@@ -133,7 +133,7 @@ describe("current Vapi assistant payload contract", () => {
     expect(nativeOutbound).not.toContain("toVapiFunctionTools");
     expect(nativeOutbound).not.toContain("api.vapi.ai");
     expect(nativeRuntime).toContain("tools,");
-    expect(nativeRuntime).toContain('tool_choice: "auto"');
+    expect(nativeRuntime).toContain('tool_choice: (reviewRequired ? "none" : "auto")');
     expect(nativeSession).toContain('type: "session.update"');
     expect(nativeSession).toContain('type: "function_call_output"');
   });

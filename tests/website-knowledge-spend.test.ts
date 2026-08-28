@@ -1,12 +1,16 @@
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { recordAmbiguousProviderAttempt, recordUsage } from "../src/lib/ai-audit";
 import { DefiniteProviderRejectionError, RuntimeUnavailableError } from "../src/lib/ai-client";
+import { POSTGRES_INT32_MAX } from "../src/lib/ai-usage";
 import { runStructured } from "../src/lib/ai-structured";
 import { AppError } from "../src/lib/api-error";
 import { WebsiteFetchError } from "../src/lib/safe-public-text-fetch";
 import {
+  aggregateWebsiteKnowledgeUsage,
   runWithWebsiteKnowledgeSpend,
+  websiteKnowledgeCostDecision,
   websiteKnowledgeSettledCostUsd,
 } from "../src/lib/website-knowledge-spend";
 
@@ -75,6 +79,142 @@ function dependencies(
 }
 
 describe("website knowledge spend reservation", () => {
+  it("settles against authoritative Gateway cost when it is available", () => {
+    expect(
+      websiteKnowledgeSettledCostUsd([
+        {
+          model: "google/gemini-3.6-flash",
+          provider: "vertex",
+          actual_cost_usd: 0.012345,
+          input_tokens: 1,
+          output_tokens: 1,
+          cache_read_tokens: 0,
+          cache_create_tokens: 0,
+          latency_ms: 10,
+        },
+      ]),
+    ).toBe(0.012345);
+  });
+
+  it("labels a larger ambiguous-attempt floor instead of claiming pure provider cost", () => {
+    const record = {
+      model: "google/gemini-3.6-flash",
+      provider: "vertex",
+      actual_cost_usd: 0.012345,
+      input_tokens: 1,
+      output_tokens: 1,
+      cache_read_tokens: 0,
+      cache_create_tokens: 0,
+      latency_ms: 10,
+    };
+
+    expect(websiteKnowledgeCostDecision([record], 0.25)).toEqual({
+      costUsd: 0.25,
+      costBasis: "provider_reported_with_conservative_ambiguous_floor",
+      conservativeFloorApplied: true,
+    });
+    expect(websiteKnowledgeCostDecision([record], 0.01)).toEqual({
+      costUsd: 0.012345,
+      costBasis: "provider_reported",
+      conservativeFloorApplied: false,
+    });
+    expect(websiteKnowledgeCostDecision([], 0.25)).toEqual({
+      costUsd: 0.25,
+      costBasis: "no_known_provider_cost_with_conservative_ambiguous_floor",
+      conservativeFloorApplied: true,
+    });
+  });
+
+  it("settles an authoritative zero charge to zero instead of retaining the reserve", () => {
+    const record = {
+      model: "openai/gpt-5.6-terra",
+      provider: "gateway",
+      actual_cost_usd: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_read_tokens: 0,
+      cache_create_tokens: 0,
+      latency_ms: 10,
+    };
+
+    expect(websiteKnowledgeCostDecision([record])).toEqual({
+      costUsd: 0,
+      costBasis: "provider_reported",
+      conservativeFloorApplied: false,
+    });
+    const source = readFileSync("src/lib/website-knowledge-spend.ts", "utf8");
+    const settlement = source.slice(
+      source.indexOf("async function settleKnownWebsiteKnowledgeSpend"),
+      source.indexOf("function reservationError"),
+    );
+    expect(settlement).toContain("costUsd: String(costUsd)");
+    expect(settlement).not.toContain("commitPlatformCostReservation(input.reservation)");
+  });
+
+  it("saturates multi-call usage aggregates before persisting PostgreSQL integers", () => {
+    const record = {
+      model: "openai/gpt-5.6-terra",
+      provider: "gateway",
+      actual_cost_usd: 0,
+      input_tokens: 2_000_000_000,
+      output_tokens: 1_500_000_000,
+      cache_read_tokens: 2_000_000_000,
+      cache_create_tokens: 2_000_000_000,
+      latency_ms: 2_000_000_000,
+    };
+
+    expect(aggregateWebsiteKnowledgeUsage([record, record])).toEqual({
+      tokenDelta: POSTGRES_INT32_MAX,
+      inputTokens: POSTGRES_INT32_MAX,
+      outputTokens: POSTGRES_INT32_MAX,
+      cacheReadTokens: POSTGRES_INT32_MAX,
+      cacheCreateTokens: POSTGRES_INT32_MAX,
+      latencyMs: POSTGRES_INT32_MAX,
+    });
+  });
+
+  it("counts cache usage in the website-import daily token delta", () => {
+    expect(
+      aggregateWebsiteKnowledgeUsage([
+        {
+          model: "openai/gpt-5.6-terra",
+          provider: "gateway",
+          actual_cost_usd: 0,
+          input_tokens: 100,
+          output_tokens: 20,
+          cache_read_tokens: 300,
+          cache_create_tokens: 40,
+          latency_ms: 10,
+        },
+      ]),
+    ).toEqual({
+      tokenDelta: 460,
+      inputTokens: 100,
+      outputTokens: 20,
+      cacheReadTokens: 300,
+      cacheCreateTokens: 40,
+      latencyMs: 10,
+    });
+  });
+
+  it.each(["0x10", "1e308", -0.01, "NaN"])(
+    "falls back to catalog pricing for malformed reported cost %s",
+    (actualCost) => {
+      const baseline = {
+        model: "openai/gpt-5.6-terra",
+        provider: "gateway",
+        input_tokens: 1_000,
+        output_tokens: 100,
+        cache_read_tokens: 0,
+        cache_create_tokens: 0,
+        latency_ms: 10,
+      };
+      expect(
+        websiteKnowledgeSettledCostUsd([{ ...baseline, actual_cost_usd: actualCost as number }]),
+      ).toBe(websiteKnowledgeSettledCostUsd([baseline]));
+    },
+  );
+
   it("refuses provider work before reservation when the daily token quota is exhausted", async () => {
     const deps = dependencies();
     deps.preflightTokens.mockResolvedValueOnce({ limit: 200_000, used: 200_001 });

@@ -3,7 +3,7 @@
  * Auto-provisions a dedicated voice + SMS line per agent for a tenant.
  *
  * Canonical path (when Twilio + Vapi are configured):
- *   1. Buy US local on Wireline's Twilio account (SMS → /api/twilio-webhook/sms).
+ *   1. Buy US local on BotBound's Twilio account (SMS → /api/twilio-webhook/sms).
  *   2. Import into Vapi (voice runtime + outbound caller ID).
  *   3. Persist wireline_phone_numbers { userId, agentId, e164, vapiNumberId }.
  *
@@ -199,7 +199,7 @@ async function purchaseTwilioLocalNumber(
     voiceMethod: "POST" as const,
     voiceFallbackUrl,
     voiceFallbackMethod: "POST" as const,
-    friendlyName: `Wireline · tenant ${userId.slice(0, 8)}`,
+    friendlyName: `BotBound · tenant ${userId.slice(0, 8)}`,
   };
 
   const preferred = preferredPhoneNumber?.trim();
@@ -462,7 +462,7 @@ export async function provisionTenantNumber(
       try {
         imported = await importTwilioNumberToVapi({
           number: twilioPurchased.phoneNumber,
-          name: `Wireline · ${userId.slice(0, 8)}${opts.agentId ? ` · ${opts.agentId.slice(0, 8)}` : ""}`,
+          name: `BotBound · ${userId.slice(0, 8)}${opts.agentId ? ` · ${opts.agentId.slice(0, 8)}` : ""}`,
           smsEnabled: false,
         });
       } catch (importErr) {
@@ -510,7 +510,7 @@ export async function provisionTenantNumber(
       }
       const fresh = await provisionVapiNumber({
         areaCode: opts.areaCode,
-        name: `Wireline · ${userId.slice(0, 8)}`,
+        name: `BotBound · ${userId.slice(0, 8)}`,
       });
       if (!fresh.id || !fresh.number) {
         return { ok: false, error: "Vapi provisioning returned no number." };

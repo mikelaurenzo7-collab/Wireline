@@ -12,7 +12,7 @@ const DOWNLOADS = [
   {
     id: "chromium",
     title: "Chromium (Chrome, Edge, Opera)",
-    href: "/downloads/wireline-command-chromium.zip",
+    href: "/downloads/botbound-command-chromium.zip",
     steps: [
       "Unzip the package on your computer.",
       "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
@@ -23,7 +23,7 @@ const DOWNLOADS = [
   {
     id: "firefox",
     title: "Firefox",
-    href: "/downloads/wireline-command-firefox.zip",
+    href: "/downloads/botbound-command-firefox.zip",
     steps: [
       "Unzip the package on your computer.",
       "Open about:debugging#/runtime/this-firefox.",

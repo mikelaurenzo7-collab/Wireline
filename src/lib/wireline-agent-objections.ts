@@ -77,11 +77,11 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "pricey",
     ],
     response_template:
-      "I get it. The price tag stands out. But compare it to a part-time receptionist at twenty hours a week or an answering service charging per minute. We're typically a third of either, and we never call out sick.",
+      "I get it. Compare the published plan and usage rates with the real cost of your current call handling, then decide from your own numbers.",
     follow_up_question:
       "What are you spending right now on call handling, roughly, and can I pencil out where you'd land with us?",
     rationale:
-      "Grounded comparison vs. true alternatives (human FTE + answering services). No discount-leading. Sales has 10% authority if they need to use it later.",
+      "Ground the comparison in the prospect's own costs and BotBound's published rates. Do not invent savings percentages or lead with an unapproved discount.",
   },
   {
     id: "sounds_like_ai",
@@ -100,10 +100,10 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "is this ai",
     ],
     response_template:
-      "Honest answer: yes, it's AI, but it's the best AI voice on the planet right now. Most callers don't realize until we tell them. Want me to have a demo agent call your phone in thirty seconds so you can hear it?",
-    follow_up_question: "What's the best number for a quick demo call, same one you're on?",
+      "Honest answer: yes, it's AI. The best test is a private browser rehearsal or the live demo on this site, where you can hear it yourself.",
+    follow_up_question: "Want the shortest path to a private rehearsal or live demo?",
     rationale:
-      "Honesty disarms. Hard-pivot to experience: hearing the voice in <30s is the single highest-conversion moment in our sales funnel.",
+      "Lead with honest disclosure and a demo path BotBound can actually provide without promising an unverified callback or comparative claim.",
   },
   {
     id: "need_to_think",
@@ -166,10 +166,10 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "sync with",
     ],
     response_template:
-      "Great question. We connect to most CRMs and calendars natively: HubSpot, Salesforce, Calendly, Google Workspace, Zapier covers anything else. Tell me the specific ${tool} and I'll confirm in one second.",
+      "Great question. BotBound supports the integrations shown in the connected stack when their provider setup is ready. Tell me which integration matters and I'll confirm its current status.",
     follow_up_question: "Which tool are you most worried about losing in the move?",
     rationale:
-      "Confident positive framing + concrete name-drops (avoids vague 'yes we integrate'). Asks for the specific tool so we don't promise something we don't have.",
+      "Ask for the exact tool and verify current configuration before promising availability. Do not imply a native connector or universal integration coverage.",
   },
   {
     id: "data_security",
@@ -191,11 +191,11 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "encrypted",
     ],
     response_template:
-      "Good question. Encryption in transit and at rest, SOC 2 Type 2 in progress, HIPAA mode available for medical and dental customers. We never train models on your call data, period.",
+      "Good question. BotBound encrypts data in transit and at rest. We do not currently claim HIPAA compliance or offer BAA support. For SOC 2, data-processing, retention, or model-use terms, I'll capture your requirements for written review.",
     follow_up_question:
       "Are you in a vertical with specific compliance requirements I should walk you through?",
     rationale:
-      "Honest about SOC 2 being in-progress (don't lie about audits), strong on operational specifics (encryption, no training). Invites the compliance conversation rather than dodging.",
+      "States only the current public trust posture and routes contract-specific requirements to written review.",
   },
   {
     id: "what_if_mistake",
@@ -214,10 +214,11 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "messes up",
     ],
     response_template:
-      "Honest answer: it'll happen occasionally. The safety net is built in: any time the AI isn't confident, it transfers to a human. Every call is recorded and transcribed, so you see exactly what was said.",
-    follow_up_question: "Want me to show you the live transfer flow and call review in Studio?",
+      "Honest answer: mistakes can happen. BotBound can route to a configured human destination, and Studio shows transcripts or recordings only when the enabled workflow produced them.",
+    follow_up_question:
+      "Want me to show you the configured handoff and call-review controls in Studio?",
     rationale:
-      "Don't oversell. Lead with humility, then pivot to the safety net (graceful escalation + observability). Invites a product walkthrough.",
+      "Lead with humility, then describe escalation and call artifacts conditionally so the Bot never invents a transfer target, transcript, or recording.",
   },
 ]);
 

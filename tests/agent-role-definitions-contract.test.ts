@@ -48,6 +48,9 @@ describe("agent role definitions contract", () => {
     expect(AGENT_CREATE_DEFAULT_ROLE_ID).toBe("ceo");
     expect(resolveAgentRoleArchetype("ceo")).toBe("All-Purpose Bot");
     expect(resolveAgentRoleArchetype("general_manager")).toBe("All-Purpose Bot");
-    expect(listAgentRolesForApi().length).toBe(AGENT_ROLE_DEFINITIONS.length);
+    expect(listAgentRolesForApi()).not.toContainEqual(
+      expect.objectContaining({ id: "collections" }),
+    );
+    expect(listAgentRolesForApi().length).toBe(AGENT_ROLE_DEFINITIONS.length - 1);
   });
 });

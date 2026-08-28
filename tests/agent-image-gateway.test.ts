@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { resolveRuntimeCallCost, withAuditCapture } from "../src/lib/ai-audit";
 import { extractImageAsset } from "../src/routes/agent-routes-v2";
 
 const image = "data:image/png;base64,aGVsbG8=";
@@ -79,6 +80,55 @@ describe("agent image training through AI Gateway", () => {
     const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(JSON.parse(String(init.body))).toMatchObject({
       model: "google/gemini-3.1-pro-preview",
+    });
+  });
+
+  it("propagates authoritative Gateway routing and cost evidence into vision audit records", async () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
+    vi.stubEnv("VERCEL_OIDC_TOKEN", "");
+    const fetchMock = vi.fn(async () =>
+      response(200, {
+        model: "openai/gpt-5.6-terra",
+        output_text: JSON.stringify({ directives: [], knowledge: [], personality: "Warm" }),
+        usage: { input_tokens: 10, output_tokens: 2 },
+        provider_metadata: {
+          gateway: {
+            cost: "0.0019",
+            routing: {
+              finalProvider: "vertex",
+              modelAttempts: [
+                {
+                  canonicalSlug: "openai/gpt-5.6-terra",
+                  success: false,
+                  providerAttempts: [{ provider: "openai", success: false }],
+                },
+                {
+                  canonicalSlug: "google/gemini-3.6-flash",
+                  success: true,
+                  providerAttempts: [{ provider: "vertex", success: true }],
+                },
+              ],
+            },
+          },
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const captured = await withAuditCapture(() => extractImageAsset("menu.png", image));
+
+    expect(captured.records).toEqual([
+      expect.objectContaining({
+        model: "google/gemini-3.6-flash",
+        provider: "vertex",
+        actual_cost_usd: 0.0019,
+        input_tokens: 10,
+        output_tokens: 2,
+      }),
+    ]);
+    expect(resolveRuntimeCallCost(captured.records[0])).toEqual({
+      costUsd: 0.0019,
+      costBasis: "provider_reported",
     });
   });
 });

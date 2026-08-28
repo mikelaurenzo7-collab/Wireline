@@ -550,6 +550,8 @@ export async function handleJob(job: JobRow): Promise<void> {
           number_errors: release.numberErrors.length,
           oauth_attempted: release.oauthAttempted,
           oauth_revoked: release.oauthRevoked,
+          managed_agentmail_accounts_reconciled: release.managedAgentMailAccountsReconciled,
+          managed_agentmail_inboxes_deleted: release.managedAgentMailInboxesDeleted,
         });
         return release;
       },

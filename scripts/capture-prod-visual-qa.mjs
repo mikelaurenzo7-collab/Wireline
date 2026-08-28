@@ -1,7 +1,18 @@
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  CANONICAL_PRODUCTION_VISUAL_BASE_URL,
+  productionVisualRouteExpectation,
+  PRODUCTION_VISUAL_AUTHENTICATED_ROUTES,
+  PRODUCTION_VISUAL_COMPATIBILITY_ROUTES,
+  PRODUCTION_VISUAL_MARKETING_ROUTES,
+  PRODUCTION_VISUAL_VIEWPORTS,
+  routeReachedExactly,
+  visualQaFileStem,
+} from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 import {
   assertCleanCheckout,
@@ -11,6 +22,11 @@ import {
 } from "./lib/release-source-verification.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(/\/$/, "");
+if (baseUrl !== CANONICAL_PRODUCTION_VISUAL_BASE_URL) {
+  throw new Error(
+    `Production visual QA must capture ${CANONICAL_PRODUCTION_VISUAL_BASE_URL}; received ${baseUrl}.`,
+  );
+}
 const outputRoot = path.resolve(
   process.env.WIRELINE_VISUAL_OUTPUT_DIR || "artifacts/visual-qa-prod",
 );
@@ -25,103 +41,24 @@ const qaAccountConfigured = Boolean(
 const sourceWaitMs = Number(process.env.WIRELINE_VISUAL_SOURCE_WAIT_MS || 10 * 60_000);
 const repoRoot = process.cwd();
 const sourceCommit = resolveSourceCommit(repoRoot);
+const expectedCommit = String(
+  process.env.WIRELINE_VISUAL_EXPECTED_COMMIT || sourceCommit,
+).toLowerCase();
+if (!/^[0-9a-f]{40}$/.test(expectedCommit) || expectedCommit !== sourceCommit) {
+  throw new Error(
+    `Production visual QA expected ${expectedCommit || "no commit"}, but checked out ${sourceCommit}.`,
+  );
+}
 
 assertCleanCheckout(repoRoot, sourceCommit);
 const sourceVerificationBefore = await waitForRemoteSourceCommit(sourceCommit, baseUrl, {
   timeoutMs: sourceWaitMs,
 });
 
-const marketingRoutes = [
-  "/",
-  "/features",
-  "/pricing",
-  "/showcase",
-  "/compare",
-  "/solutions/support",
-  "/solutions/sales",
-  "/for/everyday",
-  "/for/home-services",
-  "/for/medical",
-  "/for/legal",
-  "/for/real-estate",
-  "/for/insurance",
-  "/for/restaurants",
-  "/for/sales",
-  "/about",
-  "/blog",
-  "/changelog",
-  "/security",
-  "/trust",
-  "/trust/medical",
-  "/trust/legal",
-  "/trust/insurance",
-  "/trust/enterprise",
-  "/support",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/developers",
-  "/get-started",
-  "/signin",
-  "/signup",
-  "/404",
-  "/not-found",
-];
-
-const authenticatedRoutes = [
-  "/studio",
-  "/studio?create=1",
-  "/templates",
-  "/knowledge",
-  "/connections",
-  "/connections/salesforce",
-  "/phone",
-  "/phone?tab=setup#company-identity",
-  "/phone?tab=logs",
-  "/phone?tab=outbound",
-  "/phone?tab=campaigns",
-  "/phone?tab=callbacks",
-  "/insights",
-  "/inbox",
-  "/approvals",
-  "/settings",
-  "/settings/billing",
-  "/settings/team",
-  "/settings/customization",
-  "/settings/compliance",
-  "/settings/apps",
-  "/settings/apps/command",
-  "/settings/not-a-route",
-  "/admin",
-  "/admin?tab=subscription",
-  "/admin?tab=team",
-  "/admin?tab=branding",
-  "/admin?tab=carrier",
-];
-
-const compatibilityRoutes = [
-  "/overview",
-  "/studio/live-video",
-  "/settings/phone#company-identity",
-  "/apps",
-  "/apps/command",
-];
-
-const expectedRedirects = new Map([
-  ["/overview", "/studio"],
-  ["/studio/live-video", "/studio"],
-  ["/settings/phone", "/phone?tab=setup"],
-  ["/apps", "/settings/apps"],
-  ["/apps/command", "/settings/apps/command"],
-]);
-
-const allViewports = [
-  { name: "phone", width: 390, height: 844, isMobile: true, hasTouch: true },
-  { name: "desktop", width: 1440, height: 1100, isMobile: false, hasTouch: false },
-  { name: "laptop", width: 1280, height: 900, isMobile: false, hasTouch: false },
-  { name: "breakpoint", width: 1023, height: 768, isMobile: false, hasTouch: false },
-  { name: "short", width: 1365, height: 650, isMobile: false, hasTouch: false },
-];
+const marketingRoutes = PRODUCTION_VISUAL_MARKETING_ROUTES;
+const authenticatedRoutes = PRODUCTION_VISUAL_AUTHENTICATED_ROUTES;
+const compatibilityRoutes = PRODUCTION_VISUAL_COMPATIBILITY_ROUTES;
+const allViewports = PRODUCTION_VISUAL_VIEWPORTS;
 const viewportFilter = new Set(
   (process.env.WIRELINE_VISUAL_VIEWPORTS || "phone,desktop,laptop,breakpoint,short")
     .split(",")
@@ -139,16 +76,6 @@ const ignoredRequestHosts = new Set([
   "connect.facebook.net",
   "www.facebook.com",
 ]);
-
-function fileName(route) {
-  if (route === "/") return "home";
-  return (
-    route
-      .replace(/^\//, "")
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "") || "home"
-  );
-}
 
 function isBenignExternal(value) {
   try {
@@ -183,30 +110,6 @@ async function blockThirdPartyBeacons(page) {
     const url = route.request().url();
     return isBenignExternal(url) ? route.abort() : route.continue();
   });
-}
-
-function routeReached(route, finalUrl) {
-  try {
-    const requested = new URL(route, `${baseUrl}/`);
-    const redirectTarget = new URL(
-      expectedRedirects.get(requested.pathname) || requested.pathname,
-      requested.origin,
-    );
-    const expectedSearchParams = new URLSearchParams(requested.search);
-    for (const [key, value] of redirectTarget.searchParams) expectedSearchParams.set(key, value);
-    const expectedSearchValue = expectedSearchParams.toString();
-    const expectedSearch = expectedSearchValue ? `?${expectedSearchValue}` : "";
-    const expectedHash = redirectTarget.hash || requested.hash;
-    const final = new URL(finalUrl);
-    return (
-      final.origin === requested.origin &&
-      final.pathname === redirectTarget.pathname &&
-      final.search === expectedSearch &&
-      final.hash === expectedHash
-    );
-  } catch {
-    return false;
-  }
 }
 
 async function auditResponsiveLayout(page, viewportName, route, issues) {
@@ -289,9 +192,111 @@ function attachDiagnostics(page, viewportName, mode, issues) {
       detail: `${request.url()} - ${detail}`,
     });
   });
+  page.on("response", (response) => {
+    const status = response.status();
+    if (status < 400) return;
+    let url;
+    try {
+      url = new URL(response.url());
+    } catch {
+      return;
+    }
+    if (url.origin !== new URL(baseUrl).origin || !url.pathname.startsWith("/api/")) return;
+    if (mode === "public" && url.pathname === "/api/auth/me" && status === 401) return;
+    pushIssue(issues, {
+      viewport: viewportName,
+      route: page.url(),
+      mode,
+      kind: "api-response",
+      detail: `${status} ${url.pathname}`,
+    });
+  });
 }
 
-async function captureRoute(page, viewportName, route, issues, mode) {
+function emptySemanticAssertion(viewportName, route, mode) {
+  const expectation = productionVisualRouteExpectation(mode, route);
+  return {
+    viewport: viewportName,
+    mode,
+    route,
+    expectedPage: expectation?.page ?? null,
+    expectedStates: expectation ? [...expectation.states] : [],
+    assertedPages: [],
+    assertedStates: [],
+    success: false,
+  };
+}
+
+async function assertSemanticContent(page, viewportName, route, mode, issues) {
+  const assertion = emptySemanticAssertion(viewportName, route, mode);
+  if (!assertion.expectedPage) {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      mode,
+      kind: "semantic",
+      detail: "No canonical semantic marker expectation exists for this route.",
+    });
+    return assertion;
+  }
+
+  await page
+    .waitForFunction(
+      ({ expectedPage, expectedStates }) => {
+        const pagePresent = Array.from(document.querySelectorAll("[data-visual-qa-page]")).some(
+          (element) => element.getAttribute("data-visual-qa-page") === expectedPage,
+        );
+        const observedStates = new Set(
+          Array.from(document.querySelectorAll("[data-visual-qa-state]"))
+            .map((element) => element.getAttribute("data-visual-qa-state"))
+            .filter(Boolean),
+        );
+        return pagePresent && expectedStates.every((state) => observedStates.has(state));
+      },
+      { expectedPage: assertion.expectedPage, expectedStates: assertion.expectedStates },
+      { timeout: 10_000 },
+    )
+    .catch(() => {});
+
+  const observed = await page.evaluate(() => ({
+    pages: [
+      ...new Set(
+        Array.from(document.querySelectorAll("[data-visual-qa-page]"))
+          .map((element) => element.getAttribute("data-visual-qa-page"))
+          .filter(Boolean),
+      ),
+    ].sort(),
+    states: [
+      ...new Set(
+        Array.from(document.querySelectorAll("[data-visual-qa-state]"))
+          .map((element) => element.getAttribute("data-visual-qa-state"))
+          .filter(Boolean),
+      ),
+    ].sort(),
+  }));
+  assertion.assertedPages = observed.pages;
+  assertion.assertedStates = observed.states;
+  assertion.success =
+    JSON.stringify(assertion.assertedPages) === JSON.stringify([assertion.expectedPage]) &&
+    JSON.stringify(assertion.assertedStates) === JSON.stringify(assertion.expectedStates);
+
+  if (!assertion.success) {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      mode,
+      kind: "semantic",
+      detail: `Expected page/state markers ${JSON.stringify([
+        assertion.expectedPage,
+        assertion.expectedStates,
+      ])}; observed ${JSON.stringify([assertion.assertedPages, assertion.assertedStates])}.`,
+    });
+  }
+  return assertion;
+}
+
+async function captureRoute(page, viewportName, route, issues, semanticAssertions, mode) {
+  let semanticAssertion = emptySemanticAssertion(viewportName, route, mode);
   try {
     const response = await page.goto(`${baseUrl}${route}`, {
       waitUntil: "domcontentloaded",
@@ -309,7 +314,7 @@ async function captureRoute(page, viewportName, route, issues, mode) {
       });
     }
     const finalUrl = page.url();
-    if (!routeReached(route, finalUrl)) {
+    if (!routeReachedExactly(baseUrl, route, finalUrl)) {
       pushIssue(issues, {
         viewport: viewportName,
         route,
@@ -340,8 +345,9 @@ async function captureRoute(page, viewportName, route, issues, mode) {
         detail: "#root has no children.",
       });
     }
+    semanticAssertion = await assertSemanticContent(page, viewportName, route, mode, issues);
     await auditResponsiveLayout(page, viewportName, route, issues);
-    const prefix = path.join(outputDir, `${viewportName}-${mode}-${fileName(route)}`);
+    const prefix = path.join(outputDir, `${viewportName}-${mode}-${visualQaFileStem(route)}`);
     await page.screenshot({
       path: `${prefix}-viewport.png`,
       fullPage: false,
@@ -355,7 +361,6 @@ async function captureRoute(page, viewportName, route, issues, mode) {
           element.scrollTop = element.scrollHeight;
         });
         await page.waitForTimeout(150);
-        authenticatedScrollCaptureCount += 1;
         await page.screenshot({
           path: `${prefix}-scroll-end.png`,
           fullPage: false,
@@ -371,6 +376,8 @@ async function captureRoute(page, viewportName, route, issues, mode) {
       kind: "capture",
       detail: error instanceof Error ? error.message : "Capture failed",
     });
+  } finally {
+    semanticAssertions.push(semanticAssertion);
   }
 }
 
@@ -447,6 +454,7 @@ async function signIn(page, issues) {
 
 await mkdir(outputDir, { recursive: true });
 const issues = [];
+const semanticAssertions = [];
 const proxyServer = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy;
 const browser = await chromium.launch({
   headless: true,
@@ -455,7 +463,6 @@ const browser = await chromium.launch({
 });
 
 let storageState = null;
-let authenticatedScrollCaptureCount = 0;
 try {
   const seedViewport = allViewports.find((viewport) => viewport.name === "desktop");
   const seedContext = await createContext(browser, seedViewport);
@@ -471,7 +478,7 @@ try {
     await blockThirdPartyBeacons(publicPage);
     attachDiagnostics(publicPage, viewport.name, "public", issues);
     for (const route of marketingRoutes) {
-      await captureRoute(publicPage, viewport.name, route, issues, "public");
+      await captureRoute(publicPage, viewport.name, route, issues, semanticAssertions, "public");
     }
     await publicContext.close();
 
@@ -481,7 +488,14 @@ try {
     await blockThirdPartyBeacons(authPage);
     attachDiagnostics(authPage, viewport.name, "authenticated", issues);
     for (const route of [...authenticatedRoutes, ...compatibilityRoutes]) {
-      await captureRoute(authPage, viewport.name, route, issues, "authenticated");
+      await captureRoute(
+        authPage,
+        viewport.name,
+        route,
+        issues,
+        semanticAssertions,
+        "authenticated",
+      );
     }
     await authContext.close();
   }
@@ -492,24 +506,44 @@ try {
 const sourceVerificationAfter = await verifyRemoteSourceCommit(sourceCommit, baseUrl);
 assertCleanCheckout(repoRoot, sourceCommit);
 
+const artifacts = await Promise.all(
+  (await readdir(outputDir, { withFileTypes: true }))
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".png"))
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right))
+    .map(async (file) => {
+      const contents = await readFile(path.join(outputDir, file));
+      return {
+        file,
+        bytes: contents.byteLength,
+        sha256: createHash("sha256").update(contents).digest("hex"),
+      };
+    }),
+);
+
 const authenticatedCaptureRoutes = [...authenticatedRoutes, ...compatibilityRoutes];
-const publicScreenshotCountExpected = marketingRoutes.length * viewports.length * 2;
-const authenticatedScreenshotCountExpected = storageState
-  ? authenticatedCaptureRoutes.length * viewports.length * 2 + authenticatedScrollCaptureCount
-  : 0;
+const routeCount =
+  marketingRoutes.length * viewports.length +
+  (storageState ? authenticatedCaptureRoutes.length * viewports.length : 0);
 const manifest = {
   baseUrl,
   outputDir,
+  artifactDirectory: timestamp,
   sourceCommit,
-  sourceVerificationBefore,
-  sourceVerificationAfter,
+  expectedCommit,
+  sourceVerifiedAt: sourceVerificationBefore.verifiedAt,
+  sourceProofBefore: sourceVerificationBefore,
+  sourceProofAfter: sourceVerificationAfter,
   qaAccountConfigured,
   authenticatedCapture: Boolean(storageState),
   viewports: viewports.map(({ name, width, height }) => ({ name, width, height })),
   marketingRoutes,
   authenticatedRoutes,
   compatibilityRoutes,
-  screenshotCountExpected: publicScreenshotCountExpected + authenticatedScreenshotCountExpected,
+  screenshotCountExpected: routeCount * 2,
+  screenshotCountActual: artifacts.length,
+  artifacts,
+  semanticAssertions,
   issues,
 };
 const manifestJson = `${JSON.stringify(manifest, null, 2)}\n`;

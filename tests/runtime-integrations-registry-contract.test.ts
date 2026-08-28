@@ -51,4 +51,15 @@ describe("runtime integrations registry launch policy", () => {
   it("keeps WhatsApp claims bounded", () => {
     expect(source).toContain("WhatsApp remains private beta");
   });
+
+  it("keeps workspace and Yahoo capability claims bounded to implemented behavior", () => {
+    expect(source).toContain('"Gmail, Calendar, Drive, and Sheets."');
+    expect(source).not.toContain("Gmail, Calendar, Contacts, Drive, and Sheets.");
+    expect(source).toContain('"Outlook, Calendar, Teams, Excel, and OneDrive."');
+    expect(source).not.toContain("OneDrive, and PowerPoint.");
+    expect(source).toContain('"Yahoo"');
+    expect(source).toContain(
+      "Yahoo sign-in is supported. Yahoo Mail read and send actions are not yet available.",
+    );
+  });
 });

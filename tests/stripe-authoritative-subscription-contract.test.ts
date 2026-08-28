@@ -11,14 +11,16 @@ describe("authoritative Stripe subscription reconciliation", () => {
     );
     expect(helper).toContain("stripe.subscriptions.list({");
     expect(helper).toContain('status: "all"');
-    expect(helper).toContain("isWirelinePlanSubscription(candidate)");
+    expect(helper).toContain("isBotBoundPlanSubscription(candidate)");
     expect(helper).toContain("CURRENT_PLAN_SUBSCRIPTION_STATUSES");
     expect(helper).toContain("current.length > 1");
   });
 
   it("does not let a stale event payload outrank the authoritative subscription", () => {
     const sync = source.slice(source.indexOf("export async function syncSubscriptionFromStripe"));
-    expect(sync).toContain("const authoritative = await currentPlanSubscriptionForCustomer(customerId)");
+    expect(sync).toContain(
+      "const authoritative = await currentPlanSubscriptionForCustomer(customerId)",
+    );
     expect(sync).toContain("if (authoritative.id !== incomingSub.id)");
     expect(sync).toContain("return;");
     expect(sync).toContain("sub = authoritative;");

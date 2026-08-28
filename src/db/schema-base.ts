@@ -23,7 +23,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0163_guard_account_environment_promotion.sql`.
+// `drizzle/migrations/0164_stripe_event_claim_fencing.sql`.
 // Runtime voice defaults are established by 0156_openai_runtime_cohesion.sql.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
@@ -1765,6 +1765,8 @@ export const stripeEvents = pgTable("wireline_stripe_events", {
   eventId: text("event_id").primaryKey(),
   eventType: text("event_type").notNull(),
   processedAt: timestamp("processed_at", { withTimezone: true }).defaultNow(),
+  /** Per-attempt ownership fence while status is processing. Migration 0164. */
+  claimToken: uuid("claim_token"),
   /**
    * "processing" until the handler completes, then "processed". A killed
    * invocation cannot run the JS rollback, so without this a redelivery of an

@@ -67,9 +67,11 @@ Signed-in customers install from **Apps → BotBound Command** (`/settings/apps/
 That page serves the same zips the build copies into `public/downloads/`:
 
 ```text
-/downloads/wireline-command-chromium.zip
-/downloads/wireline-command-firefox.zip
+/downloads/botbound-command-chromium.zip
+/downloads/botbound-command-firefox.zip
 ```
+
+The former `wireline-command-*` URLs remain byte-identical compatibility aliases during migration.
 
 Rebuild with `node apps/browser-extension/scripts/build.mjs` whenever shipping a new package so `public/downloads/` stays in sync.
 

@@ -15,6 +15,20 @@ import {
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
+import { RUNTIME_ACTION_SAFETY_BLOCK } from "../agent-runtime";
+import {
+  founderInternalRuntimeAuthorityBoundary,
+  founderInternalRuntimePolicyBlock,
+  resolveFounderInternalRuntimePolicy,
+} from "../founder-internal-runtime-policy";
+import {
+  isSavedRuntimeReviewRequired,
+  isRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_GREETING,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+  resolveRuntimeTemplatePersonality,
+  runtimeTemplateGuidanceBlock,
+} from "../runtime-template-personality";
 
 export const OPENAI_LIVE_VOICE_MAX_SECONDS = 300 as const;
 
@@ -71,7 +85,7 @@ const LIVE_DEMO_TOOLS: OpenAIRealtimeToolDefinition[] = [
   },
 ];
 
-type AgentRow = {
+export type OpenAILiveInstructionAgent = {
   id: string;
   userId: string;
   name: string;
@@ -148,18 +162,33 @@ function storedProfile(value: unknown): unknown {
   );
 }
 
-function buildInstructions(
-  agent: AgentRow,
+export function composeOpenAILiveInstructions(
+  agent: OpenAILiveInstructionAgent,
   personality: string,
   directives: Array<{ content: string | null }>,
   knowledge: Array<{ content: string | null }>,
 ) {
-  const customInstructions = trimLine(agent.systemPromptOverride, 8_000);
-  const identity = [
-    `You are ${agent.name}, a BotBound voice Bot.`,
-    `Your role is ${agent.role || "Bot"}.`,
-    ...NON_NEGOTIABLE_RUNTIME_RULES,
-  ].join("\n");
+  const internalPolicy = resolveFounderInternalRuntimePolicy({
+    agentId: agent.id,
+    userId: agent.userId,
+    businessVariables: agent.businessVariables,
+  });
+  const runtimeTemplate = internalPolicy ? null : resolveRuntimeTemplatePersonality(personality);
+  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, agent.role);
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, agent.role);
+  const customInstructions =
+    internalPolicy || runtimeReviewRequired ? "" : trimLine(agent.systemPromptOverride, 8_000);
+  const identity = runtimeReviewRequired
+    ? [
+        "You are a BotBound Bot in review-required hold mode.",
+        "Do not collect, repeat, infer, or discuss customer, patient, account, balance, insurance, identity, or payment details.",
+        "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
+      ].join("\n")
+    : [
+        `You are ${agent.name}, a BotBound voice Bot.`,
+        `Your role is ${agent.role || "Bot"}.`,
+        ...NON_NEGOTIABLE_RUNTIME_RULES,
+      ].join("\n");
   const compliance = [
     agent.complianceMode && agent.complianceMode !== "none"
       ? `Compliance mode: ${agent.complianceMode}.`
@@ -176,16 +205,31 @@ function buildInstructions(
   ]
     .filter(Boolean)
     .join("\n");
-  const tone =
-    trimLine(personality, 1_500) ||
-    (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
+  const tone = internalPolicy
+    ? agent.personalityVibe
+      ? `Tone: ${agent.personalityVibe}.`
+      : ""
+    : runtimeReviewRequired
+      ? ""
+      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : personality, 1_500) ||
+        (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
   return [
     identity,
     customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
+    internalPolicy && !runtimeReviewRequired
+      ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
+      : "",
     tone ? `\nTONE:\n${tone}` : "",
-    compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-    listBlock("OPERATING RULES", directives, 24),
-    listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+    templateGuidance ? `\n${templateGuidance}` : "",
+    !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+    runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
+    runtimeReviewRequired
+      ? ""
+      : listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+    `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
+    internalPolicy && !runtimeReviewRequired
+      ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -232,7 +276,7 @@ async function loadAgentRuntime(agentId: string, userId: string) {
         .limit(80),
     ]),
   );
-  const agent = agents[0] as AgentRow | undefined;
+  const agent = agents[0] as OpenAILiveInstructionAgent | undefined;
   if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
   return {
     agent,
@@ -253,19 +297,23 @@ export async function createOpenAILiveVoiceCall(input: {
     storedProfile(runtime.agent.businessVariables),
   );
   const voice = normalizeOpenAIRealtimeVoice(PROFILE_VOICES[profile]);
-  const instructions = buildInstructions(
+  const instructions = composeOpenAILiveInstructions(
     runtime.agent,
     runtime.personality,
     runtime.directives,
     runtime.knowledge,
   );
+  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role);
+  if (reviewRequired) {
+    throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
+  }
   const session = {
     type: "realtime",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     output_modalities: ["audio"],
     instructions,
-    tools: LIVE_DEMO_TOOLS,
-    tool_choice: "auto",
+    tools: reviewRequired ? [] : LIVE_DEMO_TOOLS,
+    tool_choice: reviewRequired ? "none" : "auto",
     truncation: OPENAI_REALTIME_COST_TRUNCATION,
     audio: {
       input: {
@@ -313,14 +361,15 @@ export async function createOpenAILiveVoiceCall(input: {
     maxDurationSeconds: call.maxDurationSeconds,
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     voice,
-    greeting:
-      runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+    greeting: reviewRequired
+      ? RUNTIME_REVIEW_REQUIRED_GREETING
+      : runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
     wireline: {
       provider: "openai_realtime",
       agentId: runtime.agent.id,
       profile,
       voice,
-      tools: LIVE_DEMO_TOOLS.map((tool) => tool.name),
+      tools: reviewRequired ? [] : LIVE_DEMO_TOOLS.map((tool) => tool.name),
       phoneRuntimeProvider: "xai_sip",
     },
   };

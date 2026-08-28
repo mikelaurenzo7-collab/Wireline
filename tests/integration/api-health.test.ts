@@ -7,6 +7,9 @@ describe("API integration smoke", () => {
   let previousRedisUrl: string | undefined;
   let previousRedisToken: string | undefined;
 
+  // This deliberately imports the canonical server, including the complete API
+  // route graph. V8 coverage transforms that graph under shared worker load, so
+  // keep a file-local cold-start budget without weakening either assertion.
   beforeAll(async () => {
     process.env.VERCEL = "1";
     previousRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
@@ -20,7 +23,7 @@ describe("API integration smoke", () => {
     const addr = server!.address();
     if (!addr || typeof addr === "string") throw new Error("no address");
     baseUrl = `http://127.0.0.1:${addr.port}`;
-  }, 120_000);
+  }, 240_000);
 
   afterAll(async () => {
     if (previousRedisUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;

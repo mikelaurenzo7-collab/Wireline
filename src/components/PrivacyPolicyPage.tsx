@@ -284,6 +284,10 @@ export default function PrivacyPolicyPage() {
                 <strong>Resend</strong>: Transactional email delivery
               </li>
               <li>
+                <strong>AgentMail</strong>: Platform-managed Bot mailboxes, including inbound and
+                outbound Bot email
+              </li>
+              <li>
                 <strong>Vercel</strong>: Hosting, functions, and edge delivery
               </li>
               <li>

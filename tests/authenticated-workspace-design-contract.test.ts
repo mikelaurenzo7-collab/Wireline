@@ -127,6 +127,10 @@ describe("authenticated workspace design architecture", () => {
       'layout={splitWorkspace && section === "test" ? "split" : "standalone"}',
     );
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
+    expect(setup).toContain("Define the role. {agentName} owns the outcome.");
+    expect(setup).toContain("Then let {agentName} handle the work end");
+    expect(setup).not.toContain("one clear job");
+    expect(setup).toContain("wl-preserve-case text-lg font-semibold");
     expect(review).toContain(
       'data-wireline-studio-review-density={compact ? "inspector" : "page"}',
     );

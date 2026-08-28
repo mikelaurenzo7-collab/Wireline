@@ -8,7 +8,7 @@ export function getInternalJwtSecret(env: NodeJS.ProcessEnv = process.env): stri
   if (internalSecret && legacySecret && internalSecret !== legacySecret) {
     throw new Error(
       "JWT_SECRET_CONFLICT: INTERNAL_JWT_SECRET and SUPABASE_JWT_SECRET are both set but differ. " +
-        "Keep INTERNAL_JWT_SECRET as the canonical Wireline session secret; remove SUPABASE_JWT_SECRET " +
+        "Keep INTERNAL_JWT_SECRET as the canonical BotBound session secret; remove SUPABASE_JWT_SECRET " +
         "after confirming active sessions no longer depend on it.",
     );
   }

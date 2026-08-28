@@ -75,6 +75,7 @@ router.get(
         salesforce: isLive(sfConn)
           ? {
               connected: true,
+              configured: sfOAuthConfigured(),
               email: sfConn.connectedEmail,
               instance_url: sfConn.instanceUrl,
               connected_at: sfConn.createdAt,
@@ -84,6 +85,7 @@ router.get(
         hubspot: isLive(hsConn)
           ? {
               connected: true,
+              configured: hsOAuthConfigured(),
               email: hsConn.connectedEmail,
               instance_url: hsConn.instanceUrl,
               connected_at: hsConn.createdAt,
@@ -92,6 +94,7 @@ router.get(
         slack: isLive(slackConn)
           ? {
               connected: true,
+              configured: slackOAuthConfigured(),
               team: slackConn.connectedEmail,
               instance_url: slackConn.instanceUrl,
               connected_at: slackConn.createdAt,
@@ -103,6 +106,7 @@ router.get(
         x: isLive(xConn)
           ? {
               connected: true,
+              configured: xOAuthConfigured(),
               email: xConn.connectedEmail,
               instance_url: xConn.instanceUrl,
               connected_at: xConn.createdAt,
@@ -115,6 +119,7 @@ router.get(
         zoom: isLive(zoomConn)
           ? {
               connected: true,
+              configured: zoomOAuthConfigured(),
               instance_url: zoomConn.instanceUrl,
               connected_at: zoomConn.createdAt,
             }
@@ -122,6 +127,7 @@ router.get(
         apollo: isLive(apolloConn)
           ? {
               connected: true,
+              configured: apolloPlatformConfigured(),
               email: apolloConn.connectedEmail,
               connected_at: apolloConn.createdAt,
               platform_active: apolloPlatformConfigured(),
@@ -136,6 +142,7 @@ router.get(
         meta: isLive(metaConn)
           ? {
               connected: true,
+              configured: metaOAuthConfigured(),
               email: metaConn.connectedEmail,
               connected_at: metaConn.createdAt,
             }
@@ -143,6 +150,7 @@ router.get(
         shopify: isLive(shopifyConn)
           ? {
               connected: true,
+              configured: shopifyOAuthConfigured(),
               email: shopifyConn.connectedEmail,
               instance_url: shopifyConn.instanceUrl,
               connected_at: shopifyConn.createdAt,
@@ -151,6 +159,7 @@ router.get(
         square: isLive(squareConn)
           ? {
               connected: true,
+              configured: squareOAuthConfigured(),
               email: squareConn.connectedEmail,
               connected_at: squareConn.createdAt,
             }
@@ -158,6 +167,7 @@ router.get(
         microsoft_teams: isLive(teamsConn)
           ? {
               connected: true,
+              configured: microsoftGraphConfigured(),
               email: teamsConn.connectedEmail,
               connected_at: teamsConn.createdAt,
               team_id: (teamsConn.metadata as { team_id?: string } | null)?.team_id ?? null,
@@ -171,6 +181,7 @@ router.get(
         microsoft_excel: isLive(excelConn)
           ? {
               connected: true,
+              configured: microsoftGraphConfigured(),
               email: excelConn.connectedEmail,
               connected_at: excelConn.createdAt,
             }
@@ -178,6 +189,7 @@ router.get(
         google_sheets: isLive(sheetsConn)
           ? {
               connected: true,
+              configured: googleSheetsConfigured(),
               email: sheetsConn.connectedEmail,
               connected_at: sheetsConn.createdAt,
             }

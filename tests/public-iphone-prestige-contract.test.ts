@@ -100,10 +100,13 @@ describe("BotBound public iPhone prestige contract", () => {
   it("keeps the desktop privacy choice clear of launch conversion controls", () => {
     const consent = read("src/components/CookieConsent.tsx");
 
-    expect(consent).toContain("sm:w-[420px] sm:max-w-[calc(100vw-2rem)]");
+    expect(consent).toContain("sm:w-[720px] sm:max-w-[calc(100vw-2rem)]");
     expect(consent).not.toContain("lg:left-8 lg:right-8 lg:max-w-none");
-    expect(consent).toContain("lg:flex lg:items-center lg:gap-4 lg:space-y-0");
-    expect(consent).toContain("lg:flex-nowrap lg:shrink-0");
+    expect(consent).toContain(
+      'className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0"',
+    );
+    expect(consent).toContain('className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"');
+    expect(consent).toContain("sm:items-center");
   });
 
   it("renders Jordan as a compact animated letterless signal, not a portrait or monogram", () => {

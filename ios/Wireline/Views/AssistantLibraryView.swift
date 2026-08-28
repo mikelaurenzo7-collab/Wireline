@@ -61,7 +61,7 @@ struct AssistantLibraryView: View {
     private var createSheet: some View {
         NavigationStack {
             Form {
-                Section("START WITH ONE CLEAR JOB") {
+                Section("Build Your Bot") {
                     TextField("BOT NAME", text: $name)
                     if rolesLoading && agentRoles.isEmpty {
                         ProgressView("Loading roles…")

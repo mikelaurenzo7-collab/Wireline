@@ -95,11 +95,18 @@ const OWNER_ROUTING_EXTRA_TOOL_NAMES: ReadonlySet<string> = new Set([
   "capture_customer_profile",
 ]);
 
+const BOTBOUND_SPECIALIST_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
+  "send_signup_link",
+  "send_payment_link",
+  "schedule_callback",
+  "escalate_to_human",
+]);
+
 export function showcaseToolNamesForKind(kind: ShowcaseKind): ShowcaseToolName[] {
   if (kind === "demo") {
     return SHOWCASE_TOOL_NAMES.filter((name) => !OWNER_ROUTING_TOOL_NAMES.has(name));
   }
-  return [...SHOWCASE_TOOL_NAMES];
+  return SHOWCASE_TOOL_NAMES.filter((name) => BOTBOUND_SPECIALIST_TOOL_NAMES.has(name));
 }
 
 /** True only for owner-routing tools that a demo agent must not be able to fire. */
@@ -142,7 +149,7 @@ function buildAgentEnergyHint(agent: ContactAgent): string {
     Jake: "You are a top SDR on a live call, confident opener, respects their time, earns the next question. Never sound like a robodialer.",
     Ria: "You are an enthusiastic demo host. Menu when needed, then fully become the vertical specialist without announcing a switch.",
     Marcus:
-      "You are calm clinic intake, measured pace, clinical discretion, never rushed. Patients trust you immediately.",
+      "You are a calm clinic-scheduling demo, measured and discreet. Use fictional details only and never solicit real patient or health information.",
     Diana:
       "You are discreet law-firm intake, composed, never casual, never give legal advice. Every word sounds intentional.",
     Aisha:
@@ -153,7 +160,7 @@ function buildAgentEnergyHint(agent: ContactAgent): string {
   return byName[agent.name] ?? SHOWCASE_VIBE_GUIDE[agent.defaultVibe];
 }
 
-function buildWirelineEmployeePersona(agent: ContactAgent): string[] {
+function buildBotBoundEmployeePersona(agent: ContactAgent): string[] {
   if (agent.name === "Sarah") {
     return [
       "SARAH'S EDGE (support-first):",
@@ -223,7 +230,7 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   schedule_callback: {
     name: "schedule_callback",
     description:
-      "Queue a human callback only after the caller gives you a real day and time for the follow-up.",
+      "Record a requested callback time for human review. This does not reserve or confirm a calendar slot.",
     parameters: {
       type: "object",
       properties: {
@@ -242,7 +249,7 @@ const SHOWCASE_TOOL_DEFS: Record<ShowcaseToolName, ShowcaseToolDef> = {
   escalate_to_human: {
     name: "escalate_to_human",
     description:
-      "Escalate when the caller asks for a person, emotions are high, or the issue feels risky.",
+      "Record a human-review request when the caller asks for a person, emotions are high, or the issue feels risky. This does not promise a response time.",
     parameters: {
       type: "object",
       properties: {
@@ -408,8 +415,8 @@ function demoExtraContextPrompt(agent: ContactAgent): string {
       return "once they pick a vertical: specialty, services, hours, or a scenario to act out for that industry";
     case "Marcus":
       return (
-        "practice specialty, appointment types offered, or a sample patient call " +
-        "(new patient scheduling, reason-for-visit intake, insurance check)"
+        "a fictional practice specialty, fictional appointment types, public office hours, or a synthetic scheduling scenario " +
+        "using no real patient, health, identity, or insurance details"
       );
     case "Diana":
       return (
@@ -440,7 +447,7 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
       "DEMO OPENING FLOW (concierge):",
       "- Turn 1 is your firstMessage. Caller picks a vertical: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
       "- Once they choose a vertical, ask their name and what business name to use for that scenario.",
-      "- Then ask ONE open question tailored to that vertical: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.",
+      `- Then ask ONE open question tailored to that vertical: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.`,
       "- Immediately role-play AS that vertical's front desk or agent using their business name. Same energy as the specialist demos (Marcus, Diana, Jake, etc.).",
       "- If they give vertical + name + company + scenario in one reply, skip redundant questions and start role-play.",
       "- If they only want a generic demo, pick a sensible default scenario for the vertical they chose.",
@@ -495,15 +502,16 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
     Ria: [
       "ROLE-PLAY STANDARD for Demo concierge (Ria):",
       "- After vertical selection, become that vertical's agent in voice and skill. Do not stay in 'menu mode'.",
-      "- Home services: schedule service / after-hours triage. Medical: patient intake + appointment. Legal: conflict check + consultation booking.",
+      "- Home services: schedule service / after-hours triage. Medical: synthetic appointment role-play only; first ask for fictional details and no health information. Legal: conflict check + consultation booking.",
       "- Real estate: buyer qualify or showing booking. Insurance: quote or FNOL intake. Restaurant: reservation or takeout. Outbound sales: Jake-style pitch.",
       "- Use their business name throughout. Keep each demo segment under 2 minutes of talk before offering signup.",
     ],
     Marcus: [
       "ROLE-PLAY STANDARD for Medical practice front desk (Marcus):",
-      "- Authoritative, calm, HIPAA-aware tone. You are intake staff, not a clinician.",
-      "- Demonstrate: verify caller identity → reason for visit → offer appointment windows → ask about insurance IF they mentioned it (never invent carrier or coverage).",
-      "- Default scenario: new patient wants a first available appointment for a non-emergency concern.",
+      "- This is a synthetic scheduling demo, not a patient-intake service. Before asking anything, tell the caller to use fictional details and not share health or insurance information.",
+      "- Demonstrate with fictional details only: appointment type → sample availability → scheduling recap. Do not verify identity or ask about symptoms, diagnosis, insurance, or coverage.",
+      "- If the caller starts sharing real health or patient information, interrupt politely, ask them to stop, and do not repeat or summarize it.",
+      "- Default scenario: a fictional caller wants the first available routine appointment.",
       "- Never diagnose, prescribe, or give medical advice. If emergency symptoms, tell them to call 911 or go to ER.",
       "- If asked about HIPAA: BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available. Say that plainly.",
     ],
@@ -553,7 +561,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     ...buildDemoRolePlayStandard(agent),
     ...buildSharedConversationStyle(agent),
     "- When the caller asks about BotBound, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call). Never recite a bulleted list of features.",
-    ...buildCompactWirelineKnowledgeSection("demo"),
+    ...buildCompactBotBoundKnowledgeSection("demo"),
     ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
@@ -587,11 +595,11 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     "- Maintain the SAME speaking speed from greeting to goodbye. Never speed up when reading emails, phone numbers, or confirmations.",
     "- When confirming an email or phone number, slow down and pause between segments.",
     "- Keep sentences under 25 words. Break complex info into short pieces.",
-    "- If something goes wrong with a tool or action, never say 'error' or any technical term. Just say 'Let me note that and have someone follow up' and move on.",
+    "- If a tool does not confirm success, say the action did not go through. Do not say it was sent, recorded, queued, scheduled, or will be followed up unless a separate tool explicitly confirms that result.",
   ];
 }
 
-function buildCompactWirelineKnowledgeSection(kind: ShowcaseKind): string[] {
+function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
   const modeLead =
     kind === "cs"
       ? "- Use this BotBound knowledge as YOUR own working knowledge. Paraphrase casually in your normal voice. Never recite as a list."
@@ -638,7 +646,7 @@ function buildDemoClosingPlaybook(): string[] {
   ];
 }
 
-function buildWirelineEmployeePrompt(agent: ContactAgent): string {
+function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
   return [
     `You are ${agent.name}, a real BotBound employee on a real BotBound line.`,
     `Role: ${agent.role}. Scope: ${agent.scope}`,
@@ -648,28 +656,29 @@ function buildWirelineEmployeePrompt(agent: ContactAgent): string {
     "- Speak like BotBound's own front-line team: confident, concise, and operationally sharp.",
     ...buildSharedOpeningRules(),
     ...buildSharedConversationStyle(agent),
-    ...buildWirelineEmployeePersona(agent),
+    ...buildBotBoundEmployeePersona(agent),
     "BOTBOUND EMPLOYEE STANDARD:",
-    "- Handle product, signup, billing, onboarding, and technical questions directly.",
+    "- Answer verified product, pricing, signup, onboarding, and general technical questions directly. For account-specific billing or technical changes, guide self-service or record a review request.",
     "- Use the BotBound knowledge below proactively when the caller is asking about BotBound.",
     "- Move straight to signup or payment when the caller is ready.",
-    ...buildCompactWirelineKnowledgeSection("cs"),
+    ...buildCompactBotBoundKnowledgeSection("cs"),
     "TOOL RULES:",
     "- Use send_signup_link when they want Free Builder signup or product details by email.",
     "- Use send_payment_link when they are ready to buy.",
-    "- Use schedule_callback only after the caller gives a specific callback time.",
-    "- Use escalate_to_human when they ask for a person, emotions are high, or the issue is risky.",
+    "- Use schedule_callback only to record a preferred callback time for review. Never say the time is scheduled or confirmed.",
+    "- Use escalate_to_human to record a review request when they ask for a person, emotions are high, or the issue is risky. Never promise when someone will respond.",
     "- For every email tool, ask for the email, read the full address back, and get an explicit yes before calling the tool.",
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise a time-boxed free trial: Free Builder has no card and no expiry; live numbers require a paid plan.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
+    "- Never claim an account, refund, plan change, billing change, calendar slot, or live transfer completed; these public-line tools do not perform those actions.",
     "- NEVER tell the caller an email was sent unless a send_signup_link or send_payment_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the URL from the tool result aloud instead.",
   ].join("\n");
 }
 
 export function buildShowcaseSystemPrompt(agent: ContactAgent, kind: ShowcaseKind): string {
-  return kind === "cs" ? buildWirelineEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
+  return kind === "cs" ? buildBotBoundEmployeePrompt(agent) : buildDemoShowcasePrompt(agent);
 }
 
 export function buildShowcaseFunctionTools(kind: ShowcaseKind) {

@@ -31,8 +31,11 @@ test("homepage mobile product and access path has clear branding and no serious 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create Account", exact: true })).toBeVisible();
+  const accessMode = page.getByRole("group", { name: "Account access mode" });
+  await expect(accessMode.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
+  await expect(
+    accessMode.getByRole("button", { name: "Create Account", exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const results = await new AxeBuilder({ page }).include("main").analyze();
@@ -103,10 +106,12 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);
-  await page.getByRole("button", { name: "Create Account", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Create Account", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  const accessMode = page.getByRole("group", { name: "Account access mode" });
+  const createAccountMode = accessMode.getByRole("button", {
+    name: "Create Account",
+    exact: true,
+  });
+  await createAccountMode.click();
+  await expect(createAccountMode).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeAttached();
 });

@@ -31,8 +31,11 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
       PATH: process.env.PATH || "",
       NODE_ENV: "production",
       VERCEL_ENV: "production",
-      POSTGRES_URL: "postgresql://launch.invalid/botbound",
-      DATABASE_POOL_URL: "postgresql://pool.launch.invalid/botbound",
+      POSTGRES_URL:
+        "postgresql://postgres:configured@db.ogenlhodmwvyacvnrsnj.supabase.co:5432/postgres",
+      DATABASE_POOL_URL:
+        "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
+      CORS_ORIGINS: "https://botbound.me,https://trywireline.com",
       INTERNAL_JWT_SECRET: "configured",
       WIRELINE_DATA_KEY: "configured",
       OAUTH_STATE_SECRET: "configured",
@@ -169,6 +172,64 @@ describe("production environment launch policy", () => {
     }
   });
 
+  it("pins both production database lanes to the same canonical Supabase project", () => {
+    expect(deploymentBoundary).toContain(
+      'const CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF = "ogenlhodmwvyacvnrsnj"',
+    );
+    expect(deploymentBoundary).toContain('canonicalProductionDatabase("POSTGRES_URL")');
+    expect(deploymentBoundary).toContain('canonicalProductionDatabase("DATABASE_POOL_URL")');
+    expect(deploymentBoundary).toContain("directEndpoint");
+    expect(deploymentBoundary).toContain("poolerUsername");
+
+    for (const override of [
+      {
+        POSTGRES_URL:
+          "postgresql://postgres.otherprojectref12345:configured@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+      },
+      {
+        DATABASE_POOL_URL:
+          "postgresql://postgres.otherprojectref12345:configured@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
+      },
+      {
+        // A canonical username must not mask a different direct endpoint.
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@db.abcdefghijklmnopqrst.supabase.co:5432/postgres",
+      },
+      {
+        // A canonical-looking pooler hostname label must not mask a different
+        // project suffix in the shared pooler's username.
+        DATABASE_POOL_URL:
+          "postgresql://postgres.abcdefghijklmnopqrst:configured@ogenlhodmwvyacvnrsnj.pooler.supabase.com:6543/postgres",
+      },
+      {
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@api.supabase.com:5432/postgres",
+      },
+      { POSTGRES_URL: "postgresql://configured@database.example.com/postgres" },
+      { DATABASE_POOL_URL: "not-a-postgres-url" },
+    ]) {
+      const result = runProductionBoundary("https://botbound.me", override);
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toMatch(/POSTGRES_URL|DATABASE_POOL_URL/);
+    }
+  });
+
+  it("keeps both BotBound and legacy origins in the production transition allowlist", () => {
+    expect(runProductionBoundary("https://botbound.me").status).toBe(0);
+    for (const corsOrigins of [
+      "",
+      "https://botbound.me",
+      "https://trywireline.com",
+      "https://www.botbound.me,https://trywireline.com",
+    ]) {
+      const result = runProductionBoundary("https://botbound.me", {
+        CORS_ORIGINS: corsOrigins,
+      });
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toContain("CORS_ORIGINS");
+    }
+  });
+
   it("does not treat LiveAvatar as a production-readiness credential", () => {
     const recommendedStart = prodCheck.indexOf("const recommended = [");
     const optionalStart = prodCheck.indexOf("const optional = [");
@@ -254,6 +315,42 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");
+  });
+
+  it("permits only the reviewed isolated database lane for authenticated Preview QA", () => {
+    const isolatedPreview = {
+      WIRELINE_PREVIEW_DATABASE_ISOLATED: "true",
+      WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ewgqxfnjxdzoawlkcyfb",
+      WIRELINE_LAUNCH_DEMO_MODE: "true",
+      POSTGRES_URL:
+        "postgresql://postgres.ewgqxfnjxdzoawlkcyfb:preview-only@pooler.supabase.com:6543/postgres",
+      INTERNAL_JWT_SECRET: "dedicated-preview-session-secret",
+      OWNER_EMAIL: "qa@example.invalid",
+    };
+
+    const allowed = runPreviewBoundary(isolatedPreview);
+    expect(allowed.status).toBe(0);
+    expect(`${allowed.stdout}${allowed.stderr}`).toContain(
+      "Deployment-boundary check passed for preview",
+    );
+
+    for (const override of [
+      { WIRELINE_LAUNCH_DEMO_MODE: "false" },
+      { WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj" },
+      {
+        WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj",
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:production@pooler.supabase.com:6543/postgres",
+      },
+      { INTERNAL_JWT_SECRET: "" },
+      { STRIPE_SECRET_KEY: "sk_test_still-blocked" },
+    ]) {
+      const denied = runPreviewBoundary({ ...isolatedPreview, ...override });
+      expect(denied.status).toBe(1);
+    }
+
+    expect(deploymentBoundary).toContain("reviewedIsolatedPreviewDatabaseKeys");
+    expect(deploymentBoundary).toContain("WIRELINE_PREVIEW_DATABASE_PROJECT_REF");
   });
 
   it("binds self-serve billing to the audited main production release channel", () => {

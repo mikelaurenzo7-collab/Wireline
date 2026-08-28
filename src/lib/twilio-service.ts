@@ -10,6 +10,7 @@ import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing
 import { SMS_COST_PER_SEGMENT_USD } from "./sms-billing";
 import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { isLaunchHardBlocked } from "./launch-readiness";
 import { assertLiveWorkEntitlementForUser } from "./trial-gate";
 import { finalizeAcceptedTwilioMessage } from "./twilio-message-reconciliation";
@@ -407,291 +408,311 @@ export async function sendTenantMessage(
     };
   }
 
-  if (channel === "sms" && settings.lookupEnabled && !thread) {
-    const lookup = await lookupTenantPhoneNumber(userId, phone);
-    if (!lookup.ok || lookup.valid === false) {
-      return {
-        ok: false,
-        configured: lookup.configured,
-        enabled: true,
-        reason: lookup.reason || "The destination number did not pass phone validation.",
+  const fencedSend = await runTenantProviderWorkWithDeletionFence({
+    userId,
+    operation: "twilio_message_send",
+    retainOnSuccess: (result: TwilioSendResult) =>
+      result.ok || result.providerOutcomeAmbiguous === true,
+    perform: async (): Promise<TwilioSendResult> => {
+      if (channel === "sms" && settings.lookupEnabled && !thread) {
+        const lookup = await lookupTenantPhoneNumber(userId, phone);
+        if (!lookup.ok || lookup.valid === false) {
+          return {
+            ok: false,
+            configured: lookup.configured,
+            enabled: true,
+            reason: lookup.reason || "The destination number did not pass phone validation.",
+            channel,
+          };
+        }
+        if ((lookup.lineType || "").toLowerCase() === "landline") {
+          return {
+            ok: false,
+            configured: true,
+            enabled: true,
+            reason: "The destination is a landline, so SMS was not sent.",
+            channel,
+          };
+        }
+      }
+
+      const segments = channel === "sms" ? estimateSmsSegments(body) : 1;
+      const whatsappRate = channel === "whatsapp" ? whatsappCustomerRate() : null;
+      if (channel === "whatsapp" && whatsappRate == null) {
+        return {
+          ok: false,
+          configured: true,
+          enabled: false,
+          reason:
+            "WhatsApp is available only through the priced private beta after a sender and approved templates are configured.",
+          channel,
+        };
+      }
+      const requiredBalance =
+        channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * segments) : whatsappRate || 0;
+
+      let sender = channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
+      let agentSender: string | null = null;
+      if (channel === "sms" && params.agentId) {
+        agentSender = await resolveAgentSmsFromNumber(userId, params.agentId);
+        sender = agentSender || sender;
+      }
+      if (!sender && !settings.messagingServiceSid) {
+        return {
+          ok: false,
+          configured: true,
+          enabled: true,
+          reason: "Configure a Twilio sender or Messaging Service before sending.",
+          channel,
+        };
+      }
+      if (channel === "whatsapp" && !sender) {
+        return {
+          ok: false,
+          configured: true,
+          enabled: true,
+          reason: "Configure a WhatsApp-enabled sender before sending.",
+          channel,
+        };
+      }
+
+      const payload: Record<string, any> = withTwilioMessageReliability({
+        to: address(phone, channel),
+        body,
+      });
+      const mediaUrls = Array.isArray(params.mediaUrl)
+        ? params.mediaUrl.filter((url) => typeof url === "string" && url.trim())
+        : typeof params.mediaUrl === "string" && params.mediaUrl.trim()
+          ? [params.mediaUrl.trim()]
+          : [];
+      if (mediaUrls.length > 0) {
+        payload.mediaUrl = mediaUrls;
+      }
+      if (channel === "whatsapp") {
+        payload.from = address(cleanPhone(sender), channel);
+      } else if (settings.messagingServiceSid) {
+        payload.messagingServiceSid = settings.messagingServiceSid;
+        if (agentSender) payload.from = cleanPhone(agentSender);
+      } else if (sender) {
+        payload.from = cleanPhone(sender);
+      }
+
+      const reservationReference = twilioMessageReservationReference({
         channel,
-      };
-    }
-    if ((lookup.lineType || "").toLowerCase() === "landline") {
+        idempotencyKey: params.idempotencyKey,
+        reservationAttempt: params.reservationAttempt,
+      });
+      const reservation = await reserveRuntimeUsage({
+        userId,
+        amountUsd: requiredBalance,
+        referenceId: reservationReference,
+        reason: channel === "sms" ? "Outbound SMS" : "Outbound WhatsApp message",
+        provider: "twilio",
+        source: "twilio",
+        metadata: {
+          channel,
+          estimated_segments: segments,
+          estimated_usd: requiredBalance,
+          destination_suffix: phone.slice(-4),
+        },
+      });
+      if (!reservation.reserved) {
+        return {
+          ok: false,
+          configured: true,
+          enabled: true,
+          reason: `Add Runtime Balance before sending. This message requires at least $${requiredBalance.toFixed(2)}.`,
+          channel,
+        };
+      }
+
+      // The callback is deliberately after every entitlement/configuration/
+      // balance gate and immediately before the provider boundary. It is outside
+      // the provider catch: a failed durable claim proves Twilio was never called,
+      // so refund this attempt's reserve and reject for a safe queue retry.
+      try {
+        await params.beforeProviderAttempt?.();
+      } catch (error) {
+        try {
+          await refundRuntimeUsage({
+            userId,
+            amountUsd: requiredBalance,
+            referenceId: reservationReference,
+            reason: "Twilio provider attempt did not start",
+            provider: "twilio",
+            source: "twilio",
+            metadata: { channel, estimated_segments: segments, pre_provider_failure: true },
+          });
+        } catch (refundError) {
+          log.error("Twilio pre-provider reservation refund failed", {
+            userId,
+            channel,
+            reservationReference,
+            preProviderError: getErrorMessage(error),
+            refundError: getErrorMessage(refundError),
+          });
+          const accountingError = new Error(
+            "Twilio was not called, but its pre-provider Runtime Balance refund could not be recorded.",
+          );
+          (accountingError as Error & { cause?: unknown }).cause = refundError;
+          throw accountingError;
+        }
+        throw error;
+      }
+
+      let message: Awaited<ReturnType<typeof client.messages.create>>;
+      try {
+        message = await createTwilioMessageWithRateLimitRetry(
+          () => client.messages.create(payload as any),
+          {
+            onRetry: ({ retryNumber, delayMs }) =>
+              log.warn("Twilio message rate limited; retrying accepted-safe request", {
+                userId,
+                channel,
+                retryNumber,
+                delayMs,
+              }),
+          },
+        );
+      } catch (error) {
+        const status = Number((error as { status?: number } | null)?.status || 0);
+        // A Twilio 4xx means the provider definitively rejected the request. Network
+        // and 5xx errors are ambiguous: the message may have been accepted before the
+        // response was lost, so retain the reservation for reconciliation instead of
+        // refunding and potentially funding duplicate carrier spend.
+        const definitiveRejection = status >= 400 && status < 500;
+        if (definitiveRejection) {
+          try {
+            // Refund is idempotent on reservationReference, including redelivered
+            // or already-reserved attempts. Never hide a failed accounting write
+            // behind the ordinary provider-rejection response.
+            await refundRuntimeUsage({
+              userId,
+              amountUsd: requiredBalance,
+              referenceId: reservationReference,
+              reason: "Twilio rejected the outbound message",
+              provider: "twilio",
+              source: "twilio",
+              metadata: { channel, status, estimated_segments: segments },
+            });
+          } catch (refundError) {
+            log.error("Twilio rejection refund failed", {
+              userId,
+              channel,
+              status,
+              reservationReference,
+              providerError: getErrorMessage(error),
+              refundError: getErrorMessage(refundError),
+            });
+            const accountingError = new Error(
+              "Twilio rejected the message, but its Runtime Balance refund could not be recorded.",
+            );
+            (accountingError as Error & { cause?: unknown }).cause = refundError;
+            throw accountingError;
+          }
+        }
+        if (!definitiveRejection) {
+          let incidentRecorded = false;
+          try {
+            await persistAmbiguousTwilioProviderOutcome({
+              userId,
+              reservationReference,
+              destinationSuffix: phone.slice(-4),
+              providerStatus: status || null,
+            });
+            incidentRecorded = true;
+          } catch (auditError) {
+            log.error("Twilio ambiguous provider outcome audit persistence failed", {
+              userId,
+              reservationReference,
+              destinationSuffix: phone.slice(-4),
+              status: status || undefined,
+              auditError: getErrorMessage(auditError),
+            });
+          }
+          log.error("Twilio message provider outcome is ambiguous", {
+            userId,
+            channel,
+            reservationReference,
+            destinationSuffix: phone.slice(-4),
+            status: status || undefined,
+            incidentRecorded,
+            reservationRetained: true,
+            doNotResend: true,
+            error: getErrorMessage(error),
+          });
+          return {
+            ok: false,
+            configured: true,
+            enabled: true,
+            reason:
+              "Delivery status is unknown because the carrier response was interrupted. The message may have been accepted. Do not resend it; contact support with the time and recipient.",
+            code: SMS_PROVIDER_OUTCOME_AMBIGUOUS,
+            channel,
+            providerOutcomeAmbiguous: true,
+            doNotResend: true,
+          };
+        }
+
+        log.warn("Twilio message send failed", {
+          userId,
+          channel,
+          segments,
+          status: status || undefined,
+          reservationRetained: false,
+          error: getErrorMessage(error),
+        });
+        return {
+          ok: false,
+          configured: true,
+          enabled: true,
+          reason: "Twilio rejected the message send request.",
+          channel,
+        };
+      }
+
+      // Twilio accepted the provider request. From this point onward, reporting a
+      // send failure would invite a duplicate customer retry. Local history and
+      // segment true-up failures therefore move to idempotent durable recovery.
+      const actualSegments =
+        channel === "sms" ? Math.max(1, Number(message.numSegments) || segments) : 1;
+      const actualCost =
+        channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * actualSegments) : requiredBalance;
+      const local = await finalizeAcceptedTwilioMessage({
+        userId,
+        customerNumber: phone,
+        body,
+        sid: message.sid,
+        channel,
+        agentId: params.agentId,
+        reservationReference,
+        estimatedUsd: requiredBalance,
+        actualUsd: actualCost,
+        actualSegments,
+      });
+
       return {
-        ok: false,
+        ok: true,
         configured: true,
         enabled: true,
-        reason: "The destination is a landline, so SMS was not sent.",
+        sid: message.sid,
+        status: message.status ?? null,
+        to: message.to || payload.to,
         channel,
+        reconciliationPending: local.reconciliationPending,
       };
-    }
-  }
+    },
+  });
 
-  const segments = channel === "sms" ? estimateSmsSegments(body) : 1;
-  const whatsappRate = channel === "whatsapp" ? whatsappCustomerRate() : null;
-  if (channel === "whatsapp" && whatsappRate == null) {
+  if (!fencedSend.performed) {
     return {
       ok: false,
       configured: true,
       enabled: false,
-      reason:
-        "WhatsApp is available only through the priced private beta after a sender and approved templates are configured.",
+      reason: "Messaging is unavailable because account deletion is in progress.",
+      code: "ACCOUNT_DELETION_IN_PROGRESS",
       channel,
     };
   }
-  const requiredBalance =
-    channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * segments) : whatsappRate || 0;
-
-  let sender = channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
-  let agentSender: string | null = null;
-  if (channel === "sms" && params.agentId) {
-    agentSender = await resolveAgentSmsFromNumber(userId, params.agentId);
-    sender = agentSender || sender;
-  }
-  if (!sender && !settings.messagingServiceSid) {
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Configure a Twilio sender or Messaging Service before sending.",
-      channel,
-    };
-  }
-  if (channel === "whatsapp" && !sender) {
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Configure a WhatsApp-enabled sender before sending.",
-      channel,
-    };
-  }
-
-  const payload: Record<string, any> = withTwilioMessageReliability({
-    to: address(phone, channel),
-    body,
-  });
-  const mediaUrls = Array.isArray(params.mediaUrl)
-    ? params.mediaUrl.filter((url) => typeof url === "string" && url.trim())
-    : typeof params.mediaUrl === "string" && params.mediaUrl.trim()
-      ? [params.mediaUrl.trim()]
-      : [];
-  if (mediaUrls.length > 0) {
-    payload.mediaUrl = mediaUrls;
-  }
-  if (channel === "whatsapp") {
-    payload.from = address(cleanPhone(sender), channel);
-  } else if (settings.messagingServiceSid) {
-    payload.messagingServiceSid = settings.messagingServiceSid;
-    if (agentSender) payload.from = cleanPhone(agentSender);
-  } else if (sender) {
-    payload.from = cleanPhone(sender);
-  }
-
-  const reservationReference = twilioMessageReservationReference({
-    channel,
-    idempotencyKey: params.idempotencyKey,
-    reservationAttempt: params.reservationAttempt,
-  });
-  const reservation = await reserveRuntimeUsage({
-    userId,
-    amountUsd: requiredBalance,
-    referenceId: reservationReference,
-    reason: channel === "sms" ? "Outbound SMS" : "Outbound WhatsApp message",
-    provider: "twilio",
-    source: "twilio",
-    metadata: {
-      channel,
-      estimated_segments: segments,
-      estimated_usd: requiredBalance,
-      destination_suffix: phone.slice(-4),
-    },
-  });
-  if (!reservation.reserved) {
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: `Add Runtime Balance before sending. This message requires at least $${requiredBalance.toFixed(2)}.`,
-      channel,
-    };
-  }
-
-  // The callback is deliberately after every entitlement/configuration/
-  // balance gate and immediately before the provider boundary. It is outside
-  // the provider catch: a failed durable claim proves Twilio was never called,
-  // so refund this attempt's reserve and reject for a safe queue retry.
-  try {
-    await params.beforeProviderAttempt?.();
-  } catch (error) {
-    try {
-      await refundRuntimeUsage({
-        userId,
-        amountUsd: requiredBalance,
-        referenceId: reservationReference,
-        reason: "Twilio provider attempt did not start",
-        provider: "twilio",
-        source: "twilio",
-        metadata: { channel, estimated_segments: segments, pre_provider_failure: true },
-      });
-    } catch (refundError) {
-      log.error("Twilio pre-provider reservation refund failed", {
-        userId,
-        channel,
-        reservationReference,
-        preProviderError: getErrorMessage(error),
-        refundError: getErrorMessage(refundError),
-      });
-      const accountingError = new Error(
-        "Twilio was not called, but its pre-provider Runtime Balance refund could not be recorded.",
-      );
-      (accountingError as Error & { cause?: unknown }).cause = refundError;
-      throw accountingError;
-    }
-    throw error;
-  }
-
-  let message: Awaited<ReturnType<typeof client.messages.create>>;
-  try {
-    message = await createTwilioMessageWithRateLimitRetry(
-      () => client.messages.create(payload as any),
-      {
-        onRetry: ({ retryNumber, delayMs }) =>
-          log.warn("Twilio message rate limited; retrying accepted-safe request", {
-            userId,
-            channel,
-            retryNumber,
-            delayMs,
-          }),
-      },
-    );
-  } catch (error) {
-    const status = Number((error as { status?: number } | null)?.status || 0);
-    // A Twilio 4xx means the provider definitively rejected the request. Network
-    // and 5xx errors are ambiguous: the message may have been accepted before the
-    // response was lost, so retain the reservation for reconciliation instead of
-    // refunding and potentially funding duplicate carrier spend.
-    const definitiveRejection = status >= 400 && status < 500;
-    if (definitiveRejection) {
-      try {
-        // Refund is idempotent on reservationReference, including redelivered
-        // or already-reserved attempts. Never hide a failed accounting write
-        // behind the ordinary provider-rejection response.
-        await refundRuntimeUsage({
-          userId,
-          amountUsd: requiredBalance,
-          referenceId: reservationReference,
-          reason: "Twilio rejected the outbound message",
-          provider: "twilio",
-          source: "twilio",
-          metadata: { channel, status, estimated_segments: segments },
-        });
-      } catch (refundError) {
-        log.error("Twilio rejection refund failed", {
-          userId,
-          channel,
-          status,
-          reservationReference,
-          providerError: getErrorMessage(error),
-          refundError: getErrorMessage(refundError),
-        });
-        const accountingError = new Error(
-          "Twilio rejected the message, but its Runtime Balance refund could not be recorded.",
-        );
-        (accountingError as Error & { cause?: unknown }).cause = refundError;
-        throw accountingError;
-      }
-    }
-    if (!definitiveRejection) {
-      let incidentRecorded = false;
-      try {
-        await persistAmbiguousTwilioProviderOutcome({
-          userId,
-          reservationReference,
-          destinationSuffix: phone.slice(-4),
-          providerStatus: status || null,
-        });
-        incidentRecorded = true;
-      } catch (auditError) {
-        log.error("Twilio ambiguous provider outcome audit persistence failed", {
-          userId,
-          reservationReference,
-          destinationSuffix: phone.slice(-4),
-          status: status || undefined,
-          auditError: getErrorMessage(auditError),
-        });
-      }
-      log.error("Twilio message provider outcome is ambiguous", {
-        userId,
-        channel,
-        reservationReference,
-        destinationSuffix: phone.slice(-4),
-        status: status || undefined,
-        incidentRecorded,
-        reservationRetained: true,
-        doNotResend: true,
-        error: getErrorMessage(error),
-      });
-      return {
-        ok: false,
-        configured: true,
-        enabled: true,
-        reason:
-          "Delivery status is unknown because the carrier response was interrupted. The message may have been accepted. Do not resend it; contact support with the time and recipient.",
-        code: SMS_PROVIDER_OUTCOME_AMBIGUOUS,
-        channel,
-        providerOutcomeAmbiguous: true,
-        doNotResend: true,
-      };
-    }
-
-    log.warn("Twilio message send failed", {
-      userId,
-      channel,
-      segments,
-      status: status || undefined,
-      reservationRetained: false,
-      error: getErrorMessage(error),
-    });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio rejected the message send request.",
-      channel,
-    };
-  }
-
-  // Twilio accepted the provider request. From this point onward, reporting a
-  // send failure would invite a duplicate customer retry. Local history and
-  // segment true-up failures therefore move to idempotent durable recovery.
-  const actualSegments =
-    channel === "sms" ? Math.max(1, Number(message.numSegments) || segments) : 1;
-  const actualCost =
-    channel === "sms" ? money(SMS_COST_PER_SEGMENT_USD * actualSegments) : requiredBalance;
-  const local = await finalizeAcceptedTwilioMessage({
-    userId,
-    customerNumber: phone,
-    body,
-    sid: message.sid,
-    channel,
-    agentId: params.agentId,
-    reservationReference,
-    estimatedUsd: requiredBalance,
-    actualUsd: actualCost,
-    actualSegments,
-  });
-
-  return {
-    ok: true,
-    configured: true,
-    enabled: true,
-    sid: message.sid,
-    status: message.status ?? null,
-    to: message.to || payload.to,
-    channel,
-    reconciliationPending: local.reconciliationPending,
-  };
+  return fencedSend.result;
 }

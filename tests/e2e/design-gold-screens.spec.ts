@@ -6,7 +6,7 @@ const password = process.env.WIRELINE_E2E_PASSWORD;
 const GOLD_ROUTES = [
   {
     path: "/studio",
-    eyebrow: /Bot Studio|Start With One Job|Studio/i,
+    eyebrow: /Bot Studio|Build Your Bot|Studio/i,
     marker: '#studio-brief, #studio-workroom-message, [aria-label="Loading Studio workspace"]',
   },
   { path: "/phone?tab=logs", eyebrow: /Place outbound call/i, marker: ".wl-operate-surface" },

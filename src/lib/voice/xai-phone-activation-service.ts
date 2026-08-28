@@ -3,10 +3,15 @@ import { randomUUID } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 
 import { xaiPhoneBindings } from "../../db/xai-voice-schema";
+import * as schema from "../../db/schema";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "../runtime-template-personality";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { isAmbiguousTwilioPhoneMutationError } from "./native-phone-carrier";
@@ -261,7 +266,25 @@ export async function provisionNativeXAIPhone(input: {
   agentId: string;
 }): Promise<NativeXAIPhoneStatus> {
   try {
+    // Account-environment policy is the cheapest and broadest boundary. Demo
+    // and test tenants must fail before any agent lookup or provider lease.
     await assertLiveExternalActionAllowed(input.userId, "native_xai_phone_activation");
+    const [agent] = await drizzle
+      .select({ role: schema.agents.role, personality: schema.personality.content })
+      .from(schema.agents)
+      .leftJoin(
+        schema.personality,
+        and(
+          eq(schema.personality.agentId, schema.agents.id),
+          eq(schema.personality.userId, schema.agents.userId),
+        ),
+      )
+      .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
+      .limit(1);
+    if (!agent) throw AppError.notFound("Bot not found.");
+    if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
+      throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
+    }
     const outcome = await runTenantProviderWorkWithDeletionFence({
       userId: input.userId,
       operation: "xai_phone_activation",

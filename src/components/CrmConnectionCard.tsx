@@ -16,7 +16,7 @@ import { BRAND } from "../constants/brand-colors";
 
 const CRM_SELECT_UNSET = "__unset__";
 
-interface IntegrationStatus {
+export interface IntegrationStatus {
   connected: boolean;
   configured?: boolean;
   /** Apollo: platform APOLLO_API_KEY and/or OAuth app credentials on Vercel */
@@ -52,6 +52,77 @@ interface IntegrationState {
 }
 
 type ProviderKey = keyof IntegrationState;
+
+export type IntegrationAvailability = {
+  available: boolean;
+  connected: boolean;
+  hasSavedGrant: boolean;
+};
+
+export type IntegrationPrimaryAction = "connected" | "disconnect" | "connect" | "unavailable";
+
+/**
+ * Platform configuration is authoritative. A saved tenant grant can outlive
+ * the provider credentials needed to use or refresh it, so it must not render
+ * as a live connection while the platform is unavailable.
+ */
+export function resolveIntegrationAvailability(
+  status: IntegrationStatus | null | undefined,
+): IntegrationAvailability {
+  const hasSavedGrant = status?.connected === true;
+  const available = Boolean(
+    status && status.configured !== false && status.platform_active !== false,
+  );
+  return {
+    available,
+    connected: available && hasSavedGrant,
+    hasSavedGrant,
+  };
+}
+
+export function summarizeIntegrationAvailability(
+  statuses: readonly (IntegrationStatus | null | undefined)[],
+) {
+  return statuses.reduce(
+    (summary, status) => {
+      const availability = resolveIntegrationAvailability(status);
+      if (!availability.available) summary.unavailable += 1;
+      else if (availability.connected) summary.live += 1;
+      else summary.available += 1;
+      return summary;
+    },
+    { live: 0, available: 0, unavailable: 0 },
+  );
+}
+
+export function resolveIntegrationPrimaryAction(
+  availability: IntegrationAvailability,
+  oauthConnectAvailable: boolean,
+): IntegrationPrimaryAction {
+  if (availability.connected) return "connected";
+  if (availability.hasSavedGrant) return "disconnect";
+  if (availability.available && oauthConnectAvailable) return "connect";
+  return "unavailable";
+}
+
+export const SAVED_CONNECTION_INACTIVE_HELP =
+  "BotBound cannot use this saved authorization while the integration is unavailable. Disconnect to remove it from BotBound.";
+
+export function getIntegrationStatusDetail(
+  group: string,
+  availability: IntegrationAvailability,
+  oauthConnectAvailable: boolean,
+  apolloPlatformOnly = false,
+): string {
+  const primaryAction = resolveIntegrationPrimaryAction(availability, oauthConnectAvailable);
+  if (primaryAction === "disconnect") return `${group} · Saved connection inactive`;
+  if (apolloPlatformOnly) {
+    return `${group} · Platform API active. Connecting your workspace is optional`;
+  }
+  if (availability.available && oauthConnectAvailable) return group;
+  if (availability.available) return `${group} · Platform configured`;
+  return `${group} · Not available yet`;
+}
 
 import { ShadButton } from "./ui/shadcn/ShadButton";
 
@@ -214,8 +285,11 @@ export default function CrmConnectionCard() {
   }, []);
   useEffect(() => stopPopupPoll, [stopPopupPoll]);
 
+  const slackConnected = resolveIntegrationAvailability(state?.slack).connected;
+  const teamsConnected = resolveIntegrationAvailability(state?.microsoft_teams).connected;
+
   useEffect(() => {
-    if (!state?.slack?.connected) {
+    if (!slackConnected) {
       setSlackChannels([]);
       return;
     }
@@ -235,10 +309,10 @@ export default function CrmConnectionCard() {
     return () => {
       cancelled = true;
     };
-  }, [state?.slack?.connected]);
+  }, [slackConnected]);
 
   useEffect(() => {
-    if (!state?.microsoft_teams?.connected) {
+    if (!teamsConnected) {
       setTeamsTargets([]);
       return;
     }
@@ -258,7 +332,7 @@ export default function CrmConnectionCard() {
     return () => {
       cancelled = true;
     };
-  }, [state?.microsoft_teams?.connected]);
+  }, [teamsConnected]);
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -394,7 +468,9 @@ export default function CrmConnectionCard() {
     );
   }
 
-  const connectedCount = PROVIDERS.filter((p) => state[p.key]?.connected).length;
+  const integrationSummary = summarizeIntegrationAvailability(
+    PROVIDERS.map((provider) => state[provider.key]),
+  );
 
   return (
     <div className="space-y-4">
@@ -416,10 +492,15 @@ export default function CrmConnectionCard() {
           <p className={WL_APP_CLASSES.wiredEyebrow}>Connected stack</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span className="chip-brand">{connectedCount} live</span>
+          <span className="chip-brand">{integrationSummary.live} live</span>
           <span className="wl-label text-foreground/55">
-            {PROVIDERS.length - connectedCount} available
+            {integrationSummary.available} available
           </span>
+          {integrationSummary.unavailable > 0 ? (
+            <span className="wl-label text-foreground/55">
+              {integrationSummary.unavailable} unavailable
+            </span>
+          ) : null}
           <ShadButton
             type="button"
             variant="outline"
@@ -454,10 +535,21 @@ export default function CrmConnectionCard() {
               </span>
             ) : null;
 
-            const platformReady = s.configured !== false;
+            const availability = resolveIntegrationAvailability(s);
+            const { available: platformReady, connected: isConnected } = availability;
             const oauthConnectAvailable = key !== "apollo" || s.oauth_connect_available !== false;
+            const primaryAction = resolveIntegrationPrimaryAction(
+              availability,
+              oauthConnectAvailable,
+            );
             const apolloPlatformOnly =
-              key === "apollo" && platformReady && !oauthConnectAvailable && !s.connected;
+              key === "apollo" && platformReady && !oauthConnectAvailable && !isConnected;
+            const statusDetail = getIntegrationStatusDetail(
+              group,
+              availability,
+              oauthConnectAvailable,
+              apolloPlatformOnly,
+            );
 
             return (
               <motion.div
@@ -467,14 +559,14 @@ export default function CrmConnectionCard() {
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
                   "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
-                  s.connected ? styles.card : "border-border",
+                  isConnected ? styles.card : "border-border",
                 )}
               >
                 <div className="flex items-start gap-3 flex-1">
                   <div
                     className={cn(
                       "w-9 h-9 rounded-md flex items-center justify-center p-1.5 border shrink-0",
-                      s.connected ? styles.icon : "bg-muted border border-border text-muted/50",
+                      isConnected ? styles.icon : "bg-muted border border-border text-muted/50",
                     )}
                   >
                     {getIntegrationLogo(key) ?? <span className="wl-label font-bold">{logo}</span>}
@@ -486,36 +578,28 @@ export default function CrmConnectionCard() {
                       <div className="min-w-0 truncate text-[length:var(--wireline-typography-overline-size)] font-semibold text-foreground">
                         {label}
                       </div>
-                      {s.connected && (
+                      {isConnected && (
                         <CheckCircle2 className={cn("w-3 h-3 shrink-0", styles.check)} />
                       )}
                       {betaPill}
                     </div>
-                    {s.connected ? (
+                    {primaryAction === "connected" ? (
                       <div className="wl-micro-meta--muted leading-snug mt-0.5 truncate">
                         {detail && <span>{detail} · </span>}
                         Connected{" "}
                         {s.connected_at ? new Date(s.connected_at).toLocaleDateString() : ""}
                       </div>
                     ) : (
-                      <div className="wl-micro-meta--muted leading-snug mt-0.5">
-                        {apolloPlatformOnly
-                          ? `${group} · Platform API active. Connecting your workspace is optional`
-                          : platformReady && oauthConnectAvailable
-                            ? group
-                            : platformReady
-                              ? `${group} · Platform configured`
-                              : // Customers do not have a mental model for "this deployment", and
-                                // reading it on a catalog card makes an integration Wireline has
-                                // not switched on yet look like something that broke. State the
-                                // fact in the customer's terms and keep the `category · state`
-                                // shape the other branches use.
-                                `${group} · Not available yet`}
-                      </div>
+                      <div className="wl-micro-meta--muted leading-snug mt-0.5">{statusDetail}</div>
                     )}
+                    {primaryAction === "disconnect" ? (
+                      <p className="mt-1.5 max-w-[20rem] text-[length:var(--wireline-typography-caption-size)] leading-snug text-foreground/55">
+                        {SAVED_CONNECTION_INACTIVE_HELP}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="shrink-0">
-                    {s.connected ? (
+                    {isConnected ? (
                       <div className="flex items-center gap-2">
                         {s.instance_url && (
                           <a
@@ -552,7 +636,21 @@ export default function CrmConnectionCard() {
                           <Unlink className="w-3.5 h-3.5" />
                         </ShadButton>
                       </div>
-                    ) : platformReady && oauthConnectAvailable ? (
+                    ) : primaryAction === "disconnect" ? (
+                      <ShadButton
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disableAnimations
+                        onClick={disconnect(key)}
+                        className="h-8 rounded-md wl-micro-meta font-medium text-foreground/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10"
+                        title="Disconnect saved connection"
+                        aria-label={`Disconnect ${label}`}
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                        Disconnect
+                      </ShadButton>
+                    ) : primaryAction === "connect" ? (
                       <ShadButton
                         type="button"
                         variant="outline"
@@ -579,7 +677,7 @@ export default function CrmConnectionCard() {
                     )}
                   </div>
                 </div>
-                {s.connected &&
+                {isConnected &&
                   (() => {
                     const toolInt = toolIntegrationForProvider(key);
                     if (!toolInt) return null;
@@ -596,7 +694,7 @@ export default function CrmConnectionCard() {
                     );
                   })()}
 
-                {key === "shopify" && !s.connected && shopDomainOpen && (
+                {key === "shopify" && !isConnected && shopDomainOpen && (
                   <div className="mt-3 pt-3 border-t border-white/10 space-y-1.5">
                     <div className="wl-label text-muted/90">Your store domain</div>
                     <Input
@@ -621,7 +719,7 @@ export default function CrmConnectionCard() {
                     )}
                   </div>
                 )}
-                {key === "slack" && s.connected && (
+                {key === "slack" && isConnected && (
                   <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
                     <div className="wl-label text-muted/90">Default notify channel</div>
                     {slackChannelsLoading ? (
@@ -664,7 +762,7 @@ export default function CrmConnectionCard() {
                     </p>
                   </div>
                 )}
-                {key === "microsoft_teams" && s.connected && (
+                {key === "microsoft_teams" && isConnected && (
                   <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
                     <div className="wl-label text-muted/90">Notify team & channel</div>
                     {teamsTargetsLoading ? (

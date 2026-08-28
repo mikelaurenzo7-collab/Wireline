@@ -1,11 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {
-  mkdtempSync,
-  readFileSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { crc32 } from "node:zlib";
@@ -72,18 +66,13 @@ function listSourceFiles(directory: string): string[] {
 beforeAll(() => {
   const result = spawnSync(
     process.execPath,
-    [
-      resolve(extensionRoot, "scripts/build.mjs"),
-      "--output-root",
-      outputRoot,
-      "--no-publish",
-    ],
+    [resolve(extensionRoot, "scripts/build.mjs"), "--output-root", outputRoot, "--no-publish"],
     { cwd: root, encoding: "utf8" },
   );
   if (result.status !== 0) {
     throw new Error(result.stderr || result.stdout || "Browser-extension test packaging failed.");
   }
-});
+}, 60_000);
 
 afterAll(() => {
   rmSync(outputRoot, { recursive: true, force: true });
@@ -92,14 +81,16 @@ afterAll(() => {
 describe("browser-extension download freshness contract", () => {
   it("wires extension packaging into the canonical production asset build", () => {
     const renderer = readFileSync(resolve(root, "scripts/render-image-assets.mjs"), "utf8");
-    expect(renderer).toContain('apps/browser-extension/scripts/build.mjs');
+    expect(renderer).toContain("apps/browser-extension/scripts/build.mjs");
     expect(renderer).toContain("Browser-extension packaging failed");
   });
 
   for (const target of ["chromium", "firefox"]) {
     it(`generates a ${target} package that exactly matches the extension source`, () => {
-      const zipPath = resolve(outputRoot, `wireline-command-${target}.zip`);
-      const entries = new Map(readZipCentralDirectory(zipPath).map((entry) => [entry.name, entry.crc]));
+      const zipPath = resolve(outputRoot, `botbound-command-${target}.zip`);
+      const entries = new Map(
+        readZipCentralDirectory(zipPath).map((entry) => [entry.name, entry.crc]),
+      );
 
       const checked: string[] = [];
       for (const directory of VERBATIM_SOURCE_DIRS) {
@@ -107,7 +98,10 @@ describe("browser-extension download freshness contract", () => {
           const entryName = relative(extensionRoot, sourcePath).replaceAll("\\", "/");
           const packagedCrc = entries.get(entryName);
 
-          expect(packagedCrc, `${target}: ${entryName} is missing from the generated package`).toBeDefined();
+          expect(
+            packagedCrc,
+            `${target}: ${entryName} is missing from the generated package`,
+          ).toBeDefined();
           expect(packagedCrc, `${target}: ${entryName} does not match current source`).toBe(
             crc32(readFileSync(sourcePath)),
           );
@@ -122,13 +116,13 @@ describe("browser-extension download freshness contract", () => {
 
     it(`keeps the published ${target} download synchronized with the generated package`, () => {
       const generated = new Map(
-        readZipCentralDirectory(resolve(outputRoot, `wireline-command-${target}.zip`)).map(
+        readZipCentralDirectory(resolve(outputRoot, `botbound-command-${target}.zip`)).map(
           (entry) => [entry.name, entry.crc],
         ),
       );
       const published = new Map(
         readZipCentralDirectory(
-          resolve(root, `public/downloads/wireline-command-${target}.zip`),
+          resolve(root, `public/downloads/botbound-command-${target}.zip`),
         ).map((entry) => [entry.name, entry.crc]),
       );
 
@@ -138,6 +132,13 @@ describe("browser-extension download freshness contract", () => {
           generatedCrc,
         );
       }
+
+      const legacyAlias = new Map(
+        readZipCentralDirectory(
+          resolve(root, `public/downloads/wireline-command-${target}.zip`),
+        ).map((entry) => [entry.name, entry.crc]),
+      );
+      expect(legacyAlias).toEqual(published);
     });
   }
 });

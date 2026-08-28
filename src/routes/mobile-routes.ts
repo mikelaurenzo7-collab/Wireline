@@ -39,8 +39,8 @@ import { normalizeOutboundNumber } from "../lib/dialer-compliance";
 import { outboundDialReservations } from "../db/security-schema";
 import {
   OUTBOUND_CALL_PURPOSES,
+  classifyUntrustedDirectDial,
   hasAuditableExpressConsentArtifact,
-  isMarketingCallPurpose,
   normalizedExpressConsent,
   outboundConsentMetadata,
   requiresFederalDncScreeningForDirectDial,
@@ -49,6 +49,7 @@ import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { transferLiveCall } from "../lib/vapi-client";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
+import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
@@ -58,6 +59,10 @@ import {
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
+import {
+  agentRoleLaunchReviewMessage,
+  isAgentRoleLaunchReviewRequired,
+} from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import type { AuthenticatedRequest } from "../types/auth";
 import {
@@ -222,6 +227,12 @@ router.post(
         return res.status(400).json({ code: "UNKNOWN_AGENT_ROLE", error: roleError });
       }
       const role = canonicalizeAgentRoleForCreate(rawRole);
+      if (isAgentRoleLaunchReviewRequired(role)) {
+        return res.status(409).json({
+          code: "ROLE_REVIEW_REQUIRED",
+          error: agentRoleLaunchReviewMessage(role),
+        });
+      }
       const isBusinessAgent = req.body?.is_business_agent === true;
 
       const id = `agent-${randomUUID()}`;
@@ -486,13 +497,35 @@ router.post(
       const type = req.body.type as "personality" | "directive" | "knowledge" | "flow";
       const content = cleanText(req.body.content, 12000);
       if (type === "personality") {
-        await drizzle
-          .insert(schema.personality)
-          .values({ agentId: req.params.id, userId: req.user.id, content })
-          .onConflictDoUpdate({
-            target: schema.personality.agentId,
-            set: { userId: req.user.id, content },
-          });
+        await drizzle.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${req.params.id} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
+          );
+          const [current] = await tx
+            .select({ content: schema.personality.content })
+            .from(schema.personality)
+            .where(
+              and(
+                eq(schema.personality.agentId, req.params.id),
+                eq(schema.personality.userId, req.user.id),
+              ),
+            )
+            .limit(1);
+          if (removesRegulatedTemplateProvenance(current?.content, content)) {
+            throw new AppError(
+              409,
+              "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
+              "This review-required Bot's regulated template marker cannot be removed.",
+            );
+          }
+          await tx
+            .insert(schema.personality)
+            .values({ agentId: req.params.id, userId: req.user.id, content })
+            .onConflictDoUpdate({
+              target: schema.personality.agentId,
+              set: { userId: req.user.id, content },
+            });
+        });
       } else if (type === "directive") {
         await drizzle
           .insert(schema.directives)
@@ -698,8 +731,10 @@ router.post(
         consentSource,
         consentLeadId,
       } = req.body;
+      const purpose = classifyUntrustedDirectDial({ callPurpose });
+      const effectiveCallPurpose = purpose.effectiveCallPurpose;
       const claimedExpressConsent = normalizedExpressConsent({
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
         hasExpressWrittenConsent,
       });
       const hasAuditableConsentArtifact = hasAuditableExpressConsentArtifact({
@@ -707,7 +742,7 @@ router.post(
         consentLeadId,
       });
       const expressConsent = claimedExpressConsent && hasAuditableConsentArtifact;
-      const marketing = isMarketingCallPurpose(callPurpose);
+      const marketing = purpose.isMarketingCall;
 
       if (marketing && claimedExpressConsent && !hasAuditableConsentArtifact) {
         return res.status(400).json({
@@ -828,7 +863,7 @@ router.post(
         customerName,
         customerNumber: phoneE164,
         context,
-        callPurpose,
+        callPurpose: effectiveCallPurpose,
       });
       if (!result.ok) {
         await drizzle
@@ -854,7 +889,8 @@ router.post(
         lastCalledAt: new Date(),
         metadata: {
           ...outboundConsentMetadata({
-            callPurpose,
+            callPurpose: effectiveCallPurpose,
+            requestedCallPurpose: callPurpose,
             hasExpressWrittenConsent: expressConsent,
             source: "mobile",
             consentSource,

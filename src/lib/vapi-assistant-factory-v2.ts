@@ -30,17 +30,22 @@ import {
 } from "./agent-runtime";
 import { clampVoiceTemperature, resolveCoherentVoiceModel } from "./ai-models";
 import { isPrincipalVoiceRole } from "./agent-role-definitions";
-import {
-  buildGrokStrengthsPromptSection,
-  isGrokModelId,
-} from "./grok-features";
+import { buildGrokStrengthsPromptSection, isGrokModelId } from "./grok-features";
 import { resolvePstnVoiceCandidate } from "../data/voice-roster";
-import {
-  buildManagedVoiceRuntime,
-  isCuratedElevenLabsVoiceId,
-} from "./managed-voice-runtime";
+import { buildManagedVoiceRuntime, isCuratedElevenLabsVoiceId } from "./managed-voice-runtime";
 import { sanitizeAmbientNoise } from "./workspace-planner";
 import { STUDIO_BROWSER_TEST_MAX_SECONDS } from "./voice/studio-live-test-policy";
+import {
+  founderInternalRuntimeAuthorityBoundary,
+  founderInternalRuntimePolicyBlock,
+  resolveFounderInternalRuntimePolicy,
+} from "./founder-internal-runtime-policy";
+import {
+  isRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_GREETING,
+  resolveRuntimeTemplatePersonality,
+  runtimeTemplateGuidanceBlock,
+} from "./runtime-template-personality";
 
 export interface AssistantRequestPayload {
   message: { type: string; call?: any };
@@ -49,10 +54,7 @@ export interface AssistantRequestPayload {
   surface?: "pstn" | "browser_test";
 }
 
-const promptItem = (
-  prefix: string,
-  values: Array<{ content?: string | null }>,
-) => {
+const promptItem = (prefix: string, values: Array<{ content?: string | null }>) => {
   const lines = values
     .map((value) => truncateRuntimeSnippet(value.content || ""))
     .filter(Boolean)
@@ -72,6 +74,168 @@ const LIVE_CALL_EXECUTION_PROTOCOL = `
 - Before closing, recap confirmed actions and unresolved items in one concise sentence.
 `;
 
+export interface VapiRuntimePromptAgent {
+  id: string;
+  userId: string;
+  name: string;
+  role?: string | null;
+  systemPromptOverride?: string | null;
+  businessVariables?: unknown;
+  timezone?: AgentRuntimeProfile["timezone"];
+  businessHours?: AgentRuntimeProfile["business_hours"];
+  complianceMode?: AgentRuntimeProfile["compliance_mode"];
+  disallowedTopics?: AgentRuntimeProfile["disallowed_topics"];
+  escalationKeywords?: AgentRuntimeProfile["escalation_keywords"];
+  outOfHoursMessage?: AgentRuntimeProfile["out_of_hours_message"];
+  kpiFocus?: AgentRuntimeProfile["kpi_focus"];
+  personalityVibe?: AgentRuntimeProfile["personality_vibe"];
+  escalationPhone?: string | null;
+  escalationEmail?: string | null;
+  flowConfig?: unknown;
+}
+
+export function composeVapiRuntimePrompt(input: {
+  configured: VapiRuntimePromptAgent;
+  personality: string;
+  directives: Array<{ content?: string | null }>;
+  knowledge: Array<{ content?: string | null }>;
+  browserTest: boolean;
+  isOutbound: boolean;
+  model: string;
+  now?: Date;
+}) {
+  const { configured } = input;
+  const internalPolicy = resolveFounderInternalRuntimePolicy({
+    agentId: configured.id,
+    userId: configured.userId,
+    businessVariables: configured.businessVariables,
+  });
+  const runtimeTemplate = internalPolicy
+    ? null
+    : resolveRuntimeTemplatePersonality(input.personality);
+  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, configured.role);
+  // Managed internal rows carry the canonical policy in the personality table
+  // for workspace chat, but the live voice policy must not use that truncated
+  // copy. It leads the prompt once, through the trusted structured marker path.
+  const personality = internalPolicy
+    ? ""
+    : runtimeReviewRequired
+      ? ""
+      : truncateRuntimeSnippet(
+          runtimeTemplate ? runtimeTemplate.rolePersonality : input.personality || "",
+          1_200,
+        );
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, configured.role);
+  const flow =
+    !runtimeReviewRequired && Array.isArray(configured.flowConfig)
+      ? (
+          configured.flowConfig as Array<{
+            name?: string;
+            instructions?: string;
+            transitionCondition?: string;
+            isEndNode?: boolean;
+          }>
+        ).slice(0, 12)
+      : [];
+  const flowBlock = flow.length
+    ? `\n## CALL FLOW\n${flow
+        .map(
+          (step, index) =>
+            `${index + 1}. ${truncateRuntimeSnippet(step.name || "Stage", 80)}: ${truncateRuntimeSnippet(step.instructions || "", 360)}${
+              step.transitionCondition
+                ? ` (advance when ${truncateRuntimeSnippet(step.transitionCondition, 180)})`
+                : ""
+            }${step.isEndNode ? " (end call after completion)" : ""}`,
+        )
+        .join("\n")}\n`
+    : "";
+  const principalFacing = isPrincipalVoiceRole(configured.role);
+  const identityBlock = runtimeReviewRequired
+    ? [
+        "You are a BotBound Bot in review-required hold mode.",
+        "Do not collect, repeat, infer, or discuss customer, patient, account, balance, insurance, identity, or payment details.",
+        "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
+      ].join("\n")
+    : principalFacing
+      ? [
+          `You are ${configured.name}, a BotBound Bot for your principal.`,
+          "Be accurate, concise, discreet, and protective of their time. Never invent personal facts, schedule commitments, or private details.",
+          "Represent your principal professionally. When something is outside your authority, say so and offer to relay a message or escalate.",
+          "Default to privacy: do not volunteer address, family, health, finances, or schedule details unless required for the immediate task.",
+        ].join("\n")
+      : [
+          `You are ${configured.name}, a BotBound ${configured.role || "agent"}.`,
+          "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
+          "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
+        ].join("\n");
+  const callSpecificContext = [
+    runtimeReviewRequired ? "" : LIVE_CALL_EXECUTION_PROTOCOL,
+    !runtimeReviewRequired && input.browserTest
+      ? "\n## PRIVATE BROWSER TEST\nThis is a private live test with the account holder. Use the same intelligence and voice as a live phone call. Do not send messages, book, transfer, create records, or change outside systems. Search approved Training when facts are needed.\n"
+      : "",
+    personality ? `\n## TONE\n${personality}\n` : "",
+    templateGuidance ? `\n${templateGuidance}\n` : "",
+    runtimeReviewRequired ? "" : promptItem("OPERATING RULES", input.directives),
+    runtimeReviewRequired ? "" : promptItem("APPROVED TRAINING", input.knowledge),
+    flowBlock,
+    !runtimeReviewRequired && (configured.escalationPhone || configured.escalationEmail)
+      ? principalFacing
+        ? "\n## ESCALATION\nEscalate when the caller is urgent, distressed, asks for your principal by name with a time-sensitive matter, or anything exceeds your approved personal preferences.\n"
+        : "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const internalBasePrompt = internalPolicy
+    ? founderInternalRuntimePolicyBlock(internalPolicy)
+    : null;
+  const basePrompt = resolveAssistantBasePrompt({
+    // A current managed internal policy is authoritative. Account-holder
+    // overrides retain their existing priority for every non-internal Bot.
+    override:
+      internalBasePrompt || (runtimeReviewRequired ? null : configured.systemPromptOverride),
+    autoComposedPrompt: [identityBlock, callSpecificContext].filter(Boolean).join("\n"),
+    callSpecificContext,
+  });
+  const runtimeProfile: AgentRuntimeProfile = runtimeReviewRequired
+    ? {}
+    : {
+        timezone: configured.timezone,
+        business_hours: configured.businessHours,
+        compliance_mode: configured.complianceMode,
+        disallowed_topics: configured.disallowedTopics,
+        escalation_keywords: configured.escalationKeywords,
+        business_variables:
+          configured.businessVariables as AgentRuntimeProfile["business_variables"],
+        out_of_hours_message: configured.outOfHoursMessage,
+        kpi_focus: configured.kpiFocus,
+        personality_vibe: configured.personalityVibe,
+      };
+  const runtime = buildAgentRuntimeContext(basePrompt, runtimeProfile, input.now);
+  const afterHours = !runtimeReviewRequired && !input.isOutbound && !runtime.inHours;
+  const systemPrompt = afterHours
+    ? principalFacing
+      ? `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise a relay only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments or personal details you are not cleared to share.`
+      : `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise follow-up only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments, prices, or actions that require the business to be open.`
+    : runtime.prompt;
+  const augmentedSystemPrompt =
+    !runtimeReviewRequired && isGrokModelId(input.model)
+      ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
+      : systemPrompt;
+  const authoritativeSystemPrompt = internalPolicy
+    ? `${augmentedSystemPrompt}\n\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
+    : augmentedSystemPrompt;
+
+  return {
+    finalSystemPrompt: clampRuntimePromptPreservingTail(authoritativeSystemPrompt),
+    afterHours,
+    outOfHoursMessage: runtime.outOfHoursMessage,
+    principalFacing,
+    internalPolicyApplied: Boolean(internalPolicy),
+    reviewRequired: runtimeReviewRequired,
+  };
+}
+
 export async function buildVapiAssistant({
   message,
   agent,
@@ -82,10 +246,9 @@ export async function buildVapiAssistant({
   const browserTest = surface === "browser_test";
   const isOutbound =
     !browserTest &&
-    (message.type === "outboundPhoneCall" ||
-      message.call?.type === "outboundPhoneCall");
-  const [agentRows, directives, knowledge, personalityRows] =
-    await drizzle.transaction(async (tx) => {
+    (message.type === "outboundPhoneCall" || message.call?.type === "outboundPhoneCall");
+  const [agentRows, directives, knowledge, personalityRows] = await drizzle.transaction(
+    async (tx) => {
       // A pg transaction owns one client. Concurrent tx queries are only
       // queued by pg@8 and are rejected by pg@9, so keep this snapshot's
       // reads explicitly ordered on the checked-out client.
@@ -112,10 +275,10 @@ export async function buildVapiAssistant({
         .where(eq(schema.personality.agentId, agentId))
         .limit(1);
       return [agentRows, directives, knowledge, personalityRows] as const;
-    });
+    },
+  );
   const configured = agentRows[0];
-  if (!configured)
-    throw new Error("Agent not found for Vapi assistant request");
+  if (!configured) throw new Error("Agent not found for Vapi assistant request");
 
   // Coherent (provider, model) pair — agent brain first, tenant default
   // second — so a partially-configured agent never crosses its provider with
@@ -168,127 +331,43 @@ export async function buildVapiAssistant({
     role: configured.role || undefined,
     isOutbound,
   });
-  const personality = truncateRuntimeSnippet(
-    personalityRows[0]?.content || "",
-    1_200,
-  );
-  const flow = Array.isArray(configured.flowConfig)
-    ? (
-        configured.flowConfig as Array<{
-          name?: string;
-          instructions?: string;
-          transitionCondition?: string;
-          isEndNode?: boolean;
-        }>
-      ).slice(0, 12)
-    : [];
-  const flowBlock = flow.length
-    ? `\n## CALL FLOW\n${flow
-        .map(
-          (step, index) =>
-            `${index + 1}. ${truncateRuntimeSnippet(step.name || "Stage", 80)}: ${truncateRuntimeSnippet(step.instructions || "", 360)}${
-              step.transitionCondition
-                ? ` (advance when ${truncateRuntimeSnippet(step.transitionCondition, 180)})`
-                : ""
-            }${step.isEndNode ? " (end call after completion)" : ""}`,
-        )
-        .join("\n")}\n`
-    : "";
-  const principalFacing = isPrincipalVoiceRole(configured.role);
-  const identityBlock = principalFacing
-    ? [
-        `You are ${configured.name}, a BotBound Bot for your principal.`,
-        "Be accurate, concise, discreet, and protective of their time. Never invent personal facts, schedule commitments, or private details.",
-        "Represent your principal professionally. When something is outside your authority, say so and offer to relay a message or escalate.",
-        "Default to privacy: do not volunteer address, family, health, finances, or schedule details unless required for the immediate task.",
-      ].join("\n")
-    : [
-        `You are ${configured.name}, a BotBound ${configured.role || "agent"}.`,
-        "Be accurate, concise, kind, and action-oriented. Never invent business facts, prices, availability, or commitments.",
-        "When an action is outside your permissions or confidence, clearly explain the limitation and escalate to a human.",
-      ].join("\n");
-  const callSpecificContext = [
-    LIVE_CALL_EXECUTION_PROTOCOL,
-    browserTest
-      ? "\n## PRIVATE BROWSER TEST\nThis is a private live test with the account holder. Use the same intelligence and voice as a live phone call. Do not send messages, book, transfer, create records, or change outside systems. Search approved Training when facts are needed.\n"
-      : "",
-    personality ? `\n## TONE\n${personality}\n` : "",
-    promptItem("OPERATING RULES", directives),
-    promptItem("APPROVED TRAINING", knowledge),
-    flowBlock,
-    configured.escalationPhone || configured.escalationEmail
-      ? principalFacing
-        ? "\n## ESCALATION\nEscalate when the caller is urgent, distressed, asks for your principal by name with a time-sensitive matter, or anything exceeds your approved personal preferences.\n"
-        : "\n## ESCALATION\nEscalate when the caller requests a human, a policy exception, legal/medical/financial advice, a final price, or anything not covered by approved Training.\n"
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
-  // Account Holder override replaces the auto-composed identity but keeps the
-  // call-specific context (tone, rules, training, flow, escalation) appended.
-  const basePrompt = resolveAssistantBasePrompt({
-    override: configured.systemPromptOverride,
-    autoComposedPrompt: [identityBlock, callSpecificContext]
-      .filter(Boolean)
-      .join("\n"),
-    callSpecificContext,
+  const promptComposition = composeVapiRuntimePrompt({
+    configured: {
+      ...configured,
+      businessHours: configured.businessHours as AgentRuntimeProfile["business_hours"],
+    },
+    personality: personalityRows[0]?.content || "",
+    directives,
+    knowledge,
+    browserTest,
+    isOutbound,
+    model: modelSelection.model,
   });
-  // Layer the runtime guardrails (compliance disclosure, do-not-discuss,
-  // escalation keywords, KPI focus, personality vibe, voice consistency,
-  // business-variable substitution) exactly as the outbound path does — an
-  // override can never silently drop them.
-  const runtimeProfile: AgentRuntimeProfile = {
-    timezone: configured.timezone,
-    business_hours:
-      configured.businessHours as AgentRuntimeProfile["business_hours"],
-    compliance_mode: configured.complianceMode,
-    disallowed_topics: configured.disallowedTopics,
-    escalation_keywords: configured.escalationKeywords,
-    business_variables:
-      configured.businessVariables as AgentRuntimeProfile["business_variables"],
-    out_of_hours_message: configured.outOfHoursMessage,
-    kpi_focus: configured.kpiFocus,
-    personality_vibe: configured.personalityVibe,
-  };
-  const runtime = buildAgentRuntimeContext(basePrompt, runtimeProfile);
-  // Inbound callers are already on the line when the business is closed, so
-  // out-of-hours never refuses the call — it switches the agent into durable
-  // message-taking mode rather than promising an unrecorded human follow-up.
-  const afterHours = !isOutbound && !runtime.inHours;
-  const systemPrompt = afterHours
-    ? principalFacing
-      ? `${runtime.prompt}\n\n## QUIET-HOURS MODE\nYour principal is not available right now. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise a relay only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments or personal details you are not cleared to share.`
-      : `${runtime.prompt}\n\n## AFTER-HOURS MODE\nThe business is currently closed. Let the caller know and collect a complete message: name, number, reason for calling, and urgency. Use create_followup_task before closing. Promise follow-up only if that tool explicitly confirms the task was created; otherwise say the message could not be recorded and offer another contact channel. Do NOT commit to appointments, prices, or actions that require the business to be open.`
-    : runtime.prompt;
-  const augmentedSystemPrompt = isGrokModelId(modelSelection.model)
-    ? `${systemPrompt}\n\n${buildGrokStrengthsPromptSection()}`
-    : systemPrompt;
-  const finalSystemPrompt = clampRuntimePromptPreservingTail(
-    augmentedSystemPrompt,
-  );
+  const { finalSystemPrompt, afterHours, outOfHoursMessage, principalFacing, reviewRequired } =
+    promptComposition;
   const afterHoursGreeting = afterHours
-    ? runtime.outOfHoursMessage ||
+    ? outOfHoursMessage ||
       (principalFacing
         ? `Hi, you've reached ${configured.name}. They're not available right now, but I can take a message for them.`
         : `Hi, you've reached ${configured.name}. We're currently closed, but I can take a message for the team.`)
     : null;
-  const functionTools = toVapiFunctionTools(
-    await buildRoleToolDefsForTenant(
-      configured.role || "customer_service",
-      browserTest ? ["search_knowledge_base"] : configured.enabledTools,
-      agent.user_id,
-      userSettings?.aiTier,
-      {
-        twilioMessaging: !!userSettings?.twilioMessagingEnabled,
-        twilioLookup: !!userSettings?.twilioLookupEnabled,
-      },
-    ),
-  );
+  const functionTools = reviewRequired
+    ? []
+    : toVapiFunctionTools(
+        await buildRoleToolDefsForTenant(
+          configured.role || "customer_service",
+          browserTest ? ["search_knowledge_base"] : configured.enabledTools,
+          agent.user_id,
+          userSettings?.aiTier,
+          {
+            twilioMessaging: !!userSettings?.twilioMessagingEnabled,
+            twilioLookup: !!userSettings?.twilioLookupEnabled,
+          },
+        ),
+      );
   const appUrl = process.env.APP_URL?.trim().replace(/\/+$/, "");
   const webhookServer = appUrl
-    ? buildVapiServerConfig(
-        `${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`,
-      )
+    ? buildVapiServerConfig(`${appUrl}/api/vapi-webhook?agentId=${encodeURIComponent(agentId)}`)
     : undefined;
 
   // BotBound retains transcript-driven product value without full-call provider
@@ -304,12 +383,12 @@ export async function buildVapiAssistant({
     name: configured.name,
     firstMessage:
       disclosurePrefix +
-      (afterHoursGreeting ||
-        configured.firstMessage ||
-        `Hi, this is ${configured.name}. How can I help?`),
-    ...(isOutbound
-      ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE }
-      : {}),
+      (reviewRequired
+        ? RUNTIME_REVIEW_REQUIRED_GREETING
+        : afterHoursGreeting ||
+          configured.firstMessage ||
+          `Hi, this is ${configured.name}. How can I help?`),
+    ...(isOutbound ? { firstMessageMode: VAPI_OUTBOUND_FIRST_MESSAGE_MODE } : {}),
     maxDurationSeconds: browserTest
       ? STUDIO_BROWSER_TEST_MAX_SECONDS
       : isOutbound
@@ -352,13 +431,7 @@ export async function buildVapiAssistant({
       "tool-calls",
       "speech-update",
     ],
-    clientMessages: [
-      "transcript",
-      "hang",
-      "function-call",
-      "speech-update",
-      "conversation-update",
-    ],
+    clientMessages: ["transcript", "hang", "function-call", "speech-update", "conversation-update"],
     analysisPlan: VAPI_ANALYSIS_PLAN,
     // Ambient noise parity with outbound — the user-settable field only
     // affected outbound dials before; inbound calls silently ignored it.

@@ -86,7 +86,7 @@ const SAMPLE_SUMMARIES = [
   "Demo booked. Prospect switching from their current provider, wants to see the outbound playbook.",
   "Renewal conversation. Customer happy, asked about the Pro supervisor cockpit.",
   "Sales qual. 50-seat call-center prospect, routed to Liam for enterprise quote.",
-  "Refund request. Charged twice during pause, refunded one and emailed receipt.",
+  "Refund request. Reported a duplicate charge during pause, captured the invoice details, and queued billing review.",
   "Knowledge gap detected. Customer asked about Slack DLP, captured to docs queue.",
 ];
 
@@ -105,12 +105,30 @@ const SAMPLE_SENTIMENTS = ["positive", "positive", "neutral", "positive", "neutr
 
 const SAMPLE_KNOWLEDGE = [
   "Our standard demo runs 25 minutes: 5 min discovery, 15 min live agent demo on their actual phone, 5 min Q&A + next-step.",
-  "Scale customers get a dedicated CSM. CSM hands off after the first 90 days unless the customer asks to continue.",
-  "Refund window: 14 days from invoice for any new charge. Beyond that we offer credits but not refunds.",
+  "Scale support and implementation terms are confirmed in the signed order. Do not promise a dedicated CSM, fixed handoff period, or SLA unless it is written in that customer's agreement.",
+  "Refund policy: the first subscription invoice is eligible for review when the request arrives within 30 days. Verify the account and transaction; never promise or issue a refund from a conversation alone.",
   "When troubleshooting webhook signature errors, rotate the signing secret from the integrations dashboard first, then re-verify delivery on the next event.",
   "Competitive wedge: we win on two-way SMS, email agents, and the supervisor cockpit. Lead with that triple when a prospect is comparing vendors.",
-  "Enterprise legal redlines: we accept SCC, DPA, BAA on request. Security review pack available under NDA.",
+  "Enterprise requests for SCCs, a DPA, a BAA, security review, SLAs, or other contractual terms must be escalated and confirmed in writing. HIPAA and BAA support are not currently available.",
 ];
+
+const LEGACY_DEMO_KNOWLEDGE_REPLACEMENTS = [
+  {
+    legacy:
+      "Scale customers get a dedicated CSM. CSM hands off after the first 90 days unless the customer asks to continue.",
+    current: SAMPLE_KNOWLEDGE[1],
+  },
+  {
+    legacy:
+      "Refund window: 14 days from invoice for any new charge. Beyond that we offer credits but not refunds.",
+    current: SAMPLE_KNOWLEDGE[2],
+  },
+  {
+    legacy:
+      "Enterprise legal redlines: we accept SCC, DPA, BAA on request. Security review pack available under NDA.",
+    current: SAMPLE_KNOWLEDGE[5],
+  },
+] as const;
 
 const SAMPLE_APPOINTMENT_TYPES = [
   "Discovery Call",
@@ -345,6 +363,13 @@ async function pruneLegacyDemoSmsThreads(userId: string, tx: DemoSeedDb): Promis
 async function refreshDemoShowcaseCopy(userId: string, tx: DemoSeedDb): Promise<void> {
   await pruneDuplicateDemoLeads(userId, tx);
   await pruneExcessSeedEmailThreads(userId, tx);
+
+  for (const replacement of LEGACY_DEMO_KNOWLEDGE_REPLACEMENTS) {
+    await tx
+      .update(knowledge)
+      .set({ content: replacement.current })
+      .where(and(eq(knowledge.userId, userId), eq(knowledge.content, replacement.legacy)));
+  }
 
   const calls = await tx
     .select({ id: callLogs.id })

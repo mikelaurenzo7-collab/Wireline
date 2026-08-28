@@ -13,6 +13,7 @@ import {
   assertExternalEntityActionAllowed,
   liveExternalActionPolicyForUser,
 } from "./account-environment-policy";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -180,63 +181,84 @@ export class IntegrationService {
     agentId?: string;
   }): Promise<boolean> {
     try {
-      const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
-      if (!environmentPolicy.allowed) {
-        log.warn("Calendar booking blocked by account environment", {
+      let providerWorkStarted = false;
+      const fenced = await runTenantProviderWorkWithDeletionFence({
+        userId: this.userId,
+        operation: "integration_calendar_booking",
+        retainOnSuccess: () => providerWorkStarted,
+        perform: async () => {
+          const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+          if (!environmentPolicy.allowed) {
+            log.warn("Calendar booking blocked by account environment", {
+              userId: this.userId,
+              accountEnvironment: environmentPolicy.environment ?? "missing",
+              code: environmentPolicy.code,
+            });
+            return false;
+          }
+          for (const attendee of params.attendees || []) {
+            await assertExternalEntityActionAllowed(this.userId, "calendar_attendee_invitation", {
+              email: attendee,
+            });
+          }
+          const accounts = await this.getAccounts("calendar");
+          if (accounts.length === 0) return false;
+
+          // Check if the agent has auto_zoom_link enabled.
+          let zoomUrl: string | undefined;
+          if (params.agentId) {
+            const [agent] = await drizzle
+              .select({ autoZoomLink: schema.agents.autoZoomLink })
+              .from(schema.agents)
+              .where(
+                and(eq(schema.agents.id, params.agentId), eq(schema.agents.userId, this.userId)),
+              )
+              .limit(1);
+
+            if (agent?.autoZoomLink) {
+              providerWorkStarted = true;
+              const meeting = await createZoomMeeting(this.userId, {
+                topic: params.title,
+                startTime: params.startTime,
+                duration: Math.round(
+                  (new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) /
+                    60_000,
+                ),
+              });
+              if (meeting) {
+                zoomUrl = meeting.join_url;
+              }
+            }
+          }
+
+          const bookingParams = {
+            ...params,
+            description: zoomUrl
+              ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
+              : params.description,
+            location: zoomUrl || undefined,
+            generateMeetLink: !zoomUrl,
+          };
+
+          // Pick the first account as the primary for booking.
+          const account = accounts[0];
+          if (account.provider === "google") {
+            providerWorkStarted = true;
+            return await this.createGoogleEvent(account, bookingParams);
+          } else if (account.provider === "microsoft") {
+            providerWorkStarted = true;
+            return await this.createMicrosoftEvent(account, bookingParams);
+          }
+          return false;
+        },
+      });
+      if (!fenced.performed) {
+        log.warn("Calendar booking blocked by terminal account deletion", {
           userId: this.userId,
-          accountEnvironment: environmentPolicy.environment ?? "missing",
-          code: environmentPolicy.code,
         });
         return false;
       }
-      for (const attendee of params.attendees || []) {
-        await assertExternalEntityActionAllowed(this.userId, "calendar_attendee_invitation", {
-          email: attendee,
-        });
-      }
-      const accounts = await this.getAccounts("calendar");
-      if (accounts.length === 0) return false;
-
-      // Check if the agent has auto_zoom_link enabled
-      let zoomUrl: string | undefined;
-      if (params.agentId) {
-        const [agent] = await drizzle
-          .select({ autoZoomLink: schema.agents.autoZoomLink })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, params.agentId), eq(schema.agents.userId, this.userId)))
-          .limit(1);
-
-        if (agent?.autoZoomLink) {
-          const meeting = await createZoomMeeting(this.userId, {
-            topic: params.title,
-            startTime: params.startTime,
-            duration: Math.round(
-              (new Date(params.endTime).getTime() - new Date(params.startTime).getTime()) / 60_000,
-            ),
-          });
-          if (meeting) {
-            zoomUrl = meeting.join_url;
-          }
-        }
-      }
-
-      const bookingParams = {
-        ...params,
-        description: zoomUrl
-          ? `${params.description}\n\nZoom Meeting: ${zoomUrl}`
-          : params.description,
-        location: zoomUrl || undefined,
-        generateMeetLink: !zoomUrl,
-      };
-
-      // Pick the first account as the primary for booking.
-      const account = accounts[0];
-      if (account.provider === "google") {
-        return await this.createGoogleEvent(account, bookingParams);
-      } else if (account.provider === "microsoft") {
-        return await this.createMicrosoftEvent(account, bookingParams);
-      }
-      return false;
+      return fenced.result;
     } catch (err) {
       log.error("Calendar booking failed", { userId: this.userId, error: getErrorMessage(err) });
       return false;
@@ -448,122 +470,149 @@ export class IntegrationService {
     marketing?: boolean;
   }): Promise<boolean> {
     try {
-      const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
-      if (!environmentPolicy.allowed) {
-        log.warn("Outbound tenant email blocked by account environment", {
-          userId: this.userId,
-          accountEnvironment: environmentPolicy.environment ?? "missing",
-          code: environmentPolicy.code,
-        });
-        return false;
-      }
-      await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
-        email: params.to,
-      });
+      let providerWorkStarted = false;
+      const fenced = await runTenantProviderWorkWithDeletionFence({
+        userId: this.userId,
+        operation: "integration_email_send",
+        retainOnSuccess: () => providerWorkStarted,
+        perform: async () => {
+          const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+          if (!environmentPolicy.allowed) {
+            log.warn("Outbound tenant email blocked by account environment", {
+              userId: this.userId,
+              accountEnvironment: environmentPolicy.environment ?? "missing",
+              code: environmentPolicy.code,
+            });
+            return false;
+          }
+          await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
+            email: params.to,
+          });
 
-      const accounts = await this.getAccounts("mail");
-      // Fallback: If no mail account, try calendar accounts (many have mail too)
-      const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
+          const accounts = await this.getAccounts("mail");
+          // Fallback: If no mail account, try calendar accounts (many have mail too)
+          const mailAccounts = accounts.length > 0 ? accounts : await this.getAccounts("calendar");
 
-      if (mailAccounts.length > 0) {
-        // Marketing compliance for the tenant's OWN mailbox transports.
-        // Cadence marketing never falls through to Wireline's transactional
-        // sender: honoring suppression and sender identity here is what makes a
-        // recorded opt-out binding no matter which connected mailbox sends.
-        let sendParams: ConnectedMailboxSendParams = params;
-        if (params.marketing) {
-          const {
-            getTenantMarketingIdentity,
-            isTenantEmailSuppressed,
-            buildTenantComplianceFooterText,
-            buildTenantComplianceFooterHtml,
-            buildTenantListUnsubscribeHeaders,
-          } = await import("./email-compliance");
-          const identity = await getTenantMarketingIdentity(this.userId);
-          if (!identity) {
-            log.warn("Marketing email skipped, tenant sender identity is incomplete", {
+          if (mailAccounts.length > 0) {
+            // Marketing compliance for the tenant's OWN mailbox transports.
+            // Cadence marketing never falls through to Wireline's transactional
+            // sender: honoring suppression and sender identity here is what makes a
+            // recorded opt-out binding no matter which connected mailbox sends.
+            let sendParams: ConnectedMailboxSendParams = params;
+            if (params.marketing) {
+              const {
+                getTenantMarketingIdentity,
+                isTenantEmailSuppressed,
+                buildTenantComplianceFooterText,
+                buildTenantComplianceFooterHtml,
+                buildTenantListUnsubscribeHeaders,
+              } = await import("./email-compliance");
+              const identity = await getTenantMarketingIdentity(this.userId);
+              if (!identity) {
+                log.warn("Marketing email skipped, tenant sender identity is incomplete", {
+                  userId: this.userId,
+                });
+                return false;
+              }
+              if (await isTenantEmailSuppressed(this.userId, params.to)) {
+                log.info("Marketing email skipped, recipient opted out of this sender", {
+                  userId: this.userId,
+                  to: params.to,
+                });
+                return false;
+              }
+              const complianceArgs = {
+                userId: this.userId,
+                email: params.to,
+                identity,
+              };
+              sendParams = {
+                ...params,
+                textBody: `${params.body}${buildTenantComplianceFooterText(complianceArgs)}`,
+                htmlBody: `${plainTextEmailBodyHtml(params.body)}${buildTenantComplianceFooterHtml(
+                  complianceArgs,
+                )}`,
+                unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
+              };
+            }
+
+            const account =
+              mailAccounts.find((candidate) => candidate.provider === "agentmail") ??
+              mailAccounts[0];
+            if (account.provider === "google") {
+              providerWorkStarted = true;
+              return await this.sendGoogleEmail(account, sendParams);
+            }
+            if (account.provider === "microsoft") {
+              providerWorkStarted = true;
+              return await this.sendMicrosoftEmail(account, sendParams);
+            }
+            if (account.provider === "icloud") {
+              if (!account.accessToken || !account.emailAddress) return false;
+              const email = account.emailAddress as string;
+              const appPassword = decryptSecret(account.accessToken);
+              providerWorkStarted = true;
+              return sendIcloudMail(email, appPassword, sendParams);
+            }
+            if (account.provider === "agentmail") {
+              if (!account.accessToken || !account.emailAddress) return false;
+              const email = account.emailAddress as string;
+              const apiKey = decryptSecret(account.accessToken);
+              providerWorkStarted = true;
+              return sendAgentMail(email, apiKey, sendParams);
+            }
+            if (account.provider === "yahoo") {
+              log.warn("Yahoo Mail send refused because XOAUTH2 transport is not implemented", {
+                userId: this.userId,
+              });
+              return false;
+            }
+          }
+
+          // A tenant cadence must leave from the tenant's own mailbox. Sending a
+          // customer's marketing campaign through BotBound's transactional Resend
+          // identity would misidentify the commercial sender and blur opt-out scope.
+          if (params.marketing) {
+            log.warn("Marketing email skipped, connect a tenant mailbox before sending cadences", {
               userId: this.userId,
             });
             return false;
           }
-          if (await isTenantEmailSuppressed(this.userId, params.to)) {
-            log.info("Marketing email skipped, recipient opted out of this sender", {
+
+          // Non-marketing messages here are transactional/relationship mail: team
+          // invitations, account-holder digests, or one-off follow-ups requested
+          // during an active customer conversation. Do not gate those on a marketing
+          // opt-out and do not append a misleading commercial unsubscribe footer.
+          const { sendEmail: sendPlatformEmail } = await import("./email-service");
+          const escaped = params.body
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+          const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
+          providerWorkStarted = true;
+          const result = await sendPlatformEmail({
+            to: params.to,
+            subject: params.subject,
+            text: params.body,
+            html,
+          });
+          if (!result.ok) {
+            log.warn("Platform Resend fallback failed for tenant email", {
               userId: this.userId,
               to: params.to,
+              error: result.error,
             });
-            return false;
           }
-          const complianceArgs = {
-            userId: this.userId,
-            email: params.to,
-            identity,
-          };
-          sendParams = {
-            ...params,
-            textBody: `${params.body}${buildTenantComplianceFooterText(complianceArgs)}`,
-            htmlBody: `${plainTextEmailBodyHtml(params.body)}${buildTenantComplianceFooterHtml(
-              complianceArgs,
-            )}`,
-            unsubscribeHeaders: buildTenantListUnsubscribeHeaders(this.userId, params.to),
-          };
-        }
-
-        const account =
-          mailAccounts.find((candidate) => candidate.provider === "agentmail") ?? mailAccounts[0];
-        if (account.provider === "google") {
-          return await this.sendGoogleEmail(account, sendParams);
-        }
-        if (account.provider === "microsoft") {
-          return await this.sendMicrosoftEmail(account, sendParams);
-        }
-        if (account.provider === "icloud") {
-          if (!account.accessToken || !account.emailAddress) return false;
-          const email = account.emailAddress as string;
-          const appPassword = decryptSecret(account.accessToken);
-          return sendIcloudMail(email, appPassword, sendParams);
-        }
-        if (account.provider === "agentmail") {
-          if (!account.accessToken || !account.emailAddress) return false;
-          const email = account.emailAddress as string;
-          const apiKey = decryptSecret(account.accessToken);
-          return sendAgentMail(email, apiKey, sendParams);
-        }
-      }
-
-      // A tenant cadence must leave from the tenant's own mailbox. Sending a
-      // customer's marketing campaign through Wireline's transactional Resend
-      // identity would misidentify the commercial sender and blur opt-out scope.
-      if (params.marketing) {
-        log.warn("Marketing email skipped, connect a tenant mailbox before sending cadences", {
+          return result.ok;
+        },
+      });
+      if (!fenced.performed) {
+        log.warn("Outbound tenant email blocked by terminal account deletion", {
           userId: this.userId,
         });
         return false;
       }
-
-      // Non-marketing messages here are transactional/relationship mail: team
-      // invitations, account-holder digests, or one-off follow-ups requested
-      // during an active customer conversation. Do not gate those on a marketing
-      // opt-out and do not append a misleading commercial unsubscribe footer.
-      const { sendEmail: sendPlatformEmail } = await import("./email-service");
-      const escaped = params.body
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
-      const result = await sendPlatformEmail({
-        to: params.to,
-        subject: params.subject,
-        text: params.body,
-        html,
-      });
-      if (!result.ok) {
-        log.warn("Platform Resend fallback failed for tenant email", {
-          userId: this.userId,
-          to: params.to,
-          error: result.error,
-        });
-      }
-      return result.ok;
+      return fenced.result;
     } catch (err) {
       log.error("Email sending failed", { userId: this.userId, error: getErrorMessage(err) });
       return false;

@@ -16,6 +16,65 @@ export function isMarketingCallPurpose(callPurpose: OutboundCallPurpose): boolea
   return callPurpose === "marketing_or_sales";
 }
 
+/**
+ * Purpose labels arriving at a direct-send boundary are caller assertions, not
+ * evidence of an established business relationship or a consumer request.
+ * Unless the server resolved such an artifact independently, fail closed to
+ * the marketing class even when the caller selected a service/callback label.
+ */
+export function classifyUntrustedDirectDial(input: {
+  callPurpose: OutboundCallPurpose;
+  hasServerOwnedNonMarketingArtifact?: boolean;
+}): {
+  requestedCallPurpose: OutboundCallPurpose;
+  effectiveCallPurpose: OutboundCallPurpose;
+  isMarketingCall: boolean;
+} {
+  const isMarketingCall =
+    isMarketingCallPurpose(input.callPurpose) || input.hasServerOwnedNonMarketingArtifact !== true;
+  return {
+    requestedCallPurpose: input.callPurpose,
+    effectiveCallPurpose: isMarketingCall ? "marketing_or_sales" : input.callPurpose,
+    isMarketingCall,
+  };
+}
+
+const UNTRUSTED_OUTBOUND_METADATA_KEYS = new Set([
+  "auto_dial",
+  "callback_requested_via",
+  "call_purpose",
+  "client_requested_call_purpose",
+  "has_express_written_consent",
+  "native_voice",
+  "tcpa",
+]);
+
+const UNTRUSTED_OUTBOUND_METADATA_PREFIXES = [
+  "auto_dial_",
+  "consent_",
+  "federal_dnc_",
+  "placement_",
+  "tcpa_",
+];
+
+/**
+ * Remove provider-control and compliance claims from metadata accepted at an
+ * HTTP/intake boundary. Server-derived metadata is overlaid after this step.
+ */
+export function sanitizeUntrustedOutboundMetadata(
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(metadata).filter(([rawKey]) => {
+      const key = rawKey.trim().toLowerCase();
+      return (
+        !UNTRUSTED_OUTBOUND_METADATA_KEYS.has(key) &&
+        !UNTRUSTED_OUTBOUND_METADATA_PREFIXES.some((prefix) => key.startsWith(prefix))
+      );
+    }),
+  );
+}
+
 export function normalizedExpressConsent(input: {
   callPurpose: OutboundCallPurpose;
   hasExpressWrittenConsent?: boolean;
@@ -46,6 +105,7 @@ export function requiresFederalDncScreeningForDirectDial(): true {
 
 export function outboundConsentMetadata(input: {
   callPurpose: OutboundCallPurpose;
+  requestedCallPurpose?: OutboundCallPurpose;
   hasExpressWrittenConsent?: boolean;
   source: "web" | "mobile" | "campaign" | "bulk";
   consentSource?: string;
@@ -53,6 +113,9 @@ export function outboundConsentMetadata(input: {
 }): Record<string, unknown> {
   return {
     call_purpose: input.callPurpose,
+    ...(input.requestedCallPurpose && input.requestedCallPurpose !== input.callPurpose
+      ? { client_requested_call_purpose: input.requestedCallPurpose }
+      : {}),
     consent_version: OUTBOUND_CONSENT_VERSION,
     has_express_written_consent: normalizedExpressConsent(input),
     source: input.source,

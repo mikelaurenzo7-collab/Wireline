@@ -6,6 +6,7 @@ const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
 const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me";
+const CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF = "ogenlhodmwvyacvnrsnj";
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -29,9 +30,72 @@ function canonicalProductionUrl(name, required = false) {
   }
 }
 
+function canonicalProductionDatabase(name) {
+  const raw = value(name);
+  if (!raw) return;
+  try {
+    const url = new URL(raw);
+    if (!["postgres:", "postgresql:"].includes(url.protocol)) {
+      failures.push(`${name}: production database must use PostgreSQL`);
+      return;
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    const directEndpoint = /^db\.([a-z0-9]{20})\.supabase\.co$/u.exec(hostname);
+    const poolerEndpoint = /^(?:[a-z0-9-]+\.)*pooler\.supabase\.com$/u.test(hostname);
+    let resolvedProjectRef = "";
+
+    if (directEndpoint) {
+      // Direct Supabase endpoints bind project identity in the hostname. Never
+      // let a username label override or mask a different direct host.
+      resolvedProjectRef = directEndpoint[1];
+    } else if (poolerEndpoint) {
+      // Supavisor pooler hosts are shared across projects. Their project
+      // identity is the exact final username label: postgres.<project-ref>.
+      const decodedUsername = decodeURIComponent(url.username).toLowerCase();
+      const poolerUsername = /^[^.]+\.([a-z0-9]{20})$/u.exec(decodedUsername);
+      if (!poolerUsername) {
+        failures.push(
+          `${name}: Supabase pooler username must end with an exact 20-character project ref`,
+        );
+        return;
+      }
+      resolvedProjectRef = poolerUsername[1];
+    } else {
+      failures.push(
+        `${name}: production database must use db.<ref>.supabase.co or a Supabase pooler endpoint`,
+      );
+      return;
+    }
+
+    if (resolvedProjectRef !== CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
+      failures.push(
+        `${name}: production database must identify canonical Supabase project ${CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF}`,
+      );
+    }
+  } catch {
+    failures.push(`${name}: production database must be a valid PostgreSQL URL`);
+  }
+}
+
+function requireProductionCorsOrigins() {
+  const configured = new Set(
+    value("CORS_ORIGINS")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+  for (const requiredOrigin of [CANONICAL_PRODUCTION_ORIGIN, "https://trywireline.com"]) {
+    if (!configured.has(requiredOrigin)) {
+      failures.push(`CORS_ORIGINS: must include ${requiredOrigin}`);
+    }
+  }
+}
+
 if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
   requireValue("DATABASE_POOL_URL", "the serverless transaction pool is missing");
+  requireValue("CORS_ORIGINS", "production browser-origin transition allowlist is missing");
   requireValue("INTERNAL_JWT_SECRET", "production session signing is missing");
   requireValue("WIRELINE_DATA_KEY", "encrypted tenant credentials cannot be stored safely");
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
@@ -59,6 +123,9 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   canonicalProductionUrl("APP_URL", true);
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true);
+  canonicalProductionDatabase("POSTGRES_URL");
+  canonicalProductionDatabase("DATABASE_POOL_URL");
+  requireProductionCorsOrigins();
   const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
   if (
     managedEmailDomain &&
@@ -179,12 +246,58 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  *   receive its own explicit reviewed policy before it can cross this boundary.
  */
 const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
+const reviewedIsolatedPreviewDatabaseKeys = new Set([
+  "INTERNAL_JWT_SECRET",
+  "OWNER_EMAIL",
+  "POSTGRES_URL",
+]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
+  const isolatedPreviewDatabase = affirmative("WIRELINE_PREVIEW_DATABASE_ISOLATED");
+  const previewDemoMode = affirmative("WIRELINE_LAUNCH_DEMO_MODE");
+  const isolatedPreviewProjectRef = value("WIRELINE_PREVIEW_DATABASE_PROJECT_REF").toLowerCase();
+  const isolatedPreviewDatabaseKeys =
+    isolatedPreviewDatabase && previewDemoMode ? reviewedIsolatedPreviewDatabaseKeys : new Set();
+
+  if (isolatedPreviewDatabase) {
+    if (!previewDemoMode) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_ISOLATED: isolated Preview data requires WIRELINE_LAUNCH_DEMO_MODE=true",
+      );
+    }
+    for (const name of reviewedIsolatedPreviewDatabaseKeys) {
+      requireValue(name, "isolated authenticated Preview QA configuration is incomplete");
+    }
+    if (!/^[a-z0-9]{20}$/.test(isolatedPreviewProjectRef)) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_PROJECT_REF: isolated Preview data requires the exact 20-character Supabase project ref",
+      );
+    } else if (isolatedPreviewProjectRef === CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_PROJECT_REF: Preview must never target the canonical production Supabase project",
+      );
+    } else if (value("POSTGRES_URL")) {
+      try {
+        const databaseUrl = new URL(value("POSTGRES_URL"));
+        const databaseIdentity =
+          `${databaseUrl.hostname} ${decodeURIComponent(databaseUrl.username)}`.toLowerCase();
+        if (
+          !["postgres:", "postgresql:"].includes(databaseUrl.protocol) ||
+          !databaseIdentity.includes(isolatedPreviewProjectRef)
+        ) {
+          failures.push(
+            "POSTGRES_URL: isolated Preview database does not match WIRELINE_PREVIEW_DATABASE_PROJECT_REF",
+          );
+        }
+      } catch {
+        failures.push("POSTGRES_URL: isolated Preview database must be a valid PostgreSQL URL");
+      }
+    }
+  }
 
   for (const name of productionOnlyPreviewKeys) {
-    if (value(name)) {
+    if (value(name) && !isolatedPreviewDatabaseKeys.has(name)) {
       failures.push(
         `${name}: production-only configuration must not be available to preview builds or runtime`,
       );
@@ -195,6 +308,7 @@ if (isPreview) {
     if (
       !productionOnlyPreviewKeySet.has(name) &&
       !reviewedPreviewCredentialKeys.has(name) &&
+      !isolatedPreviewDatabaseKeys.has(name) &&
       !platformManagedCredential.test(name) &&
       credentialLikeName.test(name) &&
       value(name)

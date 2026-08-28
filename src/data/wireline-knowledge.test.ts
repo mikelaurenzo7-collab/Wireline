@@ -41,4 +41,16 @@ describe("BotBound knowledge", () => {
     expect(combined).toMatch(/\bBots?\b/);
     expect(combined).toContain("BotBound");
   });
+
+  it("keeps marketing outbound behind explicit compliance readiness", () => {
+    const combined = [
+      WIRELINE_GROWTH_ENGINE,
+      ...WIRELINE_FEATURES.map((feature) => feature.blurb),
+    ].join(" ");
+
+    expect(combined).toContain("federal DNC screening");
+    expect(combined).toContain("Marketing campaigns stay blocked until");
+    expect(combined).not.toContain("launch outbound campaigns");
+    expect(combined).not.toContain("campaigns that dial and qualify leads");
+  });
 });

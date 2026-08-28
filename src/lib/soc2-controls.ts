@@ -279,7 +279,7 @@ export function looksEncrypted(value: string | null | undefined): boolean {
   if (!value) return false;
   if (/^[0-9a-f]{64}$/i.test(value)) return true; // SHA-256 hex
   if (/^\$2[aby]\$/.test(value)) return true; // bcrypt
-  if (value.startsWith("ek_")) return true; // Wireline encrypted key prefix
+  if (value.startsWith("ek_")) return true; // BotBound encrypted key prefix
   return false;
 }
 

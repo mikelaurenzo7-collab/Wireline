@@ -5,6 +5,10 @@ import { runStructured, type StructuredToolSchema } from "./ai-structured";
 import { isRuntimeAvailable } from "./ai-client";
 import { drizzle, serialQueryBatch } from "./server-context";
 import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "./runtime-template-personality";
 import * as schema from "../db/schema";
 
 export type PrivateAgentTestHistoryItem = {
@@ -16,6 +20,7 @@ export type PrivateAgentTestContext = {
   agentId: string;
   agentName: string;
   system: string;
+  reviewRequired: boolean;
 };
 
 export const PRIVATE_AGENT_TEST_TOOL: StructuredToolSchema = {
@@ -100,6 +105,16 @@ export async function loadPrivateAgentTestContext(
 
   const agent = agentRows[0];
   if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
+  const savedPersonality = personalities[0]?.content || "";
+  const reviewRequired = isSavedRuntimeReviewRequired(savedPersonality, agent.role);
+  if (reviewRequired) {
+    return {
+      agentId: agent.id,
+      agentName: agent.name || "the Bot",
+      system: RUNTIME_REVIEW_REQUIRED_RESPONSE,
+      reviewRequired: true,
+    };
+  }
 
   const directiveLines = compactLines(
     directives.map((directive) => directive.content),
@@ -119,9 +134,7 @@ export async function loadPrivateAgentTestContext(
     "Reply only as that customer-facing Bot. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
     "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
     "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
-    personalities[0]?.content
-      ? `Tone: ${personalities[0].content}`
-      : "Tone: clear and professional.",
+    savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
     agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
@@ -136,7 +149,12 @@ export async function loadPrivateAgentTestContext(
     .filter(Boolean)
     .join("\n\n");
 
-  return { agentId: agent.id, agentName: agent.name || "the Bot", system };
+  return {
+    agentId: agent.id,
+    agentName: agent.name || "the Bot",
+    system,
+    reviewRequired: false,
+  };
 }
 
 export async function runPrivateAgentTestTurn(input: {
@@ -145,8 +163,15 @@ export async function runPrivateAgentTestTurn(input: {
   customerMessage: string;
   history?: PrivateAgentTestHistoryItem[];
 }): Promise<{ agent_id: string; agent_name: string; reply: string }> {
-  if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
   const context = await loadPrivateAgentTestContext(input.userId, input.agentId);
+  if (context.reviewRequired) {
+    return {
+      agent_id: context.agentId,
+      agent_name: context.agentName,
+      reply: RUNTIME_REVIEW_REQUIRED_RESPONSE,
+    };
+  }
+  if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
   const result = await runStructured<{ reply?: string }>({
     system: context.system,
     user: buildPrivateAgentTestUserMessage(

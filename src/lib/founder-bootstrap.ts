@@ -6,7 +6,11 @@ import { eq, sql } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import { EXPECTED_FOUNDER_FLEET_AGENT_COUNT, seedFounderAssistant } from "./founder-fleet-seed";
+import {
+  FOUNDER_FLEET_SEED_CONTRACT_VERSION,
+  founderFleetSeedNeedsRefresh,
+  seedFounderAssistant,
+} from "./founder-fleet-seed";
 import { FOUNDER_EFFECTIVE_PLAN_ID } from "./plan-entitlements";
 import { getErrorMessage } from "./server-utils";
 
@@ -90,13 +94,30 @@ export async function bootstrapFounderAssistantIfEmpty(
           n: sql<number>`count(*)::int`,
           businessAgents: sql<number>`count(*) filter (where ${schema.agents.isBusinessAgent} is true)::int`,
           personalAgents: sql<number>`count(*) filter (where coalesce(${schema.agents.isBusinessAgent}, false) is false)::int`,
+          currentManagedContracts: sql<number>`count(*) filter (
+            where (
+                ${schema.agents.businessVariables}->>'wireline_internal' = 'true'
+                or ${schema.agents.businessVariables}->>'founder_fleet_seed' = 'true'
+              )
+              and ${schema.agents.businessVariables}->>'founder_seed_contract_version' = ${String(
+                FOUNDER_FLEET_SEED_CONTRACT_VERSION,
+              )}
+          )::int`,
         })
         .from(schema.agents)
         .where(eq(schema.agents.userId, userId));
       const count = agentCounts[0]?.n ?? 0;
       const businessAgents = agentCounts[0]?.businessAgents ?? 0;
       const personalAgents = agentCounts[0]?.personalAgents ?? 0;
-      if (count >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT && businessAgents > 0 && personalAgents > 0) {
+      const currentManagedContracts = agentCounts[0]?.currentManagedContracts ?? 0;
+      if (
+        !founderFleetSeedNeedsRefresh({
+          totalAgents: count,
+          businessAgents,
+          personalAgents,
+          currentManagedContracts,
+        })
+      ) {
         return { seeded: false, skipped: true, subscriptionEnsured: true };
       }
 

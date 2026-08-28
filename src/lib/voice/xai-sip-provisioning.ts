@@ -12,6 +12,7 @@ import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
 import {
   XAI_PHONE_NUMBERS_URL,
+  LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME,
   XAI_TWILIO_ORIGINATION_FRIENDLY_NAME,
   XAI_TWILIO_TRUNK_FRIENDLY_NAME,
   normalizeXAIPhoneNumber,
@@ -100,10 +101,10 @@ export function buildXAIPhoneRegistrationBody(input: {
 }) {
   return {
     origin: "byo_trunk" as const,
-    name: `Wireline · ${input.phoneNumber}`,
+    name: `BotBound · ${input.phoneNumber}`,
     phone_number: input.phoneNumber,
     webhook: {
-      name: `Wireline voice · ${input.phoneNumber}`,
+      name: `BotBound voice · ${input.phoneNumber}`,
       url: input.webhookUrl,
     },
     sip_auth: {
@@ -133,7 +134,7 @@ export function parseXAIPhoneRegistrationPayload(
 
 export function isAmbiguousXAIRegistrationStatus(status: number): boolean {
   // These statuses and all provider/server failures may have occurred after the
-  // number was created but before the response reached Wireline. Retrying a
+  // number was created but before the response reached BotBound. Retrying a
   // non-idempotent registration could create a second webhook/secret pair.
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
@@ -325,9 +326,10 @@ async function ensureTwilioTrunk(): Promise<string> {
     trunk = await client.trunking.v1.trunks(configuredSid).fetch();
   } else {
     const trunks = await client.trunking.v1.trunks.list({ limit: 100 });
-    trunk = trunks.find(
-      (candidate: { friendlyName?: unknown }) =>
-        candidate.friendlyName === XAI_TWILIO_TRUNK_FRIENDLY_NAME,
+    trunk = trunks.find((candidate: { friendlyName?: unknown }) =>
+      [XAI_TWILIO_TRUNK_FRIENDLY_NAME, LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME].includes(
+        String(candidate.friendlyName || ""),
+      ),
     );
     if (!trunk) {
       trunk = await client.trunking.v1.trunks.create({
@@ -388,8 +390,8 @@ async function ensureTwilioTrunk(): Promise<string> {
     throw new Error("Carrier did not return a valid SIP origination identifier.");
   }
 
-  // This trunk is Wireline-owned. Disable duplicate target rows and stale rows
-  // carrying Wireline's managed name so a prior console edit cannot remain in
+  // This trunk is BotBound-owned. Disable duplicate target rows and stale rows
+  // carrying BotBound's managed name so a prior console edit cannot remain in
   // the routing set after activation reports success. Unrelated operator-added
   // failover URLs are intentionally preserved.
   const staleManagedOriginations = originations.filter((row) => {

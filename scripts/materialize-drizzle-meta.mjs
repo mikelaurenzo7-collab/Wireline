@@ -17,6 +17,8 @@ const TARGET_0058_PATH = resolve(ROOT, "drizzle/migrations/meta/0058_snapshot.js
 const TARGET_0059_PATH = resolve(ROOT, "drizzle/migrations/meta/0059_snapshot.json");
 const TARGET_0060_PATH = resolve(ROOT, "drizzle/migrations/meta/0060_snapshot.json");
 const TARGET_0061_PATH = resolve(ROOT, "drizzle/migrations/meta/0061_snapshot.json");
+const SOURCE_0062_PATH = resolve(ROOT, "drizzle/migrations/meta/0062_snapshot.json");
+const TARGET_0063_PATH = resolve(ROOT, "drizzle/migrations/meta/0063_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -41,6 +43,10 @@ const TARGET_0060_ID = "b6d92ed4-2df5-43b6-a8b2-f4816dc34fa2";
 const TARGET_0060_SHA256 = "2b11dbd447336abc4ccb4301b00a0abe87e12996417e9eefa42a5349fe81e212";
 const TARGET_0061_ID = "7564a2ba-adb5-47fe-9abb-990b35c20b69";
 const TARGET_0061_SHA256 = "c3f10b6940fef1e026e4c837fb3a4ba1ff9cdc3f479351c2cd841fc20b8a2090";
+const SOURCE_0062_ID = "a905b7c9-a1f8-4796-a294-bccc09db5601";
+const SOURCE_0062_SHA256 = "ebc456e87118028b0c17e34db67f744f4d2cb0ee70024ccd3583805d17043a1e";
+const TARGET_0063_ID = "d8764100-e1b8-4d00-8abb-b876d90b3828";
+const TARGET_0063_SHA256 = "ee649aa201d1ef54f3dab1dc90ea615ae00ae5bce0ff763cabfb027458a07367";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -396,6 +402,20 @@ export function buildAccountEnvironmentPromotionGuardSnapshot(subscriptionCascad
   return snapshot;
 }
 
+export function buildLegacyAuditOrphanReconciliationSnapshot(stripeClaimFencingSnapshot) {
+  if (
+    !stripeClaimFencingSnapshot ||
+    stripeClaimFencingSnapshot.id !== SOURCE_0062_ID ||
+    stripeClaimFencingSnapshot.version !== "7"
+  ) {
+    throw new Error("0062 snapshot identity changed; refusing to synthesize 0063.");
+  }
+  const snapshot = structuredClone(stripeClaimFencingSnapshot);
+  snapshot.id = TARGET_0063_ID;
+  snapshot.prevId = stripeClaimFencingSnapshot.id;
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -444,6 +464,15 @@ export function materializeDrizzleMeta() {
     subscriptionCascadeSnapshot,
   );
   const accountEnvironmentPromotionGuardSerialized = `${JSON.stringify(accountEnvironmentPromotionGuardSnapshot, null, 2)}\n`;
+  const stripeClaimFencingSerialized = readFileSync(SOURCE_0062_PATH, "utf8");
+  if (hash(stripeClaimFencingSerialized) !== SOURCE_0062_SHA256) {
+    throw new Error("0062 snapshot hash changed; refusing to synthesize 0063.");
+  }
+  const stripeClaimFencingSnapshot = JSON.parse(stripeClaimFencingSerialized);
+  const legacyAuditOrphanReconciliationSnapshot = buildLegacyAuditOrphanReconciliationSnapshot(
+    stripeClaimFencingSnapshot,
+  );
+  const legacyAuditOrphanReconciliationSerialized = `${JSON.stringify(legacyAuditOrphanReconciliationSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
@@ -484,6 +513,11 @@ export function materializeDrizzleMeta() {
     accountEnvironmentPromotionGuardSerialized,
     TARGET_0061_SHA256,
   );
+  const legacyAuditOrphanReconciliation = writeSnapshot(
+    TARGET_0063_PATH,
+    legacyAuditOrphanReconciliationSerialized,
+    TARGET_0063_SHA256,
+  );
   return {
     native,
     preserved,
@@ -497,6 +531,7 @@ export function materializeDrizzleMeta() {
     accountOperationLease,
     subscriptionCascade,
     accountEnvironmentPromotionGuard,
+    legacyAuditOrphanReconciliation,
   };
 }
 
@@ -547,5 +582,10 @@ if (result.subscriptionCascade.changed) {
 if (result.accountEnvironmentPromotionGuard.changed) {
   console.log(
     `Materialized Drizzle snapshot 0061 (${result.accountEnvironmentPromotionGuard.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.legacyAuditOrphanReconciliation.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0063 (${result.legacyAuditOrphanReconciliation.sha256.slice(0, 12)}…).`,
   );
 }

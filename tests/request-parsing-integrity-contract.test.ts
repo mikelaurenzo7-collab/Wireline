@@ -133,14 +133,11 @@ describe("bulk outbound validates the fields it actually persists", () => {
     // The handler spreads caller metadata FIRST and overlays server-derived
     // consent after, so this ordering is what stops a client asserting its own
     // TCPA consent. Guarded here because it is one line away from reversing.
-    // The caller spread also passes through stripCallbackRequestMarker: the
-    // consent overlay only protects keys it writes, and the callback-request
-    // marker is a consent claim it never writes — an imported row carrying it
-    // would sail through the overlay and waive consent at dial time.
+    // The caller spread also passes through the shared outbound sanitizer: the
+    // consent overlay protects the keys it writes, while the sanitizer removes
+    // callback/provider-control claims that no overlay should preserve.
     const routes = stripComments(read("src/routes/outbound-routes.ts"));
-    const spread = routes.indexOf(
-      "...stripCallbackRequestMarker((lead.metadata as Record<string, unknown>) || {})",
-    );
+    const spread = routes.indexOf("...sanitizeUntrustedOutboundMetadata(");
     const consent = routes.indexOf("...outboundConsentMetadata({", spread);
     expect(spread).toBeGreaterThan(-1);
     expect(consent).toBeGreaterThan(spread);
@@ -149,25 +146,24 @@ describe("bulk outbound validates the fields it actually persists", () => {
 
 describe("Stripe stale-claim reclaim reaches the handler", () => {
   /**
-   * The reclaim branch sets claimed=true intending to fall through and process
-   * the event inline, but the catch block ended in an unconditional throw — so
-   * it never processed anything. It had already DELETEd and re-INSERTed the
-   * row, and processedAt defaults to now(), so each reclaim reset the 5-minute
-   * abandonment clock immediately before 503-ing. A paid top-up could be lost.
+   * The shared claim helper returns ownership only after it has inserted or
+   * atomically reclaimed the event with a fresh attempt token. The route must
+   * process only that owned result; an in-flight result or missing ownership
+   * remains a retryable 503 and must never fall through to the handler.
    */
-  it("guards the terminal 503 on !claimed", () => {
+  it("guards the handler on a durable fenced claim owner", () => {
     const billing = read("src/routes/billing-routes.ts");
     const claimBlock = billing.slice(
       billing.indexOf("const idempotencyKey = event.id;"),
       billing.indexOf("  try {\n    switch (event.type) {"),
     );
-    expect(claimBlock).toContain("claimed = true;");
-    // The guard must be bound to THIS throw specifically. An earlier
-    // `if (!claimed)` handles duplicates, so a loose search for the nearest one
-    // passes even with this guard removed — the first version of this
-    // assertion did exactly that and survived the mutation.
+    expect(claimBlock).toContain(
+      "const result = await claimStripeEvent(idempotencyKey, event.type)",
+    );
+    expect(claimBlock).toContain('result.kind === "in_flight"');
+    expect(claimBlock).toContain("claim = result.claim;");
     expect(claimBlock).toMatch(
-      /if \(!claimed\) \{\s*log\.warn\(\s*"Stripe idempotency claim failed/,
+      /if \(!claim\) \{\s*throw AppError\.fromHttpStatus\(503, "Webhook claim ownership unavailable\. Retry later\."\)/,
     );
     expect(claimBlock).toContain(
       'throw AppError.fromHttpStatus(503, "Webhook idempotency store unavailable. Retry later.")',

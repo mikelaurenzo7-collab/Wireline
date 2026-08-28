@@ -137,7 +137,9 @@ assert(
   "the consent notice must actually be MOUNTED in App.tsx — asserting only the component's contents let the banner sit unmounted while every content check passed (footer 'Privacy choices' dispatched to no listener; visitors never saw a consent choice).",
 );
 assert(
-  app.includes('const PrivacyPolicy = lazy(() => import("./components/PrivacyPolicyPage"));'),
+  app.includes("const PrivacyPolicy = lazy(() =>") &&
+    app.includes('import("./components/PrivacyPolicyPage")') &&
+    app.includes('withVisualQaPage(module, "privacy")'),
   "the public /privacy route must use the consent-aware privacy policy.",
 );
 assert(

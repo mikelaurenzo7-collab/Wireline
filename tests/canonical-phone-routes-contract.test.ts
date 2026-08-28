@@ -59,7 +59,7 @@ describe("canonical Phone routes", () => {
   });
 
   it("keeps visual QA captures and generated CTAs on Connections, not retired Actions", () => {
-    const visualProd = read("scripts/capture-prod-visual-qa.mjs");
+    const visualProd = read("scripts/lib/production-visual-qa-contract.mjs");
     const visualLocal = read("scripts/capture-visual-qa.mjs");
     const playbooks = read("src/lib/integration-playbooks.ts");
     const ops = read("src/lib/wireline-ops-design.ts");

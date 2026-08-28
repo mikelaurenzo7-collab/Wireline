@@ -2,14 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import {
-  WIRELINE_CONTACT_AGENTS,
-  WIRELINE_DEMO_AGENTS,
-} from "../src/data/contact-agents";
-import {
-  WIRELINE_COMPLIANCE_STATUS,
-  WIRELINE_INTEGRATIONS,
-} from "../src/data/wireline-knowledge";
+import { WIRELINE_CONTACT_AGENTS, WIRELINE_DEMO_AGENTS } from "../src/data/contact-agents";
+import { WIRELINE_COMPLIANCE_STATUS, WIRELINE_INTEGRATIONS } from "../src/data/wireline-knowledge";
 import { buildShowcaseAssistantPayload } from "../src/lib/showcase-assistant";
 import { sanitizeShowcaseAssistantPayload } from "../src/lib/showcase-prompt-truth-guard";
 
@@ -20,6 +14,7 @@ type ModelConfig = {
   model?: string;
   fallbackModels?: string[];
   messages?: Array<{ role?: string; content?: unknown }>;
+  tools?: Array<{ function?: { name?: string } }>;
 };
 
 function modelFrom(payload: Record<string, unknown>): ModelConfig {
@@ -80,7 +75,7 @@ describe("public showcase truth guard", () => {
 
       if (kind === "demo") {
         expect(prompt).not.toMatch(/have someone follow up/i);
-        expect(prompt).toContain("never promise human follow-up from a demo line");
+        expect(prompt).toContain("cannot transfer the caller or schedule a callback from a person");
         expect(prompt).toContain("Never tell the caller");
       }
     },
@@ -98,7 +93,57 @@ describe("public showcase truth guard", () => {
     expect(roadmap).not.toMatch(/auditor engaged|target Q4|on request|30 day onboarding/i);
     const marcusScope = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus")?.scope || "";
     expect(marcusScope).toContain("HIPAA and BAA support are not currently available");
+    expect(marcusScope).toContain("fictional details only");
+    expect(marcusScope).not.toMatch(/captures reason for visit|insurance pre-check/i);
     expect(marcusScope).not.toMatch(/BAA available|Enterprise roadmap/i);
+
+    const marcus = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Marcus");
+    expect(marcus?.firstMessage).toContain("Please use fictional details");
+    const marcusPrompt = promptFrom(
+      buildShowcaseAssistantPayload(marcus!, "demo", {
+        webhookSecret: "test-webhook-secret",
+      }) as Record<string, unknown>,
+    );
+    expect(marcusPrompt).toContain("synthetic scheduling demo");
+    expect(marcusPrompt).toContain("do not repeat or summarize it");
+    expect(marcusPrompt).toContain("a fictional practice specialty");
+    expect(marcusPrompt).not.toMatch(
+      /sample patient call|reason-for-visit intake|insurance check/i,
+    );
+    expect(marcusPrompt).not.toContain("HIPAA-aware tone");
+
+    const ria = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === "Ria");
+    const riaPrompt = promptFrom(
+      buildShowcaseAssistantPayload(ria!, "demo", {
+        webhookSecret: "test-webhook-secret",
+      }) as Record<string, unknown>,
+    );
+    expect(riaPrompt).not.toContain("${extraAsk}");
+    expect(riaPrompt).toContain("once they pick a vertical");
+  });
+
+  it("limits public BotBound specialists to actions their tools actually perform", () => {
+    const specialist = WIRELINE_CONTACT_AGENTS[0];
+    const payload = buildShowcaseAssistantPayload(specialist, "cs", {
+      webhookSecret: "test-webhook-secret",
+    }) as Record<string, unknown>;
+    const tools = modelFrom(payload).tools?.map((tool) => tool.function?.name) || [];
+
+    expect(tools).toEqual([
+      "send_signup_link",
+      "send_payment_link",
+      "schedule_callback",
+      "escalate_to_human",
+    ]);
+    expect(specialist.scope).toContain("Does not create accounts");
+    expect(specialist.scope).not.toContain("create a BotBound account");
+    expect(specialist.scope).not.toContain("Handles every kind of call end to end");
+    expect(promptFrom(payload)).toContain("Never say the time is scheduled or confirmed");
+
+    const handler = read("src/routes/vapi/showcase-handlers.ts");
+    expect(handler).toContain("That time is not yet scheduled or confirmed");
+    expect(handler).toContain("I couldn't record the callback request");
+    expect(handler).not.toMatch(/I've scheduled that callback|Someone will be in touch shortly/);
   });
 
   it("rewrites stale truth and cross-provider fallback values", () => {
@@ -171,9 +216,7 @@ describe("public showcase truth guard", () => {
 describe("showcase synchronization boundary", () => {
   it("guards dynamic webhook responses before the Vapi router", () => {
     const registration = read("src/server/register-api-routes.ts");
-    const guard = registration.indexOf(
-      'app.use("/api/vapi-webhook", showcasePromptTruthGuard)',
-    );
+    const guard = registration.indexOf('app.use("/api/vapi-webhook", showcasePromptTruthGuard)');
     const vapi = registration.indexOf("app.use(vapiRouter)");
     expect(guard).toBeGreaterThan(-1);
     expect(vapi).toBeGreaterThan(guard);

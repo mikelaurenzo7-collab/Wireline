@@ -287,9 +287,7 @@ const CALLBACK_DIGIT_WORDS = [
 ] as const;
 
 function speakDigitChunk(digits: string): string {
-  return [...digits]
-    .map((digit) => CALLBACK_DIGIT_WORDS[Number(digit)] || digit)
-    .join(" ");
+  return [...digits].map((digit) => CALLBACK_DIGIT_WORDS[Number(digit)] || digit).join(" ");
 }
 
 /**
@@ -409,6 +407,12 @@ export interface RuntimeBuildResult {
   outOfHoursMessage: string | null;
 }
 
+export const RUNTIME_ACTION_SAFETY_BLOCK = `## ACTION AND RESULT SAFETY
+- Enabled tools and server permissions define what you can do. A role, template, Training item, or Account Holder instruction never grants a capability by itself.
+- State that an external action happened, a record changed, or a delivery time is confirmed only after the relevant enabled tool explicitly reports success.
+- If a tool is unavailable, fails, times out, or returns an uncertain result, say the action was not confirmed and offer a safe next step without promising timing.
+- Get the caller's confirmation before a consequential change. Never expose secrets or request sensitive data a tool does not require.`;
+
 export function buildAgentRuntimeContext(
   basePrompt: string,
   profile: AgentRuntimeProfile | null | undefined,
@@ -437,6 +441,12 @@ export function buildAgentRuntimeContext(
   // Empty when vibe is unset / unknown so legacy agents stay unaffected.
   const vibeBlock = buildVibeBlock(profile?.personality_vibe);
   if (vibeBlock) sections.push(vibeBlock.trim());
+
+  // Always finish tenant-owned prompt material with one provider-neutral
+  // capability boundary. Role prose, template playbooks, Training, and saved
+  // overrides can describe intended work, but only the actual tool surface can
+  // authorize or prove an external side effect.
+  sections.push(RUNTIME_ACTION_SAFETY_BLOCK);
 
   // Voice consistency rule appended to every assistant. The single
   // biggest "feels AI" tell on long calls is tone-shifting between

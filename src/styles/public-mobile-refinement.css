@@ -32,7 +32,8 @@
   .landing-prestige__auth .wl-access-panel__brand .bb-lockup {
     --bb-lockup-mark: 2.75rem;
     --bb-lockup-wordmark-size: 1.18rem;
-    --bb-lockup-gap: 0.64rem;
+    --bb-lockup-gap: 0.16rem;
+    --bb-lockup-overlap: 0.08rem;
   }
 
   .landing-prestige__auth .wl-access-panel__card {

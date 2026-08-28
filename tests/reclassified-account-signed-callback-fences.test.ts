@@ -68,7 +68,7 @@ describe("reclassified-account signed callback fences", () => {
   it("gates new and queued tenant webhook work at the shared network boundary", () => {
     const source = read("src/lib/webhook-helpers.ts");
     const attempt = source.slice(
-      source.indexOf("export async function attemptWebhookDelivery"),
+      source.indexOf("async function attemptWebhookDeliveryAfterDeletionFence"),
       source.indexOf("export async function dispatchWebhook"),
     );
     expect(attempt.indexOf("tenantWebhookExternalActionsAllowed(")).toBeLessThan(
@@ -77,8 +77,8 @@ describe("reclassified-account signed callback fences", () => {
     expect(attempt).toContain("blocked_${externalActionPolicy.code.toLowerCase()}");
 
     const dispatch = source.slice(
+      source.indexOf("async function dispatchWebhookAfterDeletionFence"),
       source.indexOf("export async function dispatchWebhook"),
-      source.indexOf("export async function processWebhookRetries"),
     );
     expect(dispatch.indexOf("tenantWebhookExternalActionsAllowed(userId)")).toBeLessThan(
       dispatch.indexOf(".insert(schema.webhookDeliveries)"),

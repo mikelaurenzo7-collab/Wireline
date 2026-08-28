@@ -3,9 +3,9 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import type { AuthenticatedRequest } from "../types/auth";
 import { drizzle, log, auditLogger, serialQueryBatch } from "../lib/server-context";
-import { settings, userPreferences, agents, callLogs, deletionQueue } from "../db/schema";
+import { settings, userPreferences, agents, callLogs } from "../db/schema";
 import * as schema from "../db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage, mapObjectToCamel, mapObjectToSnake } from "../lib/server-utils";
 import { isOwnerEmail } from "../lib/auth-service";
@@ -13,8 +13,10 @@ import { isPlatformAdmin } from "../middleware/platform-admin";
 import { enqueue } from "../lib/job-queue";
 import { jobsRateLimit, userPreferencesRateLimit } from "../middleware/api-rate-limits";
 import { ACCOUNT_DELETION_GRACE_DAYS, computeScheduledPurgeAt } from "../lib/account-deletion";
-import { resumeRenewalAfterDeletionCancellation } from "../lib/account-deletion-billing";
-import { ensurePendingAccountDeletion } from "../lib/account-deletion-request";
+import {
+  cancelPendingAccountDeletion,
+  ensurePendingAccountDeletion,
+} from "../lib/account-deletion-request";
 import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
 
@@ -504,7 +506,7 @@ router.post(
       res.setHeader("Content-Type", "application/json");
       res.setHeader(
         "Content-Disposition",
-        `attachment; filename="wireline-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
+        `attachment; filename="botbound-account-export-${uid.substring(0, 8)}-${Date.now()}.json"`,
       );
       res.status(200).json(exportPackage);
     } catch (err: any) {
@@ -643,45 +645,17 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const uid = req.user.id;
     try {
-      const [existing] = await drizzle
-        .select()
-        .from(deletionQueue)
-        .where(sql`${deletionQueue.userId} = ${uid} AND ${deletionQueue.status} = 'pending'`)
-        .limit(1);
-
-      if (!existing) {
+      const cancellation = await cancelPendingAccountDeletion({ userId: uid });
+      if (cancellation.state === "not_found") {
         throw AppError.fromHttpStatus(404, "No pending deletion request found.");
       }
-
-      if (!existing.scheduledPurgeAt || existing.scheduledPurgeAt.getTime() <= Date.now()) {
+      if (cancellation.state === "terminal") {
         return res.status(410).json({
           code: "GONE",
           error: "Grace period has expired. Deletion can no longer be cancelled.",
-          scheduled_purge_at: existing.scheduledPurgeAt?.toISOString() ?? null,
+          scheduled_purge_at: cancellation.scheduledPurgeAt?.toISOString() ?? null,
         });
       }
-
-      const [cancelled] = await drizzle
-        .update(deletionQueue)
-        .set({ status: "cancelled", cancelledAt: new Date() })
-        .where(
-          and(
-            eq(deletionQueue.id, existing.id),
-            eq(deletionQueue.userId, uid),
-            eq(deletionQueue.status, "pending"),
-            sql`${deletionQueue.scheduledPurgeAt} > now()`,
-          ),
-        )
-        .returning({ id: deletionQueue.id });
-      if (!cancelled) {
-        return res.status(410).json({
-          code: "GONE",
-          error: "Grace period has expired or terminal deletion has begun.",
-          scheduled_purge_at: existing.scheduledPurgeAt.toISOString(),
-        });
-      }
-
-      const renewal = await resumeRenewalAfterDeletionCancellation(uid);
 
       // Awaited: a detached audit write can be frozen mid-flight on Vercel
       // once the response goes out, losing the cancellation evidence.
@@ -694,8 +668,11 @@ router.post(
 
       return res.json({
         status: "cancelled",
-        renewal_resumed: renewal.confirmed,
-        billing_period_end: renewal.billingPeriodEnd,
+        renewal_resumed: false,
+        billing_reactivation_required: true,
+        billing_reactivation_path: "/settings/billing",
+        billing_notice:
+          "Billing is never restarted automatically. If renewal was already stopped, reactivate it explicitly from Billing.",
       });
     } catch (err: any) {
       if (err instanceof AppError) throw err;

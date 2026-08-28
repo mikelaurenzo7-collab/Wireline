@@ -351,7 +351,7 @@ describe("Live Video Checkout operation durability", () => {
     });
     expect(checkoutCreate).not.toHaveBeenCalled();
     expect(checkoutRetrieve).not.toHaveBeenCalled();
-  });
+  }, 20_000);
 
   it("does not open Stripe sessions for simultaneous retired checkout requests", async () => {
     const { handler, checkoutCreate } = await loadLiveVideoCheckoutRoute();

@@ -10,7 +10,7 @@ describe("BotBound brand migration", () => {
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
     expect(component).toContain('data-botbound-mark="phone-bot"');
-    expect(component).toContain('src="/brand/botbound-app-icon.png"');
+    expect(component).toContain('src="/brand/botbound-operator-polished.png"');
     expect(component).toContain("visibly grips a violet telephone receiver");
     expect(component).not.toContain("<svg");
     for (const source of [icon, favicon]) {
@@ -22,11 +22,13 @@ describe("BotBound brand migration", () => {
 
   it("makes BotBound canonical while old Wireline component paths are render-safe aliases", () => {
     const brand = read("src/components/brand/BotBoundBrand.tsx");
+    const identityCss = read("src/styles/brand-identity.css");
     const legacyBrand = read("src/components/brand/WirelineBrand.tsx");
     const legacyMark = read("src/components/brand/WirelineMark.tsx");
     expect(brand).toContain("BotBoundWordmark");
     expect(brand).toContain("BotBoundLockup");
     expect(brand).toContain('data-botbound-brand-lockup="true"');
+    expect(identityCss).toContain("margin-inline-start: calc(var(--bb-lockup-overlap) * -1)");
     expect(legacyBrand).toContain("BotBoundWordmark as WirelineWordmark");
     expect(legacyBrand).toContain("BotBoundLockup as WirelineLockup");
     expect(legacyMark).toContain('from "./BotBoundMark"');

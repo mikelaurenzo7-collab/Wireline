@@ -66,9 +66,12 @@ describe("billing proof contract", () => {
 
   it("claims webhook event ids before side effects and preserves wallet idempotency", () => {
     const billingRoutes = read("src/routes/billing-routes.ts");
+    const claims = read("src/lib/stripe-event-claim.ts");
     const wallet = read("src/lib/credit-wallet.ts");
 
-    expect(billingRoutes).toContain("schema.stripeEvents");
+    expect(billingRoutes).toContain("claimStripeEvent(idempotencyKey, event.type)");
+    expect(claims).toContain("schema.stripeEvents");
+    expect(claims).toContain("claimToken: randomUUID()");
     expect(billingRoutes).toContain("duplicate: true");
     expect(billingRoutes).toContain("Webhook idempotency store unavailable. Retry later.");
     expect(wallet).toContain("onConflictDoNothing()");
@@ -207,7 +210,7 @@ describe("billing proof contract", () => {
     }
   });
 
-  it("stops future renewal for both deletion APIs and resumes it after cancellation", () => {
+  it("stops future renewal for both deletion APIs without auto-resuming after cancellation", () => {
     const accountRoutes = read("src/routes/account-routes.ts");
     const settingsRoutes = read("src/routes/settings-routes.ts");
     const deletionBilling = read("src/lib/account-deletion-billing.ts");
@@ -218,18 +221,20 @@ describe("billing proof contract", () => {
     expect(accountRoutes).toContain("renewal_stopped: deletion.renewal.confirmed");
     expect(settingsRoutes).toContain("ensurePendingAccountDeletion");
     expect(deletionRequest).toContain("stopRenewalForDeletion");
-    expect(settingsRoutes).toContain("resumeRenewalAfterDeletionCancellation");
-    expect(settingsRoutes).toContain("renewal_resumed: renewal.confirmed");
+    expect(settingsRoutes).toContain("cancelPendingAccountDeletion");
+    expect(settingsRoutes).toContain("renewal_resumed: false");
+    expect(settingsRoutes).toContain("billing_reactivation_required: true");
     expect(deletionBilling).toContain("cancel_at_period_end: true");
-    expect(deletionBilling).toContain("cancel_at_period_end: false");
-    expect(deletionBilling).toContain("stripe.subscriptions.list");
+    expect(deletionBilling).not.toContain("cancel_at_period_end: false");
+    expect(deletionBilling).toContain("stripeClient.subscriptions.list");
     expect(deletionBilling).toContain("for await");
     expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
-    expect(deletionBilling).toContain('metadata: { [DELETION_RENEWAL_MARKER]: "" }');
+    expect(deletionBilling).not.toContain("resumeRenewalAfterDeletionCancellation");
     expect(settings).toContain("Future subscription renewal is stopped");
     expect(settings).toContain('authFetch("/api/account/deletion-status"');
     expect(settings).toContain('authFetch("/api/account/cancel-deletion"');
     expect(settings).toContain("Keep my account");
+    expect(settings).toContain("BotBound did not restart billing automatically");
     expect(settings).not.toContain("Billing continues until purge");
   });
 

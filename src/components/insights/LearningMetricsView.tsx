@@ -90,7 +90,7 @@ export default function LearningMetricsView() {
   if (agents.length === 0) {
     return (
       <EmptyState
-        title="No agents"
+        title="No Bots"
         icon={BrainCircuit}
         actions={[{ label: "Studio", to: "/studio", primary: true }]}
       />
@@ -102,7 +102,7 @@ export default function LearningMetricsView() {
       <div className="grid gap-3 sm:grid-cols-3">
         <MetricStatTile label="Lessons pending review" value={pendingTotal} tone="rose" />
         <MetricStatTile label="Lessons in runtime" value={approvedTotal} />
-        <MetricStatTile label="Agents tracked" value={agents.length} tone="muted" />
+        <MetricStatTile label="Bots tracked" value={agents.length} tone="muted" />
       </div>
 
       <div className="space-y-3">

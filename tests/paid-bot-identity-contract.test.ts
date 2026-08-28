@@ -30,6 +30,19 @@ describe("paid Bot identity reconciliation", () => {
     expect(phone).toContain("export async function provisionTenantNumber");
   });
 
+  it("holds the tenant deletion fence across paid identity provider work", () => {
+    const fenceIndex = identity.indexOf("runTenantProviderWorkWithDeletionFence({");
+    const phoneIndex = identity.indexOf("await ensurePaidBotPhone", fenceIndex);
+    const mailIndex = identity.indexOf("await ensurePaidBotMailbox", fenceIndex);
+
+    expect(fenceIndex).toBeGreaterThanOrEqual(0);
+    expect(identity).toContain('operation: "paid_bot_identity_reconcile"');
+    expect(phoneIndex).toBeGreaterThan(fenceIndex);
+    expect(mailIndex).toBeGreaterThan(phoneIndex);
+    expect(identity).toContain("if (!fenced.performed)");
+    expect(identity).toContain("account deletion is in progress");
+  });
+
   it("requires a managed custom AgentMail domain instead of provider-branded fallback", () => {
     expect(identity).toContain("AGENTMAIL_DEFAULT_DOMAIN");
     expect(identity).toContain("AGENTMAIL_API_KEY");
@@ -53,19 +66,26 @@ describe("paid Bot identity reconciliation", () => {
   });
 
   it("reuses existing provider resources while reconciling missing delivery state", () => {
-    expect(identity).toContain("if (existing?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER))");
+    expect(identity).toContain("hasExactAgentMailManagedScope(account.oauthGrantedScopes)");
     expect(identity).toContain("refreshToken: schema.emailAccounts.refreshToken");
     expect(identity).toContain("hasStoredSecret: Boolean(existing.refreshToken)");
     expect(identity).toContain("ensureManagedDeliveryWebhook");
-    expect(identity).toContain(
-      "Managed AgentMail inbox is missing from the configured AgentMail organization",
-    );
+    expect(identity).toContain("emailAddress: existing.emailAddress");
     expect(identity).toContain("AgentMail webhook registration requires a public APP_URL");
     expect(identity).toContain("if (!ensured.secret && input.hasStoredSecret) return");
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
     expect(identity).toContain("if (existing) return { ...existing, reused: true }");
     expect(identity).toContain("reused: Boolean(provisioned.reused)");
     expect(identity).toContain("phoneReused: phone.reused");
+  });
+
+  it("reserves the exact managed address before any provider mailbox creation", () => {
+    const reserveIndex = identity.indexOf("const connected = await upsertOwnedEmailAccount");
+    const providerIndex = identity.indexOf("const inbox = await resolveManagedInbox", reserveIndex);
+    expect(reserveIndex).toBeGreaterThanOrEqual(0);
+    expect(providerIndex).toBeGreaterThan(reserveIndex);
+    expect(identity).toContain("emailAddress: reservedEmailAddress");
+    expect(identity).toContain("AgentMail did not create the exact reserved BotBound mailbox");
   });
 
   it("narrows ImapFlow search results before using array-only operations", () => {

@@ -74,8 +74,8 @@ function StudioEmptyState() {
     <EmptyState
       fill
       icon={Sparkles}
-      title="Start With One Job"
-      description="Describe the work. Your Bot can call, text, email, use tools, and change as the workflow changes."
+      title="Build Your Bot"
+      description="Describe the work. Configure calls, texts, email, tools, and the workflow around them."
       className="wl-composer-dock"
     >
       <div className="mx-auto mt-2 w-full max-w-xl text-left">
@@ -270,7 +270,9 @@ export default function StudioWorkspaceV2() {
               id={studioTabId(item.id)}
               aria-selected={selected}
               aria-controls={
-                splitWorkspace && item.id === "test" ? "studio-split-workspace" : studioPanelId(item.id)
+                splitWorkspace && item.id === "test"
+                  ? "studio-split-workspace"
+                  : studioPanelId(item.id)
               }
               tabIndex={selected ? 0 : -1}
               onClick={() => setSection(item.id)}

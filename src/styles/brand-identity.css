@@ -56,11 +56,14 @@
 .bb-lockup {
   --bb-lockup-mark: 2.625rem;
   --bb-lockup-wordmark-size: 1.18rem;
-  --bb-lockup-gap: 0.62rem;
+  --bb-lockup-gap: 0.18rem;
+  --bb-lockup-overlap: 0.08rem;
+  position: relative;
   display: inline-flex;
   min-width: 0;
   align-items: center;
   gap: var(--bb-lockup-gap);
+  isolation: isolate;
   color: var(--wireline-color-text-primary);
   line-height: 1;
 }
@@ -68,23 +71,27 @@
 .bb-lockup[data-size="compact"] {
   --bb-lockup-mark: 2rem;
   --bb-lockup-wordmark-size: 0.98rem;
-  --bb-lockup-gap: 0.48rem;
+  --bb-lockup-gap: 0.12rem;
+  --bb-lockup-overlap: 0.04rem;
 }
 
 .bb-lockup[data-size="large"] {
   --bb-lockup-mark: 3.75rem;
   --bb-lockup-wordmark-size: 1.68rem;
-  --bb-lockup-gap: 0.78rem;
+  --bb-lockup-gap: 0.2rem;
+  --bb-lockup-overlap: 0.12rem;
 }
 
 .bb-lockup[data-size="display"] {
   --bb-lockup-mark: 5.25rem;
   --bb-lockup-wordmark-size: 2.42rem;
-  --bb-lockup-gap: 1rem;
+  --bb-lockup-gap: 0.24rem;
+  --bb-lockup-overlap: 0.18rem;
 }
 
 .bb-lockup__mark {
   position: relative;
+  z-index: 2;
   display: inline-grid;
   width: var(--bb-lockup-mark);
   height: var(--bb-lockup-mark);
@@ -112,7 +119,10 @@
 }
 
 .bb-lockup__wordmark {
+  position: relative;
+  z-index: 1;
   min-width: 0;
+  margin-inline-start: calc(var(--bb-lockup-overlap) * -1);
   font-size: var(--bb-lockup-wordmark-size);
 }
 
@@ -177,6 +187,7 @@ button:has(> .wl-wireline-lockup):focus-visible {
   .bb-lockup[data-size="standard"] {
     --bb-lockup-mark: 2.2rem;
     --bb-lockup-wordmark-size: 1rem;
-    --bb-lockup-gap: 0.5rem;
+    --bb-lockup-gap: 0.14rem;
+    --bb-lockup-overlap: 0.05rem;
   }
 }

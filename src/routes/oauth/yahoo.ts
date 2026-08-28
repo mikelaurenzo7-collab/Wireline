@@ -22,6 +22,12 @@ import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-envir
 
 const router = express.Router();
 
+// Yahoo sign-in is live through /api/auth/yahoo/*. Mailbox connection remains
+// deliberately unavailable until BotBound can actually read and send through
+// Yahoo with XOAUTH2; collecting broad mail scopes before that would overstate
+// the product and create dormant credentials with no safe execution path.
+export const YAHOO_MAIL_CONNECTION_AVAILABLE = false;
+
 // ────────────────────────────────────────────────────────────────────
 //  Yahoo Mailbox OAuth — mail-r/mail-w scopes
 //
@@ -51,6 +57,12 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     setOAuthNoStoreHeaders(res);
+    if (!YAHOO_MAIL_CONNECTION_AVAILABLE) {
+      throw AppError.fromHttpStatus(
+        503,
+        "Yahoo sign-in is available, but Yahoo Mail connection is not yet supported.",
+      );
+    }
     if (!process.env.YAHOO_CLIENT_ID || !process.env.YAHOO_CLIENT_SECRET) {
       throw AppError.fromHttpStatus(503, "Yahoo mailbox integration is finishing setup.");
     }
@@ -79,6 +91,12 @@ router.get(
   oauthRateLimiter,
   async (req: express.Request, res: express.Response) => {
     setOAuthNoStoreHeaders(res);
+    if (!YAHOO_MAIL_CONNECTION_AVAILABLE) {
+      return res
+        .status(410)
+        .type("text/plain")
+        .send("Yahoo Mail connection is not available. Use Yahoo only for BotBound sign-in.");
+    }
     const { code, state, error } = req.query;
     if (error) {
       log.warn("Yahoo Mail OAuth authorization was not completed");

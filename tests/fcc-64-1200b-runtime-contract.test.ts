@@ -37,16 +37,23 @@ describe("64.1200(b) runtime wiring", () => {
       // announcement. Everything else stays marketing and keeps it.
       ["src/lib/callback-engine.ts", /consumerRequested \? "callback" : "marketing_or_sales"/],
       ["src/lib/intake-auto-dial.ts", /callPurpose: "marketing_or_sales"/],
-      // Web/mobile manual dials pass the request's validated purpose through.
-      ["src/routes/outbound-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
+      // Web/mobile manual dials classify the client label as untrusted and pass
+      // only the server-derived effective purpose to the placement boundary.
+      [
+        "src/routes/outbound-routes.ts",
+        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
+      ],
       [
         "src/routes/outbound-dial-atomic-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/,
+        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
       ],
-      ["src/routes/mobile-routes.ts", /placeOutboundCall\(\{[\s\S]{0,220}callPurpose,/],
+      [
+        "src/routes/mobile-routes.ts",
+        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
+      ],
       [
         "src/routes/native-mobile-voice-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,280}callPurpose,/,
+        /placeOutboundCall\(\{[\s\S]{0,280}callPurpose: effectiveCallPurpose/,
       ],
     ];
     for (const [file, pattern] of sites) {

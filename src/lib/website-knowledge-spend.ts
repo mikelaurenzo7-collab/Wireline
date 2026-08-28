@@ -12,7 +12,7 @@ import {
 import { AppError } from "./api-error";
 import {
   createAuditContext,
-  estimateCost,
+  resolveRuntimeCallCost,
   runInAuditContext,
   type RuntimeCallMeta,
 } from "./ai-audit";
@@ -21,6 +21,7 @@ import { WebsiteFetchError } from "./safe-public-text-fetch";
 import { drizzle, log, quotaTracker } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { clearBudgetCache, evaluateSpend, recordDailySpend } from "./spend-guards";
+import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "./ai-usage";
 
 export const WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD = 0.25;
 
@@ -53,20 +54,7 @@ const productionDependencies: SpendDependencies = {
 };
 
 function actualCostUsd(records: RuntimeCallMeta[]): number {
-  return records.reduce(
-    (sum, record) =>
-      sum +
-      estimateCost(
-        {
-          input_tokens: record.input_tokens,
-          output_tokens: record.output_tokens,
-          cache_read_input_tokens: record.cache_read_tokens,
-          cache_creation_input_tokens: record.cache_create_tokens,
-        },
-        record.model,
-      ),
-    0,
-  );
+  return records.reduce((sum, record) => sum + resolveRuntimeCallCost(record).costUsd, 0);
 }
 
 export function websiteKnowledgeSettledCostUsd(
@@ -76,33 +64,62 @@ export function websiteKnowledgeSettledCostUsd(
   return Math.max(actualCostUsd(records), Math.max(0, minimumCostUsd));
 }
 
-async function settleKnownWebsiteKnowledgeSpend(input: {
-  reservation: PlatformCostReservation;
-  records: RuntimeCallMeta[];
-  hostname: string;
-  minimumCostUsd: number;
-}): Promise<void> {
-  const costUsd = websiteKnowledgeSettledCostUsd(input.records, input.minimumCostUsd);
-  if (!(costUsd > 0)) {
-    await commitPlatformCostReservation(input.reservation);
-    return;
-  }
+export function websiteKnowledgeCostDecision(
+  records: RuntimeCallMeta[],
+  minimumCostUsd = 0,
+): { costUsd: number; costBasis: string; conservativeFloorApplied: boolean } {
+  const knownCostUsd = actualCostUsd(records);
+  const conservativeFloorUsd = Math.max(0, minimumCostUsd);
+  const conservativeFloorApplied = conservativeFloorUsd > knownCostUsd;
+  const providerReportedCostCount = records
+    .map(resolveRuntimeCallCost)
+    .filter((decision) => decision.costBasis === "provider_reported").length;
+  const knownCostBasis =
+    records.length === 0
+      ? "no_known_provider_cost"
+      : providerReportedCostCount === records.length
+        ? "provider_reported"
+        : providerReportedCostCount > 0
+          ? "mixed_provider_reported_and_catalog_estimate"
+          : "catalog_estimate";
 
-  const providers = [...new Set(input.records.map((record) => record.provider))];
-  const models = [...new Set(input.records.map((record) => record.model))];
-  const tokenDelta = input.records.reduce(
-    (sum, record) => sum + record.input_tokens + record.output_tokens,
-    0,
-  );
-  const aggregate = input.records.reduce(
+  return {
+    costUsd: Math.max(knownCostUsd, conservativeFloorUsd),
+    costBasis: conservativeFloorApplied
+      ? `${knownCostBasis}_with_conservative_ambiguous_floor`
+      : knownCostBasis,
+    conservativeFloorApplied,
+  };
+}
+
+export function aggregateWebsiteKnowledgeUsage(records: RuntimeCallMeta[]): {
+  tokenDelta: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreateTokens: number;
+  latencyMs: number;
+} {
+  return records.reduce(
     (sum, record) => ({
-      inputTokens: sum.inputTokens + record.input_tokens,
-      outputTokens: sum.outputTokens + record.output_tokens,
-      cacheReadTokens: sum.cacheReadTokens + record.cache_read_tokens,
-      cacheCreateTokens: sum.cacheCreateTokens + record.cache_create_tokens,
-      latencyMs: sum.latencyMs + record.latency_ms,
+      tokenDelta: saturatingUsageTokenSum(
+        sum.tokenDelta,
+        record.input_tokens,
+        record.output_tokens,
+        record.cache_read_tokens,
+        record.cache_create_tokens,
+      ),
+      inputTokens: saturatingUsageTokenSum(sum.inputTokens, record.input_tokens),
+      outputTokens: saturatingUsageTokenSum(sum.outputTokens, record.output_tokens),
+      cacheReadTokens: saturatingUsageTokenSum(sum.cacheReadTokens, record.cache_read_tokens),
+      cacheCreateTokens: saturatingUsageTokenSum(sum.cacheCreateTokens, record.cache_create_tokens),
+      latencyMs: saturatingUsageTokenSum(
+        sum.latencyMs,
+        normalizeUsageTokenCount(record.latency_ms),
+      ),
     }),
     {
+      tokenDelta: 0,
       inputTokens: 0,
       outputTokens: 0,
       cacheReadTokens: 0,
@@ -110,6 +127,21 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
       latencyMs: 0,
     },
   );
+}
+
+async function settleKnownWebsiteKnowledgeSpend(input: {
+  reservation: PlatformCostReservation;
+  records: RuntimeCallMeta[];
+  hostname: string;
+  minimumCostUsd: number;
+}): Promise<void> {
+  const costDecision = websiteKnowledgeCostDecision(input.records, input.minimumCostUsd);
+  const { costUsd } = costDecision;
+
+  const providers = [...new Set(input.records.map((record) => record.provider))];
+  const models = [...new Set(input.records.map((record) => record.model))];
+  const aggregate = aggregateWebsiteKnowledgeUsage(input.records);
+  const { tokenDelta } = aggregate;
 
   const [updated] = await drizzle
     .update(schema.auditLog)
@@ -128,6 +160,8 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
           input.minimumCostUsd > 0 ? "settled_with_ambiguous_floor" : "settled_actual",
         reserved_usd: input.reservation.costUsd,
         ambiguous_provider_attempt_floor_usd: input.minimumCostUsd,
+        cost_basis: costDecision.costBasis,
+        conservative_ambiguous_floor_applied: costDecision.conservativeFloorApplied,
         hostname: input.hostname,
       },
     })

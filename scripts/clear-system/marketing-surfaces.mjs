@@ -109,8 +109,12 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       "desktop entrance must stay split",
     ],
     [
-      /font-size:\s*clamp\(4\.25rem, 7\.15vw, 8\.4rem\)/,
-      "desktop hero must retain editorial scale",
+      /font-size:\s*clamp\(3\.25rem, 5vw, 6\.2rem\)/,
+      "desktop hero must retain the verified horizontal editorial scale",
+    ],
+    [
+      /\.landing-prestige__hero-copy h1 span\s*\{[\s\S]*?white-space:\s*nowrap;/,
+      "desktop hero must preserve its intentional two-line composition",
     ],
     [
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto;/,

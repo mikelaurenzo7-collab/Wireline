@@ -10,16 +10,17 @@ const engine = read("src/lib/action-engine.ts");
 describe("action-engine outbound SMS compliance gate", () => {
   it("routes auto send_text_message through evaluateOutboundDialGate before Twilio send", () => {
     expect(engine).toContain('import { evaluateOutboundDialGate } from "./outbound-dial-gate"');
-    expect(engine).toContain("NON_MARKETING_SMS_ROLES");
+    expect(engine).toContain("classifyUntrustedDirectDial");
+    expect(engine).toContain("sanitizeUntrustedOutboundMetadata");
 
-    const handlerMatch = engine.match(
-      /async function handleSendTextMessage\([\s\S]*?\n\}/,
-    );
+    const handlerMatch = engine.match(/async function handleSendTextMessage\([\s\S]*?\n\}/);
     expect(handlerMatch).not.toBeNull();
     const handler = handlerMatch![0];
 
     expect(handler).toContain("await evaluateOutboundDialGate({");
-    expect(handler).toContain("isMarketingCall");
+    expect(handler).toContain("isMarketingCall: purpose.isMarketingCall");
+    expect(handler).toContain("requireFederalDncScreening: true");
+    expect(handler).toContain("hasExpressWrittenConsent: false");
     expect(handler).toContain("userId");
     expect(handler).toContain("phone");
     expect(handler).toContain("leadId: lead?.id");
@@ -33,10 +34,11 @@ describe("action-engine outbound SMS compliance gate", () => {
     expect(handler).toContain("success: false");
   });
 
-  it("treats non-service agent roles as marketing SMS (fail-closed)", () => {
-    expect(engine).toContain("NON_MARKETING_SMS_ROLES");
+  it("does not let a tenant-configurable agent role mint a non-marketing exemption", () => {
+    expect(engine).not.toContain("NON_MARKETING_SMS_ROLES");
+    expect(engine).not.toContain("schema.agents.role");
     expect(engine).toContain("cleanOutboundSmsPhone");
-    expect(engine).toContain("let isMarketingCall = true");
-    expect(engine).toContain("!NON_MARKETING_SMS_ROLES.has(role)");
+    expect(engine).toContain('callPurpose: "service_or_requested"');
+    expect(engine).toContain("classifyUntrustedDirectDial");
   });
 });

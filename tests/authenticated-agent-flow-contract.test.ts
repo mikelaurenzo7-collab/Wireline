@@ -158,7 +158,6 @@ describe("authenticated Bot flow", () => {
       "Customer Support",
       "Lead Qualifier",
       "Recruiter",
-      "Collections",
       "Property Manager",
       "Personal Assistant",
       "Family Concierge",
@@ -166,6 +165,7 @@ describe("authenticated Bot flow", () => {
     ]) {
       expect(botProduct).toContain(`name: "${phrase}"`);
     }
+    expect(botProduct).not.toContain('name: "Collections"');
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain("BOT_CHANNELS.map");
     expect(createDialog).toContain(
@@ -239,7 +239,7 @@ describe("authenticated Bot flow", () => {
     expect(routes).toContain('voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi"');
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
-    expect(routes).toContain("cleanText(req.body?.firstMessage, 500)");
+    expect(routes).toContain("resolveCreateFirstMessage(req.body?.firstMessage, name)");
     expect(templates).toContain("template.firstMessage");
     expect(deployModal).toContain("firstMessage");
   });

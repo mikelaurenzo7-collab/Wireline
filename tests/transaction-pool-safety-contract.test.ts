@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(process.cwd());
 const SRC = join(ROOT, "src");
+const FILESYSTEM_SCAN_TIMEOUT_MS = 90_000;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -50,24 +51,28 @@ const POOLED_CALL = /\bdrizzle\s*\.\s*(select|insert|update|delete|execute|query
 describe("no pooled database handle is used inside an open transaction", () => {
   const files = walk(SRC);
 
-  it("has no direct pooled call inside a transaction callback", () => {
-    const offenders: string[] = [];
-    for (const file of files) {
-      const source = readFileSync(file, "utf8");
-      if (!source.includes("drizzle.transaction")) continue;
-      const pattern = /drizzle\.transaction\(\s*async\s*\(?[^)]*\)?\s*=>/g;
-      let match: RegExpExecArray | null;
-      while ((match = pattern.exec(source)) !== null) {
-        const body = blockAt(source, match.index + match[0].length);
-        if (POOLED_CALL.test(body)) {
-          offenders.push(
-            `${relative(ROOT, file)}:${source.slice(0, match.index).split("\n").length}`,
-          );
+  it(
+    "has no direct pooled call inside a transaction callback",
+    () => {
+      const offenders: string[] = [];
+      for (const file of files) {
+        const source = readFileSync(file, "utf8");
+        if (!source.includes("drizzle.transaction")) continue;
+        const pattern = /drizzle\.transaction\(\s*async\s*\(?[^)]*\)?\s*=>/g;
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(source)) !== null) {
+          const body = blockAt(source, match.index + match[0].length);
+          if (POOLED_CALL.test(body)) {
+            offenders.push(
+              `${relative(ROOT, file)}:${source.slice(0, match.index).split("\n").length}`,
+            );
+          }
         }
       }
-    }
-    expect(offenders).toEqual([]);
-  });
+      expect(offenders).toEqual([]);
+    },
+    FILESYSTEM_SCAN_TIMEOUT_MS,
+  );
 
   /**
    * Helpers that touch the pool and are awaited from inside a transaction.

@@ -7,10 +7,12 @@ import {
   AGENTMAIL_API_BASE,
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
   AgentMailConnectError,
+  agentmailLocalPart,
   agentmailGrantedScopes,
   deleteAgentMailWebhook,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
+  hasExactAgentMailManagedScope,
   listAgentMailInboxes,
   listAgentMailWebhooks,
   normalizeAgentMailInbox,
@@ -30,6 +32,7 @@ import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
+import { runTenantProviderWorkWithDeletionFence } from "../lib/tenant-provider-deletion-fence";
 
 const router = Router();
 const MANAGED_SCOPE_MARKER = "managed-botbound";
@@ -233,13 +236,20 @@ async function resolveManagedBotInbox(input: {
   apiKey: string;
   agentId: string;
   agentName: string;
+  reservedEmailAddress?: string;
 }): Promise<{ inboxId: string; email: string; usedCustomDomain: boolean }> {
-  const username = managedMailboxUsername(input.agentName, input.agentId);
   const preferredDomain = managedMailboxDomain();
   if (!preferredDomain) {
     throw new AgentMailConnectError("BotBound managed email domain is not ready.");
   }
-  const preferredEmail = `${username}@${preferredDomain}`;
+  const reservedEmailAddress = input.reservedEmailAddress?.trim().toLowerCase();
+  const preferredEmail =
+    reservedEmailAddress ??
+    `${managedMailboxUsername(input.agentName, input.agentId)}@${preferredDomain}`;
+  const username = agentmailLocalPart(preferredEmail);
+  if (!username || !preferredEmail.endsWith(`@${preferredDomain}`)) {
+    throw new AgentMailConnectError("The reserved BotBound mailbox address is invalid.");
+  }
   const existing = await listAgentMailInboxes(input.apiKey);
   const current = existing.find((inbox) => inbox.email === preferredEmail);
   if (current) {
@@ -306,7 +316,7 @@ router.post(
       throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
     }
 
-    const [existingManaged] = await drizzle
+    const agentMailAccounts = await drizzle
       .select({
         id: schema.emailAccounts.id,
         emailAddress: schema.emailAccounts.emailAddress,
@@ -319,84 +329,128 @@ router.post(
           eq(schema.emailAccounts.agentId, agentId),
           eq(schema.emailAccounts.provider, "agentmail"),
         ),
-      )
-      .limit(1);
-    if (existingManaged?.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER)) {
-      if (!existingManaged.emailAddress.toLowerCase().endsWith(`@${requiredDomain}`)) {
-        throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
-      }
-      try {
-        const inbox = await resolveAgentMailInbox(apiKey, existingManaged.emailAddress);
-        await verifyAgentMailCredentials(inbox.email, apiKey);
+      );
+    const existingManaged = agentMailAccounts.find((account) =>
+      hasExactAgentMailManagedScope(account.oauthGrantedScopes),
+    );
+    const provisioned = await runTenantProviderWorkWithDeletionFence({
+      userId,
+      operation: "managed_agentmail_mailbox_provision",
+      // A successful reconciliation/create reached AgentMail. Keep the lease
+      // through its crash horizon so terminal purge cannot erase the only
+      // pointer while an accepted provider or webhook outcome is still
+      // settling. Thrown/ambiguous outcomes are retained by the fence itself.
+      retainOnSuccess: true,
+      perform: async (): Promise<{ status: number; body: Record<string, unknown> }> => {
+        if (existingManaged) {
+          if (!existingManaged.emailAddress.toLowerCase().endsWith(`@${requiredDomain}`)) {
+            throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+          }
+          try {
+            const inbox = await resolveManagedBotInbox({
+              apiKey,
+              agentId,
+              agentName: agent.name || "Bot",
+              reservedEmailAddress: existingManaged.emailAddress,
+            });
+            await verifyAgentMailCredentials(inbox.email, apiKey);
+            await persistAgentMailDeliverySubscription({
+              apiKey,
+              inboxId: inbox.inboxId,
+              accountId: existingManaged.id,
+              userId,
+              emailAddress: existingManaged.emailAddress,
+            });
+          } catch (err) {
+            log.warn("Existing managed Bot mailbox reconciliation failed", {
+              userId,
+              agentId,
+              email: existingManaged.emailAddress,
+              error: getErrorMessage(err),
+            });
+            throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+          }
+          return {
+            status: 200,
+            body: {
+              ok: true,
+              email: existingManaged.emailAddress,
+              provider: "agentmail",
+              managed: true,
+              reused: true,
+            },
+          };
+        }
+
+        // Reserve the exact provider address inside the same deletion lease as
+        // the first external create and every evidence postwrite. If AgentMail
+        // succeeds but verification, parsing, or a later write fails, terminal
+        // erasure and the next retry retain an authoritative pointer.
+        const reservedEmailAddress = `${managedMailboxUsername(
+          agent.name || "Bot",
+          agentId,
+        )}@${requiredDomain}`;
+        const connected = await upsertOwnedEmailAccount({
+          userId,
+          agentId,
+          emailAddress: reservedEmailAddress,
+          provider: "agentmail",
+          accessToken: encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL),
+          refreshToken: null,
+          expiresAt: null,
+          oauthGrantedScopes: `${agentmailGrantedScopes()} ${MANAGED_SCOPE_MARKER}`,
+        });
+        if (!connected) {
+          throw new AppError(409, "EMAIL_ACCOUNT_IN_USE", EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+        }
+
+        let inbox: Awaited<ReturnType<typeof resolveManagedBotInbox>>;
+        try {
+          inbox = await resolveManagedBotInbox({
+            apiKey,
+            agentId,
+            agentName: agent.name || "Bot",
+            reservedEmailAddress,
+          });
+          await verifyAgentMailCredentials(inbox.email, apiKey);
+        } catch (err) {
+          log.warn("Managed Bot mailbox provisioning failed", {
+            userId,
+            agentId,
+            error: getErrorMessage(err),
+          });
+          throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+        }
+
         await persistAgentMailDeliverySubscription({
           apiKey,
           inboxId: inbox.inboxId,
-          accountId: existingManaged.id,
+          accountId: connected.id,
           userId,
-          emailAddress: existingManaged.emailAddress,
+          emailAddress: reservedEmailAddress,
         });
-      } catch (err) {
-        log.warn("Existing managed Bot mailbox reconciliation failed", {
-          userId,
-          agentId,
-          email: existingManaged.emailAddress,
-          error: getErrorMessage(err),
-        });
-        throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
-      }
-      res.json({
-        ok: true,
-        email: existingManaged.emailAddress,
-        provider: "agentmail",
-        managed: true,
-        reused: true,
-      });
-      return;
-    }
 
-    let inbox: Awaited<ReturnType<typeof resolveManagedBotInbox>>;
-    try {
-      inbox = await resolveManagedBotInbox({ apiKey, agentId, agentName: agent.name || "Bot" });
-      await verifyAgentMailCredentials(inbox.email, apiKey);
-    } catch (err) {
-      log.warn("Managed Bot mailbox provisioning failed", {
-        userId,
-        agentId,
-        error: getErrorMessage(err),
-      });
-      throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
-    }
-
-    const connected = await upsertOwnedEmailAccount({
-      userId,
-      agentId,
-      emailAddress: inbox.email,
-      provider: "agentmail",
-      accessToken: encryptSecret(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL),
-      refreshToken: null,
-      expiresAt: null,
-      oauthGrantedScopes: `${agentmailGrantedScopes()} ${MANAGED_SCOPE_MARKER}`,
+        return {
+          status: 201,
+          body: {
+            ok: true,
+            email: reservedEmailAddress,
+            provider: "agentmail",
+            managed: true,
+            custom_domain: inbox.usedCustomDomain,
+            reused: false,
+          },
+        };
+      },
     });
-    if (!connected) {
-      throw new AppError(409, "EMAIL_ACCOUNT_IN_USE", EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
+    if (!provisioned.performed) {
+      throw new AppError(
+        409,
+        "ACCOUNT_DELETION_IN_PROGRESS",
+        "Managed email cannot be provisioned while account deletion is in progress.",
+      );
     }
-
-    await persistAgentMailDeliverySubscription({
-      apiKey,
-      inboxId: inbox.inboxId,
-      accountId: connected.id,
-      userId,
-      emailAddress: inbox.email,
-    });
-
-    res.status(201).json({
-      ok: true,
-      email: inbox.email,
-      provider: "agentmail",
-      managed: true,
-      custom_domain: inbox.usedCustomDomain,
-      reused: false,
-    });
+    res.status(provisioned.result.status).json(provisioned.result.body);
   },
 );
 
@@ -493,7 +547,7 @@ router.post(
           ),
         );
       const legacyAccounts = accounts.filter(
-        (account) => !account.oauthGrantedScopes?.includes(MANAGED_SCOPE_MARKER),
+        (account) => !hasExactAgentMailManagedScope(account.oauthGrantedScopes),
       );
       for (const account of legacyAccounts) {
         if (account.accessToken) {

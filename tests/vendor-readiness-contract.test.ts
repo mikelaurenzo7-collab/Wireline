@@ -18,6 +18,7 @@ describe("vendor readiness contract", () => {
       "twilio_voice_sms",
       "twilio_whatsapp",
       "stripe",
+      "agentmail",
       "resend",
       "live_video",
       "federal_dnc",
@@ -34,6 +35,11 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("/IncomingPhoneNumbers.json?PageSize=50");
     expect(probe).toContain("messaging.twilio.com/v1/Services?PageSize=50");
     expect(probe).toContain("/v1/Channels/Senders?Channel=whatsapp&PageSize=50");
+    expect(probe).toContain("https://api.agentmail.to/v0/inboxes?limit=1");
+    expect(probe).toContain("https://api.agentmail.to/v0/api-keys?limit=100");
+    expect(probe).toContain("https://api.agentmail.to/v0/domains?limit=100");
+    expect(probe).toContain("/v0/domains/${encodeURIComponent(agentmailDomainId)}");
+    expect(probe).toContain("this probe uses read-only GET requests only");
     expect(probe).not.toContain('/call"');
     expect(probe).not.toContain("/chat/completions");
     expect(probe).not.toContain("/Messages.json");

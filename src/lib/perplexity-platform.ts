@@ -60,7 +60,7 @@ const CHAT_MODEL = process.env.PERPLEXITY_MODEL || "sonar";
 
 // Agent + embeddings product contracts are intentionally endpoint-configured.
 // The key alone enables Sonar + Search today; these planes become active only
-// after ops supplies the exact endpoint/model contract provisioned for Wireline.
+// after ops supplies the exact endpoint/model contract provisioned for BotBound.
 const AGENT_URL = process.env.PERPLEXITY_AGENT_API_URL?.trim() || "";
 const AGENT_MODEL = process.env.PERPLEXITY_AGENT_MODEL?.trim() || "";
 const EMBEDDINGS_URL = process.env.PERPLEXITY_EMBEDDINGS_API_URL?.trim() || "";
@@ -227,7 +227,7 @@ async function runSonarResearch(
             {
               role: "system",
               content:
-                "You are Wireline's live public-research tool. Answer in two concise sentences using current public information. Do not guess. Do not expose raw JSON, markdown tables, or internal tooling details.",
+                "You are BotBound's live public-research tool. Answer in two concise sentences using current public information. Do not guess. Do not expose raw JSON, markdown tables, or internal tooling details.",
             },
             { role: "user", content: query },
           ],

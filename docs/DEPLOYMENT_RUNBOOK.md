@@ -121,6 +121,8 @@ Do not ignore a named GitHub job that actually ran and found an application defe
 
 New credential-like variables are blocked in preview by default until `scripts/check-deployment-boundaries.mjs` explicitly classifies them. Never widen a production secret to all targets as a shortcut.
 
+Authenticated Preview QA has one narrow exception. A release branch may receive its own `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and `OWNER_EMAIL` only when `WIRELINE_PREVIEW_DATABASE_ISOLATED=true`, `WIRELINE_LAUNCH_DEMO_MODE=true`, and `WIRELINE_PREVIEW_DATABASE_PROJECT_REF` matches the Supabase identity embedded in the database URL. All five values must be scoped to Preview and the same exact Git branch. The canonical production Supabase project is rejected even if an operator sets the isolation marker. Remove the branch-scoped values and delete the disposable branch after QA.
+
 `XAI_API_KEY` is Production-only. Preview and Development must not inherit the live xAI credential; preview product work must remain provider-free or use a separately named, explicitly classified sandbox variable. Twilio carrier credentials are also Production-only, so Preview cannot place native PSTN calls. `PERPLEXITY_API_KEY` may appear in Preview project configuration but stays inert unless `PERPLEXITY_PREVIEW_API_KEY` is set.
 
 `INTERNAL_JWT_SECRET` is the canonical session-signing secret. Legacy aliases must not coexist with a different value.

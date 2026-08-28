@@ -16,6 +16,10 @@ import {
   STRIPE_PUBLIC_SUPPORT_URL,
   hasBotBoundDescriptor,
 } from "./lib/stripe-account-identity.mjs";
+import {
+  agentMailDomainIdFromList,
+  evaluateAgentMailReadiness,
+} from "./lib/agentmail-readiness.mjs";
 import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const checks = [];
@@ -134,6 +138,10 @@ const twilioAuthorization = twilioConfigured
   : null;
 const gatewayCredential =
   process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim() || "";
+const agentmailCredential = process.env.AGENTMAIL_API_KEY?.trim() || "";
+const agentmailHeaders = agentmailCredential
+  ? { Authorization: `Bearer ${agentmailCredential}` }
+  : null;
 
 const [
   xai,
@@ -153,6 +161,9 @@ const [
   stripeWebhookEndpoints,
   stripeTaxSettings,
   stripeTaxRegistrations,
+  agentmailInboxes,
+  agentmailApiKeys,
+  agentmailDomains,
   resend,
   elevenlabs,
   elevenlabsVoices,
@@ -244,6 +255,15 @@ const [
     ? readJson("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
         headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
       })
+    : null,
+  agentmailHeaders
+    ? readJson("https://api.agentmail.to/v0/inboxes?limit=1", { headers: agentmailHeaders })
+    : null,
+  agentmailHeaders
+    ? readJson("https://api.agentmail.to/v0/api-keys?limit=100", { headers: agentmailHeaders })
+    : null,
+  agentmailHeaders
+    ? readJson("https://api.agentmail.to/v0/domains?limit=100", { headers: agentmailHeaders })
     : null,
   present("RESEND_API_KEY")
     ? readJson("https://api.resend.com/domains", {
@@ -656,6 +676,57 @@ record(
       : null,
     tax_provider_ready: stripeTaxProviderReady,
     tax_ready: stripeTaxReady,
+  },
+);
+
+const agentmailDomainId = agentMailDomainIdFromList(
+  agentmailDomains,
+  process.env.AGENTMAIL_DEFAULT_DOMAIN,
+);
+const agentmailDomainDetail =
+  agentmailHeaders && agentmailDomainId
+    ? await readJson(
+        `https://api.agentmail.to/v0/domains/${encodeURIComponent(agentmailDomainId)}`,
+        { headers: agentmailHeaders },
+      )
+    : null;
+const agentmailReadiness = evaluateAgentMailReadiness({
+  apiKey: agentmailCredential,
+  configuredDomain: process.env.AGENTMAIL_DEFAULT_DOMAIN,
+  inboxesResponse: agentmailInboxes,
+  apiKeysResponse: agentmailApiKeys,
+  domainsResponse: agentmailDomains,
+  domainDetailResponse: agentmailDomainDetail,
+});
+record(
+  "agentmail",
+  true,
+  agentmailReadiness.ready ? "ready" : "blocked",
+  agentmailReadiness.ready
+    ? `AgentMail key accepted with managed-mail permissions and verified domain ${agentmailReadiness.configuredDomain}.`
+    : !agentmailReadiness.configuredDomain
+      ? "AGENTMAIL_DEFAULT_DOMAIN is missing or invalid."
+      : !agentmailReadiness.credentialsAccepted
+        ? "AgentMail key missing, rejected, or inbox inventory response was malformed."
+        : !agentmailReadiness.activeKeyIdentified || !agentmailReadiness.organizationScoped
+          ? "AgentMail could not identify an organization-scoped active API key."
+          : agentmailReadiness.missingPermissions.length > 0
+            ? `AgentMail key is missing required managed-mail permissions: ${agentmailReadiness.missingPermissions.join(", ")}.`
+            : !agentmailReadiness.domainVerified
+              ? `AgentMail domain ${agentmailReadiness.configuredDomain} is missing, unverified, or returned an invalid inventory response.`
+              : "AgentMail readiness could not be verified.",
+  "Maintain an organization-scoped AgentMail key and verified managed custom domain; this probe uses read-only GET requests only.",
+  {
+    configured_domain: agentmailReadiness.configuredDomain,
+    credential_accepted: agentmailReadiness.credentialsAccepted,
+    inbox_inventory_readable: agentmailReadiness.inboxInventoryReadable,
+    key_inventory_readable: agentmailReadiness.keyInventoryReadable,
+    active_key_identified: agentmailReadiness.activeKeyIdentified,
+    organization_scoped: agentmailReadiness.organizationScoped,
+    missing_permissions: agentmailReadiness.missingPermissions,
+    domain_inventory_readable: agentmailReadiness.domainInventoryReadable,
+    domain_listed: agentmailReadiness.domainListed,
+    domain_verified: agentmailReadiness.domainVerified,
   },
 );
 

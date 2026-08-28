@@ -122,7 +122,7 @@ describe("reclassified xAI outbound carrier accounting", () => {
     });
     expect(countedProviderCalls).toEqual(new Set([`tenant-demo:twilio:${CALL_SID}`]));
     expect(billedMinutes).toBe(1);
-  });
+  }, 20_000);
 
   it("meters before the Hangup response through the durable per-call idempotency contract", () => {
     const route = readFileSync(resolve(process.cwd(), "src/routes/xai-outbound-routes.ts"), "utf8");

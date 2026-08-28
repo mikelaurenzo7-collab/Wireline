@@ -5,13 +5,7 @@
 
 .landing-prestige {
   min-height: 100dvh;
-  background:
-    radial-gradient(
-      circle at 18% 18%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 9%, transparent),
-      transparent 28rem
-    ),
-    var(--wireline-color-canvas-default);
+  background: var(--wireline-color-canvas-default);
 }
 
 .landing-prestige__main {
@@ -45,13 +39,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 58% 40% at 30% 52%,
-      color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
-      transparent 72%
-    ),
-    linear-gradient(135deg, color-mix(in srgb, white 2%, transparent), transparent 32%);
+  background: none;
 }
 
 .landing-prestige__hero > * {
@@ -63,6 +51,22 @@
   align-self: start;
 }
 
+.landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+  --bb-lockup-mark: clamp(5.75rem, 7.5vw, 6.75rem);
+  --bb-lockup-wordmark-size: clamp(3.25rem, 4.8vw, 4.25rem);
+  --bb-lockup-gap: clamp(0.12rem, 0.25vw, 0.22rem);
+  --bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem);
+}
+
+.landing-prestige__hero-lockup .bb-lockup__mark {
+  filter: drop-shadow(0 0.8rem 1.5rem rgba(0, 0, 0, 0.3))
+    drop-shadow(0 0 2.1rem color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent));
+}
+
+.landing-prestige__hero-lockup .bb-mark-image {
+  filter: saturate(1.04) contrast(1.025);
+}
+
 .landing-prestige__hero-copy {
   align-self: center;
   max-width: 48rem;
@@ -70,15 +74,19 @@
 
 .landing-prestige__hero-copy h1 {
   display: grid;
-  gap: 0.02em;
+  gap: 0.04em;
   margin: 0;
   color: var(--wireline-color-text-primary);
   font-family: var(--wireline-font-family-display);
-  font-size: clamp(4.25rem, 7.15vw, 8.4rem);
+  font-size: clamp(3.25rem, 5vw, 6.2rem);
   font-weight: 700;
-  letter-spacing: -0.075em;
-  line-height: 0.82;
-  text-wrap: balance;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+  word-spacing: 0.04em;
+}
+
+.landing-prestige__hero-copy h1 span {
+  white-space: nowrap;
 }
 
 .landing-prestige__hero-copy h1 span:last-child {
@@ -532,8 +540,15 @@
 }
 
 @media (max-width: 1100px) {
+  .landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+    --bb-lockup-mark: 4.75rem;
+    --bb-lockup-wordmark-size: 2.75rem;
+    --bb-lockup-gap: 0.14rem;
+    --bb-lockup-overlap: 0.32rem;
+  }
+
   .landing-prestige__hero-copy h1 {
-    font-size: clamp(3.5rem, 7vw, 5.5rem);
+    font-size: clamp(2.8rem, 5.25vw, 4rem);
   }
 
   .landing-prestige__role-grid {
@@ -564,8 +579,15 @@
     border-bottom: 1px solid var(--wireline-color-border-default);
   }
 
+  .landing-prestige .bb-lockup.landing-prestige__hero-lockup {
+    --bb-lockup-mark: clamp(4.25rem, 20vw, 5.25rem);
+    --bb-lockup-wordmark-size: clamp(2.45rem, 10.8vw, 3.1rem);
+    --bb-lockup-gap: clamp(0.1rem, 0.6vw, 0.16rem);
+    --bb-lockup-overlap: clamp(0.25rem, 1.4vw, 0.36rem);
+  }
+
   .landing-prestige__hero-copy h1 {
-    font-size: clamp(2.9rem, 14.5vw, 4.6rem);
+    font-size: clamp(2.2rem, 10.25vw, 3.1rem);
   }
 
   .landing-prestige__desktop-only {

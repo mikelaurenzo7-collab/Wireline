@@ -42,8 +42,7 @@ export function buildPublicHealthPayload(input: {
   // Losing a redundant fallback reduces resilience but does not make the live
   // platform unavailable while both primary voice and reasoning remain usable.
   // A hard outage in either primary execution path is still a platform outage.
-  const primaryOutage =
-    components.voice_runtime === "outage" || components.reasoning === "outage";
+  const primaryOutage = components.voice_runtime === "outage" || components.reasoning === "outage";
   const anyDegradation = Object.values(components).some((level) => level !== "operational");
   const overall: PublicHealthLevel = primaryOutage
     ? "outage"
@@ -148,7 +147,7 @@ export function probeVapiManagedVoice(
 }
 
 /**
- * Check the same OpenAI Responses execution surface used by Wireline's managed
+ * Check the same OpenAI Responses execution surface used by BotBound's managed
  * reasoning runtime. A model-metadata GET can be slow or unavailable while
  * inference is healthy, which makes it a poor public product-health signal.
  *

@@ -3,25 +3,70 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
+import { VisualQaPageMarker, withVisualQaPage } from "../components/VisualQaMarker";
 
-const AgentStudioHome = lazy(() => import("../pages/AgentStudioHome"));
+const AgentStudioHome = lazy(() =>
+  import("../pages/AgentStudioHome").then((module) => withVisualQaPage(module, "studio")),
+);
 const BrowserHandoffBridge = lazy(() => import("../pages/BrowserHandoffBridge"));
-const SettingsPage = lazy(() => import("../pages/SettingsPage"));
-const AdminSettings = lazy(() => import("../components/AdminSettings"));
-const TemplatesPage = lazy(() => import("../pages/TemplatesPage"));
-const KnowledgePage = lazy(() => import("../pages/KnowledgePage"));
-const ConnectionsPage = lazy(() => import("../pages/ConnectionsPage"));
-const SalesforceIntegrationPage = lazy(() => import("../pages/SalesforceIntegrationPage"));
-const PhonePage = lazy(() => import("../pages/PhonePage"));
-const InsightsPage = lazy(() => import("../pages/InsightsPage"));
-const EmailPage = lazy(() => import("../pages/EmailPage"));
-const ApprovalsPage = lazy(() => import("../pages/ApprovalsPage"));
-const ClientAppsPage = lazy(() => import("../pages/ClientAppsPage"));
-const BrowserCommandInstallPage = lazy(() => import("../pages/BrowserCommandInstallPage"));
-const BillingSettings = lazy(() => import("../pages/BillingSettings"));
-const TeamSettings = lazy(() => import("../pages/TeamSettings"));
-const ComplianceCenterPage = lazy(() => import("../pages/ComplianceCenterPage"));
-const CustomizationSettings = lazy(() => import("../pages/CustomizationSettings"));
+const SettingsPage = lazy(() =>
+  import("../pages/SettingsPage").then((module) => withVisualQaPage(module, "settings", "account")),
+);
+const AdminSettings = lazy(() =>
+  import("../components/AdminSettings").then((module) => withVisualQaPage(module, "admin")),
+);
+const TemplatesPage = lazy(() =>
+  import("../pages/TemplatesPage").then((module) => withVisualQaPage(module, "templates")),
+);
+const KnowledgePage = lazy(() =>
+  import("../pages/KnowledgePage").then((module) => withVisualQaPage(module, "knowledge")),
+);
+const ConnectionsPage = lazy(() =>
+  import("../pages/ConnectionsPage").then((module) => withVisualQaPage(module, "connections")),
+);
+const SalesforceIntegrationPage = lazy(() =>
+  import("../pages/SalesforceIntegrationPage").then((module) =>
+    withVisualQaPage(module, "salesforce"),
+  ),
+);
+const PhonePage = lazy(() =>
+  import("../pages/PhonePage").then((module) => withVisualQaPage(module, "phone")),
+);
+const InsightsPage = lazy(() =>
+  import("../pages/InsightsPage").then((module) => withVisualQaPage(module, "insights")),
+);
+const EmailPage = lazy(() =>
+  import("../pages/EmailPage").then((module) => withVisualQaPage(module, "inbox")),
+);
+const ApprovalsPage = lazy(() =>
+  import("../pages/ApprovalsPage").then((module) => withVisualQaPage(module, "approvals")),
+);
+const ClientAppsPage = lazy(() =>
+  import("../pages/ClientAppsPage").then((module) => withVisualQaPage(module, "settings", "apps")),
+);
+const BrowserCommandInstallPage = lazy(() =>
+  import("../pages/BrowserCommandInstallPage").then((module) =>
+    withVisualQaPage(module, "settings", "apps-command"),
+  ),
+);
+const BillingSettings = lazy(() =>
+  import("../pages/BillingSettings").then((module) =>
+    withVisualQaPage(module, "settings", "billing"),
+  ),
+);
+const TeamSettings = lazy(() =>
+  import("../pages/TeamSettings").then((module) => withVisualQaPage(module, "settings", "team")),
+);
+const ComplianceCenterPage = lazy(() =>
+  import("../pages/ComplianceCenterPage").then((module) =>
+    withVisualQaPage(module, "settings", "compliance"),
+  ),
+);
+const CustomizationSettings = lazy(() =>
+  import("../pages/CustomizationSettings").then((module) =>
+    withVisualQaPage(module, "settings", "customization"),
+  ),
+);
 
 const loading = <RouteFallback />;
 
@@ -67,9 +112,11 @@ function AppsToSettingsRedirect({ command = false }: { command?: boolean }) {
 
 function AuthNotFound() {
   return (
-    <WorkspaceShell>
-      <NotFound />
-    </WorkspaceShell>
+    <VisualQaPageMarker page="authenticated-not-found" state="not-found">
+      <WorkspaceShell>
+        <NotFound />
+      </WorkspaceShell>
+    </VisualQaPageMarker>
   );
 }
 

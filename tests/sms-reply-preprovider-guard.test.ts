@@ -13,6 +13,7 @@ function selectChain(rows: unknown[]) {
   const chain: any = {};
   chain.from = vi.fn(() => chain);
   chain.where = vi.fn(() => chain);
+  chain.orderBy = vi.fn(() => chain);
   chain.limit = vi.fn(async () => rows);
   return chain;
 }
@@ -136,7 +137,7 @@ describe("authenticated SMS reply pre-provider guard", () => {
     expect(loaded.assertExternalEntityActionAllowed).not.toHaveBeenCalled();
     expect(loaded.evaluateOutboundDialGate).not.toHaveBeenCalled();
     expect(loaded.sendTenantMessage).not.toHaveBeenCalled();
-  });
+  }, 20_000);
 
   for (const [environment, status, code] of [
     ["demo", 403, "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"],

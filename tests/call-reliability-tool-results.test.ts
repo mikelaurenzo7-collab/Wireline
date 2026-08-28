@@ -11,6 +11,7 @@ describe("live tool reliability classification", () => {
       "The callback was not scheduled because the requested time could not be verified.",
       "That action was already started and may still be processing.",
       "I couldn't record or send the escalation right now.",
+      "I wasn't able to create the support ticket. Tell the caller it could not be recorded and offer another contact channel. Do not promise follow-up.",
     ]) {
       expect(isToolCallFailureResult(result)).toBe(true);
     }

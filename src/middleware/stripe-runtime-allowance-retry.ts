@@ -6,7 +6,7 @@ import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   stripe,
   stripeAvailable,
@@ -26,6 +26,12 @@ import {
   runtimeAllowanceMovementUsd,
   subscriptionDisputeAllowancePortion,
 } from "../lib/stripe-dispute-accounting";
+import {
+  claimStripeEvent,
+  completeStripeEventClaim,
+  releaseStripeEventClaim,
+  type StripeEventClaimOwnership,
+} from "../lib/stripe-event-claim";
 
 /**
  * Stripe can omit the expanded `charge.refunds` list from webhook payloads.
@@ -140,7 +146,7 @@ async function resolveSubscriptionAllowanceContext(
   }
   if (!owner?.userId) {
     throw new Error(
-      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its Wireline owner is unresolved.`,
+      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its BotBound owner is unresolved.`,
     );
   }
 
@@ -280,7 +286,7 @@ async function reverseTopUpDisputeStrict(
   const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
   if (!userId || !(purchasedCreditUsd > 0)) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
     );
   }
 
@@ -375,7 +381,7 @@ async function restoreTopUpDisputeStrict(
   const purchasedCreditUsd = Number(paymentIntent.metadata?.credit_usd);
   if (!userId || !(purchasedCreditUsd > 0)) {
     throw new Error(
-      `Stripe top-up dispute ${dispute.id} is missing Wireline owner or purchased-credit metadata.`,
+      `Stripe top-up dispute ${dispute.id} is missing BotBound owner or purchased-credit metadata.`,
     );
   }
 
@@ -419,17 +425,17 @@ async function claimOrRespondDuplicate(
   event: Stripe.Event,
   res: Response,
   next: NextFunction,
-): Promise<"claimed" | "responded"> {
-  const claimed = await claimStripeEventForPreflight(event);
-  if (claimed === "already_processed") {
+): Promise<StripeEventClaimOwnership | null> {
+  const result = await claimStripeEvent(event.id, event.type);
+  if (result.kind === "already_processed") {
     res.json({ received: true, duplicate: true });
-    return "responded";
+    return null;
   }
-  if (claimed === "in_flight") {
+  if (result.kind === "in_flight") {
     next(AppError.fromHttpStatus(503, "Webhook still processing. Retry."));
-    return "responded";
+    return null;
   }
-  return "claimed";
+  return result.claim;
 }
 
 /**
@@ -504,7 +510,8 @@ export async function stripeRuntimeAllowanceRetryPreflight(
 
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       if (paymentIntent.metadata?.purpose === "credit_topup") return next();
-      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
+      const claim = await claimOrRespondDuplicate(event, res, next);
+      if (!claim) return;
 
       try {
         const reversed = await reverseSubscriptionRuntimeAllowanceForChargeStrict(
@@ -514,25 +521,26 @@ export async function stripeRuntimeAllowanceRetryPreflight(
           undefined,
           event.id,
         );
-        await markStripeEventProcessed(event.id);
+        await completeStripeEventClaim(claim);
         res.json({ received: true, runtime_allowance_reversal: reversed });
       } catch (error) {
-        await releaseStripeEventClaim(event.id);
+        await releaseStripeEventClaim(claim);
         throw error;
       }
       return;
     }
 
     if (event.type === "charge.dispute.created") {
-      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
+      const claim = await claimOrRespondDuplicate(event, res, next);
+      if (!claim) return;
       try {
         // Creation can be a no-funds inquiry. Consume it here so the historical
         // billing route cannot reverse customer balance before Stripe reports
         // an actual withdrawal.
-        await markStripeEventProcessed(event.id);
+        await completeStripeEventClaim(claim);
         res.json({ received: true, dispute_financial_movement: false });
       } catch (error) {
-        await releaseStripeEventClaim(event.id);
+        await releaseStripeEventClaim(claim);
         throw error;
       }
       return;
@@ -544,7 +552,8 @@ export async function stripeRuntimeAllowanceRetryPreflight(
       eventType === "charge.dispute.funds_reinstated"
     ) {
       const eventDispute = event.data.object as Stripe.Dispute;
-      if ((await claimOrRespondDuplicate(event, res, next)) === "responded") return;
+      const claim = await claimOrRespondDuplicate(event, res, next);
+      if (!claim) return;
 
       try {
         const dispute = await retrieveAuthoritativeDispute(eventDispute.id);
@@ -586,14 +595,14 @@ export async function stripeRuntimeAllowanceRetryPreflight(
                   event.id,
                 );
 
-        await markStripeEventProcessed(event.id);
+        await completeStripeEventClaim(claim);
         res.json({
           received: true,
           dispute_financial_movement: direction,
           runtime_balance_mutated: mutated,
         });
       } catch (error) {
-        await releaseStripeEventClaim(event.id);
+        await releaseStripeEventClaim(claim);
         throw error;
       }
       return;
@@ -608,69 +617,4 @@ export async function stripeRuntimeAllowanceRetryPreflight(
     });
     next(AppError.fromHttpStatus(500, "Webhook handler failed"));
   }
-}
-
-type StripeClaimResult = "claimed" | "already_processed" | "in_flight";
-
-async function claimStripeEventForPreflight(event: Stripe.Event): Promise<StripeClaimResult> {
-  try {
-    await drizzle.insert(schema.stripeEvents).values({
-      eventId: event.id,
-      eventType: event.type,
-      status: "processing",
-    });
-    return "claimed";
-  } catch (err: unknown) {
-    const message = getErrorMessage(err);
-    if (!/duplicate key|23505/i.test(message) && (err as { code?: string }).code !== "23505") {
-      return "in_flight";
-    }
-    const [prior] = await drizzle
-      .select({ status: schema.stripeEvents.status, at: schema.stripeEvents.processedAt })
-      .from(schema.stripeEvents)
-      .where(eq(schema.stripeEvents.eventId, event.id))
-      .limit(1);
-    if (prior?.status === "processed") return "already_processed";
-    const abandonedAfterMs = 5 * 60 * 1000;
-    const isProcessing = prior?.status === "processing";
-    const stale = isProcessing && Date.now() - new Date(prior.at ?? 0).getTime() > abandonedAfterMs;
-    if (!isProcessing || !stale) return "in_flight";
-
-    const cutoff = new Date(Date.now() - abandonedAfterMs);
-    const reclaimed = await drizzle
-      .delete(schema.stripeEvents)
-      .where(
-        and(
-          eq(schema.stripeEvents.eventId, event.id),
-          eq(schema.stripeEvents.status, "processing"),
-          lt(schema.stripeEvents.processedAt, cutoff),
-        ),
-      )
-      .returning({ eventId: schema.stripeEvents.eventId });
-    if (reclaimed.length === 0) return "in_flight";
-
-    try {
-      await drizzle.insert(schema.stripeEvents).values({
-        eventId: event.id,
-        eventType: event.type,
-        status: "processing",
-      });
-      return "claimed";
-    } catch {
-      // Another delivery can claim the brief delete/insert gap. It owns the
-      // event; this delivery must return 503 so Stripe retries safely.
-      return "in_flight";
-    }
-  }
-}
-
-async function markStripeEventProcessed(eventId: string): Promise<void> {
-  await drizzle
-    .update(schema.stripeEvents)
-    .set({ status: "processed", processedAt: new Date() })
-    .where(eq(schema.stripeEvents.eventId, eventId));
-}
-
-async function releaseStripeEventClaim(eventId: string): Promise<void> {
-  await drizzle.delete(schema.stripeEvents).where(eq(schema.stripeEvents.eventId, eventId));
 }

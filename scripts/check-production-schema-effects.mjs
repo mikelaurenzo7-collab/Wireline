@@ -118,6 +118,42 @@ function hasPinnedPublicTemporarySearchPath(value) {
   return settings.some((setting) => /^search_path=public,\s*pg_temp$/iu.test(setting.trim()));
 }
 
+function hasAccountOperationLeaseTenantBoundary(value) {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .replace(/[()\s"]/gu, "");
+  return normalized.includes("user_id=") && normalized.includes("wireline_current_user_id");
+}
+
+function isAccountOperationLeaseKindConstraint(value) {
+  const normalized = String(value ?? "")
+    .toLowerCase()
+    .replace(/::text/gu, "")
+    .replace(/[()\s'"]/gu, "");
+  return (
+    normalized === "checkkind=anyarray[billing,provider]" ||
+    normalized === "checkkindinbilling,provider"
+  );
+}
+
+function hasStripeReclaimLeaseSemantics(value) {
+  const definition = String(value ?? "");
+  const hasFifteenMinuteLease =
+    /INTERVAL\s*'15\s+minutes'/iu.test(definition) ||
+    /'00:15:00'\s*::\s*interval/iu.test(definition);
+  return (
+    /IF\s+NEW\.status\s*<>\s*'processing'/iu.test(definition) &&
+    /DELETE\s+FROM\s+public\.wireline_stripe_events/iu.test(definition) &&
+    /event_id\s*=\s*NEW\.event_id/iu.test(definition) &&
+    /status\s*=\s*'processing'/iu.test(definition) &&
+    /processed_at\s+IS\s+NULL/iu.test(definition) &&
+    /processed_at\s*<\s*clock_timestamp\s*\(\s*\)\s*-/iu.test(definition) &&
+    hasFifteenMinuteLease &&
+    !/'00:05:00'\s*::\s*interval/iu.test(definition) &&
+    !/INTERVAL\s*'5\s+minutes'/iu.test(definition)
+  );
+}
+
 function hasXAITenantPolicyBoundary(value) {
   const normalized = String(value ?? "")
     .toLowerCase()
@@ -336,6 +372,8 @@ try {
     xaiPolicyResult,
     xaiFunctionSecurityResult,
     accountEnvironmentPromotionResult,
+    accountOperationLeaseResult,
+    stripeClaimFencingResult,
   ] = await Promise.all([
     pool.query(`
         SELECT
@@ -733,6 +771,192 @@ try {
              ]::oid[]
            )
       `),
+    pool.query(`
+        SELECT
+          target.table_oid IS NOT NULL AS table_exists,
+          table_row.relrowsecurity AS rls_enabled,
+          (
+            SELECT jsonb_object_agg(
+              column_row.column_name,
+              jsonb_build_object(
+                'type', column_row.udt_name,
+                'nullable', column_row.is_nullable,
+                'default', column_row.column_default
+              )
+            )
+              FROM information_schema.columns column_row
+             WHERE column_row.table_schema = 'public'
+               AND column_row.table_name =
+                   'wireline_account_operation_leases'
+          ) AS lease_columns,
+          (
+            SELECT count(*)
+              FROM pg_constraint foreign_key
+             WHERE foreign_key.conrelid = target.table_oid
+               AND foreign_key.contype = 'f'
+               AND foreign_key.confrelid =
+                   to_regclass('public.wireline_users')
+               AND foreign_key.confdeltype = 'c'
+               AND foreign_key.convalidated
+               AND foreign_key.conkey = ARRAY[(
+                 SELECT column_row.attnum
+                   FROM pg_attribute column_row
+                  WHERE column_row.attrelid = target.table_oid
+                    AND column_row.attname = 'user_id'
+               )]::smallint[]
+               AND foreign_key.confkey = ARRAY[(
+                 SELECT column_row.attnum
+                   FROM pg_attribute column_row
+                  WHERE column_row.attrelid =
+                        to_regclass('public.wireline_users')
+                    AND column_row.attname = 'id'
+               )]::smallint[]
+          ) AS exact_user_fk_count,
+          (
+            SELECT count(*)
+              FROM pg_constraint foreign_key
+             WHERE foreign_key.conrelid = target.table_oid
+               AND foreign_key.contype = 'f'
+               AND foreign_key.conkey = ARRAY[(
+                 SELECT column_row.attnum
+                   FROM pg_attribute column_row
+                  WHERE column_row.attrelid = target.table_oid
+                    AND column_row.attname = 'user_id'
+               )]::smallint[]
+          ) AS user_fk_count,
+          (
+            SELECT pg_get_constraintdef(check_constraint.oid, true)
+              FROM pg_constraint check_constraint
+             WHERE check_constraint.conrelid = target.table_oid
+               AND check_constraint.contype = 'c'
+               AND check_constraint.conname =
+                   'wireline_account_operation_leases_kind_check'
+               AND check_constraint.convalidated
+          ) AS kind_check_definition,
+          (
+            SELECT index_state.indisvalid
+              FROM pg_index index_state
+              JOIN pg_class index_row ON index_row.oid = index_state.indexrelid
+             WHERE index_state.indrelid = target.table_oid
+               AND index_row.relname = 'idx_account_operation_leases_active_user'
+          ) AS active_index_valid,
+          (
+            SELECT pg_get_indexdef(index_row.oid)
+              FROM pg_index index_state
+              JOIN pg_class index_row ON index_row.oid = index_state.indexrelid
+             WHERE index_state.indrelid = target.table_oid
+               AND index_row.relname = 'idx_account_operation_leases_active_user'
+          ) AS active_index_definition,
+          policy_row.permissive AS policy_permissive,
+          policy_row.roles AS policy_roles,
+          policy_row.cmd AS policy_command,
+          policy_row.qual AS policy_qual,
+          policy_row.with_check AS policy_with_check,
+          has_table_privilege(
+            'wireline_server', target.table_oid, 'SELECT'
+          ) AS server_select,
+          has_table_privilege(
+            'wireline_server', target.table_oid, 'INSERT'
+          ) AS server_insert,
+          has_table_privilege(
+            'wireline_server', target.table_oid, 'UPDATE'
+          ) AS server_update,
+          has_table_privilege(
+            'wireline_server', target.table_oid, 'DELETE'
+          ) AS server_delete,
+          (
+            has_table_privilege('anon', target.table_oid, 'SELECT') OR
+            has_table_privilege('anon', target.table_oid, 'INSERT') OR
+            has_table_privilege('anon', target.table_oid, 'UPDATE') OR
+            has_table_privilege('anon', target.table_oid, 'DELETE')
+          ) AS anon_dml,
+          (
+            has_table_privilege('authenticated', target.table_oid, 'SELECT') OR
+            has_table_privilege('authenticated', target.table_oid, 'INSERT') OR
+            has_table_privilege('authenticated', target.table_oid, 'UPDATE') OR
+            has_table_privilege('authenticated', target.table_oid, 'DELETE')
+          ) AS authenticated_dml,
+          (
+            has_table_privilege('service_role', target.table_oid, 'SELECT') OR
+            has_table_privilege('service_role', target.table_oid, 'INSERT') OR
+            has_table_privilege('service_role', target.table_oid, 'UPDATE') OR
+            has_table_privilege('service_role', target.table_oid, 'DELETE')
+          ) AS service_dml,
+          NOT EXISTS (
+            SELECT 1
+              FROM aclexplode(
+                COALESCE(
+                  table_row.relacl,
+                  acldefault('r', table_row.relowner)
+                )
+              ) AS table_acl
+             WHERE table_acl.grantee = 0
+               AND table_acl.privilege_type = ANY(
+                 ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']::text[]
+               )
+          ) AS public_dml_revoked
+          FROM (
+            SELECT to_regclass(
+              'public.wireline_account_operation_leases'
+            ) AS table_oid
+          ) AS target
+          LEFT JOIN pg_class table_row ON table_row.oid = target.table_oid
+          LEFT JOIN pg_policies policy_row
+            ON policy_row.schemaname = 'public'
+           AND policy_row.tablename = 'wireline_account_operation_leases'
+           AND policy_row.policyname = 'tenant_isolation'
+      `),
+    pool.query(`
+        SELECT
+          claim_column.udt_name AS claim_token_type,
+          claim_column.is_nullable AS claim_token_nullable,
+          trigger_row.tgenabled AS trigger_enabled,
+          pg_get_triggerdef(trigger_row.oid) AS trigger_definition,
+          trigger_row.tgfoid = target.function_oid AS trigger_function_matches,
+          function_row.prosecdef AS security_definer,
+          function_row.proconfig,
+          function_language.lanname AS function_language,
+          pg_get_function_identity_arguments(function_row.oid)
+            AS identity_arguments,
+          pg_get_function_result(function_row.oid) AS function_result,
+          pg_get_functiondef(function_row.oid) AS function_definition,
+          has_function_privilege(
+            'anon', target.function_oid, 'EXECUTE'
+          ) AS anon_execute,
+          has_function_privilege(
+            'authenticated', target.function_oid, 'EXECUTE'
+          ) AS authenticated_execute,
+          NOT EXISTS (
+            SELECT 1
+              FROM aclexplode(
+                COALESCE(
+                  function_row.proacl,
+                  acldefault('f', function_row.proowner)
+                )
+              ) AS function_acl
+             WHERE function_acl.grantee = 0
+               AND function_acl.privilege_type = 'EXECUTE'
+          ) AS public_execute_revoked
+          FROM (
+            SELECT
+              to_regclass('public.wireline_stripe_events') AS table_oid,
+              to_regprocedure(
+                'public.wireline_reclaim_abandoned_stripe_event_claim()'
+              ) AS function_oid
+          ) AS target
+          LEFT JOIN information_schema.columns claim_column
+            ON claim_column.table_schema = 'public'
+           AND claim_column.table_name = 'wireline_stripe_events'
+           AND claim_column.column_name = 'claim_token'
+          LEFT JOIN pg_trigger trigger_row
+            ON trigger_row.tgrelid = target.table_oid
+           AND trigger_row.tgname =
+               'wireline_reclaim_abandoned_stripe_event_claim_before_insert'
+           AND NOT trigger_row.tgisinternal
+          LEFT JOIN pg_proc function_row ON function_row.oid = target.function_oid
+          LEFT JOIN pg_language function_language
+            ON function_language.oid = function_row.prolang
+      `),
   ]);
 
   const agentIntegrity = agentIntegrityResult.rows[0] ?? {};
@@ -912,6 +1136,120 @@ try {
     Number(subscriptionCascade.competing_user_fks || 0) !== 0
   ) {
     failures.push("subscription_erasure:wrong_user_fk_definition");
+  }
+
+  const accountOperationLease = accountOperationLeaseResult.rows[0] ?? {};
+  if (accountOperationLease.table_exists !== true) {
+    failures.push("account_operation_leases:missing_table");
+  } else {
+    if (accountOperationLease.rls_enabled !== true) {
+      failures.push("account_operation_leases:rls_disabled");
+    }
+    const leaseColumns = accountOperationLease.lease_columns ?? {};
+    const expectedLeaseColumns = {
+      id: { type: "uuid", defaultRequired: true },
+      user_id: { type: "uuid" },
+      kind: { type: "text" },
+      operation: { type: "text" },
+      expires_at: { type: "timestamptz" },
+      created_at: { type: "timestamptz", defaultRequired: true },
+    };
+    for (const [columnName, expectation] of Object.entries(expectedLeaseColumns)) {
+      const column = leaseColumns[columnName];
+      if (
+        !column ||
+        column.type !== expectation.type ||
+        column.nullable !== "NO" ||
+        (expectation.defaultRequired && !column.default)
+      ) {
+        failures.push(`account_operation_leases:wrong_column:${columnName}`);
+      }
+    }
+    if (
+      Number(accountOperationLease.exact_user_fk_count || 0) !== 1 ||
+      Number(accountOperationLease.user_fk_count || 0) !== 1
+    ) {
+      failures.push("account_operation_leases:wrong_user_fk");
+    }
+    if (!isAccountOperationLeaseKindConstraint(accountOperationLease.kind_check_definition)) {
+      failures.push("account_operation_leases:wrong_kind_check");
+    }
+
+    const activeIndexDefinition = String(accountOperationLease.active_index_definition || "");
+    if (
+      accountOperationLease.active_index_valid !== true ||
+      !/ON\s+(?:public\.)?wireline_account_operation_leases\s+USING\s+btree\s*\(\s*user_id\s*,\s*expires_at\s*\)/iu.test(
+        activeIndexDefinition,
+      )
+    ) {
+      failures.push("account_operation_leases:wrong_active_index");
+    }
+
+    if (
+      String(accountOperationLease.policy_permissive).toUpperCase() !== "PERMISSIVE" ||
+      String(accountOperationLease.policy_command).toUpperCase() !== "ALL" ||
+      !sameStringSet(normalizeRoles(accountOperationLease.policy_roles), ["wireline_server"]) ||
+      !hasAccountOperationLeaseTenantBoundary(accountOperationLease.policy_qual) ||
+      !hasAccountOperationLeaseTenantBoundary(accountOperationLease.policy_with_check)
+    ) {
+      failures.push("account_operation_leases:wrong_tenant_policy");
+    }
+
+    if (
+      accountOperationLease.server_select !== true ||
+      accountOperationLease.server_insert !== true ||
+      accountOperationLease.server_update !== true ||
+      accountOperationLease.server_delete !== true ||
+      accountOperationLease.anon_dml !== false ||
+      accountOperationLease.authenticated_dml !== false ||
+      accountOperationLease.service_dml !== false ||
+      accountOperationLease.public_dml_revoked !== true
+    ) {
+      failures.push("account_operation_leases:wrong_table_acl");
+    }
+  }
+
+  const stripeClaimFencing = stripeClaimFencingResult.rows[0] ?? {};
+  if (
+    stripeClaimFencing.claim_token_type !== "uuid" ||
+    stripeClaimFencing.claim_token_nullable !== "YES"
+  ) {
+    failures.push("stripe_claim_fencing:missing_claim_token");
+  }
+
+  const stripeTriggerDefinition = String(stripeClaimFencing.trigger_definition || "");
+  if (
+    stripeClaimFencing.trigger_enabled !== "O" ||
+    stripeClaimFencing.trigger_function_matches !== true ||
+    !/BEFORE\s+INSERT\s+ON\s+(?:public\.)?wireline_stripe_events\s+FOR\s+EACH\s+ROW\s+EXECUTE\s+FUNCTION\s+(?:public\.)?wireline_reclaim_abandoned_stripe_event_claim\(\)/iu.test(
+      stripeTriggerDefinition,
+    )
+  ) {
+    failures.push("stripe_claim_fencing:wrong_reclaim_trigger");
+  }
+
+  if (!stripeClaimFencing.function_definition) {
+    failures.push("stripe_claim_fencing:missing_reclaim_function");
+  } else {
+    if (
+      stripeClaimFencing.security_definer !== false ||
+      String(stripeClaimFencing.function_language).toLowerCase() !== "plpgsql" ||
+      String(stripeClaimFencing.identity_arguments || "") !== "" ||
+      String(stripeClaimFencing.function_result).toLowerCase() !== "trigger" ||
+      !hasPinnedPublicTemporarySearchPath(stripeClaimFencing.proconfig)
+    ) {
+      failures.push("stripe_claim_fencing:wrong_reclaim_function_boundary");
+    }
+    if (!hasStripeReclaimLeaseSemantics(stripeClaimFencing.function_definition)) {
+      failures.push("stripe_claim_fencing:wrong_reclaim_lease_semantics");
+    }
+    if (
+      stripeClaimFencing.anon_execute !== false ||
+      stripeClaimFencing.authenticated_execute !== false ||
+      stripeClaimFencing.public_execute_revoked !== true
+    ) {
+      failures.push("stripe_claim_fencing:wrong_reclaim_function_acl");
+    }
   }
 
   const resolvedCarrierOrphans = resolvedCarrierOrphanResult.rows[0] ?? {};
@@ -1147,7 +1485,7 @@ try {
     process.exitCode = 1;
   } else {
     console.log(
-      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, deleted-user reconciliation, subscription and audit erasure, carrier cleanup, retention configuration safety, runtime-cohesion defaults, de-identified retained xAI bindings, and guarded account-environment promotion are ready.",
+      "Production schema effects verified on the runtime-selected database: Resend feedback semantics, agent/account ownership, auth-token cascades/indexes, deleted-user reconciliation, subscription and audit erasure, account-operation leases, Stripe claim fencing, carrier cleanup, retention configuration safety, runtime-cohesion defaults, de-identified retained xAI bindings, and guarded account-environment promotion are ready.",
     );
   }
 } catch (error) {

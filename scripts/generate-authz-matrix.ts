@@ -425,7 +425,7 @@ function scanFile(
 ): RouteEntry[] {
   if (visited.includes(filePath) || visited.length >= MAX_SUBROUTER_DEPTH) return [];
   const content = fs.readFileSync(filePath, "utf8");
-  const file = path.relative(ROUTES_DIR, filePath);
+  const file = path.relative(ROUTES_DIR, filePath).split(path.sep).join("/");
   const routerAuth =
     inheritedRouterAuth ||
     new RegExp(`router\\.use\\(\\s*(?:${AUTH_MIDDLEWARE.join("|")})`).test(content);

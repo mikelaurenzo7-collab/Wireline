@@ -26,7 +26,6 @@ type TechnicalRole =
   | "customer_service"
   | "scheduler"
   | "lead_qualifier"
-  | "collections"
   | "personal_assistant"
   | "custom";
 
@@ -37,7 +36,6 @@ const TECHNICAL_ROLE_BY_TEMPLATE: Record<TemplateKey, TechnicalRole> = {
   "customer-support": "customer_service",
   "lead-qualifier": "lead_qualifier",
   recruiter: "custom",
-  collections: "collections",
   "property-manager": "custom",
   "personal-assistant": "personal_assistant",
   "family-concierge": "personal_assistant",
@@ -202,7 +200,7 @@ export default function CreateAgentDialog({
               message: [
                 `Role starter: ${selectedTemplate.name}.`,
                 `Conversation direction: ${selectedTemplate.direction}.`,
-                `Available channels: ${BOT_CHANNELS.map((channel) => channel.label).join(", ")}.`,
+                `Configurable channels: ${BOT_CHANNELS.map((channel) => channel.label).join(", ")}.`,
                 `First brief: ${finalBrief}`,
               ].join("\n"),
             }),
@@ -299,6 +297,7 @@ export default function CreateAgentDialog({
     >
       <form
         ref={dialogRef}
+        data-visual-qa-state="create-dialog"
         onSubmit={create}
         onKeyDown={onKeyDown}
         className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden p-0 shadow-2xl"

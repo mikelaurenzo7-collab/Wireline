@@ -109,7 +109,13 @@ test.describe("keyboard accessibility interactions", () => {
     expect(colors.borderWidth).not.toBe("0px");
     expect(colors.border).not.toBe(colors.background);
 
-    await page.getByRole("button", { name: "Continue with Google" }).click();
+    const accountAccess = page.getByRole("region", { name: "Account access" });
+    await accountAccess.getByRole("textbox", { name: "Email" }).fill("qa@example.com");
+    await accountAccess.getByRole("textbox", { name: "Password" }).fill("LaunchReady9!pass");
+    await accountAccess
+      .locator("form")
+      .getByRole("button", { name: "Create Account", exact: true })
+      .click();
     await expect(consent).toBeFocused();
     await expect(consent).toHaveAttribute("aria-invalid", "true");
     await expect(consent).toHaveAttribute("aria-describedby", "auth-terms-error");

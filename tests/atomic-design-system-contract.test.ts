@@ -69,11 +69,11 @@ describe("Atomic Design completion contract", () => {
     const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
 
-    expect(mark).toContain('src="/brand/botbound-app-icon.png"');
+    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
     expect(legacyMark).toContain('from "./BotBoundMark"');
-    expect(renderer).toContain('public/brand/botbound-app-icon.png');
+    expect(renderer).toContain("public/brand/botbound-app-icon.png");
 
     for (const asset of [
       "public/favicon.svg",
@@ -116,6 +116,8 @@ describe("Atomic Design completion contract", () => {
 
   it("keeps the control radius reset in @layer base so rounded-* utilities win", () => {
     const foundation = source("src/styles/foundation.css");
-    expect(foundation).toMatch(/@layer base \{\s*button,\s*input,\s*select,\s*textarea \{[^}]*border-radius: var\(--radius\);/);
+    expect(foundation).toMatch(
+      /@layer base \{\s*button,\s*input,\s*select,\s*textarea \{[^}]*border-radius: var\(--radius\);/,
+    );
   });
 });

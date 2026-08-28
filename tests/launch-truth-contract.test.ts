@@ -133,8 +133,10 @@ describe("launch truth contract", () => {
     expect(accountRoutes).toContain('"/api/account/deletion-status"');
     expect(settings).toContain('authFetch("/api/account/deletion-status"');
     expect(deletionBilling).toContain("cancel_at_period_end: true");
-    expect(deletionBilling).toContain("cancel_at_period_end: false");
-    expect(deletionBilling).toContain("stripe.subscriptions.list");
+    expect(deletionBilling).not.toContain("cancel_at_period_end: false");
+    expect(deletionBilling).not.toContain("resumeRenewalAfterDeletionCancellation");
+    expect(settings).toContain("BotBound did not restart billing automatically");
+    expect(deletionBilling).toContain("stripeClient.subscriptions.list");
     expect(deletionBilling).toContain("DELETION_RENEWAL_MARKER");
     expect(spendRoutes).toContain("maximum_limit_usd");
     expect(spendRoutes).toContain("The provider spend guard is always enabled with a hard cap.");

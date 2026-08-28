@@ -92,6 +92,14 @@ function installTwilioMocks(
   vi.doMock("../src/lib/trial-gate", () => ({
     assertLiveWorkEntitlementForUser: vi.fn(async () => ({ ok: true, status: "active" })),
   }));
+  vi.doMock("../src/lib/tenant-provider-deletion-fence", () => ({
+    runTenantProviderWorkWithDeletionFence: vi.fn(
+      async ({ perform }: { perform: () => Promise<unknown> }) => ({
+        performed: true,
+        result: await perform(),
+      }),
+    ),
+  }));
 
   return { createMessage, reserveRuntimeUsage, refundRuntimeUsage, log };
 }

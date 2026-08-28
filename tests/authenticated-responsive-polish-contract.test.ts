@@ -93,7 +93,7 @@ describe("authenticated responsive polish contract", () => {
     // The selected-line header may share a row when space permits, but it must
     // wrap the action instead of forcing the phone number into a narrow column.
     expect(panel).toContain("flex flex-wrap items-start justify-between gap-3");
-    expect(panel).toMatch(/<h3[^>]*>\{formatPhone\(activeNumber\.phone_number\)\}<\/h3>/);
+    expect(panel).toMatch(/<h3[^>]*>\s*\{formatPhone\(activeNumber\.phone_number\)\}\s*<\/h3>/);
     expect(panel).not.toContain('<div className="flex items-start justify-between gap-4">');
   });
 

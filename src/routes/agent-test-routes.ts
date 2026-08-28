@@ -13,6 +13,10 @@ import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { withAudit } from "../middleware/audit-middleware";
 import { validateBody } from "../lib/api-validation";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "../lib/runtime-template-personality";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 
@@ -53,8 +57,6 @@ router.post(
       const agentId = req.params.id;
       const customerMessage = req.body.content.trim();
       const history = req.body.history as Array<{ role: "customer" | "employee"; content: string }>;
-      if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
-
       const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
         serialQueryBatch([
           tx
@@ -108,6 +110,25 @@ router.post(
 
       const agent = agentRows[0];
       if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
+      const savedPersonality = personalities[0]?.content || "";
+      if (isSavedRuntimeReviewRequired(savedPersonality, agent.role)) {
+        const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
+        const sse = createSseStream(req, res);
+        writeSseBootstrap(sse, { agentId, agentName: agent.name, mode: "customer_test" });
+        const reply = RUNTIME_REVIEW_REQUIRED_RESPONSE;
+        sse.write("reply", { reply, changes: [], toolToggles: [], actions: [] });
+        sse.write("done", {
+          reply,
+          changes: [],
+          toolToggles: [],
+          actions: [],
+          reasoning: "",
+          thinkingDurationMs: 0,
+        });
+        sse.end();
+        return;
+      }
+      if (!isRuntimeAvailable()) throw AppError.fromHttpStatus(503, "AI runtime not configured");
 
       const directiveLines = compactLines(
         directives.map((directive) => directive.content),
@@ -127,9 +148,7 @@ router.post(
         "Reply only as that customer-facing Bot. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
         "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
         "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
-        personalities[0]?.content
-          ? `Tone: ${personalities[0].content}`
-          : "Tone: clear and professional.",
+        savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
         agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",

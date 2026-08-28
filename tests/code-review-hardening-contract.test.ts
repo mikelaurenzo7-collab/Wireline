@@ -273,14 +273,52 @@ describe("code review hardening contracts", () => {
   it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const terms = read("src/components/LegalPage.tsx");
+    const support = read("src/components/SupportPage.tsx");
+    const contact = read("src/components/ContactPage.tsx");
+    const activation = read("src/components/ActivationChecklist.tsx");
+    const demoSeed = read("src/lib/demo-account-seed.ts");
+    const supportPersona = read("src/lib/wireline-agent-personas.ts");
+    const escalation = read("src/lib/wireline-agent-escalation.ts");
+    const founderFleet = read("src/lib/founder-fleet-seed.ts");
+    const founderBootstrap = read("src/lib/founder-bootstrap.ts");
+    const canonicalDemoKnowledge = demoSeed.slice(
+      demoSeed.indexOf("const SAMPLE_KNOWLEDGE"),
+      demoSeed.indexOf("const LEGACY_DEMO_KNOWLEDGE_REPLACEMENTS"),
+    );
     const auth = read("src/components/AuthPortal.tsx");
     const authAccess = read("src/components/auth/AuthAccessPanel.tsx");
     const marketingCss = read("src/styles/public-marketing-polish.css");
     const safeAreaCss = read("src/styles/safe-area-ownership.css");
 
     expect(pricing).toContain("within 30 days of your first paid invoice");
+    expect(pricing).toContain("verify the account and transaction");
     expect(pricing).not.toContain("within 14 days of a first paid charge");
     expect(terms).toContain("30-day money-back guarantee");
+    expect(terms).toContain("verifies the account and transaction");
+    expect(terms).not.toContain("No forms, no escalation");
+    expect(terms).not.toContain("coordinates that registration through Twilio");
+    expect(support).toContain("We'll follow up at");
+    expect(support).not.toContain("within one business day");
+    expect(contact).toContain("We'll follow up at");
+    expect(contact).not.toContain("within one business day");
+    expect(activation).toContain("Define the work, boundaries, and successful outcomes.");
+    expect(activation).not.toContain("one clear customer-facing responsibility");
+    expect(canonicalDemoKnowledge).toContain("within 30 days");
+    expect(canonicalDemoKnowledge).not.toContain("Refund window: 14 days");
+    expect(canonicalDemoKnowledge).toContain("HIPAA and BAA support are not currently available");
+    expect(canonicalDemoKnowledge).not.toContain("we accept SCC, DPA, BAA on request");
+    expect(canonicalDemoKnowledge).not.toContain("Scale customers get a dedicated CSM");
+    expect(demoSeed).toContain("LEGACY_DEMO_KNOWLEDGE_REPLACEMENTS");
+    expect(demoSeed).toContain(".set({ content: replacement.current })");
+    expect(supportPersona).toContain("SUPPORT_REFUND_REVIEW_INSTRUCTION");
+    expect(supportPersona).not.toContain("Auto-issue refunds");
+    expect(escalation).toContain("Every refund request");
+    expect(escalation).toContain('id: "refund_review_required"');
+    expect(escalation).toContain('action: "create_support_ticket"');
+    expect(escalation).not.toContain("SUPPORT_AUTO_REFUND_MAX_USD");
+    expect(founderFleet).toContain("systemPrompt: persona.systemPrompt");
+    expect(founderFleet).toContain("FOUNDER_FLEET_SEED_CONTRACT_VERSION");
+    expect(founderBootstrap).toContain("currentManagedContracts");
     expect(auth).toContain('<AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />');
     expect(authAccess).toContain('const termsId = embedded ? "landing-auth-terms" : "auth-terms";');
     expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");

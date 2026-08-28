@@ -7,7 +7,7 @@ import {
 import { verifyYahooIdToken } from "../lib/yahoo-openid";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
- * Wireline native sign-in OAuth (Google / Microsoft / Yahoo).
+ * BotBound native sign-in OAuth (Google / Microsoft / Yahoo).
  * Mailbox/integration OAuth remains in `src/routes/oauth/`.
  *
  * OAuth-based SIGN-IN (distinct from the mailbox-connect OAuth in oauth/).
@@ -18,7 +18,7 @@ import { verifyYahooIdToken } from "../lib/yahoo-openid";
  *      The browser-binding layer replaces the placeholder state with a signed,
  *      provider-specific value bound to the initiating HttpOnly cookie.
  *   3. Provider sends the browser back to /api/auth/:provider/callback.
- *   4. Wireline verifies provider identity, atomically finds or creates the
+ *   4. BotBound verifies provider identity, atomically finds or creates the
  *      email-keyed user, stores a short-lived browser-bound bridge code, and
  *      redirects to /auth/oauth-complete with the code in the URL fragment.
  *
@@ -299,7 +299,7 @@ async function ensurePendingCodeSchema(): Promise<void> {
           ON wireline_oauth_pending_codes (expires_at)
       `);
       // Lock the table down (see migration 0035). The table now stores only
-      // short-lived bridge metadata (not live Wireline JWTs), but remains
+      // short-lived bridge metadata (not live BotBound session JWTs), but remains
       // sensitive because rows bind browser state to pending sign-in. Enable
       // RLS so it can't be read via the Supabase Data API and strip direct
       // grants. The OAuth callback runs as the postgres base role (table owner
@@ -636,7 +636,7 @@ router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) =
     // nOAuth guard: Graph `mail` is an unverified, admin-settable proxy
     // address. Only attach to an account when the id_token proves the caller
     // owns the email (personal MSA tenant or xms_edov); otherwise refuse so a
-    // spoofed `mail` can never take over a pre-existing Wireline account.
+    // spoofed `mail` can never take over a pre-existing BotBound account.
     const claims = decodeJwtClaims(tokenJson.id_token);
     const email = resolveMicrosoftVerifiedEmail(claims, {
       mail: me.mail,

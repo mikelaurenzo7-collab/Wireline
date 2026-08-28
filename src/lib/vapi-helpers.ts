@@ -62,6 +62,7 @@ const RUNTIME_GUARDRAIL_MARKERS = [
   "\n\n## COMPLIANCE",
   "\n\n## DO-NOT-DISCUSS TOPICS",
   "\n\n## IMMEDIATE-ESCALATION TRIGGERS",
+  "\n\n## ACTION AND RESULT SAFETY",
   "\n\n## VOICE CONSISTENCY",
 ] as const;
 
@@ -88,7 +89,11 @@ export function clampRuntimePromptPreservingTail(
 ): string {
   if (text.length <= max) return text;
 
-  const indices = RUNTIME_GUARDRAIL_MARKERS.map((marker) => text.indexOf(marker))
+  // Runtime guardrails are appended after every tenant-authored prompt block.
+  // Select the final occurrence of each marker so a saved prompt cannot place
+  // an earlier lookalike heading and trick the overflow clamp into preserving
+  // tenant text while dropping the real runtime policy.
+  const indices = RUNTIME_GUARDRAIL_MARKERS.map((marker) => text.lastIndexOf(marker))
     .filter((idx) => idx > 0)
     .sort((a, b) => a - b);
 

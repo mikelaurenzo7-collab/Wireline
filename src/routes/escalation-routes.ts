@@ -199,7 +199,6 @@ router.post("/api/escalate", escalationRateLimiter, async (req: Request, res: Re
     smsDispatched,
     slackPosted,
     tracked: taskPersisted,
-    sla: "4 business hours",
   });
   // Note: the destination remains the fixed platform OWNER_PHONE, never a
   // tenant-derived number. When a tenant resolved, only a null-thread delivery

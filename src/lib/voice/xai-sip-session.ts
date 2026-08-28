@@ -668,7 +668,7 @@ async function runRealtimeSession(
       maxDurationTimer = null;
     }
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-      ws.close(1000, "Wireline transferred");
+      ws.close(1000, "BotBound transferred");
     }
   };
   liveSipSessions.set(input.callId, { notifyTransferred });
@@ -690,7 +690,7 @@ async function runRealtimeSession(
         callId: providerCallId(input.callId),
       });
     });
-    ws.close(1000, "Wireline line suspended");
+    ws.close(1000, "BotBound line suspended");
     return true;
   };
 
@@ -725,7 +725,7 @@ async function runRealtimeSession(
       });
     }
     if (ws.readyState === WebSocket.OPEN) {
-      ws.close(1000, "Wireline caller DNC");
+      ws.close(1000, "BotBound caller DNC");
     }
   };
 
@@ -872,7 +872,7 @@ async function runRealtimeSession(
           },
         });
         if (transferCompleted) {
-          // REFER hands the PSTN call to the destination. Close only Wireline's
+          // REFER hands the PSTN call to the destination. Close only BotBound's
           // realtime session and disarm its watchdog; never hang up the new leg.
           notifyTransferred();
           break;
@@ -1042,7 +1042,7 @@ async function runRealtimeSession(
             });
           });
           if (ws.readyState === WebSocket.OPEN) {
-            ws.close(1000, "Wireline maximum duration reached");
+            ws.close(1000, "BotBound maximum duration reached");
           }
         }, maxDurationMs);
 
