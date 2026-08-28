@@ -30,9 +30,72 @@ function canonicalProductionUrl(name, required = false) {
   }
 }
 
+function canonicalProductionDatabase(name) {
+  const raw = value(name);
+  if (!raw) return;
+  try {
+    const url = new URL(raw);
+    if (!["postgres:", "postgresql:"].includes(url.protocol)) {
+      failures.push(`${name}: production database must use PostgreSQL`);
+      return;
+    }
+
+    const hostname = url.hostname.toLowerCase();
+    const directEndpoint = /^db\.([a-z0-9]{20})\.supabase\.co$/u.exec(hostname);
+    const poolerEndpoint = /^(?:[a-z0-9-]+\.)*pooler\.supabase\.com$/u.test(hostname);
+    let resolvedProjectRef = "";
+
+    if (directEndpoint) {
+      // Direct Supabase endpoints bind project identity in the hostname. Never
+      // let a username label override or mask a different direct host.
+      resolvedProjectRef = directEndpoint[1];
+    } else if (poolerEndpoint) {
+      // Supavisor pooler hosts are shared across projects. Their project
+      // identity is the exact final username label: postgres.<project-ref>.
+      const decodedUsername = decodeURIComponent(url.username).toLowerCase();
+      const poolerUsername = /^[^.]+\.([a-z0-9]{20})$/u.exec(decodedUsername);
+      if (!poolerUsername) {
+        failures.push(
+          `${name}: Supabase pooler username must end with an exact 20-character project ref`,
+        );
+        return;
+      }
+      resolvedProjectRef = poolerUsername[1];
+    } else {
+      failures.push(
+        `${name}: production database must use db.<ref>.supabase.co or a Supabase pooler endpoint`,
+      );
+      return;
+    }
+
+    if (resolvedProjectRef !== CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
+      failures.push(
+        `${name}: production database must identify canonical Supabase project ${CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF}`,
+      );
+    }
+  } catch {
+    failures.push(`${name}: production database must be a valid PostgreSQL URL`);
+  }
+}
+
+function requireProductionCorsOrigins() {
+  const configured = new Set(
+    value("CORS_ORIGINS")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+  for (const requiredOrigin of [CANONICAL_PRODUCTION_ORIGIN, "https://trywireline.com"]) {
+    if (!configured.has(requiredOrigin)) {
+      failures.push(`CORS_ORIGINS: must include ${requiredOrigin}`);
+    }
+  }
+}
+
 if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
   requireValue("DATABASE_POOL_URL", "the serverless transaction pool is missing");
+  requireValue("CORS_ORIGINS", "production browser-origin transition allowlist is missing");
   requireValue("INTERNAL_JWT_SECRET", "production session signing is missing");
   requireValue("WIRELINE_DATA_KEY", "encrypted tenant credentials cannot be stored safely");
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
@@ -60,6 +123,9 @@ if (isProduction) {
   requireValue("CRON_SECRET", "scheduled jobs cannot authenticate");
   canonicalProductionUrl("APP_URL", true);
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true);
+  canonicalProductionDatabase("POSTGRES_URL");
+  canonicalProductionDatabase("DATABASE_POOL_URL");
+  requireProductionCorsOrigins();
   const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
   if (
     managedEmailDomain &&

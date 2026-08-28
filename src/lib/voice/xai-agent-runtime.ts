@@ -2,7 +2,21 @@ import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
+import { RUNTIME_ACTION_SAFETY_BLOCK } from "../agent-runtime";
 import { BOTBOUND_BRAND_NAME } from "../brand";
+import {
+  founderInternalRuntimeAuthorityBoundary,
+  founderInternalRuntimePolicyBlock,
+  resolveFounderInternalRuntimePolicy,
+} from "../founder-internal-runtime-policy";
+import {
+  isSavedRuntimeReviewRequired,
+  isRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_GREETING,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+  resolveRuntimeTemplatePersonality,
+  runtimeTemplateGuidanceBlock,
+} from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
 import { buildRoleToolDefsForTenant } from "../vapi-helpers";
 import {
@@ -34,7 +48,7 @@ const NON_NEGOTIABLE_RUNTIME_RULES = [
 
 export type XAIRealtimeSurface = "browser_test" | "phone";
 
-type AgentRow = {
+export type XAIRealtimeInstructionAgent = {
   id: string;
   userId: string;
   name: string;
@@ -53,7 +67,7 @@ type AgentRow = {
   kpiFocus: string | null;
 };
 
-type TenantRuntimeSettings = {
+export type XAIRealtimeTenantSettings = {
   aiTier: string | null;
   twilioMessagingEnabled: boolean | null;
   twilioLookupEnabled: boolean | null;
@@ -108,23 +122,43 @@ function storedProfile(value: unknown): unknown {
   );
 }
 
-function buildInstructions(input: {
-  agent: AgentRow;
-  tenant: TenantRuntimeSettings;
+export function composeXAIRealtimeInstructions(input: {
+  agent: XAIRealtimeInstructionAgent;
+  tenant: XAIRealtimeTenantSettings;
   personality: string;
   directives: Array<{ content: string | null }>;
   knowledge: Array<{ content: string | null }>;
   surface: XAIRealtimeSurface;
 }) {
-  const customInstructions = trimLine(input.agent.systemPromptOverride, 8_000);
-  const identity = [
-    `You are ${input.agent.name}, a ${BOTBOUND_BRAND_NAME} voice Bot.`,
-    `Your role is ${input.agent.role || "agent"}.`,
-    input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
-    ...NON_NEGOTIABLE_RUNTIME_RULES,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const internalPolicy = resolveFounderInternalRuntimePolicy({
+    agentId: input.agent.id,
+    userId: input.agent.userId,
+    businessVariables: input.agent.businessVariables,
+  });
+  const runtimeTemplate = internalPolicy
+    ? null
+    : resolveRuntimeTemplatePersonality(input.personality);
+  const runtimeReviewRequired = isRuntimeReviewRequired(runtimeTemplate, input.agent.role);
+  const templateGuidance = runtimeTemplateGuidanceBlock(runtimeTemplate, input.agent.role);
+  const customInstructions = internalPolicy
+    ? ""
+    : runtimeReviewRequired
+      ? ""
+      : trimLine(input.agent.systemPromptOverride, 8_000);
+  const identity = runtimeReviewRequired
+    ? [
+        "You are a BotBound Bot in review-required hold mode.",
+        "Do not collect, repeat, infer, or discuss customer, patient, account, balance, insurance, identity, or payment details.",
+        "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
+      ].join("\n")
+    : [
+        `You are ${input.agent.name}, a ${BOTBOUND_BRAND_NAME} voice Bot.`,
+        `Your role is ${input.agent.role || "agent"}.`,
+        input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
+        ...NON_NEGOTIABLE_RUNTIME_RULES,
+      ]
+        .filter(Boolean)
+        .join("\n");
   const compliance = [
     input.agent.complianceMode && input.agent.complianceMode !== "none"
       ? `Compliance mode: ${input.agent.complianceMode}.`
@@ -141,11 +175,17 @@ function buildInstructions(input: {
   ]
     .filter(Boolean)
     .join("\n");
-  const tone =
-    trimLine(input.personality, 1_500) ||
-    (input.agent.personalityVibe ? `Tone: ${input.agent.personalityVibe}.` : "");
-  const surface =
-    input.surface === "browser_test"
+  const tone = internalPolicy
+    ? input.agent.personalityVibe
+      ? `Tone: ${input.agent.personalityVibe}.`
+      : ""
+    : runtimeReviewRequired
+      ? ""
+      : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : input.personality, 1_500) ||
+        (input.agent.personalityVibe ? `Tone: ${input.agent.personalityVibe}.` : "");
+  const surface = runtimeReviewRequired
+    ? ""
+    : input.surface === "browser_test"
       ? "\nPRIVATE TEST: This is a private browser test with the account holder. Search approved Training when needed, but do not send, book, transfer, create records, or change external systems.\n"
       : "\nLIVE PHONE CALL: Use enabled tools only when their action is necessary and the caller supplied the required facts. Treat every tool result as authoritative.\n";
 
@@ -153,11 +193,23 @@ function buildInstructions(input: {
     identity,
     surface,
     customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
+    internalPolicy && !runtimeReviewRequired
+      ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
+      : "",
     tone ? `\nTONE:\n${tone}` : "",
-    input.agent.kpiFocus ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}` : "",
-    compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-    listBlock("OPERATING RULES", input.directives, 24),
-    listBlock("INITIAL APPROVED KNOWLEDGE", input.knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+    templateGuidance ? `\n${templateGuidance}` : "",
+    !runtimeReviewRequired && input.agent.kpiFocus
+      ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
+      : "",
+    !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+    runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
+    runtimeReviewRequired
+      ? ""
+      : listBlock("INITIAL APPROVED KNOWLEDGE", input.knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+    `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
+    internalPolicy && !runtimeReviewRequired
+      ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -218,9 +270,9 @@ async function loadRuntime(agentId: string, userId: string) {
     ]),
   );
 
-  const agent = agents[0] as AgentRow | undefined;
+  const agent = agents[0] as XAIRealtimeInstructionAgent | undefined;
   if (!agent) throw AppError.notFound("Agent not found.");
-  const tenant: TenantRuntimeSettings = settings[0] || {
+  const tenant: XAIRealtimeTenantSettings = settings[0] || {
     aiTier: null,
     twilioMessagingEnabled: false,
     twilioLookupEnabled: false,
@@ -256,6 +308,7 @@ async function resolveTools(
   surface: XAIRealtimeSurface,
   runtime: Awaited<ReturnType<typeof loadRuntime>>,
 ): Promise<readonly ProviderTool[]> {
+  if (isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role)) return [];
   if (surface === "browser_test") {
     return WIRELINE_GROK_REALTIME_TOOLS as readonly ProviderTool[];
   }
@@ -284,8 +337,12 @@ export async function buildXAIRealtimeAgentRuntime(input: {
     storedProfile(runtime.agent.businessVariables),
   );
   const voice = resolveWirelineGrokVoice(runtime.agent.role, profile);
+  const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role);
+  if (reviewRequired) {
+    throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
+  }
   const tools = await resolveTools(input.surface, runtime);
-  const instructions = buildInstructions({
+  const instructions = composeXAIRealtimeInstructions({
     ...runtime,
     surface: input.surface,
   });
@@ -295,7 +352,7 @@ export async function buildXAIRealtimeAgentRuntime(input: {
     voice,
     reasoning: { effort: resolveGrokReasoningEffort() },
     tools,
-    tool_choice: "auto" as "auto" | "none",
+    tool_choice: (reviewRequired ? "none" : "auto") as "auto" | "none",
     turn_detection: {
       type: "server_vad",
       threshold: 0.72,
@@ -327,18 +384,21 @@ export async function buildXAIRealtimeAgentRuntime(input: {
     model: GROK_VOICE_DEFAULT_MODEL,
     profile,
     voice,
-    greeting:
-      runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+    greeting: reviewRequired
+      ? RUNTIME_REVIEW_REQUIRED_GREETING
+      : runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
   };
 }
 
 function tokens(value: string): string[] {
-  return value
-    .toLowerCase()
-    .match(/[\p{L}\p{N}]{2,}/gu)
-    ?.slice(0, 16) || [];
+  return (
+    value
+      .toLowerCase()
+      .match(/[\p{L}\p{N}]{2,}/gu)
+      ?.slice(0, 16) || []
+  );
 }
 
 function excerptAroundMatch(content: string, queryTokens: string[]): string {

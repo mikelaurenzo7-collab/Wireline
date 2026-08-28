@@ -115,8 +115,7 @@ export function SupportPage() {
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Request received</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                We will reply within one business day at{" "}
-                <strong className="text-foreground">{email}</strong>.
+                We'll follow up at <strong className="text-foreground">{email}</strong>.
               </p>
             </div>
           ) : (

@@ -147,7 +147,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Email support@trywireline.com within 30 days of your first paid invoice if the plan was not the right fit.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@trywireline.com within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
   ],
   [
     "What is the Scale plan?",

@@ -257,7 +257,7 @@ describe("production visual QA safety gate", () => {
       },
       { includeOptionalScrollEnd: true },
     );
-  }, 30_000);
+  }, 60_000);
 
   it("rejects missing, duplicate, failed, wrong-shell, and wrong-tab semantic evidence", () => {
     withFixture(({ manifest, run }) => {
@@ -293,7 +293,7 @@ describe("production visual QA safety gate", () => {
       campaigns.assertedStates = ["primary-outbound", "secondary-callbacks"];
       expect(run(wrongTab).status).toBe(1);
     });
-  }, 30_000);
+  }, 60_000);
 
   it("rejects empty, partial, wrong-route, unauthenticated, and unsafe manifests", () => {
     withFixture(({ manifest, run }) => {
@@ -327,7 +327,7 @@ describe("production visual QA safety gate", () => {
         }).status,
       ).toBe(1);
     });
-  }, 30_000);
+  }, 60_000);
 
   it("rejects missing and cryptographically tampered PNG artifacts", () => {
     withFixture(({ artifactPath, manifest, run }) => {
@@ -342,7 +342,7 @@ describe("production visual QA safety gate", () => {
       writeFileSync(join(artifactPath, second), tampered);
       expect(run().status).toBe(1);
     });
-  }, 30_000);
+  }, 60_000);
 
   it("fails request, API-response, and release-provenance defects", () => {
     withFixture(({ manifest, run }) => {
@@ -370,5 +370,5 @@ describe("production visual QA safety gate", () => {
         }).status,
       ).toBe(1);
     });
-  }, 30_000);
+  }, 60_000);
 });

@@ -35,6 +35,10 @@ import {
   vapiTenantWebhookPolicy,
 } from "../lib/vapi-tenant-webhook-policy";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "../lib/runtime-template-personality";
 import { notifyInboundCall } from "../lib/mobile-push";
 import { clearVapiAssistantSpeaking, setVapiAssistantSpeaking } from "../lib/vapi-listen-gate";
 import {
@@ -268,9 +272,23 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
     const agent = { id: webhookAgentId, user_id: routed.agentUserId };
 
     const [agentVoiceRow] = await drizzle
-      .select({ name: schema.agents.name, complianceMode: schema.agents.complianceMode })
+      .select({
+        name: schema.agents.name,
+        role: schema.agents.role,
+        complianceMode: schema.agents.complianceMode,
+        personality: schema.personality.content,
+      })
       .from(schema.agents)
-      .where(eq(schema.agents.id, webhookAgentId))
+      .leftJoin(
+        schema.personality,
+        and(
+          eq(schema.personality.agentId, schema.agents.id),
+          eq(schema.personality.userId, schema.agents.userId),
+        ),
+      )
+      .where(
+        and(eq(schema.agents.id, webhookAgentId), eq(schema.agents.userId, routed.agentUserId)),
+      )
       .limit(1);
     const agentVoiceName = agentVoiceRow?.name ?? undefined;
     const agentComplianceMode = agentVoiceRow?.complianceMode ?? undefined;
@@ -311,6 +329,19 @@ router.post("/api/vapi-webhook", vapiWebhookRateLimiter, async (req, res) => {
       return res.status(environmentAdmission.status).json({
         code: environmentAdmission.code,
         error: environmentAdmission.message,
+      });
+    }
+    if (
+      message?.type === "assistant-request" &&
+      isSavedRuntimeReviewRequired(agentVoiceRow?.personality, agentVoiceRow?.role)
+    ) {
+      log.warn("Regulated Bot line refused before provider assistant creation", {
+        agentId: webhookAgentId,
+        userId: agent.user_id,
+      });
+      return res.status(409).json({
+        code: "RUNTIME_REVIEW_REQUIRED",
+        error: RUNTIME_REVIEW_REQUIRED_RESPONSE,
       });
     }
     let externalEffectsAllowed = environmentAdmission.externalEffectsAllowed;

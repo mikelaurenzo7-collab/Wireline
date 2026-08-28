@@ -5,6 +5,7 @@ export const AGENT_ROLE_IDS = [
   "ceo",
   "sales",
   "customer_service",
+  "ecommerce",
   "scheduler",
   "collections",
   "technical_support",
@@ -57,6 +58,11 @@ const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
     archetype: "Customer Support",
     description: "Handles inbound issues and support",
   },
+  ecommerce: {
+    label: "E-commerce",
+    archetype: "Connected Store Specialist",
+    description: "Handles supported store lookups and checkout workflows through connected tools",
+  },
   scheduler: {
     label: "Scheduler",
     archetype: "Appointment Scheduler",
@@ -65,7 +71,7 @@ const ROLE_META: Record<AgentRoleId, Omit<AgentRoleDefinition, "id">> = {
   collections: {
     label: "Collections",
     archetype: "Collections Specialist",
-    description: "Handles payment follow-ups and recovery",
+    description: "Review-required payment follow-up workflow",
   },
   technical_support: {
     label: "Technical Support",
@@ -120,7 +126,9 @@ export function normalizeAgentRoleId(value: string | undefined | null): AgentRol
 }
 
 export function listAgentRolesForApi(): Array<{ id: string; label: string; archetype: string }> {
-  return AGENT_ROLE_DEFINITIONS.map(({ id, label, archetype }) => ({ id, label, archetype }));
+  return AGENT_ROLE_DEFINITIONS.filter(({ id }) => id !== "collections").map(
+    ({ id, label, archetype }) => ({ id, label, archetype }),
+  );
 }
 
 export function resolveAgentRoleArchetype(role: string | undefined | null): string {

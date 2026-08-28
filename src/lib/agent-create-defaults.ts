@@ -14,6 +14,16 @@ export const PERSONAL_FAST_START_ROLE = "personal_assistant" as const;
 /** Concierge overlay applied when personal Fast Start has no explicit template. */
 export const PERSONAL_DEFAULT_TEMPLATE_ID = "personal-concierge" as const;
 
+const UNRESOLVED_GREETING_TOKEN = /\[[^\]]+\]|\{\{?[^{}]+\}\}?/;
+
+export function resolveCreateFirstMessage(raw: unknown, agentName: string): string {
+  const fallback = `Hi, this is ${agentName}. How can I help?`;
+  if (typeof raw !== "string") return fallback;
+  const value = raw.trim().slice(0, 500);
+  if (!value || UNRESOLVED_GREETING_TOKEN.test(value)) return fallback;
+  return value;
+}
+
 /**
  * Device actions dispatch directly to the Account Holder's phone. They remain
  * explicit opt-ins and are never granted by a web/mobile/template create path.

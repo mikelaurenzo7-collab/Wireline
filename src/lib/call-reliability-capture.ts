@@ -36,6 +36,7 @@ const TOOL_FAILURE_PATTERNS = [
   /\bmessage was not confirmed\b/i,
   /\baction was already started\b/i,
   /\bcouldn['’]t record or send the escalation\b/i,
+  /\bwasn['’]t able to create the support ticket\b/i,
 ] as const;
 
 /** True when a speakable tool result indicates failure, timeout, or uncertain completion. */

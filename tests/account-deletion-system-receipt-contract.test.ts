@@ -56,9 +56,26 @@ describe("terminal account-erasure receipts", () => {
 
   it("uses the user delete as the race-proof tenant-audit erasure boundary", () => {
     const migration = read("drizzle/migrations/0160_cascade_tenant_audit_erasure.sql");
+    const reconciliation = read("drizzle/migrations/0165_reconcile_legacy_audit_orphans.sql");
     const schema = read("src/db/schema-base.ts");
 
+    const legacyCleanup = reconciliation.indexOf("DELETE FROM public.wireline_audit_log AS audit");
+    const orphanAssertion = reconciliation.indexOf("0165 refused:");
+
     expect(migration).toContain("wireline_audit_log_user_id_wireline_users_id_fk");
+    expect(migration).not.toContain("DELETE FROM public.wireline_audit_log AS audit");
+    expect(migration).not.toContain("orphan_preflight");
+    expect(legacyCleanup).toBeGreaterThan(-1);
+    expect(reconciliation).toContain("audit.event_type = 'data.account_deleted'");
+    expect(reconciliation).toContain("audit.action = 'account_deleted'");
+    expect(reconciliation).toContain("audit.resource_type = 'user_account'");
+    expect(reconciliation).toContain("audit.severity = 'critical'");
+    expect(reconciliation).toContain("audit.resource_id = audit.user_id::text");
+    expect(reconciliation).toContain("audit.user_id IS NOT NULL");
+    expect(reconciliation).toContain(
+      "LOCK TABLE public.wireline_audit_log IN SHARE ROW EXCLUSIVE MODE",
+    );
+    expect(orphanAssertion).toBeGreaterThan(legacyCleanup);
     expect(migration).toContain("ON DELETE CASCADE");
     expect(migration).toContain("NOT VALID");
     expect(migration).toContain("VALIDATE CONSTRAINT");

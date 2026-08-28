@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { WirelineWordmark } from "./brand/WirelineBrand";
 import { cn } from "../lib/utils";
 import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
@@ -146,7 +145,7 @@ export default function CookieConsent() {
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[448px] sm:max-w-[calc(100vw-2rem)]",
+            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)]",
             clearMarketingSticky
               ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
               : hasSession
@@ -160,7 +159,7 @@ export default function CookieConsent() {
         >
           <div
             className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5",
+              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
               hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
             )}
           >
@@ -168,17 +167,18 @@ export default function CookieConsent() {
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
-            <div className="flex-1 min-w-0 space-y-3">
+            <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
               <p
                 className={cn(
-                  "leading-relaxed text-foreground/80 lg:flex-1",
+                  "leading-relaxed text-foreground/80 sm:flex-1",
                   hasSession
                     ? "text-[11px] sm:text-[length:var(--wireline-typography-caption-size)]"
                     : "text-[length:var(--wireline-typography-caption-size)]",
                 )}
               >
-                Essential storage keeps <WirelineWordmark inline /> working. Optional measurement
-                stays off until you allow it.{" "}
+                Essential storage keeps{" "}
+                <span className="font-semibold text-foreground">BotBound</span> working. Optional
+                measurement stays off until you allow it.{" "}
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
@@ -193,14 +193,14 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("denied")}
-                    className="min-w-0"
+                    className="min-w-0 sm:min-w-[132px]"
                   >
                     Essential only
                   </ShadButton>
@@ -209,7 +209,7 @@ export default function CookieConsent() {
                     size="sm"
                     disableAnimations
                     onClick={() => saveChoice("granted")}
-                    className="min-w-0"
+                    className="min-w-0 sm:min-w-[148px]"
                   >
                     Allow measurement
                   </ShadButton>

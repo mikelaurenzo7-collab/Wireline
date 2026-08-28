@@ -302,6 +302,44 @@ describe("migration journal integrity contract", () => {
     expect(materializer).not.toContain('TARGET_0061_SHA256 = "PENDING_COMPUTE"');
   });
 
+  it("journals and snapshots Stripe event claim fencing", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 62,
+        tag: "0164_stripe_event_claim_fencing",
+      }),
+    );
+    const snapshot = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0062_snapshot.json"), "utf8"),
+    ) as { tables: Record<string, { columns: Record<string, { type: string }> }> };
+    expect(snapshot.tables["public.wireline_stripe_events"].columns.claim_token.type).toBe("uuid");
+  });
+
+  it("journals and materializes legacy audit-orphan reconciliation as data-only", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 63,
+        tag: "0165_reconcile_legacy_audit_orphans",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0063_PATH");
+    expect(materializer).toContain("buildLegacyAuditOrphanReconciliationSnapshot");
+    expect(materializer).not.toContain('TARGET_0063_SHA256 = "PENDING_COMPUTE"');
+
+    const stripeSnapshot = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0062_snapshot.json"), "utf8"),
+    ) as { id: string; tables: unknown };
+    const reconciliationSnapshot = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0063_snapshot.json"), "utf8"),
+    ) as { prevId: string; tables: unknown };
+    expect(reconciliationSnapshot.prevId).toBe(stripeSnapshot.id);
+    expect(reconciliationSnapshot.tables).toEqual(stripeSnapshot.tables);
+  });
+
   it("documents the split so the journal is not read as the whole history", () => {
     // The operational rule only survives if it is written down where database
     // work starts. docs/DATABASE_OPERATIONS.md is that single source of truth.

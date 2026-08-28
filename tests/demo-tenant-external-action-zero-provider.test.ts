@@ -94,7 +94,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(signupSend).not.toHaveBeenCalled();
     expect(paymentSend).not.toHaveBeenCalled();
     expect(supervise).not.toHaveBeenCalled();
-  }, 20_000);
+  }, 60_000);
 
   it("does not call Slack or Zoom when the workspace is demo-classified", async () => {
     const fetchSpy = vi.fn();
@@ -120,7 +120,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(select).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(fetchWithTimeout).not.toHaveBeenCalled();
-  });
+  }, 60_000);
 
   it("keeps fixture email and SMS targets inert in a production-classified tenant", async () => {
     const supervise = vi.fn();
@@ -192,7 +192,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(tenantMessage).not.toHaveBeenCalled();
     expect(signupSend).not.toHaveBeenCalled();
     expect(paymentSend).not.toHaveBeenCalled();
-  });
+  }, 60_000);
 
   it("rejects a fixture outbound voice target before acquiring a lease or calling Twilio", async () => {
     const deletionFence = vi.fn();

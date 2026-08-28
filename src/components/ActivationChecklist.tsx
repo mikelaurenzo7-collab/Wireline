@@ -46,9 +46,9 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
   return [
     {
       id: "job",
-      label: "Job and greeting defined",
-      actionLabel: "Define job and greeting",
-      detail: "Give the Voice Bot one clear customer-facing responsibility.",
+      label: "Role and greeting set",
+      actionLabel: "Set role and greeting",
+      detail: "Define the work, boundaries, and successful outcomes.",
       done: p.agents > 0,
       href: "/studio?section=setup",
       icon: Sparkles,

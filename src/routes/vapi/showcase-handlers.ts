@@ -185,8 +185,8 @@ export async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? `Got it, I've scheduled that callback for ${callbackDatetime || "the time you mentioned"}.`
-          : "I've noted your callback request. Someone from the team will reach out.",
+          ? `Your callback request was recorded for team review with a preferred time of ${callbackDatetime || "the time you mentioned"}. That time is not yet scheduled or confirmed.`
+          : "I couldn't record the callback request. Please use the Support link at botbound.me for another contact path.",
       });
       continue;
     }
@@ -206,8 +206,8 @@ export async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? "I've flagged this for the team. Someone will be in touch shortly."
-          : "I've noted the request. Someone from our team will reach out to you.",
+          ? "Your request was recorded for team review. I can't promise when someone will respond."
+          : "I couldn't record the review request. Please use the Support link at botbound.me for another contact path.",
       });
       continue;
     }
@@ -226,8 +226,8 @@ export async function handleShowcaseToolCalls(args: {
       results.push({
         toolCallId: toolCall.id,
         result: queued
-          ? "Got it, I've passed that along to the team."
-          : "I've noted that. Someone from the team will follow up.",
+          ? "Your follow-up request was recorded for team review."
+          : "I couldn't record the follow-up request. Please use the Support link at botbound.me for another contact path.",
       });
       continue;
     }
@@ -247,7 +247,7 @@ export async function handleShowcaseToolCalls(args: {
         toolCallId: toolCall.id,
         result: queued
           ? "Great, I've captured your details for the team."
-          : "I've noted your information.",
+          : "I couldn't record those details. Please use the Support link at botbound.me for another contact path.",
       });
       continue;
     }

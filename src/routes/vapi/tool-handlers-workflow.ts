@@ -111,7 +111,7 @@ export async function handleWorkflowToolCall(
       return {
         toolCallId,
         result:
-          "I wasn't able to create the ticket right now. I've noted the issue and someone from the team will follow up.",
+          "I wasn't able to create the support ticket. Tell the caller it could not be recorded and offer another contact channel. Do not promise follow-up.",
       };
     }
   }

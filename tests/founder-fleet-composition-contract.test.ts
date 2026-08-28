@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  EXPECTED_FOUNDER_FLEET_AGENT_COUNT,
+  EXPECTED_FOUNDER_PERSONA_COUNT,
   FOUNDER_FLEET_TEAMS,
   FOUNDER_FLEET_TEMPLATES,
+  founderFleetSeedNeedsRefresh,
   knowledgeForRole,
+  personalityForTemplate,
   wirelinePlanFacts,
 } from "../src/lib/founder-fleet-seed";
 import { plansForClient } from "../src/lib/plan-catalog";
@@ -16,6 +20,48 @@ import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
  * against the seed's real output rather than source reads.
  */
 describe("founder fleet composition", () => {
+  it("retries when only the internal personas completed the current seed contract", () => {
+    const baseState = {
+      totalAgents: EXPECTED_FOUNDER_FLEET_AGENT_COUNT,
+      businessAgents: EXPECTED_FOUNDER_FLEET_AGENT_COUNT - 1,
+      personalAgents: 1,
+    };
+
+    expect(
+      founderFleetSeedNeedsRefresh({
+        ...baseState,
+        currentManagedContracts: EXPECTED_FOUNDER_PERSONA_COUNT,
+      }),
+    ).toBe(true);
+    expect(
+      founderFleetSeedNeedsRefresh({
+        ...baseState,
+        currentManagedContracts: EXPECTED_FOUNDER_FLEET_AGENT_COUNT,
+      }),
+    ).toBe(false);
+  });
+
+  it("persists the exact internal persona policy into each live founder Bot", () => {
+    for (const persona of Object.values(WIRELINE_PERSONAS)) {
+      const persisted = personalityForTemplate({
+        role: persona.role,
+        systemPrompt: persona.systemPrompt,
+      });
+      expect(persisted).toContain(persona.systemPrompt);
+      expect(persisted).toContain("CHAT MODE (operator workspace)");
+    }
+
+    const supportPrompt = WIRELINE_PERSONAS.support.systemPrompt;
+    expect(supportPrompt).toContain("use create_support_ticket");
+    expect(supportPrompt).not.toMatch(/auto-issue|within 24 hours/i);
+
+    const allPrompts = Object.values(WIRELINE_PERSONAS)
+      .map((persona) => persona.systemPrompt)
+      .join("\n");
+    expect(allPrompts).toContain("We do not currently claim HIPAA compliance or offer BAA support");
+    expect(allPrompts).not.toMatch(/HIPAA mode|SOC 2 Type 2 in progress|never train models/i);
+  });
+
   it("keeps every business agent serving Wireline, not a demo vertical", () => {
     // The roster previously carried vertical role-play (a real-estate closer
     // asking about "listings", an insurance desk asking for a "policy number").

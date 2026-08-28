@@ -174,7 +174,9 @@ describe("double-pass launch honesty", () => {
     const privacy = read("src/components/PrivacyPolicyPage.tsx");
     expect(terms).toContain("Mobile contact information and SMS opt-in records are not sold or");
     expect(terms).toContain("Carriers are not liable");
-    expect(terms).toContain("coordinates that registration through Twilio");
+    expect(terms).toContain("You are responsible for accurate");
+    expect(terms).toContain("BotBound may request proof or disable");
+    expect(terms).not.toContain("coordinates that registration through Twilio");
     expect(terms).not.toContain("as the Communications Service Provider");
     expect(privacy).toContain("Mobile contact information and SMS opt-in records are not sold or");
   });

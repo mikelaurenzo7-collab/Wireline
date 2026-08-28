@@ -78,7 +78,7 @@ export const OPS_CHANNEL_EMPTY = {
     ],
   },
   fleetRail: {
-    title: "No agents yet",
+    title: "No Bots yet",
     actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   fleetAgents: {
@@ -125,7 +125,7 @@ export const OPS_CHANNEL_EMPTY = {
     ],
   },
   training: {
-    title: "No agents to train yet",
+    title: "No Bots to train yet",
     actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   integrations: {
@@ -134,7 +134,7 @@ export const OPS_CHANNEL_EMPTY = {
   audit: {
     title: "Audit trail is quiet",
     actions: [
-      { label: "Deploy an agent", to: "/studio?create=1", primary: true },
+      { label: "Deploy a Bot", to: "/studio?create=1", primary: true },
       { label: "Open Activity", to: "/insights" },
     ],
   },

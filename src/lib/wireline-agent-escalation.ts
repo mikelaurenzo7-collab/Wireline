@@ -1,11 +1,10 @@
 /**
- * Wireline platform-internal agent escalation engine.
+ * BotBound founder-fleet escalation policy and backtesting helper.
  *
- * This module governs WHEN our own customer-facing AI agents (Wireline
- * Reception, Wireline Sales, Wireline Support) escalate to a human —
- * specifically the platform owner (Mike). It is intentionally a typed,
- * declarative ruleset so the answers to "why did this transfer happen?"
- * are auditable + testable, not buried in prompt text.
+ * This typed ruleset models the desired decision for replay, review, and
+ * regression tests. It is NOT a production turn dispatcher. Live agents act
+ * from their preserved persona policy and enabled tools; production side
+ * effects occur only when a real tool handler confirms them.
  *
  * Design principles:
  *   1. DEFAULT IS `ai_handles`. We do not bother Mike on ambiguity. The
@@ -18,6 +17,7 @@
  *        - transfer_to_owner   (live transfer to Mike's cell, immediate)
  *        - send_sms_to_owner   (async ping — Mike calls back when free)
  *        - send_email_to_owner (queued for next-day batch review)
+ *        - create_support_ticket (durable queue for authorized review)
  *      Choosing the right one is the rule author's job — not a
  *      universal "transfer everything" reflex.
  *   4. EACH RULE OWNS THE CALLER-FACING LINE the agent says before
@@ -34,10 +34,9 @@
 export type Sentiment = "positive" | "neutral" | "negative" | "frustrated";
 
 /**
- * Conversation state we evaluate rules against. Populated by the runtime
- * (typically from the Vapi message stream) and passed to every rule's
- * trigger function. Keep this surface small + serializable so rules can
- * be replayed against historical transcripts for backtesting.
+ * Serializable conversation state supplied by tests or a backtesting caller.
+ * Keep this surface small so historical transcripts can be replayed without
+ * implying that this helper is wired into the live call-turn runtime.
  */
 export interface ConversationState {
   /** Concatenation of every user utterance so far (lowercased). */
@@ -68,7 +67,11 @@ export type WirelinePersonaId =
   "reception" | "sales" | "support" | "technical" | "onboarding" | "success";
 
 export type EscalationAction =
-  "transfer_to_owner" | "send_sms_to_owner" | "send_email_to_owner" | "ai_handles";
+  | "transfer_to_owner"
+  | "send_sms_to_owner"
+  | "send_email_to_owner"
+  | "create_support_ticket"
+  | "ai_handles";
 
 export interface EscalationRule {
   /** Stable identifier — referenced in tests + analytics. */
@@ -77,11 +80,11 @@ export interface EscalationRule {
   priority: number;
   /** Pure predicate over state — must not mutate anything. */
   trigger: (state: ConversationState) => boolean;
-  /** What we DO when the rule fires. */
+  /** Recommended action for policy review/backtesting. */
   action: EscalationAction;
   /**
-   * What the agent says to the caller before the action runs. Voice-
-   * optimized: short sentences, contractions, no markdown.
+   * Candidate pre-action copy for policy review. Voice-optimized: short
+   * sentences, contractions, no markdown.
    */
   message_to_caller: string;
   /** Plain-English reason for analytics/debug. Not spoken. */
@@ -89,9 +92,8 @@ export interface EscalationRule {
 }
 
 /**
- * The decision returned by `evaluateEscalation`. Even when no rule
- * fires we return a typed shape so the caller can log the "we handled
- * this" path uniformly.
+ * The modeled decision returned by `evaluateEscalation`. Even when no rule
+ * fires, backtests receive one typed shape for uniform analysis.
  */
 export interface EscalationDecision {
   rule_id: string | null;
@@ -116,34 +118,21 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "how to clone a voice",
   "vertical fit questions (does this work for [industry])",
   "Free Builder tier questions (build/test one agent free, no card, no time limit)",
-  "password reset link",
-  "receipt or invoice resend",
-  "cancellation (confirms + emails Mike a record, no live transfer)",
-  "demo booking via Calendly",
+  "password-reset guidance; use create_support_ticket for authorized follow-up",
+  "receipt or invoice guidance; use create_support_ticket for authorized resend",
+  "cancellation guidance; capture the request with create_support_ticket and never claim completion",
+  "demo scheduling when a supported calendar connection is configured",
   "showcase audio trigger ('can I hear it')",
   "competitor comparison (factual, no disparagement)",
-  "data security questions (SOC 2 in progress, HIPAA mode, encryption)",
+  "data security questions (current trust posture, encryption, and healthcare restrictions)",
   "what BotBound is + what problem it solves",
   "where we're based",
   "do we have a free trial",
   "how much does it cost",
 ]);
 
-/**
- * Discount authority granted to the Sales persona. Annual-commit first-
- * time customers can be offered up to 10% off without escalation — this
- * lets Sales close deals without paging Mike for every price negotiation.
- * Anything above triggers the standard "let me have our founder reach
- * out" hot-lead path.
- */
-export const SALES_AUTO_DISCOUNT_MAX_PERCENT = 10;
-
-/**
- * Refund authority granted to the Support persona. Refunds at or below
- * this threshold are issued automatically; above it triggers the queued
- * email review path (NOT a live transfer — Mike batches these).
- */
-export const SUPPORT_AUTO_REFUND_MAX_USD = 50;
+export const SUPPORT_REFUND_REVIEW_INSTRUCTION =
+  "Every refund request: capture the invoice details and use create_support_ticket to queue an authorized billing review. Tell the caller the billing team will review it and follow up. Never issue, approve, or promise a refund from the conversation alone.";
 
 /**
  * Keyword sets used by multiple rules. Pulled out so we can exhaustively
@@ -191,6 +180,27 @@ export const LEGAL_THREAT_KEYWORDS = Object.freeze([
   "suspend my account",
 ] as const);
 
+export const REFUND_REQUEST_PHRASES = Object.freeze([
+  "want a refund",
+  "need a refund",
+  "would like a refund",
+  "refund this",
+  "refund that",
+  "refund my",
+  "refund the",
+  "want my money back",
+  "want the money back",
+  "need my money back",
+  "need the money back",
+  "would like my money back",
+  "give me my money back",
+  "get my money back",
+  "reverse this charge",
+  "reverse that charge",
+  "reverse my charge",
+  "reverse the charge",
+] as const);
+
 function containsAny(haystack: string, needles: readonly string[]): boolean {
   // Word-boundary-ish matching: we lowercase + check substring. Phrases
   // ("real person") are matched as substrings; single tokens ("human")
@@ -210,6 +220,12 @@ function containsAny(haystack: string, needles: readonly string[]): boolean {
   return false;
 }
 
+export function hasRefundRequest(state: ConversationState): boolean {
+  if (state.requestedRefundAmount !== null) return true;
+  const refundContext = `${state.latestUtterance} ${state.transcript}`.toLowerCase();
+  return containsAny(refundContext, REFUND_REQUEST_PHRASES);
+}
+
 /**
  * The canonical Wireline rule set. ORDER MATTERS — lower priority wins.
  * Priorities are spaced by 10s so we have room to insert new rules
@@ -224,10 +240,10 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     action: "transfer_to_owner",
     // Legal / data-deletion / suspension are the ONE case where we go
     // all-three (transfer + sms + email). The rule itself emits
-    // transfer_to_owner; the runtime layer reads the rationale and
-    // mirrors the alert to the other channels.
+    // transfer_to_owner. A future dispatcher must explicitly implement any
+    // mirrored channels; this policy helper performs no side effects.
     message_to_caller:
-      "I hear you, and I want to get this exactly right. Let me connect you straight to our founder so he can handle this personally.",
+      "I hear you, and I want to get this exactly right. I'll check the configured human handoff now.",
     rationale:
       "Legal/regulatory keyword detected. Transfer live, mirror to SMS + email (all three channels) per the escalation matrix.",
   },
@@ -236,7 +252,7 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     priority: 20,
     trigger: (s) => containsAny(s.transcript, HUMAN_REQUEST_KEYWORDS),
     action: "transfer_to_owner",
-    message_to_caller: "Absolutely. Let me get a human on the line for you right now. One moment.",
+    message_to_caller: "Absolutely. I'll check the configured human handoff now.",
     rationale: "Caller explicitly asked for a human/supervisor/manager.",
   },
   {
@@ -245,25 +261,23 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     trigger: (s) => s.iDontUnderstandCount >= 3,
     action: "transfer_to_owner",
     message_to_caller:
-      "I'm sorry I'm not catching this. Let me get a human on the line who can help you faster.",
+      "I'm sorry I'm not catching this. I'll check the configured human handoff now.",
     rationale: "Caller said 'I don't understand' 3+ times. We're not landing.",
   },
 
-  // --- 40s: financial-threshold escalations ---------------------------
+  // --- 40s: billing-authority escalations -----------------------------
   {
-    id: "refund_above_threshold",
+    id: "refund_review_required",
     priority: 40,
-    trigger: (s) =>
-      s.persona === "support" &&
-      s.requestedRefundAmount !== null &&
-      s.requestedRefundAmount > SUPPORT_AUTO_REFUND_MAX_USD,
-    action: "send_email_to_owner",
-    // Critically: NOT a live transfer. We capture the reason + commit to
-    // a 24-hour follow-up. Mike processes these in batch overnight so a
-    // refund request never wakes him up.
+    trigger: (s) => s.persona === "support" && hasRefundRequest(s),
+    action: "create_support_ticket",
+    // Refunds are financial mutations. The Bot captures the request and routes
+    // it to an authorized billing operator; it never promises or performs the
+    // money movement from a conversation alone.
     message_to_caller:
-      "Got it. I'll have our team review this and follow up within 24 hours. You'll hear back from us at the number you called from.",
-    rationale: `Refund request above auto-issue threshold ($${SUPPORT_AUTO_REFUND_MAX_USD}). Queue for Mike's batch review. No live transfer.`,
+      "Got it. I'll check the billing review workflow now. The team will need to verify the account and invoice before deciding.",
+    rationale:
+      "Every refund request requires authorized billing review. Queue it without claiming approval or completion.",
   },
 
   // --- 50s: prospect-quality signals ----------------------------------
@@ -273,7 +287,7 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     trigger: (s) => s.persona === "sales" && containsAny(s.transcript, ENTERPRISE_KEYWORDS),
     action: "send_sms_to_owner",
     message_to_caller:
-      "This sounds like exactly the kind of conversation our founder Mike loves. Let me have him call you back in about ten minutes. He handles all enterprise inquiries personally.",
+      "This sounds like a conversation our founder should review. I'll check the configured owner-notification workflow now.",
     rationale: "Enterprise-tier signal detected on a sales call. Mike wants the warm handoff.",
   },
 
@@ -294,7 +308,7 @@ export const WIRELINE_ESCALATION_RULES: readonly EscalationRule[] = Object.freez
     },
     action: "send_sms_to_owner",
     message_to_caller:
-      "I can tell this hasn't been smooth, and I'm sorry. Let me have our founder personally call you back so we get this right. He'll reach out within the hour.",
+      "I can tell this hasn't been smooth, and I'm sorry. I'll check the configured owner-notification workflow now.",
     rationale: "Two consecutive frustrated turns detected. Empathy + Mike callback.",
   },
 ]);

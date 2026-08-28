@@ -20,6 +20,7 @@ import { LEAD_STATUS } from "../lib/outbound-status";
 import { decryptSecret } from "../lib/secret-vault";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
+import { isSavedRuntimeReviewRequired } from "../lib/runtime-template-personality";
 import {
   getNativeXAIPhoneStatus,
   provisionNativeXAIPhone,
@@ -88,6 +89,7 @@ type XAIIncomingWebhook = {
 type AgentContext = {
   businessName: string | null;
   complianceMode: string | null;
+  reviewRequired: boolean;
 };
 
 type XAIInboundEnvironmentDependencies = {
@@ -192,9 +194,18 @@ async function resolveAgentContext(binding: XAIPhoneBinding): Promise<AgentConte
     .select({
       businessName: schema.settings.businessName,
       complianceMode: schema.agents.complianceMode,
+      role: schema.agents.role,
+      personality: schema.personality.content,
     })
     .from(schema.agents)
     .leftJoin(schema.settings, eq(schema.settings.userId, schema.agents.userId))
+    .leftJoin(
+      schema.personality,
+      and(
+        eq(schema.personality.agentId, schema.agents.id),
+        eq(schema.personality.userId, schema.agents.userId),
+      ),
+    )
     .where(and(eq(schema.agents.id, binding.agentId), eq(schema.agents.userId, binding.userId)))
     .limit(1);
   if (!agentContext) {
@@ -204,7 +215,11 @@ async function resolveAgentContext(binding: XAIPhoneBinding): Promise<AgentConte
     });
     throw AppError.serviceUnavailable("This phone line is not ready for native voice.");
   }
-  return agentContext;
+  return {
+    businessName: agentContext.businessName,
+    complianceMode: agentContext.complianceMode,
+    reviewRequired: isSavedRuntimeReviewRequired(agentContext.personality, agentContext.role),
+  };
 }
 
 async function resolveOutboundSession(input: {
@@ -373,6 +388,23 @@ router.post(
       throw AppError.unauthorized("Invalid xAI webhook signature.");
     }
 
+    const agentContext = await resolveAgentContext(binding);
+    if (agentContext.reviewRequired) {
+      await hangupXAISipCall(callId).catch((error) => {
+        log.warn("Regulated xAI call could not be synchronously hung up", {
+          bindingId: binding.id,
+          callIdSuffix: callId.slice(-8),
+          error: error instanceof Error ? error.message : String(error),
+        });
+      });
+      log.warn("Regulated xAI binding rejected before session admission", {
+        bindingId: binding.id,
+        calledSuffix: phoneSuffixForLog(calledNumber),
+      });
+      res.status(202).json({ received: true, handled: false });
+      return;
+    }
+
     const productionEnvironment = await enforceXAIInboundProductionEnvironment({
       userId: binding.userId,
       callId,
@@ -384,7 +416,6 @@ router.post(
       return;
     }
 
-    const agentContext = await resolveAgentContext(binding);
     const outboundToken = sipHeader(payload, XAI_OUTBOUND_SIP_TOKEN_HEADER);
     const sessionInput = outboundToken
       ? await resolveOutboundSession({

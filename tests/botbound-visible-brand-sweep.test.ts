@@ -4,6 +4,7 @@ import { globSync } from "glob";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
+const FILESYSTEM_SCAN_TIMEOUT_MS = 90_000;
 
 function read(path: string) {
   return readFileSync(resolve(root, path), "utf8");
@@ -47,7 +48,6 @@ const compatibilityLinePatterns = [
   /legacyName:\s*"Wireline"/,
   /command@wireline\.com/,
   /https:\/\/github\.com\/mikelaurenzo7-collab\/Wireline/,
-  /trywireline\.com/i,
 ] as const;
 
 function withoutStableHeaderTokens(line: string): string {
@@ -117,20 +117,33 @@ describe("BotBound visible-brand sweep", () => {
     ).toEqual([]);
   });
 
-  it("does not leak the retired standalone Wireline customer name through web, native, static, API, or delivered text", () => {
-    const files = customerSurfacePatterns
-      .flatMap((pattern) => globSync(pattern, { cwd: root }))
-      .map((file) => file.replaceAll("\\", "/"))
-      .filter((file) => !/\.(?:test|spec)\.(?:ts|tsx)$/.test(file))
-      .filter((file, index, all) => all.indexOf(file) === index)
-      .sort();
-    const leaks = files.flatMap(visibleWirelineLeaks);
-
+  it("does not let a legacy-domain token hide retired display copy on the same line", () => {
     expect(
-      leaks,
-      `Customer-visible BotBound surfaces still contain the retired standalone Wireline name:\n${leaks.join("\n")}`,
-    ).toEqual([]);
+      visibleWirelineLeaksInSource(
+        "synthetic.ts",
+        'const support = "support@trywireline.com"; const title = "Wireline Support";',
+      ),
+    ).toHaveLength(1);
   });
+
+  it(
+    "does not leak the retired standalone Wireline customer name through web, native, static, API, or delivered text",
+    () => {
+      const files = customerSurfacePatterns
+        .flatMap((pattern) => globSync(pattern, { cwd: root }))
+        .map((file) => file.replaceAll("\\", "/"))
+        .filter((file) => !/\.(?:test|spec)\.(?:ts|tsx)$/.test(file))
+        .filter((file, index, all) => all.indexOf(file) === index)
+        .sort();
+      const leaks = files.flatMap(visibleWirelineLeaks);
+
+      expect(
+        leaks,
+        `Customer-visible BotBound surfaces still contain the retired standalone Wireline name:\n${leaks.join("\n")}`,
+      ).toEqual([]);
+    },
+    FILESYSTEM_SCAN_TIMEOUT_MS,
+  );
 
   it("keeps technical compatibility identifiers explicit while requiring customer billing names to be BotBound", () => {
     const brand = read("src/lib/brand.ts");

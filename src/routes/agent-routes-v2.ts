@@ -20,7 +20,17 @@ import {
   normalizeEnabledTools,
   type AgentToolName,
 } from "../lib/agent-capabilities";
-import { resolveCreateEnabledTools, resolveCreatePersonality } from "../lib/agent-create-defaults";
+import {
+  resolveCreateEnabledTools,
+  resolveCreateFirstMessage,
+  resolveCreatePersonality,
+} from "../lib/agent-create-defaults";
+import {
+  agentRoleLaunchReviewMessage,
+  isAgentRoleLaunchReviewRequired,
+  isTemplateLaunchReviewRequired,
+  templateLaunchReviewMessage,
+} from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
@@ -52,6 +62,7 @@ import {
   resolveAgentRoleArchetype,
   validateAgentRoleForCreate,
 } from "../lib/agent-role-definitions";
+import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 
 const router = Router();
 
@@ -123,6 +134,23 @@ function normalizeExtraction(value: unknown): ExtractedConfig {
 
 async function persistExtraction(agentId: string, userId: string, extraction: ExtractedConfig) {
   await drizzle.transaction(async (tx) => {
+    if (extraction.personality) {
+      await tx.execute(
+        sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${userId} FOR UPDATE`,
+      );
+      const [current] = await tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
+        .limit(1);
+      if (removesRegulatedTemplateProvenance(current?.content, extraction.personality)) {
+        throw new AppError(
+          409,
+          "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
+          "This review-required Bot's regulated template marker cannot be removed through Training extraction.",
+        );
+      }
+    }
     if (extraction.directives.length) {
       await tx.insert(schema.directives).values(
         extraction.directives.map((item) => ({
@@ -323,6 +351,9 @@ router.post(
     const roleError = validateAgentRoleForCreate(rawRole);
     if (roleError) throw new AppError(400, "UNKNOWN_AGENT_ROLE", roleError);
     const role = canonicalizeAgentRoleForCreate(rawRole);
+    if (isAgentRoleLaunchReviewRequired(role)) {
+      throw new AppError(409, "ROLE_REVIEW_REQUIRED", agentRoleLaunchReviewMessage(role));
+    }
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
     // Quick Deploy sends a curated pick as voice_id; anything outside the
@@ -331,9 +362,11 @@ router.post(
     // Template deploys carry the template's channel, opening line, and
     // personality overlay; plain Fast Start creates keep the defaults.
     const channel = req.body?.channel === "email" ? "email" : "voice";
-    const firstMessage =
-      cleanText(req.body?.firstMessage, 500) || `Hi, this is ${name}. How can I help?`;
+    const firstMessage = resolveCreateFirstMessage(req.body?.firstMessage, name);
     const templateId = cleanText(req.body?.templateId, 80);
+    if (isTemplateLaunchReviewRequired(templateId)) {
+      throw new AppError(409, "TEMPLATE_REVIEW_REQUIRED", templateLaunchReviewMessage(templateId));
+    }
     // Always seed a real personality. Fast Start used to leave personal agents
     // with a one-line tone from the client; Studio Set up then overwrote it with
     // role-ready copy. Templates still win when templateId is present.
@@ -588,13 +621,35 @@ router.post(
       throw AppError.fromHttpStatus(400, "Content must start with replacePrefix");
     }
     if (type === "personality") {
-      await drizzle
-        .insert(schema.personality)
-        .values({ agentId: req.params.id, userId: req.user.id, content })
-        .onConflictDoUpdate({
-          target: schema.personality.agentId,
-          set: { userId: req.user.id, content },
-        });
+      await drizzle.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${req.params.id} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
+        );
+        const [current] = await tx
+          .select({ content: schema.personality.content })
+          .from(schema.personality)
+          .where(
+            and(
+              eq(schema.personality.agentId, req.params.id),
+              eq(schema.personality.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (removesRegulatedTemplateProvenance(current?.content, content)) {
+          throw new AppError(
+            409,
+            "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
+            "This review-required Bot's regulated template marker cannot be removed.",
+          );
+        }
+        await tx
+          .insert(schema.personality)
+          .values({ agentId: req.params.id, userId: req.user.id, content })
+          .onConflictDoUpdate({
+            target: schema.personality.agentId,
+            set: { userId: req.user.id, content },
+          });
+      });
     } else if (type === "directive") {
       if (isPrefixReplace) {
         await drizzle.transaction(async (tx: typeof drizzle) => {

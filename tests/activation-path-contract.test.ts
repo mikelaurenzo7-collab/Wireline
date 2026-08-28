@@ -32,9 +32,10 @@ describe("activation path contract", () => {
     expect(firstRun).toContain("Browse Templates");
     expect(firstRun).toContain('to="/studio?create=1"');
     expect(firstRun).toContain('to="/templates"');
-    expect(studio).toContain("Start With One Job");
+    expect(studio).toContain("Build Your Bot");
+    expect(studio).not.toMatch(/one (?:job|task)/i);
     expect(studio).toContain("Choose a role starter or make it entirely custom");
-    expect(studio).toContain('to={createHref()}');
+    expect(studio).toContain("to={createHref()}");
     expect(`${overview}\n${firstRun}\n${studio}`).not.toMatch(
       /posture=|personalAgents|businessAgents|dayGreeting/,
     );
@@ -73,7 +74,9 @@ describe("activation path contract", () => {
     expect(wizard).toContain('value === "train"');
     expect(wizard).toContain('value === "wire"');
     expect(wizard).toContain('value === "test"');
-    expect(wizard).toContain('const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]');
+    expect(wizard).toContain(
+      'const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]',
+    );
     expect(wizard).toContain("onTestCompleted");
     expect(wizard).toContain('event: "test_call_completed"');
     expect(wizard).toContain('result: "assistant_response_completed"');

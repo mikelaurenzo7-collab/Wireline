@@ -14,6 +14,9 @@ import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
 import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
+import { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
+
+export { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
 
 export const ALL_AGENT_TOOLS: AgentToolName[] = [...AGENT_TOOL_NAME_VALUES];
 
@@ -57,6 +60,7 @@ export interface AssistantAgentTemplate {
   emailSignature?: string;
   websiteUrl?: string;
   wirelinePersonaId?: WirelinePersonaId;
+  systemPrompt?: string;
   isBusinessAgent?: boolean;
 }
 
@@ -201,6 +205,24 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
 /** Minimum agents after a full founder seed (6 personas + specialty roster). */
 export const EXPECTED_FOUNDER_FLEET_AGENT_COUNT =
   Object.keys(WIRELINE_PERSONAS).length + FOUNDER_FLEET_TEMPLATES.length;
+export const EXPECTED_FOUNDER_PERSONA_COUNT = Object.keys(WIRELINE_PERSONAS).length;
+
+export interface FounderFleetSeedState {
+  totalAgents: number;
+  businessAgents: number;
+  personalAgents: number;
+  currentManagedContracts: number;
+}
+
+/** A partial contract migration must retry until every managed founder agent is current. */
+export function founderFleetSeedNeedsRefresh(state: FounderFleetSeedState): boolean {
+  return !(
+    state.totalAgents >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT &&
+    state.businessAgents > 0 &&
+    state.personalAgents > 0 &&
+    state.currentManagedContracts >= EXPECTED_FOUNDER_FLEET_AGENT_COUNT
+  );
+}
 
 /**
  * Live plan facts for the agents that sell BotBound.
@@ -295,12 +317,15 @@ function personaTeam(personaId: WirelinePersonaId): FounderFleetTeam {
   return "front_door";
 }
 
-function personalityForRole(role: string): string {
-  const key = role in ROLE_PERSONALITY_TEMPLATES ? role : "customer_service";
-  return (
-    (ROLE_PERSONALITY_TEMPLATES[key as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
-      ROLE_PERSONALITY_TEMPLATES.customer_service) + CHAT_COLLABORATOR_OVERLAY
-  );
+export function personalityForTemplate(
+  template: Pick<AssistantAgentTemplate, "role" | "systemPrompt">,
+): string {
+  const key = template.role in ROLE_PERSONALITY_TEMPLATES ? template.role : "customer_service";
+  const roleTemplate =
+    ROLE_PERSONALITY_TEMPLATES[key as keyof typeof ROLE_PERSONALITY_TEMPLATES] ||
+    ROLE_PERSONALITY_TEMPLATES.customer_service;
+  const basePrompt = template.systemPrompt?.trim() || roleTemplate;
+  return basePrompt + CHAT_COLLABORATOR_OVERLAY;
 }
 
 /**
@@ -495,10 +520,16 @@ async function upsertAgent(
     ? {
         wireline_internal: true,
         wireline_persona_id: template.wirelinePersonaId,
+        founder_seed_contract_version: FOUNDER_FLEET_SEED_CONTRACT_VERSION,
         team: template.team,
         provisioned_at: new Date().toISOString(),
       }
-    : { founder_fleet_seed: true, team: template.team, seeded_at: new Date().toISOString() };
+    : {
+        founder_fleet_seed: true,
+        founder_seed_contract_version: FOUNDER_FLEET_SEED_CONTRACT_VERSION,
+        team: template.team,
+        seeded_at: new Date().toISOString(),
+      };
 
   const voiceId = pickRotatedVoiceId(voiceIndex);
   const values = {
@@ -534,7 +565,7 @@ async function upsertAgent(
     report.agentsCreated++;
   }
 
-  await upsertPersonality(agentId, userId, personalityForRole(template.role));
+  await upsertPersonality(agentId, userId, personalityForTemplate(template));
   await seedTrainingArtifacts(agentId, userId, template.role, report);
   report.agentIds.push(agentId);
   return agentId;
@@ -568,6 +599,7 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
         archetype: "Receptionist",
         firstMessage: persona.firstMessage,
         wirelinePersonaId: persona.id,
+        systemPrompt: persona.systemPrompt,
         team: personaTeam(persona.id),
         personalityVibe:
           persona.id === "sales" || persona.id === "onboarding"

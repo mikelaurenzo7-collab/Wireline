@@ -114,7 +114,7 @@ const SECTIONS = [
     icon: BugPlay,
     title: "Responsible disclosure",
     items: [
-      "Found a vulnerability? Email security@trywireline.com with details; we aim to acknowledge reports within one business day.",
+      "Found a vulnerability? Email security@trywireline.com with details.",
       "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
       "Please do not test exploits against tenant data; use your own Free Builder account.",
     ],
@@ -182,7 +182,8 @@ const TRUST_PACK_SECTIONS = [
     items: [
       "Production voice: Twilio for PSTN and xAI Direct SIP Speech-to-Speech for live phone conversation. OpenAI provides managed structured inference plus Studio and ChatGPT browser realtime. ElevenLabs is managed text-to-speech and authorized private voices. Vapi is optional rollback and public-showcase PSTN only.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
-      "Data plane: Supabase Postgres (US-East today). Email: Resend. Rate limits: Upstash Redis.",
+      "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis.",
+      "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",
       "Provider credentials and routing stay server-side. BotBound owns the customer-facing experience while this Trust Center names key subprocessors for transparency.",
     ],
   },

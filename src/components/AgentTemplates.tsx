@@ -39,7 +39,7 @@ import { Skeleton } from "./ui/shadcn/Skeleton";
 // Template definitions — unlocked starting points, not plan locks.
 // ────────────────────────────────────────────────────────────────────────────
 
-const AGENT_TEMPLATES = [
+export const AGENT_TEMPLATES = [
   // === SALES & REVENUE ===
   {
     id: "sales-sdr",
@@ -53,7 +53,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Most popular",
     firstMessage:
-      "Hi, this is Alex from [Company]. I saw you were interested in [Product]. Got 2 minutes to see if we'd be a fit?",
+      "Hi, I'm following up because you showed interest in what we offer. Is now a good time for two quick questions?",
   },
   {
     id: "sales-closer",
@@ -67,7 +67,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hey [Name], following up on our conversation. Happy to answer any final questions and get you started today.",
+      "Hi, I'm following up on your recent conversation with our team. What would help you decide on the next step?",
   },
   {
     id: "lead-qualifier-inbound",
@@ -95,7 +95,7 @@ const AGENT_TEMPLATES = [
     icon: Headphones,
     accent: BRAND.colors.primary,
     badge: null,
-    firstMessage: "Thank you for calling support. I'm your agent. How can I help you today?",
+    firstMessage: "Thank you for calling support. I'm here to help. What can I take care of?",
   },
   {
     id: "support-email",
@@ -116,13 +116,14 @@ const AGENT_TEMPLATES = [
     id: "scheduler-medical",
     category: "Scheduling",
     name: "Medical Office Scheduler",
-    description:
-      "Books patient appointments, handles cancellations, sends reminders, and follows a careful healthcare communication style.",
+    description: "Coordinates appointment scheduling for approved healthcare deployments.",
     role: "scheduler",
     channel: "voice" as const,
     icon: Calendar,
     accent: BRAND.colors.primary,
-    badge: "Healthcare",
+    badge: "Restricted",
+    selfServeRestriction:
+      "Self-serve deployment is unavailable. Healthcare use requires a signed BAA and an approved BotBound configuration.",
     firstMessage:
       "Hello, thank you for calling. I can help schedule or reschedule your appointment. What works best for you?",
   },
@@ -138,7 +139,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Welcome to [Salon Name]! I can help book an appointment or answer questions about services.",
+      "Thanks for calling. I can help with service questions or find an appointment time. What do you need today?",
   },
   {
     id: "scheduler-realestate",
@@ -152,7 +153,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Real Estate",
     firstMessage:
-      "Hi! I'm calling about [Property Address]. Are you still interested in scheduling a showing?",
+      "Hi, I'm following up about a property you asked about. Would you like to review details or request a showing time?",
   },
   // === COLLECTIONS & FINANCE ===
   {
@@ -160,28 +161,32 @@ const AGENT_TEMPLATES = [
     category: "Collections & Finance",
     name: "Soft Collections: Payment Reminders",
     description:
-      "Friendly payment reminder calls with empathy. Offers payment plans and avoids escalation.",
+      "Payment-reminder workflows with empathy-first guardrails. Requires legal review before deployment.",
     role: "collections",
     channel: "voice" as const,
     icon: DollarSign,
     accent: BRAND.colors.outlineVariant,
-    badge: null,
+    badge: "Legal review required",
+    selfServeRestriction:
+      "Self-serve deployment is unavailable. Payment-reminder use requires legal review and an approved jurisdiction-specific BotBound configuration.",
     firstMessage:
-      "Hi [Name], this is a friendly reminder about an outstanding balance on your account. I'd love to help you resolve this today.",
+      "This payment-reminder workflow is unavailable until its legal and account review is complete.",
   },
   {
     id: "collections-hard",
     category: "Collections & Finance",
     name: "Hard Collections: Recovery",
     description:
-      "Direct payment recovery calls. Compliant with FDCPA guidelines. Structured call flow with objection handling.",
+      "Direct payment recovery workflows with FDCPA-aware guardrails. Requires legal review before deployment.",
     role: "collections",
     channel: "voice" as const,
     icon: Shield,
     accent: BRAND.colors.outlineVariant,
-    badge: "FDCPA compliant",
+    badge: "Legal review required",
+    selfServeRestriction:
+      "Self-serve deployment is unavailable. Debt-recovery use requires legal review and an approved jurisdiction-specific BotBound configuration.",
     firstMessage:
-      "This is an important call regarding your account. To protect your credit, I need to speak with you or an authorized representative today.",
+      "This debt-recovery workflow is unavailable until its legal and account review is complete.",
   },
   // === MARKETING ===
   {
@@ -196,7 +201,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hi [Name], it's been a while! I'm reaching out with something special for our loyal customers. Do you have 60 seconds?",
+      "Hi, I'm reaching out because you've worked with us before. Is now a good time for a brief update?",
   },
   {
     id: "marketing-survey",
@@ -210,36 +215,36 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: null,
     firstMessage:
-      "Hi! I'm calling on behalf of [Company]. We'd love your feedback on your recent experience. This takes under 2 minutes.",
+      "Hi, I'm calling to ask about your recent experience. Would you be open to a quick feedback survey?",
   },
   // === E-COMMERCE ===
   {
     id: "ecommerce-support",
     category: "E-commerce",
-    name: "Shopify / Square Support",
+    name: "Connected Store Support",
     description:
-      "Handles 'Where is my order?', returns, inventory questions, address changes, and discount codes, connected to your live store.",
+      "With Shopify or Square connected, looks up orders, customers, and inventory. Store actions depend on the provider and enabled tools.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Headphones,
     accent: BRAND.colors.onSurfaceMuted,
-    badge: "Shopify · Square",
+    badge: "Shopify or Square",
     firstMessage:
-      "Thanks for calling! I can help with order status, returns, or anything about your purchase. What can I look into for you?",
+      "Thanks for calling! I can help look up your order, purchase history, or current inventory. What can I check for you?",
   },
   {
     id: "ecommerce-phone-order",
     category: "E-commerce",
     name: "Phone Order Agent",
     description:
-      "Takes orders over the phone, builds draft orders, applies discounts, sends payment links, and handles address corrections, all live.",
+      "Creates Square payment links or Shopify draft-order checkout links when the matching provider is connected.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Receipt,
     accent: BRAND.colors.onSurfaceMuted,
     badge: "Phone sales",
     firstMessage:
-      "Hi, welcome to our store! I can help you place an order right over the phone. What are you looking for today?",
+      "Hi, welcome to our store! I can help find the right item and send a secure checkout link. What are you looking for today?",
   },
   // === EVERYDAY & LIFESTYLE ===
   // These are role starters in the same Bot workspace, not a separate product.
@@ -254,7 +259,7 @@ const AGENT_TEMPLATES = [
     icon: User,
     accent: BRAND.colors.primary,
     badge: "Everyday · most versatile",
-    firstMessage: "Hi, this is [Your Name]'s agent. How can I help you today?",
+    firstMessage: "Hi, you've reached the line. How can I help today?",
   },
   {
     id: "personal-screener",
@@ -267,8 +272,7 @@ const AGENT_TEMPLATES = [
     icon: PhoneIncoming,
     accent: BRAND.colors.primary,
     badge: "Everyday · inbound",
-    firstMessage:
-      "Hi, you've reached [Your Name]'s line. I'm their agent. Can I take a quick message or let them know what this is about?",
+    firstMessage: "Hi, you've reached the line. Can I take a message or ask what this is about?",
   },
   {
     id: "personal-errand",
@@ -282,7 +286,7 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Everyday · outbound",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name]. They asked me to [book / reschedule / confirm] [appointment type]. Is now a good time?",
+      "Hi, I'm calling with the account holder's permission about an appointment request. Is now a good time?",
   },
   {
     id: "personal-negotiator",
@@ -296,11 +300,19 @@ const AGENT_TEMPLATES = [
     accent: BRAND.colors.primary,
     badge: "Everyday · saves money",
     firstMessage:
-      "Hi, I'm calling on behalf of [Your Name], account [Account #]. They've asked me to discuss their current plan and pricing.",
+      "Hi, I'm calling with the account holder's permission to ask about their current plan and pricing.",
   },
 ] as const;
 
 type Template = (typeof AGENT_TEMPLATES)[number];
+
+export function getTemplateSelfServeRestriction(template: Template): string | null {
+  return "selfServeRestriction" in template ? template.selfServeRestriction : null;
+}
+
+export function isTemplateSelfServeAvailable(template: Template): boolean {
+  return getTemplateSelfServeRestriction(template) === null;
+}
 
 const CATEGORIES = [
   "All",
@@ -366,6 +378,8 @@ function TemplateCard({
   const [previewOpen, setPreviewOpen] = useState(false);
   const Icon = template.icon;
   const alreadyDeployed = deployedCount > 0;
+  const selfServeRestriction = getTemplateSelfServeRestriction(template);
+  const selfServeAvailable = selfServeRestriction === null;
 
   return (
     <motion.article
@@ -373,13 +387,13 @@ function TemplateCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      whileHover={{ y: -2 }}
+      whileHover={selfServeAvailable ? { y: -2 } : undefined}
       className={cn(
         "relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
         previewOpen ? "border-primary/20 shadow-md shadow-primary/8" : "shadow-sm",
       )}
       data-accent={template.accent}
-      aria-label={`${template.name} template`}
+      aria-label={`${template.name} template${selfServeAvailable ? "" : ", self-serve deployment unavailable"}`}
       onMouseEnter={() => setPreviewOpen(true)}
       onMouseLeave={() => setPreviewOpen(false)}
       onFocus={() => setPreviewOpen(true)}
@@ -438,6 +452,11 @@ function TemplateCard({
             {template.name}
           </h3>
           <p className="text-xs text-foreground/70 leading-relaxed mt-1">{template.description}</p>
+          {selfServeRestriction ? (
+            <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-foreground/60">
+              {selfServeRestriction}
+            </p>
+          ) : null}
         </div>
 
         <AnimatePresence>
@@ -464,12 +483,20 @@ function TemplateCard({
           disableAnimations
           variant="default"
           onClick={() => onDeploy(template)}
-          disabled={deploying}
+          disabled={deploying || !selfServeAvailable}
           className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-normal flex items-center justify-center gap-2 shadow-sm"
-          aria-label={`${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`}
+          aria-label={
+            selfServeAvailable
+              ? `${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`
+              : `${template.name} requires review before deployment`
+          }
         >
           {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}
-          {alreadyDeployed ? "Use again" : "Use template"}
+          {selfServeAvailable
+            ? alreadyDeployed
+              ? "Use again"
+              : "Use template"
+            : "Review required"}
         </ShadButton>
       </div>
     </motion.article>
@@ -540,7 +567,7 @@ export default function AgentTemplates() {
     if (!template) return;
     setActiveCategory(template.category);
     setSearch(template.name);
-    setModalTemplate(template);
+    if (isTemplateSelfServeAvailable(template)) setModalTemplate(template);
   }, []);
 
   const deployedCounts = useMemo(() => {
@@ -562,7 +589,7 @@ export default function AgentTemplates() {
     : `${visible.length} of ${TEMPLATE_TOTAL} templates`;
 
   const handleOpenDeploy = (template: Template) => {
-    if (deploying) return;
+    if (deploying || !isTemplateSelfServeAvailable(template)) return;
     setModalTemplate(template);
   };
 

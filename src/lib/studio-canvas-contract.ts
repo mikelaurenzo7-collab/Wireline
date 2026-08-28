@@ -112,7 +112,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{active\.id\}/ },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Start With One Job/i },
+    { id: "empty-state", pattern: /Build Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },
     { id: "named-workspace-tabs", pattern: /Setup[\s\S]*Test[\s\S]*Review/ },
   ],

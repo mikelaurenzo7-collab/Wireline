@@ -7,6 +7,10 @@ import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { isVaultConfigured } from "../secret-vault";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "../runtime-template-personality";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import {
   deactivateNativeXAIPhoneLine,
@@ -72,11 +76,25 @@ async function assignNativePhoneLineUnfenced(input: {
   const changesAgent = input.agentId !== undefined && input.agentId !== current.agentId;
   if (typeof input.agentId === "string") {
     const [agent] = await drizzle
-      .select({ id: schema.agents.id })
+      .select({
+        id: schema.agents.id,
+        role: schema.agents.role,
+        personality: schema.personality.content,
+      })
       .from(schema.agents)
+      .leftJoin(
+        schema.personality,
+        and(
+          eq(schema.personality.agentId, schema.agents.id),
+          eq(schema.personality.userId, schema.agents.userId),
+        ),
+      )
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1);
     if (!agent) throw AppError.notFound("Agent not found");
+    if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
+      throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
+    }
     assertNativeActivationConfigured();
   }
 

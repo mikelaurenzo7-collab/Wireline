@@ -28,7 +28,8 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("uses one role-first next action when the workspace is empty", () => {
-    expect(studio).toContain('title="Start With One Job"');
+    expect(studio).toContain('title="Build Your Bot"');
+    expect(studio).not.toMatch(/one (?:job|task)/i);
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).toContain("Create Bot");
     expect(studio).toContain("Choose a role starter or make it entirely custom.");
@@ -55,7 +56,9 @@ describe("demand-driven authenticated experience", () => {
 
   it("tracks only verifiable customer-readiness milestones", () => {
     expect(activation).toContain("Ready for customers");
-    expect(activation).toContain("Job and greeting defined");
+    expect(activation).toContain("Role and greeting set");
+    expect(activation).toContain("Define the work, boundaries, and successful outcomes.");
+    expect(activation).not.toContain("one clear customer-facing responsibility");
     expect(activation).toContain("Knowledge added");
     expect(activation).toContain("Phone number connected");
     expect(activation).toContain("First live customer handled");

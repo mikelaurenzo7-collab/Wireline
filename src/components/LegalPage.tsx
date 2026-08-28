@@ -232,11 +232,11 @@ export function TermsOfService() {
           .
         </p>
         <p>
-          <strong>A2P 10DLC registration (US carriers).</strong> Business (Application-to-Person)
-          messaging in the United States requires brand and campaign registration with US carrier
-          consortia. BotBound coordinates that registration through Twilio; each account holder's
-          legal brand, use case, consent flow, and campaign must be registered accurately before
-          messaging is enabled. Unregistered or misrepresented traffic may be blocked.
+          <strong>A2P 10DLC registration (US carriers).</strong> US carriers may require brand and
+          campaign registration before business messaging begins. You are responsible for accurate
+          business, use-case, and consent information. BotBound may request proof or disable
+          messaging when required registration is incomplete; carriers may block unregistered or
+          misrepresented traffic.
         </p>
         <p>
           Report messaging complaints or ask a question about SMS from a BotBound number by emailing{" "}
@@ -252,13 +252,11 @@ export function TermsOfService() {
           cancellation takes effect at the end of the current billing period.
         </p>
         <p>
-          <strong>30-day money-back guarantee.</strong> If BotBound isn't working for you for any
-          reason within 30 days of your first paid invoice, email{" "}
-          <strong>support@trywireline.com</strong> with the subject "Refund request" and we'll
-          refund that month's charge in full. No forms, no escalation, no questions about your
-          reason. The 30-day window starts on the date of your first paid invoice. Outbound call
-          minutes consumed prior to the refund request are not separately deducted. The refund is on
-          the subscription line item.
+          <strong>30-day money-back guarantee.</strong> Submit a request to{" "}
+          <strong>support@trywireline.com</strong> within 30 days of your first paid invoice. After
+          BotBound verifies the account and transaction, the first subscription charge is eligible
+          for a full refund. The 30-day window starts on the invoice date. Usage purchases,
+          third-party fees, and later invoices are not included.
         </p>
         <p>
           After the 30-day window, no refunds are issued for partial periods, but you can cancel

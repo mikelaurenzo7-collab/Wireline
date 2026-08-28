@@ -140,19 +140,6 @@ export const BOT_ROLE_TEMPLATES = [
     ],
   },
   {
-    key: "collections",
-    name: "Collections",
-    category: "Operations" as const,
-    direction: "outbound" as const,
-    summary: "Run respectful, controlled follow-up without losing the audit trail.",
-    outcomes: ["Run Reminders", "Capture Payment Intent", "Escalate Exceptions"],
-    moves: [
-      "Approved reminder sequences",
-      "Promise-to-pay + dispute capture",
-      "Exception review + audit trail",
-    ],
-  },
-  {
     key: "property-manager",
     name: "Property Manager",
     category: "Operations" as const,

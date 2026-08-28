@@ -6,6 +6,10 @@ import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
+import {
+  isSavedRuntimeReviewRequired,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE,
+} from "../runtime-template-personality";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { buildVapiAssistant } from "../vapi-assistant-factory-v2";
 import {
@@ -141,8 +145,19 @@ export async function proxyStudioVapiWebCall(token: string): Promise<{
     perform: () =>
       tenantStore.run(verification.claims.userId, async () => {
         const [agent] = await drizzle
-          .select({ id: schema.agents.id })
+          .select({
+            id: schema.agents.id,
+            role: schema.agents.role,
+            personality: schema.personality.content,
+          })
           .from(schema.agents)
+          .leftJoin(
+            schema.personality,
+            and(
+              eq(schema.personality.agentId, schema.agents.id),
+              eq(schema.personality.userId, schema.agents.userId),
+            ),
+          )
           .where(
             and(
               eq(schema.agents.id, verification.claims.agentId),
@@ -151,6 +166,9 @@ export async function proxyStudioVapiWebCall(token: string): Promise<{
           )
           .limit(1);
         if (!agent) throw AppError.fromHttpStatus(404, "That live test profile was not found.");
+        if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
+          throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
+        }
 
         const [userSettings] = await drizzle
           .select({

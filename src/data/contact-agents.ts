@@ -60,25 +60,21 @@ export type ContactAgent = {
 
 /**
  * The 2 BotBound specialists. All on (630) numbers for company
- * uniformity. Each is a FULL GENERALIST — every specialist can handle
- * every kind of BotBound call: support, pricing, billing, technical,
- * onboarding, success. They can also sign a caller up for a BotBound
- * account on the spot. No call ever needs to be "transferred to the
- * right department" — whoever picks up can do it all.
+ * uniformity. Each can answer verified product questions, guide callers
+ * through self-service signup, email secure links, and record a human
+ * follow-up request. Account-specific changes still require the relevant
+ * authenticated workflow or a confirmed human follow-up.
  */
 const ALL_ENCOMPASSING_SCOPE =
-  "A complete BotBound specialist. Handles every kind of call end to end: " +
-  "general support and how-to, account help, pricing and plan comparison, " +
-  "ROI questions, enterprise quotes, billing (invoices, refunds, plan changes, " +
-  "overages), technical questions (integrations, webhooks, API, voice quality, " +
-  "CRM sync), onboarding, and customer success. Can email a sign-up link, email " +
-  "a payment/checkout link, AND create a BotBound account for the caller right " +
-  "on the call if they want to sign up by phone. Never says 'let me transfer you " +
-  "to the right department'. Each specialist can do it all.";
+  "A BotBound front-line specialist who answers verified product, pricing, setup, " +
+  "onboarding, and general troubleshooting questions. Can email a Free Builder " +
+  "signup link or secure checkout link after confirmation, and can record a " +
+  "callback or escalation request for team review. Does not create accounts, " +
+  "issue refunds, change plans, alter billing, or promise a response time on the call.";
 
 const ALL_ENCOMPASSING_HANDLES =
-  "general, how-to, account, pricing, plans, demo, billing, invoice, refund, " +
-  "signup, create account, payment link, API, webhooks, integration, voice quality, " +
+  "general, how-to, account guidance, pricing, plans, demo, billing questions, " +
+  "signup link, payment link, API, webhooks, integration, voice quality, " +
   "onboarding, training, success, troubleshooting, enterprise";
 
 export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
@@ -154,12 +150,12 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Marcus",
     role: "Medical Practice Demo",
     scope:
-      "Role-plays a clinic front desk: greets patients, captures reason for visit, schedules appointments, handles insurance pre-check. Healthcare-style demo; BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
+      "Runs a synthetic clinic-scheduling role-play using fictional details only. It does not collect real patient, health, or insurance information. BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
     firstMessage:
-      "Good afternoon. Marcus on the BotBound medical demo. May I have your name, please?",
+      "Good afternoon. Marcus on the BotBound medical demo. Please use fictional details and don't share health information. What kind of appointment should we role-play?",
     voiceLabel: "Sagar · Steady & Professional",
     vapiVoiceId: "Sagar",
-    handles: "medical, healthcare, clinic, patient intake, appointment",
+    handles: "medical demo, healthcare demo, synthetic clinic scheduling, appointment role-play",
     tel: "+16173134469",
     display: "(617) 313-4469",
     tint: CONTACT_AGENT_TINTS.muted,

@@ -91,7 +91,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Outbound sales",
     blurb:
-      "Upload a CSV, pick a playbook, launch outbound campaigns, and hand qualified meetings to the calendar.",
+      "Upload a CSV and prepare a playbook. Marketing campaigns stay blocked until federal DNC screening, consent rules, provider connections, and account configuration are ready.",
   },
   {
     title: "Email workflows",
@@ -114,7 +114,7 @@ export const WIRELINE_FEATURES = [
  * framed as the answer to "I need more leads" or "my pipeline is dry."
  */
 export const WIRELINE_GROWTH_ENGINE =
-  "BotBound's autonomous growth engine works leads across calls, texts, and email: upload a list or sync a CRM, qualify with a defined playbook, book meetings onto the calendar, and keep improving from the best completed conversations.";
+  "BotBound's growth engine researches and prepares leads across calls, texts, and email. After required consent rules, federal DNC screening, provider connections, and account configuration are ready, it can run approved qualification, follow-up, and supported meeting booking.";
 
 /**
  * Pain -> capability map. When a caller names a problem, the Bot should
@@ -124,7 +124,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Struggling with leads, dry pipeline, or need more customers",
     solution:
-      "the autonomous growth engine - outbound campaigns that dial and qualify leads, run multi-touch follow-up, and book qualified meetings without adding SDR headcount",
+      "the growth engine - research and prepare leads, then run approved outreach and qualification only after consent rules, federal DNC screening, and required provider connections are ready",
   },
   {
     pain: "Missing calls or losing business after hours",
@@ -134,7 +134,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "No time to follow up or leads going cold",
     solution:
-      "cadences and email workflows that follow up automatically across call, text, and email until the lead responds or opts out",
+      "cadences and email workflows that follow up across approved channels only after consent, compliance screening, and required connections are ready; every opt-out stops the sequence",
   },
   {
     pain: "Drowning in the inbox",

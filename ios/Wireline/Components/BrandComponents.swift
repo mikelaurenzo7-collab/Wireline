@@ -131,7 +131,7 @@ struct BrandEmptyState: View {
         AssistantRow(agent: Agent(id: "1", name: "Ava", role: "scheduler", archetype: "Scheduler", channels: ["voice", "email"], voiceId: nil, isBusinessAgent: false))
         CallCard(call: ActiveCall(callId: "c1", agentId: "1", customerNumber: "+1 555 123 4567", status: "in-progress", label: nil, type: "inbound"))
         Button("Place a call") {}.buttonStyle(PrimaryButtonStyle())
-        BrandEmptyState(title: "No agents yet", message: "Set up your first call agent on the web to get started.")
+        BrandEmptyState(title: "No Bots yet", message: "Set up your first Bot on the web to get started.")
     }
     .tint(Brand.accent)
     .wirelineBrand()

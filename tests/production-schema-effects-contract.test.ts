@@ -10,6 +10,14 @@ const migrationSource = readFileSync(
   "drizzle/migrations/0142_resend_delivery_feedback.sql",
   "utf8",
 );
+const accountOperationLeaseMigration = readFileSync(
+  "drizzle/migrations/0161_account_operation_leases.sql",
+  "utf8",
+);
+const stripeClaimFencingMigration = readFileSync(
+  "drizzle/migrations/0164_stripe_event_claim_fencing.sql",
+  "utf8",
+);
 
 describe("production schema effects", () => {
   it("pins the full Resend feedback table contract, not just object names", () => {
@@ -144,6 +152,61 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("subscription_erasure:missing_user_fk");
     expect(verifierSource).toContain("subscription_erasure:wrong_user_fk_definition");
     expect(verifierSource).toContain("competing_user_fks");
+  });
+
+  it("certifies the complete account-operation lease boundary before runtime use", () => {
+    expect(accountOperationLeaseMigration).toContain("wireline_account_operation_leases");
+    for (const invariant of [
+      "exact_user_fk_count",
+      "user_fk_count",
+      "lease_columns",
+      "wireline_account_operation_leases_kind_check",
+      "idx_account_operation_leases_active_user",
+      "relrowsecurity",
+      "tenant_isolation",
+      "public_dml_revoked",
+      "server_select",
+      "server_insert",
+      "server_update",
+      "server_delete",
+      "anon_dml",
+      "authenticated_dml",
+      "service_dml",
+      "account_operation_leases:missing_table",
+      "account_operation_leases:wrong_column",
+      "account_operation_leases:wrong_user_fk",
+      "account_operation_leases:wrong_kind_check",
+      "account_operation_leases:wrong_active_index",
+      "account_operation_leases:wrong_tenant_policy",
+      "account_operation_leases:wrong_table_acl",
+    ]) {
+      expect(verifierSource).toContain(invariant);
+    }
+  });
+
+  it("certifies Stripe claim-token fencing, 15-minute reclaim semantics, and ACL", () => {
+    expect(stripeClaimFencingMigration).toContain("INTERVAL '15 minutes'");
+    for (const invariant of [
+      "claim_token_type",
+      "claim_token_nullable",
+      "wireline_reclaim_abandoned_stripe_event_claim_before_insert",
+      "trigger_function_matches",
+      "pg_get_function_result",
+      "public_execute_revoked",
+      "anon_execute",
+      "authenticated_execute",
+      "stripe_claim_fencing:missing_claim_token",
+      "stripe_claim_fencing:wrong_reclaim_trigger",
+      "stripe_claim_fencing:missing_reclaim_function",
+      "stripe_claim_fencing:wrong_reclaim_function_boundary",
+      "stripe_claim_fencing:wrong_reclaim_lease_semantics",
+      "stripe_claim_fencing:wrong_reclaim_function_acl",
+    ]) {
+      expect(verifierSource).toContain(invariant);
+    }
+    expect(verifierSource).toContain("hasStripeReclaimLeaseSemantics");
+    expect(verifierSource).toContain("00:15:00");
+    expect(verifierSource).toContain("00:05:00");
   });
 
   it("certifies the live account-environment promotion body and ACL", () => {

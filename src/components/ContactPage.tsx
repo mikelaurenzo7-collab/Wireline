@@ -187,9 +187,7 @@ export function ContactPage() {
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                We aim to reply within one business day at {email}.
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">We'll follow up at {email}.</p>
             </div>
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">

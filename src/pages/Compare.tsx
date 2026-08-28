@@ -5,28 +5,37 @@ import { signupHrefForPlan } from "../lib/signup-intent";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 
 const DIFFERENCES = [
-  { title: "Makes the Call", copy: "Handles natural conversations by voice, email, or text." },
+  {
+    title: "Works Across Channels",
+    copy: "Handles conversations through the voice, email, and text channels you configure.",
+  },
   {
     title: "Plain Instructions",
     copy: "Your voice, playbook, knowledge, and rules. No flowchart required.",
   },
-  { title: "A Clear Next Step", copy: "Booked, handed off, followed up, or logged." },
+  {
+    title: "A Clear Next Step",
+    copy: "Uses enabled tools to book, hand off, follow up, or record the outcome.",
+  },
   {
     title: "Persistent Memory",
-    copy: "Every lesson, objection, and preference stays in the Bot's shared memory.",
+    copy: "Approved coaching, objections, and preferences can stay with the Bot.",
   },
   {
     title: "Real Calendar Booking",
-    copy: "Availability checks, timezone aware, and no double booking.",
+    copy: "Checks connected-calendar availability and timezone before supported bookings.",
   },
   {
     title: "Across Channels",
-    copy: "Starts on voice and continues by email or text with the same context.",
+    copy: "Connected channels can continue the work with shared workspace context.",
   },
-  { title: "After-Hours Coverage", copy: "24/7 without overtime, burnout, or missed calls." },
+  {
+    title: "After-Hours Coverage",
+    copy: "Can answer around the clock within your configured runtime and routing rules.",
+  },
   {
     title: "Every Outcome Visible",
-    copy: "Transcripts, summaries, actions, and analytics for every conversation.",
+    copy: "Completed conversations can produce transcripts, summaries, actions, and analytics.",
   },
   {
     title: "Improves with Use",
@@ -87,12 +96,15 @@ const TABLE_ROWS = [
   ["Wait on hold", "Your Bot waits and reports back"],
   ["Repeat the same details", "Your Bot keeps the instructions"],
   ["Receive another task", "You get a clear next step"],
-  ["Miss after-hours calls", "Your Bot picks up 24/7, without voicemail tag"],
+  ["Miss after-hours calls", "Your Bot can answer within the coverage rules you configure"],
   ["Train a new receptionist", "Your Bot starts with your playbook on day one"],
-  ["Log calls manually in a CRM", "Your Bot writes the summary and syncs the record"],
+  [
+    "Log calls manually in a CRM",
+    "Your Bot can write a summary and sync supported records when the CRM is connected",
+  ],
   [
     "Follow up on every inbound lead",
-    "Your Bot qualifies, books, or hands off. Nothing falls through",
+    "Your Bot can qualify the lead and use enabled tools to book, hand off, or record the next step",
   ],
 ] as const;
 
