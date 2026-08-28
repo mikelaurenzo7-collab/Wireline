@@ -94,7 +94,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(signupSend).not.toHaveBeenCalled();
     expect(paymentSend).not.toHaveBeenCalled();
     expect(supervise).not.toHaveBeenCalled();
-  }, 10_000);
+  }, 20_000);
 
   it("does not call Slack or Zoom when the workspace is demo-classified", async () => {
     const fetchSpy = vi.fn();

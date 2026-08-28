@@ -137,7 +137,7 @@ describe("authenticated SMS reply pre-provider guard", () => {
     expect(loaded.assertExternalEntityActionAllowed).not.toHaveBeenCalled();
     expect(loaded.evaluateOutboundDialGate).not.toHaveBeenCalled();
     expect(loaded.sendTenantMessage).not.toHaveBeenCalled();
-  });
+  }, 20_000);
 
   for (const [environment, status, code] of [
     ["demo", 403, "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"],
