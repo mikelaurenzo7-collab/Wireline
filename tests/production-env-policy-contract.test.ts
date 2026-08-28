@@ -256,6 +256,42 @@ describe("production environment launch policy", () => {
     expect(vercelBuild).not.toContain("runtime will disable");
   });
 
+  it("permits only the reviewed isolated database lane for authenticated Preview QA", () => {
+    const isolatedPreview = {
+      WIRELINE_PREVIEW_DATABASE_ISOLATED: "true",
+      WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ewgqxfnjxdzoawlkcyfb",
+      WIRELINE_LAUNCH_DEMO_MODE: "true",
+      POSTGRES_URL:
+        "postgresql://postgres.ewgqxfnjxdzoawlkcyfb:preview-only@pooler.supabase.com:6543/postgres",
+      INTERNAL_JWT_SECRET: "dedicated-preview-session-secret",
+      OWNER_EMAIL: "qa@example.invalid",
+    };
+
+    const allowed = runPreviewBoundary(isolatedPreview);
+    expect(allowed.status).toBe(0);
+    expect(`${allowed.stdout}${allowed.stderr}`).toContain(
+      "Deployment-boundary check passed for preview",
+    );
+
+    for (const override of [
+      { WIRELINE_LAUNCH_DEMO_MODE: "false" },
+      { WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj" },
+      {
+        WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj",
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:production@pooler.supabase.com:6543/postgres",
+      },
+      { INTERNAL_JWT_SECRET: "" },
+      { STRIPE_SECRET_KEY: "sk_test_still-blocked" },
+    ]) {
+      const denied = runPreviewBoundary({ ...isolatedPreview, ...override });
+      expect(denied.status).toBe(1);
+    }
+
+    expect(deploymentBoundary).toContain("reviewedIsolatedPreviewDatabaseKeys");
+    expect(deploymentBoundary).toContain("WIRELINE_PREVIEW_DATABASE_PROJECT_REF");
+  });
+
   it("binds self-serve billing to the audited main production release channel", () => {
     expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_REF")');
     expect(deploymentBoundary).toContain('gitRef !== "main"');

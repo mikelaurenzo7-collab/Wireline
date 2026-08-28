@@ -6,6 +6,7 @@ const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
 const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me";
+const CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF = "ogenlhodmwvyacvnrsnj";
 
 const value = (name) => String(process.env[name] || "").trim();
 const affirmative = (name) => ["1", "true", "yes", "on"].includes(value(name).toLowerCase());
@@ -179,12 +180,58 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  *   receive its own explicit reviewed policy before it can cross this boundary.
  */
 const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
+const reviewedIsolatedPreviewDatabaseKeys = new Set([
+  "INTERNAL_JWT_SECRET",
+  "OWNER_EMAIL",
+  "POSTGRES_URL",
+]);
 
 if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
+  const isolatedPreviewDatabase = affirmative("WIRELINE_PREVIEW_DATABASE_ISOLATED");
+  const previewDemoMode = affirmative("WIRELINE_LAUNCH_DEMO_MODE");
+  const isolatedPreviewProjectRef = value("WIRELINE_PREVIEW_DATABASE_PROJECT_REF").toLowerCase();
+  const isolatedPreviewDatabaseKeys =
+    isolatedPreviewDatabase && previewDemoMode ? reviewedIsolatedPreviewDatabaseKeys : new Set();
+
+  if (isolatedPreviewDatabase) {
+    if (!previewDemoMode) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_ISOLATED: isolated Preview data requires WIRELINE_LAUNCH_DEMO_MODE=true",
+      );
+    }
+    for (const name of reviewedIsolatedPreviewDatabaseKeys) {
+      requireValue(name, "isolated authenticated Preview QA configuration is incomplete");
+    }
+    if (!/^[a-z0-9]{20}$/.test(isolatedPreviewProjectRef)) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_PROJECT_REF: isolated Preview data requires the exact 20-character Supabase project ref",
+      );
+    } else if (isolatedPreviewProjectRef === CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
+      failures.push(
+        "WIRELINE_PREVIEW_DATABASE_PROJECT_REF: Preview must never target the canonical production Supabase project",
+      );
+    } else if (value("POSTGRES_URL")) {
+      try {
+        const databaseUrl = new URL(value("POSTGRES_URL"));
+        const databaseIdentity =
+          `${databaseUrl.hostname} ${decodeURIComponent(databaseUrl.username)}`.toLowerCase();
+        if (
+          !["postgres:", "postgresql:"].includes(databaseUrl.protocol) ||
+          !databaseIdentity.includes(isolatedPreviewProjectRef)
+        ) {
+          failures.push(
+            "POSTGRES_URL: isolated Preview database does not match WIRELINE_PREVIEW_DATABASE_PROJECT_REF",
+          );
+        }
+      } catch {
+        failures.push("POSTGRES_URL: isolated Preview database must be a valid PostgreSQL URL");
+      }
+    }
+  }
 
   for (const name of productionOnlyPreviewKeys) {
-    if (value(name)) {
+    if (value(name) && !isolatedPreviewDatabaseKeys.has(name)) {
       failures.push(
         `${name}: production-only configuration must not be available to preview builds or runtime`,
       );
@@ -195,6 +242,7 @@ if (isPreview) {
     if (
       !productionOnlyPreviewKeySet.has(name) &&
       !reviewedPreviewCredentialKeys.has(name) &&
+      !isolatedPreviewDatabaseKeys.has(name) &&
       !platformManagedCredential.test(name) &&
       credentialLikeName.test(name) &&
       value(name)
