@@ -170,7 +170,6 @@ describe("BotBound product voice", () => {
       "Customer Support",
       "Lead Qualifier",
       "Recruiter",
-      "Collections",
       "Property Manager",
       "Personal Assistant",
       "Family Concierge",
@@ -178,6 +177,7 @@ describe("BotBound product voice", () => {
     ]) {
       expect(names).toContain(role);
     }
+    expect(names).not.toContain("Collections");
     for (const template of BOT_ROLE_TEMPLATES) {
       expect(template.moves).toHaveLength(3);
       expect(new Set(template.moves).size).toBe(3);
