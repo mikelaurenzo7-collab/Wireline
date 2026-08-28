@@ -266,6 +266,9 @@ export async function provisionNativeXAIPhone(input: {
   agentId: string;
 }): Promise<NativeXAIPhoneStatus> {
   try {
+    // Account-environment policy is the cheapest and broadest boundary. Demo
+    // and test tenants must fail before any agent lookup or provider lease.
+    await assertLiveExternalActionAllowed(input.userId, "native_xai_phone_activation");
     const [agent] = await drizzle
       .select({ role: schema.agents.role, personality: schema.personality.content })
       .from(schema.agents)
@@ -282,7 +285,6 @@ export async function provisionNativeXAIPhone(input: {
     if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
       throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
     }
-    await assertLiveExternalActionAllowed(input.userId, "native_xai_phone_activation");
     const outcome = await runTenantProviderWorkWithDeletionFence({
       userId: input.userId,
       operation: "xai_phone_activation",

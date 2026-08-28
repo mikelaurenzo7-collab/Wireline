@@ -388,6 +388,17 @@ router.post(
       throw AppError.unauthorized("Invalid xAI webhook signature.");
     }
 
+    const productionEnvironment = await enforceXAIInboundProductionEnvironment({
+      userId: binding.userId,
+      callId,
+      bindingId: binding.id,
+      calledNumber,
+    });
+    if (!productionEnvironment) {
+      res.status(202).json({ received: true, handled: false });
+      return;
+    }
+
     const agentContext = await resolveAgentContext(binding);
     if (agentContext.reviewRequired) {
       await hangupXAISipCall(callId).catch((error) => {
@@ -401,17 +412,6 @@ router.post(
         bindingId: binding.id,
         calledSuffix: phoneSuffixForLog(calledNumber),
       });
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-
-    const productionEnvironment = await enforceXAIInboundProductionEnvironment({
-      userId: binding.userId,
-      callId,
-      bindingId: binding.id,
-      calledNumber,
-    });
-    if (!productionEnvironment) {
       res.status(202).json({ received: true, handled: false });
       return;
     }

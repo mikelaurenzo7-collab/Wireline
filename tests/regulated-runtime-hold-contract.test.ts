@@ -87,10 +87,13 @@ describe("regulated runtime hold", () => {
     );
 
     const xaiActivation = source("../src/lib/voice/xai-phone-activation-service.ts");
+    const environmentGuard = xaiActivation.indexOf("await assertLiveExternalActionAllowed");
     const activationGuard = xaiActivation.lastIndexOf("isSavedRuntimeReviewRequired(");
+    expect(environmentGuard).toBeGreaterThan(-1);
     expect(activationGuard).toBeGreaterThan(-1);
+    expect(environmentGuard).toBeLessThan(activationGuard);
     expect(activationGuard).toBeLessThan(
-      xaiActivation.indexOf("await assertLiveExternalActionAllowed", activationGuard),
+      xaiActivation.indexOf("await runTenantProviderWorkWithDeletionFence", activationGuard),
     );
 
     const studioVapi = source("../src/lib/voice/studio-vapi-web-session.ts");
