@@ -15,6 +15,12 @@ import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
 import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
 import { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
+import {
+  defaultBotMarkKey,
+  firstAvailableBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "./bot-mark";
 
 export { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
 
@@ -380,33 +386,7 @@ export function founderAssistantAgentScope(agentId: string, userId: string) {
 
 /** When canonical template ids are already owned by another tenant, namespace per user. */
 export function namespacedAssistantAgentId(templateId: string, userId: string): string {
-  return `${userId.slice(0, 8)}-${templateId}`;
-}
-
-export async function resolveAssistantAgentId(templateId: string, userId: string): Promise<string> {
-  const [ownedCanonical] = await drizzle
-    .select({ id: schema.agents.id })
-    .from(schema.agents)
-    .where(founderAssistantAgentScope(templateId, userId))
-    .limit(1);
-  if (ownedCanonical) return templateId;
-
-  const namespaced = namespacedAssistantAgentId(templateId, userId);
-  const [ownedNamespaced] = await drizzle
-    .select({ id: schema.agents.id })
-    .from(schema.agents)
-    .where(founderAssistantAgentScope(namespaced, userId))
-    .limit(1);
-  if (ownedNamespaced) return namespaced;
-
-  const [collision] = await drizzle
-    .select({ userId: schema.agents.userId })
-    .from(schema.agents)
-    .where(eq(schema.agents.id, templateId))
-    .limit(1);
-  if (collision && collision.userId !== userId) return namespaced;
-
-  return templateId;
+  return `${userId}-${templateId}`;
 }
 
 async function upsertPersonality(agentId: string, userId: string, content: string): Promise<void> {
@@ -508,14 +488,6 @@ async function upsertAgent(
   report: FounderAssistantSeedReport,
 ): Promise<string> {
   const toolsJson = ALL_AGENT_TOOLS;
-  const agentId = await resolveAssistantAgentId(template.id, userId);
-  const tenantScope = founderAssistantAgentScope(agentId, userId);
-  const [existing] = await drizzle
-    .select({ id: schema.agents.id })
-    .from(schema.agents)
-    .where(tenantScope)
-    .limit(1);
-
   const businessVariables = template.wirelinePersonaId
     ? {
         wireline_internal: true,
@@ -551,24 +523,102 @@ async function upsertAgent(
     isBusinessAgent: template.isBusinessAgent ?? template.role !== "personal_assistant",
   };
 
-  if (existing) {
-    await drizzle
-      .update(schema.agents)
-      .set({
-        ...values,
-        enabledTools: toolsJson,
-      })
-      .where(tenantScope);
-    report.agentsUpdated++;
-  } else {
-    await drizzle.insert(schema.agents).values({ id: agentId, ...values });
-    report.agentsCreated++;
-  }
+  const outcome = await drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+    // Template ids are global primary keys. Serialize their resolution with the
+    // insert so two different tenants cannot both observe the canonical id as
+    // free and then race to claim it.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${template.id}))`);
 
-  await upsertPersonality(agentId, userId, personalityForTemplate(template));
-  await seedTrainingArtifacts(agentId, userId, template.role, report);
-  report.agentIds.push(agentId);
-  return agentId;
+    const legacyNamespacedId = `${userId.slice(0, 8)}-${template.id}`;
+    const namespacedId = namespacedAssistantAgentId(template.id, userId);
+    const [ownedCanonical] = await tx
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(founderAssistantAgentScope(template.id, userId))
+      .limit(1);
+    const [ownedLegacyNamespaced] = await tx
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(founderAssistantAgentScope(legacyNamespacedId, userId))
+      .limit(1);
+    const [ownedNamespaced] = await tx
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(founderAssistantAgentScope(namespacedId, userId))
+      .limit(1);
+    const [canonicalCollision] = await tx
+      .select({ userId: schema.agents.userId })
+      .from(schema.agents)
+      .where(eq(schema.agents.id, template.id))
+      .limit(1);
+    const [namespacedCollision] = await tx
+      .select({ userId: schema.agents.userId })
+      .from(schema.agents)
+      .where(eq(schema.agents.id, namespacedId))
+      .limit(1);
+
+    const agentId = ownedCanonical
+      ? template.id
+      : ownedLegacyNamespaced
+        ? legacyNamespacedId
+        : ownedNamespaced
+          ? namespacedId
+          : canonicalCollision
+            ? namespacedId
+            : template.id;
+    if (namespacedCollision && namespacedCollision.userId !== userId && agentId === namespacedId) {
+      throw new Error(`Founder Bot id namespace collision for template ${template.id}.`);
+    }
+    const tenantScope = founderAssistantAgentScope(agentId, userId);
+
+    const [existing] = await tx
+      .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+      .from(schema.agents)
+      .where(tenantScope)
+      .limit(1);
+    const workspaceAgents = await tx
+      .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, userId));
+    const unavailable = new Set<BotMarkKey>();
+    for (const workspaceAgent of workspaceAgents) {
+      if (workspaceAgent.id === agentId) continue;
+      unavailable.add(
+        isBotMarkKey(workspaceAgent.markKey)
+          ? workspaceAgent.markKey
+          : defaultBotMarkKey(workspaceAgent.id),
+      );
+    }
+    const markKey =
+      (isBotMarkKey(existing?.markKey) && !unavailable.has(existing.markKey)
+        ? existing.markKey
+        : firstAvailableBotMarkKey(agentId, unavailable)) ?? null;
+    if (!markKey) {
+      throw new Error(`Bot identity catalog exhausted for founder workspace ${userId}.`);
+    }
+
+    if (existing) {
+      await tx
+        .update(schema.agents)
+        .set({
+          ...values,
+          markKey,
+          enabledTools: toolsJson,
+        })
+        .where(tenantScope);
+      return { kind: "updated", agentId } as const;
+    }
+    await tx.insert(schema.agents).values({ id: agentId, ...values, markKey });
+    return { kind: "created", agentId } as const;
+  });
+  if (outcome.kind === "updated") report.agentsUpdated++;
+  else report.agentsCreated++;
+
+  await upsertPersonality(outcome.agentId, userId, personalityForTemplate(template));
+  await seedTrainingArtifacts(outcome.agentId, userId, template.role, report);
+  report.agentIds.push(outcome.agentId);
+  return outcome.agentId;
 }
 
 /**
@@ -634,7 +684,7 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
       await drizzle
         .update(schema.agents)
         .set({ enabledTools: ALL_AGENT_TOOLS })
-        .where(eq(schema.agents.id, row.id));
+        .where(and(eq(schema.agents.id, row.id), eq(schema.agents.userId, userId)));
       await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
       report.agentIds.push(row.id);
       report.agentsUpdated++;

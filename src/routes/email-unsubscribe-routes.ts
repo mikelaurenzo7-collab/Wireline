@@ -102,7 +102,7 @@ router.get("/api/email/unsubscribe", unsubscribeRateLimit, async (req: Request, 
         renderPage(
           "We couldn't process that just now",
           `Your unsubscribe request for <strong>${escapeHtml(target.email)}</strong> didn't go through. ` +
-            `Please refresh this page in a few minutes to try again, or email support@trywireline.com and we'll remove you manually.`,
+            `Please refresh this page in a few minutes to try again, or email support@botbound.me and we'll remove you manually.`,
         ),
       );
     return;

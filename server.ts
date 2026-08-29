@@ -24,6 +24,7 @@ import { registerMcpRoutes } from "./src/server/register-mcp-routes";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
+import { isProductionDeployment } from "./src/lib/deployment-environment";
 
 const SHUTDOWN_GRACE_MS = 30_000;
 let server: Server | null = null;
@@ -54,7 +55,7 @@ function gracefulShutdown(signal: string) {
 }
 
 /**
- * Canonical Wireline server entrypoint.
+ * Canonical BotBound server entrypoint.
  *
  * Build, local development, Vercel's bundled API function, and process startup
  * all originate here. This is the single entrypoint — its absence of a
@@ -84,7 +85,7 @@ const origins = (process.env.CORS_ORIGINS || "")
   .filter(Boolean);
 if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
 
-if (IS_PROD && origins.length === 0) {
+if (isProductionDeployment() && origins.length === 0) {
   log.error("CORS misconfigured: set CORS_ORIGINS and/or APP_URL in production");
 }
 
@@ -265,7 +266,7 @@ async function startServer() {
 if (process.env.VERCEL !== "1") {
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
-    server = app.listen(port, () => log.info("Wireline server started", { port }));
+    server = app.listen(port, () => log.info("BotBound server started", { port }));
     initSupervisorWebSocketServer(server);
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));

@@ -44,6 +44,13 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/PublicChangelog.tsx",
   "src/components/StripeBillingCard.tsx",
   "src/components/StudioWorkroom.tsx",
+  "src/components/DeployAgentModal.tsx",
+  "src/components/EmailInbox.tsx",
+  "src/components/SmsThreads.tsx",
+  "src/components/SupportPage.tsx",
+  "src/components/OpenAILiveVoiceSandbox.tsx",
+  "src/components/VapiLiveVoiceSandbox.tsx",
+  "src/components/XAILiveVoiceSandbox.tsx",
   "src/components/admin/CarrierPanel.tsx",
   "src/components/insights/shared.tsx",
   "src/components/onboarding/PostCreateActivationWizard.tsx",
@@ -103,6 +110,7 @@ describe("BotBound product voice", () => {
       const source = withoutComments(read(path));
       expect(source, path).not.toMatch(/\bvoice agents?\b/i);
       expect(source, path).not.toMatch(/\bagent speaking\b/i);
+      expect(source, path).not.toMatch(/\bagent name\b/i);
     }
   });
 
@@ -119,6 +127,8 @@ describe("BotBound product voice", () => {
     });
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
+    expect(formatAgentRoleLabel("wireline_sales")).toBe("Sales");
+    expect(formatAgentRoleLabel("wireline_reception")).toBe("Reception");
   });
 
   it("does not reintroduce personal-versus-business language on customer surfaces", () => {
@@ -209,8 +219,10 @@ describe("BotBound product voice", () => {
     expect(landing).toContain("<AuthAccessPanel embedded");
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
+    expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");

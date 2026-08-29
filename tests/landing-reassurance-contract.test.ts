@@ -6,6 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("home landing launch clarity", () => {
   const landing = read("src/components/marketing/WireAgentLanding.tsx");
+  const product = read("src/lib/bot-product.ts");
   const css = read("src/styles/landing-prestige.css");
 
   it("keeps a concise product entrance instead of a brochure stack", () => {
@@ -14,7 +15,9 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain('variant="stage"');
     expect(landing).not.toContain("Illustrative Workflow");
     expect(landing).not.toContain("Booked and logged");
-    expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(landing).toContain(
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+    );
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
     expect(css).toContain(".landing-prestige__entrance");
@@ -23,8 +26,15 @@ describe("home landing launch clarity", () => {
   });
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
-    expect(landing).toContain("Build free. Put it on a number when it is ready.");
-    expect(landing).toContain('const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]');
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(product).toContain(
+      'activationLine: "Start free. Every live Bot gets its own number and email."',
+    );
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
+    expect(landing).toContain(
+      'const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]',
+    );
     expect(landing).toContain("plan.voice_minutes_monthly");
     expect(landing).toContain("plan.included_phone_numbers");
     expect(landing).toContain("Private simulation");

@@ -32,7 +32,7 @@ This addendum records fixes verified after the point-in-time audit above. It doe
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0-01 local code gates           | The complete `npm run verify:full` release command now passes on the current working tree: TypeScript, ESLint, design, source-control, workflow, route/security, docs, OpenAPI, tokens, Stripe, authorization, tenant, bootstrap, CSP, runtime, API-error, dependency audit, the complete authored unit estate, coverage, production build, server import smoke, 79 browser tests, and browser-extension package integrity. Six credential-dependent design-gold browser captures remain intentionally skipped. The regenerated authorization matrix inventories 395 routes: 320 protected, 75 explicitly public, and 0 violations.                           |
 | P0-02 code-side canonical origin | Runtime and release tooling now treat `https://botbound.me` as canonical. Production build, environment, runtime link, and Twilio-base validation reject any other `APP_URL`, including the legacy host, `www`, lookalikes, ports, paths, credentials, and trailing-slash variants at the deployment boundary. New ChatGPT, Claude, and Cursor manifests, install links, public connector pages, OAuth publication metadata, and release checks use the same canonical MCP issuer/resource. `https://trywireline.com` remains explicit compatibility infrastructure only where already-issued callbacks, clients, or provider registrations still require it. |
-| P1-04 support identity           | `support@trywireline.com` is now documented and tested as the verified compatibility mailbox, not an accidental public-brand leak. It remains intentionally unchanged until a BotBound-domain mailbox completes external delivery and DNS-authentication proof.                                                                                                                                                                                                                                                                                                                                                                                               |
+| P1-04 support identity           | `support@botbound.me` completed the production-domain gate on 2026-08-29: AgentMail DNS validation, delivery to Gmail, Gmail reply, and inbound receipt in the same thread. `security@botbound.me` and the DMARC-report inbox exist on the same domain. Public, legal, connector, and Stripe identity now converge on BotBound; the legacy mailbox is private compatibility only.                                                                                                                                                                                                                                                                             |
 | P1-03 Call Ops                   | Call Ops analytics is mounted in the visible Calls surface and reads exact aggregate-only metrics independently of call-row pagination. Call history exposes bounded load-more behavior instead of silently presenting a capped history as complete. Focused metrics and analytics truth contracts pass.                                                                                                                                                                                                                                                                                                                                                      |
 | Source package integrity         | The refreshed `brand-work/SOURCE-SHA256SUMS.txt` verifies all 50 current compact source-package entries. This resolves source-package revision ambiguity only; it does not clear the separate delivery or rights gate.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Runtime and measurement brand    | Public showcase prompts, live-model context, status copy, connector prose, and Plausible attribution now name BotBound. Stable `wireline` protocol, storage, package, and installed-client identifiers remain intentionally unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -436,23 +436,23 @@ Evidence:
 - Resend feedback, suppression, unsubscribe, support ticket, and AgentMail webhook routes exist.
 - The local Resend readiness check had no RESEND_API_KEY.
 - The latest live evidence reported zero connected email accounts, zero Resend webhook events, and no support tickets found in the connected Gmail review.
-- Public support and submission packets still use support@trywireline.com while the public brand is BotBound.
+- AgentMail accepted `support@botbound.me`; Gmail received the outbound test and the reply returned to the same AgentMail thread on 2026-08-29.
+- Public support and submission packets now use `support@botbound.me`.
 
 Impact:
 
 - The first customer may not receive a recap or support response, or BotBound may not record bounce, complaint, and suppression feedback.
-- Mixed brand and support domains can reduce trust or create routing ambiguity.
+- Transactional Resend delivery can still fail independently of the now-proven AgentMail support path.
 
 Launch gate:
 
-- Blocks design-partner onboarding until at least support and transactional delivery are proven.
+- Support identity no longer blocks design-partner onboarding. Transactional Resend delivery remains a separate launch proof.
 
 Recommended fix:
 
-- Send an external support request, receive it, reply, and verify the stated service process.
-- Exercise AgentMail create/fetch/send and signed webhook handling.
+- Continue monitoring the proven AgentMail support inbox and signed webhook handling.
 - Exercise Resend delivered, bounced, complained, and rejected events and verify durable suppression.
-- Document whether support@trywireline.com is an intentional compatibility address, add a BotBound alias, and verify SPF, DKIM, DMARC, return path, and reply handling.
+- Keep the legacy support inbox monitored only as a private compatibility fallback.
 
 ### P1-05: Live database drift, backup, PITR, and restore evidence is absent
 

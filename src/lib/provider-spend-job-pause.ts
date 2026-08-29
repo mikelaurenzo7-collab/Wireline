@@ -17,6 +17,7 @@ export const PAUSABLE_PROVIDER_SPEND_JOB_TYPES = [
   "autonomous_prospecting",
   "knowledge_from_url",
   "intake_auto_dial",
+  "paid_bot_identity_reconcile",
   "campaign_dial",
   "cadence_tick",
   "callback_tick",

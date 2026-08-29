@@ -6,6 +6,7 @@
  *   POSTGRES_URL=... node scripts/replay-pending-vapi-webhooks.mjs [--limit=50]
  */
 import postgres from "postgres";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 
 const limitArg = process.argv.find((a) => a.startsWith("--limit="));
 const limit = limitArg ? Number(limitArg.split("=")[1]) : 50;
@@ -16,7 +17,22 @@ if (!url) {
   process.exit(1);
 }
 
-const sql = postgres(url, { max: 1 });
+const connection = getPostgresConnectionConfig(url);
+const sql =
+  "connectionString" in connection
+    ? postgres(connection.connectionString, { max: 1 })
+    : postgres({
+        host: connection.host,
+        port: connection.port,
+        database: connection.database,
+        user: connection.user,
+        password: connection.password,
+        ssl: connection.ssl,
+        max: 1,
+        // Supavisor transaction mode cannot retain prepared statements across
+        // backend connections. Session/direct 5432 lanes may keep them.
+        prepare: connection.port !== 6543,
+      });
 
 const rows = await sql`
   SELECT id, user_id, payload, attempts

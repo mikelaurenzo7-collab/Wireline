@@ -8,10 +8,10 @@ declare global {
   }
 }
 
-async function openShowcase(page: Page) {
+async function openPublicPage(page: Page, path = "/showcase") {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.goto("/showcase", { waitUntil: "commit", timeout: 60_000 });
+    await page.goto(path, { waitUntil: "commit", timeout: 60_000 });
     await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
     try {
       await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
@@ -53,10 +53,10 @@ test("a protected-demo outage fails before microphone permission and exposes the
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await openShowcase(page);
+  await openPublicPage(page);
 
   const preview = page.getByText("LIVE PHONE PREVIEW", { exact: true }).locator("..");
-  await preview.getByRole("button", { name: "START LIVE DEMO", exact: true }).click();
+  await preview.getByRole("button", { name: "Talk to Jordan", exact: true }).click();
 
   await expect(preview.getByRole("alert")).toContainText(
     "The protected live demo is temporarily unavailable",
@@ -71,7 +71,45 @@ test("a protected-demo outage fails before microphone permission and exposes the
     "href",
     /^tel:/,
   );
-  await expect(preview.getByRole("button", { name: "START LIVE DEMO", exact: true })).toBeEnabled();
+  await expect(preview.getByRole("button", { name: "Talk to Jordan", exact: true })).toBeEnabled();
 
+  expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
+});
+
+test("the homepage demo outage keeps retry and demo-line recovery available", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__wirelineMicRequests = 0;
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        getUserMedia: async () => {
+          window.__wirelineMicRequests = (window.__wirelineMicRequests ?? 0) + 1;
+          return { getTracks: () => [] } as unknown as MediaStream;
+        },
+      },
+    });
+  });
+  await page.route("**/api/public/demo-session", async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "The protected live demo is temporarily unavailable." }),
+    });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPublicPage(page, "/");
+
+  const preview = page.locator(".landing-demo-inline");
+  const retry = preview.getByRole("button", { name: "Talk to Jordan", exact: true });
+  await retry.click();
+
+  await expect(preview.getByRole("alert")).toContainText(
+    "The protected live demo is temporarily unavailable",
+  );
+  await expect(retry).toBeEnabled();
+  await expect(
+    preview.getByRole("link", { name: "Call a demo line", exact: true }),
+  ).toHaveAttribute("href", "/showcase#demo-lines");
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
 });

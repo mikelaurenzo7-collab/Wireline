@@ -58,7 +58,7 @@ export function SupportPage() {
         /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
         message.includes("(5");
       if (isTransport) {
-        const fallback = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
+        const fallback = `mailto:support@botbound.me?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
         window.location.href = fallback;
         setError(
           "The ticket service did not respond, so your email client has opened with everything filled in.",
@@ -93,12 +93,12 @@ export function SupportPage() {
             <p className="mt-2 text-sm text-muted-foreground">{supportAgent.display}</p>
           </a>
           <a
-            href="mailto:support@trywireline.com"
+            href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Email</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
+            <p className="mt-2 text-sm text-muted-foreground">support@botbound.me</p>
           </a>
           <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
@@ -170,7 +170,7 @@ export function SupportPage() {
                     issueType === "billing"
                       ? "Invoice or charge in question, what you expected, and what happened."
                       : issueType === "agent"
-                        ? "Agent name, approximate call time, what happened, and what should have happened."
+                        ? "Bot name, approximate call time, what happened, and what should have happened."
                         : "What you did, what happened, and what you expected."
                   }
                   className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"

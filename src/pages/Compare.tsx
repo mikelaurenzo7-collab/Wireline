@@ -137,12 +137,12 @@ export default function Compare() {
       </section>
 
       <section className="marketing-section">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto w-full min-w-0 max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="wl-stitch-display text-balance">Compare the Model, Not the Sticker</h2>
           </div>
 
-          <div className="mt-8 overflow-x-auto border border-border bg-card">
+          <div className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
                 Public launch pricing and buying-model comparison for BotBound and selected

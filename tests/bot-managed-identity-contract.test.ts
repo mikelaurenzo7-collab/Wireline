@@ -82,9 +82,11 @@ describe("BotBound managed Bot identity", () => {
     expect(studio).toContain("bootstrapManagedBotIdentity(payload.agentId)");
     expect(studio).toContain("identityBootstrapAgentIds.current.has(payload.agentId)");
     expect(studio).toContain("identityBootstrapComplete: true");
+    expect(studio).toContain("durable server job owns");
     expect(studio).toContain("updatePostCreateWizard(pending)");
     expect(studio).toContain("updatePostCreateWizard(updated)");
     expect(createFlow).toContain("export function updatePostCreateWizard");
     expect(createFlow).toContain("without moving the user's current step");
+    expect(createFlow).toContain("durable paid repair owns retries");
   });
 });

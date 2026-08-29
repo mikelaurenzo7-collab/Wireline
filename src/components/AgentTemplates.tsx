@@ -34,6 +34,9 @@ import { EmptyState } from "./ui/EmptyState";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Skeleton } from "./ui/shadcn/Skeleton";
+import { stashPostCreateWizard } from "../lib/wireline-create-flow";
+import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
+import { isBotMarkKey } from "../lib/bot-mark";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Template definitions — unlocked starting points, not plan locks.
@@ -100,7 +103,7 @@ export const AGENT_TEMPLATES = [
   {
     id: "support-email",
     category: "Customer Support",
-    name: "Email Support Agent",
+    name: "Email Support Bot",
     description:
       "Responds to customer emails with empathy and precision. Handles complaints, refunds, and status updates.",
     role: "customer_service",
@@ -235,7 +238,7 @@ export const AGENT_TEMPLATES = [
   {
     id: "ecommerce-phone-order",
     category: "E-commerce",
-    name: "Phone Order Agent",
+    name: "Phone Order Bot",
     description:
       "Creates Square payment links or Shopify draft-order checkout links when the matching provider is connected.",
     role: "ecommerce",
@@ -628,7 +631,18 @@ export default function AgentTemplates() {
         typeof data === "object" && data && "id" in data && typeof data.id === "string"
           ? data.id
           : uniqueId;
-      navigate(`/studio?agent=${encodeURIComponent(createdId)}`);
+      stashPostCreateWizard({
+        agentId: createdId,
+        agentName: values.name,
+        markKey:
+          typeof data === "object" && data && "mark_key" in data && isBotMarkKey(data.mark_key)
+            ? data.mark_key
+            : null,
+        phoneProvisionRequested: false,
+        phoneProvisioned: false,
+      });
+      setPostSignupFlowActive(true);
+      navigate(`/studio?agent=${encodeURIComponent(createdId)}&section=setup`);
     } catch {
       toastError("Deployment failed", "Could not reach the server. Please try again.");
       setDeploying(null);

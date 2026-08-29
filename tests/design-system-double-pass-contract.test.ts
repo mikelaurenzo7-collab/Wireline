@@ -88,16 +88,16 @@ describe("WIRELINE design-system double-pass contract", () => {
     const botMark = read("src/lib/bot-mark.ts");
 
     expect(vision).toContain(
-      "Bot identity is a role-agnostic BotBound signal signature; status colors communicate state only.",
+      "Bot identity is a customer-selected mark from the curated BotBound set; status remains a separate signal.",
     );
     expect(refinement).toContain('.wl-rail-agent-link[aria-current="page"]');
-    expect(botMark).toContain("BOT_MARK_GRADIENT_CAPACITY = 1_048_576");
+    expect(botMark).toContain("BOT_MARK_SIGNATURE_CAPACITY = 1_048_576");
     expect(botMark).not.toContain("status-success");
     expect(botMark).not.toContain("status-warning");
     expect(botMark).not.toContain("status-error");
   });
 
-  it("keeps Bot Mark gradient capacity beyond the maximum standard purchasable roster", () => {
+  it("keeps Bot Mark fallback signatures beyond the maximum standard purchasable roster", () => {
     // Retained Business has 15 base Bots and the self-serve add-on route permits
     // up to 100 additional Bots, so 115 is the largest standard catalog roster.
     const standardCommercialCeiling = 115;
@@ -120,7 +120,8 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(landing).not.toMatch(/\bvoice agents?\b/i);
     expect(footer).not.toMatch(/\bvoice agents?\b/i);
     expect(demo).not.toMatch(/\bBot avatar\b/i);
-    expect(demo).toContain("Bot mark");
+    expect(demo).toContain("Headphones");
+    expect(demo).not.toContain("Bot mark");
   });
 
   it("keeps BotBound as one cross-platform visual brand while technical wireline stays data", () => {

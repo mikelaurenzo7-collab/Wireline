@@ -30,6 +30,8 @@ import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
+import { resolveAgentEntitlement } from "../lib/agent-entitlements";
+import { isOwnerEmail } from "../lib/auth-service";
 import {
   failStripeCheckoutSession,
   fulfillStripeCheckoutSession,
@@ -841,6 +843,13 @@ router.get(
         .from(schema.settings)
         .where(eq(schema.settings.userId, req.user.id))
         .limit(1);
+      const agentEntitlement = resolveAgentEntitlement({
+        isOwner: isOwnerEmail(req.user.email),
+        subscriptionStatus: sub?.status ?? settingsRow?.status,
+        planId: sub?.plan,
+        maxAgents: settingsRow?.maxAgents,
+        extraAgents: settingsRow?.extraAgents,
+      });
 
       let trial: {
         status: string;
@@ -903,14 +912,8 @@ router.get(
               plan: sub.plan,
               plan_id: sub.plan,
               plan_name: planMeta?.name || null,
-              max_agents: (() => {
-                const catalog =
-                  (planMeta?.max_agents ?? 0) + Math.max(0, settingsRow?.extraAgents ?? 0);
-                const stored =
-                  typeof settingsRow?.maxAgents === "number" ? settingsRow.maxAgents : 0;
-                return Math.max(catalog, stored) || planMeta?.max_agents || null;
-              })(),
-              extra_agents: settingsRow?.extraAgents ?? 0,
+              max_agents: agentEntitlement.effectiveCap,
+              extra_agents: agentEntitlement.purchasedExtras,
               status: sub.status,
               current_period_end: sub.currentPeriodEnd,
               cancel_at_period_end: !!sub.cancelAtPeriodEnd,

@@ -53,6 +53,7 @@ describe("production dogfood and QA canonical origin", () => {
     );
     expect(appReleaseQa).toContain("const legacyMcpEndpoint = `${LEGACY_COMPATIBILITY_URL}/mcp`");
     expect(measurementQa).toContain('window.location.hostname === "trywireline.com"');
-    expect(stripeIdentity).toContain('"support@trywireline.com"');
+    expect(stripeIdentity).toContain('"support@botbound.me"');
+    expect(stripeIdentity).not.toContain('"support@trywireline.com"');
   });
 });

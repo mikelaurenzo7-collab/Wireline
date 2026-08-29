@@ -3,6 +3,7 @@ import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 
 import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type SignalResponse = {
@@ -10,7 +11,7 @@ type SignalResponse = {
   greeting?: string;
   maxDurationSeconds?: number;
 };
-type Line = { id: string; role: "You" | "Agent"; text: string };
+type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 const RATE = 24_000;
@@ -65,7 +66,7 @@ function voiceActivity(state: VoiceState) {
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Agent speaking",
+      title: "Bot speaking",
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
@@ -84,6 +85,7 @@ function voiceActivity(state: VoiceState) {
 export default function OpenAILiveVoiceSandbox({
   agentId,
   agentName,
+  markKey,
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
@@ -91,6 +93,7 @@ export default function OpenAILiveVoiceSandbox({
 }: {
   agentId: string;
   agentName: string;
+  markKey?: BotMarkKey | null;
   onAgentAudioDelta?: (base64Pcm: string) => void;
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
@@ -130,7 +133,7 @@ export default function OpenAILiveVoiceSandbox({
     const id =
       assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     assistantLineId.current = id;
-    upsertLine(id, "Agent", text);
+    upsertLine(id, "Bot", text);
   };
 
   const updateUserTranscript = (text: string, itemId?: unknown) => {
@@ -417,6 +420,7 @@ export default function OpenAILiveVoiceSandbox({
             <div className="wl-presence__face">
               <AgentFace
                 seed={agentName}
+                markKey={markKey}
                 size={44}
                 speaking={state === "speaking"}
                 title={`${agentName} face`}
@@ -429,7 +433,7 @@ export default function OpenAILiveVoiceSandbox({
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              A private browser test using this agent's rules, facts, and voice profile.
+              A private browser test of this Bot's rules, facts, and voice.
             </p>
           </div>
         </div>

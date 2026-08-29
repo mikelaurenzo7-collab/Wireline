@@ -112,13 +112,22 @@
 
 .wl-access-panel__tabs button {
   min-height: 2.65rem;
+  padding-inline: 0.4rem;
   border: 0;
   border-radius: 0.7rem;
   background: transparent;
   color: var(--wireline-color-text-secondary);
   font-size: 0.84rem;
   font-weight: 650;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+@media (max-width: 340px) {
+  .wl-access-panel__tabs button {
+    font-size: 0.76rem;
+    letter-spacing: -0.01em;
+  }
 }
 
 .wl-access-panel__tabs button[aria-pressed="true"] {

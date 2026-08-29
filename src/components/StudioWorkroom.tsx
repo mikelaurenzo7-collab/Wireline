@@ -15,6 +15,7 @@ import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
@@ -57,10 +58,19 @@ export type StudioWorkroomHandle = {
   focusComposer: (text?: string) => void;
 };
 
-function AgentAvatar({ agentName, speaking = false }: { agentName: string; speaking?: boolean }) {
+function AgentAvatar({
+  agentName,
+  markKey,
+  speaking = false,
+}: {
+  agentName: string;
+  markKey?: BotMarkKey | null;
+  speaking?: boolean;
+}) {
   return (
     <AgentFace
       seed={agentName || "agent"}
+      markKey={markKey}
       size={24}
       speaking={speaking}
       title={`${agentName || "Bot"} face`}
@@ -72,11 +82,13 @@ function AgentAvatar({ agentName, speaking = false }: { agentName: string; speak
 function MessageBubble({
   message,
   agentName,
+  markKey,
   mode,
   speaking = false,
 }: {
   message: StudioMessage;
   agentName: string;
+  markKey?: BotMarkKey | null;
   mode: WorkroomMode;
   speaking?: boolean;
 }) {
@@ -98,7 +110,7 @@ function MessageBubble({
 
   return (
     <article className="flex max-w-[92%] items-start gap-3">
-      <AgentAvatar agentName={agentName} speaking={speaking} />
+      <AgentAvatar agentName={agentName} markKey={markKey} speaking={speaking} />
       <div className="min-w-0">
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -118,6 +130,7 @@ const StudioWorkroom = forwardRef<
   {
     agentId: string;
     agentName: string;
+    markKey?: BotMarkKey | null;
     initialCommand?: string;
     commandNonce?: string;
     onBack: () => void;
@@ -130,6 +143,7 @@ const StudioWorkroom = forwardRef<
   {
     agentId,
     agentName,
+    markKey,
     initialCommand,
     commandNonce,
     onBack,
@@ -419,6 +433,7 @@ const StudioWorkroom = forwardRef<
                   key={message.id}
                   message={message}
                   agentName={agentName}
+                  markKey={markKey}
                   mode={mode}
                   speaking={
                     sending &&
@@ -430,7 +445,11 @@ const StudioWorkroom = forwardRef<
               ))}
               {sending ? (
                 <div className="flex max-w-[92%] items-start gap-3">
-                  <AgentAvatar agentName={agentName} speaking={streamState.phase === "replying"} />
+                  <AgentAvatar
+                    agentName={agentName}
+                    markKey={markKey}
+                    speaking={streamState.phase === "replying"}
+                  />
                   <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
                     {workingLabel}…
@@ -440,7 +459,7 @@ const StudioWorkroom = forwardRef<
             </div>
           ) : (
             <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
-              <AgentFace seed={agentName} size={48} title={`${agentName} face`} />
+              <AgentFace seed={agentName} markKey={markKey} size={48} title={`${agentName} mark`} />
               <h3 className="mt-4 text-lg font-semibold text-foreground">
                 {mode === "test"
                   ? "Start with a real customer question"

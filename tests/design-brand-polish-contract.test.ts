@@ -112,11 +112,12 @@ describe("E2E design and BotBound brand polish", () => {
     expect(footer).toContain("min-h-11 items-center");
   });
 
-  it("keeps status and CTA foregrounds accessible while demos use Bot Marks directly", () => {
+  it("keeps status and CTA foregrounds accessible while public demos use a live-voice signal", () => {
     const demo = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(demo).toContain('import BotMark from "../BotMark"');
-    expect(demo).toContain("<SignalOrbFrame");
-    expect(demo).toContain("<BotMark");
+    expect(demo).toContain("Headphones");
+    expect(demo).not.toContain("<BotMark");
+    expect(demo).not.toContain("markKey");
+    expect(demo).not.toContain("<SignalOrbFrame");
     expect(demo).not.toContain("AgentFace");
     expect(demo).not.toContain("<Medallion");
     expect(demo).toContain("text-[color:var(--wireline-color-text-onAction)]");
@@ -128,12 +129,15 @@ describe("E2E design and BotBound brand polish", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     const prestige = withoutComments(read("src/styles/landing-prestige.css"));
     const auth = read("src/styles/auth-access-panel.css");
-    expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(landing).toContain(
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+    );
     expect(landing).toMatch(/<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/);
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("BotBoundLockup");
     expect(landing).toContain('className="landing-prestige__hero-lockup"');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");

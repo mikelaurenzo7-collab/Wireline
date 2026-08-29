@@ -71,37 +71,44 @@ function StudioEmptyState() {
   }
 
   return (
-    <EmptyState
-      fill
-      icon={Sparkles}
-      title="Build Your Bot"
-      description="Describe the work. Configure calls, texts, email, tools, and the workflow around them."
-      className="wl-composer-dock"
+    <div
+      data-studio-first-run
+      className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-8 sm:px-6 sm:pt-12 lg:pt-16"
     >
-      <div className="mx-auto mt-2 w-full max-w-xl text-left">
-        <label className="mb-2 block text-sm font-semibold text-foreground" htmlFor="studio-brief">
-          {BOT_LANGUAGE.setupPrompt}
-        </label>
-        <textarea
-          id="studio-brief"
-          value={brief}
-          onChange={(event) => setBrief(event.target.value)}
-          className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
-          placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups…"
-        />
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild>
-            <Link to={createHref()}>
-              <Plus size={15} aria-hidden="true" />
-              Create Bot
-            </Link>
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Choose a role starter or make it entirely custom.
-          </span>
+      <EmptyState
+        icon={Sparkles}
+        title="Build Your Bot"
+        description="Describe the work. Configure calls, texts, email, tools, and the workflow around them."
+        className="wl-composer-dock mx-auto w-full max-w-3xl"
+      >
+        <div className="mx-auto mt-2 w-full max-w-xl text-left">
+          <label
+            className="mb-2 block text-sm font-semibold text-foreground"
+            htmlFor="studio-brief"
+          >
+            {BOT_LANGUAGE.setupPrompt}
+          </label>
+          <textarea
+            id="studio-brief"
+            value={brief}
+            onChange={(event) => setBrief(event.target.value)}
+            className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
+            placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups…"
+          />
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild>
+              <Link to={createHref()}>
+                <Plus size={15} aria-hidden="true" />
+                Create Bot
+              </Link>
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              Choose a role starter or make it entirely custom.
+            </span>
+          </div>
         </div>
-      </div>
-    </EmptyState>
+      </EmptyState>
+    </div>
   );
 }
 
@@ -328,6 +335,7 @@ export default function StudioWorkspaceV2() {
       ref={workroomRef}
       agentId={active.id}
       agentName={active.name}
+      markKey={active.mark_key}
       initialCommand={params.get("command") || undefined}
       commandNonce={params.get("commandNonce") || undefined}
       onBack={() => setSection("setup")}

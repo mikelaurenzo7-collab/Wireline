@@ -5,12 +5,13 @@
  */
 
 :root {
-  --wireline-font-family-display: "Inter Tight", "Inter", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --wireline-font-family-body: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
-  --wireline-font-family-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
-    Consolas, monospace;
+  --wireline-font-family-display:
+    "Inter Tight", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --wireline-font-family-body:
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --wireline-font-family-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --wl-font-display: var(--wireline-font-family-display);
   --wl-font-body: var(--wireline-font-family-body);
   --wl-font-sans: var(--wireline-font-family-body);
@@ -92,7 +93,15 @@ h4,
   letter-spacing: var(--wireline-typography-h3-letterSpacing);
 }
 
-:is(.marketing-surface, .prose, .wl-copy, .wl-public-copy, .wl-page-copy, .wl-route-copy, .wl-overview-hero-copy)
+:is(
+    .marketing-surface,
+    .prose,
+    .wl-copy,
+    .wl-public-copy,
+    .wl-page-copy,
+    .wl-route-copy,
+    .wl-overview-hero-copy
+  )
   :where(p, li, dd, dt, summary),
 .wl-body,
 .wl-lead,
@@ -189,8 +198,7 @@ summary {
 }
 
 :focus-visible {
-  outline: var(--wireline-interaction-focus-width, 2px) solid
-    var(--wireline-color-focus-default);
+  outline: var(--wireline-interaction-focus-width, 2px) solid var(--wireline-color-focus-default);
   outline-offset: var(--wireline-interaction-focus-offset, 2px);
 }
 
@@ -247,6 +255,11 @@ summary {
   .marketing-btn-primary,
   .marketing-btn-secondary {
     width: 100%;
+  }
+
+  .wl-public-header .marketing-btn-primary,
+  .wl-public-header .marketing-btn-secondary {
+    width: auto;
   }
 }
 
@@ -332,24 +345,20 @@ button[data-slot="switch"]::after {
   color: var(--wireline-color-text-primary);
 }
 
-:is(
-    [data-slot="dialog-overlay"],
-    [data-slot="sheet-overlay"],
-    [data-slot="alert-dialog-overlay"]
-  ) {
+:is([data-slot="dialog-overlay"], [data-slot="sheet-overlay"], [data-slot="alert-dialog-overlay"]) {
   background: var(--wireline-color-overlay-scrim);
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
 }
 
 :is(
-    [data-slot="dialog-content"],
-    [data-slot="sheet-content"],
-    [data-slot="alert-dialog-content"],
-    [data-slot="select-content"],
-    [data-slot="dropdown-menu-content"],
-    [data-slot="dropdown-menu-sub-content"]
-  ) {
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="select-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"]
+) {
   scrollbar-gutter: stable;
 }
 
@@ -357,7 +366,11 @@ button[data-slot="switch"]::after {
   border-color: var(--wireline-color-status-error);
 }
 
-:is([data-slot="input"], [data-slot="textarea"], [data-slot="native-select"])[aria-invalid="true"]:focus-visible {
+:is(
+    [data-slot="input"],
+    [data-slot="textarea"],
+    [data-slot="native-select"]
+  )[aria-invalid="true"]:focus-visible {
   outline-color: var(--wireline-color-status-error);
   box-shadow: 0 0 0 var(--wireline-interaction-focus-haloWidth, 4px)
     color-mix(in srgb, var(--wireline-color-status-error) 22%, transparent);
@@ -376,11 +389,7 @@ button[data-slot="switch"]::after {
 }
 
 ::selection {
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 34%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
   color: var(--wireline-color-text-primary);
 }
 
@@ -420,10 +429,10 @@ button[data-slot="switch"]::after {
 
 @media (prefers-reduced-transparency: reduce) {
   :is(
-      [data-slot="dialog-overlay"],
-      [data-slot="sheet-overlay"],
-      [data-slot="alert-dialog-overlay"]
-    ),
+    [data-slot="dialog-overlay"],
+    [data-slot="sheet-overlay"],
+    [data-slot="alert-dialog-overlay"]
+  ),
   [aria-hidden="true"]:has(+ [role="dialog"][aria-labelledby="recipe-modal-title"]) {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

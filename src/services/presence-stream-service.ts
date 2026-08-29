@@ -9,6 +9,7 @@ import pkg from "pg";
 const { Client } = pkg;
 
 import { log, drizzle } from "../lib/server-context";
+import { getPostgresConnectionConfig } from "../lib/postgres-tls.mjs";
 import * as schema from "../db/schema";
 
 class PresenceStreamManager {
@@ -121,7 +122,7 @@ export async function initPresenceDbListener() {
 export async function startPresenceListener() {
   if (process.env.VERCEL === "1") return;
 
-  const client = new Client({ connectionString: process.env.POSTGRES_URL });
+  const client = new Client(getPostgresConnectionConfig(process.env.POSTGRES_URL));
 
   try {
     await client.connect();

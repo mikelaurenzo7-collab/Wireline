@@ -42,7 +42,7 @@ async function publicMetrics(page: Page) {
     const prestigeEntrance = document.querySelector<HTMLElement>(".landing-prestige__entrance");
     const prestigeHero = document.querySelector<HTMLElement>(".landing-prestige__hero");
     const prestigeAuth = document.querySelector<HTMLElement>(".landing-prestige__auth");
-    const prestigeDemo = document.querySelector<HTMLElement>(".landing-prestige__demo-link");
+    const prestigeDemo = document.querySelector<HTMLElement>(".landing-demo-inline");
     const prestigeMobileLinks = document.querySelector<HTMLElement>(
       ".landing-prestige__mobile-links",
     );
@@ -160,6 +160,30 @@ for (const { path, name } of PUBLIC_ROUTES) {
   });
 }
 
+test("supporting public headers keep both account actions inside a phone viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+
+  for (const path of ["/showcase", "/solutions/support"] as const) {
+    await openPublicRoute(page, path);
+    const bounds = await page.evaluate(() => {
+      const links = Array.from(
+        document.querySelectorAll<HTMLElement>('.wl-public-header nav[aria-label="Account"] a'),
+      ).map((link) => {
+        const rect = link.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      return { links, width: window.innerWidth };
+    });
+    expect(bounds.links).toHaveLength(2);
+    for (const link of bounds.links) {
+      expect(link.left, `${path} account link left`).toBeGreaterThanOrEqual(-1);
+      expect(link.right, `${path} account link right`).toBeLessThanOrEqual(bounds.width + 1);
+    }
+  }
+});
+
 test("sign in uses the document auth shell without horizontal escape", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openPublicRoute(page, "/signin");
@@ -197,9 +221,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
   await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk to Jordan" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." }),
   ).toBeAttached();
@@ -233,7 +257,7 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Create Account" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
@@ -245,6 +269,32 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   expect(metrics.prestigeAuthWidth).toBeGreaterThan(320);
   expect(metrics.prestigeAuthWidth).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.prestigeMobileLinksDisplay).toBe("flex");
+});
+
+test("home demo reflows deliberately at the narrowest supported width", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await openPublicRoute(page, "/");
+
+  const geometry = await page.evaluate(() => {
+    const card = document
+      .querySelector<HTMLElement>(".landing-demo-inline")
+      ?.getBoundingClientRect();
+    const identity = document
+      .querySelector<HTMLElement>(".landing-demo-inline__identity")
+      ?.getBoundingClientRect();
+    const button = document
+      .querySelector<HTMLElement>(".landing-demo-inline__button")
+      ?.getBoundingClientRect();
+    return { card, identity, button, width: window.innerWidth };
+  });
+
+  expect(geometry.card).toBeTruthy();
+  expect(geometry.identity).toBeTruthy();
+  expect(geometry.button).toBeTruthy();
+  expect(geometry.card!.left).toBeGreaterThanOrEqual(-1);
+  expect(geometry.card!.right).toBeLessThanOrEqual(geometry.width + 1);
+  expect(geometry.button!.top).toBeGreaterThanOrEqual(geometry.identity!.bottom);
+  expect(geometry.button!.width).toBeGreaterThanOrEqual(geometry.card!.width - 30);
 });
 
 test("home remains composed on a short wide desktop", async ({ page }) => {
@@ -268,4 +318,24 @@ test("features and pricing remain scrollable without horizontal clipping", async
     expectNoHorizontalEscape(metrics, path);
     expect(metrics.documentVerticalOverflow).toBeGreaterThanOrEqual(0);
   }
+});
+
+test("showcase demo lines stay inside a 320px viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await openPublicRoute(page, "/showcase");
+  await expect(page.locator("#demo-lines")).toBeVisible();
+
+  const geometry = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    cardsInsideViewport: Array.from(document.querySelectorAll<HTMLElement>("#demo-lines a")).every(
+      (card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left >= 0 && rect.right <= document.documentElement.clientWidth + 0.5;
+      },
+    ),
+  }));
+
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+  expect(geometry.cardsInsideViewport).toBe(true);
 });

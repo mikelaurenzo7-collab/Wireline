@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { resolvePreviewMigrationDatabaseUrl } from "./lib/preview-migration-database.mjs";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
 
 const run = (command, args, options = {}) => {
@@ -315,7 +316,28 @@ if (shouldMigrate) {
     process.exit(1);
   }
 
-  run("npm", ["run", "db:migrate"]);
+  if (environment === "preview") {
+    let previewMigrationDatabaseUrl;
+    try {
+      previewMigrationDatabaseUrl = resolvePreviewMigrationDatabaseUrl({
+        databaseUrl,
+        projectRef: process.env.WIRELINE_PREVIEW_DATABASE_PROJECT_REF,
+        sessionPoolerHost: process.env.WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST,
+      });
+    } catch (error) {
+      console.error(
+        `Refusing Preview migrations: ${error instanceof Error ? error.message : "invalid isolated database configuration"}`,
+      );
+      process.exit(1);
+    }
+
+    console.log("Running Preview migrations through the validated isolated database lane.");
+    run("npm", ["run", "db:migrate"], {
+      env: { POSTGRES_URL: previewMigrationDatabaseUrl },
+    });
+  } else {
+    run("npm", ["run", "db:migrate"]);
+  }
 } else {
   console.log(
     `Skipping database migrations for ${environment || "local"} build${

@@ -19,6 +19,8 @@ const TARGET_0060_PATH = resolve(ROOT, "drizzle/migrations/meta/0060_snapshot.js
 const TARGET_0061_PATH = resolve(ROOT, "drizzle/migrations/meta/0061_snapshot.json");
 const SOURCE_0062_PATH = resolve(ROOT, "drizzle/migrations/meta/0062_snapshot.json");
 const TARGET_0063_PATH = resolve(ROOT, "drizzle/migrations/meta/0063_snapshot.json");
+const TARGET_0064_PATH = resolve(ROOT, "drizzle/migrations/meta/0064_snapshot.json");
+const TARGET_0065_PATH = resolve(ROOT, "drizzle/migrations/meta/0065_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -47,6 +49,10 @@ const SOURCE_0062_ID = "a905b7c9-a1f8-4796-a294-bccc09db5601";
 const SOURCE_0062_SHA256 = "ebc456e87118028b0c17e34db67f744f4d2cb0ee70024ccd3583805d17043a1e";
 const TARGET_0063_ID = "d8764100-e1b8-4d00-8abb-b876d90b3828";
 const TARGET_0063_SHA256 = "ee649aa201d1ef54f3dab1dc90ea615ae00ae5bce0ff763cabfb027458a07367";
+const TARGET_0064_ID = "6c735f69-77f0-4c5f-9d61-2f1f7e4543a8";
+const TARGET_0064_SHA256 = "823ff657a10c975cc63a9dc2707dc1abc4a6c3726f42e769b7e96ddba020bd79";
+const TARGET_0065_ID = "065505d7-57b1-42ce-a9c0-50f6d3490ae9";
+const TARGET_0065_SHA256 = "0eed50cf6d3264d03712ad69001b98c5b08310b6e0e1a683f625ba21a7cc48f7";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -416,6 +422,78 @@ export function buildLegacyAuditOrphanReconciliationSnapshot(stripeClaimFencingS
   return snapshot;
 }
 
+export function buildAgentIdentityMarkSnapshot(legacyAuditOrphanReconciliationSnapshot) {
+  if (
+    !legacyAuditOrphanReconciliationSnapshot ||
+    legacyAuditOrphanReconciliationSnapshot.id !== TARGET_0063_ID ||
+    legacyAuditOrphanReconciliationSnapshot.version !== "7"
+  ) {
+    throw new Error("0063 snapshot identity changed; refusing to synthesize 0064.");
+  }
+  const snapshot = structuredClone(legacyAuditOrphanReconciliationSnapshot);
+  snapshot.id = TARGET_0064_ID;
+  snapshot.prevId = legacyAuditOrphanReconciliationSnapshot.id;
+  const agents = snapshot.tables["public.wireline_agents"];
+  if (!agents) {
+    throw new Error("wireline_agents is missing; refusing to synthesize 0064.");
+  }
+  agents.columns.mark_key = column("mark_key", "text", false);
+  agents.checkConstraints.wireline_agents_mark_key_check = {
+    name: "wireline_agents_mark_key_check",
+    value:
+      '"wireline_agents"."mark_key" IS NULL OR "wireline_agents"."mark_key" ~ \'^(orbit|beacon|spark|prism|flow|pulse|compass|focus|aperture|wave|helix|loop|nova|route|vertex)-(violet|blue|rose|amber|teal|magenta|indigo|slate)$\'',
+  };
+  agents.indexes.uq_wireline_agents_user_mark_key = {
+    name: "uq_wireline_agents_user_mark_key",
+    columns: [
+      { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+      { expression: "mark_key", isExpression: false, asc: true, nulls: "last" },
+    ],
+    isUnique: true,
+    where: '"wireline_agents"."mark_key" IS NOT NULL',
+    concurrently: false,
+    method: "btree",
+    with: {},
+  };
+  return snapshot;
+}
+
+export function buildPaidBotIdentityJobSnapshot(agentIdentityMarkSnapshot) {
+  if (
+    !agentIdentityMarkSnapshot ||
+    agentIdentityMarkSnapshot.id !== TARGET_0064_ID ||
+    agentIdentityMarkSnapshot.version !== "7"
+  ) {
+    throw new Error("0064 snapshot identity changed; refusing to synthesize 0065.");
+  }
+  const snapshot = structuredClone(agentIdentityMarkSnapshot);
+  snapshot.id = TARGET_0065_ID;
+  snapshot.prevId = agentIdentityMarkSnapshot.id;
+  const jobs = snapshot.tables["public.wireline_jobs"];
+  if (!jobs) {
+    throw new Error("wireline_jobs is missing; refusing to synthesize 0065.");
+  }
+  jobs.indexes.uq_jobs_paid_bot_identity_active = {
+    name: "uq_jobs_paid_bot_identity_active",
+    columns: [
+      { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+      {
+        expression: "(\"payload\"->>'agentId')",
+        isExpression: true,
+        asc: true,
+        nulls: "last",
+      },
+    ],
+    isUnique: true,
+    where:
+      '"wireline_jobs"."type" = \'paid_bot_identity_reconcile\' AND ("wireline_jobs"."payload"->>\'agentId\') IS NOT NULL AND "wireline_jobs"."status" IN (\'pending\', \'running\', \'failed\')',
+    concurrently: false,
+    method: "btree",
+    with: {},
+  };
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -473,6 +551,12 @@ export function materializeDrizzleMeta() {
     stripeClaimFencingSnapshot,
   );
   const legacyAuditOrphanReconciliationSerialized = `${JSON.stringify(legacyAuditOrphanReconciliationSnapshot, null, 2)}\n`;
+  const agentIdentityMarkSnapshot = buildAgentIdentityMarkSnapshot(
+    legacyAuditOrphanReconciliationSnapshot,
+  );
+  const agentIdentityMarkSerialized = `${JSON.stringify(agentIdentityMarkSnapshot, null, 2)}\n`;
+  const paidBotIdentityJobSnapshot = buildPaidBotIdentityJobSnapshot(agentIdentityMarkSnapshot);
+  const paidBotIdentityJobSerialized = `${JSON.stringify(paidBotIdentityJobSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
@@ -518,6 +602,16 @@ export function materializeDrizzleMeta() {
     legacyAuditOrphanReconciliationSerialized,
     TARGET_0063_SHA256,
   );
+  const agentIdentityMark = writeSnapshot(
+    TARGET_0064_PATH,
+    agentIdentityMarkSerialized,
+    TARGET_0064_SHA256,
+  );
+  const paidBotIdentityJob = writeSnapshot(
+    TARGET_0065_PATH,
+    paidBotIdentityJobSerialized,
+    TARGET_0065_SHA256,
+  );
   return {
     native,
     preserved,
@@ -532,6 +626,8 @@ export function materializeDrizzleMeta() {
     subscriptionCascade,
     accountEnvironmentPromotionGuard,
     legacyAuditOrphanReconciliation,
+    agentIdentityMark,
+    paidBotIdentityJob,
   };
 }
 
@@ -587,5 +683,15 @@ if (result.accountEnvironmentPromotionGuard.changed) {
 if (result.legacyAuditOrphanReconciliation.changed) {
   console.log(
     `Materialized Drizzle snapshot 0063 (${result.legacyAuditOrphanReconciliation.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.agentIdentityMark.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0064 (${result.agentIdentityMark.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.paidBotIdentityJob.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0065 (${result.paidBotIdentityJob.sha256.slice(0, 12)}…).`,
   );
 }

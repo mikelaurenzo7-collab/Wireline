@@ -2,16 +2,18 @@
  * AgentPresenceSlot — compact, role-agnostic bot recognition.
  *
  * The active product intentionally has no avatar or video-presenter layer.
- * Every bot gets a stable circular Bot Mark; richer branding can later flow
- * through the same primitive without changing the surrounding product UI.
+ * Every Bot gets a stable customer-selectable identity mark that follows it
+ * through dense and expressive product surfaces.
  */
 import BotMark from "./BotMark";
+import type { BotMarkKey } from "../lib/bot-mark";
 
 export type AgentPresenceVariant = "badge" | "inline" | "stage";
 
 type AgentPresenceProps = {
   name: string;
   agentId?: string | null;
+  markKey?: BotMarkKey | null;
   role?: string | null;
   isBusinessAgent?: boolean;
   variant?: AgentPresenceVariant;
@@ -26,15 +28,14 @@ type AgentPresenceProps = {
 function displayRole(role: string | null | undefined): string | null {
   const normalized = role?.trim();
   if (!normalized) return null;
-  return normalized
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return normalized.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export default function AgentPresenceSlot(props: AgentPresenceProps) {
   const {
     name,
     agentId,
+    markKey,
     role,
     variant = "inline",
     speaking = false,
@@ -48,6 +49,7 @@ export default function AgentPresenceSlot(props: AgentPresenceProps) {
       <BotMark
         seed={seed}
         name={name}
+        markKey={markKey}
         size={markSize}
         active={speaking}
         className={className}
@@ -63,6 +65,7 @@ export default function AgentPresenceSlot(props: AgentPresenceProps) {
         <BotMark
           seed={seed}
           name={name}
+          markKey={markKey}
           size={markSize}
           active={speaking}
           title={`${name || "Bot"} mark`}

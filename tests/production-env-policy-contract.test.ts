@@ -11,6 +11,7 @@ const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
 const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
 const startup = readFileSync(resolve(process.cwd(), "src/lib/startup.ts"), "utf8");
+const server = readFileSync(resolve(process.cwd(), "server.ts"), "utf8");
 const packageJson = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8"));
 
 const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
@@ -77,6 +78,15 @@ describe("production environment launch policy", () => {
     expect(isProductionDeployment({ NODE_ENV: "production" })).toBe(true);
     expect(envValidator).toContain("isProductionDeployment()");
     expect(envValidator).not.toContain('process.env.VERCEL === "1"');
+    expect(startup).toContain("const productionDeployment = isProductionDeployment()");
+    expect(startup).toContain("logEnvValidation(productionDeployment)");
+    expect(startup).toContain(
+      "!importSmokeWithoutDatabase && productionDeployment && !isFederalDncVendorConfigured()",
+    );
+    expect(startup).toContain(
+      "!importSmokeWithoutDatabase && productionDeployment && !process.env.SENTRY_DSN",
+    );
+    expect(server).toContain("if (isProductionDeployment() && origins.length === 0)");
   });
 
   it("fails production closed if an operator override moves structured primary off OpenAI", () => {
@@ -140,6 +150,9 @@ describe("production environment launch policy", () => {
       "value === BOTBOUND_PRODUCTION_ORIGIN",
     );
     expect(startup).toContain('if (!IS_PROD && !process.env.APP_URL) recommended.push("APP_URL")');
+    expect(startup).toContain(
+      "if (productionDeployment && !process.env.CORS_ORIGINS && !process.env.APP_URL)",
+    );
 
     const requiredBlock = prodCheck.slice(
       prodCheck.indexOf("const required = ["),
@@ -205,6 +218,18 @@ describe("production environment launch policy", () => {
         POSTGRES_URL:
           "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@api.supabase.com:5432/postgres",
       },
+      {
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
+      },
+      {
+        DATABASE_POOL_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+      },
+      {
+        DATABASE_POOL_URL:
+          "postgresql://postgres:configured@db.ogenlhodmwvyacvnrsnj.supabase.co:5432/postgres",
+      },
       { POSTGRES_URL: "postgresql://configured@database.example.com/postgres" },
       { DATABASE_POOL_URL: "not-a-postgres-url" },
     ]) {
@@ -212,7 +237,17 @@ describe("production environment launch policy", () => {
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toMatch(/POSTGRES_URL|DATABASE_POOL_URL/);
     }
-  });
+
+    for (const override of [
+      { NODE_TLS_REJECT_UNAUTHORIZED: "0" },
+      { PGSSLMODE: "no-verify" },
+      { PGSSLMODE: "disable" },
+    ]) {
+      const result = runProductionBoundary("https://botbound.me", override);
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toMatch(/NODE_TLS_REJECT_UNAUTHORIZED|PGSSLMODE/);
+    }
+  }, 30_000);
 
   it("keeps both BotBound and legacy origins in the production transition allowlist", () => {
     expect(runProductionBoundary("https://botbound.me").status).toBe(0);
@@ -315,7 +350,7 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");
-  });
+  }, 30_000);
 
   it("permits only the reviewed isolated database lane for authenticated Preview QA", () => {
     const isolatedPreview = {
@@ -334,6 +369,77 @@ describe("production environment launch policy", () => {
       "Deployment-boundary check passed for preview",
     );
 
+    const allowedLimiterOverride = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+      VERCEL_OIDC_TOKEN: "automatic-preview-oidc",
+    });
+    expect(allowedLimiterOverride.status).toBe(0);
+
+    const unisolatedLimiterOverride = runPreviewBoundary({
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+    });
+    expect(unisolatedLimiterOverride.status).toBe(1);
+    expect(`${unisolatedLimiterOverride.stdout}${unisolatedLimiterOverride.stderr}`).toContain(
+      "Preview override requires WIRELINE_PREVIEW_DATABASE_ISOLATED=true",
+    );
+
+    const providerBackedLimiterOverride = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+      PERPLEXITY_PREVIEW_API_KEY: "budgeted-but-live-preview-key",
+    });
+    expect(providerBackedLimiterOverride.status).toBe(1);
+    expect(
+      `${providerBackedLimiterOverride.stdout}${providerBackedLimiterOverride.stderr}`,
+    ).toContain("provider-free Preview required");
+
+    const missingSessionPoolerHost = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+    });
+    expect(missingSessionPoolerHost.status).toBe(1);
+    expect(`${missingSessionPoolerHost.stdout}${missingSessionPoolerHost.stderr}`).toContain(
+      "transaction-pooler migration requires a reviewed Supabase session-pooler hostname",
+    );
+
+    const invalidSessionPoolerHost = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "database.example.com",
+    });
+    expect(invalidSessionPoolerHost.status).toBe(1);
+    expect(`${invalidSessionPoolerHost.stdout}${invalidSessionPoolerHost.stderr}`).toContain(
+      "reviewed Supabase session-pooler hostname",
+    );
+
+    const derivedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "aws-0-us-east-2.pooler.supabase.com",
+    });
+    expect(derivedMigrationLane.status).toBe(0);
+
+    const mismatchedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "aws-0-us-east-2.pooler.supabase.com",
+      POSTGRES_URL:
+        "postgresql://postgres.abcdefghijklmnopqrst:preview-only@pooler.supabase.com:6543/postgres",
+    });
+    expect(mismatchedMigrationLane.status).toBe(1);
+    expect(`${mismatchedMigrationLane.stdout}${mismatchedMigrationLane.stderr}`).toContain(
+      "does not match the isolated Preview project ref",
+    );
+
+    const allowedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      POSTGRES_URL:
+        "postgresql://postgres.ewgqxfnjxdzoawlkcyfb:preview-only@pooler.supabase.com:5432/postgres",
+    });
+    expect(allowedMigrationLane.status).toBe(0);
+
     for (const override of [
       { WIRELINE_LAUNCH_DEMO_MODE: "false" },
       { WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj" },
@@ -351,7 +457,7 @@ describe("production environment launch policy", () => {
 
     expect(deploymentBoundary).toContain("reviewedIsolatedPreviewDatabaseKeys");
     expect(deploymentBoundary).toContain("WIRELINE_PREVIEW_DATABASE_PROJECT_REF");
-  });
+  }, 30_000);
 
   it("binds self-serve billing to the audited main production release channel", () => {
     expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_REF")');

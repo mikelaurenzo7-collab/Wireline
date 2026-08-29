@@ -130,7 +130,7 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.listing.company_website).toBe("https://botbound.me");
     expect(listing.server.url).toBe("https://botbound.me/mcp");
     expect(listing.server.allowed_link_uris).toEqual(["https://botbound.me"]);
-    expect(listing.listing.support_email).toBe("support@trywireline.com");
+    expect(listing.listing.support_email).toBe("support@botbound.me");
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
     expect(listing.listing.tagline).toBe("Build your first Bot");
     expect(packet).toContain("Build your first Bot");

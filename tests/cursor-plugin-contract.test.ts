@@ -34,9 +34,9 @@ describe("Cursor Directory plugin contract", () => {
     expect(plugin.repository).toBe("https://github.com/mikelaurenzo7-collab/Wireline");
     expect(plugin.author?.name).toBe("BotBound");
     expect(plugin.author?.url).toBe("https://botbound.me");
-    // Directory schemas require an email; retain the verified legacy mailbox
-    // until support@botbound.me is delivery-proven.
-    expect(plugin.author?.email).toBe("support@trywireline.com");
+    // Directory identity follows the production-domain mailbox after its
+    // external round-trip and DNS proof.
+    expect(plugin.author?.email).toBe("support@botbound.me");
     expect(Object.keys(plugin).sort()).toEqual(
       [
         "$schema",

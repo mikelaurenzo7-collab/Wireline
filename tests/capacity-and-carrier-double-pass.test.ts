@@ -7,6 +7,12 @@ import {
   agentCapMessage,
   resolveAgentEntitlement,
 } from "../src/lib/agent-entitlements";
+import { BOT_MARK_IDENTITY_CAPACITY } from "../src/lib/bot-mark";
+import {
+  MAX_EXTRA_AGENT_ADDONS,
+  clampAgentCapacity,
+  clampExtraAgentAddons,
+} from "../src/lib/agent-capacity";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -73,7 +79,7 @@ describe("agent capacity integrity", () => {
     }
   });
 
-  it("keeps the owner workspace unlimited", () => {
+  it("keeps the owner workspace within the non-repeating identity namespace", () => {
     const entitlement = resolveAgentEntitlement({
       isOwner: true,
       subscriptionStatus: "canceled",
@@ -82,8 +88,43 @@ describe("agent capacity integrity", () => {
       extraAgents: 0,
     });
 
-    expect(entitlement.unlimited).toBe(true);
-    expect(entitlement.effectiveCap).toBeNull();
+    expect(entitlement.unlimited).toBe(false);
+    expect(entitlement.planAgents).toBe(BOT_MARK_IDENTITY_CAPACITY);
+    expect(entitlement.effectiveCap).toBe(BOT_MARK_IDENTITY_CAPACITY);
+    expect(agentCapHit(BOT_MARK_IDENTITY_CAPACITY, entitlement)).toBe(true);
+  });
+
+  it("clamps explicit grants to the non-repeating identity namespace", () => {
+    const entitlement = resolveAgentEntitlement({
+      isOwner: false,
+      subscriptionStatus: "active",
+      planId: "scale",
+      maxAgents: BOT_MARK_IDENTITY_CAPACITY + 50,
+      extraAgents: 100,
+    });
+
+    expect(entitlement.effectiveCap).toBe(BOT_MARK_IDENTITY_CAPACITY);
+    expect(entitlement.purchasedExtras).toBe(MAX_EXTRA_AGENT_ADDONS);
+    expect(entitlement.unlimited).toBe(false);
+  });
+
+  it("uses one capacity boundary across settings, billing, and Stripe reconciliation", () => {
+    expect(clampAgentCapacity(BOT_MARK_IDENTITY_CAPACITY + 1)).toBe(BOT_MARK_IDENTITY_CAPACITY);
+    expect(clampExtraAgentAddons(MAX_EXTRA_AGENT_ADDONS + 1)).toBe(MAX_EXTRA_AGENT_ADDONS);
+
+    const settings = read("src/routes/settings-routes.ts");
+    const billing = read("src/routes/billing-routes.ts");
+    const stripe = read("src/lib/stripe-helpers.ts");
+    const atomicBilling = read("src/routes/extra-agent-billing-atomic-routes.ts");
+
+    expect(settings).toContain("clampAgentCapacity");
+    expect(settings).toContain("clampExtraAgentAddons");
+    expect(settings).toContain("safe.founderUnlimitedAgents = false");
+    expect(billing).toContain("resolveAgentEntitlement");
+    expect(stripe).toContain("providerExtraAgents > MAX_EXTRA_AGENT_ADDONS");
+    expect(stripe).toContain("provider_extra_agents: providerExtraAgents");
+    expect(stripe).toContain("clampAgentCapacity(baseMaxAgents + extraAgents)");
+    expect(atomicBilling).toContain("target > MAX_EXTRA_AGENT_ADDONS");
   });
 
   it("serializes Extra Agent billing with every agent-creation surface", () => {

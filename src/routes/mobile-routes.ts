@@ -72,6 +72,12 @@ import {
   resolveAgentRoleArchetype,
   validateAgentRoleForCreate,
 } from "../lib/agent-role-definitions";
+import {
+  defaultBotMarkKey,
+  firstAvailableBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "../lib/bot-mark";
 
 const router = Router();
 
@@ -250,11 +256,11 @@ router.post(
       const created = await drizzle.transaction(async (tx) => {
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
-        const [{ count }] = await tx
-          .select({ count: sql<number>`count(*)` })
+        const existingAgents = await tx
+          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
           .from(schema.agents)
           .where(eq(schema.agents.userId, req.user.id));
-        const existing = Number(count || 0);
+        const existing = existingAgents.length;
 
         const [settingsRow] = await tx
           .select({
@@ -274,13 +280,25 @@ router.post(
           maxAgents: settingsRow?.maxAgents,
           extraAgents: settingsRow?.extraAgents,
         });
-        if (agentCapHit(existing, entitlement)) return null;
+        if (agentCapHit(existing, entitlement)) return { kind: "plan_capacity" } as const;
+
+        const usedMarkKeys = new Set<BotMarkKey>();
+        for (const existingAgent of existingAgents) {
+          usedMarkKeys.add(
+            isBotMarkKey(existingAgent.markKey)
+              ? existingAgent.markKey
+              : defaultBotMarkKey(existingAgent.id),
+          );
+        }
+        const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
+        if (!markKey) return { kind: "mark_capacity" } as const;
 
         const voiceId = pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
           id,
           userId: req.user.id,
           name,
+          markKey,
           role,
           channel: "voice",
           archetype: resolveAgentRoleArchetype(role),
@@ -300,13 +318,19 @@ router.post(
               set: { userId: req.user.id, content: seededPersonality },
             });
         }
-        return { voiceId };
+        return { kind: "created", voiceId, markKey } as const;
       });
 
-      if (!created) {
+      if (created.kind === "plan_capacity") {
         return res.status(402).json({
           code: "AGENT_CAPACITY_REACHED",
           error: "Your plan has reached its agent capacity.",
+        });
+      }
+      if (created.kind === "mark_capacity") {
+        return res.status(409).json({
+          code: "BOT_MARK_CAPACITY_REACHED",
+          error: "Every available Bot identity is already in use.",
         });
       }
 
@@ -317,9 +341,11 @@ router.post(
         archetype: resolveAgentRoleArchetype(role),
         channels: ["voice"],
         voiceId: created.voiceId,
+        mark_key: created.markKey,
         isBusinessAgent,
       });
     } catch (err) {
+      if (err instanceof AppError) throw err;
       log.error("POST /api/mobile/agents failed", { error: getErrorMessage(err) });
       throw AppError.fromHttpStatus(500, "Failed to create agent.");
     }
@@ -342,6 +368,7 @@ router.get(
           channel: schema.agents.channel,
           channels: schema.agents.channels,
           voiceId: schema.agents.voiceId,
+          mark_key: schema.agents.markKey,
           isBusinessAgent: schema.agents.isBusinessAgent,
           createdAt: schema.agents.createdAt,
         })
@@ -372,6 +399,7 @@ router.get(
           channel: schema.agents.channel,
           channels: schema.agents.channels,
           voiceId: schema.agents.voiceId,
+          mark_key: schema.agents.markKey,
           personalityVibe: schema.agents.personalityVibe,
           firstMessage: schema.agents.firstMessage,
           transferPhone: schema.agents.transferPhone,
@@ -409,6 +437,7 @@ router.get(
               archetype: schema.agents.archetype,
               enabledTools: schema.agents.enabledTools,
               voiceId: schema.agents.voiceId,
+              mark_key: schema.agents.markKey,
               voiceProvider: schema.agents.voiceProvider,
               isBusinessAgent: schema.agents.isBusinessAgent,
               videoPresenterProvider: schema.agents.videoPresenterProvider,

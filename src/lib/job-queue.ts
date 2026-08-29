@@ -37,6 +37,7 @@ export type JobType =
   | "scheduled_report"
   | "twilio_message_reconciliation"
   | "openai_realtime_hangup"
+  | "paid_bot_identity_reconcile"
   | "account_deletion_billing_reconciliation";
 export interface JobRow extends Omit<base.JobRow, "type"> {
   type: JobType;
@@ -65,6 +66,8 @@ type ClaimOptions = {
 const CALLER_MANAGED_ENQUEUE_FAILURE_TYPES = new Set<JobType>(["campaign_dial"]);
 const SINGLETON_SCHEDULER_TYPES = new Set<JobType>(["cadence_tick", "callback_tick"]);
 const SINGLETON_SCHEDULER_INDEX = "uq_jobs_queued_scheduler_tick";
+const PAID_BOT_IDENTITY_JOB_TYPE: JobType = "paid_bot_identity_reconcile";
+const PAID_BOT_IDENTITY_ACTIVE_INDEX = "uq_jobs_paid_bot_identity_active";
 const STALE_RECOVERY_BATCH = 200;
 const CLAIMABLE_STATUSES = ["pending", "failed"] as const;
 const retryBudgetRemaining = sql`coalesce(${schema.jobs.attempts}, 0) < coalesce(${schema.jobs.maxAttempts}, ${base.DEFAULT_MAX_ATTEMPTS})`;
@@ -94,6 +97,17 @@ function isExpectedSingletonSchedulerConflict(
   );
 }
 
+function isExpectedPaidBotIdentityConflict(
+  opts: Pick<EnqueueOptions, "type">,
+  result: base.EnqueueResult,
+): boolean {
+  return (
+    !result.ok &&
+    opts.type === PAID_BOT_IDENTITY_JOB_TYPE &&
+    String(result.error || "").includes(PAID_BOT_IDENTITY_ACTIVE_INDEX)
+  );
+}
+
 export function enforceDurableEnqueueResult(
   opts: Pick<EnqueueOptions, "type">,
   result: base.EnqueueResult,
@@ -101,6 +115,7 @@ export function enforceDurableEnqueueResult(
   // The partial unique index is the concurrency boundary for waiting scheduler
   // ticks. Only that named conflict is an intentional durable no-op.
   if (isExpectedSingletonSchedulerConflict(opts, result)) return { ok: true };
+  if (isExpectedPaidBotIdentityConflict(opts, result)) return { ok: true };
   if (!result.ok && !CALLER_MANAGED_ENQUEUE_FAILURE_TYPES.has(opts.type)) {
     throw new Error(result.error || `Failed to enqueue ${opts.type} job`);
   }

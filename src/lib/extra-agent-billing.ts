@@ -5,10 +5,9 @@ import {
   STRIPE_PLANS,
   planExtraAgentPriceId,
 } from "./plan-catalog";
+import { clampAgentCapacity, clampExtraAgentAddons } from "./agent-capacity";
 
-const LEGACY_EXTRA_AGENT_LOOKUP_KEYS = new Set([
-  "extra_agent_monthly_founder_2026_07_v3",
-]);
+const LEGACY_EXTRA_AGENT_LOOKUP_KEYS = new Set(["extra_agent_monthly_founder_2026_07_v3"]);
 
 function objectId(value: string | { id: string } | null | undefined): string | null {
   if (!value) return null;
@@ -62,13 +61,13 @@ export function reconciledStoredAgentCap(input: {
   targetExtraAgents: number;
   storedMaxAgents: number | null | undefined;
 }): number {
-  const planMax = Math.max(0, Math.floor(input.planMaxAgents));
-  const currentExtras = Math.max(0, Math.floor(input.currentExtraAgents));
-  const targetExtras = Math.max(0, Math.floor(input.targetExtraAgents));
-  const stored = Math.max(0, Math.floor(input.storedMaxAgents ?? 0));
-  const oldCatalogCap = planMax + currentExtras;
+  const planMax = clampAgentCapacity(input.planMaxAgents);
+  const currentExtras = clampExtraAgentAddons(input.currentExtraAgents);
+  const targetExtras = clampExtraAgentAddons(input.targetExtraAgents);
+  const stored = clampAgentCapacity(input.storedMaxAgents);
+  const oldCatalogCap = clampAgentCapacity(planMax + currentExtras);
   const explicitGrant = Math.max(0, stored - oldCatalogCap);
-  return planMax + targetExtras + explicitGrant;
+  return clampAgentCapacity(planMax + targetExtras + explicitGrant);
 }
 
 /**

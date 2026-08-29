@@ -14,7 +14,7 @@ The largest launch risk is **origin split**, not a missing auth vendor. `src/lib
 
 **P0 release gate:** add every `botbound.me` callback and webhook first, retain every required `trywireline.com` registration, set one coherent production `APP_URL`, redeploy, and run end-to-end tests on that same host. Keep exact callback paths served on the legacy host until logs prove no required traffic remains. Do not redirect an in-flight OAuth callback from one host to the other: the host-only OAuth/session cookies will not follow it.
 
-**Support-email gate:** keep the verified compatibility inbox `support@trywireline.com` on customer, legal, connector, and Stripe surfaces until `support@botbound.me` has passed external send, receive, reply, forwarding, SPF, DKIM, DMARC, and bounce-handling checks. The public product name and URLs can move independently. Do not publish or configure an unproven BotBound-domain address merely for visual consistency.
+**Support-email gate complete (2026-08-29):** `support@botbound.me` passed AgentMail DNS validation, external delivery to Gmail, a Gmail reply, and inbound receipt in the same AgentMail thread. Customer, legal, connector, and Stripe surfaces now use the BotBound address. Keep the legacy mailbox monitored only as a private compatibility fallback; transactional Resend bounce/complaint proof remains a separate gate.
 
 ### Status and owner legend
 
@@ -192,7 +192,7 @@ Supabase Auth is also technically viable because the database is already on Supa
 3. **Print, diff, and register OAuth callbacks.** Run the callback printer for botbound, legacy, and localhost. Add botbound values without deleting legacy. Pay special attention to the shared Google (three paths), Microsoft (four), and Yahoo (two) clients.
 4. **Reconcile MCP as one atomic issuer change.** The MCP URL, protected-resource metadata, authorization-server issuer, resource parameter, server card, ChatGPT/Claude/Cursor registration, privacy/docs links, and `APP_URL` must all name the same origin.
 5. **Migrate server-to-server webhooks.** Stripe, Twilio number/SMS/voice/status/usage, Resend, each AgentMail mailbox, each xAI phone binding, Meta, and rollback Vapi must be enumerated. Add/update botbound endpoints and store the matching endpoint-specific signing secrets.
-6. **Verify support delivery before changing the address.** Keep `support@trywireline.com` until the BotBound-domain alias/mailbox passes external round-trip and DNS authentication checks; only then update the site, legal pages, connector listings, Stripe profile, and submission packets together.
+6. **Keep the proven support cutover coherent.** `support@botbound.me` passed the external round-trip and DNS gate on 2026-08-29. Keep the site, legal pages, connector listings, Stripe profile, and submission packets aligned to that address; retain the legacy mailbox only as a monitored compatibility fallback.
 7. **Redeploy after environment changes.** Vercel environment changes do not alter already-built deployments.
 8. **Test browser auth on botbound.** Password sign-up/verification/sign-in/reset/logout; Google/Microsoft/Yahoo sign-in; session refresh; Origin/Referer rejection; cross-host callback rejection.
 9. **Test every connected integration.** Connect, one minimally scoped read/action where safe, token refresh, disconnect, reconnect. Record provider request IDs and callback host.

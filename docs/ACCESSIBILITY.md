@@ -11,27 +11,27 @@ operator-facing surfaces.
 
 ### Implemented
 
-| Category | Implementation | Evidence |
-|----------|---------------|----------|
-| **Keyboard navigation** | All interactive elements reachable via Tab/Enter/Escape | CommandBar, modal dismissal, form navigation |
-| **Touch targets** | Minimum 44×44px interactive target on CTAs, inputs, and buttons | `min-height: 44px` enforced in `design-system.css` / `cta-readability.css`; comfortable-target token `--wireline-interaction-target-comfortable` |
-| **Color contrast** | BotBound Letterpress palette — near-white text on obsidian canvas in dark mode, obsidian text on near-white in light mode | `design-tokens/wireline.tokens.json` + `src/styles/design-system.css` |
-| **Reduced motion** | `motion/react` respects `prefers-reduced-motion` | Framer Motion default behavior |
-| **Focus indicators** | Visible focus rings on all interactive elements | Tailwind's `focus:ring-2` pattern |
-| **Semantic HTML** | Proper heading hierarchy, landmark regions | Layout components use `<nav>`, `<main>`, `<header>` |
-| **Form labels** | All inputs have associated labels or aria-label | AuthPortal, TeamSettings, agent config forms |
-| **Error messages** | Validation errors announced to screen readers | `role="alert"` on error containers |
-| **Responsive text** | Minimum 11px on mobile (global CSS scaling) | `src/index.css` media query |
+| Category                | Implementation                                                                                                            | Evidence                                                                                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Keyboard navigation** | All interactive elements reachable via Tab/Enter/Escape                                                                   | CommandBar, modal dismissal, form navigation                                                                                                     |
+| **Touch targets**       | Minimum 44×44px interactive target on CTAs, inputs, and buttons                                                           | `min-height: 44px` enforced in `design-system.css` / `cta-readability.css`; comfortable-target token `--wireline-interaction-target-comfortable` |
+| **Color contrast**      | BotBound Letterpress palette — near-white text on obsidian canvas in dark mode, obsidian text on near-white in light mode | `design-tokens/wireline.tokens.json` + `src/styles/design-system.css`                                                                            |
+| **Reduced motion**      | `motion/react` respects `prefers-reduced-motion`                                                                          | Framer Motion default behavior                                                                                                                   |
+| **Focus indicators**    | Visible focus rings on all interactive elements                                                                           | Tailwind's `focus:ring-2` pattern                                                                                                                |
+| **Semantic HTML**       | Proper heading hierarchy, landmark regions                                                                                | Layout components use `<nav>`, `<main>`, `<header>`                                                                                              |
+| **Form labels**         | All inputs have associated labels or aria-label                                                                           | AuthPortal, TeamSettings, agent config forms                                                                                                     |
+| **Error messages**      | Validation errors announced to screen readers                                                                             | `role="alert"` on error containers                                                                                                               |
+| **Responsive text**     | Minimum 11px on mobile (global CSS scaling)                                                                               | `src/index.css` media query                                                                                                                      |
 
 ### In Progress
 
-| Item | Target | Status |
-|------|--------|--------|
-| Full ARIA labeling audit | All interactive components | Q3 2026 |
-| Screen reader testing (NVDA + VoiceOver) | All critical flows | Q3 2026 |
-| Skip-to-content link | All pages | Q3 2026 |
-| Live region announcements for async updates | Call logs, live monitor | Q3 2026 |
-| Automated a11y testing in CI (axe-core) | PR gate | Q4 2026 |
+| Item                                        | Target                     | Status  |
+| ------------------------------------------- | -------------------------- | ------- |
+| Full ARIA labeling audit                    | All interactive components | Q3 2026 |
+| Screen reader testing (NVDA + VoiceOver)    | All critical flows         | Q3 2026 |
+| Skip-to-content link                        | All pages                  | Q3 2026 |
+| Live region announcements for async updates | Call logs, live monitor    | Q3 2026 |
+| Automated a11y testing in CI (axe-core)     | PR gate                    | Q4 2026 |
 
 ### Known Limitations
 
@@ -55,7 +55,7 @@ operator-facing surfaces.
 
 If you encounter an accessibility barrier:
 
-1. **Email:** support@trywireline.com (subject: "Accessibility")
+1. **Email:** support@botbound.me (subject: "Accessibility")
 2. **Phone:** Call (630) 642-5661 and tell Sarah about the issue
 3. **In-app:** Help Center → Report Accessibility Issue
 
@@ -70,4 +70,4 @@ and providing a fix or workaround within 14 days.
 
 ---
 
-*Last reviewed: August 2026. This document is updated quarterly.*
+_Last reviewed: August 2026. This document is updated quarterly._

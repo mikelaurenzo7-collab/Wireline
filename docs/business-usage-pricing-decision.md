@@ -22,12 +22,12 @@ BotBound sells operating capacity, not audience modes or template access.
 
 ## Current commercial structure (Founder Early Access, live in Stripe as of 2026-07-10)
 
-| Plan id    | Product name           | Monthly / Annual | Voice min | Runtime |       Managed AI |   Max Bots | Number slots |
-| ---------- | --------------------- | ---------------: | --------: | ------: | ---------------: | ---------: | -----------: |
-| `personal` | BotBound Free Builder  |               $0 |         0 |      $0 | $1.50 simulation |    1 draft |            0 |
-| `starter`  | BotBound Starter       |       $19 / $190 |        50 |   $1/mo |         $1.50/mo |          1 |            1 |
-| `team`     | BotBound Starter Plus  |       $39 / $390 |       100 |   $3/mo |            $3/mo |          2 |            2 |
-| `business` | BotBound Pro           |       $79 / $790 |       190 |   $6/mo |            $6/mo |          5 |            5 |
+| Plan id    | Product name          | Monthly / Annual | Voice min | Runtime |       Managed AI | Max Bots | Number slots |
+| ---------- | --------------------- | ---------------: | --------: | ------: | ---------------: | -------: | -----------: |
+| `personal` | BotBound Free Builder |               $0 |         0 |      $0 | $1.50 simulation |  1 draft |            0 |
+| `starter`  | BotBound Starter      |       $19 / $190 |        50 |   $1/mo |         $1.50/mo |        1 |            1 |
+| `team`     | BotBound Starter Plus |       $39 / $390 |       100 |   $3/mo |            $3/mo |        2 |            2 |
+| `business` | BotBound Pro          |       $79 / $790 |       190 |   $6/mo |            $6/mo |        5 |            5 |
 
 The legacy `enterprise` catalog row remains in code and Stripe for historical
 event and entitlement resolution. It is `public: false`: public discovery and self-serve checkout
@@ -96,8 +96,9 @@ Products active in that historical snapshot:
 
 Status: **Historical / superseded.** These writes targeted the retired Wireline Stripe
 account `acct_1TXb0SJohDtfy3Ik` and an older Team/Business price sheet. **Do not paste
-these price writes into Stripe or Vercel.** Current live catalog: Cadence AI
-`acct_1TkyXL8e6If87QKm` — see `docs/P0_BILLING_OPS_NOTE.md` and `src/lib/plan-catalog.ts`.
+these price writes into Stripe or Vercel.** The current live catalog belongs to the BotBound
+account `acct_1TkyXL8e6If87QKm`; `Cadence AI` was its former label in July audit evidence and is
+not the current public identity. See `docs/P0_BILLING_OPS_NOTE.md` and `src/lib/plan-catalog.ts`.
 
 Applied historically on the retired Wireline Stripe account `acct_1TXb0SJohDtfy3Ik`.
 
@@ -154,19 +155,19 @@ Vercel envs intentionally keep a few transitional names while Stripe products ca
 Founder Early Access v6 names. Do not infer the plan from the env-var label; resolve through
 `src/lib/plan-catalog.ts`, lookup keys, and Stripe price metadata.
 
-| Env var                              | Live product / interval         |
-| ------------------------------------ | ------------------------------- |
-| `STRIPE_STARTER_9_PRICE_ID`          | BotBound Starter monthly                |
-| `STRIPE_STARTER_9_ANNUAL_PRICE_ID`   | BotBound Starter annual                 |
-| `STRIPE_STARTER_PRICE_ID`            | BotBound Starter Plus monthly           |
-| `STRIPE_STARTER_ANNUAL_PRICE_ID`     | BotBound Starter Plus annual            |
-| `STRIPE_TEAM_PRICE_ID`               | BotBound Pro monthly                    |
-| `STRIPE_TEAM_ANNUAL_PRICE_ID`        | BotBound Pro annual                     |
-| `STRIPE_BUSINESS_PRICE_ID`           | Legacy hidden catalog compatibility     |
-| `STRIPE_BUSINESS_ANNUAL_PRICE_ID`    | Legacy hidden annual compatibility      |
-| `STRIPE_EXTRA_AGENT_PRICE_ID`        | Extra Bot + 50 Minutes add-on           |
-| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`   | Retired webhook-only compatibility      |
-| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Retired monthly webhook-only alias      |
+| Env var                              | Live product / interval             |
+| ------------------------------------ | ----------------------------------- |
+| `STRIPE_STARTER_9_PRICE_ID`          | BotBound Starter monthly            |
+| `STRIPE_STARTER_9_ANNUAL_PRICE_ID`   | BotBound Starter annual             |
+| `STRIPE_STARTER_PRICE_ID`            | BotBound Starter Plus monthly       |
+| `STRIPE_STARTER_ANNUAL_PRICE_ID`     | BotBound Starter Plus annual        |
+| `STRIPE_TEAM_PRICE_ID`               | BotBound Pro monthly                |
+| `STRIPE_TEAM_ANNUAL_PRICE_ID`        | BotBound Pro annual                 |
+| `STRIPE_BUSINESS_PRICE_ID`           | Legacy hidden catalog compatibility |
+| `STRIPE_BUSINESS_ANNUAL_PRICE_ID`    | Legacy hidden annual compatibility  |
+| `STRIPE_EXTRA_AGENT_PRICE_ID`        | Extra Bot + 50 Minutes add-on       |
+| `STRIPE_LIVE_VIDEO_ADDON_PRICE_ID`   | Retired webhook-only compatibility  |
+| `STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID` | Retired monthly webhook-only alias  |
 
 Retired zero-included-minutes price env vars and OpenRouter-era runtime assumptions must stay out of
 new deploy guidance. Stripe secrets and webhook secrets are separate credentials and must not be

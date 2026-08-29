@@ -1,3 +1,5 @@
+import { isBotMarkKey, type BotMarkKey } from "./bot-mark";
+
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
@@ -12,6 +14,8 @@ export type PostCreateWizardStep = "train" | "channels" | "wire" | "test";
 export type PostCreateWizardPayload = {
   agentId: string;
   agentName: string;
+  /** Persisted Bot identity returned by the create boundary. Optional for legacy sessions. */
+  markKey?: BotMarkKey | null;
   /** BotBound attempted the managed phone identity after the Bot record committed. */
   phoneProvisionRequested: boolean;
   /** A managed line is already assigned to this Bot. */
@@ -28,7 +32,7 @@ export type PostCreateWizardPayload = {
   emailAddress?: string | null;
   /** True only when the provider confirmed the configured custom domain was used. */
   emailCustomDomain?: boolean;
-  /** One full managed phone+mail bootstrap attempt completed for this Bot. */
+  /** One responsive bootstrap attempt completed; durable paid repair owns retries. */
   identityBootstrapComplete?: boolean;
 };
 
@@ -55,14 +59,25 @@ export function updatePostCreateWizard(payload: PostCreateWizardPayload): void {
   }
 }
 
+/** Parse the session boundary and reject stale or forged identity keys. */
+export function parsePostCreateWizardPayload(raw: string | null): PostCreateWizardPayload | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as PostCreateWizardPayload & { markKey?: unknown };
+    if (!parsed?.agentId || !parsed?.agentName) return null;
+    return {
+      ...parsed,
+      markKey: isBotMarkKey(parsed.markKey) ? parsed.markKey : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Read wizard payload without clearing — survives refresh and cross-route navigation. */
 export function readPostCreateWizard(): PostCreateWizardPayload | null {
   try {
-    const raw = sessionStorage.getItem(POST_CREATE_WIZARD_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PostCreateWizardPayload;
-    if (!parsed?.agentId || !parsed?.agentName) return null;
-    return parsed;
+    return parsePostCreateWizardPayload(sessionStorage.getItem(POST_CREATE_WIZARD_KEY));
   } catch {
     return null;
   }

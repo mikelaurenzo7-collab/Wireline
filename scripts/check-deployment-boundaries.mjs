@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+import {
+  assertIsolatedPreviewDatabaseUrl,
+  resolvePreviewMigrationDatabaseUrl,
+} from "./lib/preview-migration-database.mjs";
+
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
@@ -68,6 +73,18 @@ function canonicalProductionDatabase(name) {
       return;
     }
 
+    const port = Number(url.port || "5432");
+    if (name === "POSTGRES_URL" && port !== 5432) {
+      failures.push(
+        "POSTGRES_URL: production migrations and session-bound tools require port 5432",
+      );
+    }
+    if (name === "DATABASE_POOL_URL" && (!poolerEndpoint || port !== 6543)) {
+      failures.push(
+        "DATABASE_POOL_URL: production serverless runtime requires the shared Supabase transaction pooler on port 6543",
+      );
+    }
+
     if (resolvedProjectRef !== CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
       failures.push(
         `${name}: production database must identify canonical Supabase project ${CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF}`,
@@ -125,6 +142,12 @@ if (isProduction) {
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true);
   canonicalProductionDatabase("POSTGRES_URL");
   canonicalProductionDatabase("DATABASE_POOL_URL");
+  if (value("NODE_TLS_REJECT_UNAUTHORIZED") === "0") {
+    failures.push("NODE_TLS_REJECT_UNAUTHORIZED: production may not disable TLS verification");
+  }
+  if (["disable", "no-verify"].includes(value("PGSSLMODE").toLowerCase())) {
+    failures.push("PGSSLMODE: production may not weaken PostgreSQL TLS verification");
+  }
   requireProductionCorsOrigins();
   const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
   if (
@@ -246,6 +269,25 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  *   receive its own explicit reviewed policy before it can cross this boundary.
  */
 const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
+const previewSpendAuthorityKeys = [
+  "AGENTMAIL_API_KEY",
+  "AI_GATEWAY_API_KEY",
+  "APOLLO_API_KEY",
+  "ELEVENLABS_API_KEY",
+  "FEDERAL_DNC_API_KEY",
+  "GEMINI_API_KEY",
+  "OPENAI_API_KEY",
+  "OPENAI_API_KEY_CHATKIT",
+  "PERPLEXITY_PREVIEW_API_KEY",
+  "RESEND_API_KEY",
+  "STRIPE_SECRET_KEY",
+  "TWILIO_API_KEY",
+  "TWILIO_API_SECRET",
+  "TWILIO_AUTH_TOKEN",
+  "VAPI_PRIVATE_KEY",
+  "XAI_API_KEY",
+  "XAI_API_KEY_CHATKIT",
+];
 const reviewedIsolatedPreviewDatabaseKeys = new Set([
   "INTERNAL_JWT_SECRET",
   "OWNER_EMAIL",
@@ -256,9 +298,22 @@ if (isPreview) {
   const productionOnlyPreviewKeySet = new Set(productionOnlyPreviewKeys);
   const isolatedPreviewDatabase = affirmative("WIRELINE_PREVIEW_DATABASE_ISOLATED");
   const previewDemoMode = affirmative("WIRELINE_LAUNCH_DEMO_MODE");
+  const previewInMemoryRateLimit = affirmative("WIRELINE_ALLOW_INMEMORY_RATE_LIMIT");
   const isolatedPreviewProjectRef = value("WIRELINE_PREVIEW_DATABASE_PROJECT_REF").toLowerCase();
   const isolatedPreviewDatabaseKeys =
     isolatedPreviewDatabase && previewDemoMode ? reviewedIsolatedPreviewDatabaseKeys : new Set();
+
+  if (previewInMemoryRateLimit && (!isolatedPreviewDatabase || !previewDemoMode)) {
+    failures.push(
+      "WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: Preview override requires WIRELINE_PREVIEW_DATABASE_ISOLATED=true and WIRELINE_LAUNCH_DEMO_MODE=true",
+    );
+  }
+  const configuredPreviewSpendAuthority = previewSpendAuthorityKeys.filter((name) => value(name));
+  if (previewInMemoryRateLimit && configuredPreviewSpendAuthority.length) {
+    failures.push(
+      `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: provider-free Preview required; remove ${configuredPreviewSpendAuthority.join(", ")}`,
+    );
+  }
 
   if (isolatedPreviewDatabase) {
     if (!previewDemoMode) {
@@ -279,19 +334,14 @@ if (isPreview) {
       );
     } else if (value("POSTGRES_URL")) {
       try {
-        const databaseUrl = new URL(value("POSTGRES_URL"));
-        const databaseIdentity =
-          `${databaseUrl.hostname} ${decodeURIComponent(databaseUrl.username)}`.toLowerCase();
-        if (
-          !["postgres:", "postgresql:"].includes(databaseUrl.protocol) ||
-          !databaseIdentity.includes(isolatedPreviewProjectRef)
-        ) {
-          failures.push(
-            "POSTGRES_URL: isolated Preview database does not match WIRELINE_PREVIEW_DATABASE_PROJECT_REF",
-          );
-        }
-      } catch {
-        failures.push("POSTGRES_URL: isolated Preview database must be a valid PostgreSQL URL");
+        assertIsolatedPreviewDatabaseUrl({
+          databaseUrl: value("POSTGRES_URL"),
+          projectRef: isolatedPreviewProjectRef,
+        });
+      } catch (error) {
+        failures.push(
+          `POSTGRES_URL: ${error instanceof Error ? error.message : "isolated Preview database is invalid"}`,
+        );
       }
     }
   }
@@ -338,6 +388,22 @@ if (isPreview) {
     failures.push(
       "WIRELINE_RUN_MIGRATIONS: preview migrations require WIRELINE_PREVIEW_DATABASE_ISOLATED=true and a non-production database.",
     );
+  }
+  if (
+    value("WIRELINE_RUN_MIGRATIONS") === "true" &&
+    value("WIRELINE_PREVIEW_DATABASE_ISOLATED") === "true"
+  ) {
+    try {
+      resolvePreviewMigrationDatabaseUrl({
+        databaseUrl: value("POSTGRES_URL"),
+        projectRef: value("WIRELINE_PREVIEW_DATABASE_PROJECT_REF"),
+        sessionPoolerHost: value("WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST"),
+      });
+    } catch (error) {
+      failures.push(
+        `WIRELINE_RUN_MIGRATIONS: ${error instanceof Error ? error.message : "Preview migration database configuration is invalid"}`,
+      );
+    }
   }
 }
 

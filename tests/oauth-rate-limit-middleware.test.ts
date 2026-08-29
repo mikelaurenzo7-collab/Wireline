@@ -31,6 +31,7 @@ type LimiterResult = {
 const originalNodeEnv = process.env.NODE_ENV;
 const originalPlaywright = process.env.PLAYWRIGHT_TEST;
 const originalVercel = process.env.VERCEL;
+const originalVercelEnv = process.env.VERCEL_ENV;
 const originalRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const originalRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 const originalMemoryOptIn = process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT;
@@ -78,6 +79,7 @@ beforeEach(() => {
   process.env.NODE_ENV = "development";
   delete process.env.PLAYWRIGHT_TEST;
   delete process.env.VERCEL;
+  delete process.env.VERCEL_ENV;
   delete process.env.UPSTASH_REDIS_REST_URL;
   delete process.env.UPSTASH_REDIS_REST_TOKEN;
   delete process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT;
@@ -87,6 +89,7 @@ afterEach(() => {
   restore("NODE_ENV", originalNodeEnv);
   restore("PLAYWRIGHT_TEST", originalPlaywright);
   restore("VERCEL", originalVercel);
+  restore("VERCEL_ENV", originalVercelEnv);
   restore("UPSTASH_REDIS_REST_URL", originalRedisUrl);
   restore("UPSTASH_REDIS_REST_TOKEN", originalRedisToken);
   restore("WIRELINE_ALLOW_INMEMORY_RATE_LIMIT", originalMemoryOptIn);
@@ -116,6 +119,7 @@ describe("OAuth rate-limit middleware", () => {
 
   it("fails closed in production when distributed rate limiting is unavailable", async () => {
     process.env.NODE_ENV = "production";
+    process.env.VERCEL_ENV = "production";
     const result = await invokeLimiter(`oauth-no-redis-${Math.random()}`);
 
     expect(result.kind).toBe("response");

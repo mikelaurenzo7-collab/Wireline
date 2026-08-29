@@ -6,7 +6,7 @@
  */
 
 export const WIRELINE_URL = "https://botbound.me";
-export const WIRELINE_SUPPORT_EMAIL = "support@trywireline.com";
+export const WIRELINE_SUPPORT_EMAIL = "support@botbound.me";
 
 export const WIRELINE_ONE_LINER =
   "BotBound runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";

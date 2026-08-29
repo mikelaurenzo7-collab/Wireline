@@ -3,22 +3,16 @@ import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
 import AuthAccessPanel from "../auth/AuthAccessPanel";
-import BotMark from "../BotMark";
 import { BotBoundLockup } from "../brand/BotBoundBrand";
+import BrowserCallWidget from "./BrowserCallWidget";
 import LandingFooter from "./LandingFooter";
-import { BOT_CHANNELS, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 
 const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
-const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;
-const HERO_CHANNELS = HERO_CHANNEL_ORDER.map((key) => {
-  const channel = BOT_CHANNELS.find((candidate) => candidate.key === key);
-  if (!channel) throw new Error(`Missing Bot channel: ${key}`);
-  return channel.label.toUpperCase();
-});
 const FEATURED_TEMPLATE_KEYS = [
   "front-desk",
   "sales-rep",
@@ -83,41 +77,28 @@ export default function WireAgentLanding() {
                 <span>PUT YOUR BOT</span>
                 <span>ON THE LINE</span>
               </h1>
-              <div className="landing-prestige__channels" aria-label="BotBound channels">
-                {HERO_CHANNELS.map((label) => (
-                  <span key={label}>{label}</span>
-                ))}
-              </div>
-              <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.subline}</p>
+              <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
             </div>
-            <Link
-              to="/showcase"
-              className="landing-prestige__demo-link"
-              aria-label={`Hear ${HERO_DEMO.name} live`}
-            >
-              <BotMark
-                seed={`public-demo:${HERO_DEMO.name}`}
-                name={HERO_DEMO.name}
-                size={30}
-                active
-                title={`${HERO_DEMO.name} Bot signal`}
+            <div className="landing-prestige__demo">
+              <BrowserCallWidget
+                agentName={HERO_DEMO.name}
+                variant="inline"
+                buttonLabel={`Talk to ${HERO_DEMO.name}`}
+                fallback={
+                  <Link
+                    to="/showcase#demo-lines"
+                    className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline wl-focus-ring-halo"
+                  >
+                    Call a demo line
+                    <ArrowRight className="size-3.5" aria-hidden="true" />
+                  </Link>
+                }
               />
-              <span className="landing-prestige__demo-copy">
-                <strong className="wl-preserve-case">{HERO_DEMO.name}</strong>
-                <small>LIVE PHONE BOT</small>
-              </span>
-              <span className="landing-prestige__demo-action">
-                Hear it live
-                <ArrowRight aria-hidden="true" />
-              </span>
-            </Link>
-            <p className="landing-prestige__hero-footnote">
-              Build free. Put it on a number when it is ready.
-            </p>
+            </div>
           </div>
 
           <div className="landing-prestige__auth">
-            <AuthAccessPanel embedded initialMode="signin" />
+            <AuthAccessPanel embedded initialMode="signup" showBrand={false} />
             <nav className="landing-prestige__mobile-links" aria-label="Public information">
               <Link to="/privacy">Privacy</Link>
               <Link to="/terms">Terms</Link>

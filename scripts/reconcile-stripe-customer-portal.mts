@@ -33,7 +33,7 @@ if (environment !== "production") {
   throw new Error("Stripe portal reconciliation is allowed only in Vercel Production.");
 }
 if (process.env.VERCEL_PROJECT_ID !== CANONICAL_VERCEL_PROJECT_ID) {
-  throw new Error("Stripe portal reconciliation is pinned to the canonical Wireline project.");
+  throw new Error("Stripe portal reconciliation is pinned to the canonical BotBound project.");
 }
 if (appUrl !== CANONICAL_PRODUCTION_URL) {
   throw new Error(`Stripe portal reconciliation requires APP_URL=${CANONICAL_PRODUCTION_URL}.`);

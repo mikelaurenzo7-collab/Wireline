@@ -46,6 +46,7 @@ export default function StudioContextChrome() {
                 <AgentPresenceSlot
                   name={activeAgent.name}
                   agentId={activeAgent.id}
+                  markKey={activeAgent.mark_key}
                   role={activeAgent.role}
                   isBusinessAgent={activeAgent.is_business_agent}
                   variant="badge"

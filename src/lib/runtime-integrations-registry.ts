@@ -1,4 +1,5 @@
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import { isGatewayCredentialAvailable } from "./ai-gateway-auth";
 import { perplexityRuntimeAvailable } from "./platform-integration-flags";
 import { resendWebhookSecretConfigured } from "./resend-webhook-signature";
 
@@ -79,16 +80,19 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     // runtime's key policy, not raw variable presence.
     validate: perplexityRuntimeAvailable,
   },
-  item(
-    "ai-gateway",
-    "Vercel AI Gateway",
-    "Governed final multi-model route with centralized budgets and observability.",
-    "ai",
-    false,
-    [],
-    "Vercel deployments can use OIDC instead of a static Gateway key.",
-    [["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"]],
-  ),
+  {
+    ...item(
+      "ai-gateway",
+      "Vercel AI Gateway",
+      "Governed final multi-model route with centralized budgets and observability.",
+      "ai",
+      false,
+      [],
+      "Vercel Production can use OIDC instead of a static Gateway key.",
+      [["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"]],
+    ),
+    validate: isGatewayCredentialAvailable,
+  },
   item(
     "xai",
     "xAI Grok",

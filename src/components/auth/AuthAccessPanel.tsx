@@ -51,6 +51,7 @@ type OAuthProviderAvailability = Record<OAuthProvider, boolean>;
 export type AuthAccessPanelProps = {
   initialMode?: Exclude<AuthMode, "reset">;
   embedded?: boolean;
+  showBrand?: boolean;
   className?: string;
 };
 
@@ -204,6 +205,7 @@ const PROVIDERS: Array<{
 export default function AuthAccessPanel({
   initialMode = "signin",
   embedded = false,
+  showBrand = true,
   className,
 }: AuthAccessPanelProps) {
   const { signIn, user, loading: authLoading } = useAuth();
@@ -541,11 +543,13 @@ export default function AuthAccessPanel({
       className={cn("wl-access-panel", embedded && "is-embedded", className)}
       aria-label="Account access"
     >
-      <div className="wl-access-panel__brand">
-        <Link to="/" aria-label="BotBound home">
-          <WirelineLockup size={embedded ? "standard" : "large"} />
-        </Link>
-      </div>
+      {showBrand ? (
+        <div className="wl-access-panel__brand">
+          <Link to="/" aria-label="BotBound home">
+            <WirelineLockup size={embedded ? "standard" : "large"} />
+          </Link>
+        </div>
+      ) : null}
 
       <div className="wl-access-panel__card">
         <header className="wl-access-panel__heading">

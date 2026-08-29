@@ -87,7 +87,7 @@ const SECTIONS = [
     title: "GDPR + CCPA",
     items: [
       "Right-to-erasure uses a server-owned deletion workflow for user-owned product data.",
-      "Contact security@trywireline.com for current privacy documentation and any contractual review.",
+      "Contact security@botbound.me for current privacy documentation and any contractual review.",
       "Data residency is US-East today. Additional regions remain under evaluation and are not committed until confirmed in writing.",
     ],
   },
@@ -114,7 +114,7 @@ const SECTIONS = [
     icon: BugPlay,
     title: "Responsible disclosure",
     items: [
-      "Found a vulnerability? Email security@trywireline.com with details.",
+      "Found a vulnerability? Email security@botbound.me with details.",
       "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
       "Please do not test exploits against tenant data; use your own Free Builder account.",
     ],
@@ -172,7 +172,7 @@ const TRUST_PACK_SECTIONS = [
     title: "Account deletion & data rights",
     items: [
       "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
-      "GDPR/CCPA erasure requests follow the same workflow. Contact security@trywireline.com for current privacy and security documentation.",
+      "GDPR/CCPA erasure requests follow the same workflow. Contact security@botbound.me for current privacy and security documentation.",
       "Transcript retention defaults to 365 days and supports 90 to 365 days per tenant. Managed full-call provider audio recording defaults off; intentionally used voicemail/message-recording features may still create audio.",
     ],
   },
@@ -293,8 +293,8 @@ export default function Security() {
           <div className="mt-10 text-caption text-center space-y-2">
             <p>
               Questions?{" "}
-              <a href="mailto:security@trywireline.com" className="text-brand hover:underline">
-                security@trywireline.com
+              <a href="mailto:security@botbound.me" className="text-brand hover:underline">
+                security@botbound.me
               </a>
             </p>
             <p>

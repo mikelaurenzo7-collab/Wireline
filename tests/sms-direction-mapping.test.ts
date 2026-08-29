@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 export function smsMessagePresentation(direction: "in" | "out") {
   return {
     author: direction === "out" ? ("assistant" as const) : ("customer" as const),
-    label: direction === "out" ? "Agent" : "Customer",
+    label: direction === "out" ? "Bot" : "Customer",
   };
 }
 
@@ -12,7 +12,7 @@ describe("SmsThreads direction → author mapping", () => {
   it("maps outbound texts to the assistant bubble", () => {
     expect(smsMessagePresentation("out")).toEqual({
       author: "assistant",
-      label: "Agent",
+      label: "Bot",
     });
   });
 
@@ -28,7 +28,9 @@ describe("SmsThreads direction → author mapping", () => {
     const { resolve } = await import("node:path");
     const source = readFileSync(resolve(process.cwd(), "src/components/SmsThreads.tsx"), "utf8");
     expect(source).toContain('author={message.direction === "out" ? "assistant" : "customer"}');
-    expect(source).toContain('label={message.direction === "out" ? "Agent" : activeThread.customer_number}');
+    expect(source).toContain(
+      'label={message.direction === "out" ? "Bot" : activeThread.customer_number}',
+    );
     expect(source).toContain('channel="text"');
     expect(source).toContain('direction: "in" | "out"');
   });

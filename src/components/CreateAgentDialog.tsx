@@ -3,6 +3,7 @@ import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, Textarea } from "./atoms";
+import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { authFetch, safeJson } from "../lib/api";
@@ -18,6 +19,13 @@ import { setPostSignupFlowActive } from "../lib/post-signup-onboarding";
 import { emitProductEvent } from "../lib/product-event-client";
 import { customerAgentLanguage } from "../lib/product-copy";
 import { BOT_CHANNELS, BOT_ROLE_TEMPLATES } from "../lib/bot-product";
+import {
+  BOT_MARK_CHOICES,
+  defaultBotMarkKey,
+  firstAvailableBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "../lib/bot-mark";
 
 type TemplateKey = (typeof BOT_ROLE_TEMPLATES)[number]["key"];
 type TechnicalRole =
@@ -72,7 +80,13 @@ function safeCreateAgentError(
     return "Your session expired. Please sign in again to keep building.";
   }
   if (status === 402 || normalized === "plan_capacity_reached") {
-    return "Your current plan is at its live Bot capacity. Upgrade or archive an existing Bot to make room.";
+    return "Your current plan is at its live Bot capacity. Add capacity or contact support.";
+  }
+  if (normalized === "bot_mark_conflict") {
+    return "That identity is already used by another Bot. Choose another mark or color.";
+  }
+  if (normalized === "bot_mark_capacity_reached") {
+    return "Every available Bot identity is already in use. Contact support before adding another Bot.";
   }
   if (status === 409 || normalized === "name_conflict") {
     return "A Bot with that name already exists. Pick a different name to continue.";
@@ -104,12 +118,26 @@ export default function CreateAgentDialog({
 }) {
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
-  const { refresh } = useAgents();
+  const { agents, refresh } = useAgents();
   const initialTemplate = useMemo(() => templateForKey(initialTemplateKey), [initialTemplateKey]);
   const [name, setName] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>(initialTemplate.key);
+  const [markKey, setMarkKey] = useState<BotMarkKey>(defaultBotMarkKey(initialTemplate.key));
+  const unavailableMarkKeys = useMemo(
+    () =>
+      new Set<BotMarkKey>(
+        agents
+          .map((agent) => agent.mark_key)
+          .filter((candidate): candidate is BotMarkKey => isBotMarkKey(candidate)),
+      ),
+    [agents],
+  );
+  const unavailableMarkKeysRef = useRef(unavailableMarkKeys);
+  unavailableMarkKeysRef.current = unavailableMarkKeys;
+  const markCapacityReached = unavailableMarkKeys.size >= BOT_MARK_CHOICES.length;
   const [brief, setBrief] = useState(initialBrief);
   const briefIsTemplateTextRef = useRef(true);
+  const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const briefRef = useRef<HTMLTextAreaElement>(null);
@@ -123,6 +151,11 @@ export default function CreateAgentDialog({
     if (!open) return;
     const nextTemplate = templateForKey(initialTemplateKey);
     setTemplateKey(nextTemplate.key);
+    setMarkKey(
+      firstAvailableBotMarkKey(nextTemplate.key, unavailableMarkKeysRef.current) ??
+        defaultBotMarkKey(nextTemplate.key),
+    );
+    markWasChosenRef.current = false;
     setName("");
     setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary));
     briefIsTemplateTextRef.current = true;
@@ -130,6 +163,12 @@ export default function CreateAgentDialog({
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [initialBrief, initialTemplateKey, open]);
+
+  useEffect(() => {
+    if (!open || !unavailableMarkKeys.has(markKey)) return;
+    const next = firstAvailableBotMarkKey(templateKey, unavailableMarkKeys);
+    if (next) setMarkKey(next);
+  }, [markKey, open, templateKey, unavailableMarkKeys]);
 
   function close() {
     if (creating) return;
@@ -157,6 +196,12 @@ export default function CreateAgentDialog({
   async function create(event: FormEvent) {
     event.preventDefault();
     if (creating) return;
+    if (markCapacityReached) {
+      setError(
+        "Every available Bot identity is already in use. Contact support before adding another Bot.",
+      );
+      return;
+    }
     const selectedTemplate = templateForKey(templateKey);
     const finalBrief = brief.trim() || selectedTemplate.summary;
     const finalName = name.trim() || defaultName(templateKey);
@@ -174,12 +219,14 @@ export default function CreateAgentDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: finalName,
+          mark_key: markKey,
           role,
           is_business_agent: legacyCapabilityProfile,
         }),
       });
       const body = (await safeJson(response)) as {
         id?: string;
+        mark_key?: unknown;
         error?: string;
         code?: string;
       } | null;
@@ -273,6 +320,7 @@ export default function CreateAgentDialog({
       const wizardPayload: PostCreateWizardPayload = {
         agentId: body.id,
         agentName: finalName,
+        markKey: isBotMarkKey(body.mark_key) ? body.mark_key : null,
         phoneProvisionRequested: false,
         phoneProvisioned: false,
       };
@@ -379,6 +427,12 @@ export default function CreateAgentDialog({
                     type="button"
                     onClick={() => {
                       setTemplateKey(template.key);
+                      if (!markWasChosenRef.current) {
+                        setMarkKey(
+                          firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
+                            defaultBotMarkKey(template.key),
+                        );
+                      }
                       if (briefIsTemplateTextRef.current || !brief.trim()) {
                         briefIsTemplateTextRef.current = true;
                         setBrief(template.key === "custom" ? "" : template.summary);
@@ -409,6 +463,28 @@ export default function CreateAgentDialog({
                 );
               })}
             </div>
+          </section>
+
+          <section className="mt-6" aria-labelledby="bot-mark-heading">
+            <div className="mb-3">
+              <h3 id="bot-mark-heading" className="text-sm font-semibold text-foreground">
+                Choose a Mark
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                This symbol identifies your Bot everywhere in BotBound.
+              </p>
+            </div>
+            <BotMarkPicker
+              value={markKey}
+              onChange={(nextMarkKey) => {
+                markWasChosenRef.current = true;
+                setMarkKey(nextMarkKey);
+              }}
+              seed={`new:${templateKey}`}
+              name={name.trim() || defaultName(templateKey)}
+              disabled={creating || markCapacityReached}
+              unavailableKeys={unavailableMarkKeys}
+            />
           </section>
 
           <label className="mt-6 block">
@@ -463,7 +539,11 @@ export default function CreateAgentDialog({
             >
               Not Now
             </button>
-            <Button type="submit" disabled={creating} className="gap-2 sm:shrink-0">
+            <Button
+              type="submit"
+              disabled={creating || markCapacityReached}
+              className="gap-2 sm:shrink-0"
+            >
               {creating ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (

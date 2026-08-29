@@ -7,7 +7,7 @@ const withoutComments = (value: string) =>
   value.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 describe("design system polish e2e verified wins", () => {
-  it("keeps channel proof text-only and sourced from the canonical Bot channel catalog", () => {
+  it("keeps channel proof concise and avoids repeating it in the hero", () => {
     const features = withoutComments(read("src/pages/Features.tsx"));
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
 
@@ -15,9 +15,11 @@ describe("design system polish e2e verified wins", () => {
       'const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"]',
     );
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain("{HERO_CHANNELS.map((label) =>");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
+    expect(landing).not.toContain("HERO_CHANNELS.map");
+    expect(landing).not.toContain('aria-label="BotBound channels"');
     expect(landing).not.toContain("landing-home__solution-icon");
     expect(landing).not.toContain("landing-home__compact-icon");
     expect(landing).not.toContain("landing-stage__lane-icon");

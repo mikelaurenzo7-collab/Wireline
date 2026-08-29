@@ -189,7 +189,7 @@ export default function DeployAgentModal({
                 {/* Name */}
                 <div className="space-y-2">
                   <label htmlFor="agent-name" className="wl-label-muted opacity-80">
-                    Agent name
+                    Bot name
                   </label>
                   <Input
                     id="agent-name"
@@ -299,8 +299,8 @@ export default function DeployAgentModal({
                   </div>
                 ) : (
                   <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[length:var(--wireline-typography-caption-size)] text-foreground/65">
-                    Email agent - no voice picker. The agent's writing tone is configured in{" "}
-                    <span className="text-foreground/80">Studio</span> after deploy.
+                    Email Bot - no voice picker. Set its writing tone in{" "}
+                    <span className="text-foreground/80">Studio</span> after deployment.
                   </div>
                 )}
               </div>
@@ -332,7 +332,7 @@ export default function DeployAgentModal({
                     </>
                   ) : (
                     <>
-                      Deploy {trimmedName || "Agent"}
+                      Deploy {trimmedName || "Bot"}
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </>
                   )}

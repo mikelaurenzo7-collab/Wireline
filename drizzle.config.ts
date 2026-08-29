@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { defineConfig } from "drizzle-kit";
+import { getDrizzlePostgresCredentials } from "./src/lib/postgres-tls.mjs";
 
 // Migration 0152's 185 KB snapshot is deterministically materialized from the
 // committed 0049 graph plus the native xAI table recipe. The script verifies a
@@ -17,9 +18,9 @@ export default defineConfig({
   schema: ["./src/db/schema.ts", "./src/db/xai-voice-schema.ts"],
   out: "./drizzle/migrations",
   dialect: "postgresql",
-  dbCredentials: {
-    url: process.env.POSTGRES_URL || process.env.DATABASE_URL || "",
-  },
+  dbCredentials: getDrizzlePostgresCredentials(
+    process.env.POSTGRES_URL || process.env.DATABASE_URL || "",
+  ),
   verbose: true,
   strict: true,
 });

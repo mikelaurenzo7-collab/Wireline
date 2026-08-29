@@ -12,6 +12,7 @@ export interface AgentListRow {
   id: string;
   userId: string | null;
   name: string;
+  markKey: string | null;
   role: string | null;
   channel: string | null;
   voiceId: string | null;
@@ -20,6 +21,20 @@ export interface AgentListRow {
   createdAt: Date | null;
   isBusinessAgent: boolean;
 }
+
+const AGENT_LIST_SELECT = {
+  id: schema.agents.id,
+  userId: schema.agents.userId,
+  name: schema.agents.name,
+  markKey: schema.agents.markKey,
+  role: schema.agents.role,
+  channel: schema.agents.channel,
+  voiceId: schema.agents.voiceId,
+  firstMessage: schema.agents.firstMessage,
+  enabledTools: schema.agents.enabledTools,
+  createdAt: schema.agents.createdAt,
+  isBusinessAgent: schema.agents.isBusinessAgent,
+};
 
 const AGENT_LIST_FALLBACK_SELECT = {
   id: schema.agents.id,
@@ -37,7 +52,7 @@ const AGENT_LIST_FALLBACK_SELECT = {
 export async function listAgentsForUser(userId: string, limit = 500): Promise<AgentListRow[]> {
   try {
     return await drizzle
-      .select(AGENT_LIST_FALLBACK_SELECT)
+      .select(AGENT_LIST_SELECT)
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))
@@ -48,12 +63,13 @@ export async function listAgentsForUser(userId: string, limit = 500): Promise<Ag
       userId,
       error: getErrorMessage(e),
     });
-    return drizzle
+    const rows = await drizzle
       .select(AGENT_LIST_FALLBACK_SELECT)
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(desc(schema.agents.createdAt))
       .limit(limit);
+    return rows.map((row) => ({ ...row, markKey: null }));
   }
 }
 

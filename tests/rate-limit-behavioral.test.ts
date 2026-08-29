@@ -94,7 +94,32 @@ describe("distributedLimiterStatus", () => {
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     delete process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT;
     delete process.env.VERCEL;
+    delete process.env.VERCEL_ENV;
     delete process.env.NODE_ENV;
+    for (const name of [
+      "WIRELINE_PREVIEW_DATABASE_ISOLATED",
+      "WIRELINE_LAUNCH_DEMO_MODE",
+      "AGENTMAIL_API_KEY",
+      "AI_GATEWAY_API_KEY",
+      "APOLLO_API_KEY",
+      "ELEVENLABS_API_KEY",
+      "FEDERAL_DNC_API_KEY",
+      "GEMINI_API_KEY",
+      "OPENAI_API_KEY",
+      "OPENAI_API_KEY_CHATKIT",
+      "PERPLEXITY_PREVIEW_API_KEY",
+      "RESEND_API_KEY",
+      "STRIPE_SECRET_KEY",
+      "TWILIO_API_KEY",
+      "TWILIO_API_SECRET",
+      "TWILIO_AUTH_TOKEN",
+      "VAPI_PRIVATE_KEY",
+      "VERCEL_OIDC_TOKEN",
+      "XAI_API_KEY",
+      "XAI_API_KEY_CHATKIT",
+    ]) {
+      delete process.env[name];
+    }
   });
 
   it("returns ok when Redis is configured", () => {
@@ -108,9 +133,123 @@ describe("distributedLimiterStatus", () => {
     expect(distributedLimiterStatus().ok).toBe(true);
   });
 
+  it("returns ok for an acknowledged single-node non-Vercel Production runtime", () => {
+    process.env.NODE_ENV = "production";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it("returns ok for an isolated provider-free Preview override", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it.each(["WIRELINE_PREVIEW_DATABASE_ISOLATED", "WIRELINE_LAUNCH_DEMO_MODE"])(
+    "fails closed when isolated Preview is missing %s",
+    (missing) => {
+      process.env.VERCEL_ENV = "preview";
+      process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+      process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+      process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+      delete process.env[missing];
+      expect(distributedLimiterStatus()).toMatchObject({
+        ok: false,
+        code: "RATE_LIMITER_UNAVAILABLE",
+      });
+    },
+  );
+
+  it.each([
+    "AGENTMAIL_API_KEY",
+    "AI_GATEWAY_API_KEY",
+    "APOLLO_API_KEY",
+    "ELEVENLABS_API_KEY",
+    "FEDERAL_DNC_API_KEY",
+    "GEMINI_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENAI_API_KEY_CHATKIT",
+    "PERPLEXITY_PREVIEW_API_KEY",
+    "RESEND_API_KEY",
+    "STRIPE_SECRET_KEY",
+    "TWILIO_API_KEY",
+    "TWILIO_API_SECRET",
+    "TWILIO_AUTH_TOKEN",
+    "VAPI_PRIVATE_KEY",
+    "XAI_API_KEY",
+    "XAI_API_KEY_CHATKIT",
+  ])("fails closed when isolated Preview inherits %s", (name) => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env[name] = "live-provider-authority";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
+  });
+
+  it("does not treat inert Preview OIDC as usable provider authority", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env.VERCEL_OIDC_TOKEN = "automatic-preview-oidc";
+    expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it("refuses the in-memory override on Vercel Production", () => {
+    process.env.VERCEL_ENV = "production";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
+  });
+
+  it.each(["preview", "production"])(
+    "requires distributed limiting for VERCEL_ENV=%s even when NODE_ENV is development",
+    (vercelEnvironment) => {
+      process.env.VERCEL_ENV = vercelEnvironment;
+      process.env.NODE_ENV = "development";
+      expect(distributedLimiterStatus()).toMatchObject({
+        ok: false,
+        code: "RATE_LIMITER_UNAVAILABLE",
+      });
+    },
+  );
+
   it("returns ok in non-production environment without Redis", () => {
     process.env.NODE_ENV = "development";
     expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it("returns ok in the clean-room Vercel development identity without Redis", () => {
+    process.env.VERCEL_ENV = "development";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it("requires distributed limiting when the Vercel development identity is running on Vercel", () => {
+    process.env.VERCEL_ENV = "development";
+    process.env.VERCEL = "1";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
+  });
+
+  it("fails closed for an unknown Vercel environment identity", () => {
+    process.env.VERCEL_ENV = "unexpected";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
   });
 
   it("returns not ok in production without Redis or fallback", () => {

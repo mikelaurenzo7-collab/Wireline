@@ -240,7 +240,7 @@ export function TermsOfService() {
         </p>
         <p>
           Report messaging complaints or ask a question about SMS from a BotBound number by emailing{" "}
-          <strong>support@trywireline.com</strong>.
+          <strong>support@botbound.me</strong>.
         </p>
       </Section>
 
@@ -253,7 +253,7 @@ export function TermsOfService() {
         </p>
         <p>
           <strong>30-day money-back guarantee.</strong> Submit a request to{" "}
-          <strong>support@trywireline.com</strong> within 30 days of your first paid invoice. After
+          <strong>support@botbound.me</strong> within 30 days of your first paid invoice. After
           BotBound verifies the account and transaction, the first subscription charge is eligible
           for a full refund. The 30-day window starts on the invoice date. Usage purchases,
           third-party fees, and later invoices are not included.
@@ -336,7 +336,7 @@ export function TermsOfService() {
 
       <Section title="15. Contact">
         <p>
-          Legal notices: <strong>support@trywireline.com</strong>
+          Legal notices: <strong>support@botbound.me</strong>
         </p>
       </Section>
     </LegalLayout>

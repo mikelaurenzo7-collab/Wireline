@@ -8,20 +8,20 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Product surfaces
 
-| Surface          | Source                                                                                              | Release posture                                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                            |
-| Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short intake for name, role, voice, personality, and starting brief.                                   |
-| Training         | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Deep configuration, sources, behavior, policy, evaluation, and memory.                                 |
-| Wire             | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                               |
-| Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                               |
-| BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.               |
-| iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.                 |
-| Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                  |
-| ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                        |
-| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.me/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                   |
-| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot.   |
-| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                   |
+| Surface          | Source                                                                                              | Release posture                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                          |
+| Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short intake for name, role, voice, personality, and starting brief.                                 |
+| Training         | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Deep configuration, sources, behavior, policy, evaluation, and memory.                               |
+| Wire             | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
+| Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                             |
+| BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.             |
+| iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
+| Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                |
+| ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                      |
+| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.me/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                 |
+| Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot. |
+| Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                 |
 
 ## Product interface rules
 
@@ -74,6 +74,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [OPENAI_REALTIME_OPERATIONS.md](./OPENAI_REALTIME_OPERATIONS.md)                               | OpenAI Realtime admission reserve, key rotation, in-flight drain, canary, and rollback operations.                                             |
 | [BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md](./BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md) | Canonical-origin cutover inventory for sign-in, integration OAuth, MCP, webhooks, return URLs, deep links, and the launch-time Clerk decision. |
 | [RESEND_DELIVERY_FEEDBACK.md](./RESEND_DELIVERY_FEEDBACK.md)                                   | Signed Resend feedback receiver, provider suppression semantics, activation, and rollback.                                                     |
+| [AGENTMAIL_PRODUCTION_ACTIVATION.md](./AGENTMAIL_PRODUCTION_ACTIVATION.md)                     | Managed Bot email domain, credential, DNS, readiness, reconciliation, customer-domain, and rollback runbook.                                   |
 | [IOS_APP_STORE_CARPLAY_READINESS.md](./IOS_APP_STORE_CARPLAY_READINESS.md)                     | iOS signing, App Review, native capability, physical-device, and entitlement-gated CarPlay release checks.                                     |
 | [FOUNDER_LAUNCH_COMMAND_CENTER.md](./FOUNDER_LAUNCH_COMMAND_CENTER.md)                         | Founder go/no-go, runtime, GTM, KPI, support, and rollback command center.                                                                     |
 | [LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md](./LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md)                 | Active launch positioning, creative status, pre-customer proof rules, and publish gate.                                                        |
@@ -124,8 +125,8 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Historical planning reference
 
-| Document                                               | Classification                                                                                                                         |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Document                                               | Classification                                                                                                                          |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | [WIRELINE_2026_ROADMAP.md](./WIRELINE_2026_ROADMAP.md) | Historical July 2026 planning snapshot. Current product language, packaging, launch posture, and roadmap live in the authorities above. |
 
 ## Documentation rules
@@ -152,7 +153,7 @@ These files stay outside `docs/` because a development tool, compatibility path,
 | [android/README.md](../android/README.md)                                                     | Android build, signing, push, Telecom, consent, and release entry point beside its source.                                  |
 | [ios/README.md](../ios/README.md)                                                             | iOS architecture, build, widgets, intents, and release entry point beside its source.                                       |
 | [references/design-system-navigation-plan.md](../references/design-system-navigation-plan.md) | Exact path consumed by the design-system regression contract.                                                               |
-| [Archived browser proof (2026-08-20)](../brand-work/exports/product-proof/README.md)          | Archived pre-cutover browser proof retained beside its generated artifacts; explicitly not current launch evidence.        |
+| [Archived browser proof (2026-08-20)](../brand-work/exports/product-proof/README.md)          | Archived pre-cutover browser proof retained beside its generated artifacts; explicitly not current launch evidence.         |
 | [.superdesign/design-system.md](../.superdesign/design-system.md)                             | Superdesign product, visual, interaction, content, and accessibility contract generated from the canonical BotBound system. |
 | [.superdesign/init/components.md](../.superdesign/init/components.md)                         | Superdesign component inventory at the exact tool-discovery path.                                                           |
 | [.superdesign/init/extractable-components.md](../.superdesign/init/extractable-components.md) | Superdesign reusable-component candidate inventory at the exact tool-discovery path.                                        |

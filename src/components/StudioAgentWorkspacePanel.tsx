@@ -3,8 +3,11 @@ import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react"
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
+import { defaultBotMarkKey, isBotMarkKey, type BotMarkKey } from "../lib/bot-mark";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
+import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { Button } from "./atoms";
+import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
@@ -21,6 +24,7 @@ type StudioAgentWorkspacePanelProps = {
 };
 
 type AgentSetupResponse = {
+  mark_key?: string | null;
   personality?: string;
   directives?: Array<{ content?: string }>;
 };
@@ -64,7 +68,19 @@ export default function StudioAgentWorkspacePanel({
     () => `Hi, this is ${agentName || "your Bot"}. How can I help?`,
     [agentName],
   );
+  const { agents } = useAgents();
+  const unavailableMarkKeys = useMemo(
+    () =>
+      new Set<BotMarkKey>(
+        agents
+          .filter((agent) => agent.id !== agentId)
+          .map((agent) => agent.mark_key)
+          .filter((candidate): candidate is BotMarkKey => isBotMarkKey(candidate)),
+      ),
+    [agentId, agents],
+  );
   const [setupPersonality, setSetupPersonality] = useState("Clear");
+  const [setupMarkKey, setSetupMarkKey] = useState<BotMarkKey>(defaultBotMarkKey(agentId));
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
   const [setupGreeting, setSetupGreeting] = useState("");
   const [setupKnowledge, setSetupKnowledge] = useState("");
@@ -89,6 +105,7 @@ export default function StudioAgentWorkspacePanel({
     setSetupError(null);
     setSetupNotice(null);
     setSetupPersonality("Clear");
+    setSetupMarkKey(defaultBotMarkKey(agentId));
     setSetupGreeting("");
     setSetupKnowledge("");
     setLoadedPersonality(null);
@@ -100,6 +117,7 @@ export default function StudioAgentWorkspacePanel({
       .then((data) => {
         if (cancelled) return;
         const personality = typeof data.personality === "string" ? data.personality : "";
+        setSetupMarkKey(isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId));
         setLoadedPersonality(personality || null);
         setSetupPersonality(inferPersonality(personality));
         setSetupGreeting(existingGreeting(data.directives));
@@ -149,6 +167,20 @@ export default function StudioAgentWorkspacePanel({
       );
       const greetingTrimmed = setupGreeting.trim();
       const knowledgeTrimmed = setupKnowledge.trim();
+
+      const markResponse = await authFetch(`/api/agents/${encodeURIComponent(agentId)}/mark`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mark_key: setupMarkKey }),
+      });
+      if (!markResponse.ok) {
+        throw new Error(
+          markResponse.status === 409
+            ? "That identity is already used by another Bot. Choose another mark or color."
+            : "Bot mark could not be saved.",
+        );
+      }
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
 
       await saveManual("personality", personalityText);
       if (isCurrentAgent()) setLoadedPersonality(personalityText);
@@ -253,6 +285,21 @@ export default function StudioAgentWorkspacePanel({
             </StatusNotice>
           ) : (
             <div className={compact ? "space-y-4" : "space-y-5"}>
+              <fieldset>
+                <legend className="mb-2 text-sm font-semibold text-foreground">
+                  Identity mark
+                </legend>
+                <BotMarkPicker
+                  value={setupMarkKey}
+                  onChange={setSetupMarkKey}
+                  seed={agentId}
+                  name={agentName}
+                  compact={compact}
+                  disabled={applyingSetup}
+                  unavailableKeys={unavailableMarkKeys}
+                />
+              </fieldset>
+
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="grid grid-cols-2 gap-2">

@@ -16,14 +16,17 @@ describe("canonical BotBound public prestige certification", () => {
     expect(product).toContain('name: "BotBound"');
     expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
+    expect(landing).toContain(
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+    );
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
 
     expect(botMark).not.toContain("monogram");
-    expect(botMarkCss).toContain("wl-bot-mark-flow");
+    expect(botMark).toContain("MOTIF_ICONS");
+    expect(botMarkCss).toContain("wl-bot-mark-breathe");
     expect(botMarkCss).toContain("prefers-reduced-motion: reduce");
 
     expect(landingCss).toMatch(

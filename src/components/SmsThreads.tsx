@@ -390,7 +390,7 @@ export default function SmsThreads({
                       <ConversationMessage
                         key={message.id}
                         author={message.direction === "out" ? "assistant" : "customer"}
-                        label={message.direction === "out" ? "Agent" : activeThread.customer_number}
+                        label={message.direction === "out" ? "Bot" : activeThread.customer_number}
                         channel="text"
                         timestamp={formatSmsTime(message.created_at)}
                       >

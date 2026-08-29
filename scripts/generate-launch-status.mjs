@@ -20,6 +20,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
 import pg from "pg";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 import {
   CANONICAL_PROJECT_ID,
   CANONICAL_TEAM_ID,
@@ -560,7 +561,11 @@ async function stripeStatus() {
 async function databaseStatus() {
   const connectionString = (process.env.POSTGRES_URL || process.env.DATABASE_URL)?.trim();
   if (!connectionString) return { status: "unknown", reason: "POSTGRES_URL not supplied" };
-  const pool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 10_000 });
+  const pool = new Pool({
+    ...getPostgresConnectionConfig(connectionString),
+    max: 1,
+    connectionTimeoutMillis: 10_000,
+  });
   try {
     const result = await pool.query(`
       SELECT

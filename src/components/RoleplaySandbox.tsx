@@ -3,6 +3,7 @@ import { MessageSquareText, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 import LiveVoiceSandbox from "./LiveVoiceSandbox";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 
 type SimulationAllowanceStatus = {
   month_to_date_usd: number;
@@ -100,11 +101,13 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
 export default function RoleplaySandbox({
   agentId,
   agentName = "your agent",
+  markKey,
   onTestStarted,
   onTestCompleted,
 }: {
   agentId: string;
   agentName?: string;
+  markKey?: BotMarkKey | null;
   onTestStarted?: () => void;
   onTestCompleted?: () => void;
 }) {
@@ -114,6 +117,7 @@ export default function RoleplaySandbox({
       <LiveVoiceSandbox
         agentId={agentId}
         agentName={agentName}
+        markKey={markKey}
         onTestStarted={() => {
           setAllowanceRefreshTick((tick) => tick + 1);
           onTestStarted?.();

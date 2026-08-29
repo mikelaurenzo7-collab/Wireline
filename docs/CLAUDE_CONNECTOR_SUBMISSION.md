@@ -9,7 +9,7 @@
 - **Icon:** `https://botbound.me/botbound-icon-512.png`
 - **Docs:** `https://botbound.me/claude-connector.html`
 - **Privacy:** `https://botbound.me/mcp-privacy.html`
-- **Support:** `support@trywireline.com`
+- **Support:** `support@botbound.me`
 - **Company:** BotBound / `https://botbound.me`
 
 Machine-readable copy lives in `claude-connector-submission.json`.

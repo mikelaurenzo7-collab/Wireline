@@ -44,6 +44,27 @@ const customerSurfacePatterns = [
   "server.ts",
 ] as const;
 
+const activeBrandDocs = [
+  "docs/AUTHZ_MATRIX.md",
+  "docs/COMPANY_IDENTITY_PACK.md",
+  "docs/PRODUCT_SHOWCASE_MATRIX.md",
+  "docs/README.md",
+  "docs/SLA.md",
+  "docs/TRUST_CONVERSION_PACK.md",
+  "docs/VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md",
+] as const;
+
+const operatorDisplayPaths = [
+  "server.ts",
+  "scripts/capture-visual-qa.mjs",
+  "scripts/check-vendor-readiness.mjs",
+  "scripts/db-health-check.ts",
+  "scripts/generate-authz-matrix.ts",
+  "scripts/reconcile-stripe-customer-portal.mts",
+  "scripts/report-plan-economics.mts",
+  "scripts/sync-vapi-env-to-vercel.mjs",
+] as const;
+
 const compatibilityLinePatterns = [
   /legacyName:\s*"Wireline"/,
   /command@wireline\.com/,
@@ -78,15 +99,24 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   return false;
 }
 
-function isCompatibilityOnlyLine(path: string, line: string): boolean {
+function isCompatibilityOnlyLine(
+  path: string,
+  line: string,
+  allowInternalLogs = true,
+): boolean {
   return (
-    isInternalLogLine(line) ||
+    (allowInternalLogs && isInternalLogLine(line)) ||
     compatibilityLinePatterns.some((pattern) => pattern.test(line)) ||
     isPathScopedCompatibility(path, line)
   );
 }
 
-function visibleWirelineLeaksInSource(path: string, rawSource: string): string[] {
+function visibleWirelineLeaksInSource(
+  path: string,
+  rawSource: string,
+  options: { allowInternalLogs?: boolean } = {},
+): string[] {
+  const allowInternalLogs = options.allowInternalLogs ?? true;
   const source = withoutComments(rawSource);
   const lines = source.split("\n");
   const leaks: string[] = [];
@@ -94,7 +124,7 @@ function visibleWirelineLeaksInSource(path: string, rawSource: string): string[]
     const line = lines[index];
     const scannableLine = withoutStableHeaderTokens(line);
     if (!/\bWireline\b/.test(scannableLine)) continue;
-    if (isCompatibilityOnlyLine(path, scannableLine)) continue;
+    if (isCompatibilityOnlyLine(path, scannableLine, allowInternalLogs)) continue;
     leaks.push(`${path}:${index + 1} ${line.trim().replace(/\s+/g, " ").slice(0, 210)}`);
   }
   return leaks;
@@ -144,6 +174,21 @@ describe("BotBound visible-brand sweep", () => {
     },
     FILESYSTEM_SCAN_TIMEOUT_MS,
   );
+
+  it("keeps active canonical docs and operator-facing diagnostics BotBound-branded", () => {
+    const documentLeaks = activeBrandDocs.flatMap(visibleWirelineLeaks);
+    const operatorLeaks = operatorDisplayPaths.flatMap((path) =>
+      visibleWirelineLeaksInSource(path, read(path), { allowInternalLogs: false }),
+    );
+
+    expect(
+      [...documentLeaks, ...operatorLeaks],
+      `Active docs or operator diagnostics still contain the retired standalone Wireline name:\n${[
+        ...documentLeaks,
+        ...operatorLeaks,
+      ].join("\n")}`,
+    ).toEqual([]);
+  });
 
   it("keeps technical compatibility identifiers explicit while requiring customer billing names to be BotBound", () => {
     const brand = read("src/lib/brand.ts");

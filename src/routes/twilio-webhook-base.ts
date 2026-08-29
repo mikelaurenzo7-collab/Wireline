@@ -427,7 +427,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         .status(200)
         .send(
           appReply(
-            "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.",
+            "BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.me for support. Message and data rates may apply.",
           ),
         );
     }

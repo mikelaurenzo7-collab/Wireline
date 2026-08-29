@@ -197,6 +197,7 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
+  activationLine: "Start free. Every live Bot gets its own number and email.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;

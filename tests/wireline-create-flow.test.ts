@@ -13,6 +13,7 @@ import {
 const payload = {
   agentId: "agent_test_1",
   agentName: "Reception",
+  markKey: "spark-rose" as const,
   phoneProvisionRequested: true,
   phoneProvisioned: false,
 };

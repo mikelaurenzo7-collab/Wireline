@@ -8,7 +8,7 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("BotBound public iPhone prestige contract", () => {
-  it("makes Phone Bot the public wedge and keeps channel proof in CALL · TEXT · EMAIL order", () => {
+  it("makes Phone Bot the public wedge without repeating the channel promise in the hero", () => {
     const product = read("src/lib/bot-product.ts");
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
@@ -22,9 +22,10 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toMatch(
       /<h1[^>]*>[\s\S]*?<span>PUT YOUR BOT<\/span>[\s\S]*?<span>ON THE LINE<\/span>[\s\S]*?<\/h1>/,
     );
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
-    expect(landing).toContain("{HERO_CHANNELS.map((label) =>");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
+    expect(landing).not.toContain("HERO_CHANNELS.map");
+    expect(landing).not.toContain('aria-label="BotBound channels"');
     expect(landing).not.toMatch(/ONE WORKSPACE|one workspace/i);
   });
 
@@ -32,7 +33,9 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const css = read("src/styles/landing-prestige.css");
 
-    expect(landing).toContain('<AuthAccessPanel embedded initialMode="signin" />');
+    expect(landing).toContain(
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+    );
     expect(landing).not.toContain("PrecisionPublicHeader");
     expect(css).toMatch(
       /\.landing-prestige__entrance\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
@@ -109,18 +112,26 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(consent).toContain("sm:items-center");
   });
 
-  it("renders Jordan as a compact animated letterless signal, not a portrait or monogram", () => {
+  it("keeps public demos on the master brand and reserves Bot marks for customers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
     const styles = read("src/styles/bot-mark.css");
 
-    expect(landing).toMatch(/<BotMark[\s\S]*?size=\{30\}[\s\S]*?active/);
+    expect(landing).toContain("<BrowserCallWidget");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("markKey");
+    expect(widget).not.toContain("landing-demo-inline__voice-symbol");
+    expect(widget).toContain("landing-demo-inline__identity");
+    expect(widget).toContain("Headphones");
+    expect(widget).not.toContain("<BotMark");
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
     expect(generator).not.toMatch(/botMarkInitial|initial:\s*/i);
-    expect(generator).toContain("BOT_MARK_GRADIENT_CAPACITY = 1_048_576");
-    expect(styles).toContain("@keyframes wl-bot-mark-flow");
-    expect(styles).toContain("@keyframes wl-bot-mark-sweep");
+    expect(generator).toContain("BOT_MARK_SIGNATURE_CAPACITY = 1_048_576");
+    expect(generator).toContain("BOT_MARK_CHOICES");
+    expect(styles).toContain("@keyframes wl-bot-mark-breathe");
+    expect(styles).toContain("@keyframes wl-bot-mark-signal");
     expect(styles).toContain("prefers-reduced-motion: reduce");
   });
 

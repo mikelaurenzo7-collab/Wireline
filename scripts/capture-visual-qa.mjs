@@ -407,7 +407,7 @@ async function captureRoute(page, viewportName, route, issues, options = {}) {
       viewport: viewportName,
       route,
       kind: "shell-not-mounted",
-      detail: "#root has no children — captured page is not the Wireline app",
+      detail: "#root has no children — captured page is not the BotBound app",
     });
   }
 

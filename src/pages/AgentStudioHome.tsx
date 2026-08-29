@@ -146,6 +146,9 @@ export default function AgentStudioHome() {
         emailProvisioned: result.mailbox.provisioned,
         emailAddress: result.mailbox.emailAddress,
         emailCustomDomain: result.mailbox.customDomain,
+        // The browser makes one responsive attempt; the durable server job owns
+        // paid activation and retries. Free Builder therefore does not loop on
+        // endpoints that intentionally return ACTIVATION_REQUIRED.
         identityBootstrapComplete: true,
       };
       updatePostCreateWizard(updated);

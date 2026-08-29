@@ -1,14 +1,14 @@
-# Wireline Verified Voice Moat & Partner Strategy
+# BotBound Verified Voice Moat & Partner Strategy
 
 **Status:** Product and architecture direction  
 **Date:** 2026-08-01  
-**Decision owner:** Wireline
+**Decision owner:** BotBound
 
 ## Executive decision
 
 Voice cloning is a feature, not a durable moat. Model quality, latency, and cloning fidelity will continue to commoditize as large model, cloud, and contact-center vendors ship comparable capabilities.
 
-Wireline should position itself as the **verified voice operations layer for real businesses**:
+BotBound should position itself as the **verified voice operations layer for real businesses**:
 
 > A trusted assistant platform that can sound on-brand, act under explicit rules, complete work across voice, text, and email, prove authorization, survive provider failures, and measure business outcomes.
 
@@ -32,7 +32,7 @@ The strict review also identified material gaps that must be closed before voice
 - Consent was a request boolean rather than durable, versioned evidence.
 - The clone limiter was process-local and IP-scoped despite being described as per-user; this is unreliable on serverless infrastructure.
 - Uploaded audio was size-checked by base64 string length but not strictly decoded or MIME-allowlisted.
-- Provider metadata included the internal Wireline user UUID.
+- Provider metadata included the internal account UUID.
 - A successful provider clone followed by failed local persistence could leave an orphaned paid resource.
 - Raw provider error details could be returned to the account holder.
 - The existing expansion document called the implementation “production-ready” without recording these limitations or verification gates.
@@ -44,7 +44,7 @@ The strict review also identified material gaps that must be closed before voice
 - Audio MIME, base64 integrity, decoded size, and minimum payload are validated server-side.
 - File signatures are matched to the declared audio MIME before provider processing.
 - A versioned speaker-authorization attestation is persisted to the consent ledger.
-- A SHA-256 source fingerprint is recorded; Wireline does not persist source audio in its database.
+- A SHA-256 source fingerprint is recorded; BotBound does not persist source audio in its database.
 - Clone requests are reserved inside a database transaction with a per-user PostgreSQL advisory lock and a durable 24-hour audit-ledger quota.
 - Internal tenant IDs are removed from provider voice descriptions.
 - Provider clones are deleted as compensation when local ownership persistence fails.
@@ -64,7 +64,7 @@ The strict review also identified material gaps that must be closed before voice
 
 ### Core promise
 
-Wireline assistants handle voice, text, and email conversations under the account holder’s rules, using authorized brand voices and completing work in the systems the business already uses.
+BotBound Bots handle voice, text, and email conversations under the account holder’s rules, using authorized brand voices and completing work in the systems the business already uses.
 
 ### What not to lead with
 
@@ -85,19 +85,19 @@ Wireline assistants handle voice, text, and email conversations under the accoun
 
 The order matters. Do not integrate every vendor simultaneously. Each partner must improve resilience, trust, distribution, workflow depth, or unit economics.
 
-| Priority | Partner / category                           | Role for Wireline                                        | Why it matters                                                                                                         | Integration gate                                                                                                                                |
+| Priority | Partner / category                           | Role for BotBound                                        | Why it matters                                                                                                         | Integration gate                                                                                                                                |
 | -------- | -------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1        | **ElevenLabs**                               | Primary expressive TTS and current cloning provider      | Existing implementation, strong voice quality, broad creation options                                                  | Keep behind Wireline provider contract; remove hard-coded assumptions and benchmark quarterly                                                   |
+| 1        | **ElevenLabs**                               | Primary expressive TTS and current cloning provider      | Existing implementation, strong voice quality, broad creation options                                                  | Keep behind BotBound provider contract; remove hard-coded assumptions and benchmark quarterly                                                   |
 | 1        | **Cartesia**                                 | Secondary cloning/TTS lane                               | Creates an immediate second-source path and supports private cloned voices                                             | Ship only after capability contract, consent parity, deletion parity, latency/cost benchmarks, and failover tests                               |
 | 1        | **LiveKit**                                  | Provider-neutral realtime orchestration evaluation       | Open framework, telephony, handoffs, interruption handling, testing, and broad model plugins reduce runtime lock-in    | Build a controlled spike; do not replace Vapi until call completion, latency, observability, and operating cost are proven                      |
-| 1        | **Deepgram**                                 | Full-pipeline benchmark and emergency voice runtime      | One WebSocket can cover listening, reasoning integration, speaking, function calling, multi-agent flows, and telephony | Benchmark as a fallback lane and enterprise deployment option; preserve Wireline tools and memory as the control plane                          |
+| 1        | **Deepgram**                                 | Full-pipeline benchmark and emergency voice runtime      | One WebSocket can cover listening, reasoning integration, speaking, function calling, multi-agent flows, and telephony | Benchmark as a fallback lane and enterprise deployment option; preserve BotBound tools and memory as the control plane                          |
 | 1        | **Telnyx or Bandwidth**                      | Secondary telephony carrier                              | Carrier redundancy, number portability, routing control, and margin leverage                                           | Abstract phone-number inventory and routing before adding; test emergency reroute and webhook parity                                            |
 | 1        | **Jobber or Housecall Pro**                  | First vertical system-of-record wedge                    | Home-service businesses have clear call-to-booking workflows and measurable revenue outcomes                           | Select one based on API access and design-partner demand; complete booking, customer, job, quote, and status loops                              |
 | 2        | **Microsoft Azure Personal Voice**           | Regulated/enterprise personal voice lane                 | Microsoft requires approved use cases and recorded verbal consent, which aligns with a verified-voice enterprise offer | Pursue after identity verification and consent artifact storage are production-ready                                                            |
-| 2        | **Resemble AI**                              | Deepfake detection, watermarking, and provenance partner | Trust tooling can differentiate Wireline as synthetic voice becomes easier to produce                                  | Begin with outbound watermark/provenance evaluation and high-risk inbound-call detection; treat vendor performance claims as claims to validate |
+| 2        | **Resemble AI**                              | Deepfake detection, watermarking, and provenance partner | Trust tooling can differentiate BotBound as synthetic voice becomes easier to produce                                  | Begin with outbound watermark/provenance evaluation and high-risk inbound-call detection; treat vendor performance claims as claims to validate |
 | 2        | **Pindrop**                                  | Enterprise contact-center fraud/deepfake layer           | Strong fit for financial services and large contact centers that need authentication and fraud controls                | Partner only when enterprise pipeline warrants integration and procurement cost                                                                 |
 | 2        | **ServiceTitan**                             | Higher-ACV field-service system of record                | Deep workflow and revenue value for mature service businesses                                                          | Enter after the first SMB field-service integration proves activation and retention                                                             |
-| 2        | **Genesys Cloud / Amazon Connect / Five9**   | Enterprise distribution and contact-center embedding     | Lets Wireline become an intelligence/action layer instead of replacing mature telephony estates                        | Package as an adapter and supervised assistant offering, not a second full product                                                              |
+| 2        | **Genesys Cloud / Amazon Connect / Five9**   | Enterprise distribution and contact-center embedding     | Lets BotBound become an intelligence/action layer instead of replacing mature telephony estates                        | Package as an adapter and supervised assistant offering, not a second full product                                                              |
 | 3        | **Rime, Hume, or specialized voice vendors** | Specialty timbre, emotion, or vertical voice quality     | Can win specific languages, accents, or expressive use cases                                                           | Add only through measured provider scorecards and customer demand                                                                               |
 | 3        | **Persona / Stripe Identity / equivalent**   | Speaker identity and authorization verification          | Supports higher-risk cloning use cases and enterprise evidence                                                         | Required before third-party celebrity, executive, employee, healthcare, or financial voice programs                                             |
 
@@ -129,7 +129,7 @@ Every provider adapter must implement:
 - Consent-policy compatibility.
 - Data retention and residency metadata.
 - Health checks and circuit-breaker state.
-- A portability record linking Wireline voice identity to provider voice IDs.
+- A portability record linking BotBound voice identity to provider voice IDs.
 
 ### Upload transport constraint
 
@@ -156,7 +156,7 @@ Route by declared policy, not hard-coded vendor names:
 - `fallback_only`
 
 A failed private voice may fall back to a clearly generic managed voice so the
-call can continue, but Wireline must never present that fallback as the cloned
+call can continue, but BotBound must never present that fallback as the cloned
 speaker or silently substitute another person's identity. An identity-preserving
 fallback requires a separately authorized equivalent voice.
 
@@ -166,7 +166,7 @@ The durable voice object should evolve beyond `voiceId`, `userId`, and `name`.
 
 Minimum future record:
 
-- Wireline voice UUID independent of provider.
+- BotBound voice UUID independent of provider.
 - Provider and provider voice ID mappings.
 - Speaker identity state: self-attested, verified, enterprise-admin verified.
 - Consent statement/version and timestamp.
@@ -183,7 +183,7 @@ The passport—not the cloned model—is the differentiating customer asset.
 
 ## Outcome moat
 
-Wireline should optimize for **completed business outcomes**, not minutes or calls.
+BotBound should optimize for **completed business outcomes**, not minutes or calls.
 
 Primary product metrics:
 
@@ -231,7 +231,7 @@ Primary product metrics:
 
 - Implement Cartesia behind the provider contract.
 - Benchmark ElevenLabs and Cartesia by voice fidelity, P95 first audio, interruption recovery, telephony quality, cost, failure rate, language, and deletion behavior.
-- Run a LiveKit orchestration spike against the same Wireline tools and scripted call suite.
+- Run a LiveKit orchestration spike against the same BotBound tools and scripted call suite.
 - Add provider selection/fallback policies to admin operations, not end-user complexity.
 - Select Jobber or Housecall Pro and complete one end-to-end booking workflow.
 - Ship the outcome dashboard and activation funnel instrumentation.
@@ -240,14 +240,14 @@ Primary product metrics:
 
 - Pilot Resemble watermark/provenance or detection on defined high-risk flows.
 - Add identity verification for higher-risk third-party voice cloning.
-- Create a “Verified by Wireline” enterprise packet: authorization evidence, deletion proof, disclosure policy, provider data map, and audit export.
+- Create a “Verified by BotBound” enterprise packet: authorization evidence, deletion proof, disclosure policy, provider data map, and audit export.
 - Add a second telephony carrier behind routing abstraction.
 - Launch with 5–10 design partners in one vertical and publish quantified case studies.
 - Start marketplace/distribution applications only after activation and retention evidence exists.
 
 ## Build-versus-buy boundary
 
-### Wireline must own
+### BotBound must own
 
 - Tenant rules, memory, tools, workflow graph, and customer context.
 - Voice passport, consent ledger, disclosure, revocation, and audit experience.
@@ -266,13 +266,13 @@ Primary product metrics:
 - Deepfake detection and identity verification.
 - CRM/field-service systems of record.
 
-Never let a vendor become the sole source of Wireline’s customer memory, rules, action history, or voice authorization record.
+Never let a vendor become the sole source of BotBound’s customer memory, rules, action history, or voice authorization record.
 
 ## Partnership outreach package
 
 For each priority vendor, prepare:
 
-- One-page Wireline overview and vertical wedge.
+- One-page BotBound overview and vertical wedge.
 - Current architecture and monthly usage range.
 - Exact integration request: API access, startup credits, partner tier, co-selling, marketplace, SLA, data residency, or deletion guarantees.
 - Joint value proposition and named launch customer profile.
@@ -282,7 +282,7 @@ For each priority vendor, prepare:
 
 The strongest message is not “we need your voice API.” It is:
 
-> Wireline is building the verified operating layer that turns your realtime voice capability into measurable work across phone, text, email, and business systems. We can bring a repeatable vertical workflow, consent provenance, evaluation data, and distribution.
+> BotBound is building the verified operating layer that turns your realtime voice capability into measurable work across phone, text, email, and business systems. We can bring a repeatable vertical workflow, consent provenance, evaluation data, and distribution.
 
 ## Required legal and trust review
 

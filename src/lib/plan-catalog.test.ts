@@ -34,6 +34,11 @@ describe("plan-catalog", () => {
     expect(personal?.name).toBe("BotBound Free Builder");
     expect(personal?.public).toBe(true);
     expect(personal?.price_usd_monthly).toBe(0);
+    expect(personal?.included_phone_numbers).toBe(0);
+    expect(personal?.features).toContain("Private call and email workflow simulation");
+    expect(personal?.features.join("\n")).toContain(
+      "No live number or customer conversations until activation",
+    );
 
     const clientPersonal = plansForClient().find((plan) => plan.id === "personal");
     expect(clientPersonal).toMatchObject({

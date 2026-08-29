@@ -3,6 +3,7 @@
 import "../src/lib/load-env";
 import pkg from "pg";
 import { resolveDatabaseConnection } from "../src/lib/database-connection";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 import { PUBLIC_SELF_SERVE_FUNNEL_EVENT_NAMES } from "../src/lib/product-events";
 
 const { Pool } = pkg;
@@ -186,7 +187,7 @@ async function main(): Promise<void> {
   }
 
   const pool = new Pool({
-    connectionString: selected.connectionString,
+    ...getPostgresConnectionConfig(selected.connectionString),
     max: 1,
     min: 0,
     idleTimeoutMillis: 5_000,

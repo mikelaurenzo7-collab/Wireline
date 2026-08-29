@@ -14,7 +14,7 @@ describe("live voice trust surface", () => {
       expect(surface).toContain("function voiceActivity(state: VoiceState)");
       expect(surface).toContain("Connecting live voice");
       expect(surface).toContain("Checking approved knowledge");
-      expect(surface).toContain("Agent speaking");
+      expect(surface).toContain("Bot speaking");
       expect(surface).toContain("Live voice needs attention");
       expect(surface).toContain("<ConversationActivity");
     }

@@ -1,4 +1,5 @@
 import pg from "pg";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 
 const { Pool } = pg;
 
@@ -75,7 +76,11 @@ const expectedAuthIndexes = new Map([
   ["idx_mcp_oauth_codes_expires_at", ["wireline_mcp_oauth_codes", "(expires_at)"]],
 ]);
 
-const pool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 10_000 });
+const pool = new Pool({
+  ...getPostgresConnectionConfig(connectionString),
+  max: 1,
+  connectionTimeoutMillis: 10_000,
+});
 
 function normalizeRoles(value) {
   if (Array.isArray(value)) return [...value].map(String).sort();

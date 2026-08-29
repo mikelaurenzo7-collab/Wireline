@@ -20,6 +20,11 @@ import {
 } from "./subscription-welcome-credit";
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
+import {
+  MAX_EXTRA_AGENT_ADDONS,
+  clampAgentCapacity,
+  clampExtraAgentAddons,
+} from "./agent-capacity";
 
 export { STRIPE_API_VERSION };
 
@@ -651,7 +656,18 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     sub.items?.data
       ?.map((item) => basePlanByStripePrice(item.price))
       .find((candidate): candidate is StripePlan => !!candidate) ?? null;
-  const extraAgents = extraAgentQuantityFromSubscription(sub);
+  const providerExtraAgents = extraAgentQuantityFromSubscription(sub);
+  const extraAgents = clampExtraAgentAddons(providerExtraAgents);
+  if (providerExtraAgents > MAX_EXTRA_AGENT_ADDONS) {
+    log.error("Stripe sync: Extra Agent quantity exceeds the supported Bot capacity", {
+      userId,
+      customerId,
+      subscriptionId: sub.id,
+      providerExtraAgents,
+      grantedExtraAgents: extraAgents,
+      maxExtraAgentAddons: MAX_EXTRA_AGENT_ADDONS,
+    });
+  }
   const stripeStatus = sub.status;
 
   // Active/trialing Stripe status with an unmapped price must not wipe a
@@ -672,7 +688,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   }
 
   const baseMaxAgents = plan?.max_agents ?? 1;
-  const effectiveMaxAgents = baseMaxAgents + extraAgents;
+  const effectiveMaxAgents = clampAgentCapacity(baseMaxAgents + extraAgents);
 
   const localStatus =
     stripeStatus === "active" || stripeStatus === "trialing"
@@ -797,6 +813,15 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       // Must succeed — swallowing here marks the webhook processed with no
       // included Runtime Allowance, and Stripe will not retry.
       await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
+      if (stripeStatus === "active") {
+        const { enqueuePaidBotIdentityReconciliation } = await import("./paid-bot-identity");
+        const identityQueue = await enqueuePaidBotIdentityReconciliation(userId);
+        log.info("Paid Bot identity reconciliation attached to authoritative subscription sync", {
+          userId,
+          subscriptionId: sub.id,
+          ...identityQueue,
+        });
+      }
     }
 
     void auditLogger
@@ -810,6 +835,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
           legacy_status: localStatus,
           cancel_at_period_end: !!sub.cancel_at_period_end,
           extra_agents: extraAgents,
+          provider_extra_agents: providerExtraAgents,
         },
       })
       .catch(() => {});

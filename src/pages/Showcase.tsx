@@ -21,11 +21,11 @@ export default function Showcase() {
     <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
         title="TRY BOTBOUND | HEAR A PHONE BOT"
-        description="Hear the Phone Bot first. Then wire one for calls, email, text, and the work that should happen next."
+        description="Hear the Phone Bot first. Then build one for calls, email, text, and the work that should happen next."
         path="/showcase"
       />
 
-      <section className="marketing-section marketing-section--screen">
+      <section className="marketing-section marketing-section--screen min-w-0">
         <MarketingHero
           title="HEAR WHAT YOUR CUSTOMER HEARS"
           primaryAction={{ label: "BUILD YOUR BOT", to: FREE_SIGNUP }}
@@ -35,7 +35,7 @@ export default function Showcase() {
               <div className="rounded-[16px] border border-border bg-background/70 p-3">
                 <BrowserCallWidget
                   agentName={primaryDemo.name}
-                  buttonLabel="START LIVE DEMO"
+                  buttonLabel={`Talk to ${primaryDemo.name}`}
                   fallback={
                     <div className="text-center">
                       <a
@@ -52,13 +52,13 @@ export default function Showcase() {
           }
         />
 
-        <section id="demo-lines" className="mt-8">
-          <div className="grid gap-2 sm:grid-cols-2">
+        <section id="demo-lines" className="mt-8 min-w-0">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <a
                 key={agent.tel}
                 href={`tel:${agent.tel}`}
-                className="group wl-stitch-card wl-stitch-card-hover flex items-center gap-3 p-2.5 text-left"
+                className="group wl-stitch-card wl-stitch-card-hover grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-2.5 text-left sm:flex sm:gap-3"
               >
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/8 text-primary">
                   <Phone className="h-4 w-4" aria-hidden="true" />
@@ -69,8 +69,8 @@ export default function Showcase() {
                   </span>
                   <span className="block text-sm text-muted-foreground">{agent.role}</span>
                 </span>
-                <span className="shrink-0 text-right">
-                  <span className="block font-mono text-sm font-semibold text-foreground">
+                <span className="col-start-2 min-w-0 text-left sm:col-auto sm:shrink-0 sm:text-right">
+                  <span className="block break-words font-mono text-sm font-semibold text-foreground">
                     {agent.display}
                   </span>
                   <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">

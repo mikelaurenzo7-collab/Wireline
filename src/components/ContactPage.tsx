@@ -120,7 +120,7 @@ export function ContactPage() {
         ) ||
         message.includes("(5");
       if (isTransport) {
-        window.location.href = `mailto:support@trywireline.com?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
+        window.location.href = `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
         setError(
           "The message service did not respond, so your email client has opened with the note prepared.",
         );
@@ -161,12 +161,12 @@ export function ContactPage() {
             <p className="mt-2 text-sm text-muted-foreground">{salesAgent.display}</p>
           </a>
           <a
-            href="mailto:support@trywireline.com"
+            href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@trywireline.com</p>
+            <p className="mt-2 text-sm text-muted-foreground">support@botbound.me</p>
           </a>
           <Link
             to="/pricing"

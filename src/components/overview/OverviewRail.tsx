@@ -43,6 +43,7 @@ export function BotRoster({
               <BotMark
                 seed={bot.id}
                 name={bot.name}
+                markKey={bot.mark_key}
                 size={32}
                 title={`${bot.name} mark`}
                 className="shrink-0"

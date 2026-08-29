@@ -268,6 +268,7 @@ router.get(
             .select({
               id: schema.agents.id,
               name: schema.agents.name,
+              markKey: schema.agents.markKey,
               archetype: schema.agents.archetype,
               channel: schema.agents.channel,
               role: schema.agents.role,
@@ -359,6 +360,7 @@ router.get(
           return {
             agent_id: a.id,
             agent_name: a.name,
+            mark_key: a.markKey,
             archetype: a.archetype,
             role: a.role || DEFAULT_AGENT_ROLE,
             channel: a.channel,
