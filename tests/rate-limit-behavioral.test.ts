@@ -227,6 +227,31 @@ describe("distributedLimiterStatus", () => {
     expect(distributedLimiterStatus().ok).toBe(true);
   });
 
+  it("returns ok in the clean-room Vercel development identity without Redis", () => {
+    process.env.VERCEL_ENV = "development";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus().ok).toBe(true);
+  });
+
+  it("requires distributed limiting when the Vercel development identity is running on Vercel", () => {
+    process.env.VERCEL_ENV = "development";
+    process.env.VERCEL = "1";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
+  });
+
+  it("fails closed for an unknown Vercel environment identity", () => {
+    process.env.VERCEL_ENV = "unexpected";
+    process.env.NODE_ENV = "development";
+    expect(distributedLimiterStatus()).toMatchObject({
+      ok: false,
+      code: "RATE_LIMITER_UNAVAILABLE",
+    });
+  });
+
   it("returns not ok in production without Redis or fallback", () => {
     process.env.NODE_ENV = "production";
     const status = distributedLimiterStatus();

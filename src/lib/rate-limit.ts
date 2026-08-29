@@ -253,9 +253,10 @@ export function distributedLimiterStatus(): DistributedLimiterStatus {
 
   if (inMemoryRateLimitAllowed()) return { ok: true };
 
+  const vercelEnvironment = process.env.VERCEL_ENV?.trim().toLowerCase();
   const distributedRequired =
     isProductionDeployment() ||
-    Boolean(process.env.VERCEL_ENV?.trim()) ||
+    (Boolean(vercelEnvironment) && vercelEnvironment !== "development") ||
     process.env.VERCEL === "1";
   if (distributedRequired) {
     return {
