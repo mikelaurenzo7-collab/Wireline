@@ -394,13 +394,42 @@ describe("production environment launch policy", () => {
       `${providerBackedLimiterOverride.stdout}${providerBackedLimiterOverride.stderr}`,
     ).toContain("provider-free Preview required");
 
-    const wrongMigrationLane = runPreviewBoundary({
+    const missingSessionPoolerHost = runPreviewBoundary({
       ...isolatedPreview,
       WIRELINE_RUN_MIGRATIONS: "true",
     });
-    expect(wrongMigrationLane.status).toBe(1);
-    expect(`${wrongMigrationLane.stdout}${wrongMigrationLane.stderr}`).toContain(
-      "Preview migrations require a direct or session-pooler POSTGRES_URL on port 5432",
+    expect(missingSessionPoolerHost.status).toBe(1);
+    expect(`${missingSessionPoolerHost.stdout}${missingSessionPoolerHost.stderr}`).toContain(
+      "transaction-pooler migration requires a reviewed Supabase session-pooler hostname",
+    );
+
+    const invalidSessionPoolerHost = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "database.example.com",
+    });
+    expect(invalidSessionPoolerHost.status).toBe(1);
+    expect(`${invalidSessionPoolerHost.stdout}${invalidSessionPoolerHost.stderr}`).toContain(
+      "reviewed Supabase session-pooler hostname",
+    );
+
+    const derivedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "aws-0-us-east-2.pooler.supabase.com",
+    });
+    expect(derivedMigrationLane.status).toBe(0);
+
+    const mismatchedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST: "aws-0-us-east-2.pooler.supabase.com",
+      POSTGRES_URL:
+        "postgresql://postgres.abcdefghijklmnopqrst:preview-only@pooler.supabase.com:6543/postgres",
+    });
+    expect(mismatchedMigrationLane.status).toBe(1);
+    expect(`${mismatchedMigrationLane.stdout}${mismatchedMigrationLane.stderr}`).toContain(
+      "does not match the isolated Preview project ref",
     );
 
     const allowedMigrationLane = runPreviewBoundary({

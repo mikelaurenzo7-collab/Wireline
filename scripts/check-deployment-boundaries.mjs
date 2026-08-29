@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+import {
+  assertIsolatedPreviewDatabaseUrl,
+  resolvePreviewMigrationDatabaseUrl,
+} from "./lib/preview-migration-database.mjs";
+
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV || "development";
 const isProduction = environment === "production";
 const isPreview = environment === "preview";
@@ -329,19 +334,14 @@ if (isPreview) {
       );
     } else if (value("POSTGRES_URL")) {
       try {
-        const databaseUrl = new URL(value("POSTGRES_URL"));
-        const databaseIdentity =
-          `${databaseUrl.hostname} ${decodeURIComponent(databaseUrl.username)}`.toLowerCase();
-        if (
-          !["postgres:", "postgresql:"].includes(databaseUrl.protocol) ||
-          !databaseIdentity.includes(isolatedPreviewProjectRef)
-        ) {
-          failures.push(
-            "POSTGRES_URL: isolated Preview database does not match WIRELINE_PREVIEW_DATABASE_PROJECT_REF",
-          );
-        }
-      } catch {
-        failures.push("POSTGRES_URL: isolated Preview database must be a valid PostgreSQL URL");
+        assertIsolatedPreviewDatabaseUrl({
+          databaseUrl: value("POSTGRES_URL"),
+          projectRef: isolatedPreviewProjectRef,
+        });
+      } catch (error) {
+        failures.push(
+          `POSTGRES_URL: ${error instanceof Error ? error.message : "isolated Preview database is invalid"}`,
+        );
       }
     }
   }
@@ -394,14 +394,15 @@ if (isPreview) {
     value("WIRELINE_PREVIEW_DATABASE_ISOLATED") === "true"
   ) {
     try {
-      const migrationUrl = new URL(value("POSTGRES_URL"));
-      if (Number(migrationUrl.port || "5432") !== 5432) {
-        failures.push(
-          "WIRELINE_RUN_MIGRATIONS: Preview migrations require a direct or session-pooler POSTGRES_URL on port 5432.",
-        );
-      }
-    } catch {
-      // The isolated Preview database validator above reports malformed URLs.
+      resolvePreviewMigrationDatabaseUrl({
+        databaseUrl: value("POSTGRES_URL"),
+        projectRef: value("WIRELINE_PREVIEW_DATABASE_PROJECT_REF"),
+        sessionPoolerHost: value("WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST"),
+      });
+    } catch (error) {
+      failures.push(
+        `WIRELINE_RUN_MIGRATIONS: ${error instanceof Error ? error.message : "Preview migration database configuration is invalid"}`,
+      );
     }
   }
 }
