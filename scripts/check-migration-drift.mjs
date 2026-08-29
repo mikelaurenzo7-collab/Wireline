@@ -45,6 +45,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 
 const { Pool } = pg;
 const MIGRATIONS_DIR = join(process.cwd(), "drizzle", "migrations");
@@ -194,7 +195,11 @@ async function main() {
     ),
   );
 
-  const pool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 15_000 });
+  const pool = new Pool({
+    ...getPostgresConnectionConfig(connectionString),
+    max: 1,
+    connectionTimeoutMillis: 15_000,
+  });
   let live;
   try {
     live = await loadLiveSchema(pool);

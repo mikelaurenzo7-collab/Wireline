@@ -11,6 +11,7 @@
 import { Pool, type PoolClient } from "pg";
 import { log } from "./server-context";
 import { resolveDatabaseConnection } from "./database-connection";
+import { getPostgresConnectionConfig } from "./postgres-tls.mjs";
 
 export interface HealthCheckResult {
   healthy: boolean;
@@ -55,7 +56,7 @@ export async function runDatabaseHealthCheck(): Promise<HealthCheckResult> {
     return result;
   }
 
-  const pool = new Pool({ connectionString: databaseConnection.connectionString });
+  const pool = new Pool(getPostgresConnectionConfig(databaseConnection.connectionString));
   let client: PoolClient | null = null;
 
   try {

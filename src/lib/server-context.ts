@@ -1,5 +1,6 @@
 import { log, IS_PROD } from "./server-logger";
 import { tryResolveDatabaseConnection } from "./database-connection";
+import { getPostgresConnectionConfig } from "./postgres-tls.mjs";
 import { AppError } from "./api-error";
 import { resolveTenantDatabaseScope } from "./tenant-context-scope";
 import { runTenantScopedPoolQuery, scopePgClientToTenant } from "./tenant-pool-transaction";
@@ -107,7 +108,7 @@ if (!databaseConnection) {
 
 const pool = databaseConnection
   ? new Pool({
-      connectionString: databaseConnection.connectionString,
+      ...getPostgresConnectionConfig(databaseConnection.connectionString),
       // Serverless: avoid eager min connections per instance (Supabase pooler ~100 cap).
       max: 5,
       min: 0,

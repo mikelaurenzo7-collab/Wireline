@@ -3,6 +3,7 @@
 import "../src/lib/load-env";
 import pkg from "pg";
 import { resolveDatabaseConnection } from "../src/lib/database-connection";
+import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 
 const { Pool } = pkg;
 const MAX_REPORT_RANGE_MS = 366 * 24 * 60 * 60 * 1_000;
@@ -143,7 +144,7 @@ async function main(): Promise<void> {
   }
 
   const pool = new Pool({
-    connectionString: selected.connectionString,
+    ...getPostgresConnectionConfig(selected.connectionString),
     max: 1,
     min: 0,
     idleTimeoutMillis: 5_000,
