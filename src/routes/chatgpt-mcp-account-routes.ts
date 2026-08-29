@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { type AgentCustomizationInput, assertDraftConfirmation } from "../lib/agent-customization";
 import {
@@ -52,6 +52,7 @@ import { runPrivateAgentTestTurn } from "../lib/private-agent-test";
 import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import { shouldRetainRealtimeReservation } from "../lib/realtime-provider-outcome";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
+import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -547,15 +548,17 @@ function toolDefinitions() {
         properties: {
           agents: {
             type: "array",
+            maxItems: BOT_MARK_IDENTITY_CAPACITY,
             items: {
               type: "object",
               properties: {
                 id: { type: "string" },
                 name: { type: "string" },
+                mark_key: { type: ["string", "null"] },
                 role: { type: "string" },
                 channel: { type: "string" },
               },
-              required: ["id", "name", "role", "channel"],
+              required: ["id", "name", "mark_key", "role", "channel"],
               additionalProperties: false,
             },
           },
@@ -1050,15 +1053,18 @@ router.post("/mcp", async (req, res) => {
           .select({
             id: schema.agents.id,
             name: schema.agents.name,
+            markKey: schema.agents.markKey,
             role: schema.agents.role,
             channel: schema.agents.channel,
           })
           .from(schema.agents)
           .where(sql`${schema.agents.userId} = ${authed.userId}::uuid`)
-          .limit(20);
+          .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id))
+          .limit(BOT_MARK_IDENTITY_CAPACITY);
         return rows.map((agent) => ({
           id: agent.id,
           name: agent.name,
+          mark_key: agent.markKey,
           role: agent.role || "assistant",
           channel: agent.channel || "voice",
         }));

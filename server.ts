@@ -54,7 +54,7 @@ function gracefulShutdown(signal: string) {
 }
 
 /**
- * Canonical Wireline server entrypoint.
+ * Canonical BotBound server entrypoint.
  *
  * Build, local development, Vercel's bundled API function, and process startup
  * all originate here. This is the single entrypoint — its absence of a
@@ -265,7 +265,7 @@ async function startServer() {
 if (process.env.VERCEL !== "1") {
   void startServer().then(() => {
     const port = Number(process.env.PORT) || 3000;
-    server = app.listen(port, () => log.info("Wireline server started", { port }));
+    server = app.listen(port, () => log.info("BotBound server started", { port }));
     initSupervisorWebSocketServer(server);
     process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
     process.on("SIGINT", () => gracefulShutdown("SIGINT"));

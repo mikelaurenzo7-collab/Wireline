@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 import { cn } from "../../lib/utils";
+import BotMark from "../BotMark";
 import { AGENT_ROLES } from "../fleet/helpers";
 import type { InsightsLeaderboardAgentRow, InsightsLeaderboardResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty, Stat } from "./shared";
@@ -88,19 +89,27 @@ export default function LeaderboardView({ days }: { days: number }) {
             <div className="absolute right-5 top-1/2 -translate-y-1/2 font-display text-[96px] leading-none opacity-[0.04] select-none pointer-events-none">
               {i + 1}
             </div>
-            <div className="shrink-0 flex flex-col items-center gap-0.5">
-              <div
-                className={cn(
-                  "w-12 h-12 rounded-md flex items-center justify-center font-display text-2xl border border-white/10",
-                  i < 3 && "wl-leaderboard-avatar",
-                )}
-                data-rank={i < 3 ? String(i) : undefined}
-              >
-                {i === 0 ? (
-                  <Trophy className={`w-5 h-5 ${rs.textClass}`} />
-                ) : (
-                  <span className={rs.textClass}>{i + 1}</span>
-                )}
+            <div className="shrink-0 flex flex-col items-center gap-1.5">
+              <div className="relative">
+                <BotMark
+                  seed={a.agent_id}
+                  name={a.agent_name}
+                  markKey={a.mark_key}
+                  size={48}
+                  title={`${a.agent_name} mark`}
+                />
+                <span
+                  className={cn(
+                    "absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full border border-background bg-card font-mono text-[10px] font-black shadow-sm",
+                    rs.textClass,
+                    i < 3 && "wl-leaderboard-avatar",
+                  )}
+                  data-rank={i < 3 ? String(i) : undefined}
+                  aria-hidden="true"
+                >
+                  {i === 0 ? <Trophy className="size-3" /> : <span>{i + 1}</span>}
+                </span>
+                <span className="sr-only">Rank {i + 1}</span>
               </div>
               {a.rank_delta != null && (
                 <span

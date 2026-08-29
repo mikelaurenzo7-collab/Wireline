@@ -481,10 +481,10 @@ record(
   "twilio_sms_webhook_retries",
   true,
   wirelineSmsRetryReady ? "ready" : "blocked",
-  `${wirelineDirectSmsNumbers.filter((number) => hasWirelineSmsRetryPolicy(number.sms_url)).length}/${wirelineDirectSmsNumbers.length} direct Wireline SMS number(s) explicitly retry transient 5xx webhook failures.`,
+  `${wirelineDirectSmsNumbers.filter((number) => hasWirelineSmsRetryPolicy(number.sms_url)).length}/${wirelineDirectSmsNumbers.length} direct BotBound SMS number(s) explicitly retry transient 5xx webhook failures.`,
   wirelineSmsRetryReady
     ? null
-    : "Update every Wireline IncomingPhoneNumber SmsUrl to include #rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000 before paid launch.",
+    : "Update every BotBound IncomingPhoneNumber SmsUrl to include #rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000 before paid launch.",
   {
     direct_wireline_sms_number_count: wirelineDirectSmsNumbers.length,
     retry_ready_count: wirelineDirectSmsNumbers.filter((number) =>
@@ -555,7 +555,7 @@ const stripeBrandReady = Boolean(
 
 const stripePortalConfigs = arrayAt(stripePortalConfigurations?.body, "data");
 // Pick a configuration that actually carries the customer controls, preferring
-// the Wireline-managed one. Matching on active+default first and only then
+// the BotBound-managed one. Matching on active+default first and only then
 // checking features reported "blocked" whenever a bare Dashboard default
 // happened to sort ahead of the managed configuration the app really uses.
 const stripePortalHasCustomerControls = (configuration) =>

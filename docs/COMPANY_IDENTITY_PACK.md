@@ -40,7 +40,7 @@ BotBound must not claim that:
 - traditional CNAM and enhanced mobile branding are the same thing;
 - an SMS sender is production-ready before required business/campaign registration;
 - an email sender is authenticated before DNS/domain verification succeeds;
-- provider approval timing or acceptance is controlled by Wireline.
+- provider approval timing or acceptance is controlled by BotBound.
 
 The customer-facing guarantee is intentionally narrow:
 

@@ -2,6 +2,8 @@
  * Client API shapes for /api/insights/* — keep in sync with insights-routes.ts.
  */
 
+import type { BotMarkKey } from "../lib/bot-mark";
+
 export interface InsightsFunnelStage {
   name: string;
   count: number;
@@ -17,6 +19,7 @@ export interface InsightsFunnelResponse {
 export interface InsightsLeaderboardAgentRow {
   agent_id: string;
   agent_name: string;
+  mark_key: BotMarkKey | null;
   archetype: string | null;
   role: string;
   channel: string | null;

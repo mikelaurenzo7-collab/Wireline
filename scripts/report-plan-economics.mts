@@ -42,7 +42,7 @@ function aiBudget(plan: (typeof STRIPE_PLANS)[number]): number {
 
 const paidPlans = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0);
 
-console.log("Wireline plan economics — derived from src/lib/plan-catalog.ts");
+console.log("BotBound plan economics — derived from src/lib/plan-catalog.ts");
 console.log(
   `reserve ${perMin(VOICE_VARIABLE_COST_PER_MIN_USD)}/min · number ${money(PHONE_NUMBER_COST_MONTHLY_USD)}/mo · drift alarm ${perMin(COGS_DRIFT_THRESHOLD_PER_MIN_USD)}/min · certified floor ${pct(HARD_CONTRIBUTION_MARGIN_FLOOR)}`,
 );

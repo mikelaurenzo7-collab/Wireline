@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Replace Wireline's server-only Vapi credentials in Vercel production.
+ * Replace BotBound's server-only Vapi credentials in Vercel production.
  *
  * Public browser previews no longer use VITE_VAPI_PUBLIC_KEY. They mint a
- * short-lived Wireline ticket and reach Vapi through a private-key server
+ * short-lived BotBound ticket and reach Vapi through a private-key server
  * proxy. This script therefore manages only server credentials, never exposes
  * secret values, and deliberately removes stale preview/development copies.
  *
@@ -105,7 +105,7 @@ async function removeLegacyPublicKey(allEntries) {
 }
 
 async function main() {
-  console.log("Rotating Wireline Vapi server credentials in Vercel production…\n");
+  console.log("Rotating BotBound Vapi server credentials in Vercel production…\n");
   const entries = await listProjectEnvMetadata();
 
   for (const [key, value] of Object.entries(envMap)) {

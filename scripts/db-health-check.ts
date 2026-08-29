@@ -11,7 +11,7 @@ import "../src/lib/load-env";
 import { runDatabaseHealthCheck, printHealthReport } from "../src/lib/db-health-check";
 
 async function main() {
-  console.log("🔍 Running Wireline database health check...\n");
+  console.log("🔍 Running BotBound database health check...\n");
 
   const result = await runDatabaseHealthCheck();
   printHealthReport(result);
