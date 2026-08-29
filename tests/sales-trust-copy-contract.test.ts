@@ -79,7 +79,7 @@ describe("sales trust copy contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
-    expect(landing).toContain("BOT_MARKETING_VOICE.subline");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
     expect(landing).not.toMatch(/Polish principles/i);

@@ -6,10 +6,12 @@
  * without a risky all-at-once rename.
  */
 import BotMark from "./BotMark";
+import type { BotMarkKey } from "../lib/bot-mark";
 
 export default function AgentFace({
   seed,
   faceId,
+  markKey,
   size = 40,
   speaking = false,
   className,
@@ -18,6 +20,7 @@ export default function AgentFace({
   seed: string;
   /** Legacy persisted value; treated only as an alternate stable mark seed. */
   faceId?: string | null;
+  markKey?: BotMarkKey | null;
   size?: number;
   speaking?: boolean;
   className?: string;
@@ -29,6 +32,7 @@ export default function AgentFace({
     <BotMark
       seed={faceId || seed}
       name={seed}
+      markKey={markKey}
       size={size}
       active={speaking}
       className={className}

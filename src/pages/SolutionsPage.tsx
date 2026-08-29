@@ -11,7 +11,7 @@ const SOLUTIONS = {
     description:
       "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook. It calls, holds the conversation, texts, and emails until the next step is booked or clearly logged.",
     primary: { href: "/signup?wedge=sales", label: "Create Sales Bot" },
-    secondary: { href: "/showcase", label: "Hear a Demo" },
+    secondary: { href: "/showcase", label: "Browse Demos" },
     sequence: [
       ["A Lead Reaches Out", "A Voice Bot responds on the channel the lead already chose."],
       [
@@ -45,7 +45,7 @@ const SOLUTIONS = {
       href: "/signup?wedge=support",
       label: "Create Front Desk Bot",
     },
-    secondary: { href: "/showcase", label: "Hear a Demo" },
+    secondary: { href: "/showcase", label: "Browse Demos" },
     sequence: [
       [
         "A Customer Reaches Out",
@@ -108,6 +108,7 @@ export default function SolutionsPage() {
             <div className="text-center">
               <BrowserCallWidget
                 agentName={demoAgentName}
+                buttonLabel={`Talk to ${demoAgentName}`}
                 fallback={
                   demoAgent ? (
                     <div className="text-center">

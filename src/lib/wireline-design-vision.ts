@@ -11,16 +11,14 @@ export const WIRELINE_DESIGN_VISION = {
   system: "BotBound Design System",
   naming: {
     designSystem: "BotBound Design System",
-    rule:
-      "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+    rule: "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
   },
   appearance: {
     default: "light",
     modes: ["light", "dark", "system"] as const,
     lightCanvas: "#F6F5FA",
     darkCanvas: "#0A0A0E",
-    rule:
-      "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
+    rule: "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
   },
   tone: ["clean", "precise", "confident"] as const,
   references: ["ChatGPT composer clarity", "Cursor workbench density", "xAI declarative copy"],
@@ -32,7 +30,7 @@ export const WIRELINE_DESIGN_VISION = {
     "Wire carries structure and signal; it never becomes decoration for its own sake.",
     "BotBound is mixed case whenever the brand name is visibly presented; lowercase wireline remains reserved for stable technical data such as URLs, identifiers, events, APIs, and persistence keys during migration.",
     "The phone-Bot mark and BotBound wordmark keep one optical ratio and scale only as a complete lockup.",
-    "Bot identity is a role-agnostic BotBound signal signature; status colors communicate state only.",
+    "Bot identity is a customer-selected mark from the curated BotBound set; status remains a separate signal.",
     "One composer dock, one elevation language, one interaction language.",
     "Authenticated desktop panels may fold and resize, but their state must be obvious, persistent, keyboard operable, and never change the user's information hierarchy silently.",
     "Marketing earns attention with restraint; authenticated work stays left-aligned and task-first.",

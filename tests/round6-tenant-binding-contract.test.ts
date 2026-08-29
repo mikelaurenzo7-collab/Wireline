@@ -70,12 +70,12 @@ describe("round-6 agent-create capacity serialization", () => {
       mobile.indexOf('router.get(\n  "/api/mobile/agents"'),
     );
     const lockIdx = create.indexOf("pg_advisory_xact_lock");
-    const countIdx = create.indexOf("count(*)");
+    const rosterIdx = create.indexOf("const existingAgents = await tx");
     const insertIdx = create.indexOf("tx.insert(schema.agents)");
 
     expect(lockIdx).toBeGreaterThan(-1);
-    expect(countIdx).toBeGreaterThan(lockIdx);
-    expect(insertIdx).toBeGreaterThan(countIdx);
+    expect(rosterIdx).toBeGreaterThan(lockIdx);
+    expect(insertIdx).toBeGreaterThan(rosterIdx);
     expect(create).toContain("AGENT_CAPACITY_REACHED");
   });
 });

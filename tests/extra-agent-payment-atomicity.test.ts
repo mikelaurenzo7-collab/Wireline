@@ -116,10 +116,7 @@ function subscription(
 describe("extra-agent Stripe settlement helpers", () => {
   it("recognizes current, metadata-tagged, fallback, and legacy lookup-key items", () => {
     expect(
-      isExtraAgentSubscriptionItem(
-        item({ id: "si_1", priceId: "price_current" }),
-        "price_current",
-      ),
+      isExtraAgentSubscriptionItem(item({ id: "si_1", priceId: "price_current" }), "price_current"),
     ).toBe(true);
     expect(
       isExtraAgentSubscriptionItem(
@@ -142,10 +139,7 @@ describe("extra-agent Stripe settlement helpers", () => {
       ),
     ).toBe(true);
     expect(
-      isExtraAgentSubscriptionItem(
-        item({ id: "si_4", priceId: "price_other" }),
-        "price_current",
-      ),
+      isExtraAgentSubscriptionItem(item({ id: "si_4", priceId: "price_other" }), "price_current"),
     ).toBe(false);
   });
 
@@ -182,6 +176,14 @@ describe("extra-agent Stripe settlement helpers", () => {
         storedMaxAgents: 8,
       }),
     ).toBe(5);
+    expect(
+      reconciledStoredAgentCap({
+        planMaxAgents: 15,
+        currentExtraAgents: 500,
+        targetExtraAgents: 500,
+        storedMaxAgents: 500,
+      }),
+    ).toBe(120);
   });
 
   it("deduplicates identical concurrent mutations but permits a repaired-payment retry", () => {
@@ -235,9 +237,7 @@ describe("extra-agent atomic route contract", () => {
     expect(route).toContain("set({ extraAgents: quantity, maxAgents, updatedAt: new Date() })");
     expect(route).toContain("const isIncrease = target > currentStripeQuantity");
     expect(route).toContain("if (isIncrease && isLaunchHardBlocked())");
-    expect(route).not.toContain(
-      "if (target > currentDbQuantity && isLaunchHardBlocked())",
-    );
+    expect(route).not.toContain("if (target > currentDbQuantity && isLaunchHardBlocked())");
     expect(route.indexOf("if (isIncrease && isLaunchHardBlocked())")).toBeGreaterThan(
       route.indexOf("const isIncrease = target > currentStripeQuantity"),
     );

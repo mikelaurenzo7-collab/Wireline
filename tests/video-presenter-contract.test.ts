@@ -2,36 +2,54 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { BOT_MARK_GRADIENT_CAPACITY, botMarkFor } from "../src/lib/bot-mark";
+import { BOT_MARK_CHOICES, BOT_MARK_SIGNATURE_CAPACITY, botMarkFor } from "../src/lib/bot-mark";
+import { MAX_EXTRA_AGENT_ADDONS } from "../src/lib/agent-capacity";
 
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("bot visual identity", () => {
-  it("uses a proprietary letterless animated Bot signal rather than a generic avatar token", () => {
+  it("uses a curated selectable Bot identity mark rather than a generic avatar token", () => {
     const mark = source("src/components/BotMark.tsx");
     const policy = source("src/lib/bot-mark.ts");
     const optics = source("src/styles/bot-mark.css");
     const index = source("src/index.css");
 
     expect(mark).toContain("botMarkFor");
-    expect(mark).toContain("MOTIF_PATHS");
-    expect(mark).toContain("WireGlyph");
-    expect(mark).toContain("wl-bot-mark__anchor");
+    expect(mark).toContain("MOTIF_ICONS");
+    expect(mark).toContain("data-mark-key={mark.key}");
     expect(mark).toContain("imageUrl");
     expect(mark).toContain('data-active={active ? "true" : "false"}');
     expect(mark).toContain("wl-bot-mark__pulse");
     expect(mark).not.toContain("monogram");
     expect(mark).not.toContain("mark.initial");
 
-    expect(policy).toContain("role never affects the mark");
-    expect(policy).toContain("rather than a colored\n * initial");
+    expect(policy).toContain("Fifteen distinct symbols cover the largest published");
+    expect(policy).toContain("120 unique combinations");
+    expect(policy).toContain("Role and runtime status never choose");
+    expect(policy).toContain("BOT_MARK_CHOICES");
     expect(policy).toContain("BOT_MARK_PALETTE");
     expect(policy).toContain("BOT_MARK_GRADIENT_CAPACITY");
     expect(policy).toContain("BOT_MARK_MOTIFS");
     expect(policy).not.toContain("botMarkInitial");
     expect(policy).not.toContain("initial:");
-    for (const motif of ["orbit", "relay", "split", "loop", "pulse", "weave"]) {
+    for (const motif of [
+      "orbit",
+      "beacon",
+      "spark",
+      "prism",
+      "flow",
+      "pulse",
+      "compass",
+      "focus",
+      "aperture",
+      "wave",
+      "helix",
+      "loop",
+      "nova",
+      "route",
+      "vertex",
+    ]) {
       expect(policy).toContain(`"${motif}"`);
     }
     expect(policy).not.toContain("status-success");
@@ -40,9 +58,7 @@ describe("bot visual identity", () => {
 
     expect(optics).toContain(".wl-bot-mark__glyph");
     expect(optics).toContain(".wl-bot-mark__rim");
-    expect(optics).toContain("@keyframes wl-bot-mark-flow");
-    expect(optics).toContain("@keyframes wl-bot-mark-drift");
-    expect(optics).toContain("@keyframes wl-bot-mark-sweep");
+    expect(optics).toContain("@keyframes wl-bot-mark-breathe");
     expect(optics).toContain("@keyframes wl-bot-mark-signal");
     expect(optics).toContain("prefers-reduced-motion: reduce");
     expect(optics).toContain("forced-colors: active");
@@ -53,34 +69,25 @@ describe("bot visual identity", () => {
     expect(index).toContain('@import "./styles/bot-mark.css";');
   });
 
-  it("has more distinct gradient signatures than the maximum standard purchasable Bot capacity", () => {
+  it("keeps stable fallback signatures beyond commercial capacity and limits choices to the catalog", () => {
     const plans = source("src/lib/plan-catalog.ts");
-    const extraBotRoute = source("src/routes/extra-agent-billing-atomic-routes.ts");
     const baseCaps = [...plans.matchAll(/max_agents:\s*(\d+)/g)].map((match) => Number(match[1]));
-    const extraCap = Number(extraBotRoute.match(/target > (\d+)/)?.[1] || 0);
-    const maximumStandardCapacity = Math.max(...baseCaps) + extraCap;
+    const maximumStandardCapacity = Math.max(...baseCaps) + MAX_EXTRA_AGENT_ADDONS;
 
     expect(Math.max(...baseCaps)).toBe(15);
-    expect(extraCap).toBe(100);
+    expect(MAX_EXTRA_AGENT_ADDONS).toBe(100);
     expect(maximumStandardCapacity).toBe(115);
-    expect(BOT_MARK_GRADIENT_CAPACITY).toBeGreaterThan(maximumStandardCapacity);
+    expect(BOT_MARK_SIGNATURE_CAPACITY).toBeGreaterThan(maximumStandardCapacity);
+    expect(BOT_MARK_CHOICES.length).toBeGreaterThan(maximumStandardCapacity);
 
     const marks = Array.from({ length: maximumStandardCapacity }, (_, index) =>
       botMarkFor({ id: `capacity-${index}` }),
     );
     expect(new Set(marks.map((mark) => mark.gradientSignature)).size).toBe(maximumStandardCapacity);
-    expect(
-      new Set(
-        marks.map((mark) =>
-          [
-            mark.palette.surfaceFrom,
-            mark.palette.surfaceTo,
-            mark.palette.wire,
-            mark.palette.accent,
-          ].join("|"),
-        ),
-      ).size,
-    ).toBe(maximumStandardCapacity);
+    expect(new Set(marks.map((mark) => mark.key)).size).toBeLessThanOrEqual(
+      BOT_MARK_CHOICES.length,
+    );
+    expect(botMarkFor({ id: "stable-bot" }).key).toBe(botMarkFor({ id: "stable-bot" }).key);
   });
 
   it("retires human/cartoon face rendering without forcing an unsafe all-at-once import rename", () => {
@@ -128,7 +135,9 @@ describe("Live Video retirement", () => {
   it("does not mount presenter APIs and terminates stale checkout before legacy billing", () => {
     const registry = source("src/server/register-api-routes.ts");
 
-    expect(registry).not.toContain('import videoPresenterRouter from "../routes/video-presenter-routes"');
+    expect(registry).not.toContain(
+      'import videoPresenterRouter from "../routes/video-presenter-routes"',
+    );
     expect(registry).not.toContain("app.use(videoPresenterRouter)");
     expect(registry).toContain('app.all("/api/billing/live-video-checkout"');
     expect(registry).toContain('error: "FEATURE_RETIRED"');
@@ -156,7 +165,9 @@ describe("Live Video retirement", () => {
     expect(catalog).not.toContain('key: "live_video"');
     expect(catalog).not.toContain('key: "live_video_monthly"');
     expect(catalog).not.toContain("STRIPE_LIVE_VIDEO_ADDON_PRICE_ID");
-    expect(contract).toContain("Retired Live Video must stay out of the active Founder Stripe manifest");
+    expect(contract).toContain(
+      "Retired Live Video must stay out of the active Founder Stripe manifest",
+    );
     expect(contract).toContain("FOUNDER_PRODUCTS.length !== 7");
     expect(contract).toContain("FOUNDER_PRICES.length !== 13");
   });

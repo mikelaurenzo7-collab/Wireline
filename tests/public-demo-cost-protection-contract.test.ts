@@ -123,10 +123,11 @@ describe("public browser demo cost protection", () => {
     expect(routes).toContain("requireSameOrigin(req)");
   });
 
-  it("keeps compact home proof and the protected live demo on Showcase", () => {
-    expect(landing).toContain('to="/showcase"');
-    expect(landing).toContain("<BotMark");
-    expect(landing).not.toContain("<BrowserCallWidget");
+  it("keeps a protected browser demo on the home entrance and a phone fallback on Showcase", () => {
+    expect(landing).toContain("<BrowserCallWidget");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("markKey");
+    expect(widget).not.toContain("<BotMark");
     expect(showcase).toContain("<BrowserCallWidget");
     expect(showcase).toContain('id="demo-lines"');
     expect(showcase).toContain("CALL A DEMO LINE");
@@ -134,6 +135,6 @@ describe("public browser demo cost protection", () => {
     expect(hook).toContain("Try the public demo line instead");
     expect(widget).toContain("Public demo line available");
     expect(widget).toContain("Standard carrier rates may apply");
-    expect(widget).toContain("No retained call artifacts");
+    expect(widget).toContain("Private ${demo.maxDurationSeconds}-second browser call.");
   });
 });

@@ -3,6 +3,7 @@ import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 
 import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type SignalResponse = {
@@ -84,6 +85,7 @@ function voiceActivity(state: VoiceState) {
 export default function OpenAILiveVoiceSandbox({
   agentId,
   agentName,
+  markKey,
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
@@ -91,6 +93,7 @@ export default function OpenAILiveVoiceSandbox({
 }: {
   agentId: string;
   agentName: string;
+  markKey?: BotMarkKey | null;
   onAgentAudioDelta?: (base64Pcm: string) => void;
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
@@ -417,6 +420,7 @@ export default function OpenAILiveVoiceSandbox({
             <div className="wl-presence__face">
               <AgentFace
                 seed={agentName}
+                markKey={markKey}
                 size={44}
                 speaking={state === "speaking"}
                 title={`${agentName} face`}

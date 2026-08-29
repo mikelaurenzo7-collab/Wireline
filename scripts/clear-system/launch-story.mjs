@@ -116,8 +116,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<AuthAccessPanel embedded initialMode="signin"\s*\/>/,
-    "landing must embed account access",
+    /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
+    "landing must embed concise account creation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -128,8 +128,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /const HERO_CHANNEL_ORDER = \["voice", "text", "email"\] as const;/,
-    "landing must preserve Call, Text, Email order",
+    /BOT_MARKETING_VOICE\.activationLine/,
+    "landing must source the concise activation promise",
+  );
+  mustExclude(
+    "src/components/marketing/WireAgentLanding.tsx",
+    landing,
+    /HERO_CHANNEL_ORDER|BOT_CHANNELS|CALL\s*[·/]\s*TEXT\s*[·/]\s*EMAIL/,
+    "landing must not repeat the channel promise as decorative copy",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",

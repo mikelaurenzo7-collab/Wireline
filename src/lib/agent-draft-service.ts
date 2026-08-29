@@ -15,6 +15,12 @@ import { agentCapMessage, resolveAgentEntitlement } from "./agent-entitlements";
 import { isOwnerEmail } from "./auth-service";
 import { drizzle, tenantStore } from "./server-context";
 import { emitServerProductEventOnce } from "./product-event-server";
+import {
+  defaultBotMarkKey,
+  firstAvailableBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "./bot-mark";
 
 const ROLE_ARCHETYPES: Record<AgentCustomizationProfile["identity"]["role"], string> = {
   receptionist: "Receptionist",
@@ -170,18 +176,36 @@ export async function createAgentDraft(
     // insert. Same advisory-lock pattern as agent-routes-v2 / mobile-routes.
     await drizzle.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${principal.userId}))`);
-      const [{ count }] = await tx
-        .select({ count: sql`count(*)` })
+      const existingAgents = await tx
+        .select({ id: schema.agents.id, markKey: schema.agents.markKey })
         .from(schema.agents)
         .where(eq(schema.agents.userId, principal.userId));
-      existingCount = Number(count || 0);
+      existingCount = existingAgents.length;
       await assertAgentCapacity(tx, principal, existingCount);
+
+      const usedMarkKeys = new Set<BotMarkKey>();
+      for (const existingAgent of existingAgents) {
+        usedMarkKeys.add(
+          isBotMarkKey(existingAgent.markKey)
+            ? existingAgent.markKey
+            : defaultBotMarkKey(existingAgent.id),
+        );
+      }
+      const markKey = firstAvailableBotMarkKey(id, usedMarkKeys);
+      if (!markKey) {
+        throw new AppError(
+          409,
+          "BOT_MARK_CAPACITY_REACHED",
+          "Every available Bot identity is already in use.",
+        );
+      }
 
       const voiceId = pickRotatedVoiceId(existingCount);
       await tx.insert(schema.agents).values({
         id,
         userId: principal.userId,
         name: profile.identity.name,
+        markKey,
         role: profile.identity.role,
         channel: "voice",
         archetype: ROLE_ARCHETYPES[profile.identity.role],

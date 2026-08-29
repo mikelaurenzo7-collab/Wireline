@@ -544,6 +544,7 @@ export default function PostCreateActivationWizard({
               <RoleplaySandbox
                 agentId={payload.agentId}
                 agentName={payload.agentName}
+                markKey={payload.markKey}
                 onTestStarted={() => {
                   setTestStarted(true);
                   emitProductEventOnce({

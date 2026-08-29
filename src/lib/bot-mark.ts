@@ -1,15 +1,12 @@
 /**
- * Stable, role-agnostic Bot Marks.
+ * Curated Bot identity marks.
  *
- * A Bot Mark identifies one configured Bot in dense product surfaces without
- * asking customers to choose an avatar, persona, or visual theme. The Bot's
- * role never affects the mark: identity and capability stay separate.
- *
- * The mark is intentionally a tiny WIRELINE signal system rather than a colored
- * initial. A stable seed selects a restrained obsidian/violet/platinum gradient,
- * one of several wire geometries, an orientation, and an anchor point. This
- * gives customers fast recognition without creating another configuration
- * product or confusing identity color with operational status.
+ * BotBound's robot is the company mark. These marks identify individual Bots
+ * throughout the product. Fifteen distinct symbols cover the largest published
+ * plan without repeating a symbol. Eight restrained colorways expand the
+ * identity catalog to 120 unique combinations, covering the 15-Bot Scale plan
+ * plus the maximum 100 paid add-ons without a duplicate workspace identity.
+ * Role and runtime status never choose or recolor the identity.
  */
 
 export type BotMarkPaletteEntry = {
@@ -21,157 +18,164 @@ export type BotMarkPaletteEntry = {
   halo: string;
 };
 
-export type BotMarkMotif = "orbit" | "relay" | "split" | "loop" | "pulse" | "weave";
-
-type BotMarkGradientFamily = {
-  hue: number;
-  hueSpan: number;
-  saturation: number;
-  saturationSpan: number;
-  surfaceLight: number;
-  surfaceLightSpan: number;
-};
-
-/**
- * Twenty deterministic gradient bits yield 1,048,576 brand-safe gradient
- * signatures before motif, rotation, mirror, anchor, or glow position are
- * considered. This deliberately dwarfs the commercial Bot-count ceiling so a
- * large workspace does not exhaust the visual identity system.
- */
-export const BOT_MARK_GRADIENT_CAPACITY = 1_048_576;
-const BOT_MARK_GRADIENT_MASK = BOT_MARK_GRADIENT_CAPACITY - 1;
-
-/**
- * Sixteen narrow families define the only hue territory the generator may use:
- * deep indigo through electric violet, plus cool graphite/platinum lanes. No
- * red, green, amber, cyan, or other status-like hue is available here.
- */
-const BOT_MARK_GRADIENT_FAMILIES: readonly BotMarkGradientFamily[] = [
-  { hue: 258, hueSpan: 10, saturation: 42, saturationSpan: 12, surfaceLight: 20, surfaceLightSpan: 7 },
-  { hue: 266, hueSpan: 12, saturation: 46, saturationSpan: 12, surfaceLight: 19, surfaceLightSpan: 8 },
-  { hue: 246, hueSpan: 11, saturation: 40, saturationSpan: 12, surfaceLight: 18, surfaceLightSpan: 8 },
-  { hue: 274, hueSpan: 11, saturation: 38, saturationSpan: 13, surfaceLight: 20, surfaceLightSpan: 7 },
-  { hue: 252, hueSpan: 13, saturation: 34, saturationSpan: 14, surfaceLight: 19, surfaceLightSpan: 8 },
-  { hue: 263, hueSpan: 13, saturation: 25, saturationSpan: 12, surfaceLight: 18, surfaceLightSpan: 7 },
-  { hue: 246, hueSpan: 12, saturation: 14, saturationSpan: 10, surfaceLight: 17, surfaceLightSpan: 7 },
-  { hue: 271, hueSpan: 12, saturation: 18, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 8 },
-  { hue: 279, hueSpan: 9, saturation: 38, saturationSpan: 12, surfaceLight: 19, surfaceLightSpan: 8 },
-  { hue: 240, hueSpan: 10, saturation: 34, saturationSpan: 12, surfaceLight: 17, surfaceLightSpan: 8 },
-  { hue: 266, hueSpan: 12, saturation: 12, saturationSpan: 10, surfaceLight: 20, surfaceLightSpan: 7 },
-  { hue: 255, hueSpan: 12, saturation: 30, saturationSpan: 13, surfaceLight: 17, surfaceLightSpan: 8 },
-  { hue: 272, hueSpan: 12, saturation: 31, saturationSpan: 13, surfaceLight: 20, surfaceLightSpan: 7 },
-  { hue: 238, hueSpan: 10, saturation: 22, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 7 },
-  { hue: 252, hueSpan: 14, saturation: 8, saturationSpan: 9, surfaceLight: 19, surfaceLightSpan: 7 },
-  { hue: 276, hueSpan: 11, saturation: 42, saturationSpan: 11, surfaceLight: 18, surfaceLightSpan: 8 },
+export const BOT_MARK_MOTIFS = [
+  { key: "orbit", label: "Orbit" },
+  { key: "beacon", label: "Beacon" },
+  { key: "spark", label: "Spark" },
+  { key: "prism", label: "Prism" },
+  { key: "flow", label: "Flow" },
+  { key: "pulse", label: "Pulse" },
+  { key: "compass", label: "Compass" },
+  { key: "focus", label: "Focus" },
+  { key: "aperture", label: "Aperture" },
+  { key: "wave", label: "Wave" },
+  { key: "helix", label: "Helix" },
+  { key: "loop", label: "Loop" },
+  { key: "nova", label: "Nova" },
+  { key: "route", label: "Route" },
+  { key: "vertex", label: "Vertex" },
 ] as const;
 
-/**
- * Curated anchor gradients kept as a readable design reference and compatibility
- * export. Runtime marks are generated continuously around these same families
- * instead of being limited to these ten swatches.
- */
-export const BOT_MARK_PALETTE: readonly BotMarkPaletteEntry[] = [
-  {
-    surfaceFrom: "#35245F",
-    surfaceTo: "#0E0B16",
-    wire: "#E6DEFF",
-    accent: "#A78BFA",
-    ink: "#F5F4F8",
-    halo: "rgba(167, 139, 250, 0.34)",
-  },
-  {
-    surfaceFrom: "#25215B",
-    surfaceTo: "#090A17",
-    wire: "#D8DEFF",
-    accent: "#8F9CFF",
-    ink: "#F5F4F8",
-    halo: "rgba(143, 156, 255, 0.30)",
-  },
-  {
-    surfaceFrom: "#40305D",
-    surfaceTo: "#100C18",
-    wire: "#F0E8FF",
-    accent: "#C4B5FD",
-    ink: "#F5F4F8",
-    halo: "rgba(196, 181, 253, 0.30)",
-  },
-  {
-    surfaceFrom: "#292635",
-    surfaceTo: "#0B0A10",
-    wire: "#EEF1F7",
-    accent: "#C7CCD6",
-    ink: "#F5F4F8",
-    halo: "rgba(199, 204, 214, 0.26)",
-  },
-  {
-    surfaceFrom: "#272D49",
-    surfaceTo: "#090C15",
-    wire: "#D7E0FF",
-    accent: "#AEBBEE",
-    ink: "#F5F4F8",
-    halo: "rgba(174, 187, 238, 0.28)",
-  },
-  {
-    surfaceFrom: "#39264A",
-    surfaceTo: "#0F0A14",
-    wire: "#ECDDF7",
-    accent: "#BDA5DD",
-    ink: "#F5F4F8",
-    halo: "rgba(189, 165, 221, 0.28)",
-  },
-  {
-    surfaceFrom: "#332B49",
-    surfaceTo: "#0D0B14",
-    wire: "#E4DDF1",
-    accent: "#B6A9CF",
-    ink: "#F5F4F8",
-    halo: "rgba(182, 169, 207, 0.28)",
-  },
-  {
-    surfaceFrom: "#20293A",
-    surfaceTo: "#080B11",
-    wire: "#DDE5F1",
-    accent: "#A9B7CE",
-    ink: "#F5F4F8",
-    halo: "rgba(169, 183, 206, 0.26)",
-  },
-  {
-    surfaceFrom: "#312347",
-    surfaceTo: "#0D0913",
-    wire: "#E9DDF8",
-    accent: "#A78BFA",
-    ink: "#F5F4F8",
-    halo: "rgba(167, 139, 250, 0.30)",
-  },
-  {
-    surfaceFrom: "#262233",
-    surfaceTo: "#0A0910",
-    wire: "#E3E4EA",
-    accent: "#B7BBC6",
-    ink: "#F5F4F8",
-    halo: "rgba(183, 187, 198, 0.24)",
-  },
-] as const;
+export type BotMarkMotif = (typeof BOT_MARK_MOTIFS)[number]["key"];
 
-export const BOT_MARK_MOTIFS: readonly BotMarkMotif[] = [
-  "orbit",
-  "relay",
-  "split",
-  "loop",
-  "pulse",
-  "weave",
-] as const;
+export const BOT_MARK_PALETTES = [
+  {
+    key: "violet",
+    label: "Violet",
+    colors: {
+      surfaceFrom: "#7257E8",
+      surfaceTo: "#4226A5",
+      wire: "#FBFAFF",
+      accent: "#DCD3FF",
+      ink: "#17111F",
+      halo: "rgba(114, 87, 232, 0.34)",
+    },
+  },
+  {
+    key: "blue",
+    label: "Blue",
+    colors: {
+      surfaceFrom: "#1689E8",
+      surfaceTo: "#0A57AC",
+      wire: "#F7FCFF",
+      accent: "#9BD9FF",
+      ink: "#071522",
+      halo: "rgba(22, 137, 232, 0.32)",
+    },
+  },
+  {
+    key: "rose",
+    label: "Rose",
+    colors: {
+      surfaceFrom: "#D95383",
+      surfaceTo: "#8F2D57",
+      wire: "#FFF9FC",
+      accent: "#FFC0D6",
+      ink: "#241018",
+      halo: "rgba(217, 83, 131, 0.30)",
+    },
+  },
+  {
+    key: "amber",
+    label: "Amber",
+    colors: {
+      surfaceFrom: "#D47B22",
+      surfaceTo: "#8A4209",
+      wire: "#FFFDF8",
+      accent: "#FFD39B",
+      ink: "#201205",
+      halo: "rgba(212, 123, 34, 0.30)",
+    },
+  },
+  {
+    key: "teal",
+    label: "Teal",
+    colors: {
+      surfaceFrom: "#159B8D",
+      surfaceTo: "#07665E",
+      wire: "#F6FFFD",
+      accent: "#9DE8DE",
+      ink: "#061A18",
+      halo: "rgba(21, 155, 141, 0.30)",
+    },
+  },
+  {
+    key: "magenta",
+    label: "Magenta",
+    colors: {
+      surfaceFrom: "#A84BD2",
+      surfaceTo: "#6C258F",
+      wire: "#FEFAFF",
+      accent: "#E6B7FA",
+      ink: "#1B0B22",
+      halo: "rgba(168, 75, 210, 0.31)",
+    },
+  },
+  {
+    key: "indigo",
+    label: "Indigo",
+    colors: {
+      surfaceFrom: "#526DE1",
+      surfaceTo: "#2C3D9B",
+      wire: "#FAFBFF",
+      accent: "#B8C5FF",
+      ink: "#0D1227",
+      halo: "rgba(82, 109, 225, 0.31)",
+    },
+  },
+  {
+    key: "slate",
+    label: "Slate",
+    colors: {
+      surfaceFrom: "#607C91",
+      surfaceTo: "#334B60",
+      wire: "#FAFDFF",
+      accent: "#BDD4E4",
+      ink: "#0B151D",
+      halo: "rgba(96, 124, 145, 0.29)",
+    },
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  label: string;
+  colors: BotMarkPaletteEntry;
+}>;
 
-const BOT_MARK_ANCHORS = [
-  { x: 8.25, y: 19.75 },
-  { x: 11.25, y: 8.5 },
-  { x: 22.75, y: 10.25 },
-  { x: 23.5, y: 20.5 },
-  { x: 16, y: 23.25 },
-  { x: 16, y: 8.5 },
-] as const;
+export type BotMarkPaletteKey = (typeof BOT_MARK_PALETTES)[number]["key"];
+export type BotMarkKey = `${BotMarkMotif}-${BotMarkPaletteKey}`;
 
-/** Stable FNV-1a hash so the same Bot keeps the same mark across sessions. */
+export const BOT_MARK_CHOICES: ReadonlyArray<{
+  key: BotMarkKey;
+  label: string;
+  motif: BotMarkMotif;
+  motifLabel: string;
+  paletteKey: BotMarkPaletteKey;
+  paletteLabel: string;
+  palette: BotMarkPaletteEntry;
+}> = BOT_MARK_PALETTES.flatMap((palette) =>
+  BOT_MARK_MOTIFS.map((motif) => ({
+    key: `${motif.key}-${palette.key}` as BotMarkKey,
+    label: `${motif.label} · ${palette.label}`,
+    motif: motif.key,
+    motifLabel: motif.label,
+    paletteKey: palette.key,
+    paletteLabel: palette.label,
+    palette: palette.colors,
+  })),
+);
+
+/** Compatibility export for policy and downstream visual-contract checks. */
+export const BOT_MARK_PALETTE = BOT_MARK_PALETTES.map((palette) => palette.colors);
+/** The number of non-repeating workspace identities available to customers. */
+export const BOT_MARK_IDENTITY_CAPACITY = BOT_MARK_CHOICES.length;
+/** Stable animation-signature space retained for existing persisted Bot ids. */
+export const BOT_MARK_SIGNATURE_CAPACITY = 1_048_576;
+/** @deprecated Use BOT_MARK_SIGNATURE_CAPACITY. */
+export const BOT_MARK_GRADIENT_CAPACITY = BOT_MARK_SIGNATURE_CAPACITY;
+const BOT_MARK_SIGNATURE_MASK = BOT_MARK_SIGNATURE_CAPACITY - 1;
+const BOT_MARK_KEY_SET = new Set<string>(BOT_MARK_CHOICES.map((choice) => choice.key));
+
+/** Stable FNV-1a hash so an unconfigured Bot keeps the same fallback mark. */
 export function stableBotMarkHash(seed: string): number {
   let hash = 2166136261;
   for (let index = 0; index < seed.length; index += 1) {
@@ -185,74 +189,63 @@ export function normalizeBotMarkSeed(seed: string | null | undefined): string {
   return (seed || "bot").trim().replace(/\s+/g, " ") || "bot";
 }
 
-function mixedHash(seed: string, salt: string): number {
-  return stableBotMarkHash(`${salt}:${seed}`);
+export function isBotMarkKey(value: unknown): value is BotMarkKey {
+  return typeof value === "string" && BOT_MARK_KEY_SET.has(value);
 }
 
-function unit(value: number, maximum: number): number {
-  return maximum <= 0 ? 0 : value / maximum;
+export function parseBotMarkKey(key: BotMarkKey) {
+  const choice = BOT_MARK_CHOICES.find((candidate) => candidate.key === key)!;
+  return { motif: choice.motif, paletteKey: choice.paletteKey } as const;
 }
 
-function hsl(hue: number, saturation: number, lightness: number): string {
-  return `hsl(${hue.toFixed(1)}, ${saturation.toFixed(1)}%, ${lightness.toFixed(1)}%)`;
+export function defaultBotMarkKey(seed: string | null | undefined): BotMarkKey {
+  const normalized = normalizeBotMarkSeed(seed);
+  return BOT_MARK_CHOICES[stableBotMarkHash(normalized) % BOT_MARK_CHOICES.length].key;
 }
 
-function hsla(hue: number, saturation: number, lightness: number, alpha: number): string {
-  return `hsla(${hue.toFixed(1)}, ${saturation.toFixed(1)}%, ${lightness.toFixed(1)}%, ${alpha.toFixed(2)})`;
-}
-
-function generatedGradient(hash: number): BotMarkPaletteEntry {
-  const signature = hash & BOT_MARK_GRADIENT_MASK;
-  const hueStep = signature & 0x3f;
-  const saturationStep = (signature >>> 6) & 0x1f;
-  const lightStep = (signature >>> 11) & 0x1f;
-  const family = BOT_MARK_GRADIENT_FAMILIES[(signature >>> 16) & 0x0f];
-
-  const hue = family.hue + unit(hueStep, 0x3f) * family.hueSpan;
-  const saturation =
-    family.saturation + unit(saturationStep, 0x1f) * family.saturationSpan;
-  const surfaceLight =
-    family.surfaceLight + unit(lightStep, 0x1f) * family.surfaceLightSpan;
-  const depthLight = 5.2 + unit((signature >>> 3) & 0x1f, 0x1f) * 4.2;
-  const accentSaturation = Math.min(78, saturation + 24);
-  const accentLight = 67 + unit((signature >>> 8) & 0x0f, 0x0f) * 9;
-  const wireSaturation = Math.max(10, Math.min(38, saturation - 4));
-  const wireLight = 87 + unit((signature >>> 13) & 0x07, 0x07) * 7;
-  const haloAlpha = 0.23 + unit((signature >>> 5) & 0x07, 0x07) * 0.11;
-
-  return {
-    surfaceFrom: hsl(hue, saturation, surfaceLight),
-    surfaceTo: hsl(hue + 2.5, Math.max(8, saturation - 8), depthLight),
-    wire: hsl(hue - 2, wireSaturation, wireLight),
-    accent: hsl(hue, accentSaturation, accentLight),
-    ink: "#F5F4F8",
-    halo: hsla(hue, accentSaturation, accentLight, haloAlpha),
-  };
+/** Picks a stable available identity without ever reusing a workspace mark. */
+export function firstAvailableBotMarkKey(
+  seed: string | null | undefined,
+  unavailableKeys: Iterable<string>,
+): BotMarkKey | null {
+  const unavailable = new Set(
+    Array.from(unavailableKeys).filter((candidate): candidate is BotMarkKey =>
+      isBotMarkKey(candidate),
+    ),
+  );
+  const usedMotifs = new Set<BotMarkMotif>();
+  for (const key of unavailable) usedMotifs.add(parseBotMarkKey(key).motif);
+  const unusedMotifChoices = BOT_MARK_CHOICES.filter((choice) => !usedMotifs.has(choice.motif));
+  const candidatePool = unusedMotifChoices.length > 0 ? unusedMotifChoices : BOT_MARK_CHOICES;
+  const start = stableBotMarkHash(normalizeBotMarkSeed(seed)) % candidatePool.length;
+  for (let offset = 0; offset < candidatePool.length; offset += 1) {
+    const candidate = candidatePool[(start + offset) % candidatePool.length].key;
+    if (!unavailable.has(candidate)) return candidate;
+  }
+  return null;
 }
 
 export function botMarkFor(input: {
   id?: string | null;
   name?: string | null;
   seed?: string | null;
+  markKey?: string | null;
 }) {
   const seed = normalizeBotMarkSeed(input.seed || input.id || input.name || "bot");
+  const key = isBotMarkKey(input.markKey) ? input.markKey : defaultBotMarkKey(seed);
+  const choice = BOT_MARK_CHOICES.find((candidate) => candidate.key === key)!;
   const hash = stableBotMarkHash(seed);
-  const geometryHash = mixedHash(seed, "wire");
-  const lightHash = mixedHash(seed, "light");
-  const palette = generatedGradient(hash);
-  const motif = BOT_MARK_MOTIFS[geometryHash % BOT_MARK_MOTIFS.length];
-  const anchor = BOT_MARK_ANCHORS[(geometryHash >>> 5) % BOT_MARK_ANCHORS.length];
 
   return {
     seed,
-    gradientSignature: hash & BOT_MARK_GRADIENT_MASK,
-    palette,
-    motif,
-    anchor,
-    rotation: ((geometryHash >>> 9) % 8) * 45,
-    mirror: ((geometryHash >>> 13) & 1) === 1,
-    glowX: 24 + (lightHash % 53),
-    glowY: 18 + ((lightHash >>> 7) % 49),
-    phaseMs: -((geometryHash >>> 15) % 1200),
+    key,
+    label: choice.label,
+    motif: choice.motif,
+    motifLabel: choice.motifLabel,
+    paletteKey: choice.paletteKey,
+    paletteLabel: choice.paletteLabel,
+    palette: choice.palette,
+    gradientSignature: hash & BOT_MARK_SIGNATURE_MASK,
+    phaseMs: -(hash % 900),
   } as const;
 }

@@ -340,6 +340,56 @@ describe("migration journal integrity contract", () => {
     expect(reconciliationSnapshot.tables).toEqual(stripeSnapshot.tables);
   });
 
+  it("journals and materializes the curated Bot identity mark", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 64,
+        tag: "0166_agent_identity_marks",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0064_PATH");
+    expect(materializer).toContain("buildAgentIdentityMarkSnapshot");
+    expect(materializer).not.toContain('TARGET_0064_SHA256 = "PENDING_COMPUTE"');
+    const migration = readFileSync(
+      resolve(MIGRATIONS_DIR, "0166_agent_identity_marks.sql"),
+      "utf8",
+    );
+    expect(migration).toContain("HAVING count(*) > 120");
+    expect(migration).toContain("assign_wireline_agent_mark_key");
+    expect(migration).toContain("pg_advisory_xact_lock(hashtext(NEW.user_id::text))");
+    expect(migration).toContain("BEFORE INSERT OR UPDATE OF mark_key");
+    expect(migration).toContain("Bot identity backfill left unassigned agents");
+
+    const previous = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0063_snapshot.json"), "utf8"),
+    ) as { id: string };
+    const snapshot = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0064_snapshot.json"), "utf8"),
+    ) as {
+      prevId: string;
+      tables: Record<
+        string,
+        {
+          columns: Record<string, { type: string; notNull: boolean }>;
+          checkConstraints: Record<string, { value: string }>;
+        }
+      >;
+    };
+    expect(snapshot.prevId).toBe(previous.id);
+    const agents = snapshot.tables["public.wireline_agents"];
+    expect(agents.columns.mark_key).toMatchObject({ type: "text", notNull: false });
+    expect(agents.checkConstraints.wireline_agents_mark_key_check.value).toContain("vertex");
+    expect(agents.checkConstraints.wireline_agents_mark_key_check.value).toContain("slate");
+    expect(agents.checkConstraints.wireline_agents_mark_key_check.value).toContain("~");
+    expect(snapshot.tables["public.wireline_agents"].checkConstraints).toHaveProperty(
+      "wireline_agents_mark_key_check",
+    );
+  });
+
   it("documents the split so the journal is not read as the whole history", () => {
     // The operational rule only survives if it is written down where database
     // work starts. docs/DATABASE_OPERATIONS.md is that single source of truth.

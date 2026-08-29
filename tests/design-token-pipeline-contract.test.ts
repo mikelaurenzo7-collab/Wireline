@@ -188,7 +188,7 @@ describe("Wireline design token pipeline", () => {
 
   it("keeps the global hardening layer scoped to intentional UI surfaces", () => {
     const hardeningCss = source("src/styles/system-hardening.css");
-    expect(hardeningCss).toContain(":is(.marketing-surface, .prose, .wl-copy");
+    expect(hardeningCss).toMatch(/:is\(\s*\.marketing-surface,\s*\.prose,\s*\.wl-copy/);
     expect(hardeningCss).toContain(".wl-compact-control");
     expect(hardeningCss).not.toContain("p,\nli,\ndd,\ndt,\nsummary,");
     expect(hardeningCss).not.toContain('button,\n[role="button"],\na[role="button"],\ninput,');

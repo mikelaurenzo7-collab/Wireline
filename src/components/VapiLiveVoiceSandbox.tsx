@@ -4,6 +4,7 @@ import type Vapi from "@vapi-ai/web";
 
 import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
 type Line = { id: string; role: "You" | "Agent"; text: string };
@@ -59,12 +60,14 @@ function voiceActivity(state: VoiceState) {
 export default function VapiLiveVoiceSandbox({
   agentId,
   agentName,
+  markKey,
   onTestStarted,
   onTestCompleted,
   onUnavailable,
 }: {
   agentId: string;
   agentName: string;
+  markKey?: BotMarkKey | null;
   onTestStarted?: () => void;
   onTestCompleted?: () => void;
   onUnavailable?: () => void;
@@ -140,7 +143,12 @@ export default function VapiLiveVoiceSandbox({
     };
   }, [release]);
 
-  const handleMessage = (message: { type?: string; transcriptType?: string; role?: string; transcript?: string }) => {
+  const handleMessage = (message: {
+    type?: string;
+    transcriptType?: string;
+    role?: string;
+    transcript?: string;
+  }) => {
     if (message.type === "speech-update") {
       setState(message.role === "assistant" ? "speaking" : "listening");
       return;
@@ -179,8 +187,7 @@ export default function VapiLiveVoiceSandbox({
         body: JSON.stringify({ agentId }),
       });
       const body = (await response.json().catch(() => null)) as
-        | (WebSessionResponse & { error?: string })
-        | null;
+        (WebSessionResponse & { error?: string }) | null;
       if (currentGeneration !== generation.current) return;
       if (response.status === 503) {
         fail("The live phone test is temporarily unavailable.", true);
@@ -221,7 +228,9 @@ export default function VapiLiveVoiceSandbox({
       });
       instance.on("message", (message) => {
         if (currentGeneration !== generation.current) return;
-        handleMessage(message as { type?: string; transcriptType?: string; role?: string; transcript?: string });
+        handleMessage(
+          message as { type?: string; transcriptType?: string; role?: string; transcript?: string },
+        );
       });
       instance.on("call-end", () => {
         if (currentGeneration !== generation.current) return;
@@ -259,6 +268,7 @@ export default function VapiLiveVoiceSandbox({
             <div className="wl-presence__face">
               <AgentFace
                 seed={agentName}
+                markKey={markKey}
                 size={44}
                 speaking={state === "speaking"}
                 title={`${agentName} face`}
@@ -271,8 +281,8 @@ export default function VapiLiveVoiceSandbox({
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              A private browser test using the same live-call intelligence and voice as a real
-              phone call.
+              A private browser test using the same live-call intelligence and voice as a real phone
+              call.
             </p>
           </div>
         </div>

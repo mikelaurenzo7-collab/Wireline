@@ -9,10 +9,12 @@ import React, {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { authFetch } from "../lib/api";
+import { isBotMarkKey, type BotMarkKey } from "../lib/bot-mark";
 
 export interface WorkspaceAgentSummary {
   id: string;
   name: string;
+  mark_key?: BotMarkKey | null;
   role: string | null;
   channel?: "voice" | "email" | "omnichannel";
   is_business_agent?: boolean;
@@ -43,6 +45,8 @@ export const AGENTS_CHANGED_EVENT = "wireline:agents-changed";
 function isAgentLike(value: unknown): value is {
   id: string;
   name?: string | null;
+  markKey?: string | null;
+  mark_key?: string | null;
   role?: string | null;
   channel?: string | null;
   isBusinessAgent?: boolean | null;
@@ -60,6 +64,10 @@ function isAgentLike(value: unknown): value is {
 function normalizeChannel(raw: string | null | undefined): WorkspaceAgentSummary["channel"] {
   if (raw === "email" || raw === "voice" || raw === "omnichannel") return raw;
   return undefined;
+}
+
+function normalizeMarkKey(raw: string | null | undefined): BotMarkKey | null {
+  return isBotMarkKey(raw) ? raw : null;
 }
 
 function parsePhoneNumberMap(data: unknown): Map<string, string> {
@@ -87,6 +95,7 @@ function parseAgentsPayload(
   return list.filter(isAgentLike).map((agent) => ({
     id: agent.id,
     name: agent.name || "Untitled agent",
+    mark_key: normalizeMarkKey(agent.markKey ?? agent.mark_key),
     role: agent.role ?? null,
     channel: normalizeChannel(agent.channel),
     is_business_agent: !!agent.isBusinessAgent,

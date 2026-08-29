@@ -209,8 +209,10 @@ describe("BotBound product voice", () => {
     expect(landing).toContain("<AuthAccessPanel embedded");
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
-    expect(landing).toContain('const HERO_CHANNEL_ORDER = ["voice", "text", "email"] as const;');
-    expect(landing).toContain("BOT_CHANNELS.find((candidate) => candidate.key === key)");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).not.toContain("HERO_CHANNEL_ORDER");
+    expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).toContain("FEATURED_TEMPLATES.map");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");

@@ -31,6 +31,7 @@ import {
   FairKeyedConcurrencyGateAdmissionError,
   type FairKeyedConcurrencyPermit,
 } from "../lib/fair-keyed-concurrency-gate";
+import { MAX_EXTRA_AGENT_ADDONS } from "../lib/agent-capacity";
 
 const router = express.Router();
 
@@ -129,8 +130,8 @@ function latestInvoiceId(subscription: Stripe.Subscription): string | null {
  */
 router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   const target = Number(req.body?.count);
-  if (!Number.isInteger(target) || target < 0 || target > 100) {
-    throw AppError.fromHttpStatus(400, "count must be an integer 0-100");
+  if (!Number.isInteger(target) || target < 0 || target > MAX_EXTRA_AGENT_ADDONS) {
+    throw AppError.fromHttpStatus(400, `count must be an integer 0-${MAX_EXTRA_AGENT_ADDONS}`);
   }
 
   const environmentPolicy = await liveExternalActionPolicyForUser(req.user.id);

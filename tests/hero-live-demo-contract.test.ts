@@ -11,11 +11,14 @@ describe("public live demo contract", () => {
 
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
-    expect(landing).toContain("BOT_MARKETING_VOICE.subline");
-    expect(landing).toContain('aria-label="BotBound channels"');
-    expect(landing).toContain("HERO_CHANNELS.map");
+    expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
+    expect(landing).not.toContain('aria-label="BotBound channels"');
+    expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(botProduct).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
+    expect(botProduct).toContain(
+      'activationLine: "Start free. Every live Bot gets its own number and email."',
+    );
   });
 
   it("keeps a real protected browser demo and an honest phone fallback on Showcase", () => {
@@ -23,15 +26,20 @@ describe("public live demo contract", () => {
     const showcase = read("src/pages/Showcase.tsx");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
 
-    expect(landing).toContain('to="/showcase"');
-    expect(landing).toContain("<BotMark");
-    expect(landing).not.toContain("<BrowserCallWidget");
+    expect(landing).toContain("<BrowserCallWidget");
+    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("buttonLabel={`Talk to ${HERO_DEMO.name}`}");
+    expect(landing).not.toContain("<BotMark");
     expect(showcase).toContain("<BrowserCallWidget");
     expect(showcase).toContain('id="demo-lines"');
     expect(showcase).toContain("CALL A DEMO LINE");
     expect(showcase).toContain("href={`tel:${agent.tel}`}");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).toContain("Demo Phone Bot");
+    expect(widget).toContain("LIVE PHONE BOT");
+    expect(widget).toContain("Headphones");
+    expect(widget).not.toContain("markKey");
+    expect(widget).not.toContain("<BotMark");
     expect(widget).toContain("Bot speaking");
     expect(widget).not.toContain("Demo Voice Agent");
     expect(widget).not.toContain("Agent speaking");

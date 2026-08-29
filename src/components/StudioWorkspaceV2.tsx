@@ -328,6 +328,7 @@ export default function StudioWorkspaceV2() {
       ref={workroomRef}
       agentId={active.id}
       agentName={active.name}
+      markKey={active.mark_key}
       initialCommand={params.get("command") || undefined}
       commandNonce={params.get("commandNonce") || undefined}
       onBack={() => setSection("setup")}

@@ -3,6 +3,7 @@ import { AudioLines, Loader2, Mic, PhoneOff, RotateCcw } from "lucide-react";
 
 import AgentFace from "./AgentFace";
 import { authFetch } from "../lib/api";
+import type { BotMarkKey } from "../lib/bot-mark";
 import {
   XAI_BROWSER_PCM_RATE_HZ,
   XAIStreamingPcmEncoder,
@@ -81,6 +82,7 @@ function parseArguments(value: unknown): unknown {
 export default function XAILiveVoiceSandbox({
   agentId,
   agentName,
+  markKey,
   onAgentAudioDelta,
   onAgentAudioEnd,
   onTestStarted,
@@ -88,6 +90,7 @@ export default function XAILiveVoiceSandbox({
 }: {
   agentId: string;
   agentName: string;
+  markKey?: BotMarkKey | null;
   onAgentAudioDelta?: (base64Pcm: string) => void;
   onAgentAudioEnd?: () => void;
   onTestStarted?: () => void;
@@ -135,8 +138,7 @@ export default function XAILiveVoiceSandbox({
     (text: string) => {
       if (!text) return;
       const id =
-        assistantLineId.current ||
-        `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       assistantLineId.current = id;
       upsertLine(id, "Agent", text);
     },
@@ -322,49 +324,46 @@ export default function XAILiveVoiceSandbox({
     [runTool, waitForPlaybackDrain],
   );
 
-  const startCapture = useCallback(
-    async (ws: WebSocket, currentGeneration: number) => {
-      const context = new AudioContext();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      if (currentGeneration !== generation.current) {
-        stream.getTracks().forEach((track) => track.stop());
-        await context.close();
-        return;
+  const startCapture = useCallback(async (ws: WebSocket, currentGeneration: number) => {
+    const context = new AudioContext();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+    if (currentGeneration !== generation.current) {
+      stream.getTracks().forEach((track) => track.stop());
+      await context.close();
+      return;
+    }
+    if (context.state === "suspended") await context.resume();
+
+    const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
+    const source = context.createMediaStreamSource(stream);
+    const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
+    const sink = context.createGain();
+    sink.gain.value = 0;
+    processor.onaudioprocess = (event) => {
+      if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
+      const samples = event.inputBuffer.getChannelData(0);
+      for (const audio of encoder.push(samples)) {
+        ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
       }
-      if (context.state === "suspended") await context.resume();
+    };
+    source.connect(processor);
+    processor.connect(sink);
+    sink.connect(context.destination);
 
-      const encoder = new XAIStreamingPcmEncoder({ sourceRateHz: context.sampleRate });
-      const source = context.createMediaStreamSource(stream);
-      const processor = context.createScriptProcessor(CAPTURE_BUFFER_SIZE, 1, 1);
-      const sink = context.createGain();
-      sink.gain.value = 0;
-      processor.onaudioprocess = (event) => {
-        if (!sessionReady.current || ws.readyState !== WebSocket.OPEN) return;
-        const samples = event.inputBuffer.getChannelData(0);
-        for (const audio of encoder.push(samples)) {
-          ws.send(JSON.stringify({ type: "input_audio_buffer.append", audio }));
-        }
-      };
-      source.connect(processor);
-      processor.connect(sink);
-      sink.connect(context.destination);
-
-      audioContext.current = context;
-      microphone.current = stream;
-      captureSource.current = source;
-      captureProcessor.current = processor;
-      captureSink.current = sink;
-      captureEncoder.current = encoder;
-    },
-    [],
-  );
+    audioContext.current = context;
+    microphone.current = stream;
+    captureSource.current = source;
+    captureProcessor.current = processor;
+    captureSink.current = sink;
+    captureEncoder.current = encoder;
+  }, []);
 
   const handleEvent = useCallback(
     async (event: Record<string, unknown>, currentGeneration: number) => {
@@ -427,9 +426,7 @@ export default function XAILiveVoiceSandbox({
       if (type === "error") {
         const detail = event.error as { message?: unknown } | undefined;
         fail(
-          typeof detail?.message === "string"
-            ? detail.message
-            : "Live voice encountered an error.",
+          typeof detail?.message === "string" ? detail.message : "Live voice encountered an error.",
         );
       }
     },
@@ -470,9 +467,7 @@ export default function XAILiveVoiceSandbox({
       }
       if (currentGeneration !== generation.current) return;
 
-      const ws = new WebSocket(session.websocketUrl, [
-        `xai-client-secret.${session.clientSecret}`,
-      ]);
+      const ws = new WebSocket(session.websocketUrl, [`xai-client-secret.${session.clientSecret}`]);
       socket.current = ws;
       clearWatchdog();
       watchdog.current = window.setTimeout(() => {
@@ -484,7 +479,9 @@ export default function XAILiveVoiceSandbox({
       void startCapture(ws, currentGeneration).catch((reason) => {
         if (currentGeneration === generation.current) {
           fail(
-            reason instanceof Error ? reason.message : "Microphone access is required for live voice.",
+            reason instanceof Error
+              ? reason.message
+              : "Microphone access is required for live voice.",
           );
         }
       });
@@ -556,7 +553,9 @@ export default function XAILiveVoiceSandbox({
     } catch (reason) {
       if (currentGeneration === generation.current) {
         fail(
-          reason instanceof Error ? reason.message : "Microphone access is required for live voice.",
+          reason instanceof Error
+            ? reason.message
+            : "Microphone access is required for live voice.",
         );
       }
     }
@@ -584,6 +583,7 @@ export default function XAILiveVoiceSandbox({
             <div className="wl-presence__face">
               <AgentFace
                 seed={agentName}
+                markKey={markKey}
                 size={44}
                 speaking={state === "speaking"}
                 title={`${agentName} face`}

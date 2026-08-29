@@ -23,7 +23,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0164_stripe_event_claim_fencing.sql`.
+// `drizzle/migrations/0166_agent_identity_marks.sql`.
 // Runtime voice defaults are established by 0156_openai_runtime_cohesion.sql.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
@@ -370,6 +370,8 @@ export const agents = pgTable(
       onDelete: "cascade",
     }),
     name: text("name").notNull(),
+    /** Curated customer-selected identity mark. Nullable during the rollout expansion. */
+    markKey: text("mark_key"),
     voiceId: text("voice_id"),
     voiceIdInbound: text("voice_id_inbound"),
     voiceIdOutbound: text("voice_id_outbound"),
@@ -545,9 +547,16 @@ export const agents = pgTable(
     videoPresenterConsentStatus: text("video_presenter_consent_status").default("not_started"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  () => ({
+  (table) => ({
     userIdIdx: sql`CREATE INDEX idx_agents_user_id ON wireline_agents USING btree (user_id)`,
     createdAtIdx: sql`CREATE INDEX idx_agents_created_at ON wireline_agents USING btree (created_at)`,
+    workspaceMarkUnique: uniqueIndex("uq_wireline_agents_user_mark_key")
+      .on(table.userId, table.markKey)
+      .where(sql`${table.markKey} IS NOT NULL`),
+    markKeyCheck: check(
+      "wireline_agents_mark_key_check",
+      sql`${table.markKey} IS NULL OR ${table.markKey} ~ '^(orbit|beacon|spark|prism|flow|pulse|compass|focus|aperture|wave|helix|loop|nova|route|vertex)-(violet|blue|rose|amber|teal|magenta|indigo|slate)$'`,
+    ),
   }),
 );
 

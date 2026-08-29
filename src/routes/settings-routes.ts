@@ -19,6 +19,8 @@ import {
 } from "../lib/account-deletion-request";
 import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
+import { clampAgentCapacity, clampExtraAgentAddons } from "../lib/agent-capacity";
+import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
 
 const router = Router();
 
@@ -105,6 +107,14 @@ export function pickWritableSettings(
       if (clamped !== undefined) filtered[key] = clamped;
       continue;
     }
+    if (key === "maxAgents") {
+      filtered[key] = value === null ? null : clampAgentCapacity(Number(value));
+      continue;
+    }
+    if (key === "extraAgents") {
+      if (value !== null) filtered[key] = clampExtraAgentAddons(Number(value));
+      continue;
+    }
     filtered[key] = value;
   }
   return filtered;
@@ -122,11 +132,17 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
     // The raw key is never needed by the browser; only server-side code
     // uses it (and reads from process.env.XAI_API_KEY, not this column).
     const safe = data ? { ...data } : ({} as any);
+    if (typeof safe.maxAgents === "number") {
+      safe.maxAgents = clampAgentCapacity(safe.maxAgents);
+    }
+    if (typeof safe.extraAgents === "number") {
+      safe.extraAgents = clampExtraAgentAddons(safe.extraAgents);
+    }
     if (isOwnerEmail(req.user.email)) {
       safe.subscriptionStatus = "active";
-      safe.maxAgents = null;
+      safe.maxAgents = BOT_MARK_IDENTITY_CAPACITY;
       safe.extraAgents = 0;
-      safe.founderUnlimitedAgents = true;
+      safe.founderUnlimitedAgents = false;
     }
     if ("vapiPrivateKey" in safe) {
       // Native Twilio + xAI is the live voice runtime. Report platform voice

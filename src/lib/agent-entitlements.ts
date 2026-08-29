@@ -1,4 +1,6 @@
 import { planById } from "./plan-catalog";
+import { BOT_MARK_IDENTITY_CAPACITY } from "./bot-mark";
+import { clampAgentCapacity, clampExtraAgentAddons } from "./agent-capacity";
 
 export interface AgentEntitlementInput {
   isOwner: boolean;
@@ -26,10 +28,10 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
   if (input.isOwner) {
     return {
       subscriptionStatus: "active",
-      planAgents: null,
+      planAgents: BOT_MARK_IDENTITY_CAPACITY,
       purchasedExtras: 0,
-      effectiveCap: null,
-      unlimited: true,
+      effectiveCap: BOT_MARK_IDENTITY_CAPACITY,
+      unlimited: false,
     };
   }
 
@@ -53,17 +55,20 @@ export function resolveAgentEntitlement(input: AgentEntitlementInput): AgentEnti
   // extras, and any deliberate platform grant stored above that catalog total.
   const plan = planById(input.planId) || planById("personal");
   const planAgents = plan?.max_agents ?? freeDraftCap;
-  const purchasedExtras = Math.max(0, Math.floor(input.extraAgents ?? 0));
+  const purchasedExtras = clampExtraAgentAddons(input.extraAgents);
   const catalogCap = planAgents + purchasedExtras;
   const storedCap =
     typeof input.maxAgents === "number" && Number.isFinite(input.maxAgents)
-      ? Math.max(0, Math.floor(input.maxAgents))
+      ? clampAgentCapacity(input.maxAgents)
       : 0;
   return {
     subscriptionStatus,
     planAgents,
     purchasedExtras,
-    effectiveCap: Math.max(catalogCap, storedCap),
+    // A workspace cannot promise more Bots than the non-repeating identity
+    // namespace can represent. Published paid capacity tops out at 115 today;
+    // this clamp also keeps owner and deliberate platform grants truthful.
+    effectiveCap: clampAgentCapacity(Math.max(catalogCap, storedCap)),
     unlimited: false,
   };
 }

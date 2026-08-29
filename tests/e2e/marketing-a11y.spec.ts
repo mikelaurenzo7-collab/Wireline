@@ -30,7 +30,7 @@ test("homepage mobile product and access path has clear branding and no serious 
 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   const accessMode = page.getByRole("group", { name: "Account access mode" });
   await expect(accessMode.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   await expect(
@@ -59,7 +59,7 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await expect(headline).toBeVisible();
   await expect(hero).toBeVisible();
   await expect(auth).toBeVisible();
-  await expect(page.getByRole("link", { name: /Hear Jordan live/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk to Jordan" })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
     const headline = document
@@ -90,7 +90,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
-  const demo = page.getByRole("link", { name: /Hear Jordan live/i });
+  const demo = page.getByRole("button", { name: "Talk to Jordan" });
   await demo.focus();
   await expect(demo).toBeFocused();
   const focusStyle = await demo.evaluate((element) => {
@@ -99,10 +99,6 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   });
   expect(focusStyle.outlineStyle).not.toBe("none");
   expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
-
-  await demo.click();
-  await expect(page).toHaveURL(/\/showcase$/);
-  await expect(page.getByRole("heading").first()).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);

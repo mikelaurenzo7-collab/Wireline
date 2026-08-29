@@ -234,7 +234,13 @@ function DesktopRail({
           data-wireline-bot-selected="true"
           className={`wl-rail-agent-link mt-3 flex min-h-[42px] items-center rounded-[var(--wireline-radius-md)] border border-border/65 bg-muted/20 transition-colors hover:bg-muted/50 ${collapsed ? "justify-center px-0" : "gap-2.5 px-2.5"}`}
         >
-          <BotMark seed={agent.id} name={agent.name} size={24} title={`${agent.name} Bot mark`} />
+          <BotMark
+            seed={agent.id}
+            name={agent.name}
+            markKey={agent.mark_key}
+            size={24}
+            title={`${agent.name} Bot mark`}
+          />
           {!collapsed ? (
             <span className="min-w-0">
               <span className="block text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">

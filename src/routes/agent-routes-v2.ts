@@ -63,6 +63,12 @@ import {
   validateAgentRoleForCreate,
 } from "../lib/agent-role-definitions";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
+import {
+  defaultBotMarkKey,
+  firstAvailableBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "../lib/bot-mark";
 
 const router = Router();
 
@@ -86,6 +92,32 @@ async function owned(agentId: string, userId: string) {
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
     .limit(1);
   return agent;
+}
+
+async function withBotMarkPersistenceErrors<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    const databaseError = error as { code?: unknown; constraint?: unknown };
+    if (
+      databaseError.code === "23505" &&
+      databaseError.constraint === "uq_wireline_agents_user_mark_key"
+    ) {
+      throw new AppError(
+        409,
+        "BOT_MARK_CONFLICT",
+        "That Bot identity is already in use in this workspace.",
+      );
+    }
+    if (
+      databaseError.code === "23514" &&
+      databaseError.constraint === "wireline_agents_mark_key_check"
+    ) {
+      throw new AppError(400, "UNKNOWN_BOT_MARK", "Choose a valid Bot identity mark.");
+    }
+    throw error;
+  }
 }
 
 function cleanText(value: unknown, max: number) {
@@ -356,6 +388,10 @@ router.post(
     }
     const isBusinessAgent = req.body?.is_business_agent === true;
     if (!name) throw AppError.fromHttpStatus(400, "Agent name is required");
+    const requestedMarkKey = cleanText(req.body?.mark_key, 32);
+    if (requestedMarkKey && !isBotMarkKey(requestedMarkKey)) {
+      throw new AppError(400, "UNKNOWN_BOT_MARK", "Choose a valid Bot identity mark.");
+    }
     // Quick Deploy sends a curated pick as voice_id; anything outside the
     // managed roster falls back to rotation so the runtime stays managed.
     const requestedVoiceId = cleanText(req.body?.voice_id, 160);
@@ -381,75 +417,104 @@ router.post(
     const enabledTools = resolveCreateEnabledTools(role, isBusinessAgent);
     const videoPresenter = isBusinessAgent ? businessAgentVideoPresenterDefaults() : {};
 
-    await drizzle.transaction(async (tx) => {
-      // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
-      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+    const markKey = await withBotMarkPersistenceErrors(() =>
+      drizzle.transaction(async (tx): Promise<BotMarkKey> => {
+        // Serialize capacity checks per tenant so concurrent creates cannot exceed plan caps.
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
 
-      const [{ count }] = await tx
-        .select({ count: sql`count(*)` })
-        .from(schema.agents)
-        .where(eq(schema.agents.userId, req.user.id));
-      const existing = Number(count || 0);
+        const existingAgents = await tx
+          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, req.user.id));
+        const existing = existingAgents.length;
 
-      const isOwner = isOwnerEmail(req.user.email);
-      const [row] = await tx
-        .select({
-          planId: schema.subscriptions.plan,
-          subscriptionStatus: schema.settings.subscriptionStatus,
-          maxAgents: schema.settings.maxAgents,
-          extraAgents: schema.settings.extraAgents,
-        })
-        .from(schema.settings)
-        .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-        .where(eq(schema.settings.userId, req.user.id))
-        .limit(1);
-
-      const entitlement = resolveAgentEntitlement({
-        isOwner,
-        subscriptionStatus: row?.subscriptionStatus,
-        planId: row?.planId,
-        maxAgents: row?.maxAgents,
-        extraAgents: row?.extraAgents,
-      });
-
-      if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
-        throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
-      }
-
-      const voiceId = isXaiPstnVoiceId(requestedVoiceId)
-        ? requestedVoiceId
-        : isManagedVapiVoiceId(requestedVoiceId)
-          ? requestedVoiceId
-          : pickRotatedVoiceId(existing);
-      await tx.insert(schema.agents).values({
-        id,
-        userId: req.user.id,
-        name,
-        role,
-        channel,
-        archetype: resolveAgentRoleArchetype(role),
-        voiceId,
-        voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
-        enabledTools,
-        firstMessage,
-        isBusinessAgent,
-        ...videoPresenter,
-      });
-
-      if (seededPersonality) {
-        await tx
-          .insert(schema.personality)
-          .values({
-            agentId: id,
-            userId: req.user.id,
-            content: seededPersonality,
+        const isOwner = isOwnerEmail(req.user.email);
+        const [row] = await tx
+          .select({
+            planId: schema.subscriptions.plan,
+            subscriptionStatus: schema.settings.subscriptionStatus,
+            maxAgents: schema.settings.maxAgents,
+            extraAgents: schema.settings.extraAgents,
           })
-          .onConflictDoUpdate({
-            target: schema.personality.agentId,
-            set: { userId: req.user.id, content: seededPersonality },
-          });
-      }
-    });
+          .from(schema.settings)
+          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .where(eq(schema.settings.userId, req.user.id))
+          .limit(1);
+
+        const entitlement = resolveAgentEntitlement({
+          isOwner,
+          subscriptionStatus: row?.subscriptionStatus,
+          planId: row?.planId,
+          maxAgents: row?.maxAgents,
+          extraAgents: row?.extraAgents,
+        });
+
+        if (entitlement.effectiveCap !== null && existing >= entitlement.effectiveCap) {
+          throw AppError.fromHttpStatus(402, agentCapMessage(entitlement.effectiveCap));
+        }
+
+        const usedMarkKeys = new Set<BotMarkKey>();
+        for (const existingAgent of existingAgents) {
+          const existingMark = isBotMarkKey(existingAgent.markKey)
+            ? existingAgent.markKey
+            : defaultBotMarkKey(existingAgent.id);
+          usedMarkKeys.add(existingMark);
+        }
+        if (isBotMarkKey(requestedMarkKey) && usedMarkKeys.has(requestedMarkKey)) {
+          throw new AppError(
+            409,
+            "BOT_MARK_CONFLICT",
+            "That Bot identity is already in use in this workspace.",
+          );
+        }
+        const availableMarkKey = isBotMarkKey(requestedMarkKey)
+          ? requestedMarkKey
+          : firstAvailableBotMarkKey(id, usedMarkKeys);
+        if (!availableMarkKey) {
+          throw new AppError(
+            409,
+            "BOT_MARK_CAPACITY_REACHED",
+            "Every available Bot identity is already in use.",
+          );
+        }
+
+        const voiceId = isXaiPstnVoiceId(requestedVoiceId)
+          ? requestedVoiceId
+          : isManagedVapiVoiceId(requestedVoiceId)
+            ? requestedVoiceId
+            : pickRotatedVoiceId(existing);
+        await tx.insert(schema.agents).values({
+          id,
+          userId: req.user.id,
+          name,
+          markKey: availableMarkKey,
+          role,
+          channel,
+          archetype: resolveAgentRoleArchetype(role),
+          voiceId,
+          voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
+          enabledTools,
+          firstMessage,
+          isBusinessAgent,
+          ...videoPresenter,
+        });
+
+        if (seededPersonality) {
+          await tx
+            .insert(schema.personality)
+            .values({
+              agentId: id,
+              userId: req.user.id,
+              content: seededPersonality,
+            })
+            .onConflictDoUpdate({
+              target: schema.personality.agentId,
+              set: { userId: req.user.id, content: seededPersonality },
+            });
+        }
+        return availableMarkKey;
+      }),
+    );
 
     emitServerProductEventOnce({
       event: "agent_draft_created",
@@ -461,11 +526,63 @@ router.post(
     res.status(201).json({
       id,
       name,
+      mark_key: markKey,
       role,
       channel,
       enabledTools,
       is_business_agent: isBusinessAgent,
     });
+  },
+);
+
+router.patch(
+  "/api/agents/:id/mark",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const markKey = cleanText(req.body?.mark_key, 32);
+    if (!isBotMarkKey(markKey)) {
+      throw new AppError(400, "UNKNOWN_BOT_MARK", "Choose a valid Bot identity mark.");
+    }
+
+    const updated = await withBotMarkPersistenceErrors(() =>
+      drizzle.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${req.user.id}))`);
+        const [ownedAgent] = await tx
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!ownedAgent) throw AppError.fromHttpStatus(404, "Agent not found");
+
+        const workspaceAgents = await tx
+          .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+          .from(schema.agents)
+          .where(eq(schema.agents.userId, req.user.id));
+        const conflict = workspaceAgents.some(
+          (agent) =>
+            agent.id !== req.params.id &&
+            (isBotMarkKey(agent.markKey) ? agent.markKey : defaultBotMarkKey(agent.id)) === markKey,
+        );
+        if (conflict) {
+          throw new AppError(
+            409,
+            "BOT_MARK_CONFLICT",
+            "That Bot identity is already in use in this workspace.",
+          );
+        }
+
+        const [saved] = await tx
+          .update(schema.agents)
+          .set({ markKey })
+          .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+          .returning({ id: schema.agents.id });
+        if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
+        return saved;
+      }),
+    );
+
+    res.json({ id: updated.id, mark_key: markKey });
   },
 );
 
@@ -482,6 +599,7 @@ router.get(
         const agentRows = await tx
           .select({
             name: schema.agents.name,
+            markKey: schema.agents.markKey,
             role: schema.agents.role,
             archetype: schema.agents.archetype,
             flowConfig: schema.agents.flowConfig,
@@ -559,6 +677,7 @@ router.get(
         })
       : null;
     res.json({
+      mark_key: record?.markKey || null,
       role: record?.role || "customer_service",
       archetype: record?.archetype || "Assistant",
       flowConfig: record?.flowConfig || null,

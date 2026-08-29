@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import { AlertCircle, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-react";
+import { AlertCircle, Headphones, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-react";
 
 import { useProtectedPublicDemo } from "../../hooks/useProtectedPublicDemo";
 import { cn } from "../../lib/utils";
-import BotMark from "../BotMark";
-import { SignalOrbFrame } from "../ui/SignalOrbFrame";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 
 type BrowserCallWidgetProps = {
@@ -12,8 +10,8 @@ type BrowserCallWidgetProps = {
   /** Retained for call-site compatibility. Public demos use semantic tokens. */
   tintColor?: string;
   buttonLabel?: string;
-  /** compact: supporting public pages. stage: larger proof surfaces retained for compatibility. */
-  variant?: "compact" | "stage";
+  /** inline: landing conversion row. compact: supporting pages. stage: larger proof surfaces. */
+  variant?: "inline" | "compact" | "stage";
   /** Optional non-runtime path displayed after a protected preview cannot start. */
   fallback?: ReactNode;
 };
@@ -54,7 +52,7 @@ export default function BrowserCallWidget({
 }: BrowserCallWidgetProps) {
   const demo = useProtectedPublicDemo(
     agentName,
-    variant === "stage" ? "landing_product_theater" : "showcase_browser_demo",
+    variant === "compact" ? "showcase_browser_demo" : "landing_product_theater",
   );
   const showPhoneFallback = Boolean(fallback) && (Boolean(demo.error) || demo.completed);
   const buttonText = demo.connecting
@@ -64,6 +62,77 @@ export default function BrowserCallWidget({
       : demo.completed
         ? "Demo Complete"
         : buttonLabel;
+
+  if (variant === "inline") {
+    const status = demo.error
+      ? demo.error
+      : demo.callActive
+        ? demo.speakerActive
+          ? `${agentName} is speaking`
+          : `${agentName} is listening`
+        : demo.connecting
+          ? "Securing private preview"
+          : demo.completed
+            ? "Preview complete"
+            : `${demo.maxDurationSeconds}-second browser demo · No account required`;
+
+    return (
+      <div className={cn("landing-demo-inline", demo.callActive && "is-live")}>
+        <div className="landing-demo-inline__identity">
+          <span
+            className={cn("landing-demo-inline__voice-symbol", demo.callActive && "is-live")}
+            aria-hidden="true"
+          >
+            <Headphones />
+          </span>
+          <span className="landing-demo-inline__copy">
+            <strong className="wl-preserve-case">{agentName}</strong>
+            <small>LIVE PHONE BOT</small>
+          </span>
+        </div>
+
+        <button
+          type="button"
+          className={cn(
+            "landing-demo-inline__button",
+            (demo.callActive || demo.connecting) && "is-end",
+          )}
+          onClick={demo.toggle}
+          disabled={demo.completed}
+          aria-busy={demo.connecting}
+          aria-label={buttonText}
+        >
+          {demo.connecting || demo.callActive ? (
+            <PhoneOff aria-hidden="true" />
+          ) : demo.completed ? (
+            <Volume2 aria-hidden="true" />
+          ) : (
+            <Mic aria-hidden="true" />
+          )}
+          <span>{buttonText}</span>
+        </button>
+
+        <div
+          className={cn("landing-demo-inline__status", demo.error && "is-error")}
+          role={demo.error ? "alert" : "status"}
+          aria-live="polite"
+        >
+          {demo.callActive ? (
+            <>
+              <Volume2 aria-hidden="true" />
+              <WaveBars volume={demo.volume} active={demo.speakerActive} />
+            </>
+          ) : demo.connecting ? (
+            <Loader2 className="animate-spin" aria-hidden="true" />
+          ) : demo.error ? (
+            <AlertCircle aria-hidden="true" />
+          ) : null}
+          <span className="wl-preserve-case">{status}</span>
+        </div>
+        {showPhoneFallback ? <div className="landing-demo-inline__fallback">{fallback}</div> : null}
+      </div>
+    );
+  }
 
   if (variant === "stage") {
     const presence = demo.callActive
@@ -82,14 +151,12 @@ export default function BrowserCallWidget({
             {presence}
           </div>
           <div className="landing-demo__face-frame">
-            <BotMark
-              seed={`public-demo:${agentName}`}
-              name={agentName}
-              size={208}
-              active={demo.callActive && demo.speakerActive}
-              className="landing-demo__face"
-              title={`${agentName} Bot mark`}
-            />
+            <span
+              className={cn("landing-demo__voice-symbol", demo.callActive && "is-live")}
+              aria-hidden="true"
+            >
+              <Headphones />
+            </span>
           </div>
           <p className="landing-demo__name wl-preserve-case">{agentName}</p>
           <p className="landing-demo__role">Demo Phone Bot</p>
@@ -126,10 +193,7 @@ export default function BrowserCallWidget({
 
           <button
             type="button"
-            className={cn(
-              "landing-demo__button",
-              (demo.callActive || demo.connecting) && "is-end",
-            )}
+            className={cn("landing-demo__button", (demo.callActive || demo.connecting) && "is-end")}
             onClick={demo.toggle}
             disabled={demo.completed}
             aria-busy={demo.connecting}
@@ -175,26 +239,15 @@ export default function BrowserCallWidget({
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <SignalOrbFrame
-        size="sm"
-        withConstellation
-        withBloom
-        refined={false}
+      <span
         className={cn(
-          "transition-transform duration-200 motion-reduce:transition-none",
+          "public-demo-voice-symbol inline-flex size-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary transition-transform duration-200 motion-reduce:transition-none",
           demo.callActive && "scale-105",
         )}
+        aria-hidden="true"
       >
-        <div className="rounded-[18px] border border-border/80 bg-background p-1.5 shadow-sm">
-          <BotMark
-            seed={`public-demo:${agentName}`}
-            name={agentName}
-            size={48}
-            active={demo.callActive && demo.speakerActive}
-            title={`${agentName} Bot mark`}
-          />
-        </div>
-      </SignalOrbFrame>
+        <Headphones className="size-6" />
+      </span>
 
       <ShadButton
         type="button"
@@ -237,7 +290,7 @@ export default function BrowserCallWidget({
       <p className="wl-preserve-case max-w-xs text-center text-xs leading-5 text-muted-foreground">
         {demo.connecting
           ? "Cancel at any time before the private call session begins."
-          : `${demo.maxDurationSeconds}-second private preview. No retained call artifacts.`}
+          : `Private ${demo.maxDurationSeconds}-second browser call.`}
       </p>
 
       {demo.callActive ? (
