@@ -110,7 +110,14 @@ if (portalProducts.length !== PUBLIC_SELF_SERVE_PLAN_IDS.length) {
 }
 
 const fingerprint = portalProductsFingerprint(portalProducts);
-const configurations = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+// Stripe omits the portal's allowed product/price catalog unless it is explicitly
+// expanded. Audit the authoritative catalog instead of relying on the metadata
+// attestation fallback for ordinary production deploys.
+const configurations = await stripe.billingPortal.configurations.list({
+  active: true,
+  expand: ["data.features.subscription_update.products"],
+  limit: 100,
+});
 if (configurations.has_more) {
   throw new Error("Stripe has more than 100 active portal configurations; refusing partial audit.");
 }
@@ -143,7 +150,9 @@ if (!configuration) {
   }
 }
 
-const verified = await stripe.billingPortal.configurations.retrieve(configuration.id);
+const verified = await stripe.billingPortal.configurations.retrieve(configuration.id, {
+  expand: ["features.subscription_update.products"],
+});
 const findings = managedPortalConfigurationFindings(verified, appUrl, portalProducts);
 if (findings.length > 0) {
   throw new Error(`Managed Stripe portal verification failed: ${findings.join(", ")}.`);

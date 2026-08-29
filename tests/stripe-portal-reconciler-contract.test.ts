@@ -183,6 +183,8 @@ describe("Stripe customer portal reconciliation", () => {
     expect(script).toContain("product.name !== expectedProduct.name");
     expect(script).toContain("configuredPriceId !== price.id");
     expect(script).toContain("managedPortalConfigurationFindings");
+    expect(script).toContain('expand: ["data.features.subscription_update.products"]');
+    expect(script).toContain('expand: ["features.subscription_update.products"]');
     expect(script).toContain("staleManaged");
     expect(script).toContain("if (!apply)");
     expect(script).toContain("exactly one active BotBound-managed portal configuration");
