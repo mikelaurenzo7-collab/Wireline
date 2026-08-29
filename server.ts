@@ -24,6 +24,7 @@ import { registerMcpRoutes } from "./src/server/register-mcp-routes";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
+import { isProductionDeployment } from "./src/lib/deployment-environment";
 
 const SHUTDOWN_GRACE_MS = 30_000;
 let server: Server | null = null;
@@ -84,7 +85,7 @@ const origins = (process.env.CORS_ORIGINS || "")
   .filter(Boolean);
 if (IS_PROD && !origins.length && process.env.APP_URL) origins.push(process.env.APP_URL);
 
-if (IS_PROD && origins.length === 0) {
+if (isProductionDeployment() && origins.length === 0) {
   log.error("CORS misconfigured: set CORS_ORIGINS and/or APP_URL in production");
 }
 

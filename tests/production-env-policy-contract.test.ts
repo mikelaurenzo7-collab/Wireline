@@ -11,6 +11,7 @@ const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
 const serverContext = readFileSync(resolve(process.cwd(), "src/lib/server-context.ts"), "utf8");
 const startup = readFileSync(resolve(process.cwd(), "src/lib/startup.ts"), "utf8");
+const server = readFileSync(resolve(process.cwd(), "server.ts"), "utf8");
 const packageJson = JSON.parse(readFileSync(resolve(process.cwd(), "package.json"), "utf8"));
 
 const runPreviewBoundary = (overrides: NodeJS.ProcessEnv = {}) =>
@@ -77,6 +78,15 @@ describe("production environment launch policy", () => {
     expect(isProductionDeployment({ NODE_ENV: "production" })).toBe(true);
     expect(envValidator).toContain("isProductionDeployment()");
     expect(envValidator).not.toContain('process.env.VERCEL === "1"');
+    expect(startup).toContain("const productionDeployment = isProductionDeployment()");
+    expect(startup).toContain("logEnvValidation(productionDeployment)");
+    expect(startup).toContain(
+      "!importSmokeWithoutDatabase && productionDeployment && !isFederalDncVendorConfigured()",
+    );
+    expect(startup).toContain(
+      "!importSmokeWithoutDatabase && productionDeployment && !process.env.SENTRY_DSN",
+    );
+    expect(server).toContain("if (isProductionDeployment() && origins.length === 0)");
   });
 
   it("fails production closed if an operator override moves structured primary off OpenAI", () => {
@@ -140,6 +150,9 @@ describe("production environment launch policy", () => {
       "value === BOTBOUND_PRODUCTION_ORIGIN",
     );
     expect(startup).toContain('if (!IS_PROD && !process.env.APP_URL) recommended.push("APP_URL")');
+    expect(startup).toContain(
+      "if (productionDeployment && !process.env.CORS_ORIGINS && !process.env.APP_URL)",
+    );
 
     const requiredBlock = prodCheck.slice(
       prodCheck.indexOf("const required = ["),
