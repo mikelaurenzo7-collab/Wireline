@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0166_agent_identity_marks.sql`.
+ * Latest committed migration: `drizzle/migrations/0167_paid_bot_identity_jobs.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0156_openai_runtime_cohesion.sql`.
  *

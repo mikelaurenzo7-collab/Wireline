@@ -32,7 +32,7 @@ export type PostCreateWizardPayload = {
   emailAddress?: string | null;
   /** True only when the provider confirmed the configured custom domain was used. */
   emailCustomDomain?: boolean;
-  /** One full managed phone+mail bootstrap attempt completed for this Bot. */
+  /** One responsive bootstrap attempt completed; durable paid repair owns retries. */
   identityBootstrapComplete?: boolean;
 };
 

@@ -456,6 +456,13 @@
       "when": 1787961600000,
       "tag": "0166_agent_identity_marks",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1787965200000,
+      "tag": "0167_paid_bot_identity_jobs",
+      "breakpoints": true
     }
   ]
 }

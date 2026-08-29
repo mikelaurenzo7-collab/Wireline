@@ -10,7 +10,7 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 - **Docs:** `https://botbound.me/cursor-plugin.html`
 - **Privacy:** `https://botbound.me/mcp-privacy.html`
 - **Icon:** `https://botbound.me/botbound-icon-512.png`
-- **Support:** `support@trywireline.com`
+- **Support:** `support@botbound.me`
 - **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9`
 
 ## Directory form copy

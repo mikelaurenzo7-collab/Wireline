@@ -106,6 +106,7 @@ describe("provider spend launch kill switch", () => {
       "proactive_lead_enrichment",
       "autonomous_prospecting",
       "knowledge_from_url",
+      "paid_bot_identity_reconcile",
       "campaign_dial",
       "cadence_tick",
       "callback_tick",

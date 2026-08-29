@@ -7,7 +7,7 @@ import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { ConversationActivity, ConversationMessage, StatusNotice } from "./molecules";
 
-type Line = { id: string; role: "You" | "Agent"; text: string };
+type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 
 type WebSessionResponse = {
@@ -41,7 +41,7 @@ function voiceActivity(state: VoiceState) {
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Agent speaking",
+      title: "Bot speaking",
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
@@ -166,7 +166,7 @@ export default function VapiLiveVoiceSandbox({
     }
     const id = assistantLineId.current || `assistant-${Date.now()}`;
     assistantLineId.current = id;
-    upsertLine(id, "Agent", text, true);
+    upsertLine(id, "Bot", text, true);
     if (final) assistantLineId.current = null;
   };
 

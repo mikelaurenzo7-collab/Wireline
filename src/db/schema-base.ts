@@ -23,7 +23,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0166_agent_identity_marks.sql`.
+// `drizzle/migrations/0167_paid_bot_identity_jobs.sql`.
 // Runtime voice defaults are established by 0156_openai_runtime_cohesion.sql.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
@@ -1911,6 +1911,11 @@ export const jobs = pgTable(
       .on(t.userId, t.type, sql`(${t.payload}->>'postCallDigestJobId')`)
       .where(
         sql`${t.type} IN ('post_call_artifact', 'auto_qa_score') AND (${t.payload}->>'postCallDigestJobId') IS NOT NULL`,
+      ),
+    paidBotIdentityActiveUniq: uniqueIndex("uq_jobs_paid_bot_identity_active")
+      .on(t.userId, sql`(${t.payload}->>'agentId')`)
+      .where(
+        sql`${t.type} = 'paid_bot_identity_reconcile' AND (${t.payload}->>'agentId') IS NOT NULL AND ${t.status} IN ('pending', 'running', 'failed')`,
       ),
   }),
 );

@@ -69,6 +69,7 @@ import {
   isBotMarkKey,
   type BotMarkKey,
 } from "../lib/bot-mark";
+import { PAID_BOT_IDENTITY_JOB_TYPE } from "../lib/paid-bot-identity";
 
 const router = Router();
 
@@ -512,6 +513,15 @@ router.post(
               set: { userId: req.user.id, content: seededPersonality },
             });
         }
+        // Commit the Bot and its first durable identity attempt together. Free
+        // plans complete this job without provider allocation; a later paid
+        // subscription event queues a fresh attempt for every current Bot.
+        await tx.insert(schema.jobs).values({
+          userId: req.user.id,
+          type: PAID_BOT_IDENTITY_JOB_TYPE,
+          payload: { userId: req.user.id, agentId: id },
+          runAt: new Date(Date.now() + 30_000),
+        });
         return availableMarkKey;
       }),
     );

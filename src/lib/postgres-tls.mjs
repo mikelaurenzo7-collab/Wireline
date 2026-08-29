@@ -1,3 +1,5 @@
+import { URL } from "node:url";
+
 /**
  * Supabase's database certificate chain terminates at this official root CA.
  * Source: https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt

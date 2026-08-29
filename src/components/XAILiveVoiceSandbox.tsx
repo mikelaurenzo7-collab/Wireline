@@ -23,7 +23,7 @@ type XAILiveSessionResponse = {
   error?: string;
 };
 
-type Line = { id: string; role: "You" | "Agent"; text: string };
+type Line = { id: string; role: "You" | "Bot"; text: string };
 type VoiceState = "idle" | "connecting" | "listening" | "speaking" | "thinking" | "error";
 type PendingToolCall = { name: string; callId: string; arguments: unknown };
 
@@ -53,7 +53,7 @@ function voiceActivity(state: VoiceState) {
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Agent speaking",
+      title: "Bot speaking",
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
@@ -140,7 +140,7 @@ export default function XAILiveVoiceSandbox({
       const id =
         assistantLineId.current || `assistant-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       assistantLineId.current = id;
-      upsertLine(id, "Agent", text);
+      upsertLine(id, "Bot", text);
     },
     [upsertLine],
   );
@@ -596,7 +596,7 @@ export default function XAILiveVoiceSandbox({
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              A private native realtime test using this agent's rules, facts, and voice profile.
+              A private native realtime test of this Bot's rules, facts, and voice.
             </p>
           </div>
         </div>

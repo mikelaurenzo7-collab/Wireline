@@ -390,6 +390,39 @@ describe("migration journal integrity contract", () => {
     );
   });
 
+  it("journals and materializes paid Bot identity job deduplication", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 65,
+        tag: "0167_paid_bot_identity_jobs",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0065_PATH");
+    expect(materializer).toContain("buildPaidBotIdentityJobSnapshot");
+    expect(materializer).not.toContain('TARGET_0065_SHA256 = "PENDING_COMPUTE"');
+
+    const previous = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0064_snapshot.json"), "utf8"),
+    ) as { id: string };
+    const snapshot = JSON.parse(
+      readFileSync(resolve(MIGRATIONS_DIR, "meta/0065_snapshot.json"), "utf8"),
+    ) as {
+      prevId: string;
+      tables: Record<string, { indexes: Record<string, { where: string }> }>;
+    };
+    expect(snapshot.prevId).toBe(previous.id);
+    expect(snapshot.tables["public.wireline_jobs"].indexes).toHaveProperty(
+      "uq_jobs_paid_bot_identity_active",
+    );
+    expect(
+      snapshot.tables["public.wireline_jobs"].indexes.uq_jobs_paid_bot_identity_active.where,
+    ).toContain("paid_bot_identity_reconcile");
+  });
+
   it("documents the split so the journal is not read as the whole history", () => {
     // The operational rule only survives if it is written down where database
     // work starts. docs/DATABASE_OPERATIONS.md is that single source of truth.

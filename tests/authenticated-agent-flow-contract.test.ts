@@ -188,6 +188,7 @@ describe("authenticated Bot flow", () => {
 
   it("launches a resumable Train, Wire, Test wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
+    const templates = read("src/components/AgentTemplates.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
     const createFlow = read("src/lib/wireline-create-flow.ts");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
@@ -195,6 +196,10 @@ describe("authenticated Bot flow", () => {
 
     expect(createDialog).toContain("stashPostCreateWizard");
     expect(createDialog).toContain("onCreated?.(wizardPayload)");
+    expect(templates).toContain("stashPostCreateWizard");
+    expect(templates).toContain("isBotMarkKey(data.mark_key)");
+    expect(templates).toContain("setPostSignupFlowActive(true)");
+    expect(templates).toContain("&section=setup");
     expect(studioHome).toContain("onCreated={setPostCreateWizard}");
     expect(createFlow).toContain("POST_CREATE_WIZARD_KEY");
     expect(createFlow).toContain("readPostCreateWizard");

@@ -581,7 +581,7 @@ export default function EmailInbox({
                         <ConversationMessage
                           key={message.id}
                           author={assistant ? "assistant" : "customer"}
-                          label={assistant ? "Agent" : selected.sender}
+                          label={assistant ? "Bot" : selected.sender}
                           timestamp={formatTimestamp(message.createdAt)}
                           channel="email"
                         >

@@ -77,6 +77,20 @@ Production sending is configured, but signed delivery feedback is not active unt
 
 The receiver, schema, suppression semantics, and rollback path are already implemented. See `docs/RESEND_DELIVERY_FEEDBACK.md`.
 
+### AgentMail managed Bot email
+
+Paid Bot mailbox provisioning remains blocked until all of these are true:
+
+1. an organization-scoped `AGENTMAIL_API_KEY` has the required inbox, message, webhook, and domain-read permissions;
+2. `AGENTMAIL_DEFAULT_DOMAIN` is `botbound.me` or a verified BotBound subdomain;
+3. `npm run vendor:readiness` reports AgentMail ready; and
+4. a controlled Bot passes outbound send, inbound receive, signed webhook, and reply proof on the
+   configured verified BotBound domain.
+
+Do not use `@agentmail.to` as a paid Bot identity or point the global default at a customer's
+domain. Activation, DNS, reconciliation, customer-domain guidance, and rollback are in
+`docs/AGENTMAIL_PRODUCTION_ACTIVATION.md`.
+
 ### Federal marketing DNC
 
 `FEDERAL_DNC_API_KEY` remains unconfigured pending the external business/vendor credential. Marketing/campaign outbound therefore stays fail-closed.

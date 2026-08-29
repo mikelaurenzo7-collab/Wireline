@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import {
@@ -25,8 +25,16 @@ import { getErrorMessage } from "./server-utils";
 import { encryptSecret, isVaultConfigured } from "./secret-vault";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { getTwilioClient } from "./twilio-service";
+import { enqueue } from "./job-queue";
 
-const PAID_IDENTITY_STATUSES = new Set(["active", "trialing"]);
+// A Stripe trial is not a paid activation. Real carrier numbers and durable
+// AgentMail inboxes are created only after Stripe reports an active paid
+// subscription. Any future mailbox-only trial must use its own bounded
+// entitlement and must never flow through this phone+mail identity lane.
+const PAID_IDENTITY_STATUSES = new Set(["active"]);
+const ACTIVE_IDENTITY_JOB_STATUSES = ["pending", "running", "failed"] as const;
+
+export const PAID_BOT_IDENTITY_JOB_TYPE = "paid_bot_identity_reconcile" as const;
 
 export type PaidBotIdentityResult = {
   eligible: boolean;
@@ -36,6 +44,59 @@ export type PaidBotIdentityResult = {
   phoneReused: boolean;
   emailReused: boolean;
 };
+
+function queuedIdentityAgentId(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const agentId = (payload as Record<string, unknown>).agentId;
+  return typeof agentId === "string" && agentId.trim() ? agentId.trim() : null;
+}
+
+/**
+ * Attach every current Bot to the durable identity worker after paid
+ * activation. Existing pending/running/retryable jobs are reused; completed or
+ * dead jobs do not suppress a later Stripe reconciliation repair.
+ */
+export async function enqueuePaidBotIdentityReconciliation(userId: string): Promise<{
+  agents: number;
+  queued: number;
+  alreadyQueued: number;
+}> {
+  const [agents, existingJobs] = await Promise.all([
+    drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, userId)),
+    drizzle
+      .select({ payload: schema.jobs.payload })
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.userId, userId),
+          eq(schema.jobs.type, PAID_BOT_IDENTITY_JOB_TYPE),
+          inArray(schema.jobs.status, [...ACTIVE_IDENTITY_JOB_STATUSES]),
+        ),
+      ),
+  ]);
+  const activeAgentIds = new Set(
+    existingJobs.map((job) => queuedIdentityAgentId(job.payload)).filter(Boolean),
+  );
+  let queued = 0;
+  for (const agent of agents) {
+    if (activeAgentIds.has(agent.id)) continue;
+    const result = await enqueue(drizzle, {
+      userId,
+      type: PAID_BOT_IDENTITY_JOB_TYPE,
+      payload: { userId, agentId: agent.id },
+    });
+    activeAgentIds.add(agent.id);
+    if (result.jobId) queued += 1;
+  }
+  return {
+    agents: agents.length,
+    queued,
+    alreadyQueued: agents.length - queued,
+  };
+}
 
 function normalizedManagedDomain(): string | null {
   const value = String(process.env.AGENTMAIL_DEFAULT_DOMAIN || "")
@@ -355,8 +416,10 @@ export async function ensurePaidBotIdentity(input: {
     perform: async () => {
       await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
 
-      const phone = await ensurePaidBotPhone(input.userId, input.agentId);
+      // Resolve the mailbox first so a provider-side provisioning failure does
+      // not create carrier spend for a Bot that lacks its complete identity.
       const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
+      const phone = await ensurePaidBotPhone(input.userId, input.agentId);
 
       return {
         eligible: true,

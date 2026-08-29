@@ -4,10 +4,9 @@
 export const STRIPE_PUBLIC_BRAND = "BotBound";
 export const STRIPE_PUBLIC_HOSTS = new Set(["botbound.me", "www.botbound.me"]);
 export const STRIPE_PUBLIC_SUPPORT_URL = "https://botbound.me/support";
-// Keep the verified compatibility inbox until a BotBound-domain alias has
-// passed send, receive, reply, and deliverability checks. The public product
-// identity is BotBound; this address is an intentionally staged dependency.
-export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@trywireline.com";
+// Production-domain delivery was proven end to end on 2026-08-29: outbound to
+// Gmail, Gmail reply, and inbound AgentMail receipt all succeeded.
+export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@botbound.me";
 export const STRIPE_STATEMENT_DESCRIPTOR_PREFIX = "BOTBOUND";
 export const STRIPE_BRAND_PRIMARY_COLOR = "#A78BFA";
 export const STRIPE_BRAND_SECONDARY_COLOR = "#141319";
@@ -61,9 +60,7 @@ export const hasWirelineDescriptor = hasBotBoundDescriptor;
  * account merely because the optional override is null.
  */
 export function effectiveStripeCardStatementDescriptor(account) {
-  const explicit = normalizeText(
-    account?.settings?.card_payments?.statement_descriptor_prefix,
-  );
+  const explicit = normalizeText(account?.settings?.card_payments?.statement_descriptor_prefix);
   if (explicit) {
     return { value: explicit, source: "explicit" };
   }

@@ -40,6 +40,41 @@ describe("durable enqueue failure contract", () => {
     );
   });
 
+  it("deduplicates only the named active paid-identity job conflict", () => {
+    const duplicate = {
+      ok: false,
+      error: 'duplicate key value violates unique constraint "uq_jobs_paid_bot_identity_active"',
+    };
+
+    expect(enforceDurableEnqueueResult({ type: "paid_bot_identity_reconcile" }, duplicate)).toEqual(
+      { ok: true },
+    );
+    expect(() => enforceDurableEnqueueResult({ type: "daily_brief" }, duplicate)).toThrow(
+      "uq_jobs_paid_bot_identity_active",
+    );
+    expect(() =>
+      enforceDurableEnqueueResult(
+        { type: "paid_bot_identity_reconcile" },
+        { ok: false, error: "database unavailable" },
+      ),
+    ).toThrow("database unavailable");
+  });
+
+  it("enforces one active paid-identity repair per Bot while allowing later repair", () => {
+    const migration = read("drizzle/migrations/0167_paid_bot_identity_jobs.sql");
+    const schema = read("src/db/schema-base.ts");
+    const journal = read("drizzle/migrations/meta/_journal.json");
+
+    expect(migration).toContain(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_jobs_paid_bot_identity_active",
+    );
+    expect(migration).toContain("(user_id, ((payload->>'agentId')))");
+    expect(migration).toContain("type = 'paid_bot_identity_reconcile'");
+    expect(migration).toContain("status IN ('pending', 'running', 'failed')");
+    expect(schema).toContain('uniqueIndex("uq_jobs_paid_bot_identity_active")');
+    expect(journal).toContain('"tag": "0167_paid_bot_identity_jobs"');
+  });
+
   it("enforces one active scheduler tick without rewriting running work", () => {
     const migration = read("drizzle/migrations/0141_scheduler_tick_singletons.sql");
     const journal = read("drizzle/migrations/meta/_journal.json");

@@ -108,7 +108,7 @@ const CHANNEL_RULES = [
   },
   {
     title: "Email",
-    body: "Every active paid Bot gets a BotBound-managed mailbox. Verified custom domains keep the Bot on your brand; Gmail, Outlook, and iCloud connections are optional inputs, not prerequisites.",
+    body: "Every active paid Bot gets a BotBound-managed mailbox automatically. Guided custom-domain setup keeps the Bot on your brand after DNS verification; Gmail, Outlook, and iCloud connections remain optional inputs.",
   },
   {
     title: "Lead Hunt",
@@ -147,7 +147,7 @@ const FAQ = [
   ],
   [
     "Can I cancel or get a refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@trywireline.com within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@botbound.me within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
   ],
   [
     "What is the Scale plan?",

@@ -55,6 +55,7 @@ import {
   ACCOUNT_DELETION_BILLING_RECONCILIATION_MS,
   schedulePendingDeletionBillingReconciliation,
 } from "./account-deletion-request";
+import { ensurePaidBotIdentity, PAID_BOT_IDENTITY_JOB_TYPE } from "./paid-bot-identity";
 
 export * from "./job-worker-base";
 
@@ -72,6 +73,7 @@ const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
   "post_call_digest",
   "purge_deleted_account",
   "openai_realtime_hangup",
+  PAID_BOT_IDENTITY_JOB_TYPE,
   "account_deletion_billing_reconciliation",
 ]);
 
@@ -451,6 +453,30 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
       });
       throw error;
     }
+    return;
+  }
+  if (job.type === PAID_BOT_IDENTITY_JOB_TYPE) {
+    assertLaunchProviderSpendAllowed(job);
+    if (await hasPersistedResult(job.id)) return;
+    const ownerId = jobOwnerId(job);
+    const payload =
+      job.payload && typeof job.payload === "object"
+        ? (job.payload as Record<string, unknown>)
+        : {};
+    const payloadUserId = typeof payload.userId === "string" ? payload.userId : "";
+    const agentId = typeof payload.agentId === "string" ? payload.agentId : "";
+    if (!ownerId || payloadUserId !== ownerId || !agentId) {
+      throw new Error("Paid Bot identity job contains an invalid tenant payload.");
+    }
+    const result = await ensurePaidBotIdentity({ userId: ownerId, agentId });
+    await persistJobResult(job.id, {
+      eligible: result.eligible,
+      plan_id: result.planId,
+      phone_ready: Boolean(result.phone),
+      email_ready: Boolean(result.email),
+      phone_reused: result.phoneReused,
+      email_reused: result.emailReused,
+    });
     return;
   }
   // Auto-dial intentionally sits after server-owned hangup: provider-spend

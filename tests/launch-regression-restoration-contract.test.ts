@@ -200,8 +200,8 @@ describe("restored launch regression guards", () => {
     for (const source of [contact, support]) {
       expect(source).toContain("responseStatus = response.status");
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
-      expect(source).toContain("mailto:support@trywireline.com");
-      expect(source).not.toContain("support@botbound.me");
+      expect(source).toContain("mailto:support@botbound.me");
+      expect(source).not.toContain("support@trywireline.com");
       expect(source).toContain("setError(message)");
       expect(source).toContain("isTransport");
       expect(source).toContain("if (isTransport)");

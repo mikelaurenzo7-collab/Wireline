@@ -813,6 +813,15 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       // Must succeed — swallowing here marks the webhook processed with no
       // included Runtime Allowance, and Stripe will not retry.
       await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
+      if (stripeStatus === "active") {
+        const { enqueuePaidBotIdentityReconciliation } = await import("./paid-bot-identity");
+        const identityQueue = await enqueuePaidBotIdentityReconciliation(userId);
+        log.info("Paid Bot identity reconciliation attached to authoritative subscription sync", {
+          userId,
+          subscriptionId: sub.id,
+          ...identityQueue,
+        });
+      }
     }
 
     void auditLogger

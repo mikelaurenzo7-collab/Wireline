@@ -12,8 +12,9 @@ describe("paid Bot identity reconciliation", () => {
   const endpoint = read("api/reconcile-paid-bot-identities.ts");
   const pricing = read("src/lib/plan-catalog.ts");
 
-  it("allocates identity only for active or trialing paid catalog plans", () => {
-    expect(identity).toContain('const PAID_IDENTITY_STATUSES = new Set(["active", "trialing"])');
+  it("allocates identity only after a paid subscription becomes active", () => {
+    expect(identity).toContain('const PAID_IDENTITY_STATUSES = new Set(["active"])');
+    expect(identity).not.toContain('new Set(["active", "trialing"])');
     expect(identity).toContain("plan.price_usd_monthly > 0");
     expect(identity).toContain("plan.included_phone_numbers > 0");
     expect(identity).toContain("if (!plan.eligible)");
@@ -37,8 +38,8 @@ describe("paid Bot identity reconciliation", () => {
 
     expect(fenceIndex).toBeGreaterThanOrEqual(0);
     expect(identity).toContain('operation: "paid_bot_identity_reconcile"');
-    expect(phoneIndex).toBeGreaterThan(fenceIndex);
-    expect(mailIndex).toBeGreaterThan(phoneIndex);
+    expect(mailIndex).toBeGreaterThan(fenceIndex);
+    expect(phoneIndex).toBeGreaterThan(mailIndex);
     expect(identity).toContain("if (!fenced.performed)");
     expect(identity).toContain("account deletion is in progress");
   });
@@ -55,6 +56,16 @@ describe("paid Bot identity reconciliation", () => {
     expect(mail).toContain(
       'AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL = "botbound-managed-agentmail-v1"',
     );
+  });
+
+  it("creates the mailbox before any carrier spend", () => {
+    const fencedIndex = identity.indexOf("runTenantProviderWorkWithDeletionFence({");
+    const emailIndex = identity.indexOf("await ensurePaidBotMailbox", fencedIndex);
+    const phoneIndex = identity.indexOf("await ensurePaidBotPhone", fencedIndex);
+
+    expect(identity).not.toContain("AGENTMAIL_MANAGED_INBOX_CAPACITY");
+    expect(emailIndex).toBeGreaterThan(fencedIndex);
+    expect(phoneIndex).toBeGreaterThan(emailIndex);
   });
 
   it("documents the production-owned AgentMail credential and BotBound domain", () => {
@@ -113,14 +124,22 @@ describe("paid Bot identity reconciliation", () => {
     expect(ops).toContain("ensurePaidBotIdentity");
   });
 
-  it("does not claim automatic activation until the reconciler is attached to a durable trigger", () => {
+  it("attaches automatic identity activation to create, Stripe, and the durable worker", () => {
     const worker = read("src/lib/job-worker.ts");
     const createRoute = read("src/routes/agent-routes-v2.ts");
-    const checkout = read("src/lib/stripe-checkout-fulfillment.ts");
-    const wired = [worker, createRoute, checkout].some((source) =>
-      source.includes("ensurePaidBotIdentity"),
-    );
-    // Flip this contract only when create/checkout enqueue and the durable worker executes the job.
-    expect(wired).toBe(false);
+    const stripeSync = read("src/lib/stripe-helpers.ts");
+    const queue = read("src/lib/job-queue.ts");
+    const spend = read("src/lib/provider-spend-job-pause.ts");
+    expect(identity).toContain('PAID_BOT_IDENTITY_JOB_TYPE = "paid_bot_identity_reconcile"');
+    expect(identity).toContain("enqueuePaidBotIdentityReconciliation");
+    expect(createRoute).toContain("tx.insert(schema.jobs)");
+    expect(createRoute).toContain("PAID_BOT_IDENTITY_JOB_TYPE");
+    expect(stripeSync).toContain("enqueuePaidBotIdentityReconciliation(userId)");
+    expect(stripeSync).toContain('if (stripeStatus === "active")');
+    expect(worker).toContain("ensurePaidBotIdentity({ userId: ownerId, agentId })");
+    expect(worker).toContain("PAID_BOT_IDENTITY_JOB_TYPE");
+    expect(worker).toContain("assertLaunchProviderSpendAllowed(job)");
+    expect(queue).toContain('| "paid_bot_identity_reconcile"');
+    expect(spend).toContain('"paid_bot_identity_reconcile"');
   });
 });

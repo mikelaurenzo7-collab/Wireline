@@ -9,7 +9,7 @@
 - **Public MCP endpoint:** `https://botbound.me/mcp`
 - **Privacy notice:** `https://botbound.me/chatgpt-app-privacy.html`
 - **General privacy policy:** `https://botbound.me/privacy`
-- **Support:** `support@trywireline.com`
+- **Support:** `support@botbound.me`
 
 The dashboard upload version is `public/botbound-icon-512.png`. The BotBound robot-and-phone mark is designed to remain legible at small directory and composer avatar sizes.
 
@@ -39,18 +39,18 @@ The app turns a conversational business need into a structured, customizable age
 
 ## Tool inventory
 
-| Tool | Authentication | Purpose | External side effect |
-| --- | --- | --- | --- |
-| `create_agent_draft` | OAuth, `agents.write` | Creates a confirmed, persistent, unlaunched private agent draft. | Creates an unlaunched draft in the user's BotBound workspace. |
-| `get_agent_draft` | OAuth, `agents.read` | Shows the connected user's agent profile and draft state. | None. |
-| `update_agent_draft` | OAuth, `agents.write` | Applies a confirmed private profile update. | Updates a private unlaunched draft. |
-| `start_private_voice_simulation` | OAuth, `demo.voice` | Creates a short-lived credential for a tool-free private voice simulation of a saved draft. | Starts a private simulation session only. |
-| `list_wireline_agents` | OAuth, `agents.read` | Shows the connected user's existing agents. | None. |
-| `get_wireline_workspace_summary` | OAuth, `agents.read` | Returns aggregate agent, assigned-number, recent activity, unread, connection, activation, and subscription status. | None. |
-| `get_wireline_agent_status` | OAuth, `agents.read` | Returns one agent's next step and BotBound links. | None. |
-| `run_private_agent_turn` | OAuth, `demo.voice` | Confirmed private text rehearsal. | None. Not a live call. |
-| `get_agent_coaching_brief` | OAuth, `agents.read` | Returns owner-authored Training facts and rules. | None. |
-| `train_wireline_agent` | OAuth, `agents.write` | Saves a confirmed fact or rule into Training after the Apps toggle. | Writes owner-authored Training in the user's workspace. |
+| Tool                             | Authentication        | Purpose                                                                                                             | External side effect                                          |
+| -------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `create_agent_draft`             | OAuth, `agents.write` | Creates a confirmed, persistent, unlaunched private agent draft.                                                    | Creates an unlaunched draft in the user's BotBound workspace. |
+| `get_agent_draft`                | OAuth, `agents.read`  | Shows the connected user's agent profile and draft state.                                                           | None.                                                         |
+| `update_agent_draft`             | OAuth, `agents.write` | Applies a confirmed private profile update.                                                                         | Updates a private unlaunched draft.                           |
+| `start_private_voice_simulation` | OAuth, `demo.voice`   | Creates a short-lived credential for a tool-free private voice simulation of a saved draft.                         | Starts a private simulation session only.                     |
+| `list_wireline_agents`           | OAuth, `agents.read`  | Shows the connected user's existing agents.                                                                         | None.                                                         |
+| `get_wireline_workspace_summary` | OAuth, `agents.read`  | Returns aggregate agent, assigned-number, recent activity, unread, connection, activation, and subscription status. | None.                                                         |
+| `get_wireline_agent_status`      | OAuth, `agents.read`  | Returns one agent's next step and BotBound links.                                                                   | None.                                                         |
+| `run_private_agent_turn`         | OAuth, `demo.voice`   | Confirmed private text rehearsal.                                                                                   | None. Not a live call.                                        |
+| `get_agent_coaching_brief`       | OAuth, `agents.read`  | Returns owner-authored Training facts and rules.                                                                    | None.                                                         |
+| `train_wireline_agent`           | OAuth, `agents.write` | Saves a confirmed fact or rule into Training after the Apps toggle.                                                 | Writes owner-authored Training in the user's workspace.       |
 
 The simulation tool is intentionally declared `readOnlyHint: false` because it creates a short-lived session credential, even though it does not change the saved agent draft. All ten tools declare `readOnlyHint`, `openWorldHint`, `destructiveHint`, `securitySchemes`, and `outputSchema` explicitly.
 

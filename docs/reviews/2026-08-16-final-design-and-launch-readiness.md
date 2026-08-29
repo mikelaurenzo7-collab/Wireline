@@ -145,34 +145,34 @@ Exact Vercel deployment for the validated application head:
 - State: READY
 - Application SHA: `5707de7e2c43999a5c60170907b72ecbe693c634`
 
-| Gate | Result |
-| --- | --- |
-| Branch divergence from `main` | 54 ahead, 0 behind |
-| Test files | 99 passed |
-| Tests | 708 passed |
-| Operational-core contract | Passed |
-| Clear System | Passed |
-| Vite production build | Passed |
-| Modules transformed | 3,148 |
-| Marketing route shells | 29 written |
-| Server import smoke | Passed |
-| Public-health bundle smoke | Passed |
-| Design-token generation | Passed |
-| Vercel deployment | READY |
-| Manual screenshot certification | Pending |
+| Gate                            | Result             |
+| ------------------------------- | ------------------ |
+| Branch divergence from `main`   | 54 ahead, 0 behind |
+| Test files                      | 99 passed          |
+| Tests                           | 708 passed         |
+| Operational-core contract       | Passed             |
+| Clear System                    | Passed             |
+| Vite production build           | Passed             |
+| Modules transformed             | 3,148              |
+| Marketing route shells          | 29 written         |
+| Server import smoke             | Passed             |
+| Public-health bundle smoke      | Passed             |
+| Design-token generation         | Passed             |
+| Vercel deployment               | READY              |
+| Manual screenshot certification | Pending            |
 
 ### Bundle posture
 
-| Surface | Raw | Gzip |
-| --- | ---: | ---: |
-| Landing route | 15.44 kB | 4.96 kB |
-| Main application entry | 165.26 kB | 53.17 kB |
-| App shell | 90.86 kB | 28.14 kB |
-| Phone page | 54.96 kB | 15.52 kB |
-| Vapi runtime chunk | 296.22 kB | 77.27 kB |
-| Chart chunk | 363.53 kB | 106.92 kB |
+| Surface                    |       Raw |      Gzip |
+| -------------------------- | --------: | --------: |
+| Landing route              |  15.44 kB |   4.96 kB |
+| Main application entry     | 165.26 kB |  53.17 kB |
+| App shell                  |  90.86 kB |  28.14 kB |
+| Phone page                 |  54.96 kB |  15.52 kB |
+| Vapi runtime chunk         | 296.22 kB |  77.27 kB |
+| Chart chunk                | 363.53 kB | 106.92 kB |
 | Live Video presenter chunk | 466.37 kB | 123.80 kB |
-| Global CSS | 502.75 kB | 68.06 kB |
+| Global CSS                 | 502.75 kB |  68.06 kB |
 
 The heavier provider and visualization surfaces remain route split. The landing does not pull them into its route chunk.
 
@@ -253,34 +253,34 @@ A development-only August 6 `EADDRINUSE` event is not a production blocker.
 
 Production database snapshot on August 16, 2026:
 
-| Metric | Evidence |
-| --- | ---: |
-| Users | 136 |
-| Email-verified users | 7 |
-| Users created in last 30 days | 61 |
-| Accounts | 137 |
-| Organizations | 0 |
-| Memberships | 0 |
-| Agents | 49 |
-| Agents created in last 30 days | 19 |
-| Phone numbers | 17 |
-| Phone numbers attached to agents | 17 |
-| Calls | 114 |
-| Demo calls | 114 |
-| Non-demo calls | 0 |
-| Calls in last 30 days | 45 |
-| Non-demo calls in last 30 days | 0 |
-| Appointments | 32 |
-| Non-demo appointments | 0 |
-| Knowledge items | 241 |
-| SMS messages | 60 |
-| Email messages | 36 |
-| Connected email accounts | 0 |
-| Connected calendar accounts | 0 |
-| Active CRM connections | 0 |
-| Voice usage events | 0 |
-| Resend webhook events | 0 |
-| DNC entries | 15 |
+| Metric                           | Evidence |
+| -------------------------------- | -------: |
+| Users                            |      136 |
+| Email-verified users             |        7 |
+| Users created in last 30 days    |       61 |
+| Accounts                         |      137 |
+| Organizations                    |        0 |
+| Memberships                      |        0 |
+| Agents                           |       49 |
+| Agents created in last 30 days   |       19 |
+| Phone numbers                    |       17 |
+| Phone numbers attached to agents |       17 |
+| Calls                            |      114 |
+| Demo calls                       |      114 |
+| Non-demo calls                   |        0 |
+| Calls in last 30 days            |       45 |
+| Non-demo calls in last 30 days   |        0 |
+| Appointments                     |       32 |
+| Non-demo appointments            |        0 |
+| Knowledge items                  |      241 |
+| SMS messages                     |       60 |
+| Email messages                   |       36 |
+| Connected email accounts         |        0 |
+| Connected calendar accounts      |        0 |
+| Active CRM connections           |        0 |
+| Voice usage events               |        0 |
+| Resend webhook events            |        0 |
+| DNC entries                      |       15 |
 
 This is strong dogfood and demo evidence. It is not yet customer production proof.
 
@@ -397,7 +397,7 @@ Required operator test:
 2. confirm delivery;
 3. confirm signed Resend webhook persistence;
 4. verify bounce and suppression behavior using a safe test address;
-5. send an external message to `support@trywireline.com`;
+5. send an external message to `support@botbound.me`;
 6. confirm receipt and reply identity;
 7. verify the stated support response process.
 
@@ -462,16 +462,16 @@ Before broad commercial launch:
 
 ## 13. Launch matrix
 
-| Motion | Decision | Basis |
-| --- | --- | --- |
-| Merge this release candidate to `main` | **GO** | Exact application head is READY and all 708 tests pass |
-| Promote the merged tree to production | **GO with immediate smoke** | Production must build from `main` and expose the intended source SHA |
-| Founder side-panel visual QA | **REQUIRED** | Screenshot certification was not possible before merge |
-| 3 to 5 founder-led design partners | **CONDITIONAL GO** | Allowed after live visual, call, support, and provider checks |
-| Open self-serve paid acquisition | **HOLD** | No completed live billing lifecycle |
-| Broad paid media | **HOLD** | No non-demo customer outcomes or paid lifecycle evidence |
-| Cold marketing or campaign outbound | **HOLD** | Federal DNC credential absent |
-| Inbound-first and consented workflows | **CONDITIONAL GO** | Core runtime is healthy; operator certification remains |
+| Motion                                 | Decision                    | Basis                                                                |
+| -------------------------------------- | --------------------------- | -------------------------------------------------------------------- |
+| Merge this release candidate to `main` | **GO**                      | Exact application head is READY and all 708 tests pass               |
+| Promote the merged tree to production  | **GO with immediate smoke** | Production must build from `main` and expose the intended source SHA |
+| Founder side-panel visual QA           | **REQUIRED**                | Screenshot certification was not possible before merge               |
+| 3 to 5 founder-led design partners     | **CONDITIONAL GO**          | Allowed after live visual, call, support, and provider checks        |
+| Open self-serve paid acquisition       | **HOLD**                    | No completed live billing lifecycle                                  |
+| Broad paid media                       | **HOLD**                    | No non-demo customer outcomes or paid lifecycle evidence             |
+| Cold marketing or campaign outbound    | **HOLD**                    | Federal DNC credential absent                                        |
+| Inbound-first and consented workflows  | **CONDITIONAL GO**          | Core runtime is healthy; operator certification remains              |
 
 ## 14. Merge and production sequence
 

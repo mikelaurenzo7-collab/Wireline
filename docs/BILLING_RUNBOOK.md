@@ -17,7 +17,7 @@ Status: **Active canonical runbook**. This is the operator proof path for Stripe
 
 - Free Builder creates, trains, and privately simulates one draft.
 - Paid tiers include voice minutes, number capacity, and recurring Runtime Allowance as defined in `src/lib/plan-catalog.ts`.
-- Runtime Balance is prepaid overflow. Wireline does not silently create a postpaid voice overage invoice.
+- Runtime Balance is prepaid overflow. BotBound does not silently create a postpaid voice overage invoice.
 - Extra-agent add-ons include additional capacity and minutes as defined by the catalog.
 - **Live Video talking-head is retired.** Leftover Stripe add-on price IDs remain so webhooks do not brick billing. Checkout and session mint stay closed. Video files and clip-script substitutes are not generated.
 - Ops lock: [P0_BILLING_OPS_NOTE.md](./P0_BILLING_OPS_NOTE.md).
@@ -78,7 +78,7 @@ If a claimed event fails after side effects begin, the handler releases the clai
 
 Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require:
 
-1. **Account identity:** customer-facing public name/domain/descriptors are Wireline-aligned. Dashboard display name is an internal label, not the customer-facing identity gate.
+1. **Account identity:** customer-facing public name/domain/descriptors are BotBound-aligned. The canonical website is `https://botbound.me`; a historical dashboard label is not the customer-facing identity gate.
 2. **Product copy:** active canonical products match `scripts/lib/stripe-founder-catalog.mjs`, including catalog metadata.
 3. **Catalog topology:** active products/prices, amounts, intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
 
@@ -95,7 +95,7 @@ Do not change legal-entity, representative, bank, tax, address, or verification 
 ### 6. Runtime Balance top-up works
 
 1. Activate a paid plan, choose a Runtime Balance preset, and create one-time Checkout.
-2. Confirm Checkout/PaymentIntent metadata carries the Wireline user and credit amount.
+2. Confirm Checkout/PaymentIntent metadata carries the BotBound account owner and credit amount.
 3. Complete payment and deliver the webhook.
 4. Confirm exactly one `top_up` ledger row and an updated balance.
 5. Redeliver the event and confirm no duplicate credit.

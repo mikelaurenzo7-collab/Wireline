@@ -100,7 +100,7 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
     label: "restaurants",
     defaultPlanId: "team",
     templateId: "ecommerce-phone-order",
-    templateLabel: "Phone Order Agent",
+    templateLabel: "Phone Order Bot",
   },
   sales: {
     label: "sales",

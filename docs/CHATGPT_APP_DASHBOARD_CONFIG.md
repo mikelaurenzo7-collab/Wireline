@@ -6,7 +6,7 @@
 - **Subtitle:** `Build your first Bot`
 - **Category:** `BUSINESS`
 - **Website:** `https://botbound.me`
-- **Support:** `support@trywireline.com`
+- **Support:** `support@botbound.me`
 - **Privacy notice:** `https://botbound.me/chatgpt-app-privacy.html`
 - **Hosted logo:** `https://botbound.me/botbound-icon-512.png`
 - **Dashboard upload asset:** use `public/botbound-icon-512.png` when the form requires a file upload rather than a URL.
@@ -43,12 +43,12 @@ These match `MCP_SCOPES` declared by the BotBound MCP server.
 
 ## Required BotBound Vercel configuration
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `APP_URL` | Yes | `https://botbound.me` |
-| `MCP_OAUTH_TOKEN_PEPPER` | Yes | Random, at least 32 characters; hashes OAuth credentials. |
+| Variable                 | Required | Notes                                                                              |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------- |
+| `APP_URL`                | Yes      | `https://botbound.me`                                                              |
+| `MCP_OAUTH_TOKEN_PEPPER` | Yes      | Random, at least 32 characters; hashes OAuth credentials.                          |
 | `OPENAI_API_KEY_CHATKIT` | Optional | Isolated key for account-bound private simulation; falls back to `OPENAI_API_KEY`. |
-| `OPENAI_API_KEY` | Fallback | Existing BotBound OpenAI runtime key. |
+| `OPENAI_API_KEY`         | Fallback | Existing BotBound OpenAI runtime key.                                              |
 
 Never put runtime secret values into this document, the repository, screenshots, or the ChatGPT submission form.
 

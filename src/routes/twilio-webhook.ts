@@ -110,7 +110,7 @@ function optInRetryTwiml(): string {
 }
 
 function helpConfirmationTwiml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@trywireline.com for support. Message and data rates may apply.</Message></Response>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.me for support. Message and data rates may apply.</Message></Response>`;
 }
 
 async function tenantForSender(toValue: string): Promise<string | null> {

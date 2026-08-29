@@ -207,7 +207,10 @@ export const PRODUCT_POSTURE = {
 
 export function formatAgentRoleLabel(role?: string | null): string {
   if (role === "ceo") return "Lead Bot";
-  return (role || "bot").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return (role || "bot")
+    .replace(/^wireline_/, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */

@@ -36,13 +36,15 @@ Voice usage is not postpaid or metered in this launch catalog. Included Runtime 
 
 ## Live Stripe reconciliation
 
-Account: **Cadence AI** (`acct_1TkyXL8e6If87QKm`) — the live Wireline billing account after the
-2026-07 Stripe project reconnect. Older notes that cite `acct_1TXb0SJohDtfy3Ik` are historical.
+Account: **BotBound** (`acct_1TkyXL8e6If87QKm`) — the live billing account after the 2026-07
+Stripe project reconnect. `Cadence AI` is the account's former label in dated July audit evidence;
+it is not the current customer-facing identity. Older notes that cite `acct_1TXb0SJohDtfy3Ik` refer
+to a separate retired Stripe account and are historical.
 
 - Active founder products + canonical prices must match `scripts/lib/stripe-founder-catalog.mjs`.
 - Vercel Production price-ID env vars must stay in parity with the live catalog.
 - Preview must **not** receive production Stripe secrets (see `scripts/check-deployment-boundaries.mjs`).
-- Webhook `https://trywireline.com/api/stripe-webhook` enabled_events must match
+- Webhook `https://botbound.me/api/stripe-webhook` enabled_events must match
   `src/routes/billing-routes.ts` (including `charge.refunded` / `charge.dispute.created`).
 
 Do not delete Stripe products or prices. Archive products and deactivate prices only after dependency checks.
@@ -77,9 +79,11 @@ Then verify in a non-production test workspace:
 - Redeploy after changing price IDs or webhook configuration.
 - Run the live audit before and after any catalog mutation.
 
-## Current deployment evidence
+## Release-time deployment evidence
 
-- Production baseline: READY on `main` → `https://trywireline.com` (re-verify with `npm run smoke:server` / health after each deploy).
+- Canonical production target: `main` → `https://botbound.me`. Re-verify READY state, public health,
+  and the served source commit after every deploy; do not treat a status copied into this note as
+  evergreen evidence.
 - Residual ops (not code-blockable): federal DNC vendor `loginId`, one live $19 checkout proof, GitHub Actions spending restore, rotate any Vercel token pasted into chat.
 
 _Refresh this note after every live catalog change or end-to-end billing proof._

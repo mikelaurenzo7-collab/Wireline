@@ -11,7 +11,7 @@ export const MCP_SERVER_VERSION = "2.4.0";
 export const MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html";
 export const MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html";
 export const MCP_ICON_URL = "https://botbound.me/botbound-icon-512.png";
-export const MCP_SUPPORT_EMAIL = "support@trywireline.com";
+export const MCP_SUPPORT_EMAIL = "support@botbound.me";
 
 export function claudeMcpAppDomain(resourceUrl: string): string {
   return `${createHash("sha256").update(resourceUrl).digest("hex").slice(0, 32)}.claudemcpcontent.com`;
