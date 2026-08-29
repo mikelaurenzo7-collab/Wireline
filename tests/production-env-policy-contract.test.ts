@@ -205,6 +205,18 @@ describe("production environment launch policy", () => {
         POSTGRES_URL:
           "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@api.supabase.com:5432/postgres",
       },
+      {
+        POSTGRES_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
+      },
+      {
+        DATABASE_POOL_URL:
+          "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:5432/postgres",
+      },
+      {
+        DATABASE_POOL_URL:
+          "postgresql://postgres:configured@db.ogenlhodmwvyacvnrsnj.supabase.co:5432/postgres",
+      },
       { POSTGRES_URL: "postgresql://configured@database.example.com/postgres" },
       { DATABASE_POOL_URL: "not-a-postgres-url" },
     ]) {
@@ -212,7 +224,17 @@ describe("production environment launch policy", () => {
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toMatch(/POSTGRES_URL|DATABASE_POOL_URL/);
     }
-  });
+
+    for (const override of [
+      { NODE_TLS_REJECT_UNAUTHORIZED: "0" },
+      { PGSSLMODE: "no-verify" },
+      { PGSSLMODE: "disable" },
+    ]) {
+      const result = runProductionBoundary("https://botbound.me", override);
+      expect(result.status).toBe(1);
+      expect(`${result.stdout}${result.stderr}`).toMatch(/NODE_TLS_REJECT_UNAUTHORIZED|PGSSLMODE/);
+    }
+  }, 30_000);
 
   it("keeps both BotBound and legacy origins in the production transition allowlist", () => {
     expect(runProductionBoundary("https://botbound.me").status).toBe(0);
@@ -315,7 +337,7 @@ describe("production environment launch policy", () => {
     expect(deploymentBoundary).not.toContain("WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW");
     expect(vercelBuild).toContain("configurePreviewEnvironment");
     expect(vercelBuild).not.toContain("runtime will disable");
-  });
+  }, 30_000);
 
   it("permits only the reviewed isolated database lane for authenticated Preview QA", () => {
     const isolatedPreview = {
@@ -334,6 +356,23 @@ describe("production environment launch policy", () => {
       "Deployment-boundary check passed for preview",
     );
 
+    const wrongMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+    });
+    expect(wrongMigrationLane.status).toBe(1);
+    expect(`${wrongMigrationLane.stdout}${wrongMigrationLane.stderr}`).toContain(
+      "Preview migrations require a direct or session-pooler POSTGRES_URL on port 5432",
+    );
+
+    const allowedMigrationLane = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_RUN_MIGRATIONS: "true",
+      POSTGRES_URL:
+        "postgresql://postgres.ewgqxfnjxdzoawlkcyfb:preview-only@pooler.supabase.com:5432/postgres",
+    });
+    expect(allowedMigrationLane.status).toBe(0);
+
     for (const override of [
       { WIRELINE_LAUNCH_DEMO_MODE: "false" },
       { WIRELINE_PREVIEW_DATABASE_PROJECT_REF: "ogenlhodmwvyacvnrsnj" },
@@ -351,7 +390,7 @@ describe("production environment launch policy", () => {
 
     expect(deploymentBoundary).toContain("reviewedIsolatedPreviewDatabaseKeys");
     expect(deploymentBoundary).toContain("WIRELINE_PREVIEW_DATABASE_PROJECT_REF");
-  });
+  }, 30_000);
 
   it("binds self-serve billing to the audited main production release channel", () => {
     expect(deploymentBoundary).toContain('value("VERCEL_GIT_COMMIT_REF")');

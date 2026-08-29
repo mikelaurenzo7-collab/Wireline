@@ -68,6 +68,18 @@ function canonicalProductionDatabase(name) {
       return;
     }
 
+    const port = Number(url.port || "5432");
+    if (name === "POSTGRES_URL" && port !== 5432) {
+      failures.push(
+        "POSTGRES_URL: production migrations and session-bound tools require port 5432",
+      );
+    }
+    if (name === "DATABASE_POOL_URL" && (!poolerEndpoint || port !== 6543)) {
+      failures.push(
+        "DATABASE_POOL_URL: production serverless runtime requires the shared Supabase transaction pooler on port 6543",
+      );
+    }
+
     if (resolvedProjectRef !== CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF) {
       failures.push(
         `${name}: production database must identify canonical Supabase project ${CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF}`,
@@ -125,6 +137,12 @@ if (isProduction) {
   canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true);
   canonicalProductionDatabase("POSTGRES_URL");
   canonicalProductionDatabase("DATABASE_POOL_URL");
+  if (value("NODE_TLS_REJECT_UNAUTHORIZED") === "0") {
+    failures.push("NODE_TLS_REJECT_UNAUTHORIZED: production may not disable TLS verification");
+  }
+  if (["disable", "no-verify"].includes(value("PGSSLMODE").toLowerCase())) {
+    failures.push("PGSSLMODE: production may not weaken PostgreSQL TLS verification");
+  }
   requireProductionCorsOrigins();
   const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
   if (
@@ -338,6 +356,21 @@ if (isPreview) {
     failures.push(
       "WIRELINE_RUN_MIGRATIONS: preview migrations require WIRELINE_PREVIEW_DATABASE_ISOLATED=true and a non-production database.",
     );
+  }
+  if (
+    value("WIRELINE_RUN_MIGRATIONS") === "true" &&
+    value("WIRELINE_PREVIEW_DATABASE_ISOLATED") === "true"
+  ) {
+    try {
+      const migrationUrl = new URL(value("POSTGRES_URL"));
+      if (Number(migrationUrl.port || "5432") !== 5432) {
+        failures.push(
+          "WIRELINE_RUN_MIGRATIONS: Preview migrations require a direct or session-pooler POSTGRES_URL on port 5432.",
+        );
+      }
+    } catch {
+      // The isolated Preview database validator above reports malformed URLs.
+    }
   }
 }
 

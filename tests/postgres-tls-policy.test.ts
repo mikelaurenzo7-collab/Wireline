@@ -9,6 +9,7 @@ import {
   getPostgresConnectionConfig,
   isSupabasePostgresConnectionString,
 } from "../src/lib/postgres-tls.mjs";
+import { isValidSupabaseBackupUrl } from "../scripts/validate-postgres-backup-url.mjs";
 
 const { Pool } = pg;
 
@@ -18,9 +19,36 @@ const supabaseUrl =
 describe("Supabase PostgreSQL TLS policy", () => {
   it("pins a currently valid official Supabase root certificate", () => {
     const certificate = new X509Certificate(SUPABASE_ROOT_CA_2021);
+    const backupCertificate = readFileSync(
+      resolve(process.cwd(), "certs/supabase-root-2021.crt"),
+      "utf8",
+    );
 
     expect(certificate.subject).toContain("Supabase Root 2021 CA");
     expect(Date.parse(certificate.validTo)).toBeGreaterThan(Date.now());
+    expect(backupCertificate.trim()).toBe(SUPABASE_ROOT_CA_2021.trim());
+  });
+
+  it("accepts only authenticated Supabase backup URLs on the verified 5432 lane", () => {
+    for (const valid of [
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/postgres",
+      "postgres://postgres.abcdefghijklmnopqrst:secret@aws-1-us-east-2.pooler.supabase.com:5432/postgres",
+    ]) {
+      expect(isValidSupabaseBackupUrl(valid)).toBe(true);
+    }
+
+    for (const invalid of [
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:6543/postgres",
+      "postgresql://postgres.ref:secret@database.example.com:5432/postgres",
+      "postgresql://postgres.ref@db.abcdefghijklmnopqrst.supabase.co:5432/postgres",
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/",
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/postgres?ssl=true",
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/postgres?SSLMODE=no-verify",
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/postgres?ssl_min_protocol_version=TLSv1.2",
+      "postgresql://postgres.ref:secret@db.abcdefghijklmnopqrst.supabase.co:5432/postgres?gssencmode=require",
+    ]) {
+      expect(isValidSupabaseBackupUrl(invalid)).toBe(false);
+    }
   });
 
   it("uses discrete credentials so URL SSL flags cannot replace strict verification", async () => {
@@ -95,6 +123,7 @@ describe("production PostgreSQL constructor coverage", () => {
     "scripts/production-activation-report.ts",
     "scripts/production-outcome-report.ts",
     "scripts/set-account-environment.ts",
+    "scripts/replay-pending-vapi-webhooks.mjs",
   ];
 
   it.each(helperConsumers)("%s uses the centralized verified TLS policy", (relativePath) => {
@@ -114,5 +143,28 @@ describe("production PostgreSQL constructor coverage", () => {
       .join("\n");
     expect(source).not.toContain("rejectUnauthorized: false");
     expect(source).not.toContain("NODE_TLS_REJECT_UNAUTHORIZED");
+  });
+
+  it("keeps transaction-pool webhook replay compatible and authenticated", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "scripts/replay-pending-vapi-webhooks.mjs"),
+      "utf8",
+    );
+    expect(source).toContain("getPostgresConnectionConfig");
+    expect(source).toContain("prepare: connection.port !== 6543");
+    expect(source).not.toContain("postgres(url");
+  });
+
+  it("uses a dedicated backup URL and verified CA instead of an API service-role key", () => {
+    const source = readFileSync(resolve(process.cwd(), "scripts/backup-schema.sh"), "utf8");
+    expect(source).toContain("POSTGRES_BACKUP_URL");
+    expect(source).toContain('PGSSLMODE="verify-full"');
+    expect(source).toContain("PGSSLROOTCERT");
+    expect(source).toContain("validate-postgres-backup-url.mjs");
+    expect(source).toContain("mktemp");
+    expect(source).toContain('mv -- "$BACKUP_TMP_FILE" "$BACKUP_TARGET"');
+    expect(source).toContain('PGGSSENCMODE="disable"');
+    expect(source).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(source).not.toContain("PGPASSWORD");
   });
 });

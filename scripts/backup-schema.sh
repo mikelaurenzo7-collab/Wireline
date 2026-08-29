@@ -9,49 +9,56 @@
 #   ./scripts/backup-schema.sh
 #
 # Prerequisites:
-#   - VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set
-#   - psql must be installed (brew install postgresql or apt-get install postgresql-client)
+#   - POSTGRES_BACKUP_URL must be a Supabase direct/session URL on port 5432
+#   - node and pg_dump must be installed
 
 set -euo pipefail
 
-if [ -z "${VITE_SUPABASE_URL:-}" ]; then
-  echo "Error: VITE_SUPABASE_URL is not set"
+if [ -z "${POSTGRES_BACKUP_URL:-}" ]; then
+  echo "Error: POSTGRES_BACKUP_URL is not set"
   exit 1
 fi
 
-if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-  echo "Error: SUPABASE_SERVICE_ROLE_KEY is not set"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if ! node "${SCRIPT_DIR}/validate-postgres-backup-url.mjs"; then
+  echo "Error: POSTGRES_BACKUP_URL must be an authenticated Supabase direct/session URL on port 5432 without TLS overrides"
   exit 1
 fi
 
-# Extract connection details from VITE_SUPABASE_URL
-# Format: https://PROJECT_REF.supabase.co
-PROJECT_REF=$(echo "$VITE_SUPABASE_URL" | sed -E 's|https://([^.]+)\.supabase\.co.*|\1|')
+SUPABASE_DB_CA_FILE="${SUPABASE_DB_CA_FILE:-${SCRIPT_DIR}/../certs/supabase-root-2021.crt}"
+if [ ! -f "$SUPABASE_DB_CA_FILE" ]; then
+  echo "Error: Supabase root CA file is missing"
+  exit 1
+fi
 
-# Supabase Postgres connection (default port 6543 with pooler in transaction mode)
-DB_HOST="db.${PROJECT_REF}.supabase.co"
-DB_PORT="5432"
-DB_NAME="postgres"
-DB_USER="postgres"
-DB_PASSWORD="$SUPABASE_SERVICE_ROLE_KEY"
+echo "Backing up the configured BotBound schema..."
 
-echo "Backing up schema from ${DB_HOST}..."
+BACKUP_TARGET="${PWD}/supabase_schema.sql"
+BACKUP_TMP_FILE=$(mktemp "${BACKUP_TARGET}.tmp.XXXXXX")
+cleanup() {
+  rm -f -- "$BACKUP_TMP_FILE"
+}
+trap cleanup EXIT HUP INT TERM
 
-# Use pg_dump to export schema only (no data)
-PGPASSWORD="$DB_PASSWORD" pg_dump \
-  --host="$DB_HOST" \
-  --port="$DB_PORT" \
-  --username="$DB_USER" \
-  --dbname="$DB_NAME" \
+# Keep the credential out of command arguments and require authenticated TLS.
+PGDATABASE="$POSTGRES_BACKUP_URL" \
+PGSSLMODE="verify-full" \
+PGSSLROOTCERT="$SUPABASE_DB_CA_FILE" \
+PGGSSENCMODE="disable" \
+pg_dump \
   --schema=public \
   --schema-only \
   --no-owner \
   --no-acl \
   --clean \
   --if-exists \
-  > supabase_schema.sql
+  --file="$BACKUP_TMP_FILE"
 
-echo "✓ Schema backed up to supabase_schema.sql ($(wc -l < supabase_schema.sql) lines)"
+# Preserve the last known-good backup unless pg_dump completes successfully.
+mv -- "$BACKUP_TMP_FILE" "$BACKUP_TARGET"
+trap - EXIT HUP INT TERM
+
+echo "✓ Schema backed up to supabase_schema.sql ($(wc -l < "$BACKUP_TARGET") lines)"
 echo ""
 echo "Next steps:"
 echo "  1. Review the schema file for unexpected changes"
