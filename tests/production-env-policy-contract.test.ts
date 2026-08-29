@@ -369,6 +369,31 @@ describe("production environment launch policy", () => {
       "Deployment-boundary check passed for preview",
     );
 
+    const allowedLimiterOverride = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+      VERCEL_OIDC_TOKEN: "automatic-preview-oidc",
+    });
+    expect(allowedLimiterOverride.status).toBe(0);
+
+    const unisolatedLimiterOverride = runPreviewBoundary({
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+    });
+    expect(unisolatedLimiterOverride.status).toBe(1);
+    expect(`${unisolatedLimiterOverride.stdout}${unisolatedLimiterOverride.stderr}`).toContain(
+      "Preview override requires WIRELINE_PREVIEW_DATABASE_ISOLATED=true",
+    );
+
+    const providerBackedLimiterOverride = runPreviewBoundary({
+      ...isolatedPreview,
+      WIRELINE_ALLOW_INMEMORY_RATE_LIMIT: "true",
+      PERPLEXITY_PREVIEW_API_KEY: "budgeted-but-live-preview-key",
+    });
+    expect(providerBackedLimiterOverride.status).toBe(1);
+    expect(
+      `${providerBackedLimiterOverride.stdout}${providerBackedLimiterOverride.stderr}`,
+    ).toContain("provider-free Preview required");
+
     const wrongMigrationLane = runPreviewBoundary({
       ...isolatedPreview,
       WIRELINE_RUN_MIGRATIONS: "true",

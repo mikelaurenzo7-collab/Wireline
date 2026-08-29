@@ -3,6 +3,7 @@ import { getInternalJwtSecret } from "./internal-jwt-secret";
 import { validateEnv, logEnvValidation, generateSetupChecklist } from "./env-validator";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 import { isProductionDeployment } from "./deployment-environment";
+import { isolatedPreviewInMemoryRateLimitAllowed } from "./preview-spend-policy";
 
 const isNoDatabaseImportSmoke = () => process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
 const isAffirmative = (value: string | undefined) =>
@@ -28,6 +29,7 @@ export function validateStartupEnv() {
   const vercelPreview = process.env.VERCEL_ENV?.trim().toLowerCase() === "preview";
   const previewInMemoryRateLimit =
     vercelPreview && isAffirmative(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT);
+  const previewInMemoryRateLimitAllowed = isolatedPreviewInMemoryRateLimitAllowed();
   const distributedRateLimitMissing =
     !process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -58,9 +60,13 @@ export function validateStartupEnv() {
           "rate limits are per-invocation only and provide no protection in serverless. " +
           "Set both vars in Vercel project settings before serving real traffic.",
       );
-    } else if (previewInMemoryRateLimit) {
+    } else if (previewInMemoryRateLimitAllowed) {
       log.info(
-        "Preview explicitly uses per-invocation rate limiting for isolated QA. Keep this deployment access-protected and provider-free; never use the override for public or Production traffic.",
+        "Preview explicitly uses per-invocation rate limiting for isolated, provider-free QA. Keep this deployment access-protected; never use the override for public or Production traffic.",
+      );
+    } else if (previewInMemoryRateLimit) {
+      log.warn(
+        "Preview in-memory rate limiting was requested but refused. The override requires isolated demo data and no live external provider authority; spend-sensitive routes remain fail-closed.",
       );
     } else if (vercelPreview) {
       log.warn(

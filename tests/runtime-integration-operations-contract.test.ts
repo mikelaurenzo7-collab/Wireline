@@ -136,6 +136,32 @@ describe("runtime integration operations", () => {
     }
   });
 
+  it("reports Preview Gateway missing when only automatic OIDC is present", () => {
+    const saved = {
+      vercelEnv: process.env.VERCEL_ENV,
+      gatewayKey: process.env.AI_GATEWAY_API_KEY,
+      oidc: process.env.VERCEL_OIDC_TOKEN,
+    };
+    try {
+      process.env.VERCEL_ENV = "preview";
+      delete process.env.AI_GATEWAY_API_KEY;
+      process.env.VERCEL_OIDC_TOKEN = "automatic-preview-oidc";
+      expect(getRuntimeCapabilities().ai_gateway).toBe(false);
+
+      process.env.VERCEL_ENV = "production";
+      expect(getRuntimeCapabilities().ai_gateway).toBe(true);
+    } finally {
+      for (const [name, value] of [
+        ["VERCEL_ENV", saved.vercelEnv],
+        ["AI_GATEWAY_API_KEY", saved.gatewayKey],
+        ["VERCEL_OIDC_TOKEN", saved.oidc],
+      ] as const) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  });
+
   it("classifies buyer-facing runtime connectors with current registry ids", () => {
     expect(buyerTierForIntegration("google-workspace")).toBe("certified");
     expect(buyerTierForIntegration("microsoft-365")).toBe("certified");

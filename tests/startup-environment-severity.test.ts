@@ -46,6 +46,9 @@ const ENV_KEYS = [
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
   "WIRELINE_ALLOW_INMEMORY_RATE_LIMIT",
+  "WIRELINE_PREVIEW_DATABASE_ISOLATED",
+  "WIRELINE_LAUNCH_DEMO_MODE",
+  "OPENAI_API_KEY_CHATKIT",
   "SENTRY_DSN",
   "WIRELINE_IMPORT_SMOKE_NO_DATABASE",
 ] as const;
@@ -95,6 +98,8 @@ describe("startup deployment severity", () => {
   it("acknowledges the explicit isolated-Preview limiter override without an error", () => {
     process.env.VERCEL_ENV = "preview";
     process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
 
     validateStartupEnv();
 
@@ -104,6 +109,18 @@ describe("startup deployment severity", () => {
     );
     expect(runtime.log.info).toHaveBeenCalledWith(
       expect.stringContaining("Preview explicitly uses per-invocation rate limiting"),
+    );
+  });
+
+  it("warns when provider authority invalidates the Preview limiter override", () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT = "true";
+    process.env.WIRELINE_PREVIEW_DATABASE_ISOLATED = "true";
+    process.env.WIRELINE_LAUNCH_DEMO_MODE = "true";
+    process.env.OPENAI_API_KEY_CHATKIT = "scoped-live-provider-key";
+    validateStartupEnv();
+    expect(runtime.log.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Preview in-memory rate limiting was requested but refused"),
     );
   });
 

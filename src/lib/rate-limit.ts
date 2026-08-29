@@ -13,6 +13,8 @@
 
 import { Redis } from "@upstash/redis";
 import { log } from "./server-context";
+import { inMemoryRateLimitAllowed } from "./preview-spend-policy";
+import { isProductionDeployment } from "./deployment-environment";
 
 let redis: Redis | null = null;
 let warnedNoRedis = false;
@@ -225,10 +227,9 @@ export function isRedisConfigured(): boolean {
  * invocation is a fresh process; an attacker can fan out across
  * invocations and burn unlimited spend.
  *
- * The single escape hatch is `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true`
- * which is the explicit acknowledgement that the deployment is a
- * SINGLE long-lived node (Docker / VM) where the in-memory limiter
- * actually works.
+ * `WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true` is accepted for a single
+ * long-lived non-Vercel node. A narrower exception supports an isolated,
+ * provider-free Vercel Preview used only for protected authenticated QA.
  */
 export interface DistributedLimiterStatus {
   /** Whether the caller may safely proceed without Redis. */
@@ -250,20 +251,21 @@ export interface DistributedLimiterStatus {
 export function distributedLimiterStatus(): DistributedLimiterStatus {
   if (isRedisConfigured()) return { ok: true };
 
-  const allowInMemory =
-    String(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT || "").toLowerCase() === "true";
-  if (allowInMemory) return { ok: true };
+  if (inMemoryRateLimitAllowed()) return { ok: true };
 
-  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
-  if (isProd) {
+  const distributedRequired =
+    isProductionDeployment() ||
+    Boolean(process.env.VERCEL_ENV?.trim()) ||
+    process.env.VERCEL === "1";
+  if (distributedRequired) {
     return {
       ok: false,
       code: "RATE_LIMITER_UNAVAILABLE",
       reason:
         "Distributed rate limiter (Upstash Redis) is not configured. " +
-        "Spend-sensitive endpoints are refused in production until either " +
-        "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are set, or " +
-        "WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true is set for single-node deployments.",
+        "Spend-sensitive endpoints are refused in this distributed runtime until either " +
+        "UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN are set, or the runtime " +
+        "is an explicitly acknowledged single-node non-Vercel deployment.",
     };
   }
   // Non-production: in-memory limiter is fine.

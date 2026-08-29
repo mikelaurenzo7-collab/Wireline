@@ -1,6 +1,7 @@
 import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
+import { isGatewayCredentialAvailable } from "./ai-gateway-auth";
 import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import {
@@ -790,10 +791,10 @@ export function validateEnv(): EnvValidationResult {
     });
   }
 
-  const gateway =
-    process.env.AI_GATEWAY_API_KEY?.trim() || (isProd && process.env.VERCEL_OIDC_TOKEN?.trim());
   const managedRuntime =
-    process.env.OPENAI_API_KEY?.trim() || gateway || process.env.XAI_API_KEY?.trim();
+    process.env.OPENAI_API_KEY?.trim() ||
+    isGatewayCredentialAvailable() ||
+    process.env.XAI_API_KEY?.trim();
   if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
