@@ -122,7 +122,8 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="inline"');
     expect(landing).not.toContain("markKey");
-    expect(widget).toContain("landing-demo-inline__voice-symbol");
+    expect(widget).not.toContain("landing-demo-inline__voice-symbol");
+    expect(widget).toContain("landing-demo-inline__identity");
     expect(widget).toContain("Headphones");
     expect(widget).not.toContain("<BotMark");
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);

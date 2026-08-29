@@ -79,15 +79,8 @@ export default function BrowserCallWidget({
     return (
       <div className={cn("landing-demo-inline", demo.callActive && "is-live")}>
         <div className="landing-demo-inline__identity">
-          <span
-            className={cn("landing-demo-inline__voice-symbol", demo.callActive && "is-live")}
-            aria-hidden="true"
-          >
-            <Headphones />
-          </span>
           <span className="landing-demo-inline__copy">
             <strong className="wl-preserve-case">{agentName}</strong>
-            <small>LIVE PHONE BOT</small>
           </span>
         </div>
 

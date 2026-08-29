@@ -44,6 +44,9 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
     expect(studio).toContain('title="Build Your Bot"');
     expect(studio).toContain("Create Bot");
+    expect(studio).toContain("data-studio-first-run");
+    expect(studio).toContain("sm:pt-12 lg:pt-16");
+    expect(studio).not.toMatch(/<EmptyState\s+fill\s+icon=\{Sparkles\}/);
     expect(studio).not.toContain("Good morning");
     expect(studio).not.toContain("dayGreeting");
     expect(chrome).toContain('aria-label="Switch Bot"');

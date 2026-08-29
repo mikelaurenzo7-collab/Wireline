@@ -36,7 +36,7 @@ describe("public live demo contract", () => {
     expect(showcase).toContain("href={`tel:${agent.tel}`}");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).toContain("Demo Phone Bot");
-    expect(widget).toContain("LIVE PHONE BOT");
+    expect(widget).not.toContain("LIVE PHONE BOT");
     expect(widget).toContain("Headphones");
     expect(widget).not.toContain("markKey");
     expect(widget).not.toContain("<BotMark");

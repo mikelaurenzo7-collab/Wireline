@@ -152,56 +152,14 @@
 .landing-demo-inline__identity {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
   min-width: 0;
-}
-
-.landing-demo-inline__voice-symbol {
-  position: relative;
-  display: inline-flex;
-  width: 2.65rem;
-  height: 2.65rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid
-    color-mix(in srgb, var(--wireline-color-action-primary-default) 32%, transparent);
-  border-radius: 0.72rem;
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 14%,
-    var(--wireline-color-surface-default)
-  );
-  color: var(--wireline-color-action-primary-default);
-}
-
-.landing-demo-inline__voice-symbol > svg {
-  width: 1.2rem;
-  height: 1.2rem;
-}
-
-.landing-demo-inline__voice-symbol::after {
-  content: "";
-  position: absolute;
-  right: -0.06rem;
-  bottom: 0.12rem;
-  width: 0.52rem;
-  height: 0.52rem;
-  border: 2px solid var(--wireline-color-surface-default);
-  border-radius: 50%;
-  background: var(--wireline-color-status-success);
-}
-
-.landing-demo-inline__voice-symbol.is-live > svg {
-  animation: landing-demo-voice 900ms ease-in-out infinite alternate;
 }
 
 .landing-demo-inline__copy {
   min-width: 0;
 }
 
-.landing-demo-inline__copy strong,
-.landing-demo-inline__copy small {
+.landing-demo-inline__copy strong {
   display: block;
 }
 
@@ -210,15 +168,6 @@
   font-size: 1rem;
   font-weight: 650;
   letter-spacing: -0.02em;
-}
-
-.landing-demo-inline__copy small {
-  margin-top: 0.14rem;
-  color: var(--wireline-color-text-tertiary);
-  font-family: var(--wireline-font-family-mono);
-  font-size: 0.6rem;
-  font-weight: 650;
-  letter-spacing: 0.11em;
 }
 
 .landing-demo-inline__button {
@@ -274,7 +223,7 @@
   gap: 0.42rem;
   min-width: 0;
   min-height: 1rem;
-  margin-left: 3.35rem;
+  margin-left: 0;
   color: var(--wireline-color-text-tertiary);
   font-size: 0.69rem;
   line-height: 1.35;
@@ -294,7 +243,7 @@
   display: flex;
   grid-column: 1 / -1;
   align-items: center;
-  margin-left: 3.35rem;
+  margin-left: 0;
 }
 
 .landing-prestige__auth {
@@ -720,21 +669,8 @@
     padding-inline: 0.78rem;
   }
 
-  .landing-demo-inline__voice-symbol {
-    width: 2.4rem;
-    height: 2.4rem;
-  }
-
   .landing-demo-inline__button {
     padding-inline: 0.72rem;
-  }
-
-  .landing-demo-inline__status {
-    margin-left: 3.08rem;
-  }
-
-  .landing-demo-inline__fallback {
-    margin-left: 3.08rem;
   }
 }
 
@@ -770,8 +706,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .landing-demo-inline,
-  .landing-demo-inline__button,
-  .landing-demo-inline__voice-symbol.is-live > svg {
+  .landing-demo-inline__button {
     transition: none;
     animation: none;
   }
