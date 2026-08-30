@@ -35,6 +35,7 @@ import {
   normalizeOpenAIPhoneNumber,
 } from "../lib/voice/openai-sip-config";
 import {
+  applyInboundAdmission,
   runOpenAISipCallSession,
   type OpenAISipIncomingCall,
 } from "../lib/voice/openai-sip-session";
@@ -334,7 +335,7 @@ router.post(
       : await resolveInboundContext(calledNumber!, callerNumber);
     if (!context) {
       log.warn("OpenAI incoming call rejected: no active BotBound line", {
-        calledSuffix: phoneSuffixForLog(calledNumber),
+        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
       });
       await rejectCall(callId, 404);
       res.status(202).json({ received: true, handled: false });
@@ -348,37 +349,47 @@ router.post(
       return;
     }
 
+    const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
     let runtime: Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
     try {
-      runtime = await buildOpenAIRealtimeAgentRuntime({
-        userId: context.call.userId,
-        agentId: context.call.agentId,
-        surface: "phone",
-      });
+      runtime = applyInboundAdmission(
+        await buildOpenAIRealtimeAgentRuntime({
+          userId: sessionInput.userId,
+          agentId: sessionInput.agentId,
+          surface: "phone",
+        }),
+        sessionInput,
+      );
     } catch (error) {
       await rejectCall(callId, 603);
       throw error;
     }
-    await acceptCall(callId, runtime.session as Record<string, unknown>);
 
     const lease = await acquireAccountOperationLease({
-      userId: context.call.userId,
+      userId: sessionInput.userId,
       kind: "provider",
       operation: "openai_sip_call_session",
       ttlMs: 10 * 60_000,
     });
     if (!lease) {
-      await callControl(callId, "hangup").catch(() => undefined);
+      await rejectCall(callId, 486);
       res.status(202).json({ received: true, handled: false });
       return;
     }
 
-    const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
+    try {
+      await acceptCall(callId, runtime.session as Record<string, unknown>);
+    } catch (error) {
+      await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+      await callControl(callId, "hangup").catch(() => undefined);
+      throw error;
+    }
+
     runInBackground("openai-sip-call-session", async () => {
       try {
-        await runOpenAISipCallSession(sessionInput);
+        await runOpenAISipCallSession(sessionInput, runtime);
       } finally {
-        await releaseAccountOperationLease({ id: lease.id, userId: context.call.userId });
+        await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
       }
     });
     res.status(202).json({ received: true, handled: true });

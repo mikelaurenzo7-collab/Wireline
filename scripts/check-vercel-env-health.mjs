@@ -31,8 +31,8 @@ const required = [
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
   "OPENAI_API_KEY",
-  "XAI_API_KEY",
-  "XAI_SIP_ALLOWED_ADDRESSES",
+  "OPENAI_PROJECT_ID",
+  "OPENAI_WEBHOOK_SECRET",
   "ELEVENLABS_API_KEY",
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
@@ -57,14 +57,24 @@ const recommended = [
   "SENTRY_DSN",
 ];
 
-// Voice is independently fail-closed. All platform-funded Vapi paths are now
-// server-only; a browser publishable key is neither required nor desired.
+// Voice is independently fail-closed at request time. The SIP project and
+// signed webhook belong in core production coverage; these pins are optional
+// because the runtime already defaults to gpt-realtime-2.1 / gpt-4o-mini-transcribe.
 const voice = [
-  "VAPI_PRIVATE_KEY",
-  "VAPI_WEBHOOK_SECRET",
+  "OPENAI_REALTIME_MODEL",
+  "OPENAI_REALTIME_TRANSCRIBER",
 ];
 
-const retired = ["VITE_VAPI_PUBLIC_KEY"];
+const retired = [
+  "VITE_VAPI_PUBLIC_KEY",
+  "VAPI_PRIVATE_KEY",
+  "VAPI_WEBHOOK_SECRET",
+  "VAPI_WEBHOOK_CREDENTIAL_ID",
+  "XAI_API_KEY",
+  "XAI_API_KEY_CHATKIT",
+  "XAI_SIP_ALLOWED_ADDRESSES",
+  "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
+];
 const billing = ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID"];
 
 async function main() {
@@ -111,7 +121,7 @@ async function main() {
   };
 
   const reportRetired = (keys) => {
-    console.log("\nRETIRED BROWSER CREDENTIALS");
+    console.log("\nRETIRED PROVIDER CREDENTIALS");
     let configured = 0;
     for (const key of keys) {
       const entries = byKey.get(key) || [];
@@ -143,11 +153,13 @@ async function main() {
     console.log("  BLOCKED — configure the missing core variables for the production target.");
     process.exitCode = 2;
   } else if (configuredRetired) {
-    console.log("  ROTATION REQUIRED — remove retired browser credentials before production release.");
+    console.log(
+      "  ROTATION REQUIRED — remove retired Vapi/xAI credentials before production release.",
+    );
     process.exitCode = 2;
   } else {
     console.log(
-      "  METADATA COMPLETE — all required production keys are targeted correctly and no retired browser key remains.",
+      "  METADATA COMPLETE — all required production keys are targeted correctly and no retired provider key remains.",
     );
     console.log(
       "  Secret values, canonical URL equality, provider account state, and end-to-end canaries still require the fail-closed production build and launch checks.",

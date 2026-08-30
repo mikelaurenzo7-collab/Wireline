@@ -36,7 +36,8 @@ describe("Vercel env target policy stays mutually satisfiable", () => {
     expect(health).toContain("check-deployment-boundaries.mjs");
     for (const key of [
       "OPENAI_API_KEY",
-      "XAI_API_KEY",
+      "OPENAI_PROJECT_ID",
+      "OPENAI_WEBHOOK_SECRET",
       "TWILIO_WEBHOOK_BASE_URL",
       "STRIPE_WEBHOOK_SECRET",
       "RESEND_API_KEY",
@@ -48,5 +49,25 @@ describe("Vercel env target policy stays mutually satisfiable", () => {
     }
     expect(health).not.toContain("CORE READY");
     expect(health).toContain("METADATA COMPLETE");
+    expect(health).toContain("RETIRED PROVIDER CREDENTIALS");
+    for (const retired of [
+      "VAPI_PRIVATE_KEY",
+      "VAPI_WEBHOOK_SECRET",
+      "XAI_API_KEY",
+      "XAI_SIP_ALLOWED_ADDRESSES",
+    ]) {
+      expect(health).toContain(`"${retired}"`);
+    }
+    const requiredBlock = health.slice(
+      health.indexOf("const required = ["),
+      health.indexOf("const gateway = ["),
+    );
+    expect(requiredBlock).not.toMatch(/XAI_|VAPI_/);
+    const voiceBlock = health.slice(
+      health.indexOf("const voice = ["),
+      health.indexOf("const retired = ["),
+    );
+    expect(voiceBlock).toContain("OPENAI_REALTIME_MODEL");
+    expect(voiceBlock).not.toMatch(/VAPI_|XAI_/);
   });
 });

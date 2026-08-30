@@ -251,7 +251,7 @@ function inboundAdmissionMode(input: OpenAISipIncomingCall): NativeInboundAdmiss
   return input.admission?.mode || "full";
 }
 
-function applyInboundAdmission(
+export function applyInboundAdmission(
   runtime: RealtimeRuntime,
   input: OpenAISipIncomingCall,
 ): RealtimeRuntime {
@@ -1033,7 +1033,7 @@ async function runRealtimeSession(
               : resolveOpenAISipSessionMaxSeconds() * 1_000;
         maxDurationTimer = setTimeout(() => {
           if (endedReason === "transferred" || endedReason === "caller-dnc") return;
-          endedReason = "wireline-max-duration";
+          endedReason = "botbound-max-duration";
           void hangupOpenAISipCall(input.callId).catch(() => {
             log.warn("OpenAI max-duration hangup could not be confirmed", {
               callId: providerCallId(input.callId),
@@ -1145,7 +1145,10 @@ async function runRealtimeSession(
   };
 }
 
-export async function runOpenAISipCallSession(input: OpenAISipIncomingCall): Promise<void> {
+export async function runOpenAISipCallSession(
+  input: OpenAISipIncomingCall,
+  admittedRuntime?: RealtimeRuntime,
+): Promise<void> {
   return tenantStore.run(input.userId, async () => {
     const callLogId = await claimCall(input);
     if (!callLogId) {
@@ -1169,11 +1172,12 @@ export async function runOpenAISipCallSession(input: OpenAISipIncomingCall): Pro
 
     try {
       const runtime = applyInboundAdmission(
-        await buildOpenAIRealtimeAgentRuntime({
-          userId: input.userId,
-          agentId: input.agentId,
-          surface: "phone",
-        }),
+        admittedRuntime ??
+          (await buildOpenAIRealtimeAgentRuntime({
+            userId: input.userId,
+            agentId: input.agentId,
+            surface: "phone",
+          })),
         input,
       );
       agentName = runtime.agentName;

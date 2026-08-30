@@ -70,7 +70,7 @@ async function assignNativePhoneLineUnfenced(input: {
   const currentAgentPredicate = current.agentId
     ? eq(schema.phoneNumbers.agentId, current.agentId)
     : isNull(schema.phoneNumbers.agentId);
-  const [updated] = await runCompanyIdentityMutation(
+  const [updated] = await runCompanyIdentityMutation<Array<typeof schema.phoneNumbers.$inferSelect>>(
     input.userId,
     "phone_number_changed",
     (tx) =>

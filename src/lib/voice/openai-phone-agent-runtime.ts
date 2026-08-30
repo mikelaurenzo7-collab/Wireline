@@ -541,6 +541,13 @@ export async function searchApprovedAgentKnowledge(input: {
       };
 }
 
+function resolveWirelineOpenAIVoice(
+  role?: string | null,
+  profile?: WirelineVoiceProfile,
+): OpenAIRealtimeVoice {
+  return PROFILE_TO_VOICE[profile || resolveWirelineVoiceProfile(role)];
+}
+
 export async function getOpenAIRealtimeVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadRuntime(agentId, userId);
   const profile = resolveWirelineVoiceProfile(

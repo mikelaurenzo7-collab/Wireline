@@ -2,16 +2,16 @@
 /** Shared dispatch for live agent tools and Director-approved integration jobs. */
 import { randomUUID } from "node:crypto";
 
-import { handleCalendarToolCall } from "./agent-tools/calendar";
-import { handleCoreToolCall } from "./agent-tools/core";
-import { handleDeviceToolCall } from "./agent-tools/device";
-import { handleEnrichmentToolCall } from "./agent-tools/enrichment";
-import { handleNotificationToolCall } from "./agent-tools/notifications";
-import { handleShopifyToolCall } from "./agent-tools/shopify";
-import { handleSquareToolCall } from "./agent-tools/square";
+import { handleCalendarToolCall } from "./bot-tools/calendar";
+import { handleCoreToolCall } from "./bot-tools/core";
+import { handleDeviceToolCall } from "./bot-tools/device";
+import { handleEnrichmentToolCall } from "./bot-tools/enrichment";
+import { handleNotificationToolCall } from "./bot-tools/notifications";
+import { handleShopifyToolCall } from "./bot-tools/shopify";
+import { handleSquareToolCall } from "./bot-tools/square";
 import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
-import { handleWorkflowToolCall } from "./agent-tools/workflow";
-import { handleXToolCall } from "./agent-tools/x";
+import { handleWorkflowToolCall } from "./bot-tools/workflow";
+import { handleXToolCall } from "./bot-tools/x";
 import { isAgentToolExecutionAuthorized } from "./agent-tool-authorization";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
 import { handleNativeVoiceToolCall } from "./agent-tool-native-voice";
