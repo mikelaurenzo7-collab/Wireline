@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { resolvePreviewMigrationDatabaseUrl } from "./lib/preview-migration-database.mjs";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
+import { resolveProductionMigrationDatabaseUrl } from "./lib/production-migration-database.mjs";
 
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -278,6 +279,17 @@ if (shouldMigrate) {
     process.exit(1);
   }
 
+  let migrationDatabaseUrl = databaseUrl;
+  if (isCanonicalProduction) {
+    const selected = resolveProductionMigrationDatabaseUrl(databaseUrl);
+    migrationDatabaseUrl = selected.connectionString;
+    if (selected.normalizedDatabaseName) {
+      console.warn(
+        "Canonical production migration database name normalized to postgres without changing credentials.",
+      );
+    }
+  }
+
   if (environment === "preview") {
     let previewMigrationDatabaseUrl;
     try {
@@ -298,6 +310,7 @@ if (shouldMigrate) {
       env: { POSTGRES_URL: previewMigrationDatabaseUrl },
     });
   } else {
+    process.env.POSTGRES_URL = migrationDatabaseUrl;
     run("npm", ["run", "db:migrate"]);
   }
 } else {
