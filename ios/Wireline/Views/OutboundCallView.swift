@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Manual outbound dial: pick an agent, enter a number + optional instruction,
-/// and the backend dials via native Twilio + xAI Direct SIP
+/// and the backend dials via Twilio carrier transport and OpenAI Realtime SIP
 /// (`POST /api/mobile/calls/outbound`). Mirrors the Siri intent for users who'd
 /// rather tap.
 struct OutboundCallView: View {

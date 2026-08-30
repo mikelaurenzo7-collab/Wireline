@@ -33,6 +33,14 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
     expect(inbound).toContain('"/api/twilio-webhook/openai-inbound"');
     expect(webhook).toContain('"/api/webhooks/openai/realtime"');
+    expect(webhook).toContain("applyInboundAdmission");
+    expect(webhook).toContain("acquireAccountOperationLease");
+    const admission = webhook.indexOf("applyInboundAdmission(");
+    const lease = webhook.indexOf("await acquireAccountOperationLease(");
+    const accept = webhook.indexOf("await acceptCall(");
+    expect(admission).toBeGreaterThan(-1);
+    expect(lease).toBeGreaterThan(admission);
+    expect(accept).toBeGreaterThan(lease);
     expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
   });
 

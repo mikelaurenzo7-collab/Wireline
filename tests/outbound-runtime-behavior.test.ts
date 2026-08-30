@@ -276,7 +276,7 @@ describe("campaign dialer outside-window reschedule", () => {
       assertFederalDncForMarketing: () => ({ allowed: true }),
       isFederalDncListed: async () => false,
     }));
-    vi.doMock("../src/lib/vapi-client", () => ({
+    vi.doMock("../src/lib/voice/outbound-call-service", () => ({
       placeOutboundCall: vi.fn(),
     }));
     vi.doMock("../src/lib/voice-spend-control", () => ({

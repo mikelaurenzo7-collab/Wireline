@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
  * Cadence engine — fires scheduled call, SMS, and email steps. Every call step
- * routes through BotBound's native Twilio + xAI placement service and carries
- * the existing lead id so carrier, realtime, transcript, and settlement state
- * remain attached to one authoritative record.
+ * routes through BotBound's Twilio carrier placement and OpenAI Realtime SIP
+ * and carries the existing lead id so carrier, realtime, transcript, and
+ * settlement state remain attached to one authoritative record.
  */
 import { and, asc, eq, inArray, lte, sql } from "drizzle-orm";
 

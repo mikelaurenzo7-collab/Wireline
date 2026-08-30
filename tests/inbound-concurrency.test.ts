@@ -49,39 +49,33 @@ describe("inbound concurrency ceiling", () => {
 });
 
 describe("inbound concurrency wiring contract", () => {
-  const vapi = read("src/routes/vapi-v2.ts");
-  const lib = read("src/lib/inbound-concurrency.ts");
-
-  it("gates after grace, before the full assistant, degrading to take-a-message", () => {
-    const graceGate = vapi.indexOf("INBOUND_TAKE_MESSAGE_GRACE_USD = 5");
-    const ceilingGate = vapi.indexOf("await inboundConcurrencyExceeded(agent.user_id)");
-    const fullAssistant = vapi.indexOf("assistant: await buildVapiAssistant({");
-    expect(graceGate).toBeGreaterThan(-1);
-    expect(ceilingGate).toBeGreaterThan(graceGate);
-    expect(ceilingGate).toBeLessThan(fullAssistant);
-    // Overflow reuses the bounded assistant, never a hangup or an error body.
-    const overflowBranch = vapi.slice(ceilingGate, fullAssistant);
-    expect(overflowBranch).toContain("buildDurableTakeMessageAssistant(");
-  });
-
-  it("applies the same inbound cost gates on native xAI SIP", () => {
+  it("gates OpenAI inbound overflow to take-a-message before the accepted session", () => {
     const admission = read("src/lib/voice/native-inbound-admission.ts");
-    const routes = read("src/routes/xai-voice-routes.ts");
-    const session = read("src/lib/voice/xai-sip-session.ts");
+    const routes = read("src/routes/openai-sip-routes.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
     expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD = 5");
     expect(admission).toContain("inboundConcurrencyExceeded");
     expect(admission).toContain("voice_minutes_daily");
     expect(admission).toContain("after_hours");
     expect(admission).toContain("isWithinBusinessHours");
     expect(routes).toContain("resolveNativeInboundAdmission");
-    expect(routes).toContain("tenantStore.run(binding.userId");
-    expect(admission).toContain("Native inbound subscription check failed, continuing remaining gates");
+    expect(routes).toContain("tenantStore.run(line.userId");
+    expect(admission).toContain(
+      "Native inbound subscription check failed, continuing remaining gates",
+    );
     expect(session).toContain("applyInboundAdmission");
     expect(session).toContain("create_followup_task");
     expect(session).toContain("line-suspended");
+    const apply = routes.indexOf("applyInboundAdmission(");
+    const lease = routes.indexOf("await acquireAccountOperationLease(");
+    const accept = routes.indexOf("await acceptCall(");
+    expect(apply).toBeGreaterThan(-1);
+    expect(lease).toBeGreaterThan(apply);
+    expect(accept).toBeGreaterThan(lease);
   });
 
   it("only counts fresh inbound presence so a lost end-webhook cannot wedge the line", () => {
+    const lib = read("src/lib/inbound-concurrency.ts");
     expect(lib).toContain("PRESENCE_STALENESS_MS");
     expect(lib).toContain("gte(schema.signalPresence.startedAt, freshSince)");
     expect(lib).toContain('not like ${"% · Outbound"}');
