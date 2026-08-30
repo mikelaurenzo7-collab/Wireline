@@ -163,6 +163,7 @@ run("node", [
   "tests/product-voice-contract.test.ts",
   "tests/botbound-visible-brand-sweep.test.ts",
   "tests/botbound-domain-oauth-cutover-contract.test.ts",
+  "tests/canonical-runtime-origin-contract.test.ts",
   "tests/chatgpt-app-contract.test.ts",
   "tests/claude-connector-contract.test.ts",
   "tests/cursor-plugin-contract.test.ts",

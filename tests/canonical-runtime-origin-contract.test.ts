@@ -10,17 +10,18 @@ const customerUrlProducers = [
   "src/lib/email-service.ts",
   "src/lib/job-worker-base.ts",
   "src/lib/mcp-oauth-security.ts",
-  "src/lib/phone-provisioning.ts",
   "src/lib/safe-public-text-fetch.ts",
   "src/lib/shareable-artifact/service.ts",
   "src/lib/showcase-assistant.ts",
-  "src/lib/showcase-prompt-truth-guard.ts",
   "src/lib/twilio-message-reliability.ts",
+  "src/lib/voice/native-phone-carrier.ts",
+  "src/lib/voice/openai-sip-config.ts",
   "src/routes/auth-routes.ts",
   "src/routes/billing-routes.ts",
   "src/routes/meta-webhook-routes.ts",
+  "src/routes/openai-inbound-twilio-routes.ts",
+  "src/routes/openai-sip-routes.ts",
   "src/routes/team-routes.ts",
-  "src/routes/vapi-v2.ts",
 ] as const;
 
 describe("canonical BotBound runtime origins", () => {
@@ -35,9 +36,10 @@ describe("canonical BotBound runtime origins", () => {
       "src/lib/browser-handoff-token.ts",
       "src/lib/email-compliance.ts",
       "src/lib/job-worker-base.ts",
-      "src/lib/phone-provisioning.ts",
       "src/lib/shareable-artifact/service.ts",
       "src/lib/twilio-message-reliability.ts",
+      "src/lib/voice/native-phone-carrier.ts",
+      "src/lib/voice/openai-sip-config.ts",
     ]) {
       expect(read(path), path).toContain("getCanonicalAppUrl");
     }
@@ -54,9 +56,7 @@ describe("canonical BotBound runtime origins", () => {
 
     for (const path of [
       "src/lib/safe-public-text-fetch.ts",
-      "src/lib/showcase-assistant.ts",
       "src/routes/meta-webhook-routes.ts",
-      "src/routes/vapi-v2.ts",
     ]) {
       expect(read(path), path).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     }
