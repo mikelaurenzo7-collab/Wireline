@@ -225,6 +225,8 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain('promotionPreflight.volatility !== "s"');
     expect(verifierSource).toContain("procedure_row.prosrc AS function_body");
     expect(verifierSource).toContain("expectedPromotionPreflightBody");
+    expect(verifierSource).toContain('const bodyMarker = "\\nAS $$";');
+    expect(verifierSource).toContain('source.indexOf("\\n$$;"');
     expect(verifierSource).toContain("0163_guard_account_environment_promotion.sql");
     expect(verifierSource).toContain("account_environment:preflight_body_drift");
     expect(verifierSource).toContain("account_environment:mutation_missing_${checkName}");
