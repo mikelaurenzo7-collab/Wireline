@@ -26,8 +26,8 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("getTwilioClient()");
     expect(identity).toContain("incomingPhoneNumbers.list({ phoneNumber, limit: 1 })");
     expect(identity).toContain("Paid Bot line is not owned by the configured Twilio account");
-    expect(identity).toContain("releaseTenantNumber(userId, provisioned.phoneNumber)");
-    expect(identity).toContain("provisionTenantNumber(userId");
+    expect(identity).toContain("releaseNativeTenantNumber(userId, provisioned.phoneNumber)");
+    expect(identity).toContain("provisionNativeTenantNumber({");
     expect(phone).toContain("export async function provisionNativeTenantNumber");
   });
 
