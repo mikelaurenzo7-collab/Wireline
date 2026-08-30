@@ -115,7 +115,7 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("retention:purge_function_search_path_not_pinned");
   });
 
-  it("certifies migration 0156 runtime-cohesion effects on the live schema", () => {
+  it("certifies migration 0168 OpenAI Realtime effects on the live schema", () => {
     expect(verifierSource).toContain("voice_llm_provider");
     expect(verifierSource).toContain("voice_llm_model");
     expect(verifierSource).toContain("runtime_cohesion:wrong_voice_llm_provider_default");
@@ -123,8 +123,8 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("runtime_cohesion:invalid_openai_realtime_pairs");
     expect(verifierSource).toContain("'gpt-realtime-2.1'");
     expect(verifierSource).not.toContain("runtime_cohesion:invalid_xai_grok_46_pairs");
-    expect(verifierSource).toContain("lower(coalesce(voice_llm_provider, '')) = 'xai'");
-    expect(verifierSource).toContain("lower(coalesce(voice_llm_model, '')) = 'grok-4.6'");
+    expect(verifierSource).toContain("lower(coalesce(voice_llm_provider, '')) <> 'openai'");
+    expect(verifierSource).toContain("lower(coalesce(voice_llm_model, '')) <> 'gpt-realtime-2.1'");
   });
 
   it("certifies the nullable, server-only terminal audit-receipt boundary", () => {
