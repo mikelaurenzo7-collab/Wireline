@@ -111,7 +111,8 @@ describe("production schema database selection", () => {
     const drizzleSource = readFileSync(new URL("../drizzle.config.ts", import.meta.url), "utf8");
 
     expect(buildSource).toContain("resolveProductionMigrationDatabaseUrl(databaseUrl)");
-    expect(buildSource).toContain("env: { POSTGRES_URL: migrationDatabaseUrl }");
+    expect(buildSource).toContain("process.env.POSTGRES_URL = migrationDatabaseUrl;");
+    expect(buildSource).toContain('run("npm", ["run", "db:migrate"]);');
     expect(drizzleSource).toContain(
       "process.env.POSTGRES_URL || process.env.DATABASE_URL",
     );
