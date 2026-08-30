@@ -185,8 +185,13 @@ async function configureNativeNumberRoutingAfterAuthorization(
     );
   }
   const current = await client.incomingPhoneNumbers(sid).fetch();
-  if (!isNativeNumberOpenAIRouted(current)) {
-    await client.incomingPhoneNumbers(sid).update(routingFields());
+  if (isNativeNumberOpenAIRouted(current)) return sid;
+
+  const updated = await client.incomingPhoneNumbers(sid).update(routingFields());
+  if (!isNativeNumberOpenAIRouted(updated)) {
+    throw AppError.serviceUnavailable(
+      "Twilio did not confirm the canonical BotBound phone-number routing.",
+    );
   }
   return sid;
 }
