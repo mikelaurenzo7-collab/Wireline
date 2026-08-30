@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { resolveProductionSchemaDatabase } from "../scripts/run-production-schema-effects.mjs";
+import { resolveProductionMigrationDatabaseUrl } from "../scripts/lib/production-migration-database.mjs";
 import { tryResolveDatabaseConnection } from "../src/lib/database-connection";
 import { resolveTenantDatabaseScope } from "../src/lib/tenant-context-scope";
 
@@ -72,17 +73,49 @@ describe("production schema database selection", () => {
   });
 
 
-  it("pins production migrations to the same validated selector as runtime", () => {
+  it("keeps production migrations on the canonical port-5432 session URL", () => {
+    const canonicalSession =
+      "postgresql://postgres.ogenlhodmwvyacvnrsnj:secret@aws-0-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require";
+    const contaminated = canonicalSession.replace("/postgres?", "/postgresProductionUpdated?");
+
+    expect(resolveProductionMigrationDatabaseUrl(canonicalSession)).toEqual({
+      connectionString: canonicalSession,
+      normalizedDatabaseName: false,
+    });
+    const repaired = resolveProductionMigrationDatabaseUrl(contaminated);
+    expect(new URL(repaired.connectionString)).toMatchObject({
+      hostname: "aws-0-us-east-2.pooler.supabase.com",
+      port: "5432",
+      username: "postgres.ogenlhodmwvyacvnrsnj",
+      password: "secret",
+      pathname: "/postgres",
+    });
+    expect(repaired.normalizedDatabaseName).toBe(true);
+  });
+
+  it("rejects a transaction pooler or a different Supabase project for migrations", () => {
+    expect(() =>
+      resolveProductionMigrationDatabaseUrl(
+        "postgresql://postgres.ogenlhodmwvyacvnrsnj:secret@aws-0-us-east-2.pooler.supabase.com:6543/postgres",
+      ),
+    ).toThrow("port 5432");
+    expect(() =>
+      resolveProductionMigrationDatabaseUrl(
+        "postgresql://postgres.aaaaaaaaaaaaaaaaaaaa:secret@aws-0-us-east-2.pooler.supabase.com:5432/postgres",
+      ),
+    ).toThrow("canonical Supabase project");
+  });
+
+  it("passes only the normalized session URL into the production migration child", () => {
     const buildSource = readFileSync(new URL("../scripts/vercel-build.mjs", import.meta.url), "utf8");
     const drizzleSource = readFileSync(new URL("../drizzle.config.ts", import.meta.url), "utf8");
 
-    expect(buildSource).toContain("resolveProductionSchemaDatabase(process.env)");
-    expect(buildSource).toContain('const databaseUrl = databaseSelection?.connectionString || "";');
-    expect(drizzleSource).toContain("resolveProductionSchemaDatabase(process.env)?.connectionString");
-    expect(drizzleSource).toContain("getDrizzlePostgresCredentials(migrationDatabaseUrl)");
-    expect(drizzleSource).not.toContain(
+    expect(buildSource).toContain("resolveProductionMigrationDatabaseUrl(databaseUrl)");
+    expect(buildSource).toContain("env: { POSTGRES_URL: migrationDatabaseUrl }");
+    expect(drizzleSource).toContain(
       "process.env.POSTGRES_URL || process.env.DATABASE_URL",
     );
+    expect(drizzleSource).not.toContain("DATABASE_POOL_URL");
   });
 
 });
