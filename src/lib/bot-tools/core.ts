@@ -453,10 +453,9 @@ export async function handleCoreToolCall(
     }
   }
 
-  // Tenant signup-link tool. Public showcase traffic is dispatched through
-  // showcase-handlers.ts with an explicit system identity and never enters
-  // this branch; keeping that split prevents a demo tenant from inheriting the
-  // platform Resend transport.
+  // Tenant signup-link tool. Public showcase traffic uses the tool-free OpenAI
+  // guest demo session and never enters this branch; keeping that split
+  // prevents a demo tenant from inheriting the platform Resend transport.
   //
   // Core branch logic lives in src/lib/agent-link-tool-handlers.ts so it
   // can be unit-tested with mocked transports — the route stays a
