@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 380
-**Protected:** 304
+**Routes scanned:** 383
+**Protected:** 307
 **Public (allowlisted):** 76
 **Violations:** 0
 
@@ -325,6 +325,7 @@
 | native-phone-routing-routes.ts | GET | `/api/carrier/numbers` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | GET | `/api/phone-numbers` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | PATCH | `/api/phone-numbers/:id` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | GET | `/api/phone-numbers/available` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
@@ -385,6 +386,8 @@
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-bridge` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-fallback` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-status` | — | — | yes | Public (allowlisted) |
+| openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
+| openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
 | openai-sip-routes.ts | POST | `/api/webhooks/openai/realtime` | — | — | yes | Public (allowlisted) |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
 | operator-task-routes.ts | GET | `/api/Assistants/tasks` | inline | — | — | Protected |

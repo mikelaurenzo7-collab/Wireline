@@ -23,8 +23,8 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0167_paid_bot_identity_jobs.sql`.
-// Runtime voice defaults are established by 0156_openai_runtime_cohesion.sql.
+// `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`.
+// Runtime voice defaults are established by 0168_openai_realtime_voice_runtime.sql.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
