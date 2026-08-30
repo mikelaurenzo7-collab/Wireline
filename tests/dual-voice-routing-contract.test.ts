@@ -50,12 +50,17 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(webhook).toContain('"/api/webhooks/openai/realtime"');
     expect(webhook).toContain("applyInboundAdmission");
     expect(webhook).toContain("acquireAccountOperationLease");
+    expect(webhook).toContain("reserveRealtimeSessionSpend");
+    expect(webhook).toContain("commitRealtimeSessionSpend");
+    expect(webhook).toContain("releaseRealtimeSessionSpendAfterFailure");
     const admission = webhook.indexOf("applyInboundAdmission(");
     const lease = webhook.indexOf("await acquireAccountOperationLease(");
+    const reserve = webhook.indexOf("await reserveRealtimeSessionSpend(");
     const accept = webhook.indexOf("await acceptCall(");
     expect(admission).toBeGreaterThan(-1);
     expect(lease).toBeGreaterThan(admission);
-    expect(accept).toBeGreaterThan(lease);
+    expect(reserve).toBeGreaterThan(lease);
+    expect(accept).toBeGreaterThan(reserve);
     expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
   });
 
