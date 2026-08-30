@@ -1,13 +1,13 @@
-# Wireline SOC 2 control narrative
+# BotBound SOC 2 control narrative
 
-Wireline is not SOC 2 Type II certified yet. This document describes the
+BotBound is not SOC 2 Type II certified yet. This document describes the
 controls implemented today, the evidence the app can produce, and the gaps
 remaining before external attestation. It exists so prospects and operators see
 the same honest story.
 
 ## Scope
 
-Wireline processes customer call metadata, transcripts, agent configuration,
+BotBound processes customer call metadata, transcripts, agent configuration,
 knowledge sources, OAuth connection records, billing metadata, DNC entries, and
 audit events. The current deployment model is a Vercel-hosted application with
 Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for voice,
@@ -32,7 +32,7 @@ ElevenLabs for server-only studio preview/cloning, the managed reasoning chain i
 Supabase advisors currently show tables with RLS enabled but missing policies,
 tables visible through the GraphQL schema to `anon`/`authenticated`, and a
 public executable `SECURITY DEFINER` function. Until those are remediated,
-Wireline should describe tenant isolation as **application-enforced with RLS
+BotBound should describe tenant isolation as **application-enforced with RLS
 hardening in progress**, not as complete database-layer isolation.
 
 Remediation should follow Supabase's own linter guidance:

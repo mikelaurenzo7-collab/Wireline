@@ -4,12 +4,14 @@ import * as schema from "../../db/schema";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
-import { drizzle } from "../server-context";
+import { drizzle, log } from "../server-context";
+import { getErrorMessage } from "../server-utils";
 import {
   isSavedRuntimeReviewRequired,
   RUNTIME_REVIEW_REQUIRED_RESPONSE,
 } from "../runtime-template-personality";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
+import { configureNativeNumberRouting } from "./native-phone-carrier";
 import { openAISipConfigured } from "./openai-sip-config";
 
 export type OpenAIRealtimeLineStatus = {
@@ -67,6 +69,30 @@ async function assignNativePhoneLineUnfenced(input: {
     assertOpenAIRealtimeConfigured();
   }
 
+  const nextAgentId = input.agentId !== undefined ? input.agentId : current.agentId;
+  let carrierNumberId = current.vapiNumberId;
+  if (typeof input.agentId === "string") {
+    carrierNumberId = await configureNativeNumberRouting({
+      userId: input.userId,
+      phoneNumber: current.phoneNumber,
+      carrierNumberId: current.vapiNumberId,
+    });
+  } else if (nextAgentId && openAISipConfigured()) {
+    try {
+      carrierNumberId = await configureNativeNumberRouting({
+        userId: input.userId,
+        phoneNumber: current.phoneNumber,
+        carrierNumberId: current.vapiNumberId,
+      });
+    } catch (error) {
+      log.warn("OpenAI inbound routing repair during assignment skipped", {
+        userId: input.userId,
+        phoneSuffix: current.phoneNumber.slice(-4),
+        error: getErrorMessage(error),
+      });
+    }
+  }
+
   const currentAgentPredicate = current.agentId
     ? eq(schema.phoneNumbers.agentId, current.agentId)
     : isNull(schema.phoneNumbers.agentId);
@@ -81,6 +107,7 @@ async function assignNativePhoneLineUnfenced(input: {
           ...(input.campaignLabel !== undefined
             ? { campaignLabel: input.campaignLabel.trim() || null }
             : {}),
+          ...(carrierNumberId !== current.vapiNumberId ? { vapiNumberId: carrierNumberId } : {}),
         })
         .where(
           and(
@@ -102,8 +129,8 @@ async function assignNativePhoneLineUnfenced(input: {
 }
 
 /**
- * Assignment is now a single authoritative database mutation. Every Twilio
- * number points at the same BotBound inbound webhook, and the signed OpenAI
+ * Assignment writes the Bot on the owned line and confirms the Twilio number
+ * still points at the shared OpenAI inbound webhook. The signed OpenAI
  * incoming-call event resolves the current Bot at call time; no per-Bot
  * provider registration or rollback window remains.
  */

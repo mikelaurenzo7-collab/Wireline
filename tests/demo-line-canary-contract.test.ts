@@ -4,38 +4,26 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-// The nightly demo-line canary pages OWNER_EMAIL when a line looks unhealthy.
-// A single cold-start timeout on the Vapi API must not create a false page:
-// production showed one "Assistant unreachable: operation aborted due to
-// timeout" alert for a line that was otherwise fine. The fix retries only the
-// transient (timeout/network) path, never a definitive HTTP status, so a real
-// outage (deleted assistant -> 404) still alerts immediately.
-describe("demo-line canary is resilient to transient timeouts", () => {
+describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
   const canary = read("src/lib/demo-line-canary.ts");
-  const vapiFetch = canary.slice(
-    canary.indexOf("async function vapiFetch("),
-    canary.indexOf("async function probeLine("),
-  );
 
-  it("retries a transient failure but not a definitive HTTP status", () => {
-    // Bounded transient retry lives on the catch (timeout/abort) path.
-    expect(vapiFetch).toContain("VAPI_FETCH_TRANSIENT_RETRIES");
-    expect(vapiFetch).toContain("attempt <= VAPI_FETCH_TRANSIENT_RETRIES");
-    // A non-ok HTTP response returns without retrying.
-    expect(vapiFetch).toMatch(
-      /if \(!res\.ok\)[\s\S]*?return \{ ok: false, error: `Vapi \$\{res\.status\}/,
+  it("probes Twilio voice and fallback URLs against the OpenAI inbound bridge", () => {
+    expect(canary).toContain('const OPENAI_INBOUND_PATH = "/api/twilio-webhook/openai-inbound"');
+    expect(canary).toContain(
+      'const OPENAI_INBOUND_FALLBACK_PATH = "/api/twilio-webhook/openai-inbound-fallback"',
     );
-    // The retry only happens inside the catch block, before exhausting attempts.
-    const catchIdx = vapiFetch.indexOf("} catch (err: any) {");
-    expect(catchIdx).toBeGreaterThan(-1);
-    expect(vapiFetch.slice(catchIdx)).toContain("attempt < VAPI_FETCH_TRANSIENT_RETRIES");
+    expect(canary).toContain("webhookPath(number?.voiceUrl) === OPENAI_INBOUND_PATH");
+    expect(canary).toContain("webhookPath(number?.voiceFallbackUrl) === OPENAI_INBOUND_FALLBACK_PATH");
+    expect(canary).not.toContain("vapiFetch");
+    expect(canary).not.toContain("api.vapi.ai");
   });
 
-  it("keeps the assistant-existence check a hard failure and calls stay informational", () => {
-    // A missing assistant is still a real failure that alerts; recent-call
-    // activity remains informational (never flips numberOk/assistantOk).
-    expect(canary).toContain("Assistant ${vapiNumber.assistantId} unreachable");
-    expect(canary).toContain("Check recent call activity (informational, not a hard failure)");
-    expect(canary).toContain("l.numberOk || !l.assistantOk");
+  it("repairs drifted showcase webhooks before alerting", () => {
+    expect(canary).toContain("async function repairShowcaseOpenAIInboundRouting");
+    expect(canary.indexOf("await repairShowcaseOpenAIInboundRouting(")).toBeLessThan(
+      canary.indexOf("probeLine(agent, kind, carrierNumbers, assignments, runtimeReady)"),
+    );
+    expect(canary).toContain("configureNativeNumberRouting");
+    expect(canary).toContain("showcaseTels.has(String(row.phoneNumber || \"\"))");
   });
 });

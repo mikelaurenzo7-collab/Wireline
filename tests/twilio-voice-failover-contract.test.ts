@@ -8,9 +8,9 @@ const stripComments = (source: string) =>
 
 describe("Twilio voice failover contract", () => {
   const routes = read("src/routes/twilio-webhook-base.ts");
-  const outboundRoutes = read("src/routes/xai-outbound-routes.ts");
+  const outboundRoutes = read("src/routes/openai-outbound-routes.ts");
   const outboundService = read("src/lib/voice/outbound-call-service.ts");
-  const sipConfig = read("src/lib/voice/xai-sip-config.ts");
+  const sipConfig = read("src/lib/voice/openai-sip-config.ts");
   const codeOnly = stripComments(routes);
   const auth = read("src/lib/twilio-webhook-auth.ts");
 
@@ -33,23 +33,23 @@ describe("Twilio voice failover contract", () => {
   it("gives outbound voice callbacks bounded connect, read, 5xx, and total retries", () => {
     expect(sipConfig).toContain('"#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx"');
     expect(sipConfig).toMatch(
-      /twilioXAIOutboundBridgeUrl[\s\S]*searchParams\.set\("token", token\)[\s\S]*withTwilioConnectionOverrides/,
+      /twilioOpenAIOutboundBridgeUrl[\s\S]*searchParams\.set\("token", token\)[\s\S]*withTwilioConnectionOverrides/,
     );
     expect(sipConfig).toMatch(
-      /twilioXAIOutboundStatusUrl[\s\S]*searchParams\.set\("token", token\)[\s\S]*withTwilioConnectionOverrides/,
+      /twilioOpenAIOutboundStatusUrl[\s\S]*searchParams\.set\("token", token\)[\s\S]*withTwilioConnectionOverrides/,
     );
   });
 
   it("falls back to a static signed BotBound response when outbound TwiML stays unavailable", () => {
-    expect(outboundService).toContain("fallbackUrl: twilioXAIOutboundFallbackUrl(token)");
+    expect(outboundService).toContain("fallbackUrl: twilioOpenAIOutboundFallbackUrl(token)");
     expect(outboundService).toContain('fallbackMethod: "POST"');
-    expect(sipConfig).toContain("/api/twilio-webhook/xai-outbound-fallback");
+    expect(sipConfig).toContain("/api/twilio-webhook/openai-outbound-fallback");
     const fallback = outboundRoutes.slice(
-      outboundRoutes.indexOf('"/api/twilio-webhook/xai-outbound-fallback"'),
-      outboundRoutes.indexOf('"/api/twilio-webhook/xai-outbound-status"'),
+      outboundRoutes.indexOf('"/api/twilio-webhook/openai-outbound-fallback"'),
+      outboundRoutes.indexOf('"/api/twilio-webhook/openai-outbound-status"'),
     );
     expect(fallback).toContain("evaluateTwilioWebhookAuth(req)");
-    expect(fallback).toContain("verifyXAIOutboundToken");
+    expect(fallback).toContain("verifyOpenAIOutboundToken");
     expect(fallback).toContain("send(emptyTwiml())");
     expect(fallback).not.toContain("voicemailTwiml(");
     expect(fallback).not.toContain("<Say>");
@@ -129,7 +129,7 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toContain("twilio-voicemail:");
     expect(routes).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
     expect(routes).toMatch(
-      /const persisted = await tenantStore\.run[\s\S]*Duplicate Twilio voicemail callback reusing persisted call[\s\S]*Voicemail persisted during Vapi failover[\s\S]*return res\.status\(200\)/,
+      /const persisted = await tenantStore\.run[\s\S]*Duplicate Twilio voicemail callback reusing persisted call[\s\S]*Voicemail persisted during voice failover[\s\S]*return res\.status\(200\)/,
     );
     expect(routes).toContain("return res.status(503).send(twimlHangup())");
     expect(routes).toContain("idempotencyKey: `voicemail-failover/${recordingKey}`");

@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
 
+import { and, eq } from "drizzle-orm";
+
+import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
 import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
@@ -10,11 +13,12 @@ import {
   retainNativeTwilioPurchaseClaim,
   type NativeTwilioPurchaseClaim,
 } from "../orphan-carrier-ledger";
-import { log } from "../server-context";
+import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
 import {
   normalizeOpenAIPhoneNumber,
+  openAISipConfigured,
   twilioOpenAIInboundFallbackUrl,
   twilioOpenAIInboundVoiceUrl,
 } from "./openai-sip-config";
@@ -62,6 +66,27 @@ function routingFields() {
     voiceFallbackUrl,
     voiceFallbackMethod: "POST" as const,
   };
+}
+
+function webhookPath(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    return new URL(value).pathname;
+  } catch {
+    return "";
+  }
+}
+
+function isAlreadyOpenAIRouted(row: {
+  voiceUrl?: string | null;
+  voiceFallbackUrl?: string | null;
+  smsUrl?: string | null;
+}): boolean {
+  return (
+    webhookPath(row.voiceUrl) === "/api/twilio-webhook/openai-inbound" &&
+    webhookPath(row.voiceFallbackUrl) === "/api/twilio-webhook/openai-inbound-fallback" &&
+    webhookPath(row.smsUrl) === "/api/twilio-webhook/sms"
+  );
 }
 
 function purchaseFields(friendlyName: string) {
@@ -156,8 +181,58 @@ export async function configureNativeNumberRouting(input: {
       "The phone number is not uniquely owned by the configured Twilio account.",
     );
   }
-  await client.incomingPhoneNumbers(sid).update(routingFields());
+  const current = await client.incomingPhoneNumbers(sid).fetch();
+  if (!isAlreadyOpenAIRouted(current)) {
+    await client.incomingPhoneNumbers(sid).update(routingFields());
+  }
   return sid;
+}
+
+/**
+ * Rewrite owned Twilio voice/SMS webhooks onto the OpenAI inbound bridge when
+ * they still point at a retired provider path. Used after assignment and as a
+ * best-effort repair when a workspace opens its line list.
+ */
+export async function repairOwnedTwilioOpenAIRouting(userId: string): Promise<void> {
+  if (!openAISipConfigured()) return;
+  const policy = await liveExternalActionPolicyForUser(userId);
+  if (!policy.allowed) return;
+
+  const rows = await drizzle
+    .select({
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+      carrierNumberId: schema.phoneNumbers.vapiNumberId,
+    })
+    .from(schema.phoneNumbers)
+    .where(eq(schema.phoneNumbers.userId, userId))
+    .limit(20);
+
+  for (const row of rows) {
+    try {
+      const sid = await configureNativeNumberRouting({
+        userId,
+        phoneNumber: row.phoneNumber,
+        carrierNumberId: row.carrierNumberId,
+      });
+      if (sid !== row.carrierNumberId && isTwilioPhoneNumberSid(sid)) {
+        await drizzle
+          .update(schema.phoneNumbers)
+          .set({ vapiNumberId: sid })
+          .where(
+            and(
+              eq(schema.phoneNumbers.userId, userId),
+              eq(schema.phoneNumbers.phoneNumber, row.phoneNumber),
+            ),
+          );
+      }
+    } catch (error) {
+      log.warn("OpenAI inbound routing repair skipped", {
+        userId,
+        phoneSuffix: row.phoneNumber.slice(-4),
+        error: getErrorMessage(error),
+      });
+    }
+  }
 }
 
 async function recoverAcceptedPurchase(input: {

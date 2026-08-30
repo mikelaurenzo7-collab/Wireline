@@ -11,10 +11,15 @@ import {
   validateBody,
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
+import { runInBackground } from "../lib/background-work";
 import { drizzle } from "../lib/server-context";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
-import { listNativeAvailableLocalNumbers } from "../lib/voice/native-phone-carrier";
+import {
+  listNativeAvailableLocalNumbers,
+  repairOwnedTwilioOpenAIRouting,
+} from "../lib/voice/native-phone-carrier";
+import { openAISipConfigured } from "../lib/voice/openai-sip-config";
 import { resolveNonProductionPhoneNumberPickerInventory } from "../lib/voice/phone-number-picker-inventory";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
 import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
@@ -66,6 +71,11 @@ router.get(
       })
       .from(schema.phoneNumbers)
       .where(eq(schema.phoneNumbers.userId, req.user.id));
+    if (openAISipConfigured()) {
+      runInBackground(`openai inbound routing repair ${req.user.id}`, () =>
+        repairOwnedTwilioOpenAIRouting(req.user.id),
+      );
+    }
     res.setHeader("Cache-Control", "private, no-store");
     res.json({
       numbers: rows.map((row) => ({

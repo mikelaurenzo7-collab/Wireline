@@ -8,8 +8,8 @@ import {
  * Twilio AMD for native outbound SIP.
  *
  * Synchronous detection (`AsyncAmd` stays false) so TwiML is not served — and
- * xAI is not bridged — until AnsweredBy is known. Marketing/sales calls use
- * `Enable` and hang up on a machine, fax, or unclassified answer: Wireline has
+ * OpenAI SIP is not bridged — until AnsweredBy is known. Marketing/sales calls use
+ * `Enable` and hang up on a machine, fax, or unclassified answer: BotBound has
  * no 64.1200(b)(3) opt-out line, so there is no compliant telemarketing
  * voicemail, and bridging `unknown` would play an uninterruptible telemarketing
  * opening into a mailbox. Service and consumer-requested callbacks use

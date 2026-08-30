@@ -9,9 +9,8 @@ export const CHATGPT_ACCOUNT_WIDGET_URI = "ui://widget/wireline-agent-draft-v2.h
  *
  * Private voice in this hosted widget uses server-mediated OpenAI Realtime
  * WebRTC. The iframe sends its SDP offer through the authenticated MCP tool
- * and receives only an SDP answer, never a provider credential. That is not
- * the PSTN brain: phone calls remain on xAI Speech-to-Speech
- * (`grok-voice-think-fast-2.0`).
+ * and receives only an SDP answer, never a provider credential. Phone calls
+ * use the same OpenAI Realtime runtime over Twilio SIP.
  *
  * The host bridge speaks both ChatGPT (`window.openai`) and Claude MCP Apps
  * (`ui/initialize`, `ui/open-link`, host-context notifications) without bundling

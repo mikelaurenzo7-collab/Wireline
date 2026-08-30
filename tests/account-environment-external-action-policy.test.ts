@@ -59,16 +59,11 @@ describe("account-environment live external-action policy", () => {
       source("src/lib/paid-bot-identity.ts"),
       "export async function ensurePaidBotIdentity",
     );
-    const provisioning = fromMarker(
-      source("src/lib/phone-provisioning.ts"),
-      "export async function provisionTenantNumber",
-    );
     const messaging = fromMarker(
       source("src/lib/twilio-service.ts"),
       "export async function sendTenantMessage",
     );
     const email = fromMarker(source("src/lib/integrations.ts"), "async sendEmail(params:");
-    const carrierRoute = source("src/routes/carrier-routes.ts");
     const agentMailRoutes = source("src/routes/agentmail-routes.ts");
     const teamRoutes = source("src/routes/team-routes.ts");
     const dailyBrief = source("src/lib/daily-brief.ts");
@@ -91,19 +86,11 @@ describe("account-environment live external-action policy", () => {
       source("src/lib/voice/native-phone-assignment.ts"),
       "export async function assignNativePhoneLine",
     );
-    const nativeActivation = fromMarker(
-      source("src/lib/voice/xai-phone-activation-service.ts"),
-      "export async function provisionNativeXAIPhone",
-    );
 
     expect(policy).toContain("tenantStore.run(userId, async () =>");
     expect(identity.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
       identity.indexOf("ensurePaidBotPhone(input.userId"),
     );
-    expect(provisioning.indexOf("liveExternalActionPolicyForUser(userId)")).toBeLessThan(
-      provisioning.indexOf("purchaseTwilioLocalNumber("),
-    );
-    expect(carrierRoute).toContain('result.code === "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"');
     expect(agentMailRoutes).toContain(
       'assertLiveExternalActionAllowed(userId, "managed_agentmail_mailbox_provision")',
     );
@@ -143,9 +130,6 @@ describe("account-environment live external-action policy", () => {
     ).toBeLessThan(nativeProvisioning.indexOf("runTenantProviderWorkWithDeletionFence({"));
     expect(nativeAssignment.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
       nativeAssignment.indexOf("runTenantProviderWorkWithDeletionFence({"),
-    );
-    expect(nativeActivation.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
-      nativeActivation.indexOf("runTenantProviderWorkWithDeletionFence({"),
     );
     const liveVideoCheckout = fromMarker(billingRoutes, '"/billing/live-video-checkout"');
     expect(liveVideoCheckout.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(

@@ -50,6 +50,7 @@ const activeBrandDocs = [
   "docs/PRODUCT_SHOWCASE_MATRIX.md",
   "docs/README.md",
   "docs/SLA.md",
+  "docs/soc2-policies.md",
   "docs/TRUST_CONVERSION_PACK.md",
   "docs/VERIFIED_VOICE_MOAT_AND_PARTNER_STRATEGY.md",
 ] as const;

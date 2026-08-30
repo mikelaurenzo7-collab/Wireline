@@ -212,7 +212,7 @@ export function buildCallerProfileBlock(pastCalls: any[], isOutbound = false): s
   return `${heading}\n${isOutbound ? "This contact has called before. Review and use naturally:" : "This caller has contact history. Use this immediately, do NOT wait to call view_recent_interactions:"}\n${lines.join("\n")}\n${instruction}\n`;
 }
 
-/** Map Wireline persona roles (wireline_sales, etc.) to voice-runtime role keys. */
+/** Map BotBound persona roles (wireline_sales, etc.) to voice-runtime role keys. */
 const OUTBOUND_VOICE_ROLE_ALIASES: Record<string, string> = {
   wireline_sales: "sales",
   wireline_reception: "receptionist",
@@ -351,7 +351,7 @@ export const AGENT_TOOL_DEFS = {
   send_text_message: {
     name: "send_text_message",
     description:
-      // "SMS" → "text message" because Vapi TTS reads "SMS" letter-by-letter
+      // "SMS" → "text message" because OpenAI TTS reads "SMS" letter-by-letter
       // (S-M-S) which sounds choppy on the call. "text message" reads
       // naturally and is the term real callers use anyway.
       "Sends a text message or WhatsApp follow-up. Only use this when the customer explicitly asked for a text or has already consented to that channel. Good for links, confirmations, appointment details, or next steps.",

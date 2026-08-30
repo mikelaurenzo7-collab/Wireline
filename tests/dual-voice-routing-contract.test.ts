@@ -18,6 +18,21 @@ describe("OpenAI Realtime voice routing contracts", () => {
     );
   });
 
+  it("rewrites owned Twilio numbers onto the OpenAI inbound webhook", () => {
+    const assignment = read("src/lib/voice/native-phone-assignment.ts");
+    const carrier = read("src/lib/voice/native-phone-carrier.ts");
+    const routing = read("src/routes/native-phone-routing-routes.ts");
+    const canary = read("src/lib/demo-line-canary.ts");
+    expect(assignment).toContain("configureNativeNumberRouting");
+    expect(carrier).toContain("repairOwnedTwilioOpenAIRouting");
+    expect(carrier).toContain("/api/twilio-webhook/openai-inbound");
+    expect(carrier).toContain("/api/twilio-webhook/openai-inbound-fallback");
+    expect(routing).toContain("repairOwnedTwilioOpenAIRouting");
+    expect(routing).toContain("runInBackground(`openai inbound routing repair ${req.user.id}`");
+    expect(canary).toContain("repairShowcaseOpenAIInboundRouting");
+    expect(canary).toContain("configureNativeNumberRouting");
+  });
+
   it("routes every PSTN call through the governed OpenAI runtime", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");

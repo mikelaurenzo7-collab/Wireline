@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { and, desc, eq, ilike, inArray, not, or } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../ai-supervisor";
@@ -207,7 +207,7 @@ async function recordCommsFollowUpTask(
   }
 }
 
-async function tenantVapiExternalActionBlock(
+async function tenantLiveExternalActionBlock(
   userId: string | null | undefined,
   action: string,
   target?: ExternalEntityTarget,
@@ -230,7 +230,7 @@ async function tenantVapiExternalActionBlock(
 }
 
 function contextSafeLog(action: string, error: unknown): void {
-  serverLog.warn("Vapi tenant external-action policy failed closed", {
+  serverLog.warn("Live tenant external-action policy failed closed", {
     action,
     error: error instanceof Error ? error.message : String(error),
   });
@@ -395,7 +395,7 @@ export async function handleCoreToolCall(
   if (fn === "send_email") {
     const { to_email, subject, body } = args || {};
     try {
-      const blocked = await tenantVapiExternalActionBlock(agent?.user_id, "vapi_email_send", {
+      const blocked = await tenantLiveExternalActionBlock(agent?.user_id, "vapi_email_send", {
         email: to_email,
       });
       if (blocked) return { toolCallId, result: blocked };
@@ -410,7 +410,7 @@ export async function handleCoreToolCall(
         recipient: to_email,
         subject,
         body,
-        context: "Outbound email generated from a Vapi tool call during a customer conversation.",
+        context: "Outbound email generated from a live Bot tool call during a customer conversation.",
       });
       const service = new IntegrationService(agent?.user_id);
       const success = await service.sendEmail({
@@ -462,7 +462,7 @@ export async function handleCoreToolCall(
   // can be unit-tested with mocked transports — the route stays a
   // thin adapter (look up the agent name, inject deps).
   if (fn === "send_signup_link") {
-    const blocked = await tenantVapiExternalActionBlock(
+    const blocked = await tenantLiveExternalActionBlock(
       agent?.user_id,
       "vapi_tenant_signup_link_email",
       { email: args?.to_email },
@@ -485,7 +485,7 @@ export async function handleCoreToolCall(
   // send_payment_link — emails the caller a checkout link for a
   // specific plan so they can pay + activate without friction.
   if (fn === "send_payment_link") {
-    const blocked = await tenantVapiExternalActionBlock(
+    const blocked = await tenantLiveExternalActionBlock(
       agent?.user_id,
       "vapi_tenant_payment_link_email",
       { email: args?.to_email },
@@ -523,7 +523,7 @@ export async function handleCoreToolCall(
         };
       }
 
-      const blocked = await tenantVapiExternalActionBlock(
+      const blocked = await tenantLiveExternalActionBlock(
         agent.user_id,
         "vapi_tenant_message_send",
         { phone: targetNumber },
@@ -700,7 +700,7 @@ export async function handleCoreToolCall(
         };
       }
 
-      const blocked = await tenantVapiExternalActionBlock(
+      const blocked = await tenantLiveExternalActionBlock(
         agent?.user_id,
         "vapi_tenant_phone_lookup",
         { phone: targetNumber },

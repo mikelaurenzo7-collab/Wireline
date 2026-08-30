@@ -3,7 +3,8 @@
  *
  * It verifies the Twilio number still exists, its voice webhook points at the
  * canonical OpenAI SIP bridge, the database has a Bot assignment, and the
- * OpenAI SIP runtime is configured. It intentionally does not place a paid
+ * OpenAI SIP runtime is configured. Drifted showcase webhooks are rewritten
+ * onto the OpenAI inbound bridge before the probe. It does not place a paid
  * synthetic call.
  */
 import { inArray } from "drizzle-orm";
@@ -15,12 +16,16 @@ import {
 } from "../data/contact-agents";
 import * as schema from "../db/schema";
 import { sendEmail } from "./email-service";
+import { resolveFounderUserId } from "./founder-fleet-seed";
 import { drizzle, log } from "./server-context";
+import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
+import { configureNativeNumberRouting } from "./voice/native-phone-carrier";
 import { openAISipConfigured } from "./voice/openai-sip-config";
 import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 
 const OPENAI_INBOUND_PATH = "/api/twilio-webhook/openai-inbound";
+const OPENAI_INBOUND_FALLBACK_PATH = "/api/twilio-webhook/openai-inbound-fallback";
 
 export interface LineProbeResult {
   name: string;
@@ -54,12 +59,15 @@ function webhookPath(value: unknown): string {
 function probeLine(
   agent: ContactAgent,
   kind: "cs" | "demo",
-  carrierNumbers: Map<string, { voiceUrl?: unknown }>,
+  carrierNumbers: Map<string, { voiceUrl?: unknown; voiceFallbackUrl?: unknown }>,
   assignments: Set<string>,
   runtimeReady: boolean,
 ): LineProbeResult {
   const number = carrierNumbers.get(agent.tel);
-  const numberOk = Boolean(number) && webhookPath(number?.voiceUrl) === OPENAI_INBOUND_PATH;
+  const numberOk =
+    Boolean(number) &&
+    webhookPath(number?.voiceUrl) === OPENAI_INBOUND_PATH &&
+    webhookPath(number?.voiceFallbackUrl) === OPENAI_INBOUND_FALLBACK_PATH;
   const assistantOk = runtimeReady && assignments.has(agent.tel);
   const errors = [
     !number ? "number missing from Twilio" : null,
@@ -76,6 +84,45 @@ function probeLine(
     daysSinceLastCall: null,
     ...(errors.length ? { error: errors.join("; ") } : {}),
   };
+}
+
+async function repairShowcaseOpenAIInboundRouting(
+  rows: Array<{
+    phoneNumber?: string | null;
+    sid?: string | null;
+    voiceUrl?: unknown;
+    voiceFallbackUrl?: unknown;
+  }>,
+): Promise<boolean> {
+  if (!openAISipConfigured() || rows.length === 0) return false;
+  const founderUserId = await resolveFounderUserId();
+  if (!founderUserId) return false;
+
+  let attempted = false;
+  for (const row of rows) {
+    const phoneNumber = String(row.phoneNumber || "");
+    if (!phoneNumber) continue;
+    if (
+      webhookPath(row.voiceUrl) === OPENAI_INBOUND_PATH &&
+      webhookPath(row.voiceFallbackUrl) === OPENAI_INBOUND_FALLBACK_PATH
+    ) {
+      continue;
+    }
+    attempted = true;
+    try {
+      await configureNativeNumberRouting({
+        userId: founderUserId,
+        phoneNumber,
+        carrierNumberId: String(row.sid || "").trim() || null,
+      });
+    } catch (error) {
+      log.warn("Showcase OpenAI inbound routing repair failed", {
+        phoneSuffix: phoneNumber.slice(-4),
+        error: getErrorMessage(error),
+      });
+    }
+  }
+  return attempted;
 }
 
 export async function runDemoLineCanary(): Promise<CanaryRunResult> {
@@ -98,7 +145,7 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
   }
 
   try {
-    const [carrierRows, assignmentRows] = await Promise.all([
+    const [initialCarrierRows, assignmentRows] = await Promise.all([
       client.incomingPhoneNumbers.list({ limit: 1_000 }),
       drizzle
         .select({
@@ -113,8 +160,18 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
           ),
         ),
     ]);
+    const showcaseTels = new Set(agents.map(({ agent }) => agent.tel));
+    const repaired = await repairShowcaseOpenAIInboundRouting(
+      initialCarrierRows.filter((row) => showcaseTels.has(String(row.phoneNumber || ""))),
+    );
+    const carrierRows = repaired
+      ? await client.incomingPhoneNumbers.list({ limit: 1_000 })
+      : initialCarrierRows;
     const carrierNumbers = new Map(
-      carrierRows.map((row) => [String(row.phoneNumber || ""), { voiceUrl: row.voiceUrl }]),
+      carrierRows.map((row) => [
+        String(row.phoneNumber || ""),
+        { voiceUrl: row.voiceUrl, voiceFallbackUrl: row.voiceFallbackUrl },
+      ]),
     );
     const assignments = new Set(
       assignmentRows.filter((row) => Boolean(row.agentId)).map((row) => row.phoneNumber),

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi tool args are vendor-defined JSON. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Live tool args are vendor-defined JSON. */
 /**
- * Device-action tool handlers — Wireline's personal-assistant tools. When the
+ * Device-action tool handlers — BotBound personal-assistant tools. When the
  * Account Holder talks to their agent and asks it to navigate, set a reminder, or
  * play music, the agent calls one of these; we dispatch the action to the
  * Account Holder's phone via push (the app deep-links Maps / writes EventKit / opens
