@@ -542,7 +542,7 @@ try {
           constraint_row.confdeltype,
           child_table.relname AS child_table,
           parent_table.relname AS parent_table,
-          ARRAY(
+          to_jsonb(ARRAY(
             SELECT child_column.attname
               FROM unnest(constraint_row.conkey) WITH ORDINALITY
                    AS child_key(attnum, position)
@@ -550,8 +550,8 @@ try {
                 ON child_column.attrelid = constraint_row.conrelid
                AND child_column.attnum = child_key.attnum
              ORDER BY child_key.position
-          ) AS child_columns,
-          ARRAY(
+          )) AS child_columns,
+          to_jsonb(ARRAY(
             SELECT parent_column.attname
               FROM unnest(constraint_row.confkey) WITH ORDINALITY
                    AS parent_key(attnum, position)
@@ -559,7 +559,7 @@ try {
                 ON parent_column.attrelid = constraint_row.confrelid
                AND parent_column.attnum = parent_key.attnum
              ORDER BY parent_key.position
-          ) AS parent_columns
+          )) AS parent_columns
           FROM pg_constraint constraint_row
           JOIN pg_namespace constraint_namespace
             ON constraint_namespace.oid = constraint_row.connamespace
@@ -577,7 +577,7 @@ try {
           constraint_row.confdeltype,
           child_table.relname AS child_table,
           parent_table.relname AS parent_table,
-          ARRAY(
+          to_jsonb(ARRAY(
             SELECT child_column.attname
               FROM unnest(constraint_row.conkey) WITH ORDINALITY
                    AS child_key(attnum, position)
@@ -585,8 +585,8 @@ try {
                 ON child_column.attrelid = constraint_row.conrelid
                AND child_column.attnum = child_key.attnum
              ORDER BY child_key.position
-          ) AS child_columns,
-          ARRAY(
+          )) AS child_columns,
+          to_jsonb(ARRAY(
             SELECT parent_column.attname
               FROM unnest(constraint_row.confkey) WITH ORDINALITY
                    AS parent_key(attnum, position)
@@ -594,7 +594,7 @@ try {
                 ON parent_column.attrelid = constraint_row.confrelid
                AND parent_column.attnum = parent_key.attnum
              ORDER BY parent_key.position
-          ) AS parent_columns,
+          )) AS parent_columns,
           (
             SELECT count(*)
               FROM pg_constraint AS competing_constraint
