@@ -120,7 +120,9 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("voice_llm_model");
     expect(verifierSource).toContain("runtime_cohesion:wrong_voice_llm_provider_default");
     expect(verifierSource).toContain("runtime_cohesion:wrong_voice_llm_model_default");
-    expect(verifierSource).toContain("runtime_cohesion:invalid_xai_grok_46_pairs");
+    expect(verifierSource).toContain("runtime_cohesion:invalid_openai_realtime_pairs");
+    expect(verifierSource).toContain("'gpt-realtime-2.1'");
+    expect(verifierSource).not.toContain("runtime_cohesion:invalid_xai_grok_46_pairs");
     expect(verifierSource).toContain("lower(coalesce(voice_llm_provider, '')) = 'xai'");
     expect(verifierSource).toContain("lower(coalesce(voice_llm_model, '')) = 'grok-4.6'");
   });
@@ -221,6 +223,8 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("account_environment:missing_function");
     expect(verifierSource).toContain("account_environment:wrong_function_acl");
     expect(verifierSource).toContain("account_environment:preflight_is_mutating");
+    expect(verifierSource).toContain("procedure_row.provolatile AS volatility");
+    expect(verifierSource).toContain('promotionPreflight.volatility !== "s"');
     expect(verifierSource).toContain("account_environment:mutation_missing_${checkName}");
     expect(verifierSource).toContain('"promotion_preflight"');
     expect(verifierSource).toContain('"account_lock"');
