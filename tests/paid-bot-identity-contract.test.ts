@@ -6,7 +6,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("paid Bot identity reconciliation", () => {
   const identity = read("src/lib/paid-bot-identity.ts");
-  const phone = read("src/lib/phone-provisioning.ts");
+  const phone = read("src/lib/voice/native-phone-provisioning.ts");
   const mail = read("src/lib/agentmail-mail.ts");
   const ops = read("scripts/reconcile-paid-bot-identities.mts");
   const endpoint = read("api/reconcile-paid-bot-identities.ts");
@@ -28,7 +28,7 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("Paid Bot line is not owned by the configured Twilio account");
     expect(identity).toContain("releaseTenantNumber(userId, provisioned.phoneNumber)");
     expect(identity).toContain("provisionTenantNumber(userId");
-    expect(phone).toContain("export async function provisionTenantNumber");
+    expect(phone).toContain("export async function provisionNativeTenantNumber");
   });
 
   it("holds the tenant deletion fence across paid identity provider work", () => {
