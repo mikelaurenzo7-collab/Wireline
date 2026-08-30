@@ -1,3 +1,4 @@
+// No-op certification marker: this branch exists only to exercise the PR CI estate against main.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
