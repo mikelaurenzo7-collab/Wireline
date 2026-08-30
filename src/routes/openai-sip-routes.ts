@@ -12,6 +12,11 @@ import {
 } from "../lib/account-operation-lease";
 import { runInBackground } from "../lib/background-work";
 import {
+  commitRealtimeSessionSpend,
+  releaseRealtimeSessionSpendAfterFailure,
+  reserveRealtimeSessionSpend,
+} from "../lib/realtime-spend-reservation";
+import {
   ensureFounderShowcaseBots,
   founderShowcaseAgentId,
 } from "../lib/founder-showcase-seed";
@@ -377,13 +382,31 @@ router.post(
       return;
     }
 
+    let reservation: Awaited<ReturnType<typeof reserveRealtimeSessionSpend>>;
+    try {
+      reservation = await reserveRealtimeSessionSpend(req, sessionInput.userId, "openai_sip");
+    } catch (error) {
+      await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+      await rejectCall(callId, 603);
+      if (error instanceof AppError && (error.status === 402 || error.status === 503)) {
+        log.warn("OpenAI incoming call rejected: spend reservation failed", {
+          code: error.code,
+        });
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
+      throw error;
+    }
+
     try {
       await acceptCall(callId, runtime.session as Record<string, unknown>);
     } catch (error) {
       await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+      await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
       await callControl(callId, "hangup").catch(() => undefined);
       throw error;
     }
+    await commitRealtimeSessionSpend(reservation);
 
     runInBackground("openai-sip-call-session", async () => {
       try {

@@ -15,6 +15,7 @@ import healthRouter from "../routes/health-routes";
 import publicHealthHandler from "../entrypoints/public-health-api";
 import aiStatusRouter from "../routes/ai-status-routes";
 import liveVoiceRouter from "../routes/live-voice-routes";
+import openAIRealtimeRouter from "../routes/openai-realtime-routes";
 import openAISipRouter from "../routes/openai-sip-routes";
 import openAIOutboundRouter from "../routes/openai-outbound-routes";
 import openAIInboundTwilioRouter from "../routes/openai-inbound-twilio-routes";
@@ -105,6 +106,7 @@ export function registerApiRoutes(app: Express): void {
   app.use("/api/health", healthRouter);
   app.use(aiStatusRouter);
   app.use(liveVoiceRouter);
+  app.use(openAIRealtimeRouter);
   app.use(openAISipRouter);
   app.use(openAIOutboundRouter);
   app.use(openAIInboundTwilioRouter);

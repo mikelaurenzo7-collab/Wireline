@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
 
+import { and, eq } from "drizzle-orm";
+
+import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
 import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
@@ -10,11 +13,12 @@ import {
   retainNativeTwilioPurchaseClaim,
   type NativeTwilioPurchaseClaim,
 } from "../orphan-carrier-ledger";
-import { log } from "../server-context";
+import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
 import {
   normalizeOpenAIPhoneNumber,
+  openAISipConfigured,
   twilioOpenAIInboundFallbackUrl,
   twilioOpenAIInboundVoiceUrl,
 } from "./openai-sip-config";
@@ -62,6 +66,27 @@ function routingFields() {
     voiceFallbackUrl,
     voiceFallbackMethod: "POST" as const,
   };
+}
+
+export type NativeNumberRoutingSnapshot = {
+  smsUrl?: string | null;
+  smsMethod?: string | null;
+  voiceUrl?: string | null;
+  voiceMethod?: string | null;
+  voiceFallbackUrl?: string | null;
+  voiceFallbackMethod?: string | null;
+};
+
+export function isNativeNumberOpenAIRouted(row: NativeNumberRoutingSnapshot): boolean {
+  const expected = routingFields();
+  return (
+    row.smsUrl === expected.smsUrl &&
+    row.smsMethod === expected.smsMethod &&
+    row.voiceUrl === expected.voiceUrl &&
+    row.voiceMethod === expected.voiceMethod &&
+    row.voiceFallbackUrl === expected.voiceFallbackUrl &&
+    row.voiceFallbackMethod === expected.voiceFallbackMethod
+  );
 }
 
 function purchaseFields(friendlyName: string) {
@@ -142,12 +167,15 @@ export async function resolveOwnedTwilioNumberSid(
   return matches.length === 1 ? matches[0]! : null;
 }
 
-export async function configureNativeNumberRouting(input: {
+type ConfigureNativeNumberRoutingInput = {
   userId: string;
   phoneNumber: string;
   carrierNumberId?: string | null;
-}): Promise<string> {
-  await assertNativePhoneExternalActionAllowed(input.userId, "native_phone_route_openai");
+};
+
+async function configureNativeNumberRoutingAfterAuthorization(
+  input: ConfigureNativeNumberRoutingInput,
+): Promise<string> {
   const client = getTwilioClient();
   if (!client) throw AppError.serviceUnavailable("Twilio number routing is not configured.");
   const sid = await resolveOwnedTwilioNumberSid(input.phoneNumber, input.carrierNumberId);
@@ -156,8 +184,111 @@ export async function configureNativeNumberRouting(input: {
       "The phone number is not uniquely owned by the configured Twilio account.",
     );
   }
-  await client.incomingPhoneNumbers(sid).update(routingFields());
+  const current = await client.incomingPhoneNumbers(sid).fetch();
+  if (isNativeNumberOpenAIRouted(current)) return sid;
+
+  const updated = await client.incomingPhoneNumbers(sid).update(routingFields());
+  if (!isNativeNumberOpenAIRouted(updated)) {
+    throw AppError.serviceUnavailable(
+      "Twilio did not confirm the canonical BotBound phone-number routing.",
+    );
+  }
   return sid;
+}
+
+export async function configureNativeNumberRouting(
+  input: ConfigureNativeNumberRoutingInput,
+): Promise<string> {
+  await assertNativePhoneExternalActionAllowed(input.userId, "native_phone_route_openai");
+  return configureNativeNumberRoutingAfterAuthorization(input);
+}
+
+export type OwnedTwilioRoutingRepairState =
+  | "ready"
+  | "not_configured"
+  | "blocked"
+  | "degraded";
+
+export type OwnedTwilioRoutingRepairResult = {
+  state: OwnedTwilioRoutingRepairState;
+  confirmedPhoneNumbers: Set<string>;
+  failures: Map<string, string>;
+};
+
+const OWNED_ROUTING_REPAIR_CONCURRENCY = 5;
+
+/**
+ * Rewrite and confirm every owned Twilio voice/SMS webhook against the complete
+ * canonical OpenAI inbound configuration. The result is safe to expose as
+ * health metadata: provider error details stay in server logs.
+ */
+export async function repairOwnedTwilioOpenAIRouting(
+  userId: string,
+): Promise<OwnedTwilioRoutingRepairResult> {
+  const confirmedPhoneNumbers = new Set<string>();
+  const failures = new Map<string, string>();
+  if (!openAISipConfigured()) {
+    return { state: "not_configured", confirmedPhoneNumbers, failures };
+  }
+  const policy = await liveExternalActionPolicyForUser(userId);
+  if (!policy.allowed) {
+    return { state: "blocked", confirmedPhoneNumbers, failures };
+  }
+
+  const rows = await drizzle
+    .select({
+      phoneNumber: schema.phoneNumbers.phoneNumber,
+      carrierNumberId: schema.phoneNumbers.vapiNumberId,
+    })
+    .from(schema.phoneNumbers)
+    .where(eq(schema.phoneNumbers.userId, userId));
+
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(OWNED_ROUTING_REPAIR_CONCURRENCY, rows.length) },
+    async () => {
+      for (;;) {
+        const row = rows[cursor++];
+        if (!row) return;
+        try {
+          const sid = await configureNativeNumberRoutingAfterAuthorization({
+            userId,
+            phoneNumber: row.phoneNumber,
+            carrierNumberId: row.carrierNumberId,
+          });
+          if (sid !== row.carrierNumberId && isTwilioPhoneNumberSid(sid)) {
+            await drizzle
+              .update(schema.phoneNumbers)
+              .set({ vapiNumberId: sid })
+              .where(
+                and(
+                  eq(schema.phoneNumbers.userId, userId),
+                  eq(schema.phoneNumbers.phoneNumber, row.phoneNumber),
+                ),
+              );
+          }
+          confirmedPhoneNumbers.add(row.phoneNumber);
+        } catch (error) {
+          failures.set(
+            row.phoneNumber,
+            "BotBound could not confirm this line's Twilio routing. Retry shortly or contact support.",
+          );
+          log.warn("OpenAI inbound routing repair failed", {
+            userId,
+            phoneSuffix: row.phoneNumber.slice(-4),
+            error: getErrorMessage(error),
+          });
+        }
+      }
+    },
+  );
+  await Promise.all(workers);
+
+  return {
+    state: failures.size ? "degraded" : "ready",
+    confirmedPhoneNumbers,
+    failures,
+  };
 }
 
 async function recoverAcceptedPurchase(input: {

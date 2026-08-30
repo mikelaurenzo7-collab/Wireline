@@ -83,6 +83,18 @@ describe("realtime spend reservation contract", () => {
     expect(chatgpt).toContain("if (!quota.persisted)");
   });
 
+  it("reserves PSTN SIP spend before accept and refunds a failed accept", () => {
+    const webhook = read("src/routes/openai-sip-routes.ts");
+    const reserve = webhook.indexOf("await reserveRealtimeSessionSpend(");
+    const accept = webhook.indexOf("await acceptCall(");
+    const commit = webhook.indexOf("await commitRealtimeSessionSpend(");
+    expect(reserve).toBeGreaterThan(-1);
+    expect(accept).toBeGreaterThan(reserve);
+    expect(commit).toBeGreaterThan(accept);
+    expect(webhook).toContain("releaseRealtimeSessionSpendAfterFailure");
+    expect(webhook).toContain('reserveRealtimeSessionSpend(req, sessionInput.userId, "openai_sip")');
+  });
+
   it("validates request bodies before consuming a five-minute quota reservation", () => {
     for (const path of ["src/routes/openai-realtime-routes.ts"]) {
       const route = read(path);

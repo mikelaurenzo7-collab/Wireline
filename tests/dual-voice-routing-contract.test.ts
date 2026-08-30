@@ -18,6 +18,38 @@ describe("OpenAI Realtime voice routing contracts", () => {
     );
   });
 
+  it("rewrites owned Twilio numbers onto the OpenAI inbound webhook", () => {
+    const assignment = read("src/lib/voice/native-phone-assignment.ts");
+    const carrier = read("src/lib/voice/native-phone-carrier.ts");
+    const routing = read("src/routes/native-phone-routing-routes.ts");
+    const canary = read("src/lib/demo-line-canary.ts");
+    expect(assignment).toContain("configureNativeNumberRouting");
+    expect(carrier).toContain("repairOwnedTwilioOpenAIRouting");
+    expect(carrier).toContain("export function isNativeNumberOpenAIRouted");
+    expect(carrier).toContain("row.smsUrl === expected.smsUrl");
+    expect(carrier).toContain("row.smsMethod === expected.smsMethod");
+    expect(carrier).toContain("row.voiceUrl === expected.voiceUrl");
+    expect(carrier).toContain("row.voiceMethod === expected.voiceMethod");
+    expect(carrier).toContain("row.voiceFallbackUrl === expected.voiceFallbackUrl");
+    expect(carrier).toContain("row.voiceFallbackMethod === expected.voiceFallbackMethod");
+    expect(carrier).toContain("const updated = await client.incomingPhoneNumbers(sid).update");
+    expect(carrier).toContain("if (!isNativeNumberOpenAIRouted(updated))");
+    const repair = carrier.slice(
+      carrier.indexOf("export async function repairOwnedTwilioOpenAIRouting"),
+      carrier.indexOf("async function recoverAcceptedPurchase"),
+    );
+    expect(repair).not.toContain(".limit(20)");
+    expect(repair).toContain("await Promise.all(workers)");
+    expect(routing).toContain("await repairOwnedTwilioOpenAIRouting(req.user.id)");
+    expect(routing).not.toContain("runInBackground(`openai inbound routing repair");
+    expect(routing).toContain("routing.confirmedPhoneNumbers.has(row.phoneNumber)");
+    expect(routing).toContain('"configuration_required"');
+    expect(routing).toContain('"degraded"');
+    expect(canary).toContain("repairShowcaseOpenAIInboundRouting");
+    expect(canary).toContain("configureNativeNumberRouting");
+    expect(canary).toContain("isNativeNumberOpenAIRouted");
+  });
+
   it("routes every PSTN call through the governed OpenAI runtime", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
@@ -35,12 +67,17 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(webhook).toContain('"/api/webhooks/openai/realtime"');
     expect(webhook).toContain("applyInboundAdmission");
     expect(webhook).toContain("acquireAccountOperationLease");
+    expect(webhook).toContain("reserveRealtimeSessionSpend");
+    expect(webhook).toContain("commitRealtimeSessionSpend");
+    expect(webhook).toContain("releaseRealtimeSessionSpendAfterFailure");
     const admission = webhook.indexOf("applyInboundAdmission(");
     const lease = webhook.indexOf("await acquireAccountOperationLease(");
+    const reserve = webhook.indexOf("await reserveRealtimeSessionSpend(");
     const accept = webhook.indexOf("await acceptCall(");
     expect(admission).toBeGreaterThan(-1);
     expect(lease).toBeGreaterThan(admission);
-    expect(accept).toBeGreaterThan(lease);
+    expect(reserve).toBeGreaterThan(lease);
+    expect(accept).toBeGreaterThan(reserve);
     expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
   });
 

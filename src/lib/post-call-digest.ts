@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 /**
- * Post-call operating system — what fires after every completed Vapi call.
+ * Post-call operating system — what fires after every completed OpenAI Realtime call.
  *
  * Mandatory internal work:
  *   1. Classify and persist the outcome and campaign attribution.

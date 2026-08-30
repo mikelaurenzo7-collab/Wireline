@@ -59,16 +59,11 @@ describe("account-environment live external-action policy", () => {
       source("src/lib/paid-bot-identity.ts"),
       "export async function ensurePaidBotIdentity",
     );
-    const provisioning = fromMarker(
-      source("src/lib/phone-provisioning.ts"),
-      "export async function provisionTenantNumber",
-    );
     const messaging = fromMarker(
       source("src/lib/twilio-service.ts"),
       "export async function sendTenantMessage",
     );
     const email = fromMarker(source("src/lib/integrations.ts"), "async sendEmail(params:");
-    const carrierRoute = source("src/routes/carrier-routes.ts");
     const agentMailRoutes = source("src/routes/agentmail-routes.ts");
     const teamRoutes = source("src/routes/team-routes.ts");
     const dailyBrief = source("src/lib/daily-brief.ts");
@@ -91,19 +86,11 @@ describe("account-environment live external-action policy", () => {
       source("src/lib/voice/native-phone-assignment.ts"),
       "export async function assignNativePhoneLine",
     );
-    const nativeActivation = fromMarker(
-      source("src/lib/voice/xai-phone-activation-service.ts"),
-      "export async function provisionNativeXAIPhone",
-    );
 
     expect(policy).toContain("tenantStore.run(userId, async () =>");
     expect(identity.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
       identity.indexOf("ensurePaidBotPhone(input.userId"),
     );
-    expect(provisioning.indexOf("liveExternalActionPolicyForUser(userId)")).toBeLessThan(
-      provisioning.indexOf("purchaseTwilioLocalNumber("),
-    );
-    expect(carrierRoute).toContain('result.code === "NON_PRODUCTION_EXTERNAL_ACTION_BLOCKED"');
     expect(agentMailRoutes).toContain(
       'assertLiveExternalActionAllowed(userId, "managed_agentmail_mailbox_provision")',
     );
@@ -143,9 +130,6 @@ describe("account-environment live external-action policy", () => {
     ).toBeLessThan(nativeProvisioning.indexOf("runTenantProviderWorkWithDeletionFence({"));
     expect(nativeAssignment.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
       nativeAssignment.indexOf("runTenantProviderWorkWithDeletionFence({"),
-    );
-    expect(nativeActivation.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
-      nativeActivation.indexOf("runTenantProviderWorkWithDeletionFence({"),
     );
     const liveVideoCheckout = fromMarker(billingRoutes, '"/billing/live-video-checkout"');
     expect(liveVideoCheckout.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
@@ -199,14 +183,15 @@ describe("account-environment live external-action policy", () => {
 
   it("guards tenant action integrations while preserving the system showcase lane", () => {
     const engine = source("src/lib/action-engine.ts");
-    const core = source("src/routes/vapi/tool-handlers-core.ts");
-    const calendar = source("src/routes/vapi/tool-handlers-calendar.ts");
-    const workflow = source("src/routes/vapi/tool-handlers-workflow.ts");
-    const enrichment = source("src/routes/vapi/tool-handlers-enrichment.ts");
-    const notifications = source("src/routes/vapi/tool-handlers-notifications.ts");
+    const core = source("src/lib/bot-tools/core.ts");
+    const calendar = source("src/lib/bot-tools/calendar.ts");
+    const workflow = source("src/lib/bot-tools/workflow.ts");
+    const enrichment = source("src/lib/bot-tools/enrichment.ts");
+    const notifications = source("src/lib/bot-tools/notifications.ts");
     const apollo = source("src/lib/apollo-service.ts");
     const slack = source("src/lib/slack-service.ts");
-    const showcase = source("src/routes/vapi/showcase-handlers.ts");
+    const linkHandlers = source("src/lib/agent-link-tool-handlers.ts");
+    const publicDemo = source("src/lib/voice/openai-public-demo-session.ts");
     const outboundCall = fromMarker(
       source("src/lib/voice/outbound-call-service.ts"),
       "export async function placeOutboundCall",
@@ -215,12 +200,12 @@ describe("account-environment live external-action policy", () => {
     expect(engine.indexOf("liveExternalActionPolicyForUser(userId)")).toBeLessThan(
       engine.indexOf("superviseClientCommunication({"),
     );
-    expect(core).toContain("tenantVapiExternalActionBlock");
+    expect(core).toContain("tenantLiveExternalActionBlock");
     expect(core.indexOf('"vapi_tenant_signup_link_email"')).toBeLessThan(
-      core.indexOf('import("../../lib/email-service")'),
+      core.indexOf('import("../email-service")'),
     );
     expect(calendar.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
-      calendar.indexOf('import("../../lib/docusign-service")'),
+      calendar.indexOf('import("../docusign-service")'),
     );
     expect(workflow).toContain("warmTransferExternalActionBlock(");
     expect(workflow).toContain("const postNotificationBlock = await");
@@ -236,8 +221,9 @@ describe("account-environment live external-action policy", () => {
     expect(outboundCall.indexOf("assertExternalEntityActionAllowed")).toBeLessThan(
       outboundCall.indexOf("runTenantProviderWorkWithDeletionFence"),
     );
-    expect(showcase).toContain("handleSendSignupLink(toolArgs");
-    expect(showcase).toContain("handleSendPaymentLink(toolArgs");
-    expect(showcase).not.toContain("liveExternalActionPolicyForUser");
+    expect(linkHandlers).toContain("export async function handleSendSignupLink");
+    expect(linkHandlers).toContain("export async function handleSendPaymentLink");
+    expect(publicDemo).toContain("You have no tools");
+    expect(publicDemo).not.toContain("liveExternalActionPolicyForUser");
   });
 });

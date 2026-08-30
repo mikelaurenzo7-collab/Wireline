@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi webhook/tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
+/* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
 import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
@@ -325,7 +325,7 @@ export async function handleWorkflowToolCall(
       }
 
       // The durable operator task above is safe showcase behavior. Live
-      // channel fan-out and Vapi warm transfer are not: keep both disabled for
+      // channel fan-out and PSTN warm transfer are not: keep both disabled for
       // demo/test workspaces, and keep reserved fixture destinations inert
       // even after an unsafe workspace promotion.
       const initialExternalActionBlock = await warmTransferExternalActionBlock(
@@ -352,7 +352,7 @@ export async function handleWorkflowToolCall(
         // Notification fan-out can take long enough for an operator to
         // reclassify the tenant. Re-check after that await, then once more
         // after reliability persistence so the final check is adjacent to the
-        // Vapi transfer directive that can cause live provider work.
+        // OpenAI SIP REFER that can cause live provider work.
         const postNotificationBlock = await warmTransferExternalActionBlock(
           agent.user_id,
           warmTransferPhone,
@@ -368,8 +368,8 @@ export async function handleWorkflowToolCall(
           return { toolCallId, result: postNotificationBlock };
         }
 
-        // Vapi tool-result schema supports a `destination` field per result.
-        // When present, Vapi speaks `result` then transfers the call.
+        // Tool results may include a `destination` field. The OpenAI SIP
+        // session speaks `result` then REFERs the PSTN call to that number.
         if (callId) {
           await recordEscalationOutcome({
             vapiCallId: callId,

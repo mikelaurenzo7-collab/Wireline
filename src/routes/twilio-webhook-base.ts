@@ -94,7 +94,8 @@ type FailoverCompliance = {
 };
 
 /**
- * Take-a-message TwiML for the Vapi-outage path.
+ * Take-a-message TwiML for the retired-provider-outage path still attached to
+ * leftover Twilio voice-fallback URLs.
  *
  * This answers the same tenant line as the full assistant, so it inherits the
  * same obligations. A HIPAA line is never recorded or transcribed. When the
@@ -540,7 +541,7 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
   const tenantUserId = await resolveProductionInboundTenant(to, req.path);
   if (!tenantUserId) return res.status(200).send(twimlHangup());
 
-  log.error("VAPI FAILOVER TRIGGERED", {
+  log.error("VOICE FAILOVER TRIGGERED", {
     to_suffix: phoneSuffixForLog(to),
     from_suffix: phoneSuffixForLog(from),
   });
@@ -712,7 +713,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
       return { inserted: Boolean(inserted) };
     });
 
-    log.info("Voicemail persisted during Vapi failover", {
+    log.info("Voicemail persisted during voice failover", {
       tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
       from_suffix: phoneSuffixForLog(from),
       to_suffix: phoneSuffixForLog(to),

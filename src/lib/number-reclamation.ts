@@ -1,9 +1,9 @@
 /**
  * Reclaim carrier numbers held by long-canceled workspaces.
  *
- * Numbers are bought on Wireline's own Twilio account (~$1.15/mo each), and
+ * Numbers are bought on BotBound's own Twilio account (~$1.15/mo each), and
  * nothing released them after a self-serve cancellation: a canceled Business
- * workspace's 15 lines billed Wireline forever at zero revenue. Releasing a
+ * workspace's 15 lines billed BotBound forever at zero revenue. Releasing a
  * number is destructive — the tenant cannot get the same number back — so this
  * sweep is deliberately conservative:
  *
@@ -21,7 +21,7 @@
  *   mass-release the fleet in one pass.
  *
  * releaseNativeTenantNumber already fails safe: a carrier error preserves the
- * local ownership row and retires the xAI binding only after Twilio confirms.
+ * local ownership row and confirms Twilio release before treating the line as gone.
  */
 import { and, asc, eq, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 
