@@ -310,9 +310,8 @@ if (shouldMigrate) {
       env: { POSTGRES_URL: previewMigrationDatabaseUrl },
     });
   } else {
-    run("npm", ["run", "db:migrate"], {
-      env: { POSTGRES_URL: migrationDatabaseUrl },
-    });
+    process.env.POSTGRES_URL = migrationDatabaseUrl;
+    run("npm", ["run", "db:migrate"]);
   }
 } else {
   console.log(
