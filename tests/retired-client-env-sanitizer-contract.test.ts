@@ -44,7 +44,9 @@ describe("retired client environment sanitizer", () => {
     expect(deployment).toContain(
       'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
     );
-    expect(envExample).toContain("Browser Vapi credentials are retired");
+    expect(envExample).toContain(
+      "OpenAI Realtime owns every browser and phone voice",
+    );
     expect(envExample).not.toContain("\nVITE_VAPI_PUBLIC_KEY=");
   });
 
