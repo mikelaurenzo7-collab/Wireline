@@ -20,12 +20,13 @@ import { resolveFounderUserId } from "./founder-fleet-seed";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
-import { configureNativeNumberRouting } from "./voice/native-phone-carrier";
+import {
+  configureNativeNumberRouting,
+  isNativeNumberOpenAIRouted,
+  type NativeNumberRoutingSnapshot,
+} from "./voice/native-phone-carrier";
 import { openAISipConfigured } from "./voice/openai-sip-config";
 import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
-
-const OPENAI_INBOUND_PATH = "/api/twilio-webhook/openai-inbound";
-const OPENAI_INBOUND_FALLBACK_PATH = "/api/twilio-webhook/openai-inbound-fallback";
 
 export interface LineProbeResult {
   name: string;
@@ -47,27 +48,15 @@ export interface CanaryRunResult {
   error?: string;
 }
 
-function webhookPath(value: unknown): string {
-  if (typeof value !== "string" || !value.trim()) return "";
-  try {
-    return new URL(value).pathname;
-  } catch {
-    return "";
-  }
-}
-
 function probeLine(
   agent: ContactAgent,
   kind: "cs" | "demo",
-  carrierNumbers: Map<string, { voiceUrl?: unknown; voiceFallbackUrl?: unknown }>,
+  carrierNumbers: Map<string, NativeNumberRoutingSnapshot>,
   assignments: Set<string>,
   runtimeReady: boolean,
 ): LineProbeResult {
   const number = carrierNumbers.get(agent.tel);
-  const numberOk =
-    Boolean(number) &&
-    webhookPath(number?.voiceUrl) === OPENAI_INBOUND_PATH &&
-    webhookPath(number?.voiceFallbackUrl) === OPENAI_INBOUND_FALLBACK_PATH;
+  const numberOk = number ? isNativeNumberOpenAIRouted(number) : false;
   const assistantOk = runtimeReady && assignments.has(agent.tel);
   const errors = [
     !number ? "number missing from Twilio" : null,
@@ -87,12 +76,12 @@ function probeLine(
 }
 
 async function repairShowcaseOpenAIInboundRouting(
-  rows: Array<{
-    phoneNumber?: string | null;
-    sid?: string | null;
-    voiceUrl?: unknown;
-    voiceFallbackUrl?: unknown;
-  }>,
+  rows: Array<
+    NativeNumberRoutingSnapshot & {
+      phoneNumber?: string | null;
+      sid?: string | null;
+    }
+  >,
 ): Promise<boolean> {
   if (!openAISipConfigured() || rows.length === 0) return false;
   const founderUserId = await resolveFounderUserId();
@@ -102,12 +91,7 @@ async function repairShowcaseOpenAIInboundRouting(
   for (const row of rows) {
     const phoneNumber = String(row.phoneNumber || "");
     if (!phoneNumber) continue;
-    if (
-      webhookPath(row.voiceUrl) === OPENAI_INBOUND_PATH &&
-      webhookPath(row.voiceFallbackUrl) === OPENAI_INBOUND_FALLBACK_PATH
-    ) {
-      continue;
-    }
+    if (isNativeNumberOpenAIRouted(row)) continue;
     attempted = true;
     try {
       await configureNativeNumberRouting({
@@ -170,7 +154,14 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     const carrierNumbers = new Map(
       carrierRows.map((row) => [
         String(row.phoneNumber || ""),
-        { voiceUrl: row.voiceUrl, voiceFallbackUrl: row.voiceFallbackUrl },
+        {
+          smsUrl: row.smsUrl,
+          smsMethod: row.smsMethod,
+          voiceUrl: row.voiceUrl,
+          voiceMethod: row.voiceMethod,
+          voiceFallbackUrl: row.voiceFallbackUrl,
+          voiceFallbackMethod: row.voiceFallbackMethod,
+        },
       ]),
     );
     const assignments = new Set(

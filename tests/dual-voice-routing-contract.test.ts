@@ -25,12 +25,27 @@ describe("OpenAI Realtime voice routing contracts", () => {
     const canary = read("src/lib/demo-line-canary.ts");
     expect(assignment).toContain("configureNativeNumberRouting");
     expect(carrier).toContain("repairOwnedTwilioOpenAIRouting");
-    expect(carrier).toContain("/api/twilio-webhook/openai-inbound");
-    expect(carrier).toContain("/api/twilio-webhook/openai-inbound-fallback");
-    expect(routing).toContain("repairOwnedTwilioOpenAIRouting");
-    expect(routing).toContain("runInBackground(`openai inbound routing repair ${req.user.id}`");
+    expect(carrier).toContain("export function isNativeNumberOpenAIRouted");
+    expect(carrier).toContain("row.smsUrl === expected.smsUrl");
+    expect(carrier).toContain("row.smsMethod === expected.smsMethod");
+    expect(carrier).toContain("row.voiceUrl === expected.voiceUrl");
+    expect(carrier).toContain("row.voiceMethod === expected.voiceMethod");
+    expect(carrier).toContain("row.voiceFallbackUrl === expected.voiceFallbackUrl");
+    expect(carrier).toContain("row.voiceFallbackMethod === expected.voiceFallbackMethod");
+    const repair = carrier.slice(
+      carrier.indexOf("export async function repairOwnedTwilioOpenAIRouting"),
+      carrier.indexOf("async function recoverAcceptedPurchase"),
+    );
+    expect(repair).not.toContain(".limit(20)");
+    expect(repair).toContain("await Promise.all(workers)");
+    expect(routing).toContain("await repairOwnedTwilioOpenAIRouting(req.user.id)");
+    expect(routing).not.toContain("runInBackground(`openai inbound routing repair");
+    expect(routing).toContain("routing.confirmedPhoneNumbers.has(row.phoneNumber)");
+    expect(routing).toContain('"configuration_required"');
+    expect(routing).toContain('"degraded"');
     expect(canary).toContain("repairShowcaseOpenAIInboundRouting");
     expect(canary).toContain("configureNativeNumberRouting");
+    expect(canary).toContain("isNativeNumberOpenAIRouted");
   });
 
   it("routes every PSTN call through the governed OpenAI runtime", () => {

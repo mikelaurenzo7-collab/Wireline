@@ -11,7 +11,6 @@ import {
   validateBody,
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
-import { runInBackground } from "../lib/background-work";
 import { drizzle } from "../lib/server-context";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
@@ -19,7 +18,6 @@ import {
   listNativeAvailableLocalNumbers,
   repairOwnedTwilioOpenAIRouting,
 } from "../lib/voice/native-phone-carrier";
-import { openAISipConfigured } from "../lib/voice/openai-sip-config";
 import { resolveNonProductionPhoneNumberPickerInventory } from "../lib/voice/phone-number-picker-inventory";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
 import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
@@ -60,6 +58,7 @@ router.get(
   "/api/phone-numbers",
   authenticateUser,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const routing = await repairOwnedTwilioOpenAIRouting(req.user.id);
     const rows = await drizzle
       .select({
         id: schema.phoneNumbers.id,
@@ -71,23 +70,45 @@ router.get(
       })
       .from(schema.phoneNumbers)
       .where(eq(schema.phoneNumbers.userId, req.user.id));
-    if (openAISipConfigured()) {
-      runInBackground(`openai inbound routing repair ${req.user.id}`, () =>
-        repairOwnedTwilioOpenAIRouting(req.user.id),
-      );
-    }
     res.setHeader("Cache-Control", "private, no-store");
     res.json({
-      numbers: rows.map((row) => ({
-        id: String(row.id),
-        phone_number: row.phoneNumber,
-        carrier_number_id: row.carrierNumberId,
-        agent_id: row.agentId,
-        campaign_label: row.campaignLabel,
-        provider: "twilio_openai_realtime_sip",
-        native_voice_status: row.agentId ? "active" : "unassigned",
-        created_at: row.createdAt?.toISOString() ?? null,
-      })),
+      numbers: rows.map((row) => {
+        const routingConfirmed = routing.confirmedPhoneNumbers.has(row.phoneNumber);
+        const nativeVoiceStatus = !row.agentId
+          ? "unassigned"
+          : routingConfirmed
+            ? "active"
+            : routing.state === "not_configured"
+              ? "configuration_required"
+              : routing.state === "blocked"
+                ? "unavailable"
+                : "degraded";
+        const nativeVoiceError =
+          !row.agentId || routingConfirmed
+            ? null
+            : (routing.failures.get(row.phoneNumber) ??
+              (routing.state === "not_configured"
+                ? "Phone voice needs platform configuration. Contact BotBound support."
+                : routing.state === "blocked"
+                  ? "Phone voice is unavailable for this account environment."
+                  : "BotBound could not confirm this line's Twilio routing. Retry shortly or contact support."));
+        return {
+          id: String(row.id),
+          phone_number: row.phoneNumber,
+          carrier_number_id: row.carrierNumberId,
+          agent_id: row.agentId,
+          campaign_label: row.campaignLabel,
+          provider: "twilio_openai_realtime_sip",
+          native_voice_status: nativeVoiceStatus,
+          native_voice_error: nativeVoiceError,
+          created_at: row.createdAt?.toISOString() ?? null,
+        };
+      }),
+      routing: {
+        state: routing.state,
+        confirmed: routing.confirmedPhoneNumbers.size,
+        failed: routing.failures.size,
+      },
     });
   }),
 );
