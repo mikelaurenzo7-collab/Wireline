@@ -1,7 +1,38 @@
+import { readFileSync } from "node:fs";
 import pg from "pg";
 import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
 
 const { Pool } = pg;
+
+function normalizeSqlFunctionBody(value) {
+  return String(value ?? "")
+    .replace(/\r\n?/gu, "\n")
+    .trim();
+}
+
+function extractMigrationFunctionBody(source, functionName) {
+  const declaration = `CREATE OR REPLACE FUNCTION public.${functionName}(`;
+  const declarationAt = source.indexOf(declaration);
+  const bodyMarker = "\nAS $$";
+  const bodyAt = source.indexOf(bodyMarker, declarationAt);
+  const bodyEnd = source.indexOf("\n$$;", bodyAt + bodyMarker.length);
+  if (declarationAt < 0 || bodyAt < 0 || bodyEnd < 0) {
+    throw new Error(`Unable to extract canonical migration body for ${functionName}.`);
+  }
+  return normalizeSqlFunctionBody(source.slice(bodyAt + bodyMarker.length, bodyEnd));
+}
+
+const accountEnvironmentPromotionMigration = readFileSync(
+  new URL(
+    "../drizzle/migrations/0163_guard_account_environment_promotion.sql",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const expectedPromotionPreflightBody = extractMigrationFunctionBody(
+  accountEnvironmentPromotionMigration,
+  "wireline_account_environment_promotion_preflight",
+);
 
 // Match the deployed runtime's connection precedence. Migrations may use the
 // direct POSTGRES_URL, but the release gate must certify the database the app
@@ -471,11 +502,7 @@ try {
              FROM information_schema.columns
             WHERE table_schema = 'public'
               AND table_name = 'wireline_settings'
-              AND column_name = 'voice_llm_model') AS model_default,
-          (SELECT count(*)
-             FROM public.wireline_settings
-            WHERE lower(coalesce(voice_llm_provider, '')) = 'xai'
-              AND lower(coalesce(voice_llm_model, '')) = 'grok-4.6') AS invalid_runtime_pairs
+              AND column_name = 'voice_llm_model') AS model_default
       `),
     pool.query(`
         SELECT
@@ -737,7 +764,9 @@ try {
           pg_get_function_identity_arguments(procedure_row.oid) AS identity_arguments,
           pg_get_function_result(procedure_row.oid) AS function_result,
           pg_get_functiondef(procedure_row.oid) AS function_definition,
+          procedure_row.prosrc AS function_body,
           procedure_row.prosecdef AS security_definer,
+          procedure_row.provolatile AS volatility,
           procedure_row.proconfig,
           (owner_role.rolsuper OR owner_role.rolbypassrls) AS trusted_owner,
           has_function_privilege(
@@ -1067,22 +1096,16 @@ try {
     }
   }
 
-  // Migration 0156 restores a coherent rollback-only Vapi provider/model pair.
+  // Migration 0168 makes OpenAI Realtime the only live-call provider/model pair.
   // Certify its live effects after migration replay instead of trusting only
   // the journal, which can lag when a repeat-safe correction landed manually.
   const runtimeCohesion = runtimeCohesionResult.rows[0] ?? {};
   if (normalizeTextDefault(runtimeCohesion.provider_default) !== "'openai'") {
     failures.push("runtime_cohesion:wrong_voice_llm_provider_default");
   }
-  if (normalizeTextDefault(runtimeCohesion.model_default) !== "'gpt-4o'") {
+  if (normalizeTextDefault(runtimeCohesion.model_default) !== "'gpt-realtime-2.1'") {
     failures.push("runtime_cohesion:wrong_voice_llm_model_default");
   }
-  if (Number(runtimeCohesion.invalid_runtime_pairs || 0) !== 0) {
-    failures.push(
-      `runtime_cohesion:invalid_xai_grok_46_pairs:${runtimeCohesion.invalid_runtime_pairs}`,
-    );
-  }
-
   const auditSystemReceipt = auditSystemReceiptResult.rows[0];
   if (!auditSystemReceipt) {
     failures.push("audit_receipt:missing_user_id_column");
@@ -1445,8 +1468,14 @@ try {
         failures.push(`account_environment:preflight_missing_${checkName}`);
       }
     }
-    if (/\b(?:DELETE|UPDATE|INSERT|TRUNCATE)\b/iu.test(definition)) {
+    if (promotionPreflight.volatility !== "s") {
       failures.push("account_environment:preflight_is_mutating");
+    }
+    if (
+      normalizeSqlFunctionBody(promotionPreflight.function_body) !==
+      expectedPromotionPreflightBody
+    ) {
+      failures.push("account_environment:preflight_body_drift");
     }
   }
 
