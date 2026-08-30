@@ -21,9 +21,6 @@ const replacements = {
   "src/lib/agent-constants.ts": [
     ["You are Wireline Operator:", "You are BotBound Operator:"],
   ],
-  "src/lib/ai-models.ts": [
-    ["retried by Wireline through OpenAI.", "retried by BotBound through OpenAI."],
-  ],
   "src/lib/demo-account-seed.ts": [
     ["HIPAA + Wireline for our practice", "HIPAA + BotBound for our practice"],
     ["Avery from Wireline. Happy to help with that.", "Avery from BotBound. Happy to help with that."],
