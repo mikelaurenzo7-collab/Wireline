@@ -13,9 +13,9 @@ function normalizeSqlFunctionBody(value) {
 function extractMigrationFunctionBody(source, functionName) {
   const declaration = `CREATE OR REPLACE FUNCTION public.${functionName}(`;
   const declarationAt = source.indexOf(declaration);
-  const bodyMarker = "\nAS $";
+  const bodyMarker = "\nAS $$";
   const bodyAt = source.indexOf(bodyMarker, declarationAt);
-  const bodyEnd = source.indexOf("\n$;", bodyAt + bodyMarker.length);
+  const bodyEnd = source.indexOf("\n$$;", bodyAt + bodyMarker.length);
   if (declarationAt < 0 || bodyAt < 0 || bodyEnd < 0) {
     throw new Error(`Unable to extract canonical migration body for ${functionName}.`);
   }
