@@ -32,6 +32,8 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(carrier).toContain("row.voiceMethod === expected.voiceMethod");
     expect(carrier).toContain("row.voiceFallbackUrl === expected.voiceFallbackUrl");
     expect(carrier).toContain("row.voiceFallbackMethod === expected.voiceFallbackMethod");
+    expect(carrier).toContain("const updated = await client.incomingPhoneNumbers(sid).update");
+    expect(carrier).toContain("if (!isNativeNumberOpenAIRouted(updated))");
     const repair = carrier.slice(
       carrier.indexOf("export async function repairOwnedTwilioOpenAIRouting"),
       carrier.indexOf("async function recoverAcceptedPurchase"),
