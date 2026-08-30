@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { resolvePreviewMigrationDatabaseUrl } from "./lib/preview-migration-database.mjs";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
+import { resolveProductionSchemaDatabase } from "./run-production-schema-effects.mjs";
 
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -12,7 +13,8 @@ const run = (command, args, options = {}) => {
 };
 
 const environment = process.env.VERCEL_ENV || process.env.NODE_ENV;
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+const databaseSelection = resolveProductionSchemaDatabase(process.env);
+const databaseUrl = databaseSelection?.connectionString || "";
 const projectHint = [
   process.env.VERCEL_PROJECT_ID,
   process.env.VERCEL_PROJECT_PRODUCTION_URL,
