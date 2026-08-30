@@ -80,7 +80,7 @@ htmlcov/
 scratch/
 terminals/
 mcps/
-agent-tools/
+/agent-tools/
 work/
 
 # Editors and operating-system metadata

@@ -69,7 +69,7 @@ router.post(
     const callerNumber = normalizeOpenAIPhoneNumber(req.body?.From);
     if (!calledNumber || !openAISipConfigured()) {
       log.warn("Twilio inbound OpenAI bridge refused before routing", {
-        calledSuffix: phoneSuffixForLog(calledNumber),
+        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
         reason: calledNumber ? "openai_not_configured" : "invalid_called_number",
       });
       res.status(200).send(hangupTwiml());

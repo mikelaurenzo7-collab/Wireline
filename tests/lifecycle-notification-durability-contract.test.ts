@@ -40,7 +40,7 @@ describe("lifecycle notification durability", () => {
   });
 
   it("backs human-escalation claims with a task and voicemail notices with retries", () => {
-    const workflow = read("src/lib/agent-tools/workflow.ts");
+    const workflow = read("src/lib/bot-tools/workflow.ts");
     const escalation = workflow.slice(workflow.indexOf('if (fn === "escalate_to_human")'));
     const voicemail = read("src/routes/twilio-webhook-base.ts");
 

@@ -335,7 +335,7 @@ router.post(
       : await resolveInboundContext(calledNumber!, callerNumber);
     if (!context) {
       log.warn("OpenAI incoming call rejected: no active BotBound line", {
-        calledSuffix: phoneSuffixForLog(calledNumber),
+        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
       });
       await rejectCall(callId, 404);
       res.status(202).json({ received: true, handled: false });
