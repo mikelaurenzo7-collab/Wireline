@@ -136,6 +136,12 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("confdeltype");
     expect(verifierSource).toContain("constraint_row.conkey");
     expect(verifierSource).toContain("constraint_row.confkey");
+    expect(
+      verifierSource.match(/to_jsonb\(ARRAY\(\s*SELECT child_column\.attname/gu),
+    ).toHaveLength(2);
+    expect(
+      verifierSource.match(/to_jsonb\(ARRAY\(\s*SELECT parent_column\.attname/gu),
+    ).toHaveLength(2);
     expect(verifierSource).toContain("audit_receipt:missing_user_id_column");
     expect(verifierSource).toContain("audit_receipt:user_id_not_nullable");
     expect(verifierSource).toContain("audit_receipt:missing_server_insert_policy");
