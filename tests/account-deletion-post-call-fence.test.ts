@@ -178,7 +178,7 @@ describe("account deletion versus post-call provider work", () => {
     expect(read("src/lib/voice/openai-realtime-call-control.ts")).toContain(
       "runTenantProviderWorkWithDeletionFence",
     );
-    expect(read("src/lib/voice/xai-phone-activation-service.ts")).toContain(
+    expect(read("src/lib/voice/native-phone-assignment.ts")).toContain(
       "runTenantProviderWorkWithDeletionFence",
     );
     expect(dispatcher).toContain("withAccountDeletionFence(tx, userId");

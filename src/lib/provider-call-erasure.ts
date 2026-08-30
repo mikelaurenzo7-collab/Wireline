@@ -1,5 +1,5 @@
 type CallArtifactPointer = {
-  vapiCallId: string | null;
+  providerCallId: string | null;
   recordingUrl: string | null;
 };
 
@@ -11,7 +11,6 @@ export interface ProviderCallErasureOptions {
 }
 
 export interface ProviderCallErasureSummary {
-  vapiCallsDeleted: number;
   twilioRecordingsDeleted: number;
   twilioTranscriptionsDeleted: number;
   twilioCallsDeleted: number;
@@ -30,10 +29,8 @@ type TwilioTranscriptionList = {
   transcriptions?: Array<{ sid?: string | null }>;
 };
 
-const VAPI_BASE_URL = "https://api.vapi.ai";
 const TWILIO_API_ORIGIN = "https://api.twilio.com";
 const TWILIO_VOICEMAIL_PREFIX = "twilio-voicemail:";
-const NATIVE_XAI_CALL_PREFIX = "xai:";
 const TWILIO_ACCOUNT_SID_RE = /^AC[0-9a-fA-F]{32}$/;
 const TWILIO_CALL_SID_RE = /^CA[0-9a-fA-F]{32}$/;
 const TWILIO_TRANSCRIPTION_SID_RE = /^TR[0-9a-fA-F]{32}$/;
@@ -96,48 +93,6 @@ async function readJson<T>(response: Response, context: string): Promise<T> {
   } catch {
     throw new Error(`${context} returned malformed JSON; deferring account purge.`);
   }
-}
-
-async function eraseVapiCalls(
-  pointers: readonly CallArtifactPointer[],
-  fetchFn: ProviderFetch,
-  env: NodeJS.ProcessEnv,
-): Promise<number> {
-  const callIds = new Set(
-    pointers
-      .map(({ vapiCallId }) => vapiCallId?.trim() || "")
-      .filter(
-        (callId) =>
-          callId.length > 0 &&
-          callId !== "unknown" &&
-          !callId.startsWith(TWILIO_VOICEMAIL_PREFIX) &&
-          !callId.startsWith(NATIVE_XAI_CALL_PREFIX),
-      ),
-  );
-  if (!callIds.size) return 0;
-
-  const privateKey = requiredEnv(env, "VAPI_PRIVATE_KEY");
-  let deleted = 0;
-  for (const callId of callIds) {
-    const response = await fetchFn(`${VAPI_BASE_URL}/call/${encodeURIComponent(callId)}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${privateKey}`,
-        "Content-Type": "application/json",
-      },
-      body: "{}",
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (response.ok) {
-      deleted++;
-      continue;
-    }
-    if (alreadyGone(response.status)) continue;
-    throw new Error(
-      `Vapi call deletion failed with HTTP ${response.status}; deferring account purge.`,
-    );
-  }
-  return deleted;
 }
 
 async function eraseTwilioRecording(
@@ -270,7 +225,7 @@ async function eraseTwilioVoicemails(
 }> {
   const recordingUrls = new Set(
     pointers
-      .filter(({ vapiCallId }) => vapiCallId?.startsWith(TWILIO_VOICEMAIL_PREFIX))
+      .filter(({ providerCallId }) => providerCallId?.startsWith(TWILIO_VOICEMAIL_PREFIX))
       .map(({ recordingUrl }) => recordingUrl?.trim() || "")
       .filter(Boolean),
   );
@@ -308,11 +263,9 @@ export async function eraseProviderCallArtifacts(
   const fetchFn = options.fetchFn ?? fetch;
   const env = options.env ?? process.env;
 
-  const vapiCallsDeleted = await eraseVapiCalls(pointers, fetchFn, env);
   const twilio = await eraseTwilioVoicemails(pointers, fetchFn, env);
 
   return {
-    vapiCallsDeleted,
     twilioRecordingsDeleted: twilio.recordingsDeleted,
     twilioTranscriptionsDeleted: twilio.transcriptionsDeleted,
     twilioCallsDeleted: twilio.callsDeleted,

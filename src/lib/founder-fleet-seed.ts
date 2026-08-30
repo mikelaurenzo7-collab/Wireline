@@ -10,7 +10,7 @@ import { WIRELINE_PERSONAS } from "./wireline-agent-personas";
 import type { WirelinePersonaId } from "./wireline-agent-escalation";
 import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities";
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
-import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
 import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
 import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
@@ -512,7 +512,7 @@ async function upsertAgent(
     archetype: template.archetype,
     firstMessage: template.firstMessage,
     voiceId,
-    voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
+    voiceProvider: "openai",
     enabledTools: toolsJson,
     personalityVibe: template.personalityVibe || "warm",
     emailAgentTone: template.emailAgentTone,

@@ -10,7 +10,7 @@ import {
 export type BuyerTier = "certified" | "beta" | "internal";
 
 const CERTIFIED_IDS = new Set([
-  "vapi",
+  "openai",
   "twilio",
   "stripe",
   "resend",

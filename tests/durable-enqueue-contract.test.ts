@@ -104,11 +104,15 @@ describe("durable enqueue failure contract", () => {
     expect(campaigns).toContain("status: previousStatus");
   });
 
-  it("routes failed Vapi completion enqueue through the synchronous fallback", () => {
-    const vapi = read("src/routes/vapi-v2.ts");
-    expect(vapi).toContain('type: "vapi_webhook"');
-    expect(vapi).toContain("await handleEndOfCallReport({ message, agent })");
-    expect(vapi).toContain("res.status(500).json({ success: false })");
+  it("does not acknowledge OpenAI SIP finalization before durable follow-up enqueue", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const persist = session.indexOf("async function persistFinishedCall");
+    const enqueue = session.indexOf("enqueuePostCallDigest({", persist);
+    const awaitPersist = session.indexOf("await persistFinishedCall({", enqueue);
+    expect(persist).toBeGreaterThan(-1);
+    expect(enqueue).toBeGreaterThan(persist);
+    expect(awaitPersist).toBeGreaterThan(enqueue);
+    expect(session).not.toContain("void enqueuePostCallDigest");
   });
 
   it("makes existing catch-based producers observe enqueue failures", () => {

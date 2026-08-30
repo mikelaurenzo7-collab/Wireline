@@ -51,8 +51,12 @@ export function gatewayModelId(model: string) {
       process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() ||
       `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`
     );
+  // Retired xAI/Grok values must never escape through a provider-qualified
+  // model id. Check before accepting the generic `provider/model` form.
+  if (/^xai\//i.test(selected) || /grok/i.test(selected)) {
+    return `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`;
+  }
   if (selected.includes("/")) return selected;
-  if (/grok/i.test(selected)) return `xai/${selected}`;
   if (/^gpt-/i.test(selected)) return `openai/${selected}`;
   if (/^gemini/i.test(selected)) return `google/${selected}`;
   return selected;

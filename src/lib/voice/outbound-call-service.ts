@@ -1,7 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
-import { xaiPhoneBindings } from "../../db/xai-voice-schema";
 import {
   assertExternalEntityActionAllowed,
   assertLiveExternalActionAllowed,
@@ -12,18 +11,22 @@ import { drizzle, log } from "../server-context";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { nativeOutboundAmdParams } from "./native-outbound-amd";
-import { issueXAIOutboundToken, xaiOutboundTokenReady } from "./xai-outbound-token";
 import {
   claimNativeOutboundPlacement,
   markNativeOutboundPlacementAccepted,
   markNativeOutboundPlacementFailure,
-} from "./xai-outbound-placement";
+} from "./openai-outbound-placement";
 import {
-  normalizeXAIPhoneNumber,
-  twilioXAIOutboundBridgeUrl,
-  twilioXAIOutboundFallbackUrl,
-  twilioXAIOutboundStatusUrl,
-} from "./xai-sip-config";
+  issueOpenAIOutboundToken,
+  openAIOutboundTokenReady,
+} from "./openai-outbound-token";
+import {
+  normalizeOpenAIPhoneNumber,
+  openAISipConfigured,
+  twilioOpenAIOutboundBridgeUrl,
+  twilioOpenAIOutboundFallbackUrl,
+  twilioOpenAIOutboundStatusUrl,
+} from "./openai-sip-config";
 
 export const OUTBOUND_CALL_OUTCOME_UNCERTAIN =
   "Voice carrier unavailable after retries: outbound call outcome is uncertain.";
@@ -80,21 +83,19 @@ function ambiguousResult(leadId: bigint): PlaceCallResult {
 }
 
 /**
- * Native outbound call entrypoint.
- *
- * Twilio first rings the customer. Only after answer does Twilio request the
- * signed bridge TwiML and connect the answered leg to the tenant's registered
- * xAI SIP number. The placement claim is durable before the carrier request,
- * so overlapping campaign/cadence/callback workers cannot double-dial a lead.
+ * Twilio first rings the customer. Only after answer and synchronous AMD does
+ * Twilio request signed TwiML and bridge the answered leg to OpenAI Realtime
+ * over TLS SIP. The durable placement claim prevents overlapping workers from
+ * double-dialing the same lead.
  */
 async function placeOutboundCallAfterDeletionFence(
   input: PlaceOutboundCallInput,
 ): Promise<PlaceCallResult> {
-  const customerNumber = normalizeXAIPhoneNumber(input.customerNumber);
+  const customerNumber = normalizeOpenAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
   }
-  if (!xaiOutboundTokenReady()) {
+  if (!openAIOutboundTokenReady() || !openAISipConfigured()) {
     return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };
   }
   const twilio = getTwilioClient();
@@ -102,7 +103,7 @@ async function placeOutboundCallAfterDeletionFence(
     return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };
   }
 
-  const [[settings], [agent], [binding]] = await Promise.all([
+  const [[settings], [agent], [line]] = await Promise.all([
     drizzle
       .select({ subscriptionStatus: schema.settings.subscriptionStatus })
       .from(schema.settings)
@@ -114,36 +115,33 @@ async function placeOutboundCallAfterDeletionFence(
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1),
     drizzle
-      .select()
-      .from(xaiPhoneBindings)
+      .select({
+        phoneNumber: schema.phoneNumbers.phoneNumber,
+        carrierNumberId: schema.phoneNumbers.vapiNumberId,
+      })
+      .from(schema.phoneNumbers)
       .where(
         and(
-          eq(xaiPhoneBindings.userId, input.userId),
-          eq(xaiPhoneBindings.agentId, input.agentId),
-          eq(xaiPhoneBindings.status, "active"),
+          eq(schema.phoneNumbers.userId, input.userId),
+          eq(schema.phoneNumbers.agentId, input.agentId),
         ),
       )
-      .orderBy(desc(xaiPhoneBindings.updatedAt))
+      .orderBy(desc(schema.phoneNumbers.createdAt), desc(schema.phoneNumbers.id))
       .limit(1),
   ]);
 
   if (settings?.subscriptionStatus !== "active") {
-    // Missing, pending_activation, past_due, and canceled all fail closed.
-    // Never coerce an absent status to "active".
     return { ok: false, status: 403, error: "Upgrade your billing plan to place outbound calls." };
   }
-  if (!agent) return { ok: false, status: 404, error: "Agent not found." };
-  const fromNumber = normalizeXAIPhoneNumber(binding?.phoneNumber);
-  if (
-    !binding?.xaiPhoneNumberId ||
-    !binding.xaiWebhookId ||
-    !binding.webhookSecretEncrypted ||
-    !fromNumber
-  ) {
+  if (!agent) return { ok: false, status: 404, error: "Bot not found." };
+  const fromNumber = normalizeOpenAIPhoneNumber(line?.phoneNumber);
+  // The legacy column is retained for append-only schema compatibility; an
+  // OpenAI-native line must contain the Twilio IncomingPhoneNumber SID.
+  if (!fromNumber || !/^PN[a-f0-9]{32}$/i.test(String(line?.carrierNumberId || ""))) {
     return {
       ok: false,
       status: 409,
-      error: "Connect this Bot's live voice line before dialing.",
+      error: "Connect this Bot's Twilio voice line before dialing.",
     };
   }
   if (await isDncBlocked(input.userId, customerNumber)) {
@@ -153,7 +151,7 @@ async function placeOutboundCallAfterDeletionFence(
   const claim = await claimNativeOutboundPlacement({ ...input, customerNumber });
   if (!claim.ok) return claim;
   const { lead, created, placementId } = claim;
-  const { token } = issueXAIOutboundToken({ leadId: lead.id, placementId });
+  const { token } = issueOpenAIOutboundToken({ leadId: lead.id, placementId });
   const telemarketing = isMarketingCallPurpose(input.callPurpose);
   const amd = nativeOutboundAmdParams(input.callPurpose);
 
@@ -161,11 +159,11 @@ async function placeOutboundCallAfterDeletionFence(
     const call = await twilio.calls.create({
       to: customerNumber,
       from: fromNumber,
-      url: twilioXAIOutboundBridgeUrl(token),
+      url: twilioOpenAIOutboundBridgeUrl(token),
       method: "POST",
-      fallbackUrl: twilioXAIOutboundFallbackUrl(token),
+      fallbackUrl: twilioOpenAIOutboundFallbackUrl(token),
       fallbackMethod: "POST",
-      statusCallback: twilioXAIOutboundStatusUrl(token),
+      statusCallback: twilioOpenAIOutboundStatusUrl(token),
       statusCallbackMethod: "POST",
       statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
       timeout: 30,
@@ -201,7 +199,7 @@ async function placeOutboundCallAfterDeletionFence(
       callSid,
     });
     if (!accepted.accepted || (accepted.callId && accepted.callId !== callSid)) {
-      log.error("Native outbound call accepted but lead correlation was replaced", {
+      log.error("OpenAI outbound call accepted but lead correlation was replaced", {
         userId: input.userId,
         agentId: input.agentId,
         leadId: String(lead.id),
@@ -210,7 +208,7 @@ async function placeOutboundCallAfterDeletionFence(
       return ambiguousResult(lead.id);
     }
 
-    log.info("Native outbound call accepted by Twilio", {
+    log.info("OpenAI outbound call accepted by Twilio", {
       userId: input.userId,
       agentId: input.agentId,
       leadId: String(lead.id),
@@ -244,7 +242,7 @@ async function placeOutboundCallAfterDeletionFence(
       };
     }
 
-    log.error("Native outbound call creation failed", {
+    log.error("OpenAI outbound call creation failed", {
       userId: input.userId,
       agentId: input.agentId,
       leadId: String(lead.id),
@@ -263,22 +261,16 @@ async function placeOutboundCallAfterDeletionFence(
   }
 }
 
-/**
- * Every Twilio call-create path crosses one durable account-deletion lease at
- * this shared boundary. Accepted and ambiguous carrier outcomes retain the
- * lease through the native call safety horizon; definite local/provider
- * rejections release it immediately. Cadence/callback leases are reused by
- * the provider-fence context, so those paths do not double-lease.
- */
+/** Every Twilio call-create path crosses the durable account-deletion fence. */
 export async function placeOutboundCall(input: PlaceOutboundCallInput): Promise<PlaceCallResult> {
-  await assertLiveExternalActionAllowed(input.userId, "twilio_outbound_call_create");
-  await assertExternalEntityActionAllowed(input.userId, "twilio_outbound_call_create", {
+  await assertLiveExternalActionAllowed(input.userId, "twilio_openai_outbound_call_create");
+  await assertExternalEntityActionAllowed(input.userId, "twilio_openai_outbound_call_create", {
     phone: input.customerNumber,
     leadId: input.leadId,
   });
   const outcome = await runTenantProviderWorkWithDeletionFence({
     userId: input.userId,
-    operation: "twilio_outbound_call_create",
+    operation: "twilio_openai_outbound_call_create",
     ttlMs: 15 * 60_000,
     retainOnSuccess: (result) => Boolean(result.ok || result.providerOutcomeAmbiguous),
     perform: () => placeOutboundCallAfterDeletionFence(input),

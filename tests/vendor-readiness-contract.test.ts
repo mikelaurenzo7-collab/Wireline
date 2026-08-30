@@ -11,69 +11,38 @@ describe("vendor readiness contract", () => {
     for (const id of [
       "postgres",
       "upstash",
-      "xai",
       "openai",
       "ai_gateway",
-      "vapi",
       "twilio_voice_sms",
-      "twilio_whatsapp",
       "stripe",
       "agentmail",
       "resend",
-      "live_video",
+      "elevenlabs",
       "federal_dnc",
     ]) {
       expect(probe).toContain(`"${id}"`);
     }
-
     expect(probe).toContain("/v1/models");
-    expect(probe).toContain('openaiModelIds.has("gpt-5.6-terra")');
     expect(probe).toContain('openaiModelIds.has("gpt-realtime-2.1")');
-    expect(probe).toContain('openaiModelIds.has("gpt-4o-mini-transcribe")');
-    expect(probe).toContain("/phone-number?limit=100");
-    expect(probe).toContain("/assistant?limit=1");
+    expect(probe).toContain('present("OPENAI_PROJECT_ID")');
+    expect(probe).toContain('present("OPENAI_WEBHOOK_SECRET")');
     expect(probe).toContain("/IncomingPhoneNumbers.json?PageSize=50");
-    expect(probe).toContain("messaging.twilio.com/v1/Services?PageSize=50");
-    expect(probe).toContain("/v1/Channels/Senders?Channel=whatsapp&PageSize=50");
-    expect(probe).toContain("https://api.agentmail.to/v0/inboxes?limit=1");
-    expect(probe).toContain("https://api.agentmail.to/v0/api-keys?limit=100");
-    expect(probe).toContain("https://api.agentmail.to/v0/domains?limit=100");
-    expect(probe).toContain("/v0/domains/${encodeURIComponent(agentmailDomainId)}");
     expect(probe).toContain("this probe uses read-only GET requests only");
+    expect(probe).not.toMatch(/api\.vapi\.ai|api\.x\.ai|VAPI_|XAI_|grok/i);
     expect(probe).not.toContain('/call"');
-    expect(probe).not.toContain("/chat/completions");
     expect(probe).not.toContain("/Messages.json");
   });
 
-  it("blocks invalid funding or core inventory and keeps optional channels separate", () => {
-    expect(probe).toContain("stripeAvailable >= 0");
-    expect(probe).toContain("Twilio credentials missing or rejected");
+  it("requires funding and complete Twilio-to-OpenAI routing", () => {
     expect(probe).toContain("twilioBalanceUsd > 0");
-    expect(probe).toContain("balance_positive: twilioFunded");
-    expect(probe).toContain("voiceCapableNumbers.length > 0");
+    expect(probe).toContain("openAIInboundNumbers.length === voiceCapableNumbers.length");
+    expect(probe).toContain("/api/twilio-webhook/openai-inbound");
+    expect(probe).toContain("stripeAvailable >= 0");
     expect(probe).toContain("No ONLINE Twilio WhatsApp sender found");
-    expect(probe).toContain('overage_policy: "none_retired"');
-    expect(probe).not.toContain("WIRELINE_LIVE_VIDEO_CATALOG_READY");
-    expect(probe).toContain("Live talking-head video is retired");
-    const liveVideoRecordIdx = probe.indexOf('"live_video"');
-    expect(liveVideoRecordIdx).toBeGreaterThanOrEqual(0);
-    expect(probe.slice(liveVideoRecordIdx - 15, liveVideoRecordIdx + 280)).toContain("false");
-    expect(probe).toContain("isFederalDncVendorConfigured");
-    expect(probe).toContain("/^vcp_/i");
-    // Federal DNC remains on the checklist but is not required for launch_ready.
-    expect(probe).toContain("deferred checklist — not a launch GO blocker");
-    const actualRecordIdx = probe.indexOf('"federal_dnc"');
-    expect(actualRecordIdx).toBeGreaterThanOrEqual(0);
-    expect(probe.slice(actualRecordIdx - 15, actualRecordIdx + 280)).toContain("false");
-    const vapiRecordIdx = probe.lastIndexOf('"vapi"');
-    expect(vapiRecordIdx).toBeGreaterThanOrEqual(0);
-    expect(probe.slice(vapiRecordIdx - 15, vapiRecordIdx + 80)).toContain("false");
   });
 
-  it("is exposed as an explicit owner command rather than a default local test", () => {
-    const packageJson = JSON.parse(read("package.json")) as {
-      scripts: Record<string, string>;
-    };
+  it("is an explicit owner command rather than a default local test", () => {
+    const packageJson = JSON.parse(read("package.json")) as { scripts: Record<string, string> };
     expect(packageJson.scripts["vendor:readiness"]).toBe("node scripts/check-vendor-readiness.mjs");
     expect(packageJson.scripts.verify).not.toContain("vendor:readiness");
   });

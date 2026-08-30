@@ -24,7 +24,6 @@ function expectMiddlewareBeforeHandler(source: string, route: string, handlerMar
 describe("provider spend launch kill switch", () => {
   it("guards browser-minted voice sessions before provider work", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
-    const liveVoice = read("src/routes/grok-voice-routes.ts");
     const managedVoices = read("src/routes/voices-routes.ts");
     const publicDemo = read("src/routes/marketing-runtime-routes.ts");
 
@@ -43,18 +42,7 @@ describe("provider spend launch kill switch", () => {
       '"/api/public/demo-call"',
       "asyncHandler(async (req, res)",
     );
-    expectMiddlewareBeforeHandler(
-      liveVoice,
-      '"/api/voice/live/session"',
-      "async (req: AuthenticatedRequest, res: Response)",
-    );
-    expectMiddlewareBeforeHandler(
-      liveVoice,
-      '"/api/voices/curated/preview"',
-      "async (req: AuthenticatedRequest, res: Response)",
-    );
-    expect(liveVoice).not.toContain('"/api/voice/live/web-session"');
-    expect(liveVoice).not.toContain("Vapi");
+    expect(openai).not.toMatch(/Vapi|xAI|Grok/);
     for (const route of [
       '"/api/voices/:id/preview"',
       '"/api/voices/clone"',

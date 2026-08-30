@@ -6,7 +6,7 @@ function read(relativePath: string) {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8");
 }
 
-describe("dual-voice PSTN routing contracts", () => {
+describe("OpenAI Realtime voice routing contracts", () => {
   it("preserves phone voice on presenter PATCH unless explicitly overridden", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
     expect(routes).toContain("hasPhoneVoiceId");
@@ -18,37 +18,29 @@ describe("dual-voice PSTN routing contracts", () => {
     );
   });
 
-  it("routes every PSTN call through the governed managed voice runtime", () => {
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
-    expect(factory).toContain("buildManagedVoiceRuntime");
-    expect(factory).toContain('schema.clonedVoices.status, "approved"');
-    expect(factory).toContain("resolvePstnVoiceCandidate");
-    expect(factory).not.toContain('voiceProvider === "presenter"');
-    expect(managedRuntime).toContain("isManagedVapiVoiceId");
-    expect(managedRuntime).toContain("DEFAULT_MANAGED_VOICE_ID");
-    expect(managedRuntime).toContain('provider: "xai" as const');
-    expect(managedRuntime).toContain('provider: "vapi" as const');
-    expect(managedRuntime).toContain('provider: "11labs" as const');
-    expect(managedRuntime).toContain("input.approvedClone === true");
-    const roster = read("src/data/voice-roster.ts");
-    const helper = roster.slice(roster.indexOf("export function resolvePstnVoiceCandidate"));
-    expect(helper).toContain("if (isManagedVapiVoiceId(studioVoiceId)) return studioVoiceId;");
-    expect(helper).toContain("if (isManagedVapiVoiceId(phoneVoiceId)) return phoneVoiceId;");
-    // Native PSTN uses the xAI Speech-to-Speech roster, not Vapi candidate resolution.
-    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
-    const grokConfig = read("src/lib/voice/grok-voice-config.ts");
-    const client = read("src/lib/vapi-client.ts");
-    expect(nativeRuntime).toContain("resolveWirelineGrokVoice");
-    expect(grokConfig).toContain("WIRELINE_LIVE_VOICE_PROFILES");
-    expect(client).toContain("placeNativeOutboundCall");
-    expect(client).not.toContain("resolvePstnVoiceCandidate");
+  it("routes every PSTN call through the governed OpenAI runtime", () => {
+    const policy = read("src/lib/voice/runtime-policy.ts");
+    const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
+    const webhook = read("src/routes/openai-sip-routes.ts");
+    expect(policy).toContain('runtime: "openai_realtime"');
+    expect(policy).toContain('phoneTransport: "openai_sip"');
+    expect(policy).toContain('carrier: "twilio"');
+    expect(policy).toContain("fallbackRuntime: null");
+    expect(runtime).toContain("buildOpenAIRealtimeAgentRuntime");
+    expect(runtime).toContain('runtime.agent.voiceProvider?.toLowerCase() === "presenter"');
+    expect(runtime).toContain("runtime.agent.phoneVoiceId");
+    expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
+    expect(inbound).toContain('"/api/twilio-webhook/openai-inbound"');
+    expect(webhook).toContain('"/api/webhooks/openai/realtime"');
+    expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
   });
 
   it("routes Studio phone picks through the managed voice PATCH", () => {
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(picker).toContain("/voice");
-    expect(picker).toContain('provider: "vapi"');
+    expect(picker).toContain("OPENAI_REALTIME_VOICES");
+    expect(picker).toContain("voice.provider");
     expect(picker).not.toContain('provider: "presenter"');
   });
 });
@@ -110,21 +102,12 @@ describe("ChatGPT private voice simulation routing", () => {
     expect(chatkitIndex).toBeGreaterThan(openaiIndex);
   });
 
-  it("uses one XAI_API_KEY for chat, preview TTS, Studio, and native PSTN", () => {
+  it("documents only OpenAI for managed live voice", () => {
     const envExample = read(".env.example");
-    expect(envExample).toContain("XAI_API_KEY=");
-    expect(envExample).toContain("XAI_API_KEY_CHATKIT=");
-    expect(envExample).toContain("XAI_SIP_ALLOWED_ADDRESSES=");
-    expect(envExample).not.toContain("XAI_API_KEY_VOICE=");
-    expect(envExample).toContain("Wireline does not require a second env");
-    expect(envExample).toContain("var for chat vs voice");
-    expect(envExample).toContain("Latency is per model and endpoint, not");
-    expect(envExample).toContain("Rate limits are per xAI team and model");
-    expect(envExample).toContain("Do not add XAI_API_KEY_VOICE");
-    expect(envExample).toContain("Native Twilio SIP Speech-to-Speech");
-    expect(envExample).not.toContain(
-      "Live PSTN Grok 4.3 + xAI Eve/Ara/Rex/Sal/Leo use VAPI_PRIVATE_KEY",
-    );
+    expect(envExample).toContain("OPENAI_PROJECT_ID=");
+    expect(envExample).toContain("OPENAI_WEBHOOK_SECRET=");
+    expect(envExample).toContain("OPENAI_SIP_MAX_CALL_SECONDS=");
+    expect(envExample).not.toMatch(/XAI_API_KEY|VAPI_PRIVATE_KEY|GROK/i);
   });
 
   it("signals account MCP WebRTC through the authenticated server", () => {

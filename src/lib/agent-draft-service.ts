@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import * as schema from "../db/schema";
-import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 import { AppError } from "./api-error";
 import {
   normalizeAgentCustomization,
@@ -210,7 +210,7 @@ export async function createAgentDraft(
         channel: "voice",
         archetype: ROLE_ARCHETYPES[profile.identity.role],
         voiceId,
-        voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
+        voiceProvider: "openai",
         // A draft records intended actions in its customization profile, but it
         // never receives external tools until the user configures and enables
         // them explicitly in BotBound.

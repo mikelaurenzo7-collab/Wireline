@@ -116,7 +116,13 @@ for (const indexPath of indexPaths) {
 if (problems.length === 0) {
   const canonicalLinks = parseMarkdownLinks(canonicalIndexPath, true);
   const auditLinks = parseMarkdownLinks(auditIndexPath, true);
-  const trackedMarkdown = gitLines(["ls-files", "*.md", "**/*.md"]);
+  // `git ls-files` still returns a tracked path while its deletion is staged in
+  // the working tree. Filter those paths before parsing so removing an obsolete
+  // document is validated through link/index coverage instead of crashing with
+  // an unhelpful ENOENT.
+  const trackedMarkdown = gitLines(["ls-files", "*.md", "**/*.md"]).filter((file) =>
+    existsSync(path.resolve(root, file)),
+  );
 
   // Validate local Markdown links across the entire tracked documentation surface,
   // not only the two indexes. This makes file moves and deletions fail loudly.

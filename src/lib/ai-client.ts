@@ -1,16 +1,14 @@
 /* Provider-neutral structured runtime adapter. OpenAI is the managed
  * structured default, the Vercel AI Gateway is the governed continuity route,
- * xAI remains an optional structured continuity lane and voice provider, and
- * Gemini is the final structured fallback. Eligibility and ordering are owned
+ * Gemini is the final structured fallback. Live voice uses OpenAI Realtime
+ * and is deliberately separate. Eligibility and ordering are owned
  * by `reasoning-provider-policy.ts`; this module owns transport only. */
 import { log } from "./server-logger";
 import {
   GEMINI_STRUCTURED_FALLBACK_MODEL,
   OPENAI_STRUCTURED_PRIMARY_MODEL,
-  XAI_STRUCTURED_PRIMARY_MODEL,
 } from "./ai-models";
 import {
-  isXAIStructuredLaneEnabled,
   orderReasoningProviders,
   resolveReasoningPreference,
   type ReasoningProviderId,
@@ -29,8 +27,6 @@ import {
 import { recordAmbiguousProviderAttempt } from "./ai-audit";
 import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
-
-const XAI_RESPONSES_URL = "https://api.x.ai/v1/responses";
 
 export type RuntimeTextBlock = { type: "text"; text: string; citations?: null };
 export type RuntimeToolUseBlock = {
@@ -92,7 +88,7 @@ export type RuntimeClient = {
   };
 };
 
-export type RuntimeProviderName = "xAI" | "OpenAI" | "Gemini" | "AI Gateway";
+export type RuntimeProviderName = "OpenAI" | "Gemini" | "AI Gateway";
 
 /**
  * An explicit provider HTTP 4xx means the request was rejected rather than
@@ -253,8 +249,7 @@ export function resolveResponsesEvidence(
   if (transport !== "AI Gateway") {
     return {
       model: topLevelModel,
-      inferenceProvider:
-        transport === "OpenAI" ? "openai" : transport === "xAI" ? "xai" : "gateway",
+      inferenceProvider: transport === "OpenAI" ? "openai" : "gateway",
     };
   }
 
@@ -549,28 +544,6 @@ async function callResponsesEndpoint(args: {
       });
 }
 
-async function callXAI(
-  body: RuntimeRequest,
-  options?: RuntimeRequestOptions,
-): Promise<RuntimeMessage> {
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) throw new Error("XAI_API_KEY not configured");
-  const requested = String(body.model || "").trim();
-  // Only forward xAI-native model ids directly. As a continuity lane this path
-  // routinely receives requests that named an OpenAI or Gemini model; those
-  // map onto the configured Grok structured model rather than being sent to a
-  // vendor that cannot serve them.
-  const model = /grok/i.test(requested) ? requested : XAI_STRUCTURED_PRIMARY_MODEL;
-  return callResponsesEndpoint({
-    endpoint: XAI_RESPONSES_URL,
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    model,
-    body,
-    options,
-    provider: "xAI",
-  });
-}
-
 async function callGateway(
   body: RuntimeRequest,
   options?: RuntimeRequestOptions,
@@ -580,7 +553,7 @@ async function callGateway(
   const primary = gatewayModelId(
     requested ||
       process.env.WIRELINE_GATEWAY_STRUCTURED_MODEL?.trim() ||
-      `xai/${XAI_STRUCTURED_PRIMARY_MODEL}`,
+      `openai/${OPENAI_STRUCTURED_PRIMARY_MODEL}`,
   );
   const models = [
     primary,
@@ -771,14 +744,9 @@ class RuntimeCircuitBreaker {
   }
 }
 
-const xaiCircuitBreaker = new RuntimeCircuitBreaker("xAI");
 const gatewayCircuitBreaker = new RuntimeCircuitBreaker("AI Gateway");
 const openAICircuitBreaker = new RuntimeCircuitBreaker("OpenAI");
 const geminiCircuitBreaker = new RuntimeCircuitBreaker("Gemini");
-
-function xaiStructuredLaneAvailable(): boolean {
-  return isXAIStructuredLaneEnabled() && Boolean(process.env.XAI_API_KEY);
-}
 
 /**
  * Transport registry keyed by policy id. The policy module decides which of
@@ -801,10 +769,6 @@ const RUNTIME_PROVIDER_REGISTRY: Record<
     provider: { name: "AI Gateway", call: callGateway, breaker: gatewayCircuitBreaker },
     available: () => isAIGatewayConfigured(),
   },
-  xai: {
-    provider: { name: "xAI", call: callXAI, breaker: xaiCircuitBreaker },
-    available: xaiStructuredLaneAvailable,
-  },
 };
 
 function configuredProviders(): RuntimeProvider[] {
@@ -826,7 +790,7 @@ function nextAvailableProvider(
 export class RuntimeUnavailableError extends Error {
   status = 503;
   constructor() {
-    super("AI runtime is unavailable. Configure xAI, OpenAI, Gemini, or the AI Gateway.");
+    super("AI runtime is unavailable. Configure OpenAI, Gemini, or the AI Gateway.");
     this.name = "RuntimeUnavailableError";
   }
 }

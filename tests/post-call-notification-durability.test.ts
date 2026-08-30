@@ -15,18 +15,19 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("durable post-call customer follow-up", () => {
-  it("awaits a per-call queue insert on fresh and replayed Vapi reports", () => {
-    const source = read("src/lib/vapi-handlers.ts");
-    const metering = source.indexOf("await trackVoiceMinutes");
-    const durableEnqueue = source.indexOf("await enqueuePostCallDigest", metering);
-    const duplicateReturn = source.indexOf("if (!insertedFresh)", durableEnqueue);
+  it("awaits metering and a per-call digest enqueue when an OpenAI SIP call finishes", () => {
+    const source = read("src/lib/voice/openai-sip-session.ts");
+    const finalizer = source.indexOf("async function persistFinishedCall");
+    const metering = source.indexOf('runFinalizerStep("voice_usage"', finalizer);
+    const durableEnqueue = source.indexOf('runFinalizerStep("post_call_digest"', metering);
+    const awaitedFinalizer = source.indexOf("await persistFinishedCall({", durableEnqueue);
 
     expect(metering).toBeGreaterThan(-1);
     expect(durableEnqueue).toBeGreaterThan(metering);
-    expect(duplicateReturn).toBeGreaterThan(durableEnqueue);
+    expect(awaitedFinalizer).toBeGreaterThan(durableEnqueue);
     expect(source).not.toContain("void runPostCallDigest");
     expect(source).not.toContain("void notifyCallRecap");
-    expect(source).toContain("insertedCallLogId = existing?.id ?? null");
+    expect(source).toContain("enqueuePostCallDigest({");
   });
 
   it("uses Postgres as the concurrency boundary and routes the job through retries", () => {

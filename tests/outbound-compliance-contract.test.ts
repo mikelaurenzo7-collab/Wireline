@@ -25,7 +25,7 @@ describe("outbound compliance contract", () => {
     }
 
     expect(mobile).toContain("lastCalledAt: new Date()");
-    expect(read("src/lib/voice/xai-outbound-placement.ts")).toContain("lastCalledAt:");
+    expect(read("src/lib/voice/openai-outbound-placement.ts")).toContain("lastCalledAt:");
 
     expect(gate).toContain("isDncBlocked(opts.userId, opts.phone)");
     expect(gate).toContain("isFederalDncListed(opts.phone)");

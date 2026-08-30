@@ -39,10 +39,6 @@ const replacements = {
   "src/lib/microsoft-graph-service.ts": [
     ["[\"<strong>Wireline</strong>\"]", "[\"<strong>BotBound</strong>\"]"],
   ],
-  "src/lib/phone-provisioning.ts": [
-    ["Wireline could not activate a number right now.", "BotBound could not activate a number right now."],
-    ["Wireline could not release that number right now.", "BotBound could not release that number right now."],
-  ],
   "src/lib/post-call-digest.ts": [
     ["`[Wireline · ${core.outcomeTag.toUpperCase()}]", "`[BotBound · ${core.outcomeTag.toUpperCase()}]"],
     ["Shareable Wireline recap · private link", "Shareable BotBound recap · private link"],
@@ -50,20 +46,6 @@ const replacements = {
   ],
   "src/lib/shareable-artifact/template/shell.ts": [
     ["\"Wireline · \" + escapeHtml(WIRELINE_SIGNATURE)", "\"BotBound · \" + escapeHtml(WIRELINE_SIGNATURE)"],
-  ],
-  "src/lib/vapi-assistant-factory-v2.ts": [
-    ["a Wireline ${configured.role || \"agent\"}", "a BotBound ${configured.role || \"agent\"}"],
-    ["a personal Wireline agent", "a BotBound Bot for your principal"],
-  ],
-  "src/lib/vapi-handlers.ts": [
-    ["agentDetail?.name || \"Wireline Agent\"", "agentDetail?.name || \"BotBound Bot\""],
-  ],
-  "src/lib/vapi-helpers.ts": [
-    ["the Wireline ads account", "the BotBound ads account"],
-  ],
-  "src/lib/voice/xai-sip-session.ts": [
-    ["Wireline does not operate one", "BotBound does not operate one"],
-    ["input.businessName?.trim() || \"Wireline\"", "input.businessName?.trim() || \"BotBound\""],
   ],
   "src/lib/wireline-ops-design.ts": [
     ["shortcuts back into Wireline.", "shortcuts back into BotBound."],
@@ -98,9 +80,6 @@ const replacements = {
   "src/routes/twilio-webhook.ts": [
     ["Wireline's Twilio account", "BotBound's Twilio account"],
     ["`[Wireline] Twilio ${recurring} usage threshold reached`", "`[BotBound] Twilio ${recurring} usage threshold reached`"],
-  ],
-  "src/routes/xai-outbound-routes.ts": [
-    ["agent?.name?.trim() || \"Wireline\"", "agent?.name?.trim() || \"BotBound\""],
   ],
 };
 

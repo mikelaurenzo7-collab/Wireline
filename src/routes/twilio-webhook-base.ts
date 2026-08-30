@@ -10,7 +10,7 @@
  *   3. Any other inbound text → just log it for now; future work can
  *      route it to an agent for two-way conversation.
  *
- * Vapi already handles voice; this is the SMS counterpart. The
+ * OpenAI Realtime handles conversation audio over Twilio SIP; this is the SMS counterpart. The
  * outbound side (sending texts FROM Wireline) is already wired in
  * twilio-service.sendTenantMessage; this completes the round-trip.
  *
@@ -26,7 +26,7 @@ import { createHash } from "node:crypto";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, inArray, or, sql } from "drizzle-orm";
-import { sanitizePhone } from "../lib/vapi-helpers";
+import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { reportError } from "../lib/error-reporter";
@@ -40,6 +40,7 @@ import {
 } from "../lib/twilio-webhook-privacy";
 import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
+import { buildOpenAIInboundSipUri } from "../lib/voice/openai-sip-config";
 
 const router = Router();
 
@@ -799,7 +800,7 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
   log.info("Singing receptionist demo line hit", { from_suffix: phoneSuffixForLog(from) });
 
   // This is a public, provider-billed showcase number. Cap repeat callers before
-  // bridging to Vapi and fail closed when the distributed limiter is unhealthy;
+  // bridging to OpenAI and fail closed when the distributed limiter is unhealthy;
   // returning TwiML 200 avoids carrier webhook retries while still protecting spend.
   const limiter = distributedLimiterStatus();
   if (!limiter.ok) {
@@ -828,7 +829,15 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     return res.status(200).send(twimlHangup());
   }
 
-  const sipUri = process.env.SINGING_VAPI_SIP_URI || "";
+  const calledNumber = typeof req.body?.To === "string" ? req.body.To.trim() : "";
+  let sipUri = "";
+  try {
+    sipUri = buildOpenAIInboundSipUri(calledNumber, from);
+  } catch (error) {
+    log.error("Singing receptionist OpenAI SIP route is unavailable", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
   const approvedJingleUrl =
     process.env.BOTBOUND_JINGLE_ASSET_APPROVED === "true"
       ? publicAssetUrl("/sounds/botbound-jingle.mp3")
@@ -844,7 +853,7 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
   if (sipUri) {
     // Twilio <Dial> defaults to a four-hour maximum. A five-minute demo cap and
     // short ring timeout prevent a forgotten/abusive public call from turning
-    // into an unbounded Twilio + Vapi session.
+    // into an unbounded Twilio + OpenAI session.
     twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
     twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. This demo line is taking a quick break while we finish its connection. Please try again soon. Goodbye.</Say>\n`;

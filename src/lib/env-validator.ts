@@ -1,8 +1,6 @@
 import { log } from "./server-context";
 import { isPostgresConnectionString } from "./database-connection";
 import { isProductionDeployment } from "./deployment-environment";
-import { isGatewayCredentialAvailable } from "./ai-gateway-auth";
-import { isValidXAISipAllowedAddress } from "./voice/xai-sip-config";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import {
   isSafeOpenAIRealtimeSessionReserve,
@@ -159,6 +157,23 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "sk-...",
   },
   {
+    name: "OPENAI_PROJECT_ID",
+    group: "voice",
+    required: false,
+    requiredInProd: true,
+    description: "OpenAI project that owns every BotBound Realtime SIP call",
+    validate: (value) => /^proj_[A-Za-z0-9_-]{8,}$/.test(value.trim()),
+    formatHint: "proj_...",
+  },
+  {
+    name: "OPENAI_WEBHOOK_SECRET",
+    group: "voice",
+    required: false,
+    requiredInProd: true,
+    description: "Signing secret for OpenAI Realtime incoming-call webhooks",
+    validate: nonEmpty,
+  },
+  {
     name: "OPENAI_API_KEY_CHATKIT",
     group: "ai",
     required: false,
@@ -206,50 +221,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
-    name: "XAI_API_KEY",
-    group: "ai",
-    required: false,
-    description:
-      "One xAI key for native Twilio SIP Speech-to-Speech, preview TTS, and optional Grok 4.6 structured continuity. Studio browser voice and structured primary use OpenAI",
-    validate: nonEmpty,
-    requiredInProd: true,
-  },
-  {
-    name: "XAI_SIP_ALLOWED_ADDRESSES",
-    group: "voice",
-    required: false,
-    requiredInProd: true,
-    description:
-      "Comma-separated IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32). Required before registering a Twilio number with xAI.",
-    validate: (value) =>
-      value
-        .split(/[\s,]+/)
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-        .every((entry) => isValidXAISipAllowedAddress(entry)),
-    formatHint: "comma-separated IPv4 CIDRs with prefix length 8-32, e.g. 54.172.60.0/23",
-  },
-  {
-    name: "XAI_API_KEY_CHATKIT",
-    group: "ai",
-    required: false,
-    description: "Optional scoped xAI credential for isolated experiments",
-    validate: nonEmpty,
-  },
-  {
-    name: "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
-    group: "ai",
-    required: false,
-    description:
-      "Operator opt-out for the xAI structured lane. Unset means the lane is active whenever XAI_API_KEY is configured; set false to disable it",
-    // Accept exactly the forms the runtime interprets (see
-    // isXAIStructuredLaneEnabled): the disable spellings plus the historical
-    // explicit opt-in. Anything else behaves as "enabled", so flag it here
-    // rather than letting a typo like "flase" silently fail open.
-    validate: (value) => ["true", "false", "0", "off"].includes(value.trim().toLowerCase()),
-    formatHint: "true or false (also accepts 0/off to disable)",
-  },
-  {
     name: "WIRELINE_STRUCTURED_PRIMARY_PROVIDER",
     group: "ai",
     required: false,
@@ -258,10 +229,10 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     // Same acceptance as normalizeReasoningProvider, including the vendor
     // aliases operators actually type — a working config must not be flagged.
     validate: (value) =>
-      ["openai", "gemini", "gateway", "xai", "grok", "google", "ai-gateway", "vercel"].includes(
+      ["openai", "gemini", "gateway", "google", "ai-gateway", "vercel"].includes(
         value.trim().toLowerCase(),
       ),
-    formatHint: "openai, gemini, gateway, or xai (aliases: grok, google, ai-gateway, vercel)",
+    formatHint: "openai, gemini, or gateway (aliases: google, ai-gateway, vercel)",
   },
   {
     name: "PERPLEXITY_API_KEY",
@@ -285,30 +256,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
       "HTTP timeout for mid-call public web research (Perplexity/Gemini), not PSTN call length",
     validate: isPositiveNumber,
     formatHint: "milliseconds, e.g. 8000",
-  },
-  {
-    name: "VAPI_PRIVATE_KEY",
-    group: "voice",
-    required: false,
-    requiredInProd: false,
-    description: "Rollback-only Vapi control plane. Native PSTN uses Twilio and xAI Direct SIP",
-    validate: nonEmpty,
-  },
-  {
-    name: "VAPI_WEBHOOK_SECRET",
-    group: "voice",
-    required: false,
-    requiredInProd: false,
-    description: "Rollback-only Vapi webhook verification",
-    validate: nonEmpty,
-  },
-  {
-    name: "VAPI_WEBHOOK_CREDENTIAL_ID",
-    group: "voice",
-    required: false,
-    description:
-      "Preferred Vapi Custom Credential ID for authenticated webhook delivery; falls back to the shared secret during migration",
-    validate: nonEmpty,
   },
   {
     name: "ELEVENLABS_API_KEY",
@@ -775,34 +722,40 @@ export function validateEnv(): EnvValidationResult {
     }
   }
 
-  // This credential used to be intentionally browser-exposed. Public voice
-  // now uses server-minted one-use tickets and server-mediated OpenAI WebRTC, so
-  // accepting the retired key here would contradict the deployment boundary
-  // and could make a leaked configuration look healthy.
-  if (process.env.VITE_VAPI_PUBLIC_KEY?.trim()) {
+  // These credentials belong to fully retired runtime paths. Treat their
+  // presence as a deployment error so stale Vercel variables cannot silently
+  // reactivate or imply support for a removed provider.
+  const retiredVoiceEnv = [
+    "VITE_VAPI_PUBLIC_KEY",
+    "VAPI_PRIVATE_KEY",
+    "VAPI_WEBHOOK_SECRET",
+    "VAPI_WEBHOOK_CREDENTIAL_ID",
+    "XAI_API_KEY",
+    "XAI_API_KEY_CHATKIT",
+    "XAI_SIP_ALLOWED_ADDRESSES",
+    "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
+  ] as const;
+  for (const variable of retiredVoiceEnv) {
+    if (!process.env[variable]?.trim()) continue;
     result.valid = false;
     byGroup.voice.total++;
     byGroup.voice.invalid++;
     result.errors.push({
-      var: "VITE_VAPI_PUBLIC_KEY",
+      var: variable,
       group: "voice",
       message:
-        "Retired browser credential must be removed; public voice uses server-minted one-use tickets and server-mediated OpenAI WebRTC",
+        "Retired provider configuration must be removed; BotBound voice uses OpenAI Realtime with Twilio transport",
     });
   }
 
-  const managedRuntime =
-    process.env.OPENAI_API_KEY?.trim() ||
-    isGatewayCredentialAvailable() ||
-    process.env.XAI_API_KEY?.trim();
+  const managedRuntime = process.env.OPENAI_API_KEY?.trim();
   if (!managedRuntime) {
     result.valid = false;
     byGroup.ai.invalid++;
     result.errors.push({
-      var: "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN / XAI_API_KEY",
+      var: "OPENAI_API_KEY",
       group: "ai",
-      message:
-        "Configure the OpenAI managed runtime, Vercel AI Gateway, or an approved continuity provider before serving AI requests",
+      message: "Configure the OpenAI managed runtime before serving AI or voice requests",
     });
   }
   return result;

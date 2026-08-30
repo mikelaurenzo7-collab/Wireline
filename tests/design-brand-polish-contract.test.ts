@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { globSync } from "glob";
+import { globSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();

@@ -10,22 +10,21 @@ import {
   clearNativeTwilioPurchaseClaim,
   NATIVE_TWILIO_PURCHASE_OPERATION_LEASE_MS,
 } from "../orphan-carrier-ledger";
-import { isVaultConfigured } from "../secret-vault";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import {
   NATIVE_PROVISIONING_UNAVAILABLE,
+  configureNativeNumberRouting,
   purchaseNativeNumber,
   releasePurchasedNativeNumber,
   type PurchasedNativeNumber,
 } from "./native-phone-carrier";
-import { provisionNativeXAIPhone } from "./xai-phone-activation-service";
-import { resolveXAISipAllowedAddresses } from "./xai-sip-config";
+import { openAISipConfigured } from "./openai-sip-config";
 
 const NATIVE_ACTIVATION_PENDING =
-  "The number is reserved in your workspace, but native voice activation could not be confirmed. Retry activation from Phone; do not purchase another line.";
+  "The number is reserved in your workspace, but Twilio-to-OpenAI routing could not be confirmed. Retry activation from Phone; do not purchase another line.";
 
 export type NativePhoneProvisionResult = {
   ok: boolean;
@@ -52,13 +51,9 @@ function autoProvisioningEnabled(): boolean {
 }
 
 function assertNativeActivationConfigured(): void {
-  if (!String(process.env.XAI_API_KEY || "").trim()) {
-    throw AppError.serviceUnavailable("Native realtime voice is not configured.");
+  if (!openAISipConfigured()) {
+    throw AppError.serviceUnavailable("OpenAI Realtime SIP is not configured.");
   }
-  if (!isVaultConfigured()) {
-    throw AppError.serviceUnavailable("Encrypted provider-secret storage is not configured.");
-  }
-  resolveXAISipAllowedAddresses();
 }
 
 async function persistPurchasedNumber(input: {
@@ -97,7 +92,7 @@ async function persistPurchasedNumber(input: {
         // Transitional column name; native rows deliberately store the Twilio PN SID.
         vapiNumberId: input.purchase.sid,
         agentId: input.agentId ?? null,
-        campaignLabel: input.campaignLabel ?? "native-twilio-xai",
+        campaignLabel: input.campaignLabel ?? "twilio-openai-realtime",
       })
       .returning();
     if (!line) throw new Error("Native phone ownership row was not persisted.");
@@ -108,34 +103,36 @@ async function persistPurchasedNumber(input: {
 async function activateLine(input: {
   userId: string;
   agentId: string;
+  lineId: bigint;
   phoneNumber: string;
   carrierNumberId: string | null;
   reused: boolean;
 }): Promise<NativePhoneProvisionResult> {
   try {
-    const status = await provisionNativeXAIPhone({
+    const carrierNumberId = await configureNativeNumberRouting({
       userId: input.userId,
-      agentId: input.agentId,
+      phoneNumber: input.phoneNumber,
+      carrierNumberId: input.carrierNumberId,
     });
-    if (status.binding?.status !== "active") {
-      return {
-        ok: false,
-        phoneNumber: input.phoneNumber,
-        carrierNumberId: input.carrierNumberId || undefined,
-        reused: input.reused,
-        activationPending: true,
-        code: "NATIVE_VOICE_ACTIVATION_PENDING",
-        error: NATIVE_ACTIVATION_PENDING,
-      };
+    if (carrierNumberId !== input.carrierNumberId) {
+      await drizzle
+        .update(schema.phoneNumbers)
+        .set({ vapiNumberId: carrierNumberId })
+        .where(
+          and(
+            eq(schema.phoneNumbers.id, input.lineId),
+            eq(schema.phoneNumbers.userId, input.userId),
+          ),
+        );
     }
     return {
       ok: true,
       phoneNumber: input.phoneNumber,
-      carrierNumberId: input.carrierNumberId || undefined,
+      carrierNumberId,
       reused: input.reused,
     };
   } catch (error) {
-    log.error("Native phone line exists but activation could not be confirmed", {
+    log.error("Twilio line exists but OpenAI routing could not be confirmed", {
       userId: input.userId,
       agentId: input.agentId,
       phoneSuffix: input.phoneNumber.slice(-4),
@@ -170,6 +167,15 @@ async function provisionNativeTenantNumberUnfenced(input: {
   if (!getTwilioClient()) {
     return { ok: false, code: "TWILIO_NOT_CONFIGURED", error: NATIVE_PROVISIONING_UNAVAILABLE };
   }
+  try {
+    assertNativeActivationConfigured();
+  } catch (error) {
+    return {
+      ok: false,
+      code: "OPENAI_REALTIME_NOT_CONFIGURED",
+      error: error instanceof Error ? error.message : NATIVE_PROVISIONING_UNAVAILABLE,
+    };
+  }
 
   if (input.agentId) {
     const [agent] = await drizzle
@@ -178,23 +184,14 @@ async function provisionNativeTenantNumberUnfenced(input: {
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1);
     if (!agent) return { ok: false, code: "NOT_FOUND", error: "Agent not found." };
-    try {
-      assertNativeActivationConfigured();
-    } catch (error) {
-      return {
-        ok: false,
-        code: "NATIVE_VOICE_NOT_CONFIGURED",
-        error: error instanceof Error ? error.message : NATIVE_PROVISIONING_UNAVAILABLE,
-      };
-    }
-
     const existingLine = await findAgentPhoneLine(input.userId, input.agentId);
     if (existingLine) {
       return activateLine({
         userId: input.userId,
         agentId: input.agentId,
+        lineId: existingLine.id,
         phoneNumber: existingLine.phoneNumber,
-        carrierNumberId: existingLine.vapiNumberId,
+        carrierNumberId: existingLine.carrierNumberId,
         reused: true,
       });
     }
@@ -237,6 +234,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
           return activateLine({
             userId: input.userId,
             agentId: input.agentId,
+            lineId: reusable.id,
             phoneNumber: reusable.phoneNumber,
             carrierNumberId: reusable.vapiNumberId,
             reused: true,
@@ -297,6 +295,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
       return activateLine({
         userId: input.userId,
         agentId: input.agentId,
+        lineId: persisted.line.id,
         phoneNumber: persisted.line.phoneNumber,
         carrierNumberId: persisted.line.vapiNumberId,
         reused: true,
@@ -335,6 +334,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
   return activateLine({
     userId: input.userId,
     agentId: input.agentId,
+    lineId: persisted.line.id,
     phoneNumber: purchase.phoneNumber,
     carrierNumberId: purchase.sid,
     reused: false,

@@ -49,8 +49,6 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/SmsThreads.tsx",
   "src/components/SupportPage.tsx",
   "src/components/OpenAILiveVoiceSandbox.tsx",
-  "src/components/VapiLiveVoiceSandbox.tsx",
-  "src/components/XAILiveVoiceSandbox.tsx",
   "src/components/admin/CarrierPanel.tsx",
   "src/components/insights/shared.tsx",
   "src/components/onboarding/PostCreateActivationWizard.tsx",

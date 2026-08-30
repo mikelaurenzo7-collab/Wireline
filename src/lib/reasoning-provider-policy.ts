@@ -23,12 +23,11 @@
  * Gateway becomes first. Reaching a working continuity provider is strictly
  * better than returning 503.
  *
- * xAI remains an optional continuity lane. `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK`
- * remains its escape hatch: unset means "on when a key is configured", `false`
- * disables the lane outright, and `true` is the historical explicit opt-in.
+ * xAI and Grok are deliberately absent here and are never contacted by the
+ * structured or live-voice runtime.
  */
 
-export type ReasoningProviderId = "openai" | "gemini" | "gateway" | "xai";
+export type ReasoningProviderId = "openai" | "gemini" | "gateway";
 
 export type ReasoningProviderOption = {
   id: ReasoningProviderId;
@@ -46,7 +45,6 @@ export type ReasoningProviderOption = {
 export const REASONING_PROVIDER_ORDER: readonly ReasoningProviderId[] = [
   "openai",
   "gateway",
-  "xai",
   "gemini",
 ] as const;
 
@@ -57,19 +55,13 @@ export const REASONING_PROVIDER_CATALOG: readonly ReasoningProviderOption[] = [
     id: "openai",
     label: "OpenAI",
     envKeys: ["OPENAI_API_KEY"],
-    note: "BotBound default for structured reasoning and the owner of Realtime voice.",
+    note: "BotBound default for structured reasoning. Live calls use OpenAI Realtime.",
   },
   {
     id: "gateway",
     label: "AI Gateway",
     envKeys: ["AI_GATEWAY_API_KEY", "VERCEL_OIDC_TOKEN"],
     note: "Governed continuity route across approved model providers.",
-  },
-  {
-    id: "xai",
-    label: "xAI Grok",
-    envKeys: ["XAI_API_KEY"],
-    note: "Optional structured-reasoning continuity lane.",
   },
   {
     id: "gemini",
@@ -84,9 +76,7 @@ export function normalizeReasoningProvider(value: unknown): ReasoningProviderId 
   if (!candidate) return null;
   // Accept the vendor-flavored aliases operators actually type.
   const alias =
-    candidate === "grok"
-      ? "xai"
-      : candidate === "google"
+    candidate === "google"
         ? "gemini"
         : candidate === "ai-gateway" || candidate === "vercel"
           ? "gateway"
@@ -94,19 +84,6 @@ export function normalizeReasoningProvider(value: unknown): ReasoningProviderId 
   return REASONING_PROVIDER_ORDER.includes(alias as ReasoningProviderId)
     ? (alias as ReasoningProviderId)
     : null;
-}
-
-/**
- * Tri-state opt-out for the xAI lane.
- *
- * - unset   → enabled when `XAI_API_KEY` is configured
- * - "false" → disabled even with a key present
- * - "true"  → historical explicit opt-in; still honored
- */
-export function isXAIStructuredLaneEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const raw = env.WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK?.trim().toLowerCase();
-  if (raw === "false" || raw === "0" || raw === "off") return false;
-  return true;
 }
 
 /**

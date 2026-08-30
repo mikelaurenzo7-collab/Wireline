@@ -14,13 +14,6 @@ import { isSessionGenerationActive } from "../lib/session-generation";
 import { sessionUsers } from "../db/security-schema";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
-import { isAllowedVapiListenUrl } from "../lib/vapi-monitor-url";
-import {
-  applyVapiListenControlMessage,
-  clearVapiAssistantSpeaking,
-  isVapiAssistantSpeaking,
-  setVapiAssistantSpeaking,
-} from "../lib/vapi-listen-gate";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -133,20 +126,14 @@ export function initSupervisorWebSocketServer(server: any) {
 
     log.info("Supervisor WebSocket connected", { callId, mode, userId });
 
-    const verifyCallAccess = async (): Promise<{
-      ok: boolean;
-      listenUrl: string | null;
-    }> => {
+    const verifyCallAccess = async (): Promise<{ ok: boolean }> => {
       const [presence] = await drizzle
-        .select({
-          userId: schema.signalPresence.userId,
-          listenUrl: schema.signalPresence.listenUrl,
-        })
+        .select({ userId: schema.signalPresence.userId })
         .from(schema.signalPresence)
         .where(eq(schema.signalPresence.id, callId))
         .limit(1);
       if (presence && presence.userId === userId) {
-        return { ok: true, listenUrl: presence.listenUrl };
+        return { ok: true };
       }
 
       const [callRow] = await drizzle
@@ -156,7 +143,6 @@ export function initSupervisorWebSocketServer(server: any) {
         .limit(1);
       return {
         ok: !!callRow && callRow.userId === userId,
-        listenUrl: null,
       };
     };
 
@@ -168,47 +154,8 @@ export function initSupervisorWebSocketServer(server: any) {
           return;
         }
 
-        if (access.listenUrl && isAllowedVapiListenUrl(access.listenUrl)) {
-          const upstream = new WebSocket(access.listenUrl);
-          let upstreamOpen = false;
-          setVapiAssistantSpeaking(callId, false);
-
-          upstream.on("open", () => {
-            upstreamOpen = true;
-            log.info("Vapi listen relay connected", { callId, userId });
-          });
-
-          upstream.on("message", (data, isBinary) => {
-            if (!isBinary) {
-              applyVapiListenControlMessage(callId, data.toString());
-              return;
-            }
-            if (ws.readyState === WebSocket.OPEN && isVapiAssistantSpeaking(callId)) {
-              ws.send(data);
-            }
-          });
-
-          upstream.on("close", () => {
-            clearVapiAssistantSpeaking(callId);
-            if (ws.readyState === WebSocket.OPEN) ws.close(1000, "Upstream closed");
-          });
-
-          upstream.on("error", (err: Error) => {
-            log.warn("Vapi listen relay upstream error", { callId, error: err.message });
-            if (ws.readyState === WebSocket.OPEN) ws.close(1011, "Upstream error");
-          });
-
-          ws.on("close", () => {
-            clearVapiAssistantSpeaking(callId);
-            if (upstreamOpen) upstream.close();
-            log.info("Supervisor stream socket closed (listen relay)", { callId });
-          });
-
-          return;
-        }
-
         if (isProductionRuntime()) {
-          ws.close(4005, "Live call audio is not available for this call yet.");
+          ws.close(4005, "Live OpenAI SIP audio relay is not available.");
           return;
         }
 
@@ -287,13 +234,13 @@ export function initSupervisorWebSocketServer(server: any) {
                 ),
               );
 
-            log.info("Whisper coaching note logged", { callId, text });
+            log.info("Supervisor coaching note saved", { callId, characters: text.length });
 
             // Acknowledge to supervisor client
             ws.send(
               JSON.stringify({
-                type: "whisper_delivered",
-                text: "Note broadcasted to agent: " + text,
+                type: "coaching_note_saved",
+                text: "Coaching note saved to the call recap.",
                 timestamp: new Date().toISOString(),
               }),
             );

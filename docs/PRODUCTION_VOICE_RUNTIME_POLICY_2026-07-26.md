@@ -1,57 +1,51 @@
-# Production Voice Runtime Policy — 2026-08-01
+# Production Voice Runtime Policy — 2026-08-30
 
 Status: **Active launch policy**
 
+The detailed implementation contract is
+[`OPENAI_REALTIME_VOICE.md`](./OPENAI_REALTIME_VOICE.md). This file preserves the
+stable policy path used by release checklists.
+
 ## Runtime boundary
 
-| Surface              | Production path                                                                                        | Policy                                                                                                |
-| -------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| Phone calls          | Twilio carrier → xAI Direct SIP Speech-to-Speech (`grok-voice-think-fast-2.0`) | Native Eve/Ara/Rex/Sal/Leo voices. Direct `/v1/tts` is not the PSTN engine. Grok 4.6 is structured-continuity only. Vapi is rollback-only. |
-| Browser/mobile voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Private Studio/ChatGPT simulation only; never automatic PSTN failover. |
-| Video presenter      | LiveAvatar/HeyGen catalog                                                                              | Presenter identity does not silently become the phone voice.                                          |
-| Marketing audio      | Approved generation tools                                                                              | Rendered assets are not a live-call runtime.                                                          |
+| Surface | Production path | Policy |
+| --- | --- | --- |
+| Phone calls | Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP | OpenAI Realtime `gpt-realtime-2.1`; no alternate runtime or provider fallback |
+| Browser/mobile voice | Same-origin BotBound SDP exchange → OpenAI Realtime WebRTC | Studio, ChatGPT, and guest demos share the managed phone policy |
+| SMS | Twilio signed webhooks and Messaging Service/number | Twilio owns sender and carrier delivery only |
+| Presenter/video | Retired live-video compatibility surface | Presenter identity never becomes the phone voice; phone fallback is OpenAI |
+| Studio speech | Server-only ElevenLabs preview/cloning | Never a live phone provider |
 
 ## Available phone voices
 
-- Included Wireline Phone voices use native xAI Speech-to-Speech (Eve, Ara, Rex, Sal, Leo).
-- Wireline Studio exposes only three curated ElevenLabs voices (`eleven_flash_v2_5`) plus private clones owned by the authenticated founder account.
-- Private voice creation, review, approval, and deletion are platform-admin only.
-- A private voice cannot enter an agent configuration or call payload until Postgres records `approved` status.
-- If provider access, ownership, approval, or voice identity cannot be proven, the runtime falls back to Savannah.
+Only OpenAI's documented Realtime voices may reach a phone or browser session:
+`alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
+and `cedar`. `marin` is the default. Invalid, historical, or studio-only voice
+ids normalize at both the application and database boundaries.
 
 ## Clone contract
 
 1. The requester attests that they are the speaker or hold documented authorization and commercial-use rights.
-2. The server validates base64, decoded size, declared MIME, file signature, and client-measured 10–90 second duration.
-3. Before provider spend, Wireline atomically reserves the sample fingerprint and records consent; concurrent duplicate requests cannot create twice.
-4. Wireline processes the upload in memory, stores no source file, and retains only the fingerprint, authorization, ownership, review, and audit evidence.
-5. Provider creation is compensated with provider deletion if ownership finalization fails; a failed compensation remains `deletion_pending` for an authorized retry.
-6. New clones remain `pending_review`; the founder must play a full Flash 2.5 proof and approve them.
-7. Provider verification, when required, blocks approval.
-8. Revocation immediately removes live assignments and requests provider deletion. Failed provider deletion remains visible as `deletion_pending` for an authorized retry.
-
-## Call and legal guardrails
-
-- AI and cloned voices are artificial voices. Calling consent, DNC, calling-hours, recording, identification, and disclosure rules still apply.
-- Outbound native SIP speaks identity, a grouped callback number, and — for marketing — the voice-activated opt-out. Twilio AMD drops marketing answering machines, fax, and unclassified answers without a message; service voicemail is identity and callback only. Busy and no-answer campaign dials retry until the attempt budget. A spoken stop-calling request hangs up the native SIP session immediately.
-- After-hours inbound PSTN degrades to take-a-message instead of running the full agent.
-- Do not clone minors, political candidates or officials, celebrities, public figures, or other high-risk voices.
-- Do not use synthetic voices for impersonation, deception, fraud, harassment, voter influence, unauthorized transactions, or harm.
-- Never expose the founder provider key, private provider inventory, provider errors, or internal tenant identifiers to the client.
-- Noise cleanup is opt-in only for noisy samples; it is not applied blindly to clean audio.
+2. The server validates base64, decoded size, MIME, file signature, and client-measured 10–90 second duration.
+3. Before provider spend, BotBound reserves the sample fingerprint and records consent; concurrent duplicate requests cannot create twice.
+4. Source audio is processed in memory and not retained. Only ownership, fingerprint, authorization, review, and audit evidence remain.
+5. Provider creation is compensated with deletion if ownership finalization fails; unresolved deletion stays visible for an authorized retry.
+6. New clones remain pending review until an authorized founder proof and approval.
+7. Clone approval permits studio generation only. It does not change a Bot's live phone provider.
+8. Revocation clears historical assignments and requests provider deletion without altering the OpenAI phone runtime.
 
 ## Launch acceptance
 
 Before general availability, prove all of the following on the exact release commit:
 
-1. Native xAI SIP (`XAI_API_KEY`, `XAI_SIP_ALLOWED_ADDRESSES`) and Twilio credentials pass the read-only readiness probe.
-2. One inbound and one outbound native SIP call prove disclosure, interruption, voicemail, tool use, DNC, and transfer.
-3. Inbound overflow and insolvency degrade to take-a-message instead of hanging up or running the full agent.
-4. ElevenLabs production key and curated inventory pass the read-only readiness probe for Studio TTS / cloning.
-5. A founder-owned sample completes create → proof → approve → assign → call → revoke → provider-delete.
-6. Database RLS, grants, approval constraints, revocation trigger, and tenant ownership are verified after migration.
-7. Terms, Privacy Policy, consent UI, audit records, usage limits, provider training controls, and deletion behavior receive final review.
+1. The OpenAI key, project id, signed Realtime webhook, certified model, and transcriber pass the read-only readiness probe.
+2. Every Twilio voice number points to the OpenAI inbound webhook and fail-closed fallback.
+3. One inbound and one approved outbound call prove disclosure, interruption, voicemail policy, tool use, DNC, transfer, and hangup.
+4. Inbound overflow and insolvency degrade safely instead of running an unmetered full Bot.
+5. ElevenLabs preview and cloning pass separately; no studio voice is written as a phone runtime.
+6. Database RLS, grants, OpenAI normalization trigger, and tenant ownership are verified after migration.
+7. Terms, Privacy, consent UI, audit records, usage limits, provider training controls, and deletion behavior receive final review.
 
-Do not market custom cloning as generally available while the control remains founder-only. The accurate product promise is:
+The accurate product promise is:
 
-> Polished live voices on native xAI Speech-to-Speech. Authorized private Studio voices are reviewed before they can be used for generated audio.
+> Every BotBound phone and browser conversation runs on one managed OpenAI Realtime runtime, with Twilio for carrier transport, numbers, and SMS.

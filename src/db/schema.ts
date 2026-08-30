@@ -81,7 +81,7 @@ export const settings = pgTable("wireline_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   /** Rollback-only Vapi language-model pair; not the structured-runtime default. */
   voiceLlmProvider: text("voice_llm_provider").default("openai"),
-  voiceLlmModel: text("voice_llm_model").default("gpt-4o"),
+  voiceLlmModel: text("voice_llm_model").default("gpt-realtime-2.1"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),

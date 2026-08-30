@@ -21,6 +21,7 @@ const SOURCE_0062_PATH = resolve(ROOT, "drizzle/migrations/meta/0062_snapshot.js
 const TARGET_0063_PATH = resolve(ROOT, "drizzle/migrations/meta/0063_snapshot.json");
 const TARGET_0064_PATH = resolve(ROOT, "drizzle/migrations/meta/0064_snapshot.json");
 const TARGET_0065_PATH = resolve(ROOT, "drizzle/migrations/meta/0065_snapshot.json");
+const TARGET_0066_PATH = resolve(ROOT, "drizzle/migrations/meta/0066_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -53,6 +54,8 @@ const TARGET_0064_ID = "6c735f69-77f0-4c5f-9d61-2f1f7e4543a8";
 const TARGET_0064_SHA256 = "823ff657a10c975cc63a9dc2707dc1abc4a6c3726f42e769b7e96ddba020bd79";
 const TARGET_0065_ID = "065505d7-57b1-42ce-a9c0-50f6d3490ae9";
 const TARGET_0065_SHA256 = "0eed50cf6d3264d03712ad69001b98c5b08310b6e0e1a683f625ba21a7cc48f7";
+const TARGET_0066_ID = "94a4f6ab-bbf1-4c63-9c36-2e1370d22068";
+const TARGET_0066_SHA256 = "2deb591dd9d837e4cad0de81078324f8d865352ca348fe16acbecbfe4d3432b6";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
 
@@ -494,6 +497,28 @@ export function buildPaidBotIdentityJobSnapshot(agentIdentityMarkSnapshot) {
   return snapshot;
 }
 
+export function buildOpenAIRealtimeVoiceSnapshot(paidBotIdentityJobSnapshot) {
+  if (
+    !paidBotIdentityJobSnapshot ||
+    paidBotIdentityJobSnapshot.id !== TARGET_0065_ID ||
+    paidBotIdentityJobSnapshot.version !== "7"
+  ) {
+    throw new Error("0065 snapshot identity changed; refusing to synthesize 0066.");
+  }
+  const snapshot = structuredClone(paidBotIdentityJobSnapshot);
+  snapshot.id = TARGET_0066_ID;
+  snapshot.prevId = paidBotIdentityJobSnapshot.id;
+
+  const agents = snapshot.tables["public.wireline_agents"].columns;
+  agents.voice_provider.default = "'openai'";
+  agents.voice_id.default = "'marin'";
+
+  const settings = snapshot.tables["public.wireline_settings"].columns;
+  settings.voice_llm_provider.default = "'openai'";
+  settings.voice_llm_model.default = "'gpt-realtime-2.1'";
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -557,6 +582,10 @@ export function materializeDrizzleMeta() {
   const agentIdentityMarkSerialized = `${JSON.stringify(agentIdentityMarkSnapshot, null, 2)}\n`;
   const paidBotIdentityJobSnapshot = buildPaidBotIdentityJobSnapshot(agentIdentityMarkSnapshot);
   const paidBotIdentityJobSerialized = `${JSON.stringify(paidBotIdentityJobSnapshot, null, 2)}\n`;
+  const openAIRealtimeVoiceSnapshot = buildOpenAIRealtimeVoiceSnapshot(
+    paidBotIdentityJobSnapshot,
+  );
+  const openAIRealtimeVoiceSerialized = `${JSON.stringify(openAIRealtimeVoiceSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
@@ -612,6 +641,11 @@ export function materializeDrizzleMeta() {
     paidBotIdentityJobSerialized,
     TARGET_0065_SHA256,
   );
+  const openAIRealtimeVoice = writeSnapshot(
+    TARGET_0066_PATH,
+    openAIRealtimeVoiceSerialized,
+    TARGET_0066_SHA256,
+  );
   return {
     native,
     preserved,
@@ -628,6 +662,7 @@ export function materializeDrizzleMeta() {
     legacyAuditOrphanReconciliation,
     agentIdentityMark,
     paidBotIdentityJob,
+    openAIRealtimeVoice,
   };
 }
 
@@ -693,5 +728,10 @@ if (result.agentIdentityMark.changed) {
 if (result.paidBotIdentityJob.changed) {
   console.log(
     `Materialized Drizzle snapshot 0065 (${result.paidBotIdentityJob.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.openAIRealtimeVoice.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0066 (${result.openAIRealtimeVoice.sha256.slice(0, 12)}…).`,
   );
 }

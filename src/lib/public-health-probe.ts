@@ -11,7 +11,6 @@ export interface PublicHealthPayload {
   overall: PublicHealthLevel;
   components: {
     voice_runtime: PublicHealthLevel;
-    voice_fallback: PublicHealthLevel;
     reasoning: PublicHealthLevel;
   };
   last_checked: string;
@@ -29,19 +28,17 @@ function probeLevel(probe: Pick<PublicModelProbe, "ok" | "error">): PublicHealth
 
 export function buildPublicHealthPayload(input: {
   voice: PublicModelProbe;
-  voiceFallback: PublicModelProbe;
   reasoning: PublicModelProbe;
   checkedAt?: Date;
 }): PublicHealthPayload {
   const components: PublicHealthPayload["components"] = {
     voice_runtime: probeLevel(input.voice),
-    voice_fallback: probeLevel(input.voiceFallback),
     reasoning: probeLevel(input.reasoning),
   };
 
-  // Losing a redundant fallback reduces resilience but does not make the live
-  // platform unavailable while both primary voice and reasoning remain usable.
-  // A hard outage in either primary execution path is still a platform outage.
+  // OpenAI owns the only live-voice runtime. Never manufacture a healthy
+  // fallback component by copying the primary probe: that would claim
+  // redundancy the product does not have.
   const primaryOutage = components.voice_runtime === "outage" || components.reasoning === "outage";
   const anyDegradation = Object.values(components).some((level) => level !== "operational");
   const overall: PublicHealthLevel = primaryOutage
@@ -111,37 +108,19 @@ async function probeGetEndpoint(input: {
 }
 
 /**
- * Check the native xAI voice control plane without creating a call or model
- * output. Catalog GET is the same authenticated surface SIP registration uses.
+ * Check OpenAI Realtime model visibility without creating a call or output.
  */
-export function probeXAIVoiceRuntime(
+export function probeOpenAIRealtimeModel(
+  model: string,
   apiKey: string | undefined,
   timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
 ): Promise<PublicModelProbe> {
   return probeGetEndpoint({
-    url: "https://api.x.ai/v1/models",
+    url: `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
     apiKey,
-    keyName: "XAI_API_KEY",
-    label: "xai-native-voice",
-    failurePrefix: "xAI control-plane probe failed",
-    timeoutMs,
-  });
-}
-
-/**
- * Rollback-only Vapi control-plane probe. Production health uses
- * `probeXAIVoiceRuntime`. Kept exported so rollback diagnostics stay testable.
- */
-export function probeVapiManagedVoice(
-  apiKey: string | undefined,
-  timeoutMs = PUBLIC_HEALTH_PROBE_TIMEOUT_MS,
-): Promise<PublicModelProbe> {
-  return probeGetEndpoint({
-    url: "https://api.vapi.ai/assistant?limit=1",
-    apiKey,
-    keyName: "VAPI_PRIVATE_KEY",
-    label: "vapi-managed-voice",
-    failurePrefix: "Vapi control-plane probe failed",
+    keyName: "OPENAI_API_KEY",
+    label: model,
+    failurePrefix: "OpenAI Realtime model probe failed",
     timeoutMs,
   });
 }

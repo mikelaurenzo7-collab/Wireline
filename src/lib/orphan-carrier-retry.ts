@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 
-import { isTwilioPhoneNumberSid, isVapiPhoneNumberId } from "./agent-phone-lines";
+import { isTwilioPhoneNumberSid } from "./agent-phone-lines";
 import { releaseCarrierAllocations } from "./carrier-release";
 import {
   NATIVE_TWILIO_PURCHASE_CLAIM_MARKER_PREFIX,
@@ -12,7 +12,6 @@ import {
 import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
-import { listVapiNumbers, releaseVapiNumber } from "./vapi-phone-numbers";
 
 type OrphanCarrierRow = {
   id: string;
@@ -320,15 +319,13 @@ async function retryPendingOrphanCarrierResourcesOutsideTenantContext(
       } catch (error) {
         errors.push(`Twilio E.164 discovery: ${getErrorMessage(error)}`);
       }
-    } else if (!carrierId) {
-      // A Vapi import can time out after provider acceptance and before the caller
-      // receives the new UUID. Rediscover that partial resource by E.164 so the
-      // janitor removes both the Vapi object and underlying Twilio rental.
+    } else if (!isTwilioPhoneNumberSid(carrierId)) {
+      // Historical rows may carry a retired provider identifier instead of the
+      // Twilio PN SID. Rediscover the only supported carrier allocation by E.164.
       try {
-        const numbers = await listVapiNumbers();
-        carrierId = numbers.find((number) => number.number === row.phone_number)?.id ?? null;
+        carrierId = await discoverTwilioNumberIdByE164(row.phone_number);
       } catch (error) {
-        errors.push(`Vapi E.164 discovery: ${getErrorMessage(error)}`);
+        errors.push(`Twilio E.164 discovery: ${getErrorMessage(error)}`);
       }
     }
 
@@ -343,22 +340,12 @@ async function retryPendingOrphanCarrierResourcesOutsideTenantContext(
         ? { ok: false as const, error: null }
         : await releaseCarrierAllocations(
             {
-              kind:
-                carrierId && isVapiPhoneNumberId(carrierId)
-                  ? "vapi"
-                  : carrierId && isTwilioPhoneNumberSid(carrierId)
-                    ? "twilio_sid"
-                    : "e164",
+              kind: carrierId && isTwilioPhoneNumberSid(carrierId) ? "twilio_sid" : "e164",
               phoneNumber: row.phone_number,
               carrierId,
             },
             {
               twilioAvailable: Boolean(client),
-              inspectVapiProvider: async (vapiNumberId) => {
-                const numbers = await listVapiNumbers();
-                return numbers.find((number) => number.id === vapiNumberId)?.provider ?? null;
-              },
-              releaseVapi: releaseVapiNumber,
               releaseTwilioBySid: async (twilioSid) => {
                 if (!client) throw new Error("Twilio client is unavailable.");
                 await client.incomingPhoneNumbers(twilioSid).remove();

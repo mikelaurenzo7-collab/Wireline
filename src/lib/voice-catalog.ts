@@ -1,4 +1,4 @@
-export type VoiceProvider = "xai" | "vapi" | "11labs" | "presenter";
+export type VoiceProvider = "openai" | "11labs" | "presenter";
 
 export type VoiceOption = {
   id: string;
@@ -12,37 +12,24 @@ export type VoiceOption = {
 };
 
 /**
- * Built-in xAI voices for live PSTN through native Speech-to-Speech
- * (`grok-voice-think-fast-2.0`). Browser previews still render through direct
- * xAI TTS (`xai-tts-service.ts`), which is not the live-call engine.
- *
- * These voices are for native xAI PSTN and direct preview surfaces. Studio
- * browser tests use the separate curated OpenAI Realtime profile roster.
+ * Every voice OpenAI currently documents for Realtime sessions. Marin and
+ * Cedar are first because OpenAI recommends them for best quality. These ids
+ * are used unchanged by browser WebRTC and Twilio-to-OpenAI SIP calls.
  */
-export const WIRELINE_LIVE_VOICES: readonly VoiceOption[] = [
-  { id: "eve", name: "Eve · Bright & Energetic", provider: "xai" },
-  { id: "ara", name: "Ara · Warm & Professional", provider: "xai" },
-  { id: "rex", name: "Rex · Clear & Confident", provider: "xai" },
-  { id: "sal", name: "Sal · Balanced & Friendly", provider: "xai" },
-  { id: "leo", name: "Leo · Direct & Energetic", provider: "xai" },
+export const OPENAI_REALTIME_VOICES: readonly VoiceOption[] = [
+  { id: "marin", name: "Marin · Natural & Expressive", provider: "openai", gender: "female" },
+  { id: "cedar", name: "Cedar · Grounded & Clear", provider: "openai", gender: "male" },
+  { id: "coral", name: "Coral · Warm & Conversational", provider: "openai", gender: "female" },
+  { id: "verse", name: "Verse · Smooth & Professional", provider: "openai", gender: "male" },
+  { id: "ash", name: "Ash · Calm & Direct", provider: "openai", gender: "male" },
+  { id: "alloy", name: "Alloy · Balanced & Neutral", provider: "openai" },
+  { id: "ballad", name: "Ballad · Polished & Measured", provider: "openai", gender: "male" },
+  { id: "echo", name: "Echo · Clear & Energetic", provider: "openai", gender: "male" },
+  { id: "sage", name: "Sage · Thoughtful & Assured", provider: "openai", gender: "female" },
+  { id: "shimmer", name: "Shimmer · Bright & Friendly", provider: "openai", gender: "female" },
 ] as const;
 
-/** Vapi native voices · included with your phone line. */
-export const VAPI_CURATED_VOICES: readonly VoiceOption[] = [
-  { id: "Elliot", name: "Elliot · Steady & Professional", provider: "vapi", gender: "male" },
-  { id: "Savannah", name: "Savannah · Warm & Confident", provider: "vapi", gender: "female" },
-  { id: "Rohan", name: "Rohan · Bright & Energetic", provider: "vapi", gender: "male" },
-  { id: "Emma", name: "Emma · Warm & Conversational", provider: "vapi", gender: "female" },
-  { id: "Clara", name: "Clara · Warm & Professional", provider: "vapi", gender: "female" },
-  { id: "Nico", name: "Nico · Casual & Natural", provider: "vapi", gender: "male" },
-  { id: "Kai", name: "Kai · Friendly & Relaxed", provider: "vapi", gender: "male" },
-  { id: "Sagar", name: "Sagar · Steady & Professional", provider: "vapi", gender: "male" },
-  { id: "Godfrey", name: "Godfrey · Young & Energetic", provider: "vapi", gender: "male" },
-  { id: "Neil", name: "Neil · Clear & Professional", provider: "vapi", gender: "male" },
-  { id: "Layla", name: "Layla · Warm & Cheerful", provider: "vapi", gender: "female" },
-  { id: "Sid", name: "Sid · Smooth & Deep", provider: "vapi", gender: "male" },
-  { id: "Naina", name: "Naina · Calm & Professional", provider: "vapi", gender: "female" },
-] as const;
+export const WIRELINE_LIVE_VOICES = OPENAI_REALTIME_VOICES;
 
 /** Curated low-latency studio catalog of ElevenLabs premade voices. */
 export const ELEVENLABS_CURATED_VOICES: readonly VoiceOption[] = [
@@ -171,33 +158,22 @@ export const ELEVENLABS_CORE_VOICE_IDS: readonly string[] = [
   "nPczCjzI2devNBz1zQrb",
 ] as const;
 
-export const DEFAULT_PRESENTER_PHONE_VOICE = VAPI_CURATED_VOICES[0];
+export const DEFAULT_PRESENTER_PHONE_VOICE = OPENAI_REALTIME_VOICES[0];
 
 export const MANAGED_VOICE_BY_GENDER = {
-  female: "Savannah",
-  male: "Elliot",
+  female: "marin",
+  male: "cedar",
 } as const;
-
-const VAPI_V2_VOICE_IDS = new Set(
-  VAPI_CURATED_VOICES.filter((voice) => voice.id !== "Rohan").map((voice) => voice.id),
-);
-
-export function vapiVoiceVersion(voiceId: string | null | undefined): 2 | undefined {
-  return voiceId && VAPI_V2_VOICE_IDS.has(voiceId) ? 2 : undefined;
-}
 
 export function defaultPresenterPhoneVoicePayload(): {
   phoneVoiceId: string;
-  phoneVoiceProvider: "xai";
+  phoneVoiceProvider: "openai";
 } {
   return {
     phoneVoiceId: WIRELINE_LIVE_VOICES[0].id,
-    phoneVoiceProvider: "xai",
+    phoneVoiceProvider: "openai",
   };
 }
-
-/** @deprecated Use WIRELINE_LIVE_VOICES */
-export const XAI_VOICE_OPTIONS = WIRELINE_LIVE_VOICES;
 
 type ApiVoiceRow = {
   voice_id?: string;
@@ -220,15 +196,11 @@ export function normalizeApiVoices(raw: unknown): VoiceOption[] {
       if (!id) return null;
       const providerRaw = voice.provider?.toLowerCase();
       const provider: VoiceProvider =
-        providerRaw === "xai"
-          ? "xai"
-          : providerRaw === "vapi"
-            ? "vapi"
-            : providerRaw === "11labs"
-              ? "11labs"
-              : providerRaw === "presenter"
-                ? "presenter"
-                : "vapi";
+        providerRaw === "11labs"
+          ? "11labs"
+          : providerRaw === "presenter"
+            ? "presenter"
+            : "openai";
       return {
         id,
         name: voice.name || id,
@@ -245,14 +217,14 @@ export function normalizeApiVoices(raw: unknown): VoiceOption[] {
 
 export type VoiceCatalogProviders = {
   wirelineLive: boolean;
-  vapi: boolean;
+  openai: boolean;
   elevenlabs: boolean;
   presenter: boolean;
 };
 
 export function resolveVoiceLabel(voiceId: string | null | undefined): string {
   if (!voiceId) return "Not selected";
-  const pools = [...WIRELINE_LIVE_VOICES, ...VAPI_CURATED_VOICES, ...ELEVENLABS_CURATED_VOICES];
+  const pools = [...WIRELINE_LIVE_VOICES, ...ELEVENLABS_CURATED_VOICES];
   const normalizedId = voiceId.toLowerCase();
   const match = pools.find((voice) => voice.id.toLowerCase() === normalizedId);
   if (match) return match.name;
@@ -261,35 +233,29 @@ export function resolveVoiceLabel(voiceId: string | null | undefined): string {
 
 /** User-facing provider family · no third-party vendor names. */
 export function providerLabel(provider: string | null | undefined): string {
-  if (provider === "xai") return "BotBound Phone";
-  if (provider === "vapi") return "BotBound Phone";
-  if (provider === "11labs") return "BotBound Studio";
+  if (provider === "openai") return "OpenAI Realtime";
+  if (provider === "11labs") return "ElevenLabs Studio";
   if (provider === "presenter") return "Presenter voice";
   return "BotBound Voice";
 }
 
 export function voiceFamilyLabel(provider: VoiceProvider): string {
-  if (provider === "xai") return "BotBound Phone";
-  if (provider === "vapi") return "BotBound Phone";
-  if (provider === "11labs") return "BotBound Studio";
+  if (provider === "openai") return "OpenAI Realtime";
+  if (provider === "11labs") return "ElevenLabs Studio";
   if (provider === "presenter") return "Presenter voice";
   return "BotBound Voice";
 }
 
 export function voiceRoutingHint(provider: VoiceProvider): string | null {
-  if (provider === "xai") return "Live phone voice with an automatic BotBound Phone fallback.";
-  if (provider === "vapi") return "Optimized for live phone calls on your included line.";
-  if (provider === "11labs") return "Low-latency studio speech with an automatic phone fallback.";
+  if (provider === "openai") return "Used for browser tests and every live phone call.";
+  if (provider === "11labs") return "Studio preview and voice-cloning only; live calls use OpenAI Realtime.";
   if (provider === "presenter") {
-    return "Studio and browser preview use presenter lip-sync. Pick a BotBound Phone voice below for live PSTN calls.";
+    return "Presenter lip-sync is separate from calling. Pick an OpenAI Realtime voice for live calls.";
   }
   return null;
 }
 
 export function voicePreviewUrl(voice: VoiceOption): string | null {
-  if (voice.provider === "xai") {
-    return `/api/voices/curated/preview?provider=xai&voiceId=${encodeURIComponent(voice.id)}`;
-  }
   if (voice.provider === "11labs") {
     return `/api/voices/${encodeURIComponent(voice.id)}/preview`;
   }

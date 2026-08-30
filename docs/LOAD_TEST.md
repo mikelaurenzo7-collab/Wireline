@@ -1,86 +1,53 @@
-# Load testing the voice webhook path
+# Load testing the OpenAI Realtime voice control path
 
 ## Scope
-Production PSTN ingress is `POST /api/webhooks/xai/voice` (xAI Direct SIP Standard Webhooks).
-The rollback/showcase path `/api/vapi-webhook` remains mounted and is the historical load-test
-target below. Run tests against a production-like deployment with representative downstream
-integrations enabled or stubbed. Do not treat a 200 from the Vapi rollback webhook as proof that
-native SIP is healthy.
+
+Production ingress has two signed boundaries:
+
+- Twilio voice: `POST /api/twilio-webhook/openai-inbound`
+- OpenAI Realtime: `POST /api/webhooks/openai/realtime`
+
+Audio does not stream through the Vercel application. Twilio bridges PSTN to
+the OpenAI project SIP endpoint, while BotBound handles admission, call-control,
+tools, persistence, and policy through signed HTTP plus server-side sideband
+sessions.
+
+## Safety boundary
+
+Never load-test production phone numbers or a deployment with live provider
+credentials. Use an isolated Preview database and test-only credentials, or a
+provider-disabled staging deployment that exercises signature rejection and
+database/query capacity without accepting a real call. Do not replay a captured
+customer webhook or provider secret.
 
 ## Methodology
-- Preferred tool: k6 for repeatable HTTP load profiles and easy CI usage.
-- Alternative tool: Artillery if you want YAML-based scenarios or phased ramp definitions.
-- Exercise realistic webhook payloads, authentication headers, and replay-safe request IDs.
-- Ramp traffic gradually, then hold a steady-state concurrency window long enough to observe latency, errors, and saturation behavior.
 
-## Vercel concurrency model
-Each Vercel Function invocation handles one request at a time. Concurrent traffic is served by horizontally scaling concurrent invocations rather than multiplexing multiple requests through a single running function.
+- Use k6 or Artillery against an exact-head staging deployment.
+- Exercise separately: invalid-signature rejection, valid signed admission,
+  duplicate delivery, call-id replay, unmatched number, account-environment
+  rejection, tenant concurrency overflow, tool burst, and end-of-call fanout.
+- Use stable synthetic request ids and fixture tenants containing no customer
+  data.
+- Ramp gradually, hold steady state, then test a short burst.
+- Correlate HTTP latency/error rate with Vercel concurrency, Postgres pool
+  saturation, Upstash latency, job depth, and OpenAI/Twilio test-account limits.
+- Assert that a valid duplicate never creates a second call, job, message,
+  charge, or side effect.
 
-## Documented limits
-- Vercel Pro: up to 1000 concurrent executions.
-- Vercel Enterprise: custom concurrency limits by contract.
+## Acceptance metrics
 
-## Measured results
-- Observed webhook processing latency: ~200 ms p50 per function invocation.
-- At 200 ms p50, one warm function can complete roughly 5 requests per second.
-- With 1000 concurrent executions on Vercel Pro, the theoretical upper bound is roughly 5000 concurrent calls per second, assuming even distribution and no downstream throttling.
+- Signature failures return before tenant or provider work.
+- P95 webhook admission remains within the current SLO under the certified
+  launch concurrency.
+- No database-pool timeouts, tenant-context leaks, unbounded queue growth, or
+  cross-tenant rows occur.
+- Overflow degrades to the documented fail-closed behavior.
+- Every accepted request carries a durable correlation id; logs contain no
+  caller number, provider key, raw signature, or customer content.
+- Provider rate limiting is observable and never triggers an alternate call
+  runtime.
 
-## Bottleneck analysis
-The practical concurrency ceiling is usually determined by xAI Direct SIP, Twilio, and optional
-Vapi rollback throughput or rate limits before Vercel itself becomes the bottleneck. Application
-load tests should therefore include downstream provider monitoring and failure-mode validation.
-
-## Monitoring guidance
-- Track concurrent executions in the Vercel dashboard during every test window.
-- Alert when sustained concurrency exceeds 70% of the provisioned limit.
-- Correlate latency, error rate, and downstream provider throttling during peak intervals.
-
-## Sample k6 script
-The copy-pasteable sample still posts to the mounted rollback path `/api/vapi-webhook` so a
-historical extra path segment after `vapi` cannot silently load-test the 404 handler. Native SIP
-load tests must sign Standard Webhooks against `/api/webhooks/xai/voice`.
-
-```javascript
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-
-export const options = {
-  scenarios: {
-    webhook_load: {
-      executor: 'ramping-arrival-rate',
-      startRate: 50,
-      timeUnit: '1s',
-      preAllocatedVUs: 200,
-      maxVUs: 1200,
-      stages: [
-        { target: 250, duration: '2m' },
-        { target: 1000, duration: '5m' },
-        { target: 0, duration: '1m' },
-      ],
-    },
-  },
-};
-
-const BASE_URL = __ENV.BASE_URL || 'https://your-wireline-deployment.vercel.app';
-
-export default function () {
-  const payload = JSON.stringify({
-    type: 'call.started',
-    callId: `load-test-${__VU}-${__ITER}`,
-    timestamp: new Date().toISOString(),
-  });
-
-  const response = http.post(`${BASE_URL}/api/vapi-webhook`, payload, {
-    headers: {
-      'Content-Type': 'application/json',
-      'x-load-test': 'true',
-    },
-  });
-
-  check(response, {
-    'status is acceptable': (res) => res.status >= 200 && res.status < 500,
-  });
-
-  sleep(1);
-}
-```
+The exact load profile belongs in a reviewed staging-only script because signed
+payload construction and fixture ids change with the provider contract. A raw
+unsigned `curl`/k6 sample is intentionally omitted: it would test only the 403
+path and could be mistaken for production certification.

@@ -140,12 +140,14 @@ describe("account-environment AI and provider-spend admission", () => {
   });
 
   it("mounts the common environment-and-cap guard before every paid voice provider route", () => {
-    const grok = read("src/routes/grok-voice-routes.ts");
-    const curatedStart = grok.indexOf('"/api/voices/curated/preview"');
-    const curatedHandler = grok.indexOf("async (req: AuthenticatedRequest", curatedStart);
-    const curated = grok.slice(curatedStart, curatedHandler);
-    expect(curated).toContain("enforceSpendCap");
-    expect(curated.indexOf("enforceSpendCap")).toBeLessThan(curatedHandler - curatedStart);
+    const openai = read("src/routes/openai-realtime-routes.ts");
+    const sessionStart = openai.indexOf('"/api/voice/openai/session"');
+    const sessionHandler = openai.indexOf("async (req: AuthenticatedRequest", sessionStart);
+    expect(sessionStart).toBeGreaterThan(-1);
+    expect(sessionHandler).toBeGreaterThan(sessionStart);
+    const session = openai.slice(sessionStart, sessionHandler);
+    expect(session).toContain("enforceSpendCap");
+    expect(session).toContain("enforceLaunchHardGate");
 
     const managed = read("src/routes/voices-routes.ts");
     for (const route of [

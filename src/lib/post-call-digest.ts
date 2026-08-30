@@ -36,7 +36,7 @@ import { requiresSalesApprovalForIntegration } from "./sales-integration-policy"
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { maybePublishCallRecap } from "./shareable-artifact/publish-call-recap";
-import { sanitizePhone } from "./vapi-helpers";
+import { sanitizePhone } from "./agent-runtime-helpers";
 import { emitServerProductEventOnce } from "./product-event-server";
 import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";

@@ -545,7 +545,7 @@ export async function handleJob(job: JobRow): Promise<void> {
           stripe_customers_deleted: release.stripeCustomersDeleted,
           realtime_calls_hung_up: release.realtimeCallsHungUp,
           twilio_calls_hung_up: release.twilioCallsHungUp,
-          xai_calls_hung_up: release.xaiCallsHungUp,
+          openai_sip_calls_hung_up: release.openaiSipCallsHungUp,
           numbers_released: release.numbersReleased,
           number_errors: release.numberErrors.length,
           oauth_attempted: release.oauthAttempted,
@@ -693,11 +693,9 @@ export async function handleJob(job: JobRow): Promise<void> {
   }
 
   if (job.type === "vapi_webhook") {
-    const { processVapiWebhookJob } = await import("./vapi-webhook-queue");
-    const result = await processVapiWebhookJob(job);
     await persistJobResult(job.id, {
-      webhookType: result.webhookType,
-      vapiCallId: result.vapiCallId ?? null,
+      retired: true,
+      reason: "legacy_voice_provider_removed",
     });
     return;
   }

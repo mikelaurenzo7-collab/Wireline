@@ -122,8 +122,8 @@ if (isProduction) {
     "OPENAI_API_KEY",
     "the managed primary structured runtime and OpenAI Realtime sessions are missing",
   );
-  requireValue("XAI_API_KEY", "the native Twilio + xAI Speech-to-Speech runtime is missing");
-  requireValue("XAI_SIP_ALLOWED_ADDRESSES", "native xAI SIP origination allowlist is missing");
+  requireValue("OPENAI_PROJECT_ID", "the OpenAI Realtime SIP project binding is missing");
+  requireValue("OPENAI_WEBHOOK_SECRET", "OpenAI Realtime incoming-call events cannot be verified");
   requireValue("TWILIO_ACCOUNT_SID", "Twilio account binding is missing");
   requireValue("TWILIO_API_KEY", "scoped Twilio REST authentication is missing");
   requireValue("TWILIO_API_SECRET", "scoped Twilio REST authentication is incomplete");
@@ -263,10 +263,7 @@ const platformManagedCredential = /^(?:VERCEL|TURBO|NPM|NODE|GITHUB|CI)_/;
  * - PERPLEXITY_PREVIEW_API_KEY is the only Perplexity credential preview runtime
  *   may use; when configured it must be a dedicated budget-capped preview key.
  *
- * xAI:
- * - XAI_API_KEY is the live production credential and is never accepted by a
- *   Preview build. A future sandbox must use a separately named variable and
- *   receive its own explicit reviewed policy before it can cross this boundary.
+ * Retired voice-provider credentials are never accepted by a Preview build.
  */
 const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY_PREVIEW_API_KEY"]);
 const previewSpendAuthorityKeys = [

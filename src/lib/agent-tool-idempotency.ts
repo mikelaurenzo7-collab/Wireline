@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
-import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
+import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
 
 const TOOL_EVENT_TYPE = "voice.tool_call";
 const TOOL_RESOURCE_TYPE = "vapi_tool_call";

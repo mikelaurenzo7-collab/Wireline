@@ -5,8 +5,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
   openaiProbe: vi.fn(),
-  vapiProbe: vi.fn(),
-  xaiProbe: vi.fn(),
+  realtimeProbe: vi.fn(),
 }));
 
 vi.mock("@upstash/redis", () => ({
@@ -21,8 +20,7 @@ vi.mock("../src/lib/public-health-probe", async (importOriginal) => {
   return {
     ...actual,
     probeOpenAIModel: mocks.openaiProbe,
-    probeXAIVoiceRuntime: mocks.xaiProbe,
-    probeVapiManagedVoice: mocks.vapiProbe,
+    probeOpenAIRealtimeModel: mocks.realtimeProbe,
   };
 });
 
@@ -62,12 +60,10 @@ beforeEach(() => {
   mocks.get.mockReset();
   mocks.set.mockReset();
   mocks.openaiProbe.mockReset();
-  mocks.vapiProbe.mockReset();
-  mocks.xaiProbe.mockReset();
+  mocks.realtimeProbe.mockReset();
   process.env = {
     ...originalEnv,
     OPENAI_API_KEY: "test-openai-key",
-    XAI_API_KEY: "test-xai-key",
     UPSTASH_REDIS_REST_TOKEN: "test-upstash-token",
     UPSTASH_REDIS_REST_URL: "https://test-upstash.example.com",
     VERCEL_ENV: "preview",
@@ -97,7 +93,7 @@ describe("public health Vercel function", () => {
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.get("x-request-id")).toMatch(/^[0-9a-f-]{36}$/i);
     expect(mocks.openaiProbe).not.toHaveBeenCalled();
-    expect(mocks.xaiProbe).not.toHaveBeenCalled();
+    expect(mocks.realtimeProbe).not.toHaveBeenCalled();
   });
 
   it("exposes the exact deployed source commit as non-secret release metadata", async () => {
@@ -107,7 +103,6 @@ describe("public health Vercel function", () => {
       overall: "operational",
       components: {
         voice_runtime: "operational",
-        voice_fallback: "operational",
         reasoning: "operational",
       },
       last_checked: "2026-08-11T00:00:00.000Z",
@@ -129,7 +124,6 @@ describe("public health Vercel function", () => {
       overall: "operational",
       components: {
         voice_runtime: "operational",
-        voice_fallback: "operational",
         reasoning: "operational",
       },
       last_checked: "2026-08-04T00:00:00.000Z",
@@ -140,10 +134,10 @@ describe("public health Vercel function", () => {
 
     await handler(request(), res as unknown as ServerResponse);
 
-    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v4:production");
+    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v6:production");
     expect(mocks.set).not.toHaveBeenCalled();
     expect(mocks.openaiProbe).not.toHaveBeenCalled();
-    expect(mocks.xaiProbe).not.toHaveBeenCalled();
+    expect(mocks.realtimeProbe).not.toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
     expect(res.headers.get("x-wireline-health-source")).toBe("redis");
     expect(JSON.parse(res.body)).toEqual(cached);
@@ -152,10 +146,10 @@ describe("public health Vercel function", () => {
   it("lets one preview-scoped lock owner probe each owning provider and cache the result", async () => {
     mocks.get.mockResolvedValue(null);
     mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");
-    mocks.xaiProbe.mockResolvedValue({
+    mocks.realtimeProbe.mockResolvedValue({
       ok: true,
       latency_ms: 5,
-      model: "xai-native-voice",
+      model: "gpt-realtime-test",
     });
     mocks.openaiProbe.mockImplementation(async (model: string) => ({
       ok: true,
@@ -170,22 +164,21 @@ describe("public health Vercel function", () => {
     const scope = "preview:abcdef1234567890";
     expect(mocks.set).toHaveBeenNthCalledWith(
       1,
-      `wireline:health:public:probe-lock:v4:${scope}`,
+      `wireline:health:public:probe-lock:v6:${scope}`,
       expect.any(Number),
       { nx: true, ex: 12 },
     );
-    expect(mocks.xaiProbe).toHaveBeenCalledTimes(1);
-    expect(mocks.xaiProbe).toHaveBeenCalledWith("test-xai-key");
+    expect(mocks.realtimeProbe).toHaveBeenCalledTimes(1);
+    expect(mocks.realtimeProbe).toHaveBeenCalledWith("gpt-realtime-2.1", "test-openai-key");
     expect(mocks.openaiProbe).toHaveBeenCalledTimes(1);
     expect(mocks.openaiProbe).toHaveBeenCalledWith("reasoning-model", "test-openai-key");
     expect(mocks.set).toHaveBeenNthCalledWith(
       2,
-      `wireline:health:public:v4:${scope}`,
+      `wireline:health:public:v6:${scope}`,
       expect.objectContaining({
         overall: "operational",
         components: {
           voice_runtime: "operational",
-          voice_fallback: "operational",
           reasoning: "operational",
         },
       }),
@@ -199,10 +192,10 @@ describe("public health Vercel function", () => {
   it("logs failed provider diagnostics internally without leaking them publicly", async () => {
     mocks.get.mockResolvedValue(null);
     mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");
-    mocks.xaiProbe.mockResolvedValue({
+    mocks.realtimeProbe.mockResolvedValue({
       ok: true,
       latency_ms: 4,
-      model: "xai-native-voice",
+      model: "gpt-realtime-test",
     });
     mocks.openaiProbe.mockResolvedValue({
       ok: false,

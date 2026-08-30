@@ -16,7 +16,7 @@ import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
-import { VAPI_TENANT_DEFAULT_MODEL, VAPI_TENANT_DEFAULT_PROVIDER } from "../lib/ai-models";
+import { LIVE_VOICE_MODEL, LIVE_VOICE_PROVIDER } from "../lib/ai-models";
 
 // Modularized Panels
 import { AccountsPanel } from "./admin/AccountsPanel";
@@ -61,8 +61,6 @@ const ADMIN_TAB_SHORT_LABELS: Record<string, string> = {
 };
 
 interface AdminSettingsState {
-  vapi_phone_number_id: string;
-  vapi_phone_inbound_agent_id: string;
   subscription_status: string;
   max_agents: number;
   voice_llm_provider: string;
@@ -90,12 +88,10 @@ export default function AdminSettings() {
   const { updateBranding } = useBranding();
   const [confirmState, setConfirmState] = useState<ConfirmState>(CLOSED_CONFIRM);
   const [settings, setSettings] = useState<AdminSettingsState>({
-    vapi_phone_number_id: "",
-    vapi_phone_inbound_agent_id: "",
     subscription_status: "active",
     max_agents: 3,
-    voice_llm_provider: VAPI_TENANT_DEFAULT_PROVIDER,
-    voice_llm_model: VAPI_TENANT_DEFAULT_MODEL,
+    voice_llm_provider: LIVE_VOICE_PROVIDER,
+    voice_llm_model: LIVE_VOICE_MODEL,
     twilio_messaging_enabled: false,
     twilio_lookup_enabled: false,
     twilio_manager_alerts_enabled: false,
@@ -231,12 +227,10 @@ export default function AdminSettings() {
 
       if (settingsJson) {
         setSettings({
-          vapi_phone_number_id: settingsJson.vapi_phone_number_id || "",
-          vapi_phone_inbound_agent_id: settingsJson.vapi_phone_inbound_agent_id || "",
           subscription_status: settingsJson.subscription_status || "pending_activation",
           max_agents: settingsJson.max_agents || 1,
-          voice_llm_provider: settingsJson.voice_llm_provider || VAPI_TENANT_DEFAULT_PROVIDER,
-          voice_llm_model: settingsJson.voice_llm_model || VAPI_TENANT_DEFAULT_MODEL,
+          voice_llm_provider: settingsJson.voice_llm_provider || LIVE_VOICE_PROVIDER,
+          voice_llm_model: settingsJson.voice_llm_model || LIVE_VOICE_MODEL,
           twilio_messaging_enabled: !!settingsJson.twilio_messaging_enabled,
           twilio_lookup_enabled: !!settingsJson.twilio_lookup_enabled,
           twilio_manager_alerts_enabled: !!settingsJson.twilio_manager_alerts_enabled,

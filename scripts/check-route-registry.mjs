@@ -20,7 +20,7 @@ const problems = [];
 // escalate_to_human tool and was never mounted, so every escalation 404'd.
 // Reachability follows default imports passed to app.use()/router.use(), so
 // sub-router composition (oauth/index.ts providers, twilio-webhook-base,
-// video-presenter-routes-base, grok-live-profile-routes) counts as mounted
+// video-presenter-routes-base, live-voice-profile-routes) counts as mounted
 // only while the import AND the router.use(...) both exist. Files mounted by a
 // separate serverless entrypoint are enumerated below, and each claim is
 // verified against the mounting file rather than trusted as prose.
@@ -156,7 +156,7 @@ for (const { file, mountedBy } of MOUNTED_ELSEWHERE) {
 }
 
 // Every router-constructing file must be transitively mounted (or verifiably
-// mounted elsewhere). Non-router helpers in subdirectories (e.g. vapi/ tool
+// mounted elsewhere). Non-router helpers in subdirectories (for example tool
 // handlers) must at least be imported somewhere in src/, or they are dead code
 // masquerading as route modules.
 const importedAnywhere = new Set();

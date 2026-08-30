@@ -1,4 +1,4 @@
-import type { ToolCallResult } from "../routes/vapi/types";
+import type { ToolCallResult } from "./agent-tool-types";
 
 const UNVERIFIED_SUCCESS_PHRASES = [
   /\bi(?:'|’)ve queued\b/i,

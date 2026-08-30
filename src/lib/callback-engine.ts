@@ -55,7 +55,7 @@ const MAX_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
 /**
  * Provenance stamp proving a consumer asked for this callback on a live line.
  * Written only by the `schedule_callback` tool handler
- * (`src/routes/vapi/tool-handlers-workflow.ts`) and stripped from
+ * (the runtime tool dispatcher) and stripped from
  * account-holder-supplied intake metadata, so it cannot be asserted from
  * outside a call.
  */
@@ -184,13 +184,13 @@ export async function tickDueCallbacks({
       summary: string;
       metadata?: Record<string, unknown>;
     }) => {
-      // Native placement, Twilio status, xAI attachment, and callback outcomes
+      // Native placement, Twilio status, OpenAI attachment, and callback outcomes
       // all mutate the same JSON document. Serialize on the shared lead lock and
       // merge from the latest row so this worker cannot erase voice correlation
       // fields with the stale metadata snapshot selected at tick start.
       await drizzle.transaction(async (tx) => {
         await tx.execute(
-          sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(lead.id)}`}))`,
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(lead.id)}`}))`,
         );
         const [current] = await tx
           .select({ metadata: schema.outboundLeads.metadata })

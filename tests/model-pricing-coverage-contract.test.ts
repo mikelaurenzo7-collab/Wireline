@@ -4,7 +4,6 @@ import {
   GEMINI_MODELS,
   MODEL_PRICING,
   OPENAI_MODELS,
-  XAI_MODELS,
   pricingForModel,
   selectModelForTask,
 } from "../src/lib/ai-models";
@@ -14,13 +13,11 @@ import {
 // https://developers.openai.com/api/docs/models/gpt-5.6-luna
 // https://developers.openai.com/api/docs/models/gpt-5.6-sol
 // https://ai.google.dev/gemini-api/docs/pricing
-// https://docs.x.ai/docs/models
 
 describe("model pricing coverage contract", () => {
   const declaredIds = [
     ...Object.values(OPENAI_MODELS),
     ...Object.values(GEMINI_MODELS),
-    ...Object.values(XAI_MODELS),
   ];
 
   it("prices every declared model id", () => {
@@ -30,8 +27,6 @@ describe("model pricing coverage contract", () => {
         `missing pricing for ${id}`,
       ).toBeDefined();
     }
-    expect(Object.values(XAI_MODELS)).not.toContain("grok-imagine-video-1.5");
-    expect(Object.values(XAI_MODELS).join(" ")).not.toContain("imagine");
   });
 
   it("pins current GPT-5.6 standard rates and cache-write premiums", () => {
@@ -81,8 +76,6 @@ describe("model pricing coverage contract", () => {
       cacheRead: 0.2,
       cacheWrite: 2.5,
     });
-    expect(pricingForModel(XAI_MODELS.GROK_4_6, 200_000).input).toBe(4);
-    expect(pricingForModel(XAI_MODELS.GROK_4_5, 200_000).input).toBe(4);
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
   });
 

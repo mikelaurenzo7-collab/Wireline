@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
 import { Gauge, Activity, AlertTriangle } from "lucide-react";
-import {
-  MAX_VAPI_PARALLEL_TOOL_CALLS,
-  MAX_VAPI_TOOL_RESULT_CHARS,
-  VAPI_TOOL_TIMEOUT_MS,
-} from "../../lib/vapi-tool-results";
 import { cn } from "../../lib/utils";
 import type { AuditSummary, VoiceLatencyInsightsResponse } from "../../types/api-insights";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
@@ -64,9 +59,8 @@ export default function VoiceLatencyView({ days }: { days: number }) {
   }
 
   const guards = [
-    { label: "Parallel tools cap", value: String(MAX_VAPI_PARALLEL_TOOL_CALLS) },
-    { label: "Tool timeout", value: `${VAPI_TOOL_TIMEOUT_MS / 1000}s` },
-    { label: "Tool result cap", value: `${MAX_VAPI_TOOL_RESULT_CHARS} chars` },
+    { label: "Tool confirmation timeout", value: "20s" },
+    { label: "PSTN call ceiling", value: "5m" },
     { label: "TTFT target", value: "<900ms", healthy: true },
     { label: "TTFT alert", value: ">1.2s", healthy: false },
   ];

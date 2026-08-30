@@ -37,8 +37,6 @@ interface CarrierPanelProps {
 }
 
 interface CarrierSettings {
-  vapi_phone_number_id: string;
-  vapi_phone_inbound_agent_id: string;
   subscription_status: string;
   max_agents: number;
   voice_llm_provider: string;
@@ -70,7 +68,7 @@ interface CarrierAgent {
 interface PhoneNumber {
   id: string | number;
   phone_number: string;
-  vapi_number_id?: string | null;
+  carrier_number_id?: string | null;
   agent_id?: string | null;
   campaign_label?: string | null;
 }
@@ -169,10 +167,10 @@ export function CarrierPanel({
 
           <dl className="grid gap-2 sm:grid-cols-2">
             {[
-              ["Phone runtime", "BotBound managed"],
-              ["Phone voices", "Managed voice library"],
-              ["Call intelligence", "Managed automatically"],
-              ["Continuity", "Automatic failover"],
+              ["Phone runtime", "OpenAI Realtime"],
+              ["PSTN + numbers", "Twilio"],
+              ["Phone voices", "OpenAI built-in"],
+              ["SMS", "Twilio"],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg border border-border bg-background p-3">
                 <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -182,40 +180,6 @@ export function CarrierPanel({
               </div>
             ))}
           </dl>
-
-          <div className="space-y-1.5">
-            <label htmlFor="vapi-inbound-agent-id" className="wl-label text-foreground/55">
-              Default Phone Bot for unassigned Vapi rollback inbound
-            </label>
-            <p className="text-xs text-muted-foreground">
-              Native Twilio + xAI SIP lines route from Phone number routing. This default applies
-              only to leftover Vapi rollback or public-showcase numbers.
-            </p>
-            <Select
-              value={settings.vapi_phone_inbound_agent_id || CARRIER_AGENT_UNSET}
-              onValueChange={(value) =>
-                onUpdateSettings({
-                  ...settings,
-                  vapi_phone_inbound_agent_id: value === CARRIER_AGENT_UNSET ? "" : value,
-                })
-              }
-            >
-              <SelectTrigger
-                id="vapi-inbound-agent-id"
-                className="h-auto w-full rounded-md border border-input bg-black/5 py-2 pl-3 text-sm text-foreground"
-              >
-                <SelectValue placeholder="Oldest Bot" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={CARRIER_AGENT_UNSET}>Oldest Bot</SelectItem>
-                {voiceAgents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <AdminSaveBar
             onClick={onSaveSettings}
@@ -279,7 +243,7 @@ export function CarrierPanel({
                         {number.phone_number}
                       </p>
                       <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
-                        {number.vapi_number_id || "Managed number"}
+                        {number.carrier_number_id || "Twilio-managed number"}
                       </p>
                     </div>
                     <Input

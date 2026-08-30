@@ -423,6 +423,24 @@ describe("migration journal integrity contract", () => {
     ).toContain("paid_bot_identity_reconcile");
   });
 
+  it("journals and materializes the OpenAI Realtime voice runtime defaults", () => {
+    expect(journal.entries).toContainEqual(
+      expect.objectContaining({
+        idx: 66,
+        tag: "0168_openai_realtime_voice_runtime",
+      }),
+    );
+    const materializer = readFileSync(
+      resolve(process.cwd(), "scripts/materialize-drizzle-meta.mjs"),
+      "utf8",
+    );
+    expect(materializer).toContain("TARGET_0066_PATH");
+    expect(materializer).toContain("buildOpenAIRealtimeVoiceSnapshot");
+    expect(materializer).toContain("agents.voice_id.default = \"'marin'\"");
+    expect(materializer).toContain("settings.voice_llm_model.default = \"'gpt-realtime-2.1'\"");
+    expect(materializer).not.toContain('TARGET_0066_SHA256 = "PENDING_COMPUTE"');
+  });
+
   it("documents the split so the journal is not read as the whole history", () => {
     // The operational rule only survives if it is written down where database
     // work starts. docs/DATABASE_OPERATIONS.md is that single source of truth.

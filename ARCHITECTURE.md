@@ -70,18 +70,17 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
-  - Production PSTN calls: Twilio buys and owns the number, then registers it with xAI Direct SIP (`sip.voice.x.ai`). Inbound `realtime.call.incoming` webhooks and outbound Twilio `<Sip>` bridges join `wss://api.x.ai/v1/realtime?call_id=…`.
-  - Native Speech-to-Speech (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo) is the live PSTN brain. Grok 4.6 is an optional structured-continuity model, not a live-call id. Vapi remains rollback-only and is not on the production launch path.
-  - Twilio remains authoritative for numbers, signed inbound SMS, opt-out enforcement, delivery callbacks, and the two-way messaging inbox.
-  - Studio live tests and hosted MCP private simulation use OpenAI Realtime (`gpt-realtime-2.1`) over server-mediated WebRTC. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser. This does not alter the separate PSTN lane.
-  - Direct `/v1/tts` is preview and marketing-audio only. It is not the PSTN engine.
-  - Neither OpenAI Realtime nor Vapi is automatic failover for customer PSTN calls.
+  - Every browser and phone conversation uses OpenAI Realtime (`gpt-realtime-2.1`). The founder showcase fleet and customer Bots share the same runtime authority and have no alternate call provider.
+  - Twilio owns numbers, PSTN transport, signed voice/SMS callbacks, opt-out enforcement, delivery callbacks, and the two-way messaging inbox. Inbound calls reach a signed BotBound TwiML webhook and bridge to `sip:<OPENAI_PROJECT_ID>@sip.api.openai.com;transport=tls`; outbound calls ring the customer through Twilio before the same OpenAI SIP bridge.
+  - OpenAI signs `realtime.call.incoming` at `/api/webhooks/openai/realtime`; BotBound accepts the call with the selected Bot runtime and maintains the server-side sideband tool session.
+  - Studio live tests, guest demos, and hosted MCP private simulation use server-mediated OpenAI Realtime WebRTC. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser.
+  - ElevenLabs is studio preview and authorized voice-cloning infrastructure only. It is never a phone runtime or fallback.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides).
-  - Continuity: Vercel AI Gateway, then direct xAI Grok 4.6, then Gemini. Direct xAI continuity can be disabled via `WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false` without disabling native PSTN.
+  - Continuity: Vercel AI Gateway, then Gemini.
   - Every Bot and call direction shares this same managed chain; roles and use cases change configuration, not the provider default or product mode.
-  - ElevenLabs is optional TTS/cloning/showcase infrastructure, not a reasoning runtime or tenant PSTN default.
+  - ElevenLabs is optional studio preview/cloning infrastructure, not a reasoning or phone runtime.
 - **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.
 - **Browser extension:** BotBound Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
 - **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.

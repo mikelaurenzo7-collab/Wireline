@@ -11,18 +11,18 @@ import websiteKnowledgeRouter from "../routes/website-knowledge-routes";
 import agentTestRouter from "../routes/agent-test-routes";
 import agentWorkspaceRouter from "../routes/agent-workspace-routes";
 import qaV2Router from "../routes/qa-routes-v2";
-import vapiRouter from "../routes/vapi-v2";
 import healthRouter from "../routes/health-routes";
 import publicHealthHandler from "../entrypoints/public-health-api";
 import aiStatusRouter from "../routes/ai-status-routes";
-import openaiRealtimeRouter from "../routes/openai-realtime-routes";
-import grokVoiceRouter from "../routes/grok-voice-routes";
+import liveVoiceRouter from "../routes/live-voice-routes";
+import openAISipRouter from "../routes/openai-sip-routes";
+import openAIOutboundRouter from "../routes/openai-outbound-routes";
+import openAIInboundTwilioRouter from "../routes/openai-inbound-twilio-routes";
 import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
 import { enforceSelfServeBillingRelease } from "../middleware/launch-hard-gate";
-import { showcasePromptTruthGuard } from "../lib/showcase-prompt-truth-guard";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutAtomicRouter from "../routes/launch-billing-checkout-atomic-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
@@ -39,10 +39,8 @@ import companyIdentitySettingsGuardRouter from "../routes/company-identity-setti
 import settingsPhoneGuardRouter from "../routes/settings-phone-guard-routes";
 import settingsRouter from "../routes/settings-routes";
 import postCallOutputRouter from "../routes/post-call-output-routes";
-import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
 import nativePhoneReleaseRouter from "../routes/native-phone-release-routes";
-import phoneNumberReleaseRouter from "../routes/phone-number-release-routes";
-import carrierRouter from "../routes/carrier-routes";
+import nativePhoneRoutingRouter from "../routes/native-phone-routing-routes";
 import companyIdentityRouter from "../routes/company-identity-routes";
 import sharedWorkspaceReadinessRouter from "../routes/shared-workspace-readiness-routes";
 import teamRouter from "../routes/team-routes";
@@ -67,7 +65,6 @@ import marketingRuntimeRouter from "../routes/marketing-runtime-routes";
 import resendWebhookRouter from "../routes/resend-webhook-routes";
 import metaWebhookRouter from "../routes/meta-webhook-routes";
 import twilioWebhookRouter from "../routes/twilio-webhook";
-import escalationRouter from "../routes/escalation-routes";
 import smsOutcomeRouter from "../routes/sms-outcome-routes";
 import smsRouter from "../routes/sms-routes";
 import webhookTestRouter from "../routes/webhook-test-routes";
@@ -76,7 +73,6 @@ import intakeRouter from "../routes/intake-routes";
 import supportRouter from "../routes/support-routes";
 import legacyKnowledgeCrawlRouter from "../routes/legacy-knowledge-crawl-routes";
 import jobRouter from "../routes/job-routes";
-import nativeMobileVoiceRouter from "../routes/native-mobile-voice-routes";
 import mobileRouter from "../routes/mobile-routes";
 import activationRouter from "../routes/activation-routes";
 import outboundDialAtomicRouter from "../routes/outbound-dial-atomic-routes";
@@ -108,8 +104,10 @@ export function registerApiRoutes(app: Express): void {
   });
   app.use("/api/health", healthRouter);
   app.use(aiStatusRouter);
-  app.use(openaiRealtimeRouter);
-  app.use(grokVoiceRouter);
+  app.use(liveVoiceRouter);
+  app.use(openAISipRouter);
+  app.use(openAIOutboundRouter);
+  app.use(openAIInboundTwilioRouter);
   app.use(voicesRouter);
 
   app.use("/api/auth", protectAuthResponseFromCaching);
@@ -126,8 +124,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentTestRouter);
   app.use(agentWorkspaceRouter);
   app.use(browserHandoffRouter);
-  app.use("/api/vapi-webhook", showcasePromptTruthGuard);
-  app.use(vapiRouter);
   app.use(accountRouter);
   app.use(userPreferenceGuardRouter);
   app.use(mcpCoachingSettingsRouter);
@@ -136,13 +132,10 @@ export function registerApiRoutes(app: Express): void {
   app.use(accountExportGuardRouter);
   app.use(settingsRouter);
   app.use(postCallOutputRouter);
-  // Native Twilio+xAI owns all self-serve number reads/writes and release before
-  // the historical carrier routers. Legacy paths remain mounted only for
-  // rollback inventory that carries an old provider id.
-  app.use(nativePhoneRoutingRouter);
+  // Carrier routes own Twilio number and SMS provisioning. OpenAI Realtime
+  // owns every browser and PSTN voice session.
   app.use(nativePhoneReleaseRouter);
-  app.use(phoneNumberReleaseRouter);
-  app.use(carrierRouter);
+  app.use(nativePhoneRoutingRouter);
   app.use(companyIdentityRouter);
   app.use(sharedWorkspaceReadinessRouter);
   app.use(teamRouter);
@@ -189,7 +182,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(agentmailWebhookRouter);
   app.use(metaWebhookRouter);
   app.use(twilioWebhookRouter);
-  app.use(escalationRouter);
   app.use(smsOutcomeRouter);
   app.use(smsRouter);
 
@@ -200,7 +192,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(supportRouter);
   app.use(legacyKnowledgeCrawlRouter);
   app.use("/api/jobs", jobRouter);
-  app.use(nativeMobileVoiceRouter);
   app.use(mobileRouter);
   app.use(marketingRuntimeRouter);
   app.use(activationRouter);

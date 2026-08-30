@@ -24,10 +24,8 @@ afterEach(() => {
 function configureFetchRuntime(): void {
   vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
   vi.stubEnv("GEMINI_API_KEY", "");
-  vi.stubEnv("AI_GATEWAY_API_KEY", "");
+  vi.stubEnv("AI_GATEWAY_API_KEY", "test-gateway-key");
   vi.stubEnv("VERCEL_OIDC_TOKEN", "");
-  vi.stubEnv("XAI_API_KEY", "test-xai-key");
-  vi.stubEnv("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK", "true");
   vi.stubEnv("WIRELINE_STRUCTURED_PRIMARY_PROVIDER", "openai");
 }
 
@@ -395,7 +393,7 @@ describe("website knowledge spend reservation", () => {
     expect(deps.settleKnown).toHaveBeenCalledWith(
       expect.objectContaining({
         minimumCostUsd: 0,
-        records: [expect.objectContaining({ provider: "xai", model: "grok-4.6" })],
+        records: [expect.objectContaining({ provider: "gateway" })],
       }),
     );
     expect(deps.release).not.toHaveBeenCalled();

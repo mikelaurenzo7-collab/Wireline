@@ -86,18 +86,18 @@ const required = [
   ["UPSTASH_REDIS_REST_TOKEN", "Upstash Redis token", process.env.UPSTASH_REDIS_REST_TOKEN],
   [
     "OPENAI_API_KEY",
-    "Managed GPT-5.6 Terra structured runtime and OpenAI Realtime browser sessions",
+    "Managed GPT-5.6 Terra structured runtime and all OpenAI Realtime sessions",
     process.env.OPENAI_API_KEY,
   ],
   [
-    "XAI_API_KEY",
-    "Native Twilio SIP Speech-to-Speech and optional Grok 4.6 structured continuity",
-    process.env.XAI_API_KEY,
+    "OPENAI_PROJECT_ID",
+    "OpenAI Realtime SIP project binding",
+    process.env.OPENAI_PROJECT_ID,
   ],
   [
-    "XAI_SIP_ALLOWED_ADDRESSES",
-    "IPv4/CIDR allowlist for native xAI SIP origination (prefix length 8-32)",
-    process.env.XAI_SIP_ALLOWED_ADDRESSES,
+    "OPENAI_WEBHOOK_SECRET",
+    "Signature verification for OpenAI Realtime incoming-call events",
+    process.env.OPENAI_WEBHOOK_SECRET,
   ],
   [
     "ELEVENLABS_API_KEY",
@@ -205,16 +205,6 @@ const optional = [
     "PERPLEXITY_API_KEY",
     "Preferred live public-research vendor; grounded Gemini covers when unset",
   ],
-  ["XAI_API_KEY_CHATKIT", "Optional isolated xAI experiment key"],
-  [
-    "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
-    "Operator opt-out for the xAI structured lane — unset means active with a key; set false to disable",
-  ],
-  [
-    "VAPI_PRIVATE_KEY",
-    "Rollback-only Vapi control plane. Native PSTN uses Twilio and xAI Direct SIP",
-  ],
-  ["VAPI_WEBHOOK_SECRET", "Rollback-only Vapi webhook verification"],
   [
     "WIRELINE_LAUNCH_DEMO_MODE",
     "Mark launch telemetry as demo-only until real customers are admitted",
@@ -236,6 +226,17 @@ const optional = [
     "STRIPE_BUSINESS_OVERAGE_PRICE_ID",
     "Reserved only if Enterprise metered checkout is re-enabled",
   ],
+];
+
+const retiredVoiceEnvKeys = [
+  "VITE_VAPI_PUBLIC_KEY",
+  "VAPI_PRIVATE_KEY",
+  "VAPI_WEBHOOK_SECRET",
+  "VAPI_WEBHOOK_CREDENTIAL_ID",
+  "XAI_API_KEY",
+  "XAI_API_KEY_CHATKIT",
+  "XAI_SIP_ALLOWED_ADDRESSES",
+  "WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK",
 ];
 
 const formatHints = new Map([
@@ -330,6 +331,14 @@ const missingRecommended = [
 ];
 const missingOptional = missing(optional);
 const invalidRequired = invalid(required);
+for (const key of retiredVoiceEnvKeys) {
+  if (String(process.env[key] || "").trim()) {
+    invalidRequired.push([
+      key,
+      "Retired voice-provider configuration must be removed; live calls use OpenAI Realtime over Twilio.",
+    ]);
+  }
+}
 const invalidRecommended = invalid(recommended);
 
 const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;

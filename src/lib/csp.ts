@@ -32,10 +32,6 @@ export function buildConnectSrcs(isDev: boolean = false): string {
     "'self'",
     // Realtime browser sessions exchange SDP through same-origin BotBound
     // routes. Provider API keys and signaling endpoints stay server-side.
-    "https://api.vapi.ai",
-    "wss://api.vapi.ai",
-    "https://*.daily.co",
-    "wss://*.daily.co",
     "https://accounts.google.com",
     "https://oauth2.googleapis.com",
     "https://www.googleapis.com",

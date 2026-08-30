@@ -1,22 +1,19 @@
 /**
  * Voice observability API routes
  *
- *   POST /api/voice/metrics        — Record per-call telemetry (from webhooks)
  *   GET  /api/health/voice-status  — Public demo line health probe
  *   GET  /api/insights/latency     — Tenant latency trends (auth)
  */
 import express, { Request, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { z } from "zod";
-import { vapiWebhookSecretOk } from "../lib/vapi-webhook-auth";
-import { drizzle, log, tenantStore, requirePermission } from "../lib/server-context";
+import { drizzle, log, requirePermission } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { insightsRateLimit, createIpRateLimiter } from "../middleware/api-rate-limits";
 import { validateQuery } from "../lib/api-validation";
 import {
-  recordVoiceMetrics,
   computeVoiceHealthWindow,
   alertOnVoiceDegradation,
   getLatencyTrends,
@@ -26,58 +23,8 @@ import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
 
-// POST /api/voice/metrics — called by Vapi webhooks (or similar) on call end
 const VoiceReliabilityQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(90).optional(),
-});
-
-const MetricsBodySchema = z.object({
-  vapiCallId: z.string().min(1),
-  ttftMs: z.number().int().min(0).optional(),
-  ttfAudioMs: z.number().int().min(0).optional(),
-  sttError: z.boolean().optional(),
-  ttsError: z.boolean().optional(),
-  pipelineError: z.enum(["stt", "tts", "llm", "connection", "unknown"]).optional(),
-  latencyP50Ms: z.number().int().min(0).optional(),
-  latencyP95Ms: z.number().int().min(0).optional(),
-});
-
-router.post("/api/voice/metrics", async (req: Request, res: Response) => {
-  try {
-    if (!vapiWebhookSecretOk(req)) {
-      log.warn("Rejected /api/voice/metrics with bad or missing Vapi secret");
-      throw AppError.fromHttpStatus(401, "Unauthorized");
-    }
-
-    const parsed = MetricsBodySchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw AppError.badRequest("Invalid metrics payload", {
-        details: parsed.error.flatten(),
-      });
-    }
-
-    // Resolve userId from vapiCallId (required for multi-tenant isolation)
-    const [row] = await drizzle
-      .select({ userId: schema.callLogs.userId })
-      .from(schema.callLogs)
-      .where(eq(schema.callLogs.vapiCallId, parsed.data.vapiCallId))
-      .limit(1);
-
-    if (!row?.userId) {
-      throw AppError.fromHttpStatus(404, "Call not found");
-    }
-
-    await tenantStore.run(row.userId, async () => {
-      await recordVoiceMetrics(row.userId, parsed.data);
-    });
-    res.json({ recorded: true });
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    log.error("POST /api/voice/metrics failed", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw AppError.fromHttpStatus(500, "Failed to record metrics");
-  }
 });
 
 // Public, unauthenticated probe: throttle by IP so it can't be hammered into a
@@ -192,7 +139,7 @@ router.get(
       const rows = await drizzle
         .select({
           id: schema.callLogs.id,
-          vapiCallId: schema.callLogs.vapiCallId,
+          providerCallId: schema.callLogs.vapiCallId,
           createdAt: schema.callLogs.createdAt,
           durationSeconds: schema.callLogs.durationSeconds,
           ttftMs: schema.callLogs.ttftMs,

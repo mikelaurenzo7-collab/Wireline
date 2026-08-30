@@ -26,7 +26,7 @@ import * as schema from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import { refundReservedTenantMessageAttempt, sendTenantMessage } from "./twilio-service";
-import { sanitizePhone } from "./vapi-helpers";
+import { sanitizePhone } from "./agent-runtime-helpers";
 import { phoneSuffixForLog } from "./twilio-webhook-privacy";
 
 export type PreparedPostCallCsatSms = {

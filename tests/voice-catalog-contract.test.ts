@@ -5,33 +5,27 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("voice catalog", () => {
-  it("exposes multi-provider voice pools for create and studio flows", () => {
+  it("exposes OpenAI live voices and isolates ElevenLabs to Studio", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     expect(catalog).toContain("WIRELINE_LIVE_VOICES");
-    expect(catalog).toContain("VAPI_CURATED_VOICES");
+    expect(catalog).toContain("OPENAI_REALTIME_VOICES");
     expect(catalog).toContain("ELEVENLABS_CURATED_VOICES");
+    expect(catalog).toContain('provider: "openai"');
     expect(catalog).toContain('provider: "11labs"');
-    expect(catalog).toContain("playVoicePreview");
-    expect(catalog).toContain('"presenter"');
     expect(catalog).toContain("voicePreviewUrl");
-    expect(catalog).not.toContain("speechSynthesis");
+    expect(catalog).toContain("live calls use OpenAI Realtime");
+    expect(catalog).not.toMatch(/vapi|xai|grok/i);
     // The picker reads the authenticated, server-curated library. It never
     // lists or calls a voice-provider account from the browser.
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
-    expect(picker).toContain("VAPI_CURATED_VOICES");
+    expect(picker).toContain("OPENAI_REALTIME_VOICES");
     expect(picker).toContain('authFetch("/api/voices")');
     expect(picker).toContain("voice.provider");
     expect(picker).not.toContain("api.elevenlabs.io");
-    // The preview route renders the exact selected voice through the shared
-    // xAI engine; it must never substitute one provider's voice for another.
-    expect(read("src/lib/voice/xai-tts-service.ts")).toContain(
-      'const XAI_TTS_URL = "https://api.x.ai/v1/tts"',
-    );
-    expect(read("src/lib/voice/voice-preview-service.ts")).toContain("synthesizeXaiSpeech");
-    expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("XAI_TO_ELEVENLABS");
-    expect(read("src/lib/voice/voice-preview-service.ts")).not.toContain("api.elevenlabs.io");
-    expect(read("src/lib/voice-catalog.ts")).not.toMatch(/id: "(Kylie|Lily|Hana|Neha|Cole)"/);
-    expect(read("src/lib/voice/pcm-resample.ts")).toContain("VAPI_LISTEN_PCM_RATE_HZ");
+    const routes = read("src/routes/voices-routes.ts");
+    expect(routes).toContain("generateElevenLabsProof");
+    expect(routes).toContain("isCuratedElevenLabsVoiceId");
+    expect(routes).toContain('provider: "11labs"');
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("consumeCreateWarning");
   });
 
@@ -61,7 +55,7 @@ describe("voice catalog", () => {
     expect([...gateCore].sort()).toEqual([...catalogCore].sort());
   });
 
-  it("does not wire HeyGen presenter voices after talking-head retirement", () => {
+  it("keeps presenters and studio voices out of live phone routing", () => {
     expect(read("src/lib/video-presenter/liveavatar-service.ts")).not.toContain(
       "process.env.LIVEAVATAR_API_KEY",
     );
@@ -70,10 +64,9 @@ describe("voice catalog", () => {
     );
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("matched-voice");
     expect(read("src/routes/video-presenter-routes-base.ts")).toContain("throwLiveVideoRetired");
-    expect(read("src/lib/voice/voice-preview-service.ts")).toContain("generateCuratedVoicePreview");
-    const routes = read("src/routes/grok-voice-routes.ts");
-    expect(routes).toContain("/api/voices/curated/preview");
-    expect(routes).toContain("authenticateUser");
-    expect(routes).toContain("generateCuratedVoicePreview");
+    const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    expect(runtime).toContain("runtime.agent.phoneVoiceId");
+    expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
+    expect(runtime).not.toContain("ELEVENLABS_CURATED_VOICES");
   });
 });

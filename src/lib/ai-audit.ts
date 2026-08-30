@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AsyncLocalStorage } from "node:async_hooks";
-import { DEFAULT_MODEL, isXAIModelId, pricingForModel } from "./ai-models";
+import { DEFAULT_MODEL, pricingForModel } from "./ai-models";
 import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "./ai-usage";
 
@@ -167,7 +167,6 @@ function providerFor(model: string): RuntimeCallMeta["provider"] {
   // with the same model called directly.
   if (normalized.startsWith("openai/") || normalized.startsWith("gpt-")) return "openai";
   if (normalized.startsWith("google/") || normalized.includes("gemini")) return "google";
-  if (normalized.startsWith("xai/") || isXAIModelId(normalized)) return "xai";
   return "gateway";
 }
 export function recordUsage(

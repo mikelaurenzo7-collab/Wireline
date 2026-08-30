@@ -11,8 +11,8 @@
  * factory/named handlers (`createAuditEventsHandler(deps)`, `sweepHandler`),
  * comments between the method call and the path string, array path arguments,
  * and sub-routers composed via `router.use(subRouter)` (the oauth/ provider
- * pattern, twilio-webhook-base, video-presenter-routes-base,
- * grok-live-profile-routes) are all resolved instead of silently skipped.
+ * pattern, twilio-webhook-base, video-presenter-routes-base, and
+ * live-voice-profile-routes) are all resolved instead of silently skipped.
  */
 
 import fs from "node:fs";
@@ -36,8 +36,6 @@ const AUTH_MIDDLEWARE = [
   // Route-local composite gate on /api/jobs/sweep (src/routes/job-routes.ts):
   // timing-safe CRON_SECRET bearer OR authenticated owner/admin.
   "cronOrAdminAuth",
-  // Studio Vapi web proxy: HMAC live-test ticket, not a session cookie.
-  "requireStudioVapiWebTicket",
 ];
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
@@ -51,8 +49,8 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/api\/webhooks\/meta\//, reason: "Meta HMAC-SHA256 signature + rate limit" },
   {
-    pattern: /^\/api\/webhooks\/xai\/voice$/,
-    reason: "xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission",
+    pattern: /^\/api\/webhooks\/openai\/realtime$/,
+    reason: "OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission",
   },
   {
     pattern: /^\/api\/webhooks\/resend$/,
@@ -62,9 +60,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     pattern: /^\/api\/webhooks\/agentmail\/:accountId$/,
     reason: "AgentMail/Svix timestamped HMAC-SHA256 signature + replay window",
   },
-  { pattern: /^\/api\/vapi\//, reason: "Vapi tool/webhook signature verification" },
-  { pattern: /^\/api\/vapi-webhook$/, reason: "Vapi signature validation + agent-scoped routing" },
-  { pattern: /^\/api\/escalate$/, reason: "Vapi X-Vapi-Secret (timing-safe) + rate limit" },
   {
     pattern: /^\/api\/integrations\/certified$/,
     reason: "Public certified-integration status; rate-limited, no tenant data",
@@ -122,10 +117,6 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
   },
   { pattern: /^\/api\/support\/ticket$/, reason: "Public support form; rate-limited + validated" },
   { pattern: /^\/api\/contact$/, reason: "Public marketing contact form; rate-limited" },
-  {
-    pattern: /^\/(?:api\/)?voice\/metrics$/,
-    reason: "Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write",
-  },
   {
     pattern: /^\/recap\/:slug$/,
     reason:

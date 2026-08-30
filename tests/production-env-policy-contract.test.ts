@@ -43,8 +43,8 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
       OAUTH_BRIDGE_SECRET: "configured",
       MCP_OAUTH_TOKEN_PEPPER: "configured",
       OPENAI_API_KEY: "configured",
-      XAI_API_KEY: "configured",
-      XAI_SIP_ALLOWED_ADDRESSES: "configured",
+      OPENAI_PROJECT_ID: "proj_configured",
+      OPENAI_WEBHOOK_SECRET: "whsec_configured",
       TWILIO_ACCOUNT_SID: "configured",
       TWILIO_API_KEY: "configured",
       TWILIO_API_SECRET: "configured",
@@ -265,7 +265,7 @@ describe("production environment launch policy", () => {
     }
   });
 
-  it("does not treat LiveAvatar as a production-readiness credential", () => {
+  it("does not treat retired voice or LiveAvatar credentials as production readiness", () => {
     const recommendedStart = prodCheck.indexOf("const recommended = [");
     const optionalStart = prodCheck.indexOf("const optional = [");
     const recommendedBlock = prodCheck.slice(recommendedStart, optionalStart);
@@ -275,9 +275,11 @@ describe("production environment launch policy", () => {
     expect(optionalStart).toBeGreaterThan(recommendedStart);
     expect(recommendedBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(recommendedBlock).not.toContain('"XAI_API_KEY"');
-    expect(prodCheck.slice(prodCheck.indexOf("const required = ["), recommendedStart)).toContain(
-      '"XAI_API_KEY"',
-    );
+    const requiredBlock = prodCheck.slice(prodCheck.indexOf("const required = ["), recommendedStart);
+    expect(requiredBlock).toContain('"OPENAI_API_KEY"');
+    expect(requiredBlock).toContain('"OPENAI_PROJECT_ID"');
+    expect(requiredBlock).toContain('"OPENAI_WEBHOOK_SECRET"');
+    expect(requiredBlock).not.toMatch(/XAI|VAPI|GROK/);
     expect(optionalBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(optionalBlock).not.toContain('"LIVEAVATAR_DEFAULT_AVATAR_ID"');
   });

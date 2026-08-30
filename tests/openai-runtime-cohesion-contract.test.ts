@@ -4,78 +4,42 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("OpenAI-first runtime cohesion across agent postures", () => {
-  it("keeps personal and business create paths on the OpenAI structured primary", () => {
-    const routes = read("src/routes/agent-routes-v2.ts");
-    const defaults = read("src/lib/agent-create-defaults.ts");
-    const models = read("src/lib/ai-models.ts");
-
-    expect(models).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
-    // Create/extract paths use the shared structured runtime (OpenAI primary),
-    // not a route-local OPENAI_STRUCTURED_PRIMARY_MODEL import.
-    expect(routes).toContain("runStructured");
-    expect(routes).not.toContain("OPENAI_STRUCTURED_PRIMARY_MODEL");
-    expect(routes).toContain("is_business_agent");
-    expect(defaults).toContain("resolveCreateEnabledTools");
-    expect(defaults).toContain("isBusinessAgent");
-    expect(defaults).not.toContain("XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(defaults).not.toContain("createGrokVoiceClientSession");
+describe("OpenAI runtime cohesion", () => {
+  it("gives founder and customer Bots the same Realtime authority", () => {
+    const policy = read("src/lib/voice/runtime-policy.ts");
+    expect(policy.match(/runtime: "openai_realtime"/g)).toHaveLength(2);
+    expect(policy.match(/carrier: "twilio"/g)).toHaveLength(2);
+    expect(policy.match(/fallbackRuntime: null/g)).toHaveLength(2);
+    expect(policy).not.toMatch(/vapi|xai|grok/i);
   });
 
-  it("keeps rollback Vapi defaults valid while native xAI SIP owns production", () => {
-    const models = read("src/lib/ai-models.ts");
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const managedRuntime = read("src/lib/managed-voice-runtime.ts");
-    expect(models).toContain('VAPI_TENANT_DEFAULT_PROVIDER = "openai"');
-    expect(models).toContain("VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O");
-    expect(models).toContain("They are not the structured-runtime policy");
-    expect(factory).toContain("isPrincipalVoiceRole(configured.role)");
-    expect(factory).not.toContain("const isBusinessAgent = configured.isBusinessAgent !== false");
-    expect(factory).toContain("buildManagedVoiceRuntime");
-    expect(managedRuntime).toContain('provider: "xai" as const');
-    expect(managedRuntime).toContain('provider: "vapi" as const');
-    expect(managedRuntime).toContain("fallbackPlan");
-    expect(factory).not.toContain('llmProvider: "xai"');
-    expect(factory).not.toContain("grok-4.5");
+  it("uses OpenAI for created, drafted, and founder showcase Bots", () => {
+    for (const path of [
+      "src/routes/agent-routes-v2.ts",
+      "src/lib/agent-draft-service.ts",
+      "src/lib/founder-fleet-seed.ts",
+      "src/lib/founder-showcase-seed.ts",
+    ]) {
+      expect(read(path)).toContain('voiceProvider: "openai"');
+    }
   });
 
-  it("routes hybrid marketing direction through native Studio tests", () => {
-    const product = read("src/lib/product-copy.ts");
-    const liveRoutes = read("src/routes/grok-voice-routes.ts");
-    const sandbox = read("src/components/LiveVoiceSandbox.tsx");
-
-    expect(product).toContain("hybrid:");
-    expect(liveRoutes).toContain("createOpenAILiveVoiceCall");
-    expect(liveRoutes).toContain("runOpenAILiveVoiceTool");
-    expect(liveRoutes).not.toContain("createXAILiveVoiceSession");
-    expect(liveRoutes).not.toContain("createGrokVoiceClientSession");
-    expect(sandbox).toContain('from "./OpenAILiveVoiceSandbox"');
+  it("mounts the OpenAI browser, SIP, inbound, and outbound routes", () => {
+    const registry = read("src/server/register-api-routes.ts");
+    for (const route of [
+      "liveVoiceRouter",
+      "openAISipRouter",
+      "openAIInboundTwilioRouter",
+      "openAIOutboundRouter",
+    ]) {
+      expect(registry).toContain(route);
+    }
   });
 
-  it("keeps active architecture docs on OpenAI defaults and native xAI SIP PSTN", () => {
-    const architecture = read("ARCHITECTURE.md");
-    const grokDoc = read("docs/GROK_LIVE_VOICE.md");
-    const vendor = read("docs/VENDOR_LAUNCH_MAP.md");
-
-    expect(architecture).toContain(
-      "Primary: direct OpenAI Responses API using GPT-5.6 Terra by default",
-    );
-    expect(architecture).toContain("Every Bot and call direction shares this same managed chain");
-    expect(architecture).toContain("xAI Direct SIP");
-    expect(grokDoc).toContain("it is not a Vapi live-call model id");
-    expect(grokDoc).toContain("Do not add `XAI_API_KEY_VOICE`");
-    expect(grokDoc).toContain("Latency is per model and endpoint, not per API key");
-    expect(grokDoc).toContain("xAI rate limits are per team and per model");
-    expect(grokDoc).toContain(
-      "Hosted MCP private voice simulation: server-mediated OpenAI Realtime WebRTC",
-    );
-    expect(grokDoc).toContain("the widget needs no direct provider CSP permission");
-    expect(grokDoc).not.toContain("ChatGPT Apps iframes may only connect");
-    expect(grokDoc).toContain("Studio fails closed when `OPENAI_API_KEY`");
-    expect(grokDoc).toContain("PSTN independently fails closed");
-    expect(vendor).toContain(
-      "Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime",
-    );
-    expect(vendor).toContain("Vercel AI Gateway, then xAI Grok 4.6, then Gemini");
+  it("uses a presenter-specific OpenAI phone fallback", () => {
+    const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    expect(runtime).toContain('voiceProvider?.toLowerCase() === "presenter"');
+    expect(runtime).toContain("runtime.agent.phoneVoiceId");
+    expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
   });
 });

@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 398
-**Protected:** 321
-**Public (allowlisted):** 77
+**Routes scanned:** 380
+**Protected:** 304
+**Public (allowlisted):** 76
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -40,7 +40,6 @@
 | `POST /api/daily-brief/schedule` | Vercel cron; Bearer CRON_SECRET (timing-safe) |
 | `POST /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
 | `GET /api/email/unsubscribe` | CAN-SPAM one-click unsubscribe; token-scoped + rate-limited |
-| `POST /api/escalate` | Vapi X-Vapi-Secret (timing-safe) + rate limit |
 | `GET /api/health` | Public liveness probe; DB ping only, rate-limited |
 | `POST /api/health/report` | Browser client-error reports (pre-auth by design); rate-limited, size-bounded input, no data returned |
 | `GET /api/health/slos` | Monitor token OR authenticated platform admin; enforced in handler |
@@ -69,6 +68,12 @@
 | `GET /api/oauth/x/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/yahoo/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
+| `POST /api/twilio-webhook/openai-inbound` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-inbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/webhooks/openai/realtime` | OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission |
 | `GET /api/openapi.json` | Public OpenAPI spec; rate-limited + CDN cached |
 | `GET /api/quotas/plans` | Public plan limits comparison table |
 | `POST /api/webhooks/resend` | Resend/Svix timestamped HMAC-SHA256 signature + replay window |
@@ -83,13 +88,7 @@
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/usage-alert` | Twilio signature validation; valid provider retries are never IP-throttled |
-| `POST /api/vapi-webhook` | Vapi signature validation + agent-scoped routing |
 | `GET /api/health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
-| `POST /api/voice/metrics` | Vapi X-Vapi-Secret (timing-safe) verified in handler; telemetry write |
-| `POST /api/twilio-webhook/xai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
-| `POST /api/twilio-webhook/xai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
-| `POST /api/twilio-webhook/xai-outbound-status` | Twilio signature validation; valid provider retries are never IP-throttled |
-| `POST /api/webhooks/xai/voice` | xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission |
 
 ## Full Matrix
 
@@ -198,16 +197,6 @@
 | campaign-routes.ts | GET | `/api/campaigns/:id/leads` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns/:id/retry-failed` | inline | — | — | Protected |
 | campaign-routes.ts | POST | `/api/campaigns/:id/stop` | inline | — | — | Protected |
-| carrier-routes.ts | GET | `/api/carrier/numbers` | inline | — | — | Protected |
-| carrier-routes.ts | GET | `/api/phone-numbers` | inline | — | — | Protected |
-| carrier-routes.ts | POST | `/api/phone-numbers` | inline | — | — | Protected |
-| carrier-routes.ts | PATCH | `/api/phone-numbers/:id` | inline | — | — | Protected |
-| carrier-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
-| carrier-routes.ts | GET | `/api/phone-numbers/area-codes` | inline | — | — | Protected |
-| carrier-routes.ts | GET | `/api/phone-numbers/available` | inline | — | — | Protected |
-| carrier-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
-| carrier-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
-| carrier-routes.ts | POST | `/api/phone-numbers/search` | inline | — | — | Protected |
 | company-identity-routes.ts | GET | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity` | inline | — | — | Protected |
 | company-identity-routes.ts | POST | `/api/company-identity/review-request` | inline | — | — | Protected |
@@ -244,7 +233,6 @@
 | email-sync-routes.ts | POST | `/api/emails/sync` | inline | — | — | Protected |
 | email-unsubscribe-routes.ts | POST | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
 | email-unsubscribe-routes.ts | GET | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |
-| escalation-routes.ts | POST | `/api/escalate` | — | — | yes | Public (allowlisted) |
 | extra-agent-billing-atomic-routes.ts | POST | `/api/billing/extra-agents` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/activity` | inline | — | — | Protected |
 | fleet-routes.ts | GET | `/api/Assistants/presence` | inline | — | — | Protected |
@@ -259,13 +247,6 @@
 | goals-routes.ts | GET | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | POST | `/api/goals` | inline | — | — | Protected |
 | goals-routes.ts | DELETE | `/api/goals/:id` | inline | — | — | Protected |
-| grok-live-profile-routes.ts | PATCH | `/api/voice/live/custom` | inline | — | — | Protected |
-| grok-live-profile-routes.ts | GET | `/api/voice/live/profile` | inline | — | — | Protected |
-| grok-live-profile-routes.ts | PATCH | `/api/voice/live/profile` | inline | — | — | Protected |
-| grok-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
-| grok-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
-| grok-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
-| grok-voice-routes.ts | GET | `/api/voices/curated/preview` | inline | — | — | Protected |
 | health-routes.ts | GET | `/api/health` | — | — | yes | Public (allowlisted) |
 | health-routes.ts | GET | `/api/health/actions` | inline | platform_admin | — | Protected |
 | health-routes.ts | GET | `/api/health/integrations` | inline | platform_admin | — | Protected |
@@ -307,6 +288,12 @@
 | learning-routes.ts | GET | `/api/agents/:id/learning-digest` | inline | — | — | Protected |
 | learning-routes.ts | POST | `/api/agents/lessons/review` | inline | — | — | Protected |
 | legacy-knowledge-crawl-routes.ts | POST | `/api/jobs/knowledge-crawl` | inline | — | — | Protected |
+| live-voice-profile-routes.ts | PATCH | `/api/voice/live/custom` | inline | — | — | Protected |
+| live-voice-profile-routes.ts | GET | `/api/voice/live/profile` | inline | — | — | Protected |
+| live-voice-profile-routes.ts | PATCH | `/api/voice/live/profile` | inline | — | — | Protected |
+| live-voice-routes.ts | POST | `/api/voice/live/session` | inline | — | — | Protected |
+| live-voice-routes.ts | GET | `/api/voice/live/status` | inline | — | — | Protected |
+| live-voice-routes.ts | POST | `/api/voice/live/tool` | inline | — | — | Protected |
 | marketing-runtime-routes.ts | GET | `/api/public/assistant/:agentName` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-call` | — | — | yes | Public (allowlisted) |
 | marketing-runtime-routes.ts | POST | `/api/public/demo-session` | — | — | yes | Public (allowlisted) |
@@ -334,10 +321,9 @@
 | mobile-routes.ts | GET | `/api/mobile/me` | inline | — | — | Protected |
 | mobile-routes.ts | PUT | `/api/mobile/settings` | inline | — | — | Protected |
 | mobile-routes.ts | GET | `/api/mobile/wallet` | inline | — | — | Protected |
-| native-mobile-voice-routes.ts | POST | `/api/mobile/calls/:callId/handoff` | inline | — | — | Protected |
-| native-mobile-voice-routes.ts | POST | `/api/mobile/calls/outbound` | inline | — | — | Protected |
 | native-phone-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | GET | `/api/carrier/numbers` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | GET | `/api/phone-numbers` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | PATCH | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | GET | `/api/phone-numbers/available` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
@@ -394,8 +380,12 @@
 | oauth/zoom.ts | GET | `/api/oauth/zoom/callback` | — | — | yes | Public (allowlisted) |
 | oauth/zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
 | oauth/zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
-| openai-realtime-routes.ts | POST | `/api/voice/openai/session` | inline | — | — | Protected |
-| openai-realtime-routes.ts | GET | `/api/voice/openai/status` | inline | — | — | Protected |
+| openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound` | — | — | yes | Public (allowlisted) |
+| openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-fallback` | — | — | yes | Public (allowlisted) |
+| openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-bridge` | — | — | yes | Public (allowlisted) |
+| openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-fallback` | — | — | yes | Public (allowlisted) |
+| openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-status` | — | — | yes | Public (allowlisted) |
+| openai-sip-routes.ts | POST | `/api/webhooks/openai/realtime` | — | — | yes | Public (allowlisted) |
 | openapi-routes.ts | GET | `/api/openapi.json` | — | — | yes | Public (allowlisted) |
 | operator-task-routes.ts | GET | `/api/Assistants/tasks` | inline | — | — | Protected |
 | operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/approve` | inline | — | — | Protected |
@@ -408,7 +398,6 @@
 | outbound-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/operating-metrics` | inline | — | — | Protected |
 | overview-operating-metrics-routes.ts | GET | `/api/overview/recent-conversations` | inline | — | — | Protected |
-| phone-number-release-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/insights/campaign-attribution` | inline | — | — | Protected |
 | pipeline-routes.ts | GET | `/api/pipeline` | inline | — | — | Protected |
 | pipeline-routes.ts | PATCH | `/api/pipeline/lead/:id` | inline | — | — | Protected |
@@ -466,12 +455,10 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
-| vapi-v2.ts | POST | `/api/vapi-webhook` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
-| voice-observability-routes.ts | POST | `/api/voice/metrics` | — | — | yes | Public (allowlisted) |
 | voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
 | voices-routes.ts | DELETE | `/api/voices/:id` | inline | platform_admin | — | Protected |
 | voices-routes.ts | POST | `/api/voices/:id/approve` | inline | platform_admin | — | Protected |
@@ -487,9 +474,3 @@
 | webhook-test-routes.ts | POST | `/api/webhooks/:id/test` | inline | permission | — | Protected |
 | website-knowledge-routes.ts | POST | `/api/agent-config/:id/website` | inline | — | — | Protected |
 | workspace-knowledge-routes.ts | POST | `/api/workspace-knowledge/google-drive` | inline | — | — | Protected |
-| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-bridge` | — | — | yes | Public (allowlisted) |
-| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-fallback` | — | — | yes | Public (allowlisted) |
-| xai-outbound-routes.ts | POST | `/api/twilio-webhook/xai-outbound-status` | — | — | yes | Public (allowlisted) |
-| xai-voice-routes.ts | POST | `/api/voice/native/phone/provision` | inline | — | — | Protected |
-| xai-voice-routes.ts | GET | `/api/voice/native/phone/status` | inline | — | — | Protected |
-| xai-voice-routes.ts | POST | `/api/webhooks/xai/voice` | — | — | yes | Public (allowlisted) |

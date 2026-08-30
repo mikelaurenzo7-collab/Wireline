@@ -183,9 +183,9 @@ requirePattern(
 );
 
 requirePattern(
-  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
+  "drizzle/migrations/0168_openai_realtime_voice_runtime.sql",
   /CREATE TRIGGER wireline_agents_managed_voice/,
-  "Managed voice invariants must be enforced in the database.",
+  "The historical managed-voice trigger must remain installed and be replaced by the OpenAI migration.",
 );
 requirePattern(
   "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
@@ -193,24 +193,24 @@ requirePattern(
   "Concurrent clone requests must share one active source reservation.",
 );
 requirePattern(
-  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
-  /REVOKE ALL ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM PUBLIC/,
-  "Internal trigger functions must not inherit PUBLIC execution privileges.",
+  "drizzle/migrations/0168_openai_realtime_voice_runtime.sql",
+  /voice_provider := 'openai'/,
+  "The database must normalize every non-presenter live voice to OpenAI.",
 );
 requirePattern(
-  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
-  /REVOKE EXECUTE ON FUNCTION public\.wireline_normalize_managed_voice\(\) FROM anon, authenticated/,
-  "Client roles must not directly execute the managed-runtime trigger function.",
-);
-requirePattern(
-  "src/lib/managed-voice-runtime.ts",
-  /provider:\s*"11labs" as const/,
-  "Approved studio voices must use ElevenLabs through the managed phone runtime.",
+  "drizzle/migrations/0168_openai_realtime_voice_runtime.sql",
+  /'alloy', 'ash', 'ballad', 'coral', 'echo',[\s\S]*'sage', 'shimmer', 'verse', 'marin', 'cedar'/,
+  "The database must allow exactly the documented OpenAI Realtime voice roster.",
 );
 requirePattern(
   "src/lib/managed-voice-runtime.ts",
-  /fallbackPlan:[\s\S]*provider:\s*"vapi" as const/,
-  "Every ElevenLabs phone voice must carry a different-provider Vapi fallback.",
+  /provider:\s*"openai" as const/,
+  "The managed phone runtime must always resolve to OpenAI.",
+);
+forbidPattern(
+  "src/lib/managed-voice-runtime.ts",
+  /provider:\s*"11labs"|fallbackPlan|vapi|xai|grok/i,
+  "The managed phone runtime must not retain alternate live-call providers or fallbacks.",
 );
 requirePattern(
   "src/routes/voices-routes.ts",

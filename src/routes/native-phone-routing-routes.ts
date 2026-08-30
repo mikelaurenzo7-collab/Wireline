@@ -1,5 +1,5 @@
 import { Router, type Response } from "express";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { isTwilioPhoneNumberSid } from "../lib/agent-phone-lines";
@@ -17,6 +17,7 @@ import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
 import { listNativeAvailableLocalNumbers } from "../lib/voice/native-phone-carrier";
 import { resolveNonProductionPhoneNumberPickerInventory } from "../lib/voice/phone-number-picker-inventory";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
+import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -49,6 +50,37 @@ async function capacityAvailable(userId: string): Promise<boolean> {
     .where(eq(schema.phoneNumbers.userId, userId));
   return Number(held || 0) < slots;
 }
+
+router.get(
+  "/api/phone-numbers",
+  authenticateUser,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const rows = await drizzle
+      .select({
+        id: schema.phoneNumbers.id,
+        phoneNumber: schema.phoneNumbers.phoneNumber,
+        carrierNumberId: schema.phoneNumbers.vapiNumberId,
+        agentId: schema.phoneNumbers.agentId,
+        campaignLabel: schema.phoneNumbers.campaignLabel,
+        createdAt: schema.phoneNumbers.createdAt,
+      })
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.userId, req.user.id));
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({
+      numbers: rows.map((row) => ({
+        id: String(row.id),
+        phone_number: row.phoneNumber,
+        carrier_number_id: row.carrierNumberId,
+        agent_id: row.agentId,
+        campaign_label: row.campaignLabel,
+        provider: "twilio_openai_realtime_sip",
+        native_voice_status: row.agentId ? "active" : "unassigned",
+        created_at: row.createdAt?.toISOString() ?? null,
+      })),
+    });
+  }),
+);
 
 router.get(
   "/api/phone-numbers/available",
@@ -154,7 +186,7 @@ async function respondWithProvision(
     phone_number: result.phoneNumber,
     carrier_number_id: result.carrierNumberId,
     reused: result.reused === true,
-    provider: "twilio_xai_native",
+    provider: "twilio_openai_realtime_sip",
   });
 }
 
@@ -208,8 +240,38 @@ router.patch(
       success: true,
       number: result.line,
       native_voice_status:
-        result.nativeVoice?.binding?.status ?? (result.line.agentId ? "pending" : "retired"),
+        result.nativeVoice?.status ?? (result.line.agentId ? "pending" : "retired"),
     });
+  }),
+);
+
+router.delete(
+  "/api/phone-numbers/:id",
+  authenticateUser,
+  phoneNumberRateLimiter,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const lineId = parsePhoneNumberRowId(req.params.id);
+    const [owned] = await drizzle
+      .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+      .from(schema.phoneNumbers)
+      .where(
+        and(
+          eq(schema.phoneNumbers.userId, req.user.id),
+          eq(schema.phoneNumbers.id, lineId),
+        ),
+      )
+      .limit(1);
+    if (!owned) throw AppError.notFound("Phone number not found.");
+
+    const released = await releaseNativeTenantNumber(req.user.id, owned.phoneNumber);
+    if (!released.ok) {
+      throw new AppError(
+        503,
+        "CARRIER_RELEASE_FAILED",
+        released.error || "The carrier could not confirm number release.",
+      );
+    }
+    res.json({ ok: true, released: true });
   }),
 );
 

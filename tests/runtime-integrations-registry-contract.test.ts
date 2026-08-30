@@ -9,29 +9,20 @@ const source = readFileSync(
 const compactSource = source.replace(/\s+/g, " ");
 
 describe("runtime integrations registry launch policy", () => {
-  it("presents OpenAI as structured/browser primary and xAI as required native PSTN", () => {
+  it("presents OpenAI as the required structured and live voice runtime", () => {
     expect(source).toContain('"openai",\n    "OpenAI",');
     expect(source).toContain(
-      "Managed structured runtime plus Studio and ChatGPT OpenAI Realtime browser voice. Native PSTN uses Twilio + xAI SIP.",
-    );
-    expect(source).toContain('"xai",\n    "xAI Grok",');
-    expect(source).toContain(
-      "Native Twilio SIP Speech-to-Speech for PSTN plus an optional Grok 4.6 structured continuity lane.",
-    );
-    expect(source).toContain(
-      "One api.x.ai key covers optional structured continuity, preview TTS, and native SIP.",
+      "Managed structured runtime and OpenAI Realtime for every browser and PSTN voice session.",
     );
     expect(source).toContain("OpenAI Realtime");
-    expect(source).toContain("WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK");
     expect(compactSource).toMatch(/item\(\s*"openai".{0,500}?, true,/);
-    expect(compactSource).toMatch(/item\(\s*"xai".{0,500}?, true,/);
+    expect(source).not.toMatch(/api\.x\.ai|api\.vapi\.ai/i);
   });
 
   it("marks the monetized communications control plane as required", () => {
-    for (const integration of ["xai", "twilio", "stripe", "resend", "upstash"]) {
+    for (const integration of ["openai", "twilio", "stripe", "resend", "upstash"]) {
       expect(compactSource).toMatch(new RegExp(`item\\(\\s*"${integration}".{0,700}?, true,`));
     }
-    expect(compactSource).toMatch(/item\(\s*"vapi".{0,700}?, false,/);
   });
 
   it("reports signed Resend feedback separately from the required send transport", () => {

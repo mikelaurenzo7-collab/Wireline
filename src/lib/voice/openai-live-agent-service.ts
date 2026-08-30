@@ -370,7 +370,7 @@ export async function createOpenAILiveVoiceCall(input: {
       profile,
       voice,
       tools: reviewRequired ? [] : LIVE_DEMO_TOOLS.map((tool) => tool.name),
-      phoneRuntimeProvider: "xai_sip",
+      phoneRuntimeProvider: "openai_realtime_sip",
     },
   };
 }
@@ -462,7 +462,7 @@ export function getOpenAILiveVoiceStatus() {
     defaultModel: OPENAI_REALTIME_DEFAULT_MODEL,
     sessionMode: "authenticated_browser_and_mobile_webrtc",
     transcriptionEnabled: true,
-    phoneRuntimeProvider: "xai_sip",
+    phoneRuntimeProvider: "openai_realtime_sip",
     fallbackProvider: null,
   };
 }

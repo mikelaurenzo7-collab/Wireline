@@ -22,7 +22,7 @@ Launch is not a vibe check. Treat it as four proofs that must stay current:
 | Auth/session | Web uses httpOnly cookies; native uses Bearer; no browser JWT fallback. | Stale localStorage tokens, JWT secret conflict, session refresh failures. |
 | Database/RLS | Shared Supabase schema is healthy; tenant GUC/RLS paths are verified. | Drift, missing columns, role/GUC failures, pooler issues. |
 | Stripe/billing | Catalog, webhooks, plans, add-ons, and Runtime Balance agree. | Missing price envs, webhook secret drift, failed ledger reconciliation. |
-| Voice/telephony | Twilio + xAI Direct SIP paths are green; one inbound and one outbound proof call complete. Vapi remains optional rollback/showcase only. | Failed call webhooks, high latency, unavailable provider keys. |
+| Voice/telephony | OpenAI Realtime + Twilio SIP paths are green; one inbound and one outbound proof call complete. | Failed call webhooks, high latency, unavailable provider keys. |
 | Compliance | TCPA/DNC, consent, opt-out, unsubscribe, calling hours, and carrier registration posture are explicit. | Marketing dials without DNC scrub, unclear consent, unsupported brand-calling claims. |
 | Rate limiting | Upstash Redis is configured in production. | Per-invocation fallback in serverless. |
 | Email/support | Resend and support paths are configured. | Ticket delivery failures or unverified sending domain. |
@@ -38,8 +38,8 @@ BotBound should track contribution margin at the account level.
 | --- | --- | --- |
 | Plan revenue | Stripe subscription, add-ons, extra Bots. | Monthly recurring revenue by account. |
 | Runtime Balance | Credit wallet and ledger deltas. | Prepaid balance, burn rate, and top-up events. |
-| Voice | Twilio numbers/SMS/calls, xAI Direct SIP Speech-to-Speech minutes, optional Vapi rollback. | Cost per call, cost per account, unused-number inventory. |
-| AI | OpenAI/Gemini/Vercel AI Gateway/optional xAI usage. | Token/audio cost by account and feature. |
+| Voice | Twilio numbers/SMS/carrier minutes plus OpenAI Realtime audio usage. | Cost per call, cost per account, unused-number inventory. |
+| AI | OpenAI/Gemini/Vercel AI Gateway usage. | Token/audio cost by account and feature. |
 | Video presenters | Retired talking-head add-on. Leftover Stripe price IDs stay webhook-only. | Do not sell Live Video. |
 | Email/support | Resend volume and support ticket volume. | Cost per account and alert thresholds. |
 

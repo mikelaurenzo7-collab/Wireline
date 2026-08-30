@@ -150,7 +150,7 @@ export const settings = pgTable("wireline_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   /** Rollback-only Vapi language-model pair; not the structured-runtime default. */
   voiceLlmProvider: text("voice_llm_provider").default("openai"),
-  voiceLlmModel: text("voice_llm_model").default("gpt-4o"),
+  voiceLlmModel: text("voice_llm_model").default("gpt-realtime-2.1"),
   dailyBriefEnabled: boolean("daily_brief_enabled").default(false).notNull(),
   dailyBriefSendAt: text("daily_brief_send_at").default("13:00").notNull(),
   dailyBriefRecipient: text("daily_brief_recipient"),
@@ -372,7 +372,7 @@ export const agents = pgTable(
     name: text("name").notNull(),
     /** Curated customer-selected identity mark. Nullable during the rollout expansion. */
     markKey: text("mark_key"),
-    voiceId: text("voice_id"),
+    voiceId: text("voice_id").default("marin"),
     voiceIdInbound: text("voice_id_inbound"),
     voiceIdOutbound: text("voice_id_outbound"),
     /**
@@ -395,7 +395,7 @@ export const agents = pgTable(
      *   - Pattern source: Vapi call-control handoff for mid-call voice swaps.
      */
     secondaryVoiceId: text("secondary_voice_id"),
-    voiceProvider: text("voice_provider").default("xai"),
+    voiceProvider: text("voice_provider").default("openai"),
     /** PSTN line voice when studio voice uses presenter lip-sync. */
     phoneVoiceId: text("phone_voice_id"),
     phoneVoiceProvider: text("phone_voice_provider"),

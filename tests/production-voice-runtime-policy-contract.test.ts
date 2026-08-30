@@ -7,36 +7,24 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("production voice runtime policy", () => {
   it("keeps audio-file generators out of live PSTN voice routing", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
-    expect(policy).toContain("Rendered assets are not a live-call runtime");
-    expect(policy).toContain("eleven_flash_v2_5");
-    expect(policy).toContain("Twilio carrier → xAI Direct SIP Speech-to-Speech");
+    expect(policy).toContain("Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP");
+    expect(policy).toContain("OpenAI Realtime `gpt-realtime-2.1`");
+    expect(policy).toContain("no alternate runtime or provider fallback");
   });
 
-  it("labels built-in xAI voices as live PSTN through native Speech-to-Speech, not direct TTS", () => {
+  it("labels only documented OpenAI voices as live phone voices", () => {
     const catalog = read("src/lib/voice-catalog.ts");
-    const preview = read("src/lib/voice/voice-preview-service.ts");
-
-    expect(catalog).toContain("Built-in xAI voices for live PSTN through native Speech-to-Speech");
-    expect(catalog).toContain("grok-voice-think-fast-2.0");
-    expect(catalog).not.toContain("low-latency realtime speech (xAI Grok)");
-    expect(preview).toContain("Browser audio samples");
-    expect(preview).toContain("never participates in live call routing");
-
-    const xaiTts = read("src/lib/voice/xai-tts-service.ts");
-    expect(xaiTts).toContain("NOT reachable from live PSTN routing");
-    expect(xaiTts.replace(/\s*\n\s*\*?\s*/g, " ")).toContain(
-      "Live phone voices use native xAI Speech-to-Speech",
-    );
+    for (const voice of ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"]) {
+      expect(catalog).toContain(`id: "${voice}"`);
+    }
+    expect(catalog).not.toMatch(/vapi|xai|grok/i);
   });
 
-  it("keeps custom browser voices unsupported and keeps marketing audio off live PSTN", () => {
-    const routes = read("src/routes/grok-live-profile-routes.ts");
-    const docs = read("docs/GROK_LIVE_VOICE.md");
-
-    expect(routes).toContain("generated marketing voiceovers are not live call voices");
-    expect(routes).toContain("Vapi-supported streaming voice-library workflow");
-    expect(routes).toContain("LIVE_CUSTOM_VOICE_UNSUPPORTED");
-    expect(docs).toContain("Audio-file tools are marketing/demo asset generators");
-    expect(docs).toContain("not live PSTN runtime engines");
+  it("keeps studio generation off the phone runtime", () => {
+    const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
+    const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    expect(policy).toContain("Server-only ElevenLabs preview/cloning");
+    expect(policy).toContain("Never a live phone provider");
+    expect(runtime).not.toMatch(/elevenlabs|11labs/i);
   });
 });

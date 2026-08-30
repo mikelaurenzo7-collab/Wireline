@@ -13,7 +13,7 @@ import { shouldApplyTwilioMessageStatusTransition } from "../lib/twilio-message-
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
 import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
-import { sanitizePhone } from "../lib/vapi-helpers";
+import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import baseRouter from "./twilio-webhook-base";
 import { persistInboundSmsEvidence } from "./twilio-webhook-base";
 

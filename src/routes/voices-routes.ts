@@ -58,11 +58,9 @@ const cloneIpRateLimit = createIpRateLimiter({
 });
 
 const voicePreviewRateLimit = createRateLimiter({
-  // Distinct from grok-voice-routes' "api:voice-preview". rateLimit() keys on
-  // the bucket name, so sharing it made two endpoints increment one counter
-  // that was then compared against two different ceilings. Both preview paths
-  // now fail closed; they still keep separate buckets so one surface cannot
-  // spend the other's vendor budget.
+  // Studio preview owns an explicit, fail-closed vendor-spend bucket. It stays
+  // separate from live Realtime admission so preview traffic can never consume
+  // a phone or browser conversation's capacity.
   bucket: "api:voice-preview-managed",
   windowMs: 60_000,
   max: 12,
@@ -683,8 +681,8 @@ router.delete(
         await tx
           .update(schema.agents)
           .set({
-            voiceProvider: "vapi",
-            voiceId: "Savannah",
+            voiceProvider: "openai",
+            voiceId: "marin",
             voiceIdInbound: null,
             voiceIdOutbound: null,
           })

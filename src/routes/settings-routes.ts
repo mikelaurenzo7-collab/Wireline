@@ -21,6 +21,7 @@ import { validate } from "../middleware/validate";
 import { SettingsSchema } from "../../contracts/api-types";
 import { clampAgentCapacity, clampExtraAgentAddons } from "../lib/agent-capacity";
 import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
+import { openAISipConfigured } from "../lib/voice/openai-sip-config";
 
 const router = Router();
 
@@ -30,8 +31,6 @@ const router = Router();
  * counters, activation metrics, acquisition provenance, provider secrets.
  */
 const CLIENT_WRITABLE_SETTINGS = new Set([
-  "vapiPhoneNumberId",
-  "vapiPhoneInboundAgentId",
   "retentionDays",
   "voiceLlmProvider",
   "voiceLlmModel",
@@ -128,9 +127,8 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
       .where(eq(settings.userId, req.user.id))
       .limit(1);
 
-    // Strip sensitive credentials — return boolean presence flags instead.
-    // The raw key is never needed by the browser; only server-side code
-    // uses it (and reads from process.env.XAI_API_KEY, not this column).
+    // Strip sensitive legacy credential columns. Provider secrets are managed
+    // exclusively through deployment environment variables.
     const safe = data ? { ...data } : ({} as any);
     if (typeof safe.maxAgents === "number") {
       safe.maxAgents = clampAgentCapacity(safe.maxAgents);
@@ -144,16 +142,9 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
       safe.extraAgents = 0;
       safe.founderUnlimitedAgents = false;
     }
-    if ("vapiPrivateKey" in safe) {
-      // Native Twilio + xAI is the live voice runtime. Report platform voice
-      // readiness so clients do not think voice is unconfigured. The legacy
-      // has_vapi_key flag stays true when either the native key or a rollback
-      // Vapi key is present.
-      safe.has_vapi_key = Boolean(
-        process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim(),
-      );
-      delete safe.vapiPrivateKey;
-    }
+    delete safe.vapiPrivateKey;
+    delete safe.vapiPhoneNumberId;
+    delete safe.vapiPhoneInboundAgentId;
 
     const snakeSafe = mapObjectToSnake(safe);
     res.json({ ...snakeSafe, settings: snakeSafe });
@@ -165,16 +156,14 @@ router.get("/api/settings", authenticateUser, async (req: AuthenticatedRequest, 
 });
 
 /**
- * The tenant-wide telecom identity fields are client-writable, but every
- * tenant's line lives in ONE shared Vapi account and ONE shared Twilio account.
+ * Tenant messaging identities live in one shared Twilio account.
  * Format validation alone is therefore not a boundary: another workspace's real
- * number passes E.164 and its Vapi id passes the id shape, and the provider
- * accepts both because the platform credential owns them.
+ * number passes E.164 and the provider accepts it because the platform
+ * credential owns the number.
  *
  * Left unchecked, writing a neighbour's identifier here is enough to place
- * outbound calls under their caller ID (resolveAgentVapiPhoneNumberId falls
- * back to this column when an agent has no dedicated line) and to send SMS
- * from their business number — landing the carrier spam reports, STIR/SHAKEN
+ * messages from their business number — landing carrier spam reports,
+ * STIR/SHAKEN
  * reputation damage, and TCPA exposure on a workspace that never sent anything.
  * A number may only be claimed as a tenant identity if that tenant owns the row.
  */
@@ -182,8 +171,6 @@ export async function assertTelecomIdentityOwned(
   userId: string,
   update: Record<string, unknown>,
 ): Promise<void> {
-  const vapiId =
-    typeof update.vapiPhoneNumberId === "string" ? update.vapiPhoneNumberId.trim() : "";
   const smsFrom =
     typeof update.twilioSmsFromNumber === "string" ? update.twilioSmsFromNumber.trim() : "";
   // The WhatsApp sender is the same shape of shared-credential identity as the
@@ -194,22 +181,15 @@ export async function assertTelecomIdentityOwned(
     typeof update.twilioWhatsappFromNumber === "string"
       ? update.twilioWhatsappFromNumber.trim()
       : "";
-  if (!vapiId && !smsFrom && !whatsappFrom) return;
+  if (!smsFrom && !whatsappFrom) return;
 
   const owned = await drizzle
     .select({
-      vapiNumberId: schema.phoneNumbers.vapiNumberId,
       phoneNumber: schema.phoneNumbers.phoneNumber,
     })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, userId));
 
-  if (vapiId && !owned.some((row) => row.vapiNumberId === vapiId)) {
-    throw AppError.fromHttpStatus(
-      403,
-      "That voice line is not provisioned to this workspace. Provision a number before setting it as the default.",
-    );
-  }
   if (smsFrom && !owned.some((row) => row.phoneNumber === smsFrom)) {
     throw AppError.fromHttpStatus(
       403,
@@ -389,7 +369,6 @@ router.get(
             tx
               .select({
                 subscriptionStatus: settings.subscriptionStatus,
-                vapiPhoneNumberId: settings.vapiPhoneNumberId,
               })
               .from(settings)
               .where(eq(settings.userId, userId))
@@ -406,18 +385,17 @@ router.get(
           ]),
         );
 
-      const platformVoiceReady = Boolean(
-        process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim(),
-      );
-      const tenantHasNumber =
-        Number(phoneRow?.count || 0) > 0 || Boolean(settingsRow?.vapiPhoneNumberId);
+      const platformVoiceReady =
+        openAISipConfigured() &&
+        Boolean(process.env.TWILIO_ACCOUNT_SID?.trim()) &&
+        Boolean(process.env.TWILIO_AUTH_TOKEN?.trim());
+      const tenantHasNumber = Number(phoneRow?.count || 0) > 0;
 
       res.json({
         has_agents: Number(agentRow?.count || 0) > 0,
         has_calls: Number(callLogRow?.count || 0) > 0,
         has_billing: settingsRow?.subscriptionStatus === "active",
-        // Native Twilio + xAI: voice is ready when the platform key is present
-        // and the tenant has a bound number (or legacy settings phone id).
+        // Voice is ready only when OpenAI SIP, Twilio, and a bound line agree.
         has_voice: platformVoiceReady && tenantHasNumber,
         completed: !!prefsRow?.onboardingCompleted,
       });

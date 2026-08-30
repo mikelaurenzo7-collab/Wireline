@@ -13,6 +13,7 @@ import {
 } from "./founder-fleet-seed";
 import { FOUNDER_EFFECTIVE_PLAN_ID } from "./plan-entitlements";
 import { getErrorMessage } from "./server-utils";
+import { ensureFounderShowcaseBots } from "./founder-showcase-seed";
 
 const bootstrapInFlight = new Set<string>();
 
@@ -83,6 +84,7 @@ export async function bootstrapFounderAssistantIfEmpty(
   bootstrapInFlight.add(userId);
   try {
     await ensureFounderEnterpriseSubscription(userId);
+    await ensureFounderShowcaseBots(userId);
 
     return await drizzle.transaction(async (tx) => {
       await tx.execute(

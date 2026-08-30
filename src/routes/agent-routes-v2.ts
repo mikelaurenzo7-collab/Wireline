@@ -13,7 +13,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
-import { isManagedVapiVoiceId, isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { isManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   isAgentToolName,
@@ -33,7 +33,6 @@ import {
 } from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
 import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
-import { isCuratedElevenLabsVoiceId } from "../lib/managed-voice-runtime";
 import { AI_TOOLS } from "../lib/ai-tools";
 import { isGeminiModelId, isOpenAIModelId } from "../lib/ai-models";
 import {
@@ -479,11 +478,9 @@ router.post(
           );
         }
 
-        const voiceId = isXaiPstnVoiceId(requestedVoiceId)
+        const voiceId = isManagedOpenAIVoiceId(requestedVoiceId)
           ? requestedVoiceId
-          : isManagedVapiVoiceId(requestedVoiceId)
-            ? requestedVoiceId
-            : pickRotatedVoiceId(existing);
+          : pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
           id,
           userId: req.user.id,
@@ -493,7 +490,7 @@ router.post(
           channel,
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
-          voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
+          voiceProvider: "openai",
           enabledTools,
           firstMessage,
           isBusinessAgent,
@@ -884,48 +881,23 @@ router.patch(
       .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
       .limit(1);
     const voiceId = cleanText(req.body?.voiceId, 160) || null;
-    const providerRaw = cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "xai" : null);
-    const allowedProviders = new Set(["xai", "vapi", "11labs", "presenter"]);
+    const providerRaw = cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "openai" : null);
+    const allowedProviders = new Set(["openai", "presenter"]);
     if (providerRaw && !allowedProviders.has(providerRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
     const provider = providerRaw;
-    if (provider === "xai" && voiceId && !isXaiPstnVoiceId(voiceId)) {
-      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
-    }
-    if (provider === "vapi" && voiceId && !isManagedVapiVoiceId(voiceId)) {
-      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
-    }
-    if (provider === "11labs") {
-      if (!voiceId) throw AppError.fromHttpStatus(400, "Choose a studio voice.");
-      if (!isCuratedElevenLabsVoiceId(voiceId)) {
-        const [approvedClone] = await drizzle
-          .select({ voiceId: schema.clonedVoices.voiceId })
-          .from(schema.clonedVoices)
-          .where(
-            and(
-              eq(schema.clonedVoices.voiceId, voiceId),
-              eq(schema.clonedVoices.userId, req.user.id),
-              eq(schema.clonedVoices.status, "approved"),
-            ),
-          )
-          .limit(1);
-        if (!approvedClone) {
-          throw AppError.fromHttpStatus(400, "This private voice has not passed review.");
-        }
-      }
+    if (provider === "openai" && voiceId && !isManagedOpenAIVoiceId(voiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime voice.");
     }
     const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
     const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
-    const phoneProviders = new Set(["vapi", "xai"]);
+    const phoneProviders = new Set(["openai"]);
     if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
       throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
     }
-    if (phoneVoiceProviderRaw === "xai" && phoneVoiceId && !isXaiPstnVoiceId(phoneVoiceId)) {
-      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
-    }
-    if (phoneVoiceProviderRaw === "vapi" && phoneVoiceId && !isManagedVapiVoiceId(phoneVoiceId)) {
-      throw AppError.fromHttpStatus(400, "Choose an included phone voice.");
+    if (phoneVoiceProviderRaw === "openai" && phoneVoiceId && !isManagedOpenAIVoiceId(phoneVoiceId)) {
+      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime phone voice.");
     }
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(body, "phoneVoiceId");

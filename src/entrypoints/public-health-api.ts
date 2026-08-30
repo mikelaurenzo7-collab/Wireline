@@ -3,10 +3,11 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { Redis } from "@upstash/redis";
 
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import {
   buildPublicHealthPayload,
   probeOpenAIModel,
-  probeXAIVoiceRuntime,
+  probeOpenAIRealtimeModel,
   type PublicHealthLevel,
   type PublicHealthPayload,
   type PublicModelProbe,
@@ -39,8 +40,8 @@ function deployedSourceCommit(): string | null {
 
 const CACHE_SCOPE = cacheScope();
 const SOURCE_COMMIT = deployedSourceCommit();
-const RESULT_KEY = `wireline:health:public:v4:${CACHE_SCOPE}`;
-const LOCK_KEY = `wireline:health:public:probe-lock:v4:${CACHE_SCOPE}`;
+const RESULT_KEY = `wireline:health:public:v6:${CACHE_SCOPE}`;
+const LOCK_KEY = `wireline:health:public:probe-lock:v6:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
 const LOCAL_STALE_TTL_MS = 5 * 60_000;
@@ -68,7 +69,6 @@ function validPayload(value: unknown): value is PublicHealthPayload {
     LEVELS.has(candidate.overall as PublicHealthLevel) &&
     !!components &&
     LEVELS.has(components.voice_runtime as PublicHealthLevel) &&
-    LEVELS.has(components.voice_fallback as PublicHealthLevel) &&
     LEVELS.has(components.reasoning as PublicHealthLevel)
   );
 }
@@ -116,7 +116,6 @@ function unavailablePayload(code: string): PublicHealthPayload & { code: string 
     overall: "degraded",
     components: {
       voice_runtime: "degraded",
-      voice_fallback: "degraded",
       reasoning: "degraded",
     },
     last_checked: new Date().toISOString(),
@@ -216,10 +215,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       return;
     }
 
-    // Native Twilio + xAI owns the managed call runtime. Public health therefore
-    // probes xAI's authenticated model catalog rather than a retired orchestrator
-    // control plane. A GET of /v1/models does not create a call or inference.
-    const managedVoicePromise = probeXAIVoiceRuntime(process.env.XAI_API_KEY);
+    // OpenAI owns every call runtime. This authenticated model GET does not
+    // create a call or inference.
+    const managedVoicePromise = probeOpenAIRealtimeModel(
+      OPENAI_REALTIME_DEFAULT_MODEL,
+      process.env.OPENAI_API_KEY,
+    );
     const [voice, reasoning] = await Promise.all([
       managedVoicePromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
@@ -230,7 +231,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     ]);
     const payload = buildPublicHealthPayload({
       voice,
-      voiceFallback: voice,
       reasoning,
     });
     remember(payload);

@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 26, 2026.
+**Updated:** August 30, 2026.
 
 This document records BotBound's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
@@ -9,11 +9,11 @@ This document records BotBound's intended production provider roles and the evid
 
 | Plane | Primary | Continuity / boundary |
 | --- | --- | --- |
-| Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime | Vercel AI Gateway, then xAI Grok 4.6, then Gemini |
-| PSTN orchestration | Native Twilio + xAI Direct SIP | `grok-voice-think-fast-2.0`; Vapi is rollback-only |
+| Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime | Vercel AI Gateway, then Gemini |
+| PSTN orchestration | OpenAI Realtime (`gpt-realtime-2.1`) over Twilio SIP | One runtime for founder and customer Bots; no alternate provider fallback |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
-| Managed speech | Native xAI Eve/Ara/Rex/Sal/Leo | ElevenLabs remains Studio TTS / cloning, not the PSTN engine |
-| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio and ChatGPT are private simulations; PSTN remains Twilio + xAI Direct SIP |
+| Managed speech | OpenAI Realtime documented voice roster | ElevenLabs remains studio preview / cloning, never the phone engine |
+| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio, ChatGPT, and guest demos use the same server-owned policy as phone calls |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |
@@ -23,7 +23,7 @@ This document records BotBound's intended production provider roles and the evid
 
 ## Live Video — retired talking-head
 
-Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered (Grok watermark cannot be turned off; AUP forbids stripping it). A later vendor may own real clips. Until then the agent focuses on phone, email, and text.
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered. A later vendor may own real clips. Until then the Bot focuses on phone, email, and text.
 
 Leftover Stripe Live Video price IDs may still exist so webhooks do not brick billing. App checkout and session mint stay closed.
 
@@ -62,7 +62,7 @@ WhatsApp remains optional/private until an approved sender, Meta/WABA posture, c
 
 - Keep production secrets server-side and target-scoped in Vercel.
 - Use Upstash-backed distributed limits for production abuse controls.
-- Keep Vapi managed-call artifacts transcript-only unless a future explicit, auditable recording feature is introduced.
+- Keep call artifacts transcript-only unless a future explicit, auditable recording feature is introduced.
 - Public trust copy must match deployed retention, recording, and monitoring behavior.
 - Production health/status endpoints are evidence surfaces, not contractual uptime guarantees.
 - Rotate personal access tokens after use; never commit them or document them here.

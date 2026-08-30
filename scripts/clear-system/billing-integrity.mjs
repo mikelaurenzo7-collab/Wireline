@@ -23,7 +23,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const wirelineObjections = read("src/lib/wireline-agent-objections.ts");
   const wirelineEscalation = read("src/lib/wireline-agent-escalation.ts");
   const emailService = read("src/lib/email-service.ts");
-  const vapiToolHandlers = read("src/lib/vapi-tool-handlers.ts");
+  const agentRuntimeHelpers = read("src/lib/agent-runtime-helpers.ts");
 
   mustInclude(
     "src/pages/BillingSettings.tsx",
@@ -221,10 +221,10 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     "transactional email copy must not promise a time-boxed trial (Free Builder has no expiry)",
   );
   mustExclude(
-    "src/lib/vapi-tool-handlers.ts",
-    vapiToolHandlers,
+    "src/lib/agent-runtime-helpers.ts",
+    agentRuntimeHelpers,
     TRIAL_LANGUAGE_PATTERN,
-    "Vapi tool handler docs/copy must not describe a time-boxed trial (Free Builder has no expiry)",
+    "live agent tool docs/copy must not describe a time-boxed trial (Free Builder has no expiry)",
   );
   mustExclude(
     "src/lib/showcase-assistant.ts",

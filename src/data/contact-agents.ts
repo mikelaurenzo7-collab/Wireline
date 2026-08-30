@@ -21,13 +21,12 @@ export const CONTACT_AGENT_TINTS = {
  * Used in:
  *   1. Landing page — LANDING_PUBLIC_DEMO_AGENTS only (demo lines)
  *   2. In-app /help route — specialists + full demo catalog
- *   3. /api/admin/sync-vapi-knowledge — PATCHes each Vapi assistant prompt
+ *   3. Founder fleet seeding — persists each OpenAI Realtime runtime profile
  *
  * Specialist lines can escalate via `escalate_to_human`. Demo lines cannot.
  *
- * Voice design: every agent uses a curated Vapi managed voice (V2 roster)
- * so prospects hear a varied, role-authentic team — not the same voice on
- * every line. Sync via POST /api/admin/sync-vapi-knowledge after edits.
+ * Voice design: every agent uses a documented OpenAI Realtime voice so browser
+ * and SIP calls sound identical across the public fleet.
  */
 
 export type ContactAgent = {
@@ -36,9 +35,9 @@ export type ContactAgent = {
   scope: string;
   /** First-message template the agent opens calls with — keep it short, warm, scope-clear. */
   firstMessage: string;
-  /** Vapi curated voice ID (e.g. "Savannah", "Elliot"). All showcase lines use provider: "vapi". */
-  vapiVoiceId?: string;
-  /** Human label for marketing cards / sync logs — not sent to Vapi. */
+  /** OpenAI Realtime voice used by browser and SIP calls. */
+  openaiVoiceId: "alloy" | "ash" | "ballad" | "coral" | "echo" | "sage" | "shimmer" | "verse" | "marin" | "cedar";
+  /** Human label for marketing cards and audit logs. */
   voiceLabel?: string;
   /** Comma-joined list of bucket labels this agent should handle. Used by routing logic in the CS playbook. */
   handles: string;
@@ -47,15 +46,9 @@ export type ContactAgent = {
   tint: string;
   /**
    * Default personality vibe for this showcase agent. Used by
-   * /api/admin/sync-vapi-knowledge when pushing the system prompt
-   * to each Vapi assistant — the right vibe per agent role.
+   * the founder seed when persisting each OpenAI Realtime profile.
    */
   defaultVibe: "warm" | "playful" | "authoritative";
-  /**
-   * STT override — default is Flux EOT everywhere. Set "nova-livekit" only
-   * for experiments / rollback.
-   */
-  transcriberMode?: "nova-livekit" | "flux-eot";
 };
 
 /**
@@ -83,8 +76,8 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     role: "BotBound Specialist",
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage: "Hey, Sarah with BotBound. Who do I have the pleasure of speaking with today?",
-    voiceLabel: "Savannah · Warm & Confident",
-    vapiVoiceId: "Savannah",
+    voiceLabel: "Marin · Natural & Expressive",
+    openaiVoiceId: "marin",
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16306425661",
     display: "(630) 642-5661",
@@ -97,8 +90,8 @@ export const WIRELINE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
     scope: ALL_ENCOMPASSING_SCOPE,
     firstMessage:
       "Hey, Liam with BotBound. I can walk you through plans, setup, or anything technical. Who am I speaking with?",
-    voiceLabel: "Elliot · Steady & Professional",
-    vapiVoiceId: "Elliot",
+    voiceLabel: "Cedar · Grounded & Clear",
+    openaiVoiceId: "cedar",
     handles: ALL_ENCOMPASSING_HANDLES,
     tel: "+16305811834",
     display: "(630) 581-1834",
@@ -121,8 +114,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Home-services / general inbound CS showcase; never pages a human owner.",
     firstMessage:
       "Hi, Jordan on the BotBound inbound demo. I'll answer as your front desk. What's your name?",
-    voiceLabel: "Kai · Friendly & Relaxed",
-    vapiVoiceId: "Kai",
+    voiceLabel: "Verse · Smooth & Professional",
+    openaiVoiceId: "verse",
     handles:
       "customer service, inbound, front desk, scheduling, FAQ, message taking, home services, after hours",
     tel: "+16306425927",
@@ -137,8 +130,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Asks which BotBound demo the caller wants to hear, then role-plays that agent live: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
     firstMessage:
       "Hey, Ria here. I can demo medical, legal, home services, insurance, real estate, or outbound sales. Which one sounds fun?",
-    voiceLabel: "Emma · Warm & Conversational",
-    vapiVoiceId: "Emma",
+    voiceLabel: "Coral · Warm & Conversational",
+    openaiVoiceId: "coral",
     handles:
       "demo concierge, choose demo, home services, HVAC, plumbing, electrical, medical, legal, real estate, insurance, restaurant, outbound, SDR",
     tel: "+15642389455",
@@ -153,8 +146,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Runs a synthetic clinic-scheduling role-play using fictional details only. It does not collect real patient, health, or insurance information. BotBound is not HIPAA-certified, and HIPAA and BAA support are not currently available.",
     firstMessage:
       "Good afternoon. Marcus on the BotBound medical demo. Please use fictional details and don't share health information. What kind of appointment should we role-play?",
-    voiceLabel: "Sagar · Steady & Professional",
-    vapiVoiceId: "Sagar",
+    voiceLabel: "Cedar · Grounded & Clear",
+    openaiVoiceId: "cedar",
     handles: "medical demo, healthcare demo, synthetic clinic scheduling, appointment role-play",
     tel: "+16173134469",
     display: "(617) 313-4469",
@@ -167,8 +160,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     scope:
       "Role-plays a law-firm intake line: runs the conflict check, captures matter type and urgency, books the consultation, takes a clean intake for the attorney.",
     firstMessage: "Diana here. BotBound legal intake demo. May I have your full name?",
-    voiceLabel: "Clara · Warm & Professional",
-    vapiVoiceId: "Clara",
+    voiceLabel: "Marin · Natural & Expressive",
+    openaiVoiceId: "marin",
     handles: "legal, law firm, intake, conflict check, consultation",
     tel: "+15727269365",
     display: "(572) 726-9365",
@@ -182,8 +175,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Role-plays a real-estate front desk: answers listing inquiries, qualifies buyer budget + timeline, books showings, captures seller leads.",
     firstMessage:
       "Aisha here. BotBound real estate demo. Are you calling about a listing or looking to buy?",
-    voiceLabel: "Layla · Warm & Cheerful",
-    vapiVoiceId: "Layla",
+    voiceLabel: "Coral · Warm & Conversational",
+    openaiVoiceId: "coral",
     handles: "real estate, realtor, listing, showing, buyer, seller lead",
     tel: "+19733638874",
     display: "(973) 363-8874",
@@ -197,8 +190,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Role-plays an insurance line: handles quote intake, walks claimants through first-notice-of-loss, captures incident detail, opens the case file.",
     firstMessage:
       "Elena with the BotBound insurance demo. Are you starting a quote or reporting a claim?",
-    voiceLabel: "Naina · Calm & Professional",
-    vapiVoiceId: "Naina",
+    voiceLabel: "Marin · Natural & Expressive",
+    openaiVoiceId: "marin",
     handles: "insurance, claim, loss, FNOL, quote, policy",
     tel: "+19044601596",
     display: "(904) 460-1596",
@@ -212,8 +205,8 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
       "Role-plays a cold-call SDR: calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
     firstMessage:
       "Hey, Jake on the BotBound outbound sales demo. You're hearing a live SDR open. Who's this?",
-    voiceLabel: "Godfrey · Young & Energetic",
-    vapiVoiceId: "Godfrey",
+    voiceLabel: "Ash · Calm & Direct",
+    openaiVoiceId: "ash",
     handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",

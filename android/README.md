@@ -81,9 +81,9 @@ See `src/routes/mobile-routes.ts`, `src/lib/mobile-push.ts`, and `src/lib/fcm-pu
 
 ## Managed realtime voice
 
-Authenticated live tests use Wireline's native xAI Speech-to-Speech session contract (`grok-voice-think-fast-2.0`), the same brain as production PSTN. The backend creates a short-lived ephemeral client secret, applies the selected agent's server-owned instructions and bounded tools, and keeps provider credentials out of the app. The native client never selects or configures a provider directly.
+Authenticated live tests use the same OpenAI Realtime (`gpt-realtime-2.1`) policy as production PSTN. The backend creates a short-lived session, applies the selected Bot's server-owned instructions and bounded tools, and keeps provider credentials out of the app. The native client never selects or configures a provider directly.
 
-See `src/lib/voice/xai-live-agent-service.ts`, `src/routes/grok-voice-routes.ts`, and `docs/GROK_LIVE_VOICE.md`.
+See `src/lib/voice/openai-live-agent-service.ts`, `src/routes/live-voice-routes.ts`, and `docs/OPENAI_REALTIME_VOICE.md`.
 
 ## Release checklist
 

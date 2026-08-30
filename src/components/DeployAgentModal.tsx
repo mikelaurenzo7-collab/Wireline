@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, ArrowRight, User2, Users2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { MANAGED_VOICE_BY_GENDER, VAPI_CURATED_VOICES } from "../lib/voice-catalog";
+import { MANAGED_VOICE_BY_GENDER, OPENAI_REALTIME_VOICES } from "../lib/voice-catalog";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
 import { Input } from "./ui/shadcn/Input";
@@ -105,7 +105,7 @@ export default function DeployAgentModal({
 
   // Curated managed voices only — every deploy lands on the phone runtime
   // Wireline actually operates, so the picked voice is the live voice.
-  const allVoices = VAPI_CURATED_VOICES;
+  const allVoices = OPENAI_REALTIME_VOICES;
   const voicesForGender = allVoices.filter((v) => v.gender === gender);
   const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
@@ -292,7 +292,7 @@ export default function DeployAgentModal({
                           Picked: <span className="text-foreground/75">{selectedVoice.name}</span>
                         </p>
                         <p className="wl-micro-meta">
-                          Included with your line. Hear it on a Studio test right after deploy.
+                          Used by OpenAI Realtime in Studio tests and on your phone line.
                         </p>
                       </div>
                     )}

@@ -6,8 +6,8 @@ import {
   parseCallbackDatetime,
 } from "./callback-engine";
 import { LEAD_STATUS } from "./outbound-status";
-import { PRESERVED_LEAD_STATUSES } from "./vapi-helpers";
-import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
+import { PRESERVED_LEAD_STATUSES } from "./agent-runtime-helpers";
+import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
 
 const VALID_LEAD_OUTCOMES = new Set([
   "qualified",
@@ -46,7 +46,7 @@ function exactNativeLead(context: ToolCallContext): {
   callId: string;
 } | null {
   const call = callContext(context);
-  if (call.provider !== "xai") return null;
+  if (call.provider !== "openai") return null;
   const leadId = String(call.leadId || "").trim();
   if (!/^\d+$/.test(leadId)) return null;
   return {
@@ -88,7 +88,7 @@ export async function handleNativeVoiceToolCall(
 
     return context.drizzle.transaction(async (tx: typeof context.drizzle) => {
       await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(exact.leadId)}`}))`,
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(exact.leadId)}`}))`,
       );
       const [lead] = await tx
         .select({ status: schema.outboundLeads.status })
@@ -149,7 +149,7 @@ export async function handleNativeVoiceToolCall(
 
     return context.drizzle.transaction(async (tx: typeof context.drizzle) => {
       await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(exact.leadId)}`}))`,
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(exact.leadId)}`}))`,
       );
       const [lead] = await tx
         .select({
@@ -217,7 +217,7 @@ export async function handleNativeVoiceToolCall(
   if (fn === "search_leads") {
     return context.drizzle.transaction(async (tx: typeof context.drizzle) => {
       await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(exact.leadId)}`}))`,
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(exact.leadId)}`}))`,
       );
       const [lead] = await tx
         .select({

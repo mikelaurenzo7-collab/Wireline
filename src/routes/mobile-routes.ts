@@ -2,7 +2,7 @@
  * Mobile surface for the native Wireline iOS app (`/api/mobile/*`).
  *
  * This is a thin adapter layer: every handler delegates to the same backend
- * primitives the web app uses (entitlements, the Vapi outbound client, the
+ * primitives the web app uses (entitlements, the OpenAI/Twilio runtime, the
  * compliance + TCPA gates) — it never re-implements prompt building, model
  * selection, or billing logic. The contract is mobile-shaped (one bootstrap
  * call, Bearer auth) but the behaviour is identical to the web equivalents.
@@ -46,12 +46,15 @@ import {
   requiresFederalDncScreeningForDirectDial,
 } from "../lib/outbound-call-purpose";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
-import { transferLiveCall } from "../lib/vapi-client";
+import {
+  notifyOpenAISipCallTransferred,
+  referOpenAISipCall,
+} from "../lib/voice/openai-sip-session";
 import { getCreditBalanceUsd, getRecentLedger } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
-import { isXaiPstnVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   isAgentToolName,
@@ -303,7 +306,7 @@ router.post(
           channel: "voice",
           archetype: resolveAgentRoleArchetype(role),
           voiceId,
-          voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi",
+          voiceProvider: "openai",
           enabledTools,
           firstMessage: `Hi, this is ${name}. How can I help?`,
           isBusinessAgent,
@@ -724,7 +727,7 @@ router.delete(
 // ── POST /api/mobile/calls/outbound — "call the doctor, I'll be 5 min late" ─
 // Mirrors POST /api/outbound/dial exactly: same spend/trial guard, the same DNC
 // + TCPA gates, and the same native `placeOutboundCall` entrypoint (Twilio +
-// xAI SIP). The app sends only the target + a free-text context; no prompt
+// OpenAI Realtime SIP). The app sends only the target + a free-text context; no prompt
 // logic on device.
 const mobileDialSchema = z.object({
   agentId: z.string().min(1, "agentId is required"),
@@ -1054,8 +1057,8 @@ router.put(
 );
 
 // ── POST /api/mobile/calls/:callId/handoff — "take this call" ──────────────
-// Warm-transfers an in-progress call to the Account Holder's number via Vapi live
-// control (no Twilio). Destination is the request's `to` or the saved
+// Warm-transfers an in-progress OpenAI SIP call to the Account Holder's number.
+// Destination is the request's `to` or the saved
 // handoff_phone. Ownership is enforced by scoping the presence row to user.
 const handoffSchema = z.object({ to: e164.optional() });
 
@@ -1111,10 +1114,17 @@ router.post(
       await assertExternalEntityActionAllowed(req.user.id, "mobile_call_handoff", {
         phone: destination,
       });
-      const result = await transferLiveCall(req.user.id, presence.controlUrl, destination);
-      if (!result.ok) {
-        return res.status(result.status).json({ code: "ERROR", error: result.error });
+      const providerCallId = presence.controlUrl.startsWith("openai:")
+        ? presence.controlUrl.slice("openai:".length).trim()
+        : "";
+      if (!providerCallId) {
+        return res.status(409).json({
+          code: "HANDOFF_UNAVAILABLE",
+          error: "This call does not have an active OpenAI transfer session.",
+        });
       }
+      await referOpenAISipCall(req.user.id, providerCallId, destination);
+      notifyOpenAISipCallTransferred(providerCallId);
       res.json({ success: true });
     } catch (err) {
       log.error("POST /api/mobile/calls/:callId/handoff failed", { error: getErrorMessage(err) });

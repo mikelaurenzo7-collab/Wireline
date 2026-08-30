@@ -1,17 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, MessageCircle, Pause, Play, Volume2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Check, Loader2, MessageCircle, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import {
-  normalizeApiVoices,
-  VAPI_CURATED_VOICES,
-  WIRELINE_LIVE_VOICES,
+  OPENAI_REALTIME_VOICES,
   type VoiceOption,
 } from "../../lib/voice-catalog";
 import { StatusNotice } from "../molecules";
 import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
-
-const RECOMMENDED_VOICE_IDS = ["eve", "ara", "rex", "sal", "leo"] as const;
 
 type SimpleVoicePickerProps = {
   agentId: string;
@@ -29,42 +25,27 @@ type AgentVoiceResponse = {
 type VoiceLibraryResponse = {
   configured?: boolean;
   canManageVoices?: boolean;
-  voices?: unknown;
   privateVoices?: PrivateVoice[];
 };
 
 export default function SimpleVoicePicker({ agentId, agentName, onTest }: SimpleVoicePickerProps) {
   const includedVoices = useMemo(() => {
-    const xaiVoices = RECOMMENDED_VOICE_IDS.map((id) =>
-      WIRELINE_LIVE_VOICES.find((voice) => voice.id === id),
-    )
-      .filter((voice): voice is VoiceOption => Boolean(voice))
-      .map((voice) => ({ ...voice, provider: "xai" as const }));
-    const vapiVoices = ["Savannah", "Elliot"]
-      .map((id) => VAPI_CURATED_VOICES.find((voice) => voice.id === id))
-      .filter((voice): voice is VoiceOption => Boolean(voice))
-      .map((voice) => ({ ...voice, provider: "vapi" as const }));
-    return [...xaiVoices, ...vapiVoices];
+    return [...OPENAI_REALTIME_VOICES];
   }, []);
-  const [studioVoices, setStudioVoices] = useState<VoiceOption[]>([]);
   const [privateVoices, setPrivateVoices] = useState<PrivateVoice[]>([]);
   const [studioConfigured, setStudioConfigured] = useState(false);
   const [canManageVoices, setCanManageVoices] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
-  const [showStudioVoices, setShowStudioVoices] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingVoiceId, setSavingVoiceId] = useState<string | null>(null);
-  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadVoiceLibrary = useCallback(async () => {
     const response = await authFetch("/api/voices");
     if (!response.ok) throw new Error("Studio voices are temporarily unavailable.");
     const data = (await response.json()) as VoiceLibraryResponse;
-    setStudioVoices(normalizeApiVoices(data.voices));
     setPrivateVoices(Array.isArray(data.privateVoices) ? data.privateVoices : []);
     setStudioConfigured(data.configured === true);
     setCanManageVoices(data.canManageVoices === true);
@@ -83,7 +64,6 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       }),
       loadVoiceLibrary().catch((reason) => {
         if (!cancelled) {
-          setStudioVoices([]);
           setPrivateVoices([]);
           setStudioConfigured(false);
           setCanManageVoices(false);
@@ -108,14 +88,6 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       cancelled = true;
     };
   }, [agentId, loadVoiceLibrary]);
-
-  useEffect(
-    () => () => {
-      audioRef.current?.pause();
-      audioRef.current = null;
-    },
-    [],
-  );
 
   async function selectVoice(voice: VoiceOption) {
     if (!agentId || savingVoiceId) return;
@@ -143,38 +115,9 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
     }
   }
 
-  function previewVoice(voice: VoiceOption) {
-    audioRef.current?.pause();
-    if (previewingVoiceId === voice.id) {
-      audioRef.current = null;
-      setPreviewingVoiceId(null);
-      return;
-    }
-    if (!voice.preview_url) return;
-    setError(null);
-    const audio = new Audio(voice.preview_url);
-    audioRef.current = audio;
-    setPreviewingVoiceId(voice.id);
-    const stop = () => {
-      if (audioRef.current !== audio) return;
-      audioRef.current = null;
-      setPreviewingVoiceId(null);
-    };
-    audio.onended = stop;
-    audio.onerror = () => {
-      stop();
-      setError("Voice preview is temporarily unavailable.");
-    };
-    void audio.play().catch(() => {
-      stop();
-      setError("Voice preview could not play.");
-    });
-  }
-
   function renderVoice(voice: VoiceOption) {
     const selected = selectedVoiceId === voice.id && selectedProvider === voice.provider;
     const saving = savingVoiceId === voice.id;
-    const previewing = previewingVoiceId === voice.id;
     return (
       <div
         key={`${voice.provider}:${voice.id}`}
@@ -215,36 +158,13 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
             </span>
           </span>
         </button>
-        {voice.preview_url ? (
-          <button
-            type="button"
-            onClick={() => previewVoice(voice)}
-            disabled={Boolean(savingVoiceId)}
-            className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-            aria-label={`${previewing ? "Pause" : "Preview"} ${voice.name}`}
-          >
-            {previewing ? (
-              <Pause className="size-4" aria-hidden="true" />
-            ) : (
-              <Play className="ml-0.5 size-4" aria-hidden="true" />
-            )}
-          </button>
-        ) : null}
       </div>
     );
   }
 
-  const selectedIsAvailable = [...includedVoices, ...studioVoices].some(
+  const selectedIsAvailable = includedVoices.some(
     (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
-  const selectedStudioVoice = studioVoices.find(
-    (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
-  );
-  const visibleStudioVoices = showStudioVoices
-    ? studioVoices
-    : selectedStudioVoice
-      ? [selectedStudioVoice]
-      : [];
 
   return (
     <div className="space-y-4">
@@ -275,31 +195,13 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
         <>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Voices
+              OpenAI Realtime voices
+            </p>
+            <p className="text-xs text-muted-foreground">
+              This one voice is used consistently in browser tests and live phone calls.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
           </div>
-
-          {studioVoices.length ? (
-            <div className="space-y-2 border-t border-border pt-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold text-muted-foreground">More voices</p>
-                <button
-                  type="button"
-                  aria-expanded={showStudioVoices}
-                  onClick={() => setShowStudioVoices((current) => !current)}
-                  className="text-xs font-semibold text-primary hover:underline"
-                >
-                  {showStudioVoices ? "Hide" : `Show ${studioVoices.length}`}
-                </button>
-              </div>
-              {visibleStudioVoices.length ? (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {visibleStudioVoices.map(renderVoice)}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
 
           <VoiceCloningStudio
             configured={studioConfigured}

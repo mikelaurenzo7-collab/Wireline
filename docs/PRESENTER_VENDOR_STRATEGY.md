@@ -3,7 +3,7 @@
 **Status:** Historical for LiveAvatar/HeyGen talking-head. **Active** for identity badges.  
 **Updated:** August 17, 2026.
 
-Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered: xAI watermarks Imagine files and forbids stripping the watermark. PSTN voice stays on the agent. There is no work-companion API and no Grok Bot companion runtime.
+Live talking-head sessions are retired. Identity badges remain the in-app visual. Video files and clip-script substitutes are not offered. PSTN voice stays on the Bot. There is no work-companion or companion-Bot runtime.
 
 The remainder of this document is the prior LiveAvatar/HeyGen pairing research and must not be read as current launch contract.
   
@@ -94,12 +94,12 @@ Do **not** make live video calls the default product center. Voice and phone rem
 
 | Layer | Provider (internal) | Customer experience |
 | --- | --- | --- |
-| Voice + LLM + PSTN | Vapi, OpenAI, Twilio | Wireline Phone, Voice library, Live |
+| Voice + LLM + PSTN | OpenAI, Twilio | BotBound Phone, voice library, Live |
 | In-app avatar | Wireline SVG | Identity badge across app, training, analytics, and logs |
 | On-screen video | LiveAvatar (HeyGen) LITE mode | Paid Live Video add-on for eligible business agents |
 | Pre-rendered clips | HeyGen Video Agent / classic video | Fail-closed; not a tenant product until per-tenant billing exists |
 | Presenter-matched voice | HeyGen speech API | Internal matching for catalog faces |
-| PSTN with presenter voice | Falls back to a managed Wireline Phone (Vapi) voice | Routing hint in the voice picker; phone voice stays selectable in Studio |
+| PSTN with presenter voice | Uses an explicit OpenAI Realtime phone fallback | Routing hint in the voice picker; phone voice stays selectable in Studio |
 
 Architecture: Wireline owns brains, telephony, permissions, consent, and outcomes; video vendors render approved presence assets. This split is correct — do not route PSTN audio through avatar vendors and do not build an in-house neural renderer before PMF.
 

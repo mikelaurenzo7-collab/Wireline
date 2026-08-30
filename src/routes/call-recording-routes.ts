@@ -17,16 +17,6 @@ const recordingRateLimiter = createRateLimiter({
 });
 const TWILIO_RECORDING_MAX_REDIRECTS = 3;
 
-function safeHttpsLocation(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 function isTrustedTwilioMediaHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
   return (
@@ -113,9 +103,9 @@ async function pipeAudio(upstream: globalThis.Response, res: Response): Promise<
 }
 
 /**
- * Authenticated recording boundary. Persistent vendor URLs never cross the
- * tenant API: Vapi mints a short-lived signed URL after ownership is checked,
- * while Twilio failover media is streamed with server-held credentials.
+ * Authenticated recording boundary. OpenAI Realtime calls are transcript-only;
+ * Twilio voicemail media is streamed with server-held credentials and its
+ * persistent provider URL never crosses the tenant API.
  */
 router.get(
   "/api/calls/:callId/recording",
@@ -137,7 +127,7 @@ router.get(
 
     const [call] = await drizzle
       .select({
-        vapiCallId: schema.callLogs.vapiCallId,
+        providerCallId: schema.callLogs.vapiCallId,
         recordingUrl: schema.callLogs.recordingUrl,
       })
       .from(schema.callLogs)
@@ -149,13 +139,7 @@ router.get(
     }
 
     try {
-      if (call.vapiCallId?.startsWith("xai:")) {
-        return res.status(404).json({
-          code: "RECORDING_UNAVAILABLE",
-          error: "Native voice calls are transcript-only.",
-        });
-      }
-      if (call.vapiCallId?.startsWith("twilio-voicemail:")) {
+      if (call.providerCallId?.startsWith("twilio-voicemail:")) {
         const mediaUrl = twilioMediaUrl(call.recordingUrl);
         const accountSid = process.env.TWILIO_ACCOUNT_SID?.trim();
         const authToken = process.env.TWILIO_AUTH_TOKEN?.trim();
@@ -185,38 +169,9 @@ router.get(
         return;
       }
 
-      const vapiCallId = call.vapiCallId?.trim();
-      const privateKey = process.env.VAPI_PRIVATE_KEY?.trim();
-      if (!vapiCallId || vapiCallId === "unknown" || !privateKey) {
-        return res.status(503).json({
-          code: "RECORDING_PROVIDER_UNAVAILABLE",
-          error: "This recording is temporarily unavailable.",
-        });
-      }
-      const upstream = await fetch(
-        `https://api.vapi.ai/call/${encodeURIComponent(vapiCallId)}/mono-recording`,
-        {
-          headers: { Authorization: `Bearer ${privateKey}` },
-          redirect: "manual",
-          signal: AbortSignal.timeout(15_000),
-        },
-      );
-      if (upstream.status >= 300 && upstream.status < 400) {
-        const signedUrl = safeHttpsLocation(upstream.headers.get("location"));
-        if (!signedUrl) throw new Error("Vapi returned an invalid recording redirect");
-        return res.redirect(302, signedUrl);
-      }
-      if (upstream.ok) {
-        await pipeAudio(upstream, res);
-        return;
-      }
-      log.warn("Vapi recording retrieval failed", {
-        call_log_id: callId,
-        status: upstream.status,
-      });
-      return res.status(upstream.status === 404 ? 404 : 502).json({
+      return res.status(404).json({
         code: "RECORDING_UNAVAILABLE",
-        error: "This recording is not available.",
+        error: "OpenAI Realtime calls are transcript-only.",
       });
     } catch (error) {
       log.warn("Recording retrieval failed", {

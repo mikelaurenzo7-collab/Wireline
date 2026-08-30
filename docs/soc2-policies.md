@@ -10,8 +10,8 @@ the same honest story.
 Wireline processes customer call metadata, transcripts, agent configuration,
 knowledge sources, OAuth connection records, billing metadata, DNC entries, and
 audit events. The current deployment model is a Vercel-hosted application with
-Postgres on Supabase, Vapi/Twilio for telephony, OpenAI and approved
-ElevenLabs voices through Vapi, the managed structured-reasoning chain in
+Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for voice,
+ElevenLabs for server-only studio preview/cloning, the managed reasoning chain in
 `src/lib/ai-models.ts`, Stripe for billing, and Resend for transactional email.
 
 ## Implemented controls
@@ -21,7 +21,7 @@ ElevenLabs voices through Vapi, the managed structured-reasoning chain in
 | Access control    | Role-based API middleware gates sensitive routes and fails closed when role lookup fails.                                        | `src/middleware/require-role.ts`                                                                       |
 | Authentication    | Passwords are hashed with scrypt; OAuth sign-in supports Google, Microsoft, and Yahoo; JWTs are signed by `INTERNAL_JWT_SECRET`. | `src/lib/auth-service.ts`, `src/routes/auth-oauth-routes.ts`                                           |
 | Audit logging     | Billing, security, access, and settings changes are written to an append-only audit log.                                         | `src/lib/audit-logger.ts`, `src/routes/soc2-routes.ts`                                                 |
-| Webhook integrity | Vapi, Stripe, Twilio, and Meta webhooks use shared-secret or signature verification.                                             | `src/routes/*webhook*`, `src/routes/vapi-routes.ts`                                                    |
+| Webhook integrity | OpenAI, Stripe, Twilio, Resend, and Meta webhooks use shared-secret or signature verification.                                  | `src/routes/*webhook*`, `src/routes/openai-sip-routes.ts`                                             |
 | Secrets at rest   | Webhook secrets are encrypted with AES-256-GCM via `WIRELINE_DATA_KEY`; plaintext fallback is not allowed.                       | `src/lib/secret-vault.ts`                                                                              |
 | Data deletion     | Account deletion queues and purges user-owned tables with a documented 30-day grace window.                                      | `src/lib/account-deletion.ts`                                                                          |
 | Spend controls    | Managed AI spend and outbound dialing paths have budget/rate gates and trial caps.                                               | `src/lib/spend-guards.ts`, `src/lib/trial-gate.ts`                                                     |

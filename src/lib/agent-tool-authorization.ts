@@ -13,7 +13,7 @@ import {
   loadTenantIntegrationConnections,
   type TenantIntegrationConnections,
 } from "./tenant-integration-connections";
-import type { ToolCallContext } from "../routes/vapi/types";
+import type { ToolCallContext } from "./agent-tool-types";
 
 /**
  * Safety-critical tools that remain callable even when an Account Holder has a

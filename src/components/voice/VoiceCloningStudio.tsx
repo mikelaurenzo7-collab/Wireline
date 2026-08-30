@@ -90,7 +90,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 function statusLabel(status: string): string {
   if (status === "pending_review") return "Review required";
-  if (status === "approved") return "Live";
+  if (status === "approved") return "Studio ready";
   if (status === "deletion_pending") return "Deletion queued";
   if (status === "rejected") return "Not approved";
   return status.replace(/_/g, " ");
@@ -186,7 +186,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be created.");
       resetDraft();
-      setNotice("Voice created. Listen once, then approve it for live calls.");
+      setNotice("Voice created. Listen once, then approve it for studio use.");
       await onChanged().catch(() => {
         setError("Voice created. Refresh to load its review status.");
       });
@@ -248,7 +248,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
         error?: string;
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be approved.");
-      setNotice(`${voice.name} is ready for live calls.`);
+      setNotice(`${voice.name} is ready for studio previews.`);
       await onChanged().catch(() => {
         setError("Voice approved. Refresh to update the library.");
       });
@@ -260,7 +260,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
   }
 
   async function revoke(voice: PrivateVoice) {
-    if (busy || !window.confirm(`Revoke “${voice.name}”? Assigned agents will use Savannah.`)) {
+    if (busy || !window.confirm(`Revoke “${voice.name}” from the private studio library?`)) {
       return;
     }
     setBusy(voice.voice_id);
@@ -276,7 +276,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
       if (!response.ok) throw new Error(body?.error || "Voice could not be revoked.");
       setNotice(
         body?.status === "deletion_pending"
-          ? "Live use stopped. Deletion is still pending; retry revoke."
+          ? "Studio use stopped. Deletion is still pending; retry revoke."
           : "Voice revoked and deleted.",
       );
       await onChanged().catch(() => {
@@ -291,6 +291,15 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
 
   return (
     <div className="space-y-3 border-t border-border pt-4">
+      <div className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          ElevenLabs studio library
+        </p>
+        <p className="text-xs leading-5 text-muted-foreground">
+          Private clones are for controlled studio previews only. They never replace the OpenAI
+          Realtime voice used on phone calls.
+        </p>
+      </div>
       {notice ? (
         <StatusNotice tone="success" title="Voice updated">
           {notice}
@@ -329,7 +338,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
           <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p className="text-xs leading-5 text-muted-foreground">
-              BotBound does not store the upload. Live use requires review.
+              BotBound does not store the upload. Studio use requires review.
             </p>
           </div>
 
@@ -466,7 +475,7 @@ export default function VoiceCloningStudio({ configured, canManage, voices, onCh
                         providerBlocked
                           ? "Voice verification is required"
                           : reviewed
-                            ? "Approve for live calls"
+                            ? "Approve for studio use"
                             : "Play the full proof first"
                       }
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-40"

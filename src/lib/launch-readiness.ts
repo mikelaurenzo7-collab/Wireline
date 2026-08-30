@@ -55,8 +55,9 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const billingReleased = billingReleaseBlockers.length === 0;
 
   const voiceBlockers: string[] = [];
-  if (byId.get("xai")?.status !== "configured") voiceBlockers.push("XAI_API_KEY");
-  if (!envPresent("XAI_SIP_ALLOWED_ADDRESSES")) voiceBlockers.push("XAI_SIP_ALLOWED_ADDRESSES");
+  if (!envPresent("OPENAI_API_KEY")) voiceBlockers.push("OPENAI_API_KEY");
+  if (!envPresent("OPENAI_PROJECT_ID")) voiceBlockers.push("OPENAI_PROJECT_ID");
+  if (!envPresent("OPENAI_WEBHOOK_SECRET")) voiceBlockers.push("OPENAI_WEBHOOK_SECRET");
   if (byId.get("twilio")?.status !== "configured") {
     voiceBlockers.push("TWILIO_ACCOUNT_SID+TWILIO_AUTH_TOKEN");
   }

@@ -220,7 +220,7 @@ export type TerminalAccountPurgeClaim =
  *
  * The advisory lock drains any post-call provider boundary that started before
  * the grace period elapsed. Committing `purging` then makes every later
- * post-call eligibility check stop terminally, even though Stripe/carrier/Vapi
+ * post-call eligibility check stop terminally, even though Stripe/carrier/OpenAI
  * teardown necessarily runs outside this short database transaction.
  *
  * `purging` is intentionally resumable: a worker crash after this commit must
@@ -334,7 +334,7 @@ export interface ExternalReleaseSummary {
   stripeCustomersDeleted: number;
   realtimeCallsHungUp: number;
   twilioCallsHungUp: number;
-  xaiCallsHungUp: number;
+  openaiSipCallsHungUp: number;
   nativePurchaseClaimsReconciled: number;
   numbersReleased: number;
   /** Non-fatal number-release failures (carrier orphans, retried out-of-band). */
@@ -371,7 +371,7 @@ function isStripeAlreadyGone(err: unknown): boolean {
  * Releases the tenant's PAID external resources before the local hard-delete.
  *
  * The DB purge alone left two money leaks: the Stripe subscription kept billing
- * a customer whose account no longer existed, and provisioned Twilio/Vapi
+ * a customer whose account no longer existed, and provisioned Twilio
  * numbers stayed rented (and callable) with no owner. This runs first, from the
  * `purge_deleted_account` job, so both are torn down at the carrier/Stripe level
  * while we still hold the ids — after `purgeAccount` deletes the rows, they are
@@ -407,7 +407,7 @@ async function releaseExternalResourcesOutsideTenantContext(
   let stripeCustomersDeleted = 0;
   let realtimeCallsHungUp = 0;
   let twilioCallsHungUp = 0;
-  let xaiCallsHungUp = 0;
+  let openaiSipCallsHungUp = 0;
   let nativePurchaseClaimsReconciled = 0;
   let numbersReleased = 0;
   let oauthRevoked = 0;
@@ -548,19 +548,22 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  const activeXAISessions = await db
+  const activeOpenAISipSessions = await db
     .select({ presenceId: schema.signalPresence.id })
     .from(schema.signalPresence)
     .where(
-      and(eq(schema.signalPresence.userId, userId), sql`${schema.signalPresence.id} LIKE 'xai:%'`),
+      and(
+        eq(schema.signalPresence.userId, userId),
+        sql`${schema.signalPresence.id} LIKE 'openai:%'`,
+      ),
     );
-  if (activeXAISessions.length) {
-    const { hangupXAISipCall } = await import("./voice/xai-sip-session");
-    for (const row of activeXAISessions) {
-      const callId = row.presenceId.slice(4);
+  if (activeOpenAISipSessions.length) {
+    const { hangupOpenAISipCall } = await import("./voice/openai-sip-session");
+    for (const row of activeOpenAISipSessions) {
+      const callId = row.presenceId.slice("openai:".length);
       if (!callId) continue;
-      await hangupXAISipCall(callId);
-      xaiCallsHungUp++;
+      await hangupOpenAISipCall(callId);
+      openaiSipCallsHungUp++;
     }
   }
 
@@ -613,7 +616,7 @@ async function releaseExternalResourcesOutsideTenantContext(
     await reconcileNativeTwilioPurchaseClaimsForTerminalDeletion(userId);
   nativePurchaseClaimsReconciled = nativePurchaseClaimReconciliation.attempted;
 
-  // 2. Release provisioned numbers at the carrier (Twilio + native xAI). A
+  // 2. Release provisioned numbers at the carrier (Twilio). A
   //    carrier failure does not block GDPR erasure by itself, but the platform
   //    must durably retain the ownership/provider identifiers before hard-delete.
   const numbers = await db
@@ -627,7 +630,7 @@ async function releaseExternalResourcesOutsideTenantContext(
   if (numbers.length) {
     const { releaseNativeTenantNumber } = await import("./voice/native-phone-release");
     for (const { phoneNumber, vapiNumberId } of numbers) {
-      // Native xAI claim/retirement functions deliberately require the tenant
+      // Native carrier claim/retirement functions deliberately require the tenant
       // GUC even when the surrounding deletion coordinator is running as the
       // root worker. Re-enter only for this ownership-bound provider teardown;
       // the discovery and final purge remain outside every ambient tenant.
@@ -690,7 +693,7 @@ async function releaseExternalResourcesOutsideTenantContext(
   //     purge must retry rather than destroy the only remaining cleanup pointers.
   const callArtifactPointers = await db
     .select({
-      vapiCallId: schema.callLogs.vapiCallId,
+      providerCallId: schema.callLogs.vapiCallId,
       recordingUrl: schema.callLogs.recordingUrl,
     })
     .from(schema.callLogs)
@@ -798,7 +801,7 @@ async function releaseExternalResourcesOutsideTenantContext(
     stripeCustomersDeleted,
     realtimeCallsHungUp,
     twilioCallsHungUp,
-    xaiCallsHungUp,
+    openaiSipCallsHungUp,
     nativePurchaseClaimsReconciled,
     numbersReleased,
     numberErrors,

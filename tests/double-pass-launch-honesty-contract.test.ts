@@ -133,12 +133,12 @@ describe("double-pass launch honesty", () => {
   });
 
   it("routes payment and dunning links to live pages", () => {
-    const tools = read("src/lib/vapi-tool-handlers.ts");
+    const tools = read("src/lib/agent-link-tool-handlers.ts");
     const billing = read("src/routes/billing-routes.ts");
     const app = read("src/App.tsx");
-    expect(tools).toContain("`${appUrl}/pricing${planParam}`");
+    expect(tools).toContain("`${resolveAppUrl(deps.appUrl)}/pricing${planParam}`");
     expect(tools).toContain("botbound.me/pricing");
-    expect(tools).not.toContain("`${appUrl}/billing${planParam}`");
+    expect(tools).not.toContain("/billing${planParam}");
     expect(billing).toContain("updateCardUrl: `${appUrl.url}/settings/billing`");
     expect(app).toContain('path="/billing"');
     expect(app).toContain('to="/settings/billing"');
@@ -282,8 +282,6 @@ describe("double-pass launch honesty", () => {
       ["src/lib/daily-brief.ts", 1],
       ["src/routes/fleet-routes.ts", 2],
       ["src/routes/insights-routes.ts", 1],
-      ["src/lib/vapi-assistant-factory-v2.ts", 1],
-      ["src/lib/voice/xai-agent-runtime.ts", 1],
       ["src/routes/settings-routes.ts", 1],
       ["src/routes/dashboard-routes.ts", 2],
       ["src/lib/voice/openai-live-agent-service.ts", 1],

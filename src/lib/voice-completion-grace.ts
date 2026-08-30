@@ -45,8 +45,8 @@ export async function chargeCompletedVoiceUsage(opts: {
     id: opts.providerCallId,
     idempotencyKey: `voice_completion:${opts.providerCallId}`,
     entryKind: "burn",
-    source: "vapi",
-    provider: "vapi",
+    source: "openai_realtime",
+    provider: "openai",
     providerObjectId: opts.providerCallId,
     customerReason: "Completed live-call usage",
     metadata: {

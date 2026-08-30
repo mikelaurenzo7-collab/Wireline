@@ -235,23 +235,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
     ),
   },
   // Cloud & AI partners:
-  xai: {
-    name: "xAI",
-    svg: (
-      <svg viewBox="0 0 48 24" aria-label="xAI" width="100%" height="100%">
-        <text
-          x="2"
-          y="16"
-          fontFamily="Inter, Arial, sans-serif"
-          fontSize="13"
-          fontWeight="650"
-          letterSpacing="0"
-        >
-          xAI
-        </text>
-      </svg>
-    ),
-  },
   openai: {
     name: "OpenAI",
     svg: (
@@ -274,14 +257,6 @@ const ALL_LOGOS: Record<string, LogoDef> = {
     svg: (
       <svg viewBox="0 0 24 24" aria-label="Gemini" width="100%" height="100%">
         <path d="M12 2Q12 12 22 12Q12 12 12 22Q12 12 2 12Q12 12 12 2Z" />
-      </svg>
-    ),
-  },
-  vapi: {
-    name: "Vapi",
-    svg: (
-      <svg viewBox="0 0 24 24" aria-label="Vapi" width="100%" height="100%">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-5 11h2v-2H7v2zm4 3h2V8h-2v8zm4-5v2h2v-2h-2z" />
       </svg>
     ),
   },

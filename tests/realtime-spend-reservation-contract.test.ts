@@ -84,10 +84,7 @@ describe("realtime spend reservation contract", () => {
   });
 
   it("validates request bodies before consuming a five-minute quota reservation", () => {
-    for (const path of [
-      "src/routes/openai-realtime-routes.ts",
-      "src/routes/grok-voice-routes.ts",
-    ]) {
+    for (const path of ["src/routes/openai-realtime-routes.ts"]) {
       const route = read(path);
       const sessionRoute = route.slice(route.indexOf('"/api/voice/'));
       expect(sessionRoute.indexOf("validateBody(")).toBeGreaterThan(-1);

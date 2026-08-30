@@ -47,21 +47,6 @@ if (isCanonicalProduction && migrationsDisabled) {
 const shouldMigrate = !migrationsDisabled && (migrationsForced || isCanonicalProduction);
 const shouldVerifyProductionSchema = isCanonicalProduction;
 
-function runLiveVapiSchemaAuditIfRequested() {
-  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (environment !== "preview" || !commitMessage.includes("[launch-deep-audit]")) return;
-
-  if (!process.env.VAPI_PRIVATE_KEY || !process.env.VAPI_WEBHOOK_SECRET) {
-    console.log(
-      "Skipping the optional live Vapi schema audit because preview-safe credentials are not configured.",
-    );
-    return;
-  }
-
-  console.log("Running one-shot non-billable Vapi payload schema audit.");
-  run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"]);
-}
-
 function runCanonicalReleaseAudit() {
   const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
   const explicitlyRequested = commitMessage.includes("[launch-deep-audit]");
@@ -82,24 +67,6 @@ function runCanonicalReleaseAudit() {
   run("npm", ["run", "runtime:policy:check"]);
   run("npm", ["run", "security:audit"]);
   run("node", ["scripts/run-test-estate.mjs", "--canonical-release-second-pass"]);
-}
-
-function syncShowcaseIfRequested() {
-  const commitMessage = String(process.env.VERCEL_GIT_COMMIT_MESSAGE || "");
-  if (environment !== "production" || !commitMessage.includes("[sync-showcase]")) return;
-  if (isDuplicateV0Project) {
-    console.error("Refusing showcase synchronization from a duplicate Vercel project.");
-    process.exit(1);
-  }
-  if (!process.env.VAPI_PRIVATE_KEY || !process.env.VAPI_WEBHOOK_SECRET) {
-    console.error(
-      "Refusing showcase synchronization without VAPI_PRIVATE_KEY and VAPI_WEBHOOK_SECRET.",
-    );
-    process.exit(1);
-  }
-
-  console.log("Synchronizing all public BotBound assistants after build certification.");
-  run("npx", ["tsx", "scripts/sync-wireline-showcase.mts"]);
 }
 
 function configurePreviewEnvironment() {
@@ -154,7 +121,7 @@ run("node", ["scripts/check-mcp-http-hardening.mjs"]);
 run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
 run("node", ["scripts/check-resend-webhook-readiness.mjs"]);
-// Syntax-only by design: check-vendor-readiness probes live Stripe/Twilio/Vapi
+// Syntax-only by design: check-vendor-readiness probes live provider state
 // state and must not make network calls during a build. Run it for real via
 // `npm run vendor:readiness` in the release checklist.
 run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
@@ -169,7 +136,6 @@ run("node", [
   "tests/structured-runtime-policy-contract.test.ts",
   "tests/openai-runtime-cohesion-contract.test.ts",
   "tests/openai-live-demo-contract.test.ts",
-  "tests/studio-vapi-web-live-test-contract.test.ts",
   "tests/federal-dnc-service.test.ts",
   "tests/outbound-runtime-behavior.test.ts",
   "tests/outbound-compliance-contract.test.ts",
@@ -182,12 +148,10 @@ run("node", [
   "tests/database-connection.test.ts",
   "tests/production-schema-database-selection.test.ts",
   "tests/migration-journal-integrity-contract.test.ts",
-  "tests/grok-46-persisted-defaults-contract.test.ts",
   "tests/production-schema-effects-contract.test.ts",
   "tests/production-promotion-safety-contract.test.ts",
   "tests/provider-spend-hard-gate-contract.test.ts",
   "tests/account-environment-ai-spend-guard.test.ts",
-  "tests/vapi-account-environment-evidence.test.ts",
   "tests/realtime-spend-reservation-contract.test.ts",
   "tests/stripe-portal-reconciler-contract.test.ts",
   "tests/stripe-founder-price-contract.test.ts",
@@ -231,7 +195,6 @@ run("node", [
   "tests/billing-proof-contract.test.ts",
   "tests/live-video-stripe-races.test.ts",
   "tests/twilio-accepted-reconciliation-behavior.test.ts",
-  "tests/xai-outbound-twiml-replay.test.ts",
   "tests/lifecycle-notification-durability-contract.test.ts",
   "tests/post-call-notification-durability.test.ts",
   "tests/post-call-csat-behavior.test.ts",
@@ -257,9 +220,6 @@ run("node", [
   "tests/static-metadata-contract.test.ts",
   "tests/wireline-product-docs.test.ts",
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
-  "tests/managed-vapi-runtime-contract.test.ts",
-  "tests/vapi-modern-payload-contract.test.ts",
-  "src/lib/vapi-report-normalization.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
   "tests/email-observability-privacy-contract.test.ts",
   "tests/platform-ledger-integrity-contract.test.ts",
@@ -270,7 +230,6 @@ run("node", [
   "tests/background-durability-p1.test.ts",
   "tests/billing-release-gate-contract.test.ts",
   "tests/job-queue-priority-contract.test.ts",
-  "tests/showcase-truth-sync-contract.test.ts",
   "tests/checkout-customer-recovery-contract.test.ts",
   "tests/shared-workspace-readiness-contract.test.ts",
   "tests/webhook-delivery-literal-ssrf-contract.test.ts",
@@ -284,7 +243,6 @@ run("node", [
   "tests/website-fetch-stream-safety.test.ts",
   "tests/job-attempt-fencing-contract.test.ts",
 ]);
-runLiveVapiSchemaAuditIfRequested();
 configurePreviewEnvironment();
 validateProductionEnvironment();
 runCanonicalReleaseAudit();
@@ -353,5 +311,3 @@ if (shouldMigrate) {
 if (shouldVerifyProductionSchema) {
   run("node", ["scripts/run-production-schema-effects.mjs"]);
 }
-
-syncShowcaseIfRequested();

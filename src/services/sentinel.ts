@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { and, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { dncPhoneCandidates, isDncBlocked, normalizeDncPhone } from "../lib/compliance";
-import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
-import { isAllowedVapiControlUrl } from "../lib/vapi-monitor-url";
-import { hangupXAISipCall } from "../lib/voice/xai-sip-session";
+import { drizzle, log } from "../lib/server-context";
+import { hangupOpenAISipCall } from "../lib/voice/openai-sip-session";
 
 export interface SentinelResult {
   allowed: boolean;
@@ -13,9 +11,9 @@ export interface SentinelResult {
   state?: string;
 }
 
-function nativeXAICallId(value: string): string | null {
-  if (!value.startsWith("xai:")) return null;
-  const callId = value.slice(4).trim();
+function openAICallId(value: string): string | null {
+  if (!value.startsWith("openai:")) return null;
+  const callId = value.slice("openai:".length).trim();
   return callId && callId.length <= 200 && /^[A-Za-z0-9._:-]+$/.test(callId) ? callId : null;
 }
 
@@ -63,9 +61,8 @@ export class SentinelService {
 
   /**
    * Terminate active calls if a number is added to DNC mid-call. Presence ids
-   * are provider-qualified, so the compliance path can use native xAI hangup
-   * without attempting a Vapi lookup. Legacy Vapi control remains available
-   * only for rollback calls that do not carry the `xai:` prefix.
+   * are provider-qualified, so the compliance path can address the OpenAI
+   * Realtime call directly without a second provider lookup.
    */
   async terminateActiveCallsForNumber(
     phoneNumber: string,
@@ -99,85 +96,24 @@ export class SentinelService {
   private async killCall(callId: string, reason: string): Promise<boolean> {
     log.info(`Terminating call ${callId} due to ${reason}`);
 
-    const xaiCallId = nativeXAICallId(callId);
-    if (xaiCallId) {
-      try {
-        await hangupXAISipCall(xaiCallId);
-        await drizzle
-          .update(schema.signalPresence)
-          .set({ status: "terminated" })
-          .where(eq(schema.signalPresence.id, callId));
-        return true;
-      } catch (error) {
-        log.error("Native xAI DNC hangup could not be confirmed", {
-          callId,
-          reason,
-          errorClass: error instanceof Error ? error.name : typeof error,
-        });
-        return false;
-      }
-    }
-
-    const apiKey = process.env.VAPI_PRIVATE_KEY?.trim();
-    if (!apiKey) {
-      log.error("Cannot terminate rollback Vapi call: VAPI_PRIVATE_KEY is not configured", {
-        callId,
-        reason,
-      });
+    const providerCallId = openAICallId(callId);
+    if (!providerCallId) {
+      log.error("Cannot terminate call with an unsupported provider identifier", { callId, reason });
       return false;
     }
-
     try {
-      const callResponse = await fetchWithTimeout(
-        `https://api.vapi.ai/call/${encodeURIComponent(callId)}`,
-        {
-          headers: { Authorization: `Bearer ${apiKey}` },
-          redirect: "error",
-        },
-        5000,
-      );
-      if (!callResponse.ok) {
-        log.error(`Vapi call lookup rejected for call ${callId}`, {
-          reason,
-          status: callResponse.status,
-        });
-        return false;
-      }
-
-      const call = (await callResponse.json()) as { monitor?: { controlUrl?: unknown } };
-      const controlUrl =
-        typeof call.monitor?.controlUrl === "string" ? call.monitor.controlUrl.trim() : "";
-      if (!controlUrl || !isAllowedVapiControlUrl(controlUrl)) {
-        log.error(`Vapi call ${callId} returned no trusted live control URL`, { reason });
-        return false;
-      }
-
-      const response = await fetchWithTimeout(
-        controlUrl,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "end-call" }),
-          redirect: "error",
-        },
-        5000,
-      );
-
-      if (!response.ok) {
-        log.error(`Vapi end-call rejected for call ${callId}`, {
-          reason,
-          status: response.status,
-        });
-        return false;
-      }
-
+      await hangupOpenAISipCall(providerCallId);
       await drizzle
         .update(schema.signalPresence)
         .set({ status: "terminated" })
         .where(eq(schema.signalPresence.id, callId));
       return true;
-    } catch (error: any) {
-      log.error(`Failed to terminate rollback call ${callId}`, { error: error.message });
+    } catch (error) {
+      log.error("OpenAI DNC hangup could not be confirmed", {
+        callId,
+        reason,
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
       return false;
     }
   }

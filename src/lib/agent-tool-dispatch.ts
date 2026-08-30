@@ -2,16 +2,16 @@
 /** Shared dispatch for live agent tools and Director-approved integration jobs. */
 import { randomUUID } from "node:crypto";
 
-import { handleCalendarToolCall } from "../routes/vapi/tool-handlers-calendar";
-import { handleCoreToolCall } from "../routes/vapi/tool-handlers-core";
-import { handleDeviceToolCall } from "../routes/vapi/tool-handlers-device";
-import { handleEnrichmentToolCall } from "../routes/vapi/tool-handlers-enrichment";
-import { handleNotificationToolCall } from "../routes/vapi/tool-handlers-notifications";
-import { handleShopifyToolCall } from "../routes/vapi/tool-handlers-shopify";
-import { handleSquareToolCall } from "../routes/vapi/tool-handlers-square";
-import type { ToolCallContext, ToolCallResult } from "../routes/vapi/types";
-import { handleWorkflowToolCall } from "../routes/vapi/tool-handlers-workflow";
-import { handleXToolCall } from "../routes/vapi/tool-handlers-x";
+import { handleCalendarToolCall } from "./agent-tools/calendar";
+import { handleCoreToolCall } from "./agent-tools/core";
+import { handleDeviceToolCall } from "./agent-tools/device";
+import { handleEnrichmentToolCall } from "./agent-tools/enrichment";
+import { handleNotificationToolCall } from "./agent-tools/notifications";
+import { handleShopifyToolCall } from "./agent-tools/shopify";
+import { handleSquareToolCall } from "./agent-tools/square";
+import type { ToolCallContext, ToolCallResult } from "./agent-tool-types";
+import { handleWorkflowToolCall } from "./agent-tools/workflow";
+import { handleXToolCall } from "./agent-tools/x";
 import { isAgentToolExecutionAuthorized } from "./agent-tool-authorization";
 import { runIdempotentAgentToolCall } from "./agent-tool-idempotency";
 import { handleNativeVoiceToolCall } from "./agent-tool-native-voice";

@@ -67,10 +67,11 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("trywireline.com/status");
 
     expect(security).toContain("Last updated · August 17, 2026");
-    expect(security).toContain("Twilio for PSTN and xAI Direct SIP Speech-to-Speech");
-    expect(security).toContain("Vapi is optional rollback and public-showcase PSTN only");
-    expect(security).toContain("OpenAI provides managed structured inference");
-    expect(security).toContain("ElevenLabs is managed text-to-speech");
+    expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
+    expect(security).toContain("OpenAI Realtime runs every browser and phone conversation");
+    expect(security).toContain("OpenAI also provides the primary structured runtime");
+    expect(security).toContain("ElevenLabs is limited to authorized private studio voice workflows");
+    expect(security).not.toMatch(/Vapi|xAI|Grok/);
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });

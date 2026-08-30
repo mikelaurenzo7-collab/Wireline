@@ -13,7 +13,11 @@ import {
 import { log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
-import { normalizeXAIPhoneNumber, twilioVoiceFallbackUrl } from "./xai-sip-config";
+import {
+  normalizeOpenAIPhoneNumber,
+  twilioOpenAIInboundFallbackUrl,
+  twilioOpenAIInboundVoiceUrl,
+} from "./openai-sip-config";
 
 export const NATIVE_PROVISIONING_UNAVAILABLE =
   "BotBound could not activate a phone line right now. The platform configuration needs attention; no duplicate purchase will be attempted.";
@@ -47,18 +51,21 @@ export function isAmbiguousTwilioPhoneMutationError(error: unknown): boolean {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 }
 
-function purchaseFields(friendlyName: string) {
+function routingFields() {
   const appUrl = getCanonicalAppUrl();
-  const voiceFallbackUrl = twilioVoiceFallbackUrl();
+  const voiceFallbackUrl = twilioOpenAIInboundFallbackUrl();
   return {
     smsUrl: `${appUrl}/api/twilio-webhook/sms#rc=2&rp=5xx,ct,rt&ct=3000&rt=5000&tt=15000`,
     smsMethod: "POST" as const,
-    voiceUrl: voiceFallbackUrl,
+    voiceUrl: twilioOpenAIInboundVoiceUrl(),
     voiceMethod: "POST" as const,
     voiceFallbackUrl,
     voiceFallbackMethod: "POST" as const,
-    friendlyName,
   };
+}
+
+function purchaseFields(friendlyName: string) {
+  return { ...routingFields(), friendlyName };
 }
 
 export async function listNativeAvailableLocalNumbers(
@@ -110,6 +117,49 @@ async function assertNativePhoneExternalActionAllowed(
   throw new AppError(policy.status, policy.code, policy.message);
 }
 
+export async function resolveOwnedTwilioNumberSid(
+  phoneNumber: string,
+  candidateSid?: string | null,
+): Promise<string | null> {
+  const client = getTwilioClient();
+  if (!client) throw AppError.serviceUnavailable("Twilio number routing is not configured.");
+  const normalized = normalizeOpenAIPhoneNumber(phoneNumber);
+  if (!normalized) throw AppError.badRequest("The BotBound phone number is invalid.");
+
+  if (isTwilioPhoneNumberSid(candidateSid)) {
+    try {
+      const row = await client.incomingPhoneNumbers(candidateSid).fetch();
+      return normalizeOpenAIPhoneNumber(row.phoneNumber) === normalized ? candidateSid : null;
+    } catch (error) {
+      if (twilioStatus(error) !== 404) throw error;
+    }
+  }
+
+  const matches = (await client.incomingPhoneNumbers.list({ phoneNumber: normalized, limit: 10 }))
+    .filter((row) => normalizeOpenAIPhoneNumber(row.phoneNumber) === normalized)
+    .map((row) => String(row.sid || "").trim())
+    .filter(isTwilioPhoneNumberSid);
+  return matches.length === 1 ? matches[0]! : null;
+}
+
+export async function configureNativeNumberRouting(input: {
+  userId: string;
+  phoneNumber: string;
+  carrierNumberId?: string | null;
+}): Promise<string> {
+  await assertNativePhoneExternalActionAllowed(input.userId, "native_phone_route_openai");
+  const client = getTwilioClient();
+  if (!client) throw AppError.serviceUnavailable("Twilio number routing is not configured.");
+  const sid = await resolveOwnedTwilioNumberSid(input.phoneNumber, input.carrierNumberId);
+  if (!sid) {
+    throw AppError.conflict(
+      "The phone number is not uniquely owned by the configured Twilio account.",
+    );
+  }
+  await client.incomingPhoneNumbers(sid).update(routingFields());
+  return sid;
+}
+
 async function recoverAcceptedPurchase(input: {
   phoneNumber: string;
   friendlyName: string;
@@ -159,7 +209,7 @@ export async function purchaseNativeNumber(input: {
   if (!client) throw AppError.serviceUnavailable("Twilio number purchasing is not configured.");
 
   const preferredRaw = String(input.preferredPhoneNumber || "").trim();
-  const preferred = normalizeXAIPhoneNumber(preferredRaw);
+  const preferred = normalizeOpenAIPhoneNumber(preferredRaw);
   if (preferredRaw && (!preferred || !/^\+1\d{10}$/.test(preferred))) {
     throw AppError.badRequest("phone_number must be a US E.164 number");
   }
@@ -234,7 +284,7 @@ export async function purchaseNativeNumber(input: {
   }
 
   const sid = String(created.sid || "").trim();
-  const e164 = normalizeXAIPhoneNumber(created.phoneNumber) || phoneNumber;
+  const e164 = normalizeOpenAIPhoneNumber(created.phoneNumber) || phoneNumber;
   if (isTwilioPhoneNumberSid(sid)) {
     await retainPurchaseClaimOrRaise(claim, "provider_accepted");
     return { phoneNumber: e164, sid, claim };

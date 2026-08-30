@@ -19,13 +19,14 @@ import {
 } from "./owned-email-account";
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { planById } from "./plan-catalog";
-import { provisionTenantNumber, releaseTenantNumber } from "./phone-provisioning";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { encryptSecret, isVaultConfigured } from "./secret-vault";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { getTwilioClient } from "./twilio-service";
 import { enqueue } from "./job-queue";
+import { provisionNativeTenantNumber } from "./voice/native-phone-provisioning";
+import { releaseNativeTenantNumber } from "./voice/native-phone-release";
 
 // A Stripe trial is not a paid activation. Real carrier numbers and durable
 // AgentMail inboxes are created only after Stripe reports an active paid
@@ -160,7 +161,8 @@ async function assertTwilioOwnedNumber(phoneNumber: string): Promise<void> {
 }
 
 async function ensurePaidBotPhone(userId: string, agentId: string) {
-  const provisioned = await provisionTenantNumber(userId, {
+  const provisioned = await provisionNativeTenantNumber({
+    userId,
     agentId,
     campaignLabel: "paid-bot-identity",
   });
@@ -171,11 +173,10 @@ async function ensurePaidBotPhone(userId: string, agentId: string) {
   try {
     await assertTwilioOwnedNumber(provisioned.phoneNumber);
   } catch (error) {
-    // The legacy provisioner can fall back to Vapi-owned inventory. Paid Bot
-    // identity is Twilio-strict: release that allocation and let the durable job
-    // retry instead of silently changing carrier ownership.
-    await releaseTenantNumber(userId, provisioned.phoneNumber).catch((releaseError) =>
-      log.error("Non-Twilio paid Bot line could not be released", {
+    // Paid Bot identity is Twilio-strict. Release an unverifiable allocation
+    // and let the durable job retry rather than silently changing ownership.
+    await releaseNativeTenantNumber(userId, provisioned.phoneNumber).catch((releaseError) =>
+      log.error("Unverifiable paid Bot line could not be released", {
         userId,
         agentId,
         phoneNumber: provisioned.phoneNumber,

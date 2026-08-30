@@ -180,7 +180,7 @@ const TRUST_PACK_SECTIONS = [
     icon: Database,
     title: "Subprocessors & vendors",
     items: [
-      "Production voice: Twilio for PSTN and xAI Direct SIP Speech-to-Speech for live phone conversation. OpenAI provides managed structured inference plus Studio and ChatGPT browser realtime. ElevenLabs is managed text-to-speech and authorized private voices. Vapi is optional rollback and public-showcase PSTN only.",
+      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation; OpenAI also provides the primary structured runtime. ElevenLabs is limited to authorized private studio voice workflows.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",

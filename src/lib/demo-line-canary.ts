@@ -1,54 +1,34 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- Vapi API responses are untyped. */
 /**
- * Demo-Line Canary — nightly health probe for the 8 public showcase numbers.
+ * Nightly control-plane canary for every public showcase line.
  *
- * What it checks per number:
- *   1. Vapi phone-number record exists and has an assistantId assigned.
- *   2. The assistantId resolves to a live Vapi assistant (GET /assistant/:id).
- *   3. (Optional) If the line had zero calls in the last 7 days AND is a "cs"
- *      line, that's a soft warning (the employee lines should see daily traffic
- *      from prospects). Demo lines may go quiet — not an alert.
- *
- * If ANY line fails checks 1 or 2, the canary fires an email to OWNER_EMAIL.
- *
- * NOT a synthetic-call canary (that costs money per probe). This verifies
- * the infrastructure is wired — if a number is disconnected, or the
- * assistant was accidentally deleted, we know before the next prospect calls.
- *
- * Triggered via the job queue as `demo_line_canary` (nightly 04:00 UTC).
- * Also exposed via GET /api/health/voice-status for on-demand use.
+ * It verifies the Twilio number still exists, its voice webhook points at the
+ * canonical OpenAI SIP bridge, the database has a Bot assignment, and the
+ * OpenAI SIP runtime is configured. It intentionally does not place a paid
+ * synthetic call.
  */
+import { inArray } from "drizzle-orm";
 
-import { log } from "./server-context";
-import { sendEmail } from "./email-service";
-import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
   type ContactAgent,
 } from "../data/contact-agents";
+import * as schema from "../db/schema";
+import { sendEmail } from "./email-service";
+import { drizzle, log } from "./server-context";
+import { getTwilioClient } from "./twilio-service";
+import { openAISipConfigured } from "./voice/openai-sip-config";
+import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 
-const VAPI_BASE = "https://api.vapi.ai";
-
-function vapiKey(): string | null {
-  return process.env.VAPI_PRIVATE_KEY || null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
+const OPENAI_INBOUND_PATH = "/api/twilio-webhook/openai-inbound";
 
 export interface LineProbeResult {
   name: string;
   tel: string;
   kind: "cs" | "demo";
-  /** Whether the number exists in Vapi with an assigned assistant. */
   numberOk: boolean;
-  /** Whether the assistant is reachable in Vapi. */
   assistantOk: boolean;
-  /** Days since last call on this number (null if lookup failed or no data). */
   daysSinceLastCall: number | null;
-  /** Error details if either check failed. */
   error?: string;
 }
 
@@ -62,114 +42,41 @@ export interface CanaryRunResult {
   error?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Vapi API helpers.
-//
-// A nightly canary must not page the owner on a single cold-start timeout. A
-// transient failure (request timeout or network abort) is retried once; a
-// definitive HTTP response — e.g. 404 for a genuinely deleted assistant — is
-// returned immediately and never retried, so a real outage still alerts on the
-// first run while "Assistant unreachable: operation aborted due to timeout"
-// false positives are absorbed.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const VAPI_FETCH_TIMEOUT_MS = 12_000;
-const VAPI_FETCH_TRANSIENT_RETRIES = 1;
-
-async function vapiFetch(path: string): Promise<{ ok: boolean; data?: any; error?: string }> {
-  const key = vapiKey();
-  if (!key) return { ok: false, error: "VAPI_PRIVATE_KEY not configured" };
-
-  const authHeader = "Bearer " + key;
-  let lastError = "fetch failed";
-  for (let attempt = 0; attempt <= VAPI_FETCH_TRANSIENT_RETRIES; attempt++) {
-    try {
-      const res = await fetch(`${VAPI_BASE}${path}`, {
-        headers: {
-          Authorization: authHeader,
-          "content-type": "application/json",
-        },
-        signal: AbortSignal.timeout(VAPI_FETCH_TIMEOUT_MS),
-      });
-      if (!res.ok) {
-        // A returned HTTP status is a real answer, not a transient blip — do not
-        // retry it, so a genuine 404/5xx still surfaces on this run.
-        const body = await res.text().catch(() => "");
-        return { ok: false, error: `Vapi ${res.status}: ${body.slice(0, 200)}` };
-      }
-      const data = await res.json();
-      return { ok: true, data };
-    } catch (err: any) {
-      // Timeout or network abort — transient. Retry once with a short backoff so
-      // one cold-start slowness does not alert about an otherwise healthy line.
-      lastError = err?.message || "fetch failed";
-      if (attempt < VAPI_FETCH_TRANSIENT_RETRIES) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-    }
+function webhookPath(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    return new URL(value).pathname;
+  } catch {
+    return "";
   }
-  return { ok: false, error: lastError };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Core probe logic
-// ─────────────────────────────────────────────────────────────────────────────
-
-async function probeLine(
+function probeLine(
   agent: ContactAgent,
   kind: "cs" | "demo",
-  vapiNumbers: any[],
-): Promise<LineProbeResult> {
-  const result: LineProbeResult = {
+  carrierNumbers: Map<string, { voiceUrl?: unknown }>,
+  assignments: Set<string>,
+  runtimeReady: boolean,
+): LineProbeResult {
+  const number = carrierNumbers.get(agent.tel);
+  const numberOk = Boolean(number) && webhookPath(number?.voiceUrl) === OPENAI_INBOUND_PATH;
+  const assistantOk = runtimeReady && assignments.has(agent.tel);
+  const errors = [
+    !number ? "number missing from Twilio" : null,
+    number && !numberOk ? "Twilio voice webhook is not the OpenAI inbound bridge" : null,
+    !runtimeReady ? "OpenAI SIP runtime is not configured" : null,
+    runtimeReady && !assignments.has(agent.tel) ? "no Bot is assigned in BotBound" : null,
+  ].filter((value): value is string => Boolean(value));
+  return {
     name: agent.name,
     tel: agent.tel,
     kind,
-    numberOk: false,
-    assistantOk: false,
+    numberOk,
+    assistantOk,
     daysSinceLastCall: null,
+    ...(errors.length ? { error: errors.join("; ") } : {}),
   };
-
-  // Step 1: Find the Vapi number record matching this tel
-  const vapiNumber = vapiNumbers.find((n: any) => n.number === agent.tel);
-
-  if (!vapiNumber) {
-    result.error = `Number ${agent.tel} not found in Vapi account`;
-    return result;
-  }
-
-  if (!vapiNumber.assistantId) {
-    result.error = `Number ${agent.tel} has no assistantId assigned`;
-    return result;
-  }
-
-  result.numberOk = true;
-
-  // Step 2: Verify the assistant exists
-  const assistantRes = await vapiFetch(`/assistant/${vapiNumber.assistantId}`);
-  if (!assistantRes.ok) {
-    result.error = `Assistant ${vapiNumber.assistantId} unreachable: ${assistantRes.error}`;
-    return result;
-  }
-
-  result.assistantOk = true;
-
-  // Step 3: Check recent call activity (informational, not a hard failure)
-  const callsRes = await vapiFetch(`/call?phoneNumberId=${vapiNumber.id}&limit=1&sortOrder=DESC`);
-  if (callsRes.ok && Array.isArray(callsRes.data) && callsRes.data.length > 0) {
-    const lastCallDate = new Date(callsRes.data[0].createdAt || callsRes.data[0].startedAt);
-    if (!isNaN(lastCallDate.getTime())) {
-      result.daysSinceLastCall = Math.floor(
-        (Date.now() - lastCallDate.getTime()) / (24 * 60 * 60 * 1000),
-      );
-    }
-  }
-
-  return result;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main entry point
-// ─────────────────────────────────────────────────────────────────────────────
 
 export async function runDemoLineCanary(): Promise<CanaryRunResult> {
   const result: CanaryRunResult = {
@@ -178,30 +85,49 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     lines: [],
     alertSent: false,
   };
-
-  // Prefetch all Vapi numbers once (cheaper than N individual lookups)
-  const numbersRes = await vapiFetch("/phone-number");
-  if (!numbersRes.ok) {
+  const agents = [
+    ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
+    ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
+  ];
+  const client = getTwilioClient();
+  if (!client) {
     result.allHealthy = false;
-    result.error = `Failed to list Vapi numbers: ${numbersRes.error}`;
-    // Still try to alert
-    await sendCanaryAlert(result);
+    result.error = "Twilio is not configured";
+    result.alertSent = await sendCanaryAlert(result);
     return result;
   }
 
-  const vapiNumbers: any[] = Array.isArray(numbersRes.data) ? numbersRes.data : [];
-
-  // Probe all lines in parallel
-  const probes = [
-    ...WIRELINE_CONTACT_AGENTS.map((a) => probeLine(a, "cs", vapiNumbers)),
-    ...WIRELINE_DEMO_AGENTS.map((a) => probeLine(a, "demo", vapiNumbers)),
-  ];
-
-  result.lines = await Promise.all(probes);
-
-  // Determine overall health — a line is unhealthy if number or assistant check failed
-  const unhealthyLines = result.lines.filter((l) => !l.numberOk || !l.assistantOk);
-  result.allHealthy = unhealthyLines.length === 0;
+  try {
+    const [carrierRows, assignmentRows] = await Promise.all([
+      client.incomingPhoneNumbers.list({ limit: 1_000 }),
+      drizzle
+        .select({
+          phoneNumber: schema.phoneNumbers.phoneNumber,
+          agentId: schema.phoneNumbers.agentId,
+        })
+        .from(schema.phoneNumbers)
+        .where(
+          inArray(
+            schema.phoneNumbers.phoneNumber,
+            agents.map(({ agent }) => agent.tel),
+          ),
+        ),
+    ]);
+    const carrierNumbers = new Map(
+      carrierRows.map((row) => [String(row.phoneNumber || ""), { voiceUrl: row.voiceUrl }]),
+    );
+    const assignments = new Set(
+      assignmentRows.filter((row) => Boolean(row.agentId)).map((row) => row.phoneNumber),
+    );
+    const runtimeReady = openAISipConfigured();
+    result.lines = agents.map(({ agent, kind }) =>
+      probeLine(agent, kind, carrierNumbers, assignments, runtimeReady),
+    );
+    result.allHealthy = result.lines.every((line) => line.numberOk && line.assistantOk);
+  } catch (error) {
+    result.allHealthy = false;
+    result.error = error instanceof Error ? error.message : "Showcase line probe failed";
+  }
 
   try {
     const voiceWindow = await computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 60 });
@@ -211,87 +137,51 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
       result.allHealthy = false;
       await alertOnVoiceDegradation({ window: voiceWindow, channel: "demo-line" });
     }
-  } catch (err: any) {
-    log.warn("Demo-line canary voice window check failed", { error: err?.message });
+  } catch (error) {
+    log.warn("Demo-line canary voice window check failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   if (!result.allHealthy) {
     log.error("Demo-line canary detected failures", {
-      unhealthy: unhealthyLines.map((l) => ({ name: l.name, tel: l.tel, error: l.error })),
+      unhealthy: result.lines
+        .filter((line) => !line.numberOk || !line.assistantOk)
+        .map((line) => ({ name: line.name, tel: line.tel, error: line.error })),
+      globalError: result.error,
     });
     result.alertSent = await sendCanaryAlert(result);
   } else {
-    log.info("Demo-line canary: all lines healthy", {
-      lines: result.lines.length,
-      csQuiet: result.lines.filter((l) => l.kind === "cs" && (l.daysSinceLastCall ?? 0) > 7).length,
-    });
+    log.info("Demo-line canary: all lines healthy", { lines: result.lines.length });
   }
-
   return result;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Alert
-// ─────────────────────────────────────────────────────────────────────────────
-
 async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
-  const ownerEmail = process.env.OWNER_EMAIL;
+  const ownerEmail = process.env.OWNER_EMAIL?.trim();
   if (!ownerEmail) {
-    log.warn("Demo-line canary: OWNER_EMAIL not set, cannot send alert");
+    log.warn("Demo-line canary cannot alert because OWNER_EMAIL is unset");
     return false;
   }
-
-  const unhealthy = run.lines.filter((l) => !l.numberOk || !l.assistantOk);
-  const subject = `🚨 BotBound Demo Line Alert, ${unhealthy.length} line${unhealthy.length !== 1 ? "s" : ""} degraded`;
-
-  const textLines = [
-    "Demo-Line Canary detected issues:",
-    "",
-    ...(run.error ? [`Global error: ${run.error}`, ""] : []),
-    ...unhealthy.map((l) => `  ❌ ${l.name} (${l.tel}): ${l.error || "unknown"}`),
-    "",
-    `Healthy lines: ${run.lines.filter((l) => l.numberOk && l.assistantOk).length}/${run.lines.length}`,
-    run.voiceWindow
-      ? `Voice window (${run.voiceWindow.windowMinutes}m): ${run.voiceWindowHealthy ? "healthy" : "degraded"} · calls=${run.voiceWindow.totalCalls} · ttft_p95=${run.voiceWindow.ttftP95Ms != null ? `${run.voiceWindow.ttftP95Ms}ms` : "n/a"}`
-      : "",
-    "",
-    "Check: GET /api/health/voice-status for full details.",
-    "",
-    `Run at: ${run.timestamp}`,
+  const unhealthy = run.lines.filter((line) => !line.numberOk || !line.assistantOk);
+  const details = [
+    ...(run.error ? [`Global error: ${run.error}`] : []),
+    ...unhealthy.map((line) => `${line.name} (${line.tel}): ${line.error || "unknown"}`),
   ];
-
-  const htmlLines = [
-    '<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">',
-    '<h2 style="color: #dc2626; margin: 0 0 16px;">🚨 Demo Line Alert</h2>',
-    ...(run.error
-      ? [`<p style="color: #dc2626;"><strong>Global error:</strong> ${escapeHtml(run.error)}</p>`]
-      : []),
-    '<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">',
-    '<tr style="background: #f3f4f6;"><th style="padding: 8px; text-align: left;">Agent</th><th style="padding: 8px; text-align: left;">Number</th><th style="padding: 8px; text-align: left;">Issue</th></tr>',
-    ...unhealthy.map(
-      (l) =>
-        `<tr><td style="padding: 8px;">${escapeHtml(l.name)}</td><td style="padding: 8px;">${escapeHtml(l.tel)}</td><td style="padding: 8px; color: #dc2626;">${escapeHtml(l.error || "unknown")}</td></tr>`,
-    ),
-    "</table>",
-    `<p style="color: #6b7280; font-size: 13px;">Healthy: ${run.lines.filter((l) => l.numberOk && l.assistantOk).length}/${run.lines.length} &middot; Run at ${run.timestamp}</p>`,
-    "</div>",
-  ];
-
-  const sendResult = await sendEmail({
+  const sent = await sendEmail({
     to: ownerEmail,
-    subject,
-    text: textLines.join("\n"),
-    html: htmlLines.join("\n"),
+    subject: `BotBound demo-line alert: ${unhealthy.length} degraded`,
+    text: ["Demo-line canary detected issues.", "", ...details, "", `Run at: ${run.timestamp}`].join(
+      "\n",
+    ),
+    html: `<h2>BotBound demo-line alert</h2><p>${details.map(escapeHtml).join("<br>")}</p><p>Run at ${escapeHtml(run.timestamp)}</p>`,
   });
-
-  if (!sendResult.ok) {
-    log.error("Demo-line canary alert email failed", { error: sendResult.error });
-  }
-  return sendResult.ok;
+  if (!sent.ok) log.error("Demo-line canary alert email failed", { error: sent.error });
+  return sent.ok;
 }
 
-function escapeHtml(s: string): string {
-  return s
+function escapeHtml(value: string): string {
+  return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

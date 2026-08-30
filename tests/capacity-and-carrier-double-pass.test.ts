@@ -159,46 +159,42 @@ describe("agent capacity integrity", () => {
 
 describe("carrier teardown integration", () => {
   it("preserves the canonical phone row until strict provider teardown succeeds", () => {
-    const source = read("src/lib/phone-provisioning.ts");
-    const releaseCall = source.lastIndexOf("const release = await releaseCarrierAllocations(");
-    const failureGuard = source.indexOf("if (!release.ok)", releaseCall);
-    const localDelete = source.indexOf("tx.delete(schema.phoneNumbers)", releaseCall);
+    const source = read("src/lib/voice/native-phone-release.ts");
+    const releaseCall = source.indexOf("await releaseTwilioLine(carrierId)");
+    const failureGuard = source.indexOf("catch (error)", releaseCall);
+    const localDelete = source.indexOf(".delete(schema.phoneNumbers)", failureGuard);
 
     expect(releaseCall).toBeGreaterThan(-1);
     expect(failureGuard).toBeGreaterThan(releaseCall);
     expect(localDelete).toBeGreaterThan(failureGuard);
-    expect(source).toContain("releaseTwilioByE164");
-    expect(source).toContain("Carrier number release failed, preserving local ownership row");
+    expect(source).toContain("resolveOwnedTwilioNumberSid");
+    expect(source).toContain("The carrier could not confirm release");
   });
 
   it("makes provisioning compensation strict, truthful, and durable", () => {
-    const source = read("src/lib/phone-provisioning.ts");
+    const source = read("src/lib/voice/native-phone-provisioning.ts");
     const ledger = read("src/lib/orphan-carrier-ledger.ts");
     const retry = read("src/lib/orphan-carrier-retry.ts");
 
-    expect(source).toContain("releaseCarrierOrRecord");
-    expect(source).toContain("recordPendingOrphanCarrierResource");
-    expect(source).toContain("Carrier compensation queued in durable orphan ledger");
+    expect(source).toContain("releasePurchasedNativeNumber");
+    expect(source).toContain("released or queued for cleanup");
     expect(source).not.toContain("catch(() => undefined)");
     expect(ledger).toContain("INSERT INTO public.wireline_orphan_carrier_resources");
     expect(ledger).toContain("ON CONFLICT (former_user_id, phone_number) WHERE status = 'pending'");
-    expect(retry).toContain("number.number === row.phone_number");
-    expect(retry).toContain("vapi_number_id = COALESCE(vapi_number_id, ${carrierId})");
+    expect(retry).toContain("discoverTwilioNumberIdByE164");
+    expect(retry).toContain("releaseCarrierAllocations(");
   });
 
   it("reconciles only telecom defaults that referenced the released line", () => {
-    const source = read("src/lib/phone-provisioning.ts");
-    const localDelete = source.lastIndexOf("tx.delete(schema.phoneNumbers)");
-    const vapiGuard = source.indexOf("settingsRow.vapiPhoneNumberId === carrierId", localDelete);
-    const smsGuard = source.indexOf("settingsRow.twilioSmsFromNumber === phoneNumber", localDelete);
-    const settingsWrite = source.indexOf("tx.update(schema.settings).set(patch)", localDelete);
+    const source = read("src/lib/voice/native-phone-release.ts");
+    const localDelete = source.indexOf(".delete(schema.phoneNumbers)");
+    const smsGuard = source.indexOf("settings?.twilioSmsFromNumber === phoneNumber", localDelete);
+    const settingsWrite = source.indexOf(".update(schema.settings)", smsGuard);
 
     expect(localDelete).toBeGreaterThan(-1);
-    expect(vapiGuard).toBeGreaterThan(localDelete);
-    expect(smsGuard).toBeGreaterThan(vapiGuard);
+    expect(smsGuard).toBeGreaterThan(localDelete);
     expect(settingsWrite).toBeGreaterThan(smsGuard);
-    expect(source).toContain("remainingLines.find(");
-    expect(source).toContain("isVapiPhoneNumberId(line.vapiNumberId)");
+    expect(source).toContain("replacement?.phoneNumber ?? null");
   });
 
   it("hands a failed provider release to the durable orphan ledger before purge", () => {
@@ -219,7 +215,7 @@ describe("carrier teardown integration", () => {
   it("protects reassigned numbers and keeps the retry queue fair", () => {
     const retry = read("src/lib/orphan-carrier-retry.ts");
     const ownerCheck = retry.indexOf("hasCurrentCanonicalOwner(row.phone_number)");
-    const rediscovery = retry.indexOf("number.number === row.phone_number");
+    const rediscovery = retry.indexOf("discoverTwilioNumberIdByE164(row.phone_number)");
     const providerRelease = retry.indexOf("releaseCarrierAllocations(");
 
     expect(ownerCheck).toBeGreaterThan(-1);
@@ -255,20 +251,18 @@ describe("carrier teardown integration", () => {
   });
 
   it("routes user-initiated deletion through strict carrier teardown before the legacy writer", () => {
-    const releaseRoute = read("src/routes/phone-number-release-routes.ts");
+    const releaseRoute = read("src/routes/native-phone-routing-routes.ts");
     const registration = read("src/server/register-api-routes.ts");
-    const strictMount = registration.indexOf("app.use(phoneNumberReleaseRouter)");
-    const broadMount = registration.indexOf("app.use(carrierRouter)");
+    const strictMount = registration.indexOf("app.use(nativePhoneRoutingRouter)");
 
     expect(releaseRoute).toContain('router.delete(\n  "/api/phone-numbers/:id"');
-    expect(releaseRoute).toContain("releaseTenantNumber(req.user.id, owned.phoneNumber)");
+    expect(releaseRoute).toContain("releaseNativeTenantNumber(req.user.id, owned.phoneNumber)");
     expect(releaseRoute).toContain("CARRIER_RELEASE_FAILED");
     expect(releaseRoute).toContain("MAX_POSTGRES_BIGINT");
     expect(releaseRoute).toContain("/^\\d{1,19}$/");
     expect(releaseRoute).toContain("parsed > MAX_POSTGRES_BIGINT");
     expect(releaseRoute).not.toContain("delete(schema.phoneNumbers)");
     expect(strictMount).toBeGreaterThan(-1);
-    expect(broadMount).toBeGreaterThan(strictMount);
   });
 });
 

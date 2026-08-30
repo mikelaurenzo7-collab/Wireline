@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import {
   WIRELINE_CONTACT_AGENTS,
   WIRELINE_DEMO_AGENTS,
@@ -13,37 +12,7 @@ import {
   WIRELINE_PLANS,
   WIRELINE_VOICE_STACK,
 } from "../data/wireline-knowledge";
-import {
-  VAPI_SHOWCASE_MODEL,
-  VAPI_SHOWCASE_PROVIDER,
-  resolveVapiVoiceModelSelection,
-} from "./ai-models";
-import { sanitizePhone } from "./vapi-helpers";
-import { buildVapiServerConfig } from "./vapi-server-config";
-import { resolveVapiSpeechPipeline, type VapiTranscriberMode } from "./voice-agent-profile";
-import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
-
 export type ShowcaseKind = "cs" | "demo";
-
-export const SHOWCASE_WEBHOOK_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/api/vapi-webhook`;
-
-/** Vapi dashboard label — keeps number → assistant names aligned with the catalog. */
-const SHOWCASE_VAPI_LABELS: Record<string, string> = {
-  Sarah: "BotBound Customer Support",
-  Liam: "BotBound Sales",
-  Jordan: "Inbound CS Demo",
-  Ria: "Demo Concierge",
-  Marcus: "Medical Office Intake",
-  Diana: "Law Firm Intake",
-  Aisha: "Real Estate Lead Capture",
-  Elena: "Insurance Claims",
-  Jake: "Outbound SDR",
-};
-
-export function showcaseVapiAssistantName(agent: ContactAgent): string {
-  const label = SHOWCASE_VAPI_LABELS[agent.name] ?? agent.role;
-  return `${agent.name}: ${label}`;
-}
 
 export const SHOWCASE_TOOL_NAMES = [
   "send_signup_link",
@@ -75,8 +44,8 @@ type ShowcaseToolName = (typeof SHOWCASE_TOOL_NAMES)[number];
  *   conversion tools (signup / payment link), which help a
  *   prospect act on their own without ever paging Mike.
  *
- * The handler in routes/vapi/showcase-handlers.ts enforces the same
- * boundary defensively, so even a model that hallucinates an
+ * The generic OpenAI tool authorization boundary enforces the same rule
+ * defensively, so even a model that hallucinates an
  * owner-routing tool on a demo line cannot create an owner task.
  */
 const OWNER_ROUTING_TOOL_NAMES: ReadonlySet<ShowcaseToolName> = new Set([
@@ -342,11 +311,10 @@ const SHOWCASE_DIRECTORY = new Map<string, ShowcaseMatch>([
 ]);
 
 function normalizeShowcasePhone(phoneNumber?: string | null): string | null {
-  const sanitized = sanitizePhone(phoneNumber || "");
-  if (!sanitized) return null;
-
-  const digitsOnly = sanitized.replace(/[^0-9]/g, "");
-  if (sanitized.startsWith("+")) return `+${digitsOnly}`;
+  const raw = String(phoneNumber || "").trim();
+  if (!raw) return null;
+  const digitsOnly = raw.replace(/[^0-9]/g, "");
+  if (raw.startsWith("+")) return `+${digitsOnly}`;
   if (digitsOnly.length === 10) return `+1${digitsOnly}`;
   if (digitsOnly.length === 11 && digitsOnly.startsWith("1")) return `+${digitsOnly}`;
   return digitsOnly ? `+${digitsOnly}` : null;
@@ -695,114 +663,6 @@ export function buildShowcaseFunctionTools(kind: ShowcaseKind) {
   });
 }
 
-export function buildShowcaseAssistantPayload(
-  agent: ContactAgent,
-  kind: ShowcaseKind,
-  options?: {
-    webhookCredentialId?: string;
-    webhookSecret?: string;
-    provider?: string;
-    model?: string;
-    existingVoiceId?: string;
-  },
-) {
-  const voiceSelection = resolveVapiVoiceModelSelection({
-    provider: options?.provider ?? VAPI_SHOWCASE_PROVIDER,
-    model: options?.model ?? VAPI_SHOWCASE_MODEL,
-  });
-
-  const transcriberMode: VapiTranscriberMode = agent.transcriberMode ?? "flux-eot";
-  const speechPipeline = resolveVapiSpeechPipeline(transcriberMode);
-
-  const payload: Record<string, any> = {
-    name: showcaseVapiAssistantName(agent),
-    firstMessage: agent.firstMessage,
-    model: {
-      provider: voiceSelection.provider,
-      model: voiceSelection.model,
-      temperature: 0.1,
-      maxTokens: 300,
-      messages: [{ role: "system", content: buildShowcaseSystemPrompt(agent, kind) }],
-      tools: buildShowcaseFunctionTools(kind),
-      ...(voiceSelection.fallbackModels?.length
-        ? { fallbackModels: voiceSelection.fallbackModels }
-        : {}),
-    },
-    server: buildVapiServerConfig(SHOWCASE_WEBHOOK_URL, {
-      credentialId: options?.webhookCredentialId,
-      secret: options?.webhookSecret,
-    }),
-    responseDelaySeconds: 0,
-    numWordsToInterruptAssistant: 2,
-    backgroundDenoisingEnabled: false,
-    backchannelingEnabled: true,
-    backgroundSound: "office",
-    // The public demo line is the most abusable surface — it was the only
-    // call path without a COGS ceiling after VAPI_MAX_*_CALL_SECONDS landed
-    // on both tenant paths. Ten minutes is generous for a showcase call.
-    maxDurationSeconds: 600,
-    clientMessages: [
-      "transcript",
-      "hang",
-      "function-call",
-      "speech-update",
-      "metadata",
-      "conversation-update",
-    ],
-    serverMessages: ["end-of-call-report", "status-update", "hang", "function-call"],
-    startSpeakingPlan: speechPipeline.startSpeakingPlan,
-    transcriber: speechPipeline.transcriber,
-    analysisPlan: {
-      summaryPrompt:
-        "Summarize this call in 2-3 sentences. Focus on: (1) what the caller wanted, (2) what the agent did, (3) any follow-up the agent committed to.",
-      structuredDataPrompt: "Extract structured data from this call.",
-      structuredDataSchema: {
-        type: "object",
-        properties: {
-          caller_intent: {
-            type: "string",
-            description:
-              "One of: book_appointment, ask_question, complaint, sales_inquiry, support, transfer_request, other",
-          },
-          outcome: {
-            type: "string",
-            description:
-              "One of: resolved, scheduled, transferred, voicemail, unresolved, callback_needed",
-          },
-          commitments: {
-            type: "array",
-            items: { type: "string" },
-            description:
-              "List of any commitments the agent made (e.g., 'will send invoice by 5pm', 'will call back tomorrow')",
-          },
-          sentiment: {
-            type: "string",
-            description: "One of: positive, neutral, negative, frustrated",
-          },
-        },
-      },
-      successEvaluationPrompt:
-        "Did the agent successfully address what the caller wanted? Reply with 'true' or 'false' only.",
-    },
-    metadata: {
-      wireline_transcriber_mode: transcriberMode,
-      wireline_showcase_agent: agent.name,
-    },
-  };
-
-  // All showcase agents use Vapi's curated V2 managed voices,
-  // included at $0.0025/min with lower latency and more natural
-  // conversational quality.
-  const vapiVoiceId = agent.vapiVoiceId || options?.existingVoiceId || "Elliot";
-  payload.voice = {
-    provider: "vapi",
-    voiceId: vapiVoiceId,
-    version: 2,
-  };
-
-  return payload;
-}
-
 export function findShowcaseAgentByPhoneNumber(phoneNumber?: string | null): ShowcaseMatch | null {
   const normalized = normalizeShowcasePhone(phoneNumber);
   if (!normalized) return null;
@@ -854,42 +714,4 @@ export function extractShowcaseCallerNumber(payload: Record<string, unknown>): s
 
 export function findShowcaseAgentByPayload(payload: Record<string, unknown>): ShowcaseMatch | null {
   return findShowcaseAgentByPhoneNumber(extractShowcaseDialedNumber(payload));
-}
-
-/**
- * Bounded refusal assistant returned once the demo line's aggregate daily
- * ceiling (src/lib/showcase-demo-ceiling.ts) is reached. Keeps the caller
- * experience dignified — the line answers, explains, and points at the site —
- * while capping the refused call's COGS to under a minute with no tools, no
- * analysis, and no webhook round-trips.
- */
-export function buildShowcaseAtCapacityAssistant(agent: ContactAgent) {
-  const voiceSelection = resolveVapiVoiceModelSelection({
-    provider: VAPI_SHOWCASE_PROVIDER,
-    model: VAPI_SHOWCASE_MODEL,
-  });
-  return {
-    name: `${showcaseVapiAssistantName(agent)} (at capacity)`,
-    firstMessage:
-      "Hi, you've reached the BotBound demo line. Today's live demo capacity is used up, but it resets tomorrow, and you can hear every Bot anytime at botbound.me. Thanks for calling.",
-    model: {
-      provider: voiceSelection.provider,
-      model: voiceSelection.model,
-      temperature: 0.1,
-      maxTokens: 120,
-      messages: [
-        {
-          role: "system",
-          content:
-            "The demo line has reached today's capacity. If the caller speaks, thank them warmly in one short sentence, mention botbound.me, and end the conversation. Do not run a demo.",
-        },
-      ],
-    },
-    voice: {
-      provider: "vapi",
-      voiceId: agent.vapiVoiceId || "Elliot",
-      version: 2,
-    },
-    maxDurationSeconds: 45,
-  };
 }

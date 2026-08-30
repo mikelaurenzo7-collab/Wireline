@@ -5,25 +5,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getHealthModelTiering } from "../src/lib/health-model-policy";
 import {
   probeOpenAIModelDiagnostic,
-  probeXAIControlPlaneDiagnostic,
+  probeOpenAIRealtimeControlPlaneDiagnostic,
 } from "../src/lib/health-model-probe";
 import { STRUCTURED_PRIMARY_MODEL } from "../src/lib/ai-models";
-import { GROK_VOICE_DEFAULT_MODEL } from "../src/lib/voice/grok-voice-config";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../src/lib/voice/openai-realtime-config";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 const originalOpenAiKey = process.env.OPENAI_API_KEY;
-const originalXaiKey = process.env.XAI_API_KEY;
 
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   if (originalOpenAiKey === undefined) delete process.env.OPENAI_API_KEY;
   else process.env.OPENAI_API_KEY = originalOpenAiKey;
-  if (originalXaiKey === undefined) delete process.env.XAI_API_KEY;
-  else process.env.XAI_API_KEY = originalXaiKey;
 });
 
 describe("health surfaces contract", () => {
@@ -96,8 +92,8 @@ describe("health surfaces contract", () => {
     expect(routeSource).not.toContain("PUBLIC_PROBE_TTL_MS");
     expect(routeSource).not.toContain("computePublicHealth");
     expect(routeSource).toContain("probeOpenAIModelDiagnostic");
-    expect(routeSource).toContain("probeXAIControlPlaneDiagnostic");
-    expect(routeSource).toContain("GROK_VOICE_DEFAULT_MODEL");
+    expect(routeSource).toContain("probeOpenAIRealtimeControlPlaneDiagnostic");
+    expect(routeSource).toContain("OPENAI_REALTIME_DEFAULT_MODEL");
     // /models drives a live xAI control-plane GET plus one OpenAI Responses
     // probe per request, so it must never be reachable by an arbitrary
     // authenticated tenant: monitor token for ops, platform admin for humans
@@ -121,12 +117,12 @@ describe("health surfaces contract", () => {
   it("derives authenticated model/provider health from canonical runtime policy", () => {
     const tiering = getHealthModelTiering();
     expect(tiering.voice_runtime).toMatchObject({
-      provider: "xai",
-      model: GROK_VOICE_DEFAULT_MODEL,
+      provider: "openai_realtime",
+      model: OPENAI_REALTIME_DEFAULT_MODEL,
     });
     expect(tiering.voice_fallback).toMatchObject({
-      provider: "openai",
-      model: OPENAI_REALTIME_DEFAULT_MODEL,
+      provider: "none",
+      model: null,
     });
     expect(tiering.reasoning_layer).toMatchObject({
       provider: "openai",
@@ -139,8 +135,10 @@ describe("health surfaces contract", () => {
 
     const routeSource = read("src/routes/health-routes.ts");
     expect(routeSource).toContain("llm_tiering: getHealthModelTiering()");
-    expect(routeSource).toContain("voice_agent_model: GROK_VOICE_DEFAULT_MODEL");
-    expect(routeSource).toContain("probeXAIControlPlaneDiagnostic(GROK_VOICE_DEFAULT_MODEL)");
+    expect(routeSource).toContain("voice_agent_model: OPENAI_REALTIME_DEFAULT_MODEL");
+    expect(routeSource).toContain(
+      "probeOpenAIRealtimeControlPlaneDiagnostic(OPENAI_REALTIME_DEFAULT_MODEL)",
+    );
     expect(routeSource).not.toMatch(/voice_fallback:\s*\{\s*provider:\s*"google"/);
   });
 
@@ -194,22 +192,22 @@ describe("health surfaces contract", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("does not call xAI when the diagnostic key is absent", async () => {
-    delete process.env.XAI_API_KEY;
+  it("does not call OpenAI Realtime when the diagnostic key is absent", async () => {
+    delete process.env.OPENAI_API_KEY;
     const fetchImpl = vi.fn() as unknown as typeof fetch;
 
-    await expect(probeXAIControlPlaneDiagnostic("test-model", 25, fetchImpl)).resolves.toMatchObject(
-      {
-        ok: false,
-        model: "test-model",
-        error: "XAI_API_KEY not configured",
-      },
-    );
+    await expect(
+      probeOpenAIRealtimeControlPlaneDiagnostic("test-model", 25, fetchImpl),
+    ).resolves.toMatchObject({
+      ok: false,
+      model: "test-model",
+      error: "OPENAI_API_KEY not configured",
+    });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it("aborts the xAI control-plane diagnostic at the hard deadline", async () => {
-    process.env.XAI_API_KEY = "test-xai-key";
+  it("aborts the OpenAI Realtime control-plane diagnostic at the hard deadline", async () => {
+    process.env.OPENAI_API_KEY = "test-openai-key";
     vi.useFakeTimers();
     let signal: AbortSignal | undefined;
     const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
@@ -219,7 +217,7 @@ describe("health surfaces contract", () => {
       });
     }) as unknown as typeof fetch;
 
-    const pending = probeXAIControlPlaneDiagnostic("test-model", 50, fetchImpl);
+    const pending = probeOpenAIRealtimeControlPlaneDiagnostic("test-model", 50, fetchImpl);
     await vi.advanceTimersByTimeAsync(50);
 
     await expect(pending).resolves.toMatchObject({

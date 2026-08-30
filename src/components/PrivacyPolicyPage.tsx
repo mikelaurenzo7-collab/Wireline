@@ -221,10 +221,10 @@ export default function PrivacyPolicyPage() {
           <Section title="3. How We Use Data">
             <p>
               We use data to provide and secure BotBound; process managed structured AI requests
-              primarily through <strong>OpenAI</strong>, with Vercel AI Gateway,{" "}
-              <strong>xAI</strong>, and <strong>Google Gemini</strong> as governed continuity
-              routes; run live phone conversations over Twilio PSTN and <strong>xAI</strong> Direct
-              SIP Speech-to-Speech; synthesize authorized voice output through ElevenLabs; route
+              primarily through <strong>OpenAI</strong>, with Vercel AI Gateway and{" "}
+              <strong>Google Gemini</strong> as governed structured continuity routes; run live
+              phone conversations through OpenAI Realtime over Twilio PSTN and SIP; create
+              authorized studio voice proofs through ElevenLabs; route
               calls and messages; execute connected workflows; provide support; prevent fraud and
               abuse; bill through Stripe; and understand aggregate product performance.
             </p>
@@ -252,20 +252,12 @@ export default function PrivacyPolicyPage() {
                 <strong>Twilio</strong>: PSTN calls, phone numbers, and SMS
               </li>
               <li>
-                <strong>OpenAI</strong>: Primary managed structured inference and Studio/ChatGPT
-                realtime browser voice
+                <strong>OpenAI</strong>: Primary managed structured inference and Realtime browser
+                and phone conversations
               </li>
               <li>
-                <strong>xAI</strong>: Optional structured continuity (Grok 4.6) and live phone
-                conversation over Direct SIP Speech-to-Speech
-              </li>
-              <li>
-                <strong>Vapi</strong>: Optional rollback and public-showcase PSTN only; not the
-                production phone runtime
-              </li>
-              <li>
-                <strong>ElevenLabs</strong>: Managed text-to-speech, authorized private voice-model
-                creation, quality proofs, and voice-model deletion
+                <strong>ElevenLabs</strong>: Authorized private studio voice creation, quality
+                proofs, and voice-model deletion; not the live phone runtime
               </li>
               <li>
                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search

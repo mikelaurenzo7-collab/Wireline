@@ -15,7 +15,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  *   the PDF route had no rate limit at all.
  * - Free/trial tenants had no spendBudgets row, so enforceSpendCap passed
  *   everything while the usage UI displayed a fictional "hard cap".
- * - Realtime simulation sessions (Grok + OpenAI) minted vendor-metered
+ * - OpenAI Realtime simulation sessions minted vendor-metered
  *   secrets with only a per-minute rate limit — no daily aggregate.
  * - Inbound calls for insolvent tenants ran the full assistant unbounded.
  */
@@ -227,7 +227,6 @@ describe("AI cost-protection contract", () => {
       expect(Number(declaration.split(":")[1])).toBeGreaterThan(0);
     }
     expect(quotas).toContain('"simulation_minutes_daily",');
-    expect(read("src/routes/grok-voice-routes.ts")).toContain("simulationMinuteQuota");
     expect(read("src/routes/openai-realtime-routes.ts")).toContain("simulationMinuteQuota");
 
     // Every session creates vendor-metered Realtime audio on platform
@@ -263,10 +262,7 @@ describe("AI cost-protection contract", () => {
     // respect the tenant AI-spend hard cap and (b) land a platform cost reserve
     // in the envelope — otherwise a tenant 402'd on text AI keeps minting voice
     // as invisible COGS.
-    for (const path of [
-      "src/routes/openai-realtime-routes.ts",
-      "src/routes/grok-voice-routes.ts",
-    ]) {
+    for (const path of ["src/routes/openai-realtime-routes.ts"]) {
       const route = read(path);
       expect(route, path).toContain("enforceSpendCap");
       expect(route, path).toContain("reserveRealtimeSessionSpend");
@@ -350,38 +346,21 @@ describe("AI cost-protection contract", () => {
   });
 
   it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
-    const webhook = read("src/routes/vapi-v2.ts");
-    expect(webhook).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
-    expect(webhook).toContain("getVoiceWalletSnapshot");
+    const admission = read("src/lib/voice/native-inbound-admission.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
+    expect(admission).toContain("getVoiceWalletSnapshot");
     // Inbound must also read the daily minute ceiling settlement increments:
     // without it, only OUTBOUND consulted voice_minutes_daily, and a flooded
     // or farmed number ran the full assistant all day on grace debt alone.
-    expect(webhook).toContain('checkAndIncrement(agent.user_id, "voice_minutes_daily", 0)');
-    const dailyGate = webhook.slice(webhook.indexOf('"voice_minutes_daily", 0)'));
-    expect(dailyGate.slice(0, 900)).toContain("buildDurableTakeMessageAssistant");
-    // The fallback answers the same tenant line as the full assistant, so it
-    // must receive that agent's compliance posture and business identity.
-    expect(webhook).toMatch(
-      /buildDurableTakeMessageAssistant\(\s*webhookAgentId,\s*agentVoiceName,\s*agentComplianceMode,\s*userSettings\?\.businessName,\s*\)/,
+    expect(admission).toContain('"voice_minutes_daily",');
+    expect(admission).toContain('return { mode: "take_message", reason: "daily_minutes" }');
+    expect(session).toContain(
+      'admissionMode !== "take_message" || call.name === "create_followup_task"',
     );
-
-    const helperStart = webhook.indexOf("function buildDurableTakeMessageAssistant");
-    const routeStart = webhook.indexOf('router.post("/api/vapi-webhook"');
-    const helper = webhook.slice(helperStart, routeStart);
-    expect(helper).toContain("maxDurationSeconds: 300");
-    // The degraded assistant must inherit the same privacy-first artifact
-    // policy as the full tenant assistant: transcript/log evidence without
-    // full-call audio, video, or packet capture.
-    expect(helper).toContain("buildVapiTranscriptOnlyArtifactPlan()");
-    expect(helper).toContain("artifactPlan,");
-    expect(helper).toContain("recordingEnabled: artifactPlan.recordingEnabled");
-    expect(helper).toContain("complianceFirstMessagePrefix(");
-    expect(helper).toContain("firstMessage: `${disclosurePrefix}");
-    expect(helper).toContain('name: "create_followup_task"');
-    expect(helper).toContain(
-      "Promise follow-up only if the result explicitly confirms the task was created",
-    );
-    expect(helper).toContain("promise follow-up only if the tool explicitly confirms creation");
-    expect(helper).not.toContain("book_appointment");
+    expect(session).toContain('admissionMode === "take_message"');
+    expect(session).toContain("? 300_000");
+    expect(session).toContain("dispatchAgentToolCall(");
+    expect(session).not.toMatch(/Vapi|xAI|Grok/);
   });
 });

@@ -56,20 +56,18 @@ export async function probeOpenAIModelDiagnostic(
 }
 
 /**
- * Authenticated xAI control-plane GET used by `/api/health/models` voice_runtime.
- * Same catalog surface as public health and SIP registration. Does not mint a
- * session or create inference. Chat and voice share `XAI_API_KEY`; this probe
- * is not a second credential.
+ * Authenticated OpenAI control-plane GET used by `/api/health/models` for the
+ * Realtime voice runtime. It verifies model visibility without creating a call.
  */
-export async function probeXAIControlPlaneDiagnostic(
+export async function probeOpenAIRealtimeControlPlaneDiagnostic(
   model: string,
   timeoutMs = 8000,
   fetchImpl: typeof fetch = fetch,
 ): Promise<HealthModelProbeResult> {
   const started = Date.now();
-  const key = process.env.XAI_API_KEY?.trim();
+  const key = process.env.OPENAI_API_KEY?.trim();
   if (!key) {
-    return { ok: false, latency_ms: 0, model, error: "XAI_API_KEY not configured" };
+    return { ok: false, latency_ms: 0, model, error: "OPENAI_API_KEY not configured" };
   }
 
   const controller = new AbortController();
@@ -79,12 +77,15 @@ export async function probeXAIControlPlaneDiagnostic(
   );
 
   try {
-    const response = await fetchImpl("https://api.x.ai/v1/models", {
+    const response = await fetchImpl(
+      `https://api.openai.com/v1/models/${encodeURIComponent(model)}`,
+      {
       method: "GET",
       headers: { Authorization: `Bearer ${key}` },
       signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`xAI control-plane probe failed (${response.status})`);
+      },
+    );
+    if (!response.ok) throw new Error(`OpenAI Realtime model probe failed (${response.status})`);
     return { ok: true, latency_ms: Date.now() - started, model };
   } catch (error) {
     return {

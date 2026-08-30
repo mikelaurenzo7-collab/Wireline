@@ -144,12 +144,9 @@ const agentmailHeaders = agentmailCredential
   : null;
 
 const [
-  xai,
   openai,
   gemini,
   gateway,
-  vapiPhones,
-  vapiAssistants,
   twilioAccount,
   twilioBalance,
   twilioNumbers,
@@ -168,11 +165,6 @@ const [
   elevenlabs,
   elevenlabsVoices,
 ] = await Promise.all([
-  present("XAI_API_KEY")
-    ? readJson("https://api.x.ai/v1/models", {
-        headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}` },
-      })
-    : null,
   present("OPENAI_API_KEY")
     ? readJson("https://api.openai.com/v1/models", {
         headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
@@ -186,16 +178,6 @@ const [
   gatewayCredential
     ? readJson("https://ai-gateway.vercel.sh/v1/models", {
         headers: { Authorization: `Bearer ${gatewayCredential}` },
-      })
-    : null,
-  present("VAPI_PRIVATE_KEY")
-    ? readJson("https://api.vapi.ai/phone-number?limit=100", {
-        headers: { Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}` },
-      })
-    : null,
-  present("VAPI_PRIVATE_KEY")
-    ? readJson("https://api.vapi.ai/assistant?limit=1", {
-        headers: { Authorization: `Bearer ${process.env.VAPI_PRIVATE_KEY}` },
       })
     : null,
   twilioConfigured
@@ -290,8 +272,12 @@ const openaiModelIds = new Set(
 const openaiStructuredModelReady = openai?.ok && openaiModelIds.has("gpt-5.6-terra");
 const openaiRealtimeModelReady = openai?.ok && openaiModelIds.has("gpt-realtime-2.1");
 const openaiTranscriberReady = openai?.ok && openaiModelIds.has("gpt-4o-mini-transcribe");
+const openaiSipConfigured = present("OPENAI_PROJECT_ID") && present("OPENAI_WEBHOOK_SECRET");
 const openaiRuntimeReady =
-  openaiStructuredModelReady && openaiRealtimeModelReady && openaiTranscriberReady;
+  openaiStructuredModelReady &&
+  openaiRealtimeModelReady &&
+  openaiTranscriberReady &&
+  openaiSipConfigured;
 
 record(
   "openai",
@@ -300,7 +286,7 @@ record(
   openaiRuntimeReady
     ? "OpenAI key accepted and the required structured, realtime, and transcription models are available."
     : openai?.ok
-      ? "OpenAI key accepted, but one or more required structured, realtime, or transcription models are unavailable."
+      ? "OpenAI key accepted, but a required model or the Realtime SIP project/webhook configuration is unavailable."
       : "OpenAI key missing or rejected.",
   "Keep a payment method, project budget, and usage alerts enabled.",
   {
@@ -310,6 +296,8 @@ record(
     realtime_model_available: openaiRealtimeModelReady,
     transcriber_model: "gpt-4o-mini-transcribe",
     transcriber_model_available: openaiTranscriberReady,
+    sip_project_configured: present("OPENAI_PROJECT_ID"),
+    signed_webhook_configured: present("OPENAI_WEBHOOK_SECRET"),
   },
 );
 record(
@@ -331,28 +319,10 @@ record(
   "Set an API-key budget and alerting; add credits or auto-top-up before scale.",
 );
 
-record(
-  "xai",
-  true,
-  xai?.ok ? "ready" : "blocked",
-  xai?.ok
-    ? "xAI key accepted; native grok-voice-think-fast-2.0 SIP and optional Grok 4.6 continuity are reachable."
-    : "xAI key missing or rejected; native PSTN cannot launch.",
-  "Fund grok-voice-think-fast-2.0 for native SIP Speech-to-Speech. Set WIRELINE_ENABLE_XAI_STRUCTURED_FALLBACK=false only to opt the Grok 4.6 structured continuity lane out.",
-  {
-    structured_continuity_model: "grok-4.6",
-    native_sip_model: "grok-voice-think-fast-2.0",
-    xai_role: "native_pstn_and_optional_structured_continuity",
-  },
-);
-
 // Core studio voices the runtime hard-requires (mirror of
 // ELEVENLABS_CORE_VOICE_IDS in src/lib/voice-catalog.ts). Verified present
-// 2026-08-07. The broader ELEVENLABS_CURATED_VOICES catalog is intentionally
-// best-effort: each of its voices carries a Vapi fallback in
-// buildManagedVoiceRuntime, so a library rotation degrades one voice rather
-// than blocking launch. The gate therefore requires only the core set and
-// reports how much of the studio catalog the account can currently serve.
+// 2026-08-07. ElevenLabs is studio-only; it never gates OpenAI phone calls.
+// The gate requires the core preview catalog and reports the current inventory.
 const coreElevenLabsVoiceIds = new Set([
   "EXAVITQu4vr4xnSDxMaL",
   "cgSgspJ2msm6clMCkdW9",
@@ -383,7 +353,7 @@ record(
     : elevenlabs?.ok && elevenlabsVoices?.ok
       ? `ElevenLabs key accepted, but core studio voices are unavailable: ${missingCoreVoices.join(", ")}.`
       : "ElevenLabs managed voice credential missing, rejected, or voice inventory unavailable.",
-  "Keep provider billing and usage alerts active; confirm the ElevenLabs key in Vapi Integrations and prove one fallback call before GA.",
+  "Keep provider billing and usage alerts active; verify one studio preview and one cloning lifecycle before GA.",
   elevenlabs?.ok
     ? {
         character_count: elevenlabs.body?.character_count ?? null,
@@ -393,27 +363,9 @@ record(
         core_voice_count: [...coreElevenLabsVoiceIds].filter((id) =>
           availableElevenLabsVoiceIds.has(id),
         ).length,
-        runtime_model: "eleven_flash_v2_5",
+        studio_model: "eleven_flash_v2_5",
       }
     : undefined,
-);
-
-const vapiPhoneInventory = arrayAt(vapiPhones?.body, "data");
-const vapiAssistantInventory = arrayAt(vapiAssistants?.body, "data");
-const vapiReady = Boolean(vapiPhones?.ok && vapiAssistants?.ok && vapiPhoneInventory.length > 0);
-record(
-  "vapi",
-  false,
-  vapiReady ? "ready" : "degraded",
-  vapiPhones?.ok && vapiAssistants?.ok
-    ? `Rollback Vapi key accepted; ${vapiPhoneInventory.length} phone number(s) reachable and assistant API accepted.`
-    : "Vapi rollback credentials missing or inventory APIs unavailable — not a launch GO blocker.",
-  "Native PSTN uses Twilio + xAI Direct SIP. Keep Vapi only if a certified rollback window is still required.",
-  {
-    phone_number_count: vapiPhoneInventory.length,
-    assistant_sample_count: vapiAssistantInventory.length,
-    role: "rollback_only",
-  },
 );
 
 const twilioAccountReady = Boolean(twilioAccount?.ok && twilioAccount.body?.status === "active");
@@ -423,6 +375,11 @@ const voiceCapableNumbers = twilioIncomingNumbers.filter(
 );
 const smsCapableNumbers = twilioIncomingNumbers.filter(
   (number) => number?.capabilities?.sms === true,
+);
+const openAIInboundNumbers = voiceCapableNumbers.filter(
+  (number) =>
+    typeof number?.voice_url === "string" &&
+    number.voice_url.includes("/api/twilio-webhook/openai-inbound"),
 );
 const twilioServices = arrayAt(twilioMessagingServices?.body, "services");
 const whatsappSenders = arrayAt(twilioWhatsappSenders?.body, "senders");
@@ -443,6 +400,7 @@ const twilioVoiceSmsReady = Boolean(
   twilioAccountReady &&
   twilioFunded &&
   voiceCapableNumbers.length > 0 &&
+  openAIInboundNumbers.length === voiceCapableNumbers.length &&
   (smsCapableNumbers.length > 0 || twilioServices.length > 0),
 );
 record(
@@ -454,18 +412,19 @@ record(
         twilioBalance?.ok
           ? `; reported balance ${twilioBalance.body.balance} ${twilioBalance.body.currency}`
           : ""
-      }; ${voiceCapableNumbers.length} voice-capable number(s), ${smsCapableNumbers.length} SMS-capable number(s), and ${twilioServices.length} Messaging Service(s).`
+      }; ${voiceCapableNumbers.length} voice-capable number(s), ${openAIInboundNumbers.length} routed to OpenAI Realtime, ${smsCapableNumbers.length} SMS-capable number(s), and ${twilioServices.length} Messaging Service(s).`
     : `Twilio credentials missing or rejected${twilioAccount ? ` (HTTP ${twilioAccount.status})` : ""}.`,
   twilioVoiceSmsReady
     ? "Keep the paid account and payment method current; configure Usage Triggers and sender webhooks."
     : twilioAccountReady && !twilioFunded
       ? "Restore a positive Twilio balance and successful recharge posture before launch."
-      : "Restore valid credentials and provision at least one voice-capable number plus an SMS sender or Messaging Service.",
+      : "Restore valid credentials, route every voice number to the signed OpenAI inbound webhook, and provision an SMS sender or Messaging Service.",
   {
     balance_usd: twilioBalance?.ok && Number.isFinite(twilioBalanceUsd) ? twilioBalanceUsd : null,
     balance_positive: twilioFunded,
     incoming_number_count: twilioIncomingNumbers.length,
     voice_capable_number_count: voiceCapableNumbers.length,
+    openai_inbound_number_count: openAIInboundNumbers.length,
     sms_capable_number_count: smsCapableNumbers.length,
     messaging_service_count: twilioServices.length,
   },

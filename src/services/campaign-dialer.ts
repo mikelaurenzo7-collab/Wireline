@@ -52,7 +52,7 @@ function record(value: unknown): Record<string, unknown> {
 }
 
 /** Merge campaign diagnostics onto the latest row without erasing native voice
- * correlation written concurrently by Twilio or xAI webhooks. */
+ * correlation written concurrently by Twilio or OpenAI webhooks. */
 async function updateLeadAfterPlacementFailure(input: {
   leadId: bigint;
   userId: string;
@@ -63,7 +63,7 @@ async function updateLeadAfterPlacementFailure(input: {
 }) {
   await drizzle.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(input.leadId)}`}))`,
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
     );
     const [current] = await tx
       .select({ metadata: schema.outboundLeads.metadata })
@@ -260,7 +260,7 @@ export class CampaignDialerService {
       return;
     }
 
-    // Native xAI attachment moves an answered lead from Dialing to Connected
+    // OpenAI SIP attachment moves an answered lead from Dialing to Connected
     // before the conversation ends. Both states are in flight; completing the
     // campaign while a Connected call is still running would strand a retry or
     // post-call disposition created moments later.

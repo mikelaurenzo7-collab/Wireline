@@ -1,34 +1,10 @@
 /**
  * BotBound model policy.
  *
- * These are different xAI products and must not be collapsed into one id:
- *
- * - **Structured reasoning** uses the OpenAI Responses API model
- *   `gpt-5.6-terra` by default. xAI Grok 4.6 remains an optional continuity
- *   lane; neither structured model is a live-voice model.
- * - **Live PSTN** uses Twilio Elastic SIP plus xAI Direct SIP Speech-to-Speech
- *   (`grok-voice-think-fast-2.0`, Eve/Ara/Rex/Sal/Leo). Chat and voice share
- *   one `XAI_API_KEY`; they are different models, not different credentials.
- * - **Vapi rollback** can use Vapi's published xAI *language* models
- *   `grok-4.3`, `grok-4.20-0309-reasoning`, and `grok-4.20-0309-non-reasoning`.
- *   Grok 4.6 is not in that catalog. That path is not the launch runtime.
- * - **Studio browser tests** use OpenAI Realtime over WebRTC. This browser
- *   path is deliberately independent from the production PSTN lane.
- * - **Imagine** image and video models exist at xAI. Wireline does not
- *   generate those files: they include a Grok watermark that cannot be
- *   turned off. That is not Grok Bot, not live PSTN, and not a priced
- *   runtime model in this catalog.
- *
- * `reasoning-provider-policy.ts` owns structured eligibility and ordering:
- * OpenAI first, then the governed Gateway, xAI, and Gemini continuity lanes.
+ * Structured reasoning uses OpenAI first, then the governed AI Gateway and
+ * Gemini continuity lane. Every browser and PSTN voice session uses OpenAI
+ * Realtime; Twilio is the carrier, number, and SMS provider.
  */
-export const XAI_MODELS = {
-  GROK_4_6: "grok-4.6",
-  GROK_4_5: "grok-4.5",
-  // Vapi's documented live-call xAI language model (non-reasoning).
-  GROK_4_3: "grok-4.3",
-} as const;
-
 export const OPENAI_MODELS = {
   GPT_5_6_TERRA: "gpt-5.6-terra",
   GPT_5_6_LUNA: "gpt-5.6-luna",
@@ -48,9 +24,6 @@ export const GEMINI_MODELS = {
   PRO_3_1: "gemini-3.1-pro-preview",
 } as const;
 
-/** Optional structured continuity model through the direct xAI Responses API. */
-export const XAI_STRUCTURED_PRIMARY_MODEL =
-  process.env.WIRELINE_XAI_STRUCTURED_MODEL?.trim() || XAI_MODELS.GROK_4_6;
 /** Managed structured default through the direct OpenAI Responses API. */
 export const OPENAI_STRUCTURED_PRIMARY_MODEL =
   process.env.WIRELINE_OPENAI_STRUCTURED_MODEL?.trim() || OPENAI_MODELS.GPT_5_6_TERRA;
@@ -61,170 +34,16 @@ export const GEMINI_STRUCTURED_FALLBACK_MODEL =
 /** The managed structured default the runtime asks for first. */
 export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL;
 
-export type VapiVoiceProvider = "xai" | "google" | "openai";
-export type VoiceModelSpeed = "fastest" | "fast" | "balanced" | "heavy";
-
-export interface VapiVoiceModelSelection {
-  provider: VapiVoiceProvider;
-  model: string;
-  fallbackModels?: string[];
-  userSelected?: boolean;
-}
-
-export interface VoiceModelOption {
-  provider: VapiVoiceProvider;
-  model: string;
-  label: string;
-  speed: VoiceModelSpeed;
-  envKey: string;
-  latencyWarning?: boolean;
-  note?: string;
-  acceptsCustomModelId?: boolean;
-}
-
-/**
- * Workspace `voice_llm_*` settings feed the rollback-only Vapi assistant
- * payload. They are not the structured-runtime policy and must therefore use
- * a provider/model pair supported by Vapi's voice-language-model catalog.
- */
-export const VAPI_TENANT_DEFAULT_PROVIDER = "openai" as const;
-export const VAPI_SHOWCASE_PROVIDER = "xai" as const;
-/** Vapi's published xAI live-call language model. Not Grok 4.6. */
-export const VAPI_TENANT_DEFAULT_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_SHOWCASE_MODEL = XAI_MODELS.GROK_4_3;
-export const VAPI_PREMIUM_MODEL = XAI_MODELS.GROK_4_3;
-/**
- * Same-provider Grok id from Vapi's published xAI catalog.
- * Do not send this as `model.fallbackModels` on `provider: "xai"` — Vapi's
- * XaiModel DTO rejects the property. Continuity is application retry to OpenAI.
- */
-export const VAPI_XAI_FALLBACK_MODEL = "grok-4.20-0309-non-reasoning";
-/** Same-provider fallback accepted by Vapi's OpenAI model schema. */
-export const VAPI_OPENAI_FALLBACK_MODEL = OPENAI_MODELS.GPT_5_6_LUNA;
-/** Cross-provider retry is performed by Wireline after a rejected xAI or Gemini request. */
-export const VAPI_VOICE_FALLBACK_PROVIDER = "openai" as const;
-export const VAPI_VOICE_FALLBACK_MODEL = OPENAI_MODELS.GPT_4O;
-export const VAPI_DEFAULT_FALLBACK_MODELS: readonly string[] = [];
+export const LIVE_VOICE_PROVIDER = "openai" as const;
+export const LIVE_VOICE_MODEL = "gpt-realtime-2.1" as const;
 
 export function isOpenAIModelId(value: unknown): value is string {
   return typeof value === "string" && /^gpt-[a-z0-9._-]+$/i.test(value.trim());
 }
 
-export function isXAIModelId(value: unknown): value is string {
-  return typeof value === "string" && /grok/i.test(value.trim());
-}
-
 export function isGeminiModelId(value: unknown): value is string {
   return typeof value === "string" && value.trim().toLowerCase().includes("gemini");
 }
-
-/**
- * Cross-provider call creation is non-idempotent, so fallback is allowed only
- * when Vapi definitively rejected the selected model/provider before dialing.
- * Do not treat unrelated 400s, throttles, or provider 5xx responses as safe.
- */
-export function isDefinitiveVapiVoiceModelRejection(status: number, body: string): boolean {
-  if (status !== 400 && status !== 422) return false;
-  const detail = body.toLowerCase();
-  const directRejection =
-    /\b(?:invalid|unsupported|unknown|unrecognized)\s+(?:voice\s+)?(?:model|provider)\b/i;
-  const namedRejection =
-    /\b(?:model|provider)\b[^\r\n.!?]{0,64}\b(?:is\s+)?(?:invalid|unsupported|not\s+supported|not\s+found|unknown|unrecognized|does\s+not\s+exist|must\s+be\s+one\s+of)\b/i;
-  return directRejection.test(detail) || namedRejection.test(detail);
-}
-
-export function resolveVapiVoiceModelSelection(input?: {
-  provider?: string | null;
-  model?: string | null;
-}): VapiVoiceModelSelection {
-  const provider = String(input?.provider || "")
-    .trim()
-    .toLowerCase();
-  const model = String(input?.model || "").trim();
-  if (provider === "google" && isGeminiModelId(model))
-    return {
-      provider: "google",
-      model,
-      // Vapi requires fallbackModels to belong to the selected provider. The
-      // existing application-level retry in vapi-client handles Google → OpenAI
-      // after a rejected request, so do not encode a cross-provider fallback in
-      // the provider payload.
-      userSelected: true,
-    };
-  if ((provider === "xai" || provider === "") && isXAIModelId(model))
-    return {
-      provider: "xai",
-      model,
-      userSelected: provider === "xai",
-    };
-  if (provider === "openai" && isOpenAIModelId(model))
-    return {
-      provider: "openai",
-      model,
-      fallbackModels:
-        model === VAPI_OPENAI_FALLBACK_MODEL ? undefined : [VAPI_OPENAI_FALLBACK_MODEL],
-      userSelected: false,
-    };
-  return {
-    provider: VAPI_TENANT_DEFAULT_PROVIDER,
-    model: VAPI_TENANT_DEFAULT_MODEL,
-    userSelected: false,
-  };
-}
-
-/**
- * Resolve the voice brain as a COHERENT (provider, model) pair.
- *
- * `llmProvider`/`llmModel` (agent) and `voiceLlmProvider`/`voiceLlmModel`
- * (tenant) are independently-nullable columns. Resolving provider and model
- * through separate `||` chains can cross sources — e.g. an agent that set only
- * `llmProvider="openai"` combined with a tenant `voiceLlmModel="gemini-…"`
- * yields the incoherent pair openai+gemini, which `resolveVapiVoiceModelSelection`
- * then collapses to the default gpt-4o, silently discarding the tenant's chosen
- * Gemini model. Only a COMPLETE pair (both fields set) is used, agent first,
- * tenant second, else the managed default.
- */
-export function resolveCoherentVoiceModel(
-  agent: { llmProvider?: string | null; llmModel?: string | null } | null | undefined,
-  tenant: { voiceLlmProvider?: string | null; voiceLlmModel?: string | null } | null | undefined,
-): VapiVoiceModelSelection {
-  const agentPair =
-    agent?.llmProvider && agent?.llmModel
-      ? { provider: agent.llmProvider, model: agent.llmModel }
-      : null;
-  const tenantPair =
-    tenant?.voiceLlmProvider && tenant?.voiceLlmModel
-      ? { provider: tenant.voiceLlmProvider, model: tenant.voiceLlmModel }
-      : null;
-  return resolveVapiVoiceModelSelection(agentPair || tenantPair || undefined);
-}
-
-export const VOICE_MODEL_CATALOG: readonly VoiceModelOption[] = [
-  {
-    provider: "xai",
-    model: XAI_MODELS.GROK_4_3,
-    label: "Grok 4.3",
-    speed: "fast",
-    envKey: "XAI_API_KEY",
-    note: "Supported Vapi rollback option. Vapi's XaiModel DTO does not accept fallbackModels; OpenAI retries at the application layer. Structured xAI continuity uses Grok 4.6 on the xAI API, not this id.",
-  },
-  {
-    provider: "openai",
-    model: OPENAI_MODELS.GPT_4O,
-    label: "OpenAI GPT-4o",
-    speed: "fast",
-    envKey: "OPENAI_API_KEY",
-    note: "Vapi rollback default and Studio Realtime provider. Vapi retries through a same-provider OpenAI fallback.",
-  },
-  {
-    provider: "google",
-    model: GEMINI_MODELS.FLASH_3_5,
-    label: "Gemini Flash",
-    speed: "fastest",
-    envKey: "GEMINI_API_KEY",
-    note: "Native alternative. A rejected Gemini request is retried by BotBound through OpenAI.",
-  },
-] as const;
 
 export function clampVoiceTemperature(value: unknown, fallback: number): number {
   if (value == null) return fallback;
@@ -245,14 +64,6 @@ export interface ModelPricingRow {
  * GPT-5.6 cache writes are billed at 1.25x the uncached input rate.
  */
 export const MODEL_PRICING = {
-  [XAI_MODELS.GROK_4_6]: { input: 2, output: 6, cacheRead: 0.5, cacheWrite: 0 },
-  [XAI_MODELS.GROK_4_5]: { input: 2, output: 6, cacheRead: 0.3, cacheWrite: 0 },
-  [XAI_MODELS.GROK_4_3]: {
-    input: 1.25,
-    output: 2.5,
-    cacheRead: 0.2,
-    cacheWrite: 0,
-  },
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     input: 2.5,
     output: 15,
@@ -353,21 +164,6 @@ const MODEL_LONG_CONTEXT_PRICING: Partial<Record<keyof typeof MODEL_PRICING, Lon
     inclusive: false,
     rates: { input: 10, output: 45, cacheRead: 1, cacheWrite: 12.5 },
   },
-  [XAI_MODELS.GROK_4_6]: {
-    thresholdTokens: 200_000,
-    inclusive: true,
-    rates: { input: 4, output: 12, cacheRead: 1, cacheWrite: 0 },
-  },
-  [XAI_MODELS.GROK_4_5]: {
-    thresholdTokens: 200_000,
-    inclusive: true,
-    rates: { input: 4, output: 12, cacheRead: 0.6, cacheWrite: 0 },
-  },
-  [XAI_MODELS.GROK_4_3]: {
-    thresholdTokens: 200_000,
-    inclusive: true,
-    rates: { input: 2.5, output: 5, cacheRead: 0.4, cacheWrite: 0 },
-  },
   [GEMINI_MODELS.PRO_3_1]: {
     thresholdTokens: 200_000,
     inclusive: false,
@@ -405,13 +201,9 @@ export function modelLabel(model: string): string {
   if (model === OPENAI_MODELS.GPT_5_6_TERRA) return "GPT-5.6 Terra";
   if (model === OPENAI_MODELS.GPT_5_6_LUNA) return "GPT-5.6 Luna";
   if (model === OPENAI_MODELS.GPT_5_6_SOL) return "GPT-5.6 Sol";
-  if (model === XAI_MODELS.GROK_4_6) return "Grok 4.6";
-  if (model === XAI_MODELS.GROK_4_5) return "Grok 4.5";
-  if (model === XAI_MODELS.GROK_4_3) return "Grok 4.3";
   if (model === OPENAI_MODELS.GPT_5) return "GPT-5";
   if (model === OPENAI_MODELS.GPT_4O) return "GPT-4o";
   if (model.toLowerCase().includes("gemini")) return "Gemini";
-  if (model.toLowerCase().includes("grok")) return "Grok";
   return model;
 }
 export type AdaptiveEffort = "low" | "medium" | "high";

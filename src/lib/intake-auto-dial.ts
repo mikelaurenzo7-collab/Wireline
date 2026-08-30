@@ -108,7 +108,7 @@ async function writeAutoDialFailure(input: {
 }) {
   await drizzle.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${`xai-outbound:${String(input.leadId)}`}))`,
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
     );
     const [lead] = await tx
       .select({ metadata: schema.outboundLeads.metadata })

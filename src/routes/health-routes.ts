@@ -15,15 +15,13 @@ import {
   OPENAI_STRUCTURED_PRIMARY_MODEL,
   STRUCTURED_PRIMARY_MODEL,
   GEMINI_STRUCTURED_FALLBACK_MODEL,
-  VAPI_PREMIUM_MODEL,
-  VAPI_TENANT_DEFAULT_MODEL,
 } from "../lib/ai-models";
-import { GROK_VOICE_DEFAULT_MODEL } from "../lib/voice/grok-voice-config";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import { getHealthModelTiering } from "../lib/health-model-policy";
 import { describeRuntimeChain } from "../lib/ai-client";
 import {
   probeOpenAIModelDiagnostic,
-  probeXAIControlPlaneDiagnostic,
+  probeOpenAIRealtimeControlPlaneDiagnostic,
 } from "../lib/health-model-probe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
@@ -180,10 +178,8 @@ router.get(
       db,
       capabilities: getHealthCapabilities(),
       app_model: STRUCTURED_PRIMARY_MODEL,
-      voice_agent_model: GROK_VOICE_DEFAULT_MODEL,
-      voice_agent_premium_model: GROK_VOICE_DEFAULT_MODEL,
-      rollback_vapi_model: VAPI_TENANT_DEFAULT_MODEL,
-      rollback_vapi_premium_model: VAPI_PREMIUM_MODEL,
+      voice_agent_model: OPENAI_REALTIME_DEFAULT_MODEL,
+      voice_runtime_provider: "openai_realtime",
       llm_tiering: getHealthModelTiering(),
       timestamp: new Date().toISOString(),
     });
@@ -192,8 +188,8 @@ router.get(
 /**
  * Platform-admin integration payload. `structured_runtime_chain` is the
  * resolved attempt order (provider names only — never credentials, endpoints,
- * or model ids), which makes WIRELINE_STRUCTURED_PRIMARY_PROVIDER and the xAI
- * lane observable instead of trusting env spelunking. Live talking-head
+ * or model ids), which makes WIRELINE_STRUCTURED_PRIMARY_PROVIDER observable
+ * instead of trusting env spelunking. Live talking-head
  * engines are retired; identity badges remain.
  */
 const integrationsPayload = () => ({
@@ -317,7 +313,7 @@ router.get(
     });
   },
 );
-// Every /models request drives a live xAI control-plane GET plus one OpenAI
+// Every /models request drives two authenticated OpenAI control-plane probes,
 // Responses probe, so this diagnostic must not be reachable by arbitrary
 // tenants: an IP-keyed limiter alone leaves a multi-IP loop free to burn
 // unmetered platform spend. Ops monitors authenticate with the monitor token;
@@ -333,7 +329,7 @@ function requireMonitorTokenOrPlatformAdmin(req: Request, res: Response, next: N
 router.get("/models", healthRateLimiter, requireMonitorTokenOrPlatformAdmin, async (_req, res) => {
   const started = Date.now();
   const [voice, reasoning] = await Promise.all([
-    probeXAIControlPlaneDiagnostic(GROK_VOICE_DEFAULT_MODEL),
+    probeOpenAIRealtimeControlPlaneDiagnostic(OPENAI_REALTIME_DEFAULT_MODEL),
     probeOpenAIModelDiagnostic(OPENAI_STRUCTURED_PRIMARY_MODEL),
   ]);
   const ok = voice.ok && reasoning.ok;

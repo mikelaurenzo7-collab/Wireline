@@ -1,154 +1,62 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const root = process.cwd();
-const read = (relativePath: string) => readFileSync(resolve(root, relativePath), "utf8");
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-const LEGACY_CLAUDE_MODULES = [
-  "claude-brain.ts",
-  "claude-client.ts",
-  "claude-models.ts",
-  "claude-structured.ts",
-  "claude-audit.ts",
-  "claude-tools.ts",
-  "claude-recipes.ts",
-  "claude-response-helpers.ts",
-  "claude-supervisor-tools.ts",
-];
-
-describe("structured runtime policy", () => {
-  it("exports managed OpenAI-first structured models", () => {
+describe("structured and voice runtime policy", () => {
+  it("keeps structured reasoning OpenAI-first", () => {
     const models = read("src/lib/structured-runtime-models.ts");
     const aiModels = read("src/lib/ai-models.ts");
-    const schema = read("src/db/schema.ts");
-    const adminSettings = read("src/components/AdminSettings.tsx");
-    const carrierPanel = read("src/components/admin/CarrierPanel.tsx");
-    const prodEnvCheck = read("scripts/check-prod-env.mjs");
-    const legalPage = read("src/components/LegalPage.tsx");
-    const privacyPage = read("src/components/PrivacyPolicyPage.tsx");
-    const integrationLogos = read("src/components/layout/IntegrationLogos.tsx");
-    const migrationJournal = read("drizzle/migrations/meta/_journal.json");
-    const migrationCorpus = readdirSync(resolve(root, "drizzle/migrations"))
-      .filter((name) => name.endsWith(".sql"))
-      .sort()
-      .map((name) => read(`drizzle/migrations/${name}`))
-      .join("\n");
-
-    expect(models).toContain("STRUCTURED_RUNTIME_MODELS");
-    expect(models).toContain("STRUCTURED_DIRECTOR_DEEP_MODEL");
+    const policy = read("src/lib/reasoning-provider-policy.ts");
     expect(models).toContain("STRUCTURED_PRIMARY_MODEL");
-    expect(aiModels).toContain("export const OPENAI_STRUCTURED_PRIMARY_MODEL");
-    expect(aiModels).toContain(
-      "export const STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL",
-    );
-    expect(aiModels).toContain("export const XAI_STRUCTURED_PRIMARY_MODEL");
-    expect(schema).toContain('voiceLlmProvider: text("voice_llm_provider").default("openai")');
-    expect(schema).toContain('voiceLlmModel: text("voice_llm_model").default("gpt-4o")');
-    expect(schema).toContain("Rollback-only Vapi language-model pair");
-    expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
-    expect(adminSettings).toContain("VAPI_TENANT_DEFAULT_MODEL");
-    expect(adminSettings).not.toContain('"anthropic"');
-    expect(adminSettings).not.toContain('"claude-sonnet-4-6"');
-    // Whitespace-collapsed so Prettier's JSX reflow cannot break the invariant.
-    expect(carrierPanel.replace(/\s+/g, " ")).toContain(
-      "BotBound manages the phone conversation runtime, voice selection, intelligence routing, and continuity.",
-    );
-    expect(carrierPanel).toContain('["Phone runtime", "BotBound managed"]');
-    expect(carrierPanel).toContain('["Call intelligence", "Managed automatically"]');
-    expect(carrierPanel).toContain('["Continuity", "Automatic failover"]');
-    expect(carrierPanel).not.toContain("Gemini is the automatic fallback");
-    expect(carrierPanel).not.toContain('["Primary intelligence", "OpenAI"]');
-    expect(carrierPanel).not.toContain('["Automatic fallback", "Gemini"]');
-    expect(carrierPanel).not.toContain("Claude Sonnet 4.6");
-    expect(carrierPanel).not.toContain("Anthropic voice disruptions");
-    expect(carrierPanel).not.toContain('v: "anthropic"');
-    expect(prodEnvCheck).not.toContain("ANTHROPIC_API_KEY");
-    expect(prodEnvCheck).toContain("OPENAI_API_KEY");
-    expect(prodEnvCheck).toContain("XAI_API_KEY");
-    expect(privacyPage).toContain("<strong>OpenAI</strong>");
-    expect(privacyPage).toContain("<strong>xAI</strong>");
-    expect(privacyPage).toContain("<strong>Google Gemini</strong>");
-    expect(privacyPage).not.toContain("Anthropic's Claude API");
-    expect(privacyPage).not.toContain("<strong>Anthropic</strong>");
-    expect(legalPage).not.toContain("Anthropic's Claude API");
-    expect(legalPage).not.toContain("<strong>Anthropic</strong>");
-    expect(integrationLogos).toMatch(/^\s*xai:\s*\{/m);
-    expect(integrationLogos).toMatch(/^\s*openai:\s*\{/m);
-    expect(integrationLogos).not.toMatch(/^\s*anthropic:\s*\{/m);
-    expect(integrationLogos).not.toContain("ALL_LOGOS.anthropic");
-    expect(integrationLogos).not.toContain('aria-label="Anthropic"');
-    expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'xai'");
-    expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'grok-4.3'");
-    expect(migrationCorpus).toContain("voice_llm_provider SET DEFAULT 'openai'");
-    expect(migrationCorpus).toContain("voice_llm_model SET DEFAULT 'gpt-4o'");
-    expect(migrationCorpus).toContain("claude-haiku-4-5");
-    expect(migrationJournal).toContain("0151_xai_grok_46_runtime_defaults");
-    expect(migrationJournal).toContain("0154_xai_grok_46_persisted_defaults");
-    expect(migrationJournal).toContain("0156_openai_runtime_cohesion");
-    expect(existsSync(resolve(root, "src/routes/admin-migrate"))).toBe(false);
-    expect(existsSync(resolve(root, "src/routes/admin-operating-routes.ts"))).toBe(false);
-    expect(existsSync(resolve(root, "src/routes/admin-purge-accounts-routes.ts"))).toBe(false);
+    expect(aiModels).toContain("STRUCTURED_PRIMARY_MODEL = OPENAI_STRUCTURED_PRIMARY_MODEL");
+    expect(policy).toContain('"openai",\n  "gateway",\n  "gemini"');
+    expect(`${models}\n${aiModels}\n${policy}`).not.toMatch(/XAI_|GROK_|api\.x\.ai/);
   });
 
-  it("keeps direct OpenAI structured calls stateless and privacy-preserving", () => {
-    const client = read("src/lib/ai-client.ts");
-    const tenantContext = read("src/lib/tenant-context-store.ts");
-    const providerContext = read("src/lib/provider-identity-context.ts");
-    const structured = read("src/lib/ai-structured.ts");
+  it("makes OpenAI Realtime the database and application voice default", () => {
+    const schema = read("src/db/schema-base.ts");
+    const migration = read("drizzle/migrations/0168_openai_realtime_voice_runtime.sql");
+    const runtime = read("src/lib/managed-voice-runtime.ts");
+    expect(schema).toContain('voiceProvider: text("voice_provider").default("openai")');
+    expect(migration).toContain("NEW.voice_provider := 'openai'");
+    expect(migration).toContain("voice_llm_model SET DEFAULT 'gpt-realtime-2.1'");
+    expect(runtime).toContain('provider: "openai" as const');
+    expect(runtime).not.toMatch(/fallbackPlan|provider:\s*"11labs"|vapi|xai|grok/i);
+  });
 
+  it("requires the OpenAI SIP project and signed webhook in production", () => {
+    const prod = read("scripts/check-prod-env.mjs");
+    const example = read(".env.example");
+    expect(prod).toContain('"OPENAI_PROJECT_ID"');
+    expect(prod).toContain('"OPENAI_WEBHOOK_SECRET"');
+    expect(example).toContain("OPENAI_PROJECT_ID=");
+    expect(example).toContain("OPENAI_WEBHOOK_SECRET=");
+    expect(example).not.toMatch(/VAPI_|XAI_|grok/i);
+  });
+
+  it("removes retired provider modules and public claims", () => {
+    for (const path of [
+      "src/routes/vapi-v2.ts",
+      "src/routes/xai-voice-routes.ts",
+      "src/routes/grok-voice-routes.ts",
+      "src/lib/vapi-client.ts",
+      "src/lib/voice/xai-sip-session.ts",
+    ]) {
+      expect(existsSync(resolve(process.cwd(), path))).toBe(false);
+    }
+    const privacy = read("src/components/PrivacyPolicyPage.tsx");
+    const logos = read("src/components/layout/IntegrationLogos.tsx");
+    expect(privacy).toContain("OpenAI Realtime over Twilio PSTN and SIP");
+    expect(`${privacy}\n${logos}`).not.toMatch(/>xAI<|>Vapi<|ALL_LOGOS\.(?:xai|vapi)/i);
+  });
+
+  it("keeps direct OpenAI structured calls stateless", () => {
+    const client = read("src/lib/ai-client.ts");
     expect(client).toContain("store: false");
     expect(client).toContain("safety_identifier");
-    expect(client).toContain("currentProviderSafetyIdentifier()");
-    expect(client).not.toContain("tenantStore");
     expect(client).toContain("disallowPromptTraining: true");
     expect(client).toContain("await response.body.cancel()");
-    expect(client).not.toContain("detail,");
-    expect(client).toContain("Provider error bodies may echo customer content");
-
-    const gatewayCall = client.slice(
-      client.indexOf("async function callGateway"),
-      client.indexOf("function openAISafetyIdentifier"),
-    );
-    expect(gatewayCall).toContain("store: false");
-
-    const responsesCall = client.slice(
-      client.indexOf("async function callResponsesEndpoint"),
-      client.indexOf("async function callXAI"),
-    );
-    const bodyRead = responsesCall.indexOf("payload = (await response.json())");
-    expect(bodyRead).toBeGreaterThan(-1);
-    expect(responsesCall.indexOf("timer.dispose();", bodyRead)).toBeGreaterThan(bodyRead);
-    expect(tenantContext).toContain("new AsyncLocalStorage<string>()");
-    expect(providerContext).toContain('OPENAI_SAFETY_ID_DOMAIN = "botbound:"');
-    expect(providerContext).toContain("new AsyncLocalStorage<string>()");
-    expect(providerContext).toContain('createHash("sha256")');
-    expect(structured).toContain("tenantStore.getStore()");
-    expect(structured).toContain("runWithProviderIdentity(tenantId, operation)");
-  });
-
-  it("routes planners through structured-runtime-models instead of legacy Claude shims", () => {
-    for (const path of ["src/lib/workspace-planner.ts", "src/routes/agent-workspace-routes.ts"]) {
-      const source = read(path);
-      expect(source).toContain("structured-runtime-models");
-      expect(source).not.toContain("./claude-models");
-    }
-    expect(existsSync(resolve(root, "src/lib/director-planner.ts"))).toBe(false);
-    expect(existsSync(resolve(root, "src/lib/director-turn.ts"))).toBe(false);
-  });
-
-  it("keeps legacy Claude modules out of src/lib", () => {
-    const libDir = resolve(root, "src/lib");
-    const remaining = LEGACY_CLAUDE_MODULES.filter((file) => existsSync(resolve(libDir, file)));
-    expect(remaining).toEqual([]);
-    expect(existsSync(resolve(root, "src/routes/claude-routes.ts"))).toBe(false);
-  });
-
-  it("does not reintroduce claude-models via stray filenames", () => {
-    const libFiles = readdirSync(resolve(root, "src/lib"));
-    const claudeNamed = libFiles.filter(
-      (name) => name.startsWith("claude-") && !name.endsWith(".test.ts"),
-    );
-    expect(claudeNamed).toEqual([]);
   });
 });

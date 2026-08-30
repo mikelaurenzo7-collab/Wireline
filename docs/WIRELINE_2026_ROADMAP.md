@@ -52,7 +52,7 @@ Wireline is a **voice + chat AI-employee** SaaS on the **Wireline Letterpress** 
 
 - **Frontend/API:** Vercel.
 - **Data:** Supabase Postgres. **Auth:** Wireline-owned email/password + internal JWT sessions.
-- **Voice:** Twilio Elastic SIP → xAI Direct SIP Speech-to-Speech. Vapi is rollback-only. OpenAI Realtime is the ChatGPT-widget surface. Audio does not traverse Supabase Realtime.
+- **Voice:** Twilio PSTN/SIP → OpenAI Realtime for every founder and customer Bot, plus OpenAI Realtime WebRTC for browser surfaces. Audio does not traverse Supabase Realtime.
 - **Presenter:** Live talking-head video is retired. Identity badges remain.
 
 ### Billing
@@ -75,7 +75,7 @@ The primary axis Wireline competes on is the **voice + chat AI-employee operatin
 
 | Platform           | Live voice | Live presenter (retired add-on) | Self-serve | Transparent pricing |
 | ------------------ | ---------- | -------------------------------- | ---------- | ------------------- |
-| **Wireline**       | ✅ native Twilio + xAI Direct SIP | Retired                          | ✅         | ✅ Balance + tiers  |
+| **Wireline**       | ✅ OpenAI Realtime + Twilio SIP   | Retired                          | ✅         | ✅ Balance + tiers  |
 | Retell             | ✅         | ❌                                 | ✅         | ✅ ~$0.07/min       |
 | Vapi               | ✅         | ❌                                 | Dev-led    | ✅ ~$0.05/min       |
 | Synthflow          | ✅         | ❌                                 | ✅         | ✅ ~$0.08/min       |
@@ -151,15 +151,15 @@ flowchart TD
 
 | Layer                | Choice                                                      |
 | -------------------- | ----------------------------------------------------------- |
-| Real-time audio      | Twilio Elastic SIP → xAI Direct SIP; Vapi rollback; OpenAI Realtime widget |
+| Real-time audio      | OpenAI Realtime over Twilio SIP plus server-mediated WebRTC                |
 | Signaling / state    | Supabase + API                                              |
-| STT / LLM / TTS      | Native Speech-to-Speech on PSTN; structured Grok 4.6 chat   |
+| STT / LLM / TTS      | OpenAI Realtime on voice; OpenAI-first structured reasoning |
 | Presenter lip-sync   | Retired live talking-head; identity badges remain           |
-| PSTN presenter voice | Native xAI Eve/Ara/Rex/Sal/Leo; Vapi voice library is rollback only |
+| PSTN presenter voice | Explicit OpenAI Realtime phone fallback; presenter remains video-only |
 | Billing events       | Stripe webhooks → usage records                             |
 | Target latency       | &lt;250ms perceived turn-taking; monitor jitter             |
 
-See [GROK_LIVE_VOICE.md](./GROK_LIVE_VOICE.md) for xAI live path.
+See [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md) for the canonical live path.
 
 ---
 

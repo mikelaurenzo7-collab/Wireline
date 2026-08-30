@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { globSync } from "glob";
+import { globSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
@@ -62,7 +62,6 @@ const operatorDisplayPaths = [
   "scripts/generate-authz-matrix.ts",
   "scripts/reconcile-stripe-customer-portal.mts",
   "scripts/report-plan-economics.mts",
-  "scripts/sync-vapi-env-to-vercel.mjs",
 ] as const;
 
 const compatibilityLinePatterns = [
@@ -86,9 +85,6 @@ function isPathScopedCompatibility(path: string, line: string): boolean {
   }
   if (path === "src/lib/microsoft-graph-service.ts") {
     return /LEGACY_(?:EXCEL_FILE_NAME|WIRELINE_NAME)/.test(line);
-  }
-  if (path === "src/lib/voice/xai-sip-config.ts") {
-    return /LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME\s*=\s*"Wireline · xAI Direct SIP"/.test(line);
   }
   if (path === "android/app/src/main/res/values/themes.xml") {
     return /Theme\.Wireline/.test(line);
@@ -193,7 +189,7 @@ describe("BotBound visible-brand sweep", () => {
   it("keeps technical compatibility identifiers explicit while requiring customer billing names to be BotBound", () => {
     const brand = read("src/lib/brand.ts");
     const openapi = read("src/lib/openapi-spec.ts");
-    const nativeSip = read("src/lib/voice/xai-sip-config.ts");
+    const brandText = read("src/lib/brand-text.ts");
     const webhooks = read("src/components/WebhooksManager.tsx");
     const firefox = read("apps/browser-extension/manifest.firefox.json");
     const catalog = read("src/lib/plan-catalog.ts");
@@ -204,11 +200,7 @@ describe("BotBound visible-brand sweep", () => {
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
     expect(openapi).toContain('name: "X-Wireline-Key"');
-    expect(nativeSip).toContain('XAI_OUTBOUND_SIP_TOKEN_HEADER = "X-Wireline-Token"');
-    expect(nativeSip).toContain('XAI_TWILIO_TRUNK_FRIENDLY_NAME = "BotBound · xAI Direct SIP"');
-    expect(nativeSip).toContain(
-      'LEGACY_XAI_TWILIO_TRUNK_FRIENDLY_NAME = "Wireline · xAI Direct SIP"',
-    );
+    expect(brandText).toContain('"X-Wireline-Token"');
     expect(webhooks).toContain("X-Wireline-Signature");
     expect(firefox).toContain('"id": "command@wireline.com"');
     expect(catalog).toContain('name: "BotBound Starter"');
@@ -243,14 +235,15 @@ describe("BotBound visible-brand sweep", () => {
     );
   });
 
-  it("keeps long-lived showcase provider payloads brand-safe throughout the rename", () => {
-    const guard = read("src/lib/showcase-prompt-truth-guard.ts");
-    const routes = read("src/server/register-api-routes.ts");
-    expect(guard).toContain("LEGACY_DEMO_MARKER");
-    expect(guard).toContain("BOTBOUND_DEMO_MARKER");
-    expect(guard).toContain("migrateShowcaseIdentityFields");
-    expect(guard).toContain("isCapacityAssistant");
-    expect(routes).toContain('app.use("/api/vapi-webhook", showcasePromptTruthGuard)');
+  it("keeps long-lived OpenAI showcase profiles brand-safe", () => {
+    const seed = read("src/lib/founder-showcase-seed.ts");
+    const prompt = read("src/lib/showcase-assistant.ts");
+    expect(seed).toContain('FOUNDER_SHOWCASE_RUNTIME_VERSION = "openai-realtime');
+    expect(seed).toContain('voiceProvider: "openai"');
+    expect(seed).toContain('phoneVoiceProvider: "openai"');
+    expect(seed).not.toMatch(/Vapi|xAI|Grok/);
+    expect(prompt).toContain("built by BotBound");
+    expect(prompt).not.toMatch(/Vapi|xAI|Grok/);
   });
 
   it("keeps BotBound explicit in canonical brand, metadata, shell, install, native, and billing surfaces", () => {

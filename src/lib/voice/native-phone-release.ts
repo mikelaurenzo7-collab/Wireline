@@ -1,15 +1,14 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
-import { AppError } from "../api-error";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
+import { AppError } from "../api-error";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
-import { releaseTenantNumber as releaseLegacyTenantNumber } from "../phone-provisioning";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
-import { deactivateNativeXAIPhoneLine } from "./xai-phone-activation-service";
+import { resolveOwnedTwilioNumberSid } from "./native-phone-carrier";
 
 function twilioStatus(error: unknown): number | null {
   const value = Number((error as { status?: unknown } | null)?.status);
@@ -27,18 +26,6 @@ async function releaseTwilioLine(sid: string): Promise<void> {
   }
 }
 
-async function retireBinding(userId: string, phoneNumber: string): Promise<void> {
-  await drizzle.execute(sql`
-    SELECT binding_id
-    FROM public.wireline_retire_xai_phone_binding(
-      ${userId}::uuid,
-      ${phoneNumber},
-      NULL::uuid,
-      NULL::text
-    )
-  `);
-}
-
 async function releaseNativeTenantNumberUnfenced(
   userId: string,
   phoneNumber: string,
@@ -52,32 +39,34 @@ async function releaseNativeTenantNumberUnfenced(
     .limit(1);
   if (!row) return { ok: false, error: "Number not found for this tenant." };
 
-  const carrierId = row.vapiNumberId;
-  if (!isTwilioPhoneNumberSid(carrierId)) {
-    const legacy = await releaseLegacyTenantNumber(userId, phoneNumber);
-    if (legacy.ok) await retireBinding(userId, phoneNumber).catch(() => {});
-    return legacy;
-  }
-
+  let carrierId: string | null;
   try {
-    await deactivateNativeXAIPhoneLine({ userId, phoneNumber });
+    carrierId = isTwilioPhoneNumberSid(row.vapiNumberId)
+      ? row.vapiNumberId
+      : await resolveOwnedTwilioNumberSid(phoneNumber, row.vapiNumberId);
   } catch (error) {
-    log.warn("Native SIP trunk detach could not be confirmed before number release", {
+    log.warn("Twilio ownership lookup failed before number release", {
       userId,
       phoneSuffix: phoneNumber.slice(-4),
-      carrierIdSuffix: carrierId.slice(-6),
       error: getErrorMessage(error),
     });
     return {
       ok: false,
-      error: "The SIP route could not be detached. The number remains attached for a safe retry.",
+      error: "The carrier could not verify number ownership. The line remains attached for retry.",
+    };
+  }
+  if (!carrierId) {
+    return {
+      ok: false,
+      error:
+        "This line is not uniquely owned by the configured Twilio account. It remains attached for operator reconciliation.",
     };
   }
 
   try {
     await releaseTwilioLine(carrierId);
   } catch (error) {
-    log.warn("Native Twilio number release could not be confirmed", {
+    log.warn("Twilio number release could not be confirmed", {
       userId,
       phoneSuffix: phoneNumber.slice(-4),
       carrierIdSuffix: carrierId.slice(-6),
@@ -115,7 +104,7 @@ async function releaseNativeTenantNumberUnfenced(
     });
     return { ok: true };
   } catch (error) {
-    log.error("Native carrier released but local phone retirement failed", {
+    log.error("Twilio carrier released but local phone retirement failed", {
       userId,
       phoneSuffix: phoneNumber.slice(-4),
       carrierIdSuffix: carrierId.slice(-6),

@@ -45,8 +45,8 @@ describe("distributed public health boundary", () => {
     const probes = source.indexOf("const [voice, reasoning]");
 
     expect(source).toContain("const CACHE_SCOPE = cacheScope()");
-    expect(source).toContain("wireline:health:public:v4:${CACHE_SCOPE}");
-    expect(source).toContain("wireline:health:public:probe-lock:v4:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:v6:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:probe-lock:v6:${CACHE_SCOPE}");
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_REQUIRED")');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE")');
     expect(source).toContain("LOCAL_STALE_TTL_MS");
@@ -70,16 +70,19 @@ describe("distributed public health boundary", () => {
     const functionSource = read("src/entrypoints/public-health-api.ts");
     const probeSource = read("src/lib/public-health-probe.ts");
 
-    expect(functionSource).toContain("probeXAIVoiceRuntime(process.env.XAI_API_KEY)");
-    expect(functionSource).toContain("voiceFallback: voice");
+    expect(functionSource).toContain(
+      "probeOpenAIRealtimeModel(\n      OPENAI_REALTIME_DEFAULT_MODEL,\n      process.env.OPENAI_API_KEY",
+    );
     expect(functionSource).toContain(
       "probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY)",
     );
-    expect(functionSource).not.toContain("VAPI_VOICE_FALLBACK_MODEL");
-    expect(functionSource).not.toContain("probeVapiManagedVoice(process.env.VAPI_PRIVATE_KEY)");
+    expect(functionSource).not.toContain("voiceFallback");
+    expect(functionSource).not.toMatch(/VAPI|XAI|GROK/);
 
-    // Native xAI can be verified without generating a call or model output.
-    expect(probeSource).toContain('url: "https://api.x.ai/v1/models"');
+    // OpenAI Realtime can be verified without generating a call or model output.
+    expect(probeSource).toContain(
+      "https://api.openai.com/v1/models/${encodeURIComponent(model)}",
+    );
     expect(probeSource).toContain('method: "GET"');
 
     // Reasoning health must exercise the same Responses endpoint customers use,
@@ -92,23 +95,14 @@ describe("distributed public health boundary", () => {
     expect(probeSource).toContain("store: false");
     expect(probeSource).not.toContain('reasoning: { effort: "none" }');
     expect(probeSource).not.toContain('text: { verbosity: "low" }');
-    expect(probeSource).not.toContain("/v1/models/${encodeURIComponent(model)}");
+    expect(probeSource).not.toMatch(/api\.x\.ai|api\.vapi\.ai/);
   });
 
-  it("certifies the exact Vapi primary and fallback schema in deep previews", () => {
+  it("keeps provider-specific legacy live audits out of the deploy gate", () => {
     const build = read("scripts/vercel-build.mjs");
-    const audit = read("scripts/check-vapi-payload-contract-live.mts");
 
-    expect(build).toContain('run("npx", ["tsx", "scripts/check-vapi-payload-contract-live.mts"])');
-    expect(build).not.toContain("check-vapi-payload-contract-live.mjs");
-    expect(audit).toContain("VAPI_TENANT_DEFAULT_PROVIDER");
-    expect(audit).toContain("VAPI_TENANT_DEFAULT_MODEL");
-    expect(audit).toContain("without an unexpected fallback model");
-    expect(audit).toContain("model?.fallbackModels == null");
-    expect(audit).not.toContain("fallbackModels: expectedFallbackModels");
-    expect(audit).toContain('method: "DELETE"');
-    expect(audit).not.toContain("/call");
-    expect(audit).not.toContain("/chat");
+    expect(build).not.toMatch(/VAPI|XAI|GROK|check-vapi/i);
+    expect(build).toContain('"tests/openai-runtime-cohesion-contract.test.ts"');
   });
 
   it("does not cache failures, preserves request correlation, and keeps diagnostics internal", () => {
@@ -132,7 +126,7 @@ describe("distributed public health boundary", () => {
     const expressHealth = read("src/routes/health-routes.ts");
     const registration = read("src/server/register-api-routes.ts");
 
-    expect(directFunction).toContain("probeXAIVoiceRuntime");
+    expect(directFunction).toContain("probeOpenAIRealtimeModel");
     expect(directFunction).toContain("probeOpenAIModel");
     expect(directFunction).toContain("RESULT_TTL_SECONDS");
     expect(directFunction).not.toContain("publicProbeCache");
