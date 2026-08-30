@@ -70,6 +70,21 @@ describe("production schema database selection", () => {
       expect(resolveProductionSchemaDatabase(env)).toEqual(tryResolveDatabaseConnection(env));
     }
   });
+
+
+  it("pins production migrations to the same validated selector as runtime", () => {
+    const buildSource = readFileSync(new URL("../scripts/vercel-build.mjs", import.meta.url), "utf8");
+    const drizzleSource = readFileSync(new URL("../drizzle.config.ts", import.meta.url), "utf8");
+
+    expect(buildSource).toContain("resolveProductionSchemaDatabase(process.env)");
+    expect(buildSource).toContain('const databaseUrl = databaseSelection?.connectionString || "";');
+    expect(drizzleSource).toContain("resolveProductionSchemaDatabase(process.env)?.connectionString");
+    expect(drizzleSource).toContain("getDrizzlePostgresCredentials(migrationDatabaseUrl)");
+    expect(drizzleSource).not.toContain(
+      "process.env.POSTGRES_URL || process.env.DATABASE_URL",
+    );
+  });
+
 });
 
 describe("tenant database connection scope", () => {
