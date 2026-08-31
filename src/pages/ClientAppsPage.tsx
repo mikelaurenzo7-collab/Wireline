@@ -37,7 +37,7 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Create a BotBound account, then draft and privately simulate a Voice Bot in ChatGPT.",
+    blurb: "Create a BotBound account, then draft and privately simulate a Phone Bot in ChatGPT.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
     action: "MCP setup",
@@ -47,7 +47,7 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first BotBound Voice Bot from Claude with the same account-bound connector.",
+    blurb: "Build your first Phone Bot from Claude with the same account-bound connector.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,
@@ -58,7 +58,7 @@ const clientSurfaces = [
     icon: Terminal,
     title: "Cursor",
     blurb:
-      "Install the Cursor plugin to create a BotBound account and your first Voice Bot. Not a repo voice SDK.",
+      "Install the Cursor plugin to create a BotBound account and your first Phone Bot. Not a repo voice SDK.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
@@ -169,11 +169,11 @@ export default function ClientAppsPage() {
             id="chatgpt-mcp-heading"
             className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
-            Build Your First Voice Bot in Cursor, ChatGPT, or Claude
+            Build Your First Phone Bot in Cursor, ChatGPT, or Claude
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">{MCP_SERVER_URL}</code> where you already work. New users
-            create a <WirelineWordmark inline /> account during OAuth, then build their first Voice
+            create a <WirelineWordmark inline /> account during OAuth, then build their first Phone
             Bot in that chat. Privately rehearse it there. Numbers, live calls, messaging, billing,
             and launch stay in Studio. This is not a way to embed <WirelineWordmark inline /> in
             another repo.

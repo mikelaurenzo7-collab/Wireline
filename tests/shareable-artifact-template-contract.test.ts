@@ -99,7 +99,7 @@ describe("shareable-artifact templates", () => {
     expect(html).toContain("--wl-accent");
     expect(html).toContain("prefers-color-scheme: light");
     expect(html).toContain(':root[data-theme="light"]');
-    expect(html).toContain("Wire → Work → Win");
+    expect(html).toContain("Call · Text · Email");
     expect(html).toContain("Rita&#39;s Dental");
     expect(html).toContain("Booked");
     expect(html).toContain("Sarah");
@@ -119,7 +119,7 @@ describe("shareable-artifact templates", () => {
     const html = renderNotFound(BRAND);
     expect(html).toContain("expired");
     expect(html).toContain("Rita&#39;s Dental");
-    expect(html).toContain("Wire → Work → Win");
+    expect(html).toContain("Call · Text · Email");
   });
 
   it("customer surface never leaks vendor names", () => {

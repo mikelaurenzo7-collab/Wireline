@@ -1,14 +1,16 @@
 /**
- * Post-signup onboarding copy — Account Holder-facing, WIRELINE-native.
+ * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
+ * Public loop: Build → Train → Launch → Improve.
+ * After create, the setup guide is Train → Test → Launch.
  */
 
-/** Shown after Fast Start — agent exists but activation (first useful call) pending. */
+/** Shown after Fast Start — Bot exists but activation (first useful call) pending. */
 export const ACTIVATION_PENDING_COPY = {
   eyebrow: "One step left",
   title: "Make your first",
   titleAccent: "real call",
   subtitle: (agentName: string) =>
-    `${agentName} is provisioned. Dial your line from your phone. Activation counts when a customer-quality conversation completes.`,
+    `${agentName} has a number. Dial it from your phone. Activation counts when a real conversation completes.`,
   phoneLabel: "Your live number",
   dialCta: "Call now to activate",
   browserTestTitle: "Browser test (optional)",
@@ -26,62 +28,50 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call to activate",
 } as const;
 
-/** Guided steps after Fast Start create — Create → Train → Test → Wire. */
+/** Guided steps after create — Train → Test → Launch. */
 export const POST_CREATE_WIZARD_COPY = {
-  eyebrow: "Fast Start",
+  eyebrow: "Setup",
   title: "Next up for",
   steps: {
     train: {
-      label: "Review",
-      title: "Optional: review what your Bot learned",
+      label: "Train",
+      title: "Teach it the job",
       detail:
-        "Your greeting and job description are saved. Add a site, document, or policy now if it matters for the first call, or train more later.",
+        "Greeting and description are saved. Add a site, document, or policy if the first call needs it.",
       salesHint:
-        "Recommended first path: teach the outcomes that matter on day one, privately test the Bot, then connect a live number when you are ready to go live.",
+        "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
-      secondary: "Continue to private test",
+      secondary: "Continue to test",
     },
-    channels: {
-      label: "Channels",
-      title: "Connect where customers reach you",
+    launch: {
+      label: "Launch",
+      title: "Put it on the line",
       detail:
-        "Phone is the default lane. Open Connections when you need CRM, SMS, email, or other tools linked.",
-      phoneTitle: "Bot phone line",
-      phoneDetail: "Provision a US number on the next step. Callers reach this agent directly.",
-      connectionsTitle: "Connections",
-      connectionsDetail: "Mailbox, Salesforce, SMS threads, and routing live under Connections.",
-      connectionsCta: "Open Connections",
-      continue: "Continue to phone line",
-    },
-    wire: {
-      label: "Number",
-      title: "Connect a live line",
-      detail:
-        "Provision a US number so callers reach this Bot. A paid plan is required for live number provisioning.",
-      primary: "Provision number",
-      skip: "Connect later",
-      activationRequired: "Your Bot is trained. Its live number just needs a plan.",
+        "Every paid plan includes a US number. Callers reach this Bot directly.",
+      primary: "Get a number",
+      skip: "Launch later",
+      activationRequired: "Your Bot is trained. A live number needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
         `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
       activationCta: "Choose your plan",
     },
     test: {
       label: "Test",
-      title: "Hear your Bot",
+      title: "Hear it first",
       detail:
-        "Run a private browser test before you pay for a live number. Simulator calls do not count toward activation.",
-      primary: "Continue to number",
-      skip: "Skip private test",
+        "Run a private browser test before anyone else hears it. Simulator calls do not count as going live.",
+      primary: "Continue to launch",
+      skip: "Skip test",
     },
   },
   complete: {
-    wiredTitle: "You're live",
-    wiredDetail: (agentName: string, phone: string) =>
+    liveTitle: "It's on the line",
+    liveDetail: (agentName: string, phone: string) =>
       `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
-    deferredTitle: "Ready in Studio",
+    deferredTitle: "Ready when you are",
     deferredDetail: (agentName: string) =>
-      `${agentName} is trained and waiting. Connect a number under Calls → Setup when you're ready to go live.`,
+      `${agentName} is trained and waiting. Connect a number under Calls when you want it live.`,
     studioCta: "Continue in Studio",
-    phoneCta: "Connect a number",
+    phoneCta: "Get a number",
   },
 } as const;

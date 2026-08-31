@@ -299,7 +299,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       402,
       "ACTIVATION_REQUIRED",
-      "Choose Starter, Starter Plus, or Pro before wiring a production number or starting live work.",
+      "Choose Starter, Starter Plus, or Pro before connecting a production number or starting live work.",
       { recovery_path: "/settings/billing" },
     );
     return null;
@@ -398,7 +398,7 @@ export async function assertLiveWorkEntitlementForUser(
       httpStatus: 402,
       code: "ACTIVATION_REQUIRED",
       error:
-        "Choose Starter, Starter Plus, or Pro before wiring a production number or starting live work.",
+        "Choose Starter, Starter Plus, or Pro before connecting a production number or starting live work.",
       recovery_path: "/settings/billing",
     };
   }

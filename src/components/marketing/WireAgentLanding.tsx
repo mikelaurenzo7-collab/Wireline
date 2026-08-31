@@ -7,6 +7,7 @@ import { BotBoundLockup } from "../brand/BotBoundBrand";
 import BrowserCallWidget from "./BrowserCallWidget";
 import LandingFooter from "./LandingFooter";
 import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
@@ -64,7 +65,7 @@ export default function WireAgentLanding() {
     <div className="marketing-surface landing-prestige bg-background text-foreground">
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
-          <div className="landing-prestige__hero" aria-label="BotBound Phone Bot">
+          <div className="landing-prestige__hero" aria-label="BotBound">
             <div className="landing-prestige__hero-brand">
               <BotBoundLockup
                 size="display"
@@ -78,6 +79,14 @@ export default function WireAgentLanding() {
                 <span>ON THE LINE</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
+              <ol className="landing-prestige__loop" aria-label="How BotBound works">
+                {MARKETING_VOICE.proof.map((step, index) => (
+                  <li key={step}>
+                    {index > 0 ? <span aria-hidden="true">/</span> : null}
+                    {step}
+                  </li>
+                ))}
+              </ol>
             </div>
             <div className="landing-prestige__demo">
               <BrowserCallWidget

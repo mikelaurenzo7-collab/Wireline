@@ -25,7 +25,7 @@ Cursor Agent
 
 - Account creation, tenant isolation, entitlements, and spend guards.
 - Agent profile normalization and prompt compilation.
-- Training, Wire, Studio, phone numbers, live calls, messaging, billing, and launch.
+- Training, Connections, Studio, phone numbers, live calls, messaging, billing, and launch.
 - Customer records, transcripts, recordings, and provider credentials.
 
 ## Cursor Directory package

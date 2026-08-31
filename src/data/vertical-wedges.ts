@@ -61,7 +61,7 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "BOTBOUND FOR HOME SERVICES | VOICE BOTS FOR CALLS AND FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR HOME SERVICES | PHONE BOTS FOR CALLS AND FOLLOW-UP",
     metaDescription:
       "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, continue by text and email, and follow up from one workspace.",
     eyebrow: "For Home Services Pros",
@@ -118,7 +118,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   medical: {
     slug: "medical",
-    metaTitle: "BOTBOUND FOR MEDICAL PRACTICES | VOICE BOTS FOR INTAKE AND SCHEDULING",
+    metaTitle: "BOTBOUND FOR MEDICAL PRACTICES | PHONE BOTS FOR INTAKE AND SCHEDULING",
     metaDescription:
       "A voice-first Bot for dental, med spa, chiropractic, and primary care practices. Handle approved intake, book appointments, continue by text and email, and route exceptions.",
     eyebrow: "For Medical Practices",
@@ -167,7 +167,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         a: "The Bot can capture the insurance fields you approve during intake and route them with the appointment record. It does not verify eligibility today; your staff must validate coverage in the systems you already use.",
       },
       {
-        q: "Will patients accept a Voice Bot?",
+        q: "Will patients accept a Phone Bot?",
         a: "The practical win is no hold time: a clear Bot that uses your practice name and resolves routine scheduling quickly can be better than waiting on the line. Disclosure choices and consent language should match your practice policy and applicable rules.",
       },
     ],
@@ -175,7 +175,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "BOTBOUND FOR LAW FIRMS | VOICE BOTS FOR INTAKE AND CONSULT ROUTING",
+    metaTitle: "BOTBOUND FOR LAW FIRMS | PHONE BOTS FOR INTAKE AND CONSULT ROUTING",
     metaDescription:
       "A voice-first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by text and email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
@@ -232,7 +232,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "BOTBOUND FOR REAL ESTATE | VOICE BOTS FOR LISTING CALLS AND FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR REAL ESTATE | PHONE BOTS FOR LISTING CALLS AND FOLLOW-UP",
     metaDescription:
       "A voice-first Bot for real estate teams. Qualify buyers, book showings, revive approved leads, continue by text and email, and sync CRM notes.",
     eyebrow: "For Real Estate",
@@ -289,9 +289,9 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "BOTBOUND FOR EVERYONE | A VOICE BOT FOR CALLS YOU AVOID",
+    metaTitle: "BOTBOUND FOR EVERYONE | A PHONE BOT FOR CALLS YOU AVOID",
     metaDescription:
-      "A Voice Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
+      "A Phone Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
     eyebrow: "For Everyone Who Hates the Phone",
     headline: "Hand Off the Calls You Keep Avoiding",
     pains: [
@@ -320,7 +320,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
-      "Your Voice Bot calls on your behalf. You say what you need; it dials, talks, follows up, and reports back while you stay off the call.",
+      "Your Phone Bot calls on your behalf. You say what you need; it dials, talks, follows up, and reports back while you stay off the call.",
     primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("personal") },
     secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
@@ -351,7 +351,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   insurance: {
     slug: "insurance",
-    metaTitle: "BOTBOUND FOR INSURANCE AGENCIES | VOICE BOTS FOR QUOTE INTAKE AND RENEWALS",
+    metaTitle: "BOTBOUND FOR INSURANCE AGENCIES | PHONE BOTS FOR QUOTE INTAKE AND RENEWALS",
     metaDescription:
       "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, renewal follow-up, text and email context, and producer-ready notes.",
     eyebrow: "For Insurance Agencies",
@@ -408,7 +408,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "BOTBOUND FOR RESTAURANTS | VOICE BOTS FOR RESERVATIONS AND TAKEOUT",
+    metaTitle: "BOTBOUND FOR RESTAURANTS | PHONE BOTS FOR RESERVATIONS AND TAKEOUT",
     metaDescription:
       "A voice-first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by text and email, and route exceptions to staff.",
     eyebrow: "For Restaurants",
@@ -458,14 +458,14 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How is this different from Yelp or Google booking widgets?",
-        a: "Booking widgets cover web demand. BotBound adds a configurable Voice Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
+        a: "Booking widgets cover web demand. BotBound adds a configurable Phone Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
       },
     ],
   },
 
   sales: {
     slug: "sales",
-    metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP",
+    metaTitle: "BOTBOUND FOR SALES TEAMS | PHONE BOTS FOR LEAD FOLLOW-UP",
     metaDescription:
       "A voice-first Sales Bot for speed-to-lead, quote follow-up, warm reactivation, governed outbound queues, text and email continuation, and approved CRM actions.",
     eyebrow: "For Sales Teams",

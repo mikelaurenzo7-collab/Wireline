@@ -4,11 +4,11 @@ This file is BotBound's durable repository-health contract. It defines what belo
 
 ## Current north star
 
-BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The product model is **Create -> Train -> Wire -> Run**.
+BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The public operating loop is **Build -> Train -> Launch -> Improve**. Internally the same loop is **Create -> Train -> Wire -> Run**.
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
-- **Wire** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
+- **Launch / Connections** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
 - **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
 - **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
 
@@ -22,7 +22,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Overview | `src/pages/OverviewPage.tsx` |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
 | Training | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` |
-| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
 | Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
 | Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
@@ -71,7 +71,7 @@ BotBound Letterpress on the Aurora palette is the only active design system. Tec
 - Broad public language: `Bot` or `Phone Bot` in one product and workspace model. Never split signup, setup, pricing, or navigation into Personal and Business lanes. Technical compatibility identifiers remain stable.
 - Context-specific examples use the actual job (`Personal Assistant`, `Sales Rep`, `Front Desk`) without creating audience lanes.
 - Technical contracts: `agent`.
-- Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`.
+- Product nouns: `Training`, `Connections`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`. Public setup is Train, Test, Launch. Never use Wire as a customer-facing step.
 - Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.
 
 ## Documentation taxonomy

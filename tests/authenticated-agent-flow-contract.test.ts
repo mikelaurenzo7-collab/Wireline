@@ -186,7 +186,7 @@ describe("authenticated Bot flow", () => {
     expect(templates).not.toContain("hidden hidden");
   });
 
-  it("launches a resumable Train, Wire, Test wizard after Fast Start", () => {
+  it("launches a resumable Train, Test, Launch wizard after Fast Start", () => {
     const createDialog = read("src/components/CreateAgentDialog.tsx");
     const templates = read("src/components/AgentTemplates.tsx");
     const studioHome = read("src/pages/AgentStudioHome.tsx");
@@ -206,10 +206,10 @@ describe("authenticated Bot flow", () => {
     expect(createFlow).toContain("clearPostCreateWizard");
     expect(wizard).toContain("RoleplaySandbox");
     expect(wizard).toContain('value === "train"');
-    expect(wizard).toContain('value === "wire"');
     expect(wizard).toContain('value === "test"');
+    expect(wizard).toContain('value === "launch"');
     expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "test", "wire", "complete"]',
+      'const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"]',
     );
     expect(wizard).toContain("clearPostCreateWizard");
     expect(wizard).toContain("stashPostCreateWizardStep");

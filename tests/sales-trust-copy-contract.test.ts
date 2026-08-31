@@ -62,7 +62,7 @@ describe("sales trust copy contract", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     const product = read("src/lib/bot-product.ts");
     expect(wedges).toContain(
-      'metaTitle: "BOTBOUND FOR SALES TEAMS | VOICE BOTS FOR LEAD FOLLOW-UP"',
+      'metaTitle: "BOTBOUND FOR SALES TEAMS | PHONE BOTS FOR LEAD FOLLOW-UP"',
     );
     expect(wedges).toContain(
       'headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"',

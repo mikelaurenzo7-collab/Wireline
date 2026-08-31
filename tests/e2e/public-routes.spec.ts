@@ -69,11 +69,11 @@ for (const route of PUBLIC_ROUTES) {
  * Assert the served response directly: no redirect, and the route's own head.
  */
 const PRERENDERED_HEAD = [
-  { route: "/pricing", title: "PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH" },
-  { route: "/features", title: "FEATURES | BOTBOUND VOICE BOTS" },
+  { route: "/pricing", title: "PRICING | FROM $19/MONTH | BotBound" },
+  { route: "/features", title: "FEATURES | BotBound" },
   {
     route: "/for/legal",
-    title: "BOTBOUND FOR LAW FIRMS | VOICE BOTS FOR INTAKE AND CONSULT ROUTING",
+    title: "BOTBOUND FOR LAW FIRMS | PHONE BOTS FOR INTAKE AND CONSULT ROUTING",
   },
 ];
 

@@ -110,8 +110,8 @@ export function isValidAccentHex(
   return contrast(candidate, canvas) >= floor;
 }
 
-/** Canonical Wireline signature — used in every recap footer. */
-export const WIRELINE_SIGNATURE = "Wire → Work → Win";
+/** Canonical BotBound signature — used in every recap footer. */
+export const WIRELINE_SIGNATURE = "Call · Text · Email";
 
 /** Minimal wire-glyph SVG. Inlined into the shell; scales with `currentColor`. */
 export const WIRE_GLYPH_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M3 12h4.5l2-6 5 12 2-6H21" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

@@ -12,7 +12,7 @@ The Android app is the everyday control surface for Wireline agents:
 
 ## Product promise
 
-> Wire your agent.
+> Launch your Bot.
 
 The native product is a daily control surface for Bots, calls, recaps, and follow-up. Every workflow uses the same backend Bot configuration and the same practical, Bot-forward interface. Billing, provider policy, prompts, compliance gates, and tenant enforcement remain server-owned.
 
@@ -92,7 +92,7 @@ See `src/lib/voice/openai-live-agent-service.ts`, `src/routes/live-voice-routes.
 - Call detail loads transcript and recording data from `/api/mobile/calls/:id/detail` only for the authenticated account.
 - Live-call UI appears after Telecom answer and from active-call rows.
 - Widgets read real snapshot data and do not ship placeholder metrics.
-- Training and Wire use current product names and routes.
+- Training and Connections use current product names and routes.
 - Account deletion, sign-out, and auth recovery are reachable.
 - Marketing outbound succeeds only with the required confirmation and consent evidence.
 - FCM incoming call, Telecom handoff, notification permission, and stale-token cleanup are exercised on a physical device.

@@ -124,7 +124,7 @@ export default function OutboundDialDialog({
       toast({
         type: "success",
         title: "Call started",
-        message: "Your Voice Bot is dialing now.",
+        message: "Your Bot is dialing now.",
       });
       emitProductEvent({
         event: "outbound_call_started",
@@ -167,14 +167,14 @@ export default function OutboundDialDialog({
             New outbound call
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            Pick a Voice Bot with a live line, enter a number, and classify the call before dialing.
+            Pick a Bot with a live line, enter a number, and classify the call before dialing.
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center gap-2 px-6 py-8 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Loading Voice Bots…
+            Loading Bots…
           </div>
         ) : voiceAgents.length === 0 && (degraded || phoneLookupDegraded) ? (
           // "None with a phone line yet" is a claim about the roster and about
@@ -183,12 +183,12 @@ export default function OutboundDialDialog({
           // could not ask, not because the answer is none.
           <p className="px-6 py-8 text-sm text-muted-foreground" role="status">
             {degraded
-              ? "Your Voice Bot list could not be loaded. Close this and try again in a moment."
+              ? "Your Bot list could not be loaded. Close this and try again in a moment."
               : "We could not check which numbers are attached. Close this and try again in a moment."}
           </p>
         ) : voiceAgents.length === 0 ? (
           <p className="px-6 py-8 text-sm text-muted-foreground">
-            No Voice Bots with a phone line yet.{" "}
+            No Bots with a phone line yet.{" "}
             <Link to="/studio?create=1" className="text-brand underline underline-offset-2">
               Create and activate one in Studio
             </Link>
@@ -197,7 +197,7 @@ export default function OutboundDialDialog({
         ) : (
           <div className="space-y-4 px-6 py-5">
             <label className="block space-y-1.5">
-              <span className="block text-sm font-semibold text-foreground">Voice Bot</span>
+              <span className="block text-sm font-semibold text-foreground">Bot</span>
               <select
                 className="min-h-[44px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={agentId}
@@ -233,7 +233,7 @@ export default function OutboundDialDialog({
                 className="min-h-[88px] w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
                 value={context}
                 onChange={(event) => setContext(event.target.value)}
-                placeholder="What should the Voice Bot accomplish on this call?"
+                placeholder="What should the Bot accomplish on this call?"
               />
             </label>
 

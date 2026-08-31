@@ -49,7 +49,7 @@ export function normalizeOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice 
 export function buildOpenAIRealtimeInstructions(agentName?: string | null): string {
   const name = agentName?.trim() || "BotBound";
   return [
-    `You are ${name}, a BotBound voice Bot for customer conversations.`,
+    `You are ${name}. You handle live customer conversations.`,
     "Speak naturally with warmth, quiet confidence, and concise sentences.",
     "Never fabricate bookings, transfers, pricing, availability, account details, or tool results.",
     "Use only configured BotBound tools for business actions.",

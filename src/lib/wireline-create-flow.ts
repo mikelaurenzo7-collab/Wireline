@@ -3,14 +3,14 @@ import { isBotMarkKey, type BotMarkKey } from "./bot-mark";
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
-/** Post-create wizard payload — Train → Test → Wire after Fast Start.
+/** Post-create wizard payload — Train → Test → Launch after create.
  *  Private rehearsal comes before paid number provisioning.
- *  ("channels" survives in the step type only as a legacy stored value that
- *  the wizard coerces to "test" on mount; no live path renders it.) */
+ *  "wire" and "channels" survive in the step type only as legacy stored
+ *  values. The wizard coerces them on mount; no live path renders them. */
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
 export const POST_CREATE_WIZARD_STEP_KEY = "wireline:post-create-wizard-step";
 
-export type PostCreateWizardStep = "train" | "channels" | "wire" | "test";
+export type PostCreateWizardStep = "train" | "channels" | "wire" | "test" | "launch";
 
 export type PostCreateWizardPayload = {
   agentId: string;
@@ -95,7 +95,13 @@ export function stashPostCreateWizardStep(step: PostCreateWizardStep): void {
 export function readPostCreateWizardStep(): PostCreateWizardStep | null {
   try {
     const step = sessionStorage.getItem(POST_CREATE_WIZARD_STEP_KEY);
-    if (step === "train" || step === "channels" || step === "wire" || step === "test") {
+    if (
+      step === "train" ||
+      step === "channels" ||
+      step === "wire" ||
+      step === "test" ||
+      step === "launch"
+    ) {
       return step;
     }
     return null;

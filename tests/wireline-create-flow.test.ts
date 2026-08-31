@@ -60,6 +60,12 @@ describe("wireline create flow wizard persistence", () => {
     expect(readPostCreateWizardStep()).toBe("channels");
   });
 
+  it("accepts launch as the live third step", () => {
+    stashPostCreateWizard(payload);
+    stashPostCreateWizardStep("launch");
+    expect(readPostCreateWizardStep()).toBe("launch");
+  });
+
   it("clears wizard and step on dismiss", () => {
     stashPostCreateWizard(payload);
     stashPostCreateWizardStep("wire");

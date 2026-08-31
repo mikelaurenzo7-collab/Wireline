@@ -140,8 +140,8 @@ describe("launch readiness fine-tune 2026-07-27", () => {
 
     expect(email).not.toContain("first AI employee");
     expect(compare).not.toContain("AI call agent");
-    expect(apps).toContain("simulate a Voice Bot");
-    expect(apps).toContain("first Voice Bot");
+    expect(apps).toContain("simulate a Phone Bot");
+    expect(apps).toContain("first Phone Bot");
     expect(apps).not.toContain("first voice agent");
     expect(privacy).toMatch(/operates a Bot platform for calls,\s+texts, and email/);
     expect(privacy).toContain("primarily through <strong>OpenAI</strong>");

@@ -91,7 +91,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 9. Confirm the agent does not claim it booked, called, transferred, messaged, accessed records, or completed any outside action.
 10. Open BotBound and confirm the new draft has no attached phone number and is not live.
 11. Ask to privately rehearse "Do you have Saturday appointments?" and confirm `live_call` is false.
-12. Ask for the next step in BotBound. Confirm the result has Studio/Training/Wire links and no phone number.
+12. Ask for the next step in BotBound. Confirm the result has Studio/Training/Connections links and no phone number.
 
 ### Workspace summary path
 

@@ -51,7 +51,7 @@ From Cursor, ChatGPT, or Claude, "trigger" means a **private rehearsal** of an a
 - Voice: `start_private_voice_simulation`
 - Text: `run_private_agent_turn` with the customer's hypothetical line
 
-Do not claim a live call, SMS, email, booking, payment, number purchase, or launch happened. Those stay in BotBound Studio, Training, and Wire.
+Do not claim a live call, SMS, email, booking, payment, number purchase, or launch happened. Those stay in BotBound Studio, Training, and Connections.
 
 ## Never
 
