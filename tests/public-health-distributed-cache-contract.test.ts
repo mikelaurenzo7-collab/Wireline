@@ -42,11 +42,13 @@ describe("distributed public health boundary", () => {
     const source = read("src/entrypoints/public-health-api.ts");
     const clientGuard = source.indexOf("if (!client)");
     const lock = source.indexOf("nx: true");
-    const probes = source.indexOf("const [voice, reasoning]");
+    const probes = source.indexOf("const [voice, reasoning, voiceCanary]");
 
     expect(source).toContain("const CACHE_SCOPE = cacheScope()");
-    expect(source).toContain("wireline:health:public:v6:${CACHE_SCOPE}");
-    expect(source).toContain("wireline:health:public:probe-lock:v6:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:v7:${CACHE_SCOPE}");
+    expect(source).toContain("wireline:health:public:probe-lock:v7:${CACHE_SCOPE}");
+    expect(source).toContain("publicVoiceCanaryKey()");
+    expect(source).toContain('requireVoiceCanary: CACHE_SCOPE === "production"');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_REQUIRED")');
     expect(source).toContain('unavailablePayload("DISTRIBUTED_CACHE_UNAVAILABLE")');
     expect(source).toContain("LOCAL_STALE_TTL_MS");
