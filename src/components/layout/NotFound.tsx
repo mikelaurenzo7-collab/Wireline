@@ -2,16 +2,16 @@ import React from "react";
 import { Link, useLocation } from "react-router";
 import { MotionConfig, motion } from "motion/react";
 import {
-  ChevronRight,
   Compass,
+  Headphones,
   Home,
   LayoutGrid,
   MessageSquare,
   Phone,
   Settings,
+  ChevronRight,
 } from "lucide-react";
 import { BRAND } from "../../constants/brand-colors";
-import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 
 /**
  * NotFound — context-aware 404. Detects whether the visitor is signed-in
@@ -22,10 +22,6 @@ import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
  * The `mode` prop forces a specific render for the public route; the
  * default behaviour is to detect signed-in via the absence of `mode`.
  */
-// A real public demo line (these can't escalate to a human), not a support
-// employee number — the 404's "Try the demo" CTA must dial a demo agent.
-const DEMO_LINE = LANDING_PUBLIC_DEMO_AGENTS[0];
-
 export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
   const location = useLocation();
   const isPublic = mode === "public";
@@ -33,7 +29,6 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
   return (
     <MotionConfig reducedMotion="user">
       <div className="min-h-[80svh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
-        {/* Subtle mono wash behind the 404 mark */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
@@ -75,9 +70,6 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 </code>
               </span>
             )}
-            {/* Public visitors get no prose line here: the three cards below are
-              Home, the demo line, and Pricing, so "try the demo line, browse
-              pricing, or head home" was that same list read aloud first. */}
             {isPublic ? null : (
               <>
                 The page may have moved.{" "}
@@ -90,7 +82,6 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           </p>
         </motion.div>
 
-        {/* Action cards — context-aware */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -108,21 +99,13 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 hint="Back to landing"
                 accent={BRAND.colors.primary}
               />
-              <a
-                href={`tel:${DEMO_LINE.tel}`}
-                className="group relative flex items-center gap-3 p-4 rounded-md wl-paper wl-press wl-focus-ring-halo"
-              >
-                <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 wl-brand-icon-solid">
-                  <Phone className="w-4 h-4 text-on-brand" strokeWidth={2.4} />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">Try the demo</p>
-                  <p className="text-sm text-foreground font-medium truncate">
-                    {DEMO_LINE.display}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
-              </a>
+              <NotFoundCard
+                to="/showcase"
+                icon={Headphones}
+                label="Browser demo"
+                hint="Hear a live Bot"
+                accent={BRAND.colors.primary}
+              />
               <NotFoundCard
                 to="/pricing"
                 icon={Compass}
