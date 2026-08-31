@@ -49,6 +49,21 @@ describe("BotBound release provenance", () => {
     );
   });
 
+  it("counts every native OpenAI SIP failure class as a pipeline failure", () => {
+    const failures = ["openai_response", "openai_realtime", "startup", "heartbeat"] as const;
+    const capture = read("src/lib/call-reliability-capture.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const failureSet = capture.slice(
+      capture.indexOf("const PIPELINE_FAILURE_VALUES"),
+      capture.indexOf("export function isPipelineFailure"),
+    );
+
+    for (const failure of failures) {
+      expect(failureSet).toContain(`"${failure}"`);
+      expect(session).toContain(failure);
+    }
+  });
+
   it("uses the BotBound sender fallback and does not publish synthetic traction metrics", () => {
     expect(read("src/lib/resend-config.ts")).toContain('const DEFAULT_DOMAIN = "botbound.me"');
     const marketing = read("src/routes/marketing-runtime-routes.ts");
