@@ -4,11 +4,13 @@ import {
   GEMINI_MODELS,
   MODEL_PRICING,
   OPENAI_MODELS,
+  OPENAI_SOL_PROMOTIONAL_PRICING_REVIEW_DATE,
+  OPENAI_TEXT_PRICING_EFFECTIVE_DATE,
   pricingForModel,
   selectModelForTask,
 } from "../src/lib/ai-models";
 
-// Pricing provenance verified 2026-08-10 against vendor-owned documentation:
+// Pricing provenance verified 2026-08-31 against vendor-owned documentation:
 // https://developers.openai.com/api/docs/models/gpt-5.6-terra
 // https://developers.openai.com/api/docs/models/gpt-5.6-luna
 // https://developers.openai.com/api/docs/models/gpt-5.6-sol
@@ -37,44 +39,46 @@ describe("model pricing coverage contract", () => {
       expect(row.cacheWrite, `${id} cache write`).toBeGreaterThanOrEqual(0);
     }
 
+    expect(OPENAI_TEXT_PRICING_EFFECTIVE_DATE).toBe("2026-07-30");
+    expect(OPENAI_SOL_PROMOTIONAL_PRICING_REVIEW_DATE).toBe("2026-11-21");
     expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]).toEqual({
-      input: 2.5,
-      output: 15,
-      cacheRead: 0.25,
-      cacheWrite: 3.125,
+      input: 2,
+      output: 12,
+      cacheRead: 0.2,
+      cacheWrite: 2.5,
     });
     expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_LUNA]).toEqual({
-      input: 1,
-      output: 6,
-      cacheRead: 0.1,
-      cacheWrite: 1.25,
+      input: 0.2,
+      output: 1.2,
+      cacheRead: 0.02,
+      cacheWrite: 0.25,
     });
     expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_SOL]).toEqual({
-      input: 5,
-      output: 30,
-      cacheRead: 0.5,
-      cacheWrite: 6.25,
+      input: 4,
+      output: 20,
+      cacheRead: 0.4,
+      cacheWrite: 5,
     });
   });
 
   it("applies current vendor long-context rates to the full request", () => {
     expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_000)).toEqual({
-      input: 2.5,
-      output: 15,
-      cacheRead: 0.25,
-      cacheWrite: 3.125,
-    });
-    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_001)).toEqual({
-      input: 5,
-      output: 22.5,
-      cacheRead: 0.5,
-      cacheWrite: 6.25,
-    });
-    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_LUNA, 272_001)).toEqual({
       input: 2,
-      output: 9,
+      output: 12,
       cacheRead: 0.2,
       cacheWrite: 2.5,
+    });
+    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_TERRA, 272_001)).toEqual({
+      input: 4,
+      output: 18,
+      cacheRead: 0.4,
+      cacheWrite: 5,
+    });
+    expect(pricingForModel(OPENAI_MODELS.GPT_5_6_LUNA, 272_001)).toEqual({
+      input: 0.4,
+      output: 1.8,
+      cacheRead: 0.04,
+      cacheWrite: 0.5,
     });
     expect(pricingForModel(GEMINI_MODELS.PRO_3_1, 200_001).output).toBe(18);
   });
@@ -94,10 +98,10 @@ describe("model pricing coverage contract", () => {
       OPENAI_MODELS.GPT_5_6_TERRA,
     );
     // 300k total prompt tokens crosses the OpenAI long-context tier.
-    expect(cost.inputCost).toBeCloseTo(0.5);
-    expect(cost.cacheReadCost).toBeCloseTo(0.05);
-    expect(cost.cacheWriteCost).toBeCloseTo(0.625);
-    expect(cost.outputCost).toBeCloseTo(0.225);
-    expect(cost.totalCost).toBeCloseTo(1.4);
+    expect(cost.inputCost).toBeCloseTo(0.4);
+    expect(cost.cacheReadCost).toBeCloseTo(0.04);
+    expect(cost.cacheWriteCost).toBeCloseTo(0.5);
+    expect(cost.outputCost).toBeCloseTo(0.18);
+    expect(cost.totalCost).toBeCloseTo(1.12);
   });
 });
