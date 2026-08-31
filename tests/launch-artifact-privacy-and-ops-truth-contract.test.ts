@@ -69,6 +69,18 @@ describe("launch artifact privacy and operations truth", () => {
     expect(canary).toContain(`Voice health window check failed: \${message}`);
   });
 
+  it("isolates demo PSTN health from unrelated messaging callbacks", () => {
+    const observability = read("src/lib/voice-observability.ts");
+    expect(observability).toContain("VOICE_WEBHOOK_PROVIDERS");
+    expect(observability).toContain(
+      "inArray(schema.webhookHealth.provider, [...VOICE_WEBHOOK_PROVIDERS])",
+    );
+    expect(observability).toContain(
+      "const webhookRows: Array<{ outcome: string }> = opts.demoOnly",
+    );
+    expect(observability).not.toMatch(/twilio_messaging|twilio_operational|twilio_usage/);
+  });
+
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
     expect(security).toContain("365-day default; supported range 90 to 365 days");
