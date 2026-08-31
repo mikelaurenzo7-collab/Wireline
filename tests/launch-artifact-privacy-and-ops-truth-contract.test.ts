@@ -61,11 +61,15 @@ describe("launch artifact privacy and operations truth", () => {
 
   it("fails PSTN health closed when the canary signal cannot be trusted", () => {
     const canary = read("src/lib/demo-line-canary.ts");
+    const worker = read("src/lib/job-worker-base.ts");
     expect(canary).toContain(
       'throw new Error("Demo-line canary health signal requires Redis configuration")',
     );
     expect(canary).toContain("throw error;");
     expect(canary).toContain("result.voiceWindowHealthy = false;");
+    expect(canary).toContain("idempotencyKey: jobId ?");
+    expect(canary).toContain("demo-line-canary/${jobId}");
+    expect(worker).toContain("runDemoLineCanary({ jobId: String(job.id) })");
     expect(canary).toContain(`Voice health window check failed: \${message}`);
   });
 
@@ -76,7 +80,15 @@ describe("launch artifact privacy and operations truth", () => {
       "inArray(schema.webhookHealth.provider, [...VOICE_WEBHOOK_PROVIDERS])",
     );
     expect(observability).toContain(
-      "const webhookRows: Array<{ outcome: string }> = opts.demoOnly",
+      "const webhookRows: Array<{ outcome: string }> = scopedCallWindow",
+    );
+    expect(observability).toContain(
+      "opts.agentIds ? inArray(schema.callLogs.agentId, opts.agentIds) : undefined",
+    );
+    const canary = read("src/lib/demo-line-canary.ts");
+    expect(canary).toContain("agentIds: [...showcaseAgentIds]");
+    expect(canary).not.toContain(
+      "computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 60 })",
     );
     expect(observability).not.toMatch(/twilio_messaging|twilio_operational|twilio_usage/);
   });
