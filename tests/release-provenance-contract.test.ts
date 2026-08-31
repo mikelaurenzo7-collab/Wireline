@@ -29,6 +29,8 @@ describe("BotBound release provenance", () => {
     expect(schemaPromotion).toContain("BOTBOUND_RELEASE_SHA");
     expect(schemaPromotion).toContain('run("npm", ["run", "db:migrate"]');
     expect(schemaPromotion).toContain('run("node", ["scripts/run-production-schema-effects.mjs"]');
+    expect(providerPreflight).toContain("WIRELINE_RECONCILE_STRIPE_PORTAL");
+    expect(providerPreflight).toContain("read-only portal verification");
     expect(providerPreflight).toContain('run("npm", ["run", "stripe:portal:verify"]');
     expect(providerPreflight).toContain('run("npm", ["run", "stripe:webhook:check"]');
     expect(providerPreflight).not.toContain("--apply");
@@ -64,8 +66,16 @@ describe("BotBound release provenance", () => {
     }
   });
 
-  it("uses the BotBound sender fallback and does not publish synthetic traction metrics", () => {
+  it("uses the verified BotBound sender throughout the runtime and sync tooling", () => {
     expect(read("src/lib/resend-config.ts")).toContain('const DEFAULT_DOMAIN = "botbound.me"');
+    const sync = read("scripts/sync-resend-env-to-vercel.mjs");
+    expect(sync).toContain('RESEND_FROM_EMAIL = "BotBound <noreply@botbound.me>"');
+    expect(sync).toContain('const RETIRED_SENDER_DOMAIN = "trywireline.com"');
+    expect(sync).toContain("Refusing ${key}");
+    expect(sync).not.toContain("noreply@trywireline.com");
+  });
+
+  it("does not publish synthetic customer-activity metrics", () => {
     const marketing = read("src/routes/marketing-runtime-routes.ts");
     expect(marketing).not.toContain("agents_online: 120");
     expect(marketing).not.toContain("calls_this_month: 8400");
