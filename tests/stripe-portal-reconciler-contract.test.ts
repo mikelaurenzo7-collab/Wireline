@@ -166,6 +166,7 @@ describe("Stripe customer portal reconciliation", () => {
   it("keeps production portal repair explicit, pinned, bounded, and idempotent", () => {
     const script = read("scripts/reconcile-stripe-customer-portal.mts");
     const build = read("scripts/vercel-build.mjs");
+    const providerPreflight = read("scripts/run-release-provider-preflight.mjs");
     const packageJson = JSON.parse(read("package.json")) as {
       scripts?: Record<string, string>;
     };
@@ -188,16 +189,11 @@ describe("Stripe customer portal reconciliation", () => {
     expect(script).toContain("staleManaged");
     expect(script).toContain("if (!apply)");
     expect(script).toContain("exactly one active BotBound-managed portal configuration");
-    expect(build).toContain('process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true"');
     expect(build).toContain("isCanonicalVercelProject");
-    expect(build).toContain("function verifyStripePortalIfRequested()");
-    expect(build).toContain("Builds must never repair provider state");
-    expect(build).toContain(
-      'run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"])',
-    );
-    expect(build).not.toContain(
-      '"scripts/reconcile-stripe-customer-portal.mts",\n    "--apply",',
-    );
+    expect(build).not.toContain("verifyStripePortalIfRequested");
+    expect(build).not.toContain("reconcile-stripe-customer-portal.mts");
+    expect(providerPreflight).toContain('run("npm", ["run", "stripe:portal:verify"]');
+    expect(providerPreflight).not.toContain("--apply");
     expect(packageJson.scripts?.["stripe:portal:verify"]).toBe(
       "node --import tsx scripts/reconcile-stripe-customer-portal.mts",
     );
@@ -220,12 +216,12 @@ describe("Stripe customer portal reconciliation", () => {
     expect(webhookSecretSync).not.toContain("console.log(secret");
   });
 
-  it("certifies local artifacts, then verifies the portal read-only before live migration", () => {
+  it("certifies local artifacts while keeping provider verification external", () => {
     const build = read("scripts/vercel-build.mjs");
+    const providerPreflight = read("scripts/run-release-provider-preflight.mjs");
     const auditCall = "runCanonicalReleaseAudit();";
     const productBuildCall = 'run("npm", ["run", "build"]);';
     const mcpBundle = '"src/entrypoints/chatgpt-mcp-api.ts"';
-    const portalCall = "verifyStripePortalIfRequested();";
     const migrationBranch = "if (shouldMigrate) {";
 
     expect(build).toContain("function runCanonicalReleaseAudit()");
@@ -235,7 +231,8 @@ describe("Stripe customer portal reconciliation", () => {
     expect(build.indexOf(auditCall)).toBeGreaterThanOrEqual(0);
     expect(build.indexOf(productBuildCall)).toBeGreaterThan(build.indexOf(auditCall));
     expect(build.indexOf(mcpBundle)).toBeGreaterThan(build.indexOf(productBuildCall));
-    expect(build.indexOf(portalCall)).toBeGreaterThan(build.indexOf(mcpBundle));
-    expect(build.indexOf(migrationBranch)).toBeGreaterThan(build.indexOf(portalCall));
+    expect(build.indexOf(migrationBranch)).toBeGreaterThan(build.indexOf(mcpBundle));
+    expect(build).not.toContain("reconcile-stripe-customer-portal.mts");
+    expect(providerPreflight).toContain('run("npm", ["run", "stripe:portal:verify"]');
   });
 });
