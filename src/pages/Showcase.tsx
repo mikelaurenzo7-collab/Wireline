@@ -38,7 +38,7 @@ export default function Showcase() {
               <p className="wl-eyebrow">Protected browser preview</p>
               <div
                 className="wl-segmented grid w-full max-w-[22rem] grid-cols-2"
-                role="tablist"
+                role="group"
                 aria-label="Demo Phone Bots"
               >
                 {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => {
@@ -47,8 +47,7 @@ export default function Showcase() {
                     <button
                       key={agent.name}
                       type="button"
-                      role="tab"
-                      aria-selected={selected}
+                      aria-pressed={selected}
                       className="wl-segmented__item flex-1"
                       onClick={() => setActiveDemo(agent)}
                     >

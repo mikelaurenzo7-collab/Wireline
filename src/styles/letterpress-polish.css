@@ -714,18 +714,22 @@
     box-shadow var(--wireline-motion-duration-fast) var(--wireline-motion-easing-standard);
 }
 
-.wl-segmented__item:hover:not([data-active]):not([aria-selected="true"]):not(.is-active):not(
-    :disabled
-  ),
+.wl-segmented__item:hover:not([data-active]):not([aria-selected="true"]):not(
+    [aria-pressed="true"]
+  ):not(.is-active):not(:disabled),
 .wl-segmented
-  button:hover:not([data-active]):not([aria-selected="true"]):not(.is-active):not(:disabled) {
+  button:hover:not([data-active]):not([aria-selected="true"]):not([aria-pressed="true"]):not(
+    .is-active
+  ):not(:disabled) {
   color: var(--wireline-color-text-primary);
 }
 
 .wl-segmented__item[data-active],
 .wl-segmented__item[aria-selected="true"],
+.wl-segmented__item[aria-pressed="true"],
 .wl-segmented__item.is-active,
 .wl-segmented button[aria-selected="true"],
+.wl-segmented button[aria-pressed="true"],
 .wl-segmented button.is-active {
   background: var(--wireline-color-surface-raised);
   color: var(--wireline-color-text-primary);

@@ -72,7 +72,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/showcase": {
     title: "TRY BOTBOUND | HEAR A PHONE BOT",
     description:
-      "Hear the Phone Bot first. Then build one for calls, email, text, and the work that should happen next.",
+      "Hear the Phone Bot in a protected browser preview. Then build one for calls, email, text, and the work that should happen next.",
   },
   "/blog": {
     title: "BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS",

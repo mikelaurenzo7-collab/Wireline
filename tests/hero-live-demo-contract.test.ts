@@ -36,6 +36,9 @@ describe("public live demo contract", () => {
     expect(showcase).toContain('id="showcase-preview"');
     expect(showcase).toContain("BUILD YOUR BOT");
     expect(showcase).toContain("Protected browser preview");
+    expect(showcase).toContain('role="group"');
+    expect(showcase).toContain("aria-pressed={selected}");
+    expect(showcase).not.toContain('role="tablist"');
     expect(showcase).not.toContain('id="demo-lines"');
     expect(showcase).not.toContain("href={`tel:${agent.tel}`}");
     expect(widget).toContain("useProtectedPublicDemo");
