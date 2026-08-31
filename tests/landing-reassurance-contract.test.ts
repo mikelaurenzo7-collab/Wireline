@@ -22,6 +22,9 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("ON THE LINE");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
+    expect(css).toMatch(
+      /\.landing-prestige__hero\s*\{[\s\S]*?grid-template-rows:\s*auto auto auto;[\s\S]*?align-content:\s*center/,
+    );
     expect(landing).not.toContain("00:42");
   });
 

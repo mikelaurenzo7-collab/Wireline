@@ -109,6 +109,23 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   overflow: visible;
 }
 
+/* Compact public pages compose one screen of proof. Keep them as a column so
+ * the chrome bar sits on the viewport floor instead of floating above a dead
+ * band when the story is shorter than the window. Long-form routes stay block
+ * and grow with the document. */
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page) {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page)
+  .marketing-flow {
+  flex: 1 1 auto;
+}
+
 .wl-ui-caps.wl-ui-caps--document
   .marketing-surface
   .landing-stage.marketing-section--screen {

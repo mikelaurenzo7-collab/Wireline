@@ -54,6 +54,8 @@ describe("design system polish e2e verified wins", () => {
     expect(pricing).not.toContain("Sparkles");
     expect(pricing).not.toContain("icon: Users");
     expect(pricing).toContain("Build Free");
+    expect(pricing).toContain("wl-pricing-page__title");
+    expect(pricing).not.toContain("text-lg font-semibold tracking-[-0.025em]");
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
@@ -80,5 +82,9 @@ describe("design system polish e2e verified wins", () => {
     );
     expect(polish).not.toContain("#demo-lines");
     expect(polish).toContain(".wl-showcase-preview__note");
+    expect(polish).toContain(".wl-pricing-page__title");
+    expect(polish).toMatch(
+      /\.wl-pricing-page__title\s*\{[\s\S]*?font-size:\s*clamp\(1\.45rem, 1\.15rem \+ 1\.2vw, 2rem\)/,
+    );
   });
 });

@@ -213,7 +213,7 @@ export default function Pricing() {
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-3 lg:justify-between">
               <div className="text-center lg:text-left">
                 <p className="wl-eyebrow m-0 text-muted-foreground">Pricing</p>
-                <h1 className="mt-1 text-lg font-semibold tracking-[-0.025em] text-foreground">
+                <h1 className="wl-pricing-page__title mt-1 text-foreground">
                   Start free. Go live from $19.
                 </h1>
               </div>

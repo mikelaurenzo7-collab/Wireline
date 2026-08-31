@@ -169,6 +169,19 @@
   row-gap: 0.4rem;
 }
 
+/* Pricing is a buying page, not a toolbar. The compact one-screen plan grid
+ * still needs a display-rank title; 18px next to the interval toggle read as
+ * a caption instead of the page. */
+.marketing-surface.wl-pricing-page #plans h1,
+.marketing-surface.wl-pricing-page .wl-pricing-page__title {
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.45rem, 1.15rem + 1.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  max-width: 22ch;
+}
+
 /* Segmented items are tabs/controls. Keep the compact measure, but use the same
  * cased control voice and tracking as every other tab and button. */
 .marketing-surface .wl-segmented__item {

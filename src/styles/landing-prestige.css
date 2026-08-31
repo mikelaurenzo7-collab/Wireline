@@ -27,24 +27,14 @@
 .landing-prestige__hero {
   position: relative;
   display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 1.5rem;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  align-items: start;
+  justify-items: start;
+  gap: clamp(1.15rem, 2.4vh, 1.85rem);
   padding: clamp(2rem, 4.5vw, 4.5rem) clamp(2rem, 5vw, 5.5rem);
   overflow: hidden;
   border-right: 1px solid var(--wireline-color-border-default);
-}
-
-.landing-prestige__hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: none;
-}
-
-.landing-prestige__hero > * {
-  position: relative;
-  z-index: 1;
 }
 
 .landing-prestige__hero-brand {
@@ -58,17 +48,7 @@
   --bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem);
 }
 
-.landing-prestige__hero-lockup .bb-lockup__mark {
-  filter: drop-shadow(0 0.8rem 1.5rem rgba(0, 0, 0, 0.3))
-    drop-shadow(0 0 2.1rem color-mix(in srgb, var(--wireline-brand-violet) 24%, transparent));
-}
-
-.landing-prestige__hero-lockup .bb-mark-image {
-  filter: saturate(1.04) contrast(1.025);
-}
-
 .landing-prestige__hero-copy {
-  align-self: center;
   max-width: 48rem;
 }
 
@@ -118,7 +98,7 @@
   border-top: 1px solid color-mix(in srgb, var(--wireline-color-border-default) 80%, transparent);
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -190,9 +170,6 @@
 
 .landing-demo-inline__copy strong {
   display: block;
-}
-
-.landing-demo-inline__copy strong {
   font-family: var(--wireline-font-family-display);
   font-size: 1rem;
   font-weight: 650;
@@ -207,7 +184,7 @@
   min-height: 2.75rem;
   padding: 0.62rem 0.88rem;
   border: 1px solid var(--wireline-color-action-primary-default);
-  border-radius: var(--wireline-radius-lg);
+  border-radius: 0.75rem;
   background: var(--wireline-color-action-primary-default);
   color: var(--wireline-color-text-onAction);
   font-family: var(--wireline-font-family-mono);
@@ -629,7 +606,8 @@
 
   .landing-prestige__hero {
     display: grid;
-    min-height: 38rem;
+    align-content: start;
+    min-height: auto;
     padding: max(2rem, env(safe-area-inset-top)) 1.25rem 2.5rem;
     border-right: 0;
     border-bottom: 1px solid var(--wireline-color-border-default);
