@@ -1,7 +1,7 @@
-// Renders canonical BotBound SVG sources to PNGs for web, billing, native,
-// and browser-extension surfaces. Legacy wireline-named outputs are generated
-// as compatibility aliases until external dashboards have been cut over.
-import { spawnSync } from "node:child_process";
+// Verifies committed BotBound image assets by default. Pass --write to
+// explicitly regenerate canonical web, billing, native, and extension assets.
+// Legacy wireline-named outputs remain compatibility aliases until external
+// dashboards and old install links have been fully cut over.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,43 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
 const publicDir = resolve(root, "public");
 if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
+
+const committedAssets = [
+  "design-tokens/wireline.tokens.json",
+  "public/brand/botbound-app-icon.png",
+  "public/brand/botbound-operator-primary.png",
+  "public/favicon.png",
+  "public/og-image.png",
+  "public/apple-touch-icon.png",
+  "public/botbound-icon-192.png",
+  "public/botbound-icon-512.png",
+  "public/botbound-stripe-icon.png",
+  "public/wireline-icon-192.png",
+  "public/wireline-icon-512.png",
+  "public/wireline-stripe-icon.png",
+  "public/botbound-stripe-logo.png",
+  "public/wireline-stripe-logo.png",
+  "public/botbound-icon.svg",
+  "public/wireline-icon.svg",
+  "public/favicon.svg",
+  "public/botbound-stripe-logo.svg",
+  "public/wireline-stripe-logo.svg",
+  "public/og-image.svg",
+  "apps/browser-extension/assets/icon.svg",
+  "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png",
+];
+
+if (!process.argv.includes("--write")) {
+  const missing = committedAssets.filter((path) => !existsSync(resolve(root, path)));
+  if (missing.length) {
+    throw new Error(`Missing committed BotBound image assets:\n${missing.join("\n")}`);
+  }
+  console.log(
+    `Verified ${committedAssets.length} committed BotBound image assets without mutating source. ` +
+      "Run `npm run assets -- --write` only for an intentional asset refresh.",
+  );
+  process.exit(0);
+}
 
 function designToken(tokens, ...segments) {
   let current = tokens;
@@ -146,7 +183,7 @@ for (const target of targets) {
         resolve(root, "public/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"),
         resolve(root, "public/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"),
       ],
-      loadSystemFonts: true,
+      loadSystemFonts: false,
       defaultFontFamily: "Inter Tight",
     },
   });
@@ -155,11 +192,6 @@ for (const target of targets) {
   console.log(`✔ rendered ${target.out} (${png.length} bytes)`);
 }
 
-const extensionBuild = spawnSync(
-  process.execPath,
-  [resolve(root, "apps/browser-extension/scripts/build.mjs")],
-  { cwd: root, encoding: "utf8", stdio: "inherit" },
+console.log(
+  "BotBound image assets regenerated explicitly. Review and commit every intended binary and SVG change before release.",
 );
-if (extensionBuild.error) throw extensionBuild.error;
-if (extensionBuild.status !== 0)
-  throw new Error(`Browser-extension packaging failed with status ${extensionBuild.status}.`);
