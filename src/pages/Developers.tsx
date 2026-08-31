@@ -91,7 +91,7 @@ export default function Developers() {
   return (
     <MarketingPageFrame>
       <PageMeta
-        title="DEVELOPER PORTAL | BOTBOUND"
+        title="DEVELOPER PORTAL | BotBound"
         description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />

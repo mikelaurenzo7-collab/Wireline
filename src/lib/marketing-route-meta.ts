@@ -62,7 +62,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/compare": {
     title: "WHY BOTBOUND | COMPARE BOTS",
     description:
-      "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
+      "Compare BotBound's workspace with per-agent, per-call, and developer voice infrastructure pricing.",
   },
   "/about": {
     title: "ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH",
@@ -130,7 +130,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
+      "Privacy for BotBound's platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
   },
   "/terms": {
     title: "Terms of Service",

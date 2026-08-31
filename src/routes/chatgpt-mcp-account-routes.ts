@@ -1193,7 +1193,7 @@ router.post("/mcp", async (req, res) => {
           channel: agent.channel || "voice",
           on_phone_network: onPhoneNetwork,
           next_step: onPhoneNetwork
-            ? "This agent is on the phone network. Open BotBound Studio to operate live work. You can still run a private rehearsal from this client."
+            ? "This agent is on the phone network. Open Studio in BotBound to operate live work. You can still run a private rehearsal from this client."
             : "This agent is still a private draft. Open Connections in BotBound to attach a number and launch. You can privately rehearse it from this client.",
           open_in_wireline_url: `${origin}/studio?agent=${encoded}`,
           training_url: `${origin}/knowledge?agent=${encoded}`,

@@ -101,7 +101,7 @@ export default function Compare() {
     <MarketingPageFrame className="wl-compare-page">
       <PageMeta
         title="WHY BOTBOUND | COMPARE BOTS"
-        description="Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing."
+        description="Compare BotBound's workspace with per-agent, per-call, and developer voice infrastructure pricing."
         path="/compare"
       />
 

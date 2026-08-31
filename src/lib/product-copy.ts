@@ -217,7 +217,7 @@ export function formatAgentRoleLabel(role?: string | null): string {
 
 /** Canonical trust posture for sales and regulated verticals. Policy driven, not stealth. */
 export const TRUST_DISCLOSURE_FAQ =
-  "BotBound Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
+  "Bots follow your disclosure policy, consent rules, and conversation purpose. When disclosure is required or enabled, BotBound logs it automatically. The goal is quick, clear qualification and real opportunities that move forward." as const;
 
 export function rosterSummary(personalCount: number, businessCount: number): string {
   const total = personalCount + businessCount;

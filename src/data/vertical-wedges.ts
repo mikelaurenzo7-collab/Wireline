@@ -99,7 +99,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will customers know they are talking to a Bot?",
-        a: 'BotBound Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
+        a: 'Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
         q: "What happens if the Bot does not know the answer?",

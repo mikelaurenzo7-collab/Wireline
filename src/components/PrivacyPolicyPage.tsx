@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
+        description="Privacy for BotBound's platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
         path="/privacy"
       />
 

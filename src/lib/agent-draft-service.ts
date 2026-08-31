@@ -65,7 +65,7 @@ async function assertAgentIsDraftOnly(agentId: string, userId: string): Promise<
     .limit(1);
   if (line) {
     throw AppError.forbidden(
-      "This Bot is live on the phone network. Open it in BotBound Studio to make changes.",
+      "This Bot is live on the phone network. Open it in Studio to make changes.",
     );
   }
 }
