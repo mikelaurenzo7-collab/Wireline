@@ -8,7 +8,7 @@ BotBound is the operating layer for your Bot across calls, texts, follow-up, bro
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
-- **Wire** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
+- **Launch / Connections** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
 - **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
 - **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
 
@@ -22,7 +22,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Overview | `src/pages/OverviewPage.tsx` |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
 | Training | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` |
-| Wire | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
 | Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
 | Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
 | Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |

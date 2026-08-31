@@ -4,7 +4,7 @@ BotBound is one Bot product and workspace across calls, texts, email, tools, and
 outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**;
 this supports the public **Build -> Train -> Launch -> Improve** story.
 
-A customer builds a Bot, trains it with durable knowledge and policy, wires it to numbers and tools, then runs work through Studio. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
+A customer builds a Bot, trains it with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Test -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
 
 ## Product boundary
 
@@ -27,7 +27,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 | Overview             | `src/pages/OverviewPage.tsx`                                                                                                                                                          |
 | Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                                                               |
 | Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
-| Wire                 | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |
 | Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                                                           |
 | Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |

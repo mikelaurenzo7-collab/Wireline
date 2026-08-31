@@ -50,14 +50,14 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH",
+    title: "PRICING | BOTBOUND PHONE BOTS FROM $19/MONTH",
     description:
-      "Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
-    title: "FEATURES | BOTBOUND VOICE BOTS",
+    title: "FEATURES | BOTBOUND PHONE BOTS",
     description:
-      "Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory.",
+      "Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory.",
   },
   "/compare": {
     title: "WHY BOTBOUND | COMPARE BOTS",
@@ -120,7 +120,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "DEVELOPER PORTAL | BotBound",
     description:
-      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
+      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | BotBound",

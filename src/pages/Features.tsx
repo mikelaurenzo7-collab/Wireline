@@ -14,8 +14,6 @@ import { PageMeta } from "../lib/page-meta";
 import { MARKETING_VOICE } from "../lib/product-copy";
 import { signupHrefForPlan } from "../lib/signup-intent";
 
-const CHANNEL_CAPABILITIES = ["Voice", "Live Conversations", "Text / SMS", "Email"] as const;
-
 const CORE_FEATURES = [
   {
     icon: Workflow,
@@ -53,8 +51,8 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
-        title="FEATURES | BOTBOUND VOICE BOTS"
-        description="Build and train a voice-first Bot that calls, holds natural conversations, texts, emails, books, follows up, updates connected systems, and logs outcomes under shared rules and memory."
+        title="FEATURES | BOTBOUND PHONE BOTS"
+        description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
         path="/features"
       />
       <PrecisionPublicHeader />
@@ -66,7 +64,7 @@ export default function Features() {
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
-            title="VOICE-FIRST BOTS FOR EVERY CUSTOMER CONVERSATION"
+            title="THEY CALL. YOUR BOT ANSWERS."
             primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
             secondaryAction={{
               label: "HEAR A DEMO",
@@ -91,7 +89,7 @@ export default function Features() {
             </ol>
 
             <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              {CHANNEL_CAPABILITIES.map((title) => (
+              {MARKETING_VOICE.channelProof.map((title) => (
                 <li
                   key={title}
                   className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
@@ -128,14 +126,10 @@ function FeatureCard({
   body: string;
 }) {
   return (
-    <article className="wl-stitch-card group flex flex-col items-center rounded-xl p-3.5 text-center transition-all hover:-translate-y-px hover:shadow-sm">
-      <Icon
-        size={18}
-        className="text-primary transition group-hover:scale-110"
-        aria-hidden="true"
-      />
-      <h3 className="wl-card-title mx-auto mt-2 max-w-[18ch]">{title}</h3>
-      <p className="mx-auto mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
+    <article className="wl-stitch-card flex flex-col rounded-xl p-3.5 text-left">
+      <Icon size={16} className="text-primary" aria-hidden="true" />
+      <h3 className="wl-card-title mt-2 max-w-[18ch]">{title}</h3>
+      <p className="mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
         {body}
       </p>
     </article>

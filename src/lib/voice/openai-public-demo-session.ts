@@ -28,7 +28,7 @@ function delay(milliseconds: number): Promise<void> {
 
 function publicDemoInstructions(agent: ContactAgent): string {
   return [
-    `You are ${agent.name}, demonstrating a BotBound Voice Bot in a protected browser conversation.`,
+    `You are ${agent.name}, demonstrating a BotBound Phone Bot in a protected browser conversation.`,
     agent.scope,
     "The visitor may give you a customer situation, personal task, or business request. Show how you would answer, qualify, follow up, or establish the next step.",
     "Keep every spoken turn under 18 words. Ask no more than one question at a time.",
@@ -124,7 +124,7 @@ export async function createPublicOpenAILiveDemoCall(input: {
   return {
     sdp: call.sdp,
     greeting:
-      "Hi, I’m a live BotBound Voice Bot. Give me a customer situation or task, and I’ll show you how I’d handle it.",
+      "Hi, I’m a live BotBound Phone Bot. Give me a customer situation or task, and I’ll show you how I’d handle it.",
     maxDurationSeconds: call.maxDurationSeconds,
     endsAt: endsAt.toISOString(),
   } as const;

@@ -44,7 +44,7 @@ const MCP_CLIENTS = [
   {
     title: "ChatGPT",
     description:
-      "Create a BotBound account, then draft and privately rehearse your first Voice Bot.",
+      "Create a BotBound account, then draft and privately rehearse your first Phone Bot.",
     action: "Open ChatGPT Apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
@@ -52,7 +52,7 @@ const MCP_CLIENTS = [
   {
     title: "Claude",
     description:
-      "Add BotBound as a remote connector and build your first Voice Bot from Claude.",
+      "Add BotBound as a remote connector and build your first Phone Bot from Claude.",
     action: "Open Claude Connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
@@ -60,7 +60,7 @@ const MCP_CLIENTS = [
   {
     title: "Cursor",
     description:
-      "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Voice Bot.",
+      "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Phone Bot.",
     action: "Add to Cursor",
     href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
     icon: Terminal,
@@ -92,7 +92,7 @@ export default function Developers() {
     <MarketingPageFrame>
       <PageMeta
         title="DEVELOPER PORTAL | BOTBOUND"
-        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Voice Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
+        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />
 

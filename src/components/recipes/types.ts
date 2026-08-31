@@ -116,8 +116,8 @@ export const RECIPE_META: Record<Recipe, RecipeMeta> = {
     thinking: false,
   },
   "agent-wire": {
-    title: "Wire Agent",
-    tagline: "Synthesize a complete agent from a goal.",
+    title: "Launch Bot",
+    tagline: "Synthesize a complete Bot from a goal.",
     icon: Hammer,
     accent: BRAND.colors.primary,
     thinking: true,

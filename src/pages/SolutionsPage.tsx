@@ -12,7 +12,7 @@ const SOLUTIONS = {
     primary: { href: "/signup?wedge=sales", label: "Create Sales Bot" },
     secondary: { href: "/showcase", label: "Hear Browser Demo" },
     sequence: [
-      ["A Lead Reaches Out", "A Voice Bot responds on the channel the lead already chose."],
+      ["A Lead Reaches Out", "A Phone Bot responds on the channel the lead already chose."],
       [
         "It Qualifies by Your Rules",
         "Your offer, criteria, objections, and escalation path guide the conversation.",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Phone, Sparkles, X } from "lucide-react";
+import { Loader2, Phone, Sparkles, X } from "lucide-react";
 import { Link } from "react-router";
 import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
@@ -28,7 +28,13 @@ import { getStoredSignupIntent, recommendedPlanFromIntent } from "../../lib/sign
 type WizardStep = PostCreateWizardStep | "complete";
 
 function isWizardStep(value: string | null): value is PostCreateWizardStep {
-  return value === "train" || value === "channels" || value === "wire" || value === "test";
+  return (
+    value === "train" ||
+    value === "channels" ||
+    value === "wire" ||
+    value === "test" ||
+    value === "launch"
+  );
 }
 
 /** Keep provision failures owner-safe — never surface ORM/provider internals. */
@@ -39,10 +45,10 @@ function safeProvisionError(
 ): string {
   const normalized = code?.toLowerCase();
   if (status === 401 || status === 403) {
-    return "Your session expired. Sign in again to continue wiring a number.";
+    return "Your session expired. Sign in again to continue connecting a number.";
   }
   if (status === 402 || normalized === "activation_required") {
-    return POST_CREATE_WIZARD_COPY.steps.wire.activationRequired;
+    return POST_CREATE_WIZARD_COPY.steps.launch.activationRequired;
   }
   if (status === 429 || normalized === "rate_limited") {
     return "You're going a bit fast. Try provisioning again in a moment.";
@@ -82,6 +88,7 @@ export default function PostCreateActivationWizard({
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
     if (stored === "channels") return "test";
+    if (stored === "wire") return "launch";
     return isWizardStep(stored) ? stored : "train";
   });
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -95,7 +102,7 @@ export default function PostCreateActivationWizard({
   const [activationNeeded, setActivationNeeded] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
 
-  const stepOrder: WizardStep[] = ["train", "test", "wire", "complete"];
+  const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"];
   const stepIndex = stepOrder.indexOf(step);
 
   const setStep = useCallback(
@@ -271,8 +278,8 @@ export default function PostCreateActivationWizard({
   const completeCopy = useMemo(() => {
     if (hasLine && phoneNumber) {
       return {
-        title: POST_CREATE_WIZARD_COPY.complete.wiredTitle,
-        detail: POST_CREATE_WIZARD_COPY.complete.wiredDetail(
+        title: POST_CREATE_WIZARD_COPY.complete.liveTitle,
+        detail: POST_CREATE_WIZARD_COPY.complete.liveDetail(
           payload.agentName,
           formatPhone(phoneNumber),
         ),
@@ -321,38 +328,38 @@ export default function PostCreateActivationWizard({
           </button>
         </header>
 
-        <div className="flex gap-2 border-b border-border px-5 py-3 sm:px-6">
-          {(["train", "test", "wire"] as const).map((id, index) => {
+        <nav
+          aria-label="Setup steps"
+          className="flex items-center gap-2 border-b border-border px-5 py-3.5 sm:px-6"
+        >
+          {(["train", "test", "launch"] as const).map((id, index) => {
             const active = step === id;
             const done = stepIndex > index || step === "complete";
-            const labels = POST_CREATE_WIZARD_COPY.steps;
             return (
-              <div
-                key={id}
-                className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
-                  active
-                    ? "border-primary/35 bg-primary/5 text-foreground"
-                    : done
-                      ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
-                      : "border-border text-muted-foreground"
-                }`}
-              >
-                <span
-                  className={`grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
-                    done
-                      ? "bg-primary text-primary-foreground"
-                      : active
-                        ? "bg-primary/15 text-primary"
-                        : "bg-muted text-muted-foreground"
+              <div key={id} className="flex min-w-0 flex-1 items-center gap-2">
+                {index > 0 ? (
+                  <span
+                    aria-hidden="true"
+                    className={`h-px min-w-3 flex-1 ${
+                      done || active ? "bg-primary/35" : "bg-border"
+                    }`}
+                  />
+                ) : null}
+                <p
+                  className={`wl-overline truncate ${
+                    active
+                      ? "text-foreground"
+                      : done
+                        ? "text-primary"
+                        : "text-muted-foreground"
                   }`}
                 >
-                  {done ? <Check size={11} aria-hidden="true" /> : index + 1}
-                </span>
-                <span className="truncate font-semibold">{labels[id].label}</span>
+                  {POST_CREATE_WIZARD_COPY.steps[id].label}
+                </p>
               </div>
             );
           })}
-        </div>
+        </nav>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           {step === "train" ? (
@@ -387,14 +394,14 @@ export default function PostCreateActivationWizard({
             </section>
           ) : null}
 
-          {step === "wire" ? (
+          {step === "launch" ? (
             <section className="grid gap-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.wire.title}
+                  {POST_CREATE_WIZARD_COPY.steps.launch.title}
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.wire.detail}
+                  {POST_CREATE_WIZARD_COPY.steps.launch.detail}
                 </p>
               </div>
 
@@ -426,14 +433,14 @@ export default function PostCreateActivationWizard({
               {activationNeeded ? (
                 <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
                   <p className="text-sm font-semibold text-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.wire.activationRequired}
+                    {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.wire.activationDetail(starterPriceUsd)}
+                    {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
                   </p>
                   <Button asChild size="sm" className="mt-3">
-                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("wire")}>
-                      {POST_CREATE_WIZARD_COPY.steps.wire.activationCta}
+                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("launch")}>
+                      {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
                     </Link>
                   </Button>
                 </div>
@@ -451,7 +458,7 @@ export default function PostCreateActivationWizard({
                       finish();
                     }}
                   >
-                    Finish setup
+                    Continue
                   </Button>
                 ) : (
                   <>
@@ -466,7 +473,7 @@ export default function PostCreateActivationWizard({
                       ) : (
                         <Phone size={14} aria-hidden="true" />
                       )}
-                      {POST_CREATE_WIZARD_COPY.steps.wire.primary}
+                      {POST_CREATE_WIZARD_COPY.steps.launch.primary}
                     </Button>
                     <Button
                       type="button"
@@ -474,7 +481,7 @@ export default function PostCreateActivationWizard({
                       size="sm"
                       onClick={() => finish()}
                     >
-                      {POST_CREATE_WIZARD_COPY.steps.wire.skip}
+                      {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
                   </>
                 )}
@@ -583,7 +590,7 @@ export default function PostCreateActivationWizard({
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => setStep("wire")}
+                onClick={() => setStep("launch")}
               >
                 {POST_CREATE_WIZARD_COPY.steps.test.skip}
               </Button>
@@ -591,7 +598,7 @@ export default function PostCreateActivationWizard({
                 type="button"
                 size="sm"
                 disabled={!testStarted}
-                onClick={() => setStep("wire")}
+                onClick={() => setStep("launch")}
               >
                 {POST_CREATE_WIZARD_COPY.steps.test.primary}
               </Button>

@@ -137,7 +137,7 @@ export default function ActivationChecklist({ className }: { className?: string 
     return (
       <section
         className={cn("wl-paper wl-paper-elevated relative overflow-hidden p-5 sm:p-6", className)}
-        aria-label="Your Voice Bot is live"
+        aria-label="Your Bot is live"
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">

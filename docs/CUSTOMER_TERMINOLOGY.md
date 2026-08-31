@@ -17,7 +17,7 @@ identifiers, not customer language and not separate product lanes.
 | Surface | Canonical language |
 | --- | --- |
 | Broad marketing | `Bot`, `Phone Bot`, or a concrete role such as `Front Desk` |
-| Signup and setup | `Build your Bot`, `Choose the job`, `Knowledge and rules` |
+| Signup and setup | `Build your Bot`, then `Train`, `Test`, `Launch`. Never `Wire` as a customer step. |
 | Workspace and navigation | `Bot`, `Bots`, `workspace`, `Knowledge` |
 | Role starters | Job names such as `Sales Rep`, `Support`, or `Personal Assistant` |
 | Pricing | `Free Builder`, `Starter`, `Starter Plus`, `Pro`, `Scale` |
@@ -40,6 +40,7 @@ language.
 - Personal or Business as a workspace, signup choice, pricing lane, or product noun.
 - Audience-shaped public plan URLs. Emit `free`, `starter`, `starter-plus`, and
   `pro`; continue accepting historical aliases.
+- `Wire` as a customer-facing setup step, nav label, or CTA. Technical events may retain `wire_*`.
 - `AI employee` as the product description.
 - `AI` next to `agent` in customer copy.
 - Bare `business agent` or `personal agent` when the intended meaning is simply Bot.

@@ -102,7 +102,7 @@ router.get(
           return res
             .status(502)
             .send(
-              "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Wire → Integrations.",
+              "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Connections → Integrations.",
             );
         }
         pageRows = (await pageRes.json()) as typeof pageRows;
@@ -113,7 +113,7 @@ router.get(
         return res
           .status(502)
           .send(
-            "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Wire → Integrations.",
+            "Connected to Meta, but we could not load your Facebook Pages. Reconnect from Connections → Integrations.",
           );
       }
       const pages: { id: string; name: string; access_token?: string }[] = pageRows.data || [];

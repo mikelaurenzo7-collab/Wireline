@@ -275,11 +275,11 @@ export default function CampaignsPanel() {
             value={agentId || "__none__"}
             onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}
           >
-            <SelectTrigger aria-label="Assign Voice Bot">
-              <SelectValue placeholder="Assign Voice Bot" />
+            <SelectTrigger aria-label="Assign Bot">
+              <SelectValue placeholder="Assign Bot" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">No Voice Bot assigned</SelectItem>
+              <SelectItem value="__none__">No Bot assigned</SelectItem>
               {agents.map((a) => (
                 <SelectItem key={a.id} value={a.id}>
                   {a.name}

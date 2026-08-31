@@ -1,6 +1,6 @@
 # BotBound Documentation
 
-BotBound's public operating loop is **Build -> Train -> Launch -> Improve**. The repository still uses technical surface names such as Create, Training, Connections / Wire, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
+BotBound's public operating loop is **Build -> Train -> Launch -> Improve**. After create, the setup guide is **Train -> Test -> Launch**. The repository still uses technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
 Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job rather than choosing Personal or Business, and every role starter enters the same workspace model. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Every active paid Bot has an included number. Outbound, inbound, and hybrid modes are first-class.
 
@@ -13,7 +13,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Web and API      | `src/`, `server.ts`, `api/`                                                                         | **Live** canonical runtime.                                                                          |
 | Create           | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                             | Short intake for name, role, voice, personality, and starting brief.                                 |
 | Training         | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` | Deep configuration, sources, behavior, policy, evaluation, and memory.                               |
-| Wire             | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
+| Connections      | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
 | Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                             |
 | BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.             |
 | iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
@@ -27,7 +27,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 - Public pages explain. Authenticated pages execute.
 - Create stays short; Training owns detailed setup.
-- Wire owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
+- Connections owns numbers, integrations, routing, connected tools, approvals, billing, and live launch controls.
 - Studio is the workroom; Overview is the calm command center.
 - Use labels, tabs, icons, state, and clear next actions instead of explanatory paragraphs on active work surfaces.
 - Phone / Call History and Analytics may explain history, coaching, exports, and insights.

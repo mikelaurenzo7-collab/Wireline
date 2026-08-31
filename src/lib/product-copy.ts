@@ -30,6 +30,7 @@ export const BRAND_SYSTEM = {
     "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase when the design system calls for cased controls.",
     "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
+    "Never use Wire as a customer-facing setup step, nav label, or CTA. After create, the guide is Train, Test, Launch.",
     "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
     "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
@@ -51,7 +52,7 @@ const BOT_LANGUAGE = {
   navShort: "Studio",
   createCta: "Create Bot",
   createCtaShort: "Create Bot",
-  setupLabel: "Configure Your Bot",
+  setupLabel: "Set Up Your Bot",
   setupPrompt: "What should your Bot do?",
   setupDescription:
     "Choose a role starter or describe any workflow. You can change every capability later.",

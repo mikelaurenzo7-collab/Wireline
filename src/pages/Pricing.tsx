@@ -27,10 +27,10 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put Your Voice Bot Live",
-    tagline: "Your Voice Bot from $19/month",
+    eyebrow: "Put Your Phone Bot Live",
+    tagline: "Your Phone Bot from $19/month",
     detail:
-      "One focused Voice Bot for inbound calls, outbound calls, or scheduling, with an included BotBound number.",
+      "One focused Phone Bot for inbound calls, outbound calls, or scheduling, with an included BotBound number.",
     ctaMonthly: "Start for $19",
     ctaAnnual: "Start for $190/yr",
     ctaPath: signupHrefForPlan("starter"),
@@ -127,7 +127,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one Voice Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
+    "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
   ],
   [
     "Does every paid Bot get a phone number?",
@@ -160,7 +160,7 @@ const pricingJsonLd = {
   "@graph": [
     {
       "@type": "OfferCatalog",
-      name: "BotBound Voice Bots pricing",
+      name: "BotBound Phone Bots pricing",
       url: "https://botbound.me/pricing",
       itemListElement: [
         {
@@ -168,7 +168,7 @@ const pricingJsonLd = {
           name: "BotBound Free Builder",
           price: 0,
           priceCurrency: "USD",
-          description: "Build, configure, and privately simulate one Voice Bot.",
+          description: "Build, train, and privately simulate one Phone Bot.",
         },
         ...PAID_TIERS.map(({ plan, publicName, detail }) => ({
           "@type": "Offer",
@@ -197,8 +197,8 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="PRICING | BOTBOUND VOICE BOTS FROM $19/MONTH"
-        description="Build a voice-first Bot free and launch from $19/month. Included numbers, voice capacity, text, email, Lead Hunt, and prepaid usage controls stay clear."
+        title="PRICING | BOTBOUND PHONE BOTS FROM $19/MONTH"
+        description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />
       <script

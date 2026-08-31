@@ -82,7 +82,7 @@ describe("public live demo contract", () => {
     expect(demo).toContain('event: "landing_demo_clicked"');
     expect(demo).toContain('surface: "marketing_web"');
     expect(demo).toContain("endTimerRef.current");
-    expect(provider).toContain("BotBound Voice Bot");
+    expect(provider).toContain("BotBound Phone Bot");
     expect(provider).not.toMatch(/Wireline voice agent/i);
   });
 
