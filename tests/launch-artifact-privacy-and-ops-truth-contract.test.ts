@@ -59,6 +59,16 @@ describe("launch artifact privacy and operations truth", () => {
     );
   });
 
+  it("fails PSTN health closed when the canary signal cannot be trusted", () => {
+    const canary = read("src/lib/demo-line-canary.ts");
+    expect(canary).toContain(
+      'throw new Error("Demo-line canary health signal requires Redis configuration")',
+    );
+    expect(canary).toContain("throw error;");
+    expect(canary).toContain("result.voiceWindowHealthy = false;");
+    expect(canary).toContain(`Voice health window check failed: \${message}`);
+  });
+
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
     expect(security).toContain("365-day default; supported range 90 to 365 days");
