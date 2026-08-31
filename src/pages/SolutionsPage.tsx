@@ -3,7 +3,6 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
-import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const SOLUTIONS = {
   sales: {
@@ -85,7 +84,6 @@ export default function SolutionsPage() {
   const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
   const demoAgentName = key === "sales" ? "Jake" : "Jordan";
-  const demoAgent = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === demoAgentName);
 
   return (
     <MarketingPageFrame className="wl-solutions-page">
@@ -109,21 +107,6 @@ export default function SolutionsPage() {
               <BrowserCallWidget
                 agentName={demoAgentName}
                 buttonLabel={`Talk to ${demoAgentName}`}
-                fallback={
-                  demoAgent ? (
-                    <div className="text-center">
-                      <a
-                        href={`tel:${demoAgent.tel}`}
-                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
-                      >
-                        Call the {key === "sales" ? "Sales" : "Support"} Demo
-                      </a>
-                      <p className="mt-2 font-mono text-xs text-muted-foreground">
-                        {demoAgent.tel}
-                      </p>
-                    </div>
-                  ) : undefined
-                }
               />
             </div>
           }
