@@ -9,14 +9,14 @@ A workspace is activated when the user has:
 1. Created a Bot.
 2. Trained it with role, facts, tone, rules, and escalation behavior.
 3. Completed a private simulation or test call.
-4. Wired a paid-plan number or clearly understands what remains before live launch.
+4. Launched a paid-plan number or clearly understands what remains before live launch.
 5. Reviewed a real or simulated outcome in Studio.
 
 ## Onboarding Motion
 
 1. **Build a Bot** - choose one clear job and outcome.
 2. **Train the rules** - facts, approved answers, prohibited topics, escalation path, tone.
-3. **Wire the channel** - paid-plan number, SMS/email, routing, approvals, billing controls.
+3. **Launch the channel** - paid-plan number, SMS/email, routing, approvals, billing controls.
 4. **Run and review** - call, follow-up, log, coach, improve.
 
 ## Success Standards

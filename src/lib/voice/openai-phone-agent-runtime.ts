@@ -3,7 +3,6 @@ import { and, desc, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
 import { RUNTIME_ACTION_SAFETY_BLOCK } from "../agent-runtime";
-import { BOTBOUND_BRAND_NAME } from "../brand";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -219,7 +218,7 @@ export function composeOpenAIRealtimeInstructions(input: {
         "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
       ].join("\n")
     : [
-        `You are ${input.agent.name}, a ${BOTBOUND_BRAND_NAME} voice Bot.`,
+        `You are ${input.agent.name}.`,
         `Your role is ${input.agent.role || "agent"}.`,
         input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
         ...NON_NEGOTIABLE_RUNTIME_RULES,

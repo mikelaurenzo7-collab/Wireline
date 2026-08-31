@@ -49,7 +49,7 @@ const PAID_TIERS = [
     publicName: "Starter Plus",
     eyebrow: "Two Roles, One Workspace",
     tagline: "Two Live Bots from $39/month",
-    detail: `Two live Bots, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, Lead Hunt, inbox, text, and email.`,
+    detail: `Two live Bots, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, and fuller Lead Hunt and enrichment.`,
     ctaMonthly: "Choose Starter Plus",
     ctaAnnual: "Choose Annual Starter Plus",
     ctaPath: signupHrefForPlan("team"),
@@ -127,7 +127,7 @@ const FAQ = [
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and the fuller Lead Hunt, inbox, email, text, and automation experience in the same workspace.",
+    "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and fuller Lead Hunt and enrichment in the same workspace.",
   ],
   [
     "Does every paid Bot get a phone number?",

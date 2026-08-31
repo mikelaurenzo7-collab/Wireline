@@ -4,7 +4,7 @@ This file is BotBound's durable repository-health contract. It defines what belo
 
 ## Current north star
 
-BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The product model is **Create -> Train -> Wire -> Run**.
+BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The public operating loop is **Build -> Train -> Launch -> Improve**. Internally the same loop is **Create -> Train -> Wire -> Run**.
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
@@ -71,7 +71,7 @@ BotBound Letterpress on the Aurora palette is the only active design system. Tec
 - Broad public language: `Bot` or `Phone Bot` in one product and workspace model. Never split signup, setup, pricing, or navigation into Personal and Business lanes. Technical compatibility identifiers remain stable.
 - Context-specific examples use the actual job (`Personal Assistant`, `Sales Rep`, `Front Desk`) without creating audience lanes.
 - Technical contracts: `agent`.
-- Product nouns: `Training`, `Wire`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`.
+- Product nouns: `Training`, `Connections`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`. Public setup is Train, Test, Launch. Never use Wire as a customer-facing step.
 - Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.
 
 ## Documentation taxonomy

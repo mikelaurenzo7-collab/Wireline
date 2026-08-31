@@ -8,7 +8,7 @@ Wireline is agent-first: it screens inbound calls, places explicit user-initiate
 
 ## Product promise
 
-> Wire your agent.
+> Launch your Bot.
 
 The native app is the everyday control surface: ask BotBound, check live calls, review recaps, manage callback handoff, and re-enter work through Siri, widgets, and CallKit. Every Bot uses the same backend contract and one audience-neutral product language.
 
@@ -127,7 +127,7 @@ Then:
 
 ## Release checklist
 
-- Agents, Training, Wire, Inbox, Calls, and empty states use current product language and routes.
+- Agents, Training, Connections, Inbox, Calls, and empty states use current product language and routes.
 - Sign-in, token refresh, auth recovery, sign-out, and account deletion are reachable.
 - Widgets and intents deep-link into current routes and never display placeholder account data.
 - Marketing outbound requires the same explicit consent evidence as the web/API path.

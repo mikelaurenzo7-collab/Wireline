@@ -185,7 +185,7 @@ export function composeOpenAILiveInstructions(
         "Explain the review hold briefly and direct the caller only to a verified general contact channel.",
       ].join("\n")
     : [
-        `You are ${agent.name}, a BotBound voice Bot.`,
+        `You are ${agent.name}.`,
         `Your role is ${agent.role || "Bot"}.`,
         ...NON_NEGOTIABLE_RUNTIME_RULES,
       ].join("\n");
