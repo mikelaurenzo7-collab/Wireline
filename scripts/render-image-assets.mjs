@@ -1,9 +1,11 @@
-// Verifies committed BotBound image assets by default. Pass --write to
-// explicitly regenerate canonical web, billing, native, and extension assets.
+// Application builds generate only the three ignored runtime PNGs required by
+// the web bundle. Pass --write to intentionally regenerate the complete set of
+// committed web, billing, native, and extension assets for review.
+//
 // Legacy wireline-named outputs remain compatibility aliases until external
 // dashboards and old install links have been fully cut over.
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Resvg } from "@resvg/resvg-js";
 
@@ -12,17 +14,19 @@ const root = resolve(__dirname, "..");
 const publicDir = resolve(root, "public");
 if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
 
-const committedAssets = [
+const FONT_FILES = [
+  resolve(root, "public/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"),
+  resolve(root, "public/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"),
+];
+
+const COMMITTED_ASSETS = [
   "design-tokens/wireline.tokens.json",
   "public/brand/botbound-app-icon.png",
   "public/brand/botbound-operator-primary.png",
   "public/favicon.png",
-  "public/og-image.png",
-  "public/apple-touch-icon.png",
   "public/botbound-icon-192.png",
   "public/botbound-icon-512.png",
   "public/botbound-stripe-icon.png",
-  "public/wireline-icon-192.png",
   "public/wireline-icon-512.png",
   "public/wireline-stripe-icon.png",
   "public/botbound-stripe-logo.png",
@@ -37,23 +41,17 @@ const committedAssets = [
   "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png",
 ];
 
-if (!process.argv.includes("--write")) {
-  const missing = committedAssets.filter((path) => !existsSync(resolve(root, path)));
-  if (missing.length) {
-    throw new Error(`Missing committed BotBound image assets:\n${missing.join("\n")}`);
-  }
-  console.log(
-    `Verified ${committedAssets.length} committed BotBound image assets without mutating source. ` +
-      "Run `npm run assets -- --write` only for an intentional asset refresh.",
-  );
-  process.exit(0);
+const missingCommittedAssets = COMMITTED_ASSETS.filter((path) => !existsSync(resolve(root, path)));
+if (missingCommittedAssets.length) {
+  throw new Error(`Missing committed BotBound image assets:\n${missingCommittedAssets.join("\n")}`);
 }
 
 function designToken(tokens, ...segments) {
   let current = tokens;
   for (const segment of segments) current = current?.[segment];
-  if (!current || typeof current.$value !== "string")
+  if (!current || typeof current.$value !== "string") {
     throw new Error(`Missing design token: ${segments.join(".")}`);
+  }
   return current.$value;
 }
 
@@ -64,6 +62,43 @@ function rasterSvg(png, title, description, width = 2048, height = 2048) {
   <desc id="description">${description}</desc>
   <image href="data:image/png;base64,${embedded}" width="${width}" height="${height}"/>
 </svg>\n`;
+}
+
+function renderSvg(source, out, width) {
+  const outputPath = resolve(root, out);
+  const outputDir = dirname(outputPath);
+  if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+  const resvg = new Resvg(source, {
+    fitTo: { mode: "width", value: width },
+    font: {
+      fontFiles: FONT_FILES,
+      loadSystemFonts: false,
+      defaultFontFamily: "Inter Tight",
+    },
+  });
+  const png = resvg.render().asPng();
+  writeFileSync(outputPath, png);
+  console.log(`✔ rendered ${out} (${png.length} bytes)`);
+}
+
+const appIcon = readFileSync(resolve(root, "public/brand/botbound-app-icon.png"));
+const appIconSource = rasterSvg(
+  appIcon,
+  "BotBound",
+  "A friendly Bot visibly gripping a violet telephone receiver.",
+);
+
+if (!process.argv.includes("--write")) {
+  // These files are deliberately ignored because they are deterministic build
+  // outputs. Generating only them keeps `npm run build` read-only with respect
+  // to every tracked source and release artifact.
+  renderSvg(readFileSync(resolve(root, "public/og-image.svg"), "utf8"), "public/og-image.png", 1200);
+  renderSvg(appIconSource, "public/apple-touch-icon.png", 180);
+  renderSvg(appIconSource, "public/wireline-icon-192.png", 192);
+  console.log(
+    `Verified ${COMMITTED_ASSETS.length} committed BotBound assets and generated 3 ignored runtime PNGs.`,
+  );
+  process.exit(0);
 }
 
 function writeCompatibilitySvgSources() {
@@ -91,7 +126,7 @@ function writeCompatibilitySvgSources() {
   writeFileSync(resolve(root, "apps/browser-extension/assets/icon.svg"), extension, "utf8");
 }
 
-function writeStripeLogoSource(appIcon) {
+function writeStripeLogoSource() {
   const tokens = JSON.parse(
     readFileSync(resolve(root, "design-tokens/wireline.tokens.json"), "utf8"),
   );
@@ -114,7 +149,8 @@ function writeStripeLogoSource(appIcon) {
   return source;
 }
 
-function writeOgSource(operator) {
+function writeOgSource() {
+  const operator = readFileSync(resolve(root, "public/brand/botbound-operator-primary.png"));
   const embeddedOperator = operator.toString("base64");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">BotBound | Put Your Bot on the Line</title>
@@ -140,17 +176,9 @@ function writeOgSource(operator) {
   return source;
 }
 
-const appIcon = readFileSync(resolve(root, "public/brand/botbound-app-icon.png"));
-const operator = readFileSync(resolve(root, "public/brand/botbound-operator-primary.png"));
-const appIconSource = rasterSvg(
-  appIcon,
-  "BotBound",
-  "A friendly Bot visibly gripping a violet telephone receiver.",
-);
-
 writeCompatibilitySvgSources();
-const stripeLogoSource = writeStripeLogoSource(appIcon);
-const ogSource = writeOgSource(operator);
+const stripeLogoSource = writeStripeLogoSource();
+const ogSource = writeOgSource();
 
 const targets = [
   { source: appIconSource, out: "public/favicon.png", width: 64 },
@@ -162,34 +190,21 @@ const targets = [
   { source: appIconSource, out: "public/wireline-icon-192.png", width: 192 },
   { source: appIconSource, out: "public/wireline-icon-512.png", width: 512 },
   { source: appIconSource, out: "public/wireline-stripe-icon.png", width: 512 },
-  { copy: appIcon, out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 },
+  { copy: appIcon, out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png" },
   { source: stripeLogoSource, out: "public/botbound-stripe-logo.png", width: 1200 },
   { source: stripeLogoSource, out: "public/wireline-stripe-logo.png", width: 1200 },
 ];
 
 for (const target of targets) {
-  const outputPath = resolve(root, target.out);
-  const outputDir = dirname(outputPath);
-  if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
   if (target.copy) {
+    const outputPath = resolve(root, target.out);
+    const outputDir = dirname(outputPath);
+    if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
     writeFileSync(outputPath, target.copy);
     console.log(`✔ copied ${target.out} (${target.copy.length} bytes)`);
-    continue;
+  } else {
+    renderSvg(target.source, target.out, target.width);
   }
-  const resvg = new Resvg(target.source, {
-    fitTo: { mode: "width", value: target.width },
-    font: {
-      fontFiles: [
-        resolve(root, "public/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"),
-        resolve(root, "public/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"),
-      ],
-      loadSystemFonts: false,
-      defaultFontFamily: "Inter Tight",
-    },
-  });
-  const png = resvg.render().asPng();
-  writeFileSync(outputPath, png);
-  console.log(`✔ rendered ${target.out} (${png.length} bytes)`);
 }
 
 console.log(
