@@ -18,6 +18,16 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
     expect(canary).not.toContain("api.vapi.ai");
   });
 
+  it("monitors the deterministic Bot IDs used by showcase routing", () => {
+    expect(canary).toContain('import { founderShowcaseAgentId } from "./founder-showcase-seed"');
+    expect(canary).toContain(
+      "agents.map(({ agent }) => founderShowcaseAgentId(founderUserId, agent.name))",
+    );
+    expect(canary).toContain("agentIds: showcaseAgentIds");
+    expect(canary).not.toContain("showcaseAgentIds.add(row.agentId)");
+    expect(canary).toContain('result.error ||= "Founder showcase workspace is unavailable"');
+  });
+
   it("repairs drifted showcase webhooks before alerting", () => {
     expect(canary).toContain("async function repairShowcaseOpenAIInboundRouting");
     expect(canary.indexOf("await repairShowcaseOpenAIInboundRouting(")).toBeLessThan(
