@@ -389,7 +389,18 @@ router.post(
     }
 
     const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
-    const environment = await liveExternalActionPolicyForUser(sessionInput.userId);
+    let environment: Awaited<ReturnType<typeof liveExternalActionPolicyForUser>>;
+    try {
+      environment = await liveExternalActionPolicyForUser(sessionInput.userId);
+    } catch (error) {
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        603,
+        "environment_lookup_failed",
+      );
+      throw error;
+    }
     if (!environment.allowed) {
       await rejectShowcaseCallBeforeSession(
         sessionInput,
