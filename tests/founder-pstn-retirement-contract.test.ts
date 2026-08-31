@@ -35,12 +35,19 @@ describe("product-first founder PSTN retirement", () => {
     expect(resend).not.toContain('const DEFAULT_DOMAIN = "trywireline.com"');
   });
 
-  it("ships an idempotent founder cleanup migration without hardcoded generated IDs", () => {
-    const migration = read("drizzle/migrations/0169_retire_founder_vapi_bindings.sql");
-    expect(migration).toContain("lower('mikelaurenzo7@gmail.com')");
-    expect(migration).toContain("delete from public.wireline_phone_numbers");
-    expect(migration).toContain("vapi_private_key = null");
-    expect(migration).toContain("public_phone_number");
-    expect(migration).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  it("ships an idempotent, tenant-scoped founder cleanup operations script", () => {
+    const operation = read("scripts/operations/retire-founder-vapi-bindings.sql");
+    expect(operation).toContain("lower('mikelaurenzo7@gmail.com')");
+    expect(operation).toContain("delete from public.wireline_phone_numbers");
+    expect(operation).toContain("vapi_private_key = null");
+    expect(operation).toContain("public_phone_number");
+    expect(operation).toContain("begin;");
+    expect(operation).toContain("commit;");
+    expect(operation).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+  });
+
+  it("does not put one-workspace cleanup into the product migration journal", () => {
+    const journal = read("drizzle/migrations/meta/_journal.json");
+    expect(journal).not.toContain("retire_founder_vapi");
   });
 });

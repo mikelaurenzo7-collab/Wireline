@@ -1,8 +1,11 @@
--- Retire the founder-only Vapi showcase fleet without changing customer phone provisioning.
+-- Founder-only Vapi retirement repair.
 --
--- This migration is intentionally idempotent because the production cleanup was
--- performed out of band before the matching application release. Customer-owned
--- Twilio numbers and OpenAI Realtime routing are not selected by this migration.
+-- This operations script is not part of the Drizzle migration journal because
+-- it repairs one known production workspace rather than changing the product
+-- schema. It is idempotent and deliberately excludes every other tenant.
+-- Customer Twilio numbers and OpenAI Realtime routing are not selected.
+
+begin;
 
 with founder as (
   select id
@@ -53,3 +56,5 @@ set
 from founder
 where agent.user_id = founder.id
   and coalesce(agent.business_variables, '{}'::jsonb) ->> 'founder_showcase' = 'true';
+
+commit;
