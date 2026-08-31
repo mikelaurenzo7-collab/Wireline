@@ -470,6 +470,13 @@
       "when": 1788082281035,
       "tag": "0168_openai_realtime_voice_runtime",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788147000000,
+      "tag": "0169_retire_founder_vapi_bindings",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Loader2,
   Mail,
+  MessageSquare,
   Send,
   Sparkles,
 } from "lucide-react";
@@ -148,7 +149,7 @@ export function ContactPage() {
           <h1 className="wl-stitch-marketing-hero text-balance">Talk through the Bot you need</h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-2">
+        <section className="mt-10 grid gap-3 sm:grid-cols-3">
           <a
             href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
@@ -157,6 +158,14 @@ export function ContactPage() {
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
             <p className="mt-2 text-sm text-muted-foreground">support@botbound.me</p>
           </a>
+          <Link
+            to="/support"
+            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+          >
+            <MessageSquare className="mx-auto h-5 w-5 text-primary" />
+            <h2 className="mt-5 font-semibold text-foreground">Support center</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Send a tracked request</p>
+          </Link>
           <Link
             to="/pricing"
             className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5"

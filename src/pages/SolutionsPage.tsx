@@ -107,6 +107,19 @@ export default function SolutionsPage() {
               <BrowserCallWidget
                 agentName={demoAgentName}
                 buttonLabel={`Talk to ${demoAgentName}`}
+                fallback={
+                  <div className="text-center">
+                    <a
+                      href={page.primary.href}
+                      className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                    >
+                      Build this Bot
+                    </a>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      The protected browser preview is unavailable; no phone call is required.
+                    </p>
+                  </div>
+                }
               />
             </div>
           }

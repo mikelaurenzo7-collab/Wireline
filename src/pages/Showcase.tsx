@@ -20,7 +20,7 @@ export default function Showcase() {
     <MarketingPageFrame className="wl-showcase-page">
       <PageMeta
         title="TRY BOTBOUND | HEAR A PHONE BOT"
-        description="Hear the Phone Bot first. Then build one for calls, email, text, and the work that should happen next."
+        description="Talk to a BotBound Phone Bot in a protected browser preview, then build your own Bot for calls, email, text, and follow-up work."
         path="/showcase"
       />
 
@@ -41,22 +41,29 @@ export default function Showcase() {
           }
         />
 
-        <section id="demo-lines" className="mt-8 min-w-0">
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <section id="browser-demos" className="mt-8 min-w-0" aria-labelledby="browser-demos-title">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 id="browser-demos-title" className="text-2xl font-semibold tracking-[-.035em] text-foreground">
+              Try both call flows
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Protected browser demos use OpenAI Realtime and require no account or phone call.
+            </p>
+          </div>
+          <div className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
-              <div key={agent.name} className="wl-stitch-card min-w-0 p-4 text-center">
-                <div className="text-[15px] font-semibold tracking-[-.015em] text-foreground">
+              <article key={agent.name} className="wl-stitch-card min-w-0 p-5 text-center">
+                <h3 className="text-[15px] font-semibold tracking-[-.015em] text-foreground">
                   {agent.name}
-                </div>
-                <div className="mt-1 text-sm text-muted-foreground">{agent.role}</div>
-                <div className="mt-4">
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">{agent.role}</p>
+                <div className="mt-5">
                   <BrowserCallWidget
                     agentName={agent.name}
                     buttonLabel={`Talk to ${agent.name}`}
-                    variant="compact"
                   />
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>

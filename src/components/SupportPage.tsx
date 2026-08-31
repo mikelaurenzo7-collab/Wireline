@@ -93,6 +93,7 @@ export function SupportPage() {
           <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Studio</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Review your Bot and workspace</p>
           </Link>
         </section>
 

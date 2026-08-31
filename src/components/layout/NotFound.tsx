@@ -2,7 +2,6 @@ import React from "react";
 import { Link, useLocation } from "react-router";
 import { MotionConfig, motion } from "motion/react";
 import {
-  ChevronRight,
   Compass,
   Home,
   LayoutGrid,
@@ -101,8 +100,8 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <NotFoundCard
                 to="/showcase"
                 icon={Phone}
-                label="Browser Demos"
-                hint="Talk to a Bot"
+                label="Browser demo"
+                hint="Hear a Bot"
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard
@@ -193,7 +192,6 @@ function NotFoundCard({
           {label}
         </p>
       </div>
-      <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>
   );
 }

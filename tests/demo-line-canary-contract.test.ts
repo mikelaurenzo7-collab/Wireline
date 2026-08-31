@@ -4,35 +4,24 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
+describe("founder showcase PSTN retirement", () => {
   const canary = read("src/lib/demo-line-canary.ts");
+  const seed = read("src/lib/founder-showcase-seed.ts");
 
-  it("skips the retired founder PSTN fleet before touching Twilio", () => {
-    expect(canary).toContain("FOUNDER_PSTN_SHOWCASE_ENABLED");
-    expect(canary).toContain("Founder PSTN showcase is retired; demo-line canary skipped");
-    expect(canary.indexOf("if (!founderPstnShowcaseEnabled())")).toBeLessThan(
-      canary.indexOf("const client = getTwilioClient()"),
-    );
-  });
-
-  it("probes the complete canonical Twilio routing configuration when deliberately re-enabled", () => {
-    expect(canary).toContain("isNativeNumberOpenAIRouted(number)");
-    expect(canary).toContain("smsUrl: row.smsUrl");
-    expect(canary).toContain("smsMethod: row.smsMethod");
-    expect(canary).toContain("voiceMethod: row.voiceMethod");
-    expect(canary).toContain("voiceFallbackMethod: row.voiceFallbackMethod");
-    expect(canary).not.toContain("webhookPath");
-    expect(canary).not.toContain("vapiFetch");
+  it("does not probe, repair, or alert on retired founder numbers", () => {
+    expect(canary).toContain('FOUNDER_SHOWCASE_PSTN_STATUS = "retired"');
+    expect(canary).toContain("skipped: true");
+    expect(canary).toContain('customerVoiceRuntime: "openai_realtime_twilio"');
+    expect(canary).not.toContain("getTwilioClient");
+    expect(canary).not.toContain("configureNativeNumberRouting");
+    expect(canary).not.toContain("sendEmail");
     expect(canary).not.toContain("api.vapi.ai");
   });
 
-  it("repairs drifted showcase webhooks before alerting when deliberately re-enabled", () => {
-    expect(canary).toContain("async function repairShowcaseOpenAIInboundRouting");
-    expect(canary.indexOf("await repairShowcaseOpenAIInboundRouting(")).toBeLessThan(
-      canary.indexOf("probeLine(agent, kind, carrierNumbers, assignments, runtimeReady)"),
-    );
-    expect(canary).toContain("configureNativeNumberRouting");
-    expect(canary).toContain("isNativeNumberOpenAIRouted(row)");
-    expect(canary).toContain("showcaseTels.has(String(row.phoneNumber || \"\"))");
+  it("keeps browser-demo Bots on OpenAI without recreating PSTN metadata", () => {
+    expect(seed).toContain('voiceProvider: "openai"');
+    expect(seed).toContain('phoneVoiceProvider: "openai"');
+    expect(seed).toContain('founder_pstn_status: "retired"');
+    expect(seed).not.toContain("public_phone_number: agent.tel");
   });
 });

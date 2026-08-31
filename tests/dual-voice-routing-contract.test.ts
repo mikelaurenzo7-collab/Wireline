@@ -18,11 +18,10 @@ describe("OpenAI Realtime voice routing contracts", () => {
     );
   });
 
-  it("rewrites owned Twilio numbers onto the OpenAI inbound webhook", () => {
+  it("rewrites customer-owned Twilio numbers onto the OpenAI inbound webhook", () => {
     const assignment = read("src/lib/voice/native-phone-assignment.ts");
     const carrier = read("src/lib/voice/native-phone-carrier.ts");
     const routing = read("src/routes/native-phone-routing-routes.ts");
-    const canary = read("src/lib/demo-line-canary.ts");
     expect(assignment).toContain("configureNativeNumberRouting");
     expect(carrier).toContain("repairOwnedTwilioOpenAIRouting");
     expect(carrier).toContain("export function isNativeNumberOpenAIRouted");
@@ -45,12 +44,9 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(routing).toContain("routing.confirmedPhoneNumbers.has(row.phoneNumber)");
     expect(routing).toContain('"configuration_required"');
     expect(routing).toContain('"degraded"');
-    expect(canary).toContain("repairShowcaseOpenAIInboundRouting");
-    expect(canary).toContain("configureNativeNumberRouting");
-    expect(canary).toContain("isNativeNumberOpenAIRouted");
   });
 
-  it("routes every PSTN call through the governed OpenAI runtime", () => {
+  it("routes every customer PSTN call through the governed OpenAI runtime", () => {
     const policy = read("src/lib/voice/runtime-policy.ts");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
