@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { Phone, Mail, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
@@ -17,7 +16,6 @@ const ISSUE_TYPES = [
 ] as const;
 
 export function SupportPage() {
-  const supportAgent = WIRELINE_FEATURED_TEAM_AGENT;
   const [issueType, setIssueType] = useState<(typeof ISSUE_TYPES)[number]["value"]>("tech");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -83,15 +81,7 @@ export function SupportPage() {
           <h1 className="wl-stitch-marketing-hero text-balance">Support</h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a
-            href={`tel:${supportAgent.tel}`}
-            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
-          >
-            <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Call</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{supportAgent.display}</p>
-          </a>
+        <section className="mt-10 grid gap-3 sm:grid-cols-2">
           <a
             href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
