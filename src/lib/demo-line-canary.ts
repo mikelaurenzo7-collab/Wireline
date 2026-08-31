@@ -139,7 +139,9 @@ async function repairShowcaseOpenAIInboundRouting(
   return attempted;
 }
 
-export async function runDemoLineCanary(): Promise<CanaryRunResult> {
+export async function runDemoLineCanary(
+  options: { jobId?: string } = {},
+): Promise<CanaryRunResult> {
   const result: CanaryRunResult = {
     timestamp: new Date().toISOString(),
     allHealthy: true,
@@ -150,11 +152,12 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
     ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
   ];
+  const showcaseAgentIds = new Set<string>();
   const client = getTwilioClient();
   if (!client) {
     result.allHealthy = false;
     result.error = "Twilio is not configured";
-    result.alertSent = await sendCanaryAlert(result);
+    result.alertSent = await sendCanaryAlert(result, options.jobId);
     await publishPublicVoiceCanary(result);
     return result;
   }
@@ -198,6 +201,9 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     const assignments = new Set(
       assignmentRows.filter((row) => Boolean(row.agentId)).map((row) => row.phoneNumber),
     );
+    for (const row of assignmentRows) {
+      if (row.agentId) showcaseAgentIds.add(row.agentId);
+    }
     const runtimeReady = openAISipConfigured();
     result.lines = agents.map(({ agent, kind }) =>
       probeLine(agent, kind, carrierNumbers, assignments, runtimeReady),
@@ -209,7 +215,10 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
   }
 
   try {
-    const voiceWindow = await computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 60 });
+    const voiceWindow = await computeVoiceHealthWindow({
+      agentIds: [...showcaseAgentIds],
+      windowMinutes: 60,
+    });
     result.voiceWindow = voiceWindow;
     result.voiceWindowHealthy = voiceWindow.healthy;
     if (!voiceWindow.healthy) {
@@ -237,7 +246,7 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
         })),
       globalError: result.error,
     });
-    result.alertSent = await sendCanaryAlert(result);
+    result.alertSent = await sendCanaryAlert(result, options.jobId);
   } else {
     log.info("Demo-line canary: all lines healthy", { lines: result.lines.length });
   }
@@ -245,7 +254,7 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
   return result;
 }
 
-async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
+async function sendCanaryAlert(run: CanaryRunResult, jobId?: string): Promise<boolean> {
   const ownerEmail = process.env.OWNER_EMAIL?.trim();
   if (!ownerEmail) {
     log.warn("Demo-line canary cannot alert because OWNER_EMAIL is unset");
@@ -263,6 +272,7 @@ async function sendCanaryAlert(run: CanaryRunResult): Promise<boolean> {
       "\n",
     ),
     html: `<h2>BotBound demo-line alert</h2><p>${details.map(escapeHtml).join("<br>")}</p><p>Run at ${escapeHtml(run.timestamp)}</p>`,
+    idempotencyKey: jobId ? `demo-line-canary/${jobId}` : undefined,
   });
   if (!sent.ok) log.error("Demo-line canary alert email failed", { error: sent.error });
   return sent.ok;
