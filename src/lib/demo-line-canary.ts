@@ -2,13 +2,13 @@
  * Nightly control-plane canary for every public showcase line.
  *
  * It verifies the Twilio number still exists, its voice webhook points at the
- * canonical OpenAI SIP bridge, the database has a Bot assignment, and the
+ * canonical OpenAI SIP bridge, the deterministic showcase Bot exists, and the
  * OpenAI SIP runtime is configured. Drifted showcase webhooks are rewritten
  * onto the OpenAI inbound bridge before the probe. It does not place a paid
  * synthetic call.
  */
 import { Redis } from "@upstash/redis";
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -88,17 +88,22 @@ function probeLine(
   agent: ContactAgent,
   kind: "cs" | "demo",
   carrierNumbers: Map<string, NativeNumberRoutingSnapshot>,
-  assignments: Set<string>,
+  showcaseBotIds: Set<string>,
+  founderUserId: string | null,
   runtimeReady: boolean,
 ): LineProbeResult {
   const number = carrierNumbers.get(agent.tel);
   const numberOk = number ? isNativeNumberOpenAIVoiceRouted(number) : false;
-  const assistantOk = runtimeReady && assignments.has(agent.tel);
+  const showcaseAgentId = founderUserId
+    ? founderShowcaseAgentId(founderUserId, agent.name)
+    : null;
+  const assistantOk =
+    runtimeReady && Boolean(showcaseAgentId && showcaseBotIds.has(showcaseAgentId));
   const errors = [
     !number ? "number missing from Twilio" : null,
     number && !numberOk ? "Twilio voice webhook is not the OpenAI inbound bridge" : null,
     !runtimeReady ? "OpenAI SIP runtime is not configured" : null,
-    runtimeReady && !assignments.has(agent.tel) ? "no Bot is assigned in BotBound" : null,
+    runtimeReady && !assistantOk ? "the deterministic showcase Bot is missing" : null,
   ].filter((value): value is string => Boolean(value));
   return {
     name: agent.name,
@@ -180,20 +185,19 @@ export async function runDemoLineCanary(
   }
 
   try {
-    const [initialCarrierRows, assignmentRows] = await Promise.all([
+    const [initialCarrierRows, showcaseBotRows] = await Promise.all([
       client.incomingPhoneNumbers.list({ limit: 1_000 }),
-      drizzle
-        .select({
-          phoneNumber: schema.phoneNumbers.phoneNumber,
-          agentId: schema.phoneNumbers.agentId,
-        })
-        .from(schema.phoneNumbers)
-        .where(
-          inArray(
-            schema.phoneNumbers.phoneNumber,
-            agents.map(({ agent }) => agent.tel),
-          ),
-        ),
+      founderUserId && showcaseAgentIds.length
+        ? drizzle
+            .select({ id: schema.agents.id })
+            .from(schema.agents)
+            .where(
+              and(
+                eq(schema.agents.userId, founderUserId),
+                inArray(schema.agents.id, showcaseAgentIds),
+              ),
+            )
+        : Promise.resolve([] as Array<{ id: string }>),
     ]);
     const showcaseTels = new Set(agents.map(({ agent }) => agent.tel));
     const repaired = await repairShowcaseOpenAIInboundRouting(
@@ -216,12 +220,10 @@ export async function runDemoLineCanary(
         },
       ]),
     );
-    const assignments = new Set(
-      assignmentRows.filter((row) => Boolean(row.agentId)).map((row) => row.phoneNumber),
-    );
+    const showcaseBotIds = new Set(showcaseBotRows.map((row) => row.id));
     const runtimeReady = openAISipConfigured();
     result.lines = agents.map(({ agent, kind }) =>
-      probeLine(agent, kind, carrierNumbers, assignments, runtimeReady),
+      probeLine(agent, kind, carrierNumbers, showcaseBotIds, founderUserId, runtimeReady),
     );
     result.allHealthy =
       result.allHealthy && result.lines.every((line) => line.numberOk && line.assistantOk);
