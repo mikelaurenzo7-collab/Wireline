@@ -75,6 +75,10 @@ describe("OpenAI Realtime voice routing contracts", () => {
       webhook.indexOf("async function rejectShowcaseCallBeforeSession"),
     );
     expect(preSessionFailure).toContain('process.env.VERCEL_ENV !== "production"');
+    expect(preSessionFailure).toContain("tenantStore.run(input.userId");
+    expect(preSessionFailure.indexOf("tenantStore.run(input.userId")).toBeLessThan(
+      preSessionFailure.indexOf(".insert(schema.callLogs)"),
+    );
     expect(preSessionFailure).toContain('vapiCallId: `openai:pre-session:${input.callId}`');
     expect(preSessionFailure).toContain('pipelineError: "connection"');
     expect(preSessionFailure).toContain("onConflictDoNothing");

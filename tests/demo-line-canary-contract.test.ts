@@ -60,4 +60,16 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
       sip.indexOf("if (!environment.allowed)"),
     );
   });
+
+  it("persists production showcase admission failures inside the tenant context", () => {
+    const sip = read("src/routes/openai-sip-routes.ts");
+    const recorder = sip.slice(
+      sip.indexOf("async function recordShowcasePreSessionFailure"),
+      sip.indexOf("async function rejectShowcaseCallBeforeSession"),
+    );
+    expect(recorder).toContain("await tenantStore.run(input.userId, async () => {");
+    expect(recorder.indexOf("tenantStore.run(input.userId")).toBeLessThan(
+      recorder.indexOf(".insert(schema.callLogs)"),
+    );
+  });
 });

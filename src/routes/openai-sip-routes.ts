@@ -307,19 +307,21 @@ async function recordShowcasePreSessionFailure(
 ): Promise<void> {
   if (!showcase || process.env.VERCEL_ENV !== "production") return;
   try {
-    await drizzle
-      .insert(schema.callLogs)
-      .values({
-        userId: input.userId,
-        vapiCallId: `openai:pre-session:${input.callId}`,
-        agentId: input.agentId,
-        direction: "inbound",
-        summary: "OpenAI Realtime showcase call rejected before session start.",
-        endedReason,
-        pipelineError: "connection",
-        demo: true,
-      })
-      .onConflictDoNothing({ target: schema.callLogs.vapiCallId });
+    await tenantStore.run(input.userId, async () => {
+      await drizzle
+        .insert(schema.callLogs)
+        .values({
+          userId: input.userId,
+          vapiCallId: `openai:pre-session:${input.callId}`,
+          agentId: input.agentId,
+          direction: "inbound",
+          summary: "OpenAI Realtime showcase call rejected before session start.",
+          endedReason,
+          pipelineError: "connection",
+          demo: true,
+        })
+        .onConflictDoNothing({ target: schema.callLogs.vapiCallId });
+    });
   } catch (error) {
     log.error("OpenAI showcase pre-session failure persistence failed", {
       endedReason,
