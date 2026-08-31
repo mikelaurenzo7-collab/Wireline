@@ -1,11 +1,10 @@
 /**
  * Nightly control-plane canary for every public showcase line.
  *
- * It verifies the Twilio number still exists, its voice webhook points at the
- * canonical OpenAI SIP bridge, the database has a Bot assignment, and the
- * OpenAI SIP runtime is configured. Drifted showcase webhooks are rewritten
- * onto the OpenAI inbound bridge before the probe. It does not place a paid
- * synthetic call.
+ * Founder PSTN lines are retired by default. The dormant probe remains here so
+ * a future, deliberately provisioned founder fleet can be re-enabled with
+ * FOUNDER_PSTN_SHOWCASE_ENABLED=true after its Twilio inventory and public
+ * catalog are updated together. Customer Twilio/OpenAI routing is independent.
  */
 import { inArray } from "drizzle-orm";
 
@@ -43,9 +42,14 @@ export interface CanaryRunResult {
   allHealthy: boolean;
   lines: LineProbeResult[];
   alertSent: boolean;
+  retired?: boolean;
   voiceWindowHealthy?: boolean;
   voiceWindow?: Awaited<ReturnType<typeof computeVoiceHealthWindow>>;
   error?: string;
+}
+
+export function founderPstnShowcaseEnabled(): boolean {
+  return process.env.FOUNDER_PSTN_SHOWCASE_ENABLED?.trim().toLowerCase() === "true";
 }
 
 function probeLine(
@@ -116,6 +120,13 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     lines: [],
     alertSent: false,
   };
+
+  if (!founderPstnShowcaseEnabled()) {
+    result.retired = true;
+    log.info("Founder PSTN showcase is retired; demo-line canary skipped");
+    return result;
+  }
+
   const agents = [
     ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
     ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
