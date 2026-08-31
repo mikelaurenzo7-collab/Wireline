@@ -97,6 +97,7 @@ export { isPipelineFailure } from "./call-reliability-capture";
 export async function computeVoiceHealthWindow(opts: {
   userId?: string; // undefined = all demo calls across tenants
   demoOnly?: boolean;
+  agentIds?: string[];
   windowMinutes?: number;
 }): Promise<HealthWindowResult> {
   const windowMinutes = opts.windowMinutes ?? 5;
@@ -105,6 +106,7 @@ export async function computeVoiceHealthWindow(opts: {
   const baseWhere = and(
     gte(schema.callLogs.createdAt, since),
     opts.demoOnly ? eq(schema.callLogs.demo, true) : undefined,
+    opts.agentIds ? inArray(schema.callLogs.agentId, opts.agentIds) : undefined,
     opts.userId ? eq(schema.callLogs.userId, opts.userId) : undefined,
   );
 
@@ -133,7 +135,8 @@ export async function computeVoiceHealthWindow(opts: {
   // and it has no call/demo identifier. Demo-line health must therefore use
   // its scoped call rows only; otherwise routine SMS delivery receipts can
   // degrade the published PSTN signal.
-  const webhookRows: Array<{ outcome: string }> = opts.demoOnly
+  const scopedCallWindow = opts.demoOnly || opts.agentIds !== undefined;
+  const webhookRows: Array<{ outcome: string }> = scopedCallWindow
     ? []
     : await drizzle
         .select({ outcome: schema.webhookHealth.outcome })
