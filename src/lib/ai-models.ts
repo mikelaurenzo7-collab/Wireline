@@ -60,27 +60,32 @@ export interface ModelPricingRow {
 }
 
 /**
- * Standard synchronous API rates in USD per 1M text tokens, verified 2026-08-10.
- * GPT-5.6 cache writes are billed at 1.25x the uncached input rate.
+ * Current synchronous API rates in USD per 1M text tokens, verified
+ * 2026-08-31 against vendor-owned model documentation. GPT-5.6 cache writes
+ * are billed at 1.25x uncached input. Sol is promotional pricing advertised
+ * through at least 2026-11-21 and must be revalidated before that boundary.
  */
+export const OPENAI_TEXT_PRICING_EFFECTIVE_DATE = "2026-07-30" as const;
+export const OPENAI_SOL_PROMOTIONAL_PRICING_REVIEW_DATE = "2026-11-21" as const;
+
 export const MODEL_PRICING = {
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
-    input: 2.5,
-    output: 15,
-    cacheRead: 0.25,
-    cacheWrite: 3.125,
+    input: 2,
+    output: 12,
+    cacheRead: 0.2,
+    cacheWrite: 2.5,
   },
   [OPENAI_MODELS.GPT_5_6_LUNA]: {
-    input: 1,
-    output: 6,
-    cacheRead: 0.1,
-    cacheWrite: 1.25,
+    input: 0.2,
+    output: 1.2,
+    cacheRead: 0.02,
+    cacheWrite: 0.25,
   },
   [OPENAI_MODELS.GPT_5_6_SOL]: {
-    input: 5,
-    output: 30,
-    cacheRead: 0.5,
-    cacheWrite: 6.25,
+    input: 4,
+    output: 20,
+    cacheRead: 0.4,
+    cacheWrite: 5,
   },
   [OPENAI_MODELS.GPT_5]: {
     input: 1.25,
@@ -152,17 +157,17 @@ const MODEL_LONG_CONTEXT_PRICING: Partial<Record<keyof typeof MODEL_PRICING, Lon
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     thresholdTokens: 272_000,
     inclusive: false,
-    rates: { input: 5, output: 22.5, cacheRead: 0.5, cacheWrite: 6.25 },
+    rates: { input: 4, output: 18, cacheRead: 0.4, cacheWrite: 5 },
   },
   [OPENAI_MODELS.GPT_5_6_LUNA]: {
     thresholdTokens: 272_000,
     inclusive: false,
-    rates: { input: 2, output: 9, cacheRead: 0.2, cacheWrite: 2.5 },
+    rates: { input: 0.4, output: 1.8, cacheRead: 0.04, cacheWrite: 0.5 },
   },
   [OPENAI_MODELS.GPT_5_6_SOL]: {
     thresholdTokens: 272_000,
     inclusive: false,
-    rates: { input: 10, output: 45, cacheRead: 1, cacheWrite: 12.5 },
+    rates: { input: 8, output: 30, cacheRead: 0.8, cacheWrite: 10 },
   },
   [GEMINI_MODELS.PRO_3_1]: {
     thresholdTokens: 200_000,
