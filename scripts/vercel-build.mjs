@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { resolvePreviewMigrationDatabaseUrl } from "./lib/preview-migration-database.mjs";
 import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
-import { resolveProductionMigrationDatabaseUrl } from "./lib/production-migration-database.mjs";
 
 const run = (command, args, options = {}) => {
   const result = spawnSync(command, args, {
@@ -37,15 +36,14 @@ if (environment === "production" && !isCanonicalProduction) {
   process.exit(1);
 }
 
-if (isCanonicalProduction && migrationsDisabled) {
-  console.error(
-    "Refusing canonical production build with WIRELINE_RUN_MIGRATIONS=false. " +
-      "Production must apply the exact-head append-only migration journal before serving traffic.",
+if (isCanonicalProduction && migrationsForced) {
+  console.warn(
+    "Canonical production artifact compilation is read-only; WIRELINE_RUN_MIGRATIONS=true is ignored. " +
+      "Run npm run release:promote-schema against the exact release SHA before deployment.",
   );
-  process.exit(1);
 }
 
-const shouldMigrate = !migrationsDisabled && (migrationsForced || isCanonicalProduction);
+const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced;
 const shouldVerifyProductionSchema = isCanonicalProduction;
 
 function runCanonicalReleaseAudit() {
@@ -87,26 +85,8 @@ function configurePreviewEnvironment() {
 
 function validateProductionEnvironment() {
   if (!isCanonicalProduction) return;
-  console.log("Validating required production environment variables before migration and build.");
+  console.log("Validating required production environment variables before artifact build.");
   run("node", ["scripts/check-prod-env.mjs"]);
-}
-
-function verifyStripePortalIfRequested() {
-  if (!isCanonicalProduction) return;
-  if (process.env.WIRELINE_RECONCILE_STRIPE_PORTAL !== "true") {
-    console.error(
-      "Refusing canonical production build without WIRELINE_RECONCILE_STRIPE_PORTAL=true. " +
-        "The managed customer portal must be reconciled and verified on every production release.",
-    );
-    process.exit(1);
-  }
-
-  // Builds must never repair provider state. This production-only check is
-  // independently pinned to the canonical project, origin, live Stripe key,
-  // founder catalog, and managed metadata. Confirmed drift fails the artifact;
-  // an operator can then run the separately authorized reconcile command.
-  console.log("Verifying the canonical Stripe customer portal before live migration.");
-  run("node", ["--import", "tsx", "scripts/reconcile-stripe-customer-portal.mts"]);
 }
 
 run("node", ["scripts/check-deployment-boundaries.mjs"]);
@@ -123,7 +103,7 @@ run("node", ["scripts/check-stripe-checkout-tax.mjs"]);
 run("node", ["scripts/check-stripe-catalog-contract.mjs"]);
 run("node", ["scripts/check-resend-webhook-readiness.mjs"]);
 // Syntax-only by design: check-vendor-readiness probes live provider state
-// state and must not make network calls during a build. Run it for real via
+// and must not make network calls during a build. Run it for real via
 // `npm run vendor:readiness` in the release checklist.
 run("node", ["--check", "scripts/check-vendor-readiness.mjs"]);
 // Every test process, including this focused always-on tranche, must run through
@@ -154,6 +134,7 @@ run("node", [
   "tests/migration-journal-integrity-contract.test.ts",
   "tests/production-schema-effects-contract.test.ts",
   "tests/production-promotion-safety-contract.test.ts",
+  "tests/release-provenance-contract.test.ts",
   "tests/provider-spend-hard-gate-contract.test.ts",
   "tests/account-environment-ai-spend-guard.test.ts",
   "tests/realtime-spend-reservation-contract.test.ts",
@@ -227,6 +208,7 @@ run("node", [
   "tests/mailbox-and-daily-brief-hardening-contract.test.ts",
   "tests/twilio-webhook-privacy.test.ts",
   "tests/email-observability-privacy-contract.test.ts",
+  "tests/server-logger-privacy-contract.test.ts",
   "tests/platform-ledger-integrity-contract.test.ts",
   "tests/carrier-release-integrity.test.ts",
   "tests/capacity-and-carrier-double-pass.test.ts",
@@ -254,9 +236,8 @@ runCanonicalReleaseAudit();
 run("node", ["scripts/check-operational-core.mjs"]);
 run("node", ["scripts/build-design-tokens.mjs"]);
 
-// Certify every local artifact before touching provider or database state. A
-// compilation or bundle failure must not leave live infrastructure ahead of
-// the deployable code that required it.
+// Artifact compilation is read-only. Database promotion and live provider
+// preflights are explicit release steps, never side effects of producing bytes.
 run("npm", ["run", "build"]);
 run("npm", ["run", "smoke:server"]);
 run("npx", [
@@ -268,26 +249,12 @@ run("npx", [
   "--outfile=dist/chatgpt-mcp-api.cjs",
 ]);
 
-verifyStripePortalIfRequested();
-
 if (shouldMigrate) {
   if (!databaseUrl) {
     console.error(
-      "Refusing to run production migrations without POSTGRES_URL or DATABASE_URL. " +
-        "Only non-live duplicate Vercel projects may disable migration execution.",
+      "Refusing to run nonproduction migrations without POSTGRES_URL or DATABASE_URL.",
     );
     process.exit(1);
-  }
-
-  let migrationDatabaseUrl = databaseUrl;
-  if (isCanonicalProduction) {
-    const selected = resolveProductionMigrationDatabaseUrl(databaseUrl);
-    migrationDatabaseUrl = selected.connectionString;
-    if (selected.normalizedDatabaseName) {
-      console.warn(
-        "Canonical production migration database name normalized to postgres without changing credentials.",
-      );
-    }
   }
 
   if (environment === "preview") {
@@ -310,21 +277,20 @@ if (shouldMigrate) {
       env: { POSTGRES_URL: previewMigrationDatabaseUrl },
     });
   } else {
-    process.env.POSTGRES_URL = migrationDatabaseUrl;
+    process.env.POSTGRES_URL = databaseUrl;
     run("npm", ["run", "db:migrate"]);
   }
 } else {
   console.log(
     `Skipping database migrations for ${environment || "local"} build${
-      isDuplicateV0Project ? " on duplicate v0-project" : ""
-    }.`,
+      isCanonicalProduction ? " because production artifact compilation is read-only" : ""
+    }${isDuplicateV0Project ? " on duplicate v0-project" : ""}.`,
   );
 }
 
 // This is a read-only release assertion and must run for every real production
-// build even when migration execution is explicitly disabled. A migration
-// override cannot weaken the runtime schema contract. The wrapper first selects
-// the same validated database URL as the application runtime.
+// build. The production schema must already match the exact release journal;
+// artifact compilation may verify that invariant but may not establish it.
 if (shouldVerifyProductionSchema) {
   run("node", ["scripts/run-production-schema-effects.mjs"]);
 }
