@@ -1,5 +1,5 @@
 /** Transactional email sender identity. Domain remains configurable independently of brand. */
-const DEFAULT_DOMAIN = "trywireline.com";
+const DEFAULT_DOMAIN = "botbound.me";
 const DEFAULT_FROM = `BotBound <noreply@${DEFAULT_DOMAIN}>`;
 
 export function extractEmailAddress(from: string): string {
