@@ -7,7 +7,15 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
   const canary = read("src/lib/demo-line-canary.ts");
 
-  it("probes the complete canonical Twilio routing configuration", () => {
+  it("skips the retired founder PSTN fleet before touching Twilio", () => {
+    expect(canary).toContain("FOUNDER_PSTN_SHOWCASE_ENABLED");
+    expect(canary).toContain("Founder PSTN showcase is retired; demo-line canary skipped");
+    expect(canary.indexOf("if (!founderPstnShowcaseEnabled())")).toBeLessThan(
+      canary.indexOf("const client = getTwilioClient()"),
+    );
+  });
+
+  it("probes the complete canonical Twilio routing configuration when deliberately re-enabled", () => {
     expect(canary).toContain("isNativeNumberOpenAIRouted(number)");
     expect(canary).toContain("smsUrl: row.smsUrl");
     expect(canary).toContain("smsMethod: row.smsMethod");
@@ -18,7 +26,7 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
     expect(canary).not.toContain("api.vapi.ai");
   });
 
-  it("repairs drifted showcase webhooks before alerting", () => {
+  it("repairs drifted showcase webhooks before alerting when deliberately re-enabled", () => {
     expect(canary).toContain("async function repairShowcaseOpenAIInboundRouting");
     expect(canary.indexOf("await repairShowcaseOpenAIInboundRouting(")).toBeLessThan(
       canary.indexOf("probeLine(agent, kind, carrierNumbers, assignments, runtimeReady)"),
