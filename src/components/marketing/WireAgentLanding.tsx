@@ -84,15 +84,6 @@ export default function WireAgentLanding() {
                 agentName={HERO_DEMO.name}
                 variant="inline"
                 buttonLabel={`Talk to ${HERO_DEMO.name}`}
-                fallback={
-                  <Link
-                    to="/showcase#demo-lines"
-                    className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline wl-focus-ring-halo"
-                  >
-                    Call a demo line
-                    <ArrowRight className="size-3.5" aria-hidden="true" />
-                  </Link>
-                }
               />
             </div>
           </div>
