@@ -35,6 +35,10 @@ import {
 import { openAISipConfigured } from "./voice/openai-sip-config";
 import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 
+// The durable canary runs nightly. Cover every real showcase call since the
+// prior run, with headroom for queue and scheduler jitter.
+const SHOWCASE_VOICE_WINDOW_MINUTES = 26 * 60;
+
 export interface LineProbeResult {
   name: string;
   tel: string;
@@ -228,7 +232,7 @@ export async function runDemoLineCanary(
   try {
     const voiceWindow = await computeVoiceHealthWindow({
       agentIds: showcaseAgentIds,
-      windowMinutes: 60,
+      windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES,
     });
     result.voiceWindow = voiceWindow;
     result.voiceWindowHealthy = voiceWindow.healthy;
