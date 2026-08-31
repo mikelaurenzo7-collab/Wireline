@@ -22,7 +22,11 @@ export function normalizeResendFromAddress(raw: string): string {
   return trimmed;
 }
 
-export function resolveResendFromAddress(): string {
+function isBotBoundSenderDomain(domain: string): boolean {
+  return domain === DEFAULT_DOMAIN || domain.endsWith(`.${DEFAULT_DOMAIN}`);
+}
+
+function configuredResendFromAddress(): string {
   const explicit = process.env.RESEND_FROM_EMAIL?.trim();
   if (explicit) return normalizeResendFromAddress(explicit);
   const domain = process.env.RESEND_FROM_DOMAIN?.trim().toLowerCase();
@@ -30,16 +34,32 @@ export function resolveResendFromAddress(): string {
   return DEFAULT_FROM;
 }
 
+export function resolveResendFromAddress(): string {
+  const configured = configuredResendFromAddress();
+  // Production transactional mail is a BotBound surface. Legacy Wireline or
+  // arbitrary sandbox sender overrides remain usable outside Production, but
+  // can no longer silently escape into customer email after a brand cutover.
+  if (
+    process.env.VERCEL_ENV?.trim().toLowerCase() === "production" &&
+    !isBotBoundSenderDomain(extractFromDomain(configured))
+  ) {
+    return DEFAULT_FROM;
+  }
+  return configured;
+}
+
 export interface ResendTransportDiagnostics {
   from: string;
   from_domain: string;
   has_api_key: boolean;
   configured_via: "RESEND_FROM_EMAIL" | "RESEND_FROM_DOMAIN" | "default";
+  production_sender_overridden: boolean;
 }
 
 export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
   const explicit = process.env.RESEND_FROM_EMAIL?.trim();
   const domain = process.env.RESEND_FROM_DOMAIN?.trim();
+  const configured = configuredResendFromAddress();
   const from = resolveResendFromAddress();
   let configured_via: ResendTransportDiagnostics["configured_via"] = "default";
   if (explicit) configured_via = "RESEND_FROM_EMAIL";
@@ -49,6 +69,7 @@ export function getResendTransportDiagnostics(): ResendTransportDiagnostics {
     from_domain: extractFromDomain(from),
     has_api_key: Boolean(process.env.RESEND_API_KEY?.trim()),
     configured_via,
+    production_sender_overridden: configured !== from,
   };
 }
 
