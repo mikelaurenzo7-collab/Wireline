@@ -6,12 +6,10 @@ import {
   CheckCircle2,
   Loader2,
   Mail,
-  Phone,
   Send,
   Sparkles,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { WIRELINE_FEATURED_TEAM_AGENT } from "../data/contact-agents";
 import { planById } from "../lib/plan-catalog";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
@@ -28,7 +26,6 @@ const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 39;
 
 export function ContactPage() {
   const [searchParams] = useSearchParams();
-  const salesAgent = WIRELINE_FEATURED_TEAM_AGENT;
   const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
   const startsAsSales = ["sales", "business", "enterprise"].includes(
     initialIntent?.toLowerCase() ?? "",
@@ -151,15 +148,7 @@ export function ContactPage() {
           <h1 className="wl-stitch-marketing-hero text-balance">Talk through the Bot you need</h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <a
-            href={`tel:${salesAgent.tel}`}
-            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
-          >
-            <Phone className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Call BotBound</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{salesAgent.display}</p>
-          </a>
+        <section className="mt-10 grid gap-3 sm:grid-cols-2">
           <a
             href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
