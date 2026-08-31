@@ -8,6 +8,7 @@ describe("public marketing truth contract", () => {
   it("does not publish synthetic adoption or usage counts", () => {
     const routes = read("src/routes/marketing-runtime-routes.ts");
 
+    expect(routes).not.toContain("PUBLIC_MARKETING_STATS");
     expect(routes).not.toContain("agents_online: 120");
     expect(routes).not.toContain("calls_this_month: 8400");
     expect(routes).not.toContain("tenants: 95");
