@@ -30,7 +30,13 @@ function managedRows(): Array<{ agent: ContactAgent; kind: ShowcaseKind }> {
   ];
 }
 
-/** Persist the founder's public bot identities in BotBound; OpenAI is stateless. */
+/**
+ * Persist the founder's browser-demo Bot identities in BotBound.
+ *
+ * The founder PSTN fleet is retired. Do not publish or recreate phone-number
+ * bindings here; customer production numbers are provisioned independently
+ * through the native OpenAI Realtime + Twilio workflow.
+ */
 export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
   for (const { agent, kind } of managedRows()) {
     const id = founderShowcaseAgentId(userId, agent.name);
@@ -51,7 +57,7 @@ export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
         founder_showcase: true,
         founder_showcase_kind: kind,
         founder_showcase_runtime_version: FOUNDER_SHOWCASE_RUNTIME_VERSION,
-        public_phone_number: agent.tel,
+        founder_pstn_status: "retired",
       },
       updatedAt: new Date(),
     };
