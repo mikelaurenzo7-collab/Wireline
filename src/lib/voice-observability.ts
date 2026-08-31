@@ -12,7 +12,7 @@
  */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, desc } from "drizzle-orm";
+import { eq, and, gte, desc, inArray } from "drizzle-orm";
 import { dispatchWebhook } from "./webhook-helpers";
 import { isAbnormalHangup, isPipelineFailure } from "./call-reliability-capture";
 
@@ -78,6 +78,14 @@ const DEFAULT_HANGUP_RATE_ALERT_PCT = 10;
 const DEFAULT_TOOL_FAILURE_RATE_ALERT_PCT = 5;
 const DEFAULT_WEBHOOK_FAILURE_RATE_ALERT_PCT = 5;
 const DEFAULT_ESCALATION_FAILURE_RATE_ALERT_PCT = 10;
+const VOICE_WEBHOOK_PROVIDERS = [
+  "openai",
+  "openai_realtime",
+  "twilio",
+  "twilio_voice",
+  "vapi",
+  "xai",
+] as const;
 
 export { isPipelineFailure } from "./call-reliability-capture";
 
@@ -118,12 +126,19 @@ export async function computeVoiceHealthWindow(opts: {
 
   const webhookWhere = and(
     gte(schema.webhookHealth.createdAt, since),
+    inArray(schema.webhookHealth.provider, [...VOICE_WEBHOOK_PROVIDERS]),
     opts.userId ? eq(schema.webhookHealth.userId, opts.userId) : undefined,
   );
-  const webhookRows = await drizzle
-    .select({ outcome: schema.webhookHealth.outcome })
-    .from(schema.webhookHealth)
-    .where(webhookWhere);
+  // webhookHealth also stores messaging, usage, and other callback outcomes,
+  // and it has no call/demo identifier. Demo-line health must therefore use
+  // its scoped call rows only; otherwise routine SMS delivery receipts can
+  // degrade the published PSTN signal.
+  const webhookRows: Array<{ outcome: string }> = opts.demoOnly
+    ? []
+    : await drizzle
+        .select({ outcome: schema.webhookHealth.outcome })
+        .from(schema.webhookHealth)
+        .where(webhookWhere);
 
   const total = rows.length;
   if (total === 0) {
