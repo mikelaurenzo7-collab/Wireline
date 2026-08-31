@@ -421,12 +421,23 @@ router.post(
       throw error;
     }
 
-    const lease = await acquireAccountOperationLease({
-      userId: sessionInput.userId,
-      kind: "provider",
-      operation: "openai_sip_call_session",
-      ttlMs: 10 * 60_000,
-    });
+    let lease: Awaited<ReturnType<typeof acquireAccountOperationLease>>;
+    try {
+      lease = await acquireAccountOperationLease({
+        userId: sessionInput.userId,
+        kind: "provider",
+        operation: "openai_sip_call_session",
+        ttlMs: 10 * 60_000,
+      });
+    } catch (error) {
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        603,
+        "admission_lease_failed",
+      );
+      throw error;
+    }
     if (!lease) {
       await rejectShowcaseCallBeforeSession(
         sessionInput,

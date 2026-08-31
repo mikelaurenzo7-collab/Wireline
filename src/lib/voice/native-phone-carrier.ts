@@ -77,15 +77,22 @@ export type NativeNumberRoutingSnapshot = {
   voiceFallbackMethod?: string | null;
 };
 
+export function isNativeNumberOpenAIVoiceRouted(row: NativeNumberRoutingSnapshot): boolean {
+  const expected = routingFields();
+  return (
+    row.voiceUrl === expected.voiceUrl &&
+    row.voiceMethod === expected.voiceMethod &&
+    row.voiceFallbackUrl === expected.voiceFallbackUrl &&
+    row.voiceFallbackMethod === expected.voiceFallbackMethod
+  );
+}
+
 export function isNativeNumberOpenAIRouted(row: NativeNumberRoutingSnapshot): boolean {
   const expected = routingFields();
   return (
     row.smsUrl === expected.smsUrl &&
     row.smsMethod === expected.smsMethod &&
-    row.voiceUrl === expected.voiceUrl &&
-    row.voiceMethod === expected.voiceMethod &&
-    row.voiceFallbackUrl === expected.voiceFallbackUrl &&
-    row.voiceFallbackMethod === expected.voiceFallbackMethod
+    isNativeNumberOpenAIVoiceRouted(row)
   );
 }
 

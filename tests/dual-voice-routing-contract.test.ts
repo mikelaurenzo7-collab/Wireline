@@ -81,8 +81,12 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(preSessionFailure).not.toContain("customerNumber");
     expect(webhook).toContain('"environment_disallowed"');
     expect(webhook).toContain('"runtime_unavailable"');
+    expect(webhook).toContain('"admission_lease_failed"');
     expect(webhook).toContain('"admission_lease_unavailable"');
     expect(webhook).toContain('"spend_reservation_failed"');
+    expect(webhook).toContain(
+      "let lease: Awaited<ReturnType<typeof acquireAccountOperationLease>>",
+    );
     expect(webhook).toContain('"provider_accept_failed"');
     const admission = webhook.indexOf("applyInboundAdmission(");
     const lease = webhook.indexOf("await acquireAccountOperationLease(");

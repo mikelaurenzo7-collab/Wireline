@@ -6,9 +6,12 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
   const canary = read("src/lib/demo-line-canary.ts");
+  const carrier = read("src/lib/voice/native-phone-carrier.ts");
 
-  it("probes the complete canonical Twilio routing configuration", () => {
-    expect(canary).toContain("isNativeNumberOpenAIRouted(number)");
+  it("publishes voice truth independently while retaining full routing repair", () => {
+    expect(canary).toContain("isNativeNumberOpenAIVoiceRouted(number)");
+    expect(canary).not.toContain("isNativeNumberOpenAIRouted(number)");
+    expect(carrier).toContain("export function isNativeNumberOpenAIVoiceRouted");
     expect(canary).toContain("smsUrl: row.smsUrl");
     expect(canary).toContain("smsMethod: row.smsMethod");
     expect(canary).toContain("voiceMethod: row.voiceMethod");
@@ -24,6 +27,7 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
       "agents.map(({ agent }) => founderShowcaseAgentId(founderUserId, agent.name))",
     );
     expect(canary).toContain("agentIds: showcaseAgentIds");
+    expect(canary).toContain('direction: "inbound"');
     expect(canary).toContain("const SHOWCASE_VOICE_WINDOW_MINUTES = 26 * 60");
     expect(canary).toContain("windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES");
     expect(canary).not.toContain("showcaseAgentIds.add(row.agentId)");

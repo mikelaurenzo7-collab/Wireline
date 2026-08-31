@@ -85,8 +85,14 @@ describe("launch artifact privacy and operations truth", () => {
     expect(observability).toContain(
       "opts.agentIds ? inArray(schema.callLogs.agentId, opts.agentIds) : undefined",
     );
+    expect(observability).toContain(
+      "opts.direction ? eq(schema.callLogs.direction, opts.direction) : undefined",
+    );
     const canary = read("src/lib/demo-line-canary.ts");
     expect(canary).toContain("agentIds: showcaseAgentIds");
+    expect(canary).toContain('direction: "inbound"');
+    expect(canary).toContain("isNativeNumberOpenAIVoiceRouted(number)");
+    expect(canary).not.toContain("isNativeNumberOpenAIRouted(number)");
     expect(canary).toContain("const SHOWCASE_VOICE_WINDOW_MINUTES = 26 * 60");
     expect(canary).toContain("windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES");
     expect(canary).toContain(

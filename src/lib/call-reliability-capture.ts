@@ -8,7 +8,19 @@ import * as schema from "../db/schema";
 
 export type WebhookHealthOutcome = "success" | "rejected" | "error";
 
-const PIPELINE_FAILURE_VALUES = new Set(["stt", "tts", "llm", "connection", "unknown"]);
+const PIPELINE_FAILURE_VALUES = new Set([
+  "stt",
+  "tts",
+  "llm",
+  "connection",
+  "unknown",
+  // Native OpenAI SIP session classifications. Keep these recognizable for
+  // both new calls and rows written before normalization.
+  "openai_response",
+  "openai_realtime",
+  "startup",
+  "heartbeat",
+]);
 
 /** True when pipeline_error holds a real pipeline failure (not a Vapi hangup reason). */
 export function isPipelineFailure(pipelineError: string | null | undefined): boolean {

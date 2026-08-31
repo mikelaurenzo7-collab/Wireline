@@ -30,6 +30,7 @@ import { getTwilioClient } from "./twilio-service";
 import {
   configureNativeNumberRouting,
   isNativeNumberOpenAIRouted,
+  isNativeNumberOpenAIVoiceRouted,
   type NativeNumberRoutingSnapshot,
 } from "./voice/native-phone-carrier";
 import { openAISipConfigured } from "./voice/openai-sip-config";
@@ -91,7 +92,7 @@ function probeLine(
   runtimeReady: boolean,
 ): LineProbeResult {
   const number = carrierNumbers.get(agent.tel);
-  const numberOk = number ? isNativeNumberOpenAIRouted(number) : false;
+  const numberOk = number ? isNativeNumberOpenAIVoiceRouted(number) : false;
   const assistantOk = runtimeReady && assignments.has(agent.tel);
   const errors = [
     !number ? "number missing from Twilio" : null,
@@ -232,6 +233,7 @@ export async function runDemoLineCanary(
   try {
     const voiceWindow = await computeVoiceHealthWindow({
       agentIds: showcaseAgentIds,
+      direction: "inbound",
       windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES,
     });
     result.voiceWindow = voiceWindow;

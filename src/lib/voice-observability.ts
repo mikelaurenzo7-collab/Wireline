@@ -98,6 +98,7 @@ export async function computeVoiceHealthWindow(opts: {
   userId?: string; // undefined = all demo calls across tenants
   demoOnly?: boolean;
   agentIds?: string[];
+  direction?: "inbound" | "outbound";
   windowMinutes?: number;
 }): Promise<HealthWindowResult> {
   const windowMinutes = opts.windowMinutes ?? 5;
@@ -107,6 +108,7 @@ export async function computeVoiceHealthWindow(opts: {
     gte(schema.callLogs.createdAt, since),
     opts.demoOnly ? eq(schema.callLogs.demo, true) : undefined,
     opts.agentIds ? inArray(schema.callLogs.agentId, opts.agentIds) : undefined,
+    opts.direction ? eq(schema.callLogs.direction, opts.direction) : undefined,
     opts.userId ? eq(schema.callLogs.userId, opts.userId) : undefined,
   );
 
@@ -135,7 +137,8 @@ export async function computeVoiceHealthWindow(opts: {
   // and it has no call/demo identifier. Demo-line health must therefore use
   // its scoped call rows only; otherwise routine SMS delivery receipts can
   // degrade the published PSTN signal.
-  const scopedCallWindow = opts.demoOnly || opts.agentIds !== undefined;
+  const scopedCallWindow =
+    opts.demoOnly || opts.agentIds !== undefined || opts.direction !== undefined;
   const webhookRows: Array<{ outcome: string }> = scopedCallWindow
     ? []
     : await drizzle
