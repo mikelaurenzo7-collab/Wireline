@@ -160,7 +160,7 @@ const pricingJsonLd = {
   "@graph": [
     {
       "@type": "OfferCatalog",
-      name: "BotBound Phone Bots pricing",
+      name: "BotBound pricing",
       url: "https://botbound.me/pricing",
       itemListElement: [
         {
@@ -197,7 +197,7 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="PRICING | BOTBOUND PHONE BOTS FROM $19/MONTH"
+        title="PRICING | FROM $19/MONTH"
         description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />

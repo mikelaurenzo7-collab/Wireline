@@ -51,7 +51,7 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
-        title="FEATURES | BOTBOUND PHONE BOTS"
+        title="FEATURES"
         description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
         path="/features"
       />
@@ -64,7 +64,7 @@ export default function Features() {
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
-            title="THEY CALL. YOUR BOT ANSWERS."
+            title="THEY CALL. YOUR BOT ANSWERS"
             primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
             secondaryAction={{
               label: "HEAR A DEMO",

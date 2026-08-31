@@ -47,7 +47,7 @@ const clientSurfaces = [
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first BotBound Phone Bot from Claude with the same account-bound connector.",
+    blurb: "Build your first Phone Bot from Claude with the same account-bound connector.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,

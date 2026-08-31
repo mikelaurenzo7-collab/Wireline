@@ -7,7 +7,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 const DIFFERENCES = [
   {
     title: "Works Across Channels",
-    copy: "Handles conversations through the voice, email, and text channels you configure.",
+    copy: "Handles conversations through the voice, email, and text channels you configure, then continues with shared context.",
   },
   {
     title: "Plain Instructions",
@@ -18,16 +18,8 @@ const DIFFERENCES = [
     copy: "Uses enabled tools to book, hand off, follow up, or record the outcome.",
   },
   {
-    title: "Persistent Memory",
-    copy: "Approved coaching, objections, and preferences can stay with the Bot.",
-  },
-  {
     title: "Real Calendar Booking",
     copy: "Checks connected-calendar availability and timezone before supported bookings.",
-  },
-  {
-    title: "Across Channels",
-    copy: "Connected channels can continue the work with shared workspace context.",
   },
   {
     title: "After-Hours Coverage",
@@ -36,10 +28,6 @@ const DIFFERENCES = [
   {
     title: "Every Outcome Visible",
     copy: "Completed conversations can produce transcripts, summaries, actions, and analytics.",
-  },
-  {
-    title: "Improves with Use",
-    copy: "Post-call review in Studio captures lessons. Automated retraining from every call remains on the roadmap.",
   },
 ] as const;
 

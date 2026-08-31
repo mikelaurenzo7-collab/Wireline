@@ -50,12 +50,12 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "PRICING | BOTBOUND PHONE BOTS FROM $19/MONTH",
+    title: "PRICING | FROM $19/MONTH",
     description:
       "Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear.",
   },
   "/features": {
-    title: "FEATURES | BOTBOUND PHONE BOTS",
+    title: "FEATURES",
     description:
       "Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory.",
   },

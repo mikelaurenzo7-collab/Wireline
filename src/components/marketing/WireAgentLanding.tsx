@@ -65,7 +65,7 @@ export default function WireAgentLanding() {
     <div className="marketing-surface landing-prestige bg-background text-foreground">
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
-          <div className="landing-prestige__hero" aria-label="BotBound Phone Bot">
+          <div className="landing-prestige__hero" aria-label="BotBound">
             <div className="landing-prestige__hero-brand">
               <BotBoundLockup
                 size="display"

@@ -106,6 +106,9 @@ describe("BotBound product voice", () => {
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Never use Wire as a customer-facing setup step, nav label, or CTA. After create, the guide is Train, Test, Launch.",
     );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
+    );
   });
 
   it("keeps operational customer surfaces on Bot terminology", () => {
