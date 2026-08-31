@@ -41,7 +41,7 @@ export default function Showcase() {
           }
         />
 
-        <section id="browser-demos" className="mt-8 min-w-0" aria-labelledby="browser-demos-title">
+        <section id="demo-lines" className="mt-8 min-w-0" aria-labelledby="browser-demos-title">
           <div className="mx-auto max-w-2xl text-center">
             <h2 id="browser-demos-title" className="text-2xl font-semibold tracking-[-.035em] text-foreground">
               Try both call flows
