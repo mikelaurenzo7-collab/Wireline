@@ -932,7 +932,7 @@ export async function handleJob(job: JobRow): Promise<void> {
 
   if (job.type === "demo_line_canary") {
     const { runDemoLineCanary } = await import("./demo-line-canary");
-    const result = await runDemoLineCanary();
+    const result = await runDemoLineCanary({ jobId: String(job.id) });
     await drizzle
       .update(schema.jobs)
       .set({
