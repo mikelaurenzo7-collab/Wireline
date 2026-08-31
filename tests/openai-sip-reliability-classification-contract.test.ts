@@ -20,7 +20,7 @@ describe("OpenAI SIP reliability classification", () => {
     );
 
     for (const failure of OPENAI_SIP_PIPELINE_FAILURES) {
-      expect(failureSet).toContain(`\"${failure}\"`);
+      expect(failureSet).toContain(`"${failure}"`);
     }
   });
 
