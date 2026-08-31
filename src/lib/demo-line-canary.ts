@@ -18,6 +18,7 @@ import {
 import * as schema from "../db/schema";
 import { sendEmail } from "./email-service";
 import { resolveFounderUserId } from "./founder-fleet-seed";
+import { founderShowcaseAgentId } from "./founder-showcase-seed";
 import {
   PUBLIC_VOICE_CANARY_TTL_SECONDS,
   publicVoiceCanaryKey,
@@ -112,10 +113,9 @@ async function repairShowcaseOpenAIInboundRouting(
       sid?: string | null;
     }
   >,
+  founderUserId: string | null,
 ): Promise<boolean> {
-  if (!openAISipConfigured() || rows.length === 0) return false;
-  const founderUserId = await resolveFounderUserId();
-  if (!founderUserId) return false;
+  if (!openAISipConfigured() || rows.length === 0 || !founderUserId) return false;
 
   let attempted = false;
   for (const row of rows) {
@@ -152,7 +152,19 @@ export async function runDemoLineCanary(
     ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
     ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
   ];
-  const showcaseAgentIds = new Set<string>();
+  let founderUserId: string | null = null;
+  try {
+    founderUserId = await resolveFounderUserId();
+  } catch (error) {
+    result.error = `Founder showcase workspace lookup failed: ${getErrorMessage(error)}`;
+  }
+  if (!founderUserId) {
+    result.allHealthy = false;
+    result.error ||= "Founder showcase workspace is unavailable";
+  }
+  const showcaseAgentIds = founderUserId
+    ? agents.map(({ agent }) => founderShowcaseAgentId(founderUserId, agent.name))
+    : [];
   const client = getTwilioClient();
   if (!client) {
     result.allHealthy = false;
@@ -181,6 +193,7 @@ export async function runDemoLineCanary(
     const showcaseTels = new Set(agents.map(({ agent }) => agent.tel));
     const repaired = await repairShowcaseOpenAIInboundRouting(
       initialCarrierRows.filter((row) => showcaseTels.has(String(row.phoneNumber || ""))),
+      founderUserId,
     );
     const carrierRows = repaired
       ? await client.incomingPhoneNumbers.list({ limit: 1_000 })
@@ -201,14 +214,12 @@ export async function runDemoLineCanary(
     const assignments = new Set(
       assignmentRows.filter((row) => Boolean(row.agentId)).map((row) => row.phoneNumber),
     );
-    for (const row of assignmentRows) {
-      if (row.agentId) showcaseAgentIds.add(row.agentId);
-    }
     const runtimeReady = openAISipConfigured();
     result.lines = agents.map(({ agent, kind }) =>
       probeLine(agent, kind, carrierNumbers, assignments, runtimeReady),
     );
-    result.allHealthy = result.lines.every((line) => line.numberOk && line.assistantOk);
+    result.allHealthy =
+      result.allHealthy && result.lines.every((line) => line.numberOk && line.assistantOk);
   } catch (error) {
     result.allHealthy = false;
     result.error = error instanceof Error ? error.message : "Showcase line probe failed";
@@ -216,7 +227,7 @@ export async function runDemoLineCanary(
 
   try {
     const voiceWindow = await computeVoiceHealthWindow({
-      agentIds: [...showcaseAgentIds],
+      agentIds: showcaseAgentIds,
       windowMinutes: 60,
     });
     result.voiceWindow = voiceWindow;
