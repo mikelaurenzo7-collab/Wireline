@@ -6,11 +6,13 @@ import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
 import {
   buildPublicHealthPayload,
+  publicVoiceCanaryKey,
   probeOpenAIModel,
   probeOpenAIRealtimeModel,
   type PublicHealthLevel,
   type PublicHealthPayload,
   type PublicModelProbe,
+  type PublicVoiceCanarySignal,
 } from "../lib/public-health-probe";
 
 function cacheScope(): string {
@@ -40,8 +42,8 @@ function deployedSourceCommit(): string | null {
 
 const CACHE_SCOPE = cacheScope();
 const SOURCE_COMMIT = deployedSourceCommit();
-const RESULT_KEY = `wireline:health:public:v6:${CACHE_SCOPE}`;
-const LOCK_KEY = `wireline:health:public:probe-lock:v6:${CACHE_SCOPE}`;
+const RESULT_KEY = `wireline:health:public:v7:${CACHE_SCOPE}`;
+const LOCK_KEY = `wireline:health:public:probe-lock:v7:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;
 const LOCK_TTL_SECONDS = 12;
 const LOCAL_STALE_TTL_MS = 5 * 60_000;
@@ -156,6 +158,16 @@ async function readCached(client: Redis): Promise<PublicHealthPayload | null> {
   return cached;
 }
 
+async function readVoiceCanary(client: Redis): Promise<PublicVoiceCanarySignal | null> {
+  const value = await client.get<unknown>(publicVoiceCanaryKey());
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<PublicVoiceCanarySignal>;
+  if (typeof candidate.healthy !== "boolean" || typeof candidate.checked_at !== "string") {
+    return null;
+  }
+  return { healthy: candidate.healthy, checked_at: candidate.checked_at };
+}
+
 async function waitForConcurrentProbe(client: Redis): Promise<PublicHealthPayload | null> {
   for (let attempt = 0; attempt < 32; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 250));
@@ -221,9 +233,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       OPENAI_REALTIME_DEFAULT_MODEL,
       process.env.OPENAI_API_KEY,
     );
-    const [voice, reasoning] = await Promise.all([
+    const voiceCanaryPromise =
+      CACHE_SCOPE === "production"
+        ? readVoiceCanary(client)
+        : Promise.resolve<PublicVoiceCanarySignal | null>(null);
+    const [voice, reasoning, voiceCanary] = await Promise.all([
       managedVoicePromise,
       probeOpenAIModel(OPENAI_STRUCTURED_PRIMARY_MODEL, process.env.OPENAI_API_KEY),
+      voiceCanaryPromise,
     ]);
     logProviderProbeFailures(requestId, [
       { component: "voice_runtime", probe: voice },
@@ -232,6 +249,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const payload = buildPublicHealthPayload({
       voice,
       reasoning,
+      voiceCanary,
+      requireVoiceCanary: CACHE_SCOPE === "production",
     });
     remember(payload);
     await client.set(RESULT_KEY, payload, { ex: RESULT_TTL_SECONDS });

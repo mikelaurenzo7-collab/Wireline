@@ -7,6 +7,7 @@
  * onto the OpenAI inbound bridge before the probe. It does not place a paid
  * synthetic call.
  */
+import { Redis } from "@upstash/redis";
 import { inArray } from "drizzle-orm";
 
 import {
@@ -17,6 +18,11 @@ import {
 import * as schema from "../db/schema";
 import { sendEmail } from "./email-service";
 import { resolveFounderUserId } from "./founder-fleet-seed";
+import {
+  PUBLIC_VOICE_CANARY_TTL_SECONDS,
+  publicVoiceCanaryKey,
+  type PublicVoiceCanarySignal,
+} from "./public-health-probe";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { getTwilioClient } from "./twilio-service";
@@ -46,6 +52,30 @@ export interface CanaryRunResult {
   voiceWindowHealthy?: boolean;
   voiceWindow?: Awaited<ReturnType<typeof computeVoiceHealthWindow>>;
   error?: string;
+}
+
+async function publishPublicVoiceCanary(result: CanaryRunResult): Promise<void> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    log.warn("Demo-line canary health signal skipped because Redis is not configured");
+    return;
+  }
+
+  const signal: PublicVoiceCanarySignal = {
+    healthy: result.allHealthy,
+    checked_at: result.timestamp,
+  };
+  try {
+    const client = new Redis({ url, token });
+    await client.set(publicVoiceCanaryKey(), signal, {
+      ex: PUBLIC_VOICE_CANARY_TTL_SECONDS,
+    });
+  } catch (error) {
+    log.warn("Demo-line canary health signal publish failed", {
+      error: getErrorMessage(error),
+    });
+  }
 }
 
 function probeLine(
@@ -125,6 +155,7 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     result.allHealthy = false;
     result.error = "Twilio is not configured";
     result.alertSent = await sendCanaryAlert(result);
+    await publishPublicVoiceCanary(result);
     return result;
   }
 
@@ -195,13 +226,18 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     log.error("Demo-line canary detected failures", {
       unhealthy: result.lines
         .filter((line) => !line.numberOk || !line.assistantOk)
-        .map((line) => ({ name: line.name, tel: line.tel, error: line.error })),
+        .map((line) => ({
+          kind: line.kind,
+          phoneSuffix: line.tel.slice(-4),
+          error: line.error,
+        })),
       globalError: result.error,
     });
     result.alertSent = await sendCanaryAlert(result);
   } else {
     log.info("Demo-line canary: all lines healthy", { lines: result.lines.length });
   }
+  await publishPublicVoiceCanary(result);
   return result;
 }
 

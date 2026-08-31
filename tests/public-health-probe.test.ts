@@ -33,6 +33,36 @@ describe("public health probe", () => {
     });
   });
 
+  it("requires a fresh healthy PSTN canary before production voice is operational", () => {
+    const checkedAt = new Date("2026-08-31T00:00:00.000Z");
+    const base = {
+      voice: { ok: true, latency_ms: 10, model: "voice" },
+      reasoning: { ok: true, latency_ms: 10, model: "reasoning" },
+      requireVoiceCanary: true,
+      checkedAt,
+    };
+
+    const unhealthy = buildPublicHealthPayload({
+      ...base,
+      voiceCanary: { healthy: false, checked_at: checkedAt.toISOString() },
+    });
+    expect(unhealthy.overall).toBe("degraded");
+    expect(unhealthy.components.voice_runtime).toBe("degraded");
+
+    const stale = buildPublicHealthPayload({
+      ...base,
+      voiceCanary: { healthy: true, checked_at: "2026-08-29T00:00:00.000Z" },
+    });
+    expect(stale.components.voice_runtime).toBe("degraded");
+
+    const healthy = buildPublicHealthPayload({
+      ...base,
+      voiceCanary: { healthy: true, checked_at: checkedAt.toISOString() },
+    });
+    expect(healthy.overall).toBe("operational");
+    expect(healthy.components.voice_runtime).toBe("operational");
+  });
+
   it("treats an authorization rejection in a primary path as an outage", () => {
     const payload = buildPublicHealthPayload({
       voice: {

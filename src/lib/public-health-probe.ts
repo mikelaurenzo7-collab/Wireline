@@ -7,6 +7,36 @@ export interface PublicModelProbe {
   error?: string;
 }
 
+export interface PublicVoiceCanarySignal {
+  healthy: boolean;
+  checked_at: string;
+}
+
+export const PUBLIC_VOICE_CANARY_MAX_AGE_MS = 30 * 60 * 60 * 1000;
+export const PUBLIC_VOICE_CANARY_TTL_SECONDS = 48 * 60 * 60;
+
+export function publicVoiceCanaryKey(env: NodeJS.ProcessEnv = process.env): string {
+  const environment = String(env.VERCEL_ENV || env.NODE_ENV || "local")
+    .trim()
+    .toLowerCase();
+  const scope = environment === "production" ? "production" : "non-production";
+  return `wireline:health:public:pstn-canary:v1:${scope}`;
+}
+
+export function isFreshPublicVoiceCanarySignal(
+  signal: PublicVoiceCanarySignal | null | undefined,
+  checkedAt: Date = new Date(),
+): boolean {
+  if (!signal?.healthy) return false;
+  const observedAt = Date.parse(signal.checked_at);
+  const now = checkedAt.getTime();
+  return (
+    Number.isFinite(observedAt) &&
+    observedAt <= now + 5 * 60 * 1000 &&
+    now - observedAt <= PUBLIC_VOICE_CANARY_MAX_AGE_MS
+  );
+}
+
 export interface PublicHealthPayload {
   overall: PublicHealthLevel;
   components: {
@@ -29,12 +59,26 @@ function probeLevel(probe: Pick<PublicModelProbe, "ok" | "error">): PublicHealth
 export function buildPublicHealthPayload(input: {
   voice: PublicModelProbe;
   reasoning: PublicModelProbe;
+  voiceCanary?: PublicVoiceCanarySignal | null;
+  requireVoiceCanary?: boolean;
   checkedAt?: Date;
 }): PublicHealthPayload {
+  const checkedAt = input.checkedAt ?? new Date();
   const components: PublicHealthPayload["components"] = {
     voice_runtime: probeLevel(input.voice),
     reasoning: probeLevel(input.reasoning),
   };
+
+  // Model visibility proves the OpenAI control plane is reachable, not that a
+  // public phone number reaches BotBound. Production must also carry a fresh,
+  // healthy PSTN canary signal before voice is called operational.
+  if (
+    input.requireVoiceCanary &&
+    !isFreshPublicVoiceCanarySignal(input.voiceCanary, checkedAt) &&
+    components.voice_runtime === "operational"
+  ) {
+    components.voice_runtime = "degraded";
+  }
 
   // OpenAI owns the only live-voice runtime. Never manufacture a healthy
   // fallback component by copying the primary probe: that would claim
@@ -50,7 +94,7 @@ export function buildPublicHealthPayload(input: {
   return {
     overall,
     components,
-    last_checked: (input.checkedAt ?? new Date()).toISOString(),
+    last_checked: checkedAt.toISOString(),
   };
 }
 

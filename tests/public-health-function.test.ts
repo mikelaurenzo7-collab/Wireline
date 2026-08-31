@@ -134,7 +134,7 @@ describe("public health Vercel function", () => {
 
     await handler(request(), res as unknown as ServerResponse);
 
-    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v6:production");
+    expect(mocks.get).toHaveBeenCalledWith("wireline:health:public:v7:production");
     expect(mocks.set).not.toHaveBeenCalled();
     expect(mocks.openaiProbe).not.toHaveBeenCalled();
     expect(mocks.realtimeProbe).not.toHaveBeenCalled();
@@ -164,7 +164,7 @@ describe("public health Vercel function", () => {
     const scope = "preview:abcdef1234567890";
     expect(mocks.set).toHaveBeenNthCalledWith(
       1,
-      `wireline:health:public:probe-lock:v6:${scope}`,
+      `wireline:health:public:probe-lock:v7:${scope}`,
       expect.any(Number),
       { nx: true, ex: 12 },
     );
@@ -174,7 +174,7 @@ describe("public health Vercel function", () => {
     expect(mocks.openaiProbe).toHaveBeenCalledWith("reasoning-model", "test-openai-key");
     expect(mocks.set).toHaveBeenNthCalledWith(
       2,
-      `wireline:health:public:v6:${scope}`,
+      `wireline:health:public:v7:${scope}`,
       expect.objectContaining({
         overall: "operational",
         components: {
@@ -187,6 +187,41 @@ describe("public health Vercel function", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers.get("cache-control")).toContain("s-maxage=60");
     expect(res.headers.get("x-wireline-health-source")).toBe("probe");
+  });
+
+  it("degrades production voice when the PSTN canary is unhealthy", async () => {
+    process.env.VERCEL_ENV = "production";
+    mocks.get
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ healthy: false, checked_at: new Date().toISOString() });
+    mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");
+    mocks.realtimeProbe.mockResolvedValue({
+      ok: true,
+      latency_ms: 5,
+      model: "gpt-realtime-test",
+    });
+    mocks.openaiProbe.mockResolvedValue({
+      ok: true,
+      latency_ms: 5,
+      model: "reasoning-model",
+    });
+    const handler = await loadHandler();
+    const res = new MockResponse();
+
+    await handler(request(), res as unknown as ServerResponse);
+
+    expect(mocks.get).toHaveBeenNthCalledWith(
+      2,
+      "wireline:health:public:pstn-canary:v1:production",
+    );
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.body)).toMatchObject({
+      overall: "degraded",
+      components: {
+        voice_runtime: "degraded",
+        reasoning: "operational",
+      },
+    });
   });
 
   it("logs failed provider diagnostics internally without leaking them publicly", async () => {

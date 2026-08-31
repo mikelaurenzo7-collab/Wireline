@@ -51,6 +51,14 @@ describe("launch artifact privacy and operations truth", () => {
     expect(budget).toContain('bucket: "public-demo-global-daily"');
   });
 
+  it("keeps public-line canary failures free of full names and phone numbers in logs", () => {
+    const canary = read("src/lib/demo-line-canary.ts");
+    expect(canary).toContain("phoneSuffix: line.tel.slice(-4)");
+    expect(canary).not.toContain(
+      ".map((line) => ({ name: line.name, tel: line.tel, error: line.error }))",
+    );
+  });
+
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
     const security = read("src/components/Security.tsx");
     expect(security).toContain("365-day default; supported range 90 to 365 days");
