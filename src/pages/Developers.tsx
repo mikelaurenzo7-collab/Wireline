@@ -161,7 +161,7 @@ export default function Developers() {
               </Button>
             </div>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Connected apps help new users create a BotBound account and build their first Voice
+              Connected apps help new users create a BotBound account and build their first Phone
               Bot. This connector cannot place calls, send messages, provision numbers, or launch
               a live Bot. Training writes land only after you enable them in Apps and confirm each
               change. There is no public API-key product and no repo voice SDK.
