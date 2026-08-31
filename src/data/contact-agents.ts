@@ -9,11 +9,10 @@ export const CONTACT_AGENT_TINTS = {
 } as const;
 
 /**
- * Single source of truth for public showcase phone lines.
+ * Single source of truth for public browser-showcase profiles.
  *
  * Layout:
- *   - 2 BotBound specialists (Sarah, Liam) — real CS/sales lines with owner
- *     escalation tools. Used in /help + /support, NOT on the landing page.
+ *   - 2 BotBound specialists (Sarah, Liam) — product/support role profiles.
  *   - 7 vertical / skill demos — role-play showcases with NO owner escalation.
  *     Jordan + Jake are the two primary landing-page demos (inbound CS +
  *     outbound sales).
@@ -24,10 +23,12 @@ export const CONTACT_AGENT_TINTS = {
  *   2. In-app /help route — specialists + full demo catalog
  *   3. Founder fleet seeding — persists each OpenAI Realtime runtime profile
  *
- * Specialist lines can escalate via `escalate_to_human`. Demo lines cannot.
+ * The `tel` and `display` fields are retained only as legacy migration/audit
+ * identifiers. They do not authorize PSTN routing. A live phone call must have
+ * a current tenant-owned database assignment.
  *
  * Voice design: every agent uses a documented OpenAI Realtime voice so browser
- * and SIP calls sound identical across the public fleet.
+ * previews share the same managed voice palette as customer phone Bots.
  */
 
 export type ContactAgent = {
@@ -63,11 +64,10 @@ export type ContactAgent = {
 };
 
 /**
- * The 2 BotBound specialists. All on (630) numbers for company
- * uniformity. Each can answer verified product questions, guide callers
- * through self-service signup, email secure links, and record a human
- * follow-up request. Account-specific changes still require the relevant
- * authenticated workflow or a confirmed human follow-up.
+ * The 2 BotBound specialist role profiles. Each can answer verified product
+ * questions, guide callers through self-service signup, email secure links,
+ * and record a human follow-up request. Account-specific changes still require
+ * the relevant authenticated workflow or a confirmed human follow-up.
  */
 const ALL_ENCOMPASSING_SCOPE =
   "A BotBound front-line specialist who answers verified product, pricing, setup, " +
@@ -226,17 +226,21 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   },
 ];
 
-/** Real specialist line for /support and Account Holder-facing help — not landing CTAs. */
+/** Primary product-help role profile — never a public telephone CTA. */
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 
-/** Primary public demos on the landing page — no owner escalation. */
+/** Primary public demos on the landing page — protected browser sessions only. */
 export const LANDING_PUBLIC_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!,
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!,
 ];
 
-/** All public lines — specialists + demos. Used for catalog invariants. */
-export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [
-  ...WIRELINE_CONTACT_AGENTS,
-  ...WIRELINE_DEMO_AGENTS,
-];
+/**
+ * Retired founder PSTN routing registry.
+ *
+ * Keep this export for compatibility with the two inbound route modules while
+ * making the safe runtime value explicit: no hardcoded showcase number owns a
+ * live route. A number must exist in `wireline_phone_numbers` with an assigned
+ * Bot before either Twilio or OpenAI SIP accepts it.
+ */
+export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [];

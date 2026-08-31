@@ -51,7 +51,6 @@ export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
         founder_showcase: true,
         founder_showcase_kind: kind,
         founder_showcase_runtime_version: FOUNDER_SHOWCASE_RUNTIME_VERSION,
-        public_phone_number: agent.tel,
       },
       updatedAt: new Date(),
     };

@@ -1,11 +1,10 @@
 /**
- * Nightly control-plane canary for every public showcase line.
+ * Opt-in control-plane canary for the retired founder showcase PSTN fleet.
  *
- * It verifies the Twilio number still exists, its voice webhook points at the
- * canonical OpenAI SIP bridge, the database has a Bot assignment, and the
- * OpenAI SIP runtime is configured. Drifted showcase webhooks are rewritten
- * onto the OpenAI inbound bridge before the probe. It does not place a paid
- * synthetic call.
+ * BotBound's public founder demo is browser-only. This legacy probe remains
+ * available for a future deliberate Twilio reprovisioning exercise, but it is
+ * disabled by default and must never alert on or repair retired phone numbers
+ * during normal production operations.
  */
 import { inArray } from "drizzle-orm";
 
@@ -28,6 +27,14 @@ import {
 import { openAISipConfigured } from "./voice/openai-sip-config";
 import { alertOnVoiceDegradation, computeVoiceHealthWindow } from "./voice-observability";
 
+const FOUNDER_PSTN_CANARY_ENV = "BOTBOUND_ENABLE_FOUNDER_PSTN_CANARY";
+
+export function founderPstnCanaryEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env[FOUNDER_PSTN_CANARY_ENV] === "true";
+}
+
 export interface LineProbeResult {
   name: string;
   tel: string;
@@ -43,6 +50,8 @@ export interface CanaryRunResult {
   allHealthy: boolean;
   lines: LineProbeResult[];
   alertSent: boolean;
+  skipped?: boolean;
+  skipReason?: "founder_pstn_retired";
   voiceWindowHealthy?: boolean;
   voiceWindow?: Awaited<ReturnType<typeof computeVoiceHealthWindow>>;
   error?: string;
@@ -116,6 +125,14 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     lines: [],
     alertSent: false,
   };
+
+  if (!founderPstnCanaryEnabled()) {
+    result.skipped = true;
+    result.skipReason = "founder_pstn_retired";
+    log.info("Demo-line PSTN canary skipped because the founder PSTN showcase fleet is retired");
+    return result;
+  }
+
   const agents = [
     ...WIRELINE_CONTACT_AGENTS.map((agent) => ({ agent, kind: "cs" as const })),
     ...WIRELINE_DEMO_AGENTS.map((agent) => ({ agent, kind: "demo" as const })),
@@ -195,7 +212,7 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
     log.error("Demo-line canary detected failures", {
       unhealthy: result.lines
         .filter((line) => !line.numberOk || !line.assistantOk)
-        .map((line) => ({ name: line.name, tel: line.tel, error: line.error })),
+        .map((line) => ({ name: line.name, phoneSuffix: line.tel.slice(-4), error: line.error })),
       globalError: result.error,
     });
     result.alertSent = await sendCanaryAlert(result);

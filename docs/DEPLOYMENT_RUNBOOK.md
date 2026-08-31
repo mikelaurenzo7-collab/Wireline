@@ -1,201 +1,210 @@
 # BotBound Deployment Runbook
 
-Status: **Canonical production runbook**
+Status: **Canonical production runbook**  
+Last reconciled: **August 31, 2026**
 
-The canonical deployment path is GitHub `main` -> Vercel project `revaluate/wireline` -> `botbound.me`. The legacy `trywireline.com` origin remains only where registered callback compatibility requires it. Feature branches and pull requests create previews. Squash merges to `main` create production deployments.
+BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/wireline` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
-## Release sequence
+Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `botbound.me` alias. Never copy production credentials into a duplicate Vercel project to bypass a failed gate.
 
-1. Start from the latest `main` and use a focused branch.
-2. Run targeted checks while iterating.
-3. Run `npm run verify:full` for auth, billing, compliance, CSP, provider, data-access, migration, or shared-runtime changes.
-4. Push the final exact head and require the Vercel preview to be READY.
-5. Inspect CodeRabbit and resolve every review thread.
-6. Squash merge with the expected head SHA.
-7. Follow the exact squash SHA into the production deployment.
-8. Verify production health, aliases, migrations, affected live routes, and runtime errors.
+## Current launch posture
 
-A green stale deployment is not release evidence. Validation must match the head that is merged.
+BotBound is approved for a controlled design-partner pilot, not broad self-serve acquisition. Paid media, broad invitations, cold outbound, and regulated-data onboarding remain closed until one real checkout lifecycle, one consented non-demo inbound call, support handling, repeat usage, and contribution margin are verified.
 
-Never promote a preview artifact directly to production. Preview builds intentionally skip
-database migrations and production-only schema/environment gates; changing its alias does not
-rebuild it. `npm run vercel:promote-production -- <deploymentId> <exactCommitSha>` therefore
-accepts only a READY, `main`, production-target deployment at the expected SHA.
+The customer operating loop is:
 
-### Environment-only production redeploys
+> **Build → Train → Launch → Improve**
 
-An environment repair must rebuild one operator-selected source deployment; it must never search
-for the "latest READY main" deployment. That shortcut can silently rebuild a stale commit when the
-intended exact deployment failed the environment gate.
+A Bot must pass a private browser test before paid telephone-number wiring.
 
-Before creating the redeployment, run `VERCEL_TOKEN=... npm run vercel:env:health` and inspect the
-Vercel target metadata. `APP_URL=https://botbound.me` and, when the optional Twilio proxy override
-is configured, `TWILIO_WEBHOOK_BASE_URL=https://botbound.me` must have no trailing slash and must be
-scoped to **Production only**, never Preview or Development. `TWILIO_WEBHOOK_BASE_URL` remains
-optional at runtime; configuring it does not permit broader target scope. The build-time deployment
-boundary remains fail-closed and independently verifies the actual injected values.
+## Non-negotiable release invariants
 
-Use the exact existing `main`, production-target deployment ID at the intended 40-character SHA.
-The source may be `ERROR` (for example, after an environment gate stopped the exact build) or
-`READY`; every other state, project, target, branch, or SHA is rejected before the redeploy request.
+1. The reviewed Git source tree is the deployable artifact. Deployment may not rewrite runtime source.
+2. Production artifact compilation is read-only across the database and external providers.
+3. Database migrations are append-only and are promoted explicitly against an exact commit SHA before deployment.
+4. Provider verification is a separate read-only preflight. Any write-capable repair command must be deliberate and operator-invoked.
+5. Preview credentials and data must be isolated from production.
+6. Validation evidence must match the exact commit that reaches `main`; a green stale deployment is not evidence.
+7. A deployment is not released until the canonical alias, health response, served source SHA, and runtime-error stream are verified.
+
+## Canonical release sequence
+
+### 1. Anchor and review
+
+1. Fetch the latest remote `main`.
+2. Create a focused branch from that exact SHA.
+3. Run targeted checks while iterating.
+4. Run `npm run verify:full` for auth, billing, compliance, CSP, provider, data-access, migration, or shared-runtime changes.
+5. Push the final exact head and require its Vercel preview to reach `READY`.
+6. Resolve every review thread.
+7. Reconcile the branch with the latest `main` and repeat the exact-head preview if `main` moved.
+
+### 2. Run the external provider preflight
+
+From a secure operator environment containing the canonical production configuration, run:
 
 ```bash
-VERCEL_TOKEN=... npm run vercel:redeploy-production -- <sourceDeploymentId> <exactCommitSha>
-VERCEL_TOKEN=... npm run vercel:wait-deployment -- <newDeploymentId> <exactCommitSha> --production
+WIRELINE_RECONCILE_STRIPE_PORTAL=true \
+  node scripts/run-release-provider-preflight.mjs
 ```
 
-The redeploy command reports a new deployment ID but does not claim it is live. The waiter succeeds
-only when that same ID is cleanly READY in the canonical project, remains bound to `main` and the
-exact SHA, owns `botbound.me`, and the cache-busted canonical health response returns the same
-`X-Wireline-Source-Commit`. Preserve both structured outputs as release evidence. Do not deploy or
-promote a different artifact to make either check pass.
+This command is read-only. It verifies provider readiness, the managed Stripe Customer Portal, Stripe webhook coverage, and the Resend negative-delivery webhook contract. It must not contain or invoke an `--apply` path.
 
-## Vercel project boundary
+When provider drift is confirmed, use the owning explicit repair command, inspect the result, rerun the read-only preflight, and preserve redacted evidence. Never embed provider mutation in Vercel build, Preview, or an automatic retry loop.
 
-Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `botbound.me` alias. Do not copy production credentials into duplicate projects to silence an unrelated deployment check.
+### 3. Promote the exact schema journal
 
-The repository is pinned to Node 22 through `.nvmrc`, `package.json`, and Vercel configuration. Change the runtime family only through an intentional compatibility PR.
+Check out the exact release commit and run:
 
-## Preview rules
+```bash
+BOTBOUND_RELEASE_SHA=<40-character-release-sha> \
+BOTBOUND_PRODUCTION_SCHEMA_CONFIRM=APPLY_APPEND_ONLY_BOTBOUND_MIGRATIONS \
+POSTGRES_URL=<canonical-port-5432-session-url> \
+  node scripts/promote-production-schema.mjs
+```
 
-Preview builds must:
+The promotion command rejects a SHA mismatch, a noncanonical Supabase project, a transaction-pooler URL, or a missing typed confirmation. It validates production configuration, applies the committed Drizzle journal, and verifies resulting schema effects.
 
-- pass `scripts/check-deployment-boundaries.mjs` before other release work;
-- reject inherited production credentials, provider configuration, and self-serve paid checkout;
-- derive `APP_URL` from the preview host only after credential isolation passes;
-- run source-control and documentation integrity checks;
-- run the focused security, billing, runtime, product, and repository contracts;
-- skip database migrations unless an explicitly isolated preview database and override are configured;
-- build assets, client, server, and ChatGPT MCP bundles;
-- enforce the generated client bundle budgets and reject public source maps;
-- pass the no-database server import smoke.
+Never use `db:push` against shared or production data. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 
-The `[launch-deep-audit]` commit marker runs all supported TypeScript configurations, zero-warning ESLint, the production-dependency security gate, and the explicit current-launch Vitest estate on that exact preview head. The test estate runs through `scripts/run-test-estate.mjs`, which removes database and provider credentials and forces a deterministic non-production test identity. A local no-argument invocation remains the separate complete historical non-E2E archive and may expose obsolete contract drift; production never silently substitutes a smaller selection for that command.
+### 4. Merge and deploy
 
-## Production rules
+1. Merge only the reviewed exact head into `main` without force.
+2. Follow the resulting exact `main` SHA into a new **production-target** Vercel deployment.
+3. Do not promote a Preview artifact by changing its alias. Preview and Production have different environment and schema guarantees.
+4. Wait for the exact deployment to reach `READY` and own `botbound.me`.
 
-The canonical production build must, in order:
+For an environment-only redeploy, select the intended source deployment and exact SHA explicitly:
 
-1. pass deployment-boundary, repository, documentation, focused contract, operational-core, and token-generation gates;
-2. validate the complete production environment against the canonical Vercel project;
-3. pass the canonical TypeScript, zero-warning ESLint, runtime-policy, production-dependency security, and explicit current-launch Vitest audit on every production artifact, without relying on a commit marker and without exposing live credentials to tests;
-4. build the production client/server and ChatGPT MCP bundles, enforce client bundle budgets, reject public source maps, and pass server import smoke before any live release step;
-5. read and verify the catalog-fingerprinted Stripe Customer Portal when `WIRELINE_RECONCILE_STRIPE_PORTAL=true`;
-6. apply the exact committed Drizzle migration journal only after the code, local artifacts, and live Stripe read-only gates pass;
-7. verify the resulting production schema effects;
-8. report whether self-serve billing is authorized for the audited `main` production release channel or will remain runtime-closed;
-9. finish READY with no alias error and own `botbound.me`, with the legacy origin redirecting except for verified callback compatibility paths.
+```bash
+VERCEL_TOKEN=... \
+  npm run vercel:redeploy-production -- <sourceDeploymentId> <exactCommitSha>
 
-Canonical production fails closed when the portal verification switch is absent or the live configuration cannot be verified. Artifact construction must never mutate Stripe Customer Portal state.
+VERCEL_TOKEN=... \
+  npm run vercel:wait-deployment -- <newDeploymentId> <exactCommitSha> --production
+```
 
-After promotion, verify:
+The redeploy command creates a candidate; it does not declare the candidate live. The waiter must certify the same deployment ID, exact SHA, canonical project, `main` ref, production target, alias ownership, and served source header.
+
+### 5. Verify production
+
+Verify all of the following before declaring the release complete:
 
 ```text
 GET https://botbound.me/api/health -> 200 { ok: true }
+X-Wireline-Source-Commit -> exact released main SHA
 ```
 
-Then inspect runtime errors for the new deployment and probe every route or provider flow changed by the release.
+Then inspect:
 
-## GitHub checks
+- canonical and legacy-domain behavior;
+- production runtime errors and warnings for the new deployment;
+- the exact routes changed by the release;
+- database journal and schema effects;
+- read-only Stripe, Resend, AgentMail, OpenAI, and Twilio readiness applicable to the change;
+- billing, voice, email, and OAuth fail-closed behavior.
 
-GitHub Actions startup failures caused by the account billing limit are known infrastructure noise for this repository. They do not make a change safe and they do not supersede application evidence.
+## Vercel build contract
 
-When Actions are unavailable, require:
+Every Vercel build must run deployment-boundary, source-control, workflow-syntax, documentation, runtime-policy, security, focused launch-contract, operational-core, design-token, application-build, bundle, and server-smoke gates.
 
-- exact-head Vercel preview READY;
-- CodeRabbit success and no unresolved review threads;
-- the appropriate local or Vercel deep audit;
-- targeted live/read-only probes for the changed surface;
-- the mandatory comprehensive canonical-production audit before migrations;
+The canonical Production build additionally runs the clean-room TypeScript, ESLint, dependency-security, and current-launch contract audit, then performs **read-only** verification that production schema already matches the exact release journal.
+
+Production artifact compilation must not:
+
+- execute `db:migrate`;
+- alter the Stripe portal, products, prices, webhooks, or customers;
+- provision or reconfigure Twilio numbers;
+- create or mutate AgentMail inboxes;
+- send release-test email;
+- rewrite reviewed source files.
+
+If the schema or provider preflight has not passed, stop the release before deployment rather than teaching the build to repair infrastructure.
+
+## Preview isolation
+
+Preview builds must reject inherited production credentials, provider configuration, and self-serve checkout. Preview may receive branch-scoped `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and `OWNER_EMAIL` only when all of the following are true:
+
+- `WIRELINE_PREVIEW_DATABASE_ISOLATED=true`;
+- `WIRELINE_LAUNCH_DEMO_MODE=true`;
+- `WIRELINE_PREVIEW_DATABASE_PROJECT_REF` matches the isolated Supabase branch;
+- every value is scoped to Preview and the same exact Git branch;
+- the Supabase project is not the canonical production project.
+
+An isolated Preview may run the committed journal only during a deliberate branch-scoped certification window with `WIRELINE_RUN_MIGRATIONS=true`. Remove the override after the deployment terminates and delete disposable resources when the QA window closes.
+
+Production Stripe, Twilio, OpenAI, Resend, AgentMail, OAuth, and database credentials remain Production-only. Never widen a secret to all Vercel targets as a shortcut.
+
+## GitHub release controls
+
+`main` must be treated as protected even while repository-level required checks are unavailable. A safe merge requires:
+
+- latest-`main` reconciliation;
+- exact-head Vercel `READY`;
+- zero unresolved review threads;
+- appropriate targeted and canonical release checks;
+- immutable expected-head verification at merge;
 - production verification after merge.
 
-Do not ignore a named GitHub job that actually ran and found an application defect.
+GitHub Actions billing or startup failures are infrastructure failures, not application approval. Do not ignore an Action that actually ran and reported a defect.
 
-## Environment variables
+Repository branch protection and required checks should be enabled as soon as the GitHub account automation plane is healthy.
 
-`.env.example` is the canonical variable inventory. Vercel environment targeting is part of the security boundary:
+## Provider-specific release rules
 
-- **Production:** live credentials and production provider configuration.
-- **Preview:** dedicated sandbox values only, or unset.
-- **Development:** local-purpose credentials only.
+### OpenAI and Twilio
 
-New credential-like variables are blocked in preview by default until `scripts/check-deployment-boundaries.mjs` explicitly classifies them. Never widen a production secret to all targets as a shortcut.
+OpenAI Realtime is the managed browser and telephone voice runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi and xAI SIP are retired from the production runtime.
 
-Authenticated Preview QA has one narrow exception. A release branch may receive its own `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and `OWNER_EMAIL` only when `WIRELINE_PREVIEW_DATABASE_ISOLATED=true`, `WIRELINE_LAUNCH_DEMO_MODE=true`, and `WIRELINE_PREVIEW_DATABASE_PROJECT_REF` matches the Supabase identity embedded in the database URL. All five values must be scoped to Preview and the same exact Git branch. The canonical production Supabase project is rejected even if an operator sets the isolation marker. Remove the branch-scoped values and delete the disposable branch after QA.
+No hardcoded founder showcase number owns a live route. Inbound PSTN or SIP must resolve through a current tenant-owned `wireline_phone_numbers` assignment. The retired founder PSTN canary remains disabled unless a future, deliberate Twilio reprovisioning exercise enables `BOTBOUND_ENABLE_FOUNDER_PSTN_CANARY=true`.
 
-An isolated Preview may run the committed migration journal during a deliberate certification window by setting branch-scoped `WIRELINE_RUN_MIGRATIONS=true`. If its sealed `POSTGRES_URL` uses Supabase port 6543, also set `WIRELINE_PREVIEW_DATABASE_SESSION_POOLER_HOST` to the non-secret session-pooler hostname shown by Supabase Connect (for example, `aws-0-us-east-2.pooler.supabase.com`). The build derives the exact project's port-5432 connection in memory and never prints or copies the password. Remove `WIRELINE_RUN_MIGRATIONS` immediately after the deployment reaches a terminal state; do not hand-seed the Drizzle journal.
+A full carrier launch still requires direct Twilio control-plane verification of Trust Hub, A2P, CNAM, STIR/SHAKEN, geo permissions, usage triggers, callbacks, and number inventory. Application logs or database rows are not substitutes for those console controls.
 
-`XAI_API_KEY` is Production-only. Preview and Development must not inherit the live xAI credential; preview product work must remain provider-free or use a separately named, explicitly classified sandbox variable. Twilio carrier credentials are also Production-only, so Preview cannot place native PSTN calls. `PERPLEXITY_API_KEY` may appear in Preview project configuration but stays inert unless `PERPLEXITY_PREVIEW_API_KEY` is set.
+### Stripe
 
-`INTERNAL_JWT_SECRET` is the canonical session-signing secret. Legacy aliases must not coexist with a different value.
+Live catalog or portal health is not billing proof. The controlled lifecycle must demonstrate:
 
-## Database migrations
+1. checkout created for the intended live price;
+2. signed webhook accepted exactly once;
+3. customer and subscription ownership bound to the authenticated BotBound user;
+4. entitlement and Runtime Allowance posted correctly;
+5. portal access and plan/cancellation behavior;
+6. refund or reversal reconciliation;
+7. ledger and database projections matching Stripe.
 
-See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
+`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is retained as an explicit compatibility confirmation for the external read-only provider preflight. It does not authorize a build-time provider read or any mutation.
 
-Preview builds must log that migrations were skipped. Production builds run the committed journal only after the comprehensive clean-room code audit and live read-only provider gates pass. For a high-risk schema change, apply and probe the committed migration through the authenticated Supabase migration path only after the exact preview head is green.
+`STRIPE_AUTOMATIC_TAX_ENABLED` must remain false unless the applicable registrations and tax posture are deliberately established. Nexus and registration decisions require qualified tax advice.
 
-## Self-serve billing release control
+### Resend and AgentMail
 
-Self-serve billing is fail-closed and is authorized only on the audited canonical production release channel. Two operator controls and two Vercel-managed runtime identity checks must align:
+`botbound.me` is the canonical transactional and mailbox domain. Production defaults to `BotBound <noreply@botbound.me>`. `trywireline.com` may remain verified only as an explicit rollback asset; it is not the runtime fallback.
 
-1. `WIRELINE_SELF_SERVE_BILLING_ENABLED=true` expresses the operator's intent to offer paid checkout.
-2. `WIRELINE_LAUNCH_DEMO_MODE=false` ensures paid activity is classified as real customer evidence rather than demo/test evidence.
-3. `VERCEL_ENV=production` proves the request is running in a Production deployment.
-4. `VERCEL_GIT_COMMIT_REF=main` binds billing to the reviewed Git release channel.
+Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMail must retain the intentional support, security, DMARC, and unsubscribe inboxes. Test inbound, support reply, DMARC ingestion, and unsubscribe handling without exposing message contents in logs.
 
-`WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA` is retired legacy configuration. It no longer authorizes checkout and no longer needs to be rotated for every safe production deploy. It may be removed from Production after the new channel-bound gate is live. Preview continues to reject that legacy variable if it is accidentally widened to Preview.
+### Supabase
 
-This change is deliberately paired with the mandatory canonical-production pipeline: every production artifact from `main` must pass the clean-room TypeScript/ESLint/runtime-policy/security/current-launch contract audit, environment validation, local artifact build and smoke, live Stripe read-only verification, migrations, and schema-effect assertions before Vercel can make it READY. A surviving boolean alone cannot authorize Preview, a feature branch, or another Vercel environment.
+All public tables must remain under RLS. Promotion uses append-only Drizzle migrations and verifies the exact journal plus schema effects. Do not infer safety from a successful rebase alone; compare the migration journal and concrete schema objects.
 
-`WIRELINE_RECONCILE_STRIPE_PORTAL=true` is a separate production infrastructure control. The historical name is retained for environment compatibility, but canonical Production builds use it as a read-only, fail-closed verification gate. The gate verifies the exact public Starter/Starter Plus/Pro monthly and annual switch set, at-period-end cancellation, payment method updates, invoice history, and legal/return URLs before any production migration runs. Preview and Development must leave it false/unset.
+Enable leaked-password protection before broad signup acquisition.
 
-Run `npm run stripe:portal:verify` to perform the same read-only assertion from a secure, production-configured operator context. When drift is confirmed, run `npm run stripe:portal:reconcile` deliberately from that context, inspect the resulting managed configuration, then redeploy so the production artifact independently re-verifies the live state. The repair command is write-capable; it must not be embedded in a build, preview, or automatic retry loop.
+## Self-serve billing control
 
-Before opening a controlled certification window, verify all of the following against the live BotBound Stripe account and the deployed artifact:
+Self-serve billing is authorized only when all of these align:
 
-- Public business identity, support email/URL, statement descriptor, and tax posture display BotBound rather than the historical Wireline identity.
-- `STRIPE_AUTOMATIC_TAX_ENABLED` remains `false` unless Stripe Tax settings and at least one applicable live registration are active. Registration and nexus decisions require qualified tax advice; the application must never infer them.
-- The managed Billing Portal supports payment-method changes, invoice history, plan changes, at-period-end cancellation, and a verified return path to `botbound.me`.
-- Production telemetry is deliberately switched from demo evidence to live-customer evidence with `WIRELINE_LAUNCH_DEMO_MODE=false`.
-- The exact production deployment SHA, migrations, aliases, health response, affected routes, and runtime-error stream are recorded and clean.
-- Broad invitations, paid media, cold outbound, and non-founder customer onboarding remain off during certification.
+1. `WIRELINE_SELF_SERVE_BILLING_ENABLED=true`;
+2. `WIRELINE_LAUNCH_DEMO_MODE=false`;
+3. `VERCEL_ENV=production`;
+4. `VERCEL_GIT_COMMIT_REF=main`;
+5. the exact release passed provider, schema, artifact, and production verification;
+6. the approved cohort and lifecycle evidence are documented.
 
-The controlled checkout lifecycle necessarily requires the gate to be open for the founder-controlled account performing it. Channel authorization is therefore a release boundary, not proof by itself. A successful certification must still demonstrate checkout, signed webhook entitlement, subscription projection, Runtime Allowance, portal access, cancellation, refund or reversal, and ledger reconciliation.
+A boolean alone never authorizes Preview, a feature branch, another Vercel project, or acquisition traffic.
 
-Valid Stripe credentials, a verified portal, and a previously enabled boolean never authorize a Preview or non-`main` deployment by themselves.
+To close paid checkout, set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, redeploy Production at the intended source SHA, and verify that paid routes fail closed with the customer-safe `BILLING_LAUNCH_NOT_APPROVED` response.
 
-### Opening a controlled certification window
+## Rollback and incident response
 
-1. Merge the reviewed exact head to `main` through the normal production path.
-2. Verify the production SHA, comprehensive build audit, migrations, aliases, health endpoint, affected routes, Stripe portal verification, and runtime logs.
-3. Set `WIRELINE_SELF_SERVE_BILLING_ENABLED=true` and `WIRELINE_LAUNCH_DEMO_MODE=false` for Production if they are not already set, then redeploy Production without changing source.
-4. Verify the redeployment is `VERCEL_ENV=production`, originates from `main`, launch readiness reports `self_serve_billing_enabled: true`, and a founder-controlled authenticated checkout creates the intended post-branding Stripe session.
-5. Complete the live lifecycle and reconcile the Stripe, subscription, allowance, checkout-operation, usage, cancellation, and refund/reversal records.
-6. On any failure, set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, redeploy, verify the paid route is closed, and complete incident/rollback handling. On success, keep billing enabled for the approved cohort and preserve redacted evidence.
+Determine whether the incident is code, environment, schema, or provider state before acting. A Vercel rollback does not reverse database migrations or external-provider mutations.
 
-Do not send acquisition traffic merely because the billing gate is open. Public acquisition remains a separate business decision after repeated use and observed contribution are demonstrated.
-
-### Closing paid checkout
-
-Set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false` and create a Production redeployment. Verify the exact deployment SHA and confirm a pre-auth paid route returns the customer-safe 503 `BILLING_LAUNCH_NOT_APPROVED` response before considering the operational stop complete. No release-SHA rotation is required.
-
-## Provider and integration releases
-
-For a provider change, verify both configuration and behavior without exposing tokens or customer data:
-
-- OAuth: canonical callback/start route, exact authorization host, state/cookie properties, and public error behavior.
-- Stripe: catalog parity, webhook signature/idempotency, entitlements, cancellation, and Runtime Balance behavior.
-- Twilio/Vapi: webhook signatures, number/assistant routing, DNC/TCPA gates, callback URLs, and retry semantics.
-- OpenAI/Gemini/Gateway: model policy, spend guards, timeouts, fallbacks, and no preview credential inheritance.
-- ChatGPT App: discovery, OAuth/PKCE, account binding, tool side-effect limits, and reviewer flow.
-
-Provider identifiers and demo inventories belong in the owning source/configuration, not this runbook.
-
-## Rollback
-
-- Use Vercel rollback only after identifying whether the incident is code, environment, database, or provider state.
-- A deployment rollback does not reverse migrations or external provider changes.
-- Preserve backward compatibility across schema and webhook changes whenever possible.
-- After rollback, verify the production alias, health endpoint, affected route, and runtime-error stream.
-- Record the incident and forward fix in `docs/INCIDENT_RESPONSE.md` evidence rather than adding an ad hoc root file.
+Prefer backward-compatible, append-only schema changes. After rollback, verify the production alias, health endpoint, served source SHA, affected route, provider behavior, and runtime-error stream. Record evidence and the forward fix in [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md).

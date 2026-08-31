@@ -43,12 +43,6 @@ const publicDemoCallSchema = z.object({
   sdp: z.string().min(100).max(60_000),
 });
 
-const PUBLIC_MARKETING_STATS = {
-  agents_online: 120,
-  calls_this_month: 8400,
-  tenants: 95,
-} as const;
-
 function requestIp(req: Request): string {
   return String(req.ip || "unknown").trim();
 }
@@ -126,8 +120,9 @@ router.get("/api/public/stats", async (req, res) => {
     "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
   );
   res.json({
-    ...PUBLIC_MARKETING_STATS,
-    source: "static_example",
+    published: false,
+    reason: "customer_activity_metrics_not_yet_published",
+    live_demo_mode: "protected_native_browser_preview",
   });
 });
 

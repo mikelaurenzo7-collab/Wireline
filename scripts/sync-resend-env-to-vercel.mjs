@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Push production Resend env vars to the Wireline Vercel project.
+ * Push production Resend env vars to the canonical BotBound Vercel project.
  *
  * Live Resend credentials and production sender configuration are production-
  * only. Preview/Development must use dedicated sandbox credentials or remain
@@ -20,8 +20,8 @@
  *   $env:RESEND_WEBHOOK_SECRET = "whsec_..."   # from the Resend webhook page
  *   # Optional when rotating/configuring the production sender:
  *   $env:RESEND_API_KEY = "re_..."
- *   $env:RESEND_FROM_EMAIL = "BotBound <noreply@trywireline.com>"
- *   # or: $env:RESEND_FROM_DOMAIN = "trywireline.com"
+ *   $env:RESEND_FROM_EMAIL = "BotBound <noreply@botbound.me>"
+ *   # or: $env:RESEND_FROM_DOMAIN = "botbound.me"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
@@ -33,11 +33,32 @@ const MANAGED_PRODUCTION_ONLY_KEYS = new Set([
   "RESEND_FROM_EMAIL",
   "RESEND_FROM_DOMAIN",
 ]);
+const RETIRED_SENDER_DOMAIN = "trywireline.com";
 
 const token = process.env.VERCEL_TOKEN || process.env.VERCEL_OIDC_TOKEN;
 if (!token) {
   console.error("Set VERCEL_TOKEN in the environment.");
   process.exit(1);
+}
+
+function senderDomain(value) {
+  const email = value.match(/<([^>]+)>/)?.[1]?.trim() || value.trim();
+  const at = email.lastIndexOf("@");
+  return at >= 0 ? email.slice(at + 1).toLowerCase() : email.toLowerCase();
+}
+
+function assertBotBoundSender(value, key) {
+  const domain = senderDomain(value);
+  if (domain === RETIRED_SENDER_DOMAIN || domain.endsWith(`.${RETIRED_SENDER_DOMAIN}`)) {
+    console.error(
+      `Refusing ${key}: ${RETIRED_SENDER_DOMAIN} is a rollback-only sender, not the production runtime fallback.`,
+    );
+    process.exit(1);
+  }
+  if (domain !== "botbound.me" && !domain.endsWith(".botbound.me")) {
+    console.error(`${key} must use botbound.me or a verified BotBound subdomain.`);
+    process.exit(1);
+  }
 }
 
 const envEntries = [];
@@ -58,9 +79,11 @@ if (webhookSecret) {
 const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
 const fromDomain = process.env.RESEND_FROM_DOMAIN?.trim();
 if (fromEmail) {
+  assertBotBoundSender(fromEmail, "RESEND_FROM_EMAIL");
   envEntries.push({ key: "RESEND_FROM_EMAIL", value: fromEmail, targets: PRODUCTION_TARGET });
 }
 if (fromDomain) {
+  assertBotBoundSender(fromDomain, "RESEND_FROM_DOMAIN");
   envEntries.push({ key: "RESEND_FROM_DOMAIN", value: fromDomain, targets: PRODUCTION_TARGET });
 }
 
@@ -93,28 +116,23 @@ async function vercelFetch(path, opts = {}) {
 async function listProjectEnv() {
   // Target repair needs only ids, keys, and target metadata. Do not ask Vercel
   // to decrypt live values merely to inspect scope.
-  const data = await vercelFetch(
-    `/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`,
-    { method: "GET" },
-  );
+  const data = await vercelFetch(`/v10/projects/${encodeURIComponent(PROJECT_ID)}/env`, {
+    method: "GET",
+  });
   return data.envs || [];
 }
 
 async function deleteEnv(envId) {
-  await vercelFetch(
-    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(envId)}`,
-    { method: "DELETE" },
-  );
+  await vercelFetch(`/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(envId)}`, {
+    method: "DELETE",
+  });
 }
 
 async function patchEnv(envId, body) {
-  await vercelFetch(
-    `/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(envId)}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(body),
-    },
-  );
+  await vercelFetch(`/v9/projects/${encodeURIComponent(PROJECT_ID)}/env/${encodeURIComponent(envId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
 }
 
 async function createEnv(key, value, targets) {
@@ -146,8 +164,7 @@ async function narrowLegacyProductionEntries() {
 
 async function upsertEnv(key, value, targets) {
   const existingEntries = (await listProjectEnv()).filter((entry) => entry.key === key);
-  const existing =
-    existingEntries.find((entry) => envTargets(entry).includes("production")) || null;
+  const existing = existingEntries.find((entry) => envTargets(entry).includes("production")) || null;
   if (!existing) {
     await createEnv(key, value, targets);
     return;
