@@ -193,6 +193,8 @@ describe("double-pass launch honesty", () => {
     expect(emailService).toContain("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing");
     expect(emailCompliance).toContain("isEmailSuppressed check failed, treating as suppressed");
     expect(emailCompliance).toMatch(/isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/);
+    expect(emailCompliance).toContain("unsubscribe@botbound.me");
+    expect(emailCompliance).not.toContain("unsubscribe@trywireline.com");
   });
 
   it("routes founder partnerships and growth work to revenue", () => {

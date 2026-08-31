@@ -44,4 +44,22 @@ describe("OAuth provider-error responses", () => {
       );
     }
   });
+
+  it("does not leak OAuth env var names from connect-start routes", () => {
+    const connectStarts = [
+      "src/routes/oauth/google.ts",
+      "src/routes/oauth/google-sheets.ts",
+      "src/routes/oauth/microsoft.ts",
+      "src/routes/oauth/microsoft-graph.ts",
+    ] as const;
+
+    for (const path of connectStarts) {
+      const source = read(path);
+      expect(source, path).toContain("status(503)");
+      expect(source, path).toContain("finishing setup. Try again shortly.");
+      expect(source, path).not.toContain("Missing GOOGLE_CLIENT");
+      expect(source, path).not.toContain("Missing MICROSOFT_CLIENT");
+      expect(source, path).not.toContain("in environment variables");
+    }
+  });
 });

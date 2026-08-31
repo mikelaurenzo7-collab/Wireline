@@ -76,7 +76,7 @@ export default function Features() {
           />
 
           <div className="wl-public-rail mt-3">
-            <p className="sr-only">Build. Configure. Launch. Improve.</p>
+            <p className="sr-only">Build. Train. Launch. Improve.</p>
             <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
               {MARKETING_VOICE.proof.map((step, index) => (
                 <li key={step} className="flex items-center gap-2">

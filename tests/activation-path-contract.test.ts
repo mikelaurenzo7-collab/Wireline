@@ -75,13 +75,21 @@ describe("activation path contract", () => {
     expect(wizard).toContain('value === "wire"');
     expect(wizard).toContain('value === "test"');
     expect(wizard).toContain(
-      'const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"]',
+      'const stepOrder: WizardStep[] = ["train", "test", "wire", "complete"]',
     );
+    expect(wizard).toContain('if (stored === "channels") return "wire"');
+    expect(wizard).toContain("function finish(line: string | null = phoneNumber)");
+    expect(wizard).toContain("if (line && testStarted)");
+    expect(wizard).toContain("disabled={!testStarted}");
+    expect(wizard).not.toContain('event: "launch_readiness_reached"');
     expect(wizard).toContain("onTestCompleted");
     expect(wizard).toContain('event: "test_call_completed"');
     expect(wizard).toContain('result: "assistant_response_completed"');
-    expect(wizard).toContain("Finish without a test");
-    expect(copy).toContain("Optional: review what your agent learned");
+    expect(wizard).not.toContain("Finish without a test");
+    expect(copy).toContain("Optional: review what your Bot learned");
     expect(copy).toContain('label: "Number"');
+    expect(copy).toContain("Continue to private test");
+    expect(copy).toContain("Skip private test");
+    expect(copy).toContain("privately test the Bot");
   });
 });

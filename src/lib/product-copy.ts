@@ -10,8 +10,8 @@ export const BRAND_SYSTEM = {
   buyingNoun: "Bot",
   defaultRole: "Your Bot",
   productTypes: BOT_PRODUCT_TYPES,
-  brandSpine: ["Build", "Configure", "Launch"],
-  proofLoop: ["Build", "Configure", "Launch", "Improve"],
+  brandSpine: ["Build", "Train", "Launch"],
+  proofLoop: ["Build", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
     "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
@@ -20,7 +20,7 @@ export const BRAND_SYSTEM = {
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
     "Treat employee roles as starting templates, not product categories or permanent limits.",
     "Make clear only when useful that one Bot can call, text, and email with shared context.",
-    "Let customers configure the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
+    "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
     "State that the included BotBound number applies to paid plans so the free builder is never misrepresented.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after calls, texts, emails, handoffs, campaigns, and follow-up when proof helps the decision.",
@@ -129,7 +129,7 @@ export const OUTBOUND_WEDGE = {
   differentiator:
     "BotBound turns calls, text, and email into completed tasks, booked appointments, revived leads, handled callbacks, recovered opportunities, and logged proof.",
   beforeStrip:
-    "Build one capable Bot or a coordinated roster. Configure each role, connect the right channels, and improve from logged outcomes.",
+    "Build one capable Bot or a coordinated roster. Train each role, connect the right channels, and improve from logged outcomes.",
 } as const;
 
 export const MARKETING_VOICE = {
@@ -148,7 +148,7 @@ export const MARKETING_VOICE = {
 
 export const CLIENT_SURFACE_POSTURE = {
   summary:
-    "Launch on the web. Build, Configure, Launch, and Improve are complete in the browser; the rest are optional companions. None are required for the core product.",
+    "Launch on the web. Build, Train, Launch, and Improve are complete in the browser; the rest are optional companions. None are required for the core product.",
   browser: { status: "Early access", action: "Install Guide" },
   chatgpt: { status: "Early access", action: "Open Guide" },
   claude: { status: "Early access", action: "Add Connector" },

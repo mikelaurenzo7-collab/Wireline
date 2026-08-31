@@ -159,12 +159,12 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Provider spend protection",
         detail:
-          "Plan-funded provider spend is protected by an always-on hard cap that customers may lower but cannot exceed.",
+          "Live calls and prepaid Runtime Balance reserve spend before the provider runs. Customers can lower spend alerts. Some training and research paths still meter after the request.",
       },
       {
         title: "Data lifecycle controls",
         detail:
-          "Configurable retention, export paths, opt-in recordings, and a server-owned deletion workflow support review.",
+          "Configurable retention, export paths, transcript-first call records, and a server-owned deletion workflow support review.",
       },
       {
         title: "Security review channel",

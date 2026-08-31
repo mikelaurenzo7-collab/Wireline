@@ -64,7 +64,7 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 - Customer-facing noun: **Bot**
 - Acquisition wedge: **Phone Bot**
 - Broader promise: **Your Bot for calls, texts, and email.**
-- Product lifecycle: **Build. Configure. Launch. Improve.**
+- Product lifecycle: **Build. Train. Launch. Improve.**
 - Approved film loop already in The Second Ring treatment: **Build. Train. Launch. Improve.**
 - Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
 - Primary proof verbs: answer, qualify, book, confirm, text, email, route, hand off, follow up, log

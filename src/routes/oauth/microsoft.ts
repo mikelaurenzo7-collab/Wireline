@@ -28,9 +28,10 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
-      return res
-        .status(500)
-        .json({ error: "Missing MICROSOFT_CLIENT_ID or MICROSOFT_CLIENT_SECRET" });
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Microsoft mailbox integration is finishing setup. Try again shortly.",
+      });
     }
 
     const uid = req.user?.id as string | undefined;

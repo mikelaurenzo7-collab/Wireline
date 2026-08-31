@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Cable, Loader2, MessageSquare, Phone, Sparkles, X } from "lucide-react";
+import { Check, Loader2, Phone, Sparkles, X } from "lucide-react";
 import { Link } from "react-router";
 import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
@@ -89,12 +89,13 @@ export default function PostCreateActivationWizard({
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
-  // a customer who just built, trained, and tested an agent. It gets a designed
-  // panel with a direct route to billing, never a bare destructive notice.
+  // a customer who just built and trained a Bot, and may already have privately
+  // tested it. It gets a designed panel with a direct route to billing, never a
+  // bare destructive notice.
   const [activationNeeded, setActivationNeeded] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
 
-  const stepOrder: WizardStep[] = ["train", "wire", "test", "complete"];
+  const stepOrder: WizardStep[] = ["train", "test", "wire", "complete"];
   const stepIndex = stepOrder.indexOf(step);
 
   const setStep = useCallback(
@@ -114,23 +115,27 @@ export default function PostCreateActivationWizard({
     [payload.agentId],
   );
 
-  const refreshPhone = useCallback(async (): Promise<boolean> => {
+  const refreshPhone = useCallback(async (): Promise<{
+    ok: boolean;
+    phoneNumber: string | null;
+  }> => {
     setLoadingPhone(true);
     try {
       const response = await authFetch("/api/phone-numbers");
       if (!response.ok) {
         setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
-        return false;
+        return { ok: false, phoneNumber: null };
       }
       const body = await response.json();
       const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
-      setPhoneNumber(match?.phone_number ?? null);
+      const next = match?.phone_number ?? null;
+      setPhoneNumber(next);
       setWireError(null);
-      return true;
+      return { ok: true, phoneNumber: next };
     } catch {
       setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
-      return false;
+      return { ok: false, phoneNumber: null };
     } finally {
       setLoadingPhone(false);
     }
@@ -188,7 +193,7 @@ export default function PostCreateActivationWizard({
         agentId: payload.agentId,
       });
       const refreshed = await refreshPhone();
-      if (refreshed) setStep("test");
+      if (refreshed.ok) finish(refreshed.phoneNumber);
     } catch {
       setWireError("Could not provision a number.");
     } finally {
@@ -196,28 +201,32 @@ export default function PostCreateActivationWizard({
     }
   }
 
-  function finish() {
+  function finish(line: string | null = phoneNumber) {
     setStep("complete");
-    emitProductEventOnce({
-      event: "agent_launch_completed",
-      agentId: payload.agentId,
-      metadata: {
-        has_line: Boolean(phoneNumber),
-        test_started: testStarted,
-        source: "post_create_wizard",
-      },
-    });
-  }
-
-  function dismiss() {
-    if (provisioning) return;
-    if (step === "complete") {
+    // Use the resolved line, not React state: provision just called setPhoneNumber
+    // and finish() would otherwise emit against a stale null.
+    if (line && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
         agentId: payload.agentId,
         metadata: {
-          has_line: Boolean(phoneNumber),
-          test_started: testStarted,
+          has_line: true,
+          test_started: true,
+          source: "post_create_wizard",
+        },
+      });
+    }
+  }
+
+  function dismiss() {
+    if (provisioning) return;
+    if (step === "complete" && phoneNumber && testStarted) {
+      emitProductEventOnce({
+        event: "agent_launch_completed",
+        agentId: payload.agentId,
+        metadata: {
+          has_line: true,
+          test_started: true,
           source: "post_create_wizard_dismiss",
         },
       });
@@ -313,7 +322,7 @@ export default function PostCreateActivationWizard({
         </header>
 
         <div className="flex gap-2 border-b border-border px-5 py-3 sm:px-6">
-          {(["train", "wire", "test"] as const).map((id, index) => {
+          {(["train", "test", "wire"] as const).map((id, index) => {
             const active = step === id;
             const done = stepIndex > index || step === "complete";
             const labels = POST_CREATE_WIZARD_COPY.steps;
@@ -369,70 +378,12 @@ export default function PostCreateActivationWizard({
                   type="button"
                   size="sm"
                   onClick={() => {
-                    emitProductEventOnce({
-                      event: "launch_readiness_reached",
-                      agentId: payload.agentId,
-                      metadata: { source: "wizard_train_step" },
-                    });
-                    setStep("wire");
+                    setStep("test");
                   }}
                 >
                   {POST_CREATE_WIZARD_COPY.steps.train.secondary}
                 </Button>
               </div>
-            </section>
-          ) : null}
-
-          {step === "channels" ? (
-            <section className="grid gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.channels.title}
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.channels.detail}
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Phone size={15} aria-hidden="true" className="text-primary" />
-                    {POST_CREATE_WIZARD_COPY.steps.channels.phoneTitle}
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.channels.phoneDetail}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border bg-card px-4 py-3">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Cable size={15} aria-hidden="true" className="text-primary" />
-                    {POST_CREATE_WIZARD_COPY.steps.channels.connectionsTitle}
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.channels.connectionsDetail}
-                  </p>
-                  <Button asChild variant="secondary" size="sm" className="mt-3">
-                    <Link to="/connections" onClick={() => stashPostCreateWizardStep("channels")}>
-                      {POST_CREATE_WIZARD_COPY.steps.channels.connectionsCta}
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Opens Wire in this tab. Return to Studio to resume this guide.
-              </p>
-              <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-                <MessageSquare
-                  size={14}
-                  className="mt-0.5 shrink-0 text-primary"
-                  aria-hidden="true"
-                />
-                Studio is your chat-first run surface. Test voice and script before you wire more
-                channels.
-              </p>
-              <Button type="button" size="sm" onClick={() => setStep("wire")}>
-                {POST_CREATE_WIZARD_COPY.steps.channels.continue}
-              </Button>
             </section>
           ) : null}
 
@@ -497,10 +448,10 @@ export default function PostCreateActivationWizard({
                     size="sm"
                     onClick={() => {
                       markWireFunnelEvents();
-                      setStep("test");
+                      finish();
                     }}
                   >
-                    Continue to test
+                    Finish setup
                   </Button>
                 ) : (
                   <>
@@ -521,7 +472,7 @@ export default function PostCreateActivationWizard({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      onClick={() => setStep("test")}
+                      onClick={() => finish()}
                     >
                       {POST_CREATE_WIZARD_COPY.steps.wire.skip}
                     </Button>
@@ -627,9 +578,24 @@ export default function PostCreateActivationWizard({
             </Button>
           ) : null}
           {step === "test" ? (
-            <Button type="button" size="sm" onClick={finish}>
-              {testStarted ? POST_CREATE_WIZARD_COPY.steps.test.primary : "Finish without a test"}
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setStep("wire")}
+              >
+                {POST_CREATE_WIZARD_COPY.steps.test.skip}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!testStarted}
+                onClick={() => setStep("wire")}
+              >
+                {POST_CREATE_WIZARD_COPY.steps.test.primary}
+              </Button>
+            </>
           ) : null}
           {step === "complete" ? (
             <>

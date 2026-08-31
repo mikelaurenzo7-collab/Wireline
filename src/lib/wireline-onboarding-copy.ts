@@ -26,20 +26,20 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call to activate",
 } as const;
 
-/** Guided steps after Fast Start create — Create → Train → Wire → Test. */
+/** Guided steps after Fast Start create — Create → Train → Test → Wire. */
 export const POST_CREATE_WIZARD_COPY = {
   eyebrow: "Fast Start",
   title: "Next up for",
   steps: {
     train: {
       label: "Review",
-      title: "Optional: review what your agent learned",
+      title: "Optional: review what your Bot learned",
       detail:
         "Your greeting and job description are saved. Add a site, document, or policy now if it matters for the first call, or train more later.",
       salesHint:
-        "Recommended first path: teach the outcomes that matter on day one, then connect the live number when you're ready to dial.",
+        "Recommended first path: teach the outcomes that matter on day one, privately test the Bot, then connect a live number when you are ready to go live.",
       primary: "Open training",
-      secondary: "Continue to number",
+      secondary: "Continue to private test",
     },
     channels: {
       label: "Channels",
@@ -57,20 +57,21 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Number",
       title: "Connect a live line",
       detail:
-        "Provision a US number so callers reach this agent. A paid plan is required for live number provisioning.",
+        "Provision a US number so callers reach this Bot. A paid plan is required for live number provisioning.",
       primary: "Provision number",
       skip: "Connect later",
-      activationRequired: "Your agent is trained and ready. Its live number just needs a plan.",
+      activationRequired: "Your Bot is trained. Its live number just needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
         `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
       activationCta: "Choose your plan",
     },
     test: {
       label: "Test",
-      title: "Hear your agent",
+      title: "Hear your Bot",
       detail:
-        "Run a private browser test. Simulator calls do not count toward activation. Dial your line when you're ready for a real call.",
-      primary: "Finish setup",
+        "Run a private browser test before you pay for a live number. Simulator calls do not count toward activation.",
+      primary: "Continue to number",
+      skip: "Skip private test",
     },
   },
   complete: {

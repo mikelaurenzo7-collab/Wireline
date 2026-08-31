@@ -48,9 +48,10 @@ function msGraphRedirectUri(req: express.Request, provider: MsGraphProvider): st
 function buildMsGraphUrlRoute(provider: MsGraphProvider) {
   return async (req: express.Request, res: express.Response) => {
     if (!microsoftGraphConfigured()) {
-      return res
-        .status(500)
-        .json({ error: "Missing MICROSOFT_CLIENT_ID or MICROSOFT_CLIENT_SECRET" });
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Microsoft integration is finishing setup. Try again shortly.",
+      });
     }
     const uid = req.user?.id as string | undefined;
     await assertOAuthProviderConnectAllowed(uid, provider);
