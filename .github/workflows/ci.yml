@@ -82,10 +82,13 @@ jobs:
       - name: Browser extension build
         run: |
           node apps/browser-extension/scripts/build.mjs --check
-          node apps/browser-extension/scripts/build.mjs
+          node apps/browser-extension/scripts/build.mjs --no-publish
 
       - name: Build
         run: npm run build
+
+      - name: Verify build did not rewrite tracked source or release artifacts
+        run: git diff --exit-code
 
       - name: Smoke test bundled server
         run: npm run smoke:server
