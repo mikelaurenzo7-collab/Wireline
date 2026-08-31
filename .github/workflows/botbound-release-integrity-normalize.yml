@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - codex/botbound-release-integrity-2026-08-31
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened]
 
 permissions:
   contents: write
