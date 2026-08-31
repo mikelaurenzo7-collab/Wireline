@@ -1,11 +1,9 @@
 import { Router, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 
-import { ALL_SHOWCASE_CONTACT_AGENTS } from "../data/contact-agents";
 import * as schema from "../db/schema";
 import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 import { asyncHandler } from "../lib/api-error";
-import { resolveFounderUserId } from "../lib/founder-fleet-seed";
 import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
@@ -39,15 +37,13 @@ function inboundBridgeTwiml(sipUri: string): string {
   );
 }
 
-function showcaseOwnsNumber(phoneNumber: string): boolean {
-  return ALL_SHOWCASE_CONTACT_AGENTS.some(
-    (agent) => normalizeOpenAIPhoneNumber(agent.tel) === phoneNumber,
-  );
-}
-
+/**
+ * Only a current tenant-owned phone-number row with an assigned Bot may bridge
+ * into OpenAI. Founder showcase numbers are intentionally not special-cased:
+ * retiring their database assignments therefore fails closed even if a stale
+ * carrier webhook still points at this endpoint.
+ */
 async function resolveInboundOwner(phoneNumber: string): Promise<string | null> {
-  if (showcaseOwnsNumber(phoneNumber)) return resolveFounderUserId();
-
   const [line] = await drizzle
     .select({ userId: schema.phoneNumbers.userId, agentId: schema.phoneNumbers.agentId })
     .from(schema.phoneNumbers)
