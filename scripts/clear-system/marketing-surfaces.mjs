@@ -82,8 +82,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       "hero must sell the protected browser voice demo",
     ],
     [
-      /to="\/showcase#demo-lines"[\s\S]*?Call a demo line/,
-      "browser demo must retain an honest phone fallback",
+      /to="\/showcase"[\s\S]*?Open browser demo/,
+      "browser demo must retain a truthful in-product fallback",
     ],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
