@@ -34,9 +34,12 @@ describe("BotBound release provenance", () => {
     expect(providerPreflight).not.toContain("--apply");
   });
 
-  it("keeps retired founder PSTN metadata out of Bot profiles and monitoring disabled by default", () => {
+  it("requires database-owned PSTN routing and keeps retired monitoring disabled by default", () => {
     expect(read("src/lib/founder-showcase-seed.ts")).not.toContain(
       "public_phone_number: agent.tel",
+    );
+    expect(read("src/data/contact-agents.ts")).toContain(
+      "export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [];",
     );
     const canary = read("src/lib/demo-line-canary.ts");
     expect(canary).toContain("BOTBOUND_ENABLE_FOUNDER_PSTN_CANARY");
