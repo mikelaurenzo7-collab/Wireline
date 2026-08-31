@@ -32,15 +32,32 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
     expect(canary).toContain("windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES");
     expect(canary).not.toContain("showcaseAgentIds.add(row.agentId)");
     expect(canary).toContain('result.error ||= "Founder showcase workspace is unavailable"');
+    expect(canary).toContain(".select({ id: schema.agents.id })");
+    expect(canary).toContain("eq(schema.agents.userId, founderUserId)");
+    expect(canary).toContain("inArray(schema.agents.id, showcaseAgentIds)");
+    expect(canary).not.toContain("assignments.has(agent.tel)");
   });
 
   it("repairs drifted showcase webhooks before alerting", () => {
     expect(canary).toContain("async function repairShowcaseOpenAIInboundRouting");
     expect(canary.indexOf("await repairShowcaseOpenAIInboundRouting(")).toBeLessThan(
-      canary.indexOf("probeLine(agent, kind, carrierNumbers, assignments, runtimeReady)"),
+      canary.indexOf(
+        "probeLine(agent, kind, carrierNumbers, showcaseBotIds, founderUserId, runtimeReady)",
+      ),
     );
     expect(canary).toContain("configureNativeNumberRouting");
     expect(canary).toContain("isNativeNumberOpenAIRouted(row)");
     expect(canary).toContain("showcaseTels.has(String(row.phoneNumber || \"\"))");
+  });
+
+  it("records showcase failures when the environment lookup throws", () => {
+    const sip = read("src/routes/openai-sip-routes.ts");
+    expect(sip).toContain(
+      "let environment: Awaited<ReturnType<typeof liveExternalActionPolicyForUser>>",
+    );
+    expect(sip).toContain('"environment_lookup_failed"');
+    expect(sip.indexOf("try {\n      environment = await liveExternalActionPolicyForUser")).toBeLessThan(
+      sip.indexOf("if (!environment.allowed)"),
+    );
   });
 });
