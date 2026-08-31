@@ -33,9 +33,10 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     if (!zoomOAuthConfigured()) {
-      return res
-        .status(500)
-        .json({ error: "Missing ZOOM_CLIENT_ID or ZOOM_CLIENT_SECRET in environment variables." });
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Zoom integration is finishing setup. Try again shortly.",
+      });
     }
     const baseUrl =
       (process.env.APP_URL && new URL(process.env.APP_URL).origin) ||

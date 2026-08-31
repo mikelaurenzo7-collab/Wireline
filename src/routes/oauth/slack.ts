@@ -32,9 +32,9 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     if (!slackOAuthConfigured()) {
-      return res.status(500).json({
-        code: "INTERNAL_ERROR",
-        error: "Missing SLACK_CLIENT_ID or SLACK_CLIENT_SECRET in environment variables.",
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Slack integration is finishing setup. Try again shortly.",
       });
     }
     const baseUrl =
