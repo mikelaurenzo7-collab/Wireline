@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { ArrowRight, Phone } from "lucide-react";
 import { captureDemoSourceFromLocation } from "../lib/demo-attribution-client";
 import { PageMeta } from "../lib/page-meta";
 import { signupHrefForPlan } from "../lib/signup-intent";
@@ -31,57 +30,33 @@ export default function Showcase() {
           primaryAction={{ label: "BUILD YOUR BOT", to: FREE_SIGNUP }}
           visual={
             <div className="flex flex-col gap-3 text-center">
-              <div className="text-sm font-semibold text-foreground">LIVE PHONE PREVIEW</div>
+              <div className="text-sm font-semibold text-foreground">LIVE BROWSER PREVIEW</div>
               <div className="rounded-[16px] border border-border bg-background/70 p-3">
                 <BrowserCallWidget
                   agentName={primaryDemo.name}
                   buttonLabel={`Talk to ${primaryDemo.name}`}
-                  fallback={
-                    <div className="text-center">
-                      <a
-                        href="#demo-lines"
-                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
-                      >
-                        CALL A DEMO LINE
-                      </a>
-                    </div>
-                  }
                 />
               </div>
             </div>
           }
         />
 
-        <section id="demo-lines" className="mt-8 min-w-0">
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+        <section className="mt-8 min-w-0">
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
-              <a
-                key={agent.tel}
-                href={`tel:${agent.tel}`}
-                className="group wl-stitch-card wl-stitch-card-hover grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 p-2.5 text-left sm:flex sm:gap-3"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/8 text-primary">
-                  <Phone className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold tracking-[-.015em] text-foreground">
-                    {agent.name}
-                  </span>
-                  <span className="block text-sm text-muted-foreground">{agent.role}</span>
-                </span>
-                <span className="col-start-2 min-w-0 text-left sm:col-auto sm:shrink-0 sm:text-right">
-                  <span className="block break-words font-mono text-sm font-semibold text-foreground">
-                    {agent.display}
-                  </span>
-                  <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                    CALL NOW
-                    <ArrowRight
-                      className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
-                      aria-hidden="true"
-                    />
-                  </span>
-                </span>
-              </a>
+              <div key={agent.name} className="wl-stitch-card min-w-0 p-4 text-center">
+                <div className="text-[15px] font-semibold tracking-[-.015em] text-foreground">
+                  {agent.name}
+                </div>
+                <div className="mt-1 text-sm text-muted-foreground">{agent.role}</div>
+                <div className="mt-4">
+                  <BrowserCallWidget
+                    agentName={agent.name}
+                    buttonLabel={`Talk to ${agent.name}`}
+                    variant="compact"
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </section>
