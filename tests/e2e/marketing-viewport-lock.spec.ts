@@ -320,22 +320,22 @@ test("features and pricing remain scrollable without horizontal clipping", async
   }
 });
 
-test("showcase demo lines stay inside a 320px viewport", async ({ page }) => {
+test("showcase browser preview stays inside a 320px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await openPublicRoute(page, "/showcase");
-  await expect(page.locator("#demo-lines")).toBeVisible();
+  await expect(page.locator("#showcase-preview")).toBeVisible();
 
   const geometry = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
     scrollWidth: document.documentElement.scrollWidth,
-    cardsInsideViewport: Array.from(document.querySelectorAll<HTMLElement>("#demo-lines a")).every(
-      (card) => {
-        const rect = card.getBoundingClientRect();
-        return rect.left >= 0 && rect.right <= document.documentElement.clientWidth + 0.5;
-      },
-    ),
+    previewInsideViewport: (() => {
+      const card = document.querySelector<HTMLElement>("#showcase-preview");
+      if (!card) return false;
+      const rect = card.getBoundingClientRect();
+      return rect.left >= -0.5 && rect.right <= document.documentElement.clientWidth + 0.5;
+    })(),
   }));
 
   expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
-  expect(geometry.cardsInsideViewport).toBe(true);
+  expect(geometry.previewInsideViewport).toBe(true);
 });

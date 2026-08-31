@@ -3,7 +3,6 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import BrowserCallWidget from "../components/marketing/BrowserCallWidget";
 import MarketingHero from "../components/marketing/MarketingHero";
-import { WIRELINE_DEMO_AGENTS } from "../data/contact-agents";
 
 const SOLUTIONS = {
   sales: {
@@ -11,7 +10,7 @@ const SOLUTIONS = {
     description:
       "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook. It calls, holds the conversation, texts, and emails until the next step is booked or clearly logged.",
     primary: { href: "/signup?wedge=sales", label: "Create Sales Bot" },
-    secondary: { href: "/showcase", label: "Browse Demos" },
+    secondary: { href: "/showcase", label: "Hear Browser Demo" },
     sequence: [
       ["A Lead Reaches Out", "A Voice Bot responds on the channel the lead already chose."],
       [
@@ -45,7 +44,7 @@ const SOLUTIONS = {
       href: "/signup?wedge=support",
       label: "Create Front Desk Bot",
     },
-    secondary: { href: "/showcase", label: "Browse Demos" },
+    secondary: { href: "/showcase", label: "Hear Browser Demo" },
     sequence: [
       [
         "A Customer Reaches Out",
@@ -85,7 +84,6 @@ export default function SolutionsPage() {
   const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
   const demoAgentName = key === "sales" ? "Jake" : "Jordan";
-  const demoAgent = WIRELINE_DEMO_AGENTS.find((agent) => agent.name === demoAgentName);
 
   return (
     <MarketingPageFrame className="wl-solutions-page">
@@ -105,26 +103,24 @@ export default function SolutionsPage() {
             tone: "secondary",
           }}
           visual={
-            <div className="text-center">
+            <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 text-center">
+              <p className="wl-eyebrow">Protected browser preview</p>
               <BrowserCallWidget
                 agentName={demoAgentName}
                 buttonLabel={`Talk to ${demoAgentName}`}
                 fallback={
-                  demoAgent ? (
-                    <div className="text-center">
-                      <a
-                        href={`tel:${demoAgent.tel}`}
-                        className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
-                      >
-                        Call the {key === "sales" ? "Sales" : "Support"} Demo
-                      </a>
-                      <p className="mt-2 font-mono text-xs text-muted-foreground">
-                        {demoAgent.tel}
-                      </p>
-                    </div>
-                  ) : undefined
+                  <a
+                    href={page.primary.href}
+                    className="marketing-btn-secondary inline-flex min-h-11 justify-center px-5 text-[15px] font-semibold"
+                  >
+                    {page.primary.label}
+                  </a>
                 }
               />
+              <p className="max-w-[36ch] text-xs leading-5 text-muted-foreground">
+                No account or phone number required. Microphone access starts only when you begin
+                the preview.
+              </p>
             </div>
           }
         />

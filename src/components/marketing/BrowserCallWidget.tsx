@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertCircle, Headphones, Loader2, Mic, Phone, PhoneOff, Volume2 } from "lucide-react";
+import { AlertCircle, Headphones, Loader2, Mic, PhoneOff, Volume2 } from "lucide-react";
 
 import { useProtectedPublicDemo } from "../../hooks/useProtectedPublicDemo";
 import { cn } from "../../lib/utils";
@@ -54,7 +54,7 @@ export default function BrowserCallWidget({
     agentName,
     variant === "compact" ? "showcase_browser_demo" : "landing_product_theater",
   );
-  const showPhoneFallback = Boolean(fallback) && (Boolean(demo.error) || demo.completed);
+  const showRecoveryFallback = Boolean(fallback) && (Boolean(demo.error) || demo.completed);
   const buttonText = demo.connecting
     ? "Cancel"
     : demo.callActive
@@ -122,19 +122,15 @@ export default function BrowserCallWidget({
           ) : null}
           <span className="wl-preserve-case">{status}</span>
         </div>
-        {showPhoneFallback ? <div className="landing-demo-inline__fallback">{fallback}</div> : null}
+        {showRecoveryFallback ? (
+          <div className="landing-demo-inline__fallback">{fallback}</div>
+        ) : null}
       </div>
     );
   }
 
   if (variant === "stage") {
-    const presence = demo.callActive
-      ? "Live"
-      : demo.connecting
-        ? "Connecting"
-        : showPhoneFallback
-          ? "Phone Option"
-          : "Ready";
+    const presence = demo.callActive ? "Live" : demo.connecting ? "Connecting" : "Ready";
 
     return (
       <div className={cn("landing-demo", demo.callActive && "is-live")}>
@@ -171,10 +167,10 @@ export default function BrowserCallWidget({
                 <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
                 <span>Securing private preview</span>
               </>
-            ) : showPhoneFallback ? (
+            ) : showRecoveryFallback ? (
               <>
-                <Phone className="size-3.5" aria-hidden="true" />
-                <span>Public demo line available</span>
+                <Headphones className="size-3.5" aria-hidden="true" />
+                <span>Continue in product</span>
               </>
             ) : (
               <>
@@ -209,8 +205,8 @@ export default function BrowserCallWidget({
               ? `This preview ends automatically after ${demo.maxDurationSeconds} seconds. End it sooner at any time.`
               : demo.connecting
                 ? "Cancel at any time before the private call session begins."
-                : showPhoneFallback
-                  ? "Call the public demo line below. Standard carrier rates may apply."
+                : showRecoveryFallback
+                  ? "Build your own Bot next, or retry this protected browser preview."
                   : `No account required. Microphone access starts only when you choose the ${demo.maxDurationSeconds}-second preview.`}
           </p>
 
@@ -316,19 +312,9 @@ export default function BrowserCallWidget({
             <span>{demo.error}</span>
           </div>
           {fallback}
-          {fallback ? (
-            <p className="wl-preserve-case text-center text-xs text-muted-foreground">
-              Standard carrier rates may apply.
-            </p>
-          ) : null}
         </div>
       ) : demo.completed && fallback ? (
-        <div className="grid justify-items-center gap-2">
-          {fallback}
-          <p className="wl-preserve-case text-center text-xs text-muted-foreground">
-            Standard carrier rates may apply.
-          </p>
-        </div>
+        <div className="grid justify-items-center gap-2">{fallback}</div>
       ) : null}
     </div>
   );

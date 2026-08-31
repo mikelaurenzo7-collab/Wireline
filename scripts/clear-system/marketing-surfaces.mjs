@@ -228,8 +228,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/pages/SolutionsPage.tsx",
     solutionsPage,
-    /HeroCallPreview|Sarah/,
-    "solutions must not render retired call preview",
+    /HeroCallPreview|Sarah|tel:/,
+    "solutions must not render retired call preview or public phone CTAs",
   );
   mustInclude(
     "src/pages/Developers.tsx",

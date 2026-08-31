@@ -130,18 +130,18 @@ export default function VerticalLanding({
             {cfg.headline}
           </h1>
           <div className="marketing-hero__actions mt-7">
-            <Link
-              to={cfg.primaryCta.href}
+            <CtaLink
+              href={cfg.primaryCta.href}
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
               {cfg.primaryCta.label}
-            </Link>
-            <Link
-              to={cfg.secondaryCta.href}
+            </CtaLink>
+            <CtaLink
+              href={cfg.secondaryCta.href}
               className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
             >
               {cfg.secondaryCta.label}
-            </Link>
+            </CtaLink>
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -200,9 +200,7 @@ export default function VerticalLanding({
         </div>
         <div className="mt-8 space-y-3">
           {cfg.faqs.map((faq) => {
-            const question = isEverydayCalls
-              ? EVERYDAY_FAQ_TITLES[faq.q] || faq.q
-              : faq.q;
+            const question = isEverydayCalls ? EVERYDAY_FAQ_TITLES[faq.q] || faq.q : faq.q;
             return (
               <details key={faq.q} className="group wl-stitch-card overflow-hidden">
                 <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">

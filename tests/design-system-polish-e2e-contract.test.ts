@@ -72,4 +72,14 @@ describe("design system polish e2e verified wins", () => {
       "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible",
     );
   });
+
+  it("keeps marketing eyebrows in the uppercase label tier after the body reset", () => {
+    const polish = read("src/styles/e2e-design-polish.css");
+    expect(polish).toContain(".wl-eyebrow");
+    expect(polish).toMatch(
+      /\.marketing-surface\s+:is\(\s*\.wl-eyebrow[\s\S]*?text-transform:\s*uppercase;/,
+    );
+    expect(polish).not.toContain("#demo-lines");
+    expect(polish).toContain(".wl-showcase-preview__note");
+  });
 });

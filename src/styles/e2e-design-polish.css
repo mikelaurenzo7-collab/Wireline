@@ -142,6 +142,7 @@
   font-size: 0.75rem;
   letter-spacing: var(--wireline-typography-overline-letterSpacing);
   line-height: 1.25;
+  text-transform: uppercase;
 }
 
 .marketing-surface :where(.wl-body-sm, .wl-info-list, .wl-info-list li) {
@@ -157,7 +158,7 @@
 .marketing-surface.wl-pricing-page #plans article ul,
 .marketing-surface.wl-pricing-page #scale > p,
 .marketing-surface.wl-solutions-page .wl-stitch-card > p:not(.sr-only),
-.marketing-surface.wl-showcase-page #demo-lines a span > span:last-child {
+.marketing-surface.wl-showcase-page .wl-showcase-preview__note {
   font-size: 0.8125rem;
   line-height: 1.5;
 }

@@ -39,7 +39,7 @@ function callStartErrorMessage(reason: unknown): string {
     return "No microphone was found on this device.";
   }
   if (reason instanceof DOMException && reason.name === "AbortError") {
-    return "The protected live demo took too long to start. Try the public demo line instead.";
+    return "The protected live demo took too long to start. Try again, or build your own Bot.";
   }
 
   const message = reason instanceof Error ? reason.message.trim() : "";
@@ -53,7 +53,7 @@ function callStartErrorMessage(reason: unknown): string {
   ) {
     return message;
   }
-  return "The protected live demo could not start. Try the public demo line instead.";
+  return "The protected live demo could not start. Try again, or build your own Bot.";
 }
 
 async function responseMessage(response: Response): Promise<string> {
@@ -67,7 +67,7 @@ async function responseMessage(response: Response): Promise<string> {
   }
   if (body?.message) return body.message;
   if (response.status === 429) {
-    return "The live demo limit is reached for now. Try the public demo line instead.";
+    return "The live demo limit is reached for now. Try again later, or build your own Bot.";
   }
   if (response.status === 503) return "The protected live demo is temporarily unavailable.";
   return "The protected live demo could not start.";
@@ -299,7 +299,7 @@ export function useProtectedPublicDemo(
       connection.onconnectionstatechange = () => {
         if (attempt !== attemptRef.current) return;
         if (connection.connectionState === "failed") {
-          fail("The live connection ended. Try the public demo line instead.");
+          fail("The live connection ended. Try again, or build your own Bot.");
         }
       };
       events.onmessage = (message) => {
@@ -324,12 +324,12 @@ export function useProtectedPublicDemo(
           setSpeakerActive(false);
         }
         if (type === "error") {
-          fail("The live connection ended. Try the public demo line instead.");
+          fail("The live connection ended. Try again, or build your own Bot.");
         }
       };
       events.onerror = () => {
         if (attempt === attemptRef.current) {
-          fail("The live connection ended. Try the public demo line instead.");
+          fail("The live connection ended. Try again, or build your own Bot.");
         }
       };
       events.onclose = () => {
@@ -387,7 +387,7 @@ export function useProtectedPublicDemo(
       clearTimers();
       watchdogRef.current = window.setTimeout(() => {
         if (attempt === attemptRef.current && !startedRef.current) {
-          fail("The live connection took too long. Try the public demo line instead.");
+          fail("The live connection took too long. Try again, or build your own Bot.");
         }
       }, PUBLIC_DEMO_CONNECTION_TIMEOUT_MS);
 

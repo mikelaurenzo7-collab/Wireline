@@ -1,6 +1,8 @@
 import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy";
 import { signupHrefForWedge } from "../lib/signup-intent";
 
+const BROWSER_DEMO_CTA = { label: "Hear Browser Demo", href: "/showcase" } as const;
+
 export type VerticalKey =
   | "home-services"
   | "medical"
@@ -91,7 +93,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Built for the after-hours calls, urgent requests, and quote follow-ups your team chooses to route.",
     primaryCta: { label: "Create Home Services Bot", href: signupHrefForWedge("home-services") },
-    secondaryCta: { label: "Call Customer Service Demo", href: "tel:+16306425927" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Uses your configured company identity. Final caller ID display depends on carrier, network, device, and completed identity review.",
     faqs: [
@@ -147,8 +149,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "After Hours",
     statLabel:
       "Route the calls your team cannot answer so configured intake and scheduling can continue after hours.",
-    primaryCta: { label: "Call Medical Demo", href: "tel:+16173134469" },
-    secondaryCta: { label: "Create Medical Bot", href: signupHrefForWedge("medical") },
+    primaryCta: { label: "Create Medical Bot", href: signupHrefForWedge("medical") },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Uses your configured practice identity, subject to carrier display support. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
     faqs: [
@@ -204,8 +206,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statValue: "Review Ready",
     statLabel:
       "Captures the prospective client, opposing party, and matter type, then routes the record to your designated reviewer.",
-    primaryCta: { label: "Call Legal Demo", href: "tel:+15727269365" },
-    secondaryCta: { label: "Create Legal Intake Bot", href: signupHrefForWedge("legal") },
+    primaryCta: { label: "Create Legal Intake Bot", href: signupHrefForWedge("legal") },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Audit logs preserve configured disclosures and opt-outs. BotBound is the intake layer; your attorneys deliver the advice.",
     faqs: [
@@ -262,7 +264,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Qualified buyers can receive approved showing options from the connected calendar; follow-up cadence and staff handoff remain configurable.",
     primaryCta: { label: "Create Real Estate Bot", href: signupHrefForWedge("real-estate") },
-    secondaryCta: { label: "Call Real Estate Demo", href: "tel:+19733638874" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Supports connected HubSpot, Salesforce, Google Calendar, and Outlook paths. Buyers hear the brokerage identity you configure, subject to carrier display behavior.",
     faqs: [
@@ -320,7 +322,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Your Voice Bot calls on your behalf. You say what you need; it dials, talks, follows up, and reports back while you stay off the call.",
     primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("personal") },
-    secondaryCta: { label: "Call Our Demo Line", href: "tel:+15642389455" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Your Bot follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",
     faqs: [
@@ -381,7 +383,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Renewal timing, channels, retry limits, opt-outs, and staff handoff stay under the agency's control.",
     primaryCta: { label: "Create Insurance Bot", href: signupHrefForWedge("insurance") },
-    secondaryCta: { label: "Call Insurance Demo", href: "tel:+19044601596" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Callers hear the agency identity you configure, subject to carrier behavior. Transcripts follow tenant retention; recording is optional and off by default.",
     faqs: [
@@ -438,7 +440,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Built for the rush-hour calls your host cannot reach: reservations, structured takeout requests, and event inquiries.",
     primaryCta: { label: "Create Restaurant Bot", href: signupHrefForWedge("restaurants") },
-    secondaryCta: { label: "Call Demo Concierge", href: "tel:+15642389455" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Callers hear the restaurant identity and approved voice you configure. Custom voice options require explicit speaker consent and provider availability.",
     faqs: [
@@ -495,7 +497,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     statLabel:
       "Governed queues can respond quickly to inbound requests and approved warm leads while preserving consent, caps, and an audit trail.",
     primaryCta: { label: "Create Sales Bot", href: signupHrefForWedge("sales") },
-    secondaryCta: { label: "Call Outbound Sales Demo", href: "tel:+14692571581" },
+    secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
       "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment is available in beta.",
     faqs: [

@@ -102,7 +102,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
               <NotFoundCard
                 to="/showcase"
                 icon={Headphones}
-                label="Browser demo"
+                label="Browser Demo"
                 hint="Hear a live Bot"
                 accent={BRAND.colors.primary}
               />

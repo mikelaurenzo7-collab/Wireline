@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  Headphones,
   Loader2,
   Mail,
   Send,
@@ -148,20 +149,25 @@ export function ContactPage() {
           <h1 className="wl-stitch-marketing-hero text-balance">Talk through the Bot you need</h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-2">
+        <section className="mt-10 grid gap-3 sm:grid-cols-3">
           <a
             href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@botbound.me</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
           </a>
+          <Link to="/showcase" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <Headphones className="mx-auto h-5 w-5 text-primary" />
+            <h2 className="mt-5 font-semibold text-foreground">Browser Demo</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Hear a live Phone Bot</p>
+          </Link>
           <Link
             to="/pricing"
-            className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5"
+            className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5 text-center"
           >
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="mx-auto h-5 w-5" />
             <h2 className="mt-5 font-semibold">See plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
               Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $

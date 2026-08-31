@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { Mail, MessageSquare, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Headphones, Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
@@ -81,19 +81,26 @@ export function SupportPage() {
           <h1 className="wl-stitch-marketing-hero text-balance">Support</h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-2">
+        <section className="mt-10 grid gap-3 sm:grid-cols-3">
           <a
             href="mailto:support@botbound.me"
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Email</h2>
-            <p className="mt-2 text-sm text-muted-foreground">support@botbound.me</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
           </a>
           <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <MessageSquare className="mx-auto h-5 w-5 text-primary" />
             <h2 className="mt-5 text-sm font-semibold text-foreground">Studio</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Review your Bots and activity</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Review your Bots and activity
+            </p>
+          </Link>
+          <Link to="/showcase" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <Headphones className="mx-auto h-5 w-5 text-primary" />
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Browser Demo</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Hear a live Phone Bot</p>
           </Link>
         </section>
 
@@ -147,7 +154,7 @@ export function SupportPage() {
                   required
                   value={subject}
                   onChange={(event) => setSubject(event.target.value)}
-                  placeholder="A short summary of what you need"
+                  placeholder="Short summary of what you need"
                 />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">

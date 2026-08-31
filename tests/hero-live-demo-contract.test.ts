@@ -21,7 +21,7 @@ describe("public live demo contract", () => {
     );
   });
 
-  it("keeps a real protected browser demo and an honest phone fallback on Showcase", () => {
+  it("keeps a real protected browser demo and a truthful product fallback on Showcase", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const showcase = read("src/pages/Showcase.tsx");
     const widget = read("src/components/marketing/BrowserCallWidget.tsx");
@@ -29,11 +29,15 @@ describe("public live demo contract", () => {
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="inline"');
     expect(landing).toContain("buttonLabel={`Talk to ${HERO_DEMO.name}`}");
+    expect(landing).toContain('to="/showcase"');
+    expect(landing).toContain("Open browser demo");
     expect(landing).not.toContain("<BotMark");
     expect(showcase).toContain("<BrowserCallWidget");
-    expect(showcase).toContain('id="demo-lines"');
-    expect(showcase).toContain("CALL A DEMO LINE");
-    expect(showcase).toContain("href={`tel:${agent.tel}`}");
+    expect(showcase).toContain('id="showcase-preview"');
+    expect(showcase).toContain("BUILD YOUR BOT");
+    expect(showcase).toContain("Protected browser preview");
+    expect(showcase).not.toContain('id="demo-lines"');
+    expect(showcase).not.toContain("href={`tel:${agent.tel}`}");
     expect(widget).toContain("useProtectedPublicDemo");
     expect(widget).toContain("Demo Phone Bot");
     expect(widget).not.toContain("LIVE PHONE BOT");
@@ -43,6 +47,25 @@ describe("public live demo contract", () => {
     expect(widget).toContain("Bot speaking");
     expect(widget).not.toContain("Demo Voice Agent");
     expect(widget).not.toContain("Agent speaking");
+    expect(widget).not.toContain("Public demo line available");
+    expect(widget).not.toContain("Standard carrier rates may apply");
+  });
+
+  it("does not advertise retired founder phone numbers on public marketing CTAs", () => {
+    const surfaces = [
+      "src/pages/Showcase.tsx",
+      "src/pages/SolutionsPage.tsx",
+      "src/pages/VerticalLanding.tsx",
+      "src/data/vertical-wedges.ts",
+      "src/components/ContactPage.tsx",
+      "src/components/SupportPage.tsx",
+      "src/components/layout/NotFound.tsx",
+      "src/components/marketing/WireAgentLanding.tsx",
+    ].map((path) => read(path));
+
+    for (const source of surfaces) {
+      expect(source).not.toMatch(/href=\{`tel:|href: "tel:|href={`tel:/);
+    }
   });
 
   it("keeps demo sessions bounded, measured, and BotBound-branded", () => {

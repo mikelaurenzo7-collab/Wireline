@@ -106,7 +106,7 @@ function respondWithAdmissionDenial(
     error:
       denial.status === 503
         ? "The protected live demo is temporarily unavailable."
-        : "The live demo limit is reached for now. Try the public demo line instead.",
+        : "The live demo limit is reached for now. Try again later, or build your own Bot.",
     code: denial.reason,
   });
 }

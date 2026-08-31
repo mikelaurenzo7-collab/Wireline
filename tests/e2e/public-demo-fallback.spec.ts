@@ -23,7 +23,7 @@ async function openPublicPage(page: Page, path = "/showcase") {
   throw lastError;
 }
 
-test("a protected-demo outage fails before microphone permission and exposes the phone path", async ({
+test("a protected-demo outage fails before microphone permission and exposes the product path", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -55,28 +55,25 @@ test("a protected-demo outage fails before microphone permission and exposes the
   await page.setViewportSize({ width: 390, height: 844 });
   await openPublicPage(page);
 
-  const preview = page.getByText("LIVE PHONE PREVIEW", { exact: true }).locator("..");
+  const preview = page.locator("#showcase-preview");
   await preview.getByRole("button", { name: "Talk to Jordan", exact: true }).click();
 
   await expect(preview.getByRole("alert")).toContainText(
     "The protected live demo is temporarily unavailable",
   );
-  await expect(
-    preview.getByText("Standard carrier rates may apply.", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    preview.getByRole("link", { name: "CALL A DEMO LINE", exact: true }),
-  ).toHaveAttribute("href", "#demo-lines");
-  await expect(page.locator("#demo-lines").getByRole("link").first()).toHaveAttribute(
+  await expect(preview.getByRole("link", { name: /build your bot/i })).toHaveAttribute(
     "href",
-    /^tel:/,
+    /\/signup/,
   );
   await expect(preview.getByRole("button", { name: "Talk to Jordan", exact: true })).toBeEnabled();
+  await expect(page.getByText("Standard carrier rates may apply.", { exact: true })).toHaveCount(0);
 
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
 });
 
-test("the homepage demo outage keeps retry and demo-line recovery available", async ({ page }) => {
+test("the homepage demo outage keeps retry and browser-demo recovery available", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     window.__wirelineMicRequests = 0;
     Object.defineProperty(navigator, "mediaDevices", {
@@ -109,7 +106,7 @@ test("the homepage demo outage keeps retry and demo-line recovery available", as
   );
   await expect(retry).toBeEnabled();
   await expect(
-    preview.getByRole("link", { name: "Call a demo line", exact: true }),
-  ).toHaveAttribute("href", "/showcase#demo-lines");
+    preview.getByRole("link", { name: "Open browser demo", exact: true }),
+  ).toHaveAttribute("href", "/showcase");
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
 });

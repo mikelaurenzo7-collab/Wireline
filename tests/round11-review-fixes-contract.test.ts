@@ -13,14 +13,10 @@ describe("round-11 review fixes", () => {
     // Quiet-hours and own-24h-window denials leave the lead processable; only
     // genuinely terminal denials (DNC/TCPA/duplicate-of-another-lead) may
     // write the gate status onto the lead.
-    expect(dialer).toContain(
-      'gate.reason === "outside_permitted_calling_hours"',
-    );
+    expect(dialer).toContain('gate.reason === "outside_permitted_calling_hours"');
     expect(dialer).toContain('gate.reason === "self_recent_call_scheduled"');
     expect(dialer).toContain("lead stays processable");
-    const deferBranch = dialer.indexOf(
-      'gate.reason === "outside_permitted_calling_hours"',
-    );
+    const deferBranch = dialer.indexOf('gate.reason === "outside_permitted_calling_hours"');
     const statusWrite = dialer.indexOf("status: gate.status");
     expect(deferBranch).toBeGreaterThanOrEqual(0);
     expect(statusWrite).toBeGreaterThan(deferBranch);
@@ -36,16 +32,13 @@ describe("round-11 review fixes", () => {
   it("matches every stored phone variant when terminating live calls on DNC adds", () => {
     const sentinel = read("src/services/sentinel.ts");
     expect(sentinel).toContain("dncPhoneCandidates(phoneNumber)");
-    expect(sentinel).toContain(
-      "inArray(schema.signalPresence.customerNumber, candidates)",
-    );
+    expect(sentinel).toContain("inArray(schema.signalPresence.customerNumber, candidates)");
     expect(sentinel).not.toContain("eq(schema.signalPresence.customerNumber");
   });
 
   it("bounds the daily-brief win/loss samples to yesterday on both ends", () => {
     const brief = read("src/lib/daily-brief.ts");
-    const upperBounds =
-      brief.split("lt(schema.callLogs.createdAt, yEnd)").length - 1;
+    const upperBounds = brief.split("lt(schema.callLogs.createdAt, yEnd)").length - 1;
     expect(upperBounds).toBeGreaterThanOrEqual(2);
   });
 
@@ -101,10 +94,12 @@ describe("round-11 review fixes", () => {
     expect(billing).toContain("refundedCents / chargeCents");
   });
 
-  it("dials a real demo line (not a support employee) from the 404 CTA", () => {
+  it("routes the public 404 to the protected browser demo", () => {
     const notFound = read("src/components/layout/NotFound.tsx");
-    expect(notFound).toContain("LANDING_PUBLIC_DEMO_AGENTS");
-    expect(notFound).toContain("tel:${DEMO_LINE.tel}");
+    expect(notFound).toContain('to="/showcase"');
+    expect(notFound).toContain("Browser Demo");
+    expect(notFound).not.toContain("LANDING_PUBLIC_DEMO_AGENTS");
+    expect(notFound).not.toContain("tel:${DEMO_LINE.tel}");
     expect(notFound).not.toContain("tel:+16305811834");
     // The stale "4 plans" hint (there are five paid tiers plus Scale) is gone.
     expect(notFound).not.toContain("4 plans");

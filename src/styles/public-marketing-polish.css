@@ -306,18 +306,15 @@
   padding-inline: var(--wl-public-gutter-inline);
 }
 
-/* Demos: make the journey read as one story and keep the closing CTA compact. */
-.marketing-surface #demo-lines,
-.marketing-surface #demo-lines + section {
+/* Showcase: keep the protected browser preview as one composed proof surface. */
+.marketing-surface.wl-showcase-page #showcase-preview {
   padding-block: 0;
 }
 
-.marketing-surface #demo-lines .wl-stitch-card {
-  min-height: 0;
-}
-
-.marketing-surface #demo-lines + section .wl-stitch-card-brand {
-  padding-block: clamp(2rem, 4vw, 3rem);
+.marketing-surface.wl-showcase-page #showcase-preview .wl-segmented {
+  display: grid;
+  width: min(100%, 22rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* Footer: align with the public rail and stop the bottom of every page from

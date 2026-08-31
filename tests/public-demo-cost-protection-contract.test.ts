@@ -123,18 +123,21 @@ describe("public browser demo cost protection", () => {
     expect(routes).toContain("requireSameOrigin(req)");
   });
 
-  it("keeps a protected browser demo on the home entrance and a phone fallback on Showcase", () => {
+  it("keeps a protected browser demo on the home entrance and a product fallback on Showcase", () => {
     expect(landing).toContain("<BrowserCallWidget");
     expect(landing).toContain('variant="inline"');
     expect(landing).not.toContain("markKey");
     expect(widget).not.toContain("<BotMark");
     expect(showcase).toContain("<BrowserCallWidget");
-    expect(showcase).toContain('id="demo-lines"');
-    expect(showcase).toContain("CALL A DEMO LINE");
-    expect(showcase).toContain("href={`tel:${agent.tel}`}");
-    expect(hook).toContain("Try the public demo line instead");
-    expect(widget).toContain("Public demo line available");
-    expect(widget).toContain("Standard carrier rates may apply");
+    expect(showcase).toContain('id="showcase-preview"');
+    expect(showcase).toContain("BUILD YOUR BOT");
+    expect(showcase).not.toContain('id="demo-lines"');
+    expect(showcase).not.toContain("CALL A DEMO LINE");
+    expect(showcase).not.toContain("href={`tel:${agent.tel}`}");
+    expect(hook).toContain("Try again, or build your own Bot.");
+    expect(widget).toContain("Continue in product");
+    expect(widget).not.toContain("Public demo line available");
+    expect(widget).not.toContain("Standard carrier rates may apply");
     expect(widget).toContain("Private ${demo.maxDurationSeconds}-second browser call.");
   });
 });

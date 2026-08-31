@@ -19,7 +19,8 @@ export const CONTACT_AGENT_TINTS = {
  *     outbound sales).
  *
  * Used in:
- *   1. Landing page — LANDING_PUBLIC_DEMO_AGENTS only (demo lines)
+ *   1. Landing and Showcase — LANDING_PUBLIC_DEMO_AGENTS names for protected
+ *      browser demos (no public PSTN CTAs)
  *   2. In-app /help route — specialists + full demo catalog
  *   3. Founder fleet seeding — persists each OpenAI Realtime runtime profile
  *
@@ -36,7 +37,17 @@ export type ContactAgent = {
   /** First-message template the agent opens calls with — keep it short, warm, scope-clear. */
   firstMessage: string;
   /** OpenAI Realtime voice used by browser and SIP calls. */
-  openaiVoiceId: "alloy" | "ash" | "ballad" | "coral" | "echo" | "sage" | "shimmer" | "verse" | "marin" | "cedar";
+  openaiVoiceId:
+    | "alloy"
+    | "ash"
+    | "ballad"
+    | "coral"
+    | "echo"
+    | "sage"
+    | "shimmer"
+    | "verse"
+    | "marin"
+    | "cedar";
   /** Human label for marketing cards and audit logs. */
   voiceLabel?: string;
   /** Comma-joined list of bucket labels this agent should handle. Used by routing logic in the CS playbook. */

@@ -132,7 +132,7 @@ for (const [needle, description] of [
     "home must keep direct account creation",
   ],
   ["<BrowserCallWidget", "home must keep the protected browser demo"],
-  ['to="/showcase#demo-lines"', "home must keep a clear phone fallback"],
+  ['to="/showcase"', "home must keep a clear browser-demo fallback"],
   ['id="solutions"', "home must include solutions"],
   ['id="pricing"', "home must include pricing"],
   ["landing-prestige__trust", "home must include trust controls"],
