@@ -43,12 +43,6 @@ const publicDemoCallSchema = z.object({
   sdp: z.string().min(100).max(60_000),
 });
 
-const PUBLIC_MARKETING_STATS = {
-  agents_online: 120,
-  calls_this_month: 8400,
-  tenants: 95,
-} as const;
-
 function requestIp(req: Request): string {
   return String(req.ip || "unknown").trim();
 }
@@ -121,13 +115,14 @@ router.get("/api/public/stats", async (req, res) => {
     res.setHeader("Retry-After", String(Math.ceil(decision.resetMs / 1000)));
     throw AppError.fromHttpStatus(429, "Rate limit exceeded.");
   }
-  res.setHeader(
-    "Cache-Control",
-    "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
-  );
-  res.json({
-    ...PUBLIC_MARKETING_STATS,
-    source: "static_example",
+  // BotBound is pre-scale and publishes no adoption counts until they are
+  // backed by customer evidence. Keep the historical endpoint fail-closed so
+  // stale clients cannot mistake example metrics for production telemetry.
+  res.setHeader("Cache-Control", "no-store");
+  res.status(404).json({
+    error: "Public usage metrics are not published.",
+    code: "public_metrics_unavailable",
+    source: "not_published",
   });
 });
 
