@@ -70,6 +70,20 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(webhook).toContain("reserveRealtimeSessionSpend");
     expect(webhook).toContain("commitRealtimeSessionSpend");
     expect(webhook).toContain("releaseRealtimeSessionSpendAfterFailure");
+    const preSessionFailure = webhook.slice(
+      webhook.indexOf("async function recordShowcasePreSessionFailure"),
+      webhook.indexOf("async function rejectShowcaseCallBeforeSession"),
+    );
+    expect(preSessionFailure).toContain('process.env.VERCEL_ENV !== "production"');
+    expect(preSessionFailure).toContain('vapiCallId: `openai:pre-session:${input.callId}`');
+    expect(preSessionFailure).toContain('pipelineError: "connection"');
+    expect(preSessionFailure).toContain("onConflictDoNothing");
+    expect(preSessionFailure).not.toContain("customerNumber");
+    expect(webhook).toContain('"environment_disallowed"');
+    expect(webhook).toContain('"runtime_unavailable"');
+    expect(webhook).toContain('"admission_lease_unavailable"');
+    expect(webhook).toContain('"spend_reservation_failed"');
+    expect(webhook).toContain('"provider_accept_failed"');
     const admission = webhook.indexOf("applyInboundAdmission(");
     const lease = webhook.indexOf("await acquireAccountOperationLease(");
     const reserve = webhook.indexOf("await reserveRealtimeSessionSpend(");
