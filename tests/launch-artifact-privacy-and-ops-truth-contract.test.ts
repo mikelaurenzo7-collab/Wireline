@@ -86,7 +86,11 @@ describe("launch artifact privacy and operations truth", () => {
       "opts.agentIds ? inArray(schema.callLogs.agentId, opts.agentIds) : undefined",
     );
     const canary = read("src/lib/demo-line-canary.ts");
-    expect(canary).toContain("agentIds: [...showcaseAgentIds]");
+    expect(canary).toContain("agentIds: showcaseAgentIds");
+    expect(canary).toContain(
+      "agents.map(({ agent }) => founderShowcaseAgentId(founderUserId, agent.name))",
+    );
+    expect(canary).not.toContain("showcaseAgentIds.add(row.agentId)");
     expect(canary).not.toContain(
       "computeVoiceHealthWindow({ demoOnly: true, windowMinutes: 60 })",
     );
