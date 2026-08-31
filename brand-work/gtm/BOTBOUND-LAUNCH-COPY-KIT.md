@@ -180,7 +180,7 @@ Publish only after the launch gate is signed off. Replace all bracketed fields a
 
 **[CITY, STATE], [MONTH DAY, YEAR]**: BotBound today introduced a web platform for building Bots that handle calls, texts, and email under one identity, shared context, and clear business rules.
 
-BotBound starts with a familiar problem. A customer calls while the person who can help is already doing the work. Instead of forcing the owner to stop or sending the caller into a dead end, a BotBound Phone Bot can answer, understand the request, book or route the next step, continue by text or email when useful, and preserve the outcome for review.
+BotBound starts with a familiar problem. A customer calls while the person who can help is already doing the work. Instead of forcing the owner to stop or sending the caller into a dead end, a Phone Bot can answer, understand the request, book or route the next step, continue by text or email when useful, and preserve the outcome for review.
 
 Businesses can begin with one private draft Bot in Free Builder. They can choose a role starter such as Front Desk, Sales Rep, Appointment Setter, Customer Support, or Property Manager, or define a custom job. Paid plans add live Bot capacity, included voice minutes, and a dedicated production number for each active paid Bot within the plan's capacity.
 

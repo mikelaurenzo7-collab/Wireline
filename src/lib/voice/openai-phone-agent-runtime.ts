@@ -219,7 +219,7 @@ export function composeOpenAIRealtimeInstructions(input: {
       ].join("\n")
     : [
         `You are ${input.agent.name}.`,
-        `Your role is ${input.agent.role || "agent"}.`,
+        `Your role is ${input.agent.role || "Bot"}.`,
         input.tenant.businessName ? `You represent ${input.tenant.businessName}.` : "",
         ...NON_NEGOTIABLE_RUNTIME_RULES,
       ]

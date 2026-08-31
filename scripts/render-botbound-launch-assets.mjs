@@ -96,7 +96,7 @@ const square = frame({
   width: 1080,
   height: 1080,
   title: "BotBound square launch social",
-  description: "A working mechanic and the BotBound phone Bot.",
+  description: "A working mechanic and a Phone Bot.",
   background: `<defs><linearGradient id="shade" y1="0" y2="1"><stop stop-color="#050508" stop-opacity=".94"/><stop offset=".46" stop-color="#08070B" stop-opacity=".08"/><stop offset="1" stop-color="#050508" stop-opacity=".7"/></linearGradient></defs><image href="${auto}" width="1080" height="1080"/><rect width="1080" height="1080" fill="url(#shade)"/>`,
   content: `${wordmark(64, 84, 54)}<text x="62" y="178" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="82" font-weight="800" letter-spacing="-3.5"><tspan x="62">BUSY DOING</tspan><tspan x="62" dy="82">THE WORK?</tspan></text><rect x="64" y="354" width="102" height="8" rx="4" fill="#A78BFA"/><text x="64" y="965" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="44" font-weight="800">YOUR BOT CAN ANSWER.</text><text x="66" y="1010" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="17" font-weight="700" letter-spacing="2.5">CALL · TEXT · EMAIL</text>`,
 });
@@ -106,7 +106,7 @@ const story = frame({
   width: 1080,
   height: 1920,
   title: "BotBound vertical launch story",
-  description: "A florist working while the BotBound phone Bot answers.",
+  description: "A florist working while a Phone Bot answers.",
   background: `<defs><linearGradient id="shade" y1="0" y2="1"><stop stop-color="#050508" stop-opacity=".97"/><stop offset=".38" stop-color="#08070B" stop-opacity=".12"/><stop offset=".79" stop-color="#08070B" stop-opacity=".08"/><stop offset="1" stop-color="#050508" stop-opacity=".88"/></linearGradient></defs><image href="${florist}" width="1080" height="1920"/><rect width="1080" height="1920" fill="url(#shade)"/>`,
   content: `${wordmark(72, 112, 58)}<text x="70" y="245" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="21" font-weight="700" letter-spacing="4">THE SECOND RING</text><text x="66" y="390" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="104" font-weight="800" letter-spacing="-5"><tspan x="66">THE CALL</tspan><tspan x="66" dy="105">STILL GETS</tspan><tspan x="66" dy="105" fill="#A78BFA">ANSWERED.</tspan></text><rect x="70" y="1715" width="940" height="2" fill="#A78BFA" fill-opacity=".55"/><text x="70" y="1790" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="46" font-weight="800">PUT YOUR BOT ON THE LINE.</text><text x="72" y="1848" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="26" font-weight="600">Build free at BotBound.me</text>`,
 });

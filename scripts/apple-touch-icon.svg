@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">Source wrapper for the BotBound phone Bot Apple touch icon.</desc>
+  <desc id="description">Source wrapper for the BotBound Apple touch icon.</desc>
   <metadata>Canonical production artwork: ../public/brand/botbound-app-icon.png; Aurora violet #A78BFA.</metadata>
   <image href="../public/brand/botbound-app-icon.png" width="2048" height="2048"/>
 </svg>

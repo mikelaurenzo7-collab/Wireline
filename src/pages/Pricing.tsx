@@ -119,7 +119,7 @@ const CHANNEL_RULES = [
 const FAQ = [
   [
     "Can your Bot handle voice, text, and email?",
-    "Yes. A single BotBound Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
+    "Yes. A single Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
     "Is the BotBound number free?",
@@ -197,7 +197,7 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="PRICING | FROM $19/MONTH"
+        title="PRICING | FROM $19/MONTH | BotBound"
         description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />

@@ -148,7 +148,7 @@ export async function getAgentCoachingBrief(
     next_step: onPhoneNetwork
       ? "This Bot is on the phone network. Coach it here, then operate live work in BotBound Studio."
       : factCount + ruleCount === 0
-        ? "Add Training facts and operating rules, then open BotBound Connections to attach a number and launch."
+        ? "Add Training facts and operating rules, then open Connections in BotBound to attach a number and launch."
         : "Training is landing in BotBound. Open Connections to attach a number when you are ready to launch.",
   };
 }

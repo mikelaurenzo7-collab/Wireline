@@ -32,17 +32,17 @@ function rasterSvg(png, title, description, width = 2048, height = 2048) {
 function writeCompatibilitySvgSources() {
   const current = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.</desc>
+  <desc id="description">BotBound app icon: a friendly robot visibly gripping a violet phone receiver.</desc>
   <metadata>Production raster artwork; Aurora violet #A78BFA; canonical source /brand/botbound-app-icon.png.</metadata>
   <image href="/brand/botbound-app-icon.png" width="2048" height="2048"/>
 </svg>\n`;
   const legacy = current.replace(
-    "BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.",
-    "Compatibility asset path rendering the BotBound phone Bot mark: a friendly robot visibly gripping a violet receiver.",
+    "BotBound app icon: a friendly robot visibly gripping a violet phone receiver.",
+    "Compatibility asset path rendering the BotBound mark: a friendly robot visibly gripping a violet phone receiver.",
   );
   const favicon = current.replace(
-    "BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.",
-    "BotBound phone Bot favicon with a visible hand and violet receiver.",
+    "BotBound app icon: a friendly robot visibly gripping a violet phone receiver.",
+    "BotBound favicon with a visible hand and violet phone receiver.",
   );
   const extension = current.replace(
     'href="/brand/botbound-app-icon.png"',
@@ -65,7 +65,7 @@ function writeStripeLogoSource(appIcon) {
   const displayFont = designToken(tokens, "font", "family", "display");
   const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">BotBound phone Bot beside the brand promise: Your Bot for calls, texts, and email.</desc>
+  <desc id="description">BotBound mark beside the brand promise: Your Bot for calls, texts, and email.</desc>
   <image href="data:image/png;base64,${embeddedMark}" x="28" y="28" width="304" height="304"/>
   <text x="390" y="176" fill="${checkoutInk}" font-family="${displayFont}, sans-serif" font-size="104" font-weight="800" letter-spacing="-4.5">Bot<tspan fill="${brand}">Bound</tspan></text>
   <rect x="394" y="204" width="620" height="3" rx="1.5" fill="${brand}"/>

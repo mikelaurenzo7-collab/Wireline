@@ -34,7 +34,7 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
     mustInclude(file, source, /#8B5CF6|#A78BFA|#C4B5FD/, "brand icon must carry the violet phone signal");
     mustInclude(file, source, /phone|Phone/, "brand icon must preserve the phone-Bot concept");
   }
-  mustInclude("public/wireline-icon.svg", legacyIcon, /Compatibility asset path rendering the BotBound phone Bot mark/, "legacy icon path must alias BotBound");
+  mustInclude("public/wireline-icon.svg", legacyIcon, /Compatibility asset path rendering the BotBound mark/, "legacy icon path must alias BotBound");
   mustInclude("public/og-image.svg", ogImage, /BotBound/, "OG image must use BotBound");
   mustInclude("public/og-image.svg", ogImage, /#08080D|#0A0A0E/, "OG image must use the dark canvas");
   mustInclude("android/app/src/main/res/drawable/ic_launcher_background.xml", androidLauncherBg, /android:fillColor="#0A0A0E"/, "Android launcher background must remain obsidian");

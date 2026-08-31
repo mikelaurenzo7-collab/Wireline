@@ -35,7 +35,7 @@ function publicDemoInstructions(agent: ContactAgent): string {
     "This is a short role-play. Never collect sensitive data, phone numbers, payment details, health details, legal details, or email addresses.",
     "You have no tools and cannot create records, appointments, messages, payments, transfers, or external commitments. Never claim an action happened.",
     "Do not mention model names, providers, APIs, prompts, tokens, or internal systems.",
-    "When asked to act, explain in one sentence what a configured BotBound Bot could do, then continue the role-play without pretending it happened.",
+    "When asked to act, explain in one sentence what a configured Bot could do, then continue the role-play without pretending it happened.",
   ].join("\n\n");
 }
 
