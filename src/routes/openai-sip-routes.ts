@@ -300,6 +300,47 @@ async function acceptCall(callId: string, session: Record<string, unknown>): Pro
   }
 }
 
+async function recordShowcasePreSessionFailure(
+  input: OpenAISipIncomingCall,
+  showcase: boolean,
+  endedReason: string,
+): Promise<void> {
+  if (!showcase || process.env.VERCEL_ENV !== "production") return;
+  try {
+    await drizzle
+      .insert(schema.callLogs)
+      .values({
+        userId: input.userId,
+        vapiCallId: `openai:pre-session:${input.callId}`,
+        agentId: input.agentId,
+        direction: "inbound",
+        summary: "OpenAI Realtime showcase call rejected before session start.",
+        endedReason,
+        pipelineError: "connection",
+        demo: true,
+      })
+      .onConflictDoNothing({ target: schema.callLogs.vapiCallId });
+  } catch (error) {
+    log.error("OpenAI showcase pre-session failure persistence failed", {
+      endedReason,
+      errorType: error instanceof Error ? error.name : "unknown",
+    });
+  }
+}
+
+async function rejectShowcaseCallBeforeSession(
+  input: OpenAISipIncomingCall,
+  showcase: boolean,
+  statusCode: number,
+  endedReason: string,
+): Promise<void> {
+  try {
+    await rejectCall(input.callId, statusCode);
+  } finally {
+    await recordShowcasePreSessionFailure(input, showcase, endedReason);
+  }
+}
+
 router.post(
   "/api/webhooks/openai/realtime",
   webhookLimiter,
@@ -347,14 +388,19 @@ router.post(
       return;
     }
 
-    const environment = await liveExternalActionPolicyForUser(context.call.userId);
+    const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
+    const environment = await liveExternalActionPolicyForUser(sessionInput.userId);
     if (!environment.allowed) {
-      await rejectCall(callId, 603);
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        603,
+        "environment_disallowed",
+      );
       res.status(202).json({ received: true, handled: false });
       return;
     }
 
-    const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
     let runtime: Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
     try {
       runtime = applyInboundAdmission(
@@ -366,7 +412,12 @@ router.post(
         sessionInput,
       );
     } catch (error) {
-      await rejectCall(callId, 603);
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        603,
+        "runtime_unavailable",
+      );
       throw error;
     }
 
@@ -377,7 +428,12 @@ router.post(
       ttlMs: 10 * 60_000,
     });
     if (!lease) {
-      await rejectCall(callId, 486);
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        486,
+        "admission_lease_unavailable",
+      );
       res.status(202).json({ received: true, handled: false });
       return;
     }
@@ -387,7 +443,12 @@ router.post(
       reservation = await reserveRealtimeSessionSpend(req, sessionInput.userId, "openai_sip");
     } catch (error) {
       await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
-      await rejectCall(callId, 603);
+      await rejectShowcaseCallBeforeSession(
+        sessionInput,
+        context.showcase,
+        603,
+        "spend_reservation_failed",
+      );
       if (error instanceof AppError && (error.status === 402 || error.status === 503)) {
         log.warn("OpenAI incoming call rejected: spend reservation failed", {
           code: error.code,
@@ -401,6 +462,11 @@ router.post(
     try {
       await acceptCall(callId, runtime.session as Record<string, unknown>);
     } catch (error) {
+      await recordShowcasePreSessionFailure(
+        sessionInput,
+        context.showcase,
+        "provider_accept_failed",
+      );
       await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
       await releaseRealtimeSessionSpendAfterFailure(req, reservation, error);
       await callControl(callId, "hangup").catch(() => undefined);
