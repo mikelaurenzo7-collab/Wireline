@@ -77,7 +77,7 @@ describe("activation path contract", () => {
     expect(wizard).toContain(
       'const stepOrder: WizardStep[] = ["train", "test", "wire", "complete"]',
     );
-    expect(wizard).toContain('if (stored === "channels") return "wire"');
+    expect(wizard).toContain('if (stored === "channels") return "test"');
     expect(wizard).toContain("function finish(line: string | null = phoneNumber)");
     expect(wizard).toContain("if (line && testStarted)");
     expect(wizard).toContain("disabled={!testStarted}");

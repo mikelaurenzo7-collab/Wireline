@@ -6,7 +6,7 @@ export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 /** Post-create wizard payload — Train → Test → Wire after Fast Start.
  *  Private rehearsal comes before paid number provisioning.
  *  ("channels" survives in the step type only as a legacy stored value that
- *  the wizard coerces to "wire" on mount; no live path renders it.) */
+ *  the wizard coerces to "test" on mount; no live path renders it.) */
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";
 export const POST_CREATE_WIZARD_STEP_KEY = "wireline:post-create-wizard-step";
 

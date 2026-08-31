@@ -30,9 +30,9 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     if (!hsOAuthConfigured()) {
-      return res.status(500).json({
-        code: "INTERNAL_ERROR",
-        error: "Missing HUBSPOT_CLIENT_ID or HUBSPOT_CLIENT_SECRET in environment variables.",
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "HubSpot integration is finishing setup. Try again shortly.",
       });
     }
 

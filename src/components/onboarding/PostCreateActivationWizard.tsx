@@ -81,7 +81,7 @@ export default function PostCreateActivationWizard({
 }: PostCreateActivationWizardProps) {
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
-    if (stored === "channels") return "wire";
+    if (stored === "channels") return "test";
     return isWizardStep(stored) ? stored : "train";
   });
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);

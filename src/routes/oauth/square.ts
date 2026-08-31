@@ -37,10 +37,9 @@ router.get(
   authenticateUser,
   async (req: express.Request, res: express.Response) => {
     if (!squareOAuthConfigured()) {
-      return res.status(500).json({
-        code: "INTERNAL_ERROR",
-        error:
-          "Missing SQUARE_APPLICATION_ID or SQUARE_APPLICATION_SECRET in environment variables.",
+      return res.status(503).json({
+        code: "SERVICE_UNAVAILABLE",
+        error: "Square integration is finishing setup. Try again shortly.",
       });
     }
     const baseUrl =

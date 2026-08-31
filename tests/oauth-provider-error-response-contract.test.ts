@@ -47,18 +47,29 @@ describe("OAuth provider-error responses", () => {
 
   it("does not leak OAuth env var names from connect-start routes", () => {
     const connectStarts = [
-      "src/routes/oauth/google.ts",
+      "src/routes/oauth/apollo.ts",
       "src/routes/oauth/google-sheets.ts",
-      "src/routes/oauth/microsoft.ts",
+      "src/routes/oauth/google.ts",
+      "src/routes/oauth/hubspot.ts",
+      "src/routes/oauth/meta.ts",
       "src/routes/oauth/microsoft-graph.ts",
+      "src/routes/oauth/microsoft.ts",
+      "src/routes/oauth/salesforce.ts",
+      "src/routes/oauth/shopify.ts",
+      "src/routes/oauth/slack.ts",
+      "src/routes/oauth/square.ts",
+      "src/routes/oauth/x.ts",
+      "src/routes/oauth/yahoo.ts",
+      "src/routes/oauth/zoom.ts",
     ] as const;
 
     for (const path of connectStarts) {
       const source = read(path);
-      expect(source, path).toContain("status(503)");
-      expect(source, path).toContain("finishing setup. Try again shortly.");
-      expect(source, path).not.toContain("Missing GOOGLE_CLIENT");
-      expect(source, path).not.toContain("Missing MICROSOFT_CLIENT");
+      expect(source, path).toMatch(/status\(503\)|fromHttpStatus\(\s*503/);
+      expect(source, path).toContain("finishing setup");
+      expect(source, path).not.toMatch(
+        /Missing [A-Z][A-Z0-9_]*_(CLIENT_ID|CLIENT_SECRET|APPLICATION_ID|APPLICATION_SECRET)/,
+      );
       expect(source, path).not.toContain("in environment variables");
     }
   });
