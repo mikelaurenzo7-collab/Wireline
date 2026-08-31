@@ -13,6 +13,8 @@ const promotionSource = readFileSync("scripts/promote-vercel-production.mjs", "u
 const redeploySource = readFileSync("scripts/redeploy-vercel-production.mjs", "utf8");
 const waitSource = readFileSync("scripts/wait-vercel-deployment.mjs", "utf8");
 const buildSource = readFileSync("scripts/vercel-build.mjs", "utf8");
+const schemaPromotionSource = readFileSync("scripts/promote-production-schema.mjs", "utf8");
+const providerPreflightSource = readFileSync("scripts/run-release-provider-preflight.mjs", "utf8");
 
 describe("production promotion safety", () => {
   it("never treats a preview artifact as a production release candidate", () => {
@@ -92,33 +94,39 @@ describe("production promotion safety", () => {
     expect(resolveVercelToken({ VERCEL_OIDC_TOKEN: " oidc " })).toBe("oidc");
   });
 
-  it("cannot disable exact-head migrations on the canonical production build", () => {
+  it("keeps production artifact compilation read-only and schema promotion exact-SHA", () => {
     expect(buildSource).toContain("CANONICAL_VERCEL_PROJECT_ID");
     expect(buildSource).toContain("isCanonicalVercelProject");
-    expect(buildSource).toContain("if (isCanonicalProduction && migrationsDisabled)");
     expect(buildSource).toContain(
-      "Refusing canonical production build with WIRELINE_RUN_MIGRATIONS=false",
+      "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
     );
-    expect(buildSource).toContain('run("npm", ["run", "db:migrate"])');
+    expect(buildSource).toContain("Canonical production artifact compilation is read-only");
     expect(buildSource).toContain('run("node", ["scripts/run-production-schema-effects.mjs"])');
+    expect(schemaPromotionSource).toContain("BOTBOUND_PRODUCTION_SCHEMA_CONFIRM");
+    expect(schemaPromotionSource).toContain("BOTBOUND_RELEASE_SHA");
+    expect(schemaPromotionSource).toContain("APPLY_APPEND_ONLY_BOTBOUND_MIGRATIONS");
+    expect(schemaPromotionSource).toContain('run("npm", ["run", "db:migrate"]');
+    expect(schemaPromotionSource).toContain(
+      'run("node", ["scripts/run-production-schema-effects.mjs"]',
+    );
   });
 
-  it("certifies every local artifact before any provider or database release step", () => {
+  it("certifies local artifacts without querying or mutating live providers", () => {
     const productBuild = buildSource.indexOf('run("npm", ["run", "build"]);');
     const serverSmoke = buildSource.indexOf('run("npm", ["run", "smoke:server"]);');
     const mcpBundle = buildSource.indexOf('"src/entrypoints/chatgpt-mcp-api.ts"');
-    const portalVerification = buildSource.indexOf("verifyStripePortalIfRequested();");
-    const migrations = buildSource.indexOf("if (shouldMigrate) {");
+    const nonproductionMigrations = buildSource.indexOf("if (shouldMigrate) {");
 
     expect(productBuild).toBeGreaterThan(-1);
     expect(serverSmoke).toBeGreaterThan(productBuild);
     expect(mcpBundle).toBeGreaterThan(serverSmoke);
-    expect(portalVerification).toBeGreaterThan(mcpBundle);
-    expect(migrations).toBeGreaterThan(portalVerification);
-    expect(buildSource).toContain("Builds must never repair provider state");
-    expect(buildSource).not.toContain(
-      '"scripts/reconcile-stripe-customer-portal.mts",\n    "--apply",',
-    );
+    expect(nonproductionMigrations).toBeGreaterThan(mcpBundle);
+    expect(buildSource).not.toContain("verifyStripePortalIfRequested");
+    expect(buildSource).not.toContain("reconcile-stripe-customer-portal.mts");
+    expect(providerPreflightSource).toContain('run("npm", ["run", "vendor:readiness"]');
+    expect(providerPreflightSource).toContain('run("npm", ["run", "stripe:portal:verify"]');
+    expect(providerPreflightSource).toContain('run("npm", ["run", "stripe:webhook:check"]');
+    expect(providerPreflightSource).not.toContain("--apply");
   });
 
   it("rejects every noncanonical production project, including v0-named copies", () => {

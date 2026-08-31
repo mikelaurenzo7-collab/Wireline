@@ -72,7 +72,6 @@ describe("production schema database selection", () => {
     }
   });
 
-
   it("keeps production migrations on the canonical port-5432 session URL", () => {
     const canonicalSession =
       "postgresql://postgres.ogenlhodmwvyacvnrsnj:secret@aws-0-us-east-2.pooler.supabase.com:5432/postgres?sslmode=require";
@@ -106,19 +105,24 @@ describe("production schema database selection", () => {
     ).toThrow("canonical Supabase project");
   });
 
-  it("passes only the normalized session URL into the production migration child", () => {
+  it("passes only the normalized session URL into the explicit production migration command", () => {
     const buildSource = readFileSync(new URL("../scripts/vercel-build.mjs", import.meta.url), "utf8");
+    const promotionSource = readFileSync(
+      new URL("../scripts/promote-production-schema.mjs", import.meta.url),
+      "utf8",
+    );
     const drizzleSource = readFileSync(new URL("../drizzle.config.ts", import.meta.url), "utf8");
 
-    expect(buildSource).toContain("resolveProductionMigrationDatabaseUrl(databaseUrl)");
-    expect(buildSource).toContain("process.env.POSTGRES_URL = migrationDatabaseUrl;");
-    expect(buildSource).toContain('run("npm", ["run", "db:migrate"]);');
-    expect(drizzleSource).toContain(
-      "process.env.POSTGRES_URL || process.env.DATABASE_URL",
+    expect(promotionSource).toContain("resolveProductionMigrationDatabaseUrl(databaseUrl)");
+    expect(promotionSource).toContain("POSTGRES_URL: selected.connectionString");
+    expect(promotionSource).toContain('run("npm", ["run", "db:migrate"], env);');
+    expect(buildSource).not.toContain("resolveProductionMigrationDatabaseUrl");
+    expect(buildSource).toContain(
+      "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
     );
+    expect(drizzleSource).toContain("process.env.POSTGRES_URL || process.env.DATABASE_URL");
     expect(drizzleSource).not.toContain("DATABASE_POOL_URL");
   });
-
 });
 
 describe("tenant database connection scope", () => {
