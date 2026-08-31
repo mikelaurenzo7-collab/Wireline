@@ -41,7 +41,7 @@ export default function Showcase() {
           }
         />
 
-        <section className="mt-8 min-w-0">
+        <section id="demo-lines" className="mt-8 min-w-0">
           <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {LANDING_PUBLIC_DEMO_AGENTS.map((agent) => (
               <div key={agent.name} className="wl-stitch-card min-w-0 p-4 text-center">
