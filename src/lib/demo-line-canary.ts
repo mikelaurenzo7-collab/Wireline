@@ -58,8 +58,7 @@ async function publishPublicVoiceCanary(result: CanaryRunResult): Promise<void> 
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) {
-    log.warn("Demo-line canary health signal skipped because Redis is not configured");
-    return;
+    throw new Error("Demo-line canary health signal requires Redis configuration");
   }
 
   const signal: PublicVoiceCanarySignal = {
@@ -72,9 +71,10 @@ async function publishPublicVoiceCanary(result: CanaryRunResult): Promise<void> 
       ex: PUBLIC_VOICE_CANARY_TTL_SECONDS,
     });
   } catch (error) {
-    log.warn("Demo-line canary health signal publish failed", {
+    log.error("Demo-line canary health signal publish failed", {
       error: getErrorMessage(error),
     });
+    throw error;
   }
 }
 
@@ -217,9 +217,13 @@ export async function runDemoLineCanary(): Promise<CanaryRunResult> {
       await alertOnVoiceDegradation({ window: voiceWindow, channel: "demo-line" });
     }
   } catch (error) {
-    log.warn("Demo-line canary voice window check failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    const message = getErrorMessage(error);
+    result.allHealthy = false;
+    result.voiceWindowHealthy = false;
+    result.error = [result.error, `Voice health window check failed: ${message}`]
+      .filter(Boolean)
+      .join("; ");
+    log.warn("Demo-line canary voice window check failed", { error: message });
   }
 
   if (!result.allHealthy) {
@@ -269,5 +273,5 @@ function escapeHtml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/\"/g, "&quot;");
 }
