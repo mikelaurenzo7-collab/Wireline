@@ -24,6 +24,8 @@ describe("demo-line canary keeps showcase numbers on OpenAI inbound", () => {
       "agents.map(({ agent }) => founderShowcaseAgentId(founderUserId, agent.name))",
     );
     expect(canary).toContain("agentIds: showcaseAgentIds");
+    expect(canary).toContain("const SHOWCASE_VOICE_WINDOW_MINUTES = 26 * 60");
+    expect(canary).toContain("windowMinutes: SHOWCASE_VOICE_WINDOW_MINUTES");
     expect(canary).not.toContain("showcaseAgentIds.add(row.agentId)");
     expect(canary).toContain('result.error ||= "Founder showcase workspace is unavailable"');
   });
