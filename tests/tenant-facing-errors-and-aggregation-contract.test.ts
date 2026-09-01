@@ -6,7 +6,7 @@ const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 
 describe("number provisioning tells the tenant something true and nothing internal", () => {
-  const source = read("src/lib/phone-provisioning.ts");
+  const source = read("src/lib/voice/native-phone-provisioning.ts");
 
   it("never returns a provider name or environment variable to the caller", () => {
     // PhoneSetupPanel renders `body.error` verbatim on /settings/phone, so any
@@ -26,20 +26,20 @@ describe("number provisioning tells the tenant something true and nothing intern
 
   it("still records the real cause for the operator", () => {
     expect(source).toContain(
-      'log.error("number provisioning refused, VAPI_PRIVATE_KEY is not set"',
+      'log.error("Twilio line exists but OpenAI routing could not be confirmed"',
     );
     expect(source).toContain(
-      'log.error("number provisioning refused, auto-provisioning is disabled"',
+      'log.error("Native phone ownership persisted but its purchase claim could not be cleared"',
     );
-    expect(source).toContain('log.error("releaseTenantNumber failed"');
-    expect(source).toContain('log.error("provisionTenantNumber failed"');
+    expect(source).toContain('log.warn("Native phone provisioning blocked by account environment"');
   });
 
   it("says the failure is ours and what still works", () => {
-    expect(source).toContain("NUMBER_PROVISIONING_UNAVAILABLE");
-    const message = source.slice(source.indexOf("const NUMBER_PROVISIONING_UNAVAILABLE"));
-    expect(message.slice(0, 400)).toContain("on our side");
-    expect(message.slice(0, 400)).toMatch(/texts, email, and follow-up/);
+    expect(source).toContain('code: "PHONE_RUNTIME_NOT_CONFIGURED"');
+    expect(source).toContain(
+      "Phone activation is temporarily unavailable because live-call routing is not configured. No number was purchased.",
+    );
+    expect(source).not.toContain('error: "OpenAI Realtime SIP is not configured."');
   });
 });
 

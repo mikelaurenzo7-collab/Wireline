@@ -118,7 +118,7 @@ describe("durable provider deletion leases", () => {
         perform: async () => {
           const result = await runTenantProviderWorkWithDeletionFence({
             userId: "user-1",
-            operation: "twilio_outbound_call_create",
+            operation: "twilio_openai_outbound_call_create",
             retainOnSuccess: (value: { accepted: boolean }) => value.accepted,
             perform: nested,
           });
@@ -155,7 +155,7 @@ describe("durable provider deletion leases", () => {
       exported.indexOf("runTenantProviderWorkWithDeletionFence"),
     );
     expect(exported).toContain("runTenantProviderWorkWithDeletionFence");
-    expect(exported).toContain('operation: "twilio_outbound_call_create"');
+    expect(exported).toContain('operation: "twilio_openai_outbound_call_create"');
     expect(exported).toContain("perform: () => placeOutboundCallAfterDeletionFence(input)");
     expect(exported).toContain("result.ok || result.providerOutcomeAmbiguous");
     expect(exported).toContain("doNotRetry: true");
@@ -194,7 +194,7 @@ describe("durable provider deletion leases", () => {
 
     expect(environmentMocks.assertAllowed).toHaveBeenCalledWith(
       "demo-user",
-      "twilio_outbound_call_create",
+      "twilio_openai_outbound_call_create",
     );
     expect(leaseMocks.acquire).not.toHaveBeenCalled();
   });

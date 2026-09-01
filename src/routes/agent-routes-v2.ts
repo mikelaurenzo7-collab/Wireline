@@ -13,7 +13,7 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
 import { listAgentsForUser } from "../lib/agents-store";
-import { isManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
+import { normalizeManagedOpenAIVoiceId, pickRotatedVoiceId } from "../data/voice-roster";
 import { businessAgentVideoPresenterDefaults } from "../lib/video-presenter/liveavatar-service";
 import {
   isAgentToolName,
@@ -32,7 +32,6 @@ import {
   templateLaunchReviewMessage,
 } from "../lib/template-launch-policy";
 import { resolveAgentVideoPresenter } from "../lib/video-presenter/resolve-agent-presenter";
-import { defaultPresenterPhoneVoicePayload } from "../lib/voice-catalog";
 import { AI_TOOLS } from "../lib/ai-tools";
 import { isGeminiModelId, isOpenAIModelId } from "../lib/ai-models";
 import {
@@ -478,9 +477,8 @@ router.post(
           );
         }
 
-        const voiceId = isManagedOpenAIVoiceId(requestedVoiceId)
-          ? requestedVoiceId
-          : pickRotatedVoiceId(existing);
+        const voiceId =
+          normalizeManagedOpenAIVoiceId(requestedVoiceId) || pickRotatedVoiceId(existing);
         await tx.insert(schema.agents).values({
           id,
           userId: req.user.id,
@@ -872,54 +870,47 @@ router.patch(
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-    const [voiceState] = await drizzle
-      .select({
-        phoneVoiceId: schema.agents.phoneVoiceId,
-        phoneVoiceProvider: schema.agents.phoneVoiceProvider,
-      })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
-      .limit(1);
-    const voiceId = cleanText(req.body?.voiceId, 160) || null;
-    const providerRaw = cleanText(req.body?.provider, 32).toLowerCase() || (voiceId ? "openai" : null);
-    const allowedProviders = new Set(["openai", "presenter"]);
-    if (providerRaw && !allowedProviders.has(providerRaw)) {
+    const requestedVoiceId = cleanText(req.body?.voiceId, 160);
+    const requestedProvider = cleanText(req.body?.provider, 32).toLowerCase();
+    if (requestedProvider !== "openai") {
       throw AppError.fromHttpStatus(400, "Invalid voice provider.");
     }
-    const provider = providerRaw;
-    if (provider === "openai" && voiceId && !isManagedOpenAIVoiceId(voiceId)) {
+    const voiceId = normalizeManagedOpenAIVoiceId(requestedVoiceId);
+    if (!voiceId) {
       throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime voice.");
     }
-    const phoneVoiceId = cleanText(req.body?.phoneVoiceId, 160) || null;
-    const phoneVoiceProviderRaw = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase() || null;
-    const phoneProviders = new Set(["openai"]);
-    if (phoneVoiceProviderRaw && !phoneProviders.has(phoneVoiceProviderRaw)) {
-      throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
-    }
-    if (phoneVoiceProviderRaw === "openai" && phoneVoiceId && !isManagedOpenAIVoiceId(phoneVoiceId)) {
-      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime phone voice.");
-    }
+
+    // Legacy presenter rows remain readable by the response/runtime paths, but
+    // this write endpoint is a one-way migration boundary: every successful
+    // selection stores one of the ten canonical OpenAI ids as the primary
+    // browser-and-phone voice and clears the retired split-phone fields.
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const hasPhoneVoiceId = Object.prototype.hasOwnProperty.call(body, "phoneVoiceId");
     const hasPhoneVoiceProvider = Object.prototype.hasOwnProperty.call(body, "phoneVoiceProvider");
-    const patch: {
-      voiceId: string | null;
-      voiceProvider: string | null;
-      phoneVoiceId?: string | null;
-      phoneVoiceProvider?: string | null;
-    } = { voiceId, voiceProvider: provider };
-
-    if (provider !== "presenter") {
-      patch.phoneVoiceId = null;
-      patch.phoneVoiceProvider = null;
-    } else if (hasPhoneVoiceId || hasPhoneVoiceProvider) {
-      if (hasPhoneVoiceId) patch.phoneVoiceId = phoneVoiceId;
-      if (hasPhoneVoiceProvider) patch.phoneVoiceProvider = phoneVoiceProviderRaw;
-    } else if (!voiceState?.phoneVoiceId || !voiceState?.phoneVoiceProvider) {
-      const defaults = defaultPresenterPhoneVoicePayload();
-      patch.phoneVoiceId = defaults.phoneVoiceId;
-      patch.phoneVoiceProvider = defaults.phoneVoiceProvider;
+    const requestedPhoneVoiceId = cleanText(req.body?.phoneVoiceId, 160);
+    const requestedPhoneVoiceProvider = cleanText(req.body?.phoneVoiceProvider, 32).toLowerCase();
+    if (
+      hasPhoneVoiceProvider &&
+      requestedPhoneVoiceProvider &&
+      requestedPhoneVoiceProvider !== "openai"
+    ) {
+      throw AppError.fromHttpStatus(400, "Invalid phone voice provider.");
     }
+    const normalizedPhoneVoiceId = normalizeManagedOpenAIVoiceId(requestedPhoneVoiceId);
+    if (hasPhoneVoiceId && requestedPhoneVoiceId && !normalizedPhoneVoiceId) {
+      throw AppError.fromHttpStatus(400, "Choose an OpenAI Realtime phone voice.");
+    }
+    const patch: {
+      voiceId: string;
+      voiceProvider: "openai";
+      phoneVoiceId: null;
+      phoneVoiceProvider: null;
+    } = {
+      voiceId,
+      voiceProvider: "openai",
+      phoneVoiceId: null,
+      phoneVoiceProvider: null,
+    };
     const [savedVoice] = await drizzle
       .update(schema.agents)
       .set(patch)
@@ -934,7 +925,7 @@ router.patch(
       success: true,
       voice: {
         voiceId: savedVoice?.voiceId ?? voiceId,
-        provider: savedVoice?.provider ?? provider,
+        provider: savedVoice?.provider ?? "openai",
         phoneVoiceId: savedVoice?.phoneVoiceId ?? null,
         phoneVoiceProvider: savedVoice?.phoneVoiceProvider ?? null,
       },

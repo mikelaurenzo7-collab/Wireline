@@ -34,7 +34,7 @@ describe("product doctrine parity", () => {
     const showcase = read("docs/PRODUCT_SHOWCASE_MATRIX.md");
     const clientSurfaces = read("docs/CLIENT_SURFACES.md");
     const entitlements = read("src/lib/video-presenter/live-video-entitlements.ts");
-    const grokLiveVoice = read("docs/GROK_LIVE_VOICE.md");
+    const liveVoice = read("docs/OPENAI_REALTIME_VOICE.md");
 
     expect(root).toContain("**Identity - retired live talking-head:**");
     expect(docsIndex).toContain("**Retired live talking-head.**");
@@ -43,8 +43,11 @@ describe("product doctrine parity", () => {
     expect(clientSurfaces).toMatch(/Launch status\s+\|\s+\*\*Retired\*\*/);
     expect(entitlements).toContain("Live talking-head video is no longer offered");
     expect(entitlements).toContain("addonOffered: false");
-    expect(grokLiveVoice).toContain("There is no work-companion API");
-    expect(grokLiveVoice).toContain("no Grok Bot companion runtime");
+    expect(liveVoice).toContain("BotBound uses one live-conversation runtime: OpenAI Realtime");
+    expect(liveVoice).toContain(
+      "No alternate voice provider or automatic model fallback is permitted",
+    );
+    expect(liveVoice).not.toMatch(/work-companion|Grok Bot companion/i);
     expect(existsSync(resolve(process.cwd(), "docs/GROK_BOT_COMPANION_RUNTIME.md"))).toBe(false);
 
     for (const [path, source] of [

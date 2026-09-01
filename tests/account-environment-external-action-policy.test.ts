@@ -69,6 +69,8 @@ describe("account-environment live external-action policy", () => {
     const dailyBrief = source("src/lib/daily-brief.ts");
     const notifications = source("src/lib/notifications.ts");
     const postCall = source("src/lib/post-call-digest.ts");
+    const postCallExternalFence = fromMarker(postCall, "async function withPostCallExternalFence");
+    const smsReply = fromMarker(source("src/routes/sms-routes.ts"), '"/api/sms/threads/:id/reply"');
     const identityReconciler = source("scripts/reconcile-paid-bot-identities.mts");
     const billing = source("src/middleware/account-deletion-billing-fence.ts");
     const billingRoutes = source("src/routes/billing-routes.ts");
@@ -105,9 +107,21 @@ describe("account-environment live external-action policy", () => {
     );
     expect(dailyBrief).toContain('assertLiveExternalActionAllowed(userId, "daily_brief_email")');
     expect(notifications.match(/liveExternalActionPolicyForUser\(this\.userId\)/g)).toHaveLength(2);
-    expect(postCall.indexOf("liveExternalActionPolicyForUser(ctx.userId)")).toBeLessThan(
-      postCall.indexOf("return drizzle.transaction("),
+    expect(
+      postCallExternalFence.indexOf("liveExternalActionPolicyForUser(ctx.userId)"),
+    ).toBeLessThan(postCallExternalFence.indexOf("return withPostCallDeletionFence(ctx, perform)"));
+    const existingSmsOperation = smsReply.indexOf(
+      "const existingOperation = await loadSmsSendOperation",
     );
+    const smsEnvironmentGate = smsReply.indexOf("await assertSmsReplyExternalActionAllowed");
+    const smsComplianceGate = smsReply.indexOf("await evaluateSmsThreadReplyGate");
+    const smsReserve = smsReply.indexOf("await reserveSmsSendOperation");
+    const smsCarrier = smsReply.indexOf("await sendTenantMessage");
+    expect(existingSmsOperation).toBeGreaterThan(-1);
+    expect(smsEnvironmentGate).toBeGreaterThan(existingSmsOperation);
+    expect(smsComplianceGate).toBeGreaterThan(smsEnvironmentGate);
+    expect(smsReserve).toBeGreaterThan(smsComplianceGate);
+    expect(smsCarrier).toBeGreaterThan(smsReserve);
     expect(identityReconciler).toContain('eq(schema.settings.accountEnvironment, "production")');
     expect(messaging.indexOf("liveExternalActionPolicyForUser(userId)")).toBeLessThan(
       messaging.indexOf("createTwilioMessageWithRateLimitRetry("),

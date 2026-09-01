@@ -44,9 +44,9 @@ interface DeployAgentModalProps {
  *
  *   1. Name      — pre-filled with the template name, editable to anything
  *                  ("Sarah", "Front Desk", "Closer #2", etc.)
- *   2. Voice     — male / female toggle, with a per-gender default voice
- *                  and an expand-to-pick-specific control. Email-channel
- *                  templates skip the voice picker entirely.
+ *   2. Voice     — male / female shortcuts set a recommended default, while
+ *                  the expanded catalog exposes every built-in OpenAI voice.
+ *                  Email-channel templates skip the voice picker entirely.
  *
  * Everything else (role personality, template overlay, business variable
  * substitution, capabilities) is handled server-side at /api/agents POST.
@@ -106,7 +106,6 @@ export default function DeployAgentModal({
   // Curated managed voices only — every deploy lands on the phone runtime
   // Wireline actually operates, so the picked voice is the live voice.
   const allVoices = OPENAI_REALTIME_VOICES;
-  const voicesForGender = allVoices.filter((v) => v.gender === gender);
   const selectedVoice = allVoices.find((v) => v.id === voiceId);
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length > 0 && trimmedName.length <= 80 && !deploying;
@@ -261,8 +260,8 @@ export default function DeployAgentModal({
                           transition={{ duration: 0.25 }}
                           className="space-y-1.5 overflow-hidden"
                         >
-                          <p className="wl-micro-meta pt-1">Specific {gender} voice</p>
-                          {voicesForGender.map((v) => {
+                          <p className="wl-micro-meta pt-1">Specific OpenAI voice</p>
+                          {allVoices.map((v) => {
                             const isSelected = v.id === voiceId;
                             return (
                               <ShadButton
@@ -270,7 +269,10 @@ export default function DeployAgentModal({
                                 key={v.id}
                                 variant="ghost"
                                 disableAnimations
-                                onClick={() => setVoiceId(v.id)}
+                                onClick={() => {
+                                  setVoiceId(v.id);
+                                  if (v.gender) setGender(v.gender);
+                                }}
                                 className={cn(
                                   "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[length:var(--wireline-typography-caption-size)] border",
                                   isSelected

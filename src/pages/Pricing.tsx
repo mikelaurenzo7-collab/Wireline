@@ -197,7 +197,7 @@ export default function Pricing() {
   return (
     <div className="marketing-surface wl-pricing-page bg-background text-foreground">
       <PageMeta
-        title="PRICING | FROM $19/MONTH"
+        title="PRICING | FROM $19/MONTH | BotBound"
         description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
         path="/pricing"
       />

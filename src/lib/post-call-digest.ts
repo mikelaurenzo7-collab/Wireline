@@ -40,6 +40,7 @@ import { sanitizePhone } from "./agent-runtime-helpers";
 import { emitServerProductEventOnce } from "./product-event-server";
 import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";
+import { enqueueCallEscalatedWebhookOnce } from "./webhook-helpers";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
@@ -75,6 +76,42 @@ export function classifyCallOutcome(input: {
   return "other";
 }
 
+export type RecordedEscalationWebhookPayload = {
+  vapi_call_id: string;
+  call_log_id: string;
+  agent_id: string | null;
+  customer_number: string | null;
+  direction: "inbound" | "outbound";
+  intent_label: string | null;
+  escalation_succeeded: boolean;
+};
+
+/** Build the public event only from the provider-recorded escalation outcome. */
+export function buildRecordedEscalationWebhookPayload(
+  input: Pick<
+    CallContext,
+    | "callLogId"
+    | "agentId"
+    | "customerNumber"
+    | "direction"
+    | "intentLabel"
+    | "vapiCallId"
+    | "escalationAttempted"
+    | "escalationSucceeded"
+  >,
+): RecordedEscalationWebhookPayload | null {
+  if (!input.escalationAttempted) return null;
+  return {
+    vapi_call_id: input.vapiCallId || String(input.callLogId),
+    call_log_id: String(input.callLogId),
+    agent_id: input.agentId || null,
+    customer_number: input.customerNumber || null,
+    direction: input.direction === "outbound" ? "outbound" : "inbound",
+    intent_label: input.intentLabel || null,
+    escalation_succeeded: Boolean(input.escalationSucceeded),
+  };
+}
+
 async function resolveCampaignSource(
   userId: string,
   dialedNumber: string | null | undefined,
@@ -104,15 +141,27 @@ export interface CallContext {
   sentiment?: string | null;
   intentLabel?: string | null;
   endedReason?: string | null;
+  pipelineError?: string | null;
   vapiCallType?: string | null;
   demo?: boolean;
   vapiCallId?: string | null;
+  escalationAttempted?: boolean | null;
+  escalationSucceeded?: boolean | null;
+  finalization?: OpenAISipFinalizationContext | null;
 }
+
+export type OpenAISipFinalizationContext = {
+  provider: "openai_sip";
+  callId: string;
+  leadId?: string | null;
+  openingPlaybackConfirmed: boolean;
+  terminalStateReady: boolean;
+};
 
 type JsonCallContext = Pick<
   CallContext,
   "userId" | "dialedNumber" | "customerName" | "agentName" | "vapiCallType"
-> & { callLogId: string };
+> & { callLogId: string; finalization?: OpenAISipFinalizationContext };
 
 export type PostCallDigestCoreResult = {
   outcomeTag: CallOutcomeTag;
@@ -126,6 +175,7 @@ export type PostCallDigestCoreResult = {
 };
 
 type PostCallDeliveryProgress = {
+  finalization?: { state: "completed" };
   core?: { state: "completed"; result: PostCallDigestCoreResult };
   effects?: Partial<{
     googleSheets: PostCallEffectProgress<{ written: boolean }>;
@@ -135,6 +185,7 @@ type PostCallDeliveryProgress = {
     recap: PostCallEffectProgress<{ url: string | null }>;
     autoQa: PostCallEffectProgress<{ queued: boolean }>;
     mobilePush: PostCallEffectProgress<{ sent: number; devices: number }>;
+    escalationWebhook: PostCallEffectProgress<{ queued: number }>;
   }>;
   email?: {
     state: "accepted" | "suppressed" | "skipped";
@@ -166,6 +217,7 @@ type PostCallEffectResultMap = {
   recap: { url: string | null };
   autoQa: { queued: boolean };
   mobilePush: { sent: number; devices: number };
+  escalationWebhook: { queued: number };
 };
 
 type PostCallEffectName = keyof PostCallEffectResultMap;
@@ -177,8 +229,8 @@ export type PostCallEffectDecision = "claim" | "retry" | "reuse" | "reconcile_wi
  * idempotency key. A durable pre-provider claim makes each individual effect
  * at-most-once, while a completed result is safely reusable across email/CSAT
  * retries. An interrupted provider claim is reconciled conservatively instead
- * of replaying a possibly accepted operation. Local child-job enqueues opt into
- * retry only when a database uniqueness key makes replay idempotent.
+ * of replaying a possibly accepted operation. Local database enqueues opt into
+ * retry only when a durable key makes replay idempotent.
  */
 export function decidePostCallEffect(
   progress: { state?: string } | null | undefined,
@@ -253,6 +305,16 @@ function jsonCallContext(ctx: CallContext): JsonCallContext {
   // Call logs remain the authoritative copy of transcript, summary, caller
   // number, outcome, and duration. Keep only the few provider labels absent
   // from that table so the queue does not become a second transcript archive.
+  const finalization =
+    ctx.finalization?.provider === "openai_sip" && ctx.finalization.callId.trim()
+      ? {
+          provider: "openai_sip" as const,
+          callId: ctx.finalization.callId.trim(),
+          leadId: ctx.finalization.leadId ? String(ctx.finalization.leadId) : null,
+          openingPlaybackConfirmed: Boolean(ctx.finalization.openingPlaybackConfirmed),
+          terminalStateReady: Boolean(ctx.finalization.terminalStateReady),
+        }
+      : undefined;
   return {
     userId: ctx.userId,
     callLogId: String(ctx.callLogId),
@@ -260,6 +322,30 @@ function jsonCallContext(ctx: CallContext): JsonCallContext {
     customerName: ctx.customerName || null,
     agentName: ctx.agentName || null,
     vapiCallType: ctx.vapiCallType || null,
+    ...(finalization ? { finalization } : {}),
+  };
+}
+
+function openAISipFinalizationFromJob(job: JobRow): OpenAISipFinalizationContext | null {
+  const payload = job.payload as unknown as Partial<JsonCallContext>;
+  const finalization = payload.finalization;
+  if (!finalization) return null;
+  if (
+    finalization.provider !== "openai_sip" ||
+    typeof finalization.callId !== "string" ||
+    !finalization.callId.trim() ||
+    typeof finalization.openingPlaybackConfirmed !== "boolean" ||
+    typeof finalization.terminalStateReady !== "boolean" ||
+    (finalization.leadId != null && !/^\d+$/.test(String(finalization.leadId)))
+  ) {
+    throw new Error("Post-call digest job contains invalid OpenAI SIP finalization metadata.");
+  }
+  return {
+    provider: "openai_sip",
+    callId: finalization.callId.trim(),
+    leadId: finalization.leadId == null ? null : String(finalization.leadId),
+    openingPlaybackConfirmed: finalization.openingPlaybackConfirmed,
+    terminalStateReady: finalization.terminalStateReady,
   };
 }
 
@@ -279,20 +365,15 @@ class PostCallTerminalStop extends Error {
   }
 }
 
-async function withPostCallExternalFence<T>(
+async function withPostCallDeletionFence<T>(
   ctx: Pick<CallContext, "userId" | "callLogId">,
   perform: () => Promise<T>,
 ): Promise<T> {
-  const environmentPolicy = await liveExternalActionPolicyForUser(ctx.userId);
-  if (!environmentPolicy.allowed) {
-    throw new PostCallTerminalStop("non_production_external_actions_disabled");
-  }
-
   let callLogId: bigint;
   try {
     callLogId = BigInt(ctx.callLogId as any);
   } catch {
-    throw new Error(`Post-call external fence received an invalid callLogId: ${ctx.callLogId}`);
+    throw new Error(`Post-call deletion fence received an invalid callLogId: ${ctx.callLogId}`);
   }
 
   return drizzle.transaction(
@@ -331,17 +412,36 @@ async function withPostCallExternalFence<T>(
   );
 }
 
+async function withPostCallExternalFence<T>(
+  ctx: Pick<CallContext, "userId" | "callLogId">,
+  perform: () => Promise<T>,
+): Promise<T> {
+  const environmentPolicy = await liveExternalActionPolicyForUser(ctx.userId);
+  if (!environmentPolicy.allowed) {
+    throw new PostCallTerminalStop("non_production_external_actions_disabled");
+  }
+  return withPostCallDeletionFence(ctx, perform);
+}
+
+type PostCallDigestEnqueueOptions = {
+  runAt?: Date;
+  refreshPending?: boolean;
+};
+
 /**
- * Enqueue exactly one durable post-call workflow for a tenant call. Migration
- * 0150 is the concurrency boundary; onConflictDoNothing makes every webhook
- * redelivery adopt the index winner without turning duplicate delivery into a
- * failed Vapi job.
+ * Create or adopt exactly one durable post-call workflow for a tenant call.
+ * OpenAI SIP stages the row beyond the maximum call duration, then atomically
+ * refreshes that pending row when the authoritative terminal call state lands.
+ * Migration 0150 is the concurrency boundary.
  */
 export async function enqueuePostCallDigest(
   ctx: CallContext,
+  db: any = drizzle,
+  options: PostCallDigestEnqueueOptions = {},
 ): Promise<{ jobId: string; deduplicated: boolean }> {
   const payload = jsonCallContext(ctx);
-  const [created] = await drizzle
+  const runAt = options.runAt || new Date();
+  const [created] = await db
     .insert(schema.jobs)
     .values({
       userId: ctx.userId,
@@ -350,13 +450,13 @@ export async function enqueuePostCallDigest(
       payload,
       attempts: 0,
       maxAttempts: 5,
-      runAt: new Date(),
+      runAt,
     })
     .onConflictDoNothing()
     .returning({ id: schema.jobs.id });
   if (created) return { jobId: created.id, deduplicated: false };
 
-  const [existing] = await drizzle
+  const [existing] = await db
     .select({ id: schema.jobs.id })
     .from(schema.jobs)
     .where(
@@ -369,6 +469,24 @@ export async function enqueuePostCallDigest(
     .limit(1);
   if (!existing) {
     throw new Error("Post-call digest enqueue conflicted without an adoptable queue row.");
+  }
+
+  if (options.refreshPending) {
+    const [refreshed] = await db
+      .update(schema.jobs)
+      .set({ payload, runAt, error: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(schema.jobs.id, existing.id),
+          eq(schema.jobs.userId, ctx.userId),
+          eq(schema.jobs.type, "post_call_digest"),
+          eq(schema.jobs.status, "pending"),
+        ),
+      )
+      .returning({ id: schema.jobs.id });
+    if (!refreshed) {
+      throw new Error("Post-call digest recovery job was no longer pending during activation.");
+    }
   }
   return { jobId: existing.id, deduplicated: true };
 }
@@ -932,8 +1050,11 @@ async function authoritativeCallContext(job: JobRow): Promise<CallContext> {
       sentiment: schema.callLogs.sentiment,
       intentLabel: schema.callLogs.intentLabel,
       endedReason: schema.callLogs.endedReason,
+      pipelineError: schema.callLogs.pipelineError,
       demo: schema.callLogs.demo,
       vapiCallId: schema.callLogs.vapiCallId,
+      escalationAttempted: schema.callLogs.escalationAttempted,
+      escalationSucceeded: schema.callLogs.escalationSucceeded,
     })
     .from(schema.callLogs)
     .leftJoin(
@@ -959,9 +1080,12 @@ async function authoritativeCallContext(job: JobRow): Promise<CallContext> {
     sentiment: call.sentiment,
     intentLabel: call.intentLabel,
     endedReason: call.endedReason,
+    pipelineError: call.pipelineError,
     vapiCallType: payload.vapiCallType || null,
     demo: call.demo,
     vapiCallId: call.vapiCallId,
+    escalationAttempted: call.escalationAttempted,
+    escalationSucceeded: call.escalationSucceeded,
   };
 }
 
@@ -1143,8 +1267,40 @@ async function deliverPostCallCsat(
 }
 
 async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
-  const ctx = await authoritativeCallContext(job);
+  let ctx = await authoritativeCallContext(job);
   let progress = await readPostCallProgress(job, ctx.userId);
+  const finalization = openAISipFinalizationFromJob(job);
+  if (finalization && progress.finalization?.state !== "completed") {
+    await withPostCallDeletionFence(ctx, async () => {
+      const { recoverStaleOpenAISipCall, replayOpenAISipPostCallFinalization } =
+        await import("./voice/openai-sip-session");
+      if (!finalization.terminalStateReady) {
+        await recoverStaleOpenAISipCall({
+          userId: ctx.userId,
+          callLogId: ctx.callLogId,
+          finalization,
+        });
+        ctx = await authoritativeCallContext(job);
+      }
+      await replayOpenAISipPostCallFinalization({
+        userId: ctx.userId,
+        callLogId: ctx.callLogId,
+        agentId: ctx.agentId,
+        dialedNumber: ctx.dialedNumber,
+        customerNumber: ctx.customerNumber,
+        direction: ctx.direction,
+        durationSeconds: ctx.durationSeconds,
+        summary: ctx.summary,
+        transcript: ctx.transcript,
+        endedReason: ctx.endedReason,
+        pipelineError: ctx.pipelineError,
+        finalization,
+      });
+    });
+    progress = await checkpointPostCallProgress(job, ctx.userId, {
+      finalization: { state: "completed" },
+    });
+  }
   let core = progress.core?.result || null;
   if (!core) {
     core = await withPostCallExternalFence(ctx, () => runPostCallDigest(ctx));
@@ -1159,6 +1315,25 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
   // and do so attempt-neutrally through the queue's typed settlement path.
   if (isLaunchHardBlocked()) {
     throw new ProviderSpendPausedError("post_call_digest_notifications");
+  }
+
+  const escalationPayload = buildRecordedEscalationWebhookPayload(ctx);
+  if (escalationPayload) {
+    const escalationWebhook = await runClaimedPostCallEffect(
+      job,
+      ctx,
+      progress,
+      "escalationWebhook",
+      { queued: 0 },
+      () =>
+        enqueueCallEscalatedWebhookOnce({
+          userId: ctx.userId,
+          callLogId: String(ctx.callLogId),
+          data: escalationPayload,
+        }),
+      { retrySafe: true },
+    );
+    progress = escalationWebhook.progress;
   }
 
   const outputPreferences = await getPostCallOutputPreferences(ctx.userId);
@@ -1267,7 +1442,8 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
   };
   // This aggregate checkpoint is safe to retry: every optional effect has its
   // own completed/attempting record, so a late database error cannot replay a
-  // Sheets append, CRM write, recap publish, QA enqueue, or push notification.
+  // escalation event, Sheets append, CRM write, recap publish, QA enqueue, or
+  // push notification.
   progress = await checkpointPostCallProgress(job, ctx.userId, {
     core: { state: "completed", result: core },
   });

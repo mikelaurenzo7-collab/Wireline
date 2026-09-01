@@ -2,7 +2,14 @@ import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
-import { RUNTIME_ACTION_SAFETY_BLOCK } from "../agent-runtime";
+import {
+  RUNTIME_ACTION_SAFETY_BLOCK,
+  RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
+} from "../agent-runtime";
+import {
+  buildRoleToolDefsForTenant,
+  clampRuntimePromptPreservingTail,
+} from "../agent-runtime-helpers";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -17,11 +24,11 @@ import {
   runtimeTemplateGuidanceBlock,
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
-import { buildRoleToolDefsForTenant } from "../agent-runtime-helpers";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
   normalizeOpenAIRealtimeVoice,
+  parseOpenAIRealtimeVoice,
   type OpenAIRealtimeToolDefinition,
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
@@ -52,6 +59,21 @@ const PROFILE_TO_VOICE: Record<WirelineVoiceProfile, OpenAIRealtimeVoice> = {
   balanced: "verse",
   direct: "ash",
 };
+
+export function resolveOpenAIAgentVoiceSelection(input: {
+  voiceProvider?: string | null;
+  voiceId?: string | null;
+  phoneVoiceId?: string | null;
+  profile: WirelineVoiceProfile;
+}): OpenAIRealtimeVoice {
+  return (
+    (input.voiceProvider?.trim().toLowerCase() === "presenter"
+      ? null
+      : parseOpenAIRealtimeVoice(input.voiceId)) ||
+    parseOpenAIRealtimeVoice(input.phoneVoiceId) ||
+    normalizeOpenAIRealtimeVoice(PROFILE_TO_VOICE[input.profile])
+  );
+}
 
 const ROLE_TO_PROFILE: Record<string, WirelineVoiceProfile> = {
   sales: "bright",
@@ -171,6 +193,31 @@ function toStringArray(value: unknown): string[] {
     : [];
 }
 
+function runtimeTimeContext(timeZoneValue: string | null, now = new Date()): string {
+  const requested = String(timeZoneValue || "UTC").trim() || "UTC";
+  let timeZone = requested;
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
+  } catch {
+    timeZone = "UTC";
+    parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
+  }
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const date = `${values.year}-${values.month}-${values.day}`;
+  return `TIME CONTEXT:\nToday is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one.`;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -255,30 +302,34 @@ export function composeOpenAIRealtimeInstructions(input: {
       ? "\nPRIVATE TEST: This is a private browser test with the account holder. Search approved Training when needed, but do not send, book, transfer, create records, or change external systems.\n"
       : "\nLIVE PHONE CALL: Use enabled tools only when their action is necessary and the caller supplied the required facts. Treat every tool result as authoritative.\n";
 
-  return [
-    identity,
-    surface,
-    customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
-    internalPolicy && !runtimeReviewRequired
-      ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
-      : "",
-    tone ? `\nTONE:\n${tone}` : "",
-    templateGuidance ? `\n${templateGuidance}` : "",
-    !runtimeReviewRequired && input.agent.kpiFocus
-      ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
-      : "",
-    !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-    runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
-    runtimeReviewRequired
-      ? ""
-      : listBlock("INITIAL APPROVED KNOWLEDGE", input.knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
-    `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
-    internalPolicy && !runtimeReviewRequired
-      ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return clampRuntimePromptPreservingTail(
+    [
+      identity,
+      surface,
+      runtimeReviewRequired ? "" : `\n${runtimeTimeContext(input.agent.timezone)}`,
+      customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
+      internalPolicy && !runtimeReviewRequired
+        ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
+        : "",
+      tone ? `\nTONE:\n${tone}` : "",
+      templateGuidance ? `\n${templateGuidance}` : "",
+      !runtimeReviewRequired && input.agent.kpiFocus
+        ? `\nPRIMARY OUTCOME:\n${trimLine(input.agent.kpiFocus, 600)}`
+        : "",
+      !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", input.directives, 24),
+      runtimeReviewRequired
+        ? ""
+        : listBlock("INITIAL APPROVED KNOWLEDGE", input.knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+      `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
+      `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
+      internalPolicy && !runtimeReviewRequired
+        ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
 }
 
 async function loadRuntime(agentId: string, userId: string) {
@@ -405,11 +456,12 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     runtime.agent.role,
     storedProfile(runtime.agent.businessVariables),
   );
-  const storedPhoneVoice =
-    runtime.agent.voiceProvider?.toLowerCase() === "presenter"
-      ? runtime.agent.phoneVoiceId
-      : runtime.agent.voiceId;
-  const voice = normalizeOpenAIRealtimeVoice(storedPhoneVoice || PROFILE_TO_VOICE[profile]);
+  const voice = resolveOpenAIAgentVoiceSelection({
+    voiceProvider: runtime.agent.voiceProvider,
+    voiceId: runtime.agent.voiceId,
+    phoneVoiceId: runtime.agent.phoneVoiceId,
+    profile,
+  });
   const reviewRequired = isSavedRuntimeReviewRequired(runtime.personality, runtime.agent.role);
   if (reviewRequired) {
     throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);

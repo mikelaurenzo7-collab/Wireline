@@ -52,12 +52,13 @@ describe("PR 729 hardening contract", () => {
 
   it("keeps a chosen agent sender associated with its Messaging Service", () => {
     const twilio = read("src/lib/twilio-service.ts");
+    expect(twilio).toContain("sender = agentSender || sender;");
     const serviceBlock = twilio.slice(
       twilio.indexOf("} else if (settings.messagingServiceSid) {"),
       twilio.indexOf("const reservationReference"),
     );
     expect(serviceBlock).toContain("payload.messagingServiceSid = settings.messagingServiceSid;");
-    expect(serviceBlock).toContain("if (agentSender) payload.from = cleanPhone(agentSender);");
+    expect(serviceBlock).toContain("if (sender) payload.from = cleanPhone(sender);");
   });
 
   it("limits START to reversing only Twilio-created SMS opt-outs", () => {

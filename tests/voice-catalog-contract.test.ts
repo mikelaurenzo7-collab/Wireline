@@ -1,58 +1,41 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+
+import { OPENAI_REALTIME_VOICE_IDS, OPENAI_REALTIME_VOICES } from "../src/lib/voice-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("voice catalog", () => {
-  it("exposes OpenAI live voices and isolates ElevenLabs to Studio", () => {
+  it("exposes only the ten OpenAI live choices in the customer picker", () => {
     const catalog = read("src/lib/voice-catalog.ts");
     expect(catalog).toContain("WIRELINE_LIVE_VOICES");
     expect(catalog).toContain("OPENAI_REALTIME_VOICES");
-    expect(catalog).toContain("ELEVENLABS_CURATED_VOICES");
     expect(catalog).toContain('provider: "openai"');
-    expect(catalog).toContain('provider: "11labs"');
-    expect(catalog).toContain("voicePreviewUrl");
-    expect(catalog).toContain("live calls use OpenAI Realtime");
-    expect(catalog).not.toMatch(/vapi|xai|grok/i);
-    // The picker reads the authenticated, server-curated library. It never
-    // lists or calls a voice-provider account from the browser.
+    expect(catalog).not.toMatch(/elevenlabs|11labs|vapi|xai|grok/i);
+    expect(OPENAI_REALTIME_VOICE_IDS).toHaveLength(10);
+    expect(OPENAI_REALTIME_VOICES.map((voice) => voice.id).sort()).toEqual(
+      [...OPENAI_REALTIME_VOICE_IDS].sort(),
+    );
+    // The customer picker is exactly the managed OpenAI catalog.
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
-    expect(picker).toContain('authFetch("/api/voices")');
+    expect(picker).not.toContain('authFetch("/api/voices")');
     expect(picker).toContain("voice.provider");
+    expect(picker).toContain("OpenAILiveVoiceSandbox");
+    expect(picker).toContain("Preview voice");
+    expect(picker).not.toContain("VoiceCloningStudio");
     expect(picker).not.toContain("api.elevenlabs.io");
-    const routes = read("src/routes/voices-routes.ts");
-    expect(routes).toContain("generateElevenLabsProof");
-    expect(routes).toContain("isCuratedElevenLabsVoiceId");
-    expect(routes).toContain('provider: "11labs"');
+    expect(existsSync(resolve(process.cwd(), "src/routes/voices-routes.ts"))).toBe(false);
+    const registry = read("src/server/register-api-routes.ts");
+    expect(registry).not.toContain("voicesRouter");
+    expect(registry).not.toContain("voices-routes");
     expect(read("src/pages/AgentStudioHome.tsx")).toContain("consumeCreateWarning");
   });
 
-  it("keeps the readiness gate's core voice ids in sync with the catalog", () => {
-    // scripts/check-vendor-readiness.mjs cannot import the TS constant, so it
-    // hardcodes a mirror of ELEVENLABS_CORE_VOICE_IDS. If the two drift, the
-    // launch gate would verify a different core set than the runtime ships.
-    const idsFromBlock = (source: string, marker: string): string[] => {
-      const start = source.indexOf(marker);
-      expect(start).toBeGreaterThan(-1);
-      // Anchor on the `=` so a `readonly string[]` type annotation's brackets
-      // are not mistaken for the array literal.
-      const eq = source.indexOf("=", start);
-      const open = source.indexOf("[", eq);
-      const close = source.indexOf("]", open);
-      return Array.from(source.slice(open, close).matchAll(/"([^"]+)"/g), (m) => m[1]);
-    };
-    const catalogCore = idsFromBlock(
-      read("src/lib/voice-catalog.ts"),
-      "export const ELEVENLABS_CORE_VOICE_IDS",
-    );
-    const gateCore = idsFromBlock(
-      read("scripts/check-vendor-readiness.mjs"),
-      "const coreElevenLabsVoiceIds = new Set(",
-    );
-    expect(catalogCore.length).toBeGreaterThanOrEqual(3);
-    expect([...gateCore].sort()).toEqual([...catalogCore].sort());
+  it("keeps ElevenLabs out of the launch readiness network probe", () => {
+    const readiness = read("scripts/check-vendor-readiness.mjs");
+    expect(readiness).not.toMatch(/elevenlabs|11labs/i);
   });
 
   it("keeps presenters and studio voices out of live phone routing", () => {
@@ -67,6 +50,6 @@ describe("voice catalog", () => {
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     expect(runtime).toContain("runtime.agent.phoneVoiceId");
     expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
-    expect(runtime).not.toContain("ELEVENLABS_CURATED_VOICES");
+    expect(runtime).not.toMatch(/elevenlabs|11labs/i);
   });
 });

@@ -1,6 +1,6 @@
-# Contributing to Wireline
+# Contributing to BotBound
 
-Wireline is a production SaaS monorepo. Changes must preserve tenant isolation, billing integrity, provider-cost controls, compliance gates, and the shared product contract across web, API, browser, native, and ChatGPT surfaces.
+BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, billing integrity, provider-cost controls, compliance gates, and the shared product contract across web, API, browser, native, and ChatGPT surfaces. Technical identifiers may retain the `wireline` namespace for installed-client and migration compatibility; customer-facing language uses BotBound.
 
 ## Working model
 

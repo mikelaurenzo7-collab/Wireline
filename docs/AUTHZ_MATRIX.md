@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 383
-**Protected:** 307
-**Public (allowlisted):** 76
+**Routes scanned:** 380
+**Protected:** 303
+**Public (allowlisted):** 77
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -69,6 +69,7 @@
 | `GET /api/oauth/yahoo/callback` | OAuth initiation/callback (state-validated) |
 | `GET /api/oauth/zoom/callback` | OAuth initiation/callback (state-validated) |
 | `POST /api/twilio-webhook/openai-inbound` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/openai-inbound-dial-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-inbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-bridge` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/openai-outbound-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -382,6 +383,7 @@
 | oauth/zoom.ts | POST | `/api/oauth/zoom/disconnect` | inline | — | yes | Protected |
 | oauth/zoom.ts | GET | `/api/oauth/zoom/url` | inline | — | yes | Protected |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound` | — | — | yes | Public (allowlisted) |
+| openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-dial-complete` | — | — | yes | Public (allowlisted) |
 | openai-inbound-twilio-routes.ts | POST | `/api/twilio-webhook/openai-inbound-fallback` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-bridge` | — | — | yes | Public (allowlisted) |
 | openai-outbound-routes.ts | POST | `/api/twilio-webhook/openai-outbound-fallback` | — | — | yes | Public (allowlisted) |
@@ -430,6 +432,7 @@
 | sms-outcome-routes.ts | PATCH | `/api/sms/threads/:id/outcome` | inline | — | — | Protected |
 | sms-outcome-routes.ts | GET | `/api/sms/threads/:id/outcome` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads` | inline | — | — | Protected |
+| sms-routes.ts | POST | `/api/sms/threads/:id/draft` | inline | — | — | Protected |
 | sms-routes.ts | POST | `/api/sms/threads/:id/mark-read` | inline | — | — | Protected |
 | sms-routes.ts | GET | `/api/sms/threads/:id/messages` | inline | — | — | Protected |
 | sms-routes.ts | POST | `/api/sms/threads/:id/reply` | inline | — | — | Protected |
@@ -462,11 +465,6 @@
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |
-| voices-routes.ts | GET | `/api/voices` | inline | — | — | Protected |
-| voices-routes.ts | DELETE | `/api/voices/:id` | inline | platform_admin | — | Protected |
-| voices-routes.ts | POST | `/api/voices/:id/approve` | inline | platform_admin | — | Protected |
-| voices-routes.ts | GET | `/api/voices/:id/preview` | inline | — | — | Protected |
-| voices-routes.ts | POST | `/api/voices/clone` | inline | platform_admin | — | Protected |
 | webhook-routes.ts | GET | `/api/webhooks` | inline | — | — | Protected |
 | webhook-routes.ts | POST | `/api/webhooks` | inline | permission | — | Protected |
 | webhook-routes.ts | PATCH | `/api/webhooks/:id` | inline | permission | — | Protected |

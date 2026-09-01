@@ -188,11 +188,6 @@ requirePattern(
   "The historical managed-voice trigger must remain installed and be replaced by the OpenAI migration.",
 );
 requirePattern(
-  "drizzle/migrations/0119_elevenlabs_managed_voice_runtime.sql",
-  /CREATE UNIQUE INDEX IF NOT EXISTS uq_cloned_voices_active_source/,
-  "Concurrent clone requests must share one active source reservation.",
-);
-requirePattern(
   "drizzle/migrations/0168_openai_realtime_voice_runtime.sql",
   /voice_provider := 'openai'/,
   "The database must normalize every non-presenter live voice to OpenAI.",
@@ -212,30 +207,10 @@ forbidPattern(
   /provider:\s*"11labs"|fallbackPlan|vapi|xai|grok/i,
   "The managed phone runtime must not retain alternate live-call providers or fallbacks.",
 );
-requirePattern(
-  "src/routes/voices-routes.ts",
-  /requirePlatformAdmin[\s\S]*voiceMutationRateLimit[\s\S]*cloneIpRateLimit/,
-  "Private voice creation must remain founder-only and rate-limited.",
-);
-requirePattern(
-  "src/routes/voices-routes.ts",
-  /status:\s*"creating"[\s\S]*voice\.clone\.consent_granted/,
-  "Provider spend must follow a durable clone reservation and consent record.",
-);
-requirePattern(
-  "src/routes/voices-routes.ts",
-  /CREATING_RESERVATION_TTL_MS[\s\S]*rejectionReason:\s*"reservation_expired"/,
-  "Timed-out clone reservations must recover before a new provider spend.",
-);
 forbidPattern(
   "src/lib/csp.ts",
   /(?:https|wss):\/\/api\.x\.ai|https:\/\/api\.openai\.com/,
   "Server-mediated realtime must not expose provider signaling origins to the browser CSP.",
-);
-forbidPattern(
-  "src/lib/csp.ts",
-  /api\.elevenlabs\.io|cdn\.elevenlabs\.io/,
-  "ElevenLabs is server-side only and must not regain browser network access.",
 );
 
 if (failures.length) {

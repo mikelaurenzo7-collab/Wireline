@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   clampRuntimePromptPreservingTail,
   MAX_RUNTIME_PROMPT_CHARS,
-} from "../src/lib/vapi-helpers";
+} from "../src/lib/agent-runtime-helpers";
 import { buildAgentRuntimeContext } from "../src/lib/agent-runtime";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -35,14 +35,14 @@ describe("runtime prompt clamp preserves the WHOLE guardrail block", () => {
     expect(clamped).toContain("## DO-NOT-DISCUSS TOPICS");
     expect(clamped).toContain("## IMMEDIATE-ESCALATION TRIGGERS");
     expect(clamped).toContain("## ACTION AND RESULT SAFETY");
-    expect(clamped).toContain("## VOICE CONSISTENCY");
+    expect(clamped).toContain("## VOICE AND DELIVERY CONSISTENCY");
   });
 
   it("uses marker strings that actually match the emitted section headers", () => {
     // The old markers "## ESCALATION" / "## DO NOT DISCUSS" never matched the
     // real "## IMMEDIATE-ESCALATION TRIGGERS" / "## DO-NOT-DISCUSS TOPICS"
     // headers, so those guardrails were unprotected during a clamp.
-    const helpers = read("src/lib/vapi-helpers.ts");
+    const helpers = read("src/lib/agent-runtime-helpers.ts");
     expect(helpers).toContain('"\\n\\n## DO-NOT-DISCUSS TOPICS"');
     expect(helpers).toContain('"\\n\\n## IMMEDIATE-ESCALATION TRIGGERS"');
     expect(helpers).not.toContain('"\\n\\n## DO NOT DISCUSS"');
@@ -68,11 +68,11 @@ describe("runtime prompt clamp preserves the WHOLE guardrail block", () => {
     expect(clamped).toContain("## DO-NOT-DISCUSS TOPICS");
     expect(clamped).toContain("## IMMEDIATE-ESCALATION TRIGGERS");
     expect(clamped).toContain("## ACTION AND RESULT SAFETY");
-    expect(clamped).toContain("## VOICE CONSISTENCY");
+    expect(clamped).toContain("## VOICE AND DELIVERY CONSISTENCY");
   });
 
   it("returns the input unchanged when it already fits", () => {
-    const small = "short prompt\n\n## VOICE CONSISTENCY\n- one voice";
+    const small = "short prompt\n\n## VOICE AND DELIVERY CONSISTENCY\n- keep the selected voice";
     expect(clampRuntimePromptPreservingTail(small)).toBe(small);
   });
 
@@ -118,7 +118,7 @@ describe("marketing email honors suppression and unsubscribe on every transport"
 });
 
 describe("voice comms tools record a real task instead of fabricating follow-ups", () => {
-  const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+  const handlers = read("src/lib/bot-tools/core.ts");
 
   it("has a task-writing helper and no dead approved:false branches", () => {
     expect(handlers).toContain("async function recordCommsFollowUpTask");
@@ -151,21 +151,23 @@ describe("voice comms tools record a real task instead of fabricating follow-ups
 });
 
 describe("inbound webhook keeps the tenant binding from a resolved line", () => {
-  const resolver = read("src/lib/vapi-webhook-agent.ts");
+  const resolver = read("src/routes/openai-sip-routes.ts");
 
-  it("rejects a prod request whose phoneNumberId did not resolve to a tenant", () => {
-    // The guard was `!phoneNumberId` (presence); a bogus phoneNumberId slipped
-    // past it into the unfenced query-agent path.
-    expect(resolver).toContain("if (IS_PROD && !enforceTenantUserId)");
-    expect(resolver).not.toContain("if (IS_PROD && !phoneNumberId)");
+  it("rejects a signed OpenAI request whose called number has no assigned tenant", () => {
+    expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, calledNumber)");
+    expect(resolver).toContain("if (!line?.userId || !line.agentId) return null;");
+    expect(resolver).toContain("if (!context) {");
+    expect(resolver).toContain("await rejectCall(callId, 404)");
   });
 
-  it("no longer nulls a tenant binding already established from a line", () => {
+  it("carries the line owner and Bot together into the accepted session", () => {
     const block = resolver.slice(
-      resolver.indexOf("if (!resolvedAgentId && queryRaw)"),
-      resolver.indexOf("if (!resolvedAgentId) {"),
+      resolver.indexOf("const [line] = await drizzle"),
+      resolver.indexOf("async function resolveOutboundContext"),
     );
-    expect(block).not.toContain("enforceTenantUserId = null");
+    expect(block).toContain("userId: line.userId");
+    expect(block).toContain("agentId: line.agentId");
+    expect(block).toContain("tenantStore.run(line.userId");
   });
 });
 

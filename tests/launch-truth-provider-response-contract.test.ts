@@ -20,11 +20,13 @@ describe("launch-truth provider and response-time contracts", () => {
   it("does not publish unsupported support or escalation response times", () => {
     const security = read("src/components/Security.tsx");
     const dataDeletion = read("public/legal/data-deletion.html");
-    const escalation = read("src/routes/escalation-routes.ts");
+    const escalation = read("src/lib/bot-tools/workflow.ts");
 
     expect(security).not.toMatch(/acknowledge reports within|within one business day/i);
     expect(dataDeletion).not.toMatch(/respond within two business days/i);
     expect(escalation).not.toMatch(/4 business hours|sla\s*:/i);
-    expect(escalation).toContain("tracked: taskPersisted");
+    expect(escalation).toContain("schema.followUpTasks");
+    expect(escalation).toContain('taskType: "human_escalation"');
+    expect(escalation).toContain("do not promise a response time");
   });
 });

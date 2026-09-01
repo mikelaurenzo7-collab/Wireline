@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Mail, RefreshCw } from "lucide-react";
 
@@ -148,6 +148,12 @@ export default function EmailInbox({
   const [detailError, setDetailError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const selectedIdRef = useRef<string | null>(null);
+  const outcomeOperationRef = useRef(0);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   const loadThreads = useCallback(async () => {
     setLoading(true);
@@ -209,12 +215,17 @@ export default function EmailInbox({
     if (!selectedId) {
       setDetail(null);
       setDetailError(null);
+      setNotice(null);
       return;
     }
     // Never carry one conversation's detail into another selection. Without
     // this reset, a failed second request can leave the previous sender and
     // messages rendered under the newly selected list row.
     setDetail(null);
+    setDetailError(null);
+    setNotice(null);
+    setOutcomeBusy(null);
+    outcomeOperationRef.current += 1;
     const controller = new AbortController();
     void loadThreadDetail(selectedId, controller.signal);
     return () => controller.abort();
@@ -240,62 +251,79 @@ export default function EmailInbox({
     }
   };
 
-  const persistOutcome = async (status: OutcomeStatus) => {
+  const persistOutcome = async (status: OutcomeStatus, createHandoff = false) => {
     if (!selectedId) return;
-    const response = await authFetch(`/api/emails/threads/${selectedId}/outcome`, {
+    const threadId = selectedId;
+    const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, handoff: createHandoff }),
     });
     const body = (await response.json().catch(() => null)) as {
       thread?: Record<string, unknown>;
+      handoff?: { id: string; status: string } | null;
+      handoff_task_id?: string | null;
       error?: string;
     } | null;
     if (!response.ok || !body?.thread)
       throw new Error(body?.error || "Could not update this conversation.");
     const updated = normalizeThread(body.thread);
     setThreads((current) => current.map((thread) => (thread.id === updated.id ? updated : thread)));
-    setDetail((current) => (current ? { ...current, thread: updated } : current));
+    setDetail((current) =>
+      current?.thread.id === updated.id
+        ? {
+            ...current,
+            thread: updated,
+            handoff: body.handoff ? body.handoff : status === "escalated" ? current.handoff : null,
+          }
+        : current,
+    );
+    return body.handoff ?? null;
   };
 
   const updateOutcome = async (status: OutcomeStatus) => {
     if (!selectedId || outcomeBusy) return;
+    const threadId = selectedId;
+    const operation = ++outcomeOperationRef.current;
     setOutcomeBusy(status);
     setDetailError(null);
+    setNotice(null);
     try {
       await persistOutcome(status);
     } catch (cause) {
-      setDetailError(
-        cause instanceof Error ? cause.message : "Could not update this conversation.",
-      );
+      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+        setDetailError(
+          cause instanceof Error ? cause.message : "Could not update this conversation.",
+        );
+      }
     } finally {
-      setOutcomeBusy(null);
+      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+        setOutcomeBusy(null);
+      }
     }
   };
 
   const requestHandoff = async () => {
     if (!selectedId || outcomeBusy) return;
+    const threadId = selectedId;
+    const operation = ++outcomeOperationRef.current;
     setOutcomeBusy("handoff");
     setDetailError(null);
+    setNotice(null);
     try {
-      const response = await authFetch(`/api/emails/threads/${selectedId}/handoff`, {
-        method: "POST",
-      });
-      const body = (await response.json().catch(() => null)) as {
-        handoff?: { id: string; status: string };
-        error?: string;
-      } | null;
-      if (!response.ok || !body?.handoff)
-        throw new Error(body?.error || "Could not request a handoff.");
-      setDetail((current) => (current ? { ...current, handoff: body.handoff || null } : current));
-      // Handoff creation and thread status are two durable writes. Do not route
-      // the second through updateOutcome(): its user-action busy guard is
-      // intentionally active while this handoff request is in flight.
-      await persistOutcome("escalated");
+      const handoffTask = await persistOutcome("escalated", true);
+      if (!handoffTask) throw new Error("Could not confirm the handoff task.");
+      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+        setNotice("A human follow-up is now in Approvals.");
+      }
     } catch (cause) {
-      setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
+      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+        setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
+      }
     } finally {
-      setOutcomeBusy(null);
+      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+        setOutcomeBusy(null);
+      }
     }
   };
 
@@ -466,6 +494,7 @@ export default function EmailInbox({
                       onClick={() => {
                         setDetail(null);
                         setDetailError(null);
+                        setNotice(null);
                         setSelectedId(thread.id);
                       }}
                       aria-pressed={active}

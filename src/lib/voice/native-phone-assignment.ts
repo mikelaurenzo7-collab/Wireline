@@ -24,9 +24,14 @@ export type NativePhoneAssignmentResult = {
   nativeVoice: OpenAIRealtimeLineStatus | null;
 };
 
-function assertOpenAIRealtimeConfigured(): void {
+function assertOpenAIRealtimeConfigured(userId: string): void {
   if (!openAISipConfigured()) {
-    throw AppError.serviceUnavailable("OpenAI Realtime SIP is not configured.");
+    log.error("Native phone assignment blocked because OpenAI Realtime SIP is not configured", {
+      userId,
+    });
+    throw AppError.serviceUnavailable(
+      "Live-call routing is not configured. Contact BotBound support before assigning this line.",
+    );
   }
 }
 
@@ -66,7 +71,7 @@ async function assignNativePhoneLineUnfenced(input: {
     if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
       throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
     }
-    assertOpenAIRealtimeConfigured();
+    assertOpenAIRealtimeConfigured(input.userId);
   }
 
   const nextAgentId = input.agentId !== undefined ? input.agentId : current.agentId;
@@ -96,35 +101,32 @@ async function assignNativePhoneLineUnfenced(input: {
   const currentAgentPredicate = current.agentId
     ? eq(schema.phoneNumbers.agentId, current.agentId)
     : isNull(schema.phoneNumbers.agentId);
-  const [updated] = await runCompanyIdentityMutation<Array<typeof schema.phoneNumbers.$inferSelect>>(
-    input.userId,
-    "phone_number_changed",
-    (tx) =>
-      tx
-        .update(schema.phoneNumbers)
-        .set({
-          ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
-          ...(input.campaignLabel !== undefined
-            ? { campaignLabel: input.campaignLabel.trim() || null }
-            : {}),
-          ...(carrierNumberId !== current.vapiNumberId ? { vapiNumberId: carrierNumberId } : {}),
-        })
-        .where(
-          and(
-            eq(schema.phoneNumbers.id, input.lineId),
-            eq(schema.phoneNumbers.userId, input.userId),
-            currentAgentPredicate,
-          ),
-        )
-        .returning(),
+  const [updated] = await runCompanyIdentityMutation<
+    Array<typeof schema.phoneNumbers.$inferSelect>
+  >(input.userId, "phone_number_changed", (tx) =>
+    tx
+      .update(schema.phoneNumbers)
+      .set({
+        ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
+        ...(input.campaignLabel !== undefined
+          ? { campaignLabel: input.campaignLabel.trim() || null }
+          : {}),
+        ...(carrierNumberId !== current.vapiNumberId ? { vapiNumberId: carrierNumberId } : {}),
+      })
+      .where(
+        and(
+          eq(schema.phoneNumbers.id, input.lineId),
+          eq(schema.phoneNumbers.userId, input.userId),
+          currentAgentPredicate,
+        ),
+      )
+      .returning(),
   );
   if (!updated) throw AppError.conflict("The phone assignment changed in another request.");
 
   return {
     line: updated,
-    nativeVoice: updated.agentId
-      ? { provider: "openai_realtime", status: "active" }
-      : null,
+    nativeVoice: updated.agentId ? { provider: "openai_realtime", status: "active" } : null,
   };
 }
 

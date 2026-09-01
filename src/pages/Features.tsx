@@ -51,7 +51,7 @@ export default function Features() {
   return (
     <div className="marketing-surface wl-features-page bg-background text-foreground">
       <PageMeta
-        title="FEATURES"
+        title="FEATURES | BotBound"
         description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
         path="/features"
       />
@@ -129,9 +129,7 @@ function FeatureCard({
     <article className="wl-stitch-card flex flex-col rounded-xl p-3.5 text-left">
       <Icon size={16} className="text-primary" aria-hidden="true" />
       <h3 className="wl-card-title mt-2 max-w-[18ch]">{title}</h3>
-      <p className="mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
-        {body}
-      </p>
+      <p className="mt-1.5 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">{body}</p>
     </article>
   );
 }

@@ -16,6 +16,8 @@ const root = process.cwd();
 const extensionRoot = resolve(root, "apps/browser-extension");
 const outputRoot = mkdtempSync(join(tmpdir(), "wireline-extension-contract-"));
 const VERBATIM_SOURCE_DIRS = ["panel", "background"];
+const EXTENSION_BUILD_CHILD_TIMEOUT_MS = 120_000;
+const EXTENSION_BUILD_HOOK_MARGIN_MS = 30_000;
 
 type ZipEntry = { name: string; crc: number };
 
@@ -67,12 +69,13 @@ beforeAll(() => {
   const result = spawnSync(
     process.execPath,
     [resolve(extensionRoot, "scripts/build.mjs"), "--output-root", outputRoot, "--no-publish"],
-    { cwd: root, encoding: "utf8" },
+    { cwd: root, encoding: "utf8", timeout: EXTENSION_BUILD_CHILD_TIMEOUT_MS },
   );
+  if (result.error) throw result.error;
   if (result.status !== 0) {
     throw new Error(result.stderr || result.stdout || "Browser-extension test packaging failed.");
   }
-}, 60_000);
+}, EXTENSION_BUILD_CHILD_TIMEOUT_MS + EXTENSION_BUILD_HOOK_MARGIN_MS);
 
 afterAll(() => {
   rmSync(outputRoot, { recursive: true, force: true });

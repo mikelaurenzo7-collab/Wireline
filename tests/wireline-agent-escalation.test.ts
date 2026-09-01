@@ -107,10 +107,7 @@ describe("BotBound founder-fleet escalation policy/backtesting helper", () => {
   });
 
   it("keeps the production support-ticket tool durable and failure-honest", () => {
-    const workflow = readFileSync(
-      resolve(process.cwd(), "src/routes/vapi/tool-handlers-workflow.ts"),
-      "utf8",
-    );
+    const workflow = readFileSync(resolve(process.cwd(), "src/lib/bot-tools/workflow.ts"), "utf8");
     const handler = workflow.slice(
       workflow.indexOf('if (fn === "create_support_ticket")'),
       workflow.indexOf('if (fn === "leave_voicemail")'),

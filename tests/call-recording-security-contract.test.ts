@@ -13,8 +13,7 @@ describe("call recording access contract", () => {
     expect(route).toContain("authenticateUser");
     expect(route).toContain("eq(schema.callLogs.userId, req.user.id)");
     expect(route).toContain('"Cache-Control", "private, no-store, max-age=0"');
-    expect(route).toContain("/mono-recording");
-    expect(route).toContain("VAPI_PRIVATE_KEY");
+
     expect(route).toContain("TWILIO_AUTH_TOKEN");
     expect(route).toContain('redirect: "manual"');
     expect(route).toContain('trustedTwilioMediaUrl(upstream.headers.get("location"), currentUrl)');

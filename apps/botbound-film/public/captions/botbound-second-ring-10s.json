@@ -1,0 +1,65 @@
+[
+  {
+    "text": "[Phone ringing]",
+    "startMs": 0,
+    "endMs": 600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Still busy?",
+    "startMs": 600,
+    "endMs": 1400,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "[Second phone ring; connection chime]",
+    "startMs": 1400,
+    "endMs": 2100,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The second ring. That’s where BotBound begins.",
+    "startMs": 2100,
+    "endMs": 3600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Configured example.",
+    "startMs": 3600,
+    "endMs": 4100,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Listen. Decide. Act.",
+    "startMs": 4100,
+    "endMs": 5100,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Capture intent. Follow your rules. Move to the next step.",
+    "startMs": 5100,
+    "endMs": 6600,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound. You can't answer every call. Your Bot can.",
+    "startMs": 6900,
+    "endMs": 8800,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "botbound.me",
+    "startMs": 8800,
+    "endMs": 9950,
+    "timestampMs": null,
+    "confidence": null
+  }
+]

@@ -134,7 +134,7 @@ async function main() {
   const result = await vercelFetch(promotePath, { method: "POST" });
   console.log("Promote response:", JSON.stringify(result, null, 2));
   console.log("\nProduction domains for this project should now target:", deploymentId);
-  console.log("Inspect: https://vercel.com/revaluate/wireline/deployments");
+  console.log("Inspect: https://vercel.com/revaluate/botbound/deployments");
 }
 
 main().catch((e) => {

@@ -33,12 +33,32 @@ import {
 
 export * from "./twilio-service-base";
 
+/**
+ * A concurrent request already owns this durable provider attempt. The losing
+ * request must not refund the shared Runtime Balance reservation while the
+ * winner may be crossing the carrier boundary.
+ */
+export class SmsProviderAttemptAlreadyClaimedError extends Error {
+  constructor() {
+    super("This SMS send operation has already reached the carrier-attempt boundary.");
+    this.name = "SmsProviderAttemptAlreadyClaimedError";
+  }
+}
+
 const GSM_BASIC = new Set(
   Array.from(
     "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà",
   ),
 );
 const GSM_EXTENSION = new Set(Array.from("^{}\\[~]|€"));
+
+// Only statuses whose response itself proves Twilio rejected the request may
+// release the reserve and permit a new provider attempt. In particular, 408
+// and unrecognized 4xx responses are transport-ambiguous: the create may have
+// reached Twilio before the response was lost.
+const DEFINITIVE_TWILIO_MESSAGE_REJECTION_STATUSES = new Set([
+  400, 401, 402, 403, 404, 405, 406, 410, 412, 413, 415, 422, 428, 429, 431,
+]);
 
 interface MessagingSettings {
   enabled: boolean;
@@ -205,18 +225,43 @@ async function settingsFor(userId: string): Promise<MessagingSettings> {
   };
 }
 
-async function existingThread(userId: string, customerNumber: string) {
+async function existingThread(userId: string, customerNumber: string, destinationNumber?: string) {
   const [thread] = await drizzle
     .select({ id: schema.smsThreads.id, agentId: schema.smsThreads.agentId })
     .from(schema.smsThreads)
     .where(
-      and(
-        eq(schema.smsThreads.userId, userId),
-        eq(schema.smsThreads.customerNumber, customerNumber),
-      ),
+      destinationNumber
+        ? and(
+            eq(schema.smsThreads.userId, userId),
+            eq(schema.smsThreads.customerNumber, customerNumber),
+            eq(schema.smsThreads.destinationNumber, destinationNumber),
+          )
+        : and(
+            eq(schema.smsThreads.userId, userId),
+            eq(schema.smsThreads.customerNumber, customerNumber),
+          ),
     )
     .limit(1);
   return thread || null;
+}
+
+async function tenantOwnsSmsSender(
+  userId: string,
+  sender: string,
+  settings: MessagingSettings,
+): Promise<boolean> {
+  const normalized = cleanPhone(sender);
+  if (!normalized) return false;
+  if (cleanPhone(settings.smsFromNumber) === normalized) return true;
+
+  const [line] = await drizzle
+    .select({ id: schema.phoneNumbers.id })
+    .from(schema.phoneNumbers)
+    .where(
+      and(eq(schema.phoneNumbers.userId, userId), eq(schema.phoneNumbers.phoneNumber, normalized)),
+    )
+    .limit(1);
+  return Boolean(line?.id);
 }
 
 async function blockedByDnc(userId: string, phone: string): Promise<boolean> {
@@ -281,6 +326,8 @@ export async function sendTenantMessage(
     body: string;
     channel?: TwilioMessageChannel;
     agentId?: string;
+    /** Exact tenant-owned SMS sender to preserve a conversation's destination line. */
+    fromNumber?: string;
     /** Stable internal operation identity for retry-safe Runtime Balance reservation. */
     idempotencyKey?: string;
     /** Attempt-scoped reserve; pre-provider failures are refunded before the next attempt. */
@@ -296,6 +343,7 @@ export async function sendTenantMessage(
 ): Promise<TwilioSendResult> {
   const channel = params.channel || "sms";
   const phone = cleanPhone(params.to);
+  const requestedSender = channel === "sms" ? cleanPhone(params.fromNumber) : "";
   const body = String(params.body || "").trim();
   if (!phone || !body) {
     return {
@@ -303,6 +351,16 @@ export async function sendTenantMessage(
       configured: isTwilioConfigured(),
       enabled: false,
       reason: "A destination and message body are required.",
+      channel,
+    };
+  }
+  if (channel === "sms" && params.fromNumber && !requestedSender) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: "The selected SMS sending line is invalid.",
+      code: "SMS_SENDER_INVALID",
       channel,
     };
   }
@@ -375,7 +433,7 @@ export async function sendTenantMessage(
 
   const [settings, thread, dncBlocked] = await Promise.all([
     settingsFor(userId),
-    existingThread(userId, phone),
+    existingThread(userId, phone, requestedSender || undefined),
     blockedByDnc(userId, phone),
   ]);
   if (!settings.enabled) {
@@ -393,6 +451,16 @@ export async function sendTenantMessage(
       configured: isTwilioConfigured(),
       enabled: true,
       reason: "This contact has opted out of messaging.",
+      channel,
+    };
+  }
+  if (requestedSender && !(await tenantOwnsSmsSender(userId, requestedSender, settings))) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: true,
+      reason: "The selected SMS sending line is not owned by this workspace.",
+      code: "SMS_SENDER_NOT_OWNED",
       channel,
     };
   }
@@ -453,7 +521,10 @@ export async function sendTenantMessage(
 
       let sender = channel === "whatsapp" ? settings.whatsappFromNumber : settings.smsFromNumber;
       let agentSender: string | null = null;
-      if (channel === "sms" && params.agentId) {
+      if (channel === "sms" && requestedSender) {
+        sender = requestedSender;
+        agentSender = requestedSender;
+      } else if (channel === "sms" && params.agentId) {
         agentSender = await resolveAgentSmsFromNumber(userId, params.agentId);
         sender = agentSender || sender;
       }
@@ -492,7 +563,13 @@ export async function sendTenantMessage(
         payload.from = address(cleanPhone(sender), channel);
       } else if (settings.messagingServiceSid) {
         payload.messagingServiceSid = settings.messagingServiceSid;
-        if (agentSender) payload.from = cleanPhone(agentSender);
+        // Keep Messaging Service controls while pinning the exact tenant line.
+        // If `From` is omitted, Twilio may dynamically select another sender
+        // from the pool and the immediate `accepted` response may not identify
+        // it yet. Persisting the configured default in that case would invent a
+        // conversation route. Twilio supports both fields when this sender is
+        // in the Service pool; a misconfigured pool then fails closed.
+        if (sender) payload.from = cleanPhone(sender);
       } else if (sender) {
         payload.from = cleanPhone(sender);
       }
@@ -533,6 +610,15 @@ export async function sendTenantMessage(
       try {
         await params.beforeProviderAttempt?.();
       } catch (error) {
+        if (error instanceof SmsProviderAttemptAlreadyClaimedError) {
+          log.warn("Twilio provider attempt already claimed; retaining shared reservation", {
+            userId,
+            channel,
+            reservationReference,
+            reservationRetained: true,
+          });
+          throw error;
+        }
         try {
           await refundRuntimeUsage({
             userId,
@@ -576,11 +662,10 @@ export async function sendTenantMessage(
         );
       } catch (error) {
         const status = Number((error as { status?: number } | null)?.status || 0);
-        // A Twilio 4xx means the provider definitively rejected the request. Network
-        // and 5xx errors are ambiguous: the message may have been accepted before the
-        // response was lost, so retain the reservation for reconciliation instead of
-        // refunding and potentially funding duplicate carrier spend.
-        const definitiveRejection = status >= 400 && status < 500;
+        // Only a narrow set of explicit provider rejections is safe to refund.
+        // Timeouts, unknown statuses, and server errors are ambiguous: the
+        // message may have been accepted before the response was lost.
+        const definitiveRejection = DEFINITIVE_TWILIO_MESSAGE_REJECTION_STATUSES.has(status);
         if (definitiveRejection) {
           try {
             // Refund is idempotent on reservationReference, including redelivered
@@ -681,6 +766,10 @@ export async function sendTenantMessage(
       const local = await finalizeAcceptedTwilioMessage({
         userId,
         customerNumber: phone,
+        destinationNumber:
+          channel === "sms"
+            ? cleanPhone(String(message.from || payload.from || "")) || undefined
+            : undefined,
         body,
         sid: message.sid,
         channel,

@@ -57,11 +57,9 @@ router.patch(
 
       if (!thread) throw AppError.fromHttpStatus(404, "Email conversation not found.");
 
-      const { updated, handoffTaskId, taskStateChanged } = await drizzle.transaction(async (tx) => {
+      const { updated, handoffTask, taskStateChanged } = await drizzle.transaction(async (tx) => {
         const lockKey = handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id);
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
-        );
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
 
         const [nextThread] = await tx
           .update(schema.emailThreads)
@@ -71,12 +69,12 @@ router.patch(
           )
           .returning();
 
-        let nextHandoffTaskId: string | null = null;
+        let nextHandoffTask: { id: string; status: string } | null = null;
         let nextTaskStateChanged = false;
 
         if (handoff) {
           const [existing] = await tx
-            .select({ id: schema.followUpTasks.id })
+            .select({ id: schema.followUpTasks.id, status: schema.followUpTasks.status })
             .from(schema.followUpTasks)
             .where(
               and(
@@ -90,7 +88,7 @@ router.patch(
             .limit(1);
 
           if (existing) {
-            nextHandoffTaskId = existing.id;
+            nextHandoffTask = { id: existing.id, status: existing.status || "pending" };
           } else {
             const [task] = await tx
               .insert(schema.followUpTasks)
@@ -107,8 +105,8 @@ router.patch(
                 priority: "high",
                 status: "pending",
               })
-              .returning({ id: schema.followUpTasks.id });
-            nextHandoffTaskId = task?.id ?? null;
+              .returning({ id: schema.followUpTasks.id, status: schema.followUpTasks.status });
+            nextHandoffTask = task ? { id: task.id, status: task.status || "pending" } : null;
             nextTaskStateChanged = Boolean(task?.id);
           }
         } else {
@@ -136,7 +134,7 @@ router.patch(
 
         return {
           updated: nextThread,
-          handoffTaskId: nextHandoffTaskId,
+          handoffTask: nextHandoffTask,
           taskStateChanged: nextTaskStateChanged,
         };
       });
@@ -145,7 +143,8 @@ router.patch(
 
       res.json({
         thread: mapObjectToSnake(updated),
-        handoff_task_id: handoffTaskId,
+        handoff: handoffTask,
+        handoff_task_id: handoffTask?.id ?? null,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;

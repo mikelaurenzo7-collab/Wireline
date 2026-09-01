@@ -1,3 +1,4 @@
+import { OPENAI_REALTIME_VOICE_IDS } from "../voice-catalog";
 import { OPENAI_REALTIME_PRICING_MODEL } from "./openai-realtime-pricing";
 
 // Pricing/admission is certified for this model. An environment override may
@@ -7,20 +8,18 @@ export const OPENAI_REALTIME_DEFAULT_VOICE = process.env.OPENAI_REALTIME_VOICE |
 export const OPENAI_REALTIME_DEFAULT_TRANSCRIBER =
   process.env.OPENAI_REALTIME_TRANSCRIBER || "gpt-4o-mini-transcribe";
 
-export const OPENAI_REALTIME_VOICES = [
-  "alloy",
-  "ash",
-  "ballad",
-  "coral",
-  "echo",
-  "sage",
-  "shimmer",
-  "verse",
-  "marin",
-  "cedar",
-] as const;
+export const OPENAI_REALTIME_VOICES = OPENAI_REALTIME_VOICE_IDS;
 
 export type OpenAIRealtimeVoice = (typeof OPENAI_REALTIME_VOICES)[number];
+
+export function parseOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice | null {
+  const value = String(raw || "")
+    .trim()
+    .toLowerCase();
+  return (OPENAI_REALTIME_VOICES as readonly string[]).includes(value)
+    ? (value as OpenAIRealtimeVoice)
+    : null;
+}
 
 export interface OpenAIRealtimeToolDefinition {
   type: "function";
@@ -35,15 +34,9 @@ export interface OpenAIRealtimeToolDefinition {
 }
 
 export function normalizeOpenAIRealtimeVoice(raw: unknown): OpenAIRealtimeVoice {
-  const value = String(raw || "")
-    .trim()
-    .toLowerCase();
-  const supportedVoices = OPENAI_REALTIME_VOICES as readonly string[];
-  if (supportedVoices.includes(value)) return value as OpenAIRealtimeVoice;
-  const configuredDefault = OPENAI_REALTIME_DEFAULT_VOICE.trim().toLowerCase();
-  return supportedVoices.includes(configuredDefault)
-    ? (configuredDefault as OpenAIRealtimeVoice)
-    : "marin";
+  const selected = parseOpenAIRealtimeVoice(raw);
+  if (selected) return selected;
+  return parseOpenAIRealtimeVoice(OPENAI_REALTIME_DEFAULT_VOICE) || "marin";
 }
 
 export function buildOpenAIRealtimeInstructions(agentName?: string | null): string {

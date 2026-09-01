@@ -12,7 +12,7 @@ import {
   DEFAULT_VOICE_ID,
   speakable,
 } from "../scripts/generate-campaign-vo.mjs";
-import { ELEVENLABS_CURATED_VOICES } from "../src/lib/voice-catalog";
+import { OPENAI_REALTIME_VOICE_IDS } from "../src/lib/voice-catalog";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -58,7 +58,7 @@ describe("launch campaign voiceover", () => {
       expect(track.text).not.toMatch(/\bWireline\b|trywireline\.com/i);
       expect(() => assertBotBoundCampaignText(track.text, track.id)).not.toThrow();
       expect(
-        campaignTrackFingerprint({ track, engine: "elevenlabs", voiceId: DEFAULT_VOICE_ID }),
+        campaignTrackFingerprint({ track, engine: "openai", voiceId: DEFAULT_VOICE_ID }),
       ).toMatch(/^[0-9a-f]{64}$/);
     }
     expect(() => assertBotBoundCampaignText("Welcome to Wireline.")).toThrow(
@@ -76,16 +76,16 @@ describe("launch campaign voiceover", () => {
     const customVoiceId = "custom-launch-voice";
     const expected = campaignTrackFingerprint({
       track,
-      engine: "elevenlabs",
+      engine: "openai",
       voiceId: customVoiceId,
     });
     expect(
       campaignTrackFingerprintFromProvenance({
         track,
-        expectedEngine: "elevenlabs",
+        expectedEngine: "openai",
         provenance: {
           track_id: track.id,
-          engine: "elevenlabs",
+          engine: "openai",
           voice_id: customVoiceId,
         },
       }),
@@ -93,10 +93,10 @@ describe("launch campaign voiceover", () => {
     expect(() =>
       campaignTrackFingerprintFromProvenance({
         track,
-        expectedEngine: "xai",
+        expectedEngine: "openai",
         provenance: {
           track_id: track.id,
-          engine: "elevenlabs",
+          engine: "alternate",
           voice_id: customVoiceId,
         },
       }),
@@ -145,13 +145,18 @@ describe("launch campaign voiceover", () => {
     }
   });
 
-  it("narrates with a real runtime Studio voice, not a marketing-only voice", () => {
-    // The launch reels claim voice quality. That claim is honest because the
-    // narration voice is one of the curated ElevenLabs Studio voices customers
-    // actually put on their phone line — the same catalog the call runtime
-    // routes through Vapi. If the default drifts off-catalog, the reels start
-    // selling a voice the product does not ship.
-    expect(ELEVENLABS_CURATED_VOICES.map((voice) => voice.id)).toContain(DEFAULT_VOICE_ID);
+  it("uses an OpenAI voice from the same fixed customer catalog", () => {
+    expect(OPENAI_REALTIME_VOICE_IDS).toContain(DEFAULT_VOICE_ID);
+    expect(mediaKit).toContain("default OpenAI TTS narration voice (`marin`)");
+    expect(mediaKit).toContain("`gpt-4o-mini-tts`");
+    expect(mediaKit).toContain("Alternate engines are rejected");
+
+    const script = read("scripts/generate-campaign-vo.mjs");
+    expect(script).toContain('endpoint: "https://api.openai.com/v1/audio/speech"');
+    expect(script).toContain('const OPENAI_TTS_MODEL = "gpt-4o-mini-tts"');
+    expect(script).toContain('const engine = engineIndex >= 0 ? argv[engineIndex + 1] : "openai"');
+    expect(script).toContain('if (engine !== "openai")');
+    expect(script).not.toMatch(/api\.elevenlabs\.io|api\.x\.ai|ELEVENLABS_API_KEY|XAI_API_KEY/);
   });
 
   it("keeps campaign audio out of the production call path", () => {

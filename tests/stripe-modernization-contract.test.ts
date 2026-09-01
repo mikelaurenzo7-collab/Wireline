@@ -10,11 +10,15 @@ describe("Stripe Checkout modernization contract", () => {
     const packageJson = JSON.parse(read("package.json")) as {
       dependencies?: Record<string, string>;
     };
-    expect(packageJson.dependencies?.stripe).toBe("^22.5.0");
+    const packageLock = JSON.parse(read("package-lock.json")) as {
+      packages?: Record<string, { version?: string }>;
+    };
+    expect(packageJson.dependencies?.stripe).toBe("^22.6.0");
+    expect(packageLock.packages?.["node_modules/stripe"]?.version).toBe("22.6.0");
 
     const helpers = read("src/lib/stripe-helpers.ts");
     const apiVersion = read("src/lib/stripe-api-version.ts");
-    expect(apiVersion).toContain('"2026-07-29.dahlia"');
+    expect(apiVersion).toContain('"2026-08-26.dahlia"');
     expect(helpers).toContain("export { STRIPE_API_VERSION }");
 
     for (const file of [
@@ -25,7 +29,7 @@ describe("Stripe Checkout modernization contract", () => {
       "scripts/setup-stripe-catalog.mjs",
       "scripts/audit-stripe-account-identity-live.mjs",
     ]) {
-      expect(read(file), file).toContain('const API_VERSION = "2026-07-29.dahlia"');
+      expect(read(file), file).toContain('const API_VERSION = "2026-08-26.dahlia"');
     }
   });
 

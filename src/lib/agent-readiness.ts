@@ -6,7 +6,7 @@
  * `/api/phone-numbers`. When that lookup fails, AgentsContext leaves the field
  * null for every agent and raises `phoneLookupDegraded` — so "no number" and
  * "we could not ask" arrive as the same value. Reading it as a bare boolean
- * labelled a customer's working line "Needs setup" and pointed them at buying
+ * labelled a customer's working line "No live line" and pointed them at buying
  * another number, which is billed. Three states, not two.
  */
 
@@ -26,7 +26,7 @@ const LINE_STATUS_LABELS: Record<AgentLineStatus, string> = {
   // Matches the vocabulary already used for the other degraded notices rather
   // than inventing a third way to say the same thing.
   unavailable: "Status unavailable",
-  "needs-setup": "Needs setup",
+  "needs-setup": "No live line",
 };
 
 export function agentReadinessLabel(

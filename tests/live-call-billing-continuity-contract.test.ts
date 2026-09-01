@@ -40,27 +40,31 @@ describe("live-call billing continuity contract", () => {
   });
 
   it("awaits voice metering so a serverless freeze cannot drop it", () => {
-    const handlers = read("src/lib/vapi-handlers.ts");
+    const handlers = read("src/lib/voice/openai-sip-session.ts");
     expect(handlers).toContain("await trackVoiceMinutes({");
     expect(handlers).not.toContain("void trackVoiceMinutes({");
   });
 
-  it("re-drives idempotent voice metering before the duplicate early return", () => {
+  it("re-drives idempotent voice metering through the durable post-call job", () => {
     /**
      * The monthly counter now has its own durable per-provider-call checkpoint,
-     * so duplicate Vapi delivery is the recovery mechanism for a failure after
-     * the call-log claim. Metering MUST run before the call-log duplicate return:
-     * a DNC write can intentionally throw first, and the retry must still finish
-     * the count/debit without re-running downstream notifications or enrichment.
+     * and the unique post-call job is the recovery mechanism after the SIP
+     * session has already returned 202. Duplicate incoming-call delivery cannot
+     * recover finalization because the call-log claim intentionally suppresses it.
      */
-    const handlers = stripComments(read("src/lib/vapi-handlers.ts"));
-    const duplicateReturn = handlers.indexOf("if (!insertedFresh) {");
-    const metering = handlers.indexOf("await trackVoiceMinutes({");
+    const handlers = stripComments(read("src/lib/voice/openai-sip-session.ts"));
+    const digest = stripComments(read("src/lib/post-call-digest.ts"));
+    const replay = handlers.indexOf("export async function replayOpenAISipPostCallFinalization");
+    const metering = handlers.indexOf("await trackVoiceMinutes({", replay);
+    const workerReplay = digest.indexOf("await replayOpenAISipPostCallFinalization({");
+    const core = digest.indexOf("let core = progress.core?.result", workerReplay);
 
-    expect(duplicateReturn).toBeGreaterThan(-1);
-    expect(metering).toBeGreaterThan(-1);
-    expect(metering).toBeLessThan(duplicateReturn);
-    expect(handlers.split("trackVoiceMinutes(").length - 1).toBe(1);
+    expect(replay).toBeGreaterThan(-1);
+    expect(metering).toBeGreaterThan(replay);
+    expect(workerReplay).toBeGreaterThan(-1);
+    expect(core).toBeGreaterThan(workerReplay);
+    expect(digest).toContain('finalization: { state: "completed" }');
+    expect(handlers).toContain("if (!callLogId)");
   });
 
   it("keys the monthly counter checkpoint by tenant and provider call", () => {

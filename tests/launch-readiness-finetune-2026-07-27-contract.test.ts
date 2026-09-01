@@ -18,20 +18,6 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(admin).toContain("Could not fetch available BotBound phone numbers.");
   });
 
-  it("fails closed when carrier sync lacks the platform Vapi key", () => {
-    const carrier = read("src/routes/carrier-routes.ts");
-    const block = carrier.slice(
-      carrier.indexOf('"/api/carrier/numbers"'),
-      carrier.indexOf("export default router"),
-    );
-    expect(block).not.toMatch(
-      /if\s*\(\s*!vapiSecret\s*\)\s*return\s+res\.json\(\s*\{\s*numbers:\s*\[\s*\]\s*\}\s*\)/,
-    );
-    expect(block).toContain("Voice carrier sync is temporarily unavailable");
-    expect(block).toContain("AppError.fromHttpStatus(");
-    expect(block).toContain("503");
-  });
-
   it("OutcomeLedger and ApprovalInbox surface non-OK loads instead of silent empty lists", () => {
     const ledger = read("src/components/OutcomeLedger.tsx");
     const inbox = read("src/components/ApprovalInbox.tsx");
@@ -106,15 +92,6 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     const analytics = read("src/components/CallOpsAnalytics.tsx");
     expect(analytics).toContain('setError("Could not load call analytics.")');
     expect(analytics).toContain("Analytics unavailable");
-  });
-
-  it("reports managed Vapi readiness instead of the dead tenant vapi_private_key column", () => {
-    const settings = read("src/routes/settings-routes.ts");
-    expect(settings).toContain(
-      "process.env.XAI_API_KEY?.trim() || process.env.VAPI_PRIVATE_KEY?.trim()",
-    );
-    expect(settings).toContain("platformVoiceReady && tenantHasNumber");
-    expect(settings).not.toContain("has_voice: !!settingsRow?.vapiPrivateKey");
   });
 
   it("returns 200 { user: null } for anonymous session probes", () => {

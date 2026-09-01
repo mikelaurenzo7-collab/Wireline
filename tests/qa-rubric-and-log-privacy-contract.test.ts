@@ -19,7 +19,7 @@ const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8").replace
 
 describe("the QA rubric actually runs", () => {
   it("treats the heuristic breakdown as provisional", () => {
-    // What the Vapi end-of-call handler writes on every single call.
+    // Shape retained for legacy call rows written by the retired finalizer.
     const heuristic = {
       source: QA_SCORE_SOURCE_HEURISTIC,
       base: 60,
@@ -72,8 +72,11 @@ describe("the QA rubric actually runs", () => {
     expect(qaRubricShouldRun("not an object")).toBe(true);
   });
 
-  it("stamps both writers so the guard can tell them apart", () => {
-    expect(read("src/lib/vapi-handlers.ts")).toContain("source: QA_SCORE_SOURCE_HEURISTIC");
+  it("queues native calls for the final rubric without a provisional score blocking it", () => {
+    expect(read("src/lib/post-call-digest.ts")).toContain('type: "auto_qa_score"');
+    expect(read("src/lib/voice/openai-sip-session.ts")).not.toContain(
+      "source: QA_SCORE_SOURCE_HEURISTIC",
+    );
     expect(read("src/lib/job-worker-base.ts")).toContain("source: QA_SCORE_SOURCE_RUBRIC");
   });
 
@@ -152,31 +155,20 @@ describe("customer conversation content and identifiers stay out of logs", () =>
   });
 
   it("routes the sites that were fixed through the masking helpers", () => {
-    expect(read("src/routes/vapi-v2.ts")).toContain(
-      "transcript: conversationShapeForLog(transcriptText)",
+    expect(read("src/routes/openai-sip-routes.ts")).not.toMatch(
+      /log\.(?:info|warn|error|debug)\([\s\S]{0,400}transcript:/,
     );
-    expect(read("src/routes/escalation-routes.ts")).toContain(
-      "callerPhone: phoneSuffixForLog(callerPhone)",
+    expect(read("src/lib/bot-tools/workflow.ts")).not.toMatch(
+      /log\.(?:info|warn|error|debug)\([\s\S]{0,400}(?:callerPhone|customerNumber|phone):/,
     );
     expect(read("src/routes/auth-oauth-routes.ts")).toContain("emailMaskForLog(normalized)");
     for (const path of [
       "src/lib/csat-service.ts",
-      "src/routes/xai-voice-routes.ts",
       "src/routes/compliance-routes.ts",
-      "src/routes/vapi/tool-handlers-core.ts",
+      "src/lib/bot-tools/core.ts",
     ]) {
       expect(read(path)).toContain("phoneSuffixForLog(");
     }
-  });
-
-  it("still broadcasts the transcript to the account holder's own session", () => {
-    // The SSE stream is the product surface — a tenant watching their own live
-    // call. Redaction belongs in the log sink, not in the feature.
-    const route = read("src/routes/vapi-v2.ts");
-    const broadcast = route.slice(
-      route.indexOf('sseBroadcaster.broadcast(\n          "handoff_requested"'),
-    );
-    expect(broadcast.slice(0, 400)).toContain("transcript: transcriptText");
   });
 });
 

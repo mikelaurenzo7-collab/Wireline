@@ -149,5 +149,13 @@ wireline-*-assets*.zip
 /brand-work/exports/social/botbound-launch-story-1080x1920.png
 /brand-work/exports/product-proof/botbound-brand-ui-comparison.png
 
+# Versioned launch releases keep reproducible source and human-authored copy in
+# Git; rendered delivery masters, duplicate delivery fonts, and their generated
+# manifests are trafficked through the private Google Drive release archive.
+/brand-work/launch-2026-09/exports/
+/brand-work/launch-2026-09/fonts/*.ttf
+/brand-work/launch-2026-09/manifest.json
+/brand-work/launch-2026-09/SHA256SUMS.txt
+
 # Local sandbox-only Vitest override; not part of CI
 vitest.sandbox.config.ts

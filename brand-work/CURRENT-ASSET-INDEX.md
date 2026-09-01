@@ -1,12 +1,14 @@
 # BotBound Brand and Launch Asset Index
 
-Status: approved launch system, revision 3, 2026-08-20.
+Status: revision 4 creative release candidate, 2026-09-01. The creative package is complete for owner review; it is not a deployment record or blanket paid-media authorization.
 
 The production identity is the friendly white/platinum robot visibly gripping a violet phone receiver, paired with a complete Inter Tight ExtraBold `BotBound` wordmark. Both B glyphs are complete and unbroken.
 
 ## Source of truth
 
 - Launch library: https://drive.google.com/drive/folders/1IuBVwWQIFQZbBCeSW5DKLxeBOmSygTuF
+- Current versioned creative release: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
+- Local release assembly (Google Drive is canonical): `launch-2026-09/`; Git retains the human-authored copy, provenance, original source art, and regeneration inputs, while rendered delivery masters and generated manifests stay in the private Drive release.
 - Native Google Slides launch deck: https://docs.google.com/presentation/d/1VDwq4RTI86V1DKfKRkcEG7ojve52-JVqMeTYFhy7GIQ/edit?usp=drivesdk
 - Decks and GTM folder: https://drive.google.com/drive/folders/12ynmOVkcvJJKHc-PNhv9gSLKh3jHRyIu
 - Archived revision 3 product proof (2026-08-20; not current release evidence): https://drive.google.com/drive/folders/1FVW4a87GFOELb3ivNt6UAbR349fB7FZy
@@ -16,13 +18,33 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 
 ## Identity
 
-- `selected/botbound-app-icon.png`
+- `../public/brand/botbound-app-icon.png`
+- `../public/brand/botbound-operator-polished.png` — current dimensional hero operator used by the web product and new launch creative
 - `selected/botbound-operator-primary.png`
 - `exports/identity/botbound-lockup-obsidian-1600x480.png`
 - `exports/identity/botbound-lockup-platinum-1600x480.png`
 - `exports/identity/botbound-lockup-transparent-1600x480.png`
 
 ## Campaign and finished placements
+
+### Revision 4 — The Second Ring, 2026-09-01
+
+The paths below describe the generated local layout and the matching private
+Drive delivery. A fresh checkout recreates the delivery files from the committed
+source package; it does not treat PNG, PDF, MP4, or QA output as application source.
+
+- Campaign overview, truth boundaries, and release status: `launch-2026-09/README.md`
+- Campaign contact sheet: `launch-2026-09/exports/contact-sheet/botbound-launch-campaign-contact-sheet-1920x1400.png`
+- Signal billboard master: `launch-2026-09/exports/billboard/botbound-second-ring-signal-billboard-3840x2160.png`
+- Hands Full, Impeccably Bad Timing, Ring to Next Action, and Call Sheet: `launch-2026-09/exports/social/`
+- Five-slide OpenAI voice carousel: `launch-2026-09/exports/voice-carousel/`
+- Investor one-pager and preview: `launch-2026-09/exports/investor/`
+- Social, lifecycle, and launch copy: `launch-2026-09/copy/`
+- Provenance, proof boundary, manifest, and checksums: `launch-2026-09/`
+
+Revision 4 deepens the approved **The Second Ring** platform. It adds the current ten-voice OpenAI story, distinguishes voice choice from runtime consistency, removes ElevenLabs from public positioning, and keeps Twilio as the phone/SMS carrier layer. Generated scenes remain campaign art, not customer or product-screen evidence.
+
+### Revision 3 archive — 2026-08-20
 
 - Repository editorial inputs:
   - `commercial/hands-full-opening-2560x1440.jpg`
@@ -62,7 +84,7 @@ These captures preserve the 2026-08-20 revision 3 snapshot. They predate the cur
 - New social reviews:
   - https://drive.google.com/file/d/19UbBYdvB-wHhr32GtM0a_AgwH2F2JZxC/view
   - https://drive.google.com/file/d/1xojnxswqSlhVWlN1Z8OY60LR_OPoq-l1/view
-- Deterministic caption sidecars for the 30-second, 15-second, and 6-second cuts are stored as JSON, SRT, and WebVTT.
+- Deterministic caption sidecars for the 30-second, 15-second, 10-second, and 6-second cuts are stored as JSON, SRT, and WebVTT.
 
 Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-delivery masters should be rendered from the registered 4K compositions, reviewed in their delivery context, and checksummed before release.
 

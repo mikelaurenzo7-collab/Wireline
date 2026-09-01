@@ -3,13 +3,20 @@ import { CheckCircle2, ChevronDown, Loader2, PlugZap, Save } from "lucide-react"
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
-import { defaultBotMarkKey, isBotMarkKey, type BotMarkKey } from "../lib/bot-mark";
+import {
+  BOT_MARK_CHOICES,
+  defaultBotMarkKey,
+  isBotMarkKey,
+  type BotMarkKey,
+} from "../lib/bot-mark";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { Button } from "./atoms";
+import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
+import ActivationChecklist from "./ActivationChecklist";
 import AgentToolPermissions from "./AgentToolPermissions";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
@@ -91,6 +98,8 @@ export default function StudioAgentWorkspacePanel({
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const activeAgentIdRef = useRef(agentId);
+  const selectedMarkLabel =
+    BOT_MARK_CHOICES.find((choice) => choice.key === setupMarkKey)?.label ?? "Bot identity";
 
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId;
@@ -235,6 +244,7 @@ export default function StudioAgentWorkspacePanel({
       className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
     >
       <div className={contentClass}>
+        {!compact ? <ActivationChecklist className="mb-1" /> : null}
         <header className={compact ? "px-1 pt-1" : ""}>
           <h2
             className={
@@ -285,20 +295,45 @@ export default function StudioAgentWorkspacePanel({
             </StatusNotice>
           ) : (
             <div className={compact ? "space-y-4" : "space-y-5"}>
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-foreground">
-                  Identity mark
-                </legend>
-                <BotMarkPicker
-                  value={setupMarkKey}
-                  onChange={setSetupMarkKey}
-                  seed={agentId}
-                  name={agentName}
-                  compact={compact}
-                  disabled={applyingSetup}
-                  unavailableKeys={unavailableMarkKeys}
-                />
-              </fieldset>
+              <details className="group rounded-xl border border-border bg-background">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2 wl-focus-ring-halo">
+                  <span className="flex min-w-0 items-center gap-3">
+                    <BotMark
+                      seed={agentId}
+                      name={agentName}
+                      markKey={setupMarkKey}
+                      size={32}
+                      title={`${agentName} identity mark`}
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-foreground">
+                        Identity mark
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {selectedMarkLabel}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
+                    Change
+                    <ChevronDown
+                      className="size-4 transition-transform group-open:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </summary>
+                <div className="border-t border-border p-3 sm:p-4">
+                  <BotMarkPicker
+                    value={setupMarkKey}
+                    onChange={setSetupMarkKey}
+                    seed={agentId}
+                    name={agentName}
+                    compact
+                    disabled={applyingSetup}
+                    unavailableKeys={unavailableMarkKeys}
+                  />
+                </div>
+              </details>
 
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
@@ -397,7 +432,7 @@ export default function StudioAgentWorkspacePanel({
           >
             Phone voice
           </h3>
-          <SimpleVoicePicker agentId={agentId} agentName={agentName} onTest={onTestVoiceInChat} />
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} />
         </section>
 
         <details

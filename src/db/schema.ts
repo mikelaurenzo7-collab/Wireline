@@ -1,8 +1,9 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`.
+ * Latest committed migration: `drizzle/migrations/0172_remove_retired_xai_voice_bindings.sql`.
  * Runtime voice defaults remain defined by
- * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`.
+ * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
+ * and 0172 remove empty retired provider ledgers.
  *
  * `schema-base.ts` preserves the existing table graph. The three runtime
  * mirrors below are declared explicitly here because migrations 0130, 0133,

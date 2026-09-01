@@ -5,7 +5,7 @@ import {
 } from "../../middleware/audit-middleware";
 import { runInBackground } from "../background-work";
 import { PUBLIC_BROWSER_DEMO_MAX_SECONDS } from "../public-browser-demo";
-import { OPENAI_REALTIME_DEFAULT_MODEL, type OpenAIRealtimeVoice } from "./openai-realtime-config";
+import { OPENAI_REALTIME_DEFAULT_MODEL } from "./openai-realtime-config";
 import {
   createServerManagedOpenAIRealtimeCall,
   hangupOpenAIRealtimeCall,
@@ -15,12 +15,6 @@ import {
   OPENAI_REALTIME_COST_TRUNCATION,
   OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
 } from "./openai-realtime-pricing";
-
-const PROFILE_BY_VIBE: Record<ContactAgent["defaultVibe"], OpenAIRealtimeVoice> = {
-  warm: "marin",
-  playful: "coral",
-  authoritative: "cedar",
-};
 
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -51,7 +45,7 @@ export async function createPublicOpenAILiveDemoCall(input: {
   // Resolve before provider work so an explicitly underfunded deployment
   // cannot mint a call and discover the pricing fault afterward.
   const fiveMinuteReserveUsd = platformCostReserveUsd("openai_realtime_session");
-  const voice = PROFILE_BY_VIBE[input.agent.defaultVibe];
+  const voice = input.agent.openaiVoiceId;
   const session = {
     type: "realtime",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
@@ -123,8 +117,7 @@ export async function createPublicOpenAILiveDemoCall(input: {
 
   return {
     sdp: call.sdp,
-    greeting:
-      `Hi, I’m ${input.agent.name}. Give me a customer situation or task, and I’ll show you how I’d handle it.`,
+    greeting: `Hi, I’m ${input.agent.name}. Give me a customer situation or task, and I’ll show you how I’d handle it.`,
     maxDurationSeconds: call.maxDurationSeconds,
     endsAt: endsAt.toISOString(),
   } as const;

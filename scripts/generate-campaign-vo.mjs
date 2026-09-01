@@ -6,8 +6,7 @@
  * is written under official-assets/audio/, which is intentionally gitignored.
  *
  * Usage:
- *   ELEVENLABS_API_KEY=... node scripts/generate-campaign-vo.mjs [--force] [--voice <id>]
- *   XAI_API_KEY=... node scripts/generate-campaign-vo.mjs --engine xai [--force]
+ *   OPENAI_API_KEY=... node scripts/generate-campaign-vo.mjs [--force] [--voice <id>]
  */
 import { createHash } from "node:crypto";
 import { mkdir, stat, writeFile } from "node:fs/promises";
@@ -18,21 +17,26 @@ import { audioProvenanceMatches, writeAudioProvenance } from "./lib/audio-proven
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
 const OUTPUT_DIR = resolve(REPO_ROOT, "official-assets/audio");
-const ELEVENLABS_MODEL_ID = "eleven_multilingual_v2";
-const ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_128";
-const ELEVENLABS_VOICE_SETTINGS = {
-  stability: 0.5,
-  similarity_boost: 0.75,
-  style: 0,
-  use_speaker_boost: true,
-};
-const XAI_OUTPUT_FORMAT = { codec: "mp3", sample_rate: 44_100, bit_rate: 128_000 };
+const OPENAI_TTS_MODEL = "gpt-4o-mini-tts";
+const OPENAI_TTS_FORMAT = "mp3";
+const OPENAI_TTS_INSTRUCTIONS =
+  "Deliver a polished, warm, assured American-English brand narration. Sound human and conversational, not theatrical. Keep the pacing crisp and preserve every word exactly.";
 const DURATION_RETRY_POLICY = { maxAttempts: 4, speedStep: 0.03, maxSpeed: 1.2 };
 
-/** Curated Studio voice that customers can also use on the production runtime. */
-export const DEFAULT_VOICE_ID = "cgSgspJ2msm6clMCkdW9";
-/** Warm built-in xAI voice for alternate/reference reads. */
-export const XAI_VOICE_ID = "ara";
+/** Built-in OpenAI voice shared with the production runtime catalog. */
+export const DEFAULT_VOICE_ID = "marin";
+const OPENAI_VOICE_IDS = new Set([
+  "alloy",
+  "ash",
+  "ballad",
+  "coral",
+  "echo",
+  "sage",
+  "shimmer",
+  "verse",
+  "marin",
+  "cedar",
+]);
 
 /**
  * Canonical copy, kept verbatim in docs/WIRELINE_LAUNCH_CAMPAIGN_2026-07-26.md.
@@ -79,7 +83,7 @@ export function campaignTrackFingerprint({ track, engine, voiceId }) {
   return createHash("sha256")
     .update(
       JSON.stringify({
-        version: 2,
+        version: 3,
         engine,
         voiceId,
         track: {
@@ -89,20 +93,13 @@ export function campaignTrackFingerprint({ track, engine, voiceId }) {
           maxSeconds: track.maxSeconds ?? null,
           baseSpeed: track.speed ?? 1,
         },
-        rendering:
-          engine === "xai"
-            ? {
-                endpoint: "https://api.x.ai/v1/tts",
-                language: "en",
-                outputFormat: XAI_OUTPUT_FORMAT,
-                textNormalization: true,
-              }
-            : {
-                model: ELEVENLABS_MODEL_ID,
-                outputFormat: ELEVENLABS_OUTPUT_FORMAT,
-                voiceSettings: ELEVENLABS_VOICE_SETTINGS,
-              },
-        durationParser: "mpeg1-layer3-cbr-v1",
+        rendering: {
+          endpoint: "https://api.openai.com/v1/audio/speech",
+          model: OPENAI_TTS_MODEL,
+          responseFormat: OPENAI_TTS_FORMAT,
+          instructions: OPENAI_TTS_INSTRUCTIONS,
+        },
+        durationParser: "mpeg-audio-layer3-version-aware-v2",
         retryPolicy: track.maxSeconds ? DURATION_RETRY_POLICY : { maxAttempts: 1 },
       }),
     )
@@ -118,12 +115,24 @@ export function campaignTrackFingerprintFromProvenance({ track, expectedEngine, 
 }
 
 /**
- * Measure an MPEG-1 Layer III CBR stream by walking frame headers. This keeps
- * campaign generation self-contained in environments without ffprobe.
+ * Measure an MPEG Audio Layer III stream by walking every contiguous frame.
+ * OpenAI may return MPEG-1, MPEG-2, or MPEG-2.5 and may vary bitrate between
+ * frames, so version-specific sample rates, bitrate tables, samples/frame, and
+ * frame-length coefficients are all resolved from each header. This keeps the
+ * release gate self-contained without undercounting valid lower-version MP3s.
  */
 export function mp3DurationSeconds(buffer) {
-  const bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
-  const sampleRates = [44_100, 48_000, 32_000];
+  const mpeg1Layer3Bitrates = [
+    0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320,
+  ];
+  const mpeg2Layer3Bitrates = [
+    0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160,
+  ];
+  const sampleRatesByVersion = {
+    3: [44_100, 48_000, 32_000],
+    2: [22_050, 24_000, 16_000],
+    0: [11_025, 12_000, 8_000],
+  };
   let offset = 0;
 
   if (buffer.length > 10 && buffer.subarray(0, 3).toString("latin1") === "ID3") {
@@ -136,28 +145,49 @@ export function mp3DurationSeconds(buffer) {
   }
 
   let seconds = 0;
+  let frameCount = 0;
+  let foundFirstFrame = false;
   while (offset + 4 < buffer.length) {
     const sync = buffer[offset] === 0xff && (buffer[offset + 1] & 0xe0) === 0xe0;
     if (!sync) {
+      if (foundFirstFrame) break;
       offset += 1;
       continue;
     }
 
+    const version = (buffer[offset + 1] >> 3) & 0x03;
+    const layer = (buffer[offset + 1] >> 1) & 0x03;
     const bitrateIndex = (buffer[offset + 2] >> 4) & 0x0f;
     const sampleRateIndex = (buffer[offset + 2] >> 2) & 0x03;
-    if (bitrateIndex === 0 || bitrateIndex === 15 || sampleRateIndex === 3) {
+    if (
+      version === 1 ||
+      layer !== 1 ||
+      bitrateIndex === 0 ||
+      bitrateIndex === 15 ||
+      sampleRateIndex === 3
+    ) {
+      if (foundFirstFrame) break;
       offset += 1;
       continue;
     }
 
-    const bitrate = bitrates[bitrateIndex] * 1000;
-    const sampleRate = sampleRates[sampleRateIndex];
+    const bitrateTable = version === 3 ? mpeg1Layer3Bitrates : mpeg2Layer3Bitrates;
+    const sampleRateTable = sampleRatesByVersion[version];
+    const bitrate = bitrateTable[bitrateIndex] * 1000;
+    const sampleRate = sampleRateTable[sampleRateIndex];
+    const samplesPerFrame = version === 3 ? 1152 : 576;
+    const frameLengthCoefficient = version === 3 ? 144 : 72;
     const padding = (buffer[offset + 2] >> 1) & 1;
-    seconds += 1152 / sampleRate;
-    offset += Math.floor((1152 * bitrate) / (8 * sampleRate)) + padding;
+    const frameLength = Math.floor((frameLengthCoefficient * bitrate) / sampleRate) + padding;
+    if (frameLength < 4 || offset + frameLength > buffer.length) break;
+
+    foundFirstFrame = true;
+    frameCount += 1;
+    seconds += samplesPerFrame / sampleRate;
+    offset += frameLength;
   }
 
-  return seconds;
+  return frameCount >= 2 ? seconds : 0;
 }
 
 export function assertGeneratedMp3(buffer, contentType, label = "Generated audio") {
@@ -182,53 +212,24 @@ function parseArgs() {
   const argv = process.argv.slice(2);
   const engineIndex = argv.indexOf("--engine");
   const voiceIndex = argv.indexOf("--voice");
-  const engine = engineIndex >= 0 ? argv[engineIndex + 1] : "elevenlabs";
-
-  if (engine !== "elevenlabs" && engine !== "xai") {
-    throw new Error(`Unknown engine "${engine}". Use elevenlabs or xai.`);
+  const engine = engineIndex >= 0 ? argv[engineIndex + 1] : "openai";
+  const voiceId = voiceIndex >= 0 ? argv[voiceIndex + 1] : DEFAULT_VOICE_ID;
+  if (engine !== "openai") {
+    throw new Error(`Unknown engine "${engine}". BotBound campaign speech uses OpenAI only.`);
+  }
+  if (!OPENAI_VOICE_IDS.has(voiceId)) {
+    throw new Error(`Unknown OpenAI voice "${voiceId}". Choose one of: ${[...OPENAI_VOICE_IDS].join(", ")}.`);
   }
 
   return {
     engine,
     force: argv.includes("--force"),
-    voiceId:
-      voiceIndex >= 0 ? argv[voiceIndex + 1] : engine === "xai" ? XAI_VOICE_ID : DEFAULT_VOICE_ID,
+    voiceId,
   };
 }
 
-async function renderElevenLabs({ apiKey, voiceId, text, speed }) {
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=${ELEVENLABS_OUTPUT_FORMAT}`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: ELEVENLABS_MODEL_ID,
-        voice_settings: {
-          ...ELEVENLABS_VOICE_SETTINGS,
-          speed,
-        },
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const detail = (await response.text().catch(() => "")).slice(0, 300);
-    throw new Error(`ElevenLabs returned ${response.status}: ${detail}`);
-  }
-
-  const audio = Buffer.from(await response.arrayBuffer());
-  assertGeneratedMp3(audio, response.headers.get("content-type"), "ElevenLabs TTS");
-  return audio;
-}
-
-async function renderXai({ apiKey, voiceId, text, speed }) {
-  const response = await fetch("https://api.x.ai/v1/tts", {
+async function renderOpenAI({ apiKey, voiceId, text, speed }) {
+  const response = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -236,22 +237,22 @@ async function renderXai({ apiKey, voiceId, text, speed }) {
       Accept: "audio/mpeg",
     },
     body: JSON.stringify({
-      text,
-      voice_id: voiceId,
-      language: "en",
-      output_format: XAI_OUTPUT_FORMAT,
-      ...(speed !== 1 ? { speed: Math.min(1.5, Math.max(0.7, speed)) } : {}),
-      text_normalization: true,
+      model: OPENAI_TTS_MODEL,
+      input: text,
+      voice: voiceId,
+      response_format: OPENAI_TTS_FORMAT,
+      instructions: OPENAI_TTS_INSTRUCTIONS,
+      speed,
     }),
   });
 
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 300);
-    throw new Error(`xAI TTS returned ${response.status}: ${detail}`);
+    throw new Error(`OpenAI TTS returned ${response.status}: ${detail}`);
   }
 
   const audio = Buffer.from(await response.arrayBuffer());
-  assertGeneratedMp3(audio, response.headers.get("content-type"), "xAI TTS");
+  assertGeneratedMp3(audio, response.headers.get("content-type"), "OpenAI TTS");
   return audio;
 }
 
@@ -299,13 +300,13 @@ async function renderTrack({ track, render, apiKey, voiceId }) {
 async function main() {
   const { engine, force, voiceId } = parseArgs();
   for (const track of CAMPAIGN_VO) assertBotBoundCampaignText(track.text, track.id);
-  const apiKey = engine === "xai" ? process.env.XAI_API_KEY : process.env.ELEVENLABS_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error(`${engine === "xai" ? "XAI_API_KEY" : "ELEVENLABS_API_KEY"} is not set.`);
+    throw new Error("OPENAI_API_KEY is not set.");
   }
 
-  const outputDir = engine === "xai" ? resolve(OUTPUT_DIR, "xai") : OUTPUT_DIR;
-  const render = engine === "xai" ? renderXai : renderElevenLabs;
+  const outputDir = OUTPUT_DIR;
+  const render = renderOpenAI;
   await mkdir(outputDir, { recursive: true });
 
   for (const track of CAMPAIGN_VO) {

@@ -19,6 +19,10 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const SHA = "a".repeat(40);
 const ARTIFACT_DIRECTORY = "2026-08-26T12-00-00-000Z";
+const VISUAL_GATE_CHILD_TIMEOUT_MS = 60_000;
+const VISUAL_GATE_TIMEOUT_MARGIN_MS = 30_000;
+const visualGateTestTimeout = (invocations: number) =>
+  invocations * VISUAL_GATE_CHILD_TIMEOUT_MS + VISUAL_GATE_TIMEOUT_MARGIN_MS;
 const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZegAAAABJRU5ErkJggg==",
   "base64",
@@ -27,15 +31,17 @@ const PNG = Buffer.from(
 type Manifest = Record<string, any>;
 
 function invokeGate(manifestPath: string, production = true) {
-  return spawnSync(
+  const result = spawnSync(
     process.execPath,
     [
       resolve(process.cwd(), "scripts/check-visual-qa-manifest.mjs"),
       ...(production ? ["--production"] : []),
       manifestPath,
     ],
-    { encoding: "utf8" },
+    { encoding: "utf8", timeout: VISUAL_GATE_CHILD_TIMEOUT_MS },
   );
+  if (result.error) throw result.error;
+  return result;
 }
 
 function withFixture(
@@ -170,36 +176,40 @@ describe("production visual QA safety gate", () => {
     expect(capture).not.toContain('locator("body").innerText()');
   });
 
-  it("keeps the local PR visual gate focused on captured P0 issues", () => {
-    const directory = mkdtempSync(join(tmpdir(), "botbound-local-visual-gate-"));
-    const manifestPath = join(directory, "manifest.json");
-    try {
-      writeFileSync(
-        manifestPath,
-        JSON.stringify({
-          baseUrl: "http://127.0.0.1:3000",
-          authenticatedCapture: false,
-          viewports: [{ name: "phone-390", width: 390, height: 844 }],
-          marketingRoutes: ["/"],
-          authenticatedRoutes: [],
-          compatibilityRoutes: [],
-          issues: [],
-        }),
-      );
-      expect(invokeGate(manifestPath, false).status).toBe(0);
+  it(
+    "keeps the local PR visual gate focused on captured P0 issues",
+    () => {
+      const directory = mkdtempSync(join(tmpdir(), "botbound-local-visual-gate-"));
+      const manifestPath = join(directory, "manifest.json");
+      try {
+        writeFileSync(
+          manifestPath,
+          JSON.stringify({
+            baseUrl: "http://127.0.0.1:3000",
+            authenticatedCapture: false,
+            viewports: [{ name: "phone-390", width: 390, height: 844 }],
+            marketingRoutes: ["/"],
+            authenticatedRoutes: [],
+            compatibilityRoutes: [],
+            issues: [],
+          }),
+        );
+        expect(invokeGate(manifestPath, false).status).toBe(0);
 
-      writeFileSync(
-        manifestPath,
-        JSON.stringify({
-          baseUrl: "http://127.0.0.1:3000",
-          issues: [{ kind: "capture", viewport: "phone-390", route: "/" }],
-        }),
-      );
-      expect(invokeGate(manifestPath, false).status).toBe(1);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
-  });
+        writeFileSync(
+          manifestPath,
+          JSON.stringify({
+            baseUrl: "http://127.0.0.1:3000",
+            issues: [{ kind: "capture", viewport: "phone-390", route: "/" }],
+          }),
+        );
+        expect(invokeGate(manifestPath, false).status).toBe(1);
+      } finally {
+        rmSync(directory, { recursive: true, force: true });
+      }
+    },
+    visualGateTestTimeout(2),
+  );
 
   it("matches redirects by exact parsed origin, pathname, query, and hash", () => {
     expect(
@@ -249,126 +259,148 @@ describe("production visual QA safety gate", () => {
     ).toBe(true);
   });
 
-  it("accepts complete evidence, including an optional authenticated scroll-end image", () => {
-    withFixture(
-      ({ run }) => {
-        const result = run();
-        expect(result.status, result.stderr).toBe(0);
-      },
-      { includeOptionalScrollEnd: true },
-    );
-  }, 60_000);
-
-  it("rejects missing, duplicate, failed, wrong-shell, and wrong-tab semantic evidence", () => {
-    withFixture(({ manifest, run }) => {
-      const missing = structuredClone(manifest);
-      missing.semanticAssertions.pop();
-      expect(run(missing).status).toBe(1);
-
-      const duplicate = structuredClone(manifest);
-      duplicate.semanticAssertions.push(structuredClone(duplicate.semanticAssertions[0]));
-      expect(run(duplicate).status).toBe(1);
-
-      const failed = structuredClone(manifest);
-      failed.semanticAssertions[0].success = false;
-      expect(run(failed).status).toBe(1);
-
-      const wrongShell = structuredClone(manifest);
-      const studio = wrongShell.semanticAssertions.find(
-        (assertion: Manifest) =>
-          assertion.viewport === "desktop" &&
-          assertion.mode === "authenticated" &&
-          assertion.route === "/studio",
+  it(
+    "accepts complete evidence, including an optional authenticated scroll-end image",
+    () => {
+      withFixture(
+        ({ run }) => {
+          const result = run();
+          expect(result.status, result.stderr).toBe(0);
+        },
+        { includeOptionalScrollEnd: true },
       );
-      studio.assertedPages = ["workspace-shell"];
-      expect(run(wrongShell).status).toBe(1);
+    },
+    visualGateTestTimeout(1),
+  );
 
-      const wrongTab = structuredClone(manifest);
-      const campaigns = wrongTab.semanticAssertions.find(
-        (assertion: Manifest) =>
-          assertion.viewport === "desktop" &&
-          assertion.mode === "authenticated" &&
-          assertion.route === "/phone?tab=campaigns",
-      );
-      campaigns.assertedStates = ["primary-outbound", "secondary-callbacks"];
-      expect(run(wrongTab).status).toBe(1);
-    });
-  }, 60_000);
+  it(
+    "rejects missing, duplicate, failed, wrong-shell, and wrong-tab semantic evidence",
+    () => {
+      withFixture(({ manifest, run }) => {
+        const missing = structuredClone(manifest);
+        missing.semanticAssertions.pop();
+        expect(run(missing).status).toBe(1);
 
-  it("rejects empty, partial, wrong-route, unauthenticated, and unsafe manifests", () => {
-    withFixture(({ manifest, run }) => {
-      const empty = {
-        ...structuredClone(manifest),
-        marketingRoutes: [],
-        authenticatedRoutes: [],
-        compatibilityRoutes: [],
-        viewports: [],
-        artifacts: [],
-        screenshotCountExpected: 0,
-        screenshotCountActual: 0,
-      };
-      expect(run(empty).status).toBe(1);
+        const duplicate = structuredClone(manifest);
+        duplicate.semanticAssertions.push(structuredClone(duplicate.semanticAssertions[0]));
+        expect(run(duplicate).status).toBe(1);
 
-      const partial = structuredClone(manifest);
-      partial.marketingRoutes.pop();
-      expect(run(partial).status).toBe(1);
+        const failed = structuredClone(manifest);
+        failed.semanticAssertions[0].success = false;
+        expect(run(failed).status).toBe(1);
 
-      const wrongRoute = structuredClone(manifest);
-      wrongRoute.authenticatedRoutes[0] = "/studio-evil";
-      expect(run(wrongRoute).status).toBe(1);
+        const wrongShell = structuredClone(manifest);
+        const studio = wrongShell.semanticAssertions.find(
+          (assertion: Manifest) =>
+            assertion.viewport === "desktop" &&
+            assertion.mode === "authenticated" &&
+            assertion.route === "/studio",
+        );
+        studio.assertedPages = ["workspace-shell"];
+        expect(run(wrongShell).status).toBe(1);
 
-      expect(run({ ...structuredClone(manifest), authenticatedCapture: false }).status).toBe(1);
-      expect(run({ ...structuredClone(manifest), qaAccountConfigured: false }).status).toBe(1);
-      expect(run({ ...structuredClone(manifest), artifactDirectory: "../outside" }).status).toBe(1);
-      expect(
-        run({
+        const wrongTab = structuredClone(manifest);
+        const campaigns = wrongTab.semanticAssertions.find(
+          (assertion: Manifest) =>
+            assertion.viewport === "desktop" &&
+            assertion.mode === "authenticated" &&
+            assertion.route === "/phone?tab=campaigns",
+        );
+        campaigns.assertedStates = ["primary-outbound", "secondary-callbacks"];
+        expect(run(wrongTab).status).toBe(1);
+      });
+    },
+    visualGateTestTimeout(5),
+  );
+
+  it(
+    "rejects empty, partial, wrong-route, unauthenticated, and unsafe manifests",
+    () => {
+      withFixture(({ manifest, run }) => {
+        const empty = {
           ...structuredClone(manifest),
-          screenshotCountExpected: manifest.screenshotCountExpected - 1,
-        }).status,
-      ).toBe(1);
-    });
-  }, 60_000);
+          marketingRoutes: [],
+          authenticatedRoutes: [],
+          compatibilityRoutes: [],
+          viewports: [],
+          artifacts: [],
+          screenshotCountExpected: 0,
+          screenshotCountActual: 0,
+        };
+        expect(run(empty).status).toBe(1);
 
-  it("rejects missing and cryptographically tampered PNG artifacts", () => {
-    withFixture(({ artifactPath, manifest, run }) => {
-      const first = manifest.artifacts[0].file;
-      unlinkSync(join(artifactPath, first));
-      expect(run().status).toBe(1);
+        const partial = structuredClone(manifest);
+        partial.marketingRoutes.pop();
+        expect(run(partial).status).toBe(1);
 
-      writeFileSync(join(artifactPath, first), PNG);
-      const second = manifest.artifacts[1].file;
-      const tampered = Buffer.from(PNG);
-      tampered[tampered.length - 1] ^= 1;
-      writeFileSync(join(artifactPath, second), tampered);
-      expect(run().status).toBe(1);
-    });
-  }, 60_000);
+        const wrongRoute = structuredClone(manifest);
+        wrongRoute.authenticatedRoutes[0] = "/studio-evil";
+        expect(run(wrongRoute).status).toBe(1);
 
-  it("fails request, API-response, and release-provenance defects", () => {
-    withFixture(({ manifest, run }) => {
-      expect(
-        run({
-          ...structuredClone(manifest),
-          issues: [{ kind: "request", viewport: "desktop", route: "/studio" }],
-        }).status,
-      ).toBe(1);
-      expect(
-        run({
-          ...structuredClone(manifest),
-          issues: [{ kind: "api-response", viewport: "desktop", route: "/studio" }],
-        }).status,
-      ).toBe(1);
-      expect(run({ ...structuredClone(manifest), sourceProofAfter: undefined }).status).toBe(1);
-      expect(
-        run({
-          ...structuredClone(manifest),
-          sourceProofAfter: {
-            baseURL: CANONICAL_PRODUCTION_VISUAL_BASE_URL,
-            deployedCommit: "b".repeat(40),
-            verifiedAt: new Date(0).toISOString(),
-          },
-        }).status,
-      ).toBe(1);
-    });
-  }, 60_000);
+        expect(run({ ...structuredClone(manifest), authenticatedCapture: false }).status).toBe(1);
+        expect(run({ ...structuredClone(manifest), qaAccountConfigured: false }).status).toBe(1);
+        expect(run({ ...structuredClone(manifest), artifactDirectory: "../outside" }).status).toBe(
+          1,
+        );
+        expect(
+          run({
+            ...structuredClone(manifest),
+            screenshotCountExpected: manifest.screenshotCountExpected - 1,
+          }).status,
+        ).toBe(1);
+      });
+    },
+    visualGateTestTimeout(7),
+  );
+
+  it(
+    "rejects missing and cryptographically tampered PNG artifacts",
+    () => {
+      withFixture(({ artifactPath, manifest, run }) => {
+        const first = manifest.artifacts[0].file;
+        unlinkSync(join(artifactPath, first));
+        expect(run().status).toBe(1);
+
+        writeFileSync(join(artifactPath, first), PNG);
+        const second = manifest.artifacts[1].file;
+        const tampered = Buffer.from(PNG);
+        tampered[tampered.length - 1] ^= 1;
+        writeFileSync(join(artifactPath, second), tampered);
+        expect(run().status).toBe(1);
+      });
+    },
+    visualGateTestTimeout(2),
+  );
+
+  it(
+    "fails request, API-response, and release-provenance defects",
+    () => {
+      withFixture(({ manifest, run }) => {
+        expect(
+          run({
+            ...structuredClone(manifest),
+            issues: [{ kind: "request", viewport: "desktop", route: "/studio" }],
+          }).status,
+        ).toBe(1);
+        expect(
+          run({
+            ...structuredClone(manifest),
+            issues: [{ kind: "api-response", viewport: "desktop", route: "/studio" }],
+          }).status,
+        ).toBe(1);
+        expect(run({ ...structuredClone(manifest), sourceProofAfter: undefined }).status).toBe(1);
+        expect(
+          run({
+            ...structuredClone(manifest),
+            sourceProofAfter: {
+              baseURL: CANONICAL_PRODUCTION_VISUAL_BASE_URL,
+              deployedCommit: "b".repeat(40),
+              verifiedAt: new Date(0).toISOString(),
+            },
+          }).status,
+        ).toBe(1);
+      });
+    },
+    visualGateTestTimeout(4),
+  );
 });

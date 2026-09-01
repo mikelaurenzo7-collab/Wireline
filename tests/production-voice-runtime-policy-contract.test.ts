@@ -14,17 +14,27 @@ describe("production voice runtime policy", () => {
 
   it("labels only documented OpenAI voices as live phone voices", () => {
     const catalog = read("src/lib/voice-catalog.ts");
-    for (const voice of ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"]) {
+    for (const voice of [
+      "alloy",
+      "ash",
+      "ballad",
+      "coral",
+      "echo",
+      "sage",
+      "shimmer",
+      "verse",
+      "marin",
+      "cedar",
+    ]) {
       expect(catalog).toContain(`id: "${voice}"`);
     }
     expect(catalog).not.toMatch(/vapi|xai|grok/i);
   });
 
-  it("keeps studio generation off the phone runtime", () => {
+  it("keeps the retired alternate voice provider out of policy and runtime", () => {
     const policy = read("docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md");
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
-    expect(policy).toContain("Server-only ElevenLabs preview/cloning");
-    expect(policy).toContain("Never a live phone provider");
+    expect(policy).not.toMatch(/elevenlabs|11labs/i);
     expect(runtime).not.toMatch(/elevenlabs|11labs/i);
   });
 });

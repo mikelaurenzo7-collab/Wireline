@@ -23,8 +23,9 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`.
-// Runtime voice defaults are established by 0168_openai_realtime_voice_runtime.sql.
+// `drizzle/migrations/0172_remove_retired_xai_voice_bindings.sql`.
+// Runtime voice defaults are established by 0168; 0169 and 0172 remove empty
+// retired provider ledgers.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
 // After editing this file run `npm run db:generate` and review the new SQL before deploy.
 
@@ -424,14 +425,14 @@ export const agents = pgTable(
      * "playful" for retail / agencies / SaaS where memorability beats
      * formality, or to "authoritative" for medical / legal / financial
      * intake where the caller needs to feel they're in capable hands.
-     * Voice (Adam · Deep) stays consistent across vibes — vibe shifts
-     * the SCRIPT, not the voice.
+     * The Account Holder's selected OpenAI voice stays consistent for each
+     * session. Vibe changes delivery and wording; it never swaps the speaker.
      */
     personalityVibe: text("personality_vibe").default("warm"),
     /**
      * Account Holder-authored system prompt that fully REPLACES the
      * auto-composed base identity prompt at call time. When set and
-     * non-empty, the Vapi assistant factory uses this text as the base
+     * non-empty, the OpenAI Realtime runtime uses this text as the base
      * identity block instead of the generated "## IDENTITY & MISSION"
      * prompt (or the Wireline persona overlay), then still appends the
      * call-specific dynamic blocks (caller profile, intel, sentiment,
@@ -557,53 +558,6 @@ export const agents = pgTable(
       "wireline_agents_mark_key_check",
       sql`${table.markKey} IS NULL OR ${table.markKey} ~ '^(orbit|beacon|spark|prism|flow|pulse|compass|focus|aperture|wave|helix|loop|nova|route|vertex)-(violet|blue|rose|amber|teal|magenta|indigo|slate)$'`,
     ),
-  }),
-);
-
-/**
- * Tenant-owned instant voices created through the founder-managed ElevenLabs
- * account. Uploaded source audio is never stored; only a one-way fingerprint,
- * consent evidence, review state, and provider voice id remain. A voice cannot
- * enter the phone runtime until status is `approved`.
- */
-export const clonedVoices = pgTable(
-  "wireline_cloned_voices",
-  {
-    voiceId: text("voice_id").primaryKey(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    provider: text("provider").notNull().default("elevenlabs"),
-    status: text("status").notNull().default("creating"),
-    previewUrl: text("preview_url"),
-    consentVersion: text("consent_version").notNull(),
-    sourceSha256: text("source_sha256").notNull(),
-    sourceMimeType: text("source_mime_type").notNull(),
-    sourceDurationSeconds: integer("source_duration_seconds").notNull(),
-    intendedUse: text("intended_use").notNull().default("wireline-agents"),
-    sourceAudioRetained: boolean("source_audio_retained").notNull().default(false),
-    isolationApplied: boolean("isolation_applied").notNull().default(false),
-    providerVerificationRequired: boolean("provider_verification_required")
-      .notNull()
-      .default(false),
-    qualityCheckVersion: text("quality_check_version"),
-    qualitySampleModel: text("quality_sample_model"),
-    approvedAt: timestamp("approved_at", { withTimezone: true }),
-    approvedBy: uuid("approved_by").references(() => users.id, {
-      // Approval is durable authorization evidence. Do not let deleting a
-      // reviewer silently erase it while an approved clone remains live.
-      onDelete: "restrict",
-    }),
-    rejectionReason: text("rejection_reason"),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  () => ({
-    userStatusCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_user_status_created ON wireline_cloned_voices USING btree (user_id, status, created_at DESC)`,
-    sourceFingerprintIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_source_fingerprint ON wireline_cloned_voices USING btree (user_id, source_sha256)`,
-    approvedByIdx: sql`CREATE INDEX IF NOT EXISTS idx_cloned_voices_approved_by ON wireline_cloned_voices USING btree (approved_by)`,
-    activeSourceUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_cloned_voices_active_source ON wireline_cloned_voices (user_id, source_sha256) WHERE status NOT IN ('revoked', 'failed')`,
   }),
 );
 
@@ -1054,8 +1008,9 @@ export const emailMessages = pgTable(
 
 // 3.1b SMS THREADS + MESSAGES — two-way text conversations.
 // Mirrors the email_threads/email_messages shape so the SmsThreads UI
-// can reuse the same inbox layout. One thread per (user, customer phone)
-// pair; messages append in time order. Inbound writes from the Twilio
+// can reuse the same inbox layout. One thread per (user, exact Twilio
+// destination, customer phone) so a customer can safely text more than one
+// Bot line. Messages append in time order. Inbound writes from the Twilio
 // webhook; outbound writes from twilio-service.sendTenantMessage.
 export const smsThreads = pgTable(
   "wireline_sms_threads",
@@ -1066,6 +1021,7 @@ export const smsThreads = pgTable(
       onDelete: "set null",
     }),
     customerNumber: text("customer_number").notNull(),
+    destinationNumber: text("destination_number"),
     status: text("status").default("open"),
     summary: text("summary"),
     unreadCount: integer("unread_count").default(0).notNull(),
@@ -1074,8 +1030,13 @@ export const smsThreads = pgTable(
     }).defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  () => ({
-    userCustomerUnique: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_sms_threads_user_customer ON wireline_sms_threads (user_id, customer_number)`,
+  (table) => ({
+    userDestinationCustomerUnique: uniqueIndex("idx_sms_threads_user_destination_customer")
+      .on(table.userId, table.destinationNumber, table.customerNumber)
+      .where(sql`${table.destinationNumber} IS NOT NULL`),
+    legacyUserCustomerUnique: uniqueIndex("idx_sms_threads_legacy_user_customer")
+      .on(table.userId, table.customerNumber)
+      .where(sql`${table.destinationNumber} IS NULL`),
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_user_id ON wireline_sms_threads (user_id)`,
     lastMessageIdx: sql`CREATE INDEX IF NOT EXISTS idx_sms_threads_last_message ON wireline_sms_threads (last_message_at DESC)`,
   }),
@@ -1101,6 +1062,50 @@ export const smsMessages = pgTable(
     twilioSidUniqueIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_sms_messages_user_twilio_sid ON wireline_sms_messages (user_id, twilio_sid) WHERE twilio_sid IS NOT NULL`,
   }),
 );
+
+/**
+ * Durable idempotency fence for account-holder SMS replies.
+ *
+ * A browser retry, timeout, double-click, or reload must never turn one
+ * operator action into two carrier requests. The reply route claims a
+ * client-stable operation key here, records the exact request hash, and moves
+ * the row to `attempting` immediately before Twilio is called. Terminal rows
+ * replay their original outcome instead of calling the carrier again.
+ */
+export const smsSendOperations = pgTable(
+  "wireline_sms_send_operations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => smsThreads.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotency_key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    status: text("status").notNull().default("reserved"),
+    providerSid: text("provider_sid"),
+    providerStatus: text("provider_status"),
+    failureCode: text("failure_code"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdempotencyUnique: uniqueIndex("uq_sms_send_operations_user_idempotency").on(
+      table.userId,
+      table.idempotencyKey,
+    ),
+    threadCreatedIdx: index("idx_sms_send_operations_thread_created").on(
+      table.threadId,
+      table.createdAt,
+    ),
+    statusCheck: check(
+      "wireline_sms_send_operations_status_check",
+      sql`${table.status} IN ('reserved', 'attempting', 'accepted', 'rejected', 'ambiguous')`,
+    ),
+  }),
+).enableRLS();
 
 // 3.1c AGENT TEAMS + CALL QUEUES — call-center scaffolding.
 // Distinct from the human-team RBAC concept in wireline_team_members

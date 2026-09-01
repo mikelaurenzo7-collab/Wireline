@@ -470,6 +470,34 @@
       "when": 1788082281035,
       "tag": "0168_openai_realtime_voice_runtime",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1788234306000,
+      "tag": "0169_remove_legacy_voice_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1788234307000,
+      "tag": "0170_sms_destination_routing",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1788234308000,
+      "tag": "0171_sms_send_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1788234309000,
+      "tag": "0172_remove_retired_xai_voice_bindings",
+      "breakpoints": true
     }
   ]
 }

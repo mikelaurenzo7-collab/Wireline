@@ -234,8 +234,9 @@ describe("route meta prerendering", () => {
     const pkg = read("package.json");
     const buildScript = (JSON.parse(pkg) as { scripts: Record<string, string> }).scripts.build;
     expect(buildScript).toContain(
-      "vite build && node scripts/validate-botbound-jingle.mjs && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts",
+      "npm run assets && vite build && node scripts/quarantine-retired-public-assets.mjs && node --import tsx scripts/prerender-marketing-meta.mts",
     );
+    expect(buildScript).not.toContain("validate-botbound-jingle");
 
     const script = read("scripts/prerender-marketing-meta.mts");
     expect(script).toContain("PRERENDERED_ROUTE_SHELLS");

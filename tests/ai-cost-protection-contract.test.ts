@@ -43,7 +43,8 @@ describe("AI cost-protection contract", () => {
       agentTest.indexOf('"/api/agents/:id/test/stream"'),
       agentTest.indexOf("async (req: AuthenticatedRequest"),
     );
-    expect(testRoute).toContain("enforceSpendCap");
+    expect(testRoute).toContain("enforcePrivateTextSimulationSpendCap");
+    expect(testRoute).not.toMatch(/\benforceSpendCap\b/);
     expect(testRoute).toContain('withAudit("agent-test")');
     expect(testRoute.indexOf("authenticateEventStream")).toBeLessThan(
       testRoute.indexOf('withAudit("agent-test")'),

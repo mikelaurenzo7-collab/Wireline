@@ -233,9 +233,13 @@ describe("retired presenter CSS stays out of the launch cascade", () => {
 describe("review-hardening: the fixes Codex found in the first pass", () => {
   it("binds the SMS post-send refresh to the thread that was replied to", () => {
     const sms = read("src/components/SmsThreads.tsx");
-    expect(sms).toContain("const sentThreadController = activeThreadFetchRef.current;");
-    expect(sms).toContain("fetchMessages(threadId, sentThreadController?.signal)");
-    expect(sms).not.toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
+    const accepted = sms.slice(
+      sms.indexOf("if (response.ok && result?.ok === true)"),
+      sms.indexOf("const message = result?.reason", sms.indexOf("if (response.ok")),
+    );
+    expect(accepted).toContain("if (activeIdRef.current === threadId)");
+    expect(accepted).toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
+    expect(sms).not.toContain("sentThreadController");
   });
 
   it("never re-dials an outbound call whose provider outcome is ambiguous", () => {
@@ -247,18 +251,5 @@ describe("review-hardening: the fixes Codex found in the first pass", () => {
     expect(step).not.toContain("retryable: !res.ok");
     expect(step).toContain('result: "compliance gate failed (fail-closed)", retryable: true');
     expect(step).toContain("voice control rejected");
-  });
-
-  it("persists tool usage that lands after the wrapper timeout", () => {
-    const route = read("src/routes/vapi-v2.ts");
-    const arm = route.slice(
-      route.indexOf('if (message?.type === "tool-calls")'),
-      route.indexOf('if (message?.type === "speech-update")'),
-    );
-    expect(arm).toContain("anyToolTimedOut");
-    expect(arm).toContain("LATE_TOOL_AUDIT_GRACE_MS");
-    expect(arm.indexOf("LATE_TOOL_AUDIT_GRACE_MS")).toBeLessThan(
-      arm.indexOf("toolAuditContext.records.slice()"),
-    );
   });
 });

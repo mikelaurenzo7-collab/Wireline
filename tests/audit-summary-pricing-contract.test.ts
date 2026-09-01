@@ -17,8 +17,8 @@ describe("audit summary cache economics", () => {
       ],
     });
 
-    // Long-context rates: read saves (5 - .5) * .1 = $0.45 while the write
-    // premium costs (6.25 - 5) * .1 = $0.125, for $0.325 net savings.
-    expect(summary.totals.cache_savings_usd).toBe(0.325);
+    // Input + cache buckets cross the long-context threshold. Current Terra
+    // rates save (4 - .4) * .1 = $0.36 on reads and add (5 - 4) * .1 = $0.10 on writes.
+    expect(summary.totals.cache_savings_usd).toBe(0.26);
   });
 });

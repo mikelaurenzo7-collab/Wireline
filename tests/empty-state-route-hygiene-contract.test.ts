@@ -38,8 +38,8 @@ describe("empty-state route hygiene", () => {
     expect(studioChrome).toContain("agentLineStatus(activeAgent, phoneLookupDegraded)");
     expect(readiness).toContain('"Live"');
     expect(readiness).toContain('"Status unavailable"');
-    expect(readiness).toContain('"Needs setup"');
-    expect(studioChrome).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
+    expect(readiness).toContain('"No live line"');
+    expect(studioChrome).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No live line"/);
 
     expect(routes).toContain("function ToStudioRedirect()");
     expect(routes).toContain('path="/agents" element={<ToStudioRedirect />}');

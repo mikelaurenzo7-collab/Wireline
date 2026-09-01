@@ -123,7 +123,6 @@ describe("production PostgreSQL constructor coverage", () => {
     "scripts/production-activation-report.ts",
     "scripts/production-outcome-report.ts",
     "scripts/set-account-environment.ts",
-    "scripts/replay-pending-vapi-webhooks.mjs",
   ];
 
   it.each(helperConsumers)("%s uses the centralized verified TLS policy", (relativePath) => {
@@ -143,16 +142,6 @@ describe("production PostgreSQL constructor coverage", () => {
       .join("\n");
     expect(source).not.toContain("rejectUnauthorized: false");
     expect(source).not.toContain("NODE_TLS_REJECT_UNAUTHORIZED");
-  });
-
-  it("keeps transaction-pool webhook replay compatible and authenticated", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "scripts/replay-pending-vapi-webhooks.mjs"),
-      "utf8",
-    );
-    expect(source).toContain("getPostgresConnectionConfig");
-    expect(source).toContain("prepare: connection.port !== 6543");
-    expect(source).not.toContain("postgres(url");
   });
 
   it("uses a dedicated backup URL and verified CA instead of an API service-role key", () => {

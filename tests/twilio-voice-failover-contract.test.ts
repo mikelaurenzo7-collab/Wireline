@@ -3,15 +3,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-const stripComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 describe("Twilio voice failover contract", () => {
   const routes = read("src/routes/twilio-webhook-base.ts");
+  const inboundRoutes = read("src/routes/openai-inbound-twilio-routes.ts");
   const outboundRoutes = read("src/routes/openai-outbound-routes.ts");
   const outboundService = read("src/lib/voice/outbound-call-service.ts");
   const sipConfig = read("src/lib/voice/openai-sip-config.ts");
-  const codeOnly = stripComments(routes);
+  const promptGenerator = read("scripts/generate-openai-static-prompts.mjs");
   const auth = read("src/lib/twilio-webhook-auth.ts");
 
   it("fails production callbacks closed through Twilio's official signature verifier", () => {
@@ -25,8 +24,17 @@ describe("Twilio voice failover contract", () => {
   it("does not IP-throttle signed provider retries ahead of verification", () => {
     expect(routes).not.toContain("twilioVoiceRateLimiter");
     expect(routes).not.toContain('bucket: "webhook:twilio:voice"');
-    expect(routes).toMatch(
-      /"\/api\/twilio-webhook\/voice-fallback",[\s\S]*res\.setHeader\("Content-Type", "text\/xml"\);[\s\S]*verifyTwilioSignature\(req\)/,
+    const shared = routes.slice(
+      routes.indexOf("export async function handleTwilioVoiceFallback"),
+      routes.indexOf('router.post("/api/twilio-webhook/voice-fallback"'),
+    );
+    expect(shared).toContain('res.setHeader("Content-Type", "text/xml")');
+    expect(shared).toContain("verifyTwilioSignature(req)");
+    expect(routes).toContain(
+      'router.post("/api/twilio-webhook/voice-fallback", handleTwilioVoiceFallback)',
+    );
+    expect(inboundRoutes).toContain(
+      'router.post("/api/twilio-webhook/openai-inbound-fallback", handleTwilioVoiceFallback)',
     );
   });
 
@@ -56,65 +64,63 @@ describe("Twilio voice failover contract", () => {
     expect(fallback).not.toContain("<Dial");
   });
 
-  it("falls through an unanswered human transfer to voicemail", () => {
+  it("hangs up after an unanswered human transfer without recording", () => {
     expect(routes).toContain('action="/api/twilio-webhook/voice-fallback-complete"');
-    expect(routes).toContain(
-      'if (dialStatus === "completed") return res.status(200).send(twimlHangup());',
+    const completion = routes.slice(
+      routes.indexOf('router.post("/api/twilio-webhook/voice-fallback-complete"'),
+      routes.indexOf('router.post("/api/twilio-webhook/voicemail-complete"'),
     );
-    expect(routes).toContain('action="/api/twilio-webhook/voicemail-complete"');
+    expect(completion).toContain("return res.status(200).send(twimlHangup())");
+    expect(completion).not.toContain("<Record");
+    expect(completion).not.toContain("failoverVoicemailTwiml");
     expect(routes).toContain('method="POST"');
   });
 
-  it("never records or transcribes a HIPAA or unresolved line on the failover path", () => {
-    const builder = routes.slice(
-      routes.indexOf("function failoverVoicemailTwiml("),
-      routes.indexOf("async function resolveFailoverCompliance("),
+  it("transitions a failed OpenAI SIP Dial into signed continuity", () => {
+    expect(inboundRoutes).toContain(
+      'action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST"',
     );
-    expect(builder).toMatch(
-      /const recordingEnabled =\s*compliance\.complianceMode !== null && compliance\.complianceMode !== "hipaa";/,
+    const complete = inboundRoutes.slice(
+      inboundRoutes.indexOf('"/api/twilio-webhook/openai-inbound-dial-complete"'),
+      inboundRoutes.indexOf('"/api/twilio-webhook/openai-inbound-fallback"'),
     );
-    const guardStart = builder.indexOf("if (!recordingEnabled) {");
-    const guardEnd = builder.indexOf("const disclosure =");
-    expect(guardStart, "recording suppression branch must exist").toBeGreaterThan(-1);
-    expect(guardEnd, "disclosure branch must follow it").toBeGreaterThan(guardStart);
-
-    const suppressed = builder.slice(guardStart, guardEnd);
-    expect(suppressed.length).toBeGreaterThan(0);
-    expect(suppressed).not.toContain("<Record");
-    expect(suppressed).not.toContain("transcribe");
-    expect(suppressed).toContain("return (");
+    const auth = complete.indexOf("evaluateTwilioWebhookAuth(req)");
+    const status = complete.indexOf("DialCallStatus");
+    const continuity = complete.indexOf("await handleTwilioVoiceFallback(req, res)");
+    expect(auth).toBeGreaterThan(-1);
+    expect(status).toBeGreaterThan(auth);
+    expect(continuity).toBeGreaterThan(status);
+    expect(complete).toContain('dialStatus === "completed"');
+    expect(complete).toContain("INBOUND_DIAL_CONTINUITY_STATUSES.has(dialStatus)");
   });
 
-  it("speaks the recording disclosure on every call it does record", () => {
-    const builder = routes.slice(
-      routes.indexOf("function failoverVoicemailTwiml("),
-      routes.indexOf("async function resolveFailoverCompliance("),
+  it("lets carrier fallback run on transient primary failures only", () => {
+    expect(inboundRoutes).toMatch(
+      /if \(!calledNumber\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
     );
-    expect(builder).toContain("complianceFirstMessagePrefix(");
-    expect(builder).toContain("recordingEnabled: true");
-    expect(builder).toContain("escapeTwimlValue(");
-    expect(builder).toMatch(/\$\{disclosure\}Please leave your name/);
+    expect(inboundRoutes).toMatch(
+      /if \(!openAISipConfigured\(\)\) \{[\s\S]*?res\.status\(503\)\.send\(hangupTwiml\(\)\)/,
+    );
+    expect(inboundRoutes).toMatch(
+      /if \(!userId\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
+    );
+    expect(inboundRoutes).toMatch(
+      /if \(!environment\.allowed\) \{[\s\S]*?res\.status\(200\)\.send\(hangupTwiml\(\)\)/,
+    );
+    expect(inboundRoutes).toMatch(
+      /catch \(error\) \{[\s\S]*?res\.status\(503\)\.send\(hangupTwiml\(\)\)/,
+    );
   });
 
-  it("resolves compliance for both failover entry points and keeps lookup failures unknown", () => {
-    expect(routes).toContain("failoverVoicemailTwiml(true, await resolveFailoverCompliance(to))");
-    expect(routes).toContain("failoverVoicemailTwiml(false, await resolveFailoverCompliance(to))");
-    expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\(\)/);
-    expect(codeOnly).not.toMatch(/failoverVoicemailTwiml\((?:true|false)\)/);
-
-    const resolver = routes.slice(
-      routes.indexOf("async function resolveFailoverCompliance("),
-      routes.indexOf("function publicAssetUrl("),
+  it("serves only a non-speech chime and validated human transfer on continuity", () => {
+    const shared = routes.slice(
+      routes.indexOf("export async function handleTwilioVoiceFallback"),
+      routes.indexOf('router.post("/api/twilio-webhook/voice-fallback"'),
     );
-    expect(resolver).toContain("schema.agents.complianceMode");
-    // Must match lookupTenant's normalization: a To variant that resolves the
-    // tenant but misses this lookup fails closed and refuses voicemail for a
-    // non-HIPAA tenant during every failover.
-    expect(resolver).toContain("eq(schema.phoneNumbers.phoneNumber, sanitizePhone(to))");
-    expect(resolver).toContain("catch (error)");
-    expect(resolver).toContain("return unknown;");
-    expect(resolver).toContain("complianceMode: null");
-    expect(resolver).toContain("recording disabled");
+    expect(shared).toContain("/sounds/wireline-transfer-chime.wav");
+    expect(shared).toContain("escapeTwimlValue(fallbackNumber)");
+    expect(shared).toContain("return res.status(200).send(twimlHangup())");
+    expect(shared).not.toMatch(/<Record\b|transcribeCallback|openai-[a-z-]+\.mp3/);
   });
 
   it("validates transfer destinations and escapes dynamic TwiML values", () => {
@@ -138,8 +144,10 @@ describe("Twilio voice failover contract", () => {
     expect(routes).not.toContain("Promise.race([");
   });
 
-  it("captures the voicemail transcript via a dedicated transcribeCallback", () => {
-    expect(routes).toContain('transcribeCallback="/api/twilio-webhook/voicemail-transcription"');
+  it("keeps in-flight legacy voicemail callbacks signed without advertising new recording", () => {
+    expect(routes).not.toContain(
+      'transcribeCallback="/api/twilio-webhook/voicemail-transcription"',
+    );
     expect(routes).toContain('"/api/twilio-webhook/voicemail-transcription"');
     expect(routes).toMatch(
       /TranscriptionStatus[\s\S]*status !== "completed"[\s\S]*update\(schema\.callLogs\)[\s\S]*set\(\{ transcript: transcription \}\)/,
@@ -150,5 +158,16 @@ describe("Twilio voice failover contract", () => {
     const asset = resolve(process.cwd(), "public/sounds/wireline-transfer-chime.wav");
     expect(existsSync(asset)).toBe(true);
     expect(statSync(asset).size).toBeGreaterThan(1_000);
+  });
+
+  it("ships zero carrier synthesis and no references to absent prompt assets", () => {
+    for (const route of [routes, inboundRoutes, outboundRoutes]) {
+      expect(route).not.toMatch(/Polly\.|<Say\b|\.say\s*\(/i);
+      expect(route).not.toMatch(/openai-[a-z-]+\.mp3/i);
+      expect(route).not.toContain("openai-static-prompts");
+    }
+    expect(outboundRoutes).not.toContain("voicemailTwiml");
+    expect(promptGenerator.match(/file: "openai-[a-z-]+\.mp3"/g)).toHaveLength(6);
+    expect(promptGenerator).toContain("future reproducibility");
   });
 });

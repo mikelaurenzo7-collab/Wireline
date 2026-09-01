@@ -20,7 +20,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  */
 describe("caller-requested callbacks execute end-to-end", () => {
   it("tool handler persists a structured, executable callback", () => {
-    const handler = read("src/routes/vapi/tool-handlers-workflow.ts");
+    const handler = read("src/lib/bot-tools/workflow.ts");
     expect(handler).toContain("parseCallbackDatetime");
     expect(handler).toContain("callbackScheduledAt: dueAt");
     expect(handler).toContain("dueDate: dueAt");
@@ -54,7 +54,7 @@ describe("caller-requested callbacks execute end-to-end", () => {
    */
   it("claims the callback consent class only from the consumer's own request", () => {
     const engine = read("src/lib/callback-engine.ts");
-    const handler = read("src/routes/vapi/tool-handlers-workflow.ts");
+    const handler = read("src/lib/bot-tools/workflow.ts");
     const intake = read("src/routes/intake-routes.ts");
 
     // Read from the lead, never assumed.
@@ -75,7 +75,7 @@ describe("caller-requested callbacks execute end-to-end", () => {
     expect(bulk).toContain("sanitizeUntrustedOutboundMetadata(");
 
     // Without the marker the dial stays marketing-classed, which is what keeps
-    // the opt-out announcement on (vapi-client isMarketingCallPurpose).
+    // the opt-out announcement on the live-call purpose classifier.
     expect(engine).toContain('consumerRequested ? "callback" : "marketing_or_sales"');
   });
 

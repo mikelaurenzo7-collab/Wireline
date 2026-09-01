@@ -35,7 +35,7 @@ describe("SMS opt-in cannot clear manual/legal DNC rows", () => {
 
 describe("voice tool handlers tell the truth", () => {
   it("add_to_dnc failure is admitted to the consumer, not papered over", () => {
-    const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+    const handlers = read("src/lib/bot-tools/core.ts");
     expect(handlers).not.toContain(
       "I've noted your preference. We'll make sure that's taken care of.",
     );
@@ -45,7 +45,7 @@ describe("voice tool handlers tell the truth", () => {
   });
 
   it("update_lead_status reports a no-op instead of claiming success", () => {
-    const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+    const handlers = read("src/lib/bot-tools/core.ts");
     expect(handlers).toContain("so the status wasn't updated");
     expect(handlers).toContain(".returning({ id: schema.outboundLeads.id })");
     expect(handlers).not.toContain(
@@ -90,18 +90,5 @@ describe("agent capacity is race-safe on the MCP draft path", () => {
     expect(createBlock).toContain("drizzle.transaction");
     expect(createBlock).toContain("pg_advisory_xact_lock(hashtext(");
     expect(createBlock).toContain("tx.insert(schema.agents)");
-  });
-});
-
-describe("sentinel killCall verifies the Vapi response", () => {
-  it("does not mark presence terminated when the terminate call was rejected", () => {
-    const sentinel = read("src/services/sentinel.ts");
-    expect(sentinel).toContain("if (!response.ok)");
-    // Native xAI hangup updates presence first; the Vapi rollback path must
-    // still only mark terminated after the end-call response succeeds.
-    const okCheck = sentinel.indexOf("if (!response.ok)");
-    const presenceUpdate = sentinel.indexOf('set({ status: "terminated" })', okCheck);
-    expect(okCheck).toBeGreaterThan(-1);
-    expect(presenceUpdate).toBeGreaterThan(okCheck);
   });
 });

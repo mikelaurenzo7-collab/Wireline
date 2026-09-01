@@ -18,10 +18,6 @@ vi.mock("../src/lib/twilio-service", () => ({
   sendTenantMessage: mocks.sendTenantMessage,
 }));
 
-vi.mock("../src/lib/vapi-helpers", () => ({
-  sanitizePhone: (value: string) => value.replace(/[^0-9+]/g, ""),
-}));
-
 import { sendPreparedPostCallCsatSms } from "../src/lib/csat-service";
 
 describe("post-call CSAT provider boundary", () => {

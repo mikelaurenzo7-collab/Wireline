@@ -100,11 +100,6 @@ const required = [
     process.env.OPENAI_WEBHOOK_SECRET,
   ],
   [
-    "ELEVENLABS_API_KEY",
-    "Server-only managed Studio TTS and authorized private voice cloning",
-    process.env.ELEVENLABS_API_KEY,
-  ],
-  [
     "TWILIO_ACCOUNT_SID",
     "Twilio programmable voice and messaging account",
     process.env.TWILIO_ACCOUNT_SID,
@@ -229,6 +224,7 @@ const optional = [
 ];
 
 const retiredVoiceEnvKeys = [
+  "ELEVENLABS_API_KEY",
   "VITE_VAPI_PUBLIC_KEY",
   "VAPI_PRIVATE_KEY",
   "VAPI_WEBHOOK_SECRET",

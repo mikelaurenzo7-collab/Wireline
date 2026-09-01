@@ -18,12 +18,15 @@ describe("activation path contract", () => {
     expect(doc).toContain("SENTRY_DSN");
   });
 
-  it("mounts one Bot activation path across Overview and Studio", () => {
+  it("mounts one Bot activation path on active Studio as well as the retired Overview source", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
+    const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
 
     expect(overview).toContain("ActivationChecklist");
+    expect(studioSetup).toContain('import ActivationChecklist from "./ActivationChecklist"');
+    expect(studioSetup).toContain('<ActivationChecklist className="mb-1" />');
     expect(overview).toContain("FirstRunWorkspace");
     expect(overview).toContain("degraded && !hasBots");
     expect(overview).toContain("WorkspaceRecovery");
@@ -70,6 +73,7 @@ describe("activation path contract", () => {
 
   it("keeps post-create setup resumable, honest, and focused", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const billing = read("src/pages/BillingSettings.tsx");
     const copy = read("src/lib/wireline-onboarding-copy.ts");
     expect(wizard).toContain('value === "train"');
     expect(wizard).toContain('value === "wire"');
@@ -97,5 +101,12 @@ describe("activation path contract", () => {
     expect(copy).toContain("Continue to launch");
     expect(copy).toContain("Skip test");
     expect(copy).toContain("Put it on the line");
+    expect(billing).toContain("shouldResumePostCreateLaunch(");
+    expect(billing).toContain("Boolean(readPostCreateWizard())");
+    expect(billing).toContain("readPostCreateWizardStep()");
+    expect(billing).toContain('window.location.replace("/studio")');
+    expect(billing.indexOf("window.history.replaceState")).toBeLessThan(
+      billing.indexOf('window.location.replace("/studio")'),
+    );
   });
 });

@@ -270,7 +270,6 @@ const previewSpendAuthorityKeys = [
   "AGENTMAIL_API_KEY",
   "AI_GATEWAY_API_KEY",
   "APOLLO_API_KEY",
-  "ELEVENLABS_API_KEY",
   "FEDERAL_DNC_API_KEY",
   "GEMINI_API_KEY",
   "OPENAI_API_KEY",

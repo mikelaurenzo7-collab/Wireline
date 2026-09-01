@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026."
+        description="Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated August 31, 2026."
         path="/privacy"
       />
 
@@ -101,7 +101,7 @@ export default function PrivacyPolicyPage() {
           {[
             "We do not sell personal information.",
             "Optional advertising measurement stays off unless you allow it.",
-            "Custom voices stay private and require speaker authorization.",
+            "Voice settings use OpenAI's built-in voice roster; BotBound does not accept voice-cloning uploads.",
           ].map((item) => (
             <div
               key={item}
@@ -192,13 +192,6 @@ export default function PrivacyPolicyPage() {
               the calling, texting, and email service you configure.
             </p>
             <p>
-              <strong>Authorized voice data</strong>: When the account owner creates a custom voice,
-              we process the submitted recording, voice characteristics, a one-way sample
-              fingerprint, voice-model identifier, consent record, review audio, approval status,
-              and lifecycle audit events. Voice characteristics may be biometric or sensitive data
-              under applicable law.
-            </p>
-            <p>
               <strong>Usage and billing data</strong>: Feature usage, AI-model consumption, plan and
               balance records, and Stripe billing information. We do not store full payment-card
               numbers.
@@ -223,10 +216,9 @@ export default function PrivacyPolicyPage() {
               We use data to provide and secure BotBound; process managed structured AI requests
               primarily through <strong>OpenAI</strong>, with Vercel AI Gateway and{" "}
               <strong>Google Gemini</strong> as governed structured continuity routes; run live
-              phone conversations through OpenAI Realtime over Twilio PSTN and SIP; create
-              authorized studio voice proofs through ElevenLabs; route
-              calls and messages; execute connected workflows; provide support; prevent fraud and
-              abuse; bill through Stripe; and understand aggregate product performance.
+              phone conversations through OpenAI Realtime over Twilio PSTN and SIP; route calls and
+              messages; execute connected workflows; provide support; prevent fraud and abuse; bill
+              through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -236,9 +228,8 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               BotBound does not train its own models on customer Bot configurations, recordings,
-              transcripts, message content, or custom voice samples. AI and voice providers process
-              submitted data under their applicable contracts, privacy terms, account controls, and
-              safety obligations.
+              transcripts, or message content. AI providers process submitted data under their
+              applicable contracts, privacy terms, account controls, and safety obligations.
             </p>
           </Section>
 
@@ -254,10 +245,6 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>OpenAI</strong>: Primary managed structured inference and Realtime browser
                 and phone conversations
-              </li>
-              <li>
-                <strong>ElevenLabs</strong>: Authorized private studio voice creation, quality
-                proofs, and voice-model deletion; not the live phone runtime
               </li>
               <li>
                 <strong>Google Gemini</strong>: Managed continuity inference and grounded search
@@ -318,15 +305,6 @@ export default function PrivacyPolicyPage() {
               deletion starts a documented deletion process; associated personal data is erased
               within 30 days except for records we must retain by law or security records that have
               been de-identified.
-            </p>
-            <p>
-              BotBound processes a custom-voice upload in memory and does not place the source file
-              in its database or object storage. We retain the one-way fingerprint, authorization,
-              ownership, review, and audit records needed to prevent duplicate or unauthorized use.
-              ElevenLabs receives the sample to create and operate the voice model and retains or
-              deletes provider-side data under its terms, privacy controls, and legal obligations.
-              Revoking a voice immediately blocks new BotBound calls and requests provider deletion;
-              if that request fails, deletion remains pending for an authorized retry.
             </p>
             <p>
               We use access controls, encryption in transit, restricted secrets, tenant isolation,

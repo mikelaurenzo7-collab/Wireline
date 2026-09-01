@@ -40,7 +40,9 @@ describe("repository and documentation organization", () => {
     expect(docs).toContain("[CLAUDE.md](../CLAUDE.md)");
     expect(docs).toContain("[DATABASE_SETUP.md](../DATABASE_SETUP.md)");
     expect(docs).toContain("[DEPLOY.md](../DEPLOY.md)");
-    expect(docs).toContain("[apps/browser-extension/README.md](../apps/browser-extension/README.md)");
+    expect(docs).toContain(
+      "[apps/browser-extension/README.md](../apps/browser-extension/README.md)",
+    );
     expect(docs).toContain("[android/README.md](../android/README.md)");
     expect(docs).toContain("[ios/README.md](../ios/README.md)");
     expect(docs).not.toContain("SETUP_CHECKLIST.md");
@@ -64,7 +66,7 @@ describe("repository and documentation organization", () => {
     expect(exists("DATABASE_SETUP.md")).toBe(true);
     expect(exists("DEPLOY.md")).toBe(true);
     expect(databaseRunbook).toContain("wireline_server");
-    expect(deploymentRunbook).toContain("Only the canonical `revaluate/wireline` project may own");
+    expect(deploymentRunbook).toContain("Only the canonical `revaluate/botbound` project may own");
     expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
     expect(databasePointer).toContain("Never use `db:push`");
     expect(databasePointer).toContain("wireline_server");

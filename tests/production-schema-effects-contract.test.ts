@@ -136,9 +136,9 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("confdeltype");
     expect(verifierSource).toContain("constraint_row.conkey");
     expect(verifierSource).toContain("constraint_row.confkey");
-    expect(
-      verifierSource.match(/to_jsonb\(ARRAY\(\s*SELECT child_column\.attname/gu),
-    ).toHaveLength(2);
+    expect(verifierSource.match(/to_jsonb\(ARRAY\(\s*SELECT child_column\.attname/gu)).toHaveLength(
+      2,
+    );
     expect(
       verifierSource.match(/to_jsonb\(ARRAY\(\s*SELECT parent_column\.attname/gu),
     ).toHaveLength(2);
@@ -229,6 +229,12 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain('source.indexOf("\\n$$;"');
     expect(verifierSource).toContain("0163_guard_account_environment_promotion.sql");
     expect(verifierSource).toContain("account_environment:preflight_body_drift");
+    expect(verifierSource).toContain(
+      "account_environment:preflight_references_retired_provider_table",
+    );
+    expect(verifierSource).toContain("account_environment:managed_voice_catalog_blocks_promotion");
+    expect(verifierSource).toContain("managedVoicePromotionCount");
+    expect(verifierSource).toContain("presenterResourcePromotionCount");
     expect(verifierSource).toContain("account_environment:mutation_missing_${checkName}");
     expect(verifierSource).toContain('"promotion_preflight"');
     expect(verifierSource).toContain('"account_lock"');
@@ -242,38 +248,53 @@ describe("production schema effects", () => {
     expect(verifierSource).toContain("consent_ledger_contacts");
   });
 
-  it("certifies retained-provider de-identification as a structural security boundary", () => {
+  it("certifies carrier retention plus complete retired-provider removal", () => {
     expect(verifierSource).toContain("pg_get_constraintdef");
     expect(verifierSource).toContain("carrier_orphan:non_pending_status_retained");
     expect(verifierSource).toContain("carrier_orphan:missing_pending_only_constraint");
-    expect(verifierSource).toContain("xai_binding:wrong_owner_identity_constraint");
-    expect(verifierSource).toContain("xai_binding:missing_tenant_policy");
-    expect(verifierSource).toContain("xai_binding:wrong_tenant_policy_definition");
-
-    expect(verifierSource).toContain("pg_get_function_identity_arguments");
-    expect(verifierSource).toContain("pg_get_functiondef");
-    expect(verifierSource).toContain("prosecdef");
-    expect(verifierSource).toContain("proconfig");
-    expect(verifierSource).toContain("rolsuper OR owner_role.rolbypassrls");
-    expect(verifierSource).toContain("has_function_privilege");
-    expect(verifierSource).toContain("aclexplode");
-    expect(verifierSource).toContain("public_execute_revoked");
-
     for (const boundary of [
+      "retired_voice_provider:cloned_voice_table_still_present",
+      "retired_voice_provider:revoke_function_still_present",
+      "retired_xai_voice:binding_table_still_present",
+      "retired_xai_voice:binding_policy_still_present",
+      "retired_xai_voice:binding_functions_still_present",
+      "wireline_claim_xai_phone_binding",
+      "wireline_claim_xai_phone_deactivation",
       "wireline_retire_xai_phone_binding",
       "wireline_scrub_xai_phone_bindings_for_purge",
-      "function_not_security_definer",
-      "function_search_path_not_pinned",
-      "function_owner_not_trusted",
-      "wrong_function_acl",
-      '"phone_lock"',
-      '"account_lock"',
-      '"purging_gate"',
-      '"ordered_phone_locks"',
-      '"sentinel_user"',
-      '"sentinel_agent"',
+      "legacyVoicePromotionCount",
+      "retiredXaiPromotionCount",
     ]) {
       expect(verifierSource).toContain(boundary);
+    }
+  });
+
+  it("certifies SMS destination routing and durable send-operation effects", () => {
+    for (const invariant of [
+      "destination_column_ready",
+      "legacy_index_removed",
+      "idx_sms_threads_user_destination_customer",
+      "idx_sms_threads_legacy_user_customer",
+      "sms_destination_routing:missing_nullable_destination_column",
+      "sms_destination_routing:legacy_cross_line_index_still_present",
+      "sms_destination_routing:wrong_destination_unique_index",
+      "sms_destination_routing:wrong_legacy_null_unique_index",
+      "wireline_sms_send_operations",
+      "operation_columns",
+      "primary_key_ready",
+      "user_cascade_fk_count",
+      "thread_cascade_fk_count",
+      "wireline_sms_send_operations_status_check",
+      "uq_sms_send_operations_user_idempotency",
+      "sms_send_operations:missing_table",
+      "sms_send_operations:wrong_column",
+      "sms_send_operations:wrong_cascade_foreign_keys",
+      "sms_send_operations:wrong_status_check",
+      "sms_send_operations:wrong_idempotency_index",
+      "sms_send_operations:wrong_tenant_policy",
+      "sms_send_operations:wrong_table_acl",
+    ]) {
+      expect(verifierSource).toContain(invariant);
     }
   });
 

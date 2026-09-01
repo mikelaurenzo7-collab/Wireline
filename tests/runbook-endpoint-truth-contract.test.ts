@@ -95,13 +95,15 @@ describe("runbooks only name endpoints that exist", () => {
     ).toEqual([]);
   });
 
-  it("points the load test at the mounted Vapi webhook path", () => {
+  it("points the load test at mounted OpenAI and Twilio webhook paths", () => {
     const loadTest = read("docs/LOAD_TEST.md");
-    const registry = read("src/server/register-api-routes.ts");
+    const openAISip = read("src/routes/openai-sip-routes.ts");
+    const twilioInbound = read("src/routes/openai-inbound-twilio-routes.ts");
 
-    expect(registry).toContain('app.use("/api/vapi-webhook"');
-    expect(loadTest).toContain("/api/vapi-webhook");
-    // The old path would have load-tested the 404 handler and reported success.
-    expect(loadTest).not.toContain("/api/vapi/webhook");
+    expect(openAISip).toContain('"/api/webhooks/openai/realtime"');
+    expect(twilioInbound).toContain('"/api/twilio-webhook/openai-inbound"');
+    expect(loadTest).toContain("/api/webhooks/openai/realtime");
+    expect(loadTest).toContain("/api/twilio-webhook/openai-inbound");
+    expect(loadTest).not.toContain("/api/vapi");
   });
 });

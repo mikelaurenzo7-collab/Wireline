@@ -1,29 +1,16 @@
 /**
- * Aggregate spend ceiling for the public demo lines.
+ * Aggregate admission ceiling for BotBound's public showcase phone lines.
  *
- * Every showcase call already carries a hard per-call COGS cap
- * (maxDurationSeconds: 600 in showcase-assistant.ts), but the published demo
- * numbers had no aggregate budget: bounded per call, unbounded in aggregate.
- * This module adds two rolling 24-hour ceilings enforced at assistant-request
- * time, before any model or voice spend starts:
- *
- * - a global daily call ceiling across all demo lines, and
- * - a per-caller daily ceiling so one number cannot farm the line.
- *
- * Fail posture is deliberately OPEN, unlike the simulation-mint quota: the
- * demo line is the top-of-funnel marketing surface, every admitted call is
- * individually COGS-capped, and silencing the published numbers on a limiter
- * outage costs more than the bounded worst case it would prevent. The
- * simulation quota fails closed because a tracker outage there removes the
- * ONLY ceiling on unbounded vendor sessions.
+ * The OpenAI SIP session has a hard per-call duration cap, but published
+ * numbers also need aggregate protection. Admission happens on the signed
+ * incoming-call event before founder seeding, runtime construction, spend
+ * reservation, or call acceptance.
  */
-import { rateLimit } from "./rate-limit";
+import { distributedLimiterStatus, rateLimit } from "./rate-limit";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** ~$77/day worst case at the 600s per-call cap and the blended voice reserve. */
+const DAY_MS = 24 * 60 * 60 * 1_000;
 const DEFAULT_GLOBAL_DAILY_CALL_CEILING = 60;
 const DEFAULT_CALLER_DAILY_CALL_CEILING = 4;
 
@@ -33,11 +20,23 @@ function ceilingFromEnv(name: string, fallback: number): number {
 }
 
 export type ShowcaseAdmission =
-  { admitted: true } | { admitted: false; reason: "global_daily_ceiling" | "caller_daily_ceiling" };
+  | { admitted: true }
+  | {
+      admitted: false;
+      reason: "limiter_unavailable" | "global_daily_ceiling" | "caller_daily_ceiling";
+    };
 
 export async function admitShowcaseDemoCall(
   callerNumber: string | null,
 ): Promise<ShowcaseAdmission> {
+  const limiter = distributedLimiterStatus();
+  if (!limiter.ok) {
+    log.error("Public showcase admission denied: distributed limiter unavailable", {
+      reason: limiter.reason,
+    });
+    return { admitted: false, reason: "limiter_unavailable" };
+  }
+
   try {
     const globalDecision = await rateLimit("all", {
       bucket: "showcase:demo-daily",
@@ -46,6 +45,7 @@ export async function admitShowcaseDemoCall(
         "WIRELINE_SHOWCASE_DAILY_CALL_CEILING",
         DEFAULT_GLOBAL_DAILY_CALL_CEILING,
       ),
+      failClosedOnError: true,
     });
     if (!globalDecision.allowed) {
       return { admitted: false, reason: "global_daily_ceiling" };
@@ -59,6 +59,7 @@ export async function admitShowcaseDemoCall(
           "WIRELINE_SHOWCASE_CALLER_DAILY_CALL_CEILING",
           DEFAULT_CALLER_DAILY_CALL_CEILING,
         ),
+        failClosedOnError: true,
       });
       if (!callerDecision.allowed) {
         return { admitted: false, reason: "caller_daily_ceiling" };
@@ -67,9 +68,9 @@ export async function admitShowcaseDemoCall(
 
     return { admitted: true };
   } catch (error: unknown) {
-    log.error("showcase demo ceiling check failed, admitting call", {
+    log.error("Public showcase admission denied: limiter check failed", {
       error: getErrorMessage(error),
     });
-    return { admitted: true };
+    return { admitted: false, reason: "limiter_unavailable" };
   }
 }

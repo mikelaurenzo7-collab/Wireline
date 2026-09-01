@@ -61,11 +61,11 @@ vi.mock("../src/lib/mobile-push", () => ({
   notifyDeviceAction: providers.notifyDeviceAction,
 }));
 
-import { handleDeviceToolCall } from "../src/routes/vapi/tool-handlers-device";
-import { handleShopifyToolCall } from "../src/routes/vapi/tool-handlers-shopify";
-import { handleSquareToolCall } from "../src/routes/vapi/tool-handlers-square";
-import { handleXToolCall } from "../src/routes/vapi/tool-handlers-x";
-import type { ToolCallContext } from "../src/routes/vapi/types";
+import { handleDeviceToolCall } from "../src/lib/bot-tools/device";
+import { handleShopifyToolCall } from "../src/lib/bot-tools/shopify";
+import { handleSquareToolCall } from "../src/lib/bot-tools/square";
+import { handleXToolCall } from "../src/lib/bot-tools/x";
+import type { ToolCallContext } from "../src/lib/agent-tool-types";
 
 const context = {
   toolCallId: "tool-1",

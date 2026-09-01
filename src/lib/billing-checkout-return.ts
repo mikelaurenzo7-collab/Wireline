@@ -9,12 +9,7 @@ export type CheckoutReturnVerification = {
 };
 
 export type CheckoutReturnOutcome =
-  | "fulfilled"
-  | "retired"
-  | "pending"
-  | "expired"
-  | "invalid"
-  | "retryable";
+  "fulfilled" | "retired" | "pending" | "expired" | "invalid" | "retryable";
 
 const CHECKOUT_RETURN_QUERY_KEYS = [
   "billing",
@@ -81,6 +76,26 @@ export function shouldFinalizeCheckoutReturn(outcome: CheckoutReturnOutcome): bo
     outcome === "retired" ||
     outcome === "expired" ||
     outcome === "invalid"
+  );
+}
+
+/**
+ * A paid plan Checkout may interrupt the post-create wizard at its Launch
+ * step. Resume only that proven flow: Runtime Balance and unrelated billing
+ * visits must remain on Billing, and an unfulfilled Checkout must retain its
+ * verification proof instead of navigating away.
+ */
+export function shouldResumePostCreateLaunch(
+  flow: CheckoutReturnFlow,
+  outcome: CheckoutReturnOutcome,
+  hasSavedWizard: boolean,
+  savedStep: string | null,
+): boolean {
+  return (
+    flow === "plan" &&
+    outcome === "fulfilled" &&
+    hasSavedWizard &&
+    (savedStep === "launch" || savedStep === "wire")
   );
 }
 

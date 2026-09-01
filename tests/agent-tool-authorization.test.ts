@@ -24,7 +24,7 @@ import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
  * The tool name union, the UI/create-path catalog, and the per-role defaults
  * are three hand-maintained lists that must agree. `search_knowledge_base` sat
  * in the union but in neither of the other two for the life of the feature: the
- * handler was live, the Vapi tool def existed, and the realtime voice path
+ * handler was live, the tool definition existed, and the realtime voice path
  * exposed it — but `resolveCreateEnabledTools` never granted it, so every agent
  * created through the web or mobile app persisted an `enabled_tools` without
  * it, the execution boundary denied it, and the Actions editor (which renders
@@ -244,10 +244,7 @@ describe("agent tool execution authorization", () => {
  * presentation concern applied on output, centred on the caller's match.
  */
 describe("knowledge search reads the whole entry", () => {
-  const source = readFileSync(
-    resolve(process.cwd(), "src/routes/vapi/tool-handlers-core.ts"),
-    "utf8",
-  );
+  const source = readFileSync(resolve(process.cwd(), "src/lib/bot-tools/core.ts"), "utf8");
 
   it("never truncates before scoring", () => {
     const build = source.slice(

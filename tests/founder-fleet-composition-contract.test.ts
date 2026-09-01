@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -5,6 +7,7 @@ import {
   EXPECTED_FOUNDER_PERSONA_COUNT,
   FOUNDER_FLEET_TEAMS,
   FOUNDER_FLEET_TEMPLATES,
+  founderFleetExistingAgentPatch,
   founderFleetSeedNeedsRefresh,
   knowledgeForRole,
   personalityForTemplate,
@@ -20,6 +23,40 @@ import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
  * against the seed's real output rather than source reads.
  */
 describe("founder fleet composition", () => {
+  it("refreshes managed metadata without replacing dogfooded Studio configuration", () => {
+    const patch = founderFleetExistingAgentPatch(
+      {
+        custom_training_setting: "keep me",
+        founder_seed_contract_version: 1,
+      },
+      {
+        founder_fleet_seed: true,
+        founder_seed_contract_version: 7,
+        team: "revenue",
+      },
+      "pulse-violet",
+    );
+
+    expect(patch).toEqual({
+      businessVariables: {
+        custom_training_setting: "keep me",
+        founder_fleet_seed: true,
+        founder_seed_contract_version: 7,
+        team: "revenue",
+      },
+      markKey: "pulse-violet",
+    });
+    expect(patch).not.toHaveProperty("voiceId");
+    expect(patch).not.toHaveProperty("firstMessage");
+    expect(patch).not.toHaveProperty("personalityVibe");
+    expect(patch).not.toHaveProperty("enabledTools");
+
+    const source = readFileSync(resolve(process.cwd(), "src/lib/founder-fleet-seed.ts"), "utf8");
+    expect(source).toContain("async function ensurePersonality");
+    expect(source).not.toContain(".set({ content })");
+    expect(source).not.toContain(".set({ enabledTools: ALL_AGENT_TOOLS })");
+  });
+
   it("retries when only the internal personas completed the current seed contract", () => {
     const baseState = {
       totalAgents: EXPECTED_FOUNDER_FLEET_AGENT_COUNT,

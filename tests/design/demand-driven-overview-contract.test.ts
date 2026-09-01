@@ -95,7 +95,8 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {
-    expect(voice).toMatch(/<MessageCircle[^>]*>[\s\S]*?Test\s*<\/button>/);
+    expect(voice).toContain("Preview voice");
+    expect(voice).toContain("OpenAILiveVoiceSandbox");
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");
     expect(voice).not.toContain("live PSTN");

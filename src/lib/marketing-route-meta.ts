@@ -130,12 +130,12 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/privacy": {
     title: "Privacy Policy",
     description:
-      "Privacy for BotBound's Bot platform: account, conversation, authorized voice, billing, and measurement data. Last updated August 17, 2026.",
+      "Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated August 31, 2026.",
   },
   "/terms": {
     title: "Terms of Service",
     description:
-      "BotBound's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026.",
+      "BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026.",
   },
   "/solutions/sales": {
     title: "EVERY GOOD LEAD GETS A NEXT STEP | BotBound",

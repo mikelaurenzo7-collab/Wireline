@@ -7,6 +7,7 @@ import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
   normalizeOpenAIRealtimeVoice,
+  parseOpenAIRealtimeVoice,
   type OpenAIRealtimeToolDefinition,
   type OpenAIRealtimeVoice,
 } from "./openai-realtime-config";
@@ -15,7 +16,11 @@ import {
   hangupOpenAIRealtimeCall,
 } from "./openai-realtime-call-control";
 import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
-import { RUNTIME_ACTION_SAFETY_BLOCK } from "../agent-runtime";
+import {
+  RUNTIME_ACTION_SAFETY_BLOCK,
+  RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK,
+} from "../agent-runtime";
+import { clampRuntimePromptPreservingTail } from "../agent-runtime-helpers";
 import {
   founderInternalRuntimeAuthorityBoundary,
   founderInternalRuntimePolicyBlock,
@@ -99,6 +104,9 @@ export type OpenAILiveInstructionAgent = {
   escalationPhone: string | null;
   escalationEmail: string | null;
   businessVariables: unknown;
+  voiceProvider?: string | null;
+  voiceId?: string | null;
+  phoneVoiceId?: string | null;
 };
 
 type Snippet = { source: "rule" | "knowledge"; content: string };
@@ -162,6 +170,38 @@ function storedProfile(value: unknown): unknown {
   );
 }
 
+export function resolveOpenAILiveVoiceSelection(input: {
+  voiceProvider?: unknown;
+  voiceId?: unknown;
+  phoneVoiceId?: unknown;
+  role: string | null;
+  businessVariables: unknown;
+}): {
+  profile: WirelineLiveVoiceProfile;
+  voice: OpenAIRealtimeVoice;
+  source: "agent_voice_id" | "profile_fallback";
+} {
+  const profile = resolveLiveVoiceProfile(input.role, storedProfile(input.businessVariables));
+  const primaryVoice = String(input.voiceProvider || "")
+    .trim()
+    .toLowerCase();
+  const voice =
+    (primaryVoice === "presenter" ? null : parseOpenAIRealtimeVoice(input.voiceId)) ||
+    parseOpenAIRealtimeVoice(input.phoneVoiceId);
+  if (voice) {
+    return {
+      profile,
+      voice,
+      source: "agent_voice_id",
+    };
+  }
+  return {
+    profile,
+    voice: normalizeOpenAIRealtimeVoice(PROFILE_VOICES[profile]),
+    source: "profile_fallback",
+  };
+}
+
 export function composeOpenAILiveInstructions(
   agent: OpenAILiveInstructionAgent,
   personality: string,
@@ -213,26 +253,29 @@ export function composeOpenAILiveInstructions(
       ? ""
       : trimLine(runtimeTemplate ? runtimeTemplate.rolePersonality : personality, 1_500) ||
         (agent.personalityVibe ? `Tone: ${agent.personalityVibe}.` : "");
-  return [
-    identity,
-    customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
-    internalPolicy && !runtimeReviewRequired
-      ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
-      : "",
-    tone ? `\nTONE:\n${tone}` : "",
-    templateGuidance ? `\n${templateGuidance}` : "",
-    !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
-    runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
-    runtimeReviewRequired
-      ? ""
-      : listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
-    `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
-    internalPolicy && !runtimeReviewRequired
-      ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
-      : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  return clampRuntimePromptPreservingTail(
+    [
+      identity,
+      customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
+      internalPolicy && !runtimeReviewRequired
+        ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
+        : "",
+      tone ? `\nTONE:\n${tone}` : "",
+      templateGuidance ? `\n${templateGuidance}` : "",
+      !runtimeReviewRequired && compliance ? `\nGUARDRAILS:\n${compliance}` : "",
+      runtimeReviewRequired ? "" : listBlock("OPERATING RULES", directives, 24),
+      runtimeReviewRequired
+        ? ""
+        : listBlock("INITIAL APPROVED KNOWLEDGE", knowledge, MAX_INITIAL_KNOWLEDGE_ITEMS),
+      `\n${RUNTIME_ACTION_SAFETY_BLOCK}`,
+      `\n${RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK}`,
+      internalPolicy && !runtimeReviewRequired
+        ? `\n${founderInternalRuntimeAuthorityBoundary(internalPolicy)}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  );
 }
 
 async function loadAgentRuntime(agentId: string, userId: string) {
@@ -253,6 +296,9 @@ async function loadAgentRuntime(agentId: string, userId: string) {
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
           businessVariables: schema.agents.businessVariables,
+          voiceProvider: schema.agents.voiceProvider,
+          voiceId: schema.agents.voiceId,
+          phoneVoiceId: schema.agents.phoneVoiceId,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
@@ -292,11 +338,7 @@ export async function createOpenAILiveVoiceCall(input: {
   sdp: string;
 }) {
   const runtime = await loadAgentRuntime(input.agentId, input.userId);
-  const profile = resolveLiveVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
-  const voice = normalizeOpenAIRealtimeVoice(PROFILE_VOICES[profile]);
+  const { profile, voice, source: voiceSource } = resolveOpenAILiveVoiceSelection(runtime.agent);
   const instructions = composeOpenAILiveInstructions(
     runtime.agent,
     runtime.personality,
@@ -353,6 +395,7 @@ export async function createOpenAILiveVoiceCall(input: {
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     voice,
     profile,
+    voiceSource,
     callId: call.callId,
     maxDurationSeconds: call.maxDurationSeconds,
   });
@@ -469,14 +512,11 @@ export function getOpenAILiveVoiceStatus() {
 
 export async function getOpenAILiveVoiceProfile(userId: string, agentId: string) {
   const runtime = await loadAgentRuntime(agentId, userId);
-  const profile = resolveLiveVoiceProfile(
-    runtime.agent.role,
-    storedProfile(runtime.agent.businessVariables),
-  );
+  const { profile, voice } = resolveOpenAILiveVoiceSelection(runtime.agent);
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: PROFILE_VOICES[profile],
+    voice,
     customVoiceConfigured: false,
   };
 }
@@ -492,14 +532,21 @@ export async function setOpenAILiveVoiceProfile(
   delete variables.grok_voice_id;
   delete variables.wirelineLiveCustomVoice;
   variables.wirelineLiveVoiceProfile = profile;
+  const voice = PROFILE_VOICES[profile];
   await drizzle
     .update(schema.agents)
-    .set({ businessVariables: variables })
+    .set({
+      businessVariables: variables,
+      voiceProvider: "openai",
+      voiceId: voice,
+      phoneVoiceProvider: null,
+      phoneVoiceId: null,
+    })
     .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)));
   return {
     profile,
     profiles: WIRELINE_LIVE_VOICE_PROFILES,
-    voice: PROFILE_VOICES[profile],
+    voice,
     customVoiceConfigured: false,
   };
 }

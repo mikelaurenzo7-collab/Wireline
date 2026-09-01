@@ -180,7 +180,7 @@ const TRUST_PACK_SECTIONS = [
     icon: Database,
     title: "Subprocessors & vendors",
     items: [
-      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation; OpenAI also provides the primary structured runtime. ElevenLabs is limited to authorized private studio voice workflows.",
+      "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation from the same 10-voice roster; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
       "Data plane: Supabase Postgres (US-East today). Rate limits: Upstash Redis.",
       "Email: AgentMail for platform-managed Bot mailboxes and Bot email; Resend for transactional platform email.",

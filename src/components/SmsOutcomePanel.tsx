@@ -41,7 +41,10 @@ export default function SmsOutcomePanel({
   initialStatus: string;
   onStatusChange?: (status: ConversationOutcomeStatus) => void;
 }) {
-  const [status, setStatus] = useState<ConversationOutcomeStatus>(() => normalizeStatus(initialStatus));
+  const [status, setStatus] = useState<ConversationOutcomeStatus>(() =>
+    normalizeStatus(initialStatus),
+  );
+  const [routingConflict, setRoutingConflict] = useState(initialStatus === "routing_conflict");
   const [handoff, setHandoff] = useState<{ id: string; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<OutcomeBusy>(null);
@@ -51,6 +54,7 @@ export default function SmsOutcomePanel({
   useEffect(() => {
     const controller = new AbortController();
     setStatus(normalizeStatus(initialStatus));
+    setRoutingConflict(initialStatus === "routing_conflict");
     setHandoff(null);
     setLoading(true);
     setError(null);
@@ -64,6 +68,12 @@ export default function SmsOutcomePanel({
       })
       .then((body) => {
         if (controller.signal.aborted) return;
+        if (body?.thread?.status === "routing_conflict") {
+          setRoutingConflict(true);
+          setHandoff(body?.handoff || null);
+          return;
+        }
+        setRoutingConflict(false);
         const nextStatus = normalizeStatus(body?.thread?.status);
         setStatus(nextStatus);
         setHandoff(body?.handoff || null);
@@ -108,7 +118,9 @@ export default function SmsOutcomePanel({
           : `Conversation marked ${OUTCOME_META[updatedStatus].label.toLowerCase()}.`,
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update the conversation outcome.");
+      setError(
+        cause instanceof Error ? cause.message : "Could not update the conversation outcome.",
+      );
     } finally {
       setBusy(null);
     }
@@ -123,8 +135,31 @@ export default function SmsOutcomePanel({
     );
   }
 
+  if (routingConflict) {
+    return (
+      <section
+        className="mb-3 rounded-lg border border-amber-500/35 bg-amber-500/10 p-3"
+        aria-label="SMS outcome"
+      >
+        <div className="flex items-center gap-2">
+          <Route className="size-3.5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
+          <span className="text-xs font-semibold uppercase tracking-[.08em] text-amber-800 dark:text-amber-200">
+            Sending line needs review
+          </span>
+        </div>
+        <StatusNotice tone="warning" className="mt-3">
+          Outcome controls are paused until this conversation is bound to one verified Twilio
+          number. BotBound will not guess which business line owns it.
+        </StatusNotice>
+      </section>
+    );
+  }
+
   return (
-    <section className="mb-3 rounded-lg border border-border bg-secondary/35 p-3" aria-label="SMS outcome">
+    <section
+      className="mb-3 rounded-lg border border-border bg-secondary/35 p-3"
+      aria-label="SMS outcome"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Route className="size-3.5 text-primary" aria-hidden="true" />
         <span className="mr-auto text-xs font-semibold uppercase tracking-[.08em] text-muted-foreground">
@@ -141,7 +176,11 @@ export default function SmsOutcomePanel({
           disabled={busy !== null}
           onClick={() => void setOutcome("waiting")}
         >
-          {busy === "waiting" ? <Loader2 className="size-3.5 animate-spin" /> : <Clock3 className="size-3.5" />}
+          {busy === "waiting" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Clock3 className="size-3.5" />
+          )}
           Waiting
         </Button>
         <Button

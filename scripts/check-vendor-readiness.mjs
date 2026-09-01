@@ -162,8 +162,6 @@ const [
   agentmailApiKeys,
   agentmailDomains,
   resend,
-  elevenlabs,
-  elevenlabsVoices,
 ] = await Promise.all([
   present("OPENAI_API_KEY")
     ? readJson("https://api.openai.com/v1/models", {
@@ -252,16 +250,6 @@ const [
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
       })
     : null,
-  present("ELEVENLABS_API_KEY")
-    ? readJson("https://api.elevenlabs.io/v1/user/subscription", {
-        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
-      })
-    : null,
-  present("ELEVENLABS_API_KEY")
-    ? readJson("https://api.elevenlabs.io/v1/voices", {
-        headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
-      })
-    : null,
 ]);
 
 const openaiModelIds = new Set(
@@ -317,55 +305,6 @@ record(
       ? `AI Gateway credential was rejected or unavailable${gateway ? ` (HTTP ${gateway.status})` : ""}.`
       : "AI Gateway credential missing.",
   "Set an API-key budget and alerting; add credits or auto-top-up before scale.",
-);
-
-// Core studio voices the runtime hard-requires (mirror of
-// ELEVENLABS_CORE_VOICE_IDS in src/lib/voice-catalog.ts). Verified present
-// 2026-08-07. ElevenLabs is studio-only; it never gates OpenAI phone calls.
-// The gate requires the core preview catalog and reports the current inventory.
-const coreElevenLabsVoiceIds = new Set([
-  "EXAVITQu4vr4xnSDxMaL",
-  "cgSgspJ2msm6clMCkdW9",
-  "pNInz6obpgDQGcFmaJgB",
-  "JBFqnCBsd6RMkjVDRZzb",
-  "nPczCjzI2devNBz1zQrb",
-]);
-const elevenLabsVoiceInventory = arrayAt(elevenlabsVoices?.body, "voices");
-const availableElevenLabsVoiceIds = new Set(
-  elevenLabsVoiceInventory.map((voice) => String(voice?.voice_id || "")).filter(Boolean),
-);
-const premadeVoiceCount = elevenLabsVoiceInventory.filter(
-  (voice) => String(voice?.category || "") === "premade",
-).length;
-const missingCoreVoices = [...coreElevenLabsVoiceIds].filter(
-  (voiceId) => !availableElevenLabsVoiceIds.has(voiceId),
-);
-const coreElevenLabsVoicesReady = missingCoreVoices.length === 0;
-const elevenLabsReady = Boolean(
-  elevenlabs?.ok && elevenlabsVoices?.ok && coreElevenLabsVoicesReady,
-);
-record(
-  "elevenlabs",
-  true,
-  elevenLabsReady ? "ready" : "blocked",
-  elevenLabsReady
-    ? `ElevenLabs key accepted (${elevenlabs.body?.tier || "unknown"} tier); all core studio voices reachable, ${premadeVoiceCount} premade voices available for the studio catalog.`
-    : elevenlabs?.ok && elevenlabsVoices?.ok
-      ? `ElevenLabs key accepted, but core studio voices are unavailable: ${missingCoreVoices.join(", ")}.`
-      : "ElevenLabs managed voice credential missing, rejected, or voice inventory unavailable.",
-  "Keep provider billing and usage alerts active; verify one studio preview and one cloning lifecycle before GA.",
-  elevenlabs?.ok
-    ? {
-        character_count: elevenlabs.body?.character_count ?? null,
-        character_limit: elevenlabs.body?.character_limit ?? null,
-        voice_count: elevenLabsVoiceInventory.length,
-        premade_voice_count: premadeVoiceCount,
-        core_voice_count: [...coreElevenLabsVoiceIds].filter((id) =>
-          availableElevenLabsVoiceIds.has(id),
-        ).length,
-        studio_model: "eleven_flash_v2_5",
-      }
-    : undefined,
 );
 
 const twilioAccountReady = Boolean(twilioAccount?.ok && twilioAccount.body?.status === "active");

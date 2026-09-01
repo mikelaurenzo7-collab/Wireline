@@ -24,7 +24,6 @@ function expectMiddlewareBeforeHandler(source: string, route: string, handlerMar
 describe("provider spend launch kill switch", () => {
   it("guards browser-minted voice sessions before provider work", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
-    const managedVoices = read("src/routes/voices-routes.ts");
     const publicDemo = read("src/routes/marketing-runtime-routes.ts");
 
     expectMiddlewareBeforeHandler(
@@ -43,19 +42,9 @@ describe("provider spend launch kill switch", () => {
       "asyncHandler(async (req, res)",
     );
     expect(openai).not.toMatch(/Vapi|xAI|Grok/);
-    for (const route of [
-      '"/api/voices/:id/preview"',
-      '"/api/voices/clone"',
-      '"/api/voices/:id/approve"',
-    ]) {
-      expectMiddlewareBeforeHandler(managedVoices, route, "asyncHandler<AuthenticatedRequest>");
-    }
-
-    const deleteStart = managedVoices.indexOf('"/api/voices/:id"');
-    const deleteHandler = managedVoices.indexOf("asyncHandler<AuthenticatedRequest>", deleteStart);
-    expect(deleteStart).toBeGreaterThan(-1);
-    expect(deleteHandler).toBeGreaterThan(deleteStart);
-    expect(managedVoices.slice(deleteStart, deleteHandler)).not.toContain("enforceLaunchHardGate");
+    const registry = read("src/server/register-api-routes.ts");
+    expect(registry).not.toContain("voices-routes");
+    expect(registry).not.toContain("voicesRouter");
   });
 
   it("guards manual SMS and queue-only artifact spend", () => {

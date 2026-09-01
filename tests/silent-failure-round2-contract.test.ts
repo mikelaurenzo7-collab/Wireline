@@ -156,10 +156,15 @@ describe("SMS inbox never paints one thread's messages under another's header", 
   it("passes the open thread's abort signal to the post-send refresh", () => {
     const component = read("src/components/SmsThreads.tsx");
     expect(component).toContain("activeThreadFetchRef");
-    // Captured at send time. Reading the ref after the await would hand this
-    // refresh a live signal belonging to whichever thread was opened since.
-    expect(component).toContain("const sentThreadController = activeThreadFetchRef.current;");
-    expect(component).toContain("fetchMessages(threadId, sentThreadController?.signal)");
+    // A -> B -> A navigation replaces A's aborted controller. Refresh only
+    // when A is active again, using the controller owned by the current A view.
+    const accepted = component.slice(
+      component.indexOf("if (response.ok && result?.ok === true)"),
+      component.indexOf("const message = result?.reason", component.indexOf("if (response.ok")),
+    );
+    expect(accepted).toContain("if (activeIdRef.current === threadId)");
+    expect(accepted).toContain("fetchMessages(threadId, activeThreadFetchRef.current?.signal)");
+    expect(component).not.toContain("sentThreadController");
     // The selection effect owns the controller and must publish it to the ref.
     expect(component).toContain("activeThreadFetchRef.current = controller");
   });
@@ -237,7 +242,7 @@ describe("a cadence retries a failed touch instead of consuming the step", () =>
     );
     expect(step).toContain('return { ok: false, result: "no phone number on lead" }');
     expect(step).toContain('return { ok: false, result: "no email on lead" }');
-    // Provider sends are never retried either: neither Vapi call creation nor
+    // Provider sends are never retried either: neither live-call creation nor
     // Twilio message creation is idempotent, so a retry can double-contact a
     // consumer — worse under TCPA than the dropped touch it would recover.
     expect(step).not.toContain("retryable: !res.ok");
@@ -257,9 +262,8 @@ describe("auto-QA failures reach the retry queue", () => {
 
   it("keeps an idempotency guard that makes a retry safe", () => {
     // The guard must exist, but it must key on the RUBRIC having run — not on
-    // `qaScore != null`. The Vapi end-of-call handler writes a provisional
-    // heuristic score on every call before this job is enqueued, so the old
-    // null-check was true every time and the rubric never ran once. See
+    // `qaScore != null`. Legacy rows can contain provisional heuristic scores,
+    // so the old null-check incorrectly treated them as completed rubrics. See
     // qa-score-provenance.ts.
     const worker = read("src/lib/job-worker-base.ts");
     expect(worker).toContain("qaRubricShouldRun(call.qaBreakdown)");
@@ -273,22 +277,6 @@ describe("every AI-spending surface reaches the spend ledger", () => {
     const route = read("src/routes/workspace-knowledge-routes.ts");
     expect(route).toContain('withAudit("workspace-knowledge")');
     expect(route.indexOf("authenticateUser")).toBeLessThan(route.indexOf('withAudit("'));
-  });
-
-  it("meters mid-call Vapi tool dispatch", () => {
-    const route = read("src/routes/vapi-v2.ts");
-    const arm = route.slice(
-      route.indexOf('if (message?.type === "tool-calls")'),
-      route.indexOf('if (message?.type === "speech-update")'),
-    );
-    expect(arm).toContain("const toolAuditContext = createAuditContext()");
-    expect(arm).toContain("runInAuditContext(toolAuditContext");
-    expect(arm).toContain('action: "vapi.tool-calls"');
-    // Must not block the tool response — Vapi drops a slow result mid-call.
-    expect(arm).toContain("runInBackground(");
-    expect(arm.indexOf("runInBackground(")).toBeLessThan(
-      arm.indexOf("return res.json({ results })"),
-    );
   });
 });
 

@@ -18,7 +18,7 @@ import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
 import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
-const API_VERSION = "2026-07-29.dahlia";
+const API_VERSION = "2026-08-26.dahlia";
 const WEBHOOK_URL = `${CANONICAL_PRODUCTION_URL}/api/stripe-webhook`;
 
 const apply = process.argv.includes("--apply");

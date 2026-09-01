@@ -10,9 +10,10 @@ the same honest story.
 BotBound processes customer call metadata, transcripts, agent configuration,
 knowledge sources, OAuth connection records, billing metadata, DNC entries, and
 audit events. The current deployment model is a Vercel-hosted application with
-Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for voice,
-ElevenLabs for server-only studio preview/cloning, the managed reasoning chain in
-`src/lib/ai-models.ts`, Stripe for billing, and Resend for transactional email.
+Postgres on Supabase, Twilio for carrier/numbers/SMS, OpenAI Realtime for live
+voice and OpenAI TTS for approved campaign narration, the managed reasoning
+chain in `src/lib/ai-models.ts`, Stripe for billing, and Resend for transactional
+email. BotBound does not operate a separate voice-cloning provider.
 
 ## Implemented controls
 

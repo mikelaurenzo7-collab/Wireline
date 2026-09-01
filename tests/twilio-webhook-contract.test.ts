@@ -2,9 +2,6 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// @ts-expect-error -- plain .mjs generation script imported for its pure brand guard.
-import { assertBotBoundJinglePrompt, jingleFingerprint } from "../scripts/generate-jingle.mjs";
-
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Twilio webhook XML contract", () => {
@@ -17,8 +14,8 @@ describe("Twilio webhook XML contract", () => {
   });
 
   it("ships the committed sound assets the TwiML references", () => {
-    // Both <Play> URLs referenced assets that did not exist for weeks; pin the
-    // committed files so a stray deletion cannot silently reintroduce the gap.
+    // Continuity references only this committed non-speech chime. Pin the file
+    // so a stray deletion cannot silently reintroduce a missing-media gap.
     const route = read("src/routes/twilio-webhook-base.ts");
     expect(route).toContain("/sounds/wireline-transfer-chime.wav");
     expect(route).not.toContain("wireline-transfer-chime.mp3");
@@ -27,37 +24,22 @@ describe("Twilio webhook XML contract", () => {
     ).toBeGreaterThan(10_000);
   });
 
-  it("never plays the retired Wireline jingle on the public BotBound demo", () => {
+  it("lets OpenAI own the first audible Bot identity without a generated jingle", () => {
     const route = read("src/routes/twilio-webhook-base.ts");
     const packageJson = read("package.json");
     const quarantine = read("scripts/quarantine-retired-public-assets.mjs");
 
     expect(route).not.toContain("/sounds/wireline-jingle.mp3");
-    expect(route).toContain('process.env.BOTBOUND_JINGLE_ASSET_APPROVED === "true"');
-    expect(route).toContain("/sounds/botbound-jingle.mp3");
-    expect(route).toContain("Welcome to BotBound. Meet Mira, our playful front desk Bot.");
-    expect(read(".env.example")).toContain("BOTBOUND_JINGLE_ASSET_APPROVED=false");
+    expect(route).not.toContain("/sounds/botbound-jingle.mp3");
+    expect(route).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
+    expect(route).toContain("OpenAI owns the audible Bot identity and first greeting");
+    expect(read(".env.example")).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
     expect(packageJson).toContain("node scripts/quarantine-retired-public-assets.mjs");
-    expect(packageJson).toContain("node scripts/validate-botbound-jingle.mjs");
+    expect(packageJson).not.toContain("validate-botbound-jingle");
+    expect(packageJson).not.toContain("generate-jingle");
     expect(quarantine).toContain('resolve(distRoot, "wireline-jingle.mp3")');
+    expect(quarantine).toContain('resolve(distRoot, "botbound-jingle.mp3")');
     expect(quarantine).toContain("rmSync(asset, { force: true })");
-  });
-
-  it("fails closed before a retired-brand jingle can be generated or silently reused", () => {
-    const script = read("scripts/generate-jingle.mjs");
-    expect(() => assertBotBoundJinglePrompt("Welcome to Wireline.")).toThrow(
-      "retired public branding",
-    );
-    expect(() => assertBotBoundJinglePrompt("Welcome to BotBound.")).not.toThrow();
-    expect(jingleFingerprint("Welcome to BotBound.", 8_000)).not.toBe(
-      jingleFingerprint("A different BotBound song.", 8_000),
-    );
-    expect(script).toContain("audioProvenanceMatches(BOTBOUND_JINGLE_OUTPUT_PATH, fingerprint)");
-    expect(script).toContain("writeAudioProvenance(BOTBOUND_JINGLE_OUTPUT_PATH, fingerprint, buf");
-    expect(script).toContain("exists without a matching prompt fingerprint");
-    expect(read("scripts/validate-botbound-jingle.mjs")).toContain(
-      "requires a present, brand-safe jingle whose recipe and audio hashes match",
-    );
   });
 
   it("escapes XML special characters in TwiML replies", () => {

@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import * as schema from "../db/schema";
-import { pickRotatedVoiceId } from "../data/voice-roster";
+import { pickRotatedVoiceId, resolvePstnVoiceCandidate } from "../data/voice-roster";
 import { AppError } from "./api-error";
 import {
   normalizeAgentCustomization,
@@ -252,7 +252,7 @@ export async function createAgentDraft(
 export async function getAgentDraft(
   principal: AgentDraftPrincipal,
   agentId: string,
-): Promise<{ view: AgentDraftView; runtimeInstructions: string }> {
+): Promise<{ view: AgentDraftView; runtimeInstructions: string; voiceId: string | null }> {
   return tenantStore.run(principal.userId, async () => {
     await assertAgentIsDraftOnly(agentId, principal.userId);
     const [agent] = await drizzle
@@ -262,6 +262,9 @@ export async function getAgentDraft(
         role: schema.agents.role,
         businessVariables: schema.agents.businessVariables,
         systemPromptOverride: schema.agents.systemPromptOverride,
+        voiceId: schema.agents.voiceId,
+        voiceProvider: schema.agents.voiceProvider,
+        phoneVoiceId: schema.agents.phoneVoiceId,
       })
       .from(schema.agents)
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, principal.userId)))
@@ -271,6 +274,10 @@ export async function getAgentDraft(
     return {
       view: toView(agent.id, profile),
       runtimeInstructions: agent.systemPromptOverride || compileAgentRuntimeInstructions(profile),
+      voiceId: resolvePstnVoiceCandidate(
+        agent.voiceProvider?.trim().toLowerCase() === "presenter" ? null : agent.voiceId,
+        agent.phoneVoiceId,
+      ),
     };
   });
 }

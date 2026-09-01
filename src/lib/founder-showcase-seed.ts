@@ -1,5 +1,3 @@
-import { and, eq } from "drizzle-orm";
-
 import * as schema from "../db/schema";
 import {
   WIRELINE_CONTACT_AGENTS,
@@ -16,7 +14,10 @@ import {
 export const FOUNDER_SHOWCASE_RUNTIME_VERSION = "openai-realtime-v1-2026-08-29" as const;
 
 function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export function founderShowcaseAgentId(userId: string, agentName: string): string {
@@ -30,11 +31,18 @@ function managedRows(): Array<{ agent: ContactAgent; kind: ShowcaseKind }> {
   ];
 }
 
-/** Persist the founder's public bot identities in BotBound; OpenAI is stateless. */
+/**
+ * Persist creation defaults for the founder's public Bot identities in BotBound.
+ *
+ * Existing rows are deliberately left alone. The founder dogfoods these Bots in
+ * Studio, so auth bootstrap must never replace a saved voice, prompt, tone,
+ * tool selection, or other training with seed data. Future managed refreshes
+ * need an explicit, versioned migration instead of an unconditional upsert.
+ */
 export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
   for (const { agent, kind } of managedRows()) {
     const id = founderShowcaseAgentId(userId, agent.name);
-    const patch = {
+    const creationDefaults = {
       name: agent.name,
       role: agent.role,
       archetype: kind === "cs" ? "Customer Service" : "Showcase Demo",
@@ -57,11 +65,7 @@ export async function ensureFounderShowcaseBots(userId: string): Promise<void> {
 
     await drizzle
       .insert(schema.agents)
-      .values({ id, userId, ...patch })
+      .values({ id, userId, ...creationDefaults })
       .onConflictDoNothing({ target: schema.agents.id });
-    await drizzle
-      .update(schema.agents)
-      .set(patch)
-      .where(and(eq(schema.agents.id, id), eq(schema.agents.userId, userId)));
   }
 }

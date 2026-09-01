@@ -19,7 +19,6 @@ import openAIRealtimeRouter from "../routes/openai-realtime-routes";
 import openAISipRouter from "../routes/openai-sip-routes";
 import openAIOutboundRouter from "../routes/openai-outbound-routes";
 import openAIInboundTwilioRouter from "../routes/openai-inbound-twilio-routes";
-import voicesRouter from "../routes/voices-routes";
 import billingRouter from "../routes/billing-routes";
 import extraAgentBillingAtomicRouter from "../routes/extra-agent-billing-atomic-routes";
 import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runtime-allowance-retry";
@@ -110,7 +109,6 @@ export function registerApiRoutes(app: Express): void {
   app.use(openAISipRouter);
   app.use(openAIOutboundRouter);
   app.use(openAIInboundTwilioRouter);
-  app.use(voicesRouter);
 
   app.use("/api/auth", protectAuthResponseFromCaching);
   app.use(authOAuthExchangeAtomicRouter);

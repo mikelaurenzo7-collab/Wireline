@@ -258,14 +258,6 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "milliseconds, e.g. 8000",
   },
   {
-    name: "ELEVENLABS_API_KEY",
-    group: "voice",
-    required: false,
-    requiredInProd: true,
-    description: "Server-only managed studio speech and authorized private voice cloning",
-    validate: nonEmpty,
-  },
-  {
     name: "TWILIO_ACCOUNT_SID",
     group: "voice",
     required: false,
@@ -726,6 +718,7 @@ export function validateEnv(): EnvValidationResult {
   // presence as a deployment error so stale Vercel variables cannot silently
   // reactivate or imply support for a removed provider.
   const retiredVoiceEnv = [
+    "ELEVENLABS_API_KEY",
     "VITE_VAPI_PUBLIC_KEY",
     "VAPI_PRIVATE_KEY",
     "VAPI_WEBHOOK_SECRET",

@@ -89,10 +89,11 @@ describe("authenticated Bot navigation contract", () => {
 
   it("keeps managed voice and readiness review in Studio without provider-facing guidance", () => {
     const voice = read("src/components/voice/SimpleVoicePicker.tsx");
-    expect(voice).toContain("VAPI_CURATED_VOICES");
-    expect(voice).toContain("Savannah");
-    expect(voice).toContain("Elliot");
-    expect(voice).toContain('provider: "vapi"');
+    const catalog = read("src/lib/voice-catalog.ts");
+    expect(voice).toContain("OPENAI_REALTIME_VOICES");
+    expect(catalog).toContain("Marin");
+    expect(catalog).toContain("Cedar");
+    expect(catalog).toContain('provider: "openai"');
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");
     expect(voice).not.toContain("live PSTN");

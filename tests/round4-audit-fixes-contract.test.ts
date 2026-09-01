@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { normalizeManagedOpenAIVoiceId } from "../src/data/voice-roster";
+import { OPENAI_REALTIME_VOICES } from "../src/lib/voice-catalog";
 
 const read = (path: string) =>
   readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
@@ -19,21 +21,16 @@ describe("round-4 audit fix contracts", () => {
     expect(block.slice(0, 2200)).toContain("if (existingPurge) continue;");
   });
 
-  it("outbound placeholder finalization is an atomic claim, not read-then-update", () => {
-    const handlers = read("src/lib/vapi-handlers.ts");
-    const claim = handlers.slice(handlers.indexOf("isOutboundCallPlaceholder(existing)"));
-    // Conditional WHERE re-checks the placeholder markers and RETURNING
-    // decides the winner; insertedFresh only flips for the winner.
-    expect(claim.slice(0, 3000)).toContain("OUTBOUND_CALL_DIALING_MARKER");
-    expect(claim.slice(0, 3000)).toContain("OUTBOUND_CALL_PLACEHOLDER_SUMMARY");
-    // RETURNING may carry extra columns (the escalation outcome is read back
-    // from this same write); what matters is that the claim returns rows at
-    // all, so exactly one concurrent worker sees a non-empty result.
-    const finalizeEnd = claim.indexOf("if (finalized.length)");
-    expect(finalizeEnd).toBeGreaterThan(-1);
-    expect(claim.slice(0, finalizeEnd)).toContain(".returning({");
-    expect(claim.slice(0, finalizeEnd)).toContain("id: schema.callLogs.id,");
-    expect(claim.slice(0, 3400)).toContain("if (finalized.length)");
+  it("OpenAI SIP sessions claim the provider call atomically before live work", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const claim = session.slice(
+      session.indexOf("async function claimCall"),
+      session.indexOf("async function updatePresence"),
+    );
+    expect(claim).toContain(".insert(schema.callLogs)");
+    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
+    expect(claim).toContain(".returning({ id: schema.callLogs.id })");
+    expect(claim).toContain("if (!created) return null;");
   });
 
   it("refund list failures throw for a clean Stripe retry instead of double-reversing", () => {
@@ -62,89 +59,104 @@ describe("round-4 audit fix contracts", () => {
     expect(jobs).toMatch(/DELETE FROM wireline_jobs[\s\S]{0,200}status IN \('done', 'dead'\)/);
   });
 
-  it("managed inbound and outbound assistants use transcript-only artifacts", () => {
-    const client = read("src/lib/vapi-client.ts");
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const policy = read("src/lib/vapi-artifact-plan.ts");
-    const session = read("src/lib/voice/xai-sip-session.ts");
-    expect(policy).toContain("recordingEnabled: false");
-    expect(policy).toContain("videoRecordingEnabled: false");
-    expect(policy).toContain("pcapEnabled: false");
-    expect(policy).toContain("transcriptPlan: { enabled: true }");
-    expect(factory).toContain("buildVapiTranscriptOnlyArtifactPlan()");
-    expect(factory).toContain("artifactPlan,");
-    expect(client).not.toContain("buildVapiTranscriptOnlyArtifactPlan()");
+  it("managed OpenAI inbound and outbound sessions persist transcripts, not recordings", () => {
+    const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(factory).toContain("transcription: { model: OPENAI_REALTIME_DEFAULT_TRANSCRIBER }");
+    expect(session).toContain("conversation.item.input_audio_transcription.completed");
+    expect(session).toContain("response.output_audio_transcript.delta");
     expect(session).toContain("recordingEnabled: false");
-    expect(factory).not.toContain(
-      'const recordingEnabled = configured.complianceMode !== "hipaa";',
-    );
+    expect(`${factory}\n${session}`).not.toMatch(/recordingUrl|videoRecording|pcap/i);
   });
 
   it("actual live openings carry outbound AI identity and purpose disclosures", () => {
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    const session = read("src/lib/voice/xai-sip-session.ts");
+    const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
     expect(session).toContain("complianceFirstMessagePrefix(");
     expect(session).toContain("outboundAiCall: true");
     expect(session).toContain("recordingEnabled: false");
     expect(session).toContain("formatCallbackNumberForSpeech");
-    expect(factory).toContain("userSettings?.businessName || configured.name");
-    expect(factory).toContain("outboundAiCall: isOutbound");
-    expect(factory).toContain("recordingEnabled: artifactPlan.recordingEnabled");
+    expect(session).toContain("function buildOutboundOpening");
+    expect(session).toContain("Say exactly this and nothing else:");
+    expect(factory).toContain("businessName: schema.settings.businessName");
+    expect(session).toContain("input.businessName || runtime.agentName");
   });
 
   it("missing transcripts are logged as unverifiable, never as played", () => {
-    const handlers = read("src/lib/vapi-handlers.ts");
-    expect(handlers).toContain('? "disclosure_not_detected"');
-    expect(handlers).toContain(': "disclosure_unverifiable"');
-    expect(handlers).not.toContain('disclosure.found || !hasTranscript ? "disclosure_played"');
+    const handlers = read("src/lib/voice/openai-sip-session.ts");
+    const disclosure = handlers.slice(
+      handlers.indexOf("async function persistAiDisclosureEvidence"),
+      handlers.indexOf("async function persistFinishedCall"),
+    );
+    expect(disclosure).toMatch(
+      /input\.openingPlaybackConfirmed[\s\S]*\? disclosure\.found[\s\S]*\? "ai_disclosure_played"[\s\S]*: "ai_disclosure_not_detected"[\s\S]*: "ai_disclosure_unverifiable"/,
+    );
   });
 
-  it("every curated Vapi voice a picker offers is accepted at runtime", () => {
+  it("every curated OpenAI Realtime voice a picker offers is accepted at runtime", () => {
     const roster = read("src/data/voice-roster.ts");
-    // isManagedVapiVoiceId must check the full curated catalog, not the
-    // 8-voice rotation pool — otherwise picker choices silently collapse
-    // to the default voice on live calls.
-    const check = roster.slice(roster.indexOf("export function isManagedVapiVoiceId"));
-    expect(check.slice(0, 400)).toContain("VAPI_CURATED_VOICES.some");
+    const picker = read("src/components/voice/SimpleVoicePicker.tsx");
+    const check = roster.slice(roster.indexOf("normalizeManagedOpenAIVoiceId"));
+    expect(check.slice(0, 500)).toContain("OPENAI_REALTIME_VOICE_IDS");
+    expect(check.slice(0, 500)).toContain(".includes(candidate)");
+    expect(picker).toContain(
+      'import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog"',
+    );
+    expect(picker).toContain("return [...OPENAI_REALTIME_VOICES]");
+    for (const voice of OPENAI_REALTIME_VOICES) {
+      expect(normalizeManagedOpenAIVoiceId(voice.id)).toBe(voice.id);
+    }
   });
 
-  it("the 2-3s latency 'nudge window' is never sent as Vapi's end-call silence timer", () => {
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
+  it("the UI latency nudge is never reused as the OpenAI SIP call deadline", () => {
+    const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    const config = read("src/lib/voice/openai-sip-config.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
     expect(factory).not.toContain("latency.silenceTimeoutSeconds");
-    expect(factory).toContain("configured.silenceTimeoutSeconds >= 10");
+    expect(config).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 300");
+    expect(config).toContain("Math.max(30, Math.min(300");
+    expect(session).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
   });
 
-  it("ambient noise is enum-validated at write time and sanitized at dial time", () => {
+  it("retires the unsupported ambient setting from the current product and runtime", () => {
     const planner = read("src/lib/workspace-planner.ts");
-    expect(planner).toContain('WORKSPACE_AMBIENT_OPTIONS = ["off", "office"]');
-    expect(planner).toContain("export function sanitizeAmbientNoise");
-    expect(read("src/routes/agent-workspace-routes.ts")).toContain('spec.kind === "ambient"');
-    expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain(
-      "sanitizeAmbientNoise(configured.ambientNoise)",
+    const workspaceRoutes = read("src/routes/agent-workspace-routes.ts");
+    expect(planner).not.toMatch(/ambient_noise|ambientNoise|WORKSPACE_AMBIENT_OPTIONS/);
+    expect(workspaceRoutes).not.toMatch(
+      /ambient noise|WORKSPACE_AMBIENT_OPTIONS|kind === "ambient"/i,
     );
-    expect(read("src/lib/vapi-client.ts")).not.toContain(
-      "sanitizeAmbientNoise(agentConfig.ambientNoise)",
-    );
+    const realtime = `${read("src/lib/voice/openai-phone-agent-runtime.ts")}\n${read(
+      "src/lib/voice/openai-sip-session.ts",
+    )}`;
+    expect(realtime).not.toMatch(/ambientNoise|backgroundSound/);
   });
 
   it("outbound prompts are capped like inbound — no 500-row interpolation", () => {
-    const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+    const nativeRuntime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     expect(nativeRuntime).toContain("MAX_INITIAL_KNOWLEDGE_ITEMS");
     expect(nativeRuntime).toContain(".limit(40)");
     expect(nativeRuntime).toContain(".limit(80)");
     expect(nativeRuntime).not.toContain(".limit(500)");
-    expect(read("src/lib/vapi-assistant-factory-v2.ts")).toContain(
+    expect(read("src/lib/voice/openai-phone-agent-runtime.ts")).toContain(
       "clampRuntimePromptPreservingTail",
     );
   });
 
-  it("the public showcase line carries a COGS duration ceiling", () => {
-    const showcase = read("src/lib/showcase-assistant.ts");
-    expect(showcase).toContain("maxDurationSeconds: 600");
+  it("public and PSTN OpenAI voice sessions carry explicit COGS duration ceilings", () => {
+    const publicPolicy = read("src/lib/public-browser-demo.ts");
+    const publicSession = read("src/lib/voice/openai-public-demo-session.ts");
+    const sipConfig = read("src/lib/voice/openai-sip-config.ts");
+    const sipSession = read("src/lib/voice/openai-sip-session.ts");
+    const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
+    expect(publicPolicy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
+    expect(publicSession).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
+    expect(sipConfig).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 300");
+    expect(sipSession).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
+    expect(inbound).toContain('timeLimit="${resolveOpenAISipSessionMaxSeconds()}"');
   });
 
   it("transferPhone backs up the escalation warm-transfer destination", () => {
-    const handlers = read("src/routes/vapi/tool-handlers-workflow.ts");
+    const handlers = read("src/lib/bot-tools/workflow.ts");
     expect(handlers).toContain("transferPhone: schema.agents.transferPhone");
     expect(handlers).toMatch(/row\?\.phone\?\.trim\(\) \|\| row\?\.transferPhone\?\.trim\(\)/);
   });

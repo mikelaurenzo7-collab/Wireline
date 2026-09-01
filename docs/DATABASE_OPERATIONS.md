@@ -19,7 +19,23 @@ BotBound uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 
 `npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. Production runs exactly that, from `scripts/vercel-build.mjs`.
 
-The two are not the same set. 167 `.sql` files are committed; 62 are journalled. The other 105 were applied out of band through the authenticated Supabase migration tool — the urgent path above — and the journal was never back-filled. The backlog is fixed at 105: every migration authored since has been journalled properly, so the gap is historical rather than growing. This includes migrations the application treats as guaranteed, notably `0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF password_hash` trigger that makes session revocation on password change database-owned rather than best-effort application code.
+The two are not the same set. A fixed historical group of SQL files was applied
+out of band before every new application migration began entering the Drizzle
+journal. Do not infer the size or state of that backlog from numeric filename
+prefixes; the integrity contract calculates and pins it. This includes
+migrations the application treats as guaranteed, notably
+`0127_monotonic_session_version`, which installs the `BEFORE UPDATE OF
+password_hash` trigger that makes session revocation on password change
+database-owned rather than best-effort application code.
+
+Supabase also exposes its own `supabase_migrations.schema_migrations` ledger in
+the dashboard. That is not BotBound's application migration authority. As of
+August 31, 2026, the Supabase dashboard ledger ends at `0156`, while the live
+`drizzle.__drizzle_migrations` ledger and verified schema objects reach `0168`.
+This is expected dual-ledger history, not a twelve-migration production gap.
+Production promotion must compare the committed Drizzle journal with
+`drizzle.__drizzle_migrations` and concrete catalog objects; never repair or
+replay migrations merely to make the Supabase dashboard number look newer.
 
 Two consequences to work from, not around:
 
@@ -126,6 +142,13 @@ Supabase advisor output is evidence, not the only source of truth. Confirm the u
 
 Account environment is an authorization boundary, not a display label. Only the audited operator command may classify an account as `production`, `test`, or `demo`:
 
+The boundary distinguishes live external actions from private rehearsal. A
+tool-free Studio text simulation may run in any explicitly classified
+`production`, `test`, or `demo` workspace, but it remains subject to the
+persisted monthly AI spend cap and cannot dispatch calls, messages,
+integrations, or agent tools. Missing or unknown classification still fails
+closed. Live external actions continue to require `production`.
+
 ```bash
 npx ts-node scripts/set-account-environment.ts \
   --email target@example.org \
@@ -139,7 +162,7 @@ npx ts-node scripts/set-account-environment.ts \
 Promoting `demo` or `test` to `production` additionally requires `--confirm-production-promotion`. Migration `0163_guard_account_environment_promotion` then runs a second, database-owned preflight under the account-deletion/provider lock. It refuses promotion while any of these remain:
 
 - demo entitlement provenance, explicit demo markers, deterministic seed identifiers, or reserved fixture contacts (RFC example roots/subdomains and any NANP 555-0100–0199 number, with or without a leading country code);
-- Stripe, voice, carrier, presenter, OAuth, push, webhook, or intake-key provider bindings;
+- Stripe, carrier, externally provisioned presenter, OAuth, push, webhook, or intake-key provider bindings (managed OpenAI catalog voice selections are Bot configuration and do not block promotion);
 - live automation, provider/billing leases, queued jobs/deliveries/cadences/outbound work, active calls, or an account-deletion request.
 
 The preflight is intentionally non-destructive. It returns only blocker codes, counts, and remediation guidance; it never prints provider identifiers or customer contacts. Resolve each category through its supported cleanup or reconciliation path and rerun the command. Do not make the account look clean by rewriting entitlement provenance, clearing identifiers before provider release, or relabeling fixture rows.

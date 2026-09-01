@@ -14,7 +14,10 @@ import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator
 import { getErrorMessage } from "./server-utils";
 import { resolveHardSpendCapStatus } from "./spend-budget-policy";
 import { resolveAiDailySpendAlertUsd } from "./ai-spend-alert";
-import { assertLiveExternalActionAllowed } from "./account-environment-policy";
+import {
+  assertLiveExternalActionAllowed,
+  assertPrivateTextSimulationAllowed,
+} from "./account-environment-policy";
 
 interface BudgetRow {
   monthly_limit_usd: number;
@@ -191,12 +194,53 @@ export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
   return status === "exceeded";
 }
 
-function sendSpendGuardUnavailable(res: Response) {
+type SpendCapSurface = "live" | "private_text_simulation";
+
+function sendSpendGuardUnavailable(res: Response, surface: SpendCapSurface) {
   return res.status(503).json({
     code: "SPEND_GUARD_UNAVAILABLE",
     error:
-      "BotBound could not verify your spend guard. New live work is paused until the check recovers.",
+      surface === "private_text_simulation"
+        ? "BotBound could not verify your spend guard. Private text simulation is paused until the check recovers."
+        : "BotBound could not verify your spend guard. New live work is paused until the check recovers.",
   });
+}
+
+async function enforcePersistedSpendCap(
+  userId: string,
+  res: Response,
+  next: NextFunction,
+  surface: SpendCapSurface,
+) {
+  try {
+    const snap = await getAuthoritativeBudgetSnapshot(userId);
+    const status = resolveHardSpendCapStatus(snap);
+    if (status === "unavailable") {
+      log.error("enforceSpendCap found missing or invalid budget", { userId, surface });
+      return sendSpendGuardUnavailable(res, surface);
+    }
+    if (status === "disabled" || status === "within_limit") return next();
+
+    return res.status(402).json({
+      code: "SPEND_CAP_REACHED",
+      error:
+        surface === "private_text_simulation"
+          ? "Your provider spend guard has reached its plan-funded limit. Private text simulation resumes next monthly period; review Billing if you need more capacity now."
+          : "Your provider spend guard has reached its plan-funded limit. New live work resumes next monthly period; review Billing if you need more capacity now.",
+      recovery_path: "/settings/billing",
+      period: snap.period,
+      month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
+      monthly_limit_usd: snap.budget!.monthly_limit_usd,
+      hard_cap: true,
+    });
+  } catch (err) {
+    log.error("enforceSpendCap could not verify budget", {
+      userId,
+      surface,
+      error: getErrorMessage(err),
+    });
+    return sendSpendGuardUnavailable(res, surface);
+  }
 }
 
 export async function enforceSpendCap(req: AuthedRequest, res: Response, next: NextFunction) {
@@ -211,29 +255,24 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
   // spend-guard outage.
   await assertLiveExternalActionAllowed(userId, "provider_spend_admission");
 
-  try {
-    const snap = await getAuthoritativeBudgetSnapshot(userId);
-    const status = resolveHardSpendCapStatus(snap);
-    if (status === "unavailable") {
-      log.error("enforceSpendCap found missing or invalid budget", { userId });
-      return sendSpendGuardUnavailable(res);
-    }
-    if (status === "disabled" || status === "within_limit") return next();
+  return enforcePersistedSpendCap(userId, res, next, "live");
+}
 
-    return res.status(402).json({
-      code: "SPEND_CAP_REACHED",
-      error:
-        "Your provider spend guard has reached its plan-funded limit. New live work resumes next monthly period; review Billing if you need more capacity now.",
-      recovery_path: "/settings/billing",
-      period: snap.period,
-      month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
-      monthly_limit_usd: snap.budget!.monthly_limit_usd,
-      hard_cap: true,
-    });
-  } catch (err) {
-    log.error("enforceSpendCap could not verify budget", { userId, error: getErrorMessage(err) });
-    return sendSpendGuardUnavailable(res);
-  }
+/**
+ * Admission for a tool-free private rehearsal. Demo/test classifications are
+ * intentional here: the model can only return text, while the ordinary live
+ * guard remains in front of calls, messages, integrations, and agent tools.
+ */
+export async function enforcePrivateTextSimulationSpendCap(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction,
+) {
+  const userId = req.user?.id;
+  if (!userId) return next();
+
+  await assertPrivateTextSimulationAllowed(userId, "private_text_simulation");
+  return enforcePersistedSpendCap(userId, res, next, "private_text_simulation");
 }
 
 const AI_DAILY_ALERT_USD = resolveAiDailySpendAlertUsd();

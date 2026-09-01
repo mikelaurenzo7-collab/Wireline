@@ -67,7 +67,7 @@ Current model: one catalog for every use case—Free Builder, Starter, Starter P
 2. **Tone and behavior controls:** expose the `promptDirective` concept (already modeled per persona in `agent-identity.ts`) as a lightweight, user-facing tone slider or preset picker in Training — "Warm ↔ Direct," "Concise ↔ Detailed" — rather than requiring free-text prompt editing for basic tone shifts.
 3. **Multi-lingual support:** if the target ICPs include Spanish-first or bilingual customer bases (very likely for home services, medical, and hospitality verticals in the US), prioritize a first-class bilingual/language-detection path over the current English-first assumption baked into onboarding copy.
 4. **Latency tiers and honesty:** the roadmap already targets <250ms perceived turn-taking. Browser and PSTN voice use OpenAI Realtime; Twilio owns PSTN/SIP. Never silently swap voice/model without disclosure.
-5. **Voice cloning / custom voice (future):** if pursued, gate behind explicit consent language and a clear "this is a custom voice, not a vendor stock voice" customer-facing label, consistent with the existing vendor-name-hiding discipline for video presenters.
+5. **OpenAI-only voice boundary:** launch with the complete 10-voice built-in roster and stable speaker identity per session. Do not add a custom-voice upload, clone, or outside catalog through this plan.
 
 ## 6. Avatar / live video presenter (retired)
 

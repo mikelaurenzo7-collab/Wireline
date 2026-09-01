@@ -23,14 +23,7 @@ describe("code review hardening contracts", () => {
         scripts: Record<string, string>;
       }
     ).scripts;
-    for (const name of [
-      "dev",
-      "build",
-      "vapi:sync-showcase",
-      "authz:check",
-      "db:health",
-      "recap:preview",
-    ]) {
+    for (const name of ["dev", "build", "authz:check", "db:health", "recap:preview"]) {
       expect(scripts[name], name).toContain("node --import tsx");
     }
   });
@@ -58,13 +51,13 @@ describe("code review hardening contracts", () => {
     expect(routes).toContain("drizzle.transaction");
   });
 
-  it("rejects production Vapi routing that did not resolve a tenant from a provisioned number", () => {
-    // Strengthened from the original `IS_PROD && !phoneNumberId` presence check:
-    // a present-but-unregistered phoneNumberId also fails to establish a tenant,
-    // and must not fall back to trusting a bare ?agentId= under no tenant fence.
-    const resolver = read("src/lib/vapi-webhook-agent.ts");
-    expect(resolver).toContain("IS_PROD && !enforceTenantUserId");
-    expect(resolver).not.toContain("IS_PROD && !phoneNumberId");
+  it("rejects OpenAI SIP routing that does not resolve a tenant from the called number", () => {
+    const routes = read("src/routes/openai-sip-routes.ts");
+    expect(routes).toContain("sipHeader(payload, OPENAI_CALLED_NUMBER_HEADER)");
+    expect(routes).toContain("eq(schema.phoneNumbers.phoneNumber, calledNumber)");
+    expect(routes).toContain("if (!line?.userId || !line.agentId) return null;");
+    expect(routes).toContain("await rejectCall(callId, 404)");
+    expect(routes).not.toMatch(/req\.(?:body|query)\.(?:userId|agentId)/);
   });
 
   it("deduplicates inbound Twilio SMS by MessageSid before thread writes", () => {
@@ -129,49 +122,46 @@ describe("code review hardening contracts", () => {
   });
 
   it("scopes tenant webhook DB work through tenantStore.run", () => {
-    const vapi = read("src/routes/vapi-v2.ts");
+    const openai = read("src/routes/openai-sip-routes.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
     const billing = read("src/routes/billing-routes.ts");
-    expect(vapi).toContain("tenantStore.run(routed.agentUserId");
+    expect(openai).toContain("tenantStore.run(line.userId");
+    expect(session).toContain("return tenantStore.run(input.userId");
     expect(billing).toContain("tenantStore.run(userId");
   });
 
-  it("returns 500 when end-of-call sync fallback fails so Vapi can retry", () => {
-    const vapi = read("src/routes/vapi-v2.ts");
-    expect(vapi).toContain("res.status(500).json({ success: false })");
+  it("compensates and rethrows OpenAI call-accept failures so the provider can retry", () => {
+    const routes = read("src/routes/openai-sip-routes.ts");
+    const accept = routes.slice(routes.indexOf("await acceptCall(callId"));
+    expect(accept.slice(0, 900)).toContain("releaseAccountOperationLease");
+    expect(accept.slice(0, 900)).toContain("releaseRealtimeSessionSpendAfterFailure");
+    expect(accept.slice(0, 900)).toContain('callControl(callId, "hangup")');
+    expect(accept.slice(0, 900)).toContain("throw error;");
   });
 
-  it("keeps duplicate end-of-call retries side-effect free after mandatory DNC suppression", () => {
-    const handlers = read("src/lib/vapi-handlers.ts");
-    expect(handlers).toContain("Duplicate end-of-call-report reached retry-safe evidence patch");
-    const suppression = handlers.indexOf("await persistTranscriptDncSuppression({");
-    // Voice metering intentionally sits between DNC suppression and the
-    // duplicate return: its own tenant+provider-call checkpoint makes it
-    // idempotent, so a redelivery can resume unfinished revenue accounting
-    // without duplicating any one-time side effect below the guard.
-    const complianceEvidence = handlers.indexOf("await persistComplianceEvidence({", suppression);
-    const usageTracking = handlers.indexOf("await trackVoiceMinutes({", suppression);
-    const duplicateGuard = handlers.indexOf("if (!insertedFresh)", usageTracking);
-    const duplicateReturn = handlers.indexOf("return;", duplicateGuard);
-    const firstCallMilestone = handlers.indexOf('event: "first_call_completed"');
-    expect(suppression).toBeGreaterThan(-1);
-    // TCPA evidence is idempotent per call and runs before the duplicate
-    // return so a redelivery restores rows a failed first delivery lost.
-    expect(complianceEvidence).toBeGreaterThan(suppression);
-    expect(usageTracking).toBeGreaterThan(complianceEvidence);
-    expect(usageTracking).toBeGreaterThan(suppression);
-    expect(duplicateGuard).toBeGreaterThan(usageTracking);
-    expect(duplicateReturn).toBeGreaterThan(duplicateGuard);
-    expect(firstCallMilestone).toBeGreaterThan(duplicateReturn);
-    expect(handlers.slice(duplicateGuard, duplicateReturn)).toContain(
-      "Everything below is one-time work.",
+  it("keeps duplicate OpenAI incoming-call deliveries side-effect free", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const claim = session.slice(
+      session.indexOf("async function claimCall"),
+      session.indexOf("async function updatePresence"),
     );
+    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
+    expect(claim).toContain("if (!created) return null;");
+
+    const runner = session.slice(session.indexOf("export async function runOpenAISipCallSession"));
+    const duplicateGuard = runner.indexOf("if (!callLogId)");
+    const runtimeStart = runner.indexOf("runRealtimeSession(input, runtime)");
+    expect(duplicateGuard).toBeGreaterThan(-1);
+    expect(runner.slice(duplicateGuard, runtimeStart)).toContain(
+      "Duplicate OpenAI incoming-call webhook suppressed",
+    );
+    expect(runner.indexOf("return;", duplicateGuard)).toBeLessThan(runtimeStart);
   });
 
   it("tracks post-create roleplay starts only from a connected live voice test", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
     const liveVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
-    const vapiLiveVoice = read("src/components/VapiLiveVoiceSandbox.tsx");
 
     expect(wizard).not.toContain("onFocusCapture");
     expect(wizard).toContain("onTestStarted={() =>");
@@ -179,9 +169,6 @@ describe("code review hardening contracts", () => {
     expect(liveVoice).toContain("onTestStarted?: () => void");
     expect(liveVoice).toContain("reportedStarted.current = true");
     expect(liveVoice).toContain("onTestStarted?.()");
-    expect(vapiLiveVoice).toContain("onTestStarted?: () => void");
-    expect(vapiLiveVoice).toContain("reportedStarted.current = true");
-    expect(vapiLiveVoice).toContain("onTestStarted?.()");
   });
 
   it("defensively handles unavailable browser storage in activation nudges", () => {
@@ -226,48 +213,37 @@ describe("code review hardening contracts", () => {
     // then B fires overlapping requests, and last-writer-wins means an
     // A-resolves-last ordering renders one conversation's messages under
     // another conversation's header.
-    const panes = [
-      {
-        path: "src/components/EmailInbox.tsx",
-        loader: "const loadThreadDetail = useCallback(",
-        write: "setDetail({",
-        loading: "if (!signal?.aborted) setDetailLoading(false);",
-      },
-      {
-        path: "src/components/SmsThreads.tsx",
-        loader: "const fetchMessages = useCallback(",
-        write: "setMessages(",
-        loading: "if (!signal?.aborted) setMessagesLoading(false);",
-      },
-    ] as const;
+    const email = read("src/components/EmailInbox.tsx");
+    expect(email).toContain("signal?: AbortSignal");
+    expect(email).toContain("{ signal }");
+    expect(email).toMatch(/return \(\) => \{?\s*controller\.abort\(\);/);
+    const emailLoader = email.slice(
+      email.indexOf("const loadThreadDetail = useCallback("),
+      email.indexOf("const controller = new AbortController();"),
+    );
+    expect(
+      (emailLoader.match(/if \(signal\?\.aborted\) return;/g) || []).length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(emailLoader.indexOf("if (signal?.aborted) return;")).toBeLessThan(
+      emailLoader.indexOf("setDetail({"),
+    );
+    expect(emailLoader).toContain("if (!signal?.aborted) setDetailLoading(false);");
 
-    for (const pane of panes) {
-      const source = read(pane.path);
-      expect(source, pane.path).toContain("signal?: AbortSignal");
-      expect(source, pane.path).toContain("{ signal }");
-      expect(source, pane.path).toContain("const controller = new AbortController();");
-      // The effect cleanup must abort. Shape-tolerant so a cleanup that also
-      // clears a published ref (SmsThreads shares its controller with the
-      // post-send refresh) still satisfies the invariant being pinned.
-      expect(source, pane.path).toMatch(/return \(\) => \{?\s*controller\.abort\(\);/);
-
-      // Every write path must respect the abort — the result, the error banner,
-      // and the loading flag the newer request already owns. Asserting the guard
-      // exists once is not enough: the catch-path copy alone satisfies that
-      // while the stale result still lands on the pane.
-      const loader = source.slice(
-        source.indexOf(pane.loader),
-        source.indexOf("const controller = new AbortController();"),
-      );
-      expect(
-        (loader.match(/if \(signal\?\.aborted\) return;/g) || []).length,
-        pane.path,
-      ).toBeGreaterThanOrEqual(2);
-      expect(loader.indexOf("if (signal?.aborted) return;"), pane.path).toBeLessThan(
-        loader.indexOf(pane.write),
-      );
-      expect(loader, pane.path).toContain(pane.loading);
-    }
+    const sms = read("src/components/SmsThreads.tsx");
+    expect(sms).toContain("signal?: AbortSignal");
+    expect(sms).toContain("{ signal }");
+    expect(sms).toContain("const isCurrentRequest = () =>");
+    expect(sms).toContain("activeIdRef.current === threadId");
+    expect(sms).toContain("messageOperationRef.current === operation");
+    expect(sms).toMatch(/return \(\) => \{\s*controller\.abort\(\);/);
+    const smsLoader = sms.slice(
+      sms.indexOf("const fetchMessages = useCallback("),
+      sms.indexOf("useEffect(() =>", sms.indexOf("const fetchMessages = useCallback(")),
+    );
+    expect(smsLoader.indexOf("if (!isCurrentRequest()) return;")).toBeLessThan(
+      smsLoader.indexOf("setMessages("),
+    );
+    expect(smsLoader).toContain("if (isCurrentRequest()) setMessagesLoading(false);");
   });
 
   it("keeps public purchase, consent, and sticky-CTA promises internally consistent", () => {

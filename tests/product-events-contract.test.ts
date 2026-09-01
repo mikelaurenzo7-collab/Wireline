@@ -139,11 +139,11 @@ describe("product event taxonomy", () => {
       read("src/components/ActivationNudge.tsx"),
       read("src/components/CallLogsClaude.tsx"),
       read("src/components/OutboundDialDialog.tsx"),
-      read("src/lib/vapi-handlers.ts"),
+      read("src/lib/voice/openai-sip-session.ts"),
       read("src/lib/post-call-digest.ts"),
       read("src/routes/billing-routes.ts"),
       read("src/routes/launch-billing-checkout-routes.ts"),
-      read("src/routes/carrier-routes.ts"),
+      read("src/routes/native-phone-routing-routes.ts"),
     ].join("\n");
 
     const requiredEmitters = [

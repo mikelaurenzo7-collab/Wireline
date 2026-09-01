@@ -14,9 +14,11 @@ import {
   classifyCheckoutReturn,
   hasCheckoutReturnToVerify,
   shouldFinalizeCheckoutReturn,
+  shouldResumePostCreateLaunch,
   type CheckoutReturnOutcome,
   type CheckoutReturnVerification,
 } from "../lib/billing-checkout-return";
+import { readPostCreateWizard, readPostCreateWizardStep } from "../lib/wireline-create-flow";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -80,6 +82,7 @@ export default function BillingSettings() {
         const returnFlow = checkoutReturnFlowFromSearch(window.location.search);
         let checkoutOutcome: CheckoutReturnOutcome | null = null;
         let verification: CheckoutReturnVerification | null = null;
+        let resumePostCreateLaunch = false;
 
         if (returnFlow && returnedSessionId) {
           for (const retryDelayMs of CHECKOUT_VERIFY_RETRY_DELAYS_MS) {
@@ -159,6 +162,15 @@ export default function BillingSettings() {
                   "We could not confirm this checkout yet. Its secure reference has been retained, so refreshing this page will retry safely.",
               });
             }
+
+            resumePostCreateLaunch = checkoutOutcome
+              ? shouldResumePostCreateLaunch(
+                  returnFlow,
+                  checkoutOutcome,
+                  Boolean(readPostCreateWizard()),
+                  readPostCreateWizardStep(),
+                )
+              : false;
           }
         }
 
@@ -178,6 +190,13 @@ export default function BillingSettings() {
               window.location.hash,
             ),
           );
+        }
+        if (resumePostCreateLaunch && !cancelled) {
+          // The wizard payload and Launch step survive Stripe in sessionStorage.
+          // Return to Studio only after the server has proved plan fulfillment;
+          // Studio will reopen the exact Bot at the saved Launch decision.
+          window.location.replace("/studio");
+          return;
         }
         if (!cancelled) setBillingReady(true);
 

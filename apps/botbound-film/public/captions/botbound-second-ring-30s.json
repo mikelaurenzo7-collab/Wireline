@@ -42,14 +42,14 @@
     "confidence": null
   },
   {
-    "text": "“Thanks for calling Northstar Bakery. How can I help?”",
+    "text": "“Thanks for calling. How can I help?”",
     "startMs": 8250,
     "endMs": 9400,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "A real conversation. Not a voicemail maze.",
+    "text": "Configured example. Not a voicemail maze.",
     "startMs": 9400,
     "endMs": 10400,
     "timestampMs": null,
@@ -84,28 +84,28 @@
     "confidence": null
   },
   {
-    "text": "Booked. Confirmed. Logged.",
+    "text": "Configured example. Listen. Decide. Act.",
     "startMs": 15200,
     "endMs": 16800,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "Appointment booked. Confirmation sent. Owner updated.",
+    "text": "Capture caller intent. Follow your rules. Move to the next step.",
     "startMs": 16800,
     "endMs": 19000,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "The customer moves forward. You never leave the work.",
+    "text": "Your Bot keeps the call moving. You stay in the work.",
     "startMs": 19000,
     "endMs": 20800,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "Better every call.",
+    "text": "Better with every review.",
     "startMs": 22200,
     "endMs": 23600,
     "timestampMs": null,
@@ -119,7 +119,7 @@
     "confidence": null
   },
   {
-    "text": "BotBound. Never miss the call that matters.",
+    "text": "BotBound. You can't answer every call. Your Bot can.",
     "startMs": 26400,
     "endMs": 28200,
     "timestampMs": null,

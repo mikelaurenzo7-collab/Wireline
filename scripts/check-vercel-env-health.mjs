@@ -33,7 +33,6 @@ const required = [
   "OPENAI_API_KEY",
   "OPENAI_PROJECT_ID",
   "OPENAI_WEBHOOK_SECRET",
-  "ELEVENLABS_API_KEY",
   "TWILIO_ACCOUNT_SID",
   "TWILIO_AUTH_TOKEN",
   "TWILIO_API_KEY",
@@ -64,8 +63,8 @@ const voice = [
   "OPENAI_REALTIME_MODEL",
   "OPENAI_REALTIME_TRANSCRIBER",
 ];
-
 const retired = [
+  "ELEVENLABS_API_KEY",
   "VITE_VAPI_PUBLIC_KEY",
   "VAPI_PRIVATE_KEY",
   "VAPI_WEBHOOK_SECRET",
@@ -154,7 +153,7 @@ async function main() {
     process.exitCode = 2;
   } else if (configuredRetired) {
     console.log(
-      "  ROTATION REQUIRED — remove retired Vapi/xAI credentials before production release.",
+      "  ROTATION REQUIRED — remove every retired voice-provider credential before production release.",
     );
     process.exitCode = 2;
   } else {

@@ -93,8 +93,7 @@ describe("customer-selectable Bot identity marks", () => {
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
     const openai = read("src/components/OpenAILiveVoiceSandbox.tsx");
-    const xai = read("src/components/XAILiveVoiceSandbox.tsx");
-    const vapi = read("src/components/VapiLiveVoiceSandbox.tsx");
+    const liveVoice = read("src/components/LiveVoiceSandbox.tsx");
 
     const parsed = parsePostCreateWizardPayload(
       JSON.stringify({
@@ -115,10 +114,9 @@ describe("customer-selectable Bot identity marks", () => {
     expect(create).toContain("markKey: isBotMarkKey(body.mark_key) ? body.mark_key : null");
     expect(wizard).toContain("markKey={payload.markKey}");
     expect(roleplay).toContain("markKey={markKey}");
-    for (const sandbox of [openai, xai, vapi]) {
-      expect(sandbox).toContain("markKey?: BotMarkKey | null");
-      expect(sandbox).toContain("markKey={markKey}");
-    }
+    expect(openai).toContain("markKey?: BotMarkKey | null");
+    expect(openai).toContain("markKey={markKey}");
+    expect(liveVoice).toContain('export { default } from "./OpenAILiveVoiceSandbox"');
   });
 
   it("persists only catalog values through an owner-scoped API and database constraint", () => {
@@ -167,9 +165,8 @@ describe("customer-selectable Bot identity marks", () => {
     expect(founder).toContain("pg_advisory_xact_lock");
     expect(founder).toContain("hashtext(${template.id})");
     expect(founder).toContain("namespacedCollision.userId !== userId");
-    expect(founder).toContain(
-      "and(eq(schema.agents.id, row.id), eq(schema.agents.userId, userId))",
-    );
+    expect(founder).toContain("const tenantScope = founderAssistantAgentScope(agentId, userId)");
+    expect(founder).toContain(".where(tenantScope)");
   });
 
   it("reserves customer Bot marks for authenticated product surfaces", () => {

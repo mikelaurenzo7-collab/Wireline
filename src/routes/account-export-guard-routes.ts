@@ -9,7 +9,13 @@ import {
   accountExportKeyForTable,
   redactAccountExportValue,
 } from "../lib/account-export";
-import { drizzle, log } from "../lib/server-context";
+import {
+  AccountExportBusyError,
+  accountExportSnapshotGate,
+  type AccountExportSnapshotLease,
+} from "../lib/account-export-admission";
+import { writeAccountExportChunk } from "../lib/account-export-stream";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
@@ -23,6 +29,7 @@ const accountExportRateLimit = createRateLimiter({
 });
 
 type ExecuteResult = { rows?: Array<Record<string, unknown>> };
+type ExportQueryExecutor = Pick<typeof drizzle, "execute">;
 
 function postgresErrorCode(error: unknown): string | undefined {
   if (!error || typeof error !== "object") return undefined;
@@ -64,27 +71,32 @@ const EXPORT_PAGE_ROWS = 500;
  *
  * Ordered by `ctid` — the physical row locator — because the registry covers
  * ~100 tables with no shared primary-key name, and OFFSET without ORDER BY is
- * not stable across pages. A concurrent write can still shift a row between
- * pages; an export is a point-in-time snapshot of the tenant's own data taken
- * while they wait for the download, so that is an acceptable trade against
- * holding a transaction open for the length of the stream.
+ * not stable across pages. The caller holds one REPEATABLE READ transaction for
+ * the complete archive, so concurrent writes cannot shift snapshot-visible rows
+ * between pages or produce a mixture of table states.
  *
  * Returns the number of rows written.
  */
 async function streamTableRows(
+  executor: ExportQueryExecutor,
   res: Response,
   table: string,
   predicates: ReturnType<typeof sql>[],
+  signal: AbortSignal,
 ): Promise<number> {
   let written = 0;
   for (let offset = 0; ; offset += EXPORT_PAGE_ROWS) {
-    const result = (await drizzle.execute(
+    const result = (await executor.execute(
       sql`SELECT * FROM ${sql.raw(table)} WHERE ${sql.join(predicates, sql` OR `)}
           ORDER BY ctid LIMIT ${EXPORT_PAGE_ROWS} OFFSET ${offset}`,
     )) as ExecuteResult;
     const rows = result.rows || [];
     for (const row of rows) {
-      res.write(`${written === 0 ? "" : ","}${JSON.stringify(redactAccountExportValue(row))}`);
+      await writeAccountExportChunk(
+        res,
+        `${written === 0 ? "" : ","}${JSON.stringify(redactAccountExportValue(row))}`,
+        signal,
+      );
       written += 1;
     }
     if (rows.length < EXPORT_PAGE_ROWS) return written;
@@ -111,6 +123,7 @@ router.use(
     const exportedAt = new Date();
     let totalRows = 0;
     let tableCount = 0;
+    let exportLease: AccountExportSnapshotLease;
 
     // Validate every ownership predicate BEFORE a byte goes out. Once the
     // response has started there is no way to turn a failure into a clean 4xx,
@@ -136,6 +149,21 @@ router.use(
       return { table: target.table, predicates };
     });
 
+    try {
+      exportLease = await accountExportSnapshotGate.acquire(userId);
+    } catch (error) {
+      if (error instanceof AccountExportBusyError) {
+        res.setHeader("Retry-After", "30");
+        res.status(503).json({
+          error: "Another account export is already in progress. Try again shortly.",
+          code: error.code,
+          requestId: res.locals?.requestId,
+        });
+        return;
+      }
+      throw error;
+    }
+
     // Account archives contain private customer and conversation data.
     // Prevent browsers and intermediary caches from retaining the response.
     res.setHeader("Cache-Control", "private, no-store");
@@ -147,62 +175,88 @@ router.use(
     res.status(200);
 
     try {
-      // `tables` is streamed first and `metadata` written last, because
-      // total_rows and skipped_missing_tables are only known once every table
-      // has been walked. Key order carries no meaning in JSON, so the parsed
-      // document is identical to the shape this route has always returned.
-      res.write('{"tables":{');
+      // Auth middleware runs inside tenantStore so normal queries receive SET
+      // LOCAL tenant scope. That outer scope already owns a transaction, where
+      // Drizzle can only create a savepoint and cannot change isolation. Exit it
+      // before checkout so this is one real root transaction whose BEGIN carries
+      // REPEATABLE READ. Every query still has the validated ownership predicate
+      // above; root scope is used only to make the whole archive one snapshot.
+      await tenantStore.exit(() =>
+        drizzle.transaction(
+          async (tx) => {
+            // `tables` is streamed first and `metadata` written last, because
+            // total_rows and skipped_missing_tables are only known once every
+            // table has been walked. Key order carries no meaning in JSON, so
+            // the parsed document retains the route's established shape.
+            await writeAccountExportChunk(res, '{"tables":{', exportLease.signal);
 
-      for (const { table, predicates } of targets) {
-        const key = accountExportKeyForTable(table);
-        const separator = tableCount === 0 ? "" : ",";
-        try {
-          res.write(`${separator}${JSON.stringify(key)}:[`);
-          totalRows += await streamTableRows(res, table, predicates);
-          res.write("]");
-          tableCount += 1;
-        } catch (error) {
-          // Legacy backup tables may be removed after a later migration. Their
-          // absence should be disclosed, not turn every account export into 500.
-          // The opening bracket is already written, so close it and move on —
-          // the table appears as an empty array and is named in
-          // skipped_missing_tables.
-          if (postgresErrorCode(error) === "42P01") {
-            skippedMissingTables.push(table);
-            log.warn("account export skipped missing table", { table, userId });
-            res.write("]");
+            for (const { table, predicates } of targets) {
+              const key = accountExportKeyForTable(table);
+              const separator = tableCount === 0 ? "" : ",";
+              await writeAccountExportChunk(
+                res,
+                `${separator}${JSON.stringify(key)}:[`,
+                exportLease.signal,
+              );
+              try {
+                // A failed SELECT aborts its transaction in PostgreSQL. Isolate
+                // each legacy-compatible table read in a savepoint so a missing
+                // retired table can be disclosed without invalidating the root
+                // snapshot used by every remaining table.
+                totalRows += await tx.transaction((tableTx) =>
+                  streamTableRows(tableTx, res, table, predicates, exportLease.signal),
+                );
+                await writeAccountExportChunk(res, "]", exportLease.signal);
+                tableCount += 1;
+              } catch (error) {
+                if (postgresErrorCode(error) === "42P01") {
+                  skippedMissingTables.push(table);
+                  log.warn("account export skipped missing table", { table, userId });
+                  await writeAccountExportChunk(res, "]", exportLease.signal);
+                  tableCount += 1;
+                  continue;
+                }
+                throw error;
+              }
+            }
+
+            // The auth profile is deleted separately after the tenant registry
+            // during terminal purge, so include it explicitly and let the shared
+            // redactor remove password_hash or future credential-shaped columns.
+            const userResult = (await tx.execute(
+              sql`SELECT * FROM wireline_users WHERE id = ${userId}`,
+            )) as ExecuteResult;
+            const userRows = (userResult.rows || []).map((row) => redactAccountExportValue(row));
+            await writeAccountExportChunk(
+              res,
+              `${tableCount === 0 ? "" : ","}"users":${JSON.stringify(userRows)}`,
+              exportLease.signal,
+            );
             tableCount += 1;
-            continue;
-          }
-          throw error;
-        }
-      }
+            totalRows += userRows.length;
 
-      // The auth profile is deleted separately after the tenant registry during
-      // terminal purge, so include it explicitly and let the shared redactor
-      // remove password_hash or any future credential-shaped columns.
-      const userResult = (await drizzle.execute(
-        sql`SELECT * FROM wireline_users WHERE id = ${userId}`,
-      )) as ExecuteResult;
-      const userRows = (userResult.rows || []).map((row) => redactAccountExportValue(row));
-      res.write(`${tableCount === 0 ? "" : ","}"users":${JSON.stringify(userRows)}`);
-      tableCount += 1;
-      totalRows += userRows.length;
-
-      res.write("},");
-      res.write(
-        `"metadata":${JSON.stringify({
-          user_id: userId,
-          email: req.user.email || "unknown",
-          exported_at: exportedAt.toISOString(),
-          export_schema_version: "2.0",
-          source_registry: "ACCOUNT_DELETION_TARGETS",
-          total_rows: totalRows,
-          excluded_security_resources: [...ACCOUNT_EXPORT_SECURITY_ONLY_TABLES].sort(),
-          redacted_credential_fields: [...ACCOUNT_EXPORT_REDACTED_FIELDS],
-          skipped_missing_tables: skippedMissingTables.sort(),
-        })}}`,
+            await writeAccountExportChunk(res, "},", exportLease.signal);
+            await writeAccountExportChunk(
+              res,
+              `"metadata":${JSON.stringify({
+                user_id: userId,
+                email: req.user.email || "unknown",
+                exported_at: exportedAt.toISOString(),
+                export_schema_version: "2.0",
+                source_registry: "ACCOUNT_DELETION_TARGETS",
+                total_rows: totalRows,
+                excluded_security_resources: [...ACCOUNT_EXPORT_SECURITY_ONLY_TABLES].sort(),
+                redacted_credential_fields: [...ACCOUNT_EXPORT_REDACTED_FIELDS],
+                skipped_missing_tables: skippedMissingTables.sort(),
+              })}}`,
+              exportLease.signal,
+            );
+          },
+          { isolationLevel: "repeatable read", accessMode: "read only" },
+        ),
       );
+      // Do not mark the download complete until PostgreSQL has committed the
+      // snapshot successfully. A commit failure destroys the response below.
       res.end();
 
       log.info("secure account export completed", {
@@ -220,6 +274,8 @@ router.use(
       // tenant's history would be silently accepted as a complete archive.
       res.destroy();
       return;
+    } finally {
+      exportLease.release();
     }
   },
 );

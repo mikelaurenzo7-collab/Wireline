@@ -5,14 +5,13 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("verified launch-readiness wins", () => {
-  it("ends spoken DNC opt-outs through Vapi live-call control and waits for confirmation", () => {
+  it("ends spoken DNC opt-outs through OpenAI live-call control and waits for confirmation", () => {
     const sentinel = read("src/services/sentinel.ts");
-    const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+    const handlers = read("src/lib/bot-tools/core.ts");
 
-    expect(sentinel).toContain("isAllowedVapiControlUrl");
-    expect(sentinel).toContain("monitor?: { controlUrl?: unknown }");
-    expect(sentinel).toContain('JSON.stringify({ type: "end-call" })');
-    expect(sentinel).not.toMatch(/api\.vapi\.ai\/call\/\$\{callId\}\/terminate/);
+    expect(sentinel).toContain('if (!value.startsWith("openai:")) return null');
+    expect(sentinel).toContain("await hangupOpenAISipCall(providerCallId)");
+    expect(sentinel).toContain('set({ status: "terminated" })');
 
     const dnc = handlers.slice(handlers.indexOf('fn === "add_to_dnc"'));
     // Awaited, so the tool result cannot claim termination before the provider
@@ -24,14 +23,14 @@ describe("verified launch-readiness wins", () => {
     expect(dnc).toContain("End this conversation immediately.");
     expect(dnc).not.toContain("void sentinel.terminateActiveCallsForNumber");
 
-    const session = read("src/lib/voice/xai-sip-session.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
     expect(session).toContain("endForCallerDnc");
     expect(session).toContain('optOut.kind === "dnc"');
     expect(session).toContain('endedReason = "caller-dnc"');
   });
 
   it("does not promise caller follow-up work that was never persisted", () => {
-    const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+    const handlers = read("src/lib/bot-tools/core.ts");
     expect(handlers).not.toContain(
       "I've noted that down. I'll make sure the team follows up with you.",
     );
@@ -42,7 +41,7 @@ describe("verified launch-readiness wins", () => {
     expect(handlers).toContain("recordCommsFollowUpTask");
   });
 
-  it("caps the public singing demo before paid Twilio/Vapi bridging", () => {
+  it("caps the public singing demo before paid carrier bridging", () => {
     const twilio = read("src/routes/twilio-webhook-base.ts");
     const start = twilio.indexOf("/api/twilio-webhook/singing-receptionist");
     const block = twilio.slice(start);
@@ -71,7 +70,7 @@ describe("verified launch-readiness wins", () => {
   });
 
   it("makes transient SMS persistence failures retryable at the carrier", () => {
-    const provisioning = read("src/lib/phone-provisioning.ts");
+    const provisioning = read("src/lib/voice/native-phone-carrier.ts");
     const readiness = read("scripts/check-vendor-readiness.mjs");
     const twilio = read("src/routes/twilio-webhook-base.ts");
 

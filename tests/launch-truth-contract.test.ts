@@ -74,8 +74,7 @@ describe("launch truth contract", () => {
     expect(security).toContain("Twilio provides phone numbers, PSTN transport, SIP, and SMS");
     expect(security).toContain("OpenAI Realtime runs every browser and phone conversation");
     expect(security).toContain("OpenAI also provides the primary structured runtime");
-    expect(security).toContain("ElevenLabs is limited to authorized private studio voice workflows");
-    expect(security).not.toMatch(/Vapi|xAI|Grok/);
+    expect(security).not.toMatch(/ElevenLabs|11labs|Vapi|xAI|Grok/);
     expect(security).toContain("names key subprocessors for transparency");
     expect(security).not.toContain("vendor names stay in operator configuration, not buyer UI");
   });

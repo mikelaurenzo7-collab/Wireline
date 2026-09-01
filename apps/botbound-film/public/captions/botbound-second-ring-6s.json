@@ -21,7 +21,7 @@
     "confidence": null
   },
   {
-    "text": "BotBound. Answers when you can’t.",
+    "text": "BotBound. The call still gets answered.",
     "startMs": 3600,
     "endMs": 4700,
     "timestampMs": null,

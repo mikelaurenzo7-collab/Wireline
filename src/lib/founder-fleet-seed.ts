@@ -389,17 +389,13 @@ export function namespacedAssistantAgentId(templateId: string, userId: string): 
   return `${userId}-${templateId}`;
 }
 
-async function upsertPersonality(agentId: string, userId: string, content: string): Promise<void> {
+async function ensurePersonality(agentId: string, userId: string, content: string): Promise<void> {
   const [existing] = await drizzle
     .select({ agentId: schema.personality.agentId })
     .from(schema.personality)
     .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
     .limit(1);
   if (existing) {
-    await drizzle
-      .update(schema.personality)
-      .set({ content })
-      .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)));
     return;
   }
 
@@ -417,6 +413,30 @@ async function upsertPersonality(agentId: string, userId: string, content: strin
   }
 
   await drizzle.insert(schema.personality).values({ agentId, userId, content });
+}
+
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/**
+ * A versioned fleet refresh may repair seed ownership metadata and identity-mark
+ * uniqueness, but it must not overwrite the founder's dogfooded Studio state.
+ */
+export function founderFleetExistingAgentPatch(
+  existingBusinessVariables: unknown,
+  managedBusinessVariables: Record<string, unknown>,
+  markKey: BotMarkKey,
+) {
+  return {
+    businessVariables: {
+      ...recordValue(existingBusinessVariables),
+      ...managedBusinessVariables,
+    },
+    markKey,
+  };
 }
 
 async function seedTrainingArtifacts(
@@ -488,20 +508,24 @@ async function upsertAgent(
   report: FounderAssistantSeedReport,
 ): Promise<string> {
   const toolsJson = ALL_AGENT_TOOLS;
-  const businessVariables = template.wirelinePersonaId
+  const managedBusinessVariables = template.wirelinePersonaId
     ? {
         wireline_internal: true,
         wireline_persona_id: template.wirelinePersonaId,
         founder_seed_contract_version: FOUNDER_FLEET_SEED_CONTRACT_VERSION,
         team: template.team,
-        provisioned_at: new Date().toISOString(),
       }
     : {
         founder_fleet_seed: true,
         founder_seed_contract_version: FOUNDER_FLEET_SEED_CONTRACT_VERSION,
         team: template.team,
-        seeded_at: new Date().toISOString(),
       };
+  const businessVariables = {
+    ...managedBusinessVariables,
+    ...(template.wirelinePersonaId
+      ? { provisioned_at: new Date().toISOString() }
+      : { seeded_at: new Date().toISOString() }),
+  };
 
   const voiceId = pickRotatedVoiceId(voiceIndex);
   const values = {
@@ -573,7 +597,11 @@ async function upsertAgent(
     const tenantScope = founderAssistantAgentScope(agentId, userId);
 
     const [existing] = await tx
-      .select({ id: schema.agents.id, markKey: schema.agents.markKey })
+      .select({
+        id: schema.agents.id,
+        markKey: schema.agents.markKey,
+        businessVariables: schema.agents.businessVariables,
+      })
       .from(schema.agents)
       .where(tenantScope)
       .limit(1);
@@ -601,11 +629,13 @@ async function upsertAgent(
     if (existing) {
       await tx
         .update(schema.agents)
-        .set({
-          ...values,
-          markKey,
-          enabledTools: toolsJson,
-        })
+        .set(
+          founderFleetExistingAgentPatch(
+            existing.businessVariables,
+            managedBusinessVariables,
+            markKey,
+          ),
+        )
         .where(tenantScope);
       return { kind: "updated", agentId } as const;
     }
@@ -615,7 +645,7 @@ async function upsertAgent(
   if (outcome.kind === "updated") report.agentsUpdated++;
   else report.agentsCreated++;
 
-  await upsertPersonality(outcome.agentId, userId, personalityForTemplate(template));
+  await ensurePersonality(outcome.agentId, userId, personalityForTemplate(template));
   await seedTrainingArtifacts(outcome.agentId, userId, template.role, report);
   report.agentIds.push(outcome.agentId);
   return outcome.agentId;
@@ -668,7 +698,9 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
     await upsertAgent(userId, template, voiceIndex++, report);
   }
 
-  // Ensure every existing owner agent also gets max tools (legacy rows)
+  // Existing owner-created Bots keep their chosen tools and Studio settings.
+  // A versioned refresh may add missing canonical training facts, but it must
+  // not silently broaden the external actions a dogfooded Bot can perform.
   const ownerAgents = await drizzle
     .select({ id: schema.agents.id, role: schema.agents.role })
     .from(schema.agents)
@@ -676,18 +708,8 @@ export async function seedFounderAssistant(userId: string): Promise<FounderAssis
 
   for (const row of ownerAgents) {
     if (!report.agentIds.includes(row.id)) {
-      // Preserve the posture the owner already chose. Role is only a default for
-      // the managed seed templates above; reclassifying every existing agent from
-      // its role silently moved a user-created personal agent (role "scheduler",
-      // "sales", or anything custom) into the business workspace, where the
-      // posture-filtered surfaces then hid it from the workspace it belonged to.
-      await drizzle
-        .update(schema.agents)
-        .set({ enabledTools: ALL_AGENT_TOOLS })
-        .where(and(eq(schema.agents.id, row.id), eq(schema.agents.userId, userId)));
       await seedTrainingArtifacts(row.id, userId, row.role || "customer_service", report);
       report.agentIds.push(row.id);
-      report.agentsUpdated++;
     }
   }
 

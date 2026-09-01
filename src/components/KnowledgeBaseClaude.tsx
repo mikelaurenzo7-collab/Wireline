@@ -1,5 +1,5 @@
 import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
-import { FileText, Loader2, UploadCloud } from "lucide-react";
+import { Check, FileText, Loader2, Pencil, Trash2, UploadCloud, X } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
 import {
@@ -10,7 +10,7 @@ import {
   knowledgeAssetTooLargeMessage,
 } from "../lib/knowledge-asset-limits";
 import { emitProductEvent } from "../lib/product-event-client";
-import { MetricTile } from "./atoms";
+import { Button, MetricTile } from "./atoms";
 
 /**
  * KnowledgeBaseClaude — Claude Design Knowledge surface for the Training tab.
@@ -114,6 +114,15 @@ function entrySubtitle(content: string | undefined, headline: string): string {
   return `${length} char${length === 1 ? "" : "s"}`;
 }
 
+function knowledgeRowId(entry: ConfigKnowledgeRow): string | null {
+  if (typeof entry.id === "number" && Number.isSafeInteger(entry.id) && entry.id > 0) {
+    return String(entry.id);
+  }
+  if (typeof entry.id !== "string") return null;
+  const normalized = entry.id.trim();
+  return /^\d+$/.test(normalized) && normalized !== "0" ? normalized : null;
+}
+
 function readAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -176,14 +185,26 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   // it wins when somehow both are set.
   const [loadError, setLoadError] = useState<string | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
-  const error = loadError || ingestError;
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const error = loadError || entryError || ingestError;
   const [showAllKnowledge, setShowAllKnowledge] = useState(false);
+  const [editingKnowledgeId, setEditingKnowledgeId] = useState<string | null>(null);
+  const [knowledgeDraft, setKnowledgeDraft] = useState("");
+  const [knowledgeBusyId, setKnowledgeBusyId] = useState<string | null>(null);
+  const [confirmDeleteKnowledgeId, setConfirmDeleteKnowledgeId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confirmDeleteCancelRef = useRef<HTMLButtonElement>(null);
+  const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
 
   useEffect(() => {
     // Switching voice agents should not carry over an expanded list from a
     // different (possibly much longer) knowledge base.
     setShowAllKnowledge(false);
+    setEditingKnowledgeId(null);
+    setKnowledgeDraft("");
+    setKnowledgeBusyId(null);
+    setConfirmDeleteKnowledgeId(null);
+    setEntryError(null);
   }, [agentId]);
 
   useEffect(() => {
@@ -231,6 +252,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     if (!list.length || uploading) return;
     setUploading(true);
     setNotice(null);
+    setEntryError(null);
     setIngestError(null);
 
     const summaries: string[] = [];
@@ -300,6 +322,108 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   function onDragLeave() {
     if (dragOver) setDragOver(false);
+  }
+
+  function beginKnowledgeEdit(entry: ConfigKnowledgeRow) {
+    const rowId = knowledgeRowId(entry);
+    if (!rowId) return;
+    setEditingKnowledgeId(rowId);
+    setKnowledgeDraft(entry.content || "");
+    setConfirmDeleteKnowledgeId(null);
+    setEntryError(null);
+    setNotice(null);
+  }
+
+  function cancelKnowledgeEdit() {
+    if (knowledgeBusyId) return;
+    setEditingKnowledgeId(null);
+    setKnowledgeDraft("");
+    setEntryError(null);
+  }
+
+  function beginKnowledgeRemoval(rowId: string) {
+    setEditingKnowledgeId(null);
+    setKnowledgeDraft("");
+    setConfirmDeleteKnowledgeId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    requestAnimationFrame(() => confirmDeleteCancelRef.current?.focus());
+  }
+
+  function cancelKnowledgeRemoval(rowId: string) {
+    if (knowledgeBusyId) return;
+    setConfirmDeleteKnowledgeId(null);
+    requestAnimationFrame(() => removeButtonRefs.current.get(rowId)?.focus());
+  }
+
+  async function saveKnowledgeEntry(rowId: string) {
+    const content = knowledgeDraft.trim();
+    if (!content) {
+      setEntryError("Knowledge cannot be empty. Remove the entry instead.");
+      return;
+    }
+    setKnowledgeBusyId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    try {
+      const response = await authFetch(`/api/knowledge/${encodeURIComponent(rowId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const body = (await safeJson(response)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Knowledge could not be updated.");
+      setConfig((current) =>
+        current
+          ? {
+              ...current,
+              knowledge: (current.knowledge || []).map((entry) =>
+                knowledgeRowId(entry) === rowId ? { ...entry, content } : entry,
+              ),
+            }
+          : current,
+      );
+      setEditingKnowledgeId(null);
+      setKnowledgeDraft("");
+      setNotice("Knowledge updated.");
+    } catch (reason) {
+      setEntryError(reason instanceof Error ? reason.message : "Knowledge could not be updated.");
+    } finally {
+      setKnowledgeBusyId(null);
+    }
+  }
+
+  async function removeKnowledgeEntry(rowId: string) {
+    setKnowledgeBusyId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    try {
+      const response = await authFetch(`/api/knowledge/${encodeURIComponent(rowId)}`, {
+        method: "DELETE",
+      });
+      const body = (await safeJson(response)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Knowledge could not be removed.");
+      setConfig((current) =>
+        current
+          ? {
+              ...current,
+              knowledge: (current.knowledge || []).filter(
+                (entry) => knowledgeRowId(entry) !== rowId,
+              ),
+            }
+          : current,
+      );
+      setConfirmDeleteKnowledgeId(null);
+      if (editingKnowledgeId === rowId) {
+        setEditingKnowledgeId(null);
+        setKnowledgeDraft("");
+      }
+      setNotice("Knowledge removed.");
+    } catch (reason) {
+      setEntryError(reason instanceof Error ? reason.message : "Knowledge could not be removed.");
+    } finally {
+      setKnowledgeBusyId(null);
+    }
   }
 
   const knowledge = config?.knowledge ?? [];
@@ -441,10 +565,62 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             {(showAllKnowledge ? knowledge : knowledge.slice(0, KNOWLEDGE_VISIBLE_CAP)).map(
               (entry, index) => {
                 const badge = fileBadge(entry.source);
+                const rowId = knowledgeRowId(entry);
+                const headline = entryHeadline(entry.content, entry.source);
+                const busy = rowId !== null && knowledgeBusyId === rowId;
+                if (rowId && editingKnowledgeId === rowId) {
+                  return (
+                    <article
+                      key={entry.id ?? `k-${index}`}
+                      className="rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-surface-default)] p-4"
+                    >
+                      <label
+                        className="mb-2 block text-xs font-semibold text-[var(--wireline-color-text-primary)]"
+                        htmlFor={`knowledge-entry-${rowId}`}
+                      >
+                        Edit knowledge
+                      </label>
+                      <textarea
+                        id={`knowledge-entry-${rowId}`}
+                        value={knowledgeDraft}
+                        onChange={(event) => setKnowledgeDraft(event.target.value)}
+                        maxLength={10_000}
+                        rows={5}
+                        disabled={busy}
+                        className="w-full resize-y rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
+                      />
+                      <div className="mt-3 flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={busy}
+                          onClick={cancelKnowledgeEdit}
+                        >
+                          <X aria-hidden="true" />
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={busy || !knowledgeDraft.trim()}
+                          onClick={() => void saveKnowledgeEntry(rowId)}
+                        >
+                          {busy ? (
+                            <Loader2 className="animate-spin" aria-hidden="true" />
+                          ) : (
+                            <Check aria-hidden="true" />
+                          )}
+                          Save
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                }
                 return (
                   <article
                     key={entry.id ?? `k-${index}`}
-                    className="flex items-center gap-3.5 rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-5 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)]"
+                    className="flex flex-wrap items-center gap-3.5 rounded-[var(--wireline-radius-lg)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-4 py-4 transition-colors hover:border-[var(--wireline-color-action-primary-default)] sm:flex-nowrap sm:px-5"
                   >
                     <div
                       className="grid size-9 shrink-0 place-items-center rounded-[var(--wireline-radius-md)] font-[var(--wireline-font-mono)] text-[11px] font-bold"
@@ -454,21 +630,86 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                        {entryHeadline(entry.content, entry.source)}
+                        {headline}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                        {entrySubtitle(entry.content, entryHeadline(entry.content, entry.source))}
+                        {entrySubtitle(entry.content, headline)}
                       </div>
                     </div>
-                    <span
-                      className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
-                      style={{
-                        background: SUCCESS_SURFACE,
-                        color: "var(--wireline-color-status-success)",
-                      }}
-                    >
-                      Active
-                    </span>
+                    {rowId ? (
+                      confirmDeleteKnowledgeId === rowId ? (
+                        <div
+                          className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto"
+                          role="group"
+                          aria-label={`Remove ${headline}`}
+                        >
+                          <span className="text-xs text-muted-foreground">Remove this entry?</span>
+                          <Button
+                            ref={confirmDeleteCancelRef}
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => cancelKnowledgeRemoval(rowId)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={busy}
+                            onClick={() => void removeKnowledgeEntry(rowId)}
+                          >
+                            {busy ? (
+                              <Loader2 className="animate-spin" aria-hidden="true" />
+                            ) : (
+                              <Trash2 aria-hidden="true" />
+                            )}
+                            Remove
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex w-full justify-end gap-1 sm:w-auto">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={Boolean(knowledgeBusyId)}
+                            onClick={() => beginKnowledgeEdit(entry)}
+                            aria-label={`Edit ${headline}`}
+                          >
+                            <Pencil aria-hidden="true" />
+                            Edit
+                          </Button>
+                          <Button
+                            ref={(node) => {
+                              if (node) removeButtonRefs.current.set(rowId, node);
+                              else removeButtonRefs.current.delete(rowId);
+                            }}
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={Boolean(knowledgeBusyId)}
+                            onClick={() => beginKnowledgeRemoval(rowId)}
+                            aria-label={`Remove ${headline}`}
+                          >
+                            <Trash2 aria-hidden="true" />
+                            Remove
+                          </Button>
+                        </div>
+                      )
+                    ) : (
+                      <span
+                        className="rounded-[var(--wireline-radius-xs)] px-2 py-1 font-[var(--wireline-font-mono)] text-[9px] uppercase tracking-[0.1em]"
+                        style={{
+                          background: SUCCESS_SURFACE,
+                          color: "var(--wireline-color-status-success)",
+                        }}
+                      >
+                        Active
+                      </span>
+                    )}
                   </article>
                 );
               },

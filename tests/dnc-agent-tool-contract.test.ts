@@ -20,7 +20,7 @@ describe("live-call DNC opt-out contract", () => {
   });
 
   it("keeps legal opt-outs independent of the auxiliary tool ledger", () => {
-    const coreHandler = read("src/routes/vapi/tool-handlers-core.ts");
+    const coreHandler = read("src/lib/bot-tools/core.ts");
 
     expect(isIdempotentAgentTool("add_to_dnc")).toBe(false);
     expect(coreHandler).toContain('if (fn === "add_to_dnc")');

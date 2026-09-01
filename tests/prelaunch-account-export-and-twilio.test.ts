@@ -178,7 +178,8 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     expect(route).toContain("EXPORT_PAGE_ROWS");
     expect(route).toContain("LIMIT ${EXPORT_PAGE_ROWS} OFFSET ${offset}");
     expect(route).toContain("ORDER BY ctid");
-    expect(route).toContain("res.write(");
+    expect(route).toContain("writeAccountExportChunk(");
+    expect(route).not.toContain("res.write(");
     // No unbounded whole-table read, and no single json() of the full archive.
     expect(route).not.toContain("res.status(200).json(exportPackage)");
     expect(route).not.toMatch(
@@ -190,9 +191,26 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     const route = read("src/routes/account-export-guard-routes.ts");
     // Once bytes are on the wire there is no status code left to send, so the
     // one error meaning "this code is unsafe" has to surface first.
-    expect(route.indexOf("Unsafe account export target without ownership predicate")).toBeLessThan(
-      route.indexOf("res.write('{\"tables\":{')"),
+    const validationIndex = route.indexOf(
+      "Unsafe account export target without ownership predicate",
     );
+    const firstWriteIndex = route.indexOf("writeAccountExportChunk(res, '{\"tables\":{'");
+    expect(validationIndex).toBeGreaterThan(-1);
+    expect(firstWriteIndex).toBeGreaterThan(-1);
+    expect(validationIndex).toBeLessThan(firstWriteIndex);
+  });
+
+  it("uses one root-scoped repeatable-read snapshot for every archive query", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+
+    // Tenant-scoped checkouts already own an outer transaction, so changing
+    // isolation there would only configure a nested savepoint. The export must
+    // exit that context before its real BEGIN and keep all reads on tx.
+    expect(route).toContain("tenantStore.exit(() =>");
+    expect(route).toContain('{ isolationLevel: "repeatable read", accessMode: "read only" }');
+    expect(route).toContain("streamTableRows(tableTx, res, table, predicates, exportLease.signal)");
+    expect(route).toContain("const userResult = (await tx.execute(");
+    expect(route).not.toContain("await drizzle.execute(");
   });
 
   it("aborts rather than emitting a well-formed but incomplete archive", () => {

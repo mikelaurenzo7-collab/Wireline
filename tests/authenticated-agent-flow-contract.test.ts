@@ -37,7 +37,7 @@ describe("authenticated Bot flow", () => {
     expect(permissions).toContain("return response.json().catch(() => null);");
     expect(permissions).toContain("Not connected. These stay off in live calls until");
     expect(permissions).toContain("to={playbook.connectPath}");
-    expect(read("src/lib/vapi-helpers.ts")).toContain("filterToolsByTenantConnections");
+    expect(read("src/lib/agent-runtime-helpers.ts")).toContain("filterToolsByTenantConnections");
     expect(permissions).toContain("const savedFor = agentId;");
     expect(permissions).toMatch(/if \(loadedAgentRef\.current !== savedFor\) return;/);
     expect(permissions).toContain("encodeURIComponent(savedFor)");
@@ -74,7 +74,7 @@ describe("authenticated Bot flow", () => {
   it("gates provider-spending live work on activation, not draft creation", () => {
     const trialGate = read("src/lib/trial-gate.ts");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
-    const carrierRoutes = read("src/routes/carrier-routes.ts");
+    const carrierRoutes = read("src/routes/native-phone-routing-routes.ts");
 
     expect(trialGate).toContain("enforceLiveWorkActivation");
     expect(trialGate).toContain("other provider-spending live actions until verified");
@@ -240,8 +240,8 @@ describe("authenticated Bot flow", () => {
     const deployModal = read("src/components/DeployAgentModal.tsx");
 
     expect(routes).toContain("cleanText(req.body?.voice_id, 160)");
-    expect(routes).toContain("isManagedVapiVoiceId(requestedVoiceId)");
-    expect(routes).toContain('voiceProvider: isXaiPstnVoiceId(voiceId) ? "xai" : "vapi"');
+    expect(routes).toContain("normalizeManagedOpenAIVoiceId(requestedVoiceId)");
+    expect(routes).toContain('voiceProvider: "openai"');
     expect(routes).not.toContain('voiceProvider: "11labs"');
     expect(routes).toContain('req.body?.channel === "email"');
     expect(routes).toContain("resolveCreateFirstMessage(req.body?.firstMessage, name)");

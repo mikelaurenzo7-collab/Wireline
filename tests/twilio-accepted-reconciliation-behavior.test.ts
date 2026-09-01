@@ -10,8 +10,10 @@ function installSendMocks(options: {
   failRefund?: boolean;
   accountEnvironment?: "production" | "test" | "demo";
   fenceDenied?: boolean;
+  threadStatus?: string;
+  smsFromNumber?: string | null;
 }) {
-  const createMessage = vi.fn(async () => {
+  const createMessage = vi.fn(async (_payload?: Record<string, unknown>) => {
     if (options.provider.kind === "rejected") {
       throw Object.assign(new Error("provider rejected"), { status: options.provider.status });
     }
@@ -45,14 +47,14 @@ function installSendMocks(options: {
           enabled: true,
           lookupEnabled: false,
           messagingServiceSid: "MGservice",
-          smsFromNumber: null,
+          smsFromNumber: options.smsFromNumber ?? null,
           whatsappFromNumber: null,
         },
       ];
     } else if ("phone" in projection) {
       rows = [];
     } else {
-      rows = [{ id: "thread-1", agentId: null }];
+      rows = [{ id: "thread-1", agentId: null, status: options.threadStatus ?? "open" }];
     }
     return {
       from: vi.fn(() => ({
@@ -65,9 +67,8 @@ function installSendMocks(options: {
         throw new Error("message history unavailable");
       })
     : vi.fn(async () => undefined);
-  const update = vi.fn(() => ({
-    set: vi.fn(() => ({ where: updateWhere })),
-  }));
+  const updateSet = vi.fn(() => ({ where: updateWhere }));
+  const update = vi.fn(() => ({ set: updateSet }));
   const insertValues = vi.fn(() => ({
     onConflictDoNothing: vi.fn(async () => undefined),
   }));
@@ -154,6 +155,7 @@ function installSendMocks(options: {
     enqueue,
     refundRuntimeUsage,
     reserveRuntimeUsage,
+    updateSet,
     updateWhere,
     insertValues,
     log,
@@ -216,6 +218,63 @@ describe("Twilio accepted-message reliability", () => {
     expect(mocks.createMessage).not.toHaveBeenCalled();
   });
 
+  it("retains the shared reserve when another request already claimed the provider attempt", async () => {
+    const mocks = installSendMocks({ provider: { kind: "accepted" } });
+    const { sendTenantMessage, SmsProviderAttemptAlreadyClaimedError } =
+      await import("../src/lib/twilio-service");
+    const beforeProviderAttempt = vi.fn(async () => {
+      throw new SmsProviderAttemptAlreadyClaimedError();
+    });
+
+    await expect(
+      sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Only the winning request may cross the carrier boundary.",
+        channel: "sms",
+        idempotencyKey: "manual-reply/thread-1/concurrent",
+        beforeProviderAttempt,
+      }),
+    ).rejects.toBeInstanceOf(SmsProviderAttemptAlreadyClaimedError);
+
+    expect(beforeProviderAttempt).toHaveBeenCalledTimes(1);
+    expect(mocks.reserveRuntimeUsage).toHaveBeenCalledTimes(1);
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.log.warn).toHaveBeenCalledWith(
+      "Twilio provider attempt already claimed; retaining shared reservation",
+      expect.objectContaining({ reservationRetained: true }),
+    );
+  });
+
+  it("refunds exactly once when a generic pre-provider callback failure prevents the send", async () => {
+    const mocks = installSendMocks({ provider: { kind: "accepted" } });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const beforeProviderAttempt = vi.fn(async () => {
+      throw new Error("claim store unavailable");
+    });
+
+    await expect(
+      sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "The carrier must not be called without a durable claim.",
+        channel: "sms",
+        idempotencyKey: "manual-reply/thread-1/pre-provider-failure",
+        beforeProviderAttempt,
+      }),
+    ).rejects.toThrow("claim store unavailable");
+
+    expect(beforeProviderAttempt).toHaveBeenCalledTimes(1);
+    expect(mocks.reserveRuntimeUsage).toHaveBeenCalledTimes(1);
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(mocks.refundRuntimeUsage).toHaveBeenCalledTimes(1);
+    expect(mocks.refundRuntimeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: "Twilio provider attempt did not start",
+        metadata: expect.objectContaining({ pre_provider_failure: true }),
+      }),
+    );
+  });
+
   it("returns carrier acceptance and queues failed local bookkeeping without a second send", async () => {
     const mocks = installSendMocks({
       provider: { kind: "accepted", numSegments: "2" },
@@ -253,6 +312,50 @@ describe("Twilio accepted-message reliability", () => {
         providerAccepted: true,
         doNotRetryProviderSend: true,
         jobId: "job-reconcile-1",
+      }),
+    );
+  });
+
+  it.each(["waiting", "escalated", "booked", "resolved"])(
+    "preserves the operator-owned %s outcome after carrier acceptance",
+    async (threadStatus) => {
+      const mocks = installSendMocks({
+        provider: { kind: "accepted" },
+        threadStatus,
+      });
+      const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+      const result = await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Carrier acceptance must not change who owns this conversation.",
+        channel: "sms",
+      });
+
+      expect(result).toMatchObject({ ok: true, sid: "SMaccepted123" });
+      expect(mocks.updateSet).toHaveBeenCalledWith(
+        expect.objectContaining({ status: threadStatus }),
+      );
+    },
+  );
+
+  it("pins the tenant default From while retaining Messaging Service controls", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      smsFromNumber: "+14155550999",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+
+    const result = await sendTenantMessage("user-1", {
+      to: "+14155550123",
+      body: "Keep this reply on the exact business line.",
+      channel: "sms",
+    });
+
+    expect(result).toMatchObject({ ok: true, sid: "SMaccepted123" });
+    expect(mocks.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messagingServiceSid: "MGservice",
+        from: "+14155550999",
       }),
     );
   });
@@ -307,7 +410,7 @@ describe("Twilio accepted-message reliability", () => {
     ).toBe(false);
   });
 
-  it.each([0, 503])(
+  it.each([0, 408, 503])(
     "marks provider status %s as ambiguous, retains the reserve, and writes a content-free critical incident",
     async (status) => {
       const mocks = installSendMocks({

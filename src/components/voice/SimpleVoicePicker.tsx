@@ -1,80 +1,82 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Loader2, MessageCircle, Volume2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
-import {
-  OPENAI_REALTIME_VOICES,
-  type VoiceOption,
-} from "../../lib/voice-catalog";
+import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
+import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
-import VoiceCloningStudio, { type PrivateVoice } from "./VoiceCloningStudio";
 
 type SimpleVoicePickerProps = {
   agentId: string;
   agentName: string;
-  onTest: () => void;
 };
 
 type AgentVoiceResponse = {
   voice?: {
     voiceId?: string | null;
     provider?: string | null;
+    phoneVoiceId?: string | null;
+    phoneVoiceProvider?: string | null;
   };
 };
 
-type VoiceLibraryResponse = {
-  configured?: boolean;
-  canManageVoices?: boolean;
-  privateVoices?: PrivateVoice[];
-};
-
-export default function SimpleVoicePicker({ agentId, agentName, onTest }: SimpleVoicePickerProps) {
+export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePickerProps) {
   const includedVoices = useMemo(() => {
     return [...OPENAI_REALTIME_VOICES];
   }, []);
-  const [privateVoices, setPrivateVoices] = useState<PrivateVoice[]>([]);
-  const [studioConfigured, setStudioConfigured] = useState(false);
-  const [canManageVoices, setCanManageVoices] = useState(false);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingVoiceId, setSavingVoiceId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const activeAgentIdRef = useRef(agentId);
+  const saveOperationRef = useRef(0);
 
-  const loadVoiceLibrary = useCallback(async () => {
-    const response = await authFetch("/api/voices");
-    if (!response.ok) throw new Error("Studio voices are temporarily unavailable.");
-    const data = (await response.json()) as VoiceLibraryResponse;
-    setPrivateVoices(Array.isArray(data.privateVoices) ? data.privateVoices : []);
-    setStudioConfigured(data.configured === true);
-    setCanManageVoices(data.canManageVoices === true);
-    setError(null);
-  }, []);
+  useLayoutEffect(() => {
+    activeAgentIdRef.current = agentId;
+    saveOperationRef.current += 1;
+  }, [agentId]);
 
   useEffect(() => {
-    if (!agentId) return;
+    setSavingVoiceId(null);
+    setSelectedVoiceId(null);
+    setSelectedProvider(null);
+    setNotice(null);
+    if (!agentId) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([
-      authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`).then(async (response) => {
+    setPreviewOpen(false);
+    authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
+      .then(async (response) => {
         if (!response.ok) throw new Error("Could not load the current voice.");
         return (await response.json()) as AgentVoiceResponse;
-      }),
-      loadVoiceLibrary().catch((reason) => {
-        if (!cancelled) {
-          setPrivateVoices([]);
-          setStudioConfigured(false);
-          setCanManageVoices(false);
-          setError(reason instanceof Error ? reason.message : "Studio voices are unavailable.");
-        }
-      }),
-    ])
-      .then(([agentData]) => {
+      })
+      .then((agentData) => {
         if (cancelled) return;
-        setSelectedVoiceId(agentData.voice?.voiceId ?? null);
-        setSelectedProvider(agentData.voice?.provider ?? null);
+        const storedPrimaryVoiceId = agentData.voice?.voiceId?.trim() || null;
+        const storedPrimaryProvider = agentData.voice?.provider?.trim().toLowerCase() || null;
+        const usesSeparatePhoneVoice = storedPrimaryProvider === "presenter";
+        const storedVoiceId = usesSeparatePhoneVoice
+          ? agentData.voice?.phoneVoiceId?.trim() || null
+          : storedPrimaryVoiceId;
+        const storedProvider = usesSeparatePhoneVoice
+          ? agentData.voice?.phoneVoiceProvider?.trim().toLowerCase() || null
+          : storedPrimaryProvider;
+        const managedVoice = OPENAI_REALTIME_VOICES.find(
+          (voice) => voice.id.toLowerCase() === storedVoiceId?.toLowerCase(),
+        );
+        setSelectedVoiceId(managedVoice?.id ?? storedVoiceId);
+        setSelectedProvider(
+          managedVoice && (!storedProvider || storedProvider === "openai")
+            ? "openai"
+            : storedProvider,
+        );
       })
       .catch((reason) => {
         if (!cancelled) {
@@ -87,31 +89,58 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
     return () => {
       cancelled = true;
     };
-  }, [agentId, loadVoiceLibrary]);
+  }, [agentId]);
 
   async function selectVoice(voice: VoiceOption) {
     if (!agentId || savingVoiceId) return;
+    const requestedAgentId = agentId;
+    const saveOperation = ++saveOperationRef.current;
+    const isCurrentSave = () =>
+      activeAgentIdRef.current === requestedAgentId && saveOperationRef.current === saveOperation;
     setSavingVoiceId(voice.id);
     setNotice(null);
     setError(null);
     try {
-      const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/voice`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voiceId: voice.id, provider: voice.provider }),
-      });
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(requestedAgentId)}/voice`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ voiceId: voice.id, provider: "openai" }),
+        },
+      );
       const body = (await response.json().catch(() => null)) as {
         error?: string;
-        voice?: { voiceId?: string | null; provider?: string | null };
+        voice?: {
+          voiceId?: string | null;
+          provider?: string | null;
+          phoneVoiceId?: string | null;
+          phoneVoiceProvider?: string | null;
+        };
       } | null;
       if (!response.ok) throw new Error(body?.error || "Voice could not be saved.");
-      setSelectedVoiceId(body?.voice?.voiceId ?? voice.id);
-      setSelectedProvider(body?.voice?.provider ?? voice.provider);
+      if (!isCurrentSave()) return;
+      const savedPrimaryProvider = body?.voice?.provider?.trim().toLowerCase() || null;
+      const savedPrimaryVoiceId = body?.voice?.voiceId?.trim() || null;
+      const savedWithPhoneFallback = savedPrimaryProvider === "presenter";
+      setSelectedVoiceId(
+        savedWithPhoneFallback
+          ? (body?.voice?.phoneVoiceId ?? voice.id)
+          : (savedPrimaryVoiceId ?? voice.id),
+      );
+      setSelectedProvider(
+        savedWithPhoneFallback
+          ? (body?.voice?.phoneVoiceProvider ?? voice.provider)
+          : (savedPrimaryProvider ?? voice.provider),
+      );
+      setPreviewOpen(false);
       setNotice(`${voice.name} is ready for ${agentName}.`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Voice could not be saved.");
+      if (isCurrentSave()) {
+        setError(reason instanceof Error ? reason.message : "Voice could not be saved.");
+      }
     } finally {
-      setSavingVoiceId(null);
+      if (isCurrentSave()) setSavingVoiceId(null);
     }
   }
 
@@ -150,11 +179,7 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
               {voice.name.split("·")[0].trim()}
             </span>
             <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {selected
-                ? "Selected"
-                : voice.category === "cloned"
-                  ? "Private"
-                  : voice.name.split("·").slice(1).join("·").trim() || "Choose"}
+              {selected ? "Selected" : voice.name.split("·").slice(1).join("·").trim() || "Choose"}
             </span>
           </span>
         </button>
@@ -171,11 +196,13 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={onTest}
+          onClick={() => setPreviewOpen((open) => !open)}
+          disabled={loading || Boolean(savingVoiceId) || !selectedIsAvailable}
+          aria-expanded={previewOpen}
           className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         >
-          <MessageCircle className="size-4" aria-hidden="true" />
-          Test
+          <Volume2 className="size-4" aria-hidden="true" />
+          {previewOpen ? "Close preview" : "Preview voice"}
         </button>
       </div>
 
@@ -195,25 +222,28 @@ export default function SimpleVoicePicker({ agentId, agentName, onTest }: Simple
         <>
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              OpenAI Realtime voices
+              10 built-in OpenAI voices
             </p>
             <p className="text-xs text-muted-foreground">
-              This one voice is used consistently in browser tests and live phone calls.
+              Choose the OpenAI voice that fits this Bot. It stays consistent throughout each
+              session and is shared by browser tests and live phone calls. Change it anytime between
+              sessions. A preview starts a new private browser voice session with the saved choice.
             </p>
             <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
           </div>
-
-          <VoiceCloningStudio
-            configured={studioConfigured}
-            canManage={canManageVoices}
-            voices={privateVoices}
-            onChanged={loadVoiceLibrary}
-          />
         </>
       )}
 
       {!loading && !selectedIsAvailable ? (
         <StatusNotice tone="warning">Choose a voice before the next call.</StatusNotice>
+      ) : null}
+
+      {previewOpen && selectedIsAvailable ? (
+        <OpenAILiveVoiceSandbox
+          key={`${selectedProvider}:${selectedVoiceId}`}
+          agentId={agentId}
+          agentName={agentName}
+        />
       ) : null}
     </div>
   );

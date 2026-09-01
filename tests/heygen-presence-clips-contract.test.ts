@@ -13,6 +13,7 @@ describe("HeyGen and LiveAvatar talking-head paths are gone", () => {
       existsSync(resolve(process.cwd(), "src/lib/video-presenter/heygen-voice-service.ts")),
     ).toBe(false);
     expect(existsSync(resolve(process.cwd(), "scripts/patch-liveavatar-sdk.mjs"))).toBe(false);
+    expect(existsSync(resolve(process.cwd(), "src/lib/xai-imagine-video.ts"))).toBe(false);
   });
 
   it("keeps live session owners off HeyGen and Imagine file generation", () => {
@@ -27,8 +28,6 @@ describe("HeyGen and LiveAvatar talking-head paths are gone", () => {
       expect(source, path).not.toContain("https://api.heygen.com");
       expect(source, path).not.toContain("https://api.liveavatar.com");
     }
-    expect(read("src/lib/xai-imagine-video.ts")).toContain("IMAGINE_WATERMARK_NOT_OFFERED");
-    expect(read("src/lib/xai-imagine-video.ts")).toContain("imagineVideoGenerationOffered");
   });
 
   it("does not let clients write consent on PATCH", () => {

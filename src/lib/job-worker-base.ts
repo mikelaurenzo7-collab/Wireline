@@ -294,21 +294,6 @@ export async function handleJob(job: JobRow): Promise<void> {
         }),
       );
     }
-    const intent = (result.intent_label || "").toLowerCase();
-    if (intent === "escalation" || intent === "escalate") {
-      dispatchWebhook(p.userId, "call.escalated", {
-        vapi_call_id: p.callId,
-        intent_label: result.intent_label,
-        customer_number: payload.customer_number,
-      }).catch((e: unknown) =>
-        log.error("webhook dispatch failed", {
-          userId: p.userId,
-          event: "call.escalated",
-          error: getErrorMessage(e),
-        }),
-      );
-    }
-
     // Automatically enqueue action extraction after enrichment
     await enqueue(drizzle, {
       userId: p.userId,

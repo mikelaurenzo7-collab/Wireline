@@ -61,15 +61,7 @@ describe("launch completeness contracts", () => {
     const beats = reelBeatPaths(kit);
     const declared = declaredRoutePaths(appRoutes);
     const missing = beats.filter((path) => !declared.has(path));
-    expect(beats).toEqual([
-      "/",
-      "/email",
-      "/knowledge",
-      "/overview",
-      "/phone",
-      "/settings/phone",
-      "/studio",
-    ]);
+    expect(beats).toEqual(["/", "/inbox", "/knowledge", "/overview", "/phone", "/studio"]);
     expect(
       missing,
       `Launch reel beats reference routes absent from AppRoutes: ${missing.join(", ")}. A stale scene route records the authenticated 404 and can still look like a unique certified frame.`,

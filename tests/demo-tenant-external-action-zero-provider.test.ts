@@ -61,7 +61,7 @@ describe("demo tenant external actions stop before providers", () => {
       sendPaymentLinkEmail: paymentSend,
     }));
 
-    const { handleCoreToolCall } = await import("../src/routes/vapi/tool-handlers-core");
+    const { handleCoreToolCall } = await import("../src/lib/bot-tools/core");
     const context = {
       toolCallId: "tool-1",
       payload: {},
@@ -152,7 +152,7 @@ describe("demo tenant external actions stop before providers", () => {
       sendPaymentLinkEmail: paymentSend,
     }));
 
-    const { handleCoreToolCall } = await import("../src/routes/vapi/tool-handlers-core");
+    const { handleCoreToolCall } = await import("../src/lib/bot-tools/core");
     const context = {
       toolCallId: "tool-1",
       payload: {},
@@ -221,7 +221,7 @@ describe("demo tenant external actions stop before providers", () => {
     expect(getTwilioClient).not.toHaveBeenCalled();
   });
 
-  it("returns no Vapi transfer destination when production flips to demo during notification", async () => {
+  it("returns no live transfer destination when production flips to demo during notification", async () => {
     let accountEnvironment: "production" | "demo" = "production";
     const livePolicy = vi.fn(async () =>
       accountEnvironment === "production"
@@ -259,7 +259,7 @@ describe("demo tenant external actions stop before providers", () => {
       insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) })),
     };
 
-    const { handleWorkflowToolCall } = await import("../src/routes/vapi/tool-handlers-workflow");
+    const { handleWorkflowToolCall } = await import("../src/lib/bot-tools/workflow");
     const result = await handleWorkflowToolCall(
       "escalate_to_human",
       { reason: "Customer asked for the owner" },

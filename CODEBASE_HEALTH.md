@@ -11,6 +11,7 @@ BotBound is the operating layer for your Bot across calls, texts, follow-up, bro
 - **Launch / Connections** owns numbers, integrations, routing, connected tools, approvals, billing, and launch controls.
 - **Run / Studio** is chat-first execution for calls, texts, follow-up, approvals, handoff, and review.
 - **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
+- **Customer voice choice** is the complete 10-voice built-in OpenAI Realtime catalog. A Bot keeps its saved voice for each entire session and may use a different saved voice on a later session. No external voice-cloning provider, catalog, upload, or runtime remains.
 
 Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light themes must express one BotBound Letterpress system rather than separate products.
 
@@ -19,7 +20,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Surface | Active source |
 | --- | --- |
 | Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
-| Overview | `src/pages/OverviewPage.tsx` |
+| Home / Studio | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` both resolve to `/studio` |
 | Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
 | Training | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` |
 | Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |

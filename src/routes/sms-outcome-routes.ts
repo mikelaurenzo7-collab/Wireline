@@ -40,23 +40,42 @@ router.patch(
           customerNumber: schema.smsThreads.customerNumber,
           summary: schema.smsThreads.summary,
           agentId: schema.smsThreads.agentId,
+          status: schema.smsThreads.status,
         })
         .from(schema.smsThreads)
         .where(
-          and(
-            eq(schema.smsThreads.id, req.params.id),
-            eq(schema.smsThreads.userId, req.user.id),
-          ),
+          and(eq(schema.smsThreads.id, req.params.id), eq(schema.smsThreads.userId, req.user.id)),
         )
         .limit(1);
 
       if (!thread) throw AppError.fromHttpStatus(404, "SMS conversation not found.");
+      if (thread.status === "routing_conflict") {
+        throw new AppError(
+          409,
+          "SMS_THREAD_ROUTING_CONFLICT",
+          "Resolve this conversation's Twilio sending line before changing its outcome.",
+        );
+      }
 
       const { updated, handoffTaskId, taskStateChanged } = await drizzle.transaction(async (tx) => {
         const lockKey = handoffAdvisoryLockKey(req.user.id, SMS_HANDOFF_SOURCE_TYPE, thread.id);
-        await tx.execute(
-          sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
-        );
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+
+        const [lockedThread] = await tx
+          .select({ status: schema.smsThreads.status })
+          .from(schema.smsThreads)
+          .where(
+            and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, req.user.id)),
+          )
+          .limit(1);
+        if (!lockedThread) throw AppError.fromHttpStatus(404, "SMS conversation not found.");
+        if (lockedThread.status === "routing_conflict") {
+          throw new AppError(
+            409,
+            "SMS_THREAD_ROUTING_CONFLICT",
+            "Resolve this conversation's Twilio sending line before changing its outcome.",
+          );
+        }
 
         const [nextThread] = await tx
           .update(schema.smsThreads)
@@ -168,10 +187,7 @@ router.get(
         })
         .from(schema.smsThreads)
         .where(
-          and(
-            eq(schema.smsThreads.id, req.params.id),
-            eq(schema.smsThreads.userId, req.user.id),
-          ),
+          and(eq(schema.smsThreads.id, req.params.id), eq(schema.smsThreads.userId, req.user.id)),
         )
         .limit(1);
       if (!thread) throw AppError.fromHttpStatus(404, "SMS conversation not found.");

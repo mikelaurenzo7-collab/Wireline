@@ -82,6 +82,17 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(visualQa).toContain('localStorage.setItem("wireline_cookie_consent", "acknowledged")');
   });
 
+  it("rejects generic loaders and byte-identical screenshots as visual proof", () => {
+    const visualQa = read("scripts/capture-visual-qa.mjs");
+    expect(visualQa).toContain("productionVisualRouteExpectation");
+    expect(visualQa).toContain('document.querySelectorAll("[data-visual-qa-page]")');
+    expect(visualQa).toContain('document.querySelectorAll("[data-visual-qa-state]")');
+    expect(visualQa).toContain('kind: "loading-state"');
+    expect(visualQa).toContain('createHash("sha256")');
+    expect(visualQa).toContain('kind: "duplicate-capture"');
+    expect(visualQa).toContain("route-specific content was not proven");
+  });
+
   it("keeps authenticated category tabs inside a real horizontal scroller on phones", () => {
     const css = read("src/styles/system-refinement-pass-two.css");
     const tabs = read("src/components/layout/ClientSubTabs.tsx");

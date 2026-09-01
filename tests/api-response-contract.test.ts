@@ -24,19 +24,6 @@ describe("API response contract", () => {
     expect(emailBanner).toContain("BillingStatusResponse");
   });
 
-  it("wires Grok strengths into live voice runtime paths", () => {
-    // grok-voice-service was removed 2026-08-13 (dead: zero importers; the
-    // routes file never used it). The strengths section lives in the shared
-    // grok-features module the live factory actually imports.
-    expect(existsSync("src/lib/voice/grok-voice-service.ts")).toBe(false);
-    const grokFeatures = read("src/lib/grok-features.ts");
-    expect(grokFeatures).toContain("buildGrokStrengthsPromptSection");
-
-    const vapiFactory = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(vapiFactory).toContain("isGrokModelId");
-    expect(vapiFactory).toContain("buildGrokStrengthsPromptSection");
-  });
-
   it("keeps usage meter on the shared workspace usage response type", () => {
     const usageMeter = read("src/components/UsageMeter.tsx");
     expect(usageMeter).toContain("WorkspaceUsageResponse");

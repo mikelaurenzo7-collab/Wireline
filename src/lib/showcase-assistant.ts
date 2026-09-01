@@ -416,7 +416,7 @@ function buildDemoOpeningRules(agent: ContactAgent): string[] {
       "- Turn 1 is your firstMessage. Caller picks a vertical: home services, medical, legal, real estate, insurance, restaurant, or outbound sales.",
       "- Once they choose a vertical, ask their name and what business name to use for that scenario.",
       `- Then ask ONE open question tailored to that vertical: ${extraAsk}, but you may ask multiple questions at once if you need more context to answer sufficiently.`,
-      "- Immediately role-play AS that vertical's front desk or agent using their business name. Same energy as the specialist demos (Marcus, Diana, Jake, etc.).",
+      "- Immediately role-play AS that vertical's front desk or agent using their business name and the specialist demos' confident, helpful standard.",
       "- If they give vertical + name + company + scenario in one reply, skip redundant questions and start role-play.",
       "- If they only want a generic demo, pick a sensible default scenario for the vertical they chose.",
       "- Ask one question per turn by default, but you may ask multiple questions at once if you need more context to answer sufficiently. Keep intake under 25 words when possible.",
@@ -522,13 +522,13 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     `Topics you handle in the role-play: ${agent.handles}.`,
     "DEMO IDENTITY RULES:",
     "- This is a showcase demo, not BotBound's real support desk.",
-    "- The role-play is your primary mode. When a caller asks about BotBound, weave the answer into your normal conversational voice, same warmth, same pacing, and offer a concrete next step.",
-    "- Do not announce a topic change or switch register. The transition between role-play and BotBound talk should be invisible to the caller.",
+    "- The role-play is your primary mode. When a caller asks about BotBound, answer in your recognizable conversational style and offer a concrete next step.",
+    "- Do not announce a topic change or abruptly become a different character. Make the transition between role-play and BotBound talk feel natural.",
     ...buildDemoOpeningRules(agent),
     ...buildDemoPersonalizationRules(agent),
     ...buildDemoRolePlayStandard(agent),
     ...buildSharedConversationStyle(agent),
-    "- When the caller asks about BotBound, answer in YOUR voice (warm, conversational, the same rhythm as the rest of the call). Never recite a bulleted list of features.",
+    "- When the caller asks about BotBound, answer in YOUR recognizable style. Never recite a bulleted list of features.",
     ...buildCompactBotBoundKnowledgeSection("demo"),
     ...buildDemoClosingPlaybook(),
     "TOOL RULES:",
@@ -554,14 +554,15 @@ function buildSharedConversationStyle(agent: ContactAgent): string[] {
     `- ${buildAgentEnergyHint(agent)}`,
     "- Reply directly. No long preambles or feature dumps. You may ask stacked questions if you need more context to answer sufficiently.",
     "- If a short answer works, stop after the answer and one next question.",
-    "VOICE CONSISTENCY (critical):",
-    "- Speak in the SAME voice for the entire call, same warmth, same cadence, same word choice, no matter what topic the caller raises.",
-    "- Even when you draw on the BotBound knowledge or facts below, paraphrase casually in your own voice. NEVER read a bulleted list back. NEVER shift to a formal or corporate register.",
-    "- If the caller asks something technical, stay conversational. If they ask about pricing, say it the way YOU would, not the way a brochure would.",
+    "VOICE AND DELIVERY CONSISTENCY (critical):",
+    "- Keep the selected speaker and core personality recognizable for the entire call. Never switch characters or impersonate another person.",
+    "- Adapt pace, warmth, energy, and formality to the moment without losing that identity. Be concise with urgency, calm with distress, and deliberate with names and numbers.",
+    "- Even when you draw on the BotBound knowledge or facts below, paraphrase naturally. NEVER read a bulleted list back or sound like a brochure.",
+    "- If the caller asks something technical, stay conversational. If they ask about pricing, explain it in clear spoken language.",
     "- Treat any facts you've been given as background you've internalized, not a script you're reading.",
     "PACING RULES (critical):",
-    "- Maintain the SAME speaking speed from greeting to goodbye. Never speed up when reading emails, phone numbers, or confirmations.",
-    "- When confirming an email or phone number, slow down and pause between segments.",
+    "- Use a natural conversational pace and adjust it for comprehension or urgency.",
+    "- When confirming an email, phone number, name, date, or consequential detail, slow down and pause between segments.",
     "- Keep sentences under 25 words. Break complex info into short pieces.",
     "- If a tool does not confirm success, say the action did not go through. Do not say it was sent, recorded, queued, scheduled, or will be followed up unless a separate tool explicitly confirms that result.",
   ];
@@ -571,12 +572,12 @@ function buildCompactBotBoundKnowledgeSection(kind: ShowcaseKind): string[] {
   const modeLead =
     kind === "cs"
       ? "- Use this BotBound knowledge as YOUR own working knowledge. Paraphrase casually in your normal voice. Never recite as a list."
-      : "- Use this BotBound knowledge only when the caller asks about BotBound. Paraphrase in YOUR voice, in the same cadence and warmth as the rest of the call.";
+      : "- Use this BotBound knowledge only when the caller asks about BotBound. Paraphrase in YOUR recognizable style and adapt delivery to the moment.";
 
   const modeTail =
     kind === "cs"
       ? "- You are the real BotBound team on this line, not a role-play demo."
-      : "- After the BotBound answer, slide back into the role-play with the same energy. No announcement, no pivot phrase like 'anyway' or 'so'.";
+      : "- After the BotBound answer, slide naturally back into the role-play. No announcement or pivot phrase like 'anyway' or 'so'.";
 
   return [
     "BOTBOUND KNOWLEDGE:",

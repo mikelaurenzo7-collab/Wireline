@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(
-  resolve(process.cwd(), "src/middleware/api-rate-limits.ts"),
-  "utf8",
-);
+const source = readFileSync(resolve(process.cwd(), "src/middleware/api-rate-limits.ts"), "utf8");
 
 describe("expensive admission boundaries", () => {
   it("fails the authenticated or cron job sweep closed behind one canonical cron bucket", () => {
@@ -21,7 +18,7 @@ describe("expensive admission boundaries", () => {
     expect(block).toContain("failClosedOnError: true");
     expect(block).toContain('JOBS_SWEEP_CRON_KEY = "cron:wireline-job-sweep"');
     expect(block).toContain('sweepMode === "cron" ? JOBS_SWEEP_CRON_KEY : null');
-    expect(block).not.toContain('`cron:${req.ip');
+    expect(block).not.toContain("`cron:${req.ip");
     expect(block).toContain("job sweep limiter unavailable, failing closed");
     expect(block).toContain("job sweep rate limiter error, failing closed");
     expect(block).toContain("res.status(503).json");
@@ -34,7 +31,7 @@ describe("expensive admission boundaries", () => {
       "src/routes/insights-routes.ts": 'bucket: "api:insights-ai"',
       "src/routes/daily-brief-routes.ts": 'bucket: "api:daily-brief-send-now"',
       "src/routes/openai-realtime-routes.ts": 'bucket: "api:openai-realtime"',
-      "src/routes/grok-voice-routes.ts": 'bucket: "api:live-voice-session"',
+      "src/routes/live-voice-routes.ts": 'bucket: "api:live-voice-session"',
       "src/routes/video-presenter-routes-base.ts": 'bucket: "api:video-presenter-session"',
     } as const;
 
@@ -45,10 +42,6 @@ describe("expensive admission boundaries", () => {
       const block = contents.slice(Math.max(0, start - 80), start + 180);
       expect(block, path).toContain("failClosedOnError: true");
     }
-
-    const preview = readFileSync(resolve(process.cwd(), "src/routes/grok-voice-routes.ts"), "utf8");
-    const previewStart = preview.indexOf('bucket: "api:voice-preview"');
-    expect(preview.slice(previewStart, previewStart + 160)).toContain("failClosedOnError: true");
   });
 
   it("lets IP-keyed public routes opt into fail-closed admission without breaking signed webhooks", () => {

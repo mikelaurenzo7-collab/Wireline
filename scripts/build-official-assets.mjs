@@ -398,10 +398,7 @@ async function validatePreservedCampaignAudio() {
   if (!existsSync(audioRoot)) return;
 
   const expected = new Map();
-  for (const { engine, prefix } of [
-    { engine: "elevenlabs", prefix: "" },
-    { engine: "xai", prefix: "xai" },
-  ]) {
+  for (const { engine, prefix } of [{ engine: "openai", prefix: "" }]) {
     for (const track of CAMPAIGN_VO) {
       const relativePath = path.posix.join(prefix, track.file);
       expected.set(relativePath, { track, engine });

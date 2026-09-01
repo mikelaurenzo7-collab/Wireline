@@ -13,7 +13,7 @@ The second ring. Answered.
 
 4
 00:00:03,600 --> 00:00:04,700
-BotBound. Answers when you can’t.
+BotBound. The call still gets answered.
 
 5
 00:00:04,700 --> 00:00:05,950

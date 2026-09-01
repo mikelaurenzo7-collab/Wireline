@@ -32,14 +32,14 @@ describe("native outbound AMD", () => {
     });
   });
 
-  it("waits for greeting end on service and callback calls so identity voicemail can land", () => {
+  it("waits for greeting end so service and callback machines are classified definitively", () => {
     expect(nativeOutboundAmdParams("service_or_requested").machineDetection).toBe(
       "DetectMessageEnd",
     );
     expect(nativeOutboundAmdParams("callback").machineDetection).toBe("DetectMessageEnd");
   });
 
-  it("drops marketing machines, fax, and unknown; leaves service voicemail; fail-opens service unknown", () => {
+  it("classifies service machines for the route's no-message drop and fail-opens service unknown", () => {
     expect(
       resolveNativeAmdBridgeAction({
         answeredBy: "machine_start",
@@ -84,7 +84,7 @@ describe("native outbound AMD", () => {
     ).toBe("bridge");
   });
 
-  it("treats missing stored purpose as marketing so AMD cannot leave a service voicemail", () => {
+  it("treats missing stored purpose as marketing so AMD cannot select service behavior", () => {
     expect(nativeCallPurposeFromMetadata(undefined)).toBe("marketing_or_sales");
     expect(nativeCallPurposeFromMetadata("marketing_or_sales")).toBe("marketing_or_sales");
     expect(nativeCallPurposeFromMetadata("callback")).toBe("callback");

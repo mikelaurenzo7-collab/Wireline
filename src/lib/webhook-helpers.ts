@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- job and webhook payloads are stored as Postgres jsonb. */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, isNull, lte, or, sql } from "drizzle-orm";
+import { eq, and, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import { decryptSecret } from "./secret-vault";
 import { postWebhookSafely, type WebhookBlockReason } from "./safe-webhook-delivery";
@@ -497,6 +497,59 @@ export async function attemptWebhookDelivery(deliveryId: string | number) {
       deliveryId: deliveryIdBig.toString(),
     });
   }
+}
+
+/**
+ * Durably enqueue the escalation event once per tenant call and subscribed
+ * endpoint. Provider delivery is intentionally left to the webhook scheduler.
+ * The advisory lock plus read-before-insert makes an unknown commit outcome
+ * safe to retry without requiring a public payload/schema change.
+ */
+export async function enqueueCallEscalatedWebhookOnce(
+  input: { userId: string; callLogId: string; data: unknown },
+  db: any = drizzle,
+): Promise<{ queued: number }> {
+  return db.transaction(async (tx: any) => {
+    const event: WebhookEvent = "call.escalated";
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`${input.userId}:${event}:${input.callLogId}`}))`,
+    );
+
+    const hooks = await tx
+      .select({ id: schema.webhooks.id, events: schema.webhooks.events })
+      .from(schema.webhooks)
+      .where(and(eq(schema.webhooks.userId, input.userId), eq(schema.webhooks.active, true)));
+    const targetIds = (hooks || [])
+      .filter((hook: any) => Array.isArray(hook.events) && hook.events.includes(event))
+      .map((hook: any) => hook.id as string);
+    if (!targetIds.length) return { queued: 0 };
+
+    const existing = await tx
+      .select({ webhookId: schema.webhookDeliveries.webhookId })
+      .from(schema.webhookDeliveries)
+      .where(
+        and(
+          eq(schema.webhookDeliveries.userId, input.userId),
+          eq(schema.webhookDeliveries.event, event),
+          inArray(schema.webhookDeliveries.webhookId, targetIds),
+          sql`${schema.webhookDeliveries.payload}->'data'->>'call_log_id' = ${input.callLogId}`,
+        ),
+      );
+    const existingIds = new Set((existing || []).map((row: any) => row.webhookId));
+    const missingIds = targetIds.filter((webhookId: string) => !existingIds.has(webhookId));
+    if (!missingIds.length) return { queued: 0 };
+
+    const payload = { event, timestamp: new Date().toISOString(), data: input.data };
+    await tx.insert(schema.webhookDeliveries).values(
+      missingIds.map((webhookId: string) => ({
+        userId: input.userId,
+        webhookId,
+        event,
+        payload,
+      })),
+    );
+    return { queued: missingIds.length };
+  });
 }
 
 async function dispatchWebhookAfterDeletionFence(userId: string, event: WebhookEvent, data: any) {

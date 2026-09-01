@@ -48,9 +48,12 @@ Verified against the published documentation on 2026-08-16:
 - The speech vendor's own avatar product remains pre-rendered and is a second creative option when its API is offered; it is still not live conversation.
 - The video vendor's speech-vendor connector requires a **paid** speech-vendor key (free-tier keys are blocked), registers the credential provider-side in exchange for an opaque secret id, outputs PCM 24 kHz, and **rejects per-session language overrides for speech-vendor-backed sessions with a 400** — which is why Wireline's payload builder never sends one.
 
-The live integration Wireline implements is the officially documented pairing: a LITE-mode session where Wireline (or a connector) orchestrates audio and LiveAvatar renders. The speech credential is registered **with the video vendor**, which returns an opaque secret id; Wireline stores that id, never the raw key. When the agent's own phone voice is a PSTN-approved speech-vendor voice, the session passes it as the connector voice — the presenter speaks the same voice as the agent's live calls. See `src/lib/video-presenter/live-video-session-policy.ts` and the `LIVEAVATAR_ELEVENLABS_SECRET_ID` entry in `.env.example`.
-
-**Scope boundary on the connector engines (decision, 2026-08-14).** The Studio-voice connector and FULL managed engine run against **workspace-level** provider identities (`LIVEAVATAR_ELEVENLABS_AGENT_ID`, `LIVEAVATAR_VOICE_AGENT_ID` / `LIVEAVATAR_CONTEXT_ID`) — one shared brain per deployment, not the tenant agent's Training. That is fine for the current founder/dogfood posture and the engine catalog copy now says so explicitly. It becomes a **multi-tenant blocker**: before these engines are offered beyond the founder workspace, either provision per-tenant provider agents or keep the engines operator-only, because pooled provider-side conversation history across tenants is not acceptable. The default Wireline-voice engine has no such issue — it runs the tenant's own agent brain end to end.
+The former connector and managed presenter engines are retired compatibility
+history. BotBound does not register a separate speech credential with a video
+vendor, does not maintain workspace-level presenter agents, and does not mint
+live video sessions. If a real video product is reconsidered, it must use the
+tenant Bot's OpenAI-owned speech identity and pass a new multi-tenant privacy,
+cost, and release review before any customer surface reopens.
 
 ### Identity range: realistic through animated
 

@@ -17,6 +17,8 @@ type AgentConfigResponse = {
   voice?: {
     voiceId?: string | null;
     provider?: string | null;
+    phoneVoiceId?: string | null;
+    phoneVoiceProvider?: string | null;
   };
 };
 
@@ -97,7 +99,11 @@ export default function StudioAgentReviewPanel({
     };
   }, [agentId]);
 
-  const voiceName = resolveVoiceLabel(config?.voice?.voiceId);
+  const voiceName = resolveVoiceLabel(
+    config?.voice?.provider?.trim().toLowerCase() === "presenter"
+      ? config.voice.phoneVoiceId
+      : config?.voice?.voiceId,
+  );
   const role = formatAgentRoleLabel(config?.role ?? agentRole ?? null);
   const hasPhone = Boolean(phoneNumber);
   const contentClass = compact

@@ -23,12 +23,27 @@ export type LiveExternalActionPolicy =
       message: string;
     };
 
+export type PrivateTextSimulationPolicy =
+  | {
+      allowed: true;
+      environment: AccountEnvironment;
+    }
+  | {
+      allowed: false;
+      environment: null;
+      status: 503;
+      code: typeof ACCOUNT_ENVIRONMENT_UNAVAILABLE;
+      message: string;
+    };
+
 /**
- * Pure account-environment policy for provider-backed work.
+ * Pure account-environment policy for live provider-backed work.
  *
- * Only an explicit production classification may spend money or contact a
- * real person. Missing/unknown settings fail closed so a partially-created
- * tenant cannot inherit live-provider access from deployment credentials.
+ * Only an explicit production classification may perform work that can reach
+ * an external system or person. Missing/unknown settings fail closed so a
+ * partially-created tenant cannot inherit live-provider access from deployment
+ * credentials. Bounded, tool-free private rehearsals use the separate policy
+ * below because they cannot perform an external action.
  */
 export function liveExternalActionPolicy(
   environment: string | null | undefined,
@@ -54,17 +69,50 @@ export function liveExternalActionPolicy(
   };
 }
 
-export async function liveExternalActionPolicyForUser(
-  userId: string,
-): Promise<LiveExternalActionPolicy> {
+/**
+ * Private text rehearsal is safe in every explicitly classified workspace.
+ *
+ * It consumes metered model capacity, so callers must still enforce the
+ * tenant's persisted spend cap. It does not contact a person, invoke an agent
+ * integration, or mutate an external provider. Unknown/missing account state
+ * still fails closed before any model call.
+ */
+export function privateTextSimulationPolicy(
+  environment: string | null | undefined,
+): PrivateTextSimulationPolicy {
+  if (environment === "production" || environment === "demo" || environment === "test") {
+    return { allowed: true, environment };
+  }
+  return {
+    allowed: false,
+    environment: null,
+    status: 503,
+    code: ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+    message: "Private text simulation is unavailable until this workspace is fully configured.",
+  };
+}
+
+async function accountEnvironmentForUser(userId: string): Promise<string | null> {
   return tenantStore.run(userId, async () => {
     const [row] = await drizzle
       .select({ accountEnvironment: schema.settings.accountEnvironment })
       .from(schema.settings)
       .where(eq(schema.settings.userId, userId))
       .limit(1);
-    return liveExternalActionPolicy(row?.accountEnvironment);
+    return row?.accountEnvironment ?? null;
   });
+}
+
+export async function liveExternalActionPolicyForUser(
+  userId: string,
+): Promise<LiveExternalActionPolicy> {
+  return liveExternalActionPolicy(await accountEnvironmentForUser(userId));
+}
+
+export async function privateTextSimulationPolicyForUser(
+  userId: string,
+): Promise<PrivateTextSimulationPolicy> {
+  return privateTextSimulationPolicy(await accountEnvironmentForUser(userId));
 }
 
 export async function assertLiveExternalActionAllowed(
@@ -78,6 +126,22 @@ export async function assertLiveExternalActionAllowed(
     userId,
     action,
     accountEnvironment: policy.environment ?? "missing",
+    code: policy.code,
+  });
+  throw new AppError(policy.status, policy.code, policy.message);
+}
+
+export async function assertPrivateTextSimulationAllowed(
+  userId: string,
+  action: string,
+): Promise<void> {
+  const policy = await privateTextSimulationPolicyForUser(userId);
+  if (policy.allowed) return;
+
+  log.warn("Private simulation blocked by account environment", {
+    userId,
+    action,
+    accountEnvironment: "missing",
     code: policy.code,
   });
   throw new AppError(policy.status, policy.code, policy.message);

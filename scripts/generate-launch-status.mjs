@@ -32,7 +32,7 @@ import {
 } from "./lib/production-url.mjs";
 
 const { Pool } = pg;
-const PINNED_STRIPE_API_VERSION = "2026-07-29.dahlia";
+const PINNED_STRIPE_API_VERSION = "2026-08-26.dahlia";
 const root = resolve(import.meta.dirname, "..");
 const outputArg = process.argv.indexOf("--output");
 const outputPath = resolve(

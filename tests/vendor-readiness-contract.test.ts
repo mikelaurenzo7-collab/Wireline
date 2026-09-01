@@ -17,7 +17,6 @@ describe("vendor readiness contract", () => {
       "stripe",
       "agentmail",
       "resend",
-      "elevenlabs",
       "federal_dnc",
     ]) {
       expect(probe).toContain(`"${id}"`);
@@ -29,6 +28,7 @@ describe("vendor readiness contract", () => {
     expect(probe).toContain("/IncomingPhoneNumbers.json?PageSize=50");
     expect(probe).toContain("this probe uses read-only GET requests only");
     expect(probe).not.toMatch(/api\.vapi\.ai|api\.x\.ai|VAPI_|XAI_|grok/i);
+    expect(probe).not.toMatch(/elevenlabs|11labs/i);
     expect(probe).not.toContain('/call"');
     expect(probe).not.toContain("/Messages.json");
   });

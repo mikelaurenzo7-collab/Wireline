@@ -9,7 +9,7 @@ describe("vendor live-research and voice posture", () => {
     const research = read("src/lib/fresh-public-research.ts");
     const perplexity = read("src/lib/perplexity-platform.ts");
     const flags = read("src/lib/platform-integration-flags.ts");
-    const tools = read("src/lib/vapi-helpers.ts");
+    const tools = read("src/lib/agent-runtime-helpers.ts");
 
     expect(perplexity).toContain("PERPLEXITY_API_KEY");
     expect(perplexity).toContain("PERPLEXITY_SEARCH_API_URL");
@@ -53,7 +53,7 @@ describe("vendor live-research and voice posture", () => {
     const permissions = read("src/components/AgentToolPermissions.tsx");
     const studio = read("src/components/StudioAgentWorkspacePanel.tsx");
     const agentRoutes = read("src/routes/agent-routes-v2.ts");
-    const vapiTools = read("src/lib/vapi-helpers.ts");
+    const runtimeTools = read("src/lib/agent-runtime-helpers.ts");
 
     expect(capabilities).toContain('name: "gemini_ground"');
     expect(capabilities).toContain('label: "Grounded web search"');
@@ -67,22 +67,12 @@ describe("vendor live-research and voice posture", () => {
     expect(permissions).toContain("JSON.stringify({ enabled_tools: enabled })");
     expect(agentRoutes).toContain('"/api/agents/:id/tools"');
     expect(studio).toContain("<AgentToolPermissions agentId={agentId} />");
-    expect(vapiTools).toContain("resolveAgentTools(role, enabledTools)");
+    expect(runtimeTools).toContain("resolveAgentTools(role, enabledTools)");
   });
 
-  it("does not claim Grok voice sessions have open-web search tools", () => {
-    const features = read("src/lib/grok-features.ts");
-    const voiceTools = read("src/lib/voice/grok-voice-config.ts");
-
-    expect(features).toContain("approved Training knowledge");
-    expect(features).not.toMatch(/live web and social/i);
-    expect(voiceTools).toContain("search_agent_knowledge");
-    expect(voiceTools).not.toMatch(/gemini_ground|perplexity|web_search/i);
-  });
-
-  it("keeps ElevenLabs off the tenant PSTN assistant path", () => {
-    const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(factory).not.toMatch(/provider:\s*["']11labs["']/);
-    expect(factory).toMatch(/voice|deepgram/i);
+  it("keeps alternate voice providers off the tenant PSTN assistant path", () => {
+    const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    expect(factory).not.toMatch(/elevenlabs|11labs|api\.vapi\.ai|api\.x\.ai/i);
+    expect(factory).toContain("resolveOpenAIAgentVoiceSelection");
   });
 });

@@ -15,8 +15,10 @@ import {
   openAISipConfigured,
   resolveOpenAISipSessionMaxSeconds,
 } from "../lib/voice/openai-sip-config";
+import { handleTwilioVoiceFallback } from "./twilio-webhook-base";
 
 const router = Router();
+const INBOUND_DIAL_CONTINUITY_STATUSES = new Set(["failed", "busy", "no-answer"]);
 
 function escapeXml(value: string): string {
   return value
@@ -34,7 +36,7 @@ function hangupTwiml(): string {
 function inboundBridgeTwiml(sipUri: string): string {
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    `<Response><Dial answerOnBridge="true" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
+    `<Response><Dial answerOnBridge="true" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
     `<Sip>${escapeXml(sipUri)}</Sip></Dial><Hangup/></Response>`
   );
 }
@@ -67,12 +69,22 @@ router.post(
 
     const calledNumber = normalizeOpenAIPhoneNumber(req.body?.To);
     const callerNumber = normalizeOpenAIPhoneNumber(req.body?.From);
-    if (!calledNumber || !openAISipConfigured()) {
+    if (!calledNumber) {
       log.warn("Twilio inbound OpenAI bridge refused before routing", {
-        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
-        reason: calledNumber ? "openai_not_configured" : "invalid_called_number",
+        calledSuffix: "",
+        reason: "invalid_called_number",
       });
       res.status(200).send(hangupTwiml());
+      return;
+    }
+    if (!openAISipConfigured()) {
+      log.error("Twilio inbound OpenAI bridge is temporarily unavailable", {
+        calledSuffix: phoneSuffixForLog(calledNumber),
+        reason: "openai_not_configured",
+      });
+      // Twilio invokes the IncomingPhoneNumber fallback URL only when the
+      // primary webhook is unavailable, not after a successful Hangup response.
+      res.status(503).send(hangupTwiml());
       return;
     }
 
@@ -103,17 +115,40 @@ router.post(
         calledSuffix: phoneSuffixForLog(calledNumber),
         errorClass: error instanceof Error ? error.name : typeof error,
       });
-      res.status(200).send(hangupTwiml());
+      // Lookup/configuration exceptions are transient primary-route failures.
+      // Returning success here would suppress the carrier continuity callback.
+      res.status(503).send(hangupTwiml());
     }
   }),
 );
 
-router.post("/api/twilio-webhook/openai-inbound-fallback", (req: Request, res: Response) => {
-  res.setHeader("Content-Type", "text/xml");
-  if (!evaluateTwilioWebhookAuth(req).ok) {
-    return res.status(403).send(hangupTwiml());
-  }
-  return res.status(200).send(hangupTwiml());
-});
+router.post(
+  "/api/twilio-webhook/openai-inbound-dial-complete",
+  async (req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/xml");
+    if (!evaluateTwilioWebhookAuth(req).ok) {
+      res.status(403).send(hangupTwiml());
+      return;
+    }
+
+    const dialStatus =
+      typeof req.body?.DialCallStatus === "string"
+        ? req.body.DialCallStatus.trim().toLowerCase()
+        : "unknown";
+    if (dialStatus === "completed") {
+      res.status(200).send(hangupTwiml());
+      return;
+    }
+    if (INBOUND_DIAL_CONTINUITY_STATUSES.has(dialStatus)) {
+      await handleTwilioVoiceFallback(req, res);
+      return;
+    }
+
+    log.warn("Twilio inbound OpenAI Dial returned an unhandled status", { dialStatus });
+    res.status(200).send(hangupTwiml());
+  },
+);
+
+router.post("/api/twilio-webhook/openai-inbound-fallback", handleTwilioVoiceFallback);
 
 export default router;

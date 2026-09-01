@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { OPENAI_REALTIME_VOICE_IDS } from "../src/lib/voice-catalog";
+
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("OpenAI browser and PSTN voice architecture", () => {
@@ -39,8 +41,8 @@ describe("OpenAI browser and PSTN voice architecture", () => {
     const config = read("src/lib/voice/openai-realtime-config.ts");
     expect(config).toContain("OPENAI_REALTIME_PRICING_MODEL");
     expect(config).toContain('"gpt-4o-mini-transcribe"');
-    for (const voice of ["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse", "marin", "cedar"]) {
-      expect(config).toContain(`"${voice}"`);
-    }
+    expect(config).toContain("OPENAI_REALTIME_VOICES = OPENAI_REALTIME_VOICE_IDS");
+    expect(OPENAI_REALTIME_VOICE_IDS).toHaveLength(10);
+    expect(new Set(OPENAI_REALTIME_VOICE_IDS).size).toBe(10);
   });
 });

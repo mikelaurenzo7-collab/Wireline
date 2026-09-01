@@ -16,14 +16,19 @@ describe("entitlement fail-closed defaults", () => {
   });
 
   it("treats missing subscription status as pending_activation on live paths", () => {
-    for (const path of [
-      "src/lib/voice/outbound-call-service.ts",
-      "src/routes/vapi-v2.ts",
-      "src/lib/phone-line-entitlements.ts",
-      "src/lib/agent-entitlements.ts",
-    ]) {
-      const source = read(path);
-      expect(source, path).toContain("pending_activation");
+    const outbound = read("src/lib/voice/outbound-call-service.ts");
+    const phoneLines = read("src/lib/phone-line-entitlements.ts");
+    const agents = read("src/lib/agent-entitlements.ts");
+
+    expect(outbound).toContain('settings?.subscriptionStatus !== "active"');
+    expect(phoneLines).toContain('settings?.subscriptionStatus ?? "pending_activation"');
+    expect(agents).toContain('status?.trim().toLowerCase() || "pending_activation"');
+
+    for (const [path, source] of [
+      ["src/lib/voice/outbound-call-service.ts", outbound],
+      ["src/lib/phone-line-entitlements.ts", phoneLines],
+      ["src/lib/agent-entitlements.ts", agents],
+    ] as const) {
       expect(source, path).not.toMatch(/subscriptionStatus\s*\|\|\s*"active"/);
       expect(source, path).not.toMatch(/subscriptionStatus\s*\?\?\s*"active"/);
     }

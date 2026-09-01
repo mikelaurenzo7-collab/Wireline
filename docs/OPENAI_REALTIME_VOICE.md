@@ -49,7 +49,12 @@ remain on the server.
 
 Every Twilio voice-capable number must use
 `https://botbound.me/api/twilio-webhook/openai-inbound` as its voice URL and
-the fail-closed `/api/twilio-webhook/openai-inbound-fallback` fallback URL.
+the signed `/api/twilio-webhook/openai-inbound-fallback` continuity URL. With
+no approved OpenAI-generated outage speech committed, that path plays only the
+existing non-speech transfer chime before a configured human transfer; otherwise
+it hangs up and never records. The primary SIP `<Dial>` also posts outcomes to the
+signed `/api/twilio-webhook/openai-inbound-dial-complete` action so busy,
+no-answer, and failed bridges reach the same continuity handler.
 Every direct SMS sender must use `/api/twilio-webhook/sms` with the reviewed
 Twilio retry fragment.
 
@@ -58,11 +63,13 @@ Twilio retry fragment.
 Phone and browser sessions use only OpenAI's documented Realtime voices:
 `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
 and `cedar`. BotBound defaults to `marin`; `cedar` is the second recommended
-quality choice.
+quality choice. The saved voice remains fixed for an active session and can be
+changed before a later session. Studio previews and phone calls resolve the same
+saved choice.
 
-ElevenLabs is a separate, server-only studio preview and authorized cloning
-surface. An ElevenLabs voice can never be persisted as a live phone provider.
-Presenter/video selections retain an explicit OpenAI phone fallback.
+BotBound does not operate a separate voice-cloning provider or accept customer
+voice uploads. Historical presenter/video records retain an explicit OpenAI
+phone fallback, and Studio uses that same fallback for a consistent preview.
 
 ## Security and reliability invariants
 

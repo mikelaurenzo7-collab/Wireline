@@ -31,7 +31,9 @@ describe("SMS trust surface", () => {
   it("retains tenant-scoped SMS endpoints and outcome ownership", () => {
     const sms = source("src/components/SmsThreads.tsx");
     const outcome = source("src/components/SmsOutcomePanel.tsx");
-    expect(sms).toMatch(/agentId\s*\? `\/api\/sms\/threads\?agent_id=\$\{encodeURIComponent\(agentId\)\}`/);
+    expect(sms).toMatch(
+      /agentId\s*\? `\/api\/sms\/threads\?agent_id=\$\{encodeURIComponent\(agentId\)\}`/,
+    );
     expect(sms).toContain("/api/sms/threads/${threadId}/messages");
     expect(sms).toContain("/api/sms/threads/${threadId}/reply");
     expect(outcome).toContain("/api/sms/threads/${threadId}/outcome");

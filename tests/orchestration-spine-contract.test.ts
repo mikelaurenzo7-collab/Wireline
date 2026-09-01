@@ -25,7 +25,7 @@ describe("orchestration spine contract", () => {
   it("routes live tool calls through agent dispatch handlers", () => {
     const dispatch = read("src/lib/agent-tool-dispatch.ts");
     expect(dispatch).toContain("dispatchAgentToolCall");
-    expect(read("src/routes/vapi/tool-handlers-workflow.ts")).toContain("export");
+    expect(read("src/lib/bot-tools/workflow.ts")).toContain("export");
     expect(read("src/server/register-api-routes.ts")).toContain('app.use("/api/jobs"');
   });
 

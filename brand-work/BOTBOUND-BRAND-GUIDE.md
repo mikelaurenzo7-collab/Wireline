@@ -25,8 +25,9 @@ The product promise is:
 
 ### Master files
 
-- `selected/botbound-app-icon.png`: full-bleed app, avatar, favicon, native, billing, and browser master.
-- `selected/botbound-operator-primary.png`: transparent hero robot for film, campaign composition, and oversized display use.
+- `../public/brand/botbound-app-icon.png`: full-bleed app, avatar, favicon, native, billing, and browser master.
+- `../public/brand/botbound-operator-polished.png`: dimensional hero operator for web, film end cards, campaign composition, and oversized display use.
+- `selected/botbound-operator-primary.png`: flat campaign operator for diagrams, compact editorial layouts, and compatibility placements.
 - `exports/identity/botbound-lockup-obsidian-1600x480.png`: approved dark-surface horizontal lockup.
 - `exports/identity/botbound-lockup-platinum-1600x480.png`: approved light-surface horizontal lockup.
 - `exports/identity/botbound-lockup-transparent-1600x480.png`: transparent presentation lockup.
@@ -69,7 +70,7 @@ Show competent people in the middle of real work: hands occupied, attention comm
 
 - Use deep practical shadows, warm work light, and restrained violet signal light.
 - Preserve intentional negative space for campaign copy.
-- The robot may enter the world as a believable premium character, but must retain the approved white/platinum shell, black visor, smiling violet eyes, antenna, visible gripping hand, and classic violet receiver.
+- The robot may enter the world as a believable premium character, but must retain the approved white/platinum shell, black visor, friendly violet eyes, antenna, visible gripping hand, and classic violet receiver. Use the dimensional polished operator for hero placements and the flat operator only when the layout needs graphic simplicity.
 - Avoid humanoid faces, metallic menace, headset silhouettes, floating chat bubbles, neon overload, fake interface screens, and text generated inside source photography.
 
 ## Motion and sound

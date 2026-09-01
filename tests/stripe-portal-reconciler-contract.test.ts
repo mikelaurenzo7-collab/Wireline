@@ -112,9 +112,7 @@ describe("Stripe customer portal reconciliation", () => {
         },
       },
     } as never;
-    expect(
-      managedPortalConfigurationFindings(drifted, "https://botbound.me", products),
-    ).toEqual(
+    expect(managedPortalConfigurationFindings(drifted, "https://botbound.me", products)).toEqual(
       expect.arrayContaining([
         "legal_urls_mismatch",
         "subscription_cancel_incomplete",
@@ -207,7 +205,7 @@ describe("Stripe customer portal reconciliation", () => {
     expect(route).toContain("PORTAL_CONFIGURATION_REVERIFY_MS");
     expect(route).toContain('code: "STRIPE_CUSTOMER_OWNERSHIP_MISMATCH"');
     expect(route).toContain('code: "PORTAL_NOT_CONFIGURED"');
-    expect(launchStatus).toContain('const PINNED_STRIPE_API_VERSION = "2026-07-29.dahlia"');
+    expect(launchStatus).toContain('const PINNED_STRIPE_API_VERSION = "2026-08-26.dahlia"');
     expect(launchStatus).toContain('"Stripe-Version": PINNED_STRIPE_API_VERSION');
     expect(launchStatus).toContain("runtime_env_price_id_mismatch");
     expect(webhookSecretSync).toContain('target: ["production"]');

@@ -24,7 +24,7 @@ import {
 import { openAISipConfigured } from "./openai-sip-config";
 
 const NATIVE_ACTIVATION_PENDING =
-  "The number is reserved in your workspace, but Twilio-to-OpenAI routing could not be confirmed. Retry activation from Phone; do not purchase another line.";
+  "The number is reserved in your workspace, but live-call routing could not be confirmed. Retry activation from Phone; do not purchase another line.";
 
 export type NativePhoneProvisionResult = {
   ok: boolean;
@@ -170,10 +170,16 @@ async function provisionNativeTenantNumberUnfenced(input: {
   try {
     assertNativeActivationConfigured();
   } catch (error) {
+    log.error("Native phone provisioning blocked because OpenAI Realtime SIP is not configured", {
+      userId: input.userId,
+      agentId: input.agentId ?? null,
+      error: getErrorMessage(error),
+    });
     return {
       ok: false,
-      code: "OPENAI_REALTIME_NOT_CONFIGURED",
-      error: error instanceof Error ? error.message : NATIVE_PROVISIONING_UNAVAILABLE,
+      code: "PHONE_RUNTIME_NOT_CONFIGURED",
+      error:
+        "Phone activation is temporarily unavailable because live-call routing is not configured. No number was purchased.",
     };
   }
 

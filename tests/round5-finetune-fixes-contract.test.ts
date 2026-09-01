@@ -55,7 +55,7 @@ describe("round-5 fine-tune verified fixes", () => {
   });
 
   it("gates live-call SMS through the shared outbound dial gate", () => {
-    const handlers = read("src/routes/vapi/tool-handlers-core.ts");
+    const handlers = read("src/lib/bot-tools/core.ts");
     expect(handlers).toContain("evaluateOutboundDialGate");
     // The live-session exemptions (skip quiet hours/duplicates, supply
     // consent) only apply when the destination IS the live caller — a

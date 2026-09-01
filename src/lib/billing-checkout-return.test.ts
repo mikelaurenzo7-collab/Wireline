@@ -6,6 +6,7 @@ import {
   classifyCheckoutReturn,
   hasCheckoutReturnToVerify,
   shouldFinalizeCheckoutReturn,
+  shouldResumePostCreateLaunch,
 } from "./billing-checkout-return";
 
 describe("billing Checkout return recovery", () => {
@@ -87,5 +88,16 @@ describe("billing Checkout return recovery", () => {
         "#invoice",
       ),
     ).toBe("/settings/billing?plan=starter&tab=usage#invoice");
+  });
+
+  it("resumes only a fulfilled plan Checkout that interrupted the Launch step", () => {
+    expect(shouldResumePostCreateLaunch("plan", "fulfilled", true, "launch")).toBe(true);
+    expect(shouldResumePostCreateLaunch("plan", "fulfilled", true, "wire")).toBe(true);
+    expect(shouldResumePostCreateLaunch("runtime_balance", "fulfilled", true, "launch")).toBe(
+      false,
+    );
+    expect(shouldResumePostCreateLaunch("plan", "pending", true, "launch")).toBe(false);
+    expect(shouldResumePostCreateLaunch("plan", "fulfilled", false, "launch")).toBe(false);
+    expect(shouldResumePostCreateLaunch("plan", "fulfilled", true, "test")).toBe(false);
   });
 });

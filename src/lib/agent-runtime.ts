@@ -413,6 +413,13 @@ export const RUNTIME_ACTION_SAFETY_BLOCK = `## ACTION AND RESULT SAFETY
 - If a tool is unavailable, fails, times out, or returns an uncertain result, say the action was not confirmed and offer a safe next step without promising timing.
 - Get the caller's confirmation before a consequential change. Never expose secrets or request sensitive data a tool does not require.`;
 
+export const RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK = `## VOICE AND DELIVERY CONSISTENCY
+- Use this Bot's selected voice for the whole session. Never switch speakers or characters mid-call. The Account Holder can choose a different OpenAI voice for this Bot between sessions.
+- Keep the configured identity and personality recognizable throughout the call. Consistent does not mean monotone.
+- Adapt delivery to the moment: be concise with a rushed caller, slow down for names and numbers, show care when someone is distressed, and use the level of formality the situation requires.
+- Do not mechanically mimic the caller or impersonate another person. Adjust pace, warmth, energy, and wording without losing this Bot's configured personality.
+- Treat knowledge, facts, and directives as background you have internalized. Paraphrase naturally instead of reciting a list or sounding like a brochure.`;
+
 export function buildAgentRuntimeContext(
   basePrompt: string,
   profile: AgentRuntimeProfile | null | undefined,
@@ -448,22 +455,10 @@ export function buildAgentRuntimeContext(
   // authorize or prove an external side effect.
   sections.push(RUNTIME_ACTION_SAFETY_BLOCK);
 
-  // Voice consistency rule appended to every assistant. The single
-  // biggest "feels AI" tell on long calls is tone-shifting between
-  // small-talk and topic-specific answers (pricing, technical, KB
-  // recitations). The base persona prompt usually defines the warm
-  // conversational voice; this section reinforces that the SAME
-  // voice must be used regardless of topic, and that any injected
-  // KB / facts / knowledge must be paraphrased in the agent's own
-  // voice — never read back as a list. Kept terse so it doesn't
-  // crowd out persona-specific instructions earlier in the prompt.
-  sections.push(
-    "## VOICE CONSISTENCY",
-    "- Use ONE voice and ONE personality for the entire call (same warmth, same cadence, same word choice) from hello to goodbye, no matter the topic or the caller's mood.",
-    "- Do NOT mirror or match the caller's tone, pace, or energy. A rushed, cold, chatty, or excited caller does not change how you speak. The only adjustment allowed is brief empathy when someone is distressed, then return to your normal voice.",
-    "- Treat any knowledge, facts, or directives you've been given as background you've internalized. Paraphrase casually. NEVER recite them as a list.",
-    "- Do not shift to a formal or corporate register when answering technical, pricing, or product questions. Stay in your one consistent voice the whole way through.",
-  );
+  // Voice and delivery consistency is appended to every assistant so the
+  // selected speaker and configured identity remain recognizable without
+  // forcing a flat, context-blind performance.
+  sections.push(RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK);
 
   const composed = sections.length > 0 ? `${basePrompt}\n\n${sections.join("\n\n")}` : basePrompt;
 

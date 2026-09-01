@@ -52,7 +52,6 @@ describe("direct-dial compliance contract", () => {
     const directDialRoutes = [
       "src/routes/outbound-dial-atomic-routes.ts",
       "src/routes/outbound-routes.ts",
-      "src/routes/native-mobile-voice-routes.ts",
       "src/routes/mobile-routes.ts",
     ];
 

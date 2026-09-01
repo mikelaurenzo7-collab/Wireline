@@ -1,9 +1,11 @@
 import { ChevronDown, Inbox, Phone, Plus } from "lucide-react";
+import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
 import AgentPresenceSlot from "../AgentPresenceSlot";
+import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
 
@@ -13,6 +15,7 @@ export default function StudioContextChrome() {
   const activeAgent = resolvedId ? (agents.find((agent) => agent.id === resolvedId) ?? null) : null;
   const lineStatus = activeAgent ? agentLineStatus(activeAgent, phoneLookupDegraded) : null;
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
+  const optionLabels = useMemo(() => buildAgentOptionLabels(agents), [agents]);
   const language = customerAgentLanguage();
 
   function selectAgent(agentId: string) {
@@ -65,7 +68,7 @@ export default function StudioContextChrome() {
                     >
                       {agents.map((agent) => (
                         <option key={agent.id} value={agent.id}>
-                          {agent.name}
+                          {optionLabels.get(agent.id) || agent.name}
                         </option>
                       ))}
                     </select>

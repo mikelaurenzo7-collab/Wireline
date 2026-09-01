@@ -22,6 +22,10 @@ const TARGET_0063_PATH = resolve(ROOT, "drizzle/migrations/meta/0063_snapshot.js
 const TARGET_0064_PATH = resolve(ROOT, "drizzle/migrations/meta/0064_snapshot.json");
 const TARGET_0065_PATH = resolve(ROOT, "drizzle/migrations/meta/0065_snapshot.json");
 const TARGET_0066_PATH = resolve(ROOT, "drizzle/migrations/meta/0066_snapshot.json");
+const TARGET_0067_PATH = resolve(ROOT, "drizzle/migrations/meta/0067_snapshot.json");
+const TARGET_0068_PATH = resolve(ROOT, "drizzle/migrations/meta/0068_snapshot.json");
+const TARGET_0069_PATH = resolve(ROOT, "drizzle/migrations/meta/0069_snapshot.json");
+const TARGET_0070_PATH = resolve(ROOT, "drizzle/migrations/meta/0070_snapshot.json");
 const TARGET_SHA256 = "d745e0bbd85d3ce13003bcef03851fad1c3afd7e646516ecdd395c83b796835e";
 const TARGET_ID = "1e0f1868-ced4-473b-a4cc-d0d9002571fa";
 const TARGET_0051_ID = "7c4e9b2a-1f58-4d3a-9c6e-8a2b5d7f1e03";
@@ -56,8 +60,19 @@ const TARGET_0065_ID = "065505d7-57b1-42ce-a9c0-50f6d3490ae9";
 const TARGET_0065_SHA256 = "0eed50cf6d3264d03712ad69001b98c5b08310b6e0e1a683f625ba21a7cc48f7";
 const TARGET_0066_ID = "94a4f6ab-bbf1-4c63-9c36-2e1370d22068";
 const TARGET_0066_SHA256 = "2deb591dd9d837e4cad0de81078324f8d865352ca348fe16acbecbfe4d3432b6";
+const TARGET_0067_ID = "46517560-a4ac-4edb-b423-91352eff46ae";
+const TARGET_0067_SHA256 = "3e32979541bc416ae5ccea055cedca540e5ad67af54ee0aca7c9b52c45ab41d9";
+const TARGET_0068_ID = "0634832a-0159-460f-90dd-8c581d0358e1";
+const TARGET_0068_SHA256 = "19a7b218f8979b97956f98e3542317a64f305bbc89588c9babb2fe76380aaaad";
+const TARGET_0069_ID = "4382dc6d-ceac-4f3a-a61a-136ddc895d17";
+const TARGET_0069_SHA256 = "e4ca6264c71f0cf1307d4f5cf101622b0dc871800d175ff10cde7a3afd2ced58";
+const TARGET_0070_ID = "ee0cd15b-c76d-4247-9fca-5ad417fc3638";
+const TARGET_0070_SHA256 = "d2552ae27ab62f58dd9b1dcb11bdc4d4075568b559e4ccd166d17f3046c7d044";
 const PREVIOUS_ID = "e5e34b6e-86f4-44f2-90a1-2fe4503111a2";
 const TABLE_NAME = "public.wireline_xai_phone_bindings";
+const LEGACY_VOICE_TABLE_NAME = "public.wireline_cloned_voices";
+const SMS_THREADS_TABLE_NAME = "public.wireline_sms_threads";
+const SMS_SEND_OPERATIONS_TABLE_NAME = "public.wireline_sms_send_operations";
 
 function hash(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -519,6 +534,173 @@ export function buildOpenAIRealtimeVoiceSnapshot(paidBotIdentityJobSnapshot) {
   return snapshot;
 }
 
+export function buildLegacyVoiceProviderRemovalSnapshot(openAIRealtimeVoiceSnapshot) {
+  if (
+    !openAIRealtimeVoiceSnapshot ||
+    openAIRealtimeVoiceSnapshot.id !== TARGET_0066_ID ||
+    openAIRealtimeVoiceSnapshot.version !== "7"
+  ) {
+    throw new Error("0066 snapshot identity changed; refusing to synthesize 0067.");
+  }
+  if (!openAIRealtimeVoiceSnapshot.tables[LEGACY_VOICE_TABLE_NAME]) {
+    throw new Error("Legacy voice table is missing; refusing to synthesize 0067.");
+  }
+  const snapshot = structuredClone(openAIRealtimeVoiceSnapshot);
+  snapshot.id = TARGET_0067_ID;
+  snapshot.prevId = openAIRealtimeVoiceSnapshot.id;
+  delete snapshot.tables[LEGACY_VOICE_TABLE_NAME];
+  return snapshot;
+}
+
+export function buildSmsDestinationRoutingSnapshot(legacyVoiceProviderRemovalSnapshot) {
+  if (
+    !legacyVoiceProviderRemovalSnapshot ||
+    legacyVoiceProviderRemovalSnapshot.id !== TARGET_0067_ID ||
+    legacyVoiceProviderRemovalSnapshot.version !== "7"
+  ) {
+    throw new Error("0067 snapshot identity changed; refusing to synthesize 0068.");
+  }
+  const snapshot = structuredClone(legacyVoiceProviderRemovalSnapshot);
+  snapshot.id = TARGET_0068_ID;
+  snapshot.prevId = legacyVoiceProviderRemovalSnapshot.id;
+  const threads = snapshot.tables[SMS_THREADS_TABLE_NAME];
+  if (!threads) {
+    throw new Error("SMS thread table is missing; refusing to synthesize 0068.");
+  }
+  threads.columns.destination_number = column("destination_number", "text", false);
+  delete threads.indexes.idx_sms_threads_user_customer;
+  threads.indexes.idx_sms_threads_user_destination_customer = {
+    name: "idx_sms_threads_user_destination_customer",
+    columns: [
+      { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+      { expression: "destination_number", isExpression: false, asc: true, nulls: "last" },
+      { expression: "customer_number", isExpression: false, asc: true, nulls: "last" },
+    ],
+    isUnique: true,
+    where: '"wireline_sms_threads"."destination_number" IS NOT NULL',
+    concurrently: false,
+    method: "btree",
+    with: {},
+  };
+  threads.indexes.idx_sms_threads_legacy_user_customer = {
+    name: "idx_sms_threads_legacy_user_customer",
+    columns: [
+      { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+      { expression: "customer_number", isExpression: false, asc: true, nulls: "last" },
+    ],
+    isUnique: true,
+    where: '"wireline_sms_threads"."destination_number" IS NULL',
+    concurrently: false,
+    method: "btree",
+    with: {},
+  };
+  return snapshot;
+}
+
+export function buildSmsSendIdempotencySnapshot(smsDestinationRoutingSnapshot) {
+  if (
+    !smsDestinationRoutingSnapshot ||
+    smsDestinationRoutingSnapshot.id !== TARGET_0068_ID ||
+    smsDestinationRoutingSnapshot.version !== "7"
+  ) {
+    throw new Error("0068 snapshot identity changed; refusing to synthesize 0069.");
+  }
+  const snapshot = structuredClone(smsDestinationRoutingSnapshot);
+  snapshot.id = TARGET_0069_ID;
+  snapshot.prevId = smsDestinationRoutingSnapshot.id;
+  snapshot.tables[SMS_SEND_OPERATIONS_TABLE_NAME] = {
+    name: "wireline_sms_send_operations",
+    schema: "",
+    columns: {
+      id: column("id", "uuid", true, true, "gen_random_uuid()"),
+      user_id: column("user_id", "uuid", true),
+      thread_id: column("thread_id", "uuid", true),
+      idempotency_key: column("idempotency_key", "text", true),
+      request_hash: column("request_hash", "text", true),
+      status: column("status", "text", true, false, "'reserved'"),
+      provider_sid: column("provider_sid", "text", false),
+      provider_status: column("provider_status", "text", false),
+      failure_code: column("failure_code", "text", false),
+      created_at: column("created_at", "timestamp with time zone", true, false, "now()"),
+      updated_at: column("updated_at", "timestamp with time zone", true, false, "now()"),
+    },
+    indexes: {
+      uq_sms_send_operations_user_idempotency: {
+        name: "uq_sms_send_operations_user_idempotency",
+        columns: [
+          { expression: "user_id", isExpression: false, asc: true, nulls: "last" },
+          { expression: "idempotency_key", isExpression: false, asc: true, nulls: "last" },
+        ],
+        isUnique: true,
+        concurrently: false,
+        method: "btree",
+        with: {},
+      },
+      idx_sms_send_operations_thread_created: {
+        name: "idx_sms_send_operations_thread_created",
+        columns: [
+          { expression: "thread_id", isExpression: false, asc: true, nulls: "last" },
+          { expression: "created_at", isExpression: false, asc: true, nulls: "last" },
+        ],
+        isUnique: false,
+        concurrently: false,
+        method: "btree",
+        with: {},
+      },
+    },
+    foreignKeys: {
+      wireline_sms_send_operations_user_id_wireline_users_id_fk: {
+        name: "wireline_sms_send_operations_user_id_wireline_users_id_fk",
+        tableFrom: "wireline_sms_send_operations",
+        tableTo: "wireline_users",
+        columnsFrom: ["user_id"],
+        columnsTo: ["id"],
+        onDelete: "cascade",
+        onUpdate: "no action",
+      },
+      wireline_sms_send_operations_thread_id_wireline_sms_threads_id_fk: {
+        name: "wireline_sms_send_operations_thread_id_wireline_sms_threads_id_fk",
+        tableFrom: "wireline_sms_send_operations",
+        tableTo: "wireline_sms_threads",
+        columnsFrom: ["thread_id"],
+        columnsTo: ["id"],
+        onDelete: "cascade",
+        onUpdate: "no action",
+      },
+    },
+    compositePrimaryKeys: {},
+    uniqueConstraints: {},
+    policies: {},
+    checkConstraints: {
+      wireline_sms_send_operations_status_check: {
+        name: "wireline_sms_send_operations_status_check",
+        value:
+          '"wireline_sms_send_operations"."status" IN (\'reserved\', \'attempting\', \'accepted\', \'rejected\', \'ambiguous\')',
+      },
+    },
+    isRLSEnabled: true,
+  };
+  return snapshot;
+}
+
+export function buildRetiredXAIVoiceBindingRemovalSnapshot(smsSendIdempotencySnapshot) {
+  if (
+    !smsSendIdempotencySnapshot ||
+    smsSendIdempotencySnapshot.id !== TARGET_0069_ID ||
+    smsSendIdempotencySnapshot.version !== "7"
+  ) {
+    throw new Error("0069 snapshot identity changed; refusing to synthesize 0070.");
+  }
+  if (!smsSendIdempotencySnapshot.tables[TABLE_NAME]) {
+    throw new Error("Retired xAI binding table is missing; refusing to synthesize 0070.");
+  }
+  const snapshot = structuredClone(smsSendIdempotencySnapshot);
+  snapshot.id = TARGET_0070_ID;
+  snapshot.prevId = smsSendIdempotencySnapshot.id;
+  delete snapshot.tables[TABLE_NAME];
+  return snapshot;
+}
+
 function writeSnapshot(path, serialized, expectedHash) {
   const actualHash = hash(serialized);
   if (expectedHash !== "PENDING_COMPUTE" && actualHash !== expectedHash) {
@@ -586,6 +768,22 @@ export function materializeDrizzleMeta() {
     paidBotIdentityJobSnapshot,
   );
   const openAIRealtimeVoiceSerialized = `${JSON.stringify(openAIRealtimeVoiceSnapshot, null, 2)}\n`;
+  const legacyVoiceProviderRemovalSnapshot = buildLegacyVoiceProviderRemovalSnapshot(
+    openAIRealtimeVoiceSnapshot,
+  );
+  const legacyVoiceProviderRemovalSerialized = `${JSON.stringify(legacyVoiceProviderRemovalSnapshot, null, 2)}\n`;
+  const smsDestinationRoutingSnapshot = buildSmsDestinationRoutingSnapshot(
+    legacyVoiceProviderRemovalSnapshot,
+  );
+  const smsDestinationRoutingSerialized = `${JSON.stringify(smsDestinationRoutingSnapshot, null, 2)}\n`;
+  const smsSendIdempotencySnapshot = buildSmsSendIdempotencySnapshot(
+    smsDestinationRoutingSnapshot,
+  );
+  const smsSendIdempotencySerialized = `${JSON.stringify(smsSendIdempotencySnapshot, null, 2)}\n`;
+  const retiredXAIVoiceBindingRemovalSnapshot = buildRetiredXAIVoiceBindingRemovalSnapshot(
+    smsSendIdempotencySnapshot,
+  );
+  const retiredXAIVoiceBindingRemovalSerialized = `${JSON.stringify(retiredXAIVoiceBindingRemovalSnapshot, null, 2)}\n`;
   const native = writeSnapshot(TARGET, nativeSerialized, TARGET_SHA256);
   const preserved = writeSnapshot(TARGET_0051_PATH, preservedSerialized, TARGET_0051_SHA256);
   const grok46 = writeSnapshot(TARGET_0052_PATH, grok46Serialized, TARGET_0052_SHA256);
@@ -646,6 +844,26 @@ export function materializeDrizzleMeta() {
     openAIRealtimeVoiceSerialized,
     TARGET_0066_SHA256,
   );
+  const legacyVoiceProviderRemoval = writeSnapshot(
+    TARGET_0067_PATH,
+    legacyVoiceProviderRemovalSerialized,
+    TARGET_0067_SHA256,
+  );
+  const smsDestinationRouting = writeSnapshot(
+    TARGET_0068_PATH,
+    smsDestinationRoutingSerialized,
+    TARGET_0068_SHA256,
+  );
+  const smsSendIdempotency = writeSnapshot(
+    TARGET_0069_PATH,
+    smsSendIdempotencySerialized,
+    TARGET_0069_SHA256,
+  );
+  const retiredXAIVoiceBindingRemoval = writeSnapshot(
+    TARGET_0070_PATH,
+    retiredXAIVoiceBindingRemovalSerialized,
+    TARGET_0070_SHA256,
+  );
   return {
     native,
     preserved,
@@ -663,6 +881,10 @@ export function materializeDrizzleMeta() {
     agentIdentityMark,
     paidBotIdentityJob,
     openAIRealtimeVoice,
+    legacyVoiceProviderRemoval,
+    smsDestinationRouting,
+    smsSendIdempotency,
+    retiredXAIVoiceBindingRemoval,
   };
 }
 
@@ -733,5 +955,25 @@ if (result.paidBotIdentityJob.changed) {
 if (result.openAIRealtimeVoice.changed) {
   console.log(
     `Materialized Drizzle snapshot 0066 (${result.openAIRealtimeVoice.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.legacyVoiceProviderRemoval.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0067 (${result.legacyVoiceProviderRemoval.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.smsDestinationRouting.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0068 (${result.smsDestinationRouting.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.smsSendIdempotency.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0069 (${result.smsSendIdempotency.sha256.slice(0, 12)}…).`,
+  );
+}
+if (result.retiredXAIVoiceBindingRemoval.changed) {
+  console.log(
+    `Materialized Drizzle snapshot 0070 (${result.retiredXAIVoiceBindingRemoval.sha256.slice(0, 12)}…).`,
   );
 }

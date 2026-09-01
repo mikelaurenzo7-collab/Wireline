@@ -3,20 +3,20 @@ import { describe, expect, it } from "vitest";
 import { composeAgentPersonality, TEMPLATE_OVERLAYS } from "../src/lib/template-overlays";
 import {
   ACCOUNT_HOLDER_INSTRUCTIONS_MARKER,
+  isSavedRuntimeReviewRequired,
   TEMPLATE_SPECIALTY_MARKER,
   resolveRuntimeTemplatePersonality,
 } from "../src/lib/runtime-template-personality";
-import { composeVapiRuntimePrompt } from "../src/lib/vapi-assistant-factory-v2";
 import {
   composeOpenAILiveInstructions,
   type OpenAILiveInstructionAgent,
 } from "../src/lib/voice/openai-live-agent-service";
 import {
-  composeXAIRealtimeInstructions,
-  type XAIRealtimeInstructionAgent,
-  type XAIRealtimeTenantSettings,
-} from "../src/lib/voice/xai-agent-runtime";
-import { MAX_RUNTIME_PROMPT_CHARS } from "../src/lib/vapi-helpers";
+  composeOpenAIRealtimeInstructions,
+  type OpenAIRealtimeInstructionAgent,
+  type OpenAIRealtimeTenantSettings,
+} from "../src/lib/voice/openai-phone-agent-runtime";
+import { MAX_RUNTIME_PROMPT_CHARS } from "../src/lib/agent-runtime-helpers";
 
 const USER_ID = "template-owner";
 const ROLE_PREFIX = `ROLE-FIRST SAVED PERSONALITY\n${"role guidance ".repeat(180)}`;
@@ -43,16 +43,19 @@ function openAIAgent(role = "customer_service"): OpenAILiveInstructionAgent {
   };
 }
 
-function xaiAgent(role = "customer_service"): XAIRealtimeInstructionAgent {
+function phoneAgent(role = "customer_service"): OpenAIRealtimeInstructionAgent {
   return {
     ...openAIAgent(role),
     enabledTools: null,
     timezone: null,
     kpiFocus: "TENANT_KPI_SENTINEL",
+    voiceProvider: "openai",
+    voiceId: "coral",
+    phoneVoiceId: "coral",
   };
 }
 
-const xaiTenant: XAIRealtimeTenantSettings = {
+const phoneTenant: OpenAIRealtimeTenantSettings = {
   aiTier: null,
   twilioMessagingEnabled: false,
   twilioLookupEnabled: false,
@@ -72,48 +75,32 @@ function composeAllProviders(personality: string, role = "customer_service") {
       content: `runtime knowledge ${index} ${"k".repeat(700)}`,
     })),
   ];
-  const vapiComposition = composeVapiRuntimePrompt({
-    configured: {
-      id: "agent-template-runtime",
-      userId: USER_ID,
-      name: "Taylor",
-      role,
-      businessVariables: null,
-      personalityVibe: "warm",
-      systemPromptOverride: "TENANT_OVERRIDE_SENTINEL",
-      kpiFocus: "TENANT_KPI_SENTINEL",
-      flowConfig: [{ name: "TENANT_FLOW_SENTINEL", instructions: "Run the saved workflow." }],
-    },
+  const phone = composeOpenAIRealtimeInstructions({
+    agent: phoneAgent(role),
+    tenant: phoneTenant,
     personality,
     directives,
     knowledge,
-    browserTest: false,
-    isOutbound: false,
-    model: "gpt-4.1-mini",
+    surface: "phone",
   });
-  const vapi = vapiComposition.finalSystemPrompt;
+  const browser = composeOpenAILiveInstructions(
+    openAIAgent(role),
+    personality,
+    directives,
+    knowledge,
+  );
 
-  expect(vapi.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
+  expect(phone.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
+  expect(browser.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
 
   return {
-    prompts: [
-      vapi,
-      composeOpenAILiveInstructions(openAIAgent(role), personality, directives, knowledge),
-      composeXAIRealtimeInstructions({
-        agent: xaiAgent(role),
-        tenant: xaiTenant,
-        personality,
-        directives,
-        knowledge,
-        surface: "phone",
-      }),
-    ],
-    vapiComposition,
+    prompts: [browser, phone],
+    reviewRequired: isSavedRuntimeReviewRequired(personality, role),
   };
 }
 
 describe("template personality runtime composition", () => {
-  it("preserves legacy role-first specialty and appended custom guidance in every provider", () => {
+  it("preserves legacy role-first specialty and appended custom guidance on every live surface", () => {
     const legacyPersonality = [
       ROLE_PREFIX,
       TEMPLATE_OVERLAYS["ecommerce-support"],
@@ -132,7 +119,7 @@ describe("template personality runtime composition", () => {
     }
   });
 
-  it("preserves newly delimited Account Holder instructions in every provider", () => {
+  it("preserves newly delimited Account Holder instructions on every live surface", () => {
     const composed = composeAgentPersonality({
       rolePersonality: ROLE_PREFIX,
       templateId: "ecommerce-phone-order",
@@ -167,7 +154,7 @@ describe("template personality runtime composition", () => {
     }
   });
 
-  it("disarms saved headings reserved by the Vapi guardrail clamp", () => {
+  it("disarms saved headings reserved by the runtime guardrail clamp", () => {
     const composed = composeAgentPersonality({
       rolePersonality: ROLE_PREFIX,
       templateId: "ecommerce-support",
@@ -177,7 +164,7 @@ describe("template personality runtime composition", () => {
 
     const prompt = composeAllProviders(composed).prompts[0];
     expect(prompt).toContain("### SAVED VOICE CONSISTENCY");
-    expect(prompt.match(/## VOICE CONSISTENCY/g)).toHaveLength(1);
+    expect(prompt.match(/## VOICE AND DELIVERY CONSISTENCY/g)).toHaveLength(1);
     expect(prompt).toContain("Never claim access, inventory, availability");
   });
 
@@ -200,7 +187,7 @@ describe("template personality runtime composition", () => {
     expect(ecommerceOrder).toContain("say it was sent only after that tool confirms success");
   });
 
-  it("fails existing regulated template rows closed across every voice provider", () => {
+  it("fails existing regulated template rows closed across every live surface", () => {
     for (const templateId of [
       "scheduler-medical",
       "collections-soft",
@@ -213,7 +200,7 @@ describe("template personality runtime composition", () => {
 
       const role = templateId.startsWith("collections") ? "collections" : "scheduler";
       const composition = composeAllProviders(composed, role);
-      expect(composition.vapiComposition.reviewRequired).toBe(true);
+      expect(composition.reviewRequired).toBe(true);
       for (const prompt of composition.prompts) {
         expect(prompt).toContain("## REGULATED TEMPLATE HOLD");
         expect(prompt).toContain("not authorized for live operation");
@@ -228,9 +215,9 @@ describe("template personality runtime composition", () => {
     }
   });
 
-  it("fails an unmarked generic collections role closed across every voice provider", () => {
+  it("fails an unmarked generic collections role closed across every live surface", () => {
     const composition = composeAllProviders("TENANT PERSONALITY SENTINEL", "collections");
-    expect(composition.vapiComposition.reviewRequired).toBe(true);
+    expect(composition.reviewRequired).toBe(true);
 
     for (const prompt of composition.prompts) {
       expect(prompt).toContain("## REGULATED ROLE HOLD");

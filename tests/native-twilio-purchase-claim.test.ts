@@ -46,10 +46,6 @@ function installCarrierMocks(input: {
   vi.doMock("../src/lib/app-url", () => ({
     getCanonicalAppUrl: () => "https://botbound.me",
   }));
-  vi.doMock("../src/lib/voice/xai-sip-config", () => ({
-    normalizeXAIPhoneNumber: (value: string) => (/^\+1\d{10}$/.test(value) ? value : null),
-    twilioVoiceFallbackUrl: () => "https://botbound.me/api/voice/fallback",
-  }));
   return { ...provider, log };
 }
 
@@ -85,10 +81,6 @@ function installReconciliationMocks(input: {
   }));
   vi.doMock("../src/lib/carrier-release", () => ({
     releaseCarrierAllocations: vi.fn(),
-  }));
-  vi.doMock("../src/lib/vapi-phone-numbers", () => ({
-    listVapiNumbers: vi.fn(async () => []),
-    releaseVapiNumber: vi.fn(),
   }));
   return provider;
 }

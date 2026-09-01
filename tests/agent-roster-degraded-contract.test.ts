@@ -117,14 +117,14 @@ describe("Bot line readiness: attached, absent, or unknown", () => {
     expect(agentLineStatus(withLine, true)).toBe("live");
 
     expect(agentReadinessLabel(withLine, false)).toBe("Live");
-    expect(agentReadinessLabel(withoutLine, false)).toBe("Needs setup");
-    expect(agentReadinessLabel(withoutLine, true)).not.toBe("Needs setup");
+    expect(agentReadinessLabel(withoutLine, false)).toBe("No live line");
+    expect(agentReadinessLabel(withoutLine, true)).not.toBe("No live line");
   });
 
   it("keeps the visible readiness surface on the shared helper", () => {
     const source = read("src/components/overview/OverviewRail.tsx");
     expect(source).toContain("agentReadinessLabel(");
-    expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"Needs setup"/);
+    expect(source).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No live line"/);
 
     // The workspace shell now shows only the current Bot identity and makes no
     // line-readiness claim, so it has no status label to normalize.

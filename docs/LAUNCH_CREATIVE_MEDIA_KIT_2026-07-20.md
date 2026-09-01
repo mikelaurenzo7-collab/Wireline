@@ -58,10 +58,10 @@ Historical and exclude it from every package. Campaign audio is
 marketing/reference material only and never the production phone-call speech
 path.
 
-The default ElevenLabs narration voice (Jessica) is approved campaign/reference
-audio, not a claim about the production PSTN engine. A contract pins the
-generator configuration; every cut must still use real captured Bot audio when
-selling live-call quality.
+The default OpenAI TTS narration voice (`marin`) is the approved
+campaign/reference voice, not a substitute for captured production-call proof.
+A contract pins the generator configuration; every cut must still use real
+captured Bot audio when selling live-call quality.
 
 ## Required Launch Cuts
 
@@ -88,9 +88,13 @@ evidence is retained only to explain the retired implementation. It does not
 authorize a product claim, checkout path, session mint, audio deliverable, or
 creative cut. Live talking-head video is now fully retired and non-publishable.
 
-### Campaign audio — dual-engine, duration-verified
+### Campaign audio — OpenAI TTS, duration-verified
 
-`npm run campaign:vo` now measures every rendered MP3 by walking its frames and retries the 15-second track at stepped speeds until it fits the 15.0s hard ceiling. `--engine xai` renders the same canonical scripts through the second creative engine (voice "Ara") into `official-assets/audio/xai/` for A/B and edit reference; ElevenLabs (Jessica, curated runtime voice) remains canonical.
+`npm run campaign:vo` renders the canonical scripts with OpenAI
+`gpt-4o-mini-tts` and the built-in `marin` voice. It measures every rendered MP3
+by walking its frames and retries the 15-second track at stepped speeds until it
+fits the 15.0s hard ceiling. Alternate engines are rejected so campaign
+provenance cannot silently drift from the OpenAI-only speech policy.
 
 ### Rejected historical masters
 

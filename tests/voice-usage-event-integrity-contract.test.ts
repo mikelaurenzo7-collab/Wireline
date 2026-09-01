@@ -79,12 +79,12 @@ describe("per-call TCPA evidence is race-safe, not just check-then-insert", () =
   });
 
   it("inserts with onConflictDoNothing and only alerts on the row that lands", () => {
-    const handlers = read("src/lib/vapi-handlers.ts");
+    const handlers = read("src/lib/voice/openai-sip-session.ts");
     expect(handlers).toContain(".onConflictDoNothing()");
     // The unverified-two-party alert must fire only for the delivery that
     // actually inserted the disclosure row, so a concurrent duplicate cannot
     // double-page ops.
-    expect(handlers).toContain("insertedDisclosure.length > 0");
+    expect(handlers).toContain("inserted.length > 0");
   });
 });
 

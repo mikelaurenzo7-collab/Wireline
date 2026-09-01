@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import type { ToolCallContext } from "../agent-tool-types";
@@ -12,9 +12,16 @@ import {
 import { notifyInboundCall } from "../mobile-push";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
-import { enqueuePostCallDigest } from "../post-call-digest";
+import { enqueuePostCallDigest, type OpenAISipFinalizationContext } from "../post-call-digest";
+import { reportError } from "../error-reporter";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
-import { detectOptOut } from "../tcpa-consent";
+import {
+  buildConsentLedgerRow,
+  CONSENT_RULE_VERSION,
+  detectAiDisclosure,
+  detectOptOut,
+  getConsentRuleForPhone,
+} from "../tcpa-consent";
 import { persistTranscriptDncSuppression } from "../call-dnc-suppression";
 import { trackVoiceMinutes } from "../voice-usage";
 import {
@@ -36,6 +43,10 @@ const HEARTBEAT_INTERVAL_MS = 25_000;
 const MAX_MISSED_PONGS = 2;
 const MAX_TRANSCRIPT_CHARS = 120_000;
 const MAX_TOOL_OUTPUT_CHARS = 8_000;
+const FINALIZATION_RECOVERY_GRACE_MS = 120_000;
+const IN_PROGRESS_SUMMARY = "OpenAI Realtime voice call in progress.";
+const RECOVERED_SUMMARY =
+  "OpenAI Realtime voice call ended before its terminal state could be persisted.";
 const ACTIVE_OUTBOUND_STATUSES: readonly string[] = [
   LEAD_STATUS.PENDING,
   LEAD_STATUS.QUEUED,
@@ -77,6 +88,7 @@ type RealtimeSessionOutcome = {
   toolCallsFailed: number;
   escalationAttempted: boolean;
   escalationSucceeded: boolean;
+  openingPlaybackConfirmed: boolean;
 };
 
 export type OpenAITranscriptLine = {
@@ -357,21 +369,53 @@ export function notifyOpenAISipCallTransferred(callId: string): void {
 
 async function claimCall(input: OpenAISipIncomingCall) {
   const id = providerCallId(input.callId);
-  const [created] = await drizzle
-    .insert(schema.callLogs)
-    .values({
-      userId: input.userId,
-      vapiCallId: id,
-      agentId: input.agentId,
-      direction: callDirection(input),
-      customerNumber: input.callerNumber,
-      summary: "OpenAI Realtime voice call in progress.",
-      endedReason: null,
-      pipelineError: null,
-    })
-    .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
-    .returning({ id: schema.callLogs.id });
-  return created?.id ?? null;
+  return drizzle.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(schema.callLogs)
+      .values({
+        userId: input.userId,
+        vapiCallId: id,
+        agentId: input.agentId,
+        direction: callDirection(input),
+        customerNumber: input.callerNumber,
+        summary: IN_PROGRESS_SUMMARY,
+        endedReason: null,
+        pipelineError: null,
+      })
+      .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
+      .returning({ id: schema.callLogs.id });
+    if (!created) return null;
+
+    const direction = callDirection(input);
+    await enqueuePostCallDigest(
+      {
+        userId: input.userId,
+        callLogId: created.id,
+        agentId: input.agentId,
+        dialedNumber: input.calledNumber,
+        customerNumber: input.callerNumber,
+        customerName: input.customerName,
+        agentName: input.businessName,
+        direction,
+        vapiCallType: direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound",
+        vapiCallId: id,
+        finalization: {
+          provider: "openai_sip",
+          callId: input.callId,
+          leadId: input.leadId ? String(input.leadId) : null,
+          openingPlaybackConfirmed: false,
+          terminalStateReady: false,
+        },
+      },
+      tx,
+      {
+        runAt: new Date(
+          Date.now() + resolveOpenAISipSessionMaxSeconds() * 1_000 + FINALIZATION_RECOVERY_GRACE_MS,
+        ),
+      },
+    );
+    return created.id;
+  });
 }
 
 async function updatePresence(input: OpenAISipIncomingCall, agentName: string) {
@@ -461,7 +505,27 @@ async function settleOutboundLead(input: {
 
     const metadata = asRecord(lead.metadata);
     const nativeVoice = asRecord(metadata.native_voice);
+    const providerId = providerCallId(input.call.callId);
+    const currentCallId = String(nativeVoice.openai_call_id || "").trim();
     const currentlyActive = ACTIVE_OUTBOUND_STATUSES.includes(lead.status || "");
+    if (currentCallId !== providerId) {
+      log.warn("OpenAI SIP lead settlement skipped because another call owns the lead", {
+        userId: input.call.userId,
+        leadId: String(input.call.leadId),
+        callId: providerId,
+        currentCallId: currentCallId || null,
+      });
+      return;
+    }
+    if (
+      !currentlyActive &&
+      ["completed", "runtime_error", "transferred", "caller_dnc"].includes(
+        String(nativeVoice.state || ""),
+      )
+    ) {
+      return;
+    }
+
     const now = new Date();
     const nextState =
       input.endedReason === "transferred"
@@ -490,7 +554,7 @@ async function settleOutboundLead(input: {
           ...metadata,
           native_voice: {
             ...nativeVoice,
-            openai_call_id: providerCallId(input.call.callId),
+            openai_call_id: providerId,
             state: nextState,
             ended_reason: input.endedReason,
             pipeline_error: input.pipelineError,
@@ -526,6 +590,103 @@ async function runFinalizerStep(
   }
 }
 
+const AI_DISCLOSURE_EVENTS = [
+  "ai_disclosure_played",
+  "ai_disclosure_not_detected",
+  "ai_disclosure_unverifiable",
+] as const;
+
+async function persistAiDisclosureEvidence(input: {
+  call: OpenAISipIncomingCall;
+  transcript: string;
+  durationSeconds: number;
+  openingPlaybackConfirmed: boolean;
+}): Promise<void> {
+  if (callDirection(input.call) !== "outbound") return;
+
+  const callId = providerCallId(input.call.callId);
+  const [existing] = await drizzle
+    .select({ id: schema.consentLog.id })
+    .from(schema.consentLog)
+    .where(
+      and(
+        eq(schema.consentLog.userId, input.call.userId),
+        eq(schema.consentLog.callId, callId),
+        inArray(schema.consentLog.event, AI_DISCLOSURE_EVENTS),
+      ),
+    )
+    .limit(1);
+  if (existing) return;
+
+  const disclosure = detectAiDisclosure(input.transcript);
+  const event = input.openingPlaybackConfirmed
+    ? disclosure.found
+      ? "ai_disclosure_played"
+      : "ai_disclosure_not_detected"
+    : "ai_disclosure_unverifiable";
+  const delivery =
+    event === "ai_disclosure_played"
+      ? "verified"
+      : event === "ai_disclosure_not_detected"
+        ? "not_detected"
+        : "unverifiable";
+  const { rule, state } = getConsentRuleForPhone(input.call.callerNumber);
+  const ledgerRow = buildConsentLedgerRow({
+    user_id: input.call.userId,
+    call_id: callId,
+    customer_number: input.call.callerNumber || "unknown",
+    event,
+    rule_version: CONSENT_RULE_VERSION,
+    rule,
+    state,
+    metadata: {
+      delivery,
+      disclosure_kind: "ai_identity",
+      opening_playback_confirmed: input.openingPlaybackConfirmed,
+      ...(disclosure.found ? { evidence: disclosure.excerpt } : {}),
+    },
+  });
+
+  const inserted = await drizzle
+    .insert(schema.consentLog)
+    .values({
+      userId: ledgerRow.user_id,
+      callId: ledgerRow.call_id,
+      customerNumber: ledgerRow.customer_number,
+      event: ledgerRow.event,
+      ruleVersion: ledgerRow.rule_version,
+      rule: ledgerRow.rule,
+      state: ledgerRow.state,
+      metadata: ledgerRow.metadata,
+    })
+    .onConflictDoNothing()
+    .returning({ id: schema.consentLog.id });
+
+  // The locally composed opening is included in the transcript before audio
+  // playback. Only a drained output buffer proves delivery. A caller turn or
+  // non-zero duration makes an unverified opening actionable; a call that never
+  // carried conversation is recorded without paging.
+  const carriedConversation =
+    input.durationSeconds > 0 ||
+    input.transcript.split("\n").some((line) => line.startsWith("Caller:"));
+  if (inserted.length > 0 && event !== "ai_disclosure_played" && carriedConversation) {
+    log.warn("TCPA: AI-identity disclosure could not be verified on an outbound AI call", {
+      userId: input.call.userId,
+      callId,
+      state,
+      delivery,
+    });
+    reportError(new Error("TCPA AI-identity disclosure unverified on outbound AI call"), {
+      userId: input.call.userId,
+      callId,
+      state,
+      rule,
+      delivery,
+      tags: { compliance: "tcpa_ai_disclosure_unverified" },
+    });
+  }
+}
+
 async function persistFinishedCall(input: {
   call: OpenAISipIncomingCall;
   callLogId: bigint;
@@ -538,6 +699,7 @@ async function persistFinishedCall(input: {
   toolCallsFailed: number;
   escalationAttempted: boolean;
   escalationSucceeded: boolean;
+  openingPlaybackConfirmed: boolean;
 }) {
   const durationSeconds = input.connectedAt
     ? Math.max(0, Math.round((Date.now() - input.connectedAt) / 1_000))
@@ -545,8 +707,11 @@ async function persistFinishedCall(input: {
   const summary = deterministicSummary(input.transcript);
   const direction = callDirection(input.call);
 
-  await runFinalizerStep("call_log", input.call, () =>
-    drizzle
+  // The terminal call row and its unique post-call job commit together. The
+  // inline steps below improve latency, but the queue is the durable owner and
+  // re-drives every idempotent critical step after a crash or transient error.
+  await drizzle.transaction(async (tx) => {
+    const [updated] = await tx
       .update(schema.callLogs)
       .set({
         durationSeconds,
@@ -556,12 +721,55 @@ async function persistFinishedCall(input: {
         pipelineError: input.pipelineError,
         toolCallsTotal: input.toolCallsTotal,
         toolCallsFailed: input.toolCallsFailed,
-        escalationAttempted: input.escalationAttempted,
-        escalationSucceeded: input.escalationSucceeded,
+        // Workflow escalations can persist a successful task/notification
+        // before the SIP session finishes. Merge rather than clobbering that
+        // durable outcome with the session-local REFER result.
+        escalationAttempted: sql<boolean>`COALESCE(${schema.callLogs.escalationAttempted}, false) OR ${input.escalationAttempted}`,
+        escalationSucceeded: sql<boolean>`COALESCE(${schema.callLogs.escalationSucceeded}, false) OR ${input.escalationSucceeded}`,
       })
       .where(
         and(eq(schema.callLogs.id, input.callLogId), eq(schema.callLogs.userId, input.call.userId)),
-      ),
+      )
+      .returning({ id: schema.callLogs.id });
+    if (!updated) throw new Error("OpenAI SIP terminal call row could not be persisted.");
+
+    await enqueuePostCallDigest(
+      {
+        userId: input.call.userId,
+        callLogId: input.callLogId,
+        agentId: input.call.agentId,
+        dialedNumber: input.call.calledNumber,
+        customerNumber: input.call.callerNumber,
+        customerName: input.call.customerName,
+        agentName: input.agentName,
+        direction,
+        durationSeconds,
+        summary,
+        transcript: input.transcript,
+        endedReason: input.endedReason,
+        pipelineError: input.pipelineError,
+        vapiCallType: direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound",
+        vapiCallId: providerCallId(input.call.callId),
+        finalization: {
+          provider: "openai_sip",
+          callId: input.call.callId,
+          leadId: input.call.leadId ? String(input.call.leadId) : null,
+          openingPlaybackConfirmed: input.openingPlaybackConfirmed,
+          terminalStateReady: true,
+        },
+      },
+      tx,
+      { runAt: new Date(), refreshPending: true },
+    );
+  });
+
+  await runFinalizerStep("ai_disclosure", input.call, () =>
+    persistAiDisclosureEvidence({
+      call: input.call,
+      transcript: input.transcript,
+      durationSeconds,
+      openingPlaybackConfirmed: input.openingPlaybackConfirmed,
+    }),
   );
 
   await runFinalizerStep("transcript_dnc", input.call, async () => {
@@ -602,26 +810,130 @@ async function persistFinishedCall(input: {
       vapiCallId: providerCallId(input.call.callId),
     }),
   );
+}
 
-  if (durationSeconds > 0 || input.transcript) {
-    await runFinalizerStep("post_call_digest", input.call, () =>
-      enqueuePostCallDigest({
-        userId: input.call.userId,
-        callLogId: input.callLogId,
-        agentId: input.call.agentId,
-        dialedNumber: input.call.calledNumber,
-        customerNumber: input.call.callerNumber,
-        agentName: input.agentName,
-        direction,
-        durationSeconds,
-        summary,
-        transcript: input.transcript,
-        endedReason: input.endedReason,
-        vapiCallType: direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound",
-        vapiCallId: providerCallId(input.call.callId),
-      }),
-    );
+/**
+ * A recovery job is created before the realtime session starts. If the process
+ * disappears before persistFinishedCall can activate it, make the placeholder
+ * row terminal without inventing a transcript or charging an unknown duration.
+ */
+export async function recoverStaleOpenAISipCall(input: {
+  userId: string;
+  callLogId: bigint | number | string;
+  finalization: OpenAISipFinalizationContext;
+}): Promise<boolean> {
+  const providerId = providerCallId(input.finalization.callId);
+  const [recovered] = await drizzle
+    .update(schema.callLogs)
+    .set({
+      durationSeconds: 0,
+      summary: RECOVERED_SUMMARY,
+      endedReason: "finalization-recovery",
+      pipelineError: "finalization_recovery",
+    })
+    .where(
+      and(
+        eq(schema.callLogs.id, BigInt(String(input.callLogId))),
+        eq(schema.callLogs.userId, input.userId),
+        eq(schema.callLogs.vapiCallId, providerId),
+        sql`${schema.callLogs.endedReason} IS NULL`,
+      ),
+    )
+    .returning({ id: schema.callLogs.id });
+  if (!recovered) return false;
+
+  const error = new Error("OpenAI SIP call required stale finalization recovery");
+  log.error(error.message, {
+    userId: input.userId,
+    callId: providerId,
+    callLogId: String(input.callLogId),
+  });
+  reportError(error, {
+    userId: input.userId,
+    callId: providerId,
+    tags: { voice: "openai_sip_finalization_recovery" },
+  });
+  return true;
+}
+
+/** Queue replay for the critical, provider-idempotent end-of-call effects. */
+export async function replayOpenAISipPostCallFinalization(input: {
+  userId: string;
+  callLogId: bigint | number | string;
+  agentId?: string | null;
+  dialedNumber?: string | null;
+  customerNumber?: string | null;
+  direction?: string | null;
+  durationSeconds?: number | null;
+  summary?: string | null;
+  transcript?: string | null;
+  endedReason?: string | null;
+  pipelineError?: string | null;
+  finalization: OpenAISipFinalizationContext;
+}): Promise<void> {
+  const providerId = providerCallId(input.finalization.callId);
+  const [authoritative] = await drizzle
+    .select({ providerCallId: schema.callLogs.vapiCallId })
+    .from(schema.callLogs)
+    .where(
+      and(
+        eq(schema.callLogs.id, BigInt(String(input.callLogId))),
+        eq(schema.callLogs.userId, input.userId),
+      ),
+    )
+    .limit(1);
+  if (!authoritative || authoritative.providerCallId !== providerId) {
+    throw new Error("OpenAI SIP finalization metadata does not match the authoritative call row.");
   }
+  if (!input.agentId) {
+    throw new Error("OpenAI SIP finalization is missing the authoritative Bot identity.");
+  }
+
+  const call: OpenAISipIncomingCall = {
+    callId: input.finalization.callId,
+    userId: input.userId,
+    agentId: input.agentId,
+    callerNumber: input.customerNumber || null,
+    calledNumber: input.dialedNumber || "",
+    direction: input.direction === "outbound" ? "outbound" : "inbound",
+    ...(input.finalization.leadId ? { leadId: BigInt(input.finalization.leadId) } : {}),
+  };
+  const transcript = input.transcript || "";
+  const durationSeconds = Math.max(0, Number(input.durationSeconds || 0));
+
+  await persistAiDisclosureEvidence({
+    call,
+    transcript,
+    durationSeconds,
+    openingPlaybackConfirmed: input.finalization.openingPlaybackConfirmed,
+  });
+
+  const optOut = detectOptOut(transcript);
+  if (optOut.kind === "dnc") {
+    await persistTranscriptDncSuppression({
+      userId: input.userId,
+      callId: providerId,
+      rawCallerNumber: input.customerNumber || "",
+      matchedPattern: optOut.matched_pattern,
+    });
+  }
+
+  await drizzle
+    .delete(schema.signalPresence)
+    .where(
+      and(eq(schema.signalPresence.id, providerId), eq(schema.signalPresence.userId, input.userId)),
+    );
+  await settleOutboundLead({
+    call,
+    summary: input.summary || "Call completed.",
+    endedReason: input.endedReason || "provider-disconnected",
+    pipelineError: input.pipelineError || null,
+  });
+  await trackVoiceMinutes({
+    userId: input.userId,
+    durationSeconds,
+    vapiCallId: providerId,
+  });
 }
 
 async function runRealtimeSession(
@@ -642,6 +954,7 @@ async function runRealtimeSession(
   let toolCallsFailed = 0;
   let escalationAttempted = false;
   let escalationSucceeded = false;
+  let openingPlaybackConfirmed = false;
   let sipPlaybackActive = false;
   let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
   let awaitingExactOpeningPlayback = false;
@@ -679,9 +992,10 @@ async function runRealtimeSession(
     assistantTurn = "";
   };
 
-  const finishExactOpeningIfNeeded = () => {
+  const finishExactOpeningIfNeeded = (delivered: boolean) => {
     if (!awaitingExactOpeningPlayback) return false;
     awaitingExactOpeningPlayback = false;
+    openingPlaybackConfirmed = delivered;
     if (!hangupAfterOpening || ws.readyState !== WebSocket.OPEN) return true;
     hangupAfterOpening = false;
     endedReason = "line-suspended";
@@ -921,7 +1235,7 @@ async function runRealtimeSession(
     }
     if (type === "output_audio_buffer.stopped" || type === "output_audio_buffer.cleared") {
       sipPlaybackActive = false;
-      if (finishExactOpeningIfNeeded()) return;
+      if (finishExactOpeningIfNeeded(type === "output_audio_buffer.stopped")) return;
       requestToolContinuationWhenReady();
       return;
     }
@@ -1142,6 +1456,7 @@ async function runRealtimeSession(
     toolCallsFailed,
     escalationAttempted,
     escalationSucceeded,
+    openingPlaybackConfirmed,
   };
 }
 
@@ -1150,7 +1465,19 @@ export async function runOpenAISipCallSession(
   admittedRuntime?: RealtimeRuntime,
 ): Promise<void> {
   return tenantStore.run(input.userId, async () => {
-    const callLogId = await claimCall(input);
+    let callLogId: bigint | null;
+    try {
+      callLogId = await claimCall(input);
+    } catch (error) {
+      log.error("OpenAI SIP call could not establish durable recovery state", {
+        userId: input.userId,
+        agentId: input.agentId,
+        callId: providerCallId(input.callId),
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      await hangupOpenAISipCall(input.callId).catch(() => undefined);
+      throw error;
+    }
     if (!callLogId) {
       log.info("Duplicate OpenAI incoming-call webhook suppressed", {
         callId: providerCallId(input.callId),
@@ -1168,6 +1495,7 @@ export async function runOpenAISipCallSession(
       toolCallsFailed: 0,
       escalationAttempted: false,
       escalationSucceeded: false,
+      openingPlaybackConfirmed: false,
     };
 
     try {
@@ -1223,6 +1551,7 @@ export async function runOpenAISipCallSession(
         toolCallsFailed: outcome.toolCallsFailed,
         escalationAttempted: outcome.escalationAttempted,
         escalationSucceeded: outcome.escalationSucceeded,
+        openingPlaybackConfirmed: outcome.openingPlaybackConfirmed,
       });
     }
   });

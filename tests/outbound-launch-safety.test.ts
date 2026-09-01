@@ -52,9 +52,9 @@ describe("outbound launch safety", () => {
     expect(gate).toContain("LEAD_STATUS.CALLBACK_SCHEDULED");
     expect(gate).toContain("self_within_24h");
     expect(gate).toContain("jsonSafeId(otherRecent.id)");
-    const vapi = read("src/lib/vapi-helpers.ts");
-    expect(vapi).toContain('"Skipped-Duplicate"');
-    expect(vapi).toContain('"Blocked-TCPA"');
+    const runtimeHelpers = read("src/lib/agent-runtime-helpers.ts");
+    expect(runtimeHelpers).toContain('"Skipped-Duplicate"');
+    expect(runtimeHelpers).toContain('"Blocked-TCPA"');
   });
 
   it("reschedules campaign_dial when outside workspace call window", () => {
@@ -107,9 +107,10 @@ describe("outbound launch safety", () => {
     expect(email).not.toMatch(/payUrl:\s*opts\.payUrl/);
   });
 
-  it("labels public stats as static example without live as_of", () => {
+  it("does not present unpublished public stats as live customer activity", () => {
     const marketing = read("src/routes/marketing-runtime-routes.ts");
-    expect(marketing).toContain('source: "static_example"');
+    expect(marketing).toContain("published: false");
+    expect(marketing).toContain('reason: "customer_activity_metrics_not_yet_published"');
     expect(marketing).not.toContain("as_of: new Date()");
   });
 

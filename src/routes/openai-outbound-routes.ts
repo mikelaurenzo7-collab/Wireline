@@ -2,7 +2,6 @@ import { Router, type Request, type Response } from "express";
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
-import { formatCallbackNumberForSpeech } from "../lib/agent-runtime";
 import { liveExternalActionPolicy } from "../lib/account-environment-policy";
 import { AppError, asyncHandler } from "../lib/api-error";
 import { isMarketingCallPurpose } from "../lib/outbound-call-purpose";
@@ -30,7 +29,6 @@ import {
   persistOpenAIOutboundTwiMLReplay,
   resolveOpenAIOutboundTwiMLReplay,
 } from "../lib/voice/openai-outbound-twiml-replay";
-import { buildOutboundVoicemailMessage } from "../lib/voice-agent-profile";
 import { trackVoiceMinutes } from "../lib/voice-usage";
 
 const router = Router();
@@ -74,16 +72,6 @@ function escapeXml(value: string): string {
 
 function emptyTwiml(): string {
   return '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
-}
-
-function voicemailTwiml(message: string): string {
-  const spoken = message.trim();
-  if (!spoken) return emptyTwiml();
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?><Response><Say>' +
-    escapeXml(spoken) +
-    "</Say><Hangup/></Response>"
-  );
 }
 
 function bridgeTwiml(input: { callerId: string; sipUri: string }): string {
@@ -173,7 +161,6 @@ async function loadCampaignMaxAttempts(
 type BridgeDecision =
   | { kind: "bridge"; callerId: string; sipUri: string }
   | { kind: "drop"; answeredBy: string; userId: string }
-  | { kind: "voicemail"; answeredBy: string; message: string; userId: string }
   | { kind: "hangup"; userId: string; accountEnvironment: string | null };
 
 const AMD_ERROR_CLAIM_STATUSES = [LEAD_STATUS.ERROR] as const;
@@ -231,7 +218,10 @@ async function resolveBridgeContext(
       return { ...replay, userId: lead.userId };
     }
     if (replay?.kind === "voicemail") {
-      return { ...replay, userId: lead.userId };
+      // Compatibility with durable decisions written before carrier synthesis
+      // was retired. Preserve that stored decision as historical evidence, but
+      // never replay its message through Twilio or rewrite what previously ran.
+      return { kind: "drop", answeredBy: replay.answeredBy, userId: lead.userId };
     }
     if (replay?.kind === "bridge") {
       return { kind: "bridge", callerId: replay.callerId, sipUri: replay.sipUri };
@@ -266,29 +256,11 @@ async function resolveBridgeContext(
       throw AppError.serviceUnavailable("The native voice line is not active.");
     }
 
-    const [agent] = await tx
-      .select({ name: schema.agents.name })
-      .from(schema.agents)
-      .where(and(eq(schema.agents.id, lead.agentId), eq(schema.agents.userId, lead.userId)))
-      .limit(1);
-    const [settings] = await tx
-      .select({ businessName: schema.settings.businessName })
-      .from(schema.settings)
-      .where(eq(schema.settings.userId, lead.userId))
-      .limit(1);
-
     const now = new Date();
     const callPurpose = nativeCallPurposeFromMetadata(nativeVoice.call_purpose);
     const telemarketing = isMarketingCallPurpose(callPurpose);
     const amdAction = resolveNativeAmdBridgeAction({ answeredBy, callPurpose });
-    const agentName = agent?.name?.trim() || "BotBound";
-    const businessName = settings?.businessName?.trim() || null;
-    const voicemailMessage = buildOutboundVoicemailMessage(
-      agentName,
-      businessName,
-      formatCallbackNumberForSpeech(callerId),
-      telemarketing,
-    );
+    const effectiveAmdAction = amdAction === "voicemail" ? "drop" : amdAction;
 
     const amdNativeVoice: Record<string, unknown> = {
       ...nativeVoice,
@@ -296,11 +268,12 @@ async function resolveBridgeContext(
       twilio_call_sid: callSid,
       call_purpose: callPurpose,
       answered_by: answeredBy || "unknown",
-      amd_action: amdAction,
+      amd_detected_action: amdAction,
+      amd_action: effectiveAmdAction,
       updated_at: now.toISOString(),
     };
 
-    if (amdAction === "drop") {
+    if (amdAction === "drop" || amdAction === "voicemail") {
       amdNativeVoice.state = "amd_no_message";
       amdNativeVoice.amd_completed_at = now.toISOString();
       amdNativeVoice.twiml_replay = persistOpenAIOutboundTwiMLReplay({
@@ -318,9 +291,12 @@ async function resolveBridgeContext(
           callId: callSid,
           status: dropStatus,
           lastCalledAt: now,
-          lastContactSummary: telemarketing
-            ? "Answering machine detected; no marketing voicemail was left (47 CFR 64.1200(b)(3))."
-            : "Fax or machine detected; the native voice bridge was not started.",
+          lastContactSummary:
+            amdAction === "voicemail"
+              ? "Answering machine detected; no voicemail was left because no approved OpenAI-generated fallback audio is deployed."
+              : telemarketing
+                ? "Answering machine detected; no marketing voicemail was left (47 CFR 64.1200(b)(3))."
+                : "Fax or machine detected; the native voice bridge was not started.",
           metadata: { ...metadata, native_voice: amdNativeVoice },
         })
         .where(
@@ -333,36 +309,6 @@ async function resolveBridgeContext(
         .returning({ id: schema.outboundLeads.id });
       if (!dropped) throw AppError.conflict("Outbound bridge could not claim this lead.");
       return { kind: "drop", answeredBy, userId: lead.userId };
-    }
-
-    if (amdAction === "voicemail") {
-      amdNativeVoice.state = "voicemail_left";
-      amdNativeVoice.amd_completed_at = now.toISOString();
-      amdNativeVoice.twiml_replay = persistOpenAIOutboundTwiMLReplay({
-        callSid,
-        decision: { kind: "voicemail", answeredBy, message: voicemailMessage },
-      });
-      const [left] = await tx
-        .update(schema.outboundLeads)
-        .set({
-          callId: callSid,
-          status: voicemailMessage ? LEAD_STATUS.VOICEMAIL_LEFT : LEAD_STATUS.FAILED,
-          lastCalledAt: now,
-          lastContactSummary: voicemailMessage
-            ? "Left a deterministic identity and callback voicemail. No call context was disclosed."
-            : "Answering machine detected; no voicemail was left.",
-          metadata: { ...metadata, native_voice: amdNativeVoice },
-        })
-        .where(
-          and(
-            eq(schema.outboundLeads.id, lead.id),
-            eq(schema.outboundLeads.userId, lead.userId),
-            inArray(schema.outboundLeads.status, amdClaimStatuses),
-          ),
-        )
-        .returning({ id: schema.outboundLeads.id });
-      if (!left) throw AppError.conflict("Outbound bridge could not claim this lead.");
-      return { kind: "voicemail", answeredBy, message: voicemailMessage, userId: lead.userId };
     }
 
     amdNativeVoice.state = "bridging";
@@ -436,16 +382,6 @@ router.post(
           answeredBy: decision.answeredBy || "unknown",
         });
         res.status(200).send(emptyTwiml());
-        return;
-      }
-      if (decision.kind === "voicemail") {
-        await meterNativeCarrierAttempt(decision.userId, callSid);
-        log.info("Native outbound AMD leaving identity voicemail", {
-          callSidSuffix: callSid.slice(-8),
-          answeredBy: decision.answeredBy || "unknown",
-          messageChars: decision.message.length,
-        });
-        res.status(200).send(voicemailTwiml(decision.message));
         return;
       }
       res.status(200).send(bridgeTwiml({ callerId: decision.callerId, sipUri: decision.sipUri }));

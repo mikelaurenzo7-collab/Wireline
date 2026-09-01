@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
+import { resolveOpenAIAgentVoiceSelection } from "../src/lib/voice/openai-phone-agent-runtime";
+
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("OpenAI runtime cohesion", () => {
@@ -38,7 +40,15 @@ describe("OpenAI runtime cohesion", () => {
 
   it("uses a presenter-specific OpenAI phone fallback", () => {
     const runtime = read("src/lib/voice/openai-phone-agent-runtime.ts");
-    expect(runtime).toContain('voiceProvider?.toLowerCase() === "presenter"');
+    expect(
+      resolveOpenAIAgentVoiceSelection({
+        voiceProvider: " Presenter ",
+        voiceId: "shimmer",
+        phoneVoiceId: "cedar",
+        profile: "warm",
+      }),
+    ).toBe("cedar");
+    expect(runtime).toContain('input.voiceProvider?.trim().toLowerCase() === "presenter"');
     expect(runtime).toContain("runtime.agent.phoneVoiceId");
     expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
   });

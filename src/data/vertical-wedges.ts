@@ -442,7 +442,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Restaurant Bot", href: signupHrefForWedge("restaurants") },
     secondaryCta: BROWSER_DEMO_CTA,
     trustLine:
-      "Callers hear the restaurant identity and approved voice you configure. Custom voice options require explicit speaker consent and provider availability.",
+      "Callers hear the restaurant identity and the built-in OpenAI voice you choose; that speaker stays consistent for the full call.",
     faqs: [
       {
         q: "Will it integrate with Resy, OpenTable, or Tock?",

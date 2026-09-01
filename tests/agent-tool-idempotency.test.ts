@@ -3,7 +3,7 @@ import {
   isIdempotentAgentTool,
   runIdempotentAgentToolCall,
 } from "../src/lib/agent-tool-idempotency";
-import type { ToolCallContext } from "../src/routes/vapi/types";
+import type { ToolCallContext } from "../src/lib/agent-tool-types";
 
 function context(drizzle: unknown): ToolCallContext {
   return {
@@ -58,7 +58,9 @@ describe("live agent tool idempotency", () => {
     });
     const drizzle = { transaction: vi.fn().mockRejectedValue(new Error("audit unavailable")) };
 
-    await expect(runIdempotentAgentToolCall("add_to_dnc", context(drizzle), execute)).resolves.toEqual({
+    await expect(
+      runIdempotentAgentToolCall("add_to_dnc", context(drizzle), execute),
+    ).resolves.toEqual({
       toolCallId: "tool-1",
       result: "+14155551234 is now on the Do Not Call list.",
     });
@@ -80,7 +82,9 @@ describe("live agent tool idempotency", () => {
   });
 
   it("preserves a cached transfer destination without resending the alert", async () => {
-    const execute = vi.fn().mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate transfer" });
+    const execute = vi
+      .fn()
+      .mockResolvedValue({ toolCallId: "tool-1", result: "Duplicate transfer" });
     const output = {
       toolCallId: "tool-1",
       result: "Transferring you now — please hold.",
@@ -134,7 +138,9 @@ describe("live agent tool idempotency", () => {
       execute,
     );
 
-    expect(result.result).toBe("The email was not sent. Reconfirm the address before trying again.");
+    expect(result.result).toBe(
+      "The email was not sent. Reconfirm the address before trying again.",
+    );
     expect(execute).not.toHaveBeenCalled();
   });
 

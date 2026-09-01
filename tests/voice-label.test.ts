@@ -3,11 +3,11 @@ import { resolveVoiceLabel } from "../src/lib/voice-catalog";
 
 describe("resolveVoiceLabel", () => {
   it("turns configured provider ids into friendly workspace labels", () => {
-    expect(resolveVoiceLabel("PNInz6obpgDQGcFmaJgB")).toBe("Adam · Firm & Confident");
-    expect(resolveVoiceLabel("ara")).toBe("Ara · Warm & Professional");
+    expect(resolveVoiceLabel("marin")).toBe("Marin · Natural & Expressive");
+    expect(resolveVoiceLabel("coral")).toBe("Coral · Warm & Conversational");
   });
 
   it("does not expose opaque provider ids to customers", () => {
-    expect(resolveVoiceLabel("owned-voice-opaque-id")).toBe("Custom voice");
+    expect(resolveVoiceLabel("owned-voice-opaque-id")).toBe("Unavailable voice");
   });
 });

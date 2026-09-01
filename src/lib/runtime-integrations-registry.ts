@@ -94,15 +94,6 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     validate: isGatewayCredentialAvailable,
   },
   item(
-    "elevenlabs",
-    "ElevenLabs",
-    "Managed low-latency studio speech and founder-approved private voice cloning.",
-    "voice",
-    false,
-    ["ELEVENLABS_API_KEY"],
-    "Optional voice-preview and approved cloning provider; OpenAI Realtime owns live speech.",
-  ),
-  item(
     "twilio",
     "Twilio",
     "Required production phone-number carrier and two-way SMS layer; WhatsApp remains private beta until an approved sender and templates are live.",

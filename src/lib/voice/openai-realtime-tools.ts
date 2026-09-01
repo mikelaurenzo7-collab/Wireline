@@ -69,16 +69,28 @@ export const OPENAI_REALTIME_WIRELINE_TOOLS: OpenAIRealtimeToolDefinition[] = [
   },
   {
     type: "function",
-    name: "send_follow_up",
-    description: "Send a customer follow-up message through an enabled BotBound messaging channel.",
+    name: "send_text_message",
+    description:
+      "Send a text message or WhatsApp follow-up only after the customer explicitly asks for it or consents during this conversation.",
     parameters: {
       type: "object",
       properties: {
-        channel: { type: "string", enum: ["sms", "email"], description: "Follow-up channel." },
-        message: { type: "string", description: "Message body." },
-        purpose: { type: "string", description: "Why the follow-up is being sent." },
+        to_number: {
+          type: "string",
+          description:
+            "Destination in E.164 format. Omit only when sending to the caller currently on the line.",
+        },
+        channel: {
+          type: "string",
+          enum: ["sms", "whatsapp"],
+          description: "Approved messaging channel.",
+        },
+        message_body: {
+          type: "string",
+          description: "Concise customer-facing message body.",
+        },
       },
-      required: ["channel", "message", "purpose"],
+      required: ["channel", "message_body"],
       additionalProperties: false,
     },
   },

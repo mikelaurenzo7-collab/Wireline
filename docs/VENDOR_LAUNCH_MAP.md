@@ -12,7 +12,7 @@ This document records BotBound's intended production provider roles and the evid
 | Structured reasoning | OpenAI GPT-5.6 Terra managed structured runtime | Vercel AI Gateway, then Gemini |
 | PSTN orchestration | OpenAI Realtime (`gpt-realtime-2.1`) over Twilio SIP | One runtime for founder and customer Bots; no alternate provider fallback |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
-| Managed speech | OpenAI Realtime documented voice roster | ElevenLabs remains studio preview / cloning, never the phone engine |
+| Managed speech | OpenAI Realtime documented voice roster; OpenAI TTS for approved campaign narration | No alternate speech catalog or voice-cloning provider |
 | Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio, ChatGPT, and guest demos use the same server-owned policy as phone calls |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |

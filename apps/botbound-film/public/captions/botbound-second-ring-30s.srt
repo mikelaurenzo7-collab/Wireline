@@ -24,11 +24,11 @@ On-brand. On the second ring. Ready to help.
 
 7
 00:00:08,250 --> 00:00:09,400
-“Thanks for calling Northstar Bakery. How can I help?”
+“Thanks for calling. How can I help?”
 
 8
 00:00:09,400 --> 00:00:10,400
-A real conversation. Not a voicemail maze.
+Configured example. Not a voicemail maze.
 
 9
 00:00:10,400 --> 00:00:11,600
@@ -48,19 +48,19 @@ BotBound: “You’re booked. I just texted the details.”
 
 13
 00:00:15,200 --> 00:00:16,800
-Booked. Confirmed. Logged.
+Configured example. Listen. Decide. Act.
 
 14
 00:00:16,800 --> 00:00:19,000
-Appointment booked. Confirmation sent. Owner updated.
+Capture caller intent. Follow your rules. Move to the next step.
 
 15
 00:00:19,000 --> 00:00:20,800
-The customer moves forward. You never leave the work.
+Your Bot keeps the call moving. You stay in the work.
 
 16
 00:00:22,200 --> 00:00:23,600
-Better every call.
+Better with every review.
 
 17
 00:00:23,600 --> 00:00:25,600
@@ -68,7 +68,7 @@ Build. Train. Launch. Improve.
 
 18
 00:00:26,400 --> 00:00:28,200
-BotBound. Never miss the call that matters.
+BotBound. You can't answer every call. Your Bot can.
 
 19
 00:00:28,200 --> 00:00:29,800

@@ -5,7 +5,7 @@ import {parseSrt} from '@remotion/captions';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const captionsDirectory = join(scriptDirectory, '..', 'public', 'captions');
-const cuts = ['30s', '15s', '6s'];
+const cuts = ['30s', '15s', '10s', '6s'];
 
 const pad = (value, length = 2) => String(value).padStart(length, '0');
 

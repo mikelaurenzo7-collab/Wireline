@@ -117,35 +117,79 @@ describe("sms inbox error honesty", () => {
 
   it("clears the prior transcript before loading a newly selected thread", () => {
     const component = read("src/components/SmsThreads.tsx");
-    const selectionEffect = component.slice(
-      component.indexOf("activeThreadFetchRef.current?.abort()"),
-      component.indexOf("}, [activeId, fetchMessages]);"),
-    );
-    const clearAt = selectionEffect.indexOf(
-      "setMessages([])",
-      selectionEffect.indexOf("if (!activeId)"),
-    );
-    const fetchAt = selectionEffect.indexOf("fetchMessages(activeId");
+    const activeLayoutAnchor = component.indexOf("activeIdRef.current = activeId");
+    const layoutStart = component.lastIndexOf("useLayoutEffect(() => {", activeLayoutAnchor);
+    const layoutEnd = component.indexOf("}, [activeId]);", activeLayoutAnchor);
+    const selectionLayout = component.slice(layoutStart, layoutEnd);
+    const fetchEffect = component.indexOf("useEffect(() => {", layoutEnd);
+    const fetchAt = component.indexOf("fetchMessages(activeId", fetchEffect);
+    const clearAt = component.indexOf("setMessages([])", activeLayoutAnchor);
 
+    expect(layoutStart).toBeGreaterThan(-1);
+    expect(layoutEnd).toBeGreaterThan(activeLayoutAnchor);
     expect(clearAt).toBeGreaterThan(-1);
-    expect(fetchAt).toBeGreaterThan(clearAt);
-    expect(selectionEffect.slice(clearAt, fetchAt)).toContain("setThreadErr(null)");
+    expect(clearAt).toBeLessThan(layoutEnd);
+    expect(fetchAt).toBeGreaterThan(layoutEnd);
+    expect(selectionLayout).toContain("activeThreadFetchRef.current?.abort()");
+    expect(selectionLayout).toContain("setThreadErr(null)");
+    expect(selectionLayout).toContain("setMessagesLoading(Boolean(activeId))");
   });
 
   it("turns ambiguous carrier outcomes into an explicit non-resend state", () => {
     const route = read("src/routes/sms-routes.ts");
     const component = read("src/components/SmsThreads.tsx");
-    const ambiguousStart = component.indexOf('result.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS"');
-    const ordinaryFailure = component.indexOf("if (!response.ok || !result.ok)", ambiguousStart);
-    const ambiguousBranch = component.slice(ambiguousStart, ordinaryFailure);
+    const ambiguousStart = component.indexOf('result?.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS"');
+    const acceptedStart = component.indexOf(
+      "if (response.ok && result?.ok === true)",
+      ambiguousStart,
+    );
+    const rejectionStart = component.indexOf("const definitiveRejection =", acceptedStart);
+    const ambiguousBranch = component.slice(ambiguousStart, acceptedStart);
 
     expect(route).toContain("provider_outcome_ambiguous: result.providerOutcomeAmbiguous");
     expect(route).toContain("do_not_resend: result.doNotResend");
+    expect(route).toContain("reserveSmsSendOperation({");
+    expect(route).toContain("claimSmsProviderAttempt(req.user.id, operation.id)");
+    expect(route).toContain('status: "ambiguous"');
     expect(ambiguousStart).toBeGreaterThan(-1);
-    expect(ordinaryFailure).toBeGreaterThan(ambiguousStart);
+    expect(acceptedStart).toBeGreaterThan(ambiguousStart);
+    expect(rejectionStart).toBeGreaterThan(acceptedStart);
     expect(ambiguousBranch).toContain("Do not resend");
     expect(ambiguousBranch).toContain("message.id !== optimistic.id");
     expect(ambiguousBranch).not.toContain("setReply(body)");
-    expect(component.indexOf("setReply(body)")).toBeGreaterThan(ordinaryFailure);
+    expect(component.indexOf("setReply(body)", rejectionStart)).toBeGreaterThan(rejectionStart);
+    expect(component).toContain('state: "retryable"');
+    expect(component).toContain('state: "ambiguous"');
+    expect(component).toContain('"Idempotency-Key": idempotencyKey');
+  });
+
+  it("clears only proven pre-provider failures while retaining unknown conflict and rate-limit sends", () => {
+    const component = read("src/components/SmsThreads.tsx");
+    const codesStart = component.indexOf("const DEFINITIVE_SMS_PRE_PROVIDER_CODES = new Set([");
+    const codesEnd = component.indexOf("]);", codesStart);
+    const codesBlock = component.slice(codesStart, codesEnd);
+    const definitiveCodes = new Set(
+      Array.from(codesBlock.matchAll(/"([A-Z0-9_]+)"/g), (match) => match[1]),
+    );
+    const definitiveStatuses = new Set([400, 401, 403, 404, 405, 413, 415, 422]);
+    const isDefinitive = (status: number, code: string) =>
+      definitiveCodes.has(code) || definitiveStatuses.has(status);
+
+    expect(codesStart).toBeGreaterThan(-1);
+    expect([...definitiveCodes]).toEqual(
+      expect.arrayContaining([
+        "IDEMPOTENCY_KEY_REUSED",
+        "SMS_THREAD_ROUTING_CONFLICT",
+        "SMS_THREAD_DESTINATION_UNRESOLVED",
+      ]),
+    );
+    expect(isDefinitive(409, "IDEMPOTENCY_KEY_REUSED")).toBe(true);
+    expect(isDefinitive(409, "SMS_THREAD_ROUTING_CONFLICT")).toBe(true);
+    expect(isDefinitive(409, "SMS_THREAD_DESTINATION_UNRESOLVED")).toBe(true);
+    expect(isDefinitive(409, "UNKNOWN_CONFLICT")).toBe(false);
+    expect(isDefinitive(429, "UNKNOWN_RATE_LIMIT")).toBe(false);
+    expect(component).toContain("DEFINITIVE_SMS_PRE_PROVIDER_CODES.has(result.code)");
+    expect(component).not.toMatch(/\[400[^\]]*409/);
+    expect(component).not.toMatch(/\[400[^\]]*429/);
   });
 });

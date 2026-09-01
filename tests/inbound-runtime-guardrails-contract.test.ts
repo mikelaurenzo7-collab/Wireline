@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildOutboundVoicemailMessage } from "../src/lib/voice-agent-profile";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -9,107 +8,87 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  * Inbound and outbound PSTN calls must run the SAME config surface.
  *
  * History this contract prevents from regressing:
- * - systemPromptOverride was documented in schema.ts as replacing the base
- *   identity "at call time" but only the Grok test sandbox read it — real
- *   inbound calls silently dropped the Account Holder's custom prompt.
+ * - systemPromptOverride must reach the shared Realtime instruction composer,
+ *   rather than only a browser test surface.
  * - buildAgentRuntimeContext (disallowed topics, compliance disclosure,
  *   escalation keywords, business hours, personality vibe, voice
  *   consistency) ran only on outbound, so inbound callers could pull the
  *   agent into disallowed topics and after-hours inbound behaved as if the
  *   business were open.
- * - Per-agent llmProvider/llmModel/llmTemperature were honored inbound but
- *   ignored outbound — the same agent got a different brain per direction.
- * - No call had a duration ceiling, so worst-case COGS per call was bounded
- *   only by the Vapi account default.
+ * - No call had a duration ceiling, so worst-case COGS per call was unbounded.
  *
- * Production PSTN is native Twilio + xAI SIP. The Vapi factory remains the
- * rollback assistant builder and is still pinned so that path cannot silently
- * lose guardrails while it exists.
+ * Production PSTN is native Twilio + OpenAI Realtime SIP. Browser and phone
+ * sessions share the same saved identity and voice configuration.
  */
 describe("inbound/outbound runtime parity contract", () => {
-  const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-  const session = read("src/lib/voice/xai-sip-session.ts");
-  const nativeRuntime = read("src/lib/voice/xai-agent-runtime.ts");
+  const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+  const session = read("src/lib/voice/openai-sip-session.ts");
   const admission = read("src/lib/voice/native-inbound-admission.ts");
   const placement = read("src/lib/voice/outbound-call-service.ts");
-  const bridge = read("src/routes/xai-outbound-routes.ts");
+  const bridge = read("src/routes/openai-outbound-routes.ts");
 
   it("inbound factory honors the Account Holder system prompt override", () => {
-    expect(factory).toContain("resolveAssistantBasePrompt");
-    expect(factory).toContain("configured.systemPromptOverride");
-    expect(nativeRuntime).toContain("systemPromptOverride");
-    expect(nativeRuntime).toContain("CUSTOM ROLE INSTRUCTIONS");
+    expect(factory).toContain("trimLine(input.agent.systemPromptOverride, 8_000)");
+    expect(factory).toContain("CUSTOM ROLE INSTRUCTIONS");
+    expect(factory).toContain("systemPromptOverride: schema.agents.systemPromptOverride");
   });
 
   it("inbound factory layers the runtime guardrails like outbound does", () => {
-    expect(factory).toContain("buildAgentRuntimeContext");
-    expect(factory).toContain("disallowed_topics: configured.disallowedTopics");
-    expect(factory).toContain("personality_vibe: configured.personalityVibe");
-    expect(nativeRuntime).toContain("disallowedTopics");
-    expect(nativeRuntime).toContain("personalityVibe");
+    expect(factory).toContain("input.agent.disallowedTopics");
+    expect(factory).toContain("input.agent.personalityVibe");
+    expect(factory).toContain("RUNTIME_ACTION_SAFETY_BLOCK");
+    expect(factory).toContain("RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK");
   });
 
   it("after-hours inbound switches to message-taking instead of pretending to be open", () => {
-    expect(factory).toContain("AFTER-HOURS MODE");
-    expect(factory).toContain("runtime.outOfHoursMessage");
     expect(admission).toContain("after_hours");
     expect(admission).toContain("isWithinBusinessHours");
     expect(admission).toContain("outOfHoursMessage");
+    expect(session).toContain("export function applyInboundAdmission");
     expect(session).toContain("AFTER-HOURS MODE");
   });
 
   it("both call directions carry a hard duration ceiling", () => {
-    expect(factory).toContain("maxDurationSeconds");
-    expect(session).toContain("resolveXAISipSessionMaxSeconds()");
-    expect(bridge).toContain("resolveXAISipSessionMaxSeconds()");
+    expect(session).toContain("resolveOpenAISipSessionMaxSeconds()");
+    expect(bridge).toContain("resolveOpenAISipSessionMaxSeconds()");
   });
 
-  it("outbound respects the per-agent brain as a coherent pair, then tenant defaults", () => {
-    // Rollback Vapi still uses resolveCoherentVoiceModel. Native PSTN is one
-    // Speech-to-Speech roster remains native PSTN; Studio uses OpenAI Realtime.
-    expect(factory).toContain("resolveCoherentVoiceModel(configured, userSettings)");
-    expect(nativeRuntime).toContain("resolveWirelineGrokVoice(runtime.agent.role, profile)");
-    expect(read("src/lib/vapi-client.ts")).not.toContain("resolveCoherentVoiceModel");
+  it("phone and Studio honor the same saved OpenAI voice before role defaults", () => {
+    const studio = read("src/lib/voice/openai-live-agent-service.ts");
+    expect(factory).toContain("parseOpenAIRealtimeVoice(input.voiceId)");
+    expect(factory).toContain("parseOpenAIRealtimeVoice(input.phoneVoiceId)");
+    expect(studio).toContain("parseOpenAIRealtimeVoice(input.voiceId)");
+    expect(studio).toContain("parseOpenAIRealtimeVoice(input.phoneVoiceId)");
+    expect(factory).toContain("OPENAI_REALTIME_DEFAULT_MODEL");
   });
 
-  it("outbound uses native voicemail detection with a deterministic fallback message", () => {
+  it("outbound machine detection drops when no approved OpenAI audio is deployed", () => {
     expect(placement).toContain("machineDetection");
-    expect(bridge).toContain("buildOutboundVoicemailMessage(");
+    expect(bridge).toContain('amdAction === "drop" || amdAction === "voicemail"');
+    expect(bridge).toContain(
+      'const effectiveAmdAction = amdAction === "voicemail" ? "drop" : amdAction',
+    );
+    expect(bridge).toContain("amd_action: effectiveAmdAction");
+    expect(bridge).toContain("no approved OpenAI-generated fallback audio is deployed");
+    expect(bridge).not.toContain("voicemailTwiml");
+    expect(bridge).not.toContain("openai-static-prompts");
     expect(bridge).toContain("AnsweredBy");
     expect(read("src/lib/voice/native-outbound-amd.ts")).toContain("DetectMessageEnd");
   });
 
-  it("voicemail fallback never discloses call context (FDCPA-safe)", () => {
-    const message = buildOutboundVoicemailMessage("Riley");
-    expect(message).toContain("Riley");
-    expect(message).not.toMatch(/debt|invoice|balance|payment|collection/i);
-    // Signature stays context-free: identity + callback inputs only (agent
-    // name, business name, callback number) — never WHY we called.
-    expect(buildOutboundVoicemailMessage.length).toBe(3);
+  it("retains reproducible future OpenAI prompt copy without activating it", () => {
+    const generator = read("scripts/generate-openai-static-prompts.mjs");
+    expect(generator).toContain("openai-outbound-voicemail.mp3");
+    expect(generator).toContain("return the call using the number shown on your caller ID");
+    expect(bridge).not.toContain("openai-outbound-voicemail.mp3");
   });
 
-  it("voicemail fallback states the responsible business and callback number when known", () => {
-    // 64.1200(b)(1)/(b)(2): an artificial-voice answering-machine message must
-    // identify the responsible business and state a callback number — caller
-    // ID is not a statement. Degrades to identity-only when unconfigured.
-    const full = buildOutboundVoicemailMessage("Riley", "Acme Plumbing", "415-555-0134");
-    expect(full).toContain("Riley with Acme Plumbing");
-    expect(full).toContain("reach us at 415-555-0134");
-    // No duplicate naming when the agent is named after the business.
-    const dedup = buildOutboundVoicemailMessage("Acme Plumbing", "Acme Plumbing", null);
-    expect(dedup).not.toContain("with Acme Plumbing");
-    expect(dedup).toContain("reach us back at this number");
-  });
-
-  it("call analysis includes success evaluation on BOTH call directions", () => {
-    // Rollback Vapi still ships one shared analysis plan. Native SIP uses the
-    // same deterministic transcript summary for inbound and outbound so the
-    // two directions cannot drift onto different post-call brains.
-    const profile = read("src/lib/voice-agent-profile.ts");
-    expect(profile).toContain("VAPI_ANALYSIS_PLAN");
-    expect(profile).toContain("successEvaluationPrompt");
-    expect(factory).toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
+  it("both directions use one deterministic summary and durable QA pipeline", () => {
+    const digest = read("src/lib/post-call-digest.ts");
     expect(session).toContain("deterministicSummary(input.transcript)");
-    expect(read("src/lib/vapi-client.ts")).not.toContain("analysisPlan: VAPI_ANALYSIS_PLAN");
+    expect(session).toContain(
+      'direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound"',
+    );
+    expect(digest).toContain('type: "auto_qa_score"');
   });
 });

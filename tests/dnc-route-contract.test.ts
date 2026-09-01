@@ -43,11 +43,11 @@ describe("mid-call DNC termination stays inside one tenant", () => {
     for (const [file, expected] of [
       ["src/routes/compliance-routes.ts", "terminateActiveCallsForNumber(row.phone, req.user.id)"],
       [
-        "src/lib/vapi-handlers.ts",
+        "src/lib/call-dnc-suppression.ts",
         "terminateActiveCallsForNumber(normalizedCallerNumber, input.userId)",
       ],
       [
-        "src/routes/vapi/tool-handlers-core.ts",
+        "src/lib/bot-tools/core.ts",
         "terminateActiveCallsForNumber(normalizedPhone, agent?.user_id)",
       ],
     ] as const) {
@@ -86,7 +86,9 @@ describe("a dnc-classified outcome suppresses the number, not just the lead", ()
   });
 
   it("keeps the transcript-phrase writer as the other independent path", () => {
-    expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
+    expect(read("src/lib/voice/openai-sip-session.ts")).toContain(
+      "persistTranscriptDncSuppression",
+    );
   });
 });
 

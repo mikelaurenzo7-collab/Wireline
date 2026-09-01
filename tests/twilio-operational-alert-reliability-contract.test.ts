@@ -18,7 +18,7 @@ describe("Twilio operational alert reliability contract", () => {
 
   it("correlates staff alerts without creating customer conversation threads", () => {
     const operationalMessaging = read("src/lib/twilio-service-base.ts");
-    const escalation = read("src/routes/escalation-routes.ts");
+    const escalation = read("src/lib/bot-tools/workflow.ts");
 
     expect(operationalMessaging).toContain("persistOperationalAlertCorrelation");
     expect(operationalMessaging).toContain("threadId: null");
@@ -28,7 +28,10 @@ describe("Twilio operational alert reliability contract", () => {
       '{ scope: userId ? "operational" : "operational-system" }',
     );
     expect(operationalMessaging).toContain(".onConflictDoNothing()");
-    expect(escalation).toContain("sendPlatformOperationalAlert(");
+    expect(escalation).toContain("new NotificationService(agent.user_id, agent.id)");
+    expect(escalation).toContain("await notifier.sendUrgentAlert({");
+    expect(read("src/lib/notifications.ts")).toContain("sendManagerAlert");
+    expect(read("src/lib/notifications.ts")).toContain("sendDirectAlert");
     expect(escalation).not.toContain("client.messages.create");
   });
 

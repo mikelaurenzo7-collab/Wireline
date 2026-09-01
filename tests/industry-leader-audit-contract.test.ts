@@ -6,11 +6,27 @@ function read(path: string): string {
 }
 
 describe("industry-leader audit hardening contracts", () => {
-  it("provisions Twilio numbers with voiceFallbackUrl for Vapi resilience", () => {
-    const provisioning = read("src/lib/phone-provisioning.ts");
-    expect(provisioning).toContain("voiceFallbackUrl");
-    expect(provisioning).toContain("/api/twilio-webhook/voice-fallback");
-    expect(provisioning).toContain("voiceFallbackMethod");
+  it("provisions Twilio numbers with signed transfer-or-voicemail continuity", () => {
+    const carrier = read("src/lib/voice/native-phone-carrier.ts");
+    const config = read("src/lib/voice/openai-sip-config.ts");
+    const routes = read("src/routes/openai-inbound-twilio-routes.ts");
+    const shared = read("src/routes/twilio-webhook-base.ts");
+    expect(carrier).toContain("voiceFallbackUrl");
+    expect(carrier).toContain("twilioOpenAIInboundFallbackUrl()");
+    expect(carrier).toContain("voiceFallbackMethod");
+    expect(config).toContain('"/api/twilio-webhook/openai-inbound-fallback"');
+    expect(routes).toContain(
+      'router.post("/api/twilio-webhook/openai-inbound-fallback", handleTwilioVoiceFallback)',
+    );
+    expect(routes).toContain('import { handleTwilioVoiceFallback } from "./twilio-webhook-base"');
+    expect(shared).toContain("export async function handleTwilioVoiceFallback");
+    expect(shared).toContain("if (!verifyTwilioSignature(req))");
+    expect(shared).toContain("await resolveProductionInboundTenant(to, req.path)");
+    expect(shared).toContain('action="/api/twilio-webhook/voice-fallback-complete"');
+    expect(shared).toContain("/sounds/wireline-transfer-chime.wav");
+    expect(shared).toContain("return res.status(200).send(twimlHangup())");
+    expect(shared).not.toContain("failoverVoicemailTwiml");
+    expect(shared).not.toContain("openai-continuity-");
   });
 
   it("never persists undefined Microsoft access tokens on failed refresh", () => {

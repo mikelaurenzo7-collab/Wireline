@@ -14,25 +14,23 @@ stable policy path used by release checklists.
 | Browser/mobile voice | Same-origin BotBound SDP exchange → OpenAI Realtime WebRTC | Studio, ChatGPT, and guest demos share the managed phone policy |
 | SMS | Twilio signed webhooks and Messaging Service/number | Twilio owns sender and carrier delivery only |
 | Presenter/video | Retired live-video compatibility surface | Presenter identity never becomes the phone voice; phone fallback is OpenAI |
-| Studio speech | Server-only ElevenLabs preview/cloning | Never a live phone provider |
+| Studio speech | OpenAI Realtime WebRTC | Same saved 10-voice catalog as phone calls |
 
 ## Available phone voices
 
 Only OpenAI's documented Realtime voices may reach a phone or browser session:
 `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`,
-and `cedar`. `marin` is the default. Invalid, historical, or studio-only voice
-ids normalize at both the application and database boundaries.
+and `cedar`. `marin` is the default. The selected voice stays fixed during an
+active session and may change between sessions. Invalid or historical voice ids
+normalize at the application and database boundaries.
 
-## Clone contract
+## OpenAI-only speech boundary
 
-1. The requester attests that they are the speaker or hold documented authorization and commercial-use rights.
-2. The server validates base64, decoded size, MIME, file signature, and client-measured 10–90 second duration.
-3. Before provider spend, BotBound reserves the sample fingerprint and records consent; concurrent duplicate requests cannot create twice.
-4. Source audio is processed in memory and not retained. Only ownership, fingerprint, authorization, review, and audit evidence remain.
-5. Provider creation is compensated with deletion if ownership finalization fails; unresolved deletion stays visible for an authorized retry.
-6. New clones remain pending review until an authorized founder proof and approval.
-7. Clone approval permits studio generation only. It does not change a Bot's live phone provider.
-8. Revocation clears historical assignments and requests provider deletion without altering the OpenAI phone runtime.
+BotBound has no external voice catalog, cloning provider, or customer
+voice-upload path. Historical voice-provider rows are removed by the release
+migration after a fail-closed empty-table assertion. Reintroducing custom voices
+would be a separate product decision requiring an approved provider capability,
+explicit consent policy, privacy review, and a new release review.
 
 ## Launch acceptance
 
@@ -42,10 +40,10 @@ Before general availability, prove all of the following on the exact release com
 2. Every Twilio voice number points to the OpenAI inbound webhook and fail-closed fallback.
 3. One inbound and one approved outbound call prove disclosure, interruption, voicemail policy, tool use, DNC, transfer, and hangup.
 4. Inbound overflow and insolvency degrade safely instead of running an unmetered full Bot.
-5. ElevenLabs preview and cloning pass separately; no studio voice is written as a phone runtime.
+5. Studio and Quick Deploy expose exactly the 10 built-in OpenAI voices; no external provider record, upload route, or cloning surface remains selectable.
 6. Database RLS, grants, OpenAI normalization trigger, and tenant ownership are verified after migration.
 7. Terms, Privacy, consent UI, audit records, usage limits, provider training controls, and deletion behavior receive final review.
 
 The accurate product promise is:
 
-> Every BotBound phone and browser conversation runs on one managed OpenAI Realtime runtime, with Twilio for carrier transport, numbers, and SMS.
+> Every BotBound phone and browser conversation runs on OpenAI Realtime, with 10 selectable built-in voices and one consistent saved voice per active session. Twilio provides carrier transport, numbers, and SMS.

@@ -1003,6 +1003,7 @@ router.post("/mcp", async (req, res) => {
           sdp: text(args.offer_sdp, 60_000),
           agentName: draft.view.name,
           instructions: draft.runtimeInstructions,
+          voice: draft.voiceId,
           tools: [],
           toolChoice: "none",
           apiKeyPurpose: "chatgpt_demo",

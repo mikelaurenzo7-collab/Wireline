@@ -23,7 +23,7 @@ import {
 } from "./lib/stripe-product-copy.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const API_VERSION = "2026-07-29.dahlia";
+const API_VERSION = "2026-08-26.dahlia";
 const CATALOG_MANIFEST_PATH = join(ROOT, "stripe-catalog-proposal.json");
 const GENERATED_ENV_PATH = join(ROOT, "scripts", ".stripe-env.generated.json");
 

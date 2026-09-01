@@ -15,7 +15,7 @@ import { claimTwilioUsageAlert } from "../lib/twilio-usage-alert-idempotency";
 import { opaqueIdSuffixForLog, phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import baseRouter from "./twilio-webhook-base";
-import { persistInboundSmsEvidence } from "./twilio-webhook-base";
+import { lookupMessagingDestination, persistInboundSmsEvidence } from "./twilio-webhook-base";
 
 const router = Router();
 const LEGACY_OPT_OUT_KEYWORDS = new Set([
@@ -113,30 +113,6 @@ function helpConfirmationTwiml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>BotBound SMS help: reply STOP to opt out or START to opt back in. Contact support@botbound.me for support. Message and data rates may apply.</Message></Response>`;
 }
 
-async function tenantForSender(toValue: string): Promise<string | null> {
-  const normalized = sanitizePhone(String(toValue || "").replace(/^whatsapp:/i, ""));
-  if (!normalized) return null;
-
-  const [line] = await drizzle
-    .select({ userId: schema.phoneNumbers.userId })
-    .from(schema.phoneNumbers)
-    .where(eq(schema.phoneNumbers.phoneNumber, normalized))
-    .limit(1);
-  if (line?.userId) return line.userId;
-
-  const [settings] = await drizzle
-    .select({ userId: schema.settings.userId })
-    .from(schema.settings)
-    .where(
-      or(
-        eq(schema.settings.twilioSmsFromNumber, normalized),
-        eq(schema.settings.twilioWhatsappFromNumber, normalized),
-      ),
-    )
-    .limit(1);
-  return settings?.userId || null;
-}
-
 function resolveConsentControl(
   optOutType: string,
   bodyKeyword: string,
@@ -166,6 +142,8 @@ function resolveConsentControl(
 
 async function persistConsentControl(input: {
   userId: string;
+  agentId: string | null;
+  destinationNumber: string;
   customerNumber: string;
   phoneRaw: string;
   messageSid: string;
@@ -206,6 +184,8 @@ async function persistConsentControl(input: {
       if (existing) {
         await persistInboundSmsEvidence(tx, {
           userId: input.userId,
+          agentId: input.agentId,
+          destinationNumber: input.destinationNumber,
           customerNumber: input.customerNumber,
           body: input.body,
           messageSid: input.messageSid,
@@ -271,6 +251,8 @@ async function persistConsentControl(input: {
 
     await persistInboundSmsEvidence(tx, {
       userId: input.userId,
+      agentId: input.agentId,
+      destinationNumber: input.destinationNumber,
       customerNumber: input.customerNumber,
       body: input.body,
       messageSid: input.messageSid,
@@ -295,11 +277,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
   if (!control) return next();
   if (!evaluateTwilioWebhookAuth(req).ok) return res.status(403).send(emptyTwiml());
 
-  const userId = await tenantForSender(String(req.body?.To || ""));
+  const destination = await lookupMessagingDestination(String(req.body?.To || ""));
+  const userId = destination?.userId ?? null;
   const phoneRaw = String(req.body?.From || "");
   const customerNumber = sanitizePhone(phoneRaw.replace(/^whatsapp:/i, ""));
   const messageSid = String(req.body?.MessageSid || req.body?.SmsSid || "").trim();
-  if (!userId || !customerNumber) return res.status(200).send(emptyTwiml());
+  if (!userId || !destination || !customerNumber) return res.status(200).send(emptyTwiml());
 
   const replyEnvironment = await resolveTwilioInboundEnvironment(userId);
   if (!replyEnvironment.allowed) {
@@ -316,6 +299,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
     try {
       await persistConsentControl({
         userId,
+        agentId: destination.agentId,
+        destinationNumber: destination.destinationNumber,
         customerNumber,
         phoneRaw,
         messageSid,

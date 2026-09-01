@@ -50,9 +50,9 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     expect(matrix).toMatch(
       /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback-complete` \|.*\| Public \(allowlisted\) \|/,
     );
-    // grok-voice-routes.ts -> grok-live-profile-routes.ts.
+    // live-voice-routes.ts -> live-voice-profile-routes.ts.
     expect(matrix).toMatch(
-      /\| grok-live-profile-routes\.ts \| GET \| `\/api\/voice\/live\/profile` \|.*\| Protected \|/,
+      /\| live-voice-profile-routes\.ts \| GET \| `\/api\/voice\/live\/profile` \|.*\| Protected \|/,
     );
   });
 
@@ -68,15 +68,15 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     );
   });
 
-  it("records native xAI SIP ingress as an explicit public security decision", () => {
+  it("records OpenAI Realtime SIP ingress as an explicit public security decision", () => {
     expect(matrix).toMatch(
-      /\| xai-voice-routes\.ts \| POST \| `\/api\/webhooks\/xai\/voice` \|.*\| Public \(allowlisted\) \|/,
+      /\| openai-sip-routes\.ts \| POST \| `\/api\/webhooks\/openai\/realtime` \|.*\| Public \(allowlisted\) \|/,
     );
     expect(matrix).toContain(
-      "xAI Standard Webhooks HMAC + rate limit; inbound native SIP admission",
+      "OpenAI Standard Webhooks HMAC + replay defense; Realtime SIP admission",
     );
     expect(matrix).toMatch(
-      /\| xai-outbound-routes\.ts \| POST \| `\/api\/twilio-webhook\/xai-outbound-bridge` \|.*\| Public \(allowlisted\) \|/,
+      /\| openai-outbound-routes\.ts \| POST \| `\/api\/twilio-webhook\/openai-outbound-bridge` \|.*\| Public \(allowlisted\) \|/,
     );
     expect(matrix).toContain("`POST /api/public/demo-call`");
     expect(matrix).not.toContain("`POST /api/public/demo-vapi/call/web`");

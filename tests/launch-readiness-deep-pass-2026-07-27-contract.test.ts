@@ -7,28 +7,32 @@ const read = (path: string) =>
 
 describe("launch readiness deep pass 2026-07-27", () => {
   it("gates phone claim and search on plan capacity", () => {
-    const carrier = read("src/routes/carrier-routes.ts");
-    const claim = carrier.slice(
-      carrier.indexOf('"/api/phone-numbers/claim"'),
-      carrier.indexOf('"/api/carrier/numbers"'),
-    );
-    expect(claim).toContain("getIncludedPhoneLineSlots(req.user.id)");
-    expect(claim).toContain("PHONE_CAPACITY");
-    expect(claim).toContain("rethrowIfAppError");
-
+    const carrier = read("src/routes/native-phone-routing-routes.ts");
     const search = carrier.slice(
       carrier.indexOf('"/api/phone-numbers/search"'),
       carrier.indexOf('"/api/phone-numbers/claim"'),
     );
     expect(search).toContain("PHONE_CAPACITY_REACHED");
     expect(search).toContain("getIncludedPhoneLineSlots(req.user.id)");
+
+    const claim = carrier.slice(
+      carrier.indexOf('"/api/phone-numbers/claim"'),
+      carrier.indexOf('"/api/phone-numbers/:id"'),
+    );
+    expect(claim).toContain("respondWithProvision(req, res");
+    expect(carrier).toContain("const result = await provisionNativeTenantNumber({");
   });
 
   it("re-checks phone capacity under lock after carrier buy", () => {
-    const provision = read("src/lib/phone-provisioning.ts");
-    expect(provision).toContain("PHONE_CAPACITY_RACE");
-    expect(provision).toContain("Number(held || 0) >= phoneSlots");
-    expect(provision).toContain("compensateProvisionedNumber");
+    const provision = read("src/lib/voice/native-phone-provisioning.ts");
+    const persist = provision.slice(
+      provision.indexOf("async function persistPurchasedNumber"),
+      provision.indexOf("async function activateLine"),
+    );
+    expect(persist).toContain("Number(held || 0) >= input.phoneSlots");
+    expect(persist).toContain('return { kind: "capacity" as const }');
+    expect(provision).toContain('persisted.kind === "capacity" ? "PHONE_CAPACITY_RACE"');
+    expect(provision).toContain("releasePurchasedNativeNumber");
   });
 
   it("retires uncapped Assistants seed", () => {

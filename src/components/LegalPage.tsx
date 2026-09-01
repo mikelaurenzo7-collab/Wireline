@@ -111,7 +111,7 @@ export function TermsOfService() {
     >
       <PageMeta
         title="Terms of Service"
-        description="BotBound's terms of service: acceptable use, authorized synthetic voices, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 1, 2026."
+        description="BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026."
         path="/terms"
       />
 
@@ -173,36 +173,27 @@ export function TermsOfService() {
           regulatory violations.
         </p>
         <p>
-          AI-generated and cloned voices are artificial voices. You must obtain every consent and
-          provide every identification or disclosure required for the call, its purpose, and its
-          recipients. A BotBound feature, safeguard, or default is not legal advice or a substitute
-          for your own compliance review.
+          AI-generated voices are artificial voices. You must obtain every consent and provide every
+          identification or disclosure required for the call, its purpose, and its recipients. A
+          BotBound feature, safeguard, or default is not legal advice or a substitute for your own
+          compliance review.
         </p>
       </Section>
 
-      <Section title="5. Voice Cloning and Synthetic Media">
+      <Section title="5. Synthetic Voice Use">
         <p>
-          You may create or use a custom voice only when you are the speaker or have documented,
-          legally sufficient authorization from the speaker and all rights needed for the intended
-          commercial use. You represent that submitted audio and resulting use do not violate
-          privacy, publicity, biometric, intellectual-property, employment, contract, or other
-          rights.
+          BotBound provides built-in artificial voices from its managed OpenAI voice roster. It does
+          not accept voice-cloning samples or create a private model of a speaker's voice. You
+          remain responsible for every identification, disclosure, and consent required for the
+          calls and messages you configure.
         </p>
         <p>
-          You may not clone or imitate a minor, political candidate or public official, celebrity,
-          or other high-risk voice; bypass a provider verification step; conceal synthetic origin
-          where disclosure is required; or use a synthetic voice for fraud, deception, harassment,
-          impersonation, identity verification, biometric authentication, voter influence,
-          unauthorized transactions, or harm. BotBound may reject, suspend, or delete a voice when
-          authorization, quality, safety, or provider eligibility cannot be verified.
-        </p>
-        <p>
-          You retain your rights in authorized source audio and voice characteristics. You grant
-          BotBound and its voice-processing providers a limited license to process the sample,
-          create and operate a private voice model, generate review audio, and synthesize calls only
-          to provide the service you direct. Withdrawal stops future BotBound use and starts
-          provider deletion; it cannot undo audio already lawfully generated or processing already
-          completed.
+          You may not use synthetic speech for fraud, deception, harassment, impersonation, identity
+          verification, biometric authentication, voter influence, unauthorized transactions, or
+          harm; conceal its synthetic origin where disclosure is required; or configure a Bot to
+          present itself as a minor, political candidate or public official, celebrity, or another
+          real person. BotBound may suspend or restrict a Bot when its use cannot be verified as
+          authorized and lawful.
         </p>
       </Section>
 

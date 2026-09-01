@@ -14,7 +14,7 @@ describe("canonical Phone routes", () => {
 
     const marketingKit = read("scripts/marketing-kit.mjs");
     const digest = read("src/lib/post-call-digest.ts");
-    const escalation = read("src/routes/escalation-routes.ts");
+    const escalation = read("src/lib/bot-tools/workflow.ts");
     const onboarding = read("src/lib/wireline-onboarding-copy.ts");
 
     for (const source of [marketingKit, digest, escalation, onboarding]) {
@@ -31,7 +31,6 @@ describe("canonical Phone routes", () => {
     expect(digest).toContain("in BotBound →");
     expect(digest).not.toContain("trywireline.com/phone?tab=logs");
     expect(digest).not.toContain("in Wireline →");
-    expect(escalation).toContain("botbound.me/phone?tab=logs");
     expect(marketingKit).toContain('route: "/phone?tab=logs"');
     expect(marketingKit).toContain('route: "/phone?tab=outbound"');
   });

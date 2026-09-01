@@ -72,7 +72,7 @@ First motion is 3-5 founder-led design partners with an obvious missed-call or f
 Complementary to PR #1186:
 
 1. Public operating loop is **Build → Train → Launch → Improve**.
-2. Post-create wizard is **Train → Test → Wire**, so private rehearsal happens before paid number provisioning.
+2. Post-create wizard is **Train → Test → Launch**, so private rehearsal happens before paid number provisioning.
 3. `agent_launch_completed` emits only when a line exists and a test started.
 4. Unsubscribe mailto defaults to `unsubscribe@botbound.me`.
 5. Unconfigured Google/Microsoft connect-start returns 503 without env-var names.

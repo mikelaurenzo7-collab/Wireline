@@ -40,18 +40,6 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_webhook_health", userColumns: ["user_id"] },
   { table: "wireline_webhooks", userColumns: ["user_id"] },
   { table: "wireline_intake_keys", userColumns: ["user_id"] },
-  // Purged by owner only. `approved_by` carries ON DELETE RESTRICT while
-  // user_id carries CASCADE; because 0119 declares the CASCADE first, its
-  // trigger has the lower OID and fires first, so the row is gone before the
-  // RESTRICT is evaluated and the user delete succeeds either way. That makes
-  // an explicit `OR approved_by = $1` predicate unnecessary — and unsafe to
-  // add: approval is self-scoped today (voices-routes.ts updates only where
-  // user_id = req.user.id), but if a platform admin is ever allowed to review
-  // another tenant's voice, that predicate would delete the *other* tenant's
-  // row and the revoke trigger would silently reset their live agents. Deleting
-  // by owner keeps this entry correct under either approval model; the worst
-  // case becomes a blocked purge, never another tenant's data loss.
-  { table: "wireline_cloned_voices", userColumns: ["user_id"] },
   { table: "wireline_agent_lessons", userColumns: ["user_id"] },
   { table: "wireline_directives", userColumns: ["user_id"] },
   { table: "wireline_knowledge", userColumns: ["user_id"] },
@@ -61,6 +49,7 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_tenant_email_suppressions", userColumns: ["user_id"] },
   { table: "wireline_email_accounts", userColumns: ["user_id"] },
   { table: "wireline_sms_messages", userColumns: ["user_id"] },
+  { table: "wireline_sms_send_operations", userColumns: ["user_id"] },
   { table: "wireline_sms_threads", userColumns: ["user_id"] },
   { table: "wireline_call_logs", userColumns: ["user_id"] },
   { table: "wireline_outbound_dial_reservations", userColumns: ["user_id"] },
@@ -158,7 +147,9 @@ export const ACCOUNT_DELETION_TABLES: ReadonlyArray<string> = ACCOUNT_DELETION_T
   ({ table }) => table,
 );
 
-type ExecuteResult = { rows?: Array<{ table_exists?: boolean }> };
+type ExecuteResult = {
+  rows?: Array<{ table_exists?: boolean; function_exists?: boolean }>;
+};
 
 async function tableExists(
   tx: { execute: PurgeAccountDeps["db"]["execute"] },
@@ -168,6 +159,16 @@ async function tableExists(
     sql`SELECT to_regclass(${table}) IS NOT NULL AS table_exists`,
   )) as ExecuteResult;
   return Boolean(res.rows?.[0]?.table_exists);
+}
+
+async function functionExists(
+  tx: { execute: PurgeAccountDeps["db"]["execute"] },
+  signature: string,
+): Promise<boolean> {
+  const res = (await tx.execute(
+    sql`SELECT to_regprocedure(${signature}) IS NOT NULL AS function_exists`,
+  )) as ExecuteResult;
+  return Boolean(res.rows?.[0]?.function_exists);
 }
 
 export interface PurgeAccountDeps {
@@ -342,8 +343,6 @@ export interface ExternalReleaseSummary {
   /** Best-effort OAuth provider revoke counts (never blocks purge). */
   oauthRevoked: number;
   oauthAttempted: number;
-  /** Cloned voice models deleted at the provider (erasure evidence). */
-  clonedVoicesDeleted: number;
   /** Managed AgentMail ownership pointers reconciled before local erasure. */
   managedAgentMailAccountsReconciled: number;
   /** BotBound-owned AgentMail inboxes deleted or already absent. */
@@ -412,7 +411,6 @@ async function releaseExternalResourcesOutsideTenantContext(
   let numbersReleased = 0;
   let oauthRevoked = 0;
   let oauthAttempted = 0;
-  let clonedVoicesDeleted = 0;
   let managedAgentMailAccountsReconciled = 0;
   let managedAgentMailInboxesDeleted = 0;
 
@@ -712,36 +710,6 @@ async function releaseExternalResourcesOutsideTenantContext(
     }
   }
 
-  // 2.75 Delete cloned voice models at ElevenLabs while the local rows still
-  //     map voice_id -> tenant. This is the only such mapping: once the purge
-  //     removes wireline_cloned_voices, the model would stay live in Wireline's
-  //     provider account forever, still synthesizable, still billed, and no
-  //     longer attributable to anyone — a permanent orphan of what may be
-  //     biometric data, directly contradicting the erasure promise in the
-  //     privacy policy. Treated like number release rather than OAuth revoke:
-  //     a provider failure DEFERS the purge (throws so the job retries) instead
-  //     of destroying the ids, because there is no ledger to hand them to.
-  const clonedVoiceRows = await db
-    .select({ voiceId: schema.clonedVoices.voiceId })
-    .from(schema.clonedVoices)
-    .where(eq(schema.clonedVoices.userId, userId));
-
-  if (clonedVoiceRows.length) {
-    const { deleteElevenLabsVoice } = await import("./elevenlabs-client");
-    for (const row of clonedVoiceRows) {
-      try {
-        await deleteElevenLabsVoice(row.voiceId);
-        clonedVoicesDeleted++;
-      } catch (err) {
-        log.error("cloned voice provider deletion failed, deferring account purge", {
-          userId,
-          error: getErrorMessage(err),
-        });
-        throw err;
-      }
-    }
-  }
-
   // 2.9 Permanently erase BotBound-owned AgentMail inboxes while the local
   //      managed marker, encrypted sentinel, and exact address still exist.
   //      Provider inventory/delete failures are blocking: deleting the local
@@ -807,7 +775,6 @@ async function releaseExternalResourcesOutsideTenantContext(
     numberErrors,
     oauthRevoked,
     oauthAttempted,
-    clonedVoicesDeleted,
     managedAgentMailAccountsReconciled,
     managedAgentMailInboxesDeleted,
   };
@@ -846,13 +813,14 @@ async function purgeAccountOutsideTenantContext(
       // boundary, while a worker arriving after this lock waits for erasure and
       // then observes that the user/call no longer exists.
       await acquireAccountDeletionFence(tx, userId);
-      // Retained xAI provider registrations outlive the tenant only because
-      // their one-time verification secret cannot be recovered. Remove former
-      // tenant/agent ownership before the user row disappears; unresolved
-      // registrations become non-routable reconciliation records.
-      await tx.execute(
-        sql`SELECT public.wireline_scrub_xai_phone_bindings_for_purge(${userId}::uuid)`,
-      );
+      // During a rolling release, application code can briefly run against the
+      // pre-0172 schema. Scrub its retired provider ledger while the legacy
+      // function exists; once 0172 has removed both, skip the obsolete call.
+      if (await functionExists(tx, "public.wireline_scrub_xai_phone_bindings_for_purge(uuid)")) {
+        await tx.execute(
+          sql`SELECT public.wireline_scrub_xai_phone_bindings_for_purge(${userId}::uuid)`,
+        );
+      }
       for (const target of ACCOUNT_DELETION_TARGETS) {
         if (!(await tableExists(tx, target.table))) {
           log.warn("account purge skipped missing table", { table: target.table, userId });

@@ -47,22 +47,16 @@ describe("regulated runtime hold", () => {
     expect(mobileRoutes).toContain("REGULATED_TEMPLATE_PROVENANCE_PROTECTED");
   });
 
-  it("removes tools and saved greetings from every live voice provider", () => {
-    const vapi = source("../src/lib/vapi-assistant-factory-v2.ts");
-    expect(vapi).toContain("const functionTools = reviewRequired");
-    expect(vapi).toMatch(/reviewRequired\s*\? \[\]/);
-    expect(vapi).toContain("? RUNTIME_REVIEW_REQUIRED_GREETING");
-
-    const openai = source("../src/lib/voice/openai-live-agent-service.ts");
-    expect(openai).toContain("tools: reviewRequired ? [] : LIVE_DEMO_TOOLS");
-    expect(openai).toContain('tool_choice: reviewRequired ? "none" : "auto"');
-    expect(openai).toContain("? RUNTIME_REVIEW_REQUIRED_GREETING");
-    expect(openai).toContain("tools: reviewRequired ? [] : LIVE_DEMO_TOOLS.map");
-
-    const xai = source("../src/lib/voice/xai-agent-runtime.ts");
-    expect(xai).toContain("isSavedRuntimeReviewRequired(runtime.personality");
-    expect(xai).toContain('reviewRequired ? "none" : "auto"');
-    expect(xai).toContain("? RUNTIME_REVIEW_REQUIRED_GREETING");
+  it("checks the review hold before either OpenAI live session is constructed", () => {
+    for (const [path, sessionMarker] of [
+      ["../src/lib/voice/openai-phone-agent-runtime.ts", "const commonSession ="],
+      ["../src/lib/voice/openai-live-agent-service.ts", "const session ="],
+    ] as const) {
+      const runtime = source(path);
+      const guard = runtime.indexOf('throw new AppError(409, "RUNTIME_REVIEW_REQUIRED"');
+      expect(guard, path).toBeGreaterThan(-1);
+      expect(guard, path).toBeLessThan(runtime.indexOf(sessionMarker, guard));
+    }
   });
 
   it("refuses regulated live sessions before any provider call is created", () => {
@@ -73,38 +67,20 @@ describe("regulated runtime hold", () => {
       openai.indexOf("await createServerManagedOpenAIRealtimeCall({"),
     );
 
-    const xai = source("../src/lib/voice/xai-agent-runtime.ts");
-    expect(xai).toContain('throw new AppError(409, "RUNTIME_REVIEW_REQUIRED"');
+    const phoneRuntime = source("../src/lib/voice/openai-phone-agent-runtime.ts");
+    const phoneGuard = phoneRuntime.indexOf('throw new AppError(409, "RUNTIME_REVIEW_REQUIRED"');
+    expect(phoneGuard).toBeGreaterThan(-1);
+    expect(phoneGuard).toBeLessThan(phoneRuntime.indexOf("const commonSession =", phoneGuard));
 
-    const xaiWebhook = source("../src/routes/xai-voice-routes.ts");
-    const xaiWebhookGuard = xaiWebhook.indexOf("if (agentContext.reviewRequired)");
-    expect(xaiWebhookGuard).toBeGreaterThan(-1);
-    expect(xaiWebhookGuard).toBeLessThan(
-      xaiWebhook.indexOf("const sessionLease = await acquireAccountOperationLease"),
-    );
-    expect(xaiWebhook.slice(xaiWebhookGuard, xaiWebhookGuard + 1_200)).toContain(
-      "await hangupXAISipCall(callId)",
-    );
-
-    const xaiActivation = source("../src/lib/voice/xai-phone-activation-service.ts");
-    const environmentGuard = xaiActivation.indexOf("await assertLiveExternalActionAllowed");
-    const activationGuard = xaiActivation.lastIndexOf("isSavedRuntimeReviewRequired(");
-    expect(environmentGuard).toBeGreaterThan(-1);
-    expect(activationGuard).toBeGreaterThan(-1);
-    expect(environmentGuard).toBeLessThan(activationGuard);
-    expect(activationGuard).toBeLessThan(
-      xaiActivation.indexOf("await runTenantProviderWorkWithDeletionFence", activationGuard),
-    );
-
-    const studioVapi = source("../src/lib/voice/studio-vapi-web-session.ts");
-    const studioGuard = studioVapi.indexOf("if (isSavedRuntimeReviewRequired");
-    expect(studioGuard).toBeGreaterThan(-1);
-    expect(studioGuard).toBeLessThan(studioVapi.indexOf('fetch("https://api.vapi.ai/call/web"'));
-
-    const vapiRoute = source("../src/routes/vapi-v2.ts");
-    const pstnGuard = vapiRoute.indexOf("isSavedRuntimeReviewRequired(");
-    expect(pstnGuard).toBeGreaterThan(-1);
-    expect(pstnGuard).toBeLessThan(vapiRoute.indexOf("await buildVapiAssistant({"));
+    const sipRoute = source("../src/routes/openai-sip-routes.ts");
+    const runtimeBuild = sipRoute.indexOf("await buildOpenAIRealtimeAgentRuntime({");
+    const reject = sipRoute.indexOf("await rejectCall(callId, 603)", runtimeBuild);
+    const lease = sipRoute.indexOf("await acquireAccountOperationLease({", runtimeBuild);
+    const accept = sipRoute.indexOf("await acceptCall(callId", runtimeBuild);
+    expect(runtimeBuild).toBeGreaterThan(-1);
+    expect(reject).toBeGreaterThan(runtimeBuild);
+    expect(lease).toBeGreaterThan(reject);
+    expect(accept).toBeGreaterThan(lease);
   });
 
   it("returns a neutral hold before either structured rehearsal invokes a provider", () => {

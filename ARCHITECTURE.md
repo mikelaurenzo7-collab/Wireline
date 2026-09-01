@@ -24,7 +24,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 | Entry                | `src/main.tsx`                                                                                                                                                                        |
 | Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                                                             |
 | Session boundary     | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx`                                                                                                             |
-| Overview             | `src/pages/OverviewPage.tsx`                                                                                                                                                          |
+| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` resolve to `/studio`                                                            |
 | Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                                                               |
 | Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
 | Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |
@@ -71,16 +71,17 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
   - Every browser and phone conversation uses OpenAI Realtime (`gpt-realtime-2.1`). The founder showcase fleet and customer Bots share the same runtime authority and have no alternate call provider.
+  - Customers can choose any of the 10 built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, or Cedar. The saved voice is fixed for an active session and may be changed between sessions. Browser previews and phone calls resolve the same saved OpenAI voice, including the phone fallback for legacy presenter records.
   - Twilio owns numbers, PSTN transport, signed voice/SMS callbacks, opt-out enforcement, delivery callbacks, and the two-way messaging inbox. Inbound calls reach a signed BotBound TwiML webhook and bridge to `sip:<OPENAI_PROJECT_ID>@sip.api.openai.com;transport=tls`; outbound calls ring the customer through Twilio before the same OpenAI SIP bridge.
   - OpenAI signs `realtime.call.incoming` at `/api/webhooks/openai/realtime`; BotBound accepts the call with the selected Bot runtime and maintains the server-side sideband tool session.
   - Studio live tests, guest demos, and hosted MCP private simulation use server-mediated OpenAI Realtime WebRTC. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser.
-  - ElevenLabs is studio preview and authorized voice-cloning infrastructure only. It is never a phone runtime or fallback.
+  - BotBound has no external voice-cloning provider or customer voice-upload path. Historical provider tables are removed by migration; only OpenAI's built-in voice roster is selectable.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides).
   - Continuity: Vercel AI Gateway, then Gemini.
   - Every Bot and call direction shares this same managed chain; roles and use cases change configuration, not the provider default or product mode.
-  - ElevenLabs is optional studio preview/cloning infrastructure, not a reasoning or phone runtime.
+  - Speech generation and live-call voice remain OpenAI-owned; structured continuity never changes the selected speaker.
 - **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.
 - **Browser extension:** BotBound Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
 - **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.

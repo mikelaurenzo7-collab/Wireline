@@ -9,102 +9,120 @@ beforeEach(() => {
   delete process.env.WIRELINE_SHOWCASE_CALLER_DAILY_CALL_CEILING;
 });
 
-async function loadModule(rateLimitImpl: (key: string, opts: unknown) => Promise<unknown>) {
-  vi.doMock("../src/lib/rate-limit", () => ({ rateLimit: vi.fn(rateLimitImpl) }));
-  vi.doMock("../src/lib/server-context", () => ({ log: { error: vi.fn(), warn: vi.fn() } }));
+async function loadModule(input: {
+  limiterAvailable?: boolean;
+  rateLimitImpl?: (key: string, opts: unknown) => Promise<unknown>;
+}) {
+  const rateLimit = vi.fn(
+    input.rateLimitImpl || (async () => ({ allowed: true, remaining: 10, resetMs: 1_000 })),
+  );
+  vi.doMock("../src/lib/rate-limit", () => ({
+    distributedLimiterStatus: vi.fn(() =>
+      input.limiterAvailable === false
+        ? { ok: false, code: "RATE_LIMITER_UNAVAILABLE", reason: "Redis is unavailable" }
+        : { ok: true },
+    ),
+    rateLimit,
+  }));
+  vi.doMock("../src/lib/server-context", () => ({
+    log: { error: vi.fn(), warn: vi.fn() },
+  }));
   const { admitShowcaseDemoCall } = await import("../src/lib/showcase-demo-ceiling");
-  const { rateLimit } = await import("../src/lib/rate-limit");
   return { admitShowcaseDemoCall, rateLimit };
 }
 
-describe("showcase demo aggregate ceiling", () => {
-  it("admits under both ceilings and charges both buckets", async () => {
-    const { admitShowcaseDemoCall, rateLimit } = await loadModule(async () => ({
-      allowed: true,
-      remaining: 10,
-      resetMs: 1000,
-    }));
-    const admission = await admitShowcaseDemoCall("+15550001111");
-    expect(admission).toEqual({ admitted: true });
-    const buckets = vi
-      .mocked(rateLimit)
-      .mock.calls.map(([, opts]) => (opts as { bucket: string }).bucket);
-    expect(buckets).toEqual(["showcase:demo-daily", "showcase:demo-caller-daily"]);
+describe("public showcase aggregate admission", () => {
+  it("admits under both daily ceilings and charges both buckets", async () => {
+    const { admitShowcaseDemoCall, rateLimit } = await loadModule({});
+    await expect(admitShowcaseDemoCall("+15550001111")).resolves.toEqual({ admitted: true });
+    expect(rateLimit.mock.calls.map(([, opts]) => (opts as { bucket: string }).bucket)).toEqual([
+      "showcase:demo-daily",
+      "showcase:demo-caller-daily",
+    ]);
+    expect(
+      rateLimit.mock.calls.every(
+        ([, opts]) => (opts as { failClosedOnError?: boolean }).failClosedOnError,
+      ),
+    ).toBe(true);
   });
 
-  it("refuses at the global daily ceiling before any caller bucket spend", async () => {
-    const { admitShowcaseDemoCall, rateLimit } = await loadModule(async () => ({
-      allowed: false,
-      remaining: 0,
-      resetMs: 1000,
-    }));
-    const admission = await admitShowcaseDemoCall("+15550001111");
-    expect(admission).toEqual({ admitted: false, reason: "global_daily_ceiling" });
-    expect(vi.mocked(rateLimit).mock.calls.length).toBe(1);
-  });
-
-  it("refuses a single caller farming the line", async () => {
-    const { admitShowcaseDemoCall } = await loadModule(async (_key, opts) => ({
-      allowed: (opts as { bucket: string }).bucket === "showcase:demo-daily",
-      remaining: 0,
-      resetMs: 1000,
-    }));
-    const admission = await admitShowcaseDemoCall("+15550001111");
-    expect(admission).toEqual({ admitted: false, reason: "caller_daily_ceiling" });
-  });
-
-  it("skips the caller bucket when no caller number is present", async () => {
-    const { admitShowcaseDemoCall, rateLimit } = await loadModule(async () => ({
-      allowed: true,
-      remaining: 10,
-      resetMs: 1000,
-    }));
-    const admission = await admitShowcaseDemoCall(null);
-    expect(admission).toEqual({ admitted: true });
-    expect(vi.mocked(rateLimit).mock.calls.length).toBe(1);
-  });
-
-  it("fails open on limiter outage — the marketing line stays answerable", async () => {
-    const { admitShowcaseDemoCall } = await loadModule(async () => {
-      throw new Error("redis down");
+  it("refuses at the global ceiling before charging a caller bucket", async () => {
+    const { admitShowcaseDemoCall, rateLimit } = await loadModule({
+      rateLimitImpl: async () => ({ allowed: false, remaining: 0, resetMs: 1_000 }),
     });
-    const admission = await admitShowcaseDemoCall("+15550001111");
-    expect(admission).toEqual({ admitted: true });
+    await expect(admitShowcaseDemoCall("+15550001111")).resolves.toEqual({
+      admitted: false,
+      reason: "global_daily_ceiling",
+    });
+    expect(rateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("refuses one caller farming the public lines", async () => {
+    const { admitShowcaseDemoCall } = await loadModule({
+      rateLimitImpl: async (_key, opts) => ({
+        allowed: (opts as { bucket: string }).bucket === "showcase:demo-daily",
+        remaining: 0,
+        resetMs: 1_000,
+      }),
+    });
+    await expect(admitShowcaseDemoCall("+15550001111")).resolves.toEqual({
+      admitted: false,
+      reason: "caller_daily_ceiling",
+    });
+  });
+
+  it("keeps the global ceiling when the carrier omits caller identity", async () => {
+    const { admitShowcaseDemoCall, rateLimit } = await loadModule({});
+    await expect(admitShowcaseDemoCall(null)).resolves.toEqual({ admitted: true });
+    expect(rateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed when distributed limiting is absent or errors", async () => {
+    const unavailable = await loadModule({ limiterAvailable: false });
+    await expect(unavailable.admitShowcaseDemoCall("+15550001111")).resolves.toEqual({
+      admitted: false,
+      reason: "limiter_unavailable",
+    });
+    expect(unavailable.rateLimit).not.toHaveBeenCalled();
+
+    const failed = await loadModule({
+      rateLimitImpl: async () => {
+        throw new Error("redis down");
+      },
+    });
+    await expect(failed.admitShowcaseDemoCall("+15550001111")).resolves.toEqual({
+      admitted: false,
+      reason: "limiter_unavailable",
+    });
   });
 });
 
-describe("showcase demo ceiling wiring contract", () => {
-  const vapi = read("src/routes/vapi-v2.ts");
-  const assistantRequestBranch = vapi.slice(
-    vapi.indexOf('showcaseRoute && message?.type === "assistant-request"'),
-    vapi.indexOf('showcaseRoute && message?.type === "tool-calls"'),
+describe("OpenAI showcase admission wiring", () => {
+  const routes = read("src/routes/openai-sip-routes.ts");
+  const incoming = routes.slice(
+    routes.indexOf('"/api/webhooks/openai/realtime"'),
+    routes.indexOf("export default router"),
   );
 
-  it("admits before any assistant spend and refuses with the bounded assistant", () => {
-    expect(assistantRequestBranch).toContain("admitShowcaseDemoCall");
-    expect(assistantRequestBranch.indexOf("admitShowcaseDemoCall")).toBeLessThan(
-      assistantRequestBranch.indexOf("buildShowcaseAssistantPayload"),
-    );
-    expect(assistantRequestBranch).toContain("buildShowcaseAtCapacityAssistant");
-    // The refusal path keeps recordings off like the full demo path.
-    expect(assistantRequestBranch.split("buildVapiTranscriptOnlyArtifactPlan()").length).toBe(3);
+  it("authenticates, admits, and denies before seeding or runtime/provider work", () => {
+    const verification = incoming.indexOf("verifyStandardWebhook({");
+    const unauthorized = incoming.indexOf("if (!verification.ok)", verification);
+    const admission = incoming.indexOf("await admitShowcaseDemoCall(callerNumber)", unauthorized);
+    const context = incoming.indexOf("await resolveInboundContext", admission);
+    const runtime = incoming.indexOf("await buildOpenAIRealtimeAgentRuntime", context);
+    const acceptance = incoming.indexOf("await acceptCall", runtime);
+    expect(verification).toBeGreaterThan(-1);
+    expect(unauthorized).toBeGreaterThan(verification);
+    expect(admission).toBeGreaterThan(unauthorized);
+    expect(context).toBeGreaterThan(admission);
+    expect(runtime).toBeGreaterThan(context);
+    expect(acceptance).toBeGreaterThan(runtime);
+    expect(incoming.slice(admission, context)).toContain("await rejectCall(callId, 486)");
+    expect(incoming.slice(admission, context)).toContain("handled: false");
   });
 
-  it("keeps the refusal assistant bounded: short, tool-free, webhook-free", () => {
-    const showcase = read("src/lib/showcase-assistant.ts");
-    const builder = showcase.slice(
-      showcase.indexOf("export function buildShowcaseAtCapacityAssistant"),
-      showcase.indexOf("maxDurationSeconds: 45") + 40,
-    );
-    expect(builder).toContain("maxDurationSeconds: 45");
-    expect(builder).not.toContain("tools");
-    expect(builder).not.toContain("buildVapiServerConfig");
-    expect(builder).not.toContain("analysisPlan");
-  });
-
-  it("keeps the full demo assistant's per-call COGS cap in place", () => {
-    // The aggregate ceiling complements the per-call cap; neither replaces
-    // the other.
-    expect(read("src/lib/showcase-assistant.ts")).toContain("maxDurationSeconds: 600");
+  it("keeps the OpenAI SIP session's enforced per-call duration ceiling", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(session).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
   });
 });

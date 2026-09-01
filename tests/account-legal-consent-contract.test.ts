@@ -98,15 +98,9 @@ describe("account legal-consent evidence contract", () => {
 
   it("keeps voice conversion on the consent-bearing signup page", () => {
     const showcaseAssistant = read("src/lib/showcase-assistant.ts");
-    const toolHandlers = read("src/lib/vapi-tool-handlers.ts");
-    const coreRoute = read("src/routes/vapi/tool-handlers-core.ts");
-    const showcaseRoute = read("src/routes/vapi/showcase-handlers.ts");
-    const voiceAccountCreationSurface = [
-      showcaseAssistant,
-      toolHandlers,
-      coreRoute,
-      showcaseRoute,
-    ].join("\n");
+    const toolHandlers = read("src/lib/agent-tool-dispatch.ts");
+    const coreRoute = read("src/lib/bot-tools/core.ts");
+    const voiceAccountCreationSurface = [showcaseAssistant, toolHandlers, coreRoute].join("\n");
 
     expect(showcaseAssistant).toContain('"send_signup_link"');
     expect(showcaseAssistant).toContain("send the signup link");

@@ -7,12 +7,16 @@ function read(relativePath: string) {
 }
 
 describe("OpenAI Realtime voice routing contracts", () => {
-  it("preserves phone voice on presenter PATCH unless explicitly overridden", () => {
+  it("makes every successful voice PATCH a one-way migration to canonical OpenAI voice", () => {
     const routes = read("src/routes/agent-routes-v2.ts");
+    expect(routes).toContain('requestedProvider !== "openai"');
+    expect(routes).toContain("normalizeManagedOpenAIVoiceId(requestedVoiceId)");
     expect(routes).toContain("hasPhoneVoiceId");
     expect(routes).toContain("hasPhoneVoiceProvider");
-    expect(routes).toContain("defaultPresenterPhoneVoicePayload");
-    expect(routes).toContain('provider !== "presenter"');
+    expect(routes).toContain('voiceProvider: "openai"');
+    expect(routes).toContain("phoneVoiceId: null");
+    expect(routes).toContain("phoneVoiceProvider: null");
+    expect(routes).not.toContain("defaultPresenterPhoneVoicePayload");
     expect(routes).not.toContain(
       'if (provider === "presenter" || phoneVoiceId || phoneVoiceProviderRaw)',
     );
@@ -60,7 +64,8 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(policy).toContain('carrier: "twilio"');
     expect(policy).toContain("fallbackRuntime: null");
     expect(runtime).toContain("buildOpenAIRealtimeAgentRuntime");
-    expect(runtime).toContain('runtime.agent.voiceProvider?.toLowerCase() === "presenter"');
+    expect(runtime).toContain("resolveOpenAIAgentVoiceSelection");
+    expect(runtime).toContain('input.voiceProvider?.trim().toLowerCase() === "presenter"');
     expect(runtime).toContain("runtime.agent.phoneVoiceId");
     expect(runtime).toContain("normalizeOpenAIRealtimeVoice");
     expect(inbound).toContain('"/api/twilio-webhook/openai-inbound"');
@@ -78,15 +83,23 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(lease).toBeGreaterThan(admission);
     expect(reserve).toBeGreaterThan(lease);
     expect(accept).toBeGreaterThan(reserve);
-    expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(/api\.vapi\.ai|api\.x\.ai/i);
+    expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(
+      /api\.vapi\.ai|api\.x\.ai/i,
+    );
   });
 
   it("routes Studio phone picks through the managed voice PATCH", () => {
     const picker = read("src/components/voice/SimpleVoicePicker.tsx");
+    const selection = picker.slice(
+      picker.indexOf("async function selectVoice"),
+      picker.indexOf("function renderVoice"),
+    );
     expect(picker).toContain("/voice");
     expect(picker).toContain("OPENAI_REALTIME_VOICES");
     expect(picker).toContain("voice.provider");
-    expect(picker).not.toContain('provider: "presenter"');
+    expect(selection).toContain('JSON.stringify({ voiceId: voice.id, provider: "openai" })');
+    expect(selection).not.toContain("phoneVoiceId: voice.id");
+    expect(selection).not.toContain("phoneVoiceProvider: voice.provider");
   });
 });
 
@@ -135,8 +148,8 @@ describe("ChatGPT private voice simulation routing", () => {
 
   it("fails a misconfigured default voice back to a supported GA voice", () => {
     const openaiConfig = read("src/lib/voice/openai-realtime-config.ts");
-    expect(openaiConfig).toContain("supportedVoices.includes(configuredDefault)");
-    expect(openaiConfig).toContain(': "marin";');
+    expect(openaiConfig).toContain("parseOpenAIRealtimeVoice(OPENAI_REALTIME_DEFAULT_VOICE)");
+    expect(openaiConfig).toContain('|| "marin"');
   });
 
   it("keeps OPENAI_API_KEY_CHATKIT documented alongside OPENAI_API_KEY", () => {

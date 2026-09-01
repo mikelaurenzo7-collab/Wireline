@@ -3,8 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
-/** Collapse whitespace so an assertion survives a Prettier reflow. */
-const flat = (path: string) => read(path).replace(/\s+/g, " ");
 
 // Pins the 2026-08-15 full-surface audit fixes. Every block below closed a
 // silent data-loss or dead-code defect: a feature that shipped, was paid for,
@@ -18,8 +16,8 @@ describe("live-voice knowledge retrieval", () => {
     // Entries were truncated to 900 chars BEFORE scoring, so anything
     // documented past the first ~900 characters of a Training entry scored
     // zero and was dropped: the agent said it had no approved answer while
-    // the answer sat in its own knowledge base. Same defect the Vapi phone
-    // path already fixed in excerptAroundMatch.
+    // the answer sat in its own knowledge base. The PSTN path already uses
+    // excerptAroundMatch, so the browser live-voice path must stay aligned.
     expect(live).toContain("function excerptAroundMatch(");
     expect(live).toContain("MAX_LIVE_KB_RESULT_CHARS");
     // The snippet set that feeds scoring must not be pre-truncated.
@@ -33,61 +31,62 @@ describe("live-voice knowledge retrieval", () => {
 });
 
 describe("call-log reliability truth", () => {
-  const handlers = read("src/lib/vapi-handlers.ts");
+  const handlers = read("src/lib/voice/openai-sip-session.ts");
 
-  it("the outbound placeholder finalize merges reliability instead of zeroing it", () => {
-    // Outbound calls own a placeholder row from dial time, so
-    // recordToolCallBatch/recordEscalationOutcome write live counters straight
-    // onto that row and the staging table stays empty. Writing `staged ?? 0`
-    // over it erased every tool call and escalation captured during the call.
-    expect(handlers).toContain("const reliabilityPatch = stagedReliability");
-    expect(handlers).toContain("...reliabilityPatch,");
-    expect(handlers).toContain("COALESCE(${schema.callLogs.toolCallsTotal}, 0) +");
-    expect(handlers).toContain("COALESCE(${schema.callLogs.escalationAttempted}, false) OR");
-    // The finalize UPDATE must no longer set these columns unconditionally.
-    const finalizeIdx = handlers.indexOf("const finalized = await drizzle");
-    const whereIdx = handlers.indexOf(".where(", finalizeIdx);
-    expect(finalizeIdx).toBeGreaterThan(0);
-    expect(handlers.slice(finalizeIdx, whereIdx)).not.toContain(
-      "toolCallsTotal: stagedReliability?.toolCallsTotal ?? 0",
+  it("the claimed OpenAI call row receives the session's terminal reliability outcome", () => {
+    const claimIdx = handlers.indexOf("callLogId = await claimCall(input)");
+    const sessionIdx = handlers.indexOf("outcome = await runRealtimeSession(input, runtime)");
+    const finalizerIdx = handlers.indexOf("async function persistFinishedCall");
+    const enqueueIdx = handlers.indexOf("await enqueuePostCallDigest(", finalizerIdx);
+    expect(claimIdx).toBeGreaterThan(0);
+    expect(sessionIdx).toBeGreaterThan(claimIdx);
+    expect(finalizerIdx).toBeGreaterThan(0);
+    expect(enqueueIdx).toBeGreaterThan(finalizerIdx);
+    const terminalWrite = handlers.slice(finalizerIdx, enqueueIdx);
+    expect(terminalWrite).toContain("toolCallsTotal: input.toolCallsTotal");
+    expect(terminalWrite).toContain("toolCallsFailed: input.toolCallsFailed");
+    expect(terminalWrite).toContain(
+      "COALESCE(${schema.callLogs.escalationAttempted}, false) OR ${input.escalationAttempted}",
     );
+    expect(terminalWrite).toContain(
+      "COALESCE(${schema.callLogs.escalationSucceeded}, false) OR ${input.escalationSucceeded}",
+    );
+    expect(terminalWrite).not.toContain("stagedReliability?.toolCallsTotal ?? 0");
   });
 
   it("call.escalated fires off the recorded escalation, not an impossible intent label", () => {
     // intent_label is a constrained enum ("high" | "medium" | "low" | "none"),
     // so `intent === "escalation"` could never be true: the documented
-    // call.escalated webhook and the Slack escalation alert were unreachable
-    // for every tenant since they shipped.
+    // call.escalated webhook was unreachable for every tenant since it shipped.
     expect(read("src/lib/ai-brains.ts")).toContain('enum: ["high", "medium", "low", "none"]');
-    expect(handlers).not.toContain('intent === "escalation"');
-    expect(handlers).toContain("if (escalationOutcome.attempted) {");
-    expect(handlers).toContain("escalation_succeeded: escalationOutcome.succeeded");
-    // The outcome is read back from the same write that persisted it.
-    expect(handlers).toContain("escalationAttempted: schema.callLogs.escalationAttempted");
+    const digest = read("src/lib/post-call-digest.ts");
+    const legacyWorker = read("src/lib/job-worker-base.ts");
+    expect(legacyWorker).not.toContain('intent === "escalation"');
+    expect(digest).toContain("if (!input.escalationAttempted) return null");
+    expect(digest).toContain("escalation_succeeded: Boolean(input.escalationSucceeded)");
+    // The durable workflow rehydrates both values from the tenant-scoped call row.
+    expect(digest).toContain("escalationAttempted: schema.callLogs.escalationAttempted");
+    expect(digest).toContain("escalationSucceeded: schema.callLogs.escalationSucceeded");
+    expect(digest).toContain('"escalationWebhook",');
+    expect(digest).toContain("enqueueCallEscalatedWebhookOnce({");
   });
 });
 
-describe("suspended tenant compliance evidence", () => {
-  const webhook = read("src/routes/vapi-v2.ts");
+describe("suspended-line compliance evidence", () => {
+  const admission = read("src/lib/voice/native-inbound-admission.ts");
+  const session = read("src/lib/voice/openai-sip-session.ts");
 
   it("a suspended line still logs its calls and captures opt-outs", () => {
-    // A suspended line still answers (with the suspension assistant), so a
-    // real call happens. 403-ing its end-of-call-report threw away the call
-    // log, the transcript DNC/opt-out capture, and the TCPA evidence. A legal
-    // opt-out is not conditional on billing state.
-    expect(webhook).toContain("isVapiTenantEvidenceMessage");
-    expect(flat("src/routes/vapi-v2.ts")).toContain(
-      "Evidence callbacks remain accepted. A suspended line still answers",
-    );
-    // Everything else on a suspended line stays denied.
-    expect(webhook).toContain(
-      'return res.status(403).json({ code: "ERROR", error: "Access Denied" });',
-    );
+    expect(admission).toContain('mode: "suspended"');
+    expect(session).toContain('hangupAfterOpening = inboundAdmissionMode(input) === "suspended"');
+    expect(session).toContain("persistFinishedCall({");
+    expect(session).toContain("persistTranscriptDncSuppression({");
+    expect(session).toContain('endedReason = "line-suspended"');
   });
 });
 
 describe("voice bookings are real records", () => {
-  const calendar = read("src/routes/vapi/tool-handlers-calendar.ts");
+  const calendar = read("src/lib/bot-tools/calendar.ts");
 
   it("a booked appointment is persisted, not only pushed to the tenant's calendar", () => {
     // bookAppointment only reached Google/Microsoft. Nothing wrote
@@ -128,9 +127,12 @@ describe("SMS reply failure reasons", () => {
     // Carrier rejections ride `reason` on a 200; compliance stops (DNC,
     // federal DNC unconfigured) throw an AppError and ride `error`. Reading
     // only `reason` turned every compliance block into a bare "Send failed".
-    expect(threads).toContain("if (!response.ok || !result.ok) {");
     expect(threads).toContain(
-      'throw new Error(result.reason || result.error || "Text could not be sent.");',
+      'const message = result?.reason || result?.error || "Text could not be sent.";',
+    );
+    expect(threads).toContain("setThreadErr(message)");
+    expect(threads).toContain(
+      'toastError(definitiveRejection ? "SMS send rejected" : "SMS send interrupted", message)',
     );
   });
 });

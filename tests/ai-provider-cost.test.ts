@@ -94,7 +94,7 @@ describe("provider-reported AI cost normalization", () => {
       const record = recordWithCost(raw);
 
       expect(resolveRuntimeCallCost(record)).toEqual({
-        costUsd: 0.004,
+        costUsd: 0.0032,
         costBasis: "catalog_estimate",
       });
       await expect(
@@ -107,12 +107,12 @@ describe("provider-reported AI cost normalization", () => {
 
       expect(mocks.insertedRows).toEqual([
         expect.objectContaining({
-          costUsd: "0.004",
+          costUsd: "0.0032",
           metadata: { cost_basis: "catalog_estimate" },
         }),
       ]);
-      expect(mocks.recordDailySpend).toHaveBeenCalledWith(0.004);
-      expect(mocks.evaluateSpend).toHaveBeenCalledWith("user-1", 0.004);
+      expect(mocks.recordDailySpend).toHaveBeenCalledWith(0.0032);
+      expect(mocks.evaluateSpend).toHaveBeenCalledWith("user-1", 0.0032);
     },
   );
 

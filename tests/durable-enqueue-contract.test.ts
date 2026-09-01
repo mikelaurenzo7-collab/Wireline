@@ -107,11 +107,21 @@ describe("durable enqueue failure contract", () => {
   it("does not acknowledge OpenAI SIP finalization before durable follow-up enqueue", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     const persist = session.indexOf("async function persistFinishedCall");
-    const enqueue = session.indexOf("enqueuePostCallDigest({", persist);
-    const awaitPersist = session.indexOf("await persistFinishedCall({", enqueue);
+    const transaction = session.indexOf("await drizzle.transaction(async (tx)", persist);
+    const terminalUpdate = session.indexOf(".update(schema.callLogs)", transaction);
+    const enqueue = session.indexOf("await enqueuePostCallDigest(", terminalUpdate);
+    const inlineFinalization = session.indexOf('runFinalizerStep("ai_disclosure"', enqueue);
+    const awaitPersist = session.indexOf("await persistFinishedCall({", inlineFinalization);
     expect(persist).toBeGreaterThan(-1);
-    expect(enqueue).toBeGreaterThan(persist);
-    expect(awaitPersist).toBeGreaterThan(enqueue);
+    expect(transaction).toBeGreaterThan(persist);
+    expect(terminalUpdate).toBeGreaterThan(transaction);
+    expect(enqueue).toBeGreaterThan(terminalUpdate);
+    expect(inlineFinalization).toBeGreaterThan(enqueue);
+    expect(awaitPersist).toBeGreaterThan(inlineFinalization);
+    expect(session).toContain("refreshPending: true");
+    expect(session).toContain("terminalStateReady: false");
+    expect(session).toContain("terminalStateReady: true");
+    expect(session).toContain('provider: "openai_sip"');
     expect(session).not.toContain("void enqueuePostCallDigest");
   });
 

@@ -48,7 +48,7 @@ afterEach(() => {
 
 describe("Stripe API modernization", () => {
   it("pins the SDK-matched current API version", () => {
-    expect(STRIPE_API_VERSION).toBe("2026-07-29.dahlia");
+    expect(STRIPE_API_VERSION).toBe("2026-08-26.dahlia");
   });
 
   it("creates flow-specific integration identifiers with eight random letters", () => {

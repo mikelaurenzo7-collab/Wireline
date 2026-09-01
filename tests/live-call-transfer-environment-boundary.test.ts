@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 function read(path: string): string {
-  return readFileSync(resolve(process.cwd(), path), "utf8");
+  return readFileSync(resolve(process.cwd(), path), "utf8").replace(/\r\n/g, "\n");
 }
 
 function handoffRoute(source: string): string {
@@ -19,38 +19,24 @@ describe("live-call transfer environment boundary", () => {
     const environment = route.indexOf("await assertLiveExternalActionAllowed");
     const presence = route.indexOf("schema.signalPresence.controlUrl");
     const entity = route.indexOf("await assertExternalEntityActionAllowed");
-    const transfer = route.indexOf("await transferLiveCall");
+    const transfer = route.indexOf("await referOpenAISipCall");
 
     expect(environment).toBeGreaterThan(-1);
     expect(presence).toBeGreaterThan(environment);
     expect(entity).toBeGreaterThan(presence);
     expect(transfer).toBeGreaterThan(entity);
-    expect(route).toContain("transferLiveCall(req.user.id, presence.controlUrl, destination)");
+    expect(route).toContain("referOpenAISipCall(req.user.id, providerCallId, destination)");
   });
 
-  it("checks native mobile before claiming presence and rechecks inside REFER", () => {
-    const route = handoffRoute(read("src/routes/native-mobile-voice-routes.ts"));
-    const environment = route.indexOf("await assertLiveExternalActionAllowed");
-    const entity = route.indexOf("await assertExternalEntityActionAllowed");
-    const claim = route.indexOf('.set({ status: "transferring" })');
-    const refer = route.indexOf("await referXAISipCall");
-
-    expect(environment).toBeGreaterThan(-1);
-    expect(entity).toBeGreaterThan(environment);
-    expect(claim).toBeGreaterThan(entity);
-    expect(refer).toBeGreaterThan(claim);
-    expect(route).toContain("referXAISipCall(req.user.id, callId, normalizedDestination)");
-  });
-
-  it("rechecks the tenant immediately before every xAI REFER, including late completion", () => {
-    const session = read("src/lib/voice/xai-sip-session.ts");
+  it("rechecks the tenant immediately before every OpenAI REFER, including late completion", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
     const referBoundary = session.slice(
-      session.indexOf("export async function referXAISipCall"),
-      session.indexOf("export function hangupXAISipCall"),
+      session.indexOf("export async function referOpenAISipCall"),
+      session.indexOf("export function hangupOpenAISipCall"),
     );
     const entity = referBoundary.indexOf("await assertExternalEntityActionAllowed");
     const environment = referBoundary.indexOf("await assertLiveExternalActionAllowed");
-    const provider = referBoundary.indexOf('await xaiCallControl(callId, "refer"');
+    const provider = referBoundary.indexOf('await openaiCallControl(callId, "refer"');
 
     expect(entity).toBeGreaterThan(-1);
     expect(environment).toBeGreaterThan(entity);
@@ -58,23 +44,23 @@ describe("live-call transfer environment boundary", () => {
     expect(referBoundary.slice(environment, provider).match(/await /g)).toHaveLength(1);
 
     expect(session).toContain(
-      "referXAISipCall(input.userId, input.callId, result.destination.number)",
+      "referOpenAISipCall(input.userId, input.callId, result.destination.number)",
     );
     expect(session).toMatch(
-      /referXAISipCall\(\s*input\.userId,\s*input\.callId,\s*outcome\.result\.destination\.number/,
+      /referOpenAISipCall\(\s*input\.userId,\s*input\.callId,\s*outcome\.result\.destination\.number/,
     );
 
     const hangupBoundary = session.slice(
-      session.indexOf("export function hangupXAISipCall"),
+      session.indexOf("export function hangupOpenAISipCall"),
       session.indexOf("const liveSipSessions"),
     );
-    expect(hangupBoundary).toContain('xaiCallControl(callId, "hangup")');
+    expect(hangupBoundary).toContain('openaiCallControl(callId, "hangup")');
     expect(hangupBoundary).not.toContain("assertLiveExternalActionAllowed");
     expect(hangupBoundary).not.toContain("assertExternalEntityActionAllowed");
   });
 
-  it("rechecks Vapi warm-transfer eligibility after notification and at the final directive", () => {
-    const workflow = read("src/routes/vapi/tool-handlers-workflow.ts");
+  it("rechecks warm-transfer eligibility after notification and at the final directive", () => {
+    const workflow = read("src/lib/bot-tools/workflow.ts");
     const escalation = workflow.slice(workflow.indexOf('if (fn === "escalate_to_human")'));
     const notification = escalation.indexOf("await notifier.sendUrgentAlert");
     const postNotification = escalation.indexOf(

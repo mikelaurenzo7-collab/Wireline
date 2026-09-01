@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { enqueue, type JobRow } from "./job-queue";
@@ -16,6 +16,8 @@ export interface AcceptedTwilioMessageInput {
   sid: string;
   channel: TwilioMessageChannel;
   agentId?: string;
+  /** Exact Twilio sender accepted for this SMS. Missing only on legacy queued jobs. */
+  destinationNumber?: string;
   reservationReference: string;
   estimatedUsd: number;
   actualUsd: number;
@@ -30,14 +32,21 @@ function money(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-async function existingThread(userId: string, customerNumber: string) {
+async function existingThread(userId: string, customerNumber: string, destinationNumber?: string) {
   const [thread] = await drizzle
-    .select({ id: schema.smsThreads.id, agentId: schema.smsThreads.agentId })
+    .select({
+      id: schema.smsThreads.id,
+      agentId: schema.smsThreads.agentId,
+      status: schema.smsThreads.status,
+    })
     .from(schema.smsThreads)
     .where(
       and(
         eq(schema.smsThreads.userId, userId),
         eq(schema.smsThreads.customerNumber, customerNumber),
+        destinationNumber
+          ? eq(schema.smsThreads.destinationNumber, destinationNumber)
+          : isNull(schema.smsThreads.destinationNumber),
       ),
     )
     .limit(1);
@@ -52,18 +61,38 @@ async function existingThread(userId: string, customerNumber: string) {
  * customer to retry a message Twilio has already accepted.
  */
 export async function persistAcceptedTwilioOutbound(
-  input: Pick<AcceptedTwilioMessageInput, "userId" | "customerNumber" | "body" | "sid" | "agentId">,
+  input: Pick<
+    AcceptedTwilioMessageInput,
+    "userId" | "customerNumber" | "destinationNumber" | "body" | "sid" | "agentId"
+  >,
 ): Promise<void> {
-  const current = await existingThread(input.userId, input.customerNumber);
+  const current = await existingThread(input.userId, input.customerNumber, input.destinationNumber);
   let threadId = current?.id;
   if (current) {
+    // Carrier acceptance is message history, not an operator outcome change.
+    // Preserve every explicitly owned lifecycle state; otherwise an account
+    // holder replying from an escalated thread would silently move Inbox back
+    // to `open` while its human-handoff task remained active in Approvals.
+    // A new accepted attempt may clear only transport-derived/unknown state.
+    const preservedStatus = [
+      "waiting",
+      "escalated",
+      "booked",
+      "resolved",
+      "routing_conflict",
+    ].includes(current.status || "")
+      ? current.status
+      : "open";
+    const routingConflict = preservedStatus === "routing_conflict";
     await drizzle
       .update(schema.smsThreads)
       .set({
         lastMessageAt: new Date(),
-        status: "open",
+        status: preservedStatus,
         unreadCount: 0,
-        ...(input.agentId && !current.agentId ? { agentId: input.agentId } : {}),
+        ...(!routingConflict && input.agentId && !current.agentId
+          ? { agentId: input.agentId }
+          : {}),
       })
       .where(eq(schema.smsThreads.id, current.id));
   } else {
@@ -74,6 +103,7 @@ export async function persistAcceptedTwilioOutbound(
       .values({
         userId: input.userId,
         customerNumber: input.customerNumber,
+        destinationNumber: input.destinationNumber || null,
         agentId: input.agentId || null,
         unreadCount: 0,
       })
@@ -81,7 +111,11 @@ export async function persistAcceptedTwilioOutbound(
       .returning({ id: schema.smsThreads.id });
     threadId = created?.id;
     if (!threadId) {
-      const winner = await existingThread(input.userId, input.customerNumber);
+      const winner = await existingThread(
+        input.userId,
+        input.customerNumber,
+        input.destinationNumber,
+      );
       threadId = winner?.id;
     }
   }

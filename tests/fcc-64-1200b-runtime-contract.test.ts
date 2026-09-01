@@ -14,12 +14,12 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
  * assertion here pins one link in that chain; a broken link is a per-call
  * statutory-damages exposure, not a style regression.
  *
- * Production PSTN is native Twilio + xAI SIP. The Vapi client is a placement
- * facade and must not be the home of these duties.
+ * Production PSTN is native Twilio + OpenAI Realtime SIP. The shared placement
+ * boundary and SIP session are the homes of these duties.
  */
 describe("64.1200(b) runtime wiring", () => {
   const placement = read("src/lib/voice/outbound-call-service.ts");
-  const session = read("src/lib/voice/xai-sip-session.ts");
+  const session = read("src/lib/voice/openai-sip-session.ts");
 
   it("(b)(3) every dial site states its regulatory call purpose explicitly", () => {
     // placeOutboundCall requires callPurpose, so a new caller cannot compile
@@ -41,19 +41,15 @@ describe("64.1200(b) runtime wiring", () => {
       // only the server-derived effective purpose to the placement boundary.
       [
         "src/routes/outbound-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
+        /placeOutboundCall\(\{[\s\S]{0,700}callPurpose: effectiveCallPurpose/,
       ],
       [
         "src/routes/outbound-dial-atomic-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
+        /placeOutboundCall\(\{[\s\S]{0,700}callPurpose: effectiveCallPurpose/,
       ],
       [
         "src/routes/mobile-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,220}callPurpose: effectiveCallPurpose/,
-      ],
-      [
-        "src/routes/native-mobile-voice-routes.ts",
-        /placeOutboundCall\(\{[\s\S]{0,280}callPurpose: effectiveCallPurpose/,
+        /placeOutboundCall\(\{[\s\S]{0,700}callPurpose: effectiveCallPurpose/,
       ],
     ];
     for (const [file, pattern] of sites) {
@@ -81,9 +77,11 @@ describe("64.1200(b) runtime wiring", () => {
   it("(b)(3) the opt-out mechanism records the number and the prompt orders immediate honor", () => {
     // The announced mechanism must actually exist: the in-call tool writes the
     // tenant DNC list, and the post-call transcript failsafe backstops it.
-    const handler = read("src/routes/vapi/tool-handlers-core.ts");
+    const handler = read("src/lib/bot-tools/core.ts");
     expect(handler).toMatch(/fn === "add_to_dnc"[\s\S]{0,900}insert\(schema\.dncList\)/);
-    expect(read("src/lib/vapi-handlers.ts")).toContain("persistTranscriptDncSuppression");
+    expect(read("src/lib/voice/openai-sip-session.ts")).toContain(
+      "persistTranscriptDncSuppression",
+    );
     expect(session).toContain("persistTranscriptDncSuppression");
     expect(session).toMatch(/add_to_dnc tool immediately/);
     expect(session).toContain('optOut.kind === "dnc"');
@@ -95,7 +93,7 @@ describe("64.1200(b) runtime wiring", () => {
     // recipient." A live-counterpart send is only reachable after the scripted
     // verbal opt-in, so the send writes the consent_granted ledger row; cold
     // sends rely on pre-existing consent and must not fabricate a grant.
-    const handler = read("src/routes/vapi/tool-handlers-core.ts");
+    const handler = read("src/lib/bot-tools/core.ts");
     expect(handler).toMatch(/outcome\.ok && isLiveCounterpart[\s\S]{0,2200}consent_granted/);
     expect(handler).toContain('consent_kind: "sms_verbal_optin"');
   });
@@ -119,27 +117,31 @@ describe("64.1200(b) runtime wiring", () => {
  * (b)(1) and (b)(2) only. Wireline operates no opt-out line, so there is no
  * compliant marketing voicemail to compose and the only fail-closed answer is
  * to leave none: Twilio AMD ends the call on detection, and the model is told
- * the same thing so it cannot narrate one instead. Non-marketing voicemail is
- * unchanged. Building the opt-out line is what re-enables marketing drops.
+ * the same thing so it cannot narrate one instead. Until approved OpenAI audio
+ * is committed, non-marketing machine answers also drop without a message.
  */
 describe("(b)(3) applies to answering machines", () => {
-  const profile = read("src/lib/voice-agent-profile.ts");
   const placement = read("src/lib/voice/outbound-call-service.ts");
-  const bridge = read("src/routes/xai-outbound-routes.ts");
-  const session = read("src/lib/voice/xai-sip-session.ts");
+  const bridge = read("src/routes/openai-outbound-routes.ts");
+  const session = read("src/lib/voice/openai-sip-session.ts");
   const amd = read("src/lib/voice/native-outbound-amd.ts");
 
   it("leaves no prerecorded message on a marketing call", () => {
-    expect(profile).toContain("telemarketing = false,");
-    expect(profile).toContain('if (telemarketing) return "";');
+    expect(amd).toContain('return telemarketing ? "drop" : "voicemail"');
+    const dropBranch = bridge.indexOf('if (amdAction === "drop" || amdAction === "voicemail")');
+    expect(dropBranch).toBeGreaterThan(-1);
+    expect(bridge).not.toContain("voicemailTwiml");
+    expect(bridge).not.toContain("LEAD_STATUS.VOICEMAIL_LEFT");
   });
 
-  it("passes the call's own marketing classification into the builder", () => {
+  it("classifies the call before recording the truthful no-message outcome", () => {
     expect(placement).toContain("machineDetection");
     expect(amd).toContain('machineDetection: telemarketing ? "Enable" : "DetectMessageEnd"');
     expect(amd).toContain('return telemarketing ? "drop" : "bridge"');
-    const call = bridge.slice(bridge.indexOf("buildOutboundVoicemailMessage("));
-    expect(call.slice(0, 300)).toContain("telemarketing,");
+    expect(bridge).toContain("nativeCallPurposeFromMetadata(nativeVoice.call_purpose)");
+    expect(bridge).toContain("resolveNativeAmdBridgeAction({ answeredBy, callPurpose })");
+    expect(bridge).toContain("no approved OpenAI-generated fallback audio is deployed");
+    expect(bridge).not.toContain("openai-outbound-voicemail.mp3");
     expect(bridge).toContain("AnsweredBy");
     expect(bridge).toContain("emptyTwiml()");
     expect(bridge).toContain("resolveRetryableLeadStatus");

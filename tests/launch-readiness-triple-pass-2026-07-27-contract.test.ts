@@ -52,7 +52,7 @@ describe("launch readiness triple-pass 2026-07-27", () => {
   });
 
   it("gates manual phone bind behind live-work activation", () => {
-    const carrier = read("src/routes/carrier-routes.ts");
+    const carrier = read("src/routes/native-phone-routing-routes.ts");
     const bind = carrier.slice(
       carrier.indexOf('"/api/phone-numbers",'),
       carrier.indexOf('"/api/phone-numbers/provision"'),

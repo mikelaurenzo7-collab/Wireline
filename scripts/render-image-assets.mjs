@@ -91,10 +91,10 @@ function writeOgSource(operator) {
   <rect width="1200" height="630" fill="url(#signal)"/>
   <path d="M0 570H1200" stroke="#A78BFA" stroke-opacity=".35"/>
   <text x="72" y="92" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="46" font-weight="800" letter-spacing="-2">Bot<tspan fill="#A78BFA">Bound</tspan></text>
-  <text x="72" y="178" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="20" font-weight="700" letter-spacing="4">YOUR BOT. EVERY CHANNEL.</text>
+  <text x="72" y="178" fill="#C4B5FD" font-family="IBM Plex Mono, monospace" font-size="16" font-weight="700" letter-spacing="2.6">YOUR BOT FOR CALLS, TEXTS, AND EMAIL.</text>
   <text x="68" y="286" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="80" font-weight="800" letter-spacing="-4">PUT YOUR BOT</text>
   <text x="68" y="364" fill="#F5F4F8" font-family="Inter Tight, sans-serif" font-size="80" font-weight="800" letter-spacing="-4">ON THE <tspan fill="#A78BFA">LINE.</tspan></text>
-  <text x="72" y="428" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="27" font-weight="500">Calls, texts, and email. Answered.</text>
+  <text x="72" y="428" fill="#B6B1C6" font-family="Inter, sans-serif" font-size="27" font-weight="500">Calls. Texts. Email. One Bot.</text>
   <rect x="72" y="484" width="296" height="52" rx="26" fill="#A78BFA"/>
   <text x="107" y="518" fill="#0E0B16" font-family="Inter Tight, sans-serif" font-size="20" font-weight="800" letter-spacing="1.4">BUILD YOUR BOT</text>
   <image href="data:image/png;base64,${embeddedOperator}" x="704" y="6" width="540" height="540"/>
@@ -143,10 +143,14 @@ for (const target of targets) {
     fitTo: { mode: "width", value: target.width },
     font: {
       fontFiles: [
-        resolve(root, "public/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"),
-        resolve(root, "public/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"),
+        resolve(root, "brand-work/fonts/InterTight-ExtraBold.ttf"),
+        resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
+        resolve(root, "brand-work/fonts/Inter-SemiBold.ttf"),
+        resolve(root, "brand-work/fonts/Inter-Bold.ttf"),
+        resolve(root, "brand-work/fonts/Inter-ExtraBold.ttf"),
+        resolve(root, "brand-work/fonts/IBMPlexMono-Bold.ttf"),
       ],
-      loadSystemFonts: true,
+      loadSystemFonts: false,
       defaultFontFamily: "Inter Tight",
     },
   });

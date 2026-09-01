@@ -6,6 +6,7 @@ import { isProductionDeployment } from "../src/lib/deployment-environment";
 
 const envValidator = readFileSync(resolve(process.cwd(), "src/lib/env-validator.ts"), "utf8");
 const prodCheck = readFileSync(resolve(process.cwd(), "scripts/check-prod-env.mjs"), "utf8");
+const envExample = readFileSync(resolve(process.cwd(), ".env.example"), "utf8");
 const deploymentBoundaryPath = resolve(process.cwd(), "scripts/check-deployment-boundaries.mjs");
 const deploymentBoundary = readFileSync(deploymentBoundaryPath, "utf8");
 const vercelBuild = readFileSync(resolve(process.cwd(), "scripts/vercel-build.mjs"), "utf8");
@@ -142,6 +143,25 @@ describe("production environment launch policy", () => {
     expect(envValidator).toContain("least-privilege rk_live_");
   });
 
+  it("removes ElevenLabs from the OpenAI-only inventory and rejects stale inheritance", () => {
+    const registryBlock = envValidator.slice(
+      envValidator.indexOf("export const ENV_REGISTRY"),
+      envValidator.indexOf("export function validateEnv"),
+    );
+    const productionInventory = prodCheck.slice(
+      prodCheck.indexOf("const required = ["),
+      prodCheck.indexOf("const retiredVoiceEnvKeys = ["),
+    );
+
+    expect(registryBlock).not.toContain('name: "ELEVENLABS_API_KEY"');
+    expect(envValidator).toContain("const retiredVoiceEnv");
+    expect(envValidator).toContain('"ELEVENLABS_API_KEY",');
+    expect(productionInventory).not.toContain("ELEVENLABS_API_KEY");
+    expect(prodCheck).toContain("const retiredVoiceEnvKeys");
+    expect(prodCheck).toContain('"ELEVENLABS_API_KEY",');
+    expect(envExample).not.toContain("ELEVENLABS_API_KEY");
+  });
+
   it("pins every production-generated URL to the exact BotBound origin", () => {
     const appUrlStart = envValidator.indexOf('name: "APP_URL"');
     expect(appUrlStart).toBeGreaterThanOrEqual(0);
@@ -275,7 +295,10 @@ describe("production environment launch policy", () => {
     expect(optionalStart).toBeGreaterThan(recommendedStart);
     expect(recommendedBlock).not.toContain('"LIVEAVATAR_API_KEY"');
     expect(recommendedBlock).not.toContain('"XAI_API_KEY"');
-    const requiredBlock = prodCheck.slice(prodCheck.indexOf("const required = ["), recommendedStart);
+    const requiredBlock = prodCheck.slice(
+      prodCheck.indexOf("const required = ["),
+      recommendedStart,
+    );
     expect(requiredBlock).toContain('"OPENAI_API_KEY"');
     expect(requiredBlock).toContain('"OPENAI_PROJECT_ID"');
     expect(requiredBlock).toContain('"OPENAI_WEBHOOK_SECRET"');

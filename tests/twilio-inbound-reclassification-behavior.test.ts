@@ -194,9 +194,29 @@ describe("signed Twilio voice reclassification fence", () => {
     );
 
     expect(captured.statusCode).toBe(200);
-    expect(String(captured.body)).toContain("<Say");
     expect(String(captured.body)).toContain("<Play>");
+    expect(String(captured.body)).not.toContain("<Say");
     expect(String(captured.body)).toContain("<Dial");
+  });
+
+  it("hangs up without speech or recording when transfer is unavailable or fails", async () => {
+    const { router } = await loadVoiceRouter({
+      allowed: true,
+      selectRows: [[{ userId: TENANT_ID }], [{}], [{ userId: TENANT_ID }]],
+    });
+
+    for (const [path, body] of [
+      ["/api/twilio-webhook/voice-fallback", { To: "+12025550140", From: "+12025550141" }],
+      [
+        "/api/twilio-webhook/voice-fallback-complete",
+        { To: "+12025550140", From: "+12025550141", DialCallStatus: "busy" },
+      ],
+    ] as const) {
+      const { response, captured } = fakeResponse();
+      await routeHandler(router, path)({ path, body }, response, vi.fn());
+      expect(captured).toEqual({ statusCode: 200, body: HANGUP_TWIML });
+      expect(String(captured.body)).not.toMatch(/<(?:Say|Play|Dial|Record)\b/);
+    }
   });
 
   it.each([
@@ -220,6 +240,51 @@ describe("signed Twilio voice reclassification fence", () => {
 });
 
 describe("signed Twilio SMS reclassification fence", () => {
+  it("preserves operator ownership and clears a stale Bot when the exact line is unassigned", async () => {
+    vi.doUnmock("../src/routes/twilio-webhook-base");
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: {},
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      tenantStore: { run: vi.fn(async (_userId: string, operation: () => unknown) => operation()) },
+    }));
+    vi.doMock("../src/lib/twilio-webhook-auth", () => ({
+      evaluateTwilioWebhookAuth: vi.fn(() => ({ ok: true })),
+    }));
+
+    const threadInsert: any = {};
+    threadInsert.values = vi.fn(() => threadInsert);
+    threadInsert.onConflictDoNothing = vi.fn(() => threadInsert);
+    threadInsert.returning = vi.fn(async () => []);
+    const messageInsert: any = {};
+    messageInsert.values = vi.fn(() => messageInsert);
+    messageInsert.onConflictDoNothing = vi.fn(() => messageInsert);
+    messageInsert.returning = vi.fn(async () => [{ id: 2n }]);
+    const set = vi.fn(() => ({ where: vi.fn(async () => []) }));
+    let insertCall = 0;
+    const tx: any = {
+      insert: vi.fn(() => (insertCall++ === 0 ? threadInsert : messageInsert)),
+      select: vi.fn(() => selectChain([{ id: "thread-1", status: "escalated" }])),
+      update: vi.fn(() => ({ set })),
+    };
+
+    const { persistInboundSmsEvidence } = await import("../src/routes/twilio-webhook-base");
+    await persistInboundSmsEvidence(tx, {
+      userId: TENANT_ID,
+      agentId: null,
+      destinationNumber: "+12025550140",
+      customerNumber: "+12025550141",
+      body: "I still need help",
+      messageSid: "SM00000000000000000000000000000999",
+    });
+
+    expect(set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "escalated",
+        agentId: null,
+      }),
+    );
+  });
+
   async function loadBaseSmsRouter() {
     vi.doUnmock("../src/routes/twilio-webhook-base");
     const values: unknown[] = [];
@@ -289,9 +354,18 @@ describe("signed Twilio SMS reclassification fence", () => {
   async function loadWrapperSmsRouter(allowed: boolean) {
     const values: unknown[] = [];
     const persistInboundSmsEvidence = vi.fn(async () => undefined);
+    const lookupMessagingDestination = vi.fn(async (toNumber: string) => ({
+      userId: TENANT_ID,
+      agentId: null,
+      destinationNumber: toNumber,
+    }));
     vi.doMock("../src/routes/twilio-webhook-base", async () => {
       const express = await vi.importActual<typeof import("express")>("express");
-      return { default: express.Router(), persistInboundSmsEvidence };
+      return {
+        default: express.Router(),
+        lookupMessagingDestination,
+        persistInboundSmsEvidence,
+      };
     });
     const tx: any = {
       execute: vi.fn(async () => undefined),
@@ -405,23 +479,30 @@ describe("signed Twilio inbound reclassification contracts", () => {
     expect(base.match(/resolveProductionInboundTenant\(to, req\.path\)/g)).toHaveLength(2);
 
     const fallback = base.slice(
-      base.indexOf('router.post("/api/twilio-webhook/voice-fallback"'),
+      base.indexOf("export async function handleTwilioVoiceFallback"),
       base.indexOf('router.post("/api/twilio-webhook/voice-fallback-complete"'),
     );
     const complete = base.slice(
       base.indexOf('router.post("/api/twilio-webhook/voice-fallback-complete"'),
       base.indexOf('router.post("/api/twilio-webhook/voicemail-complete"'),
     );
-    for (const route of [fallback, complete]) {
-      const signature = route.indexOf("verifyTwilioSignature(req)");
-      const environment = route.indexOf("resolveProductionInboundTenant(to, req.path)");
-      const hangup = route.indexOf("if (!tenantUserId)");
-      const media = route.search(/failoverVoicemailTwiml|twiml \+= ` {2}<Say/);
-      expect(signature).toBeGreaterThan(-1);
-      expect(environment).toBeGreaterThan(signature);
-      expect(hangup).toBeGreaterThan(environment);
-      expect(media).toBeGreaterThan(hangup);
-    }
+    const fallbackSignature = fallback.indexOf("verifyTwilioSignature(req)");
+    const fallbackEnvironment = fallback.indexOf("resolveProductionInboundTenant(to, req.path)");
+    const fallbackHangup = fallback.indexOf("if (!tenantUserId)");
+    const transfer = fallback.indexOf("/sounds/wireline-transfer-chime.wav");
+    expect(fallbackSignature).toBeGreaterThan(-1);
+    expect(fallbackEnvironment).toBeGreaterThan(fallbackSignature);
+    expect(fallbackHangup).toBeGreaterThan(fallbackEnvironment);
+    expect(transfer).toBeGreaterThan(fallbackHangup);
+
+    const completeSignature = complete.indexOf("verifyTwilioSignature(req)");
+    const completeEnvironment = complete.indexOf("resolveProductionInboundTenant(to, req.path)");
+    const completeHangup = complete.indexOf("if (!tenantUserId)");
+    expect(completeSignature).toBeGreaterThan(-1);
+    expect(completeEnvironment).toBeGreaterThan(completeSignature);
+    expect(completeHangup).toBeGreaterThan(completeEnvironment);
+    expect(complete).toContain("return res.status(200).send(twimlHangup())");
+    expect(complete).not.toMatch(/<(?:Play|Dial|Record)\b/);
 
     const voicemail = base.slice(
       base.indexOf('router.post("/api/twilio-webhook/voicemail-complete"'),
@@ -462,8 +543,7 @@ describe("signed Twilio inbound reclassification contracts", () => {
       base.indexOf('router.post("/api/twilio-webhook/singing-receptionist"'),
     );
     expect(singing).not.toMatch(/<Say[^>]*>[^<]*SINGING_VAPI_SIP_URI/i);
-    expect(singing).toContain(
-      "This demo line is taking a quick break while we finish its connection.",
-    );
+    expect(singing).not.toContain("openai-demo-unavailable.mp3");
+    expect(singing).toMatch(/if \(sipUri\)[\s\S]*else \{[\s\S]*<Hangup\/>/);
   });
 });

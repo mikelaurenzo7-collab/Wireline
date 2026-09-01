@@ -12,7 +12,7 @@ const OTHER_ACCOUNT_SID = `AC${"2".repeat(32)}`;
 const RECORDING_SID = `RE${"3".repeat(32)}`;
 const CALL_SID = `CA${"4".repeat(32)}`;
 const TRANSCRIPTION_SID = `TR${"5".repeat(32)}`;
-const VAPI_CALL_ID = "call_01JTESTWIRELINEERASURE";
+
 const RECORDING_URL = `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Recordings/${RECORDING_SID}`;
 const RECORDING_METADATA_URL = `${RECORDING_URL}.json?IncludeSoftDeleted=true`;
 
@@ -45,14 +45,8 @@ describe("provider call erasure", () => {
     ).toThrow(/not an authenticated Twilio API URL/i);
   });
 
-  it("deletes Vapi calls plus Twilio transcription, recording, and call-log resources", async () => {
+  it("deletes Twilio transcription, recording, and call-log resources", async () => {
     const fetchFn = vi.fn(async (input: string, init?: RequestInit): Promise<Response> => {
-      if (input === `https://api.vapi.ai/call/${encodeURIComponent(VAPI_CALL_ID)}`) {
-        expect(init?.method).toBe("DELETE");
-        expect(new Headers(init?.headers).get("authorization")).toBe("Bearer vapi-test-key");
-        return jsonResponse({ id: VAPI_CALL_ID });
-      }
-
       if (input === RECORDING_METADATA_URL && !init?.method) {
         expect(new Headers(init?.headers).get("authorization")).toMatch(/^Basic /);
         return jsonResponse({ call_sid: CALL_SID });
@@ -88,14 +82,10 @@ describe("provider call erasure", () => {
     });
 
     const result = await eraseProviderCallArtifacts(
-      [
-        { vapiCallId: VAPI_CALL_ID, recordingUrl: null },
-        { vapiCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL },
-      ],
+      [{ providerCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL }],
       {
         fetchFn,
         env: {
-          VAPI_PRIVATE_KEY: "vapi-test-key",
           TWILIO_ACCOUNT_SID: ACCOUNT_SID,
           TWILIO_AUTH_TOKEN: "twilio-test-token",
         },
@@ -103,12 +93,11 @@ describe("provider call erasure", () => {
     );
 
     expect(result).toEqual({
-      vapiCallsDeleted: 1,
       twilioRecordingsDeleted: 1,
       twilioTranscriptionsDeleted: 1,
       twilioCallsDeleted: 1,
     });
-    expect(fetchFn).toHaveBeenCalledTimes(6);
+    expect(fetchFn).toHaveBeenCalledTimes(5);
   });
 
   it("recovers the Call SID from soft-deleted recording metadata after a partial failure", async () => {
@@ -141,7 +130,7 @@ describe("provider call erasure", () => {
       throw new Error(`Unexpected provider request: ${init?.method || "GET"} ${input}`);
     });
 
-    const pointers = [{ vapiCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL }];
+    const pointers = [{ providerCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL }];
     const options = {
       fetchFn,
       env: {
@@ -154,7 +143,6 @@ describe("provider call erasure", () => {
       /Twilio call-log deletion failed with HTTP 500/,
     );
     await expect(eraseProviderCallArtifacts(pointers, options)).resolves.toEqual({
-      vapiCallsDeleted: 0,
       twilioRecordingsDeleted: 0,
       twilioTranscriptionsDeleted: 0,
       twilioCallsDeleted: 1,
@@ -164,28 +152,22 @@ describe("provider call erasure", () => {
 
   it("treats provider not-found responses as retry-idempotent", async () => {
     const fetchFn = vi.fn(async (input: string): Promise<Response> => {
-      if (input.startsWith("https://api.vapi.ai/call/")) return emptyResponse(404);
       if (input === RECORDING_METADATA_URL) return emptyResponse(404);
       throw new Error(`Unexpected provider request: ${input}`);
     });
 
     await expect(
       eraseProviderCallArtifacts(
-        [
-          { vapiCallId: VAPI_CALL_ID, recordingUrl: null },
-          { vapiCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL },
-        ],
+        [{ providerCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL }],
         {
           fetchFn,
           env: {
-            VAPI_PRIVATE_KEY: "vapi-test-key",
             TWILIO_ACCOUNT_SID: ACCOUNT_SID,
             TWILIO_AUTH_TOKEN: "twilio-test-token",
           },
         },
       ),
     ).resolves.toEqual({
-      vapiCallsDeleted: 0,
       twilioRecordingsDeleted: 0,
       twilioTranscriptionsDeleted: 0,
       twilioCallsDeleted: 0,
@@ -196,11 +178,14 @@ describe("provider call erasure", () => {
     const fetchFn = vi.fn(async (): Promise<Response> => emptyResponse(500));
 
     await expect(
-      eraseProviderCallArtifacts([{ vapiCallId: VAPI_CALL_ID, recordingUrl: null }], {
-        fetchFn,
-        env: { VAPI_PRIVATE_KEY: "vapi-test-key" },
-      }),
-    ).rejects.toThrow(/Vapi call deletion failed with HTTP 500/);
+      eraseProviderCallArtifacts(
+        [{ providerCallId: "twilio-voicemail:hash", recordingUrl: RECORDING_URL }],
+        {
+          fetchFn,
+          env: { TWILIO_ACCOUNT_SID: ACCOUNT_SID, TWILIO_AUTH_TOKEN: "twilio-test-token" },
+        },
+      ),
+    ).rejects.toThrow(/Twilio recording lookup failed with HTTP 500/);
   });
 
   it("is wired into external cleanup before the local hard-delete engine", () => {

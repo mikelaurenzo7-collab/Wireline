@@ -7,8 +7,10 @@
  *      → add phone to wireline_dnc_list (TCPA compliance) + log to
  *        wireline_consent_log so we have an audit trail.
  *   2. START / UNSTOP / YES keywords → remove from DNC (opt-back-in).
- *   3. Any other inbound text → just log it for now; future work can
- *      route it to an agent for two-way conversation.
+ *   3. Any other inbound text → persist it and bind the conversation to the
+ *      Bot assigned to the destination line. OpenAI reply intelligence is
+ *      requested from the authenticated inbox; Twilio remains the only
+ *      carrier and send boundary.
  *
  * OpenAI Realtime handles conversation audio over Twilio SIP; this is the SMS counterpart. The
  * outbound side (sending texts FROM Wireline) is already wired in
@@ -38,7 +40,6 @@ import {
   opaqueIdSuffixForLog,
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
-import { complianceFirstMessagePrefix } from "../lib/agent-runtime";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
 import { buildOpenAIInboundSipUri } from "../lib/voice/openai-sip-config";
 
@@ -87,92 +88,6 @@ function twimlHangup(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`;
 }
 
-type FailoverCompliance = {
-  /** Resolved compliance mode of the agent answering this line, if known. */
-  complianceMode: string | null;
-  businessName: string | null;
-};
-
-/**
- * Take-a-message TwiML for the retired-provider-outage path still attached to
- * leftover Twilio voice-fallback URLs.
- *
- * This answers the same tenant line as the full assistant, so it inherits the
- * same obligations. A HIPAA line is never recorded or transcribed. When the
- * compliance posture cannot be resolved, recording also fails closed: losing a
- * voicemail during an outage is preferable to capturing PHI under an unknown
- * policy. Calls that are explicitly known to be non-HIPAA may record only after
- * the same spoken disclosure used by the managed assistant paths.
- */
-function failoverVoicemailTwiml(
-  includeOutageContext = false,
-  compliance: FailoverCompliance = { complianceMode: null, businessName: null },
-): string {
-  const context = includeOutageContext
-    ? `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`
-    : "";
-
-  const recordingEnabled =
-    compliance.complianceMode !== null && compliance.complianceMode !== "hipaa";
-  if (!recordingEnabled) {
-    return (
-      `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
-      context +
-      `  <Say voice="Polly.Matthew-Neural">We are unable to take a message on this line right now. Please call back shortly and a member of the team will assist you. Thank you.</Say>\n` +
-      `</Response>`
-    );
-  }
-
-  const disclosure = escapeTwimlValue(
-    complianceFirstMessagePrefix(compliance.complianceMode, compliance.businessName, {
-      recordingEnabled: true,
-    }),
-  );
-  return (
-    `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n` +
-    context +
-    `  <Say voice="Polly.Matthew-Neural">${disclosure}Please leave your name, number, and a brief message, and a human agent will return your call as soon as possible. Thank you.</Say>\n` +
-    `  <Record maxLength="120" action="/api/twilio-webhook/voicemail-complete" method="POST" transcribe="true" transcribeCallback="/api/twilio-webhook/voicemail-transcription" />\n` +
-    `</Response>`
-  );
-}
-
-/**
- * Compliance posture for the line a failover call arrived on. Resolved through
- * wireline_phone_numbers.agent_id -> wireline_agents.compliance_mode, the same
- * chain inbound routing uses. Unknown stays unknown so the TwiML builder can
- * fail closed rather than silently assuming recording is allowed.
- */
-async function resolveFailoverCompliance(to: string | null): Promise<FailoverCompliance> {
-  const unknown: FailoverCompliance = { complianceMode: null, businessName: null };
-  if (!to) return unknown;
-  try {
-    const [row] = await drizzle
-      .select({
-        complianceMode: schema.agents.complianceMode,
-        businessName: schema.settings.businessName,
-      })
-      .from(schema.phoneNumbers)
-      .leftJoin(schema.agents, eq(schema.agents.id, schema.phoneNumbers.agentId))
-      .leftJoin(schema.settings, eq(schema.settings.userId, schema.phoneNumbers.userId))
-      // Match lookupTenant's normalization: a To variant that resolves the
-      // tenant but missed this lookup would fail closed and refuse voicemail
-      // for a non-HIPAA tenant during every failover.
-      .where(eq(schema.phoneNumbers.phoneNumber, sanitizePhone(to)))
-      .limit(1);
-    return {
-      complianceMode: row?.complianceMode ?? null,
-      businessName: row?.businessName ?? null,
-    };
-  } catch (error) {
-    log.error("Failover compliance lookup failed; recording disabled", {
-      error: error instanceof Error ? error.message : String(error),
-      to_suffix: phoneSuffixForLog(to),
-    });
-    return unknown;
-  }
-}
-
 function publicAssetUrl(pathname: string): string {
   const canonical = resolveCanonicalAppUrl();
   const baseUrl = "error" in canonical ? "https://botbound.me" : canonical.url;
@@ -188,23 +103,53 @@ function verifyTwilioSignature(req: Request): boolean {
   return evaluateTwilioWebhookAuth(req).ok;
 }
 
-async function lookupTenant(toNumber: string): Promise<string | null> {
-  const normalized = sanitizePhone(toNumber);
+export type InboundMessagingDestination = {
+  userId: string;
+  agentId: string | null;
+  destinationNumber: string;
+};
+
+export async function lookupMessagingDestination(
+  toNumber: string,
+): Promise<InboundMessagingDestination | null> {
+  const normalized = sanitizePhone(toNumber.replace(/^whatsapp:/i, ""));
+  if (!normalized) return null;
   const [byPhone] = await drizzle
-    .select({ userId: schema.phoneNumbers.userId })
+    .select({ userId: schema.phoneNumbers.userId, agentId: schema.phoneNumbers.agentId })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.phoneNumber, normalized))
     .limit(1);
-  if (byPhone?.userId) return byPhone.userId as string;
+  if (byPhone?.userId) {
+    return {
+      userId: byPhone.userId as string,
+      agentId: byPhone.agentId || null,
+      destinationNumber: normalized,
+    };
+  }
 
   const [bySender] = await drizzle
     .select({ userId: schema.settings.userId })
     .from(schema.settings)
-    .where(eq(schema.settings.twilioSmsFromNumber, normalized))
+    .where(
+      or(
+        eq(schema.settings.twilioSmsFromNumber, normalized),
+        eq(schema.settings.twilioWhatsappFromNumber, normalized),
+      ),
+    )
     .limit(1);
-  if (bySender?.userId) return bySender.userId as string;
+  if (bySender?.userId) {
+    return {
+      userId: bySender.userId as string,
+      agentId: null,
+      destinationNumber: normalized,
+    };
+  }
 
   return null;
+}
+
+async function lookupTenant(toNumber: string): Promise<string | null> {
+  return (await lookupMessagingDestination(toNumber))?.userId ?? null;
 }
 
 async function resolveProductionInboundTenant(
@@ -273,11 +218,12 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
   if (!from || !to) return res.status(400).send(twimlEmpty());
 
-  const tenantUserId = await lookupTenant(to);
-  if (!tenantUserId) {
+  const destination = await lookupMessagingDestination(to);
+  if (!destination) {
     log.warn("Twilio webhook: unknown To-number", { to_suffix: phoneSuffixForLog(to) });
     return res.status(200).send(twimlEmpty());
   }
+  const tenantUserId = destination.userId;
 
   const fromNormalized = sanitizePhone(from);
   const replyEnvironment =
@@ -318,6 +264,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         await drizzle.transaction(async (tx) =>
           persistInboundSmsEvidence(tx, {
             userId: tenantUserId,
+            agentId: destination.agentId,
+            destinationNumber: destination.destinationNumber,
             customerNumber: fromNormalized,
             body,
             messageSid,
@@ -385,6 +333,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         await drizzle.transaction(async (tx) =>
           persistInboundSmsEvidence(tx, {
             userId: tenantUserId,
+            agentId: destination.agentId,
+            destinationNumber: destination.destinationNumber,
             customerNumber: fromNormalized,
             body,
             messageSid,
@@ -414,6 +364,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
         await drizzle.transaction(async (tx) =>
           persistInboundSmsEvidence(tx, {
             userId: tenantUserId,
+            agentId: destination.agentId,
+            destinationNumber: destination.destinationNumber,
             customerNumber: fromNormalized,
             body,
             messageSid,
@@ -451,6 +403,8 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response) => {
       await drizzle.transaction(async (tx) =>
         persistInboundSmsEvidence(tx, {
           userId: tenantUserId,
+          agentId: destination.agentId,
+          destinationNumber: destination.destinationNumber,
           customerNumber: fromNormalized,
           body,
           messageSid,
@@ -474,6 +428,8 @@ export async function persistInboundSmsEvidence(
   tx: typeof drizzle,
   input: {
     userId: string;
+    agentId?: string | null;
+    destinationNumber: string;
     customerNumber: string;
     body: string;
     messageSid: string;
@@ -481,23 +437,35 @@ export async function persistInboundSmsEvidence(
 ): Promise<void> {
   // Establish the conversation row without racing another first message. A
   // conflicting insert is expected when two messages arrive together; the
-  // unique tenant + customer index selects the canonical row.
+  // unique tenant + exact destination + customer index selects the canonical
+  // row without merging separate Bot lines.
   const [createdThread] = await tx
     .insert(schema.smsThreads)
-    .values({ userId: input.userId, customerNumber: input.customerNumber, unreadCount: 0 })
-    .onConflictDoNothing({
-      target: [schema.smsThreads.userId, schema.smsThreads.customerNumber],
+    .values({
+      userId: input.userId,
+      agentId: input.agentId || null,
+      destinationNumber: input.destinationNumber,
+      customerNumber: input.customerNumber,
+      unreadCount: 0,
     })
-    .returning({ id: schema.smsThreads.id });
+    .onConflictDoNothing()
+    .returning({
+      id: schema.smsThreads.id,
+      status: schema.smsThreads.status,
+    });
 
   const [thread] = createdThread
     ? [createdThread]
     : await tx
-        .select({ id: schema.smsThreads.id })
+        .select({
+          id: schema.smsThreads.id,
+          status: schema.smsThreads.status,
+        })
         .from(schema.smsThreads)
         .where(
           and(
             eq(schema.smsThreads.userId, input.userId),
+            eq(schema.smsThreads.destinationNumber, input.destinationNumber),
             eq(schema.smsThreads.customerNumber, input.customerNumber),
           ),
         )
@@ -524,12 +492,22 @@ export async function persistInboundSmsEvidence(
     .set({
       lastMessageAt: new Date(),
       unreadCount: sql`coalesce(${schema.smsThreads.unreadCount}, 0) + 1`,
-      status: "open",
+      // New evidence must not silently undo an account-holder-owned outcome.
+      // In particular, `escalated` is paired with an active human-handoff task
+      // in Approvals. Reopening is an explicit operator action in the inbox.
+      status: ["waiting", "escalated", "booked", "resolved", "routing_conflict"].includes(
+        thread.status || "",
+      )
+        ? thread.status
+        : "open",
+      // The exact destination line is the assignment source of truth. Project
+      // null too so a released/unassigned line cannot keep using a stale Bot.
+      agentId: input.agentId ?? null,
     })
     .where(and(eq(schema.smsThreads.id, thread.id), eq(schema.smsThreads.userId, input.userId)));
 }
 
-router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Response) => {
+export async function handleTwilioVoiceFallback(req: Request, res: Response) {
   res.setHeader("Content-Type", "text/xml");
   if (!verifyTwilioSignature(req)) {
     log.warn("Twilio webhook signature verification failed", { path: req.path });
@@ -555,12 +533,12 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
       .limit(1);
     fallbackNumber = validE164(settings?.humanFallbackNumber);
     if (settings?.humanFallbackNumber && !fallbackNumber) {
-      log.warn("Failover number is not valid E.164; degrading to voicemail", {
+      log.warn("Failover number is not valid E.164; hanging up", {
         tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
       });
     }
   } catch (error) {
-    log.error("Failover settings lookup failed; degrading to voicemail", {
+    log.error("Failover settings lookup failed; hanging up", {
       error: error instanceof Error ? error.message : String(error),
       to_suffix: phoneSuffixForLog(to),
     });
@@ -570,16 +548,16 @@ router.post("/api/twilio-webhook/voice-fallback", async (req: Request, res: Resp
 
   if (fallbackNumber) {
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-    twiml += `  <Say voice="Polly.Matthew-Neural">Hello, you have reached a BotBound Bot line. We are currently experiencing an unexpectedly high volume of calls and our voice systems are temporarily offline.</Say>\n`;
-    twiml += `  <Say voice="Polly.Matthew-Neural">Please hold while we transfer you to an available team member.</Say>\n`;
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
     twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
     twiml += `</Response>`;
     return res.status(200).send(twiml);
   }
 
-  return res.status(200).send(failoverVoicemailTwiml(true, await resolveFailoverCompliance(to)));
-});
+  return res.status(200).send(twimlHangup());
+}
+
+router.post("/api/twilio-webhook/voice-fallback", handleTwilioVoiceFallback);
 
 router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, res: Response) => {
   res.setHeader("Content-Type", "text/xml");
@@ -598,9 +576,7 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
       : "unknown";
   log.info("Voice failover transfer completed", { dial_status: dialStatus });
 
-  if (dialStatus === "completed") return res.status(200).send(twimlHangup());
-
-  return res.status(200).send(failoverVoicemailTwiml(false, await resolveFailoverCompliance(to)));
+  return res.status(200).send(twimlHangup());
 });
 
 router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: Response) => {
@@ -839,25 +815,14 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  const approvedJingleUrl =
-    process.env.BOTBOUND_JINGLE_ASSET_APPROVED === "true"
-      ? publicAssetUrl("/sounds/botbound-jingle.mp3")
-      : null;
-
   let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  // The retired launch jingle names the previous product in its audio. Keep
-  // the public demo honest during the BotBound cutover: use provider speech
-  // until the BotBound recording has been generated, listened to, and approved.
-  twiml += approvedJingleUrl
-    ? `  <Play>${escapeTwimlValue(approvedJingleUrl)}</Play>\n`
-    : `  <Say voice="Polly.Joanna-Neural">Welcome to BotBound. Meet Mira, our playful front desk Bot.</Say>\n`;
   if (sipUri) {
-    // Twilio <Dial> defaults to a four-hour maximum. A five-minute demo cap and
-    // short ring timeout prevent a forgotten/abusive public call from turning
-    // into an unbounded Twilio + OpenAI session.
+    // OpenAI owns the audible Bot identity and first greeting. Twilio only
+    // connects the carrier leg; no separate provider-generated jingle or
+    // selectable Twilio voice precedes the session. A five-minute demo cap and
+    // short ring timeout keep public spend bounded.
     twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
   } else {
-    twiml += `  <Say voice="Polly.Joanna-Neural">Haha, sorry about that. We like to have fun at BotBound sometimes. This demo line is taking a quick break while we finish its connection. Please try again soon. Goodbye.</Say>\n`;
     twiml += `  <Hangup/>\n`;
   }
   twiml += `</Response>`;

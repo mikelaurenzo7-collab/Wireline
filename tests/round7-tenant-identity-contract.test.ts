@@ -4,44 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("round-7 shared-provider tenant identity", () => {
-  it("scopes the Vapi number listing to lines the caller owns", () => {
-    // One shared Vapi account holds every tenant's line, so the raw upstream
-    // list is a directory of every customer's business number plus the id that
-    // outbound dialing and inbound routing key off.
-    const carrier = read("src/routes/carrier-routes.ts");
-    const handler = carrier.slice(carrier.indexOf('"/api/carrier/numbers"'));
-    expect(handler).toContain("schema.phoneNumbers.userId, req.user.id");
-    expect(handler).toContain("ownedVapiIds");
-    // The upstream array must be narrowed to owned lines BEFORE it is shaped
-    // into the response — filtering after mapping would still have serialized
-    // every tenant's number.
-    expect(handler).toMatch(
-      /\.filter\(\(num\) => ownedVapiIds\.has\(num\.id\) \|\| ownedNumbers\.has\(num\.number\)\)\s*\n\s*\.map\(/,
-    );
-  });
-
-  it("refuses to adopt a telecom identity the workspace does not own", () => {
-    // E.164 / id-shape validation is not a boundary here: a neighbour's real
-    // number passes both, and the shared platform credential owns it, so the
-    // provider accepts it.
-    const settings = read("src/routes/settings-routes.ts");
-    expect(settings).toContain("async function assertTelecomIdentityOwned");
-    expect(settings).toContain("await assertTelecomIdentityOwned(req.user.id, update)");
-    const fn = settings.slice(
-      settings.indexOf("async function assertTelecomIdentityOwned"),
-      settings.indexOf('router.post(\n  "/api/settings"'),
-    );
-    expect(fn).toContain("schema.phoneNumbers.userId, userId");
-    expect(fn).toContain("row.vapiNumberId === vapiId");
-    expect(fn).toContain("row.phoneNumber === smsFrom");
-    // The WhatsApp sender is the enumerable variant of the same shared-credential
-    // identity and must be owned before it can be adopted.
-    expect(fn).toContain("update.twilioWhatsappFromNumber");
-    expect(fn).toContain("row.phoneNumber === whatsappFrom");
-    expect(fn).toContain("403");
-  });
-
+describe("round-7 voice usage integrity", () => {
   it("settles the daily voice burst cap atomically with each provider call", () => {
     // Dial-time authorization reserves zero units. Completed-call settlement
     // therefore owns the daily counter, and it must share the same transaction

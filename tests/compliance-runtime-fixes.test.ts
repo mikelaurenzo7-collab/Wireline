@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { dncPhoneCandidates, normalizeDncPhone } from "../src/lib/compliance";
-import { withVapiToolTimeout } from "../src/lib/vapi-tool-results";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -40,25 +39,6 @@ describe("DNC phone normalization", () => {
   });
 });
 
-// ── Vapi tool-call timeout recovery ──────────────────────────────────────────
-// Regression: the .catch was on the inner dispatch, so a >5s tool rejected the
-// whole batch (HTTP 500, all tool results lost). withVapiToolTimeout rejects on
-// timeout; an *outer* .catch must recover it.
-describe("Vapi tool-call timeout", () => {
-  it("withVapiToolTimeout rejects with VAPI_TOOL_TIMEOUT so an outer .catch can recover", async () => {
-    const never = new Promise<never>(() => {});
-    const recovered = await withVapiToolTimeout(never, 10).catch((e) => ({
-      fallback: (e as Error).message,
-    }));
-    expect(recovered).toEqual({ fallback: "VAPI_TOOL_TIMEOUT" });
-  });
-
-  it("resolves normally when the work finishes before the timeout", async () => {
-    const value = await withVapiToolTimeout(Promise.resolve("ok"), 1000);
-    expect(value).toBe("ok");
-  });
-});
-
 // ── Source contracts locking in the fixes ────────────────────────────────────
 describe("compliance & runtime fix contracts", () => {
   it("both DNC gates match every stored phone variant (not a naive eq)", () => {
@@ -78,18 +58,24 @@ describe("compliance & runtime fix contracts", () => {
     expect(consentRoute).toContain("phone: normalizedCustomerNumber");
   });
 
-  it("the Vapi tool-call timeout is caught OUTSIDE the timeout wrapper", () => {
-    const route = read("src/routes/vapi-v2.ts");
-    // The invariant is WHERE the catch attaches, not how the handler is written:
-    // it must wrap withVapiToolTimeout(...) so the wrapper's own rejection is
-    // caught, and must NOT be attached to the inner dispatch IIFE.
-    expect(route).toContain(").catch((err) => {");
-    expect(route).not.toMatch(/\}\)\)\(\)\.catch\(/);
-    expect(route.indexOf("withVapiToolTimeout(")).toBeLessThan(route.indexOf(").catch((err) => {"));
+  it("the OpenAI tool timeout reports uncertainty and still observes late completion", () => {
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const tools = session.slice(session.indexOf("const executePendingTools = async () =>"));
+    const operation = tools.indexOf("const operation = dispatchAgentToolCall(");
+    const race = tools.indexOf("const outcome = await Promise.race([", operation);
+    const timeout = tools.indexOf('if (outcome.kind === "timeout")', race);
+    const late = tools.indexOf("void operation.then(", timeout);
+
+    expect(operation).toBeGreaterThan(-1);
+    expect(race).toBeGreaterThan(operation);
+    expect(timeout).toBeGreaterThan(race);
+    expect(late).toBeGreaterThan(timeout);
+    expect(tools).toContain("Action confirmation timed out and the outcome is unknown");
   });
 
   it("shopify_apply_discount does not fabricate success for the unimplemented stub", () => {
-    const shopify = read("src/routes/vapi/tool-handlers-shopify.ts");
+    const shopify = read("src/lib/bot-tools/shopify.ts");
     expect(shopify).not.toContain("applied to order ${order_number} successfully");
+    expect(shopify).toContain("I can't apply a discount to an order directly on this line.");
   });
 });

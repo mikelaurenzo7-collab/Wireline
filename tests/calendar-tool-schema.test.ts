@@ -1,13 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { VAPI_TOOL_DEFS } from "../src/lib/vapi-helpers";
-import { toVapiFunctionTools } from "../src/lib/vapi-tool-format";
+import { AGENT_TOOL_DEFS } from "../src/lib/agent-runtime-helpers";
 
 describe("calendar tool schema", () => {
   it("requires exact local date and IANA timezone for availability", () => {
-    const [tool] = toVapiFunctionTools([VAPI_TOOL_DEFS.check_calendar_availability]);
-    const parameters = tool.function.parameters as {
+    const parameters = AGENT_TOOL_DEFS.check_calendar_availability.parameters as {
       properties: Record<string, { pattern?: string; description?: string }>;
       required: string[];
     };
@@ -18,8 +16,7 @@ describe("calendar tool schema", () => {
   });
 
   it("requires exact 24-hour time before booking", () => {
-    const [tool] = toVapiFunctionTools([VAPI_TOOL_DEFS.book_appointment]);
-    const parameters = tool.function.parameters as {
+    const parameters = AGENT_TOOL_DEFS.book_appointment.parameters as {
       properties: Record<string, { pattern?: string }>;
       required: string[];
     };
@@ -33,7 +30,7 @@ describe("calendar tool schema", () => {
 
 describe("calendar execution boundaries", () => {
   const actionEngine = readFileSync("src/lib/action-engine.ts", "utf8");
-  const calendarHandler = readFileSync("src/routes/vapi/tool-handlers-calendar.ts", "utf8");
+  const calendarHandler = readFileSync("src/lib/bot-tools/calendar.ts", "utf8");
 
   it("does not use server-local date parsing in either scheduling path", () => {
     expect(actionEngine).not.toMatch(/new Date\(`\$\{action\.payload\.date\}/);

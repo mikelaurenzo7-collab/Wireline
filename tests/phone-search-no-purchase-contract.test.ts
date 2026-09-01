@@ -6,16 +6,16 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("phone search does not buy a number", () => {
   it("lists Twilio inventory without calling provision", () => {
-    const search = read("src/routes/carrier-routes.ts").slice(
-      read("src/routes/carrier-routes.ts").indexOf('"/api/phone-numbers/search"'),
-      read("src/routes/carrier-routes.ts").indexOf('"/api/phone-numbers/claim"'),
+    const routes = read("src/routes/native-phone-routing-routes.ts");
+    const search = routes.slice(
+      routes.indexOf('"/api/phone-numbers/search"'),
+      routes.indexOf("async function respondWithProvision"),
     );
-    expect(search).toContain("listTwilioAvailableLocalNumbers");
+    expect(search).toContain("listNativeAvailableLocalNumbers");
+    expect(search).not.toContain("provisionNativeTenantNumber");
+    expect(search).not.toContain("purchaseNativeNumber");
     expect(search).not.toContain("provisionVapiNumber");
     expect(search).not.toContain("purchaseTwilioLocalNumber");
-    expect(read("src/lib/phone-provisioning.ts")).toContain(
-      "Preview Twilio local inventory without buying",
-    );
   });
 
   it("only treats a resolved plan's zero slots as zero", () => {
@@ -27,11 +27,12 @@ describe("phone search does not buy a number", () => {
     );
   });
 
-  it("does not copy a Vapi-only E.164 onto Twilio SMS identity", () => {
+  it("only copies a purchased native Twilio number onto SMS identity", () => {
     const lines = read("src/lib/agent-phone-lines.ts");
     expect(lines).toContain("opts.smsCapable && opts.phoneNumberE164");
-    const provisioning = read("src/lib/phone-provisioning.ts");
-    expect(provisioning).toContain("smsCapable: Boolean(twilioPurchased)");
+    const provisioning = read("src/lib/voice/native-phone-provisioning.ts");
+    expect(provisioning).toContain("phoneNumberE164: purchase.phoneNumber");
+    expect(provisioning).toContain("smsCapable: true");
   });
 
   it("lets the customer pick a previewed E.164 before purchase", () => {

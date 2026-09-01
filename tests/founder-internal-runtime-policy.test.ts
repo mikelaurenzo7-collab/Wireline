@@ -9,16 +9,15 @@ import {
   type OpenAILiveInstructionAgent,
 } from "../src/lib/voice/openai-live-agent-service";
 import {
-  composeXAIRealtimeInstructions,
-  type XAIRealtimeInstructionAgent,
-  type XAIRealtimeTenantSettings,
-} from "../src/lib/voice/xai-agent-runtime";
-import { composeVapiRuntimePrompt } from "../src/lib/vapi-assistant-factory-v2";
+  composeOpenAIRealtimeInstructions,
+  type OpenAIRealtimeInstructionAgent,
+  type OpenAIRealtimeTenantSettings,
+} from "../src/lib/voice/openai-phone-agent-runtime";
 import {
   MAX_RUNTIME_DIRECTIVES,
   MAX_RUNTIME_KNOWLEDGE,
   MAX_RUNTIME_PROMPT_CHARS,
-} from "../src/lib/vapi-helpers";
+} from "../src/lib/agent-runtime-helpers";
 import { SUPPORT_REFUND_REVIEW_INSTRUCTION } from "../src/lib/wireline-agent-escalation";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
 
@@ -69,19 +68,22 @@ function openAIAgent(
   };
 }
 
-function xaiAgent(
+function phoneAgent(
   businessVariables: unknown,
   id = "wireline-support",
-): XAIRealtimeInstructionAgent {
+): OpenAIRealtimeInstructionAgent {
   return {
     ...openAIAgent(businessVariables, id),
     enabledTools: null,
     timezone: null,
     kpiFocus: null,
+    voiceProvider: "openai",
+    voiceId: "coral",
+    phoneVoiceId: "coral",
   };
 }
 
-const xaiTenant: XAIRealtimeTenantSettings = {
+const phoneTenant: OpenAIRealtimeTenantSettings = {
   aiTier: null,
   twilioMessagingEnabled: false,
   twilioLookupEnabled: false,
@@ -127,36 +129,26 @@ describe("founder internal runtime policy", () => {
     ).toBeNull();
   });
 
-  it("keeps the complete support policy through Vapi's final 18k clamp", () => {
+  it("keeps the complete support policy through the phone runtime's final 18k clamp", () => {
     const directives = Array.from({ length: MAX_RUNTIME_DIRECTIVES }, (_, index) => ({
       content: `directive-${index} ${"d".repeat(900)}`,
     }));
     const knowledge = Array.from({ length: MAX_RUNTIME_KNOWLEDGE }, (_, index) => ({
       content: `knowledge-${index} ${"k".repeat(900)}`,
     }));
-    const result = composeVapiRuntimePrompt({
-      configured: {
-        id: "wireline-support",
-        userId: FOUNDER_USER_ID,
-        name: "Support",
-        role: "support",
-        systemPromptOverride: CONFLICTING_OVERRIDE,
-        businessVariables: currentSupportVariables,
-        personalityVibe: "warm",
-      },
+    const prompt = composeOpenAIRealtimeInstructions({
+      agent: phoneAgent(currentSupportVariables),
+      tenant: phoneTenant,
       personality: WIRELINE_PERSONAS.support.systemPrompt,
       directives,
       knowledge,
-      browserTest: false,
-      isOutbound: true,
-      model: "gpt-4.1-mini",
+      surface: "phone",
     });
 
-    expect(result.internalPolicyApplied).toBe(true);
-    expect(result.finalSystemPrompt.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
-    expect(result.finalSystemPrompt).toContain("[Context trimmed for voice latency");
-    expectCompleteSupportPolicy(result.finalSystemPrompt);
-    expect(result.finalSystemPrompt.match(/BOTBOUND INTERNAL PERSONA POLICY:/g)).toHaveLength(1);
+    expect(prompt.length).toBeLessThanOrEqual(MAX_RUNTIME_PROMPT_CHARS);
+    expect(prompt).toContain("[Context trimmed for voice latency");
+    expectCompleteSupportPolicy(prompt);
+    expect(prompt.match(/BOTBOUND INTERNAL PERSONA POLICY:/g)).toHaveLength(1);
   });
 
   it("injects the complete support policy in OpenAI without a duplicate personality", () => {
@@ -171,10 +163,10 @@ describe("founder internal runtime policy", () => {
     expect(prompt.match(/BOTBOUND INTERNAL PERSONA POLICY:/g)).toHaveLength(1);
   });
 
-  it("injects the complete support policy in xAI without a duplicate personality", () => {
-    const prompt = composeXAIRealtimeInstructions({
-      agent: xaiAgent(currentSupportVariables),
-      tenant: xaiTenant,
+  it("injects the complete support policy in OpenAI phone calls without a duplicate personality", () => {
+    const prompt = composeOpenAIRealtimeInstructions({
+      agent: phoneAgent(currentSupportVariables),
+      tenant: phoneTenant,
       personality: WIRELINE_PERSONAS.support.systemPrompt,
       directives: [],
       knowledge: [],
@@ -185,35 +177,19 @@ describe("founder internal runtime policy", () => {
     expect(prompt.match(/BOTBOUND INTERNAL PERSONA POLICY:/g)).toHaveLength(1);
   });
 
-  it("reasserts trusted founder policy after adversarial saved Training in every provider", () => {
+  it("reasserts trusted founder policy after adversarial saved Training on every live surface", () => {
     const directives = [{ content: ADVERSARIAL_TRAINING }];
     const knowledge = [{ content: ADVERSARIAL_TRAINING }];
     const prompts = [
-      composeVapiRuntimePrompt({
-        configured: {
-          id: "wireline-support",
-          userId: FOUNDER_USER_ID,
-          name: "Support",
-          role: "support",
-          systemPromptOverride: CONFLICTING_OVERRIDE,
-          businessVariables: currentSupportVariables,
-        },
-        personality: WIRELINE_PERSONAS.support.systemPrompt,
-        directives,
-        knowledge,
-        browserTest: false,
-        isOutbound: false,
-        model: "gpt-4.1-mini",
-      }).finalSystemPrompt,
       composeOpenAILiveInstructions(
         openAIAgent(currentSupportVariables),
         WIRELINE_PERSONAS.support.systemPrompt,
         directives,
         knowledge,
       ),
-      composeXAIRealtimeInstructions({
-        agent: xaiAgent(currentSupportVariables),
-        tenant: xaiTenant,
+      composeOpenAIRealtimeInstructions({
+        agent: phoneAgent(currentSupportVariables),
+        tenant: phoneTenant,
         personality: WIRELINE_PERSONAS.support.systemPrompt,
         directives,
         knowledge,
@@ -253,32 +229,24 @@ describe("founder internal runtime policy", () => {
       [],
       [],
     );
-    const xaiPrompt = composeXAIRealtimeInstructions({
-      agent: xaiAgent(invalid),
-      tenant: xaiTenant,
+    const phonePrompt = composeOpenAIRealtimeInstructions({
+      agent: phoneAgent(invalid),
+      tenant: phoneTenant,
       personality: PERSONALITY_SENTINEL,
       directives: [],
       knowledge: [],
       surface: "phone",
     });
-    const vapiPrompt = composeVapiRuntimePrompt({
-      configured: {
-        id: "support-agent",
-        userId: FOUNDER_USER_ID,
-        name: "Support",
-        role: "support",
-        systemPromptOverride: CONFLICTING_OVERRIDE,
-        businessVariables: stringMarker,
-      },
+    const stringMarkerPrompt = composeOpenAIRealtimeInstructions({
+      agent: phoneAgent(stringMarker, "support-agent"),
+      tenant: phoneTenant,
       personality: PERSONALITY_SENTINEL,
       directives: [],
       knowledge: [],
-      browserTest: false,
-      isOutbound: true,
-      model: "gpt-4.1-mini",
-    }).finalSystemPrompt;
+      surface: "phone",
+    });
 
-    for (const prompt of [openAIPrompt, xaiPrompt, vapiPrompt]) {
+    for (const prompt of [openAIPrompt, phonePrompt, stringMarkerPrompt]) {
       expect(prompt).not.toContain(INTERNAL_POLICY_HEADING);
       expect(prompt).toContain(CONFLICTING_OVERRIDE);
       expect(prompt).toContain(PERSONALITY_SENTINEL);

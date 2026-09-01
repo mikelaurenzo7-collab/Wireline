@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildRecordedEscalationWebhookPayload,
   classifyPostCallCsatFailure,
   decidePostCallEffect,
   executePostCallEffectAttempt,
@@ -15,19 +16,59 @@ import {
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("durable post-call customer follow-up", () => {
-  it("awaits metering and a per-call digest enqueue when an OpenAI SIP call finishes", () => {
+  it("atomically persists every terminal call with its durable finalization job", () => {
     const source = read("src/lib/voice/openai-sip-session.ts");
+    const digest = read("src/lib/post-call-digest.ts");
+    const claim = source.indexOf("async function claimCall");
+    const claimTransaction = source.indexOf("return drizzle.transaction(async (tx)", claim);
+    const recoveryEnqueue = source.indexOf("await enqueuePostCallDigest(", claimTransaction);
     const finalizer = source.indexOf("async function persistFinishedCall");
-    const metering = source.indexOf('runFinalizerStep("voice_usage"', finalizer);
-    const durableEnqueue = source.indexOf('runFinalizerStep("post_call_digest"', metering);
-    const awaitedFinalizer = source.indexOf("await persistFinishedCall({", durableEnqueue);
+    const transaction = source.indexOf("await drizzle.transaction(async (tx)", finalizer);
+    const terminalUpdate = source.indexOf(".update(schema.callLogs)", transaction);
+    const durableEnqueue = source.indexOf("await enqueuePostCallDigest(", terminalUpdate);
+    const metering = source.indexOf('runFinalizerStep("voice_usage"', durableEnqueue);
+    const awaitedFinalizer = source.indexOf("await persistFinishedCall({", metering);
 
-    expect(metering).toBeGreaterThan(-1);
-    expect(durableEnqueue).toBeGreaterThan(metering);
-    expect(awaitedFinalizer).toBeGreaterThan(durableEnqueue);
+    expect(claimTransaction).toBeGreaterThan(claim);
+    expect(recoveryEnqueue).toBeGreaterThan(claimTransaction);
+    expect(recoveryEnqueue).toBeLessThan(finalizer);
+    expect(transaction).toBeGreaterThan(finalizer);
+    expect(terminalUpdate).toBeGreaterThan(transaction);
+    expect(durableEnqueue).toBeGreaterThan(terminalUpdate);
+    expect(metering).toBeGreaterThan(durableEnqueue);
+    expect(awaitedFinalizer).toBeGreaterThan(metering);
+    expect(source).not.toContain('runFinalizerStep("post_call_digest"');
+    expect(source).not.toContain("if (durationSeconds > 0 || input.transcript)");
+    expect(source).toContain("replayOpenAISipPostCallFinalization");
+    expect(source).toContain("recoverStaleOpenAISipCall");
+    expect(source).toContain("terminalStateReady: false");
+    expect(source).toContain("terminalStateReady: true");
+    expect(source).toContain("refreshPending: true");
+    expect(source).toContain("call could not establish durable recovery state");
+    expect(source).toContain("await hangupOpenAISipCall(input.callId).catch");
+    expect(digest).toContain("openAISipFinalizationFromJob(job)");
+    expect(digest).toContain("withPostCallDeletionFence(ctx");
+    expect(digest).toContain("if (!finalization.terminalStateReady)");
+    expect(digest).toContain('finalization: { state: "completed" }');
     expect(source).not.toContain("void runPostCallDigest");
     expect(source).not.toContain("void notifyCallRecap");
-    expect(source).toContain("enqueuePostCallDigest({");
+    expect(source).toContain("await enqueuePostCallDigest(");
+  });
+
+  it("keeps finalization replay local, stale-safe, and correlated to the owning lead call", () => {
+    const source = read("src/lib/voice/openai-sip-session.ts");
+    const digest = read("src/lib/post-call-digest.ts");
+    const replay = digest.indexOf("if (finalization && progress.finalization?.state");
+    const deletionFence = digest.indexOf("await withPostCallDeletionFence(ctx", replay);
+    const checkpoint = digest.indexOf('finalization: { state: "completed" }', deletionFence);
+
+    expect(deletionFence).toBeGreaterThan(replay);
+    expect(checkpoint).toBeGreaterThan(deletionFence);
+    expect(digest.slice(replay, checkpoint)).not.toContain("withPostCallExternalFence");
+    expect(source).toContain("eq(schema.callLogs.vapiCallId, providerId)");
+    expect(source).toContain('endedReason: "finalization-recovery"');
+    expect(source).toContain("if (currentCallId !== providerId)");
+    expect(source).toContain('String(nativeVoice.state || "")');
   });
 
   it("uses Postgres as the concurrency boundary and routes the job through retries", () => {
@@ -66,7 +107,86 @@ describe("durable post-call customer follow-up", () => {
     expect(digest).toContain('reason: "worker_interrupted_after_claim"');
     expect(digest).toContain('"artifact",');
     expect(digest).toContain('"autoQa",');
-    expect(digest.match(/\{ retrySafe: true \}/g)).toHaveLength(2);
+    expect(digest).toContain('"escalationWebhook",');
+    expect(digest.match(/\{ retrySafe: true \}/g)).toHaveLength(3);
+  });
+
+  it("retries a failed local escalation enqueue without creating duplicate deliveries", async () => {
+    const payload = buildRecordedEscalationWebhookPayload({
+      callLogId: 42n,
+      agentId: "agent-1",
+      customerNumber: "+13125550123",
+      direction: "outbound",
+      intentLabel: "high",
+      vapiCallId: "openai:call-1",
+      escalationAttempted: true,
+      escalationSucceeded: false,
+    });
+    expect(payload).toEqual({
+      vapi_call_id: "openai:call-1",
+      call_log_id: "42",
+      agent_id: "agent-1",
+      customer_number: "+13125550123",
+      direction: "outbound",
+      intent_label: "high",
+      escalation_succeeded: false,
+    });
+    expect(
+      buildRecordedEscalationWebhookPayload({
+        callLogId: 43n,
+        escalationAttempted: false,
+      }),
+    ).toBeNull();
+
+    let durableState: { state: "attempting" } | { state: "completed" } | undefined;
+    const deliveries = new Set<string>();
+    let failBeforeInsert = true;
+    const enqueueDelivery = vi.fn(async () => {
+      if (failBeforeInsert) {
+        failBeforeInsert = false;
+        throw new Error("database unavailable before insert");
+      }
+      deliveries.add("tenant-1/call.escalated/42/hook-1");
+      return { queued: deliveries.size };
+    });
+    await expect(
+      executePostCallEffectAttempt({
+        checkpointAttempting: async () => {
+          durableState = { state: "attempting" };
+        },
+        perform: enqueueDelivery,
+        checkpointCompleted: async () => undefined,
+      }),
+    ).rejects.toThrow("database unavailable before insert");
+    expect(decidePostCallEffect(durableState, { retrySafe: true })).toBe("retry");
+
+    await executePostCallEffectAttempt({
+      checkpointAttempting: async () => {
+        durableState = { state: "attempting" };
+      },
+      perform: enqueueDelivery,
+      checkpointCompleted: async () => {
+        durableState = { state: "completed" };
+      },
+    });
+    expect(decidePostCallEffect(durableState, { retrySafe: true })).toBe("reuse");
+    expect(enqueueDelivery).toHaveBeenCalledTimes(2);
+    expect(deliveries.size).toBe(1);
+
+    const digest = read("src/lib/post-call-digest.ts");
+    const webhooks = read("src/lib/webhook-helpers.ts");
+    const enqueueStart = webhooks.indexOf("export async function enqueueCallEscalatedWebhookOnce");
+    const genericDispatchStart = webhooks.indexOf(
+      "async function dispatchWebhookAfterDeletionFence",
+      enqueueStart,
+    );
+    const enqueueSource = webhooks.slice(enqueueStart, genericDispatchStart);
+    expect(digest).toContain("escalationAttempted: schema.callLogs.escalationAttempted");
+    expect(digest).toContain('"escalationWebhook",');
+    expect(digest).toContain("enqueueCallEscalatedWebhookOnce({");
+    expect(enqueueSource).toContain("pg_advisory_xact_lock(hashtext(");
+    expect(enqueueSource).toContain("payload}->'data'->>'call_log_id'");
+    expect(enqueueSource).not.toContain("attemptWebhookDelivery");
   });
 
   it("retries transient and post-commit child enqueue failures without duplicating the child", async () => {

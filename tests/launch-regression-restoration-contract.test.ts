@@ -53,11 +53,13 @@ describe("restored launch regression guards", () => {
     expect(composed).toContain("## DELIVERY TONE");
     expect(composed).toContain("Concise, useful, and discreet");
 
-    const voiceRuntime = read("src/lib/vapi-assistant-factory-v2.ts");
-    expect(voiceRuntime).toContain("a BotBound Bot for your principal");
-    expect(voiceRuntime).not.toContain("a personal BotBound Bot");
-    expect(voiceRuntime).toContain("## QUIET-HOURS MODE");
-    expect(voiceRuntime).toContain("Never invent personal facts");
+    const voiceRuntime = read("src/lib/voice/openai-phone-agent-runtime.ts");
+    const roleDefaults = read("src/lib/agent-constants.ts");
+    expect(voiceRuntime).toContain("runtimeTemplate.rolePersonality");
+    expect(voiceRuntime).toContain("input.personality");
+    expect(roleDefaults).toContain("extension of your principal's time");
+    expect(roleDefaults).toContain("never reveal personal details");
+    expect(roleDefaults).not.toContain("You represent Sarah");
   });
 
   it("keeps personal and business tool defaults scoped while explicit selections stay authoritative", () => {

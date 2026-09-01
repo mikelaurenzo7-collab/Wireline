@@ -102,23 +102,26 @@ describe("reclassified-account signed callback fences", () => {
   });
 
   it("hard-hangups reclassified outbound bridge replays before state or TwiML", () => {
-    const source = read("src/routes/xai-outbound-routes.ts");
+    const source = read("src/routes/openai-outbound-routes.ts");
     const resolver = source.slice(
       source.indexOf("async function resolveBridgeContext"),
-      source.indexOf('router.post(\n  "/api/twilio-webhook/xai-outbound-bridge"'),
+      source.indexOf('router.post(\n  "/api/twilio-webhook/openai-outbound-bridge"'),
     );
-    const placement = resolver.indexOf("xaiOutboundPlacementMatches");
+    const placement = resolver.indexOf("openAIOutboundPlacementMatches");
     const environment = resolver.indexOf("liveExternalActionPolicy(");
-    const replay = resolver.indexOf("resolveXAIOutboundTwiMLReplay({");
+    const replay = resolver.indexOf("resolveOpenAIOutboundTwiMLReplay({");
     const stateWrite = resolver.indexOf("amdNativeVoice.state");
     expect(placement).toBeGreaterThanOrEqual(0);
     expect(environment).toBeGreaterThan(placement);
     expect(replay).toBeGreaterThan(environment);
     expect(stateWrite).toBeGreaterThan(replay);
+    expect(resolver).toMatch(
+      /replay\?\.kind === "voicemail"[\s\S]*Preserve that stored decision as historical evidence[\s\S]*return \{ kind: "drop", answeredBy: replay\.answeredBy/,
+    );
 
     const bridgeRoute = source.slice(
-      source.indexOf('"/api/twilio-webhook/xai-outbound-bridge"'),
-      source.indexOf('"/api/twilio-webhook/xai-outbound-fallback"'),
+      source.indexOf('"/api/twilio-webhook/openai-outbound-bridge"'),
+      source.indexOf('"/api/twilio-webhook/openai-outbound-fallback"'),
     );
     const decision = bridgeRoute.indexOf('decision.kind === "hangup"');
     const meter = bridgeRoute.indexOf(
@@ -126,31 +129,30 @@ describe("reclassified-account signed callback fences", () => {
       decision,
     );
     const hangup = bridgeRoute.indexOf("send(emptyTwiml())", decision);
-    const voicemail = bridgeRoute.indexOf("send(voicemailTwiml", decision);
     const bridge = bridgeRoute.indexOf("send(bridgeTwiml", decision);
     expect(decision).toBeGreaterThanOrEqual(0);
     expect(meter).toBeGreaterThan(decision);
     expect(hangup).toBeGreaterThan(meter);
-    expect(voicemail).toBeGreaterThan(hangup);
     expect(bridge).toBeGreaterThan(hangup);
+    expect(bridgeRoute).not.toContain("voicemailTwiml");
   });
 
   it("keeps the authenticated status callback while making fallback Hangup-only", () => {
-    const source = read("src/routes/xai-outbound-routes.ts");
+    const source = read("src/routes/openai-outbound-routes.ts");
     const fallback = source.slice(
-      source.indexOf('"/api/twilio-webhook/xai-outbound-fallback"'),
-      source.indexOf('"/api/twilio-webhook/xai-outbound-status"'),
+      source.indexOf('"/api/twilio-webhook/openai-outbound-fallback"'),
+      source.indexOf('"/api/twilio-webhook/openai-outbound-status"'),
     );
     expect(fallback).toContain("evaluateTwilioWebhookAuth(req)");
-    expect(fallback).toContain("verifyXAIOutboundToken");
+    expect(fallback).toContain("verifyOpenAIOutboundToken");
     expect(fallback).toContain("send(emptyTwiml())");
     expect(fallback).not.toContain("voicemailTwiml(");
     expect(fallback).not.toContain("<Say>");
     expect(fallback).not.toContain("<Dial");
 
-    const status = source.slice(source.indexOf('"/api/twilio-webhook/xai-outbound-status"'));
+    const status = source.slice(source.indexOf('"/api/twilio-webhook/openai-outbound-status"'));
     expect(status).toContain("evaluateTwilioWebhookAuth(req)");
-    expect(status).toContain("verifyXAIOutboundToken(token)");
+    expect(status).toContain("verifyOpenAIOutboundToken(token)");
     expect(status).toContain("carrier_status_last_seen");
     expect(status).toContain(".update(schema.outboundLeads)");
   });

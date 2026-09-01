@@ -76,20 +76,21 @@ describe("AI-identity disclosure detection", () => {
 });
 
 describe("AI-identity disclosure evidence is persisted per outbound call", () => {
-  const handlers = read("src/lib/vapi-handlers.ts");
+  const handlers = read("src/lib/voice/openai-sip-session.ts");
 
   it("writes its own event family, outbound only, idempotently", () => {
     expect(handlers).toContain("persistAiDisclosureEvidence");
     expect(handlers).toContain("AI_DISCLOSURE_EVENTS");
     // Outbound only: a consumer who dialed in was not sent an AI voice call.
-    expect(handlers).toMatch(
-      /call\?\.type === "outboundPhoneCall"[\s\S]{0,400}persistAiDisclosureEvidence/,
-    );
-    // Redelivery safety mirrors the recording-disclosure path.
     const block = handlers.slice(
       handlers.indexOf("async function persistAiDisclosureEvidence"),
-      handlers.indexOf("async function persistComplianceEvidence"),
+      handlers.indexOf("async function persistFinishedCall"),
     );
+    expect(block).toContain('callDirection(input.call) !== "outbound"');
+    // The locally composed transcript is not treated as proof until OpenAI
+    // confirms that the exact opening drained through SIP playback.
+    expect(block).toContain("input.openingPlaybackConfirmed");
+    // The uniqueness index is the race-safe idempotency backstop.
     expect(block).toContain("onConflictDoNothing()");
     expect(block).toContain("inserted.length > 0");
   });
@@ -97,7 +98,7 @@ describe("AI-identity disclosure evidence is persisted per outbound call", () =>
   it("alerts on an unverified AI disclosure regardless of state", () => {
     const block = handlers.slice(
       handlers.indexOf("async function persistAiDisclosureEvidence"),
-      handlers.indexOf("async function persistComplianceEvidence"),
+      handlers.indexOf("async function persistFinishedCall"),
     );
     expect(block).toContain("tcpa_ai_disclosure_unverified");
     // The recording alert is fenced on two-party states; this obligation is

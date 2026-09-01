@@ -19,7 +19,6 @@ const USER_SCOPED_TABLES = new Set([
   "cadences",
   "cadenceRuns",
   "callLogs",
-  "clonedVoices",
   "crmConnections",
   "directives",
   "dncList",

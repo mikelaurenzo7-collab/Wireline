@@ -7,8 +7,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const work = resolve(root, "brand-work");
 const output = resolve(work, "exports");
 const fonts = [
-  resolve(root, "public/fonts/NGSwv5HMAFg6IuGlBNMjxLsH8ag.woff2"),
-  resolve(root, "public/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2"),
+  resolve(root, "brand-work/fonts/InterTight-ExtraBold.ttf"),
+  resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
+  resolve(root, "brand-work/fonts/Inter-SemiBold.ttf"),
+  resolve(root, "brand-work/fonts/Inter-Bold.ttf"),
+  resolve(root, "brand-work/fonts/Inter-ExtraBold.ttf"),
+  resolve(root, "brand-work/fonts/IBMPlexMono-Bold.ttf"),
 ];
 
 function imageData(relativePath) {
@@ -23,7 +27,7 @@ function writePng(relativePath, svg, width) {
   if (!existsSync(destinationDirectory)) mkdirSync(destinationDirectory, { recursive: true });
   const image = new Resvg(svg, {
     fitTo: { mode: "width", value: width },
-    font: { fontFiles: fonts, loadSystemFonts: true, defaultFontFamily: "Inter Tight" },
+    font: { fontFiles: fonts, loadSystemFonts: false, defaultFontFamily: "Inter Tight" },
   })
     .render()
     .asPng();
@@ -45,7 +49,7 @@ function frame({ width, height, background, content, title, description }) {
 }
 
 const appIcon = imageData("public/brand/botbound-app-icon.png");
-const operator = imageData("public/brand/botbound-operator-primary.png");
+const operator = imageData("public/brand/botbound-operator-polished.png");
 const bakery = imageData("brand-work/launch-stills/botbound-second-ring-bakery-hero-2560x1440.jpg");
 const auto = imageData("brand-work/launch-stills/botbound-hands-full-auto-social-1600-square.jpg");
 const florist = imageData(

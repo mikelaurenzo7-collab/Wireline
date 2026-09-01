@@ -42,28 +42,35 @@
     "confidence": null
   },
   {
-    "text": "“Thanks for calling Northstar Bakery. How can I help?”",
+    "text": "“Thanks for calling. How can I help?”",
     "startMs": 6900,
     "endMs": 8100,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "Booked. Confirmed. Logged.",
-    "startMs": 8200,
-    "endMs": 9500,
+    "text": "Configured example.",
+    "startMs": 8100,
+    "endMs": 8600,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "Appointment booked. Confirmation sent. Owner updated.",
-    "startMs": 9500,
-    "endMs": 11200,
+    "text": "Listen. Decide. Act.",
+    "startMs": 8600,
+    "endMs": 9800,
     "timestampMs": null,
     "confidence": null
   },
   {
-    "text": "BotBound. Never miss the call that matters.",
+    "text": "Capture intent. Follow your rules. Move to the next step.",
+    "startMs": 9800,
+    "endMs": 11300,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "BotBound. You can't answer every call. Your Bot can.",
     "startMs": 12000,
     "endMs": 13600,
     "timestampMs": null,

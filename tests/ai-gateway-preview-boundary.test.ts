@@ -10,10 +10,7 @@ afterEach(() => {
 
 describe("AI Gateway Preview boundary", () => {
   const managedRuntimeError = () =>
-    validateEnv().errors.some(
-      (error) =>
-        error.var === "OPENAI_API_KEY / AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN / XAI_API_KEY",
-    );
+    validateEnv().errors.some((error) => error.var === "OPENAI_API_KEY");
 
   it("ignores automatically managed OIDC authority in Vercel Preview", () => {
     vi.stubEnv("VERCEL_ENV", "preview");
@@ -56,12 +53,12 @@ describe("AI Gateway Preview boundary", () => {
     },
   );
 
-  it("lets Production OIDC satisfy environment validation", () => {
+  it("does not let Production OIDC replace the required OpenAI voice credential", () => {
     vi.stubEnv("VERCEL_ENV", "production");
     vi.stubEnv("OPENAI_API_KEY", "");
     vi.stubEnv("XAI_API_KEY", "");
     vi.stubEnv("AI_GATEWAY_API_KEY", "");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "production-oidc");
-    expect(managedRuntimeError()).toBe(false);
+    expect(managedRuntimeError()).toBe(true);
   });
 });

@@ -1,6 +1,8 @@
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { productionVisualRouteExpectation } from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
@@ -189,6 +191,71 @@ async function settle(page) {
   await page.waitForTimeout(450);
 }
 
+async function waitForRouteContent(page, viewportName, route, requireAuth, issues) {
+  const mode = requireAuth ? "authenticated" : "public";
+  const expectation = productionVisualRouteExpectation(mode, route);
+  if (!expectation) {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      kind: "semantic",
+      detail: `No canonical ${mode} visual marker exists for this route.`,
+    });
+    return false;
+  }
+
+  const expected = {
+    page: expectation.page,
+    states: [...expectation.states],
+  };
+  const semanticTimeoutMs = Math.max(10_000, Math.min(45_000, routeTimeoutMs - 5_000));
+  try {
+    await page.waitForFunction(
+      ({ expectedPage, expectedStates }) => {
+        const pages = new Set(
+          Array.from(document.querySelectorAll("[data-visual-qa-page]"))
+            .map((element) => element.getAttribute("data-visual-qa-page"))
+            .filter(Boolean),
+        );
+        const states = new Set(
+          Array.from(document.querySelectorAll("[data-visual-qa-state]"))
+            .map((element) => element.getAttribute("data-visual-qa-state"))
+            .filter(Boolean),
+        );
+        return pages.has(expectedPage) && expectedStates.every((state) => states.has(state));
+      },
+      { expectedPage: expected.page, expectedStates: expected.states },
+      { timeout: semanticTimeoutMs },
+    );
+  } catch {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      kind: "loading-state",
+      detail: `Expected ${expected.page}${expected.states.length ? ` (${expected.states.join(", ")})` : ""} route content never replaced the generic loader.`,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+async function recordScreenshotDigest(file, viewportName, route, issues) {
+  const digest = createHash("sha256").update(await readFile(file)).digest("hex");
+  const key = `${viewportName}:${digest}`;
+  const existingRoute = screenshotDigestOwners.get(key);
+  if (existingRoute && existingRoute !== route) {
+    pushIssue(issues, {
+      viewport: viewportName,
+      route,
+      kind: "duplicate-capture",
+      detail: `Screenshot is byte-identical to ${existingRoute}; route-specific content was not proven.`,
+    });
+    return;
+  }
+  screenshotDigestOwners.set(key, route);
+}
+
 function pushIssue(issues, issue) {
   if (
     issues.some(
@@ -211,6 +278,9 @@ function pushIssue(issues, issue) {
     "redirect",
     "auth",
     "shell-not-mounted",
+    "semantic",
+    "loading-state",
+    "duplicate-capture",
   ]);
   issues.push({ ...issue, severity: P0.has(issue.kind) ? "P0" : "P1" });
 }
@@ -392,6 +462,11 @@ async function captureRoute(page, viewportName, route, issues, options = {}) {
   if (!routeReached(baseUrl, route, finalUrl)) {
     pushIssue(issues, { viewport: viewportName, route, kind: "redirect", detail: finalUrl });
   }
+  // Every routed page mounts a semantic marker only after its lazy module has
+  // rendered. Waiting for that exact page/state contract makes the generic
+  // full-screen loader ineligible as visual proof.
+  if (!(await waitForRouteContent(page, viewportName, route, requireAuth, issues))) return;
+
   // A screenshot of an interstitial (proxy error, gateway page, unmounted
   // shell) is indistinguishable from a good capture in the output directory,
   // and every downstream "reviewed N screenshots" claim inherits the lie. Fail
@@ -414,6 +489,7 @@ async function captureRoute(page, viewportName, route, issues, options = {}) {
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
+  await recordScreenshotDigest(file, viewportName, route, issues);
   await captureInternalScrollEnd(page, file);
 }
 
@@ -553,6 +629,7 @@ const browser = await chromium.launch({
   ...(proxyServer ? { proxy: { server: proxyServer, bypass: "localhost,127.0.0.1,::1" } } : {}),
 });
 const issues = [];
+const screenshotDigestOwners = new Map();
 let authenticatedStorageState = null;
 
 /*

@@ -1,7 +1,7 @@
-# Wireline Incident Response Runbook
+# BotBound Incident Response Runbook
 
-**Owner:** Wireline platform owner  
-**Last reviewed:** August 11, 2026
+**Owner:** BotBound platform owner
+**Last reviewed:** September 1, 2026
 
 This is an operator runbook. Response-time language below is prioritization guidance, not a customer SLA unless a signed customer agreement explicitly incorporates it.
 
@@ -48,8 +48,8 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 1. **Confirm the blast radius.** Check runtime health, voice status, deployment state, runtime errors/logs, database health, and provider status.
 2. **Protect integrity before availability.** If billing, tenant isolation, webhook authenticity, or data correctness is uncertain, fail closed on the risky mutation path.
-3. **Identify the failing layer.** Separate Wireline deployment/configuration from database, Twilio + xAI Direct SIP telephony, optional Vapi rollback, model provider, email, payments, and rate-limit/cache dependencies.
-4. **Mitigate using an already-tested path.** Prefer provider fallback, bounded degraded mode, feature pause, or rollback over an improvised production change.
+3. **Identify the failing layer.** Separate BotBound deployment/configuration from database, Twilio carrier/PSTN/SIP transport, OpenAI Realtime call control, the structured-model provider chain, email, payments, and rate-limit/cache dependencies.
+4. **Mitigate using an already-tested path.** Prefer a configured structured-model fallback, bounded degraded mode, feature pause, or rollback over an improvised production change. Voice failures remain on the observable OpenAI Realtime path and do not switch providers.
 5. **Verify recovery.** Re-run the exact health surface that detected the issue and verify representative end-to-end behavior before declaring resolution.
 6. **Communicate material customer impact.** Use BotBound product messaging and the appropriate support channel; do not publish an unverified root cause.
 
@@ -68,15 +68,15 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 ## 4. Provider triage
 
-Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Twilio + xAI Direct SIP telephony, OpenAI, configured model fallbacks, Stripe, email delivery, and Upstash Redis. Vapi is optional rollback/showcase only and should not be treated as a launch dependency unless the active runtime configuration uses it.
+Use the relevant official provider status/support surface for the component actually in the call or transaction path. Current production dependencies include managed hosting, Postgres, Twilio carrier/PSTN/SIP transport, OpenAI Realtime voice and call control, the configured structured-model provider chain, Stripe, email delivery, and Upstash Redis. Voice incidents must not be routed to xAI, Vapi, or ElevenLabs: those providers are retired from the production voice runtime, and BotBound does not silently fail an active call over to another voice provider.
 
-Never infer an upstream outage solely from one failed health request. Re-probe after the public-health cache TTL and compare against provider status plus Wireline runtime logs.
+Never infer an upstream outage solely from one failed health request. Re-probe after the public-health cache TTL and compare against provider status plus BotBound runtime logs.
 
 ## 5. Rollback standard
 
 Rollback is appropriate when all of the following are true:
 
-- a recent Wireline deployment is strongly correlated with the incident;
+- a recent BotBound deployment is strongly correlated with the incident;
 - the prior production deployment is known good and schema-compatible;
 - rolling back will not reverse a required data migration or recreate a known security/billing defect; and
 - provider-side degradation is not the actual root cause.

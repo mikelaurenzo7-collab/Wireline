@@ -26,14 +26,6 @@ import { enforceSpendCap } from "../src/lib/spend-guards";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-function routeAdmissionBlock(source: string, route: string): string {
-  const start = source.indexOf(route);
-  expect(start, route).toBeGreaterThanOrEqual(0);
-  const handler = source.indexOf("asyncHandler<AuthenticatedRequest>", start);
-  expect(handler, `${route} handler`).toBeGreaterThan(start);
-  return source.slice(start, handler);
-}
-
 describe("account-environment AI and provider-spend admission", () => {
   beforeEach(() => {
     environmentMocks.assertAllowed.mockReset();
@@ -139,7 +131,7 @@ describe("account-environment AI and provider-spend admission", () => {
     expect(environmentMocks.assertAllowed).not.toHaveBeenCalled();
   });
 
-  it("mounts the common environment-and-cap guard before every paid voice provider route", () => {
+  it("mounts the common environment-and-cap guard before the paid OpenAI voice route", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
     const sessionStart = openai.indexOf('"/api/voice/openai/session"');
     const sessionHandler = openai.indexOf("async (req: AuthenticatedRequest", sessionStart);
@@ -149,18 +141,9 @@ describe("account-environment AI and provider-spend admission", () => {
     expect(session).toContain("enforceSpendCap");
     expect(session).toContain("enforceLaunchHardGate");
 
-    const managed = read("src/routes/voices-routes.ts");
-    for (const route of [
-      '"/api/voices/:id/preview"',
-      '"/api/voices/clone"',
-      '"/api/voices/:id/approve"',
-    ]) {
-      const admission = routeAdmissionBlock(managed, route);
-      expect(admission, route).toContain("enforceSpendCap");
-      expect(admission.indexOf("enforceLaunchHardGate"), route).toBeLessThan(
-        admission.indexOf("enforceSpendCap"),
-      );
-    }
+    const registry = read("src/server/register-api-routes.ts");
+    expect(registry).not.toContain("voices-routes");
+    expect(registry).not.toContain("voicesRouter");
   });
 
   it("places durable environment admission before every tenant job handler", () => {

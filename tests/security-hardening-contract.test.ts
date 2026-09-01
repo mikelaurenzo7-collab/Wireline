@@ -37,14 +37,29 @@ describe("security hardening contract", () => {
   });
 
   it("escalation binds the tenant to the invoked number, not a body field", () => {
-    const routes = read("src/routes/escalation-routes.ts");
-    expect(routes).toContain("schema.phoneNumbers.phoneNumber");
-    expect(routes).toContain("tenantUserId = owner.userId");
-    expect(routes).toContain("tenantStore.run(tenantUserId");
-    // A valid shared webhook secret plus an arbitrary UUID must never write
-    // into another tenant's inbox: no existence-check fallback remains.
-    expect(routes).not.toContain("tenantUserId = validUser.id");
-    expect(routes).not.toContain("if (!tenantUserId && claimedTenantId)");
+    const routes = read("src/routes/openai-sip-routes.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(routes).toContain("sipHeader(payload, OPENAI_CALLED_NUMBER_HEADER)");
+    expect(routes).toContain("eq(schema.phoneNumbers.phoneNumber, calledNumber)");
+    expect(routes).toContain("userId: line.userId");
+    expect(routes).toContain("agentId: line.agentId");
+    expect(session).toContain("return tenantStore.run(input.userId");
+    const incoming = routes.slice(
+      routes.indexOf('"/api/webhooks/openai/realtime"'),
+      routes.indexOf("export default router"),
+    );
+    const verification = incoming.indexOf("verifyStandardWebhook({");
+    const unauthorized = incoming.indexOf("if (!verification.ok)", verification);
+    const context = incoming.indexOf("await resolveInboundContext", unauthorized);
+    expect(verification).toBeGreaterThan(-1);
+    expect(unauthorized).toBeGreaterThan(verification);
+    expect(incoming.slice(unauthorized, context)).toContain(
+      'throw AppError.unauthorized("Invalid OpenAI webhook signature.")',
+    );
+    expect(context).toBeGreaterThan(unauthorized);
+    // The signed provider event may carry a called number, but never accepts
+    // a tenant or Bot identity from a request body field.
+    expect(routes).not.toMatch(/req\.(?:body|query)\.(?:userId|agentId)/);
   });
 
   it("CSP denies plugin/embed vectors explicitly", () => {

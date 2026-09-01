@@ -16,11 +16,9 @@ import {
   releaseRealtimeSessionSpendAfterFailure,
   reserveRealtimeSessionSpend,
 } from "../lib/realtime-spend-reservation";
-import {
-  ensureFounderShowcaseBots,
-  founderShowcaseAgentId,
-} from "../lib/founder-showcase-seed";
+import { ensureFounderShowcaseBots, founderShowcaseAgentId } from "../lib/founder-showcase-seed";
 import { resolveFounderUserId } from "../lib/founder-fleet-seed";
+import { admitShowcaseDemoCall } from "../lib/showcase-demo-ceiling";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { verifyStandardWebhook } from "../lib/standard-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
@@ -110,7 +108,8 @@ async function resolveInboundContext(calledNumber: string, callerNumber: string 
   const showcase = publicShowcaseByNumber(calledNumber);
   if (showcase) {
     const userId = await resolveFounderUserId();
-    if (!userId) throw AppError.serviceUnavailable("The founder showcase workspace is unavailable.");
+    if (!userId)
+      throw AppError.serviceUnavailable("The founder showcase workspace is unavailable.");
     await ensureFounderShowcaseBots(userId);
     return {
       call: {
@@ -333,6 +332,20 @@ router.post(
       normalizeOpenAIPhoneNumber(sipHeader(payload, "From"));
     if (!callId || callId.length > 256 || (!outboundToken && !calledNumber)) {
       throw AppError.badRequest("The incoming call event is missing routing information.");
+    }
+
+    if (!outboundToken && calledNumber && publicShowcaseByNumber(calledNumber)) {
+      const showcaseAdmission = await admitShowcaseDemoCall(callerNumber);
+      if (!showcaseAdmission.admitted) {
+        log.warn("OpenAI incoming showcase call denied by aggregate ceiling", {
+          reason: showcaseAdmission.reason,
+          calledSuffix: phoneSuffixForLog(calledNumber),
+          callerSuffix: phoneSuffixForLog(callerNumber ?? ""),
+        });
+        await rejectCall(callId, 486);
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
     }
 
     const context = outboundToken

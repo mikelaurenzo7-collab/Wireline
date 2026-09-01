@@ -45,22 +45,6 @@ describe("non-production live-vendor mutation boundaries", () => {
     expect(source).toContain('keyPurpose: "chatgpt_demo"');
   });
 
-  it("blocks and leases the tenant Vapi web-call mutation after ticket verification", () => {
-    const source = read("src/lib/voice/studio-vapi-web-session.ts");
-    const proxy = sliceFrom(source, "export async function proxyStudioVapiWebCall");
-    const verify = proxy.indexOf("verifyStudioVapiWebTicket(token)");
-    const environment = proxy.indexOf("assertLiveExternalActionAllowed");
-    const lease = proxy.indexOf("runTenantProviderWorkWithDeletionFence");
-    const provider = proxy.indexOf('fetch("https://api.vapi.ai/call/web"');
-
-    expect(environment).toBeGreaterThan(verify);
-    expect(lease).toBeGreaterThan(environment);
-    expect(provider).toBeGreaterThan(lease);
-    expect(proxy).toContain('operation: "vapi_studio_web_call_create"');
-    expect(proxy).toContain("result.status >= 200 && result.status < 300");
-    expect(proxy).toContain("account-deletion deadline");
-  });
-
   it("guards both AgentMail connect POSTs while preserving disconnect cleanup", () => {
     const source = read("src/routes/agentmail-routes.ts");
     const managed = sliceFrom(

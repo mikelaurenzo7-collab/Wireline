@@ -189,8 +189,10 @@ describe("company identity pack", () => {
   it("reconciles generic branding and every tenant-number mutation", () => {
     const mutation = read("src/lib/company-identity-mutation.ts");
     const settingsGuard = read("src/routes/company-identity-settings-guard-routes.ts");
-    const carrier = read("src/routes/carrier-routes.ts");
-    const provisioning = read("src/lib/phone-provisioning.ts");
+    const carrier = read("src/routes/native-phone-routing-routes.ts");
+    const provisioning = read("src/lib/voice/native-phone-provisioning.ts");
+    const assignment = read("src/lib/voice/native-phone-assignment.ts");
+    const release = read("src/lib/voice/native-phone-release.ts");
     const registry = read("src/server/register-api-routes.ts");
 
     expect(mutation).toContain("acquireCompanyIdentityMutationLock");
@@ -229,17 +231,19 @@ describe("company identity pack", () => {
     );
     expect(registry).toContain("app.use(companyIdentitySettingsGuardRouter)");
 
-    expect(
-      carrier.match(/runCompanyIdentityMutation\(req\.user\.id, "phone_number_changed"/g),
-    ).toHaveLength(2);
-    expect(carrier).toContain('code: "NATIVE_PHONE_REQUIRED"');
-    expect(carrier).toContain("desc(schema.phoneNumbers.id)");
-    expect(provisioning).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
-    expect(provisioning).toContain("compensateProvisionedNumber");
-    expect(provisioning).toContain("Carrier compensation completed");
-    expect(provisioning).toContain("Carrier compensation queued in durable orphan ledger");
+    expect(carrier).toContain("provisionNativeTenantNumber");
+    expect(carrier).toContain("assignNativePhoneLine");
+    expect(carrier).toContain("releaseNativeTenantNumber");
     expect(provisioning).toContain(
-      "Number provisioning could not be saved; the provider allocation was released.",
+      'runCompanyIdentityMutation(input.userId, "phone_number_changed"',
+    );
+    expect(assignment).toContain('"phone_number_changed"');
+    expect(release).toContain('runCompanyIdentityMutation(userId, "phone_number_changed"');
+    expect(release).toContain("desc(schema.phoneNumbers.createdAt)");
+    expect(provisioning).toContain("releasePurchasedNativeNumber");
+    expect(provisioning).toContain("PHONE_PERSISTENCE_FAILED");
+    expect(provisioning).toContain(
+      "The number could not be saved, so its carrier allocation was released or queued for cleanup.",
     );
   });
 
@@ -265,7 +269,7 @@ describe("company identity pack", () => {
     expect(surface).toContain("Request verification review");
     expect(surface).toContain("md:grid-cols-2 xl:grid-cols-3");
     expect(surface).toContain("flex flex-wrap items-start justify-between");
-    expect(phoneSetupPanel).toContain('<CompanyIdentityPack />');
+    expect(phoneSetupPanel).toContain("<CompanyIdentityPack />");
     expect(phoneSetupPanel).toContain('id="company-identity"');
     expect(phoneSetupPanel).toContain("activeNumber ? (");
   });

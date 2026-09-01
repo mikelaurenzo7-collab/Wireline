@@ -7,26 +7,27 @@ import { detectOptOut } from "../src/lib/tcpa-consent";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("agent runtime performance and action integrity", () => {
-  const factory = read("src/lib/vapi-assistant-factory-v2.ts");
-  const route = read("src/routes/vapi-v2.ts");
-  const vapiHandlers = read("src/lib/vapi-handlers.ts");
-  const workflow = read("src/routes/vapi/tool-handlers-workflow.ts");
+  const factory = read("src/lib/voice/openai-phone-agent-runtime.ts");
+  const route = read("src/routes/openai-sip-routes.ts");
+  const session = read("src/lib/voice/openai-sip-session.ts");
+  const helpers = read("src/lib/agent-runtime-helpers.ts");
+  const workflow = read("src/lib/bot-tools/workflow.ts");
   const dispatch = read("src/lib/agent-tool-dispatch.ts");
   const idempotency = read("src/lib/agent-tool-idempotency.ts");
   const truth = read("src/lib/agent-tool-result-truth.ts");
-  const toolFormat = read("src/lib/vapi-tool-format.ts");
-  const toolResults = read("src/lib/vapi-tool-results.ts");
   const capabilities = read("src/lib/agent-capabilities.ts");
   const createDefaults = read("src/lib/agent-create-defaults.ts");
   const dncMigration = read("drizzle/migrations/0109_dnc_user_phone_uniqueness.sql");
 
   it("keeps the live prompt bounded and interruption-aware", () => {
-    expect(factory).toContain("MAX_RUNTIME_DIRECTIVES");
-    expect(factory).toContain("MAX_RUNTIME_KNOWLEDGE");
-    expect(factory).toContain("truncateRuntimeSnippet");
+    expect(helpers).toContain("MAX_RUNTIME_DIRECTIVES = 24");
+    expect(helpers).toContain("MAX_RUNTIME_KNOWLEDGE = 18");
+    expect(helpers).toContain("truncateRuntimeSnippet");
     expect(factory).toContain("clampRuntimePromptPreservingTail");
-    expect(factory).toContain("stopSpeakingPlan: VAPI_STOP_SPEAKING_PLAN");
-    expect(factory).toContain("LIVE CALL DECISION STANDARD");
+    expect(factory).toContain('type: "semantic_vad"');
+    expect(factory).toContain("interrupt_response: true");
+    expect(factory).toContain("RUNTIME_ACTION_SAFETY_BLOCK");
+    expect(factory).toContain("RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK");
   });
 
   it("makes external actions retry-safe and result-truthful", () => {
@@ -42,21 +43,21 @@ describe("agent runtime performance and action integrity", () => {
     expect(truth).toContain("was not confirmed");
   });
 
-  it("keeps callers informed during bounded tool execution", () => {
-    expect(toolFormat).toContain('type: "request-start"');
-    expect(toolFormat).toContain('type: "request-response-delayed"');
-    expect(toolFormat).toContain('type: "request-failed"');
-    expect(toolFormat).toContain("result explicitly confirms success");
-    expect(toolResults).toContain("VAPI_TOOL_TIMEOUT_MS = 8_000");
-    expect(toolResults).toContain("MAX_VAPI_PARALLEL_TOOL_CALLS = 3");
-    expect(route).toContain("may still be processing");
-    expect(route).toContain("Do not repeat it or claim success or failure");
+  it("keeps tool execution ordered, bounded, and caller-truthful", () => {
+    expect(session).toContain("for (const call of calls)");
+    expect(session).toContain("const outcome = await Promise.race([");
+    expect(session).toContain("delay(TOOL_CONFIRM_TIMEOUT_MS)");
+    expect(session).toContain("OpenAI Realtime tool completed after caller-facing timeout");
+    expect(session).toContain("Action confirmation timed out and the outcome is unknown");
+    expect(session).toContain("Do not claim success or retry automatically");
+    expect(session).toContain('type: "function_call_output"');
   });
 
   it("makes degraded message-taking durable and callbacks exact", () => {
-    expect(route).toContain("buildDurableTakeMessageAssistant");
-    expect(route).toContain('name: "create_followup_task"');
-    expect(route).not.toContain("make sure the team gets back to you");
+    expect(route).toContain("applyInboundAdmission");
+    expect(session).toContain('tool.name === "create_followup_task"');
+    expect(session).toContain("promise follow-up only if the tool explicitly confirms creation");
+    expect(session).toContain("message persistence is unavailable");
     expect(workflow).toContain("if (!dueAt)");
     expect(workflow).not.toContain("Date.now() + 24 * 60 * 60 * 1000");
     expect(workflow).toContain("do not promise a response time");
@@ -109,23 +110,23 @@ describe("agent runtime performance and action integrity", () => {
     expect(detectOptOut("Don't stop calling.")).toEqual({ found: false });
   });
 
-  it("persists transcript DNC before duplicate short-circuit and best-effort evidence", () => {
-    const suppression = vapiHandlers.indexOf("await persistTranscriptDncSuppression({");
-    // TCPA evidence is idempotent per call and deliberately sits between the
-    // legal DNC boundary and the duplicate return: a redelivery restores the
-    // consent-ledger rows a failed first delivery never wrote, instead of the
-    // call-log insert consuming the only chance to write them.
-    const complianceEvidence = vapiHandlers.indexOf(
-      "await persistComplianceEvidence({",
-      suppression,
+  it("creates durable finalization recovery before duplicate suppression and replays DNC", () => {
+    const claim = session.slice(
+      session.indexOf("async function claimCall"),
+      session.indexOf("async function updatePresence"),
     );
-    const duplicateReturn = vapiHandlers.indexOf("if (!insertedFresh) {", complianceEvidence);
+    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
+    expect(claim).toContain("await enqueuePostCallDigest(");
+    expect(claim.indexOf("await enqueuePostCallDigest(")).toBeLessThan(
+      claim.indexOf("return created.id"),
+    );
 
-    expect(suppression).toBeGreaterThan(-1);
-    expect(complianceEvidence).toBeGreaterThan(suppression);
-    expect(duplicateReturn).toBeGreaterThan(complianceEvidence);
-    expect(vapiHandlers).toContain("throw dncErr");
-    expect(vapiHandlers).toContain("Compliance ledger writer failed");
-    expect(vapiHandlers).toContain("consent-ledger outage therefore cannot strand a legal opt-out");
+    const replay = session.slice(
+      session.indexOf("export async function replayOpenAISipPostCallFinalization"),
+      session.indexOf("async function runRealtimeSession"),
+    );
+    expect(replay).toContain("await persistAiDisclosureEvidence({");
+    expect(replay).toContain("await persistTranscriptDncSuppression({");
+    expect(replay).toContain("await trackVoiceMinutes({");
   });
 });

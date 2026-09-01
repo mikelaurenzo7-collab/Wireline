@@ -3,9 +3,9 @@
 Status: **Canonical production runbook**  
 Last reconciled: **August 31, 2026**
 
-BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/wireline` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
+BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/botbound` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
-Only the canonical `revaluate/wireline` project may own the GitHub integration, production environment, and `botbound.me` alias. Never copy production credentials into a duplicate Vercel project to bypass a failed gate.
+Only the canonical `revaluate/botbound` project may own the GitHub integration, production environment, and `botbound.me` alias. Never copy production credentials into a duplicate Vercel project to bypass a failed gate.
 
 ## Current launch posture
 
@@ -184,7 +184,7 @@ Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMai
 
 ### Supabase
 
-All public tables must remain under RLS. Promotion uses append-only Drizzle migrations and verifies the exact journal plus schema effects. Do not infer safety from a successful rebase alone; compare the migration journal and concrete schema objects.
+All public tables must remain under RLS. Promotion uses append-only Drizzle migrations and verifies the exact journal plus schema effects. BotBound's application ledger is `drizzle.__drizzle_migrations`; the Supabase dashboard's separate migration history may show an older number and is not a reason to replay already-applied DDL. Do not infer safety from a successful rebase or either ledger alone; compare the committed Drizzle journal, the live Drizzle ledger, and concrete schema objects. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md#the-migration-journal-is-not-the-whole-history).
 
 Enable leaked-password protection before broad signup acquisition.
 

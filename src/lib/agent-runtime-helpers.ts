@@ -37,10 +37,10 @@ export function clampRuntimePrompt(text: string, max = MAX_RUNTIME_PROMPT_CHARS)
 
 /**
  * Runtime guardrail section headers appended by buildAgentRuntimeContext, in
- * the order they appear in the composed prompt: COMPLIANCE first, VOICE
- * CONSISTENCY always last. Each string MUST be a prefix of the real header
+ * the order they appear in the composed prompt: COMPLIANCE first, VOICE AND
+ * DELIVERY CONSISTENCY always last. Each string MUST be a prefix of the real header
  * emitted by complianceDisclosure / disallowedTopicsBlock /
- * escalationKeywordsBlock and the inline VOICE CONSISTENCY push — a marker
+ * escalationKeywordsBlock and the inline VOICE AND DELIVERY CONSISTENCY push — a marker
  * that never matches its section silently forfeits that guardrail's
  * protection during a clamp.
  */
@@ -49,7 +49,7 @@ const RUNTIME_GUARDRAIL_MARKERS = [
   "\n\n## DO-NOT-DISCUSS TOPICS",
   "\n\n## IMMEDIATE-ESCALATION TRIGGERS",
   "\n\n## ACTION AND RESULT SAFETY",
-  "\n\n## VOICE CONSISTENCY",
+  "\n\n## VOICE AND DELIVERY CONSISTENCY",
 ] as const;
 
 const RUNTIME_TRIM_NOTICE =
@@ -420,10 +420,16 @@ export const AGENT_TOOL_DEFS = {
       properties: {
         date: {
           type: "string",
-          description: "The date to check (e.g., 'October 15', 'Next Tuesday').",
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+          description: "Exact local calendar date in YYYY-MM-DD format.",
+        },
+        timezone: {
+          type: "string",
+          description:
+            "IANA timezone for that local date, such as America/Chicago. Use the Bot's configured timezone unless the caller confirms a different one.",
         },
       },
-      required: ["date"],
+      required: ["date", "timezone"],
     },
   },
   book_appointment: {
@@ -433,15 +439,28 @@ export const AGENT_TOOL_DEFS = {
     parameters: {
       type: "object",
       properties: {
-        date: { type: "string", description: "Appointment date (e.g., 'Tuesday', 'Oct 15')." },
-        time: { type: "string", description: "Appointment time (e.g., '2 PM')." },
+        date: {
+          type: "string",
+          pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+          description: "Exact local appointment date in YYYY-MM-DD format.",
+        },
+        time: {
+          type: "string",
+          pattern: "^(?:[01]\\d|2[0-3]):[0-5]\\d$",
+          description: "Exact local appointment time in 24-hour HH:mm format.",
+        },
+        timezone: {
+          type: "string",
+          description:
+            "IANA timezone for the appointment, such as America/Chicago. Use the Bot's configured timezone unless the caller confirms a different one.",
+        },
         customer_name: { type: "string", description: "Caller's full name." },
         service_type: {
           type: "string",
           description: "Type of service (e.g., 'HVAC Repair', 'Plumbing Inspection').",
         },
       },
-      required: ["date", "time", "customer_name", "service_type"],
+      required: ["date", "time", "timezone", "customer_name", "service_type"],
     },
   },
   search_leads: {
