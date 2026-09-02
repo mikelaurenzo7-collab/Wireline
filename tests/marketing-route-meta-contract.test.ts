@@ -68,6 +68,7 @@ describe("route meta prerendering", () => {
     expect(resolveRouteMeta("")).toBeNull();
     expect(resolveRouteMeta("/overview")).toBeNull();
     expect(resolveRouteMeta("/studio")).toBeNull();
+    expect(resolveRouteMeta("/showcase")).toBeNull();
     expect(resolveRouteMeta("/for/not-a-real-vertical")).toBeNull();
   });
 
@@ -120,7 +121,6 @@ describe("route meta prerendering", () => {
 
     const routeSources: Record<string, string> = {
       "/about": "src/pages/About.tsx",
-      "/showcase": "src/pages/Showcase.tsx",
       "/blog": "src/pages/Blog.tsx",
       "/support": "src/components/SupportPage.tsx",
       "/contact": "src/components/ContactPage.tsx",

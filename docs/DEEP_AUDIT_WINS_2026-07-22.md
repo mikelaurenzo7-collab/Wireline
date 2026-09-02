@@ -20,8 +20,7 @@ Status: **Active** — verified product/runtime fixes from a full Wireline audit
 1. **Manual web + mobile outbound** now call `evaluateOutboundDialGate` (duplicate
    24h window + DNC + TCPA; marketing still requires federal DNC). Manual dials
    stamp `lastCalledAt` so the guard can fire on the next attempt.
-2. **Voice observability** routes moved to `/api/voice/metrics` and
-   `/api/health/voice-status` so Vercel `/api` rewrites reach Express.
+2. **Historical voice observability** routes moved to `/api/voice/metrics` and `/api/health/voice-status` so Vercel `/api` rewrites reached Express. The public demo-line probe is retired and no longer mounted.
 3. **Gemini outbound retry** uses OpenAI (selection fallback), not Gemini again.
 4. **Live video add-on checkout** stays hidden while Presence Catalog is paused
    and no saved catalog face exists.

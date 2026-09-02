@@ -5,12 +5,10 @@ export const OPENAI_REALTIME_SIDEBAND_URL = "wss://api.openai.com/v1/realtime";
 export const OPENAI_SIP_WEBHOOK_PATH = "/api/webhooks/openai/realtime";
 export const OPENAI_SIP_DEFAULT_MAX_SECONDS = 300 as const;
 export const OPENAI_OUTBOUND_SIP_TOKEN_HEADER = "X-BotBound-Token" as const;
-export const OPENAI_CALLED_NUMBER_HEADER = "X-BotBound-Called-Number" as const;
-export const OPENAI_CALLER_NUMBER_HEADER = "X-BotBound-Caller-Number" as const;
+export const OPENAI_INBOUND_SIP_TOKEN_HEADER = "X-BB-Inbound" as const;
 
 const TWILIO_SIP_URI_MAX_LENGTH = 255;
-const TWILIO_OUTBOUND_CONNECTION_OVERRIDES =
-  "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx" as const;
+const TWILIO_OUTBOUND_CONNECTION_OVERRIDES = "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx" as const;
 
 function withTwilioConnectionOverrides(url: URL): string {
   return `${url.toString()}${TWILIO_OUTBOUND_CONNECTION_OVERRIDES}`;
@@ -76,16 +74,16 @@ export function buildOpenAIOutboundSipUri(
  * database assignment remains authoritative.
  */
 export function buildOpenAIInboundSipUri(
-  calledNumber: string,
-  callerNumber?: string | null,
+  token: string,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
-  const normalized = normalizeOpenAIPhoneNumber(calledNumber);
-  if (!normalized) throw new Error("The inbound BotBound phone number is invalid.");
-  const headers = new URLSearchParams({ [OPENAI_CALLED_NUMBER_HEADER]: normalized });
-  const normalizedCaller = normalizeOpenAIPhoneNumber(callerNumber);
-  if (normalizedCaller) headers.set(OPENAI_CALLER_NUMBER_HEADER, normalizedCaller);
-  const candidate = `${openAIProjectSipUri(env)}?${headers.toString()}`;
+  const normalizedToken = token.trim();
+  if (!normalizedToken || normalizedToken.length > 220) {
+    throw new Error("OpenAI inbound SIP token is invalid.");
+  }
+  const candidate = `${openAIProjectSipUri(env)}?${OPENAI_INBOUND_SIP_TOKEN_HEADER}=${encodeURIComponent(
+    normalizedToken,
+  )}`;
   if (candidate.length > TWILIO_SIP_URI_MAX_LENGTH) {
     throw new Error("OpenAI inbound SIP URI exceeds Twilio's length limit.");
   }
@@ -127,7 +125,7 @@ export function openAISipWebhookUrl(): string {
 export function openAISipConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
   return Boolean(
     String(env.OPENAI_API_KEY || "").trim() &&
-      /^proj_[A-Za-z0-9_-]{8,}$/.test(String(env.OPENAI_PROJECT_ID || "").trim()) &&
-      String(env.OPENAI_WEBHOOK_SECRET || "").trim(),
+    /^proj_[A-Za-z0-9_-]{8,}$/.test(String(env.OPENAI_PROJECT_ID || "").trim()) &&
+    String(env.OPENAI_WEBHOOK_SECRET || "").trim(),
   );
 }

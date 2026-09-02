@@ -18,15 +18,16 @@ describe("activation path contract", () => {
     expect(doc).toContain("SENTRY_DSN");
   });
 
-  it("mounts one Bot activation path on active Studio as well as the retired Overview source", () => {
+  it("keeps Bot activation direct in Studio while preserving the legacy Overview path", () => {
     const overview = read("src/pages/OverviewPage.tsx");
     const firstRun = read("src/components/overview/FirstRunWorkspace.tsx");
     const studio = read("src/components/StudioWorkspaceV2.tsx");
     const studioSetup = read("src/components/StudioAgentWorkspacePanel.tsx");
 
     expect(overview).toContain("ActivationChecklist");
-    expect(studioSetup).toContain('import ActivationChecklist from "./ActivationChecklist"');
-    expect(studioSetup).toContain('<ActivationChecklist className="mb-1" />');
+    expect(studioSetup).not.toContain("ActivationChecklist");
+    expect(studioSetup).toContain("Define the role.");
+    expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save"}');
     expect(overview).toContain("FirstRunWorkspace");
     expect(overview).toContain("degraded && !hasBots");
     expect(overview).toContain("WorkspaceRecovery");

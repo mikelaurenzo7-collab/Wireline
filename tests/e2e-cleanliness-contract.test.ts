@@ -51,22 +51,15 @@ describe("E2E cleanliness contracts", () => {
     expect(billingRoutes).not.toContain('router.post(\n  "/billing/checkout"');
   });
 
-  it("cleans up browser microphone permission streams inside the protected session owner", () => {
-    const hook = read("src/hooks/useProtectedPublicDemo.ts");
-    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
+  it("cleans up microphone streams inside the authenticated voice-session owner", () => {
+    const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    const marketing = read("src/routes/marketing-runtime-routes.ts");
 
-    expect(hook).toContain('fetch("/api/public/demo-session"');
-    expect(hook).toContain("JSON.stringify({ agentName, source })");
-    expect(hook).toContain("microphone.current?.getTracks()");
-    expect(hook).toContain("track.stop()");
-    expect(hook).not.toContain("xai-client-secret.");
-    expect(hook).not.toContain("PROTECTED_DEMO_ASSISTANT_SENTINEL");
-    expect(hook).not.toContain("permissionStream.getTracks()");
-    expect(widget).toContain("useProtectedPublicDemo");
-    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
-    expect(widget).not.toContain("assistantPayload");
-    expect(hook).not.toContain(
-      'setError(reason instanceof Error ? reason.message : "Voice connection failed.")',
-    );
+    expect(sandbox).toContain('authFetch("/api/voice/live/session"');
+    expect(sandbox).toContain("microphone.current?.getTracks().forEach((track) => track.stop())");
+    expect(sandbox).toContain("peer.current?.close()");
+    expect(sandbox).not.toContain("xai-client-secret.");
+    expect(marketing).toContain("res.status(410).json");
+    expect(marketing).not.toContain("createPublicOpenAILiveDemoCall");
   });
 });

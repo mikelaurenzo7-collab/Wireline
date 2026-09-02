@@ -410,7 +410,8 @@ export async function handleCoreToolCall(
         recipient: to_email,
         subject,
         body,
-        context: "Outbound email generated from a live Bot tool call during a customer conversation.",
+        context:
+          "Outbound email generated from a live Bot tool call during a customer conversation.",
       });
       const service = new IntegrationService(agent?.user_id);
       const success = await service.sendEmail({
@@ -453,9 +454,8 @@ export async function handleCoreToolCall(
     }
   }
 
-  // Tenant signup-link tool. Public showcase traffic uses the tool-free OpenAI
-  // guest demo session and never enters this branch; keeping that split
-  // prevents a demo tenant from inheriting the platform Resend transport.
+  // Tenant signup-link tool. Retired showcase profiles are not public runtime
+  // entrypoints; authenticated tenant policy owns every live invocation.
   //
   // Core branch logic lives in src/lib/agent-link-tool-handlers.ts so it
   // can be unit-tested with mocked transports — the route stays a

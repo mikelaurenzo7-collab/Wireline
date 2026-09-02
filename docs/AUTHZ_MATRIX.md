@@ -5,8 +5,8 @@
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
 **Routes scanned:** 383
-**Protected:** 306
-**Public (allowlisted):** 77
+**Protected:** 307
+**Public (allowlisted):** 76
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -46,9 +46,9 @@
 | `POST /api/intake/lead` | API-key auth via X-Wireline-Key + rate limit |
 | `POST /api/intake/leads` | API-key auth via X-Wireline-Key + rate limit |
 | `GET /api/integrations/certified` | Public certified-integration status; rate-limited, no tenant data |
-| `GET /api/public/assistant/:agentName` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/public/demo-call` | Aggregated, no-PII marketing counters; rate-limited |
-| `POST /api/public/demo-session` | Aggregated, no-PII marketing counters; rate-limited |
+| `GET /api/public/assistant/:agentName` | Retired 410 tombstone; no provider work or tenant data |
+| `POST /api/public/demo-call` | Retired 410 tombstone; no provider work or tenant data |
+| `POST /api/public/demo-session` | Retired 410 tombstone; no provider work or tenant data |
 | `GET /api/public/stats` | Aggregated, no-PII marketing counters; rate-limited |
 | `POST /api/webhooks/meta/deletion` | Meta HMAC-SHA256 signature + rate limit |
 | `GET /api/webhooks/meta/leads` | Meta HMAC-SHA256 signature + rate limit |
@@ -89,7 +89,6 @@
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/usage-alert` | Twilio signature validation; valid provider retries are never IP-throttled |
-| `GET /api/health/voice-status` | Public demo-line voice probe; aggregated metrics only, rate-limited |
 
 ## Full Matrix
 
@@ -101,6 +100,7 @@
 | account-routes.ts | POST | `/api/accounts` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/:id` | inline | — | — | Protected |
 | account-routes.ts | GET | `/api/accounts/primary` | inline | — | — | Protected |
+| activation-routes.ts | GET | `/api/activation/nudge-status` | inline | — | — | Protected |
 | activation-routes.ts | GET | `/api/activation/status` | inline | — | — | Protected |
 | admin-seed-demo-routes.ts | DELETE | `/api/admin/demo-data` | inline | platform_admin | — | Protected |
 | admin-seed-demo-routes.ts | POST | `/api/admin/seed-demo-account` | inline | platform_admin | — | Protected |
@@ -464,7 +464,6 @@
 | twilio-webhook.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/usage-alert` | — | — | yes | Public (allowlisted) |
 | user-preference-guard-routes.ts | POST | `/api/user-preferences` | inline | — | — | Protected |
-| voice-observability-routes.ts | GET | `/api/health/voice-status` | — | — | yes | Public (allowlisted) |
 | voice-observability-routes.ts | GET | `/api/insights/latency` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/latency/recent` | inline | — | — | Protected |
 | voice-observability-routes.ts | GET | `/api/insights/voice-reliability` | inline | permission | — | Protected |

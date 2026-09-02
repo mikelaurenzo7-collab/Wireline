@@ -2,7 +2,11 @@ import { chromium } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { productionVisualRouteExpectation } from "./lib/production-visual-qa-contract.mjs";
+import {
+  PRODUCTION_VISUAL_MARKETING_ROUTES,
+  productionVisualRouteExpectation,
+  productionVisualSemanticKey,
+} from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
@@ -16,41 +20,7 @@ const email = process.env.WIRELINE_VISUAL_EMAIL?.trim();
 const password = process.env.WIRELINE_VISUAL_PASSWORD;
 const routeTimeoutMs = Number(process.env.WIRELINE_VISUAL_ROUTE_TIMEOUT_MS || 90_000);
 
-const marketingRoutes = [
-  "/",
-  "/features",
-  "/pricing",
-  "/showcase",
-  "/compare",
-  "/solutions/support",
-  "/solutions/sales",
-  "/about",
-  "/blog",
-  "/changelog",
-  "/contact",
-  "/support",
-  "/security",
-  "/trust",
-  "/trust/medical",
-  "/trust/legal",
-  "/trust/insurance",
-  "/trust/enterprise",
-  "/privacy",
-  "/terms",
-  "/developers",
-  "/for/everyday",
-  "/for/home-services",
-  "/for/medical",
-  "/for/legal",
-  "/for/real-estate",
-  "/for/insurance",
-  "/for/restaurants",
-  "/for/sales",
-  "/signin",
-  "/signup",
-  "/404",
-  "/not-found",
-];
+const marketingRoutes = [...PRODUCTION_VISUAL_MARKETING_ROUTES];
 
 const authenticatedRoutes = [
   "/studio",
@@ -240,11 +210,20 @@ async function waitForRouteContent(page, viewportName, route, requireAuth, issue
   return true;
 }
 
-async function recordScreenshotDigest(file, viewportName, route, issues) {
-  const digest = createHash("sha256").update(await readFile(file)).digest("hex");
+async function recordScreenshotDigest(file, viewportName, route, requireAuth, issues) {
+  const digest = createHash("sha256")
+    .update(await readFile(file))
+    .digest("hex");
   const key = `${viewportName}:${digest}`;
   const existingRoute = screenshotDigestOwners.get(key);
   if (existingRoute && existingRoute !== route) {
+    const mode = requireAuth ? "authenticated" : "public";
+    const currentSemanticKey = productionVisualSemanticKey(mode, route);
+    const existingSemanticKey = productionVisualSemanticKey(mode, existingRoute);
+    // Compatibility redirects are expected to be byte-identical to their
+    // canonical surface. The shared page/state contract is the authority; two
+    // genuinely distinct surfaces still fail this gate.
+    if (currentSemanticKey && currentSemanticKey === existingSemanticKey) return;
     pushIssue(issues, {
       viewport: viewportName,
       route,
@@ -489,7 +468,7 @@ async function captureRoute(page, viewportName, route, issues, options = {}) {
   await auditResponsiveLayout(page, viewportName, route, issues);
   const file = path.join(outputDir, `${viewportName}-${fileName(route)}.png`);
   await page.screenshot({ path: file, fullPage: true, animations: "disabled", timeout: 30_000 });
-  await recordScreenshotDigest(file, viewportName, route, issues);
+  await recordScreenshotDigest(file, viewportName, route, requireAuth, issues);
   await captureInternalScrollEnd(page, file);
 }
 

@@ -241,6 +241,10 @@ async function resolveBridgeContext(
       ? AMD_ERROR_CLAIM_STATUSES
       : ACTIVE_LEAD_STATUSES;
 
+    const outboundLineNumber = normalizeOpenAIPhoneNumber(nativeVoice.outbound_line_number);
+    if (!outboundLineNumber) {
+      throw AppError.conflict("This outbound placement is missing its originating line.");
+    }
     const [binding] = await tx
       .select()
       .from(schema.phoneNumbers)
@@ -248,11 +252,12 @@ async function resolveBridgeContext(
         and(
           eq(schema.phoneNumbers.userId, lead.userId),
           eq(schema.phoneNumbers.agentId, lead.agentId),
+          eq(schema.phoneNumbers.phoneNumber, outboundLineNumber),
         ),
       )
       .limit(1);
     const callerId = normalizeOpenAIPhoneNumber(binding?.phoneNumber);
-    if (!callerId) {
+    if (!callerId || callerId !== outboundLineNumber) {
       throw AppError.serviceUnavailable("The native voice line is not active.");
     }
 
@@ -321,7 +326,9 @@ async function resolveBridgeContext(
       .update(schema.outboundLeads)
       .set({
         callId: callSid,
-        status: LEAD_STATUS.CONNECTED,
+        // Serving TwiML starts the SIP bridge; only the durable OpenAI call
+        // claim proves that a live conversation exists.
+        status: LEAD_STATUS.DIALING,
         lastCalledAt: now,
         metadata: { ...metadata, native_voice: amdNativeVoice },
       })
@@ -518,12 +525,19 @@ router.post(
         }
       } else if (isMonotonic && TERMINAL_CARRIER_FAILURES.has(carrierStatus)) {
         nextNativeVoice.carrier_completed_at = now.toISOString();
-        if (lead.status === LEAD_STATUS.CONNECTED || !neverBridgedNativeVoice(nativeVoice)) {
+        if (lead.status === LEAD_STATUS.CONNECTED || nativeVoice.openai_call_id) {
           // Twilio may emit a terminal customer-leg status after the call was
           // already bridged into OpenAI SIP. That callback closes the carrier leg;
           // it must not demote the live/finished conversation or create a second
           // `twilio:CallSid` usage entry beside the authoritative OpenAI call id.
           nextNativeVoice.carrier_terminal_after_bridge = carrierStatus;
+        } else if (nativeVoice.state === "bridging" || nativeVoice.bridge_served_at) {
+          // A terminal carrier callback can race the signed OpenAI incoming-call
+          // event after TwiML is served. Preserve the placement for that late
+          // attachment instead of prematurely re-queuing it.
+          patch.status = LEAD_STATUS.ERROR;
+          patch.lastContactSummary = "The customer leg ended before native voice was confirmed.";
+          nextNativeVoice.state = "carrier_completed_without_openai_confirmation";
         } else {
           const maxAttempts = await loadCampaignMaxAttempts(tx, lead.campaignId);
           patch.status = resolveRetryableLeadStatus(lead.attempts, maxAttempts);

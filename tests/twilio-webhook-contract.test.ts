@@ -26,13 +26,15 @@ describe("Twilio webhook XML contract", () => {
 
   it("lets OpenAI own the first audible Bot identity without a generated jingle", () => {
     const route = read("src/routes/twilio-webhook-base.ts");
+    const inboundRoute = read("src/routes/openai-inbound-twilio-routes.ts");
     const packageJson = read("package.json");
     const quarantine = read("scripts/quarantine-retired-public-assets.mjs");
 
     expect(route).not.toContain("/sounds/wireline-jingle.mp3");
     expect(route).not.toContain("/sounds/botbound-jingle.mp3");
     expect(route).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
-    expect(route).toContain("OpenAI owns the audible Bot identity and first greeting");
+    expect(inboundRoute).toContain("<Sip>${escapeXml(sipUri)}</Sip>");
+    expect(inboundRoute).not.toContain("<Play>");
     expect(read(".env.example")).not.toContain("BOTBOUND_JINGLE_ASSET_APPROVED");
     expect(packageJson).toContain("node scripts/quarantine-retired-public-assets.mjs");
     expect(packageJson).not.toContain("validate-botbound-jingle");

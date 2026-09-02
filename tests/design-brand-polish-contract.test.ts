@@ -107,20 +107,17 @@ describe("E2E design and BotBound brand polish", () => {
     expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
     expect(header).not.toContain("font-semibold uppercase");
     expect(sticky).toContain("MARKETING_VOICE.primaryCta");
-    expect(sticky).toContain('secondaryLabel = "Hear It Live"');
+    expect(sticky).toContain('secondaryLabel = "How It Works"');
     expect(sticky).toContain("min-h-[48px]");
     expect(footer).toContain("min-h-11 items-center");
   });
 
-  it("keeps status and CTA foregrounds accessible while public demos use a live-voice signal", () => {
-    const demo = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(demo).toContain("Headphones");
-    expect(demo).not.toContain("<BotMark");
-    expect(demo).not.toContain("markKey");
-    expect(demo).not.toContain("<SignalOrbFrame");
-    expect(demo).not.toContain("AgentFace");
-    expect(demo).not.toContain("<Medallion");
-    expect(demo).toContain("text-[color:var(--wireline-color-text-onAction)]");
+  it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    expect(landing).toContain('aria-label="Choose Bot direction"');
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
   });
@@ -136,7 +133,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("BotBoundLockup");
     expect(landing).toContain('className="landing-prestige__hero-lockup"');
-    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
     expect(landing).toContain("FEATURED_TEMPLATES.map");

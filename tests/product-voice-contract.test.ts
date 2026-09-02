@@ -53,11 +53,10 @@ const CUSTOMER_BOT_SURFACES = [
   "src/components/insights/shared.tsx",
   "src/components/onboarding/PostCreateActivationWizard.tsx",
   "src/components/outbound/CampaignsPanel.tsx",
-  "src/components/marketing/BrowserCallWidget.tsx",
-  "src/hooks/useProtectedPublicDemo.ts",
   "src/lib/private-agent-test.ts",
-  "src/lib/voice/openai-public-demo-session.ts",
   "src/pages/CustomizationSettings.tsx",
+  "src/pages/Showcase.tsx",
+  "src/routes/marketing-runtime-routes.ts",
   "src/routes/agent-test-routes.ts",
   "src/routes/chatgpt-mcp-account-routes.ts",
 ] as const;
@@ -226,7 +225,7 @@ describe("BotBound product voice", () => {
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).toContain("FEATURED_TEMPLATES.map");

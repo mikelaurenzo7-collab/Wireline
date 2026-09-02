@@ -1,4 +1,12 @@
-import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, UploadCloud, X } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
@@ -195,16 +203,57 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const confirmDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const activeAgentIdRef = useRef(agentId);
+  const agentScopeRevisionRef = useRef(0);
+  const agentOperationControllersRef = useRef(new Set<AbortController>());
 
-  useEffect(() => {
-    // Switching voice agents should not carry over an expanded list from a
-    // different (possibly much longer) knowledge base.
+  useLayoutEffect(() => {
+    const operationControllers = agentOperationControllersRef.current;
+    activeAgentIdRef.current = agentId;
+    agentScopeRevisionRef.current += 1;
+    for (const controller of operationControllers) controller.abort();
+    operationControllers.clear();
+
+    // Switching Bots must clear both the visible data and every mutation state
+    // before paint. A late upload/edit/delete response from the previous Bot is
+    // fenced by the scope revision captured when that operation began.
+    setConfig(null);
+    setLoading(Boolean(agentId));
+    setUploading(false);
+    setDragOver(false);
+    setNotice(null);
+    setLoadError(null);
+    setIngestError(null);
     setShowAllKnowledge(false);
     setEditingKnowledgeId(null);
     setKnowledgeDraft("");
     setKnowledgeBusyId(null);
     setConfirmDeleteKnowledgeId(null);
     setEntryError(null);
+    removeButtonRefs.current.clear();
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    return () => {
+      agentScopeRevisionRef.current += 1;
+      for (const controller of operationControllers) controller.abort();
+      operationControllers.clear();
+    };
+  }, [agentId]);
+
+  const startAgentOperation = useCallback(() => {
+    const requestedAgentId = agentId;
+    const scopeRevision = agentScopeRevisionRef.current;
+    const controller = new AbortController();
+    agentOperationControllersRef.current.add(controller);
+    return {
+      requestedAgentId,
+      controller,
+      isCurrent: () =>
+        !controller.signal.aborted &&
+        activeAgentIdRef.current === requestedAgentId &&
+        agentScopeRevisionRef.current === scopeRevision,
+      finish: () => agentOperationControllersRef.current.delete(controller),
+    };
   }, [agentId]);
 
   useEffect(() => {
@@ -214,10 +263,12 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       setLoadError(null);
       return;
     }
-    let cancelled = false;
+    const operation = startAgentOperation();
     setLoading(true);
     setLoadError(null);
-    authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
+    authFetch(`/api/agent-config/${encodeURIComponent(operation.requestedAgentId)}`, {
+      signal: operation.controller.signal,
+    })
       .then(async (response) => {
         if (!response.ok) {
           const body = (await safeJson(response)) as { error?: string } | null;
@@ -226,21 +277,23 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         return response.json() as Promise<AgentConfig>;
       })
       .then((data) => {
-        if (!cancelled) setConfig(data);
+        if (operation.isCurrent()) setConfig(data);
       })
       .catch((reason) => {
-        if (!cancelled) {
+        if (operation.isCurrent()) {
           setConfig(null);
           setLoadError(reason instanceof Error ? reason.message : "Knowledge could not be loaded.");
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (operation.isCurrent()) setLoading(false);
+        operation.finish();
       });
     return () => {
-      cancelled = true;
+      operation.controller.abort();
+      operation.finish();
     };
-  }, [agentId, version]);
+  }, [agentId, startAgentOperation, version]);
 
   async function ingest(files: FileList | File[]) {
     if (!agentId) {
@@ -250,6 +303,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     const picked = Array.from(files);
     const list = picked.slice(0, KNOWLEDGE_ASSET_MAX_FILES);
     if (!list.length || uploading) return;
+    const operation = startAgentOperation();
     setUploading(true);
     setNotice(null);
     setEntryError(null);
@@ -260,47 +314,55 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     let failure: string | null = null;
 
     try {
-      for (const file of list) {
-        const payload = await readAsset(file);
-        const response = await authFetch(
-          `/api/agent-config/${encodeURIComponent(agentId)}/assets`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
-        const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
-        if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
-        ingested += 1;
-        if (body?.summary) summaries.push(body.summary);
-        emitProductEvent({
-          event: "training_asset_added",
-          agentId,
-          metadata: {
-            source: "knowledge_upload",
-            file_name: file.name,
-            mime_type: payload.mimeType,
-          },
-        });
+      try {
+        for (const file of list) {
+          const payload = await readAsset(file);
+          if (!operation.isCurrent()) return;
+          const response = await authFetch(
+            `/api/agent-config/${encodeURIComponent(operation.requestedAgentId)}/assets`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+              signal: operation.controller.signal,
+            },
+          );
+          const body = (await safeJson(response)) as { summary?: string; error?: string } | null;
+          if (!response.ok) throw new Error(body?.error || `${file.name} could not be ingested.`);
+          if (!operation.isCurrent()) return;
+          ingested += 1;
+          if (body?.summary) summaries.push(body.summary);
+          emitProductEvent({
+            event: "training_asset_added",
+            agentId: operation.requestedAgentId,
+            metadata: {
+              source: "knowledge_upload",
+              file_name: file.name,
+              mime_type: payload.mimeType,
+            },
+          });
+        }
+      } catch (reason) {
+        failure = reason instanceof Error ? reason.message : "Knowledge could not be ingested.";
       }
-    } catch (reason) {
-      failure = reason instanceof Error ? reason.message : "Knowledge could not be ingested.";
-    }
 
-    // A failure part-way through a batch used to discard the whole run: the
-    // files already ingested were left out of the notice and the list was never
-    // refetched, so the screen claimed nothing had been saved while the server
-    // held the opposite. Report whatever landed before reporting what did not.
-    if (ingested > 0) {
-      setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
-      setVersion((value) => value + 1);
+      if (!operation.isCurrent()) return;
+      // A failure part-way through a batch used to discard the whole run: the
+      // files already ingested were left out of the notice and the list was never
+      // refetched, so the screen claimed nothing had been saved while the server
+      // held the opposite. Report whatever landed before reporting what did not.
+      if (ingested > 0) {
+        setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
+        setVersion((value) => value + 1);
+      }
+      // Files past the per-batch cap were being dropped without a word.
+      const problems = [failure, knowledgeAssetFileCountNotice(picked.length)].filter(Boolean);
+      setIngestError(problems.length ? problems.join(" ") : null);
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } finally {
+      operation.finish();
     }
-    // Files past the per-batch cap were being dropped without a word.
-    const problems = [failure, knowledgeAssetFileCountNotice(picked.length)].filter(Boolean);
-    setIngestError(problems.length ? problems.join(" ") : null);
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function onFilePick(event: ChangeEvent<HTMLInputElement>) {
@@ -362,6 +424,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       setEntryError("Knowledge cannot be empty. Remove the entry instead.");
       return;
     }
+    const operation = startAgentOperation();
     setKnowledgeBusyId(rowId);
     setEntryError(null);
     setNotice(null);
@@ -370,9 +433,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content }),
+        signal: operation.controller.signal,
       });
       const body = (await safeJson(response)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Knowledge could not be updated.");
+      if (!operation.isCurrent()) return;
       setConfig((current) =>
         current
           ? {
@@ -387,22 +452,27 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       setKnowledgeDraft("");
       setNotice("Knowledge updated.");
     } catch (reason) {
+      if (!operation.isCurrent()) return;
       setEntryError(reason instanceof Error ? reason.message : "Knowledge could not be updated.");
     } finally {
-      setKnowledgeBusyId(null);
+      if (operation.isCurrent()) setKnowledgeBusyId(null);
+      operation.finish();
     }
   }
 
   async function removeKnowledgeEntry(rowId: string) {
+    const operation = startAgentOperation();
     setKnowledgeBusyId(rowId);
     setEntryError(null);
     setNotice(null);
     try {
       const response = await authFetch(`/api/knowledge/${encodeURIComponent(rowId)}`, {
         method: "DELETE",
+        signal: operation.controller.signal,
       });
       const body = (await safeJson(response)) as { error?: string } | null;
       if (!response.ok) throw new Error(body?.error || "Knowledge could not be removed.");
+      if (!operation.isCurrent()) return;
       setConfig((current) =>
         current
           ? {
@@ -420,9 +490,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       }
       setNotice("Knowledge removed.");
     } catch (reason) {
+      if (!operation.isCurrent()) return;
       setEntryError(reason instanceof Error ? reason.message : "Knowledge could not be removed.");
     } finally {
-      setKnowledgeBusyId(null);
+      if (operation.isCurrent()) setKnowledgeBusyId(null);
+      operation.finish();
     }
   }
 

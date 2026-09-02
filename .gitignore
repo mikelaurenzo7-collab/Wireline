@@ -1,5 +1,6 @@
 # Dependencies and package-manager state
 node_modules/
+.botbound-proof-source-identity.json
 /node_modules
 Pods/
 Carthage/

@@ -37,7 +37,7 @@ launch-2026-09-outbound/
 |   |-- carousel/        Five-part Lead Hunt carousel
 |   |-- workflow/        Product and campaign flow proof
 |   |-- email/           Launch email header
-|   |-- investor/        Investor preview
+|   |-- investor/        Selectable-text investor PDF and PNG preview
 |   |-- motion/          Remotion exports and QA frames
 |   |-- website/         BotBound.me social share card
 |   `-- contact-sheet/   Complete visual review sheet

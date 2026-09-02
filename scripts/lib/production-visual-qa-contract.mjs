@@ -12,7 +12,6 @@ export const PRODUCTION_VISUAL_MARKETING_EXPECTATIONS = Object.freeze([
   visualExpectation("/", "home"),
   visualExpectation("/features", "features"),
   visualExpectation("/pricing", "pricing"),
-  visualExpectation("/showcase", "showcase"),
   visualExpectation("/compare", "compare"),
   visualExpectation("/solutions/support", "solutions", ["support"]),
   visualExpectation("/solutions/sales", "solutions", ["sales"]),
@@ -163,6 +162,11 @@ const expectationByCaptureKey = new Map([
 
 export function productionVisualRouteExpectation(mode, route) {
   return expectationByCaptureKey.get(`${mode}\u0000${route}`) ?? null;
+}
+
+export function productionVisualSemanticKey(mode, route) {
+  const expectation = productionVisualRouteExpectation(mode, route);
+  return expectation ? `${expectation.page}\u0000${expectation.states.join("\u0000")}` : null;
 }
 
 export function requiredProductionVisualSemanticAssertions() {

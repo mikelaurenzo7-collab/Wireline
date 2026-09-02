@@ -100,8 +100,8 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "is this ai",
     ],
     response_template:
-      "Honest answer: yes, it's AI. The best test is a private browser rehearsal or the live demo on this site, where you can hear it yourself.",
-    follow_up_question: "Want the shortest path to a private rehearsal or live demo?",
+      "Honest answer: yes, it's AI. The best test is the private rehearsal inside your BotBound account, where you can hear your own Bot before launch.",
+    follow_up_question: "Want the shortest path to a private rehearsal?",
     rationale:
       "Lead with honest disclosure and a demo path BotBound can actually provide without promising an unverified callback or comparative claim.",
   },

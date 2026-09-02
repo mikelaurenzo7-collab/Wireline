@@ -22,9 +22,6 @@
     .landing-stage__spine li > span,
     .landing-stage__lanes-label,
     .landing-console__status,
-    .landing-demo__presence,
-    .landing-demo__role,
-    .landing-demo__signal,
     .landing-console__activity-kicker,
     .landing-console__event-index,
     .landing-console__outcome span,
@@ -41,8 +38,6 @@
   :where(
     .landing-stage__economics,
     .landing-stage__lane strong,
-    .landing-demo__microcopy,
-    .landing-demo__alert,
     .landing-console__event-copy small,
     .landing-console__outcome,
     .landing-console__control-note,
@@ -55,7 +50,6 @@
   :where(
     .landing-stage__primary,
     .landing-stage__secondary,
-    .landing-demo__button,
     .landing-console__brand,
     .landing-console__event-copy strong,
     .landing-home__price-card > a
@@ -71,10 +65,6 @@
     .landing-stage__lane strong,
     .landing-console__brand,
     .landing-console__status,
-    .landing-demo__presence,
-    .landing-demo__name,
-    .landing-demo__role,
-    .landing-demo__signal,
     .landing-console__activity-kicker,
     .landing-console__activity-title,
     .landing-console__event-copy strong,
@@ -89,7 +79,6 @@
   :where(
     .landing-stage__title,
     .landing-stage__primary,
-    .landing-demo__button,
     .landing-home__price-badge,
     .landing-home__price strong
   ) {

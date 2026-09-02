@@ -106,6 +106,7 @@ router.post(
 
       res.json({ campaign: mapObjectToSnake(data) });
     } catch (error: any) {
+      rethrowIfAppError(error);
       log.error("Failed to create campaign", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to create campaign");
     }

@@ -17,8 +17,8 @@ type Props = {
 export default function MarketingStickyCta({
   href = signupHrefForPlan("personal"),
   label = MARKETING_VOICE.primaryCta,
-  secondaryHref = "/showcase",
-  secondaryLabel = "Hear It Live",
+  secondaryHref = "/features",
+  secondaryLabel = "How It Works",
   className,
 }: Props) {
   const [visible, setVisible] = useState(false);

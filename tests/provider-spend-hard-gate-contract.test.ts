@@ -22,7 +22,7 @@ function expectMiddlewareBeforeHandler(source: string, route: string, handlerMar
 }
 
 describe("provider spend launch kill switch", () => {
-  it("guards browser-minted voice sessions before provider work", () => {
+  it("guards account voice sessions and retires public voice before provider work", () => {
     const openai = read("src/routes/openai-realtime-routes.ts");
     const publicDemo = read("src/routes/marketing-runtime-routes.ts");
 
@@ -31,15 +31,13 @@ describe("provider spend launch kill switch", () => {
       '"/api/voice/openai/session"',
       "async (req: AuthenticatedRequest, res: Response)",
     );
-    expectMiddlewareBeforeHandler(
-      publicDemo,
-      '"/api/public/demo-session"',
-      "asyncHandler(async (req, res)",
+    expect(publicDemo).toContain(
+      'router.post("/api/public/demo-session", publicVoicePreviewRetired)',
     );
-    expectMiddlewareBeforeHandler(
-      publicDemo,
-      '"/api/public/demo-call"',
-      "asyncHandler(async (req, res)",
+    expect(publicDemo).toContain('router.post("/api/public/demo-call", publicVoicePreviewRetired)');
+    expect(publicDemo).toContain("res.status(410).json");
+    expect(publicDemo).not.toMatch(
+      /createServerManagedOpenAIRealtimeCall|createPublicOpenAILiveDemoCall|reserveRealtimeSessionSpend/,
     );
     expect(openai).not.toMatch(/Vapi|xAI|Grok/);
     const registry = read("src/server/register-api-routes.ts");
@@ -99,7 +97,6 @@ describe("provider spend launch kill switch", () => {
       "purge_deleted_account",
       "sweep_orphan_supervisor_subs",
       "reclaim_canceled_numbers",
-      "demo_line_canary",
       "vapi_webhook",
     ]) {
       expect(isPausableProviderSpendJobType(type), type).toBe(false);

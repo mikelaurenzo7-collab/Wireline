@@ -23,7 +23,6 @@ const FRAMED_PAGES = [
   "src/pages/Blog.tsx",
   "src/pages/Compare.tsx",
   "src/pages/Developers.tsx",
-  "src/pages/Showcase.tsx",
   "src/pages/SolutionsPage.tsx",
   "src/pages/VerticalLanding.tsx",
   "src/components/ContactPage.tsx",
@@ -131,8 +130,9 @@ for (const [needle, description] of [
     '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     "home must keep direct account creation",
   ],
-  ["<BrowserCallWidget", "home must keep the protected browser demo"],
-  ['to="/showcase"', "home must keep a clear browser-demo fallback"],
+  ["landing-prestige__directions", "home must expose inbound and outbound starting paths"],
+  ["FIND. CALL. BOOK.", "home must keep the outbound activation path"],
+  ["ANSWER. QUALIFY. ROUTE.", "home must keep the inbound activation path"],
   ['id="solutions"', "home must include solutions"],
   ['id="pricing"', "home must include pricing"],
   ["landing-prestige__trust", "home must include trust controls"],
@@ -142,10 +142,31 @@ for (const [needle, description] of [
     failures.push(`src/components/marketing/WireAgentLanding.tsx: ${description}`);
   }
 }
+if (
+  /BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)/.test(
+    executableHome,
+  )
+) {
+  failures.push(
+    "src/components/marketing/WireAgentLanding.tsx: retired public voice-preview code must stay off the landing page",
+  );
+}
 if (/variant="phone"|landing-phone|landing-os__tray|chrome="hidden"/.test(executableHome)) {
   failures.push(
     "src/components/marketing/WireAgentLanding.tsx: retired device markers must stay removed",
   );
+}
+
+const showcase = executable(read("src/pages/Showcase.tsx"));
+for (const [needle, description] of [
+  ["<Navigate", "retired Showcase must redirect instead of rendering a public voice preview"],
+  ['signupHrefForPlan("personal")', "Showcase must use the canonical free signup destination"],
+  ["replace", "Showcase redirect must replace the retired history entry"],
+]) {
+  if (!showcase.includes(needle)) failures.push(`src/pages/Showcase.tsx: ${description}`);
+}
+if (/BrowserCallWidget|useProtectedPublicDemo|RTCPeerConnection|getUserMedia/.test(showcase)) {
+  failures.push("src/pages/Showcase.tsx: retired public voice-preview runtime must stay removed");
 }
 
 const landingFooter = read("src/components/marketing/LandingFooter.tsx");

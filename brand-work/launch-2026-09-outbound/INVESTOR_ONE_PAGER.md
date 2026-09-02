@@ -2,7 +2,7 @@
 
 ## FIND. CALL. BOOK.
 
-**BotBound is the operating layer for Bots that find prospects, make calls, book next steps, follow up, and report outcomes.**
+**Autonomous Bots find prospects, make calls, and drive every conversation toward a clear outcome.**
 
 ## The wedge
 

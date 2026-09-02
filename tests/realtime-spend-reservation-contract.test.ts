@@ -55,8 +55,8 @@ describe("realtime spend reservation contract", () => {
 
     expect(helper).toContain("shouldRetainRealtimeReservation(error)");
     expect(helper).toContain("markPlatformCostReservationAmbiguous(reservation)");
-    expect(helper).toContain("Promise.allSettled");
-    expect(helper).toContain("releasePlatformCostReservation(reservation)");
+    expect(helper).toContain("releasePlatformCostReservationIfReserved(reservation)");
+    expect(helper).toContain("if (!costReleased) return");
     expect(helper).toContain("releaseSimulationMinuteQuota(req)");
     expect(quota).toContain("async releaseUsage(");
     expect(quota).toContain("periodKey?: string");
@@ -92,7 +92,9 @@ describe("realtime spend reservation contract", () => {
     expect(accept).toBeGreaterThan(reserve);
     expect(commit).toBeGreaterThan(accept);
     expect(webhook).toContain("releaseRealtimeSessionSpendAfterFailure");
-    expect(webhook).toContain('reserveRealtimeSessionSpend(req, sessionInput.userId, "openai_sip")');
+    expect(webhook).toMatch(
+      /reserveRealtimeSessionSpend\(\s*req,\s*sessionInput\.userId,\s*"openai_sip",\s*`openai-sip:\$\{callId\}`/,
+    );
   });
 
   it("validates request bodies before consuming a five-minute quota reservation", () => {
@@ -128,5 +130,8 @@ describe("realtime spend reservation contract", () => {
       'setPlatformCostReservationState(reservation, "provider_outcome_ambiguous")',
     );
     expect(accounting).toContain("Platform cost reservation state update failed");
+    expect(accounting).toContain("adopted: true");
+    expect(accounting).toContain("adopted: false");
+    expect(accounting).toContain("if (reservation.adopted !== false) return false");
   });
 });

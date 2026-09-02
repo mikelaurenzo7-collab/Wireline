@@ -1,14 +1,12 @@
 /**
- * Voice observability — per-call metrics tracking and demo line health alerting.
+ * Voice observability — per-call metrics tracking and tenant reliability analysis.
  *
  * Tracks:
  *   - TTFT (time-to-first-token): target <900ms, alert threshold 1.2s p95
  *   - STT/TTS error rates per call
  *   - Full pipeline latency (time-to-first-audio)
  *
- * Demo line health:
- *   - p95 TTFT over 5min window → alert
- *   - Error rate >5% over 5min → alert
+ * Reliability windows can be computed for authenticated operator workflows.
  */
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
@@ -82,12 +80,10 @@ const DEFAULT_ESCALATION_FAILURE_RATE_ALERT_PCT = 10;
 export { isPipelineFailure } from "./call-reliability-capture";
 
 /**
- * Compute health metrics over a trailing window. Used by:
- *   - /api/health/voice-status (public demo line probe)
- *   - Canary cron (alerts when demo line degrades)
+ * Compute health metrics over a trailing window for internal reliability analysis.
  */
 export async function computeVoiceHealthWindow(opts: {
-  userId?: string; // undefined = all demo calls across tenants
+  userId?: string; // undefined = all calls across tenants
   demoOnly?: boolean;
   windowMinutes?: number;
 }): Promise<HealthWindowResult> {
@@ -214,12 +210,12 @@ function percentile(sorted: number[], p: number): number | null {
 }
 
 /**
- * Alerting integration — called by canary cron or health probe when
- * thresholds are breached. Dispatches webhook + logs for PagerDuty/Opsgenion routing.
+ * Alerting integration for internal reliability workflows. Dispatches a tenant webhook
+ * when scoped to a user and logs the same bounded reliability window.
  */
 export async function alertOnVoiceDegradation(opts: {
   window: HealthWindowResult;
-  channel: "demo-line" | string;
+  channel: string;
   userId?: string;
 }): Promise<void> {
   const { window, channel, userId } = opts;

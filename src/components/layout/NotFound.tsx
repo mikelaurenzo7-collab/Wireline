@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router";
 import { MotionConfig, motion } from "motion/react";
 import {
   Compass,
-  Headphones,
   Home,
   LayoutGrid,
   MessageSquare,
@@ -100,10 +99,10 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard
-                to="/showcase"
-                icon={Headphones}
-                label="Browser Demo"
-                hint="Hear a live Bot"
+                to="/features"
+                icon={LayoutGrid}
+                label="Features"
+                hint="See how BotBound works"
                 accent={BRAND.colors.primary}
               />
               <NotFoundCard

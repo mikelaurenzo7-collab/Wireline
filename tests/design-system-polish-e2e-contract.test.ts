@@ -15,7 +15,9 @@ describe("design system polish e2e verified wins", () => {
     expect(features).toContain("MARKETING_VOICE.channelProof.map");
     expect(features).not.toMatch(/wl-channel-chip[\s\S]{0,180}<Icon\b/);
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).not.toContain("HERO_CHANNELS.map");
     expect(landing).not.toContain('aria-label="BotBound channels"');
@@ -79,6 +81,6 @@ describe("design system polish e2e verified wins", () => {
       /\.marketing-surface\s+:is\(\s*\.wl-eyebrow[\s\S]*?text-transform:\s*uppercase;/,
     );
     expect(polish).not.toContain("#demo-lines");
-    expect(polish).toContain(".wl-showcase-preview__note");
+    expect(polish).not.toContain(".wl-showcase-preview__note");
   });
 });

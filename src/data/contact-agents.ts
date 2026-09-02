@@ -9,7 +9,8 @@ export const CONTACT_AGENT_TINTS = {
 } as const;
 
 /**
- * Single source of truth for public browser-showcase profiles.
+ * Legacy showcase profiles retained for founder-owned internal Bot seeding and
+ * historical attribution compatibility. They are not public voice entrypoints.
  *
  * Layout:
  *   - 2 BotBound specialists (Sarah, Liam) — product/support role profiles.
@@ -18,17 +19,15 @@ export const CONTACT_AGENT_TINTS = {
  *     outbound sales).
  *
  * Used in:
- *   1. Landing and Showcase — LANDING_PUBLIC_DEMO_AGENTS names for protected
- *      browser demos (no public PSTN CTAs)
- *   2. In-app /help route — specialists + full demo catalog
- *   3. Founder fleet seeding — persists each OpenAI Realtime runtime profile
+ *   1. Founder fleet seeding — persists each OpenAI Realtime runtime profile.
+ *   2. Legacy attribution — resolves historical demo-source records.
  *
  * The `tel` and `display` fields are retained only as legacy migration/audit
  * identifiers. They do not authorize PSTN routing. A live phone call must have
  * a current tenant-owned database assignment.
  *
- * Voice design: every agent uses a documented OpenAI Realtime voice so browser
- * previews share the same managed voice palette as customer phone Bots.
+ * Voice design: every profile uses a documented OpenAI Realtime voice so
+ * authenticated rehearsals share the customer phone-Bot voice palette.
  */
 
 export type ContactAgent = {
@@ -228,12 +227,6 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
 
 /** Primary product-help role profile — never a public telephone CTA. */
 export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
-
-/** Primary public demos on the landing page — protected browser sessions only. */
-export const LANDING_PUBLIC_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
-  WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!,
-  WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!,
-];
 
 /**
  * Retired founder PSTN routing registry.

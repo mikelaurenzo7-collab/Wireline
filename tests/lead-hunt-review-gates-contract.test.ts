@@ -7,6 +7,18 @@ function source(path: string): string {
 }
 
 describe("Lead Hunt review and launch boundaries", () => {
+  it("validates malformed Lead Hunt IDs without calling BigInt on untrusted text", () => {
+    const routes = source("src/routes/outbound-routes.ts");
+    const idSchema = routes.slice(
+      routes.indexOf("const LeadHuntIdSchema"),
+      routes.indexOf("const LeadHuntApprovalSchema"),
+    );
+
+    expect(idSchema).toContain("parseBigIntId(value)");
+    expect(idSchema).toContain("parsed === null || parsed <= POSTGRES_BIGINT_MAX");
+    expect(idSchema).not.toContain("BigInt(value)");
+  });
+
   it("accepts the text Bot IDs used by campaign assignment", () => {
     const agentId = "agent-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     expect(CampaignCreateSchema.safeParse({ name: "Lead Hunt", agent_id: agentId }).success).toBe(
@@ -30,6 +42,31 @@ describe("Lead Hunt review and launch boundaries", () => {
     expect(prospecting).toContain('review_status: "pending"');
     expect(prospecting).toContain("has_express_written_consent: false");
     expect(prospecting).not.toContain("campaign_dial");
+  });
+
+  it("keeps only the newest Lead Hunt review-list response", () => {
+    const review = source("src/components/outbound/LeadHuntReview.tsx");
+    const loader = review.slice(
+      review.indexOf("const loadLeads = useCallback("),
+      review.indexOf("useEffect(() =>", review.indexOf("const loadLeads = useCallback(")),
+    );
+    expect(loader).toContain("leadListAbortRef.current?.abort()");
+    expect(loader).toContain("leadListOperationRef.current === operation");
+    expect(loader).toContain("signal: controller.signal");
+    expect(loader).toContain("if (!isCurrentRequest()) return;");
+    expect(loader).toContain("if (isCurrentRequest()) setLoading(false);");
+  });
+
+  it("labels every Lead Hunt targeting control and exposes company-size state", () => {
+    const growth = source("src/components/admin/GrowthPanel.tsx");
+    expect(growth).toContain('htmlFor="growth-target-titles"');
+    expect(growth).toContain('htmlFor="growth-target-industries"');
+    expect(growth).toContain('htmlFor="growth-target-geography"');
+    expect(growth).toContain('aria-label="Add job title"');
+    expect(growth).toContain('aria-label="Add industry"');
+    expect(growth).toContain('aria-label="Add geographic target"');
+    expect(growth).toContain('aria-labelledby="growth-target-company-size"');
+    expect(growth).toContain("aria-pressed={targetEmployeeRanges.includes(range.value)}");
   });
 
   it("binds queued Lead Hunt work to the immutable job owner", () => {

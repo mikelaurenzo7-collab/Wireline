@@ -16,39 +16,18 @@ describe("launch artifact privacy and operations truth", () => {
     expect(runtime).not.toMatch(/api\.x\.ai|api\.vapi\.ai|elevenlabs|11labs/i);
   });
 
-  it("makes unauthenticated native browser proof short, tool-free, and non-retained", () => {
-    const policy = read("src/lib/public-browser-demo.ts");
+  it("retires unauthenticated browser voice without retaining a provider path", () => {
     const route = read("src/routes/marketing-runtime-routes.ts");
-    const session = read("src/lib/voice/openai-public-demo-session.ts");
-    const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
-    const hook = read("src/hooks/useProtectedPublicDemo.ts");
-    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
-    const budget = read("src/lib/public-demo-budget.ts");
+    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+    const showcase = read("src/pages/Showcase.tsx");
 
-    expect(policy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
-    expect(policy).toContain("recordingEnabled: false");
-    expect(policy).toContain("loggingEnabled: false");
-    expect(policy).toContain("transcriptPlan: { enabled: false }");
-    expect(route).toContain("publicOpenAIDemoConfigured");
+    expect(route).toContain("function publicVoicePreviewRetired");
+    expect(route).toContain("res.status(410).json");
+    expect(route).toContain('code: "public_voice_preview_retired"');
     expect(route).toContain('"/api/public/demo-call"');
-    expect(route).toContain("createPublicOpenAILiveDemoCall");
-    expect(route).not.toContain("process.env.VAPI_PRIVATE_KEY");
-    expect(route).not.toContain('router.post("/api/public/demo-vapi/call/web"');
-    expect(session).toContain("tools: []");
-    expect(session).toContain('tool_choice: "none"');
-    expect(session).not.toContain("recording");
-    expect(session).toContain("runInBackground");
-    expect(session).toContain("hangupOpenAIRealtimeCall");
-    expect(callControl).toContain("openai_realtime_hangup");
-    expect(callControl).toContain("/hangup");
-    expect(hook).toContain('fetch("/api/public/demo-session"');
-    expect(hook).toContain("new RTCPeerConnection()");
-    expect(hook).not.toContain("xai-client-secret");
-    expect(hook).not.toContain("api.x.ai");
-    expect(widget).not.toContain("VITE_VAPI_PUBLIC_KEY");
-    expect(widget).not.toContain("/api/public/assistant/");
-    expect(budget).toContain("distributedLimiterStatus");
-    expect(budget).toContain('bucket: "public-demo-global-daily"');
+    expect(route).not.toMatch(/OpenAI|VAPI|createServerManagedOpenAIRealtimeCall|runInBackground/);
+    expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|demo-session/);
+    expect(showcase).toContain("<Navigate to={FREE_SIGNUP} replace />");
   });
 
   it("keeps public retention and recording claims aligned with runtime defaults", () => {
@@ -81,8 +60,9 @@ describe("launch artifact privacy and operations truth", () => {
     );
     expect(runbook).toContain("`/api/jobs/sweep` every **minute**");
     expect(runbook).toContain("`/api/daily-brief/schedule` every **15 minutes**");
-    expect(runbook).toContain("**nightly** schedule");
-    expect(runbook).toContain("is **not** a paid synthetic call every 15 minutes");
+    expect(runbook).toContain("The former public demo-line canary is retired");
+    expect(runbook).toContain("Do not reintroduce a paid synthetic call");
+    expect(runbook).not.toContain("**nightly** schedule");
     expect(runbook).not.toContain("Uptime monitor → SMS + email");
     expect(runbook).not.toContain("Vercel cron → Slack");
   });

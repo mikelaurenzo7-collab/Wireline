@@ -112,20 +112,17 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(consent).toContain("sm:items-center");
   });
 
-  it("keeps public demos on the master brand and reserves Bot marks for customers", () => {
+  it("keeps public entry on the master brand and reserves Bot marks for customers", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
     const styles = read("src/styles/bot-mark.css");
 
-    expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
     expect(landing).not.toContain("markKey");
-    expect(widget).not.toContain("landing-demo-inline__voice-symbol");
-    expect(widget).toContain("landing-demo-inline__identity");
-    expect(widget).toContain("Headphones");
-    expect(widget).not.toContain("<BotMark");
+    expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
     expect(generator).not.toMatch(/botMarkInitial|initial:\s*/i);
     expect(generator).toContain("BOT_MARK_SIGNATURE_CAPACITY = 1_048_576");

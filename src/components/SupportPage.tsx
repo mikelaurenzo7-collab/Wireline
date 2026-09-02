@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { CheckCircle2, Headphones, Loader2, Mail, MessageSquare, Send } from "lucide-react";
+import { CheckCircle2, LayoutTemplate, Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
@@ -97,10 +97,10 @@ export function SupportPage() {
               Review your Bots and activity
             </p>
           </Link>
-          <Link to="/showcase" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
-            <Headphones className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Browser Demo</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Hear a live Phone Bot</p>
+          <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Product tour</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">See how BotBound works</p>
           </Link>
         </section>
 

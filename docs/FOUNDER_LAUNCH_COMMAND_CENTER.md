@@ -57,7 +57,7 @@ For every release, verify rather than copy forward:
 - zero-warning ESLint;
 - production dependency security audit;
 - migrations and semantic schema-effects verification;
-- public health and voice-status after promotion;
+- public health and authenticated voice-reliability evidence after promotion;
 - fresh production error/fatal logs after promotion.
 
 The build's integration-test fixtures intentionally strip selected environment variables; fixture stderr must not be mistaken for the real production environment gate.
@@ -159,7 +159,7 @@ The repaired historical derivatives remain QA/editing drafts until exact-product
 **GO** only when:
 
 - exact `main` is deployed READY;
-- public health and voice-status are healthy;
+- public health is healthy and authenticated voice-reliability evidence shows no material degradation;
 - no new production error/fatal cluster is present;
 - required production env gate passes;
 - dependency/security and schema gates pass;

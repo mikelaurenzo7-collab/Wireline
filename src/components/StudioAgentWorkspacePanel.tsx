@@ -16,7 +16,6 @@ import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
-import ActivationChecklist from "./ActivationChecklist";
 import AgentToolPermissions from "./AgentToolPermissions";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
@@ -244,7 +243,6 @@ export default function StudioAgentWorkspacePanel({
       className={`min-h-0 flex-1 overflow-y-auto bg-background ${className}`}
     >
       <div className={contentClass}>
-        {!compact ? <ActivationChecklist className="mb-1" /> : null}
         <header className={compact ? "px-1 pt-1" : ""}>
           <h2
             className={

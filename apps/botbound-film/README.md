@@ -53,12 +53,32 @@ To render all cuts sequentially:
 npm run render:all
 ```
 
-To render and QA the approved outbound suite:
+To render and QA the outbound delivery suite:
 
 ```bash
 npm run render:outbound-social
 npm run qa:outbound-social
 ```
+
+`render:outbound-social` is a fail-closed publishing transaction. It removes
+the prior approval markers, renders all three masters into a staging directory,
+probes the exact 6s/10s/15s set, byte-verifies the installed files, and publishes
+`render-provenance.json` last. The prior masters are restored on any handled
+installation failure. A hard interruption can leave only an unapproved partial
+set: it cannot leave stale metadata claiming that the set passed.
+
+`qa:outbound-social` independently requires those exact three MP4 files, binds
+them back to the render receipt, validates codec/frame/audio/duration details,
+extracts 12 review frames, and publishes `metadata.json` only after the QA
+evidence and `SHA256SUMS.txt` are installed. Metadata records renderer, source,
+runtime, render-configuration, media-tool, QA-script, and output hashes. A dirty
+worktree is allowed for review candidates because every relevant source byte is
+hashed; the exact-input dirty state and Git context remain visible in the
+receipt.
+
+The 1080×1920 First Move cuts reserve 220 px above, 340 px below, 96 px at left,
+and 144 px at right for Reels/TikTok interface chrome. The QA contact sheet adds
+a dashed mint guide for inspection; the guide is never burned into a master.
 
 The outbound masters use score and confirmation chime only. They contain no
 spoken dialogue, so no caption sidecar is required; the exact on-screen
@@ -95,4 +115,4 @@ npm run still:endcard
 The `out/` directory is intentionally ignored except for its placeholder. Its
 contents are disposable local renders, not a release record. Delivery renders
 must be inspected and accompanied by a SHA-256 manifest tied to the exact
-source commit before approval.
+source bytes and recorded Git context before approval.

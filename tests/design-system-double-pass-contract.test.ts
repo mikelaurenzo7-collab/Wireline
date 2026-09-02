@@ -115,13 +115,12 @@ describe("WIRELINE design-system double-pass contract", () => {
   it("keeps active customer-facing brand surfaces on Bot language", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
-    const demo = read("src/components/marketing/BrowserCallWidget.tsx");
 
     expect(landing).not.toMatch(/\bvoice agents?\b/i);
     expect(footer).not.toMatch(/\bvoice agents?\b/i);
-    expect(demo).not.toMatch(/\bBot avatar\b/i);
-    expect(demo).toContain("Headphones");
-    expect(demo).not.toContain("Bot mark");
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
   });
 
   it("keeps BotBound as one cross-platform visual brand while technical wireline stays data", () => {

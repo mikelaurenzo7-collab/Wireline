@@ -12,7 +12,6 @@ Wireline uses Playwright and axe checks as the first automated accessibility gat
 - `/`
 - `/features`
 - `/pricing`
-- `/showcase`
 - `/about`
 - `/security`
 - `/support`

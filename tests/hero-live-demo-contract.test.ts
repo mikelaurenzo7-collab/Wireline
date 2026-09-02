@@ -1,10 +1,10 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("public live demo contract", () => {
+describe("public voice-preview retirement contract", () => {
   it("keeps the homepage on the canonical BotBound product truth", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const botProduct = read("src/lib/bot-product.ts");
@@ -12,8 +12,10 @@ describe("public live demo contract", () => {
     expect(landing).toContain("PUT YOUR BOT");
     expect(landing).toContain("ON THE LINE");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).not.toContain('aria-label="BotBound channels"');
-    expect(landing).not.toContain("HERO_CHANNELS.map");
+    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(botProduct).toContain(
@@ -21,37 +23,65 @@ describe("public live demo contract", () => {
     );
   });
 
-  it("keeps a real protected browser demo and a truthful product fallback on Showcase", () => {
-    const landing = read("src/components/marketing/WireAgentLanding.tsx");
+  it("redirects the retired Showcase directly to canonical free signup", () => {
     const showcase = read("src/pages/Showcase.tsx");
-    const widget = read("src/components/marketing/BrowserCallWidget.tsx");
 
-    expect(landing).toContain("<BrowserCallWidget");
-    expect(landing).toContain('variant="inline"');
-    expect(landing).toContain("buttonLabel={`Talk to ${HERO_DEMO.name}`}");
-    expect(landing).toContain('to="/showcase"');
-    expect(landing).toContain("Open browser demo");
-    expect(landing).not.toContain("<BotMark");
-    expect(showcase).toContain("<BrowserCallWidget");
-    expect(showcase).toContain('id="showcase-preview"');
-    expect(showcase).toContain("BUILD YOUR BOT");
-    expect(showcase).toContain("Protected browser preview");
-    expect(showcase).toContain('role="group"');
-    expect(showcase).toContain("aria-pressed={selected}");
-    expect(showcase).not.toContain('role="tablist"');
-    expect(showcase).not.toContain('id="demo-lines"');
-    expect(showcase).not.toContain("href={`tel:${agent.tel}`}");
-    expect(widget).toContain("useProtectedPublicDemo");
-    expect(widget).toContain("Demo Phone Bot");
-    expect(widget).not.toContain("LIVE PHONE BOT");
-    expect(widget).toContain("Headphones");
-    expect(widget).not.toContain("markKey");
-    expect(widget).not.toContain("<BotMark");
-    expect(widget).toContain("Bot speaking");
-    expect(widget).not.toContain("Demo Voice Agent");
-    expect(widget).not.toContain("Agent speaking");
-    expect(widget).not.toContain("Public demo line available");
-    expect(widget).not.toContain("Standard carrier rates may apply");
+    expect(showcase).toContain('import { Navigate } from "react-router"');
+    expect(showcase).toContain('const FREE_SIGNUP = signupHrefForPlan("personal")');
+    expect(showcase).toContain("<Navigate to={FREE_SIGNUP} replace />");
+    expect(showcase).not.toMatch(/BrowserCallWidget|RTCPeerConnection|getUserMedia|demo-session/);
+  });
+
+  it("keeps official captures on live product surfaces instead of screenshotting the redirect", () => {
+    const officialAssets = read("scripts/build-official-assets.mjs");
+    const visualQa = read("scripts/capture-visual-qa.mjs");
+
+    expect(officialAssets).toContain('path.join(web, "features-1920x1080.png")');
+    expect(officialAssets).toContain('{ id: "07-features", route: "/features" }');
+    expect(officialAssets).not.toContain('captureSized(page, "/showcase"');
+    expect(visualQa).toContain("PRODUCTION_VISUAL_MARKETING_ROUTES");
+    expect(visualQa).not.toMatch(/const marketingRoutes = \[[\s\S]*"\/showcase"/);
+  });
+
+  it("returns provider-free 410 responses from every legacy public voice endpoint", () => {
+    const routes = read("src/routes/marketing-runtime-routes.ts");
+
+    expect(routes).toContain("function publicVoicePreviewRetired");
+    expect(routes).toContain("res.status(410).json");
+    expect(routes).toContain('code: "public_voice_preview_retired"');
+    expect(routes).toContain('signupPath: "/signup?plan=free"');
+    expect(routes).toContain(
+      'router.get("/api/public/assistant/:agentName", publicVoicePreviewRetired)',
+    );
+    expect(routes).toContain('router.post("/api/public/demo-session", publicVoicePreviewRetired)');
+    expect(routes).toContain('router.post("/api/public/demo-call", publicVoicePreviewRetired)');
+    expect(routes).not.toMatch(
+      /createPublicOpenAILiveDemoCall|createServerManagedOpenAIRealtimeCall|api\.openai\.com|api\.vapi\.ai/,
+    );
+  });
+
+  it("keeps voice simulation inside the authenticated product", () => {
+    const sandbox = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    const routes = read("src/routes/live-voice-routes.ts");
+
+    expect(sandbox).toContain('authFetch("/api/voice/live/session"');
+    expect(sandbox).toContain("new RTCPeerConnection()");
+    expect(sandbox).toContain("navigator.mediaDevices.getUserMedia");
+    expect(sandbox).toContain("microphone.current?.getTracks().forEach((track) => track.stop())");
+    expect(routes).toMatch(/router\.post\(\s*"\/api\/voice\/live\/session",\s*authenticateUser/);
+  });
+
+  it("removes the retired public browser runtime instead of leaving dormant provider code", () => {
+    for (const path of [
+      "src/components/marketing/BrowserCallWidget.tsx",
+      "src/hooks/useProtectedPublicDemo.ts",
+      "src/lib/public-browser-demo.ts",
+      "src/lib/public-demo-budget.ts",
+      "src/lib/public-demo-ticket.ts",
+      "src/lib/voice/openai-public-demo-session.ts",
+    ]) {
+      expect(existsSync(resolve(process.cwd(), path)), path).toBe(false);
+    }
   });
 
   it("does not advertise retired founder phone numbers on public marketing CTAs", () => {
@@ -69,23 +99,6 @@ describe("public live demo contract", () => {
     for (const source of surfaces) {
       expect(source).not.toMatch(/href=\{`tel:|href: "tel:|href={`tel:/);
     }
-  });
-
-  it("keeps demo sessions bounded, measured, and BotBound-branded", () => {
-    const demo = read("src/hooks/useProtectedPublicDemo.ts");
-    const provider = read("src/lib/voice/openai-public-demo-session.ts");
-
-    expect(demo).toContain('fetch("/api/public/demo-session"');
-    expect(demo).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS");
-    expect(demo).toContain("PUBLIC_DEMO_SESSION_REQUEST_TIMEOUT_MS");
-    expect(demo).toContain("PUBLIC_DEMO_CONNECTION_TIMEOUT_MS");
-    expect(demo).toContain('event: "landing_demo_clicked"');
-    expect(demo).toContain('surface: "marketing_web"');
-    expect(demo).toContain("endTimerRef.current");
-    expect(provider).toContain("demonstrating BotBound");
-    expect(provider).toContain("Hi, I’m ${input.agent.name}.");
-    expect(provider).not.toContain("BotBound Phone Bot");
-    expect(provider).not.toMatch(/Wireline voice agent/i);
   });
 
   it("does not present fabricated workflow telemetry on the homepage", () => {

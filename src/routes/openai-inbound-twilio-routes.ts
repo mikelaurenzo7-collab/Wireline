@@ -1,14 +1,13 @@
 import { Router, type Request, type Response } from "express";
 import { eq } from "drizzle-orm";
 
-import { ALL_SHOWCASE_CONTACT_AGENTS } from "../data/contact-agents";
 import * as schema from "../db/schema";
 import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 import { asyncHandler } from "../lib/api-error";
-import { resolveFounderUserId } from "../lib/founder-fleet-seed";
 import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
+import { issueOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import {
   buildOpenAIInboundSipUri,
   normalizeOpenAIPhoneNumber,
@@ -41,15 +40,7 @@ function inboundBridgeTwiml(sipUri: string): string {
   );
 }
 
-function showcaseOwnsNumber(phoneNumber: string): boolean {
-  return ALL_SHOWCASE_CONTACT_AGENTS.some(
-    (agent) => normalizeOpenAIPhoneNumber(agent.tel) === phoneNumber,
-  );
-}
-
 async function resolveInboundOwner(phoneNumber: string): Promise<string | null> {
-  if (showcaseOwnsNumber(phoneNumber)) return resolveFounderUserId();
-
   const [line] = await drizzle
     .select({ userId: schema.phoneNumbers.userId, agentId: schema.phoneNumbers.agentId })
     .from(schema.phoneNumbers)
@@ -108,7 +99,12 @@ router.post(
         return;
       }
 
-      const sipUri = buildOpenAIInboundSipUri(calledNumber, callerNumber);
+      const { token } = issueOpenAIInboundToken({
+        twilioCallSid: String(req.body?.CallSid || ""),
+        calledNumber,
+        callerNumber,
+      });
+      const sipUri = buildOpenAIInboundSipUri(token);
       res.status(200).send(inboundBridgeTwiml(sipUri));
     } catch (error) {
       log.error("Twilio inbound OpenAI bridge failed closed", {

@@ -48,7 +48,7 @@ function resolveApiKey(
     throw AppError.fromHttpStatus(
       503,
       source === "chatgpt_demo"
-        ? "The protected live demo is temporarily unavailable."
+        ? "The authenticated live rehearsal is temporarily unavailable."
         : "OpenAI Realtime is not configured.",
     );
   }

@@ -26,7 +26,7 @@ describe("gpt-realtime-2.1 admission-reserve contract", () => {
     expect(() => resolveOpenAIRealtimeSessionReserveUsd("not-money")).toThrow(/at least \$1\.00/);
   });
 
-  it("applies bounded retention-ratio truncation to every browser session", () => {
+  it("applies bounded retention-ratio truncation to every account-bound browser session", () => {
     expect(OPENAI_REALTIME_COST_TRUNCATION).toEqual({
       type: "retention_ratio",
       retention_ratio: 0.8,
@@ -35,16 +35,16 @@ describe("gpt-realtime-2.1 admission-reserve contract", () => {
     for (const path of [
       "src/lib/voice/openai-realtime-service.ts",
       "src/lib/voice/openai-live-agent-service.ts",
-      "src/lib/voice/openai-public-demo-session.ts",
     ]) {
       expect(read(path), path).toContain("OPENAI_REALTIME_COST_TRUNCATION");
     }
   });
 
-  it("resolves the public-demo reserve before creating provider work", () => {
-    const source = read("src/lib/voice/openai-public-demo-session.ts");
-    expect(source.indexOf("const fiveMinuteReserveUsd")).toBeLessThan(
-      source.indexOf("createServerManagedOpenAIRealtimeCall({"),
+  it("keeps legacy public voice endpoints outside provider billing entirely", () => {
+    const routes = read("src/routes/marketing-runtime-routes.ts");
+    expect(routes).toContain("res.status(410).json");
+    expect(routes).not.toMatch(
+      /createServerManagedOpenAIRealtimeCall|resolveOpenAIRealtimeSessionReserveUsd|reserve/i,
     );
   });
 

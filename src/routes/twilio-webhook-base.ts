@@ -30,7 +30,6 @@ import * as schema from "../db/schema";
 import { eq, and, inArray, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
-import { rateLimit, distributedLimiterStatus } from "../lib/rate-limit";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { matchesCarrierKeyword } from "../lib/carrier-keywords";
@@ -41,7 +40,6 @@ import {
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
-import { buildOpenAIInboundSipUri } from "../lib/voice/openai-sip-config";
 
 const router = Router();
 
@@ -774,60 +772,13 @@ router.post("/api/twilio-webhook/singing-receptionist", async (req: Request, res
     return res.status(403).send(twimlEmpty());
   }
   const from = (req.body?.From as string | undefined) || "";
-  log.info("Singing receptionist demo line hit", { from_suffix: phoneSuffixForLog(from) });
-
-  // This is a public, provider-billed showcase number. Cap repeat callers before
-  // bridging to OpenAI and fail closed when the distributed limiter is unhealthy;
-  // returning TwiML 200 avoids carrier webhook retries while still protecting spend.
-  const limiter = distributedLimiterStatus();
-  if (!limiter.ok) {
-    log.error("Singing receptionist disabled: distributed rate limiter unavailable", {
-      reason: limiter.reason,
-    });
-    return res.status(200).send(twimlHangup());
-  }
-  try {
-    const demoRate = await rateLimit(sanitizePhone(from) || from || "unknown", {
-      bucket: "public_singing_demo",
-      windowMs: 60 * 60 * 1000,
-      max: 3,
-      failClosedOnError: true,
-    });
-    if (!demoRate.allowed) {
-      log.warn("Singing receptionist caller rate-limited", {
-        from_suffix: phoneSuffixForLog(from),
-      });
-      return res.status(200).send(twimlHangup());
-    }
-  } catch (error) {
-    log.error("Singing receptionist rate limiter failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return res.status(200).send(twimlHangup());
-  }
-
-  const calledNumber = typeof req.body?.To === "string" ? req.body.To.trim() : "";
-  let sipUri = "";
-  try {
-    sipUri = buildOpenAIInboundSipUri(calledNumber, from);
-  } catch (error) {
-    log.error("Singing receptionist OpenAI SIP route is unavailable", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-  let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
-  if (sipUri) {
-    // OpenAI owns the audible Bot identity and first greeting. Twilio only
-    // connects the carrier leg; no separate provider-generated jingle or
-    // selectable Twilio voice precedes the session. A five-minute demo cap and
-    // short ring timeout keep public spend bounded.
-    twiml += `  <Dial answerOnBridge="true" timeout="20" timeLimit="300"><Sip>${escapeTwimlValue(sipUri)}</Sip></Dial>\n`;
-  } else {
-    twiml += `  <Hangup/>\n`;
-  }
-  twiml += `</Response>`;
-
-  return res.status(200).send(twiml);
+  log.info("Retired singing receptionist route hit", {
+    from_suffix: phoneSuffixForLog(from),
+  });
+  // Keep a signed compatibility sink so any Twilio number that has not yet
+  // been detached receives a final 200 response without retrying or creating
+  // a provider-billed OpenAI/Twilio bridge.
+  return res.status(200).send(twimlHangup());
 });
 
 export default router;

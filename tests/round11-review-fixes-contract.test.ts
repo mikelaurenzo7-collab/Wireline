@@ -94,10 +94,12 @@ describe("round-11 review fixes", () => {
     expect(billing).toContain("refundedCents / chargeCents");
   });
 
-  it("routes the public 404 to the protected browser demo", () => {
+  it("routes the public 404 to useful live pages, not the retired browser demo", () => {
     const notFound = read("src/components/layout/NotFound.tsx");
-    expect(notFound).toContain('to="/showcase"');
-    expect(notFound).toContain("Browser Demo");
+    expect(notFound).toContain('to="/features"');
+    expect(notFound).toContain('to="/pricing"');
+    expect(notFound).not.toContain('to="/showcase"');
+    expect(notFound).not.toContain("Browser Demo");
     expect(notFound).not.toContain("LANDING_PUBLIC_DEMO_AGENTS");
     expect(notFound).not.toContain("tel:${DEMO_LINE.tel}");
     expect(notFound).not.toContain("tel:+16305811834");

@@ -22,7 +22,8 @@ The deployed Vercel schedule currently runs:
 
 - `/api/jobs/sweep` every **minute** for durable background work.
 - `/api/daily-brief/schedule` every **15 minutes** for due daily-brief dispatch.
-- The demo-line canary is queued separately on its **nightly** schedule. It validates the public-line control-plane/assignment posture and recent reliability evidence; it is **not** a paid synthetic call every 15 minutes.
+
+The former public demo-line canary is retired. Do not reintroduce a paid synthetic call without an explicit cost, ownership, and alert-response review.
 
 Do not describe a monitoring cadence as live until it is present in production configuration and verified.
 
@@ -30,7 +31,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 
 - `GET /api/health` — application/database health.
 - `GET /api/health/public` — cached, distributed runtime posture used by backstage release and incident checks.
-- `GET /api/health/voice-status` — recent voice reliability surface.
+- Authenticated `GET /api/insights/voice-reliability?days=1` — tenant-scoped recent voice reliability.
 - Authenticated/operator health routes expose deeper provider, SLO, queue, and integration diagnostics.
 - The incident-response target on the operator SLO surface requires both a protected monitor credential and an owner contact. A configured target is not evidence that an external monitor is polling it or that an alert destination has been tested.
 - Vercel runtime logs and grouped runtime errors are deployment evidence.
@@ -136,7 +137,7 @@ If cross-tenant access, credential exposure, webhook forgery, payment corruption
 ## 8. Launch truths to keep current
 
 - Public status is evidence, not an uptime guarantee.
-- The demo-line canary is nightly unless production scheduling is deliberately changed.
+- Public demo voice and its demo-line canary are retired; authenticated reliability evidence is the supported voice-health path.
 - Vercel cron is the source of truth for Vercel-scheduled jobs.
 - Sentry alert destinations must be verified in Sentry; code presence alone does not prove a Slack/SMS/email rule.
 - Provider fallback claims must match the active runtime policy and vendor configuration.

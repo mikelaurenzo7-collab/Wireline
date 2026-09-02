@@ -53,7 +53,9 @@ describe("code review hardening contracts", () => {
 
   it("rejects OpenAI SIP routing that does not resolve a tenant from the called number", () => {
     const routes = read("src/routes/openai-sip-routes.ts");
-    expect(routes).toContain("sipHeader(payload, OPENAI_CALLED_NUMBER_HEADER)");
+    expect(routes).toContain("sipHeader(payload, OPENAI_INBOUND_SIP_TOKEN_HEADER)");
+    expect(routes).toContain("verifyOpenAIInboundToken(inboundToken)");
+    expect(routes).toContain("inboundVerification.claims.calledNumber");
     expect(routes).toContain("eq(schema.phoneNumbers.phoneNumber, calledNumber)");
     expect(routes).toContain("if (!line?.userId || !line.agentId) return null;");
     expect(routes).toContain("await rejectCall(callId, 404)");
@@ -132,30 +134,38 @@ describe("code review hardening contracts", () => {
 
   it("compensates and rethrows OpenAI call-accept failures so the provider can retry", () => {
     const routes = read("src/routes/openai-sip-routes.ts");
-    const accept = routes.slice(routes.indexOf("await acceptCall(callId"));
-    expect(accept.slice(0, 900)).toContain("releaseAccountOperationLease");
-    expect(accept.slice(0, 900)).toContain("releaseRealtimeSessionSpendAfterFailure");
-    expect(accept.slice(0, 900)).toContain('callControl(callId, "hangup")');
-    expect(accept.slice(0, 900)).toContain("throw error;");
+    const accept = routes.slice(
+      routes.indexOf("try {\n      await acceptCall(callId"),
+      routes.indexOf("try {\n      await commitRealtimeSessionSpend"),
+    );
+    expect(accept).toContain("releaseAccountOperationLease");
+    expect(accept).toContain("releaseRealtimeSessionSpendAfterFailure");
+    expect(accept).toContain("hangupCall(callId)");
+    expect(routes).toContain("const results = await Promise.allSettled(");
+    expect(accept).toContain("throw error;");
   });
 
   it("keeps duplicate OpenAI incoming-call deliveries side-effect free", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
+    const routes = read("src/routes/openai-sip-routes.ts");
     const claim = session.slice(
       session.indexOf("async function claimCall"),
       session.indexOf("async function updatePresence"),
     );
-    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
-    expect(claim).toContain("if (!created) return null;");
+    expect(claim).toContain("sourceId: schema.callLogs.openaiSipSourceId");
+    expect(claim).toContain("openaiSipSourceId: sourceId");
+    expect(claim).toContain('.for("update")');
+    expect(claim).toContain("openaiSipOwnerToken, existing.ownerToken!");
+    expect(claim).toContain("openaiSipLeaseExpiresAt} <= now()");
+    expect(claim).toContain('return existing.phase === "claimed" ? ("retry" as const) : null');
 
-    const runner = session.slice(session.indexOf("export async function runOpenAISipCallSession"));
-    const duplicateGuard = runner.indexOf("if (!callLogId)");
-    const runtimeStart = runner.indexOf("runRealtimeSession(input, runtime)");
+    const duplicateGuard = routes.indexOf("if (callClaim === null)");
+    const spendStart = routes.indexOf("await reserveRealtimeSessionSpend(");
     expect(duplicateGuard).toBeGreaterThan(-1);
-    expect(runner.slice(duplicateGuard, runtimeStart)).toContain(
+    expect(routes.slice(duplicateGuard, spendStart)).toContain(
       "Duplicate OpenAI incoming-call webhook suppressed",
     );
-    expect(runner.indexOf("return;", duplicateGuard)).toBeLessThan(runtimeStart);
+    expect(routes.indexOf("return;", duplicateGuard)).toBeLessThan(spendStart);
   });
 
   it("tracks post-create roleplay starts only from a connected live voice test", () => {
@@ -214,20 +224,27 @@ describe("code review hardening contracts", () => {
     // A-resolves-last ordering renders one conversation's messages under
     // another conversation's header.
     const email = read("src/components/EmailInbox.tsx");
-    expect(email).toContain("signal?: AbortSignal");
-    expect(email).toContain("{ signal }");
-    expect(email).toMatch(/return \(\) => \{?\s*controller\.abort\(\);/);
     const emailLoader = email.slice(
       email.indexOf("const loadThreadDetail = useCallback("),
-      email.indexOf("const controller = new AbortController();"),
+      email.indexOf("useEffect(() =>", email.indexOf("const loadThreadDetail = useCallback(")),
     );
-    expect(
-      (emailLoader.match(/if \(signal\?\.aborted\) return;/g) || []).length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(emailLoader.indexOf("if (signal?.aborted) return;")).toBeLessThan(
+    expect(emailLoader).toContain("detailAbortRef.current?.abort()");
+    expect(emailLoader).toContain("detailOperationRef.current === operation");
+    expect(emailLoader).toContain("selectedIdRef.current === threadId");
+    expect(emailLoader).toContain("signal: controller.signal");
+    expect(emailLoader.indexOf("if (!isCurrentRequest()) return;")).toBeLessThan(
       emailLoader.indexOf("setDetail({"),
     );
-    expect(emailLoader).toContain("if (!signal?.aborted) setDetailLoading(false);");
+    expect(emailLoader).toContain("if (isCurrentRequest()) setDetailLoading(false);");
+    const emailListLoader = email.slice(
+      email.indexOf("const loadThreads = useCallback("),
+      email.indexOf("const loadThreadDetail = useCallback("),
+    );
+    expect(emailListLoader).toContain("threadListAbortRef.current?.abort()");
+    expect(emailListLoader).toContain("threadListOperationRef.current === operation");
+    expect(emailListLoader).toContain("signal: controller.signal");
+    expect(emailListLoader).toContain("if (!isCurrentRequest()) return;");
+    expect(emailListLoader).toContain("if (isCurrentRequest()) setLoading(false);");
 
     const sms = read("src/components/SmsThreads.tsx");
     expect(sms).toContain("signal?: AbortSignal");

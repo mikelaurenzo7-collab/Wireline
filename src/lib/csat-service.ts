@@ -31,6 +31,7 @@ import { phoneSuffixForLog } from "./twilio-webhook-privacy";
 
 export type PreparedPostCallCsatSms = {
   userId: string;
+  agentId: string | null;
   customerNumber: string;
   body: string;
 };
@@ -45,11 +46,12 @@ export type PostCallCsatPreparation =
  */
 export async function preparePostCallCsatSms(params: {
   userId: string;
+  agentId?: string | null;
   customerNumber: string;
   agentName?: string | null;
   callLogId: string | bigint;
 }): Promise<PostCallCsatPreparation> {
-  const { userId, customerNumber, agentName } = params;
+  const { userId, agentId = null, customerNumber, agentName } = params;
 
   // Gate 1: Tenant opt-in
   const [settings] = await drizzle
@@ -88,6 +90,7 @@ export async function preparePostCallCsatSms(params: {
     ready: true,
     message: {
       userId,
+      agentId,
       customerNumber: e164,
       body: `How was your call with ${agent}? Reply 1-5 (1=poor, 5=great). Reply STOP to unsubscribe.`,
     },
@@ -113,6 +116,7 @@ export async function sendPreparedPostCallCsatSms(
   const result = await sendTenantMessage(prepared.userId, {
     to: prepared.customerNumber,
     body: prepared.body,
+    ...(prepared.agentId ? { agentId: prepared.agentId } : {}),
     idempotencyKey: options.idempotencyKey,
     reservationAttempt: options.reservationAttempt,
     beforeProviderAttempt: options.beforeProviderAttempt,
@@ -154,6 +158,7 @@ export async function reconcilePriorPostCallCsatReservations(
 /** Compatibility wrapper for callers that do not need durable phase control. */
 export async function sendPostCallCsatSms(params: {
   userId: string;
+  agentId?: string | null;
   customerNumber: string;
   agentName?: string | null;
   callLogId: string | bigint;

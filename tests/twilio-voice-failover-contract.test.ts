@@ -127,7 +127,7 @@ describe("Twilio voice failover contract", () => {
     expect(routes).toContain("function validE164");
     expect(routes).toMatch(/\^\\\+\[1-9\]\\d\{7,14\}\$/);
     expect(routes).toContain("escapeTwimlValue(fallbackNumber)");
-    expect(routes).toContain("escapeTwimlValue(sipUri)");
+    expect(inboundRoutes).toContain("escapeXml(sipUri)");
   });
 
   it("persists voicemail idempotently before acknowledging the callback", () => {

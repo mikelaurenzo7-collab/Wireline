@@ -191,6 +191,7 @@ export const CampaignCreateSchema = z.object({
   // records use stable slugs), not bare UUID columns.
   agent_id: z
     .string()
+    .trim()
     .min(1, "Invalid agent ID")
     .max(128, "Invalid agent ID")
     .optional()
@@ -223,6 +224,7 @@ export const CampaignUpdateSchema = z
     goal: z.string().max(1000, "Goal must be 1000 characters or less").optional().nullable(),
     agent_id: z
       .string()
+      .trim()
       .min(1, "Invalid agent ID")
       .max(128, "Invalid agent ID")
       .optional()

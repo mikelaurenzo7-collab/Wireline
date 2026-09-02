@@ -1,5 +1,4 @@
 import { authFetch } from "./api";
-import type { TenantActivationStatus } from "./tenant-activation";
 
 export const FRESH_SIGNUP_SESSION_KEY = "wireline_fresh_signup";
 export const POST_SIGNUP_FLOW_SESSION_KEY = "wireline_post_signup_flow";
@@ -16,16 +15,6 @@ export async function fetchUserPreferences(): Promise<UserPreferencesSnake | nul
     const res = await authFetch("/api/user-preferences");
     if (!res.ok) return null;
     return (await res.json()) as UserPreferencesSnake;
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchActivationStatusFull(): Promise<TenantActivationStatus | null> {
-  try {
-    const res = await authFetch("/api/activation/status");
-    if (!res.ok) return null;
-    return (await res.json()) as TenantActivationStatus;
   } catch {
     return null;
   }

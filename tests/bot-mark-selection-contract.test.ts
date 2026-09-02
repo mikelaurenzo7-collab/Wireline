@@ -172,7 +172,6 @@ describe("customer-selectable Bot identity marks", () => {
   it("reserves customer Bot marks for authenticated product surfaces", () => {
     for (const path of [
       "src/components/marketing/WireAgentLanding.tsx",
-      "src/components/marketing/BrowserCallWidget.tsx",
       "src/pages/Showcase.tsx",
       "src/pages/SolutionsPage.tsx",
     ]) {
@@ -180,10 +179,9 @@ describe("customer-selectable Bot identity marks", () => {
       expect(source, path).not.toContain("<BotMark");
       expect(source, path).not.toContain("markKey");
     }
-
-    const publicDemo = read("src/components/marketing/BrowserCallWidget.tsx");
-    expect(publicDemo).toContain("Headphones");
-    expect(publicDemo).not.toContain("AudioWaveform");
+    const authenticatedVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
+    expect(authenticatedVoice).toContain("markKey?: BotMarkKey | null");
+    expect(authenticatedVoice).toContain("markKey={markKey}");
   });
 
   it("carries unique Bot identities through Insights and the full MCP workspace list", () => {

@@ -150,7 +150,7 @@ All active creative must resolve to **Build -> Train -> Launch -> Improve** rath
 Before calling the day launch-ready, verify:
 
 - production `main` is the exact intended SHA and READY;
-- public health and voice-status are healthy;
+- public health is healthy and authenticated voice-reliability evidence shows no material degradation;
 - no new production error/fatal cluster exists;
 - required env, dependency-security, and schema gates passed;
 - real provider state needed for the next action is current;

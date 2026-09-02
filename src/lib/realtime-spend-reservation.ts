@@ -6,7 +6,7 @@ import {
   commitPlatformCostReservation,
   markPlatformCostReservationAmbiguous,
   platformCostReserveUsd,
-  releasePlatformCostReservation,
+  releasePlatformCostReservationIfReserved,
   reservePlatformCostRecord,
   type PlatformCostReservation,
 } from "../middleware/audit-middleware";
@@ -19,6 +19,7 @@ export async function reserveRealtimeSessionSpend(
   req: Request,
   userId: string,
   surface: string,
+  idempotencyKey?: string,
 ): Promise<PlatformCostReservation> {
   const decision = await reservePlatformCostRecord({
     userId,
@@ -26,6 +27,7 @@ export async function reserveRealtimeSessionSpend(
     provider: "openai",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     costUsd: platformCostReserveUsd("openai_realtime_session"),
+    idempotencyKey,
     requestMeta: { surface },
   });
 
@@ -75,17 +77,25 @@ export async function releaseRealtimeSessionSpendAfterFailure(
     return;
   }
 
-  const [costRelease, quotaRelease] = await Promise.allSettled([
-    releasePlatformCostReservation(reservation),
-    releaseSimulationMinuteQuota(req),
-  ]);
-  if (costRelease.status === "rejected" || quotaRelease.status === "rejected") {
+  let costReleased = false;
+  try {
+    costReleased = await releasePlatformCostReservationIfReserved(reservation);
+  } catch (error) {
     log.error("Realtime session reservation cleanup was incomplete", {
       userId: reservation.userId,
-      costError:
-        costRelease.status === "rejected" ? getErrorMessage(costRelease.reason) : undefined,
-      quotaError:
-        quotaRelease.status === "rejected" ? getErrorMessage(quotaRelease.reason) : undefined,
+      costError: getErrorMessage(error),
+    });
+    return;
+  }
+  // A committed or ambiguous debit is intentionally retained. Its paired quota
+  // must remain retained too, or a retry could consume provider work twice.
+  if (!costReleased) return;
+  try {
+    await releaseSimulationMinuteQuota(req);
+  } catch (error) {
+    log.error("Realtime quota refund failed after cost reservation release", {
+      userId: reservation.userId,
+      quotaError: getErrorMessage(error),
     });
   }
 }

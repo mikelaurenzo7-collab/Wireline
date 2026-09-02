@@ -23,7 +23,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0172_remove_retired_xai_voice_bindings.sql`.
+// `drizzle/migrations/0173_openai_sip_claim_recovery.sql`.
 // Runtime voice defaults are established by 0168; 0169 and 0172 remove empty
 // retired provider ledgers.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
@@ -774,6 +774,12 @@ export const callLogs = pgTable(
     id: bigint("id", { mode: "bigint" }).primaryKey().generatedByDefaultAsIdentity(),
     userId: uuid("user_id").notNull(),
     vapiCallId: text("vapi_call_id").unique(),
+    /** Signed Twilio CallSid or outbound placement id; prevents SIP-token replay across OpenAI calls. */
+    openaiSipSourceId: text("openai_sip_source_id"),
+    /** Durable pre-session state used to resume a webhook after a serverless crash. */
+    openaiSipPhase: text("openai_sip_phase"),
+    openaiSipOwnerToken: uuid("openai_sip_owner_token"),
+    openaiSipLeaseExpiresAt: timestamp("openai_sip_lease_expires_at", { withTimezone: true }),
     agentId: text("agent_id").references(() => agents.id),
     direction: text("direction"),
     customerNumber: text("customer_number"),
@@ -805,7 +811,7 @@ export const callLogs = pgTable(
 
     // Voice observability — per-call telemetry for TTFT, STT/TTS health, pipeline latency.
     // Written by voice webhooks + recordVoiceMetrics(); queried by GET /api/insights/latency
-    // and GET /api/health/voice-status (see src/lib/voice-observability.ts).
+    // and authenticated voice-reliability analysis (see src/lib/voice-observability.ts).
     ttftMs: integer("ttft_ms"), // Time-to-first-token (target: <900ms, alert: >1.2s)
     ttfAudioMs: integer("ttf_audio_ms"), // Time-to-first-audio (full pipeline)
     sttError: boolean("stt_error").default(false), // Speech-to-text failed/timeout
@@ -820,7 +826,7 @@ export const callLogs = pgTable(
     escalationAttempted: boolean("escalation_attempted").default(false),
     escalationSucceeded: boolean("escalation_succeeded").default(false),
   },
-  () => ({
+  (table) => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_id ON wireline_call_logs USING btree (user_id)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_created ON wireline_call_logs USING btree (user_id, created_at)`,
     agentIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_agent_id ON wireline_call_logs USING btree (agent_id)`,
@@ -833,6 +839,9 @@ export const callLogs = pgTable(
     demoCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_demo_created ON wireline_call_logs USING btree (demo, created_at) WHERE demo = true`,
     pipelineErrorIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_pipeline_error ON wireline_call_logs USING btree (pipeline_error) WHERE pipeline_error IS NOT NULL`,
     endedReasonIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_ended_reason ON wireline_call_logs USING btree (ended_reason) WHERE ended_reason IS NOT NULL`,
+    openaiSipSourceUnique: uniqueIndex("uq_call_logs_openai_sip_source")
+      .on(table.openaiSipSourceId)
+      .where(sql`${table.openaiSipSourceId} IS NOT NULL`),
     userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_call_logs_user_phone_tail ON wireline_call_logs (user_id, right(regexp_replace(customer_number, '[^0-9]', '', 'g'), 10))`,
   }),
 );
@@ -1578,6 +1587,8 @@ export const auditLog = pgTable(
     resourceId: text("resource_id"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
+    /** Stable provider-reservation receipt; retries adopt rather than double-reserve. */
+    idempotencyKey: text("idempotency_key"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (table) => ({
@@ -1585,6 +1596,9 @@ export const auditLog = pgTable(
     eventTypeIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_event_type ON wireline_audit_log USING btree (event_type)`,
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_user_created ON wireline_audit_log USING btree (user_id, created_at)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON wireline_audit_log USING btree (created_at)`,
+    costReservationIdempotencyUnique: uniqueIndex("uq_audit_cost_reservation_idempotency")
+      .on(table.userId, table.action, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
     deletionReceiptUnique: uniqueIndex("uq_audit_account_deletion_receipt")
       .on(table.eventType, table.resourceType, table.resourceId)
       .where(

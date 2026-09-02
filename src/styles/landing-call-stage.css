@@ -177,16 +177,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .landing-demo {
-    min-height: 20.5rem;
-    border-right: 0;
-    border-bottom: 1px solid var(--wireline-color-border-default);
-  }
-
-  .landing-demo__face-frame {
-    width: 8.8rem;
-  }
-
   .landing-console__activity {
     min-height: 19rem;
   }
@@ -282,26 +272,8 @@
     min-height: 2.8rem;
   }
 
-  .landing-demo,
   .landing-console__activity {
     padding: 0.78rem;
-  }
-
-  .landing-demo__face-frame {
-    width: clamp(7.2rem, 10.5vw, 8.5rem);
-  }
-
-  .landing-demo__name {
-    margin-top: 0.42rem;
-  }
-
-  .landing-demo__controls {
-    gap: 0.36rem;
-    margin-top: 0.42rem;
-  }
-
-  .landing-demo__microcopy {
-    font-size: 0.67rem;
   }
 
   .landing-console__activity-title {
@@ -334,13 +306,11 @@
 
 @media (prefers-reduced-motion: reduce) {
   .landing-stage__lane,
-  .landing-stage__lane-arrow,
-  .landing-demo__button {
+  .landing-stage__lane-arrow {
     transition: none;
   }
 
-  .landing-stage__lane:hover,
-  .landing-demo__button:hover {
+  .landing-stage__lane:hover {
     transform: none;
   }
 }
@@ -350,7 +320,6 @@
 .marketing-surface.landing-home .landing-stage__spine li,
 .marketing-surface.landing-home .landing-stage__lanes-label,
 .marketing-surface.landing-home .landing-console__channels li,
-.marketing-surface.landing-home .landing-demo__role,
 .marketing-surface.landing-home .landing-console__activity-kicker {
   font-family: var(--wireline-font-family-mono);
   letter-spacing: var(--wl-caps-label-tracking);

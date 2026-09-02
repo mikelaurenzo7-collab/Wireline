@@ -101,8 +101,8 @@ const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [
     reason: "Monitor token OR authenticated platform admin; enforced in handler",
   },
   {
-    pattern: /^\/(?:api\/)?health\/voice-status$/,
-    reason: "Public demo-line voice probe; aggregated metrics only, rate-limited",
+    pattern: /^\/api\/public\/(?:assistant\/:agentName|demo-(?:call|session))$/,
+    reason: "Retired 410 tombstone; no provider work or tenant data",
   },
   { pattern: /^\/api\/public\//, reason: "Aggregated, no-PII marketing counters; rate-limited" },
   {

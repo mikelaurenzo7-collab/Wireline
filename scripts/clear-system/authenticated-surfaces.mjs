@@ -226,8 +226,14 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
     knowledgeBase,
-    /\/api\/agent-config\/\$\{encodeURIComponent\(agentId\)\}/,
+    /\/api\/agent-config\/\$\{encodeURIComponent\(operation\.requestedAgentId\)\}/,
     "Knowledge Base must bind to the real agent-config record",
+  );
+  mustInclude(
+    "src/components/KnowledgeBaseClaude.tsx",
+    knowledgeBase,
+    /activeAgentIdRef\.current === requestedAgentId[\s\S]*agentScopeRevisionRef\.current === scopeRevision/,
+    "Knowledge Base must fence async completions to the active Bot scope",
   );
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",

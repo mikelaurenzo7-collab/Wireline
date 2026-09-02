@@ -69,11 +69,6 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     description:
       "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
   },
-  "/showcase": {
-    title: "TRY BOTBOUND | HEAR A PHONE BOT",
-    description:
-      "Hear the Phone Bot in a protected browser preview. Then build one for calls, email, text, and the work that should happen next.",
-  },
   "/blog": {
     title: "BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS",
     description:

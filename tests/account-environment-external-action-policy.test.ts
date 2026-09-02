@@ -195,7 +195,7 @@ describe("account-environment live external-action policy", () => {
     ).toEqual({ allowed: true });
   });
 
-  it("guards tenant action integrations while preserving the system showcase lane", () => {
+  it("guards tenant action integrations while public voice preview remains provider-free", () => {
     const engine = source("src/lib/action-engine.ts");
     const core = source("src/lib/bot-tools/core.ts");
     const calendar = source("src/lib/bot-tools/calendar.ts");
@@ -205,7 +205,7 @@ describe("account-environment live external-action policy", () => {
     const apollo = source("src/lib/apollo-service.ts");
     const slack = source("src/lib/slack-service.ts");
     const linkHandlers = source("src/lib/agent-link-tool-handlers.ts");
-    const publicDemo = source("src/lib/voice/openai-public-demo-session.ts");
+    const marketing = source("src/routes/marketing-runtime-routes.ts");
     const outboundCall = fromMarker(
       source("src/lib/voice/outbound-call-service.ts"),
       "export async function placeOutboundCall",
@@ -237,7 +237,7 @@ describe("account-environment live external-action policy", () => {
     );
     expect(linkHandlers).toContain("export async function handleSendSignupLink");
     expect(linkHandlers).toContain("export async function handleSendPaymentLink");
-    expect(publicDemo).toContain("You have no tools");
-    expect(publicDemo).not.toContain("liveExternalActionPolicyForUser");
+    expect(marketing).toContain("res.status(410).json");
+    expect(marketing).not.toMatch(/createPublicOpenAILiveDemoCall|liveExternalActionPolicyForUser/);
   });
 });

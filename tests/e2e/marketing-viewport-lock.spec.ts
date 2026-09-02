@@ -6,7 +6,6 @@ const PUBLIC_ROUTES = [
   { path: "/", name: "home" },
   { path: "/features", name: "features" },
   { path: "/pricing", name: "pricing" },
-  { path: "/showcase", name: "demos" },
 ] as const;
 
 async function openPublicRoute(page: Page, path: string) {
@@ -34,15 +33,12 @@ async function publicMetrics(page: Page) {
     const flow = document.querySelector<HTMLElement>(".marketing-flow");
     const surface = document.querySelector<HTMLElement>(".marketing-surface");
     const header = document.querySelector<HTMLElement>(".marketing-surface > header");
-    const consoleElement = document.querySelector<HTMLElement>(".landing-console");
-    const title = document.querySelector<HTMLElement>(".landing-stage__title");
-    const call = document.querySelector<HTMLElement>(".landing-demo__button");
     const accountNav = document.querySelector<HTMLElement>('nav[aria-label="Account"]');
     const prestigeMain = document.querySelector<HTMLElement>(".landing-prestige__main");
     const prestigeEntrance = document.querySelector<HTMLElement>(".landing-prestige__entrance");
     const prestigeHero = document.querySelector<HTMLElement>(".landing-prestige__hero");
     const prestigeAuth = document.querySelector<HTMLElement>(".landing-prestige__auth");
-    const prestigeDemo = document.querySelector<HTMLElement>(".landing-demo-inline");
+    const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
     const prestigeMobileLinks = document.querySelector<HTMLElement>(
       ".landing-prestige__mobile-links",
     );
@@ -54,16 +50,13 @@ async function publicMetrics(page: Page) {
     const bodyRect = rect(body);
     const surfaceRect = rect(surface);
     const headerRect = rect(header);
-    const consoleRect = rect(consoleElement);
-    const titleRect = rect(title);
-    const callRect = rect(call);
     const accountRect = rect(accountNav);
     const startRect = rect(startFree);
     const prestigeMainRect = rect(prestigeMain);
     const prestigeEntranceRect = rect(prestigeEntrance);
     const prestigeHeroRect = rect(prestigeHero);
     const prestigeAuthRect = rect(prestigeAuth);
-    const prestigeDemoRect = rect(prestigeDemo);
+    const prestigeDirectionsRect = rect(prestigeDirections);
 
     return {
       rootHorizontalOverflow: root.scrollWidth - root.clientWidth,
@@ -91,21 +84,13 @@ async function publicMetrics(page: Page) {
       prestigeHeroHeight: prestigeHeroRect?.height ?? 0,
       prestigeAuthWidth: prestigeAuthRect?.width ?? 0,
       prestigeAuthHeight: prestigeAuthRect?.height ?? 0,
-      prestigeDemoWidth: prestigeDemoRect?.width ?? 0,
-      prestigeDemoHeight: prestigeDemoRect?.height ?? 0,
+      prestigeDirectionsWidth: prestigeDirectionsRect?.width ?? 0,
+      prestigeDirectionsHeight: prestigeDirectionsRect?.height ?? 0,
       prestigeEntranceDisplay: prestigeEntrance ? getComputedStyle(prestigeEntrance).display : "",
       prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
       prestigeMobileLinksDisplay: prestigeMobileLinks
         ? getComputedStyle(prestigeMobileLinks).display
         : "",
-      consoleWidth: consoleRect?.width ?? 0,
-      consoleHeight: consoleRect?.height ?? 0,
-      consoleLeft: consoleRect?.left ?? 0,
-      consoleRight: consoleRect?.right ?? 0,
-      titleLeft: titleRect?.left ?? 0,
-      titleRight: titleRect?.right ?? 0,
-      callWidth: callRect?.width ?? 0,
-      callHeight: callRect?.height ?? 0,
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
     };
@@ -165,7 +150,7 @@ test("supporting public headers keep both account actions inside a phone viewpor
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
-  for (const path of ["/showcase", "/solutions/support"] as const) {
+  for (const path of ["/features", "/solutions/support"] as const) {
     await openPublicRoute(page, path);
     await expect(page.locator('.wl-public-header nav[aria-label="Account"] a')).toHaveCount(2);
     const bounds = await page.evaluate(() => {
@@ -222,7 +207,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
   await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to Jake" })).toBeVisible();
+  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
+  await expect(directions.getByText("FIND. CALL. BOOK.", { exact: true })).toBeVisible();
+  await expect(directions.getByText("ANSWER. QUALIFY. ROUTE.", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(
@@ -235,7 +222,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(900);
   expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
   expect(metrics.prestigeAuthHeight).toBeGreaterThanOrEqual(900);
-  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
 });
 
 test("home remains usable on a short laptop", async ({ page }) => {
@@ -247,8 +234,8 @@ test("home remains usable on a short laptop", async ({ page }) => {
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(500);
   expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(800);
   expect(metrics.prestigeAuthWidth).toBeGreaterThan(500);
-  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
-  expect(metrics.prestigeDemoWidth).toBeGreaterThan(240);
+  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.prestigeDirectionsWidth).toBeGreaterThan(240);
 });
 
 test("home keeps the BotBound promise and account path in one mobile flow", async ({ page }) => {
@@ -276,30 +263,29 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   expect(metrics.prestigeMobileLinksDisplay).toBe("flex");
 });
 
-test("home demo reflows deliberately at the narrowest supported width", async ({ page }) => {
+test("home direction choices fit the narrowest supported width", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 700 });
   await openPublicRoute(page, "/");
 
   const geometry = await page.evaluate(() => {
-    const card = document
-      .querySelector<HTMLElement>(".landing-demo-inline")
+    const choices = Array.from(
+      document.querySelectorAll<HTMLElement>(".landing-prestige__direction"),
+    ).map((element) => element.getBoundingClientRect());
+    const group = document
+      .querySelector<HTMLElement>(".landing-prestige__directions")
       ?.getBoundingClientRect();
-    const identity = document
-      .querySelector<HTMLElement>(".landing-demo-inline__identity")
-      ?.getBoundingClientRect();
-    const button = document
-      .querySelector<HTMLElement>(".landing-demo-inline__button")
-      ?.getBoundingClientRect();
-    return { card, identity, button, width: window.innerWidth };
+    return { group, choices, width: window.innerWidth };
   });
 
-  expect(geometry.card).toBeTruthy();
-  expect(geometry.identity).toBeTruthy();
-  expect(geometry.button).toBeTruthy();
-  expect(geometry.card!.left).toBeGreaterThanOrEqual(-1);
-  expect(geometry.card!.right).toBeLessThanOrEqual(geometry.width + 1);
-  expect(geometry.button!.top).toBeGreaterThanOrEqual(geometry.identity!.bottom);
-  expect(geometry.button!.width).toBeGreaterThanOrEqual(geometry.card!.width - 30);
+  expect(geometry.group).toBeTruthy();
+  expect(geometry.choices).toHaveLength(2);
+  expect(geometry.group!.left).toBeGreaterThanOrEqual(-1);
+  expect(geometry.group!.right).toBeLessThanOrEqual(geometry.width + 1);
+  for (const choice of geometry.choices) {
+    expect(choice.left).toBeGreaterThanOrEqual(geometry.group!.left - 1);
+    expect(choice.right).toBeLessThanOrEqual(geometry.group!.right + 1);
+    expect(choice.width).toBeGreaterThan(100);
+  }
 });
 
 test("home remains composed on a short wide desktop", async ({ page }) => {
@@ -311,7 +297,7 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
   expect(metrics.prestigeHeroWidth).toBeGreaterThan(580);
   expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(720);
   expect(metrics.prestigeAuthWidth).toBeGreaterThan(580);
-  expect(metrics.prestigeDemoHeight).toBeGreaterThanOrEqual(44);
+  expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
 });
 
 test("features and pricing remain scrollable without horizontal clipping", async ({ page }) => {
@@ -325,22 +311,14 @@ test("features and pricing remain scrollable without horizontal clipping", async
   }
 });
 
-test("showcase browser preview stays inside a 320px viewport", async ({ page }) => {
+test("showcase redirects into free account creation without horizontal escape", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await openPublicRoute(page, "/showcase");
-  await expect(page.locator("#showcase-preview")).toBeVisible();
-
-  const geometry = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-    previewInsideViewport: (() => {
-      const card = document.querySelector<HTMLElement>("#showcase-preview");
-      if (!card) return false;
-      const rect = card.getBoundingClientRect();
-      return rect.left >= -0.5 && rect.right <= document.documentElement.clientWidth + 0.5;
-    })(),
-  }));
-
-  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
-  expect(geometry.previewInsideViewport).toBe(true);
+  await expect(page).toHaveURL(/\/signup\?plan=free$/);
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.locator("#showcase-preview")).toHaveCount(0);
+  const metrics = await publicMetrics(page);
+  expectDocumentInsideViewport(metrics, "showcase redirect");
 });

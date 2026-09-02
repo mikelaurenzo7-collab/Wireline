@@ -4,17 +4,12 @@ import { Link } from "react-router";
 
 import AuthAccessPanel from "../auth/AuthAccessPanel";
 import { BotBoundLockup } from "../brand/BotBoundBrand";
-import BrowserCallWidget from "./BrowserCallWidget";
 import LandingFooter from "./LandingFooter";
 import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
-import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 
-const HERO_DEMO =
-  LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jake") ??
-  LANDING_PUBLIC_DEMO_AGENTS[0]!;
 const FEATURED_TEMPLATE_KEYS = [
   "sales-rep",
   "front-desk",
@@ -98,22 +93,6 @@ export default function WireAgentLanding() {
                   <strong>ANSWER. QUALIFY. ROUTE.</strong>
                 </Link>
               </nav>
-            </div>
-            <div className="landing-prestige__demo">
-              <BrowserCallWidget
-                agentName={HERO_DEMO.name}
-                variant="inline"
-                buttonLabel={`Talk to ${HERO_DEMO.name}`}
-                fallback={
-                  <Link
-                    to="/showcase"
-                    className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline wl-focus-ring-halo"
-                  >
-                    Open browser demo
-                    <ArrowRight className="size-3.5" aria-hidden="true" />
-                  </Link>
-                }
-              />
             </div>
           </div>
 

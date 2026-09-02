@@ -1,19 +1,21 @@
 # OpenAI Realtime Voice — Browser and Twilio PSTN
 
 **Status:** Canonical production voice policy  
-**Updated:** August 30, 2026
+**Updated:** September 2, 2026
 
 BotBound uses one live-conversation runtime: OpenAI Realtime on
-`gpt-realtime-2.1`. This applies to customer Bots, the founder showcase fleet,
-Studio tests, ChatGPT private simulation, guest demos, inbound phone calls, and
-outbound phone calls. Twilio owns carrier transport, phone numbers, PSTN/SIP,
-and SMS. No alternate voice provider or automatic model fallback is permitted.
+`gpt-realtime-2.1`. This applies to customer Bots, founder-owned internal Bot
+profiles, authenticated Studio rehearsals, authenticated ChatGPT private
+simulation, inbound phone calls, and outbound phone calls. Public and guest
+audio/call demos are retired. Twilio owns carrier transport, phone numbers,
+PSTN/SIP, and SMS.
+No alternate voice provider or automatic model fallback is permitted.
 
 ## Transport map
 
 | Surface | Transport | Runtime |
 | --- | --- | --- |
-| Studio / ChatGPT / guest demo | Browser WebRTC offer sent to a same-origin BotBound route | OpenAI Realtime |
+| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route | OpenAI Realtime |
 | Inbound phone | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime |
 | Outbound phone | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime |
 | SMS | Twilio signed webhook and Messaging Service/number | BotBound messaging runtime |

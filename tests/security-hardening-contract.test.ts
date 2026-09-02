@@ -39,7 +39,9 @@ describe("security hardening contract", () => {
   it("escalation binds the tenant to the invoked number, not a body field", () => {
     const routes = read("src/routes/openai-sip-routes.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
-    expect(routes).toContain("sipHeader(payload, OPENAI_CALLED_NUMBER_HEADER)");
+    expect(routes).toContain("sipHeader(payload, OPENAI_INBOUND_SIP_TOKEN_HEADER)");
+    expect(routes).toContain("verifyOpenAIInboundToken(inboundToken)");
+    expect(routes).toContain("inboundVerification.claims.calledNumber");
     expect(routes).toContain("eq(schema.phoneNumbers.phoneNumber, calledNumber)");
     expect(routes).toContain("userId: line.userId");
     expect(routes).toContain("agentId: line.agentId");

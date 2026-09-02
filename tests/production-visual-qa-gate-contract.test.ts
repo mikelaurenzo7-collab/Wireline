@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   CANONICAL_PRODUCTION_VISUAL_BASE_URL,
   optionalProductionVisualArtifactNames,
+  productionVisualSemanticKey,
   PRODUCTION_VISUAL_AUTHENTICATED_ROUTES,
   PRODUCTION_VISUAL_COMPATIBILITY_ROUTES,
   PRODUCTION_VISUAL_MANIFEST_VIEWPORTS,
@@ -106,6 +107,18 @@ describe("production visual QA safety gate", () => {
   const capture = read("scripts/capture-prod-visual-qa.mjs");
   const gate = read("scripts/check-visual-qa-manifest.mjs");
   const workflow = read(".github/workflows/production-visual-qa.yml");
+
+  it("treats only semantic aliases as intentional duplicate captures", () => {
+    expect(productionVisualSemanticKey("authenticated", "/overview")).toBe(
+      productionVisualSemanticKey("authenticated", "/studio"),
+    );
+    expect(productionVisualSemanticKey("authenticated", "/apps")).toBe(
+      productionVisualSemanticKey("authenticated", "/settings/apps"),
+    );
+    expect(productionVisualSemanticKey("public", "/features")).not.toBe(
+      productionVisualSemanticKey("public", "/pricing"),
+    );
+  });
 
   it("budgets the workflow beyond source wait plus a conservative capture allowance", () => {
     const jobTimeoutMinutes = Number(workflow.match(/timeout-minutes:\s*(\d+)/)?.[1]);

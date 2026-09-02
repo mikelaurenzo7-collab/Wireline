@@ -39,10 +39,12 @@ describe("non-production live-vendor mutation boundaries", () => {
     expect(hangup).not.toContain("assertLiveExternalActionAllowed");
   });
 
-  it("keeps the platform public OpenAI demo on the explicit system identity", () => {
-    const source = read("src/lib/voice/openai-public-demo-session.ts");
-    expect(source).toContain("userId: OPENAI_REALTIME_SYSTEM_USER_ID");
-    expect(source).toContain('keyPurpose: "chatgpt_demo"');
+  it("keeps public voice preview outside every live-vendor identity", () => {
+    const source = read("src/routes/marketing-runtime-routes.ts");
+    expect(source).toContain("res.status(410).json");
+    expect(source).not.toMatch(
+      /OPENAI_REALTIME_SYSTEM_USER_ID|keyPurpose|createPublicOpenAILiveDemoCall|createServerManagedOpenAIRealtimeCall/,
+    );
   });
 
   it("guards both AgentMail connect POSTs while preserving disconnect cleanup", () => {
@@ -87,7 +89,7 @@ describe("non-production live-vendor mutation boundaries", () => {
     expect(voicemail).toContain('action: "voicemail_failover_owner_notification"');
   });
 
-  it("does not put account-environment gates on auth or platform canary mail", () => {
+  it("does not put account-environment gates on auth or platform funnel mail", () => {
     const email = read("src/lib/email-service.ts");
     const reset = sliceFrom(
       email,
@@ -101,9 +103,6 @@ describe("non-production live-vendor mutation boundaries", () => {
     );
     expect(reset).not.toContain("tenantEmailPolicyBlock");
     expect(verify).not.toContain("tenantEmailPolicyBlock");
-    expect(read("src/lib/demo-line-canary.ts")).toContain(
-      'import { sendEmail } from "./email-service"',
-    );
     expect(read("src/lib/demo-funnel.ts")).toContain('import("./email-service")');
   });
 });

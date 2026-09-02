@@ -12,10 +12,9 @@ const PRODUCT_LINKS = [
   { to: "/compare", label: "Compare" },
 ] as const;
 
-// Every built wedge, symmetrically: these pages carry the sharpest pain-first
-// copy on the site and each has its own live demo line, yet seven of eight
-// were unlinked. Everyday calls lead and no industry is privileged, preserving
-// the broad-entry posture without turning use cases into separate products.
+// Every built wedge, symmetrically. Everyday calls lead and no industry is
+// privileged, preserving the broad-entry posture without turning use cases
+// into separate products.
 const WHO_ITS_FOR_LINKS = [
   { to: "/for/everyday", label: "Everyday Calls" },
   { to: "/for/home-services", label: "Home Services" },
@@ -35,7 +34,7 @@ const COMPANY_LINKS = [
 ] as const;
 
 const RESOURCE_LINKS = [
-  { to: "/showcase", label: "Demos" },
+  { to: "/features", label: "How It Works" },
   { to: "/developers", label: "Developers" },
   { to: "/trust", label: "Trust Center" },
   { to: "/support", label: "Support" },

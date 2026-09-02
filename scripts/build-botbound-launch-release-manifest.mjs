@@ -35,17 +35,19 @@ async function walk(directory) {
 
 function mimeFor(relative) {
   const ext = path.extname(relative).toLowerCase();
-  return {
-    ".json": "application/json",
-    ".md": "text/markdown",
-    ".mp4": "video/mp4",
-    ".pdf": "application/pdf",
-    ".png": "image/png",
-    ".srt": "application/x-subrip",
-    ".ttf": "font/ttf",
-    ".txt": "text/plain",
-    ".vtt": "text/vtt",
-  }[ext] || "application/octet-stream";
+  return (
+    {
+      ".json": "application/json",
+      ".md": "text/markdown",
+      ".mp4": "video/mp4",
+      ".pdf": "application/pdf",
+      ".png": "image/png",
+      ".srt": "application/x-subrip",
+      ".ttf": "font/ttf",
+      ".txt": "text/plain",
+      ".vtt": "text/vtt",
+    }[ext] || "application/octet-stream"
+  );
 }
 
 function categoryFor(relative) {
@@ -57,7 +59,8 @@ function categoryFor(relative) {
 function releaseStatusFor(relative) {
   if (relative.startsWith("sources/")) return "editorial-source-not-placement";
   if (relative.startsWith("fonts/")) return "source-dependency";
-  if (relative.startsWith("exports/product-proof/")) return "exact-worktree-preview-not-deployed-proof";
+  if (relative.startsWith("exports/product-proof/"))
+    return "exact-worktree-preview-not-deployed-proof";
   if (relative.startsWith("exports/motion/")) return "cinematic-concept-owner-review";
   if (relative.startsWith("exports/billboard/")) return "creative-master-paid-and-ooh-hold";
   if (relative.startsWith("exports/investor/")) return "investor-master-factual-review";
@@ -66,8 +69,77 @@ function releaseStatusFor(relative) {
 }
 
 async function sha256(file) {
-  return createHash("sha256").update(await readFile(file)).digest("hex");
+  return createHash("sha256")
+    .update(await readFile(file))
+    .digest("hex");
 }
+
+async function assertApprovedProductProof() {
+  const proofRoot = path.join(releaseRoot, "exports", "product-proof");
+  const proofManifestPath = path.join(proofRoot, "botbound-current-worktree-proof.json");
+  let proof;
+  try {
+    proof = JSON.parse(await readFile(proofManifestPath, "utf8"));
+  } catch (error) {
+    throw new Error("Launch release cannot include product proof without its approval manifest.", {
+      cause: error,
+    });
+  }
+  if (
+    proof.exactWorktreePreview !== true ||
+    proof.deployedProduction !== false ||
+    !/^[0-9a-f]{40}$/i.test(String(proof.revision?.commit || "")) ||
+    proof.sourceIdentity?.commit !== proof.revision.commit ||
+    !proof.sourceIdentity?.nonce ||
+    !Array.isArray(proof.results) ||
+    proof.results.length === 0
+  ) {
+    throw new Error("Launch product-proof approval manifest has invalid source provenance.");
+  }
+
+  const approvedFrameNames = new Set();
+  for (const result of proof.results) {
+    const absolute = path.resolve(repoRoot, String(result.output || ""));
+    const relative = path.relative(proofRoot, absolute);
+    if (
+      !relative ||
+      relative.startsWith("..") ||
+      path.isAbsolute(relative) ||
+      result.finalRouteMatched !== true ||
+      result.expectedTextMatched !== true ||
+      result.rootMounted !== true ||
+      result.pageErrors?.length ||
+      result.consoleErrors?.length ||
+      result.failedRequests?.length
+    ) {
+      throw new Error(`Launch product-proof result is not approved: ${result.name || "unknown"}`);
+    }
+    const bytes = await readFile(absolute);
+    const digest = createHash("sha256").update(bytes).digest("hex");
+    if (
+      !Number.isSafeInteger(result.bytes) ||
+      result.bytes !== bytes.byteLength ||
+      !/^[0-9a-f]{64}$/i.test(String(result.sha256 || "")) ||
+      digest !== String(result.sha256).toLowerCase()
+    ) {
+      throw new Error(`Launch product-proof frame does not match its manifest: ${relative}`);
+    }
+    approvedFrameNames.add(path.basename(absolute));
+  }
+
+  const releaseFrameNames = (await readdir(proofRoot, { withFileTypes: true }))
+    .filter((entry) => entry.isFile() && entry.name.endsWith("-exact-worktree-preview.png"))
+    .map((entry) => entry.name);
+  if (
+    releaseFrameNames.length !== approvedFrameNames.size ||
+    releaseFrameNames.some((name) => !approvedFrameNames.has(name))
+  ) {
+    throw new Error("Launch product-proof directory contains stale or unapproved frames.");
+  }
+  await stat(path.join(proofRoot, "botbound-exact-worktree-proof-contact-sheet-1920x1400.png"));
+}
+
+await assertApprovedProductProof();
 
 const allFiles = (await walk(releaseRoot))
   .map((absolute) => ({

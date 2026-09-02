@@ -1,7 +1,12 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { BotMark } from "../../components/Brand";
 import { OutboundBackdrop } from "../OutboundBackdrop";
-import { OutboundChrome, SceneHeadline, StatusPill } from "../OutboundChrome";
+import {
+  OUTBOUND_VERTICAL_SAFE_ZONE,
+  OutboundChrome,
+  SceneHeadline,
+  StatusPill,
+} from "../OutboundChrome";
 
 const bars = [0.32, 0.57, 0.82, 0.48, 0.94, 0.64, 0.38, 0.74, 1, 0.58, 0.86, 0.42];
 
@@ -18,9 +23,9 @@ export const CallScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          top: vertical ? 270 : 170,
-          left: vertical ? 84 : 72,
-          right: vertical ? 84 : 72,
+          top: vertical ? 350 : 170,
+          left: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.left : 72,
+          right: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.right : 72,
         }}
       >
         <SceneHeadline>MAKES THE CALL.</SceneHeadline>
@@ -29,7 +34,7 @@ export const CallScene: React.FC = () => {
         style={{
           position: "absolute",
           left: "50%",
-          top: vertical ? 800 : 395,
+          top: vertical ? 690 : 395,
           width: stageSize,
           height: stageSize,
           marginLeft: -stageSize / 2,
@@ -85,10 +90,10 @@ export const CallScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          left: vertical ? 84 : 100,
-          right: vertical ? 84 : 100,
-          top: vertical ? 1450 : 820,
-          height: vertical ? 210 : 150,
+          left: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.left : 100,
+          right: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.right : 100,
+          top: vertical ? 1320 : 820,
+          height: vertical ? 180 : 150,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -125,8 +130,8 @@ export const CallScene: React.FC = () => {
         <div
           style={{
             position: "absolute",
-            left: 84,
-            top: 1720,
+            left: OUTBOUND_VERTICAL_SAFE_ZONE.left,
+            top: 1508,
             opacity: interpolate(frame, [14, 28], [0, 1], {
               extrapolateLeft: "clamp",
               extrapolateRight: "clamp",

@@ -39,6 +39,8 @@ export class AccountExportSnapshotDeadlineError extends Error {
 
 export type AccountExportSnapshotLease = {
   signal: AbortSignal;
+  /** Remaining wall-clock budget shared by response and database deadlines. */
+  remainingMs: () => number;
   /** Idempotent so response and transaction cleanup may safely overlap. */
   release: () => void;
 };
@@ -74,15 +76,25 @@ export class AccountExportSnapshotGate {
     }
 
     const deadline = new AbortController();
-    const timer = setTimeout(
-      () => deadline.abort(new AccountExportSnapshotDeadlineError()),
-      this.deadlineMs,
-    );
+    const deadlineAtMs = Date.now() + this.deadlineMs;
+    const deadlineError = new AccountExportSnapshotDeadlineError();
+    const timer = setTimeout(() => deadline.abort(deadlineError), this.deadlineMs);
     timer.unref?.();
 
     let released = false;
     return {
       signal: deadline.signal,
+      remainingMs: () => {
+        if (deadline.signal.aborted) {
+          throw deadline.signal.reason instanceof Error ? deadline.signal.reason : deadlineError;
+        }
+        const remainingMs = Math.floor(deadlineAtMs - Date.now());
+        if (remainingMs <= 0) {
+          deadline.abort(deadlineError);
+          throw deadlineError;
+        }
+        return remainingMs;
+      },
       release: () => {
         if (released) return;
         released = true;

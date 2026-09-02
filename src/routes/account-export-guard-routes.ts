@@ -31,6 +31,21 @@ const accountExportRateLimit = createRateLimiter({
 type ExecuteResult = { rows?: Array<Record<string, unknown>> };
 type ExportQueryExecutor = Pick<typeof drizzle, "execute">;
 
+/**
+ * PostgreSQL does not consume AbortSignal, so mirror the lease's remaining
+ * wall-clock budget into the current transaction before every archive query.
+ * `is_local = true` prevents the timeout from escaping through the pool.
+ */
+async function setAccountExportStatementDeadline(
+  executor: ExportQueryExecutor,
+  lease: AccountExportSnapshotLease,
+): Promise<void> {
+  const timeout = `${lease.remainingMs()}ms`;
+  await executor.execute(sql`SELECT set_config('statement_timeout', ${timeout}, true)`);
+  // The setup round trip may itself cross the wall-clock deadline.
+  lease.remainingMs();
+}
+
 function postgresErrorCode(error: unknown): string | undefined {
   if (!error || typeof error !== "object") return undefined;
   const direct = (error as { code?: unknown }).code;
@@ -82,10 +97,11 @@ async function streamTableRows(
   res: Response,
   table: string,
   predicates: ReturnType<typeof sql>[],
-  signal: AbortSignal,
+  lease: AccountExportSnapshotLease,
 ): Promise<number> {
   let written = 0;
   for (let offset = 0; ; offset += EXPORT_PAGE_ROWS) {
+    await setAccountExportStatementDeadline(executor, lease);
     const result = (await executor.execute(
       sql`SELECT * FROM ${sql.raw(table)} WHERE ${sql.join(predicates, sql` OR `)}
           ORDER BY ctid LIMIT ${EXPORT_PAGE_ROWS} OFFSET ${offset}`,
@@ -95,7 +111,7 @@ async function streamTableRows(
       await writeAccountExportChunk(
         res,
         `${written === 0 ? "" : ","}${JSON.stringify(redactAccountExportValue(row))}`,
-        signal,
+        lease.signal,
       );
       written += 1;
     }
@@ -204,7 +220,7 @@ router.use(
                 // retired table can be disclosed without invalidating the root
                 // snapshot used by every remaining table.
                 totalRows += await tx.transaction((tableTx) =>
-                  streamTableRows(tableTx, res, table, predicates, exportLease.signal),
+                  streamTableRows(tableTx, res, table, predicates, exportLease),
                 );
                 await writeAccountExportChunk(res, "]", exportLease.signal);
                 tableCount += 1;
@@ -223,6 +239,7 @@ router.use(
             // The auth profile is deleted separately after the tenant registry
             // during terminal purge, so include it explicitly and let the shared
             // redactor remove password_hash or future credential-shaped columns.
+            await setAccountExportStatementDeadline(tx, exportLease);
             const userResult = (await tx.execute(
               sql`SELECT * FROM wireline_users WHERE id = ${userId}`,
             )) as ExecuteResult;

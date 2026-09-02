@@ -12,9 +12,11 @@ Proof rail: **MAKES CALLS / TAKES CALLS / TEXTS / EMAILS / REPORTS BACK**
 
 Primary CTA: **BUILD YOUR BOT**
 
-Secondary CTA: **HEAR A LIVE BOT**
+Secondary CTA: **EXPLORE BOTS**
 
 Offer: **Build free. Every active paid Bot gets its own number and email.**
+
+Conversion note: **Create a free account to build, train, and hear your Bot privately before it goes live.**
 
 ## Direction split
 
@@ -38,9 +40,9 @@ CTA: **EXPLORE INBOUND**
 
 **IT CALLS OUT. IT ANSWERS IN.**
 
-## Showcase
+## Role showcase
 
-Default to the outbound Sales Bot demo. Keep the inbound Front Desk demo beside it with equal visual treatment.
+Lead with the outbound Sales Bot story. Keep the inbound Front Desk story beside it with equal visual treatment. Hearing or testing a Bot begins after account creation; there is no public call or public audio demo.
 
 ## Role order
 

@@ -77,14 +77,9 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       /BOT_MARKETING_VOICE\.activationLine/,
       "root landing must source the concise activation promise",
     ],
-    [
-      /<BrowserCallWidget[\s\S]*?variant="inline"/,
-      "hero must sell the protected browser voice demo",
-    ],
-    [
-      /to="\/showcase"[\s\S]*?Open browser demo/,
-      "browser demo must retain a truthful in-product fallback",
-    ],
+    [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
+    [/FIND\. CALL\. BOOK\./, "hero must retain the outbound activation path"],
+    [/ANSWER\. QUALIFY\. ROUTE\./, "hero must retain the inbound activation path"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],
@@ -96,7 +91,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     executable(landing),
-    /<PrecisionPublicHeader|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category|HERO_CHANNEL_ORDER|BOT_CHANNELS|<BotMark|markKey/,
+    /<PrecisionPublicHeader|<BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category|HERO_CHANNEL_ORDER|BOT_CHANNELS|<BotMark|markKey/,
     "root landing must not revive old brochure structures",
   );
   mustExclude(

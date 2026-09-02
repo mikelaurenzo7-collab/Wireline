@@ -16,6 +16,15 @@ export type ActivationStatusResponse = {
   activated?: boolean;
 };
 
+export type ActivationNudgeStatus = {
+  activated: boolean;
+  activatedAt: string | null;
+  activationChannel: "inbound" | "outbound" | null;
+  firstActivationCallId: string | null;
+  hasAgent: boolean;
+  phoneNumber: string | null;
+};
+
 export async function fetchActivationStatus(): Promise<boolean> {
   try {
     const res = await authFetch("/api/activation/status");
@@ -24,6 +33,16 @@ export async function fetchActivationStatus(): Promise<boolean> {
     return data.activated === true;
   } catch {
     return false;
+  }
+}
+
+export async function fetchActivationNudgeStatus(): Promise<ActivationNudgeStatus | null> {
+  try {
+    const res = await authFetch("/api/activation/nudge-status");
+    if (!res.ok) return null;
+    return (await res.json()) as ActivationNudgeStatus;
+  } catch {
+    return null;
   }
 }
 

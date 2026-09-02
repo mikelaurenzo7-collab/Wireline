@@ -5,15 +5,16 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("voice observability production paths", () => {
-  it("registers voice-status under /api so Vercel rewrites reach Express", () => {
+  it("keeps voice reliability authenticated and retires the public demo-line probe", () => {
     const routes = read("src/routes/voice-observability-routes.ts");
 
-    // Tolerate a wrapped multi-line registration (path on its own line when the
-    // route carries extra middleware) — the invariant is the /api prefix.
-    expect(routes).toMatch(/router\.get\(\s*"\/api\/health\/voice-status"/);
+    expect(routes).not.toContain("/api/health/voice-status");
+    expect(routes).not.toContain("voiceStatusPublicRateLimit");
+    expect(routes).toMatch(
+      /router\.get\(\s*"\/api\/insights\/voice-reliability",\s*authenticateUser,\s*requirePermission\("insights\.read"\)/,
+    );
     expect(routes).not.toContain('router.post("/api/voice/metrics"');
     expect(routes).not.toContain('router.post("/voice/metrics"');
-    expect(routes).not.toContain('router.get("/health/voice-status"');
   });
 
   it("does not allow LiveAvatar or LiveKit connect-src after talking-head retirement", () => {

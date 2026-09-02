@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Mail, RefreshCw } from "lucide-react";
 
@@ -150,12 +150,48 @@ export default function EmailInbox({
   const [query, setQuery] = useState("");
   const selectedIdRef = useRef<string | null>(null);
   const outcomeOperationRef = useRef(0);
+  const threadListOperationRef = useRef(0);
+  const threadListAbortRef = useRef<AbortController | null>(null);
+  const detailOperationRef = useRef(0);
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const syncOperationRef = useRef(0);
+  const filterKey = `${agentId || ""}\u0000${accountId || ""}`;
+  const filterKeyRef = useRef(filterKey);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    filterKeyRef.current = filterKey;
+    threadListAbortRef.current?.abort();
+    detailAbortRef.current?.abort();
+    threadListOperationRef.current += 1;
+    detailOperationRef.current += 1;
+    syncOperationRef.current += 1;
+    selectedIdRef.current = null;
+    setThreads([]);
+    setSelectedId(null);
+    setDetail(null);
+    setError(null);
+    setDetailError(null);
+    setNotice(null);
+    setOutcomeBusy(null);
+    setLoading(true);
+    setDetailLoading(false);
+    setSyncing(false);
+  }, [filterKey]);
+
+  useLayoutEffect(() => {
     selectedIdRef.current = selectedId;
   }, [selectedId]);
 
   const loadThreads = useCallback(async () => {
+    if (filterKeyRef.current !== filterKey) return;
+    threadListAbortRef.current?.abort();
+    const controller = new AbortController();
+    threadListAbortRef.current = controller;
+    const operation = ++threadListOperationRef.current;
+    const isCurrentRequest = () =>
+      !controller.signal.aborted &&
+      threadListOperationRef.current === operation &&
+      filterKeyRef.current === filterKey;
     setLoading(true);
     setError(null);
     try {
@@ -163,26 +199,40 @@ export default function EmailInbox({
       if (agentId) queryParams.set("agent_id", agentId);
       if (accountId) queryParams.set("account_id", accountId);
       const suffix = queryParams.toString();
-      const response = await authFetch(`/api/emails/threads${suffix ? `?${suffix}` : ""}`);
+      const response = await authFetch(`/api/emails/threads${suffix ? `?${suffix}` : ""}`, {
+        signal: controller.signal,
+      });
       const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
       if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
+      if (!isCurrentRequest()) return;
       const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
       setThreads(nextThreads);
       setSelectedId((current) =>
         current && nextThreads.some((thread) => thread.id === current) ? current : null,
       );
     } catch (cause) {
+      if (!isCurrentRequest()) return;
       setError(cause instanceof Error ? cause.message : "Could not load email conversations.");
     } finally {
-      setLoading(false);
+      if (isCurrentRequest()) setLoading(false);
     }
-  }, [accountId, agentId]);
+  }, [accountId, agentId, filterKey]);
 
-  const loadThreadDetail = useCallback(async (threadId: string, signal?: AbortSignal) => {
+  const loadThreadDetail = useCallback(async (threadId: string) => {
+    detailAbortRef.current?.abort();
+    const controller = new AbortController();
+    detailAbortRef.current = controller;
+    const operation = ++detailOperationRef.current;
+    const isCurrentRequest = () =>
+      !controller.signal.aborted &&
+      detailOperationRef.current === operation &&
+      selectedIdRef.current === threadId;
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, { signal });
+      const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
+        signal: controller.signal,
+      });
       const body = (await response.json().catch(() => null)) as {
         thread?: Record<string, unknown>;
         messages?: Array<Record<string, unknown>>;
@@ -191,17 +241,18 @@ export default function EmailInbox({
       } | null;
       if (!response.ok || !body?.thread)
         throw new Error(body?.error || "Could not load this conversation.");
-      if (signal?.aborted) return;
+      if (!isCurrentRequest()) return;
       setDetail({
         thread: normalizeThread(body.thread),
         messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
         handoff: body.handoff || null,
       });
     } catch (cause) {
-      if (signal?.aborted) return;
+      if (!isCurrentRequest()) return;
       setDetailError(cause instanceof Error ? cause.message : "Could not load this conversation.");
     } finally {
-      if (!signal?.aborted) setDetailLoading(false);
+      if (isCurrentRequest()) setDetailLoading(false);
+      if (detailAbortRef.current === controller) detailAbortRef.current = null;
     }
   }, []);
 
@@ -209,10 +260,15 @@ export default function EmailInbox({
     setSelectedId(null);
     setDetail(null);
     void loadThreads();
+    return () => {
+      threadListAbortRef.current?.abort();
+    };
   }, [loadThreads]);
 
   useEffect(() => {
     if (!selectedId) {
+      detailAbortRef.current?.abort();
+      detailOperationRef.current += 1;
       setDetail(null);
       setDetailError(null);
       setNotice(null);
@@ -226,12 +282,15 @@ export default function EmailInbox({
     setNotice(null);
     setOutcomeBusy(null);
     outcomeOperationRef.current += 1;
-    const controller = new AbortController();
-    void loadThreadDetail(selectedId, controller.signal);
-    return () => controller.abort();
+    void loadThreadDetail(selectedId);
+    return () => detailAbortRef.current?.abort();
   }, [loadThreadDetail, selectedId]);
 
   const syncInbox = async () => {
+    const requestedFilter = filterKey;
+    const operation = ++syncOperationRef.current;
+    const isCurrentRequest = () =>
+      syncOperationRef.current === operation && filterKeyRef.current === requestedFilter;
     setSyncing(true);
     setError(null);
     try {
@@ -242,12 +301,15 @@ export default function EmailInbox({
         message?: string;
       } | null;
       if (!response.ok) throw new Error(body?.error || "Try again in a moment.");
-      setNotice(body?.message || "Inbox refreshed.");
+      if (!isCurrentRequest()) return;
       await loadThreads();
+      if (!isCurrentRequest()) return;
+      setNotice(body?.message || "Inbox refreshed.");
     } catch (cause) {
+      if (!isCurrentRequest()) return;
       setError(cause instanceof Error ? cause.message : "Could not refresh email.");
     } finally {
-      setSyncing(false);
+      if (isCurrentRequest()) setSyncing(false);
     }
   };
 

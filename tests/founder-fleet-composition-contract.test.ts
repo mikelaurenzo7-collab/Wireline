@@ -23,6 +23,15 @@ import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
  * against the seed's real output rather than source reads.
  */
 describe("founder fleet composition", () => {
+  it("keeps every managed persona's spoken identity consistent", () => {
+    for (const persona of Object.values(WIRELINE_PERSONAS)) {
+      expect(persona.firstMessage).toContain(persona.name);
+      expect(persona.systemPrompt).toContain(`You are ${persona.name}`);
+    }
+    expect(WIRELINE_PERSONAS.sales.systemPrompt).toContain("Casey's confident, calm identity");
+    expect(WIRELINE_PERSONAS.sales.systemPrompt).not.toContain("Jake");
+  });
+
   it("refreshes managed metadata without replacing dogfooded Studio configuration", () => {
     const patch = founderFleetExistingAgentPatch(
       {

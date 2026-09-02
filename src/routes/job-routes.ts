@@ -24,6 +24,7 @@ import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
 import { apolloReadyForUser } from "../lib/apollo-service";
 import { KnowledgeIngestionUnavailableError } from "../lib/ai-brains";
 import { enforceSpendCap } from "../lib/spend-guards";
+import { acquireDistributedLease } from "../lib/distributed-lease";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -49,6 +50,8 @@ function isWithinUtcWindow(now: Date, hour: number, startMinute: number): boolea
 
 interface SweepRequest extends AuthenticatedRequest {
   _sweepMode?: "cron" | "manual";
+  _sweepStartedAt?: number;
+  _sweepLeaseSignal?: AbortSignal;
 }
 
 const router = Router();
@@ -328,8 +331,12 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
   });
 };
 
-const sweepHandler = async (req: SweepRequest, res: Response) => {
+const runSweepHandler = async (req: SweepRequest, res: Response) => {
   try {
+    const SWEEP_BUDGET_MS = 50_000;
+    const sweepStart = req._sweepStartedAt ?? Date.now();
+    const withinSweepBudget = () =>
+      !req._sweepLeaseSignal?.aborted && Date.now() - sweepStart < SWEEP_BUDGET_MS;
     const {
       claimJob: claim,
       completeClaimedJob: complete,
@@ -339,7 +346,11 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     } = await import("../lib/job-queue");
 
     const now = new Date();
-    if (isWithinUtcWindow(now, 2, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
+    if (
+      withinSweepBudget() &&
+      isWithinUtcWindow(now, 2, 0) &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
       const tenants = await drizzle
         .select({ userId: schema.settings.userId, retentionDays: schema.settings.retentionDays })
         .from(schema.settings);
@@ -363,7 +374,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
 
     const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       await enqueueJob(drizzle, {
         userId: SYSTEM_USER_ID,
         type: "cadence_tick",
@@ -383,7 +394,11 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // Daily 04:30 UTC: reclaim carrier numbers from long-canceled workspaces
     // (30-day grace, capped per run — see lib/number-reclamation.ts). Without
     // this, every canceled tenant's numbers billed Wireline ~$1.15/mo forever.
-    if (isWithinUtcWindow(now, 4, 30) && (req._sweepMode === "cron" || !req._sweepMode)) {
+    if (
+      withinSweepBudget() &&
+      isWithinUtcWindow(now, 4, 30) &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentReclaim = await drizzle
         .select({ id: schema.jobs.id })
@@ -408,7 +423,11 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
-    if (isWithinUtcWindow(now, 3, 15) && (req._sweepMode === "cron" || !req._sweepMode)) {
+    if (
+      withinSweepBudget() &&
+      isWithinUtcWindow(now, 3, 15) &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentOrphanSweep = await drizzle
         .select({ id: schema.jobs.id })
@@ -443,7 +462,11 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
         );
     }
 
-    if (isWithinUtcWindow(now, 5, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
+    if (
+      withinSweepBudget() &&
+      isWithinUtcWindow(now, 5, 0) &&
+      (req._sweepMode === "cron" || !req._sweepMode)
+    ) {
       const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
       const recentMargin = await drizzle
         .select({ id: schema.jobs.id })
@@ -463,25 +486,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
-    if (isWithinUtcWindow(now, 4, 0) && (req._sweepMode === "cron" || !req._sweepMode)) {
-      const since23h = new Date(Date.now() - 23 * 60 * 60 * 1000);
-      const recentCanary = await drizzle
-        .select({ id: schema.jobs.id })
-        .from(schema.jobs)
-        .where(and(eq(schema.jobs.type, "demo_line_canary"), gte(schema.jobs.createdAt, since23h)))
-        .limit(1);
-      if (!recentCanary.length) {
-        await enqueueJob(drizzle, {
-          userId: SYSTEM_USER_ID,
-          type: "demo_line_canary",
-          payload: {},
-        }).catch((e: unknown) =>
-          log.warn("demo_line_canary enqueue failed", { error: getErrorMessage(e) }),
-        );
-      }
-    }
-
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const dueDeletions = await drizzle
         .select({ id: schema.deletionQueue.id, userId: schema.deletionQueue.userId })
         .from(schema.deletionQueue)
@@ -526,7 +531,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     let recovered = 0;
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       try {
         recovered = await recoverStaleJobs(drizzle);
         if (recovered > 0) log.warn("Recovered stuck jobs", { recovered });
@@ -537,7 +542,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
       }
     }
 
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const { processWebhookRetries } = await import("../lib/webhook-helpers");
       await processWebhookRetries();
     }
@@ -546,10 +551,9 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // 30-second race rescheduled a job while its original side effects kept
     // running. External clients already enforce their own timeouts; the sweep
     // now awaits one claimed handler and fences its outcome to that attempt.
-    const SWEEP_BUDGET_MS = 55_000;
     // Per-tick job ceiling. Jobs run sequentially (each iteration awaits before
     // claiming the next), so this uses one pooled connection at a time and the
-    // 55s wall-clock budget below is the real safety bound — raising the count
+    // 50s wall-clock budget below is the real safety bound — raising the count
     // only lets a tick drain more of the backlog when jobs are fast (webhook
     // processing, QA scoring). At 10 the count, not the budget, was the
     // bottleneck: two slots are spent every tick on the self-enqueued
@@ -557,10 +561,9 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     // sustained call volume outran a 5-minute cron. The budget still caps a
     // tick that hits slow jobs.
     const SWEEP_MAX_JOBS = 40;
-    const sweepStart = Date.now();
     let processed = 0;
     for (let i = 0; i < SWEEP_MAX_JOBS; i++) {
-      if (Date.now() - sweepStart > SWEEP_BUDGET_MS) break;
+      if (!withinSweepBudget()) break;
       const job = await claim(drizzle);
       if (!job) break;
       try {
@@ -573,12 +576,12 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     }
 
     let trialsExpired = 0;
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const { sweepExpiredTrials } = await import("../lib/trial-gate");
       trialsExpired = await sweepExpiredTrials();
     }
 
-    if (req._sweepMode === "cron" || !req._sweepMode) {
+    if (withinSweepBudget() && (req._sweepMode === "cron" || !req._sweepMode)) {
       const now3d = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
       const trialsSoon = await drizzle
         .select({ userId: schema.settings.userId, trialEndsAt: schema.settings.trialEndsAt })
@@ -638,6 +641,66 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
     if (err instanceof AppError) throw err;
     log.error("/api/jobs/sweep failed", { error: getErrorMessage(err) });
     throw AppError.fromHttpStatus(500, "Sweep failed");
+  }
+};
+
+const sweepHandler = async (req: SweepRequest, res: Response) => {
+  req._sweepStartedAt = Date.now();
+  const decision = await acquireDistributedLease("jobs:sweep", 70_000);
+  if (decision.status === "held") {
+    res.status(202).json({ processed: 0, recovered: 0, already_running: true });
+    return;
+  }
+  if (decision.status === "unavailable") {
+    throw AppError.serviceUnavailable("The distributed job-sweep lease is unavailable.");
+  }
+
+  const leaseFence = new AbortController();
+  req._sweepLeaseSignal = leaseFence.signal;
+  let heartbeat: ReturnType<typeof setTimeout> | null = null;
+  let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+  const armSafetyFence = () => {
+    if (safetyTimer) clearTimeout(safetyTimer);
+    safetyTimer = setTimeout(() => {
+      log.error("Job sweep lease safety deadline elapsed");
+      leaseFence.abort();
+    }, 60_000);
+  };
+  const scheduleRenewal = () => {
+    heartbeat = setTimeout(async () => {
+      try {
+        const renewed = await decision.lease.renew();
+        if (!renewed) {
+          log.error("Job sweep lost its distributed lease");
+          leaseFence.abort();
+        } else {
+          armSafetyFence();
+        }
+      } catch (error) {
+        log.error("Job sweep distributed lease renewal failed", {
+          error: getErrorMessage(error),
+        });
+        leaseFence.abort();
+      } finally {
+        if (!leaseFence.signal.aborted) scheduleRenewal();
+      }
+    }, 20_000);
+  };
+  armSafetyFence();
+  scheduleRenewal();
+  try {
+    await runSweepHandler(req, res);
+  } finally {
+    // Stop an in-flight renewal callback from rescheduling after this request
+    // has finished, including when the best-effort Redis release fails.
+    leaseFence.abort();
+    if (heartbeat) clearTimeout(heartbeat);
+    if (safetyTimer) clearTimeout(safetyTimer);
+    await decision.lease.release().catch((error: unknown) => {
+      log.error("Job sweep distributed lease release failed", {
+        error: getErrorMessage(error),
+      });
+    });
   }
 };
 

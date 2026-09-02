@@ -27,10 +27,15 @@ describe("round-4 audit fix contracts", () => {
       session.indexOf("async function claimCall"),
       session.indexOf("async function updatePresence"),
     );
+    expect(claim).toContain("pg_advisory_xact_lock");
+    expect(claim).toContain("schema.callLogs.openaiSipSourceId");
+    expect(claim).toContain('.for("update")');
     expect(claim).toContain(".insert(schema.callLogs)");
-    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
     expect(claim).toContain(".returning({ id: schema.callLogs.id })");
-    expect(claim).toContain("if (!created) return null;");
+    expect(claim).toContain(
+      'if (!created) throw new Error("OpenAI SIP claim insert returned no row.")',
+    );
+    expect(claim).toContain("await claimOutboundLeadInTransaction(tx, input)");
   });
 
   it("refund list failures throw for a clean Stripe retry instead of double-reversing", () => {
@@ -83,14 +88,12 @@ describe("round-4 audit fix contracts", () => {
   });
 
   it("missing transcripts are logged as unverifiable, never as played", () => {
-    const handlers = read("src/lib/voice/openai-sip-session.ts");
-    const disclosure = handlers.slice(
-      handlers.indexOf("async function persistAiDisclosureEvidence"),
-      handlers.indexOf("async function persistFinishedCall"),
-    );
-    expect(disclosure).toMatch(
-      /input\.openingPlaybackConfirmed[\s\S]*\? disclosure\.found[\s\S]*\? "ai_disclosure_played"[\s\S]*: "ai_disclosure_not_detected"[\s\S]*: "ai_disclosure_unverifiable"/,
-    );
+    const evidence = read("src/lib/voice/ai-disclosure-evidence.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    expect(evidence).toContain("!input.openingPlaybackConfirmed || !actualOpeningTranscript");
+    expect(evidence).toContain('event: "ai_disclosure_unverifiable"');
+    expect(session).toContain("actualOpeningTranscript");
+    expect(session).not.toContain('transcriptLines.push({ role: "Agent", text: opening })');
   });
 
   it("every curated OpenAI Realtime voice a picker offers is accepted at runtime", () => {
@@ -142,14 +145,17 @@ describe("round-4 audit fix contracts", () => {
     );
   });
 
-  it("public and PSTN OpenAI voice sessions carry explicit COGS duration ceilings", () => {
-    const publicPolicy = read("src/lib/public-browser-demo.ts");
-    const publicSession = read("src/lib/voice/openai-public-demo-session.ts");
+  it("retires public voice before provider work and caps authenticated PSTN sessions", () => {
+    const publicRoutes = read("src/routes/marketing-runtime-routes.ts");
     const sipConfig = read("src/lib/voice/openai-sip-config.ts");
     const sipSession = read("src/lib/voice/openai-sip-session.ts");
     const inbound = read("src/routes/openai-inbound-twilio-routes.ts");
-    expect(publicPolicy).toContain("PUBLIC_BROWSER_DEMO_MAX_SECONDS = 45");
-    expect(publicSession).toContain("maxDurationSeconds: PUBLIC_BROWSER_DEMO_MAX_SECONDS");
+    expect(publicRoutes).toContain("res.status(410).json");
+    expect(publicRoutes).toContain('code: "public_voice_preview_retired"');
+    expect(publicRoutes).toContain('signupPath: "/signup?plan=free"');
+    expect(publicRoutes).not.toMatch(
+      /createServerManagedOpenAIRealtimeCall|createPublicOpenAILiveDemoCall|reserveRealtimeSessionSpend/,
+    );
     expect(sipConfig).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 300");
     expect(sipSession).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
     expect(inbound).toContain('timeLimit="${resolveOpenAISipSessionMaxSeconds()}"');

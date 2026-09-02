@@ -104,7 +104,6 @@ describe("account-environment AI and provider-spend admission", () => {
 
     environmentMocks.assertAllowed.mockClear();
     for (const type of [
-      "demo_line_canary",
       "twilio_message_reconciliation",
       "purge_deleted_account",
       "account_deletion_billing_reconciliation",

@@ -1,6 +1,11 @@
 import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { OutboundBackdrop } from "../OutboundBackdrop";
-import { OutboundChrome, SceneHeadline, StatusPill } from "../OutboundChrome";
+import {
+  OUTBOUND_VERTICAL_SAFE_ZONE,
+  OutboundChrome,
+  SceneHeadline,
+  StatusPill,
+} from "../OutboundChrome";
 
 const prospects = [
   { x: 8, y: 19, label: "MATCHED", delay: 6 },
@@ -13,8 +18,8 @@ export const FindScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { height, width } = useVideoConfig();
   const vertical = height / width > 1.3;
-  const panelWidth = vertical ? 900 : 840;
-  const panelHeight = vertical ? 790 : 560;
+  const panelWidth = vertical ? 792 : 840;
+  const panelHeight = vertical ? 760 : 560;
 
   return (
     <OutboundBackdrop>
@@ -22,9 +27,9 @@ export const FindScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          top: vertical ? 270 : 170,
-          left: vertical ? 84 : 72,
-          right: vertical ? 84 : 72,
+          top: vertical ? 350 : 170,
+          left: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.left : 72,
+          right: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.right : 72,
         }}
       >
         <SceneHeadline>FINDS THE LEAD.</SceneHeadline>
@@ -33,7 +38,7 @@ export const FindScene: React.FC = () => {
         style={{
           position: "absolute",
           left: "50%",
-          top: vertical ? 730 : 360,
+          top: vertical ? 700 : 360,
           width: panelWidth,
           height: panelHeight,
           marginLeft: -panelWidth / 2,

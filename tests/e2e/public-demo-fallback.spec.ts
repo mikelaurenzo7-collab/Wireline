@@ -4,109 +4,95 @@ test.setTimeout(120_000);
 
 declare global {
   interface Window {
-    __wirelineMicRequests?: number;
+    __botboundMicRequests?: number;
   }
 }
 
-async function openPublicPage(page: Page, path = "/showcase") {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.goto(path, { waitUntil: "commit", timeout: 60_000 });
-    await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
-    try {
-      await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
-      return;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw lastError;
-}
-
-test("a protected-demo outage fails before microphone permission and exposes the product path", async ({
-  page,
-}) => {
+async function installMicrophoneProbe(page: Page) {
   await page.addInitScript(() => {
-    window.__wirelineMicRequests = 0;
-    const mediaDevices = {
-      getUserMedia: async () => {
-        window.__wirelineMicRequests = (window.__wirelineMicRequests ?? 0) + 1;
-        return {
-          getTracks: () => [],
-        } as unknown as MediaStream;
-      },
-    };
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: mediaDevices,
-    });
-  });
-
-  await page.route("**/api/public/demo-session", async (route) => {
-    await route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({
-        error: "The protected live demo is temporarily unavailable.",
-      }),
-    });
-  });
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openPublicPage(page);
-
-  const preview = page.locator("#showcase-preview");
-  await preview.getByRole("button", { name: "Talk to Jake", exact: true }).click();
-
-  await expect(preview.getByRole("alert")).toContainText(
-    "The protected live demo is temporarily unavailable",
-  );
-  await expect(preview.getByRole("link", { name: /build your bot/i })).toHaveAttribute(
-    "href",
-    /\/signup/,
-  );
-  await expect(preview.getByRole("button", { name: "Talk to Jake", exact: true })).toBeEnabled();
-  await expect(page.getByText("Standard carrier rates may apply.", { exact: true })).toHaveCount(0);
-
-  expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
-});
-
-test("the homepage demo outage keeps retry and browser-demo recovery available", async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    window.__wirelineMicRequests = 0;
+    window.__botboundMicRequests = 0;
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
         getUserMedia: async () => {
-          window.__wirelineMicRequests = (window.__wirelineMicRequests ?? 0) + 1;
+          window.__botboundMicRequests = (window.__botboundMicRequests ?? 0) + 1;
           return { getTracks: () => [] } as unknown as MediaStream;
         },
       },
     });
   });
-  await page.route("**/api/public/demo-session", async (route) => {
-    await route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ error: "The protected live demo is temporarily unavailable." }),
-    });
+}
+
+async function openPage(page: Page, path: string) {
+  await page.goto(path, { waitUntil: "commit", timeout: 60_000 });
+  await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator("main").first()).toBeVisible({ timeout: 60_000 });
+}
+
+test("showcase redirects to free account creation without requesting microphone access", async ({
+  page,
+}) => {
+  await installMicrophoneProbe(page);
+  const publicVoiceRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/public/demo-")) publicVoiceRequests.push(request.url());
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await openPublicPage(page, "/");
+  await openPage(page, "/showcase");
 
-  const preview = page.locator(".landing-demo-inline");
-  const retry = preview.getByRole("button", { name: "Talk to Jake", exact: true });
-  await retry.click();
+  await expect(page).toHaveURL(/\/signup\?plan=free$/);
+  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.locator("#showcase-preview")).toHaveCount(0);
+  expect(publicVoiceRequests).toEqual([]);
+  expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
+});
 
-  await expect(preview.getByRole("alert")).toContainText(
-    "The protected live demo is temporarily unavailable",
+test("home offers outbound and inbound account paths without a public audio control", async ({
+  page,
+}) => {
+  await installMicrophoneProbe(page);
+  const publicVoiceRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/api/public/demo-")) publicVoiceRequests.push(request.url());
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPage(page, "/");
+
+  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
+  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+FIND\. CALL\. BOOK\./ });
+  const inbound = directions.getByRole("link", {
+    name: /INBOUND\s+ANSWER\. QUALIFY\. ROUTE\./,
+  });
+  await expect(outbound).toHaveAttribute(
+    "href",
+    /\/signup\?[^\s]*plan=free[^\s]*template=sales-rep/,
   );
-  await expect(retry).toBeEnabled();
-  await expect(
-    preview.getByRole("link", { name: "Open browser demo", exact: true }),
-  ).toHaveAttribute("href", "/showcase");
-  expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
+  await expect(inbound).toHaveAttribute(
+    "href",
+    /\/signup\?[^\s]*plan=free[^\s]*template=front-desk/,
+  );
+  await expect(page.getByRole("button", { name: /talk to/i })).toHaveCount(0);
+  await expect(page.locator("audio, video")).toHaveCount(0);
+  expect(publicVoiceRequests).toEqual([]);
+  expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
+});
+
+test("legacy public voice endpoints return deterministic provider-free retirement responses", async ({
+  request,
+}) => {
+  for (const [method, path] of [
+    ["get", "/api/public/assistant/Jake"],
+    ["post", "/api/public/demo-session"],
+    ["post", "/api/public/demo-call"],
+  ] as const) {
+    const response = await request[method](path);
+    expect(response.status(), path).toBe(410);
+    expect(await response.json()).toMatchObject({
+      error: "Public voice previews have moved behind BotBound account access.",
+      code: "public_voice_preview_retired",
+      signupPath: "/signup?plan=free",
+    });
+  }
 });

@@ -41,16 +41,14 @@ describe("verified launch-readiness wins", () => {
     expect(handlers).toContain("recordCommsFollowUpTask");
   });
 
-  it("caps the public singing demo before paid carrier bridging", () => {
+  it("retires the public singing route before any paid carrier bridging", () => {
     const twilio = read("src/routes/twilio-webhook-base.ts");
     const start = twilio.indexOf("/api/twilio-webhook/singing-receptionist");
     const block = twilio.slice(start);
 
-    expect(block).toContain('bucket: "public_singing_demo"');
-    expect(block).toContain("max: 3");
-    expect(block).toContain('timeLimit="300"');
-    expect(block).toContain('timeout="20"');
-    expect(block).toContain("distributedLimiterStatus()");
+    expect(block).toContain("verifyTwilioSignature(req)");
+    expect(block).toContain("return res.status(200).send(twimlHangup())");
+    expect(block).not.toMatch(/<Dial\b|<Sip\b|<Say\b|timeLimit=/);
   });
 
   it("limits public intake before any database-backed key resolution", () => {

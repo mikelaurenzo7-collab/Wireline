@@ -129,37 +129,24 @@ describe("server-owned OpenAI Realtime call control", () => {
     expect(config.functions["api/index.ts"].maxDuration).toBeGreaterThanOrEqual(360);
   });
 
-  it("keeps public admission controls ahead of provider call creation", () => {
+  it("keeps retired public voice endpoints outside provider call creation", () => {
     const route = read("src/routes/marketing-runtime-routes.ts");
-    const demoCall = route.slice(route.indexOf('"/api/public/demo-call"'));
-    expect(demoCall.indexOf("verifyPublicDemoTicket")).toBeLessThan(
-      demoCall.indexOf("consumePublicDemoTicket"),
+    expect(route).toContain("function publicVoicePreviewRetired");
+    expect(route).toContain("res.status(410).json");
+    expect(route).not.toMatch(
+      /verifyPublicDemoTicket|consumePublicDemoTicket|admitPublicWebDemoSession|createPublicOpenAILiveDemoCall|createServerManagedOpenAIRealtimeCall/,
     );
-    expect(demoCall.indexOf("consumePublicDemoTicket")).toBeLessThan(
-      demoCall.indexOf("admitPublicWebDemoSession"),
-    );
-    expect(demoCall.indexOf("admitPublicWebDemoSession")).toBeLessThan(
-      demoCall.indexOf("createPublicOpenAILiveDemoCall"),
-    );
-    const service = read("src/lib/voice/openai-public-demo-session.ts");
-    expect(service).toContain('action: "voice.realtime.public_demo"');
-    expect(service).toContain('accounting_basis: "maximum_session_duration"');
-    expect(service.indexOf("createServerManagedOpenAIRealtimeCall")).toBeLessThan(
-      service.indexOf("persistPlatformCostRecord({"),
-    );
-    expect(service.indexOf("public OpenAI Realtime deadline")).toBeLessThan(
-      service.indexOf("persistPlatformCostRecord({"),
-    );
-    expect(service).not.toContain("guestFingerprint,");
   });
 
-  it("exposes only the browser SDP answer and public deadline", () => {
-    const service = read("src/lib/voice/openai-public-demo-session.ts");
-    const response = service.slice(service.indexOf("return {", service.indexOf("endsAt")));
-    expect(response).toContain("sdp: call.sdp");
-    expect(response).toContain("maxDurationSeconds");
-    expect(response).toContain("endsAt: endsAt.toISOString()");
-    expect(response).not.toContain("callId:");
+  it("exposes only retirement guidance from legacy public voice endpoints", () => {
+    const route = read("src/routes/marketing-runtime-routes.ts");
+    const response = route.slice(
+      route.indexOf("function publicVoicePreviewRetired"),
+      route.indexOf('router.get("/api/public/stats"'),
+    );
+    expect(response).toContain('code: "public_voice_preview_retired"');
+    expect(response).toContain('signupPath: "/signup?plan=free"');
+    expect(response).not.toContain("sdp:");
     expect(response).not.toContain("clientSecret");
     expect(response).not.toContain("token:");
   });

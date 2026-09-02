@@ -141,7 +141,7 @@ describe("knowledge upload surface", () => {
     // Anchored on the whole effect, not just its fetch call: the clearing that
     // caused this happens at the top of the effect, above the request, so a
     // window that starts at authFetch never sees it.
-    const effectEnd = source.indexOf("}, [agentId, version]);");
+    const effectEnd = source.indexOf("}, [agentId, startAgentOperation, version]);");
     expect(effectEnd).toBeGreaterThan(-1);
     const effectStart = source.lastIndexOf("useEffect(() => {", effectEnd);
     expect(effectStart).toBeGreaterThan(-1);

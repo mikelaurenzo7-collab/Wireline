@@ -198,9 +198,7 @@ async function finishToolExecution(
         ...(error
           ? {
               error:
-                error instanceof Error
-                  ? error.message.slice(0, 500)
-                  : String(error).slice(0, 500),
+                error instanceof Error ? error.message.slice(0, 500) : String(error).slice(0, 500),
             }
           : {}),
       },
@@ -220,6 +218,12 @@ export async function runIdempotentAgentToolCall(
   context: ToolCallContext,
   execute: () => Promise<ToolCallResult>,
 ): Promise<ToolCallResult> {
+  if (context.abortSignal?.aborted) {
+    return {
+      toolCallId: context.toolCallId,
+      result: "This call no longer owns the live session, so the action was not run.",
+    };
+  }
   if (!isIdempotentAgentTool(name) || !context.agent?.user_id || !context.toolCallId) {
     return execute();
   }
@@ -249,6 +253,13 @@ export async function runIdempotentAgentToolCall(
       toolCallId: context.toolCallId,
       result:
         "That action was already started and may still be processing. Do not run it again or claim a new success. Tell the caller the outcome is still being verified and offer a durable follow-up task.",
+    };
+  }
+
+  if (context.abortSignal?.aborted) {
+    return {
+      toolCallId: context.toolCallId,
+      result: "This call no longer owns the live session, so the action was not run.",
     };
   }
 

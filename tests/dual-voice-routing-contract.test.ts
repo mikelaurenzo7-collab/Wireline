@@ -26,7 +26,6 @@ describe("OpenAI Realtime voice routing contracts", () => {
     const assignment = read("src/lib/voice/native-phone-assignment.ts");
     const carrier = read("src/lib/voice/native-phone-carrier.ts");
     const routing = read("src/routes/native-phone-routing-routes.ts");
-    const canary = read("src/lib/demo-line-canary.ts");
     expect(assignment).toContain("configureNativeNumberRouting");
     expect(carrier).toContain("repairOwnedTwilioOpenAIRouting");
     expect(carrier).toContain("export function isNativeNumberOpenAIRouted");
@@ -49,9 +48,6 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(routing).toContain("routing.confirmedPhoneNumbers.has(row.phoneNumber)");
     expect(routing).toContain('"configuration_required"');
     expect(routing).toContain('"degraded"');
-    expect(canary).toContain("repairShowcaseOpenAIInboundRouting");
-    expect(canary).toContain("configureNativeNumberRouting");
-    expect(canary).toContain("isNativeNumberOpenAIRouted");
   });
 
   it("routes every PSTN call through the governed OpenAI runtime", () => {
@@ -85,6 +81,42 @@ describe("OpenAI Realtime voice routing contracts", () => {
     expect(accept).toBeGreaterThan(reserve);
     expect(`${policy}\n${runtime}\n${inbound}\n${webhook}`).not.toMatch(
       /api\.vapi\.ai|api\.x\.ai/i,
+    );
+  });
+
+  it("marks an outbound lead connected only inside its durable OpenAI call claim", () => {
+    const bridge = read("src/routes/openai-outbound-routes.ts");
+    const webhook = read("src/routes/openai-sip-routes.ts");
+    const session = read("src/lib/voice/openai-sip-session.ts");
+    const placement = read("src/lib/voice/openai-outbound-placement.ts");
+    const bridgeClaim = bridge.slice(
+      bridge.indexOf('amdNativeVoice.state = "bridging"'),
+      bridge.indexOf('return {\n      kind: "bridge"'),
+    );
+    const contextResolver = webhook.slice(
+      webhook.indexOf("async function resolveOutboundContext"),
+      webhook.indexOf("async function callControl"),
+    );
+    const durableClaim = session.slice(
+      session.indexOf("async function claimOutboundLeadInTransaction"),
+      session.indexOf("async function updatePresence"),
+    );
+
+    expect(bridgeClaim).toContain("status: LEAD_STATUS.DIALING");
+    expect(bridgeClaim).not.toContain("status: LEAD_STATUS.CONNECTED");
+    expect(contextResolver).not.toContain(".update(schema.outboundLeads)");
+    expect(durableClaim).toContain("await claimOutboundLeadInTransaction(tx, input)");
+    expect(durableClaim).toContain("status: LEAD_STATUS.CONNECTED");
+    expect(durableClaim).toContain("input.outboundPlacementId");
+    expect(durableClaim).toContain("currentCallId && currentCallId !== providerId");
+    expect(durableClaim).toContain(".returning({ id: schema.outboundLeads.id })");
+    expect(placement).toContain("outbound_line_number: input.outboundLineNumber");
+    expect(bridge).toContain("eq(schema.phoneNumbers.phoneNumber, outboundLineNumber)");
+    expect(contextResolver).toContain("eq(schema.phoneNumbers.phoneNumber, outboundLineNumber)");
+    expect(durableClaim).toContain("eq(schema.phoneNumbers.phoneNumber, input.calledNumber)");
+    expect(bridge).toContain('nativeVoice.state === "bridging" || nativeVoice.bridge_served_at');
+    expect(bridge).toContain(
+      'nextNativeVoice.state = "carrier_completed_without_openai_confirmation"',
     );
   });
 

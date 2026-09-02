@@ -208,9 +208,28 @@ describe("strict prelaunch account export and Twilio contracts", () => {
     // exit that context before its real BEGIN and keep all reads on tx.
     expect(route).toContain("tenantStore.exit(() =>");
     expect(route).toContain('{ isolationLevel: "repeatable read", accessMode: "read only" }');
-    expect(route).toContain("streamTableRows(tableTx, res, table, predicates, exportLease.signal)");
+    expect(route).toContain("streamTableRows(tableTx, res, table, predicates, exportLease)");
     expect(route).toContain("const userResult = (await tx.execute(");
     expect(route).not.toContain("await drizzle.execute(");
+  });
+
+  it("enforces the remaining lease deadline inside PostgreSQL before every archive query", () => {
+    const route = read("src/routes/account-export-guard-routes.ts");
+    const deadlineHelper = route.slice(
+      route.indexOf("async function setAccountExportStatementDeadline"),
+      route.indexOf("function postgresErrorCode"),
+    );
+    const stream = route.slice(
+      route.indexOf("async function streamTableRows"),
+      route.indexOf("router.use("),
+    );
+
+    expect(deadlineHelper).toContain("lease.remainingMs()");
+    expect(deadlineHelper).toContain("set_config('statement_timeout'");
+    expect(stream.indexOf("await setAccountExportStatementDeadline")).toBeLessThan(
+      stream.indexOf("SELECT * FROM"),
+    );
+    expect(route.match(/await setAccountExportStatementDeadline\(/g)).toHaveLength(2);
   });
 
   it("aborts rather than emitting a well-formed but incomplete archive", () => {

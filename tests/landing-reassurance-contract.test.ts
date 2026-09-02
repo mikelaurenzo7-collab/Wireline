@@ -30,7 +30,9 @@ describe("home landing launch clarity", () => {
     expect(product).toContain(
       'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
     );
-    expect(landing).toContain('variant="inline"');
+    expect(landing).toContain("landing-prestige__directions");
+    expect(landing).toContain("FIND. CALL. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
       'const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]',

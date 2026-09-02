@@ -4,7 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Headphones,
+  LayoutTemplate,
   Loader2,
   Mail,
   Send,
@@ -158,10 +158,12 @@ export function ContactPage() {
             <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
           </a>
-          <Link to="/showcase" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
-            <Headphones className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Browser Demo</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Hear a live Phone Bot</p>
+          <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
+            <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
+            <h2 className="mt-5 font-semibold text-foreground">See how it works</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Calls, follow-up, outcomes
+            </p>
           </Link>
           <Link
             to="/pricing"

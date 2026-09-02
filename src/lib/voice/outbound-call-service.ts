@@ -16,10 +16,7 @@ import {
   markNativeOutboundPlacementAccepted,
   markNativeOutboundPlacementFailure,
 } from "./openai-outbound-placement";
-import {
-  issueOpenAIOutboundToken,
-  openAIOutboundTokenReady,
-} from "./openai-outbound-token";
+import { issueOpenAIOutboundToken, openAIOutboundTokenReady } from "./openai-outbound-token";
 import {
   normalizeOpenAIPhoneNumber,
   openAISipConfigured,
@@ -148,7 +145,11 @@ async function placeOutboundCallAfterDeletionFence(
     return { ok: false, status: 403, error: "This number is on the Do Not Call list." };
   }
 
-  const claim = await claimNativeOutboundPlacement({ ...input, customerNumber });
+  const claim = await claimNativeOutboundPlacement({
+    ...input,
+    customerNumber,
+    outboundLineNumber: fromNumber,
+  });
   if (!claim.ok) return claim;
   const { lead, created, placementId } = claim;
   const { token } = issueOpenAIOutboundToken({ leadId: lead.id, placementId });

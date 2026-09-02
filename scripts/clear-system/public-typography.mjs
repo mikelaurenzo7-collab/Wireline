@@ -30,25 +30,13 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
 
   for (const [pattern, description] of [
     [/--wl-public-label-size:\s*0\.75rem;/, "public labels must retain a 12px floor"],
-    [
-      /--wl-public-caption-size:\s*0\.8125rem;/,
-      "public captions must retain a 13px floor",
-    ],
-    [
-      /--wl-public-control-size:\s*0\.875rem;/,
-      "public controls must retain a 14px floor",
-    ],
+    [/--wl-public-caption-size:\s*0\.8125rem;/, "public captions must retain a 13px floor"],
+    [/--wl-public-control-size:\s*0\.875rem;/, "public controls must retain a 14px floor"],
     [/\.landing-stage__lane strong/, "work-lane labels must use the readable floor"],
     [/\.landing-console__channels li/, "channel labels must use the readable floor"],
-    [/\.landing-demo__microcopy/, "demo disclosure must use the readable floor"],
     [/\.landing-home__price-badge/, "pricing badges must use the readable floor"],
   ]) {
-    mustInclude(
-      "src/styles/marketing-readable-type.css",
-      readableType,
-      pattern,
-      description,
-    );
+    mustInclude("src/styles/marketing-readable-type.css", readableType, pattern, description);
   }
 
   mustExclude(
@@ -80,10 +68,14 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
       /\.marketing-surface \.marketing-hero__title,[\s\S]*font-weight:\s*700;/,
       "public hero copy must use a shipped display weight",
     ],
-    [/\.wl-chip,[\s\S]*\.marketing-hero-proof span[\s\S]*font-weight:\s*600;/,
-      "shared mono labels must use the shipped semibold face"],
-    [/\.marketing-proof-chip,[\s\S]*\.wl-workspace-header \.wl-overline[\s\S]*font-size:\s*0\.75rem;/,
-      "compact public and workspace labels must retain a 12px floor"],
+    [
+      /\.wl-chip,[\s\S]*\.marketing-hero-proof span[\s\S]*font-weight:\s*600;/,
+      "shared mono labels must use the shipped semibold face",
+    ],
+    [
+      /\.marketing-proof-chip,[\s\S]*\.wl-workspace-header \.wl-overline[\s\S]*font-size:\s*0\.75rem;/,
+      "compact public and workspace labels must retain a 12px floor",
+    ],
   ]) {
     mustInclude("src/styles/type-integrity.css", terminalType, pattern, description);
   }
@@ -97,12 +89,18 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
 
   for (const [pattern, description] of [
     [/font-synthesis:\s*none;/, "connected widgets must disable synthetic weights"],
-    [/\.eyebrow \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
-      "connected widget eyebrows must use readable static type"],
-    [/\.meta strong \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
-      "connected widget metadata must use readable static type"],
-    [/button, a\.button \{[\s\S]*font-weight:\s*600;/,
-      "connected widget controls must use a shipped weight"],
+    [
+      /\.eyebrow \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
+      "connected widget eyebrows must use readable static type",
+    ],
+    [
+      /\.meta strong \{[\s\S]*font-size:\s*12px;[\s\S]*font-weight:\s*600;/,
+      "connected widget metadata must use readable static type",
+    ],
+    [
+      /button, a\.button \{[\s\S]*font-weight:\s*600;/,
+      "connected widget controls must use a shipped weight",
+    ],
   ]) {
     mustInclude("src/lib/wireline-mcp-widget-styles.ts", widgetType, pattern, description);
   }
@@ -124,12 +122,7 @@ export function checkPublicTypography({ failures, read, mustInclude, mustExclude
     [/-webkit-font-smoothing:\s*auto;/, "public document font smoothing must follow the platform"],
     [/text-rendering:\s*auto;/, "public document text rendering must follow the platform"],
   ]) {
-    mustInclude(
-      "src/styles/marketing-document-flow.css",
-      documentFlow,
-      pattern,
-      description,
-    );
+    mustInclude("src/styles/marketing-document-flow.css", documentFlow, pattern, description);
   }
 
   for (const weight of [500, 600, 700]) {

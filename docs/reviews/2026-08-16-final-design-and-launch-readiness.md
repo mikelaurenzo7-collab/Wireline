@@ -240,7 +240,7 @@ Verified on August 16, 2026:
 - voice runtime was operational;
 - voice fallback was operational;
 - reasoning was operational;
-- `/api/health/voice-status` returned healthy;
+- `/api/health/voice-status` returned healthy; this historical public probe has since been retired and is no longer mounted;
 - the reviewed five-minute voice window had zero calls and zero recorded error rates;
 - Vercel reported no production warning, error, or fatal logs in the reviewed 24-hour window;
 - Vercel reported no runtime error cluster in the reviewed 24-hour window.
@@ -481,7 +481,7 @@ Before broad commercial launch:
 4. Let Vercel build production from `main`.
 5. Confirm deployment READY.
 6. Confirm the production source-commit header matches the promoted `main` SHA.
-7. Run public health and voice-health probes.
+7. Run public health and authenticated voice-reliability checks.
 8. Confirm no new warning, error, or fatal log cluster.
 9. Founder signs in through the side-panel browser.
 10. Complete public and authenticated visual QA.

@@ -1,6 +1,11 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { OutboundBackdrop } from "../OutboundBackdrop";
-import { OutboundChrome, SceneHeadline, StatusPill } from "../OutboundChrome";
+import {
+  OUTBOUND_VERTICAL_SAFE_ZONE,
+  OutboundChrome,
+  SceneHeadline,
+  StatusPill,
+} from "../OutboundChrome";
 
 const weekdays = ["M", "T", "W", "T", "F"];
 
@@ -8,7 +13,7 @@ export const BookScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { height, width } = useVideoConfig();
   const vertical = height / width > 1.3;
-  const cardWidth = vertical ? 870 : 800;
+  const cardWidth = vertical ? 792 : 800;
 
   return (
     <OutboundBackdrop>
@@ -16,9 +21,9 @@ export const BookScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          top: vertical ? 270 : 170,
-          left: vertical ? 84 : 72,
-          right: vertical ? 84 : 72,
+          top: vertical ? 350 : 170,
+          left: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.left : 72,
+          right: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.right : 72,
         }}
       >
         <SceneHeadline maxWidth={vertical ? 930 : 880}>BOOKS THE NEXT STEP.</SceneHeadline>
@@ -27,7 +32,7 @@ export const BookScene: React.FC = () => {
         style={{
           position: "absolute",
           left: "50%",
-          top: vertical ? 750 : 370,
+          top: vertical ? 720 : 370,
           width: cardWidth,
           marginLeft: -cardWidth / 2,
           borderRadius: vertical ? 50 : 40,

@@ -1,7 +1,9 @@
 import WebSocket from "ws";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { AppError } from "../api-error";
 import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
 import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
@@ -18,7 +20,6 @@ import { drizzle, fetchWithTimeout, log, tenantStore } from "../server-context";
 import {
   buildConsentLedgerRow,
   CONSENT_RULE_VERSION,
-  detectAiDisclosure,
   detectOptOut,
   getConsentRuleForPhone,
 } from "../tcpa-consent";
@@ -35,6 +36,11 @@ import {
   normalizeOpenAIPhoneNumber,
   resolveOpenAISipSessionMaxSeconds,
 } from "./openai-sip-config";
+import {
+  AI_DISCLOSURE_EVENTS,
+  classifyAiDisclosureEvidence,
+  firstAgentTranscript,
+} from "./ai-disclosure-evidence";
 
 const WS_OPEN_TIMEOUT_MS = 15_000;
 const PROVIDER_REQUEST_TIMEOUT_MS = 10_000;
@@ -44,6 +50,10 @@ const MAX_MISSED_PONGS = 2;
 const MAX_TRANSCRIPT_CHARS = 120_000;
 const MAX_TOOL_OUTPUT_CHARS = 8_000;
 const FINALIZATION_RECOVERY_GRACE_MS = 120_000;
+const PRE_SESSION_CLAIM_LEASE_MS = 2 * 60_000;
+const RUNNING_CLAIM_LEASE_MS = 90_000;
+const RUNNING_CLAIM_HEARTBEAT_MS = 30_000;
+const RUNNING_CLAIM_LOCAL_FENCE_MS = RUNNING_CLAIM_LEASE_MS - 15_000;
 const IN_PROGRESS_SUMMARY = "OpenAI Realtime voice call in progress.";
 const RECOVERED_SUMMARY =
   "OpenAI Realtime voice call ended before its terminal state could be persisted.";
@@ -54,6 +64,10 @@ const ACTIVE_OUTBOUND_STATUSES: readonly string[] = [
   LEAD_STATUS.DIALING,
   LEAD_STATUS.CONNECTED,
 ];
+const OUTBOUND_ATTACHABLE_STATUSES: readonly string[] = [
+  ...ACTIVE_OUTBOUND_STATUSES,
+  LEAD_STATUS.ERROR,
+];
 
 export type OpenAISipIncomingCall = {
   callId: string;
@@ -63,12 +77,36 @@ export type OpenAISipIncomingCall = {
   calledNumber: string;
   direction?: "inbound" | "outbound";
   leadId?: bigint;
+  inboundTwilioCallSid?: string;
+  outboundPlacementId?: string;
   customerName?: string | null;
   context?: string | null;
   callPurpose?: OutboundCallPurpose;
   businessName?: string | null;
   complianceMode?: string | null;
   admission?: NativeInboundAdmission;
+};
+
+export type OpenAISipCallClaim = {
+  callLogId: bigint;
+  recoveryJobId: string;
+  ownerToken: string;
+  resumed: boolean;
+};
+
+export type OpenAISipPreSessionFailure =
+  | "spend_reservation_failed"
+  | "provider_accept_failed"
+  | "spend_commit_failed"
+  | "session_start_failed";
+
+type OpenAISipTransaction = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
+type SettleOutboundLeadInput = {
+  call: OpenAISipIncomingCall;
+  summary: string;
+  endedReason: string;
+  pipelineError: string | null;
 };
 
 type PendingToolCall = {
@@ -89,6 +127,7 @@ type RealtimeSessionOutcome = {
   escalationAttempted: boolean;
   escalationSucceeded: boolean;
   openingPlaybackConfirmed: boolean;
+  actualOpeningTranscript: string;
 };
 
 export type OpenAITranscriptLine = {
@@ -367,14 +406,218 @@ export function notifyOpenAISipCallTransferred(callId: string): void {
   liveSipSessions.get(callId)?.notifyTransferred();
 }
 
+async function claimOutboundLeadInTransaction(
+  tx: OpenAISipTransaction,
+  input: OpenAISipIncomingCall,
+): Promise<void> {
+  if (callDirection(input) !== "outbound") return;
+  if (!input.leadId || !input.outboundPlacementId) {
+    throw AppError.conflict("The outbound call is missing its placement claim.");
+  }
+
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.leadId)}`}))`,
+  );
+  const [lead] = await tx
+    .select({
+      id: schema.outboundLeads.id,
+      userId: schema.outboundLeads.userId,
+      agentId: schema.outboundLeads.agentId,
+      status: schema.outboundLeads.status,
+      lastCalledAt: schema.outboundLeads.lastCalledAt,
+      customerNumber: schema.outboundLeads.customerNumber,
+      phoneNumber: schema.outboundLeads.phoneNumber,
+      metadata: schema.outboundLeads.metadata,
+    })
+    .from(schema.outboundLeads)
+    .where(
+      and(eq(schema.outboundLeads.id, input.leadId), eq(schema.outboundLeads.userId, input.userId)),
+    )
+    .limit(1);
+  if (!lead || lead.agentId !== input.agentId) {
+    throw AppError.conflict("The outbound call no longer matches its Bot.");
+  }
+  const customerNumber = normalizeOpenAIPhoneNumber(lead.customerNumber || lead.phoneNumber);
+  if (!customerNumber || customerNumber !== input.callerNumber) {
+    throw AppError.conflict("The outbound contact changed before the call could attach.");
+  }
+  const [line] = await tx
+    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .from(schema.phoneNumbers)
+    .where(
+      and(
+        eq(schema.phoneNumbers.userId, input.userId),
+        eq(schema.phoneNumbers.agentId, input.agentId),
+        eq(schema.phoneNumbers.phoneNumber, input.calledNumber),
+      ),
+    )
+    .limit(1);
+  if (normalizeOpenAIPhoneNumber(line?.phoneNumber) !== input.calledNumber) {
+    throw AppError.conflict("The outbound Bot line changed before the call could attach.");
+  }
+
+  const metadata = asRecord(lead.metadata);
+  const nativeVoice = asRecord(metadata.native_voice);
+  if (String(nativeVoice.placement_id || "").trim() !== input.outboundPlacementId) {
+    throw AppError.conflict("This outbound voice token belongs to an earlier placement.");
+  }
+  const recoverableCarrierRace =
+    lead.status === LEAD_STATUS.ERROR &&
+    nativeVoice.state === "carrier_completed_without_openai_confirmation";
+  if (!ACTIVE_OUTBOUND_STATUSES.includes(lead.status || "") && !recoverableCarrierRace) {
+    throw AppError.conflict("This outbound call is no longer attachable.");
+  }
+
+  const providerId = providerCallId(input.callId);
+  const currentCallId = String(nativeVoice.openai_call_id || "").trim();
+  if (currentCallId && currentCallId !== providerId) {
+    throw AppError.conflict("Another OpenAI call already owns this outbound lead.");
+  }
+
+  const now = new Date();
+  const [attached] = await tx
+    .update(schema.outboundLeads)
+    .set({
+      status: LEAD_STATUS.CONNECTED,
+      lastCalledAt: lead.lastCalledAt || now,
+      metadata: {
+        ...metadata,
+        native_voice: {
+          ...nativeVoice,
+          provider: "twilio_openai_realtime_sip",
+          openai_call_id: providerId,
+          state: "connected",
+          openai_attached_at: now.toISOString(),
+          updated_at: now.toISOString(),
+        },
+      },
+    })
+    .where(
+      and(
+        eq(schema.outboundLeads.id, lead.id),
+        eq(schema.outboundLeads.userId, input.userId),
+        inArray(schema.outboundLeads.status, OUTBOUND_ATTACHABLE_STATUSES),
+      ),
+    )
+    .returning({ id: schema.outboundLeads.id });
+  if (!attached) throw AppError.conflict("The outbound call attachment lost its lease.");
+}
+
 async function claimCall(input: OpenAISipIncomingCall) {
   const id = providerCallId(input.callId);
+  const sourceId =
+    callDirection(input) === "outbound"
+      ? input.outboundPlacementId
+        ? `outbound:${input.outboundPlacementId}`
+        : null
+      : input.inboundTwilioCallSid
+        ? `twilio:${input.inboundTwilioCallSid}`
+        : null;
+  if (!sourceId) throw AppError.conflict("The SIP call is missing its signed source identity.");
   return drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-sip:${sourceId}`}))`);
+    const [existing] = await tx
+      .select({
+        id: schema.callLogs.id,
+        userId: schema.callLogs.userId,
+        agentId: schema.callLogs.agentId,
+        providerCallId: schema.callLogs.vapiCallId,
+        sourceId: schema.callLogs.openaiSipSourceId,
+        phase: schema.callLogs.openaiSipPhase,
+        ownerToken: schema.callLogs.openaiSipOwnerToken,
+        leaseExpiresAt: schema.callLogs.openaiSipLeaseExpiresAt,
+        leaseExpired: sql<boolean>`${schema.callLogs.openaiSipLeaseExpiresAt} <= now()`,
+      })
+      .from(schema.callLogs)
+      .where(
+        or(eq(schema.callLogs.vapiCallId, id), eq(schema.callLogs.openaiSipSourceId, sourceId)),
+      )
+      .limit(1)
+      .for("update");
+
+    const ownerToken = randomUUID();
+    const leaseExpiresAt = sql<Date>`now() + (${PRE_SESSION_CLAIM_LEASE_MS} * interval '1 millisecond')`;
+    if (existing) {
+      if (
+        existing.userId !== input.userId ||
+        existing.agentId !== input.agentId ||
+        existing.providerCallId !== id ||
+        existing.sourceId !== sourceId
+      ) {
+        throw AppError.conflict("This signed SIP source is already bound to another call.");
+      }
+      const resumable =
+        (existing.phase === "claimed" || existing.phase === "running") &&
+        typeof existing.ownerToken === "string" &&
+        existing.leaseExpiresAt instanceof Date &&
+        existing.leaseExpired === true;
+      if (!resumable) return existing.phase === "claimed" ? ("retry" as const) : null;
+      const [reclaimed] = await tx
+        .update(schema.callLogs)
+        .set({
+          openaiSipPhase: "claimed",
+          openaiSipOwnerToken: ownerToken,
+          openaiSipLeaseExpiresAt: leaseExpiresAt,
+        })
+        .where(
+          and(
+            eq(schema.callLogs.id, existing.id),
+            eq(schema.callLogs.userId, input.userId),
+            inArray(schema.callLogs.openaiSipPhase, ["claimed", "running"]),
+            eq(schema.callLogs.openaiSipOwnerToken, existing.ownerToken!),
+            sql`${schema.callLogs.openaiSipLeaseExpiresAt} <= now()`,
+          ),
+        )
+        .returning({ id: schema.callLogs.id });
+      if (!reclaimed) return null;
+      const recovery = await enqueuePostCallDigest(
+        {
+          userId: input.userId,
+          callLogId: existing.id,
+          agentId: input.agentId,
+          dialedNumber: input.calledNumber,
+          customerNumber: input.callerNumber,
+          customerName: input.customerName,
+          agentName: input.businessName,
+          direction: callDirection(input),
+          vapiCallType:
+            callDirection(input) === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound",
+          vapiCallId: id,
+          finalization: {
+            provider: "openai_sip",
+            callId: input.callId,
+            leadId: input.leadId ? String(input.leadId) : null,
+            openingPlaybackConfirmed: false,
+            terminalStateReady: false,
+          },
+        },
+        tx,
+        {
+          runAt: new Date(
+            Date.now() +
+              resolveOpenAISipSessionMaxSeconds() * 1_000 +
+              FINALIZATION_RECOVERY_GRACE_MS,
+          ),
+        },
+      );
+      await claimOutboundLeadInTransaction(tx, input);
+      return {
+        callLogId: existing.id,
+        recoveryJobId: recovery.jobId,
+        ownerToken,
+        resumed: true,
+      };
+    }
+
     const [created] = await tx
       .insert(schema.callLogs)
       .values({
         userId: input.userId,
         vapiCallId: id,
+        openaiSipSourceId: sourceId,
+        openaiSipPhase: "claimed",
+        openaiSipOwnerToken: ownerToken,
+        openaiSipLeaseExpiresAt: leaseExpiresAt,
         agentId: input.agentId,
         direction: callDirection(input),
         customerNumber: input.callerNumber,
@@ -382,12 +625,11 @@ async function claimCall(input: OpenAISipIncomingCall) {
         endedReason: null,
         pipelineError: null,
       })
-      .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
       .returning({ id: schema.callLogs.id });
-    if (!created) return null;
+    if (!created) throw new Error("OpenAI SIP claim insert returned no row.");
 
     const direction = callDirection(input);
-    await enqueuePostCallDigest(
+    const recovery = await enqueuePostCallDigest(
       {
         userId: input.userId,
         callLogId: created.id,
@@ -414,8 +656,155 @@ async function claimCall(input: OpenAISipIncomingCall) {
         ),
       },
     );
-    return created.id;
+    await claimOutboundLeadInTransaction(tx, input);
+    return {
+      callLogId: created.id,
+      recoveryJobId: recovery.jobId,
+      ownerToken,
+      resumed: false,
+    };
   });
+}
+
+/** Fence session startup to the current durable claim owner. */
+export function markOpenAISipCallRunning(input: {
+  call: OpenAISipIncomingCall;
+  claim: OpenAISipCallClaim;
+}): Promise<void> {
+  return tenantStore.run(input.call.userId, async () => {
+    const [updated] = await drizzle
+      .update(schema.callLogs)
+      .set({
+        openaiSipPhase: "running",
+        openaiSipLeaseExpiresAt: sql<Date>`now() + (${RUNNING_CLAIM_LEASE_MS} * interval '1 millisecond')`,
+      })
+      .where(
+        and(
+          eq(schema.callLogs.id, input.claim.callLogId),
+          eq(schema.callLogs.userId, input.call.userId),
+          eq(schema.callLogs.openaiSipPhase, "claimed"),
+          eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken),
+        ),
+      )
+      .returning({ id: schema.callLogs.id });
+    if (!updated) throw new Error("OpenAI SIP session startup lost its durable claim lease.");
+  });
+}
+
+async function renewOpenAISipCallLease(input: {
+  call: OpenAISipIncomingCall;
+  claim: OpenAISipCallClaim;
+}): Promise<boolean> {
+  const [updated] = await drizzle
+    .update(schema.callLogs)
+    .set({
+      openaiSipLeaseExpiresAt: sql<Date>`now() + (${RUNNING_CLAIM_LEASE_MS} * interval '1 millisecond')`,
+    })
+    .where(
+      and(
+        eq(schema.callLogs.id, input.claim.callLogId),
+        eq(schema.callLogs.userId, input.call.userId),
+        eq(schema.callLogs.openaiSipPhase, "running"),
+        eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken),
+      ),
+    )
+    .returning({ id: schema.callLogs.id });
+  return Boolean(updated);
+}
+
+/** Make an ambiguous provider-accept attempt immediately reclaimable by a webhook retry. */
+export function releaseOpenAISipClaimForRetry(input: {
+  call: OpenAISipIncomingCall;
+  claim: OpenAISipCallClaim;
+}): Promise<void> {
+  return tenantStore.run(input.call.userId, async () => {
+    const [updated] = await drizzle
+      .update(schema.callLogs)
+      .set({ openaiSipLeaseExpiresAt: new Date(0) })
+      .where(
+        and(
+          eq(schema.callLogs.id, input.claim.callLogId),
+          eq(schema.callLogs.userId, input.call.userId),
+          eq(schema.callLogs.openaiSipPhase, "claimed"),
+          eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken),
+        ),
+      )
+      .returning({ id: schema.callLogs.id });
+    if (!updated) throw new Error("OpenAI SIP retry release lost its durable claim lease.");
+  });
+}
+
+/**
+ * Establish the durable, provider-call idempotency claim before any spend is
+ * reserved or the SIP call is accepted. The route is outside tenantStore, so
+ * keep the tenant context ownership here beside the claim implementation.
+ */
+export function claimOpenAISipCall(
+  input: OpenAISipIncomingCall,
+): Promise<OpenAISipCallClaim | "retry" | null> {
+  return tenantStore.run(input.userId, () => claimCall(input));
+}
+
+/** Settle a durable claim when BotBound intentionally ends before a session starts. */
+export function settleOpenAISipPreSessionFailure(input: {
+  call: OpenAISipIncomingCall;
+  claim: OpenAISipCallClaim;
+  reason: OpenAISipPreSessionFailure;
+}): Promise<boolean> {
+  return tenantStore.run(input.call.userId, () =>
+    drizzle.transaction(async (tx) => {
+      const now = new Date();
+      const [settledCall] = await tx
+        .update(schema.callLogs)
+        .set({
+          durationSeconds: 0,
+          summary: "BotBound rejected this call before an OpenAI SIP session started.",
+          outcomeTag: "unreachable",
+          endedReason: "pre-session-rejected",
+          pipelineError: input.reason,
+          openaiSipPhase: "terminal",
+          openaiSipOwnerToken: null,
+          openaiSipLeaseExpiresAt: null,
+        })
+        .where(
+          and(
+            eq(schema.callLogs.id, input.claim.callLogId),
+            eq(schema.callLogs.userId, input.call.userId),
+            eq(schema.callLogs.openaiSipPhase, "claimed"),
+            eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken),
+          ),
+        )
+        .returning({ id: schema.callLogs.id });
+      if (!settledCall) return false;
+      const [settledRecovery] = await tx
+        .update(schema.jobs)
+        .set({
+          status: "done",
+          result: { skipped: true, reason: input.reason },
+          completedAt: now,
+          finishedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(schema.jobs.id, input.claim.recoveryJobId),
+            eq(schema.jobs.userId, input.call.userId),
+            eq(schema.jobs.type, "post_call_digest"),
+          ),
+        )
+        .returning({ id: schema.jobs.id });
+      if (!settledRecovery) {
+        throw new Error("OpenAI SIP pre-session claim could not be settled atomically.");
+      }
+      await settleOutboundLeadInTransaction(tx, {
+        call: input.call,
+        summary: "BotBound rejected this call before an OpenAI SIP session started.",
+        endedReason: "pre-session-rejected",
+        pipelineError: input.reason,
+      });
+      return true;
+    }),
+  );
 }
 
 async function updatePresence(input: OpenAISipIncomingCall, agentName: string) {
@@ -453,6 +842,7 @@ function toolContext(input: {
   call: OpenAISipIncomingCall;
   agentName: string;
   toolCallId: string;
+  abortSignal?: AbortSignal;
 }): ToolCallContext {
   const direction = callDirection(input.call);
   const call = {
@@ -470,106 +860,108 @@ function toolContext(input: {
     agent: { id: input.call.agentId, user_id: input.call.userId },
     webhookAgentId: input.call.agentId,
     agentVoiceName: input.agentName,
+    abortSignal: input.abortSignal,
     drizzle,
     log,
   };
 }
 
-async function settleOutboundLead(input: {
-  call: OpenAISipIncomingCall;
-  summary: string;
-  endedReason: string;
-  pipelineError: string | null;
-}) {
+async function settleOutboundLeadInTransaction(
+  tx: OpenAISipTransaction,
+  input: SettleOutboundLeadInput,
+): Promise<void> {
   if (callDirection(input.call) !== "outbound" || !input.call.leadId) return;
 
-  await drizzle.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.call.leadId)}`}))`,
-    );
-    const [lead] = await tx
-      .select({
-        status: schema.outboundLeads.status,
-        metadata: schema.outboundLeads.metadata,
-        lastContactSummary: schema.outboundLeads.lastContactSummary,
-      })
-      .from(schema.outboundLeads)
-      .where(
-        and(
-          eq(schema.outboundLeads.id, input.call.leadId!),
-          eq(schema.outboundLeads.userId, input.call.userId),
-        ),
-      )
-      .limit(1);
-    if (!lead) return;
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-outbound:${String(input.call.leadId)}`}))`,
+  );
+  const [lead] = await tx
+    .select({
+      status: schema.outboundLeads.status,
+      metadata: schema.outboundLeads.metadata,
+      lastContactSummary: schema.outboundLeads.lastContactSummary,
+    })
+    .from(schema.outboundLeads)
+    .where(
+      and(
+        eq(schema.outboundLeads.id, input.call.leadId),
+        eq(schema.outboundLeads.userId, input.call.userId),
+      ),
+    )
+    .limit(1);
+  if (!lead) return;
 
-    const metadata = asRecord(lead.metadata);
-    const nativeVoice = asRecord(metadata.native_voice);
-    const providerId = providerCallId(input.call.callId);
-    const currentCallId = String(nativeVoice.openai_call_id || "").trim();
-    const currentlyActive = ACTIVE_OUTBOUND_STATUSES.includes(lead.status || "");
-    if (currentCallId !== providerId) {
-      log.warn("OpenAI SIP lead settlement skipped because another call owns the lead", {
-        userId: input.call.userId,
-        leadId: String(input.call.leadId),
-        callId: providerId,
-        currentCallId: currentCallId || null,
-      });
-      return;
-    }
-    if (
-      !currentlyActive &&
-      ["completed", "runtime_error", "transferred", "caller_dnc"].includes(
-        String(nativeVoice.state || ""),
-      )
-    ) {
-      return;
-    }
+  const metadata = asRecord(lead.metadata);
+  const nativeVoice = asRecord(metadata.native_voice);
+  const providerId = providerCallId(input.call.callId);
+  const currentCallId = String(nativeVoice.openai_call_id || "").trim();
+  const currentlyActive = ACTIVE_OUTBOUND_STATUSES.includes(lead.status || "");
+  if (currentCallId !== providerId) {
+    log.warn("OpenAI SIP lead settlement skipped because another call owns the lead", {
+      userId: input.call.userId,
+      leadId: String(input.call.leadId),
+      callId: providerId,
+      currentCallId: currentCallId || null,
+    });
+    return;
+  }
+  if (
+    !currentlyActive &&
+    ["completed", "runtime_error", "transferred", "caller_dnc"].includes(
+      String(nativeVoice.state || ""),
+    )
+  ) {
+    return;
+  }
 
-    const now = new Date();
-    const nextState =
-      input.endedReason === "transferred"
-        ? "transferred"
-        : input.endedReason === "caller-dnc"
-          ? "caller_dnc"
-          : input.pipelineError
-            ? "runtime_error"
-            : "completed";
-    const nextStatus =
-      input.endedReason === "caller-dnc"
-        ? LEAD_STATUS.BLOCKED_DNC
+  const now = new Date();
+  const nextState =
+    input.endedReason === "transferred"
+      ? "transferred"
+      : input.endedReason === "caller-dnc"
+        ? "caller_dnc"
         : input.pipelineError
-          ? LEAD_STATUS.ERROR
-          : LEAD_STATUS.COMPLETED;
+          ? "runtime_error"
+          : "completed";
+  const nextStatus =
+    input.endedReason === "caller-dnc"
+      ? LEAD_STATUS.BLOCKED_DNC
+      : input.pipelineError
+        ? LEAD_STATUS.ERROR
+        : LEAD_STATUS.COMPLETED;
 
-    await tx
-      .update(schema.outboundLeads)
-      .set({
-        ...(currentlyActive ? { status: nextStatus } : {}),
-        lastContactSummary: currentlyActive
-          ? input.summary
-          : lead.lastContactSummary || input.summary,
-        lastCalledAt: now,
-        metadata: {
-          ...metadata,
-          native_voice: {
-            ...nativeVoice,
-            openai_call_id: providerId,
-            state: nextState,
-            ended_reason: input.endedReason,
-            pipeline_error: input.pipelineError,
-            completed_at: now.toISOString(),
-            updated_at: now.toISOString(),
-          },
+  await tx
+    .update(schema.outboundLeads)
+    .set({
+      ...(currentlyActive ? { status: nextStatus } : {}),
+      lastContactSummary: currentlyActive
+        ? input.summary
+        : lead.lastContactSummary || input.summary,
+      lastCalledAt: now,
+      metadata: {
+        ...metadata,
+        native_voice: {
+          ...nativeVoice,
+          openai_call_id: providerId,
+          state: nextState,
+          ended_reason: input.endedReason,
+          pipeline_error: input.pipelineError,
+          completed_at: now.toISOString(),
+          updated_at: now.toISOString(),
         },
-      })
-      .where(
-        and(
-          eq(schema.outboundLeads.id, input.call.leadId!),
-          eq(schema.outboundLeads.userId, input.call.userId),
-        ),
-      );
-  });
+      },
+    })
+    .where(
+      and(
+        eq(schema.outboundLeads.id, input.call.leadId),
+        eq(schema.outboundLeads.userId, input.call.userId),
+      ),
+    );
+}
+
+async function settleOutboundLead(input: SettleOutboundLeadInput): Promise<void> {
+  if (callDirection(input.call) !== "outbound" || !input.call.leadId) return;
+  await drizzle.transaction((tx) => settleOutboundLeadInTransaction(tx, input));
 }
 
 async function runFinalizerStep(
@@ -590,15 +982,10 @@ async function runFinalizerStep(
   }
 }
 
-const AI_DISCLOSURE_EVENTS = [
-  "ai_disclosure_played",
-  "ai_disclosure_not_detected",
-  "ai_disclosure_unverifiable",
-] as const;
-
 async function persistAiDisclosureEvidence(input: {
   call: OpenAISipIncomingCall;
   transcript: string;
+  actualOpeningTranscript: string;
   durationSeconds: number;
   openingPlaybackConfirmed: boolean;
 }): Promise<void> {
@@ -618,18 +1005,11 @@ async function persistAiDisclosureEvidence(input: {
     .limit(1);
   if (existing) return;
 
-  const disclosure = detectAiDisclosure(input.transcript);
-  const event = input.openingPlaybackConfirmed
-    ? disclosure.found
-      ? "ai_disclosure_played"
-      : "ai_disclosure_not_detected"
-    : "ai_disclosure_unverifiable";
-  const delivery =
-    event === "ai_disclosure_played"
-      ? "verified"
-      : event === "ai_disclosure_not_detected"
-        ? "not_detected"
-        : "unverifiable";
+  const disclosure = classifyAiDisclosureEvidence({
+    actualOpeningTranscript: input.actualOpeningTranscript,
+    openingPlaybackConfirmed: input.openingPlaybackConfirmed,
+  });
+  const { event, delivery } = disclosure;
   const { rule, state } = getConsentRuleForPhone(input.call.callerNumber);
   const ledgerRow = buildConsentLedgerRow({
     user_id: input.call.userId,
@@ -643,7 +1023,7 @@ async function persistAiDisclosureEvidence(input: {
       delivery,
       disclosure_kind: "ai_identity",
       opening_playback_confirmed: input.openingPlaybackConfirmed,
-      ...(disclosure.found ? { evidence: disclosure.excerpt } : {}),
+      ...(disclosure.evidence ? { evidence: disclosure.evidence } : {}),
     },
   });
 
@@ -662,10 +1042,8 @@ async function persistAiDisclosureEvidence(input: {
     .onConflictDoNothing()
     .returning({ id: schema.consentLog.id });
 
-  // The locally composed opening is included in the transcript before audio
-  // playback. Only a drained output buffer proves delivery. A caller turn or
-  // non-zero duration makes an unverified opening actionable; a call that never
-  // carried conversation is recorded without paging.
+  // A caller turn or non-zero duration makes an unverified opening actionable;
+  // a call that never carried conversation is recorded without paging.
   const carriedConversation =
     input.durationSeconds > 0 ||
     input.transcript.split("\n").some((line) => line.startsWith("Caller:"));
@@ -700,6 +1078,8 @@ async function persistFinishedCall(input: {
   escalationAttempted: boolean;
   escalationSucceeded: boolean;
   openingPlaybackConfirmed: boolean;
+  actualOpeningTranscript: string;
+  claim?: OpenAISipCallClaim;
 }) {
   const durationSeconds = input.connectedAt
     ? Math.max(0, Math.round((Date.now() - input.connectedAt) / 1_000))
@@ -726,9 +1106,16 @@ async function persistFinishedCall(input: {
         // durable outcome with the session-local REFER result.
         escalationAttempted: sql<boolean>`COALESCE(${schema.callLogs.escalationAttempted}, false) OR ${input.escalationAttempted}`,
         escalationSucceeded: sql<boolean>`COALESCE(${schema.callLogs.escalationSucceeded}, false) OR ${input.escalationSucceeded}`,
+        openaiSipPhase: "terminal",
+        openaiSipOwnerToken: null,
+        openaiSipLeaseExpiresAt: null,
       })
       .where(
-        and(eq(schema.callLogs.id, input.callLogId), eq(schema.callLogs.userId, input.call.userId)),
+        and(
+          eq(schema.callLogs.id, input.callLogId),
+          eq(schema.callLogs.userId, input.call.userId),
+          ...(input.claim ? [eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken)] : []),
+        ),
       )
       .returning({ id: schema.callLogs.id });
     if (!updated) throw new Error("OpenAI SIP terminal call row could not be persisted.");
@@ -767,6 +1154,7 @@ async function persistFinishedCall(input: {
     persistAiDisclosureEvidence({
       call: input.call,
       transcript: input.transcript,
+      actualOpeningTranscript: input.actualOpeningTranscript,
       durationSeconds,
       openingPlaybackConfirmed: input.openingPlaybackConfirmed,
     }),
@@ -830,6 +1218,9 @@ export async function recoverStaleOpenAISipCall(input: {
       summary: RECOVERED_SUMMARY,
       endedReason: "finalization-recovery",
       pipelineError: "finalization_recovery",
+      openaiSipPhase: "terminal",
+      openaiSipOwnerToken: null,
+      openaiSipLeaseExpiresAt: null,
     })
     .where(
       and(
@@ -904,6 +1295,7 @@ export async function replayOpenAISipPostCallFinalization(input: {
   await persistAiDisclosureEvidence({
     call,
     transcript,
+    actualOpeningTranscript: firstAgentTranscript(transcript),
     durationSeconds,
     openingPlaybackConfirmed: input.finalization.openingPlaybackConfirmed,
   });
@@ -939,6 +1331,7 @@ export async function replayOpenAISipPostCallFinalization(input: {
 async function runRealtimeSession(
   input: OpenAISipIncomingCall,
   runtime: RealtimeRuntime,
+  ownershipSignal?: AbortSignal,
 ): Promise<RealtimeSessionOutcome> {
   const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) throw new Error("OpenAI_API_KEY is missing during SIP session startup.");
@@ -955,9 +1348,11 @@ async function runRealtimeSession(
   let escalationAttempted = false;
   let escalationSucceeded = false;
   let openingPlaybackConfirmed = false;
+  let actualOpeningTranscript = "";
   let sipPlaybackActive = false;
   let hangupAfterOpening = inboundAdmissionMode(input) === "suspended";
   let awaitingExactOpeningPlayback = false;
+  let capturingOpeningTranscript = false;
   let toolContinuationPending = false;
   let callerDncHangupStarted = false;
   let eventChain = Promise.resolve();
@@ -970,11 +1365,29 @@ async function runRealtimeSession(
     handshakeTimeout: WS_OPEN_TIMEOUT_MS,
   });
 
+  const ownsSession = () => !ownershipSignal?.aborted;
+  const abortForLostOwnership = () => {
+    if (!pipelineError) pipelineError = "ownership";
+    endedReason = "claim-lease-lost";
+    pendingTools.clear();
+    hangupAfterOpening = false;
+    awaitingExactOpeningPlayback = false;
+    capturingOpeningTranscript = false;
+    toolContinuationPending = false;
+    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      ws.terminate();
+    }
+  };
+  if (ownershipSignal?.aborted) abortForLostOwnership();
+  else ownershipSignal?.addEventListener("abort", abortForLostOwnership, { once: true });
+
   const notifyTransferred = () => {
+    if (!ownsSession()) return;
     if (endedReason === "caller-dnc") return;
     endedReason = "transferred";
     hangupAfterOpening = false;
     awaitingExactOpeningPlayback = false;
+    capturingOpeningTranscript = false;
     toolContinuationPending = false;
     if (maxDurationTimer) {
       clearTimeout(maxDurationTimer);
@@ -984,7 +1397,8 @@ async function runRealtimeSession(
       ws.close(1000, "BotBound transferred");
     }
   };
-  liveSipSessions.set(input.callId, { notifyTransferred });
+  const sessionHandle = { notifyTransferred };
+  liveSipSessions.set(input.callId, sessionHandle);
 
   const flushAssistantTurn = () => {
     const text = assistantTurn.trim();
@@ -993,8 +1407,10 @@ async function runRealtimeSession(
   };
 
   const finishExactOpeningIfNeeded = (delivered: boolean) => {
+    if (!ownsSession()) return false;
     if (!awaitingExactOpeningPlayback) return false;
     awaitingExactOpeningPlayback = false;
+    capturingOpeningTranscript = false;
     openingPlaybackConfirmed = delivered;
     if (!hangupAfterOpening || ws.readyState !== WebSocket.OPEN) return true;
     hangupAfterOpening = false;
@@ -1009,6 +1425,7 @@ async function runRealtimeSession(
   };
 
   const requestToolContinuationWhenReady = () => {
+    if (!ownsSession()) return;
     if (sipPlaybackActive || ws.readyState !== WebSocket.OPEN) return;
     if (awaitingExactOpeningPlayback || hangupAfterOpening) return;
     if (!toolContinuationPending || endedReason === "transferred" || endedReason === "caller-dnc") {
@@ -1019,6 +1436,7 @@ async function runRealtimeSession(
   };
 
   const endForCallerDnc = async (matchedPattern: string | undefined) => {
+    if (!ownsSession()) return;
     if (callerDncHangupStarted || endedReason === "transferred") return;
     callerDncHangupStarted = true;
     endedReason = "caller-dnc";
@@ -1044,6 +1462,7 @@ async function runRealtimeSession(
   };
 
   const executePendingTools = async () => {
+    if (!ownsSession()) return;
     if (!pendingTools.size || ws.readyState !== WebSocket.OPEN) return;
     const calls = [...pendingTools.values()];
     pendingTools.clear();
@@ -1051,6 +1470,7 @@ async function runRealtimeSession(
     // Execute in provider order. Parallel side effects can otherwise race (for
     // example a stop-calling request and a follow-up send from the same turn).
     for (const call of calls) {
+      if (!ownsSession()) break;
       const admissionMode = inboundAdmissionMode(input);
       const allowedTakeMessage =
         admissionMode !== "take_message" || call.name === "create_followup_task";
@@ -1074,7 +1494,12 @@ async function runRealtimeSession(
       const operation = dispatchAgentToolCall(
         call.name,
         call.arguments,
-        toolContext({ call: input, agentName: runtime.agentName, toolCallId: call.callId }),
+        toolContext({
+          call: input,
+          agentName: runtime.agentName,
+          toolCallId: call.callId,
+          abortSignal: ownershipSignal,
+        }),
       );
       const outcome = await Promise.race([
         operation.then(
@@ -1083,6 +1508,7 @@ async function runRealtimeSession(
         ),
         delay(TOOL_CONFIRM_TIMEOUT_MS).then(() => ({ kind: "timeout" as const })),
       ]);
+      if (!ownsSession()) break;
 
       if (outcome.kind === "timeout") {
         toolCallsFailed += 1;
@@ -1095,6 +1521,7 @@ async function runRealtimeSession(
         });
         void operation.then(
           async (result) => {
+            if (!ownsSession()) return;
             log.info("OpenAI Realtime tool completed after caller-facing timeout", {
               userId: input.userId,
               agentId: input.agentId,
@@ -1171,6 +1598,7 @@ async function runRealtimeSession(
       }
 
       try {
+        if (!ownsSession()) break;
         let transferCompleted = false;
         if (outcome.result.destination?.number) {
           await referOpenAISipCall(input.userId, input.callId, outcome.result.destination.number);
@@ -1228,6 +1656,7 @@ async function runRealtimeSession(
   };
 
   const handleEvent = async (event: Record<string, unknown>) => {
+    if (!ownsSession()) return;
     const type = String(event.type || "");
     if (type === "output_audio_buffer.started") {
       sipPlaybackActive = true;
@@ -1257,11 +1686,19 @@ async function runRealtimeSession(
       }
       return;
     }
-    if (
-      (type === "response.output_audio_transcript.delta" ||
-        type === "response.output_text.delta") &&
-      typeof event.delta === "string"
-    ) {
+    if (type === "response.output_audio_transcript.delta" && typeof event.delta === "string") {
+      assistantTurn += event.delta;
+      if (capturingOpeningTranscript) actualOpeningTranscript += event.delta;
+      return;
+    }
+    if (type === "response.output_audio_transcript.done" && typeof event.transcript === "string") {
+      if (!assistantTurn.trim()) assistantTurn = event.transcript;
+      if (capturingOpeningTranscript && !actualOpeningTranscript.trim()) {
+        actualOpeningTranscript = event.transcript;
+      }
+      return;
+    }
+    if (type === "response.output_text.delta" && typeof event.delta === "string") {
       assistantTurn += event.delta;
       return;
     }
@@ -1275,6 +1712,7 @@ async function runRealtimeSession(
     }
     if (type === "response.done") {
       flushAssistantTurn();
+      capturingOpeningTranscript = false;
       const response = asRecord(event.response);
       if (String(response.status || "").toLowerCase() === "failed") {
         pipelineError = "openai_response";
@@ -1309,6 +1747,10 @@ async function runRealtimeSession(
       };
 
       ws.on("open", () => {
+        if (!ownsSession()) {
+          ws.terminate();
+          return;
+        }
         connectedAt = Date.now();
         const outbound = callDirection(input) === "outbound";
         const opening = outbound
@@ -1326,7 +1768,7 @@ async function runRealtimeSession(
           // Keep the compliance opening isolated from the conversational turn.
           // A constrained response instruction owns the first playback.
           awaitingExactOpeningPlayback = true;
-          transcriptLines.push({ role: "Agent", text: opening });
+          capturingOpeningTranscript = true;
           sendJson(ws, {
             type: "response.create",
             response: {
@@ -1346,6 +1788,7 @@ async function runRealtimeSession(
               ? 300_000
               : resolveOpenAISipSessionMaxSeconds() * 1_000;
         maxDurationTimer = setTimeout(() => {
+          if (!ownsSession()) return;
           if (endedReason === "transferred" || endedReason === "caller-dnc") return;
           endedReason = "botbound-max-duration";
           void hangupOpenAISipCall(input.callId).catch(() => {
@@ -1359,6 +1802,7 @@ async function runRealtimeSession(
         }, maxDurationMs);
 
         heartbeat = setInterval(() => {
+          if (!ownsSession()) return;
           if (ws.readyState !== WebSocket.OPEN) return;
           void drizzle
             .select({ status: schema.signalPresence.status })
@@ -1394,9 +1838,11 @@ async function runRealtimeSession(
       });
 
       ws.on("pong", () => {
+        if (!ownsSession()) return;
         missedPongs = 0;
       });
       ws.on("message", (data) => {
+        if (!ownsSession()) return;
         missedPongs = 0;
         const event = safeJsonParse(data.toString());
         if (!event) return;
@@ -1431,14 +1877,17 @@ async function runRealtimeSession(
       errorClass: error instanceof Error ? error.name : typeof error,
     });
     try {
-      if (endedReason !== "transferred" && endedReason !== "caller-dnc") {
+      if (ownsSession() && endedReason !== "transferred" && endedReason !== "caller-dnc") {
         await hangupOpenAISipCall(input.callId);
       }
     } catch {
       // The provider may already have ended the call.
     }
   } finally {
-    liveSipSessions.delete(input.callId);
+    ownershipSignal?.removeEventListener("abort", abortForLostOwnership);
+    if (liveSipSessions.get(input.callId) === sessionHandle) {
+      liveSipSessions.delete(input.callId);
+    }
     if (maxDurationTimer) clearTimeout(maxDurationTimer);
     if (heartbeat) clearInterval(heartbeat);
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
@@ -1457,32 +1906,95 @@ async function runRealtimeSession(
     escalationAttempted,
     escalationSucceeded,
     openingPlaybackConfirmed,
+    actualOpeningTranscript: actualOpeningTranscript.trim(),
   };
 }
 
 export async function runOpenAISipCallSession(
   input: OpenAISipIncomingCall,
   admittedRuntime?: RealtimeRuntime,
+  preclaimedCallLogId?: bigint,
+  claim?: OpenAISipCallClaim,
 ): Promise<void> {
   return tenantStore.run(input.userId, async () => {
-    let callLogId: bigint | null;
-    try {
-      callLogId = await claimCall(input);
-    } catch (error) {
-      log.error("OpenAI SIP call could not establish durable recovery state", {
-        userId: input.userId,
-        agentId: input.agentId,
-        callId: providerCallId(input.callId),
-        errorClass: error instanceof Error ? error.name : typeof error,
-      });
-      await hangupOpenAISipCall(input.callId).catch(() => undefined);
-      throw error;
-    }
-    if (!callLogId) {
-      log.info("Duplicate OpenAI incoming-call webhook suppressed", {
-        callId: providerCallId(input.callId),
-      });
-      return;
+    let leaseHeartbeat: ReturnType<typeof setTimeout> | null = null;
+    let leaseSafetyTimer: ReturnType<typeof setTimeout> | null = null;
+    let leaseRenewalStopped = false;
+    const ownerFence = new AbortController();
+    const armLeaseSafetyFence = (renewalStartedAt: number) => {
+      if (leaseSafetyTimer) clearTimeout(leaseSafetyTimer);
+      const remainingMs = renewalStartedAt + RUNNING_CLAIM_LOCAL_FENCE_MS - Date.now();
+      if (remainingMs <= 0) {
+        log.error("OpenAI SIP lease renewal exceeded its local safety margin", {
+          userId: input.userId,
+          callId: providerCallId(input.callId),
+        });
+        ownerFence.abort();
+        return;
+      }
+      leaseSafetyTimer = setTimeout(() => {
+        log.error("OpenAI SIP local lease safety deadline elapsed", {
+          userId: input.userId,
+          callId: providerCallId(input.callId),
+        });
+        ownerFence.abort();
+      }, remainingMs);
+    };
+    const renewLeaseAndFence = async (): Promise<boolean> => {
+      if (!claim) return true;
+      const renewalStartedAt = Date.now();
+      try {
+        const renewed = await renewOpenAISipCallLease({ call: input, claim });
+        if (!renewed) {
+          log.error("OpenAI SIP session lost its durable running lease", {
+            userId: input.userId,
+            callId: providerCallId(input.callId),
+          });
+          ownerFence.abort();
+          return false;
+        }
+        armLeaseSafetyFence(renewalStartedAt);
+        return !ownerFence.signal.aborted;
+      } catch (error) {
+        log.error("OpenAI SIP running-lease renewal failed", {
+          userId: input.userId,
+          callId: providerCallId(input.callId),
+          errorClass: error instanceof Error ? error.name : typeof error,
+        });
+        ownerFence.abort();
+        return false;
+      }
+    };
+    const scheduleLeaseRenewal = () => {
+      leaseHeartbeat = setTimeout(async () => {
+        if (leaseRenewalStopped || ownerFence.signal.aborted) return;
+        const renewed = await renewLeaseAndFence();
+        if (renewed && !leaseRenewalStopped && !ownerFence.signal.aborted) {
+          scheduleLeaseRenewal();
+        }
+      }, RUNNING_CLAIM_HEARTBEAT_MS);
+    };
+    let callLogId = preclaimedCallLogId ?? null;
+    if (callLogId === null) {
+      try {
+        const claimResult = await claimCall(input);
+        callLogId = claimResult && claimResult !== "retry" ? claimResult.callLogId : null;
+      } catch (error) {
+        log.error("OpenAI SIP call could not establish durable recovery state", {
+          userId: input.userId,
+          agentId: input.agentId,
+          callId: providerCallId(input.callId),
+          errorClass: error instanceof Error ? error.name : typeof error,
+        });
+        await hangupOpenAISipCall(input.callId).catch(() => undefined);
+        throw error;
+      }
+      if (!callLogId) {
+        log.info("Duplicate OpenAI incoming-call webhook suppressed", {
+          callId: providerCallId(input.callId),
+        });
+        return;
+      }
     }
 
     let agentName = input.businessName?.trim() || "BotBound";
@@ -1496,9 +2008,15 @@ export async function runOpenAISipCallSession(
       escalationAttempted: false,
       escalationSucceeded: false,
       openingPlaybackConfirmed: false,
+      actualOpeningTranscript: "",
     };
 
     try {
+      if (claim) {
+        const renewed = await renewLeaseAndFence();
+        if (!renewed) throw new Error("OpenAI SIP session could not confirm its running lease.");
+        scheduleLeaseRenewal();
+      }
       const runtime = applyInboundAdmission(
         admittedRuntime ??
           (await buildOpenAIRealtimeAgentRuntime({
@@ -1525,7 +2043,7 @@ export async function runOpenAISipCallSession(
           });
         });
       }
-      outcome = await runRealtimeSession(input, runtime);
+      outcome = await runRealtimeSession(input, runtime, ownerFence.signal);
     } catch (error) {
       log.error("OpenAI SIP session startup failed", {
         userId: input.userId,
@@ -1534,25 +2052,50 @@ export async function runOpenAISipCallSession(
         errorClass: error instanceof Error ? error.name : typeof error,
       });
       try {
-        await hangupOpenAISipCall(input.callId);
+        if (!ownerFence.signal.aborted) await hangupOpenAISipCall(input.callId);
       } catch {
         // The call may not yet be addressable or may already be over.
       }
     } finally {
-      await persistFinishedCall({
-        call: input,
-        callLogId,
-        agentName,
-        connectedAt: outcome.connectedAt,
-        transcript: outcome.transcript,
-        endedReason: outcome.endedReason,
-        pipelineError: outcome.pipelineError,
-        toolCallsTotal: outcome.toolCallsTotal,
-        toolCallsFailed: outcome.toolCallsFailed,
-        escalationAttempted: outcome.escalationAttempted,
-        escalationSucceeded: outcome.escalationSucceeded,
-        openingPlaybackConfirmed: outcome.openingPlaybackConfirmed,
-      });
+      // Do not reuse ownerFence for normal cleanup: it signals lost ownership
+      // and intentionally drives a provider hangup. This separate stop flag
+      // prevents an in-flight renewal from outliving terminal persistence.
+      leaseRenewalStopped = true;
+      if (leaseHeartbeat) clearTimeout(leaseHeartbeat);
+      if (leaseSafetyTimer) clearTimeout(leaseSafetyTimer);
+      let terminalPersistedByOwner = false;
+      try {
+        await persistFinishedCall({
+          call: input,
+          callLogId,
+          agentName,
+          connectedAt: outcome.connectedAt,
+          transcript: outcome.transcript,
+          endedReason: outcome.endedReason,
+          pipelineError: outcome.pipelineError,
+          toolCallsTotal: outcome.toolCallsTotal,
+          toolCallsFailed: outcome.toolCallsFailed,
+          escalationAttempted: outcome.escalationAttempted,
+          escalationSucceeded: outcome.escalationSucceeded,
+          openingPlaybackConfirmed: outcome.openingPlaybackConfirmed,
+          actualOpeningTranscript: outcome.actualOpeningTranscript,
+          claim,
+        });
+        terminalPersistedByOwner = true;
+      } finally {
+        // A transient renewal error aborts local work conservatively. If the
+        // owner-fenced terminal write proves this worker still owned the call,
+        // it must also end the now-silent provider leg. A real takeover fails
+        // that write and therefore cannot be hung up by the stale worker.
+        if (ownerFence.signal.aborted && terminalPersistedByOwner) {
+          await hangupOpenAISipCall(input.callId).catch(() => {
+            log.warn("OpenAI SIP ownership-abort hangup could not be confirmed", {
+              userId: input.userId,
+              callId: providerCallId(input.callId),
+            });
+          });
+        }
+      }
     }
   });
 }

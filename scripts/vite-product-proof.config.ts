@@ -1,6 +1,11 @@
 import { defineConfig, type UserConfig } from "vite";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import baseConfigFactory from "../vite.config";
+
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export default defineConfig((context) => {
   const base = (
@@ -9,6 +14,29 @@ export default defineConfig((context) => {
 
   return {
     ...base,
+    plugins: [
+      ...(base.plugins ?? []),
+      {
+        name: "botbound-proof-source-identity",
+        configureServer(server) {
+          server.middlewares.use("/__botbound_proof_identity", (_request, response) => {
+            try {
+              const identity = readFileSync(
+                resolve(repositoryRoot, ".botbound-proof-source-identity.json"),
+                "utf8",
+              );
+              response.statusCode = 200;
+              response.setHeader("Content-Type", "application/json; charset=utf-8");
+              response.setHeader("Cache-Control", "no-store");
+              response.end(identity);
+            } catch {
+              response.statusCode = 404;
+              response.end("Proof source identity is not active.");
+            }
+          });
+        },
+      },
+    ],
     server: {
       ...base.server,
       // Concurrent launch rendering writes large binary files below brand-work.

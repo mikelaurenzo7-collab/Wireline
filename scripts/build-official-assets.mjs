@@ -180,7 +180,7 @@ async function captureProductAssets(page) {
     width: 1920,
     height: 1080,
   });
-  await captureSized(page, "/showcase", path.join(web, "showcase-1920x1080.png"), {
+  await captureSized(page, "/features", path.join(web, "features-1920x1080.png"), {
     width: 1920,
     height: 1080,
   });
@@ -242,7 +242,7 @@ async function captureProductAssets(page) {
     width: 1600,
     height: 900,
   });
-  await captureSized(page, "/showcase", path.join(social, "facebook-1200x630.png"), {
+  await captureSized(page, "/features", path.join(social, "facebook-1200x630.png"), {
     width: 1200,
     height: 630,
   });
@@ -287,7 +287,7 @@ async function captureProductAssets(page) {
     { id: "04-phone", route: "/phone" },
     { id: "05-connections", route: "/connections" },
     { id: "06-pricing", route: "/pricing" },
-    { id: "07-showcase", route: "/showcase" },
+    { id: "07-features", route: "/features" },
     { id: "08-sales", route: "/for/sales" },
   ];
   for (const item of reelRoutes) {
@@ -463,7 +463,7 @@ Generated ${new Date().toISOString()} from ${baseUrl.origin}.
 
 | Folder | Use |
 |--------|-----|
-| \`web/\` | Website OG, hero, pricing, showcase, compare |
+| \`web/\` | Website OG, hero, pricing, features, compare |
 | \`app-store/\` | App Store and Play Store screenshots for iPhone, iPad, and Android |
 | \`social/\` | Instagram, LinkedIn, X, and Facebook |
 | \`ads/\` | Meta feed and story, Google Display, and LinkedIn ads |

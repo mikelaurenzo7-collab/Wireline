@@ -13,7 +13,7 @@ This document records BotBound's intended production provider roles and the evid
 | PSTN orchestration | OpenAI Realtime (`gpt-realtime-2.1`) over Twilio SIP | One runtime for founder and customer Bots; no alternate provider fallback |
 | Carrier + SMS | Twilio | Tenant registration and sender eligibility remain separate compliance gates |
 | Managed speech | OpenAI Realtime documented voice roster; OpenAI TTS for approved campaign narration | No alternate speech catalog or voice-cloning provider |
-| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Studio, ChatGPT, and guest demos use the same server-owned policy as phone calls |
+| Live browser voice | OpenAI Realtime (`gpt-realtime-2.1`) over authenticated WebRTC | Authenticated Studio and ChatGPT rehearsals use server-owned policy; public voice previews are retired |
 | Public research | Perplexity when configured | Gemini grounded research fallback |
 | Payments | Stripe | Webhook-owned entitlements and prepaid Runtime Balance |
 | Database | Managed Postgres / Supabase infrastructure | Server-owned migrations and application auth controls |
@@ -88,6 +88,6 @@ GitHub Actions billing/startup failures that do not execute repository code are 
 - `npm run stripe:catalog:check` — static canonical Stripe contract.
 - `npm run stripe:audit-live` — read-only live Stripe/account/catalog audit.
 - `npm run dnc:probe` — federal DNC diagnostic after credentials exist.
-- `/api/health`, `/api/health/launch-readiness`, and `/api/health/voice-status` — deployed health evidence appropriate to each audience.
+- `/api/health`, `/api/health/launch-readiness`, and authenticated `/api/insights/voice-reliability?days=1` — deployed health evidence appropriate to each audience.
 
 When an executable probe and current source disagree, fix the probe rather than weakening the product contract or documenting the stale result as truth.

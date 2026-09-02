@@ -4,7 +4,7 @@ Date: 2026-08-31
 
 Status: Point-in-time domain audit of `main` `bc2e32d6f80ab637e073b8829fb01060d5c1bf2e`, with complementary code landed in this review.
 
-Live snapshot: `GET https://botbound.me/api/health` returned `{"ok":true}`. `GET /api/health/voice-status` returned `healthy` with `total_calls: 0` and `demo_line: true`. Launch-readiness remains monitor-token gated (401 without credential).
+Live snapshot: `GET https://botbound.me/api/health` returned `{"ok":true}`. At the time, `GET /api/health/voice-status` returned `healthy` with `total_calls: 0` and `demo_line: true`; that public demo-line probe is now retired and no longer mounted. Launch-readiness remains monitor-token gated (401 without credential).
 
 This file does not replace `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`, `docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`, or `docs/PRODUCT_SHOWCASE_MATRIX.md`. Durable product conclusions were promoted into code. Concurrent PR #1186 already owns production sender override, fabricated public-stats retirement, founder PSTN canary quarantine, and GPT-5.6 metering.
 
@@ -45,7 +45,7 @@ The product is one Bot workspace for calls, texts, and email. The code spine exi
 
 ### Voice / PSTN
 
-**Conditional GO** for consented inbound design-partner calls. Runtime is OpenAI Realtime over Twilio SIP. No live Vapi/xAI phone path remains. P1: SIP webhook replay is not claimed before spend reservation; finalizer failures can be swallowed; `/api/health/voice-status` reports healthy with zero current-runtime signal.
+**Conditional GO** for consented inbound design-partner calls. Runtime is OpenAI Realtime over Twilio SIP. No live Vapi/xAI phone path remains. P1: SIP webhook replay is not claimed before spend reservation; finalizer failures can be swallowed; the now-retired `/api/health/voice-status` probe reported healthy with zero current-runtime signal.
 
 ### Billing / margin
 

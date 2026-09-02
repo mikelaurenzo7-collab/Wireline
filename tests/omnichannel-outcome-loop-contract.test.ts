@@ -73,6 +73,14 @@ describe("omnichannel outcome loop", () => {
     expect(smsPanel).toContain('void setOutcome("escalated", true)');
     expect(smsPanel).toContain('void setOutcome("resolved")');
     expect(smsPanel).toContain('void setOutcome("open")');
+    expect(smsPanel).toContain("const onStatusChangeRef = useRef(onStatusChange)");
+    expect(smsPanel).toContain("onStatusChangeRef.current?.(nextStatus)");
+    expect(smsPanel).not.toContain("[initialStatus, onStatusChange, threadId]");
+    expect(smsThreads).toContain("onStatusChange={handleOutcomeStatusChange}");
+    expect(smsThreads).toContain("return changed ? next : current");
+    expect(smsPanel).toContain("outcomeOperationRef.current === operation");
+    expect(smsPanel).toContain("threadIdRef.current === requestedThreadId");
+    expect(smsPanel).toContain("signal: controller.signal");
   });
 
   it("treats human handoffs as operator work instead of unsupported AI actions", () => {

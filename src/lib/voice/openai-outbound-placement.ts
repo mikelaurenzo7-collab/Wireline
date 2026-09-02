@@ -5,10 +5,7 @@ import * as schema from "../../db/schema";
 import type { OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { drizzle } from "../server-context";
-import {
-  normalizeOpenAIPhoneNumber,
-  resolveOpenAISipSessionMaxSeconds,
-} from "./openai-sip-config";
+import { normalizeOpenAIPhoneNumber, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 
 const PLACEMENT_LEASE_GRACE_MS = 2 * 60 * 1_000;
 const IN_FLIGHT_STATES = new Set([
@@ -69,6 +66,7 @@ export function resetNativeOutboundPlacementMetadata(
   metadata: Record<string, unknown>,
   input: {
     callPurpose: OutboundCallPurpose;
+    outboundLineNumber: string;
     placementId: string;
     claimedAt: Date;
     created: boolean;
@@ -80,6 +78,7 @@ export function resetNativeOutboundPlacementMetadata(
     native_voice: {
       provider: "twilio_openai_realtime_sip",
       call_purpose: input.callPurpose,
+      outbound_line_number: input.outboundLineNumber,
       placement_id: input.placementId,
       placement_claimed_at: claimedAt,
       state: "creating",
@@ -95,6 +94,7 @@ export async function claimNativeOutboundPlacement(input: {
   agentId: string;
   customerName?: string | null;
   customerNumber: string;
+  outboundLineNumber: string;
   context?: string | null;
   callPurpose: OutboundCallPurpose;
   leadId?: bigint | string | null;
@@ -120,6 +120,7 @@ export async function claimNativeOutboundPlacement(input: {
         attempts: 1,
         metadata: resetNativeOutboundPlacementMetadata(asRecord(input.leadMetadata), {
           callPurpose: input.callPurpose,
+          outboundLineNumber: input.outboundLineNumber,
           placementId,
           claimedAt: now,
           created: true,
@@ -175,6 +176,7 @@ export async function claimNativeOutboundPlacement(input: {
         status: LEAD_STATUS.DIALING,
         metadata: resetNativeOutboundPlacementMetadata(metadata, {
           callPurpose: input.callPurpose,
+          outboundLineNumber: input.outboundLineNumber,
           placementId,
           claimedAt: now,
           created: false,

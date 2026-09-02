@@ -20,6 +20,7 @@
     "qa:launch-social": "node scripts/qa-launch-social.mjs",
     "render:outbound-social": "node scripts/render-outbound-social.mjs",
     "qa:outbound-social": "node scripts/qa-outbound-social.mjs",
+    "test:media-qa": "node --test scripts/lib/media-qa.node-test.mjs",
     "render:all": "npm run render:30 && npm run render:15 && npm run render:6 && npm run render:vertical && npm run render:6-vertical && npm run render:square",
     "still:opening": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-opening.jpg --frame=28 --scale=0.5",
     "still:product": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-product.jpg --frame=342 --scale=0.5",

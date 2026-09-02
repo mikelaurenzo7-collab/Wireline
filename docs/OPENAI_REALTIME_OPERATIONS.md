@@ -26,12 +26,13 @@ Sources:
 
 The two credential sources rotate independently:
 
-| Source              | Current key              | Previous-key drain slot           |
-| ------------------- | ------------------------ | --------------------------------- |
-| Runtime/Studio      | `OPENAI_API_KEY`         | `OPENAI_API_KEY_PREVIOUS`         |
-| ChatGPT/public demo | `OPENAI_API_KEY_CHATKIT` | `OPENAI_API_KEY_CHATKIT_PREVIOUS` |
+| Source                     | Current key              | Previous-key drain slot           |
+| -------------------------- | ------------------------ | --------------------------------- |
+| Runtime/Studio             | `OPENAI_API_KEY`         | `OPENAI_API_KEY_PREVIOUS`         |
+| ChatGPT private simulation | `OPENAI_API_KEY_CHATKIT` | `OPENAI_API_KEY_CHATKIT_PREVIOUS` |
 
-The demo falls back to the runtime source when its current ChatKit key is unset.
+Authenticated ChatGPT private simulation falls back to the runtime source when
+its current ChatKit key is unset. Public and guest audio/call demos are retired.
 Each durable hangup records its exact source and key fingerprint. New calls use
 only a current key; a hangup may use the same source's previous key only when
 its fingerprint matches. Never overwrite a nonempty previous slot during a

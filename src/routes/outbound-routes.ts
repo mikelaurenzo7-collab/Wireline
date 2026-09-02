@@ -21,7 +21,7 @@ import {
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
 import { drizzle, log } from "../lib/server-context";
-import { getErrorMessage, mapObjectToSnake, toJsonbSafe } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake, parseBigIntId, toJsonbSafe } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
 import { LEAD_STATUS } from "../lib/outbound-status";
@@ -33,7 +33,13 @@ const POSTGRES_BIGINT_MAX = 9_223_372_036_854_775_807n;
 const LeadHuntIdSchema = z
   .string()
   .regex(/^[1-9]\d{0,18}$/, "Lead IDs must be positive integers")
-  .refine((value) => BigInt(value) <= POSTGRES_BIGINT_MAX, "Lead ID is out of range");
+  .refine((value) => {
+    const parsed = parseBigIntId(value);
+    // Let the regex own malformed values. Zod still runs refinements after a
+    // regex issue, so calling the BigInt constructor here turned bad client input into a
+    // server exception instead of a normal validation response.
+    return parsed === null || parsed <= POSTGRES_BIGINT_MAX;
+  }, "Lead ID is out of range");
 
 const LeadHuntApprovalSchema = z
   .object({

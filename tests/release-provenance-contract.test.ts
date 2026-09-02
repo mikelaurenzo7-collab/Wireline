@@ -36,19 +36,14 @@ describe("BotBound release provenance", () => {
     expect(providerPreflight).not.toContain("--apply");
   });
 
-  it("requires database-owned PSTN routing and keeps retired monitoring disabled by default", () => {
+  it("requires database-owned PSTN routing and removes retired founder monitoring", () => {
     expect(read("src/lib/founder-showcase-seed.ts")).not.toContain(
       "public_phone_number: agent.tel",
     );
     expect(read("src/data/contact-agents.ts")).toContain(
       "export const ALL_SHOWCASE_CONTACT_AGENTS: ReadonlyArray<ContactAgent> = [];",
     );
-    const canary = read("src/lib/demo-line-canary.ts");
-    expect(canary).toContain("BOTBOUND_ENABLE_FOUNDER_PSTN_CANARY");
-    expect(canary).toContain('result.skipReason = "founder_pstn_retired"');
-    expect(canary.indexOf("if (!founderPstnCanaryEnabled())")).toBeLessThan(
-      canary.indexOf("const client = getTwilioClient()"),
-    );
+    expect(existsSync(resolve(root, "src/lib/demo-line-canary.ts"))).toBe(false);
   });
 
   it("counts every native OpenAI SIP failure class as a pipeline failure", () => {

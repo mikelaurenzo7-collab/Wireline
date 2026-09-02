@@ -1,5 +1,7 @@
+import argparse
 from pathlib import Path
 
+from reportlab import rl_config
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics
@@ -8,7 +10,7 @@ from reportlab.pdfgen import canvas
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = (
+DEFAULT_OUTPUT = (
     ROOT
     / "brand-work"
     / "launch-2026-09-outbound"
@@ -16,6 +18,10 @@ OUTPUT = (
     / "investor"
     / "botbound-outbound-investor-one-pager-2026-09.pdf"
 )
+
+# ReportLab otherwise embeds wall-clock metadata and a random document ID.
+# Invariant mode makes the same approved inputs produce identical PDF bytes.
+rl_config.invariant = 1
 
 INK = HexColor("#0A0A0E")
 VIOLET = HexColor("#8B6EF2")
@@ -44,12 +50,18 @@ def text(c: canvas.Canvas, value: str, x: float, y: float, font: str, size: floa
     c.drawString(x, y, value)
 
 
-def build() -> None:
+def build(output: Path = DEFAULT_OUTPUT) -> None:
     register_fonts()
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary_output = output.with_suffix(f"{output.suffix}.tmp")
 
     width, height = letter
-    c = canvas.Canvas(str(OUTPUT), pagesize=letter, pageCompression=1)
+    c = canvas.Canvas(
+        str(temporary_output),
+        pagesize=letter,
+        pageCompression=1,
+        invariant=1,
+    )
     c.setTitle("BotBound Investor Brief - Outbound Wedge")
     c.setAuthor("BotBound")
     c.setSubject("BotBound outbound launch and operating model")
@@ -78,7 +90,7 @@ def build() -> None:
     text(c, " BOOK.", 36 + prefix_width, height - 163, "InterTight-ExtraBold", 38, VIOLET_LIGHT)
     text(
         c,
-        "The operating layer for Bots that move calls into clear next steps.",
+        "Autonomous Bots find prospects, make calls, and drive clear outcomes.",
         38,
         height - 193,
         "Inter-SemiBold",
@@ -137,8 +149,12 @@ def build() -> None:
 
     c.showPage()
     c.save()
-    print(OUTPUT)
+    temporary_output.replace(output)
+    print(output)
 
 
 if __name__ == "__main__":
-    build()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
+    build(args.output.resolve())

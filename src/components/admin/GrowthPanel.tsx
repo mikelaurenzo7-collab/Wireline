@@ -168,12 +168,18 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-foreground font-bold">Job Titles</label>
+                      <label
+                        htmlFor="growth-target-titles"
+                        className="wl-label text-foreground font-bold"
+                      >
+                        Job Titles
+                      </label>
                     </div>
                     <span className="wl-label text-muted">Role Density</span>
                   </div>
                   <div className="flex gap-2">
                     <Input
+                      id="growth-target-titles"
                       type="text"
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
@@ -185,11 +191,13 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
+                      type="button"
+                      aria-label="Add job title"
                       onClick={() => addTag("target_titles", newTitle, setNewTitle)}
                       variant="outline"
                       className="p-2.5 bg-brand/10 text-brand rounded-md hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4" aria-hidden="true" />
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
@@ -220,12 +228,18 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-foreground font-bold">Industries</label>
+                      <label
+                        htmlFor="growth-target-industries"
+                        className="wl-label text-foreground font-bold"
+                      >
+                        Industries
+                      </label>
                     </div>
                     <span className="wl-label text-muted">Market Scope</span>
                   </div>
                   <div className="flex gap-2">
                     <Input
+                      id="growth-target-industries"
                       type="text"
                       value={newIndustry}
                       onChange={(e) => setNewIndustry(e.target.value)}
@@ -238,11 +252,13 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
+                      type="button"
+                      aria-label="Add industry"
                       onClick={() => addTag("target_industries", newIndustry, setNewIndustry)}
                       variant="outline"
                       className="p-2.5 bg-brand-3/10 text-brand-3 rounded-md hover:bg-brand-3/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4" aria-hidden="true" />
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
@@ -273,7 +289,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-foreground font-bold">
+                      <label
+                        htmlFor="growth-target-geography"
+                        className="wl-label text-foreground font-bold"
+                      >
                         Geographic Target
                       </label>
                     </div>
@@ -281,6 +300,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   </div>
                   <div className="flex gap-2">
                     <Input
+                      id="growth-target-geography"
                       type="text"
                       value={newState}
                       onChange={(e) => setNewState(e.target.value)}
@@ -292,11 +312,13 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
                     <ShadButton
+                      type="button"
+                      aria-label="Add geographic target"
                       onClick={() => addTag("target_states", newState, setNewState)}
                       variant="outline"
                       className="p-2.5 bg-brand/10 text-brand rounded-md hover:bg-brand/20 transition-all border-input w-10 h-10 shrink-0 p-0"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-4 h-4" aria-hidden="true" />
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
@@ -327,11 +349,20 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Users className="w-3.5 h-3.5 text-muted" />
-                      <label className="wl-label text-foreground font-bold">Company Size</label>
+                      <span
+                        id="growth-target-company-size"
+                        className="wl-label text-foreground font-bold"
+                      >
+                        Company Size
+                      </span>
                     </div>
                     <span className="wl-label text-muted">Org Scale</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div
+                    className="grid grid-cols-3 gap-1.5"
+                    role="group"
+                    aria-labelledby="growth-target-company-size"
+                  >
                     {[
                       { label: "1-10", value: "1,10" },
                       { label: "11-50", value: "11,50" },
@@ -343,6 +374,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       <ShadButton
                         key={range.value}
                         type="button"
+                        aria-pressed={targetEmployeeRanges.includes(range.value)}
                         variant="ghost"
                         disableAnimations
                         onClick={() => {

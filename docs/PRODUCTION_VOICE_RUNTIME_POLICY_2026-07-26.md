@@ -11,7 +11,7 @@ stable policy path used by release checklists.
 | Surface | Production path | Policy |
 | --- | --- | --- |
 | Phone calls | Twilio carrier/PSTN → BotBound signed TwiML → OpenAI project SIP | OpenAI Realtime `gpt-realtime-2.1`; no alternate runtime or provider fallback |
-| Browser/mobile voice | Same-origin BotBound SDP exchange → OpenAI Realtime WebRTC | Studio, ChatGPT, and guest demos share the managed phone policy |
+| Browser/mobile voice | Authenticated same-origin BotBound SDP exchange → OpenAI Realtime WebRTC | Private Studio rehearsals and authenticated ChatGPT simulation only; public and guest audio/call demos are retired |
 | SMS | Twilio signed webhooks and Messaging Service/number | Twilio owns sender and carrier delivery only |
 | Presenter/video | Retired live-video compatibility surface | Presenter identity never becomes the phone voice; phone fallback is OpenAI |
 | Studio speech | OpenAI Realtime WebRTC | Same saved 10-voice catalog as phone calls |
@@ -46,4 +46,4 @@ Before general availability, prove all of the following on the exact release com
 
 The accurate product promise is:
 
-> Every BotBound phone and browser conversation runs on OpenAI Realtime, with 10 selectable built-in voices and one consistent saved voice per active session. Twilio provides carrier transport, numbers, and SMS.
+> Every BotBound production phone conversation and authenticated private browser rehearsal runs on OpenAI Realtime, with 10 selectable built-in voices and one consistent saved voice per active session. Twilio provides carrier transport, numbers, and SMS.

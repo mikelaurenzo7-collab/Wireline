@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, Loader2, Route, UserRoundCheck } from "lucide-react";
 
 import { authFetch } from "../lib/api";
@@ -50,6 +50,22 @@ export default function SmsOutcomePanel({
   const [busy, setBusy] = useState<OutcomeBusy>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const onStatusChangeRef = useRef(onStatusChange);
+  const threadIdRef = useRef(threadId);
+  const outcomeOperationRef = useRef(0);
+  const outcomeAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    onStatusChangeRef.current = onStatusChange;
+  }, [onStatusChange]);
+
+  useLayoutEffect(() => {
+    threadIdRef.current = threadId;
+    outcomeOperationRef.current += 1;
+    outcomeAbortRef.current?.abort();
+    setBusy(null);
+    return () => outcomeAbortRef.current?.abort();
+  }, [threadId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,7 +93,7 @@ export default function SmsOutcomePanel({
         const nextStatus = normalizeStatus(body?.thread?.status);
         setStatus(nextStatus);
         setHandoff(body?.handoff || null);
-        onStatusChange?.(nextStatus);
+        onStatusChangeRef.current?.(nextStatus);
       })
       .catch((cause) => {
         if (controller.signal.aborted) return;
@@ -88,9 +104,18 @@ export default function SmsOutcomePanel({
       });
 
     return () => controller.abort();
-  }, [initialStatus, onStatusChange, threadId]);
+  }, [initialStatus, threadId]);
 
   async function setOutcome(nextStatus: ConversationOutcomeStatus, createHandoff = false) {
+    outcomeAbortRef.current?.abort();
+    const controller = new AbortController();
+    outcomeAbortRef.current = controller;
+    const requestedThreadId = threadId;
+    const operation = ++outcomeOperationRef.current;
+    const isCurrentRequest = () =>
+      !controller.signal.aborted &&
+      outcomeOperationRef.current === operation &&
+      threadIdRef.current === requestedThreadId;
     setBusy(createHandoff ? "handoff" : nextStatus);
     setError(null);
     setNotice(null);
@@ -99,14 +124,16 @@ export default function SmsOutcomePanel({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus, handoff: createHandoff }),
+        signal: controller.signal,
       });
       const body = (await response.json().catch(() => null)) as OutcomeResponse | null;
       if (!response.ok || !body?.thread) {
         throw new Error(body?.error || "Could not update the conversation outcome.");
       }
+      if (!isCurrentRequest()) return;
       const updatedStatus = normalizeStatus(body.thread.status);
       setStatus(updatedStatus);
-      onStatusChange?.(updatedStatus);
+      onStatusChangeRef.current?.(updatedStatus);
       if (body.handoff_task_id) {
         setHandoff({ id: body.handoff_task_id, status: "pending" });
       } else if (updatedStatus !== "escalated") {
@@ -118,11 +145,13 @@ export default function SmsOutcomePanel({
           : `Conversation marked ${OUTCOME_META[updatedStatus].label.toLowerCase()}.`,
       );
     } catch (cause) {
+      if (!isCurrentRequest()) return;
       setError(
         cause instanceof Error ? cause.message : "Could not update the conversation outcome.",
       );
     } finally {
-      setBusy(null);
+      if (isCurrentRequest()) setBusy(null);
+      if (outcomeAbortRef.current === controller) outcomeAbortRef.current = null;
     }
   }
 

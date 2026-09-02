@@ -30,7 +30,7 @@ At capture time, every captured route returned HTTP 200 with zero root or body h
 - Focused Playwright suite: 13 of 13 tests passed in Chromium.
   - Home, features, pricing, demos, and sign-in remain in document flow without horizontal escape.
   - Desktop, short-laptop, short-wide, and phone states remain usable.
-  - The primary demo path exposes a focus outline and navigates to `/showcase`.
+  - Primary acquisition paths expose focus outlines and route to account creation or product detail.
   - The account mode changes state correctly on phone.
   - No serious Axe violations were found on the mobile access path.
 - Remotion: TypeScript, bundle, caption export, and discovery of all six compositions passed.

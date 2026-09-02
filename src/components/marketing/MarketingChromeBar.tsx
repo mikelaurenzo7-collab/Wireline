@@ -34,7 +34,7 @@ const COMPANY_LINKS = [
 ] as const;
 
 const RESOURCE_LINKS = [
-  { to: "/showcase", label: "Demos" },
+  { to: "/features", label: "How It Works" },
   { to: "/developers", label: "Developers" },
   { to: "/trust", label: "Trust Center" },
   { to: "/support", label: "Support" },

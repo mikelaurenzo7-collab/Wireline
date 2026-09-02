@@ -34,8 +34,10 @@ describe("call-log reliability truth", () => {
   const handlers = read("src/lib/voice/openai-sip-session.ts");
 
   it("the claimed OpenAI call row receives the session's terminal reliability outcome", () => {
-    const claimIdx = handlers.indexOf("callLogId = await claimCall(input)");
-    const sessionIdx = handlers.indexOf("outcome = await runRealtimeSession(input, runtime)");
+    const claimIdx = handlers.indexOf("let callLogId = preclaimedCallLogId ?? null");
+    const sessionIdx = handlers.indexOf(
+      "outcome = await runRealtimeSession(input, runtime, ownerFence.signal)",
+    );
     const finalizerIdx = handlers.indexOf("async function persistFinishedCall");
     const enqueueIdx = handlers.indexOf("await enqueuePostCallDigest(", finalizerIdx);
     expect(claimIdx).toBeGreaterThan(0);

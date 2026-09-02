@@ -4,7 +4,48 @@ This record separates historical render evidence from the current September
 2026 release candidate. It does not claim that the current working tree is on
 `main`, is an exact-head deployment, or has final launch approval.
 
-## Current September candidate evidence
+## Current First Move outbound candidate evidence
+
+The three outbound social masters below were rebuilt and automated-delivery-QA
+verified on 2026-09-02. The QA pass required the exact 6s/10s/15s inventory,
+validated H.264/AAC framing and duration, matched every master back to its
+render receipt, and published metadata only after 12 frame samples and the
+contact sheet were complete. The representative frames and complete contact
+sheet were then visually inspected for hierarchy, legibility, sequence, and
+vertical safe-zone fit.
+
+| File                                                                                                     | Frame     | Video                          | Audio              | Container duration |     Bytes | SHA-256                                                            |
+| -------------------------------------------------------------------------------------------------------- | --------- | ------------------------------ | ------------------ | -----------------: | --------: | ------------------------------------------------------------------ |
+| `../../brand-work/launch-2026-09-outbound/exports/motion/botbound-first-move-15s-vertical-1080x1920.mp4` | 1080×1920 | H.264, 30 fps, yuv420p, BT.709 | AAC, 48 kHz stereo |         15.018667s | 3,488,321 | `8d93cbd3a2a328782ecbfbc4394380ae89ec169e59e0fa71c0351ccca3af276d` |
+| `../../brand-work/launch-2026-09-outbound/exports/motion/botbound-first-move-10s-square-1080x1080.mp4`   | 1080×1080 | H.264, 30 fps, yuv420p, BT.709 | AAC, 48 kHz stereo |         10.026667s | 2,063,496 | `bba553a90ce560fd857297cbb92d331384925439f9b419dd42853c488acf679b` |
+| `../../brand-work/launch-2026-09-outbound/exports/motion/botbound-first-move-6s-vertical-1080x1920.mp4`  | 1080×1920 | H.264, 30 fps, yuv420p, BT.709 | AAC, 48 kHz stereo |             6.016s | 1,826,358 | `6903a51a316b7e33102cf5ae2c728a9f802cadffb9269d81b3119e4c5966ab78` |
+
+Current outbound evidence files:
+
+- `../../brand-work/launch-2026-09-outbound/exports/motion/render-provenance.json`
+  binds the renderer, 17 source inputs, pinned runtime files, render flags,
+  media-tool versions, Git context, and installed master bytes. Its source
+  fingerprint is
+  `553d75ce44e14411eb30e6c4742dec3737e8e8af3e84f01ab6f99b3d31360ff2`.
+- `../../brand-work/launch-2026-09-outbound/exports/motion/metadata.json`
+  records the passing delivery probes, QA script/runtime provenance, 13 QA
+  artifact hashes, and the matching render-receipt hash.
+- `../../brand-work/launch-2026-09-outbound/exports/motion/SHA256SUMS.txt`
+  records exactly the three master checksums above.
+- `../../brand-work/launch-2026-09-outbound/exports/motion/qa/botbound-first-move-motion-qa-contact-sheet.png`
+  shows Find, Call, Book, and End frames for every cut. Dashed mint guides mark
+  the 220 px top, 340 px bottom, 96 px left, and 144 px right vertical safety
+  envelope; those guides are not present in the masters.
+
+The render receipt records commit
+`6a3c7b31aea2a602a3ff56aaba7583d5a6c1d847` and exact-input dirty state
+`true`. The hashes above certify this review candidate's exact bytes; they do
+not claim a clean exact-head `main` release. After the intended commit lands,
+rerun `qa:outbound-social`: it will require the same source fingerprint and
+record the new verification Git context. Re-render only if that fingerprint
+changed.
+
+## Current Second Ring inbound candidate evidence
 
 The current repository-local delivery set was generated on 2026-09-01. Only
 the three files below are represented in the current motion metadata and

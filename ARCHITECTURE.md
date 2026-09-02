@@ -70,11 +70,11 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - **Database:** Drizzle schema and migrations in `src/db` and `drizzle/migrations`, hosted on Supabase Postgres.
 - **Billing:** Stripe-backed entitlements, plan catalog, Runtime Balance (Conversation Balance API/module path retained), checkout, portal, webhooks, and ledger-style reconciliation stay server-owned.
 - **Voice and telephony:**
-  - Every browser and phone conversation uses OpenAI Realtime (`gpt-realtime-2.1`). The founder showcase fleet and customer Bots share the same runtime authority and have no alternate call provider.
-  - Customers can choose any of the 10 built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, or Cedar. The saved voice is fixed for an active session and may be changed between sessions. Browser previews and phone calls resolve the same saved OpenAI voice, including the phone fallback for legacy presenter records.
+  - Every authenticated browser rehearsal and production phone conversation uses OpenAI Realtime (`gpt-realtime-2.1`). Founder-owned internal Bot profiles and customer Bots share the same runtime authority and have no alternate call provider.
+  - Customers can choose any of the 10 built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, or Cedar. The saved voice is fixed for an active session and may be changed between sessions. Authenticated Studio rehearsals and phone calls resolve the same saved OpenAI voice, including the phone fallback for legacy presenter records.
   - Twilio owns numbers, PSTN transport, signed voice/SMS callbacks, opt-out enforcement, delivery callbacks, and the two-way messaging inbox. Inbound calls reach a signed BotBound TwiML webhook and bridge to `sip:<OPENAI_PROJECT_ID>@sip.api.openai.com;transport=tls`; outbound calls ring the customer through Twilio before the same OpenAI SIP bridge.
   - OpenAI signs `realtime.call.incoming` at `/api/webhooks/openai/realtime`; BotBound accepts the call with the selected Bot runtime and maintains the server-side sideband tool session.
-  - Studio live tests, guest demos, and hosted MCP private simulation use server-mediated OpenAI Realtime WebRTC. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser.
+  - Authenticated Studio rehearsals and hosted ChatGPT/MCP private simulations use server-mediated OpenAI Realtime WebRTC. Public and guest audio/call demos are retired. The server exchanges SDP and returns only a session-bound answer; provider credentials never reach the browser.
   - BotBound has no external voice-cloning provider or customer voice-upload path. Historical provider tables are removed by migration; only OpenAI's built-in voice roster is selectable.
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.

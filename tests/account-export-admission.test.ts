@@ -30,6 +30,18 @@ afterEach(() => {
 });
 
 describe("account export snapshot admission", () => {
+  it("derives the database query budget from the same absolute deadline", async () => {
+    vi.useFakeTimers();
+    const gate = new AccountExportSnapshotGate(1, 1_000);
+    const lease = await gate.acquire("deadline-user");
+
+    expect(lease.remainingMs()).toBe(1_000);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(lease.remainingMs()).toBe(750);
+
+    lease.release();
+  });
+
   it("allows only one of five slow clients to own a five-slot pool snapshot", async () => {
     const gate = new AccountExportSnapshotGate(1, 60_000);
     const attempts = await Promise.allSettled(

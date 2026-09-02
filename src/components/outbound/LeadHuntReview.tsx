@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Check, Loader2, Search, Settings2, Trash2 } from "lucide-react";
 import { authFetch } from "../../lib/api";
@@ -90,6 +90,8 @@ export function LeadHuntReview({
   const [hunting, setHunting] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const leadListOperationRef = useRef(0);
+  const leadListAbortRef = useRef<AbortController | null>(null);
 
   const draftCampaigns = useMemo(
     () => campaigns.filter((campaign) => campaign.status === "draft"),
@@ -101,11 +103,19 @@ export function LeadHuntReview({
   );
 
   const loadLeads = useCallback(async () => {
+    leadListAbortRef.current?.abort();
+    const controller = new AbortController();
+    leadListAbortRef.current = controller;
+    const operation = ++leadListOperationRef.current;
+    const isCurrentRequest = () =>
+      !controller.signal.aborted && leadListOperationRef.current === operation;
+    setLoading(true);
     setError(null);
     try {
-      const response = await authFetch("/api/lead-hunt/leads");
+      const response = await authFetch("/api/lead-hunt/leads", { signal: controller.signal });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(responseError(body, "Could not load Lead Hunt results."));
+      if (!isCurrentRequest()) return;
       const nextLeads = Array.isArray(body.leads) ? (body.leads as LeadHuntLead[]) : [];
       setLeads(nextLeads);
       setSelectedIds((current) => {
@@ -113,15 +123,18 @@ export function LeadHuntReview({
         return new Set([...current].filter((id) => available.has(id)));
       });
     } catch (reason) {
+      if (!isCurrentRequest()) return;
       logFetchError("LeadHuntReview.load", reason);
       setError(reason instanceof Error ? reason.message : "Could not load Lead Hunt results.");
     } finally {
-      setLoading(false);
+      if (isCurrentRequest()) setLoading(false);
+      if (leadListAbortRef.current === controller) leadListAbortRef.current = null;
     }
   }, []);
 
   useEffect(() => {
     void loadLeads();
+    return () => leadListAbortRef.current?.abort();
   }, [loadLeads]);
 
   useEffect(() => {

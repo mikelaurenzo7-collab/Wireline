@@ -115,10 +115,11 @@ describe("agent runtime performance and action integrity", () => {
       session.indexOf("async function claimCall"),
       session.indexOf("async function updatePresence"),
     );
-    expect(claim).toContain(".onConflictDoNothing({ target: schema.callLogs.vapiCallId })");
+    expect(claim).toContain('return existing.phase === "claimed" ? ("retry" as const) : null');
+    expect(claim).toContain('.for("update")');
     expect(claim).toContain("await enqueuePostCallDigest(");
     expect(claim.indexOf("await enqueuePostCallDigest(")).toBeLessThan(
-      claim.indexOf("return created.id"),
+      claim.lastIndexOf("return {"),
     );
 
     const replay = session.slice(

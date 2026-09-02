@@ -409,6 +409,8 @@ export type PlatformCostReservation = {
   auditId: bigint;
   userId: string;
   costUsd: number;
+  /** True when this request reused an earlier durable debit. */
+  adopted: boolean;
 };
 
 export type PlatformCostReservationDecision =
@@ -432,6 +434,7 @@ export async function reservePlatformCostRecord(opts: {
   provider: string;
   model: string;
   costUsd: number;
+  idempotencyKey?: string;
   requestMeta?: Record<string, unknown>;
 }): Promise<PlatformCostReservationDecision> {
   if (!(opts.costUsd > 0)) return { reserved: false, reason: "unavailable" };
@@ -453,6 +456,32 @@ export async function reservePlatformCostRecord(opts: {
 
       if (!budget) {
         return { reserved: false, reason: "unavailable" } as const;
+      }
+
+      const idempotencyKey = String(opts.idempotencyKey || "").trim() || null;
+      if (idempotencyKey) {
+        const [existing] = await tx
+          .select({ id: schema.auditLog.id, costUsd: schema.auditLog.costUsd })
+          .from(schema.auditLog)
+          .where(
+            and(
+              eq(schema.auditLog.userId, opts.userId),
+              eq(schema.auditLog.action, opts.action),
+              eq(schema.auditLog.idempotencyKey, idempotencyKey),
+            ),
+          )
+          .limit(1);
+        if (existing) {
+          return {
+            reserved: true,
+            reservation: {
+              auditId: existing.id,
+              userId: opts.userId,
+              costUsd: Number(existing.costUsd || opts.costUsd),
+              adopted: true,
+            },
+          } as const;
+        }
       }
 
       const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
@@ -493,6 +522,7 @@ export async function reservePlatformCostRecord(opts: {
           cacheCreateTokens: 0,
           costUsd: String(opts.costUsd),
           latencyMs: 0,
+          idempotencyKey,
           metadata: { ...(opts.requestMeta || {}), accounting_state: "reserved_before_provider" },
         })
         .returning({ id: schema.auditLog.id });
@@ -500,7 +530,12 @@ export async function reservePlatformCostRecord(opts: {
 
       return {
         reserved: true,
-        reservation: { auditId: row.id, userId: opts.userId, costUsd: opts.costUsd },
+        reservation: {
+          auditId: row.id,
+          userId: opts.userId,
+          costUsd: opts.costUsd,
+          adopted: false,
+        },
       } as const;
     });
     clearBudgetCache(opts.userId);
@@ -516,26 +551,44 @@ export async function reservePlatformCostRecord(opts: {
 }
 
 /** Remove a pre-provider reservation after a definitive no-session outcome. */
-export async function releasePlatformCostReservation(
+export async function releasePlatformCostReservationIfReserved(
   reservation: PlatformCostReservation,
-): Promise<void> {
-  await drizzle
+): Promise<boolean> {
+  // An adopted receipt may belong to a prior provider attempt that succeeded
+  // before its worker crashed. Only the request that created a fresh debit can
+  // prove that a definitive pre-provider failure is safe to refund.
+  if (reservation.adopted !== false) return false;
+  const [released] = await drizzle
     .delete(schema.auditLog)
     .where(
       and(
         eq(schema.auditLog.id, reservation.auditId),
         eq(schema.auditLog.userId, reservation.userId),
+        sql`${schema.auditLog.metadata}->>'accounting_state' = 'reserved_before_provider'`,
       ),
-    );
-  clearBudgetCache(reservation.userId);
+    )
+    .returning({ id: schema.auditLog.id });
+  if (released) clearBudgetCache(reservation.userId);
+  return Boolean(released);
+}
+
+/** Backwards-compatible release for callers that do not need transition status. */
+export async function releasePlatformCostReservation(
+  reservation: PlatformCostReservation,
+): Promise<void> {
+  await releasePlatformCostReservationIfReserved(reservation);
 }
 
 async function setPlatformCostReservationState(
   reservation: PlatformCostReservation,
   accountingState: "committed" | "provider_outcome_ambiguous",
-): Promise<void> {
+): Promise<boolean> {
   try {
-    await drizzle
+    const transitionPredicate =
+      accountingState === "provider_outcome_ambiguous"
+        ? sql`${schema.auditLog.metadata}->>'accounting_state' = 'reserved_before_provider'`
+        : sql`${schema.auditLog.metadata}->>'accounting_state' IS DISTINCT FROM 'committed'`;
+    const [updated] = await drizzle
       .update(schema.auditLog)
       .set({
         metadata: sql`coalesce(${schema.auditLog.metadata}, '{}'::jsonb) || ${JSON.stringify({
@@ -546,8 +599,11 @@ async function setPlatformCostReservationState(
         and(
           eq(schema.auditLog.id, reservation.auditId),
           eq(schema.auditLog.userId, reservation.userId),
+          transitionPredicate,
         ),
-      );
+      )
+      .returning({ id: schema.auditLog.id });
+    return Boolean(updated);
   } catch (error) {
     // Never delete or refund the reserve when state telemetry fails: provider
     // spend may already exist, and the original row remains conservative.
@@ -557,6 +613,7 @@ async function setPlatformCostReservationState(
       accountingState,
       error: getErrorMessage(error),
     });
+    return false;
   }
 }
 
@@ -570,7 +627,8 @@ export async function markPlatformCostReservationAmbiguous(
 export async function commitPlatformCostReservation(
   reservation: PlatformCostReservation,
 ): Promise<void> {
-  await setPlatformCostReservationState(reservation, "committed");
+  const transitioned = await setPlatformCostReservationState(reservation, "committed");
+  if (!transitioned) return;
   recordDailySpend(reservation.costUsd);
   await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
     log.error("Reserved platform cost spend evaluation failed", {

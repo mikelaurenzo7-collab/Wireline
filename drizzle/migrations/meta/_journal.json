@@ -498,6 +498,13 @@
       "when": 1788234309000,
       "tag": "0172_remove_retired_xai_voice_bindings",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1788360099639,
+      "tag": "0173_openai_sip_claim_recovery",
+      "breakpoints": true
     }
   ]
 }

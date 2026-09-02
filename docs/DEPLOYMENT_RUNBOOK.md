@@ -156,7 +156,7 @@ Repository branch protection and required checks should be enabled as soon as th
 
 OpenAI Realtime is the managed browser and telephone voice runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi and xAI SIP are retired from the production runtime.
 
-No hardcoded founder showcase number owns a live route. Inbound PSTN or SIP must resolve through a current tenant-owned `wireline_phone_numbers` assignment. The retired founder PSTN canary remains disabled unless a future, deliberate Twilio reprovisioning exercise enables `BOTBOUND_ENABLE_FOUNDER_PSTN_CANARY=true`.
+No hardcoded founder showcase number owns a live route. Inbound PSTN or SIP must resolve through a current tenant-owned `wireline_phone_numbers` assignment. The former founder PSTN canary and its scheduled job are retired; any future reprovisioning exercise must introduce a new, explicitly reviewed probe rather than silently reactivating launch-era numbers.
 
 A full carrier launch still requires direct Twilio control-plane verification of Trust Hub, A2P, CNAM, STIR/SHAKEN, geo permissions, usage triggers, callbacks, and number inventory. Application logs or database rows are not substitutes for those console controls.
 

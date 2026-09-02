@@ -955,28 +955,6 @@ export async function handleJob(job: JobRow): Promise<void> {
     }
   }
 
-  if (job.type === "demo_line_canary") {
-    const { runDemoLineCanary } = await import("./demo-line-canary");
-    const result = await runDemoLineCanary();
-    await drizzle
-      .update(schema.jobs)
-      .set({
-        result: { allHealthy: result.allHealthy, timestamp: result.timestamp },
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.jobs.id, job.id));
-    log.info("demo_line_canary job completed", {
-      jobId: job.id,
-      allHealthy: result.allHealthy,
-      alertSent: result.alertSent,
-      unhealthy: result.lines.filter((l) => !l.numberOk || !l.assistantOk).length,
-    });
-    if (!result.allHealthy && !result.alertSent) {
-      // If alert failed to send, let the job retry
-      throw new Error("Canary detected failures but could not deliver alert");
-    }
-  }
-
   if (job.type === "margin_at_risk_alert") {
     const { countAtRiskTenants, listAtRiskTenants } = await import("./tenant-economics");
     const { sendEmail } = await import("./email-service");

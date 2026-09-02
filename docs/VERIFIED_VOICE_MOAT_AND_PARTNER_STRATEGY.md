@@ -23,8 +23,9 @@ catalog.
 
 Voice consistency is a runtime invariant, not a one-voice product limitation:
 
-- one saved OpenAI voice resolves across Studio preview, browser simulation,
-  inbound calls, outbound calls, public demos, and ChatGPT private simulation;
+- one saved OpenAI voice resolves across authenticated Studio rehearsal,
+  authenticated browser simulation, inbound calls, outbound calls, and ChatGPT
+  private simulation; public and guest audio/call demos are retired;
 - a session never changes speaker after admission;
 - pace, warmth, energy, and formality may adapt purposefully without imitating
   the customer or changing the Bot's character;

@@ -1,9 +1,8 @@
 {
   "version": 2,
+  "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
   "buildCommand": "node scripts/vercel-deploy.mjs",
-  "regions": [
-    "cle1"
-  ],
+  "regions": ["cle1"],
   "build": {
     "env": {
       "NODE_VERSION": "22"

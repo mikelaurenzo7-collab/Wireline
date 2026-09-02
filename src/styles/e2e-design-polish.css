@@ -55,8 +55,6 @@
     .landing-stage__lane,
     .landing-console__status,
     .landing-console__channels li,
-    .landing-demo__presence,
-    .landing-demo__role,
     .landing-console__activity-kicker,
     .wl-channel-chip
   ) {
@@ -157,8 +155,7 @@
 .marketing-surface.wl-features-page .wl-stitch-card > p:not(.sr-only),
 .marketing-surface.wl-pricing-page #plans article ul,
 .marketing-surface.wl-pricing-page #scale > p,
-.marketing-surface.wl-solutions-page .wl-stitch-card > p:not(.sr-only),
-.marketing-surface.wl-showcase-page .wl-showcase-preview__note {
+.marketing-surface.wl-solutions-page .wl-stitch-card > p:not(.sr-only) {
   font-size: 0.8125rem;
   line-height: 1.5;
 }

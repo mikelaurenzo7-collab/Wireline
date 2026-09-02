@@ -11,6 +11,11 @@ on:
       - public/favicon.png
       - public/og-image.png
       - scripts/render-botbound-launch-assets.mjs
+      - scripts/render-botbound-outbound-launch-assets.mjs
+      - scripts/render-botbound-product-proof-contact-sheet.mjs
+      - scripts/capture-botbound-current-worktree-proof.mjs
+      - scripts/build-botbound-launch-release-manifest.mjs
+      - scripts/vite-product-proof.config.ts
       - scripts/render-image-assets.mjs
       - .github/workflows/brand-film-qa.yml
   push:
@@ -23,6 +28,11 @@ on:
       - public/favicon.png
       - public/og-image.png
       - scripts/render-botbound-launch-assets.mjs
+      - scripts/render-botbound-outbound-launch-assets.mjs
+      - scripts/render-botbound-product-proof-contact-sheet.mjs
+      - scripts/capture-botbound-current-worktree-proof.mjs
+      - scripts/build-botbound-launch-release-manifest.mjs
+      - scripts/vite-product-proof.config.ts
       - scripts/render-image-assets.mjs
       - .github/workflows/brand-film-qa.yml
   workflow_dispatch:
@@ -47,6 +57,13 @@ jobs:
       - name: Verify compact source manifest
         run: sha256sum -c brand-work/SOURCE-SHA256SUMS.txt
 
+      - name: Verify launch asset tooling syntax
+        run: |
+          node --check scripts/render-botbound-outbound-launch-assets.mjs
+          node --check scripts/render-botbound-product-proof-contact-sheet.mjs
+          node --check scripts/capture-botbound-current-worktree-proof.mjs
+          node --check scripts/build-botbound-launch-release-manifest.mjs
+
       - name: Install film dependencies
         working-directory: apps/botbound-film
         run: npm ci
@@ -54,6 +71,10 @@ jobs:
       - name: Verify film types
         working-directory: apps/botbound-film
         run: npm run check
+
+      - name: Verify film media QA contract
+        working-directory: apps/botbound-film
+        run: npm run test:media-qa
 
       - name: Rebuild and verify captions
         working-directory: apps/botbound-film

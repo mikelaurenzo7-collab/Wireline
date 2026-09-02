@@ -141,7 +141,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jan 27, 2026",
     tag: "infra",
     title: "Voice runtime rebalanced for reliability",
-    body: "Structured reasoning now runs a managed primary policy with ordered continuity behind it, so a runtime issue degrades gracefully instead of failing a conversation. Studio and guest demos share the same managed live-voice path, while production phone calls keep their dedicated calling runtime.",
+    body: "Structured reasoning now runs a managed primary policy with ordered continuity behind it, so a runtime issue degrades gracefully instead of failing a conversation. Authenticated Studio and ChatGPT rehearsals share the managed live-voice path, while production phone calls keep their dedicated calling runtime.",
   },
   {
     date: "May 19, 2026",

@@ -16,7 +16,11 @@ describe("provider retirement and durable SMS migrations", () => {
       { idx: 70, tag: "0172_remove_retired_xai_voice_bindings" },
     ];
 
-    expect(journal.entries.slice(-4).map(({ idx, tag }) => ({ idx, tag }))).toEqual(expected);
+    expect(
+      journal.entries
+        .filter(({ idx }) => idx >= 67 && idx <= 70)
+        .map(({ idx, tag }) => ({ idx, tag })),
+    ).toEqual(expected);
     for (const idx of [67, 68, 69, 70]) {
       expect(
         existsSync(

@@ -126,8 +126,8 @@ describe("marketing centering contract", () => {
     );
     expect(solutionsPage).not.toContain("HeroCallPreview");
     expect(solutionsPage).not.toContain("Sarah");
-    expect(solutionsPage).toContain("text-center");
-    expect(solutionsPage).toContain("BrowserCallWidget");
+    expect(solutionsPage).not.toContain("BrowserCallWidget");
+    expect(solutionsPage).toContain("MarketingHero");
   });
 
   it("ships structured data on the blog for SEO", () => {
@@ -145,7 +145,6 @@ describe("marketing centering contract", () => {
       "src/pages/About.tsx",
       "src/pages/Compare.tsx",
       "src/pages/Blog.tsx",
-      "src/pages/Showcase.tsx",
       "src/pages/SolutionsPage.tsx",
       "src/pages/VerticalLanding.tsx",
     ]) {
@@ -154,5 +153,6 @@ describe("marketing centering contract", () => {
         `${path} should explicitly declare its copy alignment`,
       ).toBe(true);
     }
+    expect(read("src/pages/Showcase.tsx")).toContain("<Navigate to={FREE_SIGNUP} replace />");
   });
 });

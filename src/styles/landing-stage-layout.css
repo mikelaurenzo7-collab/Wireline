@@ -90,7 +90,6 @@
 .landing-stage__subline,
 .landing-stage__economics,
 .landing-stage__footer,
-.landing-demo__microcopy,
 .landing-console__control-note {
   color: var(--wireline-color-text-secondary);
 }
@@ -242,7 +241,10 @@
   );
   color: var(--wireline-color-text-primary);
   text-decoration: none;
-  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .landing-stage__lane:hover {
@@ -260,7 +262,6 @@
 }
 
 .landing-stage__lane:focus-visible,
-.landing-demo__button:focus-visible,
 .landing-stage__footer a:focus-visible {
   outline: 2px solid var(--wireline-color-focus-default);
   outline-offset: 2px;

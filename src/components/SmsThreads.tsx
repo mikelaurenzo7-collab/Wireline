@@ -376,6 +376,21 @@ export default function SmsThreads({
   }, [search, threads]);
 
   const activeThread = threads.find((thread) => thread.id === activeId) || null;
+  const handleOutcomeStatusChange = useCallback(
+    (status: string) => {
+      if (!activeId) return;
+      setThreads((current) => {
+        let changed = false;
+        const next = current.map((thread) => {
+          if (thread.id !== activeId || thread.status === status) return thread;
+          changed = true;
+          return { ...thread, status };
+        });
+        return changed ? next : current;
+      });
+    },
+    [activeId],
+  );
   const activePendingSend = activeId ? pendingSends[activeId] || null : null;
   const routingConflict = activeThread?.status === "routing_conflict";
   const missingDestination = Boolean(activeThread && !activeThread.destination_number);
@@ -482,15 +497,16 @@ export default function SmsThreads({
     setMessages((current) => [...current, optimistic]);
 
     try {
-      const response = await authFetch(`/api/sms/threads/${threadId}/reply`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey,
-        },
-        body: JSON.stringify({ body }),
-      });
-      const result = (await response.json().catch(() => null)) as {
+      const submit = () =>
+        authFetch(`/api/sms/threads/${threadId}/reply`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": idempotencyKey,
+          },
+          body: JSON.stringify({ body }),
+        });
+      type SmsReplyResult = {
         ok?: boolean;
         reason?: string;
         error?: string;
@@ -498,16 +514,41 @@ export default function SmsThreads({
         provider_outcome_ambiguous?: boolean;
         do_not_resend?: boolean;
       } | null;
+      let response = await submit();
+      let result = (await response.json().catch(() => null)) as SmsReplyResult;
+      // This code proves Twilio was never called. Replay the exact operation
+      // once so the server can finish its idempotent balance refund instead of
+      // turning an accounting outage into a permanently blocked conversation.
+      if (result?.code === "SMS_PRE_PROVIDER_REFUND_UNCONFIRMED") {
+        response = await submit();
+        result = (await response.json().catch(() => null)) as SmsReplyResult;
+      }
       const isCurrentThread =
         activeIdRef.current === threadId && sendOperationRef.current === operation;
+
+      if (result?.code === "SMS_PRE_PROVIDER_REFUND_UNCONFIRMED") {
+        const warning =
+          result.reason ||
+          "Twilio was not called. Retrying this exact message will continue the balance reconciliation without creating a second carrier send.";
+        rememberPendingSend(threadId, {
+          ...sendingRecord,
+          state: "retryable",
+          message: warning,
+        });
+        if (isCurrentThread) {
+          setMessages((current) => current.filter((message) => message.id !== optimistic.id));
+          setReply(body);
+          setThreadErr(warning);
+        }
+        toastError("SMS balance reconciliation pending", warning);
+        return;
+      }
 
       if (
         result?.code === "SMS_PROVIDER_OUTCOME_AMBIGUOUS" ||
         result?.provider_outcome_ambiguous === true ||
         result?.do_not_resend === true
       ) {
-        const accountingReconciliationPending =
-          result?.code === "SMS_PRE_PROVIDER_REFUND_UNCONFIRMED";
         const warning =
           result?.reason ||
           "Delivery status is unknown. The carrier may have accepted this message. Do not resend it; contact support.";
@@ -520,12 +561,7 @@ export default function SmsThreads({
           setMessages((current) => current.filter((message) => message.id !== optimistic.id));
           setThreadErr(warning);
         }
-        toastError(
-          accountingReconciliationPending
-            ? "SMS balance reconciliation pending"
-            : "SMS status unknown. Do not resend",
-          warning,
-        );
+        toastError("SMS status unknown. Do not resend", warning);
         return;
       }
 
@@ -795,15 +831,10 @@ export default function SmsThreads({
                 </summary>
                 <div className="border-t border-border px-3 pt-3 sm:px-4">
                   <SmsOutcomePanel
+                    key={activeThread.id}
                     threadId={activeThread.id}
                     initialStatus={activeThread.status}
-                    onStatusChange={(status) =>
-                      setThreads((current) =>
-                        current.map((thread) =>
-                          thread.id === activeThread.id ? { ...thread, status } : thread,
-                        ),
-                      )
-                    }
+                    onStatusChange={handleOutcomeStatusChange}
                   />
                 </div>
               </details>

@@ -537,13 +537,15 @@ describe("signed Twilio inbound reclassification contracts", () => {
     expect(wrapper).toContain(': "sms_help"');
   });
 
-  it("never speaks an internal configuration name on the public singing line", () => {
+  it("retires the public singing line without speech or a provider bridge", () => {
     const base = source("src/routes/twilio-webhook-base.ts");
     const singing = base.slice(
       base.indexOf('router.post("/api/twilio-webhook/singing-receptionist"'),
     );
     expect(singing).not.toMatch(/<Say[^>]*>[^<]*SINGING_VAPI_SIP_URI/i);
     expect(singing).not.toContain("openai-demo-unavailable.mp3");
-    expect(singing).toMatch(/if \(sipUri\)[\s\S]*else \{[\s\S]*<Hangup\/>/);
+    expect(singing).toContain("verifyTwilioSignature(req)");
+    expect(singing).toContain("return res.status(200).send(twimlHangup())");
+    expect(singing).not.toMatch(/<Dial\b|<Sip\b|<Say\b/);
   });
 });

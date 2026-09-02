@@ -55,6 +55,12 @@ export async function dispatchAgentToolCall(
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult> {
+  if (context.abortSignal?.aborted) {
+    return {
+      toolCallId: context.toolCallId,
+      result: "This call no longer owns the live session, so the action was not run.",
+    };
+  }
   let authorized = false;
   try {
     authorized = await isAgentToolExecutionAuthorized(fn, context);
@@ -77,6 +83,13 @@ export async function dispatchAgentToolCall(
       toolCallId: context.toolCallId,
       result:
         "That action is not enabled for this agent or its required connection is unavailable. Do not claim it ran. Offer an enabled alternative or create a follow-up task.",
+    };
+  }
+
+  if (context.abortSignal?.aborted) {
+    return {
+      toolCallId: context.toolCallId,
+      result: "This call no longer owns the live session, so the action was not run.",
     };
   }
 

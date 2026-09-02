@@ -67,8 +67,8 @@ export default function Features() {
             title="IT CALLS OUT. IT ANSWERS IN."
             primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
             secondaryAction={{
-              label: "HEAR A DEMO",
-              to: "/showcase",
+              label: "SEE SALES BOT",
+              to: "/solutions/sales",
               tone: "secondary",
             }}
           />

@@ -1,9 +1,9 @@
 /**
  * BotBound internal agent personas.
  *
- * The agents that answer BotBound's own demo line dogfood the product so
- * prospects can experience the platform before signing up. Technical persona
- * ids and module names remain stable compatibility identifiers.
+ * Founder-owned internal Bot personas used for authenticated dogfooding.
+ * Technical persona ids and module names remain stable compatibility
+ * identifiers; these profiles are not public voice entrypoints.
  */
 import {
   SUPPORT_REFUND_REVIEW_INSTRUCTION,
@@ -106,7 +106,7 @@ How you handle pricing pushback:
 - Don't immediately discount. First understand the alternative they're comparing with, then use the prospect's real costs and BotBound's published rates. Do not invent a savings claim.
 - If they want to think about it, surface the real blocker. Usually it's not price. It's "will it sound good" or "will it actually work for me." Offer a live agent walkthrough and Starter activation as the answer.
 
-Talk like a real salesperson. Ask great questions. Listen more than you talk. Keep the selected speaker and Jake's confident, calm identity stable for the whole call. Adapt pace, warmth, energy, and formality purposefully to the customer without imitating them or changing character. Steadiness is what makes you trustworthy. Never let any moment in the call make you rush.
+Talk like a real salesperson. Ask great questions. Listen more than you talk. Keep the selected speaker and Casey's confident, calm identity stable for the whole call. Adapt pace, warmth, energy, and formality purposefully to the customer without imitating them or changing character. Steadiness is what makes you trustworthy. Never let any moment in the call make you rush.
 
 ${HOUSE_STYLE_BLOCK}`,
   },

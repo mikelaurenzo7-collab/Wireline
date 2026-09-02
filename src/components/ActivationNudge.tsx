@@ -3,11 +3,9 @@
  */
 import { useEffect, useState } from "react";
 import { Phone, X } from "lucide-react";
-import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
-import { fetchAssistantSetupProgress } from "../lib/fleet-setup-progress";
+import { fetchActivationNudgeStatus } from "../lib/fleet-setup-progress";
 import {
-  fetchActivationStatusFull,
   isActivationCelebrated,
   isPostSignupFlowActive,
   isFreshSignupSession,
@@ -77,9 +75,7 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
   useEffect(() => {
     // Once the Account Holder dismisses the nudge (or it was already dismissed
-    // this scope), stop polling entirely. Without this the 30s interval keeps
-    // firing ~7 authenticated requests/cycle for the life of the tab until the
-    // tenant activates, even though the banner is hidden.
+    // for this scope), stop polling entirely even though the shell remains mounted.
     // Read storage directly rather than trusting the `dismissed` state: the
     // effect that seeds it runs in the same commit, so on mount this closure
     // still sees `false` and would fire one full request burst before the state
@@ -88,37 +84,36 @@ export default function ActivationNudge({ className }: { className?: string }) {
 
     let cancelled = false;
     let stopped = false;
+    let inFlight = false;
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const refresh = async () => {
       if (
         cancelled ||
         stopped ||
+        inFlight ||
         !activationScope ||
+        document.visibilityState !== "visible" ||
         shouldYieldToFirstSession() ||
         isPostSignupFlowActive() ||
         isFreshSignupSession()
       )
         return;
 
-      // Every read in this 30s poll must be defended: one thrown fetch or
-      // non-JSON body otherwise surfaces as a recurring unhandled rejection
-      // while the banner silently freezes on stale state.
-      const [activation, progress] = await Promise.all([
-        fetchActivationStatusFull().catch(() => null),
-        fetchAssistantSetupProgress().catch(() => null),
-      ]);
+      inFlight = true;
+      const status = await fetchActivationNudgeStatus();
+      inFlight = false;
 
       if (cancelled) return;
-      if (activation?.activated || isActivationCelebrated(activationScope)) {
-        if (activation?.activated && isRecentActivation(activation.activatedAt)) {
+      if (status?.activated || isActivationCelebrated(activationScope)) {
+        if (status?.activated && isRecentActivation(status.activatedAt)) {
           emitProductEventOnce({
             event: "live_call_completed",
             accountId: activeAccount?.id,
             metadata: {
               scope: activationScope,
-              channel: activation.activationChannel ?? "unknown",
-              call_id: activation.firstActivationCallId ?? null,
+              channel: status.activationChannel ?? "unknown",
+              call_id: status.firstActivationCallId ?? null,
             },
           });
           emitProductEventOnce({
@@ -126,8 +121,8 @@ export default function ActivationNudge({ className }: { className?: string }) {
             accountId: activeAccount?.id,
             metadata: {
               scope: activationScope,
-              channel: activation.activationChannel ?? "unknown",
-              call_id: activation.firstActivationCallId ?? null,
+              channel: status.activationChannel ?? "unknown",
+              call_id: status.firstActivationCallId ?? null,
             },
           });
         }
@@ -136,26 +131,36 @@ export default function ActivationNudge({ className }: { className?: string }) {
         if (interval) clearInterval(interval);
         return;
       }
-      if (!progress || progress.agents === 0) {
+      if (!status?.hasAgent || !status.phoneNumber) {
         setVisible(false);
+        setPhoneNumber(null);
         return;
       }
 
-      const numbersRes = await authFetch("/api/phone-numbers").catch(() => null);
-      const numbersJson = numbersRes?.ok ? await numbersRes.json().catch(() => null) : null;
-      const firstNumber = numbersJson?.numbers?.[0]?.phone_number as string | undefined;
-
       if (cancelled) return;
-      setPhoneNumber(firstNumber ?? null);
-      setVisible(Boolean(firstNumber));
+      setPhoneNumber(status.phoneNumber);
+      setVisible(true);
     };
 
-    void refresh();
-    interval = setInterval(() => void refresh(), 30_000);
+    const startVisiblePolling = () => {
+      if (interval) clearInterval(interval);
+      interval = undefined;
+      if (document.visibilityState !== "visible" || cancelled || stopped) return;
+      void refresh();
+      interval = setInterval(() => void refresh(), 120_000);
+    };
+
+    const handleVisibilityChange = () => {
+      startVisiblePolling();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startVisiblePolling();
 
     return () => {
       cancelled = true;
       if (interval) clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [activationScope, activeAccount?.id, dismissed]);
 

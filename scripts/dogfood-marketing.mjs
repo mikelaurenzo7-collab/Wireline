@@ -15,7 +15,7 @@ const out =
 const screenshots = path.join(out, "screenshots");
 if (!existsSync(screenshots)) mkdirSync(screenshots, { recursive: true });
 
-const routes = ["/", "/pricing", "/showcase", "/compare", "/about", "/support", "/auth"];
+const routes = ["/", "/pricing", "/features", "/compare", "/about", "/support", "/auth"];
 const viewports = [
   { name: "mobile", width: 390, height: 844 },
   { name: "tablet", width: 834, height: 1112 },

@@ -1,5 +1,15 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +20,19 @@ const campaignRoot = resolve(root, "brand-work/launch-2026-09-outbound");
 const outputRoot = resolve(campaignRoot, "exports");
 const sourceRoot = resolve(campaignRoot, "sources");
 const websiteRoot = resolve(outputRoot, "website");
+const motionRoot = resolve(outputRoot, "motion");
+const manifestPath = resolve(campaignRoot, "manifest.json");
+const checksumPath = resolve(campaignRoot, "SHA256SUMS.txt");
+const investorPdfPath = resolve(
+  outputRoot,
+  "investor/botbound-outbound-investor-one-pager-2026-09.pdf",
+);
+const investorPdfBuilder = resolve(root, "scripts/build-botbound-outbound-investor-pdf.py");
+const approvedMotionMasters = [
+  "botbound-first-move-15s-vertical-1080x1920.mp4",
+  "botbound-first-move-10s-square-1080x1080.mp4",
+  "botbound-first-move-6s-vertical-1080x1920.mp4",
+].sort();
 const fonts = [
   resolve(root, "brand-work/fonts/InterTight-ExtraBold.ttf"),
   resolve(root, "brand-work/fonts/Inter-Regular.ttf"),
@@ -47,6 +70,99 @@ function esc(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function sha256File(filePath) {
+  return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+}
+
+function buildInvestorPdf() {
+  const bundledPython =
+    process.platform === "win32"
+      ? resolve(dirname(process.execPath), "../../python/python.exe")
+      : resolve(dirname(process.execPath), "../../python/bin/python3");
+  const candidates = [
+    process.env.BOTBOUND_PYTHON,
+    process.env.PYTHON,
+    bundledPython,
+    "python3",
+    "python",
+  ].filter((candidate, index, all) => candidate && all.indexOf(candidate) === index);
+  const failures = [];
+
+  rmSync(investorPdfPath, { force: true });
+  for (const candidate of candidates) {
+    const result = spawnSync(candidate, [investorPdfBuilder, "--output", investorPdfPath], {
+      cwd: root,
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    if (result.status === 0 && existsSync(investorPdfPath)) {
+      const bytes = readFileSync(investorPdfPath);
+      if (bytes.subarray(0, 5).toString("ascii") !== "%PDF-" || bytes.length < 20_000) {
+        throw new Error("Investor PDF builder returned an invalid or incomplete document.");
+      }
+      return investorPdfPath;
+    }
+
+    rmSync(investorPdfPath, { force: true });
+    failures.push(
+      `${candidate}: ${result.error?.message || result.stderr?.trim() || `exit ${result.status}`}`,
+    );
+  }
+
+  throw new Error(`Unable to build the investor PDF. ${failures.join(" | ")}`);
+}
+
+function assertApprovedOutboundMotion() {
+  const actualMasters = readdirSync(motionRoot)
+    .filter((name) => name.toLowerCase().endsWith(".mp4"))
+    .sort();
+  if (JSON.stringify(actualMasters) !== JSON.stringify(approvedMotionMasters)) {
+    throw new Error(
+      `Outbound motion inventory is not the approved 6s/10s/15s set: ${actualMasters.join(", ")}`,
+    );
+  }
+
+  const metadata = JSON.parse(readFileSync(resolve(motionRoot, "metadata.json"), "utf8"));
+  const deliveryByFile = new Map(
+    (metadata.deliveries || []).map((delivery) => [String(delivery.file || ""), delivery]),
+  );
+  const checksumByFile = new Map(
+    readFileSync(resolve(motionRoot, "SHA256SUMS.txt"), "utf8")
+      .trim()
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => {
+        const match = line.match(/^([0-9a-f]{64})\s{2}(.+)$/i);
+        if (!match) throw new Error(`Invalid outbound motion checksum entry: ${line}`);
+        return [match[2], match[1].toLowerCase()];
+      }),
+  );
+  if (
+    deliveryByFile.size !== approvedMotionMasters.length ||
+    checksumByFile.size !== approvedMotionMasters.length
+  ) {
+    throw new Error("Outbound motion approval metadata does not match the exact master set.");
+  }
+  for (const filename of approvedMotionMasters) {
+    const digest = sha256File(resolve(motionRoot, filename));
+    const delivery = deliveryByFile.get(filename);
+    if (!delivery || delivery.sha256 !== digest || checksumByFile.get(filename) !== digest) {
+      throw new Error(`Outbound motion master is not bound to current QA approval: ${filename}`);
+    }
+  }
+
+  const expectedQaFiles = [
+    ...approvedMotionMasters.flatMap((filename) =>
+      ["find", "call", "book", "end"].map((position) => `${filename.slice(0, -4)}-${position}.png`),
+    ),
+    "botbound-first-move-motion-qa-contact-sheet.png",
+  ].sort();
+  const actualQaFiles = readdirSync(resolve(motionRoot, "qa")).sort();
+  if (JSON.stringify(actualQaFiles) !== JSON.stringify(expectedQaFiles)) {
+    throw new Error("Outbound motion QA frame inventory is stale or incomplete.");
+  }
 }
 
 function writePng(relativePath, svg, width) {
@@ -129,7 +245,9 @@ function seededNodes(width, height, count = 88, seed = 17) {
     const y = height * (0.1 + rand() * 0.8);
     const r = 2 + rand() * 6;
     const hot = rand() > 0.86;
-    nodes.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(hot ? r * 1.5 : r).toFixed(1)}" fill="${hot ? palette.violetLight : palette.platinum}" opacity="${hot ? 0.82 : 0.18}"${hot ? ' filter="url(#softGlow)"' : ""}/>`);
+    nodes.push(
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(hot ? r * 1.5 : r).toFixed(1)}" fill="${hot ? palette.violetLight : palette.platinum}" opacity="${hot ? 0.82 : 0.18}"${hot ? ' filter="url(#softGlow)"' : ""}/>`,
+    );
   }
   return nodes.join("");
 }
@@ -157,6 +275,32 @@ function atmosphericBackground(width, height, sourceData, { vertical = false, sh
 }
 
 const generated = [];
+// Invalidate the prior approval pair before deleting or replacing any release
+// asset. A failed render must leave no stale manifest claiming success.
+rmSync(manifestPath, { force: true });
+rmSync(checksumPath, { force: true });
+assertApprovedOutboundMotion();
+const rendererOwnedDirectories = [
+  "hero",
+  "social",
+  "roles",
+  "carousel",
+  "workflow",
+  "email",
+  "investor",
+  "website",
+  "contact-sheet",
+].map((name) => resolve(outputRoot, name));
+for (const directory of rendererOwnedDirectories) {
+  const ownedRelativePath = relative(outputRoot, directory);
+  if (!ownedRelativePath || ownedRelativePath.startsWith("..")) {
+    throw new Error(
+      `Refusing to clean an output path outside the campaign export root: ${directory}`,
+    );
+  }
+  rmSync(directory, { recursive: true, force: true });
+}
+
 const render = (path, options, width) => {
   generated.push(writePng(path, svgFrame(options), width));
 };
@@ -343,11 +487,41 @@ render(
 );
 
 const roles = [
-  { slug: "sales", label: "SALES BOT", lines: ["FINDS LEADS.", "BOOKS MEETINGS."], cta: "GET YOUR SALES BOT", code: "01" },
-  { slug: "recruiting", label: "RECRUITING BOT", lines: ["WORKS THE LIST.", "BOOKS INTERVIEWS."], cta: "GET YOUR RECRUITING BOT", code: "02" },
-  { slug: "appointments", label: "APPOINTMENT BOT", lines: ["CALLS THE WAITLIST.", "BOOKS THE OPENING."], cta: "GET YOUR APPOINTMENT BOT", code: "03" },
-  { slug: "reactivation", label: "WIN-BACK BOT", lines: ["OLD LEAD.", "NEW CONVERSATION."], cta: "GET YOUR WIN-BACK BOT", code: "04" },
-  { slug: "debt-resolution-intake", label: "INTAKE BOT", lines: ["WORKS THE LIST.", "BOOKS CONSULTATIONS."], cta: "GET YOUR INTAKE BOT", code: "05" },
+  {
+    slug: "sales",
+    label: "SALES BOT",
+    lines: ["FINDS LEADS.", "BOOKS MEETINGS."],
+    cta: "GET YOUR SALES BOT",
+    code: "01",
+  },
+  {
+    slug: "recruiting",
+    label: "RECRUITING BOT",
+    lines: ["WORKS THE LIST.", "BOOKS INTERVIEWS."],
+    cta: "GET YOUR RECRUITING BOT",
+    code: "02",
+  },
+  {
+    slug: "appointments",
+    label: "APPOINTMENT BOT",
+    lines: ["CALLS THE WAITLIST.", "BOOKS THE OPENING."],
+    cta: "GET YOUR APPOINTMENT BOT",
+    code: "03",
+  },
+  {
+    slug: "reactivation",
+    label: "WIN-BACK BOT",
+    lines: ["OLD LEAD.", "NEW CONVERSATION."],
+    cta: "GET YOUR WIN-BACK BOT",
+    code: "04",
+  },
+  {
+    slug: "debt-resolution-intake",
+    label: "INTAKE BOT",
+    lines: ["WORKS THE LIST.", "BOOKS CONSULTATIONS."],
+    cta: "GET YOUR INTAKE BOT",
+    code: "05",
+  },
 ];
 
 function roleOutcomeScene(index) {
@@ -395,7 +569,11 @@ function roleOutcomeScene(index) {
   }
 
   if (index === 3) {
-    const dormant = Array.from({ length: 10 }, (_, dot) => `<circle cx="${78 + dot * 45}" cy="164" r="${dot === 7 ? 16 : 9}" fill="${dot === 7 ? palette.violet : "#514C59"}" opacity="${dot === 7 ? "1" : ".45"}"${dot === 7 ? ' filter="url(#softGlow)"' : ""}/>`).join("");
+    const dormant = Array.from(
+      { length: 10 },
+      (_, dot) =>
+        `<circle cx="${78 + dot * 45}" cy="164" r="${dot === 7 ? 16 : 9}" fill="${dot === 7 ? palette.violet : "#514C59"}" opacity="${dot === 7 ? "1" : ".45"}"${dot === 7 ? ' filter="url(#softGlow)"' : ""}/>`,
+    ).join("");
     return `<g transform="translate(100 742)">${panel}${dormant}
       <path d="M548 164H610" stroke="${palette.violet}" stroke-width="4"/><path d="M594 152L610 164L594 176" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="646" y="105" width="156" height="118" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
@@ -439,10 +617,30 @@ for (const [index, role] of roles.entries()) {
 }
 
 const carousel = [
-  { title: ["FIND.", "CALL.", "BOOK."], label: "THE FIRST MOVE", note: "LEAD HUNT + OUTBOUND BOT", accent: 2 },
-  { title: ["DEFINE", "THE TARGET."], label: "01 / TARGET", note: "ROLE · REGION · COMPANY SIZE", accent: 1 },
-  { title: ["LEAD HUNT FINDS", "THE PROSPECTS."], label: "02 / FIND", note: "CONNECTED PROSPECT INTELLIGENCE", accent: 1 },
-  { title: ["REVIEW.", "THEN QUEUE."], label: "03 / APPROVE", note: "SELECTED CONTACTS · APPROVED CAMPAIGN", accent: 1 },
+  {
+    title: ["FIND.", "CALL.", "BOOK."],
+    label: "THE FIRST MOVE",
+    note: "LEAD HUNT + OUTBOUND BOT",
+    accent: 2,
+  },
+  {
+    title: ["DEFINE", "THE TARGET."],
+    label: "01 / TARGET",
+    note: "ROLE · REGION · COMPANY SIZE",
+    accent: 1,
+  },
+  {
+    title: ["LEAD HUNT FINDS", "THE PROSPECTS."],
+    label: "02 / FIND",
+    note: "CONNECTED PROSPECT INTELLIGENCE",
+    accent: 1,
+  },
+  {
+    title: ["REVIEW.", "THEN QUEUE."],
+    label: "03 / APPROVE",
+    note: "SELECTED CONTACTS · APPROVED CAMPAIGN",
+    accent: 1,
+  },
   {
     title: ["YOUR BOT CALLS.", "YOU TAKE MEETINGS."],
     label: "04 / CALL + BOOK",
@@ -457,7 +655,10 @@ for (const [index, slide] of carousel.entries()) {
   const titleFontSize = slide.fontSize ?? 112;
   const titleLineHeight = slide.lineHeight ?? 112;
   const titleLines = slide.title
-    .map((line, lineIndex) => `<tspan x="54" dy="${lineIndex === 0 ? 0 : titleLineHeight}" fill="${lineIndex === slide.accent ? palette.violet : palette.platinum}">${esc(line)}</tspan>`)
+    .map(
+      (line, lineIndex) =>
+        `<tspan x="54" dy="${lineIndex === 0 ? 0 : titleLineHeight}" fill="${lineIndex === slide.accent ? palette.violet : palette.platinum}">${esc(line)}</tspan>`,
+    )
     .join("");
   render(
     `carousel/botbound-lead-hunt-${String(index + 1).padStart(2, "0")}-1080x1350.png`,
@@ -480,16 +681,21 @@ for (const [index, slide] of carousel.entries()) {
   );
 }
 
-const workflowSteps = ["TARGET", "FIND", "REVIEW", "QUEUE", "CALL", "QUALIFY", "BOOK", "REPORT"];
-const workflowGap = 1048 / (workflowSteps.length - 1);
-const workflowNodes = workflowSteps
-  .map((step, index) => {
-    const x = 76 + index * workflowGap;
-    const active = index === workflowSteps.length - 1;
-    return `${index > 0 ? `<path d="M${x - workflowGap + 40} 328H${x - 38}" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" opacity=".64"/><path d="M${x - 50} 318L${x - 36} 328L${x - 50} 338" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
-      <circle cx="${x}" cy="328" r="38" fill="${active ? palette.violet : "#14121B"}" stroke="${palette.violetLight}" stroke-width="2"/>
-      <text x="${x}" y="334" text-anchor="middle" fill="${active ? palette.ink : palette.platinum}" font-family="IBM Plex Mono" font-size="12" font-weight="700" letter-spacing="1.2">${index + 1}</text>
-      <text x="${x}" y="412" text-anchor="middle" fill="${palette.platinum}" font-family="Inter Tight" font-size="16" font-weight="800" letter-spacing=".2">${step}</text>`;
+const workflowPhases = [
+  ["TARGET", "FIND"],
+  ["REVIEW", "QUEUE"],
+  ["CALL", "QUALIFY"],
+  ["BOOK", "REPORT"],
+];
+const workflowNodes = workflowPhases
+  .map(([first, second], index) => {
+    const x = 60 + index * 282;
+    const active = index === workflowPhases.length - 1;
+    return `${index > 0 ? `<path d="M${x - 34} 365H${x - 10}" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" opacity=".8"/><path d="M${x - 20} 356L${x - 8} 365L${x - 20} 374" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
+      <rect x="${x}" y="292" width="248" height="148" rx="24" fill="${active ? "#201A31" : "#111017"}" stroke="${active ? palette.violet : palette.violetLight}" stroke-opacity="${active ? ".9" : ".3"}" stroke-width="2"/>
+      <text x="${x + 24}" y="330" fill="${active ? palette.violetLight : palette.muted}" font-family="IBM Plex Mono" font-size="13" font-weight="700" letter-spacing="1.8">0${index + 1}</text>
+      <text x="${x + 24}" y="374" fill="${palette.platinum}" font-family="Inter Tight" font-size="25" font-weight="800">${first}</text>
+      <text x="${x + 24}" y="410" fill="${active ? palette.violetLight : palette.platinum}" font-family="Inter Tight" font-size="25" font-weight="800">${second}</text>`;
   })
   .join("");
 
@@ -503,9 +709,9 @@ render(
     content: `<rect width="1200" height="627" fill="url(#canvas)"/><rect width="1200" height="627" fill="url(#aura)"/><rect width="1200" height="627" fill="url(#grid)"/>
       ${wordmark(58, 64, 42)}
       ${eyebrow("CONFIGURED EXAMPLE", 60, 136, 14)}
-      <text x="58" y="228" fill="${palette.platinum}" font-family="Inter Tight" font-size="62" font-weight="800" letter-spacing="-3">FROM TARGET TO BOOKED.</text>
+      <text x="58" y="228" fill="${palette.platinum}" font-family="Inter Tight" font-size="62" font-weight="800" letter-spacing="-3">FROM TARGET TO <tspan fill="${palette.violet}">OUTCOME.</tspan></text>
       ${workflowNodes}
-      <text x="60" y="556" fill="${palette.mist}" font-family="Inter" font-size="17" font-weight="600">Lead Hunt hands selected contacts to an approved calling queue.</text>
+      <text x="60" y="556" fill="${palette.mist}" font-family="Inter" font-size="17" font-weight="600">Connected source. Selected contacts. Approved queue. Recorded outcome.</text>
       <text x="1140" y="556" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2">BOTBOUND.ME</text>`,
   },
   1200,
@@ -540,7 +746,8 @@ render(
       ${eyebrow("THE OUTBOUND CALL SHEET", 62, 236, 18)}
       <text x="56" y="334" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-4.2">THE QUEUE <tspan fill="${palette.violet}">MOVED.</tspan></text>
       ${rows}
-      <text x="62" y="1018" fill="${palette.mist}" font-family="Inter" font-size="19" font-weight="600">Illustrative workflow. Outcomes depend on configuration and the conversation.</text>`,
+      <text x="62" y="1018" fill="${palette.mist}" font-family="Inter" font-size="16" font-weight="600">Illustrative workflow. Outcomes depend on configuration and the conversation.</text>
+      <text x="1018" y="1018" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>`,
   },
   1080,
 );
@@ -574,7 +781,7 @@ render(
       ${brandLockup(92, 72, 86, iconData)}
       ${eyebrow("INVESTOR BRIEF · OUTBOUND WEDGE", 94, 250, 20)}
       <text x="86" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="126" font-weight="800" letter-spacing="-6.8">FIND. CALL. <tspan fill="${palette.violet}">BOOK.</tspan></text>
-      <text x="92" y="474" fill="${palette.mist}" font-family="Inter" font-size="31" font-weight="600">The operating layer for Bots that move calls into clear next steps.</text>
+      <text x="92" y="474" fill="${palette.mist}" font-family="Inter" font-size="31" font-weight="600">Autonomous Bots find prospects, make calls, and drive clear outcomes.</text>
 
       <text x="92" y="644" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">THE WEDGE</text>
       <text x="88" y="734" fill="${palette.ink}" font-family="Inter Tight" font-size="58" font-weight="800" letter-spacing="-2.8"><tspan x="88">OUTBOUND IS STILL A STACK.</tspan><tspan x="88" dy="66" fill="#6D52B5">BOTBOUND MAKES IT A BOT.</tspan></text>
@@ -585,7 +792,7 @@ render(
       <rect x="92" y="1030" width="1416" height="300" rx="36" fill="${palette.ink}"/>
       <text x="138" y="1102" fill="${palette.violetLight}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="3">THE OPERATING PATH</text>
       <text x="138" y="1188" fill="${palette.platinum}" font-family="Inter Tight" font-size="45" font-weight="800"><tspan x="138">TARGET / FIND / REVIEW / QUEUE</tspan><tspan x="138" dy="54">CALL / QUALIFY / BOOK / REPORT</tspan></text>
-      <text x="138" y="1272" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Connected source or approved list. Intentional handoff. Clear outcome.</text>
+      <text x="138" y="1296" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Connected source or approved list. Intentional handoff. Clear outcome.</text>
 
       <text x="92" y="1450" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">WHY BOTBOUND</text>
       <text x="92" y="1534" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">JOB-SPECIFIC BOTS</text>
@@ -600,6 +807,11 @@ render(
       <text x="1508" y="2028" text-anchor="end" fill="#6D52B5" font-family="Inter" font-size="21" font-weight="800">PUT YOUR BOT ON THE LINE</text>`,
   },
   1600,
+);
+
+const investorPdf = buildInvestorPdf();
+console.log(
+  `Created investor/${relative(resolve(outputRoot, "investor"), investorPdf).replaceAll("\\", "/")} (${statSync(investorPdf).size} bytes)`,
 );
 
 function findReleaseFiles(directory) {
@@ -636,7 +848,9 @@ const websiteOgMarkup = svgFrame({
     <text x="1142" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
 });
 writeFileSync(websiteOgSvg, websiteOgMarkup);
-console.log(`Created website/botbound-find-call-book-og-1200x630.svg (${Buffer.byteLength(websiteOgMarkup)} bytes)`);
+console.log(
+  `Created website/botbound-find-call-book-og-1200x630.svg (${Buffer.byteLength(websiteOgMarkup)} bytes)`,
+);
 generated.push(writePng("website/botbound-find-call-book-og-1200x630.png", websiteOgMarkup, 1200));
 
 const reviewFiles = generated.filter((path) => !path.includes("contact-sheet"));
@@ -668,7 +882,7 @@ const contactSheet = writePng(
     description: "Complete review sheet for The First Move outbound campaign.",
     content: `<rect width="${sheetWidth}" height="${sheetHeight}" fill="${palette.ink}"/><rect width="${sheetWidth}" height="${sheetHeight}" fill="url(#grid)"/>
       ${brandLockup(88, 56, 72, iconData)}
-      ${eyebrow("THE FIRST MOVE · COMPLETE ASSET REVIEW", 88, 190, 20)}
+      ${eyebrow("THE FIRST MOVE · COMPLETE STATIC ASSET REVIEW", 88, 190, 20)}
       ${tiles}`,
   }),
   sheetWidth,
@@ -711,34 +925,48 @@ const manifestFiles = releaseRoots
   })
   .sort((a, b) => a.path.localeCompare(b.path));
 
-const manifestPath = resolve(campaignRoot, "manifest.json");
-writeFileSync(
-  manifestPath,
-  `${JSON.stringify(
+const approvalStagingDirectory = resolve(
+  outputRoot,
+  "_rejected",
+  `.approval-staging-${process.pid}-${Date.now()}`,
+);
+mkdirSync(approvalStagingDirectory, { recursive: true });
+const stagedManifestPath = resolve(approvalStagingDirectory, "manifest.json");
+const stagedChecksumPath = resolve(approvalStagingDirectory, "SHA256SUMS.txt");
+try {
+  writeFileSync(
+    stagedManifestPath,
+    `${JSON.stringify(
+      {
+        campaign: "The First Move",
+        scope: "outbound-only creative release",
+        generatedAt: new Date().toISOString(),
+        renderer: "scripts/render-botbound-outbound-launch-assets.mjs",
+        files: manifestFiles,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  const checksumFiles = [
+    ...manifestFiles,
     {
-      campaign: "The First Move",
-      scope: "outbound-only creative release",
-      generatedAt: new Date().toISOString(),
-      renderer: "scripts/render-botbound-outbound-launch-assets.mjs",
-      files: manifestFiles,
+      path: "manifest.json",
+      bytes: statSync(stagedManifestPath).size,
+      sha256: createHash("sha256").update(readFileSync(stagedManifestPath)).digest("hex"),
     },
-    null,
-    2,
-  )}\n`,
-);
+  ].sort((a, b) => a.path.localeCompare(b.path));
+  writeFileSync(
+    stagedChecksumPath,
+    `${checksumFiles.map((file) => `${file.sha256}  ${file.path}`).join("\n")}\n`,
+  );
 
-const checksumFiles = [
-  ...manifestFiles,
-  {
-    path: "manifest.json",
-    bytes: statSync(manifestPath).size,
-    sha256: createHash("sha256").update(readFileSync(manifestPath)).digest("hex"),
-  },
-].sort((a, b) => a.path.localeCompare(b.path));
-writeFileSync(
-  resolve(campaignRoot, "SHA256SUMS.txt"),
-  `${checksumFiles.map((file) => `${file.sha256}  ${file.path}`).join("\n")}\n`,
-);
-
-console.log(`Wrote ${manifestFiles.length} approved release manifest entries.`);
-console.log(`Wrote ${checksumFiles.length} approved release checksums.`);
+  // Publish the manifest last: it is the approval marker for the complete set.
+  renameSync(stagedChecksumPath, checksumPath);
+  renameSync(stagedManifestPath, manifestPath);
+  console.log(`Wrote ${manifestFiles.length} approved release manifest entries.`);
+  console.log(`Wrote ${checksumFiles.length} approved release checksums.`);
+} finally {
+  rmSync(approvalStagingDirectory, { recursive: true, force: true });
+}

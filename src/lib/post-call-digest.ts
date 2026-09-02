@@ -1189,6 +1189,7 @@ async function deliverPostCallCsat(
       perform: async () => {
         const prepared = await csatService.preparePostCallCsatSms({
           userId: ctx.userId,
+          agentId: ctx.agentId,
           customerNumber,
           agentName: ctx.agentName,
           callLogId: String(ctx.callLogId),

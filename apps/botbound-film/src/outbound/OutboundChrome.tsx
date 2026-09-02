@@ -1,20 +1,28 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { BrandLockup, Eyebrow } from "../components/Brand";
 
+export const OUTBOUND_VERTICAL_SAFE_ZONE = {
+  top: 220,
+  right: 144,
+  bottom: 340,
+  left: 96,
+} as const;
+
 export const OutboundChrome: React.FC<{ section: string }> = ({ section }) => {
   const frame = useCurrentFrame();
   const { height, width } = useVideoConfig();
   const vertical = height / width > 1.3;
-  const side = vertical ? 84 : 72;
+  const leftInset = vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.left : 72;
+  const rightInset = vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.right : 72;
 
   return (
     <>
       <div
         style={{
           position: "absolute",
-          top: vertical ? 96 : 62,
-          left: side,
-          right: side,
+          top: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.top : 62,
+          left: leftInset,
+          right: rightInset,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -34,9 +42,9 @@ export const OutboundChrome: React.FC<{ section: string }> = ({ section }) => {
       <div
         style={{
           position: "absolute",
-          left: side,
-          right: side,
-          bottom: vertical ? 84 : 62,
+          left: leftInset,
+          right: rightInset,
+          bottom: vertical ? OUTBOUND_VERTICAL_SAFE_ZONE.bottom : 62,
           height: 2,
           background:
             "linear-gradient(90deg, rgba(139,92,246,0.82), rgba(139,92,246,0.08) 42%, rgba(139,92,246,0))",

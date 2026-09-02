@@ -21,7 +21,7 @@ export type DeployTemplate = {
   defaultGender?: "female" | "male";
 };
 
-type Gender = "female" | "male";
+type Gender = "female" | "male" | null;
 
 export interface DeployValues {
   name: string;
@@ -93,7 +93,7 @@ export default function DeployAgentModal({
 
   // When gender flips, swap to the default voice for that gender so the
   // user doesn't have to also click into the voice picker.
-  const handleGenderChange = (g: Gender) => {
+  const handleGenderChange = (g: Exclude<Gender, null>) => {
     setGender(g);
     setVoiceId(MANAGED_VOICE_BY_GENDER[g]);
     setShowVoiceList(false);
@@ -267,11 +267,12 @@ export default function DeployAgentModal({
                               <ShadButton
                                 type="button"
                                 key={v.id}
+                                aria-pressed={isSelected}
                                 variant="ghost"
                                 disableAnimations
                                 onClick={() => {
                                   setVoiceId(v.id);
-                                  if (v.gender) setGender(v.gender);
+                                  setGender(v.gender ?? null);
                                 }}
                                 className={cn(
                                   "w-full h-auto justify-between rounded-md px-3 py-2.5 text-[length:var(--wireline-typography-caption-size)] border",
@@ -360,12 +361,17 @@ function GenderTile({
   active: boolean;
   label: string;
   sublabel: string;
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: React.ComponentType<{
+    className?: string;
+    strokeWidth?: number;
+    "aria-hidden"?: boolean;
+  }>;
   onClick: () => void;
 }) {
   return (
     <ShadButton
       type="button"
+      aria-pressed={active}
       variant="ghost"
       disableAnimations
       onClick={onClick}
@@ -391,7 +397,7 @@ function GenderTile({
             active ? "border-brand/40 bg-brand/15" : "border-border bg-white/40",
           )}
         >
-          <Icon className="w-4 h-4" strokeWidth={2.2} />
+          <Icon className="w-4 h-4" strokeWidth={2.2} aria-hidden={true} />
         </div>
         <div className="min-w-0">
           <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold tracking-wide">

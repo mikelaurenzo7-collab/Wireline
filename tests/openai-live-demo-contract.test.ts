@@ -16,14 +16,14 @@ describe("OpenAI browser and PSTN voice architecture", () => {
     expect(sandbox).toContain("new RTCPeerConnection()");
   });
 
-  it("keeps ChatGPT and the public demo on server-mediated OpenAI WebRTC", () => {
+  it("keeps ChatGPT account simulation on WebRTC while public voice endpoints stay retired", () => {
     const account = read("src/routes/chatgpt-mcp-account-routes.ts");
     const marketing = read("src/routes/marketing-runtime-routes.ts");
-    const hook = read("src/hooks/useProtectedPublicDemo.ts");
     expect(account).toContain("createOpenAIRealtimeSimulationCall");
-    expect(marketing).toContain("createPublicOpenAILiveDemoCall");
-    expect(hook).toContain("new RTCPeerConnection()");
-    expect(`${account}\n${marketing}\n${hook}`).not.toMatch(/api\.x\.ai|vapi/i);
+    expect(marketing).toContain("publicVoicePreviewRetired");
+    expect(marketing).toContain("res.status(410).json");
+    expect(marketing).not.toContain("createPublicOpenAILiveDemoCall");
+    expect(`${account}\n${marketing}`).not.toMatch(/api\.x\.ai|vapi/i);
   });
 
   it("bridges Twilio PSTN to the OpenAI project SIP endpoint", () => {

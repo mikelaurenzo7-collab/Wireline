@@ -1,107 +1,30 @@
 # Key Page Dependency Trees
 
-Local imports are traced recursively from each route entry. External packages and CSS-only imports are omitted; repeated local modules are marked once per page to keep the graph readable without losing coverage.
+Key local imports are summarized from each route entry. External packages and CSS-only imports are omitted; repeated local modules are marked once per page to keep the graph readable.
 
 ## / (Home)
 Entry: src/pages/LandingPage.tsx
+Runtime boundary: the home route has no public or guest audio/call-demo dependency. The retired `/showcase` route redirects to authenticated signup.
 Dependencies:
 - src/pages/LandingPage.tsx
   - src/components/marketing/WireAgentLanding.tsx
-    - src/components/marketing/BrowserCallWidget.tsx
-      - src/components/brand/WirelineMark.tsx
-      - src/components/ui/Medallion.tsx
-        - src/lib/utils.ts
-      - src/components/ui/shadcn/ShadButton.tsx
-        - src/components/atoms/Button.tsx
-          - src/lib/utils.ts (already listed)
-      - src/components/ui/SignalOrbFrame.tsx
-        - src/components/ui/SignalFrameRail.tsx
-          - src/lib/utils.ts (already listed)
-        - src/lib/utils.ts (already listed)
-      - src/lib/product-event-client.ts
-        - src/lib/product-events.ts
-      - src/lib/utils.ts (already listed)
-    - src/components/marketing/LiveVideoSpotlight.tsx
-      - src/lib/video-presenter/live-video-policy.ts
-        - src/lib/plan-catalog.ts
-    - src/components/marketing/MarketingFooter.tsx
-      - src/components/brand/WirelineMark.tsx (already listed)
-      - src/lib/utils.ts (already listed)
-    - src/components/marketing/MarketingHero.tsx
-      - src/lib/product-copy.ts
-      - src/lib/product-event-client.ts (already listed)
-      - src/lib/utils.ts (already listed)
-    - src/components/marketing/MarketingStickyCta.tsx
-      - src/lib/product-event-client.ts (already listed)
-      - src/lib/utils.ts (already listed)
-    - src/components/marketing/PrecisionPublicHeader.tsx
-      - src/components/atoms/index.ts
-        - src/components/atoms/Badge.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Button.tsx (already listed)
-        - src/components/atoms/Chip.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Dialog.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/DropdownMenu.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/EmptyState.tsx
-          - src/components/ui/EmptyState.tsx
-            - src/components/atoms/Button.tsx (already listed)
-            - src/components/ui/Medallion.tsx (already listed)
-            - src/components/ui/SectionHeader.tsx
-              - src/lib/utils.ts (already listed)
-              - src/lib/wireline-design-system.ts
-                - src/lib/authenticated-surface-contract.ts
-                  - src/lib/surface-contract.ts
-                - src/lib/wireline-design-vision.ts
-            - src/components/ui/SignalOrbFrame.tsx (already listed)
-            - src/lib/utils.ts (already listed)
-            - src/lib/wireline-design-system.ts (already listed)
-        - src/components/atoms/Eyebrow.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/HelpTooltip.tsx
-          - src/components/ui/shadcn/Tooltip.tsx
-            - src/lib/utils.ts (already listed)
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Input.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/MetricTile.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/NativeSelect.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Paper.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Reveal.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/skeleton-presets.tsx
-          - src/components/atoms/Skeleton.tsx
-            - src/lib/utils.ts (already listed)
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Skeleton.tsx (already listed)
-        - src/components/atoms/Switch.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Textarea.tsx
-          - src/lib/utils.ts (already listed)
-        - src/components/atoms/Toast.tsx
-          - src/components/atoms/Button.tsx (already listed)
-          - src/lib/utils.ts (already listed)
-      - src/components/brand/WirelineMark.tsx (already listed)
-      - src/components/layout/SkipToContentLink.tsx
-      - src/lib/product-copy.ts (already listed)
-    - src/components/marketing/TrustSignals.tsx
-    - src/data/contact-agents.ts
-      - src/constants/brand-colors.ts
-        - src/constants/generated-design-tokens.ts
-    - src/lib/plan-catalog.ts (already listed)
-    - src/lib/product-copy.ts (already listed)
-    - src/lib/product-event-client.ts (already listed)
-  - src/lib/demo-attribution-client.ts
-    - src/lib/demo-funnel-shared.ts
+    - src/components/auth/AuthAccessPanel.tsx
+    - src/components/brand/BotBoundBrand.tsx
+      - src/components/brand/BotBoundMark.tsx
+      - src/lib/brand.ts
+      - src/lib/utils.ts
+    - src/components/marketing/LandingFooter.tsx
+      - src/components/marketing/MarketingChromeBar.tsx
+    - src/lib/bot-product.ts
+    - src/lib/plan-catalog.ts
+    - src/lib/product-event-client.ts
+      - src/lib/product-events.ts
+    - src/lib/signup-intent.ts
   - src/lib/page-meta.tsx
+  - src/lib/bot-product.ts (already listed)
+  - src/lib/brand.ts (already listed)
   - src/lib/plan-catalog.ts (already listed)
-  - src/lib/product-copy.ts (already listed)
-  - src/lib/signup-intent.ts
+  - src/lib/signup-intent.ts (already listed)
 
 ## /pricing
 Entry: src/pages/Pricing.tsx

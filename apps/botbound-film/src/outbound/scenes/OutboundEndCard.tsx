@@ -1,6 +1,7 @@
 import { Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { BrandLockup, Eyebrow } from "../../components/Brand";
 import { OutboundBackdrop } from "../OutboundBackdrop";
+import { OUTBOUND_VERTICAL_SAFE_ZONE } from "../OutboundChrome";
 
 export const OutboundEndCard: React.FC<{ fast?: boolean }> = ({ fast = false }) => {
   const frame = useCurrentFrame();
@@ -20,7 +21,9 @@ export const OutboundEndCard: React.FC<{ fast?: boolean }> = ({ fast = false }) 
       <div
         style={{
           position: "absolute",
-          inset: vertical ? "140px 84px 150px" : "72px",
+          inset: vertical
+            ? `${OUTBOUND_VERTICAL_SAFE_ZONE.top}px ${OUTBOUND_VERTICAL_SAFE_ZONE.right}px ${OUTBOUND_VERTICAL_SAFE_ZONE.bottom}px ${OUTBOUND_VERTICAL_SAFE_ZONE.left}px`
+            : "72px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",

@@ -102,6 +102,10 @@ async function loadRouter(
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
+  vi.stubEnv(
+    "INTERNAL_JWT_SECRET",
+    "botbound-test-secret-that-is-longer-than-thirty-two-characters",
+  );
 });
 
 describe("OpenAI inbound carrier continuity", () => {
@@ -112,7 +116,14 @@ describe("OpenAI inbound carrier continuity", () => {
     const loaded = await loadRouter(input);
     const { response, captured } = fakeResponse();
     await routeHandler(loaded.router, primaryPath)(
-      { path: primaryPath, body: { To: to, From: "+12025550141" } },
+      {
+        path: primaryPath,
+        body: {
+          To: to,
+          From: "+12025550141",
+          CallSid: "CA0123456789abcdef0123456789abcdef",
+        },
+      },
       response,
       vi.fn(),
     );
