@@ -79,7 +79,7 @@ The homepage offers direct Sales Bot and Front Desk Bot creation paths with no p
 | Website desktop/mobile overflow | Pass |
 | Focused TypeScript, contract, and browser checks | Pass |
 | Google Drive mirror | Pass — 59 files verified: 56 approved release files plus 3 audit/index files, with zero missing, duplicate, stale, or size-mismatched counterparts |
-| Production deployment proof | Pass — `botbound.me` serves exact source commit `ca05255f5beb9cdf54b1bc9274f612ae1545cb52` |
+| Production deployment proof | Pass — `botbound.me` reports healthy and its served source matches the reviewed remote `main` release |
 
 ## Do not publish
 
