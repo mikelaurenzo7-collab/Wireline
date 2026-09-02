@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Skip Vercel compute only when the current commit is provably documentation,
- * test, workflow, native-client, or film-source-only. Any uncertainty builds.
+ * Skip Vercel compute only when every change since the last successful
+ * deployment is provably documentation, test, workflow, native-client, or
+ * film-source-only. Any uncertainty builds.
  * Exit 0 means "ignore" to Vercel; exit 1 means "continue the build".
  */
 import { spawnSync } from "node:child_process";
@@ -30,10 +31,18 @@ export function isIgnorableChangeSet(files) {
   return files.length > 0 && files.every(isNonRuntimeOnlyPath);
 }
 
-function changedFiles() {
+export function resolveVercelDiffRange(environment = process.env) {
+  const previousSha = String(environment.VERCEL_GIT_PREVIOUS_SHA || "").trim();
+  if (!/^[0-9a-f]{40}$/i.test(previousSha)) return null;
+  return [previousSha, "HEAD"];
+}
+
+function changedFiles(environment = process.env) {
+  const diffRange = resolveVercelDiffRange(environment);
+  if (!diffRange) return null;
   const result = spawnSync(
     "git",
-    ["diff", "--name-only", "--diff-filter=ACDMRTUXB", "HEAD^", "HEAD"],
+    ["diff", "--name-only", "--diff-filter=ACDMRTUXB", ...diffRange],
     {
       cwd: process.cwd(),
       encoding: "utf8",
@@ -50,7 +59,9 @@ function changedFiles() {
 function main() {
   const files = changedFiles();
   if (!files) {
-    console.log("Vercel build retained: commit diff could not be proven safe to ignore.");
+    console.log(
+      "Vercel build retained: the last successful deployment diff could not be proven safe to ignore.",
+    );
     process.exitCode = 1;
     return;
   }

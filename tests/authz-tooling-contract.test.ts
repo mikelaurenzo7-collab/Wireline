@@ -58,7 +58,7 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
 
   it("keeps the route-local sweep gate recognized as auth, not allowlisted", () => {
     const generator = read("scripts/generate-authz-matrix.ts");
-    expect(generator).toContain('"cronOrAdminAuth"');
+    expect(generator).toContain('"cronAuth"');
     expect(generator).not.toMatch(/PUBLIC_ALLOWLIST[\s\S]*jobs\\\/sweep/);
   });
 

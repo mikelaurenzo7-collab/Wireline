@@ -188,6 +188,28 @@ function assertApprovedOutboundMotion() {
   if (JSON.stringify(actualQaFiles) !== JSON.stringify(expectedQaFiles)) {
     throw new Error("Outbound motion QA frame inventory is stale or incomplete.");
   }
+  const qaArtifactByFile = new Map(
+    (metadata.qaArtifacts || []).map((artifact) => [String(artifact.file || ""), artifact]),
+  );
+  if (qaArtifactByFile.size !== expectedQaFiles.length) {
+    throw new Error("Outbound motion QA approval metadata does not match the exact evidence set.");
+  }
+  for (const filename of expectedQaFiles) {
+    const approvedPath = `qa/${filename}`;
+    const artifact = qaArtifactByFile.get(approvedPath);
+    const evidencePath = resolve(motionRoot, approvedPath);
+    const evidenceBytes = readFileSync(evidencePath);
+    const evidenceDigest = createHash("sha256").update(evidenceBytes).digest("hex");
+    if (
+      !artifact ||
+      !Number.isSafeInteger(artifact.bytes) ||
+      artifact.bytes !== evidenceBytes.byteLength ||
+      !/^[0-9a-f]{64}$/i.test(String(artifact.sha256 || "")) ||
+      artifact.sha256.toLowerCase() !== evidenceDigest
+    ) {
+      throw new Error(`Outbound motion QA evidence is not bound to current approval: ${approvedPath}`);
+    }
+  }
 }
 
 function writePng(relativePath, svg, width) {

@@ -33,9 +33,8 @@ const AUTH_MIDDLEWARE = [
   "requirePlatformAdmin",
   "requireMonitorToken",
   "requireInternalJwtSecret",
-  // Route-local composite gate on /api/jobs/sweep (src/routes/job-routes.ts):
-  // timing-safe CRON_SECRET bearer OR authenticated owner/admin.
-  "cronOrAdminAuth",
+  // Route-local timing-safe CRON_SECRET bearer gate on /api/jobs/sweep.
+  "cronAuth",
 ];
 
 const PUBLIC_ALLOWLIST: { pattern: RegExp; reason: string }[] = [

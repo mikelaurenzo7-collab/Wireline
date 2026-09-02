@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { isIgnorableChangeSet, isNonRuntimeOnlyPath } from "../scripts/vercel-ignore-build.mjs";
+import {
+  isIgnorableChangeSet,
+  isNonRuntimeOnlyPath,
+  resolveVercelDiffRange,
+} from "../scripts/vercel-ignore-build.mjs";
 
 describe("Vercel ignored-build classifier", () => {
   it("skips only a non-empty set of non-runtime changes", () => {
@@ -33,5 +37,16 @@ describe("Vercel ignored-build classifier", () => {
     "brand-work/launch/assets/poster.png",
   ])("retains the build for %s", (file) => {
     expect(isNonRuntimeOnlyPath(file)).toBe(false);
+  });
+
+  it("diffs from the last successful Vercel deployment and fails closed without it", () => {
+    const previousSha = "a".repeat(40);
+
+    expect(resolveVercelDiffRange({ VERCEL_GIT_PREVIOUS_SHA: previousSha })).toEqual([
+      previousSha,
+      "HEAD",
+    ]);
+    expect(resolveVercelDiffRange({})).toBeNull();
+    expect(resolveVercelDiffRange({ VERCEL_GIT_PREVIOUS_SHA: "HEAD^" })).toBeNull();
   });
 });

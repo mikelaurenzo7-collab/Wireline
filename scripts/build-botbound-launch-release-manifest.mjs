@@ -74,7 +74,7 @@ async function sha256(file) {
     .digest("hex");
 }
 
-async function assertApprovedProductProof() {
+async function assertApprovedProductProof(repositoryBaseSha) {
   const proofRoot = path.join(releaseRoot, "exports", "product-proof");
   const proofManifestPath = path.join(proofRoot, "botbound-current-worktree-proof.json");
   let proof;
@@ -89,6 +89,7 @@ async function assertApprovedProductProof() {
     proof.exactWorktreePreview !== true ||
     proof.deployedProduction !== false ||
     !/^[0-9a-f]{40}$/i.test(String(proof.revision?.commit || "")) ||
+    proof.revision.commit !== repositoryBaseSha ||
     proof.sourceIdentity?.commit !== proof.revision.commit ||
     !proof.sourceIdentity?.nonce ||
     !Array.isArray(proof.results) ||
@@ -103,6 +104,7 @@ async function assertApprovedProductProof() {
     const relative = path.relative(proofRoot, absolute);
     if (
       !relative ||
+      relative !== path.basename(relative) ||
       relative.startsWith("..") ||
       path.isAbsolute(relative) ||
       result.finalRouteMatched !== true ||
@@ -124,7 +126,7 @@ async function assertApprovedProductProof() {
     ) {
       throw new Error(`Launch product-proof frame does not match its manifest: ${relative}`);
     }
-    approvedFrameNames.add(path.basename(absolute));
+    approvedFrameNames.add(relative);
   }
 
   const releaseFrameNames = (await readdir(proofRoot, { withFileTypes: true }))
@@ -136,10 +138,25 @@ async function assertApprovedProductProof() {
   ) {
     throw new Error("Launch product-proof directory contains stale or unapproved frames.");
   }
-  await stat(path.join(proofRoot, "botbound-exact-worktree-proof-contact-sheet-1920x1400.png"));
+  const contactSheetName = "botbound-exact-worktree-proof-contact-sheet-1920x1400.png";
+  const contactSheetPath = path.join(proofRoot, contactSheetName);
+  const contactSheetBytes = await readFile(contactSheetPath);
+  const contactSheetDigest = createHash("sha256").update(contactSheetBytes).digest("hex");
+  if (
+    proof.contactSheet?.file !== contactSheetName ||
+    !Number.isSafeInteger(proof.contactSheet?.bytes) ||
+    proof.contactSheet.bytes !== contactSheetBytes.byteLength ||
+    !/^[0-9a-f]{64}$/i.test(String(proof.contactSheet?.sha256 || "")) ||
+    proof.contactSheet.sha256.toLowerCase() !== contactSheetDigest
+  ) {
+    throw new Error("Launch product-proof contact sheet does not match its approval manifest.");
+  }
 }
 
-await assertApprovedProductProof();
+const repositoryBaseSha = await git(["rev-parse", "HEAD"]);
+const repositoryDirty = Boolean(await git(["status", "--porcelain"]));
+
+await assertApprovedProductProof(repositoryBaseSha);
 
 const allFiles = (await walk(releaseRoot))
   .map((absolute) => ({
@@ -165,9 +182,6 @@ for (const file of allFiles) {
     release_status: releaseStatusFor(file.relative),
   });
 }
-
-const repositoryBaseSha = await git(["rev-parse", "HEAD"]);
-const repositoryDirty = Boolean(await git(["status", "--porcelain"]));
 
 const manifest = {
   release: "BotBound Launch Release — 2026-09-01",

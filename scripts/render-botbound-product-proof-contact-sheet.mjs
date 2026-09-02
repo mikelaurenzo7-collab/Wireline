@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Resvg } from "@resvg/resvg-js";
@@ -32,6 +32,10 @@ mkdirSync(stagingParent, { recursive: true });
 const stagingOutput = resolve(
   stagingParent,
   `.botbound-contact-sheet-${process.pid}-${Date.now()}.png`,
+);
+const stagedManifestPath = resolve(
+  stagingParent,
+  `.botbound-proof-manifest-${process.pid}-${Date.now()}.json`,
 );
 
 try {
@@ -119,8 +123,26 @@ try {
     .asPng();
 
   writeFileSync(stagingOutput, png);
+  writeFileSync(
+    stagedManifestPath,
+    `${JSON.stringify(
+      {
+        ...manifest,
+        contactSheet: {
+          file: basename(output),
+          bytes: png.byteLength,
+          sha256: createHash("sha256").update(png).digest("hex"),
+        },
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
   renameSync(stagingOutput, output);
+  renameSync(stagedManifestPath, manifestPath);
   console.log(output);
 } finally {
   rmSync(stagingOutput, { force: true });
+  rmSync(stagedManifestPath, { force: true });
 }

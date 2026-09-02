@@ -7,7 +7,6 @@ import { eq, and, lte, gte, or, inArray, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { jobsRateLimit, jobsSweepRateLimit } from "../middleware/api-rate-limits";
 import { getErrorMessage } from "../lib/server-utils";
-import { getCallerRole } from "../middleware/require-role";
 import {
   claimJobById,
   completeClaimedJob,
@@ -292,7 +291,7 @@ router.post(
   },
 );
 
-const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) => {
+const cronAuth = (req: SweepRequest, res: Response, next: NextFunction) => {
   const expectedCronSecret = process.env.CRON_SECRET || "";
   const authz = String(req.headers["authorization"] || "");
   const providedCronSecret = authz.startsWith("Bearer ") ? authz.slice(7) : "";
@@ -307,28 +306,7 @@ const cronOrAdminAuth = (req: SweepRequest, res: Response, next: NextFunction) =
     req._sweepMode = "cron";
     return next();
   }
-
-  authenticateUser(req, res, async (authErr?: unknown) => {
-    if (authErr) return next(authErr);
-    if (res.headersSent) return;
-    try {
-      const role = await getCallerRole(drizzle, req.tenantId || req.user.id, req.user.id);
-      if (role !== "owner" && role !== "admin") {
-        void auditLogger
-          .logJobSweep("denied", { userId: req.user.id, role, ip: req.ip })
-          .catch(() => {});
-        return res
-          .status(403)
-          .json({ error: "Forbidden: requires admin or owner role", code: "FORBIDDEN" });
-      }
-      req._sweepMode = "manual";
-      next();
-    } catch (e) {
-      if (e instanceof AppError) throw e;
-      log.error("sweep auth failed", { error: getErrorMessage(e) });
-      return res.status(403).json({ error: "Authorization check failed", code: "FORBIDDEN" });
-    }
-  });
+  res.status(401).json({ error: "Valid cron authorization required", code: "UNAUTHORIZED" });
 };
 
 const runSweepHandler = async (req: SweepRequest, res: Response) => {
@@ -704,7 +682,7 @@ const sweepHandler = async (req: SweepRequest, res: Response) => {
   }
 };
 
-router.get("/sweep", cronOrAdminAuth, jobsSweepRateLimit, sweepHandler);
-router.post("/sweep", cronOrAdminAuth, jobsSweepRateLimit, sweepHandler);
+router.get("/sweep", cronAuth, jobsSweepRateLimit, sweepHandler);
+router.post("/sweep", cronAuth, jobsSweepRateLimit, sweepHandler);
 
 export default router;

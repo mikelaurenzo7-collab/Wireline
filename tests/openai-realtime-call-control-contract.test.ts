@@ -111,7 +111,7 @@ describe("server-owned OpenAI Realtime call control", () => {
     const sweep = config.crons.find((cron) => cron.path === "/api/jobs/sweep");
 
     expect(sweep?.schedule).toBe("* * * * *");
-    expect(routes).toContain('router.get("/sweep", cronOrAdminAuth, jobsSweepRateLimit');
+    expect(routes).toContain('router.get("/sweep", cronAuth, jobsSweepRateLimit');
     expect(routes).toContain("expectedCronSecret.length >= 16");
     expect(rateLimits).toContain("const JOBS_SWEEP_WINDOW_MS = 15 * 60 * 1000");
     expect(rateLimits).toContain("const JOBS_SWEEP_MAX = 20");

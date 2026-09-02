@@ -22,13 +22,16 @@ describe("launch artifact approval gates", () => {
 
   it("refuses to assemble a release from stale or byte-swapped product proof", () => {
     const release = read("scripts/build-botbound-launch-release-manifest.mjs");
-    const approval = release.indexOf("await assertApprovedProductProof()");
+    const approval = release.indexOf("await assertApprovedProductProof(repositoryBaseSha)");
     const inventory = release.indexOf("const allFiles =", approval);
 
     expect(approval).toBeGreaterThan(-1);
     expect(inventory).toBeGreaterThan(approval);
     expect(release).toContain('createHash("sha256").update(bytes).digest("hex")');
     expect(release).toContain("result.bytes !== bytes.byteLength");
+    expect(release).toContain("proof.revision.commit !== repositoryBaseSha");
+    expect(release).toContain("relative !== path.basename(relative)");
+    expect(release).toContain("proof.contactSheet.sha256.toLowerCase() !== contactSheetDigest");
     expect(release).toContain("stale or unapproved frames");
   });
 
@@ -50,6 +53,8 @@ describe("launch artifact approval gates", () => {
     expect(renderer).toContain(
       "Outbound motion QA metadata is not bound to its exact render receipt.",
     );
+    expect(renderer).toContain("artifact.bytes !== evidenceBytes.byteLength");
+    expect(renderer).toContain("artifact.sha256.toLowerCase() !== evidenceDigest");
     expect(checksumPublish).toBeGreaterThan(-1);
     expect(manifestPublish).toBeGreaterThan(checksumPublish);
   });
