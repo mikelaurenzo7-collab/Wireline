@@ -14,8 +14,8 @@
 | Workflow retargeting | `workflow/botbound-outbound-workflow-1200x627.png` | Product-truth retargeting | Build Your Bot |
 | Outcome retargeting | `social/botbound-outbound-call-sheet-1080x1080.png` | Demonstrate the outcome record | Build Your Bot |
 | Launch email | `email/botbound-first-move-email-header-1200x400.png` | Existing audience activation | Get Your Sales Bot |
-| Website/social share | `website/botbound-find-call-book-og-1200x630.png` | Outbound-first BotBound.me link previews with inbound continuity | Get Your Sales Bot |
-| Investor/design partner | PDF in `investor/` | Explain outbound wedge and expansion | Contact BotBound |
+| Outbound campaign/social share | `website/botbound-find-call-book-og-1200x630.png` | Outbound launch link previews and campaign landing pages | Get Your Sales Bot |
+| Investor/design partner | PDF in `investor/` | Explain the outbound wedge and job expansion | Contact BotBound |
 | Motion vertical | 15s and 6s vertical MP4s | Story/Reels/TikTok launch and retargeting | Get Your Sales Bot |
 | Motion square | 10s square MP4 | LinkedIn/Meta feed | Get Your Sales Bot |
 | OOH or presentation screen | `hero/botbound-first-move-ooh-3840x2160.png` | Campaign recognition | BotBound.me |

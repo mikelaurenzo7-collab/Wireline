@@ -8,7 +8,14 @@ from reportlab.pdfgen import canvas
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "output" / "pdf" / "botbound-outbound-investor-one-pager-2026-09.pdf"
+OUTPUT = (
+    ROOT
+    / "brand-work"
+    / "launch-2026-09-outbound"
+    / "exports"
+    / "investor"
+    / "botbound-outbound-investor-one-pager-2026-09.pdf"
+)
 
 INK = HexColor("#0A0A0E")
 VIOLET = HexColor("#8B6EF2")
@@ -107,7 +114,10 @@ def build() -> None:
 
     rows = [
         ("JOB-SPECIFIC BOTS", "Sales / Recruiting / Appointments / Reactivation / Intake"),
-        ("ONE WORKSPACE. BOTH DIRECTIONS.", "Land with outbound. Expand into inbound coverage and more roles."),
+        (
+            "ONE WORKSPACE. EVERY OUTBOUND JOB.",
+            "Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.",
+        ),
         ("BUILD FREE. LIVE FROM $19/MO.", "Private simulation before live work. Capacity grows with the account."),
     ]
     row_y = why_y - 39

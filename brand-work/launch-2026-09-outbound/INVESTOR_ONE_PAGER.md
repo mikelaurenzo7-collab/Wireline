@@ -2,7 +2,7 @@
 
 ## FIND. CALL. BOOK.
 
-**BotBound is the operating layer for Bots that find prospects, make and take calls, book next steps, follow up, and report outcomes.**
+**BotBound is the operating layer for Bots that find prospects, make calls, book next steps, follow up, and report outcomes.**
 
 ## The wedge
 
@@ -23,7 +23,7 @@ Start with Sales, Recruiting, Appointment Setting, Reactivation, or Debt-Resolut
 ## Why BotBound
 
 - Job-specific Bots rather than raw voice infrastructure.
-- One workspace for outbound and inbound.
+- One workspace for every outbound job.
 - Calls plus text, email, actions, and outcome records.
 - Private simulation before launch.
 - Dedicated production number slots for active paid Bots.
@@ -31,7 +31,7 @@ Start with Sales, Recruiting, Appointment Setting, Reactivation, or Debt-Resolut
 
 ## Expansion
 
-Land with an outbound role. Expand to more roles, more live Bots, higher voice capacity, connected actions, and inbound coverage using the same product and operating model.
+Land with one outbound role. Expand to more jobs, more live Bots, higher voice capacity, connected actions, and richer operating loops.
 
 ## Evidence posture
 

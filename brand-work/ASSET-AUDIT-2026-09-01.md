@@ -40,6 +40,9 @@ The current outbound release is approved for handoff. Historical, invalid, and s
 - Completed three outbound motion masters and full-frame QA.
 - Replaced the motion claim **DIRECT LINE** with the accurate **PHONE READY**.
 - Built and visually verified a selectable-text investor PDF with no missing glyphs.
+- Replaced the two-direction campaign share card with a dedicated outbound **FIND. CALL. BOOK.** master while preserving the website's inbound-and-outbound OG separately.
+- Reframed the investor expansion story around Sales, Recruiting, Appointments, Reactivation, and Intake so the outbound release remains scope-pure.
+- Corrected the final Lead Hunt carousel slide so **YOU TAKE MEETINGS.** clears the right safe margin at feed and full resolution.
 - Removed recycled product proof and all draft motion frames from the outbound release.
 - Replaced recursive manifest collection with an approved release allowlist.
 - Verified the outbound manifest: 53 entries, zero missing files, zero byte mismatches, zero hash mismatches.
@@ -74,7 +77,7 @@ Jake is the default homepage and Showcase demo. Jordan remains immediately avail
 | Investor PDF text extraction and glyph integrity | Pass |
 | Website desktop/mobile overflow | Pass |
 | Focused TypeScript, contract, and browser checks | Pass |
-| Google Drive mirror | Pass — 57 files verified in the outbound release folder |
+| Google Drive mirror | Pass — 58 files verified in the outbound release archive with zero missing, stale, or size-mismatched counterparts |
 | Production deployment proof | Not claimed; worktree verification is labeled internal |
 
 ## Do not publish

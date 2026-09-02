@@ -24,8 +24,8 @@
 | `workflow/botbound-outbound-workflow-1200x627.png` | Configured outbound path: target, find, review, queue, call, qualify, book, and report. |
 | `social/botbound-outbound-call-sheet-1080x1080.png` | Illustrative outbound call sheet showing an approved list, call, qualification, booked next step, and reported outcome. |
 | `email/botbound-first-move-email-header-1200x400.png` | BotBound outbound launch header: Find. Call. Book. |
-| `website/botbound-find-call-book-og-1200x630.png` | BotBound phone Bot beside Find. Call. Book., with outbound sales and inbound calls presented together. |
-| `investor/botbound-outbound-investor-one-pager-1600x2071.png` | Preview of the BotBound outbound investor brief. |
+| `website/botbound-find-call-book-og-1200x630.png` | BotBound outbound Sales Bot beside the words: Find. Call. Book. Get your Sales Bot. |
+| `investor/botbound-outbound-investor-one-pager-1600x2071.png` | BotBound outbound investor brief: Find. Call. Book., with the operating path and job-specific Bot expansion. |
 | `contact-sheet/botbound-outbound-launch-contact-sheet.png` | Contact sheet of the complete BotBound First Move static campaign. |
 
 ## Motion transcript

@@ -443,12 +443,21 @@ const carousel = [
   { title: ["DEFINE", "THE TARGET."], label: "01 / TARGET", note: "ROLE · REGION · COMPANY SIZE", accent: 1 },
   { title: ["LEAD HUNT FINDS", "THE PROSPECTS."], label: "02 / FIND", note: "CONNECTED PROSPECT INTELLIGENCE", accent: 1 },
   { title: ["REVIEW.", "THEN QUEUE."], label: "03 / APPROVE", note: "SELECTED CONTACTS · APPROVED CAMPAIGN", accent: 1 },
-  { title: ["YOUR BOT CALLS.", "YOU TAKE MEETINGS."], label: "04 / CALL + BOOK", note: "YOUR PLAYBOOK · CALENDAR · OUTCOME", accent: 1 },
+  {
+    title: ["YOUR BOT CALLS.", "YOU TAKE MEETINGS."],
+    label: "04 / CALL + BOOK",
+    note: "YOUR PLAYBOOK · CALENDAR · OUTCOME",
+    accent: 1,
+    fontSize: 94,
+    lineHeight: 100,
+  },
 ];
 
 for (const [index, slide] of carousel.entries()) {
+  const titleFontSize = slide.fontSize ?? 112;
+  const titleLineHeight = slide.lineHeight ?? 112;
   const titleLines = slide.title
-    .map((line, lineIndex) => `<tspan x="54" dy="${lineIndex === 0 ? 0 : 112}" fill="${lineIndex === slide.accent ? palette.violet : palette.platinum}">${esc(line)}</tspan>`)
+    .map((line, lineIndex) => `<tspan x="54" dy="${lineIndex === 0 ? 0 : titleLineHeight}" fill="${lineIndex === slide.accent ? palette.violet : palette.platinum}">${esc(line)}</tspan>`)
     .join("");
   render(
     `carousel/botbound-lead-hunt-${String(index + 1).padStart(2, "0")}-1080x1350.png`,
@@ -461,7 +470,7 @@ for (const [index, slide] of carousel.entries()) {
         ${brandLockup(62, 54, 66, iconData)}
         <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">${String(index + 1).padStart(2, "0")} / 05</text>
         ${eyebrow(slide.label, 62, 300, 20)}
-        <text x="54" y="474" fill="${palette.platinum}" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-6">${titleLines}</text>
+        <text x="54" y="474" fill="${palette.platinum}" font-family="Inter Tight" font-size="${titleFontSize}" font-weight="800" letter-spacing="${slide.fontSize ? -5.1 : -6}">${titleLines}</text>
         <g transform="translate(330 760)">${seededNodes(700, 340, 58, 77 + index * 19)}${signalPath(700, 340)}</g>
         <text x="62" y="1220" fill="${palette.mist}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">${esc(slide.note)}</text>
         <rect x="62" y="1260" width="956" height="4" fill="${palette.violet}" opacity=".72"/>
@@ -581,8 +590,8 @@ render(
       <text x="92" y="1450" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">WHY BOTBOUND</text>
       <text x="92" y="1534" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">JOB-SPECIFIC BOTS</text>
       <text x="92" y="1582" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Sales · Recruiting · Appointments · Reactivation · Intake</text>
-      <text x="92" y="1688" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">ONE WORKSPACE. BOTH DIRECTIONS.</text>
-      <text x="92" y="1736" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Land with outbound. Expand into inbound coverage and more roles.</text>
+      <text x="92" y="1688" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">ONE WORKSPACE. EVERY OUTBOUND JOB.</text>
+      <text x="92" y="1736" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.</text>
       <text x="92" y="1842" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">BUILD FREE. LIVE FROM $19/MO.</text>
       <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Private simulation before live work. Capacity grows with the account.</text>
 
@@ -608,11 +617,27 @@ function findReleaseFiles(directory) {
 }
 
 mkdirSync(websiteRoot, { recursive: true });
-const websiteOgPng = resolve(websiteRoot, "botbound-find-call-book-og-1200x630.png");
 const websiteOgSvg = resolve(websiteRoot, "botbound-find-call-book-og-1200x630.svg");
-writeFileSync(websiteOgPng, readFileSync(resolve(root, "public/og-image.png")));
-writeFileSync(websiteOgSvg, readFileSync(resolve(root, "public/og-image.svg")));
-generated.push(websiteOgPng);
+const websiteOgMarkup = svgFrame({
+  width: 1200,
+  height: 630,
+  title: "Find. Call. Book.",
+  description: "BotBound outbound Sales Bot campaign share card.",
+  content: `${atmosphericBackground(1200, 630, null)}
+    <ellipse cx="955" cy="580" rx="260" ry="44" fill="#050508" opacity=".74"/>
+    <circle cx="960" cy="330" r="300" fill="${palette.violet}" opacity=".08" filter="url(#glow)"/>
+    <image href="${operatorData}" x="720" y="84" width="474" height="474" preserveAspectRatio="xMidYMid meet"/>
+    ${brandLockup(56, 42, 58, iconData)}
+    ${eyebrow("THE FIRST MOVE", 58, 164, 15)}
+    <text x="52" y="282" fill="${palette.platinum}" font-family="Inter Tight" font-size="92" font-weight="800" letter-spacing="-5">
+      <tspan x="52">FIND.</tspan><tspan x="52" dy="86">CALL.</tspan><tspan x="52" dy="86" fill="${palette.violet}">BOOK.</tspan>
+    </text>
+    ${ctaPill("GET YOUR SALES BOT", 58, 530, 292, 58, 17)}
+    <text x="1142" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+});
+writeFileSync(websiteOgSvg, websiteOgMarkup);
+console.log(`Created website/botbound-find-call-book-og-1200x630.svg (${Buffer.byteLength(websiteOgMarkup)} bytes)`);
+generated.push(writePng("website/botbound-find-call-book-og-1200x630.png", websiteOgMarkup, 1200));
 
 const reviewFiles = generated.filter((path) => !path.includes("contact-sheet"));
 const thumbWidth = 520;
