@@ -2,7 +2,7 @@
 
 ## Outcome
 
-All 334 promotional, identity, release, motion-source, launch-ops, and QA files in the audit inventory were inspected or classified. The machine-readable JSON and sortable CSV snapshots are certified in the Google Drive release archive and intentionally excluded from Git; `scripts/build-botbound-promotional-asset-inventory.mjs` regenerates them on demand.
+All 343 promotional, identity, release, motion-source, launch-ops, and QA files in the audit inventory were inspected or classified. The machine-readable JSON and sortable CSV snapshots are certified in the Google Drive release archive and intentionally excluded from Git; `scripts/build-botbound-promotional-asset-inventory.mjs` regenerates them on demand.
 
 The current outbound release is approved for handoff. Historical, invalid, and superseded files remain preserved for provenance but are explicitly excluded from the outbound release and Google Drive upload.
 
@@ -10,11 +10,11 @@ The current outbound release is approved for handoff. Historical, invalid, and s
 
 | Disposition | Files | Decision |
 |---|---:|---|
-| Approved outbound release | 55 | Publishable package: 53 approved manifest entries plus manifest and release checksum file |
+| Approved outbound release | 56 | Publishable package: 54 approved manifest entries plus manifest and release checksum file |
 | Preserved inbound release | 62 | Keep as The Second Ring companion campaign |
 | Preserved inbound internal proof | 10 | Internal worktree evidence; never describe as deployed-production proof |
 | Preserved inbound repair before reuse | 2 | Investor PDF and preview contain missing-arrow rendering; do not reuse until rebuilt |
-| Motion source | 50 | Keep as reproducible Remotion source and support files |
+| Motion source | 58 | Keep as reproducible Remotion source and support files |
 | Production identity or package | 43 | Keep BotBound identity; Wireline names remain compatibility aliases only |
 | Brand source or control | 18 | Keep canonical identity and control files |
 | Historical creative | 22 | Archive; do not select for the outbound campaign |
@@ -45,12 +45,13 @@ The current outbound release is approved for handoff. Historical, invalid, and s
 - Corrected the final Lead Hunt carousel slide so **YOU TAKE MEETINGS.** clears the right safe margin at feed and full resolution.
 - Removed recycled product proof and all draft motion frames from the outbound release.
 - Replaced recursive manifest collection with an approved release allowlist.
-- Verified the outbound manifest: 53 entries, zero missing files, zero byte mismatches, zero hash mismatches.
-- Verified the outbound checksum file: 54 entries, zero defects.
+- Verified the outbound manifest: 54 entries, zero missing files, zero byte mismatches, zero hash mismatches.
+- Verified the outbound checksum file: 55 entries, zero defects.
 - Repaired the inbound release manifest/checksum: 72 entries, zero defects.
 - Repaired the repository source checksum: 51 entries, zero defects.
 - Removed the hardcoded historical repository SHA from the inbound manifest builder.
-- Updated the worktree website to lead with outbound while preserving inbound above the fold.
+- Deployed the production website with outbound leading while preserving inbound above the fold.
+- Retired public voice demos and moved every listening experience behind private account access.
 
 ## Website decision
 
@@ -59,7 +60,7 @@ The public message now uses one brand promise and two concise directions:
 - **OUTBOUND — FIND. CALL. BOOK.**
 - **INBOUND — ANSWER. QUALIFY. ROUTE.**
 
-Jake is the default homepage and Showcase demo. Jordan remains immediately available beside him. Sales is the first role, Front Desk is second, and the Features hero reads **IT CALLS OUT. IT ANSWERS IN.** The Sales solution now begins with lead discovery or an approved list, then review, queue, call, qualify, book, and record.
+The homepage offers direct Sales Bot and Front Desk Bot creation paths with no public voice-demo control. The former Showcase route now redirects to private account creation. Sales is the first role, Front Desk is second, and the Sales solution begins with lead discovery or an approved list, then review, queue, call, qualify, book, and record.
 
 ## Release acceptance
 
@@ -77,8 +78,8 @@ Jake is the default homepage and Showcase demo. Jordan remains immediately avail
 | Investor PDF text extraction and glyph integrity | Pass |
 | Website desktop/mobile overflow | Pass |
 | Focused TypeScript, contract, and browser checks | Pass |
-| Google Drive mirror | Pass — 58 files verified in the outbound release archive with zero missing, stale, or size-mismatched counterparts |
-| Production deployment proof | Not claimed; worktree verification is labeled internal |
+| Google Drive mirror | Pass — 59 files verified: 56 approved release files plus 3 audit/index files, with zero missing, duplicate, stale, or size-mismatched counterparts |
+| Production deployment proof | Pass — `botbound.me` serves exact source commit `ca05255f5beb9cdf54b1bc9274f612ae1545cb52` |
 
 ## Do not publish
 
