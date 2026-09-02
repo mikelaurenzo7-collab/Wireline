@@ -239,28 +239,45 @@
   background: var(--wireline-color-surface-subtle);
 }
 
-/* Pricing: keep the comparison complete, but remove the wall-of-text feeling. */
-.wl-pricing-page #plans,
-.wl-pricing-page main > section:not(.marketing-hero) {
+/* Features / About / Compare: same gutter + section beat as the landing rail. */
+.marketing-surface.wl-features-page .marketing-section,
+.marketing-surface.wl-about-page .marketing-section,
+.marketing-surface.wl-compare-page .marketing-section,
+.marketing-surface.wl-pricing-page .marketing-section {
   padding-block: var(--wl-public-section-space);
+  padding-inline: var(--wl-public-gutter-inline);
 }
 
-.wl-pricing-page #plans > .wl-public-rail {
+.wl-pricing-page .wl-public-rail {
   max-width: 90rem;
 }
 
 .wl-pricing-page #plans article {
   border-radius: 1.05rem;
   box-shadow: none;
-  padding: clamp(0.85rem, 0.7rem + 0.45vw, 1.15rem);
+  padding: clamp(0.95rem, 0.75rem + 0.5vw, 1.25rem);
 }
 
-/* Features / About / Compare: same gutter + section beat as the landing rail. */
-.marketing-surface.wl-features-page main > section:not(.marketing-hero),
-.marketing-surface.wl-about-page main > section:not(.marketing-hero),
-.marketing-surface.wl-compare-page main > section:not(.marketing-hero) {
-  padding-block: var(--wl-public-section-space);
-  padding-inline: var(--wl-public-gutter-inline);
+.wl-pricing-page #plans article:has(.marketing-btn-primary) {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 46%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 5%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.marketing-surface.wl-features-page .wl-stitch-card {
+  min-height: 100%;
+}
+
+.marketing-surface.wl-features-page .wl-accent-icon-chip {
+  border: 1px solid
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 22%, transparent);
 }
 
 /* Security / Trust hub: document pages share the public rail rhythm. */
@@ -361,7 +378,7 @@
 
   .marketing-surface.wl-features-page .marketing-hero__title {
     max-width: 16ch;
-    font-size: clamp(2.15rem, 10.4vw, 3rem) !important;
+    font-size: clamp(1.85rem, 8.4vw, 2.45rem) !important;
     line-height: 0.98;
   }
 

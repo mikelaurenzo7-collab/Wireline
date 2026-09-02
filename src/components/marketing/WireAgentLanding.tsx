@@ -85,7 +85,7 @@ export default function WireAgentLanding() {
                   <strong>FIND. CALL. BOOK.</strong>
                 </Link>
                 <Link
-                  className="landing-prestige__direction"
+                  className="landing-prestige__direction is-inbound"
                   to={signupHrefForPlan("personal", { template: "front-desk" })}
                   onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
                 >

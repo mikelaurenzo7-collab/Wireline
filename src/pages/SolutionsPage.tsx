@@ -83,7 +83,7 @@ export default function SolutionsPage() {
   const page = SOLUTIONS[key];
 
   return (
-    <MarketingPageFrame className="wl-solutions-page">
+    <MarketingPageFrame className="wl-solutions-page" stickyCta>
       <PageMeta
         title={`${page.title} | BotBound`}
         description={page.description}

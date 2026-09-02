@@ -98,7 +98,12 @@ const TABLE_ROWS = [
 
 export default function Compare() {
   return (
-    <MarketingPageFrame className="wl-compare-page">
+    <MarketingPageFrame
+      className="wl-compare-page"
+      stickyCta
+      stickyCtaSecondaryHref="/pricing"
+      stickyCtaSecondaryLabel="See Pricing"
+    >
       <PageMeta
         title="WHY BOTBOUND | COMPARE BOTS"
         description="Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing."
@@ -111,6 +116,20 @@ export default function Compare() {
           <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
             BotBound vs. Other Voice AI
           </h1>
+          <div className="marketing-hero__actions mt-7">
+            <Link
+              to={signupHrefForPlan("personal")}
+              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+            >
+              START FREE
+            </Link>
+            <Link
+              to="/pricing"
+              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+            >
+              SEE PRICING
+            </Link>
+          </div>
         </div>
         <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
           {DIFFERENCES.map(({ title, copy }) => (

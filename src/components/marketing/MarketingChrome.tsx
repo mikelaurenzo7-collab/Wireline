@@ -36,7 +36,7 @@ export default function MarketingChrome({
     <div
       className={cn(
         "marketing-surface text-foreground",
-        authCanvas ? "auth-portal-canvas" : "bg-card",
+        authCanvas ? "auth-portal-canvas" : "bg-background",
         className,
       )}
     >

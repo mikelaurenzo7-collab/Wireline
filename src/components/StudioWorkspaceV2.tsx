@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "re
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
 import { EmptyState } from "../components/ui/EmptyState";
+import { BotBoundLockup } from "./brand/BotBoundBrand";
 import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
@@ -75,6 +76,7 @@ function StudioEmptyState() {
       data-studio-first-run
       className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-8 sm:px-6 sm:pt-12 lg:pt-16"
     >
+      <BotBoundLockup size="standard" surface="bare" className="mx-auto mb-6" />
       <EmptyState
         icon={Sparkles}
         title="Build Your Bot"

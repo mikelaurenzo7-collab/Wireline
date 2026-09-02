@@ -134,9 +134,7 @@
    at: the lift is only doing work on a panel with room to spare, and on a full
    one it is 56px charged against the panel that can least afford it. */
 .marketing-surface .marketing-section--screen {
-  min-height: calc(
-    100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom)
-  );
+  min-height: calc(100dvh - var(--wl-marketing-chrome-top) - var(--wl-marketing-chrome-bottom));
   padding-bottom: calc(var(--wl-public-section-space) + 0.5rem);
 }
 
@@ -209,12 +207,12 @@
 
 .marketing-surface.wl-features-page .marketing-section .marketing-hero__actions,
 .marketing-surface.wl-features-page .marketing-hero__actions {
-  margin-top: 0.7rem;
+  margin-top: 1.1rem;
 }
 
 .marketing-surface.wl-features-page .marketing-hero__title {
-  max-width: 22ch;
-  font-size: clamp(1.15rem, 1rem + 1.15vw, 1.85rem);
+  max-width: 18ch;
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
 }
 
 /* Same story for the hero's visual slot: 48px of margin and 36px of padding on
@@ -301,9 +299,12 @@
  * thousand pixels. The measure that creates the bug is a block-level one.
  */
 .marketing-surface
-  :is(.wl-public-rail, .wl-marketing-center, .marketing-hero__experience, [class*="text-center"]):not(
-    [class*="text-left"]
-  )
+  :is(
+    .wl-public-rail,
+    .wl-marketing-center,
+    .marketing-hero__experience,
+    [class*="text-center"]
+  ):not([class*="text-left"])
   :where(p) {
   margin-inline: auto;
 }

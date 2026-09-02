@@ -16,8 +16,7 @@ import { PageMeta } from "../lib/page-meta";
 const MCP_BOUNDARIES = [
   {
     path: "create_agent_draft / update_agent_draft",
-    description:
-      "Create or refine a private Bot configuration draft in natural language.",
+    description: "Create or refine a private Bot configuration draft in natural language.",
   },
   {
     path: "train_wireline_agent / get_agent_coaching_brief",
@@ -51,8 +50,7 @@ const MCP_CLIENTS = [
   },
   {
     title: "Claude",
-    description:
-      "Add BotBound as a remote connector and build your first Phone Bot from Claude.",
+    description: "Add BotBound as a remote connector and build your first Phone Bot from Claude.",
     action: "Open Claude Connectors",
     href: "https://claude.ai/settings/connectors",
     icon: Sparkles,
@@ -97,7 +95,7 @@ export default function Developers() {
       />
 
       <section
-        className="marketing-section marketing-section--screen border-b border-border bg-card"
+        className="marketing-section marketing-section--screen border-b border-border"
         aria-labelledby="mcp-apps-heading"
       >
         <div className="mx-auto max-w-5xl text-center">
@@ -129,10 +127,10 @@ export default function Developers() {
                 key={title}
                 className="wl-stitch-card flex flex-col items-center p-4 text-center"
               >
-                <span className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <h3 className="wl-card-title">{title}</h3>
+                <span className="wl-accent-icon-chip mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
+                <h3 className="wl-card-title">{title}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
                 <Button variant="outline" size="sm" asChild className="mt-3">
                   <a href={href} target="_blank" rel="noopener noreferrer">
@@ -162,13 +160,13 @@ export default function Developers() {
             </div>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Connected apps help new users create a BotBound account and build their first Phone
-              Bot. This connector cannot place calls, send messages, provision numbers, or launch
-              a live Bot. Training writes land only after you enable them in Apps and confirm each
+              Bot. This connector cannot place calls, send messages, provision numbers, or launch a
+              live Bot. Training writes land only after you enable them in Apps and confirm each
               change. There is no public API-key product and no repo voice SDK.
             </p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              BotBound calls the customer-facing product a Bot. MCP and API function names and
-              agent records remain stable only where the existing integration contract requires it.
+              BotBound calls the customer-facing product a Bot. MCP and API function names and agent
+              records remain stable only where the existing integration contract requires it.
             </p>
           </div>
 

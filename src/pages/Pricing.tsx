@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Check } from "lucide-react";
-import MarketingChromeBar from "../components/marketing/MarketingChromeBar";
-import PrecisionPublicHeader from "../components/marketing/PrecisionPublicHeader";
+import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { signupHrefForPlan } from "../lib/signup-intent";
@@ -195,7 +194,7 @@ export default function Pricing() {
   const annual = billingInterval === "year";
 
   return (
-    <div className="marketing-surface wl-pricing-page bg-background text-foreground">
+    <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
         title="PRICING | FROM $19/MONTH | BotBound"
         description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
@@ -205,19 +204,18 @@ export default function Pricing() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
       />
-      <PrecisionPublicHeader />
 
-      <main id="main-content" className="marketing-flow" tabIndex={-1}>
-        <section id="plans" className="marketing-section marketing-section--screen">
-          <div className="wl-public-rail mx-auto max-w-[1500px]">
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-b border-border pb-3 lg:justify-between">
-              <div className="text-center lg:text-left">
-                <p className="wl-eyebrow m-0 text-muted-foreground">Pricing</p>
-                <h1 className="mt-1 text-lg font-semibold tracking-[-0.025em] text-foreground">
-                  Start free. Go live from $19.
-                </h1>
-              </div>
-
+      <section id="plans" className="marketing-section marketing-section--screen">
+        <div className="wl-public-rail mx-auto max-w-[1500px] text-center">
+          <div className="mx-auto mb-8 max-w-3xl text-center">
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
+            <h1 className="marketing-hero-title mx-auto mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+              Start free. Go live from $19.
+            </h1>
+            <p className="marketing-hero-lead mx-auto mt-4">
+              Every active paid Bot gets its own BotBound production number.
+            </p>
+            <div className="marketing-hero__actions mt-6">
               <div
                 className="inline-flex rounded-full border border-border bg-muted/40 p-1"
                 role="group"
@@ -250,185 +248,175 @@ export default function Pricing() {
                   Annual
                 </button>
               </div>
-
-              <p className="text-xs text-muted-foreground">
-                Every active paid Bot gets its own BotBound production number
-              </p>
             </div>
+          </div>
 
-            <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-              <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
-                <h2 className="wl-card-title">Free Builder</h2>
-                <div className="mt-3 flex items-end justify-center gap-1.5">
-                  <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
-                    $0
-                  </span>
-                  <span className="text-xs text-muted-foreground">forever</span>
-                </div>
-                <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
-                  {FREE_BUILDER_HIGHLIGHTS.map((feature) => (
-                    <li key={feature} className="flex gap-2">
-                      <Check
-                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
-                        aria-hidden="true"
-                      />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to={signupHrefForPlan("personal")}
-                  className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
-                >
-                  Build Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </article>
-
-              {PAID_TIERS.map(
-                ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, highlights, featured }) => {
-                  const showAnnual = annual && plan.price_usd_annual > 0;
-                  const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
-                  const priceSuffix = showAnnual ? "/year" : "/month";
-                  const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
-                  const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
-                  return (
-                    <article
-                      key={plan.id}
-                      className={`relative flex flex-col rounded-[var(--radius-xl)] border p-4 text-center ${
-                        featured
-                          ? "border-primary/50 bg-card pt-6 ring-2 ring-primary/45"
-                          : "border-border bg-card"
-                      }`}
-                    >
-                      {featured ? (
-                        <span
-                          className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground shadow-sm"
-                          aria-label="Most popular plan"
-                        >
-                          Most Popular
-                        </span>
-                      ) : null}
-                      <h2 className="wl-card-title">{publicName}</h2>
-                      <div className="mt-3 flex items-end justify-center gap-1.5">
-                        <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
-                          ${price}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{priceSuffix}</span>
-                      </div>
-                      {showAnnual && savings ? (
-                        <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
-                      ) : plan.price_usd_annual > 0 ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {savings
-                            ? `or $${plan.price_usd_annual}/yr, ${savings}`
-                            : `or $${plan.price_usd_annual}/yr`}
-                        </p>
-                      ) : null}
-                      <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
-                        {highlights.map((feature) => (
-                          <li key={feature} className="flex gap-2">
-                            <Check
-                              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
-                              aria-hidden="true"
-                            />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <Link
-                        to={path}
-                        className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
-                          featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
-                        }`}
-                      >
-                        {showAnnual ? ctaAnnual : ctaMonthly}{" "}
-                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </Link>
-                    </article>
-                  );
-                },
-              )}
-            </div>
-
-            <article
-              id="scale"
-              className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
-            >
-              <div className="flex items-center gap-2.5">
-                <h2 className="wl-card-title">Scale &amp; Enterprise</h2>
-                <span className="text-sm text-muted-foreground">Custom</span>
+          <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
+              <h2 className="wl-card-title">Free Builder</h2>
+              <div className="mt-3 flex items-end justify-center gap-1.5">
+                <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
+                  $0
+                </span>
+                <span className="text-xs text-muted-foreground">forever</span>
               </div>
-              <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
-                25+ live Bot capacity, committed voice, text, email, and data economics, custom
-                telephony and integrations, security, rollout, and support plan
-              </p>
+              <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
+                {FREE_BUILDER_HIGHLIGHTS.map((feature) => (
+                  <li key={feature} className="flex gap-2">
+                    <Check
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
               <Link
-                to="/contact?topic=enterprise"
-                className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+                to={signupHrefForPlan("personal")}
+                className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
               >
-                Design a Scale Plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                Build Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </article>
 
-            <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
-              <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">
-                Channel rules and launch questions
-              </summary>
-              <div className="pricing-more__body mt-3">
-                <p className="mx-auto max-w-4xl text-center text-xs leading-5 text-muted-foreground">
-                  <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
-                  {SHARED_PAID_FEATURES.join(". ")}
-                </p>
-                <h2 className="wl-public-section-heading mx-auto text-center">
-                  Your Bot. No seat tax. Clear costs.
-                </h2>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  {CHANNEL_RULES.map(({ title, body }) => (
-                    <article
-                      key={title}
-                      className="rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center"
-                    >
-                      <h3 className="wl-card-title">{title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
-                    </article>
-                  ))}
-                </div>
-                <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-                  Every plan enforces calling-hour rules, Do Not Call checks before marketing dials,
-                  and instant opt-out honoring in the runtime.{" "}
-                  <Link
-                    to="/trust"
-                    className="font-semibold text-primary underline underline-offset-4"
+            {PAID_TIERS.map(
+              ({ plan, publicName, ctaMonthly, ctaAnnual, ctaPath, highlights, featured }) => {
+                const showAnnual = annual && plan.price_usd_annual > 0;
+                const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
+                const priceSuffix = showAnnual ? "/year" : "/month";
+                const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
+                const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
+                return (
+                  <article
+                    key={plan.id}
+                    className={`relative flex flex-col rounded-[var(--radius-xl)] border p-4 text-center ${
+                      featured
+                        ? "border-primary/50 bg-card pt-6 ring-2 ring-primary/45"
+                        : "border-border bg-card"
+                    }`}
                   >
-                    Read the Trust Center
-                  </Link>
-                  .
-                </p>
-                <h2 className="wl-public-section-heading mx-auto mt-6 text-center">
-                  Before launch
-                </h2>
-                <div className="mt-4 grid gap-2 md:grid-cols-2">
-                  {FAQ.map(([question, answer]) => (
-                    <details
-                      key={question}
-                      className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
-                    >
-                      <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
-                        {question}
-                      </summary>
-                      <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">
-                        {answer}
+                    {featured ? (
+                      <span
+                        className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground shadow-sm"
+                        aria-label="Most popular plan"
+                      >
+                        Most Popular
+                      </span>
+                    ) : null}
+                    <h2 className="wl-card-title">{publicName}</h2>
+                    <div className="mt-3 flex items-end justify-center gap-1.5">
+                      <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
+                        ${price}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{priceSuffix}</span>
+                    </div>
+                    {showAnnual && savings ? (
+                      <p className="mt-1 text-xs text-muted-foreground">{savings} vs monthly</p>
+                    ) : plan.price_usd_annual > 0 ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {savings
+                          ? `or $${plan.price_usd_annual}/yr, ${savings}`
+                          : `or $${plan.price_usd_annual}/yr`}
                       </p>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            </details>
+                    ) : null}
+                    <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
+                      {highlights.map((feature) => (
+                        <li key={feature} className="flex gap-2">
+                          <Check
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                            aria-hidden="true"
+                          />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={path}
+                      className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
+                        featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
+                      }`}
+                    >
+                      {showAnnual ? ctaAnnual : ctaMonthly}{" "}
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </article>
+                );
+              },
+            )}
           </div>
-        </section>
-      </main>
 
-      <MarketingChromeBar />
-    </div>
+          <article
+            id="scale"
+            className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
+          >
+            <div className="flex items-center gap-2.5">
+              <h2 className="wl-card-title">Scale &amp; Enterprise</h2>
+              <span className="text-sm text-muted-foreground">Custom</span>
+            </div>
+            <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
+              25+ live Bot capacity, committed voice, text, email, and data economics, custom
+              telephony and integrations, security, rollout, and support plan
+            </p>
+            <Link
+              to="/contact?topic=enterprise"
+              className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+            >
+              Design a Scale Plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </article>
+
+          <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
+            <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">
+              Channel rules and launch questions
+            </summary>
+            <div className="pricing-more__body mt-3">
+              <p className="mx-auto max-w-4xl text-center text-xs leading-5 text-muted-foreground">
+                <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
+                {SHARED_PAID_FEATURES.join(". ")}
+              </p>
+              <h2 className="wl-public-section-heading mx-auto text-center">
+                Your Bot. No seat tax. Clear costs.
+              </h2>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {CHANNEL_RULES.map(({ title, body }) => (
+                  <article
+                    key={title}
+                    className="rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center"
+                  >
+                    <h3 className="wl-card-title">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+                  </article>
+                ))}
+              </div>
+              <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+                Every plan enforces calling-hour rules, Do Not Call checks before marketing dials,
+                and instant opt-out honoring in the runtime.{" "}
+                <Link
+                  to="/trust"
+                  className="font-semibold text-primary underline underline-offset-4"
+                >
+                  Read the Trust Center
+                </Link>
+                .
+              </p>
+              <h2 className="wl-public-section-heading mx-auto mt-6 text-center">Before launch</h2>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {FAQ.map(([question, answer]) => (
+                  <details
+                    key={question}
+                    className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
+                  >
+                    <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
+                      {question}
+                    </summary>
+                    <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{answer}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+    </MarketingPageFrame>
   );
 }

@@ -202,7 +202,7 @@ export default function Security() {
         // evidence beyond /security, so each indexable route owns its canonical.
         path={isTrustHub ? "/trust" : "/security"}
       />
-      <MarketingChrome stickyCta={false} className="wl-security-page">
+      <MarketingChrome stickyCta className="wl-security-page">
         <div className="wl-security-doc relative z-10 mx-auto max-w-3xl px-5 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -235,7 +235,7 @@ export default function Security() {
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
                 >
-                  <div className="mb-3 flex items-center justify-center gap-2.5 text-center">
+                  <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
                     <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
                     <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
                   </div>

@@ -67,7 +67,7 @@ const structuredData = {
 
 export default function Blog() {
   return (
-    <MarketingPageFrame longform>
+    <MarketingPageFrame longform stickyCta>
       <PageMeta
         title="BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS"
         description="Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
@@ -77,7 +77,8 @@ export default function Blog() {
 
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
         <div className="mx-auto max-w-3xl">
-          <h1 className="wl-stitch-marketing-hero text-balance">
+          <p className="wl-eyebrow wl-eyebrow--wired text-primary">Notes</p>
+          <h1 className="wl-stitch-marketing-hero mx-auto mt-4 text-balance">
             PRACTICAL NOTES FOR GETTING TIME BACK
           </h1>
         </div>

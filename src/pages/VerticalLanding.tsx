@@ -116,7 +116,7 @@ export default function VerticalLanding({
   };
 
   return (
-    <MarketingPageFrame>
+    <MarketingPageFrame stickyCta>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -155,7 +155,7 @@ export default function VerticalLanding({
                 key={pain.title}
                 className="wl-stitch-card marketing-pain-card flex flex-col items-center gap-4 p-5 text-center sm:p-6"
               >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded bg-muted text-primary">
+                <span className="wl-accent-icon-chip grid h-9 w-9 shrink-0 place-items-center rounded-lg">
                   <Icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">

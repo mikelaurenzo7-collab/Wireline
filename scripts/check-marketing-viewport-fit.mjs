@@ -12,17 +12,15 @@ const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), "utf8");
 const executable = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
-const PUBLIC_SURFACES = [
-  "src/components/layout/MarketingPageFrame.tsx",
-  "src/pages/Features.tsx",
-  "src/pages/Pricing.tsx",
-];
+const PUBLIC_SURFACES = ["src/components/layout/MarketingPageFrame.tsx"];
 
 const FRAMED_PAGES = [
   "src/pages/About.tsx",
   "src/pages/Blog.tsx",
   "src/pages/Compare.tsx",
   "src/pages/Developers.tsx",
+  "src/pages/Features.tsx",
+  "src/pages/Pricing.tsx",
   "src/pages/SolutionsPage.tsx",
   "src/pages/VerticalLanding.tsx",
   "src/components/ContactPage.tsx",
