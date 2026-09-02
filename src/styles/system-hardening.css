@@ -258,7 +258,9 @@ summary {
   }
 
   .wl-public-header .marketing-btn-primary,
-  .wl-public-header .marketing-btn-secondary {
+  .wl-public-header .marketing-btn-secondary,
+  .marketing-sticky-cta .marketing-btn-primary,
+  .marketing-sticky-cta .marketing-btn-secondary {
     width: auto;
   }
 }

@@ -237,12 +237,6 @@
     letter-spacing: -0.04em;
   }
 
-  .marketing-surface.wl-features-page .marketing-hero__title {
-    max-width: 16ch;
-    font-size: clamp(1.85rem, 8.4vw, 2.45rem) !important;
-    line-height: 0.98;
-  }
-
   [data-slot="dialog-footer"] > :where(button, a, [role="button"]) {
     width: 100%;
   }

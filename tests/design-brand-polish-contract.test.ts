@@ -109,7 +109,47 @@ describe("E2E design and BotBound brand polish", () => {
     expect(sticky).toContain("MARKETING_VOICE.primaryCta");
     expect(sticky).toContain('secondaryLabel = "How It Works"');
     expect(sticky).toContain("min-h-[48px]");
+    expect(sticky).toContain("flex-nowrap");
+    expect(sticky).toContain("w-auto");
     expect(footer).toContain("min-h-11 items-center");
+  });
+
+  it("keeps the phone sticky conversion bar as two side-by-side actions", () => {
+    const hardening = read("src/styles/system-hardening.css");
+    const polish = read("src/styles/public-marketing-polish.css");
+    const mobile = read("src/lib/marketing-mobile.ts");
+    const headerException =
+      hardening
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .match(
+          /\.wl-public-header \.marketing-btn-primary,[\s\S]*?\.marketing-sticky-cta \.marketing-btn-secondary \{[\s\S]*?width:\s*auto;/,
+        )?.[0] ?? "";
+
+    expect(headerException).not.toBe("");
+    expect(polish).toContain(
+      ".marketing-sticky-cta :is(.marketing-btn-primary, .marketing-btn-secondary)",
+    );
+    expect(mobile).toContain('"/blog"');
+    expect(mobile).toContain('"/security"');
+    expect(mobile).toContain('"/trust"');
+    expect(mobile).toContain('"/features"');
+    expect(mobile).toContain('"/pricing"');
+  });
+
+  it("keeps Features and Pricing on the same page-hero scale as Compare", () => {
+    const features = read("src/pages/Features.tsx");
+    const pricing = read("src/pages/Pricing.tsx");
+    const compare = read("src/pages/Compare.tsx");
+    const responsive = read("src/styles/responsive.css");
+
+    expect(features).toContain("marketing-hero-title");
+    expect(features).not.toContain("MarketingHero");
+    expect(features).toContain("START FREE");
+    expect(features).toContain("SEE PRICING");
+    expect(features).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(pricing).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(compare).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(responsive).not.toMatch(/\.wl-pricing-page h1\s*\{[^}]*10\.4vw/);
   });
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {

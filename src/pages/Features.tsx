@@ -7,8 +7,8 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
-import MarketingHero from "../components/marketing/MarketingHero";
 import { PageMeta } from "../lib/page-meta";
 import { MARKETING_VOICE } from "../lib/product-copy";
 import { signupHrefForPlan } from "../lib/signup-intent";
@@ -64,17 +64,28 @@ export default function Features() {
         Channels as text chips, then the six control cards that carry the argument.
       */}
       <section className="marketing-section marketing-section--screen">
-        <MarketingHero
-          title="IT CALLS OUT. IT ANSWERS IN."
-          primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
-          secondaryAction={{
-            label: "SEE SALES BOT",
-            to: "/solutions/sales",
-            tone: "secondary",
-          }}
-        />
+        <div className="wl-public-rail mx-auto max-w-6xl text-center">
+          <div className="mx-auto mb-8 max-w-3xl text-center">
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Features</p>
+            <h1 className="marketing-hero-title mx-auto mt-4 max-w-[18ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+              IT CALLS OUT. IT ANSWERS IN.
+            </h1>
+            <div className="marketing-hero__actions mt-7">
+              <Link
+                to={signupHrefForPlan("personal")}
+                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+              >
+                START FREE
+              </Link>
+              <Link
+                to="/pricing"
+                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+              >
+                SEE PRICING
+              </Link>
+            </div>
+          </div>
 
-        <div className="wl-public-rail mt-3">
           <p className="sr-only">Build. Train. Launch. Improve.</p>
           <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             {MARKETING_VOICE.proof.map((step, index) => (

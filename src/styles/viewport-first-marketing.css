@@ -210,9 +210,8 @@
   margin-top: 1.1rem;
 }
 
-.marketing-surface.wl-features-page .marketing-hero__title {
+.marketing-surface.wl-features-page .marketing-hero-title {
   max-width: 18ch;
-  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
 }
 
 /* Same story for the hero's visual slot: 48px of margin and 36px of padding on

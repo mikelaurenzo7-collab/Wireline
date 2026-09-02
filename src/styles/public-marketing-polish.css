@@ -376,12 +376,6 @@
     white-space: normal;
   }
 
-  .marketing-surface.wl-features-page .marketing-hero__title {
-    max-width: 16ch;
-    font-size: clamp(1.85rem, 8.4vw, 2.45rem) !important;
-    line-height: 0.98;
-  }
-
   .marketing-surface .marketing-hero__actions {
     min-width: 0;
     max-width: 100%;
@@ -417,4 +411,12 @@
   .marketing-surface .wl-stitch-card:hover {
     transform: none;
   }
+}
+
+/* Phone marketing buttons default to full-width so hero stacks stay tappable.
+ * The sticky conversion bar is a two-action row: if either button is 100%
+ * wide, "How It Works" consumes the bar and Start Free clips off the right. */
+.marketing-sticky-cta :is(.marketing-btn-primary, .marketing-btn-secondary) {
+  width: auto;
+  max-width: 100%;
 }

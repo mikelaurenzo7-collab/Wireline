@@ -52,7 +52,7 @@ describe("marketing hero has no subhead", () => {
     // the honest floor is "some page still uses the shared hero", not "at least
     // five do".
     expect(files.length, "no MarketingHero call sites found -- the glob changed").toBeGreaterThan(
-      1,
+      0,
     );
 
     for (const file of files) {
