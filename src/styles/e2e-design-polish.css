@@ -228,7 +228,6 @@
 }
 
 @media (max-width: 639px) {
-  .marketing-surface .marketing-hero__title,
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     width: 100%;
     max-width: 12ch;
@@ -237,13 +236,17 @@
     letter-spacing: -0.04em;
   }
 
+  .marketing-surface .wl-stitch-marketing-hero {
+    font-size: clamp(1.9rem, 3.4vw, 2.9rem) !important;
+    line-height: 1.05;
+  }
+
   [data-slot="dialog-footer"] > :where(button, a, [role="button"]) {
     width: 100%;
   }
 }
 
 @media (max-width: 380px) {
-  .marketing-surface .marketing-hero__title,
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     font-size: clamp(2.2rem, 10.5vw, 3rem) !important;
   }

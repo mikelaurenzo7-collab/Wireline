@@ -78,7 +78,9 @@ export function SupportPage() {
       />
       <section className="mx-auto max-w-4xl px-5 pb-16 pt-12 sm:px-8 sm:pb-20 sm:pt-16">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="wl-stitch-marketing-hero text-balance">Support</h1>
+          <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            Support
+          </h1>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">

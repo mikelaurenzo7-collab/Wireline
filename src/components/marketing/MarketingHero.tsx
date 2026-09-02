@@ -84,7 +84,7 @@ export default function MarketingHero({
           <h1
             aria-label={isHomeHero && typeof title === "string" ? title : undefined}
             className={cn(
-              "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(2.1rem,4.3vw,3.5rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
+              "marketing-hero__title mx-auto max-w-[28ch] text-balance font-[var(--wireline-font-family-display)] text-[clamp(1.9rem,3.4vw,2.9rem)] font-semibold leading-[1.02] tracking-[-.035em] text-foreground",
               "mt-0",
               isHomeHero &&
                 "max-w-[19ch] text-[clamp(2.2rem,3.9vw,3.6rem)] leading-[1] tracking-[-.04em]",

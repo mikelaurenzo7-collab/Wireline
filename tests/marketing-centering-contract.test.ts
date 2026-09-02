@@ -127,7 +127,8 @@ describe("marketing centering contract", () => {
     expect(solutionsPage).not.toContain("HeroCallPreview");
     expect(solutionsPage).not.toContain("Sarah");
     expect(solutionsPage).not.toContain("BrowserCallWidget");
-    expect(solutionsPage).toContain("MarketingHero");
+    expect(solutionsPage).toContain("marketing-hero-title");
+    expect(solutionsPage).not.toContain("MarketingHero");
   });
 
   it("ships structured data on the blog for SEO", () => {

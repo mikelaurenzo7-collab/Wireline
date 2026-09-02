@@ -34,9 +34,9 @@
 
 .wl-stitch-marketing-hero {
   font-family: var(--wireline-font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
   font-weight: 400;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   line-height: 1.05;
   color: var(--foreground);
 }

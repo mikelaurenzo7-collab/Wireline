@@ -243,9 +243,18 @@
 .marketing-surface.wl-features-page .marketing-section,
 .marketing-surface.wl-about-page .marketing-section,
 .marketing-surface.wl-compare-page .marketing-section,
-.marketing-surface.wl-pricing-page .marketing-section {
+.marketing-surface.wl-pricing-page .marketing-section,
+.marketing-surface.wl-solutions-page .marketing-section {
   padding-block: var(--wl-public-section-space);
   padding-inline: var(--wl-public-gutter-inline);
+}
+
+/* Notes / Support / Contact still use the stitch hero class. Keep them on the
+ * same compact page-hero scale as Features, Pricing, and Compare. */
+.marketing-surface .wl-stitch-marketing-hero {
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .wl-pricing-page .wl-public-rail {
@@ -365,7 +374,8 @@
     padding-block: 3.25rem 3.75rem;
   }
 
-  .marketing-surface .marketing-hero__title,
+  /* Home lockup only. Interior marketing pages share the compact page-hero
+   * scale; this retired landing clamp was still inflating Solutions. */
   .marketing-surface .wireline-home-hero .marketing-hero__title {
     width: 100%;
     max-width: 10ch;
@@ -374,6 +384,12 @@
     overflow-wrap: normal;
     text-wrap: balance;
     white-space: normal;
+  }
+
+  .marketing-surface .wl-stitch-marketing-hero {
+    font-size: clamp(1.9rem, 3.4vw, 2.9rem) !important;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
   }
 
   .marketing-surface .marketing-hero__actions {

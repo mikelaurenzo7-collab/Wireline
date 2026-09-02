@@ -1,7 +1,6 @@
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
-import MarketingHero from "../components/marketing/MarketingHero";
 
 const SOLUTIONS = {
   sales: {
@@ -91,15 +90,28 @@ export default function SolutionsPage() {
       />
 
       <section className="marketing-section marketing-section--screen">
-        <MarketingHero
-          title={page.title}
-          primaryAction={{ to: page.primary.href, label: page.primary.label }}
-          secondaryAction={{
-            to: page.secondary.href,
-            label: page.secondary.label,
-            tone: "secondary",
-          }}
-        />
+        <div className="mx-auto mb-8 max-w-6xl text-center">
+          <p className="wl-eyebrow wl-eyebrow--wired text-primary">
+            {key === "sales" ? "Outbound" : "Inbound"}
+          </p>
+          <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            {page.title}
+          </h1>
+          <div className="marketing-hero__actions mt-7">
+            <Link
+              to={page.primary.href}
+              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+            >
+              {page.primary.label}
+            </Link>
+            <Link
+              to={page.secondary.href}
+              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+            >
+              {page.secondary.label}
+            </Link>
+          </div>
+        </div>
       </section>
 
       <section className="marketing-section marketing-section--screen">

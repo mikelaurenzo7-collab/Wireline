@@ -140,7 +140,13 @@ describe("E2E design and BotBound brand polish", () => {
     const features = read("src/pages/Features.tsx");
     const pricing = read("src/pages/Pricing.tsx");
     const compare = read("src/pages/Compare.tsx");
+    const solutions = read("src/pages/SolutionsPage.tsx");
+    const blog = read("src/pages/Blog.tsx");
+    const support = read("src/components/SupportPage.tsx");
+    const contact = read("src/components/ContactPage.tsx");
+    const notFound = read("src/components/layout/NotFound.tsx");
     const responsive = read("src/styles/responsive.css");
+    const polish = read("src/styles/public-marketing-polish.css");
 
     expect(features).toContain("marketing-hero-title");
     expect(features).not.toContain("MarketingHero");
@@ -149,7 +155,17 @@ describe("E2E design and BotBound brand polish", () => {
     expect(features).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
     expect(pricing).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
     expect(compare).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(solutions).toContain("marketing-hero-title");
+    expect(solutions).not.toContain("<MarketingHero");
+    expect(solutions).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(blog).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(support).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(contact).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
+    expect(notFound).toContain("text-[4.25rem]");
+    expect(notFound).not.toContain("xl:text-[12rem]");
     expect(responsive).not.toMatch(/\.wl-pricing-page h1\s*\{[^}]*10\.4vw/);
+    expect(polish).toContain(".marketing-surface.wl-solutions-page .marketing-section");
+    expect(polish).toContain(".marketing-surface .wl-stitch-marketing-hero");
   });
 
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {

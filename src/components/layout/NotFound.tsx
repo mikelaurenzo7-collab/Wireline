@@ -27,14 +27,14 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="min-h-[80svh] flex flex-col items-center justify-center gap-8 text-center px-6 py-12 relative">
+      <div className="relative flex min-h-[80svh] flex-col items-center justify-center gap-6 px-6 py-8 text-center">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 flex items-center justify-center -z-10"
         >
           <div
             aria-hidden="true"
-            className="w-[55vw] h-[55vw] max-w-[700px] max-h-[700px] sm:opacity-40 opacity-25 rounded-full blur-3xl wl-not-found-glow"
+            className="wl-not-found-glow h-[42vw] w-[42vw] max-h-[420px] max-w-[420px] rounded-full opacity-25 blur-3xl sm:opacity-35"
           />
         </div>
 
@@ -43,7 +43,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           initial={{ opacity: 0, scale: 0.92, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          className="wl-display-mark text-brand-display text-[6rem] sm:text-[8rem] lg:text-[10rem] xl:text-[12rem] leading-none select-none"
+          className="wl-display-mark text-brand-display select-none text-[4.25rem] leading-none sm:text-[5.5rem] lg:text-[6.75rem]"
         >
           404
         </motion.div>
@@ -187,10 +187,10 @@ function NotFoundCard({
       <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 border border-white/8 wl-accent-icon-chip">
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </div>
-      <div className="text-left flex-1 min-w-0">
-        <p className="wl-eyebrow wl-eyebrow--no-rule !text-[0.625rem]">{hint}</p>
-        <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground font-medium">
-          {label}
+      <div className="min-w-0 flex-1 text-left">
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        <p className="mt-0.5 text-[length:var(--wireline-typography-caption-size)] text-muted-foreground">
+          {hint}
         </p>
       </div>
       <ChevronRight className="w-4 h-4 text-foreground/65 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />

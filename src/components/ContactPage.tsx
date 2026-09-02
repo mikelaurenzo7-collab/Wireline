@@ -146,7 +146,9 @@ export function ContactPage() {
           Back home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
-          <h1 className="wl-stitch-marketing-hero text-balance">Talk through the Bot you need</h1>
+          <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            Talk through the Bot you need
+          </h1>
         </div>
 
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
