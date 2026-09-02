@@ -73,17 +73,16 @@ describe("BotBound static marketing metadata", () => {
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the phone-Bot identity and concise story", () => {
+  it("keeps the OG image aligned with the outbound-first, inbound-capable story", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("PUT YOUR BOT ON THE LINE");
-    expect(ogImage).toContain("Your Bot for calls, texts, and email.");
+    expect(ogImage).toContain("FIND. CALL. BOOK.");
+    expect(ogImage).toContain("Outbound sales. Inbound calls. One Bot.");
+    expect(ogImage).toContain("GET YOUR SALES BOT");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain("#8B5CF6");
-    expect(ogImage).not.toContain("WIRE YOUR");
-    expect(ogImage).not.toContain("ONE WORKSPACE");
-    expect(ogImage).not.toContain("VOICE-FIRST");
+    expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
   });
 
   it("keeps every OG text element legible after preview downscale", () => {

@@ -16,6 +16,7 @@ import {
   parsePlaybookFromGoal,
   type SalesPlaybookId,
 } from "../../lib/sales-playbooks";
+import { LeadHuntReview } from "./LeadHuntReview";
 
 type Campaign = {
   id: string;
@@ -55,8 +56,8 @@ export default function CampaignsPanel() {
   const [agentId, setAgentId] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (withLoadingState = true) => {
+    if (withLoadingState) setLoading(true);
     setError(null);
     try {
       const [campRes, agentRes] = await Promise.all([
@@ -75,7 +76,7 @@ export default function CampaignsPanel() {
       logFetchError("CampaignsPanel.load", e);
       setError("Couldn't load campaigns. Try again in a moment.");
     } finally {
-      setLoading(false);
+      if (withLoadingState) setLoading(false);
     }
   }, []);
 
@@ -228,6 +229,8 @@ export default function CampaignsPanel() {
           {error}
         </div>
       )}
+
+      <LeadHuntReview campaigns={campaigns} agents={agents} onAssigned={() => load(false)} />
 
       {showCreate && (
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">

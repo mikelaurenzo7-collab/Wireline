@@ -213,12 +213,12 @@ export const WIRELINE_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
     name: "Jake",
     role: "Outbound Sales Demo",
     scope:
-      "Role-plays a cold-call SDR: calls a lead from a CSV, qualifies fit with a BANT pass, books discovery calls with closers, logs results to CRM.",
+      "Role-plays an outbound sales follow-up: calls an approved lead, qualifies fit with a BANT pass, books discovery calls with closers, and records the outcome.",
     firstMessage:
-      "Hey, Jake on the BotBound outbound sales demo. You're hearing a live SDR open. Who's this?",
+      "Hey, Jake on the BotBound outbound sales demo. You're hearing a live outbound opener. Who's this?",
     voiceLabel: "Ash · Calm & Direct",
     openaiVoiceId: "ash",
-    handles: "outbound, cold call, SDR, prospecting, qualification, BANT",
+    handles: "outbound, sales follow-up, SDR, prospecting, qualification, BANT",
     tel: "+14692571581",
     display: "(469) 257-1581",
     tint: CONTACT_AGENT_TINTS.deep,
@@ -231,8 +231,8 @@ export const WIRELINE_FEATURED_TEAM_AGENT = WIRELINE_CONTACT_AGENTS[0]!;
 
 /** Primary public demos on the landing page — protected browser sessions only. */
 export const LANDING_PUBLIC_DEMO_AGENTS: ReadonlyArray<ContactAgent> = [
-  WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!,
   WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jake")!,
+  WIRELINE_DEMO_AGENTS.find((a) => a.name === "Jordan")!,
 ];
 
 /**

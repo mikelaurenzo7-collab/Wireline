@@ -49,7 +49,7 @@ const captures = [
     route: "/features",
     width: 1600,
     height: 1000,
-    expectedText: "THEY CALL. YOUR BOT ANSWERS",
+    expectedText: "IT CALLS OUT. IT ANSWERS IN.",
   },
   {
     name: "04-features-mobile-430x932",
@@ -57,7 +57,7 @@ const captures = [
     width: 430,
     height: 932,
     mobile: true,
-    expectedText: "THEY CALL. YOUR BOT ANSWERS",
+    expectedText: "IT CALLS OUT. IT ANSWERS IN.",
   },
   {
     name: "05-pricing-desktop-1600x1000",

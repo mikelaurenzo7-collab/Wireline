@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 380
-**Protected:** 303
+**Routes scanned:** 383
+**Protected:** 306
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -397,6 +397,9 @@
 | operator-task-routes.ts | POST | `/api/Assistants/tasks/:id/dismiss-handoff` | inline | — | — | Protected |
 | outbound-dial-atomic-routes.ts | POST | `/api/outbound/dial` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/callbacks` | inline | — | — | Protected |
+| outbound-routes.ts | POST | `/api/lead-hunt/approve` | inline | — | — | Protected |
+| outbound-routes.ts | GET | `/api/lead-hunt/leads` | inline | — | — | Protected |
+| outbound-routes.ts | DELETE | `/api/lead-hunt/leads/:id` | inline | — | — | Protected |
 | outbound-routes.ts | GET | `/api/outbound` | inline | — | — | Protected |
 | outbound-routes.ts | DELETE | `/api/outbound/:id` | inline | — | — | Protected |
 | outbound-routes.ts | POST | `/api/outbound/bulk` | inline | — | — | Protected |

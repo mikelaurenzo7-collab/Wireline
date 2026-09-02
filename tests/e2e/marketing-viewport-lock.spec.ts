@@ -167,6 +167,7 @@ test("supporting public headers keep both account actions inside a phone viewpor
 
   for (const path of ["/showcase", "/solutions/support"] as const) {
     await openPublicRoute(page, path);
+    await expect(page.locator('.wl-public-header nav[aria-label="Account"] a')).toHaveCount(2);
     const bounds = await page.evaluate(() => {
       const links = Array.from(
         document.querySelectorAll<HTMLElement>('.wl-public-header nav[aria-label="Account"] a'),
@@ -221,7 +222,7 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
   await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to Jordan" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk to Jake" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(
@@ -258,7 +259,11 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create Account" })).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "Account access mode" })
+      .getByRole("button", { name: "Create Account", exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
 
   const metrics = await publicMetrics(page);

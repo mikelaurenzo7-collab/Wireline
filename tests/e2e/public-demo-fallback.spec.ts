@@ -56,7 +56,7 @@ test("a protected-demo outage fails before microphone permission and exposes the
   await openPublicPage(page);
 
   const preview = page.locator("#showcase-preview");
-  await preview.getByRole("button", { name: "Talk to Jordan", exact: true }).click();
+  await preview.getByRole("button", { name: "Talk to Jake", exact: true }).click();
 
   await expect(preview.getByRole("alert")).toContainText(
     "The protected live demo is temporarily unavailable",
@@ -65,7 +65,7 @@ test("a protected-demo outage fails before microphone permission and exposes the
     "href",
     /\/signup/,
   );
-  await expect(preview.getByRole("button", { name: "Talk to Jordan", exact: true })).toBeEnabled();
+  await expect(preview.getByRole("button", { name: "Talk to Jake", exact: true })).toBeEnabled();
   await expect(page.getByText("Standard carrier rates may apply.", { exact: true })).toHaveCount(0);
 
   expect(await page.evaluate(() => window.__wirelineMicRequests ?? 0)).toBe(0);
@@ -98,7 +98,7 @@ test("the homepage demo outage keeps retry and browser-demo recovery available",
   await openPublicPage(page, "/");
 
   const preview = page.locator(".landing-demo-inline");
-  const retry = preview.getByRole("button", { name: "Talk to Jordan", exact: true });
+  const retry = preview.getByRole("button", { name: "Talk to Jake", exact: true });
   await retry.click();
 
   await expect(preview.getByRole("alert")).toContainText(

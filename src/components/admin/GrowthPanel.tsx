@@ -25,12 +25,25 @@ interface GrowthPanelProps {
   isSaving: boolean;
 }
 
+type TargetTagField = "target_titles" | "target_industries" | "target_states";
+const MAX_TARGET_TAGS = 20;
+const MAX_TARGET_TAG_LENGTH = 120;
+
+function asTargetTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim().slice(0, MAX_TARGET_TAG_LENGTH))
+    .filter(Boolean)
+    .slice(0, MAX_TARGET_TAGS);
+}
+
 /** Honest ICP completeness score from saved targeting fields (not fabricated funnel stats). */
 function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
-  const titles = settings.target_titles || [];
-  const industries = settings.target_industries || [];
-  const states = settings.target_states || [];
-  const sizes = settings.target_employee_ranges || [];
+  const titles = asTargetTags(settings.target_titles);
+  const industries = asTargetTags(settings.target_industries);
+  const states = asTargetTags(settings.target_states);
+  const sizes = asTargetTags(settings.target_employee_ranges);
   const filledBuckets = [titles, industries, states, sizes].filter((b) => b.length > 0).length;
   const tagCount = titles.length + industries.length + states.length + sizes.length;
   const completeness = settings.prospecting_enabled
@@ -42,7 +55,7 @@ function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
       ? industries.slice(0, 2).join(industries.length > 2 ? ", …" : "")
       : "your target industries";
 
-  let advice = "Turn on Autonomous Prospecting and save ICP tags to start sourcing leads.";
+  let advice = "Turn on Lead Hunt and save ICP tags to start sourcing leads.";
   if (settings.prospecting_enabled && titles.length === 0) {
     advice =
       "Add at least one decision-maker title (e.g. Owner, CEO) so Apollo searches stay focused.";
@@ -52,7 +65,7 @@ function computeIcpInsights(settings: GrowthPanelProps["settings"]) {
   } else if (settings.prospecting_enabled && states.length === 0) {
     advice = "Geographic filters reduce wasted dials. Start with your primary state or region.";
   } else if (settings.prospecting_enabled) {
-    advice = `ICP targets ${industryLabel}. Queue a prospecting run from Recaps when you're ready to ingest leads.`;
+    advice = `ICP targets ${industryLabel}. Open Phone → Outbound → Lead Hunt when you're ready to search.`;
   }
 
   return { completeness, industryLabel, advice };
@@ -62,20 +75,28 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
   const [newTitle, setNewTitle] = useState("");
   const [newIndustry, setNewIndustry] = useState("");
   const [newState, setNewState] = useState("");
+  const targetTitles = asTargetTags(settings.target_titles);
+  const targetIndustries = asTargetTags(settings.target_industries);
+  const targetStates = asTargetTags(settings.target_states);
+  const targetEmployeeRanges = asTargetTags(settings.target_employee_ranges);
 
-  const addTag = (field: string, value: string, setter: (v: string) => void) => {
-    if (!value.trim()) return;
-    const current = settings[field] || [];
-    if (!current.includes(value.trim())) {
-      setSettings({ ...settings, [field]: [...current, value.trim()] });
+  const addTag = (field: TargetTagField, value: string, setter: (v: string) => void) => {
+    const next = value.trim().slice(0, MAX_TARGET_TAG_LENGTH);
+    if (!next) return;
+    const current = asTargetTags(settings[field]);
+    const duplicate = current.some(
+      (entry) => entry.toLocaleLowerCase("en-US") === next.toLocaleLowerCase("en-US"),
+    );
+    if (!duplicate && current.length < MAX_TARGET_TAGS) {
+      setSettings({ ...settings, [field]: [...current, next] });
     }
     setter("");
   };
 
-  const removeTag = (field: string, value: string) => {
+  const removeTag = (field: TargetTagField, value: string) => {
     setSettings({
       ...settings,
-      [field]: (settings[field] || []).filter((v: string) => v !== value),
+      [field]: asTargetTags(settings[field]).filter((entry) => entry !== value),
     });
   };
 
@@ -84,7 +105,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
   return (
     <div className="h-full grid grid-cols-1 xl:grid-cols-3 gap-3 min-h-0 scroll-viewport pb-6">
       <div className="xl:col-span-2 space-y-3">
-        <Panel title="Growth Engine" hint="AUTONOMOUS OUTREACH" icon={TrendingUp} scroll>
+        <Panel title="Growth Engine" hint="LEAD DISCOVERY" icon={TrendingUp} scroll>
           <div className="space-y-8">
             {/* Master Control */}
             <div className="relative group overflow-hidden rounded-md wl-panel border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
@@ -103,12 +124,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-base font-bold text-foreground">
-                      Autonomous Prospecting Protocol
-                    </h4>
+                    <h4 className="text-base font-bold text-foreground">Lead Hunt</h4>
                     <p className="text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed max-w-sm">
-                      Enable BotBound to autonomously search, qualify, and ingest leads based on
-                      your specified Ideal Customer Profile (ICP).
+                      Find phone-ready Apollo leads that match your Ideal Customer Profile, then
+                      review them before they enter a campaign.
                     </p>
                   </div>
                 </div>
@@ -124,7 +143,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     settings.prospecting_enabled ? "bg-brand hover:bg-brand" : "bg-black/20",
                   )}
                   aria-pressed={settings.prospecting_enabled}
-                  aria-label="Toggle autonomous prospecting"
+                  aria-label="Toggle Lead Hunt"
                 >
                   <div
                     className={cn(
@@ -161,6 +180,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       onKeyDown={(e) =>
                         e.key === "Enter" && addTag("target_titles", newTitle, setNewTitle)
                       }
+                      maxLength={MAX_TARGET_TAG_LENGTH}
                       placeholder="e.g. CEO, Sales VP"
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
@@ -173,7 +193,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                    {(settings.target_titles || []).map((t: string) => (
+                    {targetTitles.map((t) => (
                       <span
                         key={t}
                         className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-brand/40 transition-all"
@@ -213,6 +233,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         e.key === "Enter" &&
                         addTag("target_industries", newIndustry, setNewIndustry)
                       }
+                      maxLength={MAX_TARGET_TAG_LENGTH}
                       placeholder="e.g. Fintech, SaaS"
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
@@ -225,7 +246,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                    {(settings.target_industries || []).map((t: string) => (
+                    {targetIndustries.map((t) => (
                       <span
                         key={t}
                         className="px-2.5 py-1 wl-panel border border-brand/20 bg-brand/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-brand/40 transition-all"
@@ -266,6 +287,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                       onKeyDown={(e) =>
                         e.key === "Enter" && addTag("target_states", newState, setNewState)
                       }
+                      maxLength={MAX_TARGET_TAG_LENGTH}
                       placeholder="e.g. CA, NY, Texas"
                       className="flex-1 text-sm bg-black/5 border border-input rounded-md px-4 py-2.5 outline-none focus-visible:ring-brand/40 transition-all placeholder:text-muted/70 h-auto"
                     />
@@ -278,7 +300,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                     </ShadButton>
                   </div>
                   <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-                    {(settings.target_states || []).map((t: string) => (
+                    {targetStates.map((t) => (
                       <span
                         key={t}
                         className="px-2.5 py-1 wl-panel border border-white/20 bg-black/5 rounded-md wl-label font-bold text-foreground flex items-center gap-2 hover:border-white/30 transition-all"
@@ -324,7 +346,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         variant="ghost"
                         disableAnimations
                         onClick={() => {
-                          const current = settings.target_employee_ranges || [];
+                          const current = targetEmployeeRanges;
                           if (current.includes(range.value)) {
                             setSettings({
                               ...settings,
@@ -341,7 +363,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                         }}
                         className={cn(
                           "px-2 py-2 rounded-md border wl-label font-bold h-auto min-h-0",
-                          (settings.target_employee_ranges || []).includes(range.value)
+                          targetEmployeeRanges.includes(range.value)
                             ? "bg-brand/10 border-brand/40 text-brand shadow-[var(--wireline-elevation-sm)]"
                             : "bg-black/5 border-input text-muted/70 hover:border-white/20",
                         )}
@@ -380,7 +402,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
               </div>
               <p className="wl-micro-meta--muted leading-relaxed">
                 ICP configuration completeness for{" "}
-                {settings.prospecting_enabled ? "autonomous prospecting" : "saved targeting"},{" "}
+                {settings.prospecting_enabled ? "Lead Hunt" : "saved targeting"},{" "}
                 {icp.industryLabel}.
               </p>
               <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
@@ -394,10 +416,10 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 <span className="wl-micro-badge font-mono text-muted">SAVED</span>
               </div>
               {[
-                { label: "Titles", value: (settings.target_titles || []).length },
-                { label: "Industries", value: (settings.target_industries || []).length },
-                { label: "States", value: (settings.target_states || []).length },
-                { label: "Size bands", value: (settings.target_employee_ranges || []).length },
+                { label: "Titles", value: targetTitles.length },
+                { label: "Industries", value: targetIndustries.length },
+                { label: "States", value: targetStates.length },
+                { label: "Size bands", value: targetEmployeeRanges.length },
               ].map((stat) => (
                 <div
                   key={stat.label}

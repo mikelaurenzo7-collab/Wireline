@@ -12,9 +12,9 @@ const TRUST_POINTS = [
     // outbound-dial-gate.ts, dnc-failsafe.ts) is a real differentiator that
     // was hidden a click deep in /trust. The spend story this tile replaced
     // is already told by the plan cards on the same page.
-    title: "Compliant by Default",
+    title: "Compliance Controls",
     detail:
-      "Calling-hour rules, Do Not Call checks, and instant opt-outs are enforced in the runtime before any dial.",
+      "Configure calling hours, suppression checks, attempt caps, disclosures, and opt-outs around each workflow.",
   },
   {
     title: "Controlled Handoff",

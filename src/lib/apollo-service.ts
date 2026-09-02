@@ -36,6 +36,7 @@ import {
  */
 
 export interface ApolloContact {
+  apollo_id?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -45,6 +46,7 @@ export interface ApolloContact {
   linkedin_url?: string;
   city?: string;
   state?: string;
+  phone_source?: "person" | "organization";
 }
 
 export interface ApolloSearchParams {
@@ -60,9 +62,30 @@ export interface ApolloSearchParams {
   limit?: number;
 }
 
-const APOLLO_BASE = "https://api.apollo.io/v1";
-const APOLLO_AUTH = "https://app.apollo.io/oauth/authorize";
+type ApolloAuth = {
+  header: Record<string, string>;
+  source: "tenant" | "platform";
+};
+
+export class ApolloSpendAdmissionError extends Error {
+  readonly code: "SPEND_CAP_REACHED" | "SPEND_GUARD_UNAVAILABLE";
+
+  constructor(code: "SPEND_CAP_REACHED" | "SPEND_GUARD_UNAVAILABLE") {
+    super(
+      code === "SPEND_CAP_REACHED"
+        ? "Provider spend guard has reached its monthly limit."
+        : "Provider spend guard could not verify available budget.",
+    );
+    this.name = "ApolloSpendAdmissionError";
+    this.code = code;
+  }
+}
+
+const APOLLO_CURRENT_API_BASE = "https://api.apollo.io/api/v1";
+const APOLLO_LEGACY_API_BASE = "https://api.apollo.io/v1";
+const APOLLO_AUTH = "https://app.apollo.io/#/oauth/authorize";
 const APOLLO_TOKEN = "https://app.apollo.io/api/v1/oauth/token";
+const APOLLO_OAUTH_PROFILE = "https://app.apollo.io/api/v1/users/api_profile";
 
 // ────────────────────────────────────────────────────────────────────
 //  OAuth Configuration
@@ -87,7 +110,13 @@ export function apolloOAuthConfigured(): boolean {
  * Apollo's docs at app.apollo.io/oauth_scopes. Apollo accepts
  * space-separated scope strings.
  */
-const APOLLO_SCOPES = ["read_contacts", "read_accounts", "read_users"].join(" ");
+const APOLLO_SCOPES = [
+  "read_user_profile",
+  "mixed_companies_search",
+  "mixed_people_api_search",
+  "people_bulk_match",
+  "people_match",
+].join(" ");
 
 export function getApolloAuthUrl(redirectUri: string, state: string): string {
   const params = new URLSearchParams({
@@ -221,9 +250,7 @@ async function getApolloAccessToken(userId: string): Promise<string | null> {
  * Returns `null` when neither path is configured — callers should
  * treat this as "Apollo is offline" and skip gracefully.
  */
-async function getApolloAuth(
-  userId?: string,
-): Promise<{ header: Record<string, string>; source: "tenant" | "platform" } | null> {
+async function getApolloAuth(userId?: string): Promise<ApolloAuth | null> {
   if (userId) {
     const token = await getApolloAccessToken(userId);
     if (token) return { header: { Authorization: `Bearer ${token}` }, source: "tenant" };
@@ -234,31 +261,120 @@ async function getApolloAuth(
 }
 
 /**
- * Meter platform-funded Apollo usage against the tenant's AI-spend envelope.
- * A tenant's own OAuth connection spends THEIR Apollo credits — charging the
- * Wireline envelope for it would double-bill them, so only the platform
- * API-key fallback is metered, and only when a tenant benefits from it.
- * Fire-and-forget: metering must never fail the enrichment it accounts for.
+ * Resolve whether this tenant can actually make an Apollo data call. OAuth
+ * application credentials alone are not sufficient: the tenant needs a live
+ * grant or the platform needs its shared API key.
  */
-function meterPlatformApolloUsage(
-  auth: { source: "tenant" | "platform" },
+export async function apolloReadyForUser(userId: string): Promise<boolean> {
+  if (!(await tenantApolloAllowed(userId, "apollo_readiness"))) return false;
+  return !!(await getApolloAuth(userId));
+}
+
+/**
+ * Reserve platform-funded Apollo spend before the provider request. A tenant's
+ * own OAuth connection spends their Apollo credits, so only the shared-key
+ * fallback is admitted against BotBound's tenant spend envelope.
+ */
+async function fetchApolloWithSpend(
+  url: string,
+  init: RequestInit,
+  auth: ApolloAuth,
   userId: string | undefined,
   purpose: string,
-): void {
-  if (auth.source !== "platform" || !userId) return;
-  void import("../middleware/audit-middleware")
-    .then(({ persistPlatformCostRecord, platformCostReserveUsd }) =>
-      persistPlatformCostRecord({
-        userId,
-        action: `platform.enrichment.${purpose}`,
-        provider: "apollo",
-        model: "apollo-api",
-        costUsd: platformCostReserveUsd("apollo_enrichment"),
-      }),
-    )
-    .catch((error: unknown) =>
-      log.warn("Apollo cost metering failed", { purpose, error: getErrorMessage(error) }),
+): Promise<Response> {
+  if (auth.source !== "platform" || !userId) return fetch(url, init);
+
+  let accounting: typeof import("../middleware/audit-middleware");
+  try {
+    accounting = await import("../middleware/audit-middleware");
+  } catch (error) {
+    log.error("Apollo spend guard failed to load", { purpose, error: getErrorMessage(error) });
+    throw new ApolloSpendAdmissionError("SPEND_GUARD_UNAVAILABLE");
+  }
+
+  const decision = await accounting.reservePlatformCostRecord({
+    userId,
+    action: `platform.enrichment.${purpose}`,
+    provider: "apollo",
+    model: "apollo-api",
+    costUsd: accounting.platformCostReserveUsd("apollo_enrichment"),
+    requestMeta: { purpose },
+  });
+  if (!decision.reserved) {
+    throw new ApolloSpendAdmissionError(
+      decision.reason === "cap_reached" ? "SPEND_CAP_REACHED" : "SPEND_GUARD_UNAVAILABLE",
     );
+  }
+
+  let request: Promise<Response>;
+  try {
+    request = fetch(url, init);
+  } catch (error) {
+    await accounting.releasePlatformCostReservation(decision.reservation).catch((releaseError) =>
+      log.error("Apollo spend reservation release failed", {
+        purpose,
+        error: getErrorMessage(releaseError),
+      }),
+    );
+    throw error;
+  }
+
+  let response: Response;
+  try {
+    response = await request;
+  } catch (error) {
+    await accounting.markPlatformCostReservationAmbiguous(decision.reservation);
+    throw error;
+  }
+
+  await accounting.commitPlatformCostReservation(decision.reservation).catch((error) =>
+    log.error("Apollo spend reservation commit telemetry failed", {
+      purpose,
+      error: getErrorMessage(error),
+    }),
+  );
+  return response;
+}
+
+const APOLLO_TARGET_LIMIT = 20;
+
+function boundedStrings(values: unknown, maxLength: number): string[] {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const bounded = value.trim().slice(0, maxLength);
+    const key = bounded.toLocaleLowerCase("en-US");
+    if (!bounded || seen.has(key)) continue;
+    seen.add(key);
+    result.push(bounded);
+    if (result.length >= APOLLO_TARGET_LIMIT) break;
+  }
+  return result;
+}
+
+function boundedProviderString(value: unknown, maxLength: number): string {
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function normalizeApolloPhone(value: unknown): string {
+  const raw = boundedProviderString(value, 40);
+  const digits = raw.replace(/\D+/g, "");
+  if (digits.length < 7 || digits.length > 15) return "";
+  const e164 = digits.length === 10 ? `+1${digits}` : `+${digits}`;
+  return /^\+[1-9]\d{6,14}$/.test(e164) ? e164 : "";
+}
+
+function boundedProviderUrl(value: unknown): string | undefined {
+  const raw = boundedProviderString(value, 500);
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 export async function disconnectApollo(userId: string): Promise<void> {
@@ -322,8 +438,9 @@ async function tenantApolloAllowed(
  * Search Apollo.io for new leads matching the provided ICP criteria.
  *
  * Pass `userId` to use that tenant's OAuth token; omit to use the
- * platform `APOLLO_API_KEY` fallback. Returns `[]` when Apollo is
- * unreachable or unauthorized — never throws into the call path.
+ * platform `APOLLO_API_KEY` fallback. Returns `[]` when Apollo is unreachable
+ * or unauthorized. Spend-admission failures throw so callers cannot mistake a
+ * budget block for a successful empty search.
  */
 export async function searchLeads(
   params: ApolloSearchParams,
@@ -337,49 +454,183 @@ export async function searchLeads(
   }
 
   try {
-    const response = await fetch(`${APOLLO_BASE}/mixed_people/search`, {
-      method: "POST",
-      signal: AbortSignal.timeout(15_000),
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        ...auth.header,
+    const titles = boundedStrings(params.titles, 120);
+    if (titles.length === 0) {
+      log.warn("Apollo lead search skipped because no target titles were supplied", { userId });
+      return [];
+    }
+
+    const requestedLimit = Number.isFinite(params.limit) ? Number(params.limit) : 25;
+    const limit = Math.max(1, Math.min(25, Math.trunc(requestedLimit)));
+    const industries = boundedStrings(params.industries, 120);
+    const states = boundedStrings(params.states, 80);
+    const employeeRanges = boundedStrings(params.employee_ranges, 24).filter((value) =>
+      /^\d{1,7},\d{1,7}$/.test(value),
+    );
+    let organizationIds: string[] = [];
+
+    if (industries.length > 0) {
+      // Apollo's organization search accepts free-text keyword tags. The
+      // people-search industry field expects internal tag IDs, so passing
+      // saved labels there would silently drop targeting or return 422.
+      const organizationQuery = new URLSearchParams({ per_page: "100", page: "1" });
+      for (const industry of industries) {
+        organizationQuery.append("q_organization_keyword_tags[]", industry);
+      }
+      for (const range of employeeRanges) {
+        organizationQuery.append("organization_num_employees_ranges[]", range);
+      }
+      const organizationResponse = await fetchApolloWithSpend(
+        `${APOLLO_CURRENT_API_BASE}/mixed_companies/search?${organizationQuery.toString()}`,
+        {
+          method: "POST",
+          signal: AbortSignal.timeout(15_000),
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            ...auth.header,
+          },
+        },
+        auth,
+        userId,
+        "organization_search",
+      );
+
+      if (!organizationResponse.ok) {
+        throw new Error(
+          `Apollo organization search error: ${organizationResponse.status} ${organizationResponse.statusText}`,
+        );
+      }
+
+      const organizationData = await organizationResponse.json();
+      const organizations = (organizationData.organizations || organizationData.accounts || []) as
+        Array<{ id?: unknown; organization_id?: unknown }> | undefined;
+      organizationIds = (organizations || [])
+        .map((organization) =>
+          boundedProviderString(organization.id || organization.organization_id, 128),
+        )
+        .filter(Boolean)
+        .slice(0, 100);
+
+      // Never broaden an industry-targeted search when Apollo found no matching
+      // organizations. An empty filter would turn a precise request into a
+      // platform-wide people search.
+      if (organizationIds.length === 0) return [];
+    }
+
+    const response = await fetchApolloWithSpend(
+      `${APOLLO_CURRENT_API_BASE}/mixed_people/api_search`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(15_000),
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+          ...auth.header,
+        },
+        body: JSON.stringify({
+          person_titles: titles,
+          person_locations: states.map((state) => `${state}, United States`),
+          organization_num_employees_ranges: employeeRanges.length > 0 ? employeeRanges : ["1,50"],
+          ...(organizationIds.length > 0 ? { organization_ids: organizationIds } : {}),
+          per_page: limit,
+          page: 1,
+        }),
       },
-      body: JSON.stringify({
-        person_titles: params.titles || [],
-        person_locations: params.states?.map((s) => `${s}, United States`) || [],
-        organization_num_employees_ranges: params.employee_ranges || ["1,50"],
-        organization_industry_tag_ids: [],
-        per_page: params.limit || 25,
-        page: 1,
-      }),
-    });
+      auth,
+      userId,
+      "lead_search",
+    );
 
     if (!response.ok) {
       throw new Error(`Apollo API error: ${response.status} ${response.statusText}`);
     }
 
-    meterPlatformApolloUsage(auth, userId, "lead_search");
     const data = await response.json();
-    const people = (data.people || []) as any[];
+    const people = ((data.people || []) as any[]).filter((person) => person?.id).slice(0, limit);
+    if (people.length === 0) return [];
 
-    return people
-      .map(
-        (p: any) =>
-          ({
-            first_name: p.first_name || "",
-            last_name: p.last_name || "",
-            email: p.email || "",
-            phone: p.phone_numbers?.[0]?.sanitized_number || p.sanitized_phone || "",
-            title: p.title || "",
-            company: p.organization?.name || "",
-            linkedin_url: p.linkedin_url || undefined,
-            city: p.city || undefined,
-            state: p.state || undefined,
-          }) as ApolloContact,
-      )
-      .filter((c: ApolloContact) => c.phone);
+    // Apollo's current People Search intentionally returns discovery metadata
+    // only. Hydrate the selected IDs through the documented bulk enrichment
+    // endpoint. Phone reveal is not requested here because that flow is
+    // asynchronous and requires a webhook; Lead Hunt uses a returned person
+    // number when present, otherwise the matched company's published line.
+    const hydratedPeople: any[] = [];
+    for (let offset = 0; offset < people.length; offset += 10) {
+      const batch = people.slice(offset, offset + 10);
+      const enrichmentResponse = await fetchApolloWithSpend(
+        `${APOLLO_CURRENT_API_BASE}/people/bulk_match?reveal_personal_emails=false&reveal_phone_number=false`,
+        {
+          method: "POST",
+          signal: AbortSignal.timeout(15_000),
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+            ...auth.header,
+          },
+          body: JSON.stringify({ details: batch.map((person) => ({ id: String(person.id) })) }),
+        },
+        auth,
+        userId,
+        "lead_hunt_enrichment",
+      );
+      if (!enrichmentResponse.ok) {
+        throw new Error(
+          `Apollo people enrichment error: ${enrichmentResponse.status} ${enrichmentResponse.statusText}`,
+        );
+      }
+      const enrichmentData = await enrichmentResponse.json();
+      hydratedPeople.push(...((enrichmentData.matches || []) as any[]));
+    }
+
+    const byId = new Map(
+      hydratedPeople
+        .filter((person) => person?.id)
+        .map((person) => [String(person.id), person] as const),
+    );
+    const seen = new Set<string>();
+    const results: ApolloContact[] = [];
+
+    for (const summary of people) {
+      const person = byId.get(String(summary.id)) || summary;
+      const personPhone =
+        person.phone_numbers?.find((entry: any) => entry?.sanitized_number)?.sanitized_number ||
+        person.sanitized_phone ||
+        "";
+      const organizationPhone =
+        person.organization?.phone || person.organization?.sanitized_phone || "";
+      const phone = normalizeApolloPhone(personPhone || organizationPhone);
+      if (!phone) continue;
+
+      const id = boundedProviderString(person.id || summary.id, 128);
+      if (!id) continue;
+      const dedupeKey = `${id}:${phone.replace(/\D+/g, "")}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
+
+      const email =
+        person.email_status === "verified" ? boundedProviderString(person.email, 320) : "";
+      results.push({
+        apollo_id: id,
+        first_name: boundedProviderString(person.first_name || summary.first_name, 120),
+        last_name: boundedProviderString(person.last_name, 120),
+        email,
+        phone,
+        phone_source: personPhone ? "person" : "organization",
+        title: boundedProviderString(person.title || summary.title, 200),
+        company: boundedProviderString(
+          person.organization?.name || summary.organization?.name,
+          200,
+        ),
+        linkedin_url: boundedProviderUrl(person.linkedin_url),
+        city: boundedProviderString(person.city, 120) || undefined,
+        state: boundedProviderString(person.state, 120) || undefined,
+      });
+    }
+
+    return results;
   } catch (err) {
+    if (err instanceof ApolloSpendAdmissionError) throw err;
     log.error("Apollo lead search failed", { error: getErrorMessage(err) });
     return [];
   }
@@ -397,33 +648,36 @@ export async function enrichLead(
   if (!auth) return null;
 
   try {
-    const response = await fetch(`${APOLLO_BASE}/people/match`, {
-      method: "POST",
-      signal: AbortSignal.timeout(15_000),
-      headers: {
-        "Content-Type": "application/json",
-        ...auth.header,
+    const response = await fetchApolloWithSpend(
+      `${APOLLO_LEGACY_API_BASE}/people/match`,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(15_000),
+        headers: {
+          "Content-Type": "application/json",
+          ...auth.header,
+        },
+        body: JSON.stringify({ phone_number: phone, reveal_phone_number: false }),
       },
-      body: JSON.stringify({ phone_number: phone, reveal_phone_number: false }),
-    });
+      auth,
+      userId,
+      "lead_match",
+    );
 
     if (!response.ok) return null;
 
     const data = await response.json();
     const p = data.person;
     if (!p) return null;
-    // Billed on a successful match only — Apollo consumes an enrichment
-    // credit when a person is returned, not on a miss.
-    meterPlatformApolloUsage(auth, userId, "lead_match");
-
     return {
-      first_name: p.first_name,
-      last_name: p.last_name,
-      title: p.title,
-      company: p.organization?.name,
-      linkedin_url: p.linkedin_url,
+      first_name: boundedProviderString(p.first_name, 120),
+      last_name: boundedProviderString(p.last_name, 120),
+      title: boundedProviderString(p.title, 200),
+      company: boundedProviderString(p.organization?.name, 200),
+      linkedin_url: boundedProviderUrl(p.linkedin_url),
     };
   } catch (err) {
+    if (err instanceof ApolloSpendAdmissionError) throw err;
     log.error("Apollo enrichment failed", { error: getErrorMessage(err) });
     return null;
   }
@@ -439,7 +693,7 @@ export async function getApolloUserInfo(
 ): Promise<{ email?: string; team?: string } | null> {
   try {
     const r = await fetchWithTimeout(
-      `${APOLLO_BASE}/auth/health`,
+      APOLLO_OAUTH_PROFILE,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -448,9 +702,10 @@ export async function getApolloUserInfo(
     );
     if (!r.ok) return null;
     const data = (await r.json()) as any;
+    const user = data.user && typeof data.user === "object" ? data.user : data;
     return {
-      email: data.user_email || data.email || undefined,
-      team: data.team_name || data.team || undefined,
+      email: user.email || user.user_email || undefined,
+      team: user.team_name || user.team || user.organization_name || undefined,
     };
   } catch (err) {
     log.warn("Apollo user info fetch failed", { error: getErrorMessage(err) });

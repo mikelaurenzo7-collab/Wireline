@@ -138,9 +138,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026.",
   },
   "/solutions/sales": {
-    title: "EVERY GOOD LEAD GETS A NEXT STEP | BotBound",
+    title: "FIND THE LEAD. MAKE THE CALL. BOOK THE NEXT STEP. | BotBound",
     description:
-      "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook.",
+      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
   },
   "/solutions/support": {
     title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD | BotBound",

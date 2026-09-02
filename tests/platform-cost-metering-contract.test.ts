@@ -41,17 +41,23 @@ describe("platform cost metering contract", () => {
     }
   });
 
-  it("charges Apollo only when the platform key funded the call", () => {
+  it("reserves Apollo spend before shared-key calls and bypasses tenant-funded calls", () => {
     // A tenant's own OAuth connection spends their Apollo credits — charging
     // the Wireline envelope for it would double-bill them.
     expect(apollo).toContain('source: "tenant" | "platform"');
-    expect(apollo).toContain('if (auth.source !== "platform" || !userId) return;');
-    expect(apollo).toContain('meterPlatformApolloUsage(auth, userId, "lead_search")');
-    expect(apollo).toContain('meterPlatformApolloUsage(auth, userId, "lead_match")');
-    // Enrichment bills on a successful match only.
-    const enrich = apollo.slice(apollo.indexOf("export async function enrichLead"));
-    expect(enrich.indexOf("if (!p) return null;")).toBeLessThan(
-      enrich.indexOf('meterPlatformApolloUsage(auth, userId, "lead_match")'),
+    expect(apollo).toContain('if (auth.source !== "platform" || !userId) return fetch(url, init);');
+    expect(apollo).toContain("reservePlatformCostRecord({");
+    expect(apollo).toContain("commitPlatformCostReservation(decision.reservation)");
+    expect(apollo).toContain("markPlatformCostReservationAmbiguous(decision.reservation)");
+    expect(apollo).toContain('"lead_search"');
+    expect(apollo).toContain('"lead_match"');
+
+    const helper = apollo.slice(
+      apollo.indexOf("async function fetchApolloWithSpend"),
+      apollo.indexOf("const APOLLO_TARGET_LIMIT"),
+    );
+    expect(helper.indexOf("reservePlatformCostRecord({")).toBeLessThan(
+      helper.indexOf("request = fetch(url, init)"),
     );
   });
 

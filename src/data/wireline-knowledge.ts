@@ -86,12 +86,12 @@ export const WIRELINE_FEATURES = [
   {
     title: "Inbound support",
     blurb:
-      "Bots pick up 24/7, answer questions, route urgent calls, schedule appointments, and capture intent.",
+      "Configured Bots answer inbound calls, handle approved questions, route requests, schedule appointments, and capture intent.",
   },
   {
     title: "Outbound sales",
     blurb:
-      "Upload a CSV and prepare a playbook. Marketing campaigns stay blocked until federal DNC screening, consent rules, provider connections, and account configuration are ready.",
+      "Marketing campaigns stay blocked until required consent rules and federal DNC screening are ready. Lead Hunt surfaces prospects through connected sources, or you import a list. Review the queue, then your Sales Bot calls, qualifies, books, and records the outcome.",
   },
   {
     title: "Email workflows",
@@ -144,7 +144,7 @@ export const WIRELINE_PAIN_SOLUTIONS = [
   {
     pain: "Can't justify or afford more staff",
     solution:
-      "one operating layer of trained Bots covering inbound, outbound, and email for a fraction of another full-time hire",
+      "one operating layer of trained Bots covering inbound, outbound, and email in the same workspace",
   },
   {
     pain: "Worried quality will slip or Bots will go off-script",

@@ -105,6 +105,24 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)             | Campaign platform, story system, claims, channel behavior, and commercial direction.                 |
 | [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)          | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                              |
 | [GTM workspace](../brand-work/gtm/README.md)                              | Founder deck, copy-kit, and review-artifact handoff.                                                 |
+| [Brand font sources](../brand-work/fonts/README.md)                       | Licensed local font inventory and source notes for reproducible campaign rendering.                  |
+| [September launch workspace](../brand-work/launch-2026-09/README.md)      | Original inbound-led launch campaign, production map, and delivery guidance.                         |
+| [September release pointer](../brand-work/launch-2026-09/CURRENT-RELEASE-POINTER.md) | Current release pointer for the original September launch library.                         |
+| [September product proof](../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md) | Current-product proof and freshness contract for the original launch library.                   |
+| [September launch provenance](../brand-work/launch-2026-09/PROVENANCE.md) | Source, generation, and review provenance for the original launch library.                           |
+| [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md) | Placement, channel, and media-buying guidance.                              |
+| [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md) | Press and creator outreach copy for the original launch.                                    |
+| [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md) | Social copy and channel adaptations for the original launch.                                      |
+| [September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                             |
+| [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)           | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.           |
+| [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md) | Outbound-first production library, delivery map, render commands, and release links.                |
+| [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md) | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
+| [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md) | Website message hierarchy that preserves inbound coverage while leading with outbound.       |
+| [Outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md) | Investor narrative for the outbound wedge and expansion path.                               |
+| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md) | Approved asset-to-channel mapping and placement guidance.                                    |
+| [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md) | Alt text, motion, contrast, and accessible publishing notes.                         |
+| [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md) | Source, model, render, QA, and checksum provenance for the outbound library.                    |
+| [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md) | Approved atmospheric source provenance and usage constraints.                              |
 | [Launch-film workspace](../apps/botbound-film/README.md)                  | Remotion composition, render, caption, and review entry point.                                       |
 | [Launch-film production notes](../apps/botbound-film/PRODUCTION_NOTES.md) | Timing, sound, scene, safe-area, and export direction.                                               |
 | [Launch-film asset manifest](../apps/botbound-film/ASSET_MANIFEST.md)     | Repository media inputs, provenance, and integrity hashes.                                           |

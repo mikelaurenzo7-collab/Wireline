@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { promisify } from "node:util";
 
 const repoRoot = process.cwd();
 const releaseRoot = path.join(repoRoot, "brand-work", "launch-2026-09");
@@ -9,6 +11,16 @@ const manifestPath = path.join(releaseRoot, "manifest.json");
 const checksumsPath = path.join(releaseRoot, "SHA256SUMS.txt");
 
 const ignored = new Set(["manifest.json", "SHA256SUMS.txt"]);
+const execFileAsync = promisify(execFile);
+
+async function git(args) {
+  const { stdout } = await execFileAsync(process.env.GIT_EXECUTABLE || "git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    windowsHide: true,
+  });
+  return stdout.trim();
+}
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -82,11 +94,15 @@ for (const file of allFiles) {
   });
 }
 
+const repositoryBaseSha = await git(["rev-parse", "HEAD"]);
+const repositoryDirty = Boolean(await git(["status", "--porcelain"]));
+
 const manifest = {
   release: "BotBound Launch Release — 2026-09-01",
   campaign: "The Second Ring",
   generated_at: new Date().toISOString(),
-  repository_base_sha: "13fd4807f43a352d1d7a11da7c03f50460b0caee",
+  repository_base_sha: repositoryBaseSha,
+  repository_worktree_status: repositoryDirty ? "dirty" : "clean",
   deployment_status: "not deployed by this release-preparation pass",
   paid_media_status: "hold pending explicit approval and release gates",
   product_proof_status: "worktree preview is not deployed production proof",

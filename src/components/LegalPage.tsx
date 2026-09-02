@@ -182,9 +182,11 @@ export function TermsOfService() {
 
       <Section title="5. Synthetic Voice Use">
         <p>
-          BotBound provides built-in artificial voices from its managed OpenAI voice roster. It does
-          not accept voice-cloning samples or create a private model of a speaker's voice. You
-          remain responsible for every identification, disclosure, and consent required for the
+          BotBound provides built-in artificial voices from its managed OpenAI voice roster.{" "}
+          {
+            "It does not accept voice-cloning samples or create a private model of a speaker's voice. "
+          }
+          You remain responsible for every identification, disclosure, and consent required for the
           calls and messages you configure.
         </p>
         <p>

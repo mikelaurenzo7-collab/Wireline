@@ -64,7 +64,7 @@ export default function Features() {
         */}
         <section className="marketing-section marketing-section--screen">
           <MarketingHero
-            title="THEY CALL. YOUR BOT ANSWERS"
+            title="IT CALLS OUT. IT ANSWERS IN."
             primaryAction={{ label: "BUILD YOUR BOT", to: signupHrefForPlan("personal") }}
             secondaryAction={{
               label: "HEAR A DEMO",

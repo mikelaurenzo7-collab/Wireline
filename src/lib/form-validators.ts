@@ -187,7 +187,14 @@ export const CampaignCreateSchema = z.object({
     .min(1, "Campaign name is required")
     .max(200, "Name must be 200 characters or less"),
   goal: z.string().max(1000, "Goal must be 1000 characters or less").optional().nullable(),
-  agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
+  // Bot IDs are text keys (new records use `agent-<uuid>` and curated fleet
+  // records use stable slugs), not bare UUID columns.
+  agent_id: z
+    .string()
+    .min(1, "Invalid agent ID")
+    .max(128, "Invalid agent ID")
+    .optional()
+    .nullable(),
   call_window_start: z
     .string()
     .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Start time must be HH:MM in 24-hour format")
@@ -214,7 +221,12 @@ export const CampaignUpdateSchema = z
       .max(200, "Name must be 200 characters or less")
       .optional(),
     goal: z.string().max(1000, "Goal must be 1000 characters or less").optional().nullable(),
-    agent_id: z.string().uuid("Invalid agent ID").optional().nullable(),
+    agent_id: z
+      .string()
+      .min(1, "Invalid agent ID")
+      .max(128, "Invalid agent ID")
+      .optional()
+      .nullable(),
     status: z.enum(["draft", "active", "paused", "completed", "failed"]).optional(),
     call_window_start: z
       .string()

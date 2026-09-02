@@ -21,8 +21,9 @@ import {
   PROVIDER_SPEND_PAUSE_DELAY_MS,
 } from "../lib/provider-spend-job-pause";
 import { assertUrlSafeForServerFetch } from "../lib/webhook-validators";
-import { apolloPlatformConfigured } from "../lib/apollo-service";
+import { apolloReadyForUser } from "../lib/apollo-service";
 import { KnowledgeIngestionUnavailableError } from "../lib/ai-brains";
+import { enforceSpendCap } from "../lib/spend-guards";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const JOB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -72,13 +73,43 @@ router.post(
   "/prospect",
   authenticateUser,
   jobsRateLimit,
+  enforceSpendCap,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const [settings] = await drizzle
-        .select({ prospectingEnabled: schema.settings.prospectingEnabled })
+        .select({
+          prospectingEnabled: schema.settings.prospectingEnabled,
+          targetTitles: schema.settings.targetTitles,
+          targetIndustries: schema.settings.targetIndustries,
+          targetStates: schema.settings.targetStates,
+          targetEmployeeRanges: schema.settings.targetEmployeeRanges,
+        })
         .from(schema.settings)
         .where(eq(schema.settings.userId, req.user.id))
         .limit(1);
+
+      if (!settings?.prospectingEnabled) {
+        return res.status(409).json({
+          code: "LEAD_HUNT_DISABLED",
+          error: "Turn on Lead Hunt and save your targeting before finding leads.",
+        });
+      }
+
+      const targetTitles = (settings.targetTitles as string[] | null) || [];
+      if (targetTitles.length === 0) {
+        return res.status(400).json({
+          code: "LEAD_HUNT_TARGETING_REQUIRED",
+          error: "Add at least one target job title before finding leads.",
+        });
+      }
+
+      const apolloReady = await apolloReadyForUser(req.user.id);
+      if (!apolloReady) {
+        return res.status(503).json({
+          code: "APOLLO_NOT_CONNECTED",
+          error: "Connect Apollo before running Lead Hunt.",
+        });
+      }
 
       const result = await enqueue(drizzle, {
         userId: req.user.id,
@@ -92,8 +123,14 @@ router.post(
       res.json({
         ok: true,
         jobId: result.jobId ?? null,
-        prospectingEnabled: !!settings?.prospectingEnabled,
-        apolloReady: apolloPlatformConfigured(),
+        prospectingEnabled: true,
+        apolloReady: true,
+        targeting: {
+          titles: targetTitles,
+          industries: (settings.targetIndustries as string[] | null) || [],
+          states: (settings.targetStates as string[] | null) || [],
+          employeeRanges: (settings.targetEmployeeRanges as string[] | null) || [],
+        },
       });
     } catch (err) {
       if (err instanceof AppError) throw err;

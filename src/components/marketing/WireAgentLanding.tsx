@@ -7,19 +7,20 @@ import { BotBoundLockup } from "../brand/BotBoundBrand";
 import BrowserCallWidget from "./BrowserCallWidget";
 import LandingFooter from "./LandingFooter";
 import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
-import { MARKETING_VOICE } from "../../lib/product-copy";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../../data/contact-agents";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 
-const HERO_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0];
+const HERO_DEMO =
+  LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jake") ??
+  LANDING_PUBLIC_DEMO_AGENTS[0]!;
 const FEATURED_TEMPLATE_KEYS = [
-  "front-desk",
   "sales-rep",
-  "customer-support",
+  "front-desk",
+  "recruiter",
   "appointment-setter",
-  "property-manager",
+  "customer-support",
   "custom",
 ] as const;
 const FEATURED_TEMPLATES = FEATURED_TEMPLATE_KEYS.map((key) => {
@@ -66,27 +67,37 @@ export default function WireAgentLanding() {
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
         <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
           <div className="landing-prestige__hero" aria-label="BotBound">
-            <div className="landing-prestige__hero-brand">
+            <Link className="landing-prestige__hero-brand" to="/" aria-label="BotBound home">
               <BotBoundLockup
                 size="display"
                 surface="bare"
                 className="landing-prestige__hero-lockup"
               />
-            </div>
+            </Link>
             <div className="landing-prestige__hero-copy">
               <h1 id="landing-prestige-title">
                 <span>PUT YOUR BOT</span>
                 <span>ON THE LINE</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
-              <ol className="landing-prestige__loop" aria-label="How BotBound works">
-                {MARKETING_VOICE.proof.map((step, index) => (
-                  <li key={step}>
-                    {index > 0 ? <span aria-hidden="true">/</span> : null}
-                    {step}
-                  </li>
-                ))}
-              </ol>
+              <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
+                <Link
+                  className="landing-prestige__direction is-outbound"
+                  to={signupHrefForPlan("personal", { template: "sales-rep" })}
+                  onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
+                >
+                  <span>OUTBOUND</span>
+                  <strong>FIND. CALL. BOOK.</strong>
+                </Link>
+                <Link
+                  className="landing-prestige__direction"
+                  to={signupHrefForPlan("personal", { template: "front-desk" })}
+                  onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
+                >
+                  <span>INBOUND</span>
+                  <strong>ANSWER. QUALIFY. ROUTE.</strong>
+                </Link>
+              </nav>
             </div>
             <div className="landing-prestige__demo">
               <BrowserCallWidget
@@ -120,9 +131,8 @@ export default function WireAgentLanding() {
           <section id="solutions" className="landing-prestige__section landing-prestige__roles">
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
-                <p>STARTERS</p>
+                <p>OUTBOUND + INBOUND</p>
                 <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
-                <span>Start with a proven playbook. Rewrite every rule.</span>
               </header>
               <div className="landing-prestige__role-grid">
                 {FEATURED_TEMPLATES.map((template) => (

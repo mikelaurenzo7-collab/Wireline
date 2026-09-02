@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 import { Router, Response } from "express";
 import { z } from "zod";
-import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { authenticateUser } from "../middleware/auth";
@@ -21,12 +21,285 @@ import {
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { SentryEvents } from "../lib/sentry-events";
 import { drizzle, log } from "../lib/server-context";
-import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
+import { getErrorMessage, mapObjectToSnake, toJsonbSafe } from "../lib/server-utils";
 import { placeOutboundCall } from "../lib/voice/outbound-call-service";
 import { outboundVoiceGuard } from "../lib/voice-spend-control";
+import { LEAD_STATUS } from "../lib/outbound-status";
+import { campaignWriteRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+const POSTGRES_BIGINT_MAX = 9_223_372_036_854_775_807n;
+const LeadHuntIdSchema = z
+  .string()
+  .regex(/^[1-9]\d{0,18}$/, "Lead IDs must be positive integers")
+  .refine((value) => BigInt(value) <= POSTGRES_BIGINT_MAX, "Lead ID is out of range");
+
+const LeadHuntApprovalSchema = z
+  .object({
+    lead_ids: z
+      .array(LeadHuntIdSchema)
+      .min(1, "Select at least one lead")
+      .max(100, "Approve at most 100 leads at a time"),
+    campaign_id: z.string().uuid("Invalid campaign ID"),
+    agent_id: z.string().min(1, "Select a Bot").max(128, "Invalid Bot ID"),
+    review_approved: z.literal(true),
+  })
+  .strict();
+
+router.get(
+  "/api/lead-hunt/leads",
+  authenticateUser,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const rows = await drizzle
+        .select({
+          id: schema.outboundLeads.id,
+          customerName: schema.outboundLeads.customerName,
+          customerNumber: schema.outboundLeads.customerNumber,
+          status: schema.outboundLeads.status,
+          metadata: schema.outboundLeads.metadata,
+          createdAt: schema.outboundLeads.createdAt,
+        })
+        .from(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.userId, req.user.id),
+            eq(schema.outboundLeads.source, "apollo"),
+            isNull(schema.outboundLeads.campaignId),
+            inArray(schema.outboundLeads.status, [LEAD_STATUS.PENDING, "New"]),
+            isNotNull(schema.outboundLeads.customerNumber),
+          ),
+        )
+        .orderBy(desc(schema.outboundLeads.createdAt))
+        .limit(100);
+
+      const leads = rows.map((row) => {
+        const metadata =
+          row.metadata && typeof row.metadata === "object"
+            ? (row.metadata as Record<string, any>)
+            : {};
+        const details =
+          metadata.lead_hunt && typeof metadata.lead_hunt === "object"
+            ? (metadata.lead_hunt as Record<string, any>)
+            : {};
+        return {
+          id: String(row.id),
+          customer_name: row.customerName,
+          customer_number: row.customerNumber,
+          status: row.status,
+          title: typeof details.title === "string" ? details.title : null,
+          company: typeof details.company === "string" ? details.company : null,
+          phone_source:
+            details.phone_source === "person" || details.phone_source === "organization"
+              ? details.phone_source
+              : null,
+          city: typeof details.city === "string" ? details.city : null,
+          state: typeof details.state === "string" ? details.state : null,
+          created_at: row.createdAt,
+        };
+      });
+
+      res.json({ leads, total: leads.length });
+    } catch (error: any) {
+      log.error("GET /api/lead-hunt/leads failed", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to load Lead Hunt results.");
+    }
+  },
+);
+
+router.delete(
+  "/api/lead-hunt/leads/:id",
+  authenticateUser,
+  campaignWriteRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsedId = LeadHuntIdSchema.safeParse(req.params.id);
+    if (!parsedId.success) {
+      return res.status(404).json({ code: "NOT_FOUND", error: "Lead Hunt result not found." });
+    }
+
+    try {
+      const removed = await drizzle
+        .delete(schema.outboundLeads)
+        .where(
+          and(
+            eq(schema.outboundLeads.id, BigInt(parsedId.data)),
+            eq(schema.outboundLeads.userId, req.user.id),
+            eq(schema.outboundLeads.source, "apollo"),
+            isNull(schema.outboundLeads.campaignId),
+            inArray(schema.outboundLeads.status, [LEAD_STATUS.PENDING, "New"]),
+          ),
+        )
+        .returning({ id: schema.outboundLeads.id });
+
+      if (removed.length !== 1) {
+        return res.status(409).json({
+          code: "LEAD_HUNT_RESULT_CHANGED",
+          error: "This lead is no longer awaiting review. Refresh Lead Hunt and try again.",
+        });
+      }
+
+      res.json({ success: true, id: parsedId.data });
+    } catch (error: any) {
+      log.error("DELETE /api/lead-hunt/leads/:id failed", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to remove Lead Hunt result.");
+    }
+  },
+);
+
+router.post(
+  "/api/lead-hunt/approve",
+  authenticateUser,
+  campaignWriteRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const parsed = LeadHuntApprovalSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        code: "BAD_REQUEST",
+        error: parsed.error.issues[0]?.message || "Invalid Lead Hunt approval.",
+      });
+    }
+
+    const { campaign_id, agent_id } = parsed.data;
+    const leadIds = [...new Set(parsed.data.lead_ids)].map((id) => BigInt(id));
+
+    try {
+      const assigned = await drizzle.transaction(async (tx) => {
+        const [campaign] = await tx
+          .select({
+            id: schema.outboundCampaigns.id,
+            status: schema.outboundCampaigns.status,
+            agentId: schema.outboundCampaigns.agentId,
+          })
+          .from(schema.outboundCampaigns)
+          .where(
+            and(
+              eq(schema.outboundCampaigns.id, campaign_id),
+              eq(schema.outboundCampaigns.userId, req.user.id),
+            ),
+          )
+          .limit(1);
+        if (!campaign) throw AppError.fromHttpStatus(404, "Campaign not found.");
+        if (campaign.status !== "draft") {
+          throw AppError.fromHttpStatus(
+            409,
+            "Lead Hunt results can only be assigned to a draft campaign.",
+          );
+        }
+        if (campaign.agentId && campaign.agentId !== agent_id) {
+          throw AppError.fromHttpStatus(
+            409,
+            "This draft already uses a different Bot. Select that Bot or choose another draft.",
+          );
+        }
+
+        const [agent] = await tx
+          .select({ id: schema.agents.id })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
+          .limit(1);
+        if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
+
+        const eligible = await tx
+          .select({ id: schema.outboundLeads.id, metadata: schema.outboundLeads.metadata })
+          .from(schema.outboundLeads)
+          .where(
+            and(
+              eq(schema.outboundLeads.userId, req.user.id),
+              eq(schema.outboundLeads.source, "apollo"),
+              isNull(schema.outboundLeads.campaignId),
+              inArray(schema.outboundLeads.status, [LEAD_STATUS.PENDING, "New"]),
+              isNotNull(schema.outboundLeads.customerNumber),
+              inArray(schema.outboundLeads.id, leadIds),
+            ),
+          );
+        if (eligible.length !== leadIds.length) {
+          throw AppError.fromHttpStatus(
+            409,
+            "One or more leads are no longer awaiting review. Refresh Lead Hunt and try again.",
+          );
+        }
+
+        const reviewedAt = new Date().toISOString();
+        for (const lead of eligible) {
+          const metadata =
+            lead.metadata && typeof lead.metadata === "object"
+              ? (lead.metadata as Record<string, any>)
+              : {};
+          const leadHunt =
+            metadata.lead_hunt && typeof metadata.lead_hunt === "object"
+              ? (metadata.lead_hunt as Record<string, any>)
+              : {};
+          const updated = await tx
+            .update(schema.outboundLeads)
+            .set({
+              agentId: agent_id,
+              campaignId: campaign_id,
+              // Reviewed records may enter the campaign queue, but the dialer
+              // still requires the campaign's separate guarded Launch action.
+              // Queuing here also prevents a concurrent launch from missing a
+              // just-approved Pending row between its promote and transition.
+              status: LEAD_STATUS.QUEUED,
+              metadata: toJsonbSafe({
+                ...metadata,
+                lead_hunt: {
+                  ...leadHunt,
+                  review_status: "approved",
+                  reviewed_at: reviewedAt,
+                  campaign_id,
+                  agent_id,
+                },
+              }) as any,
+            })
+            .where(
+              and(
+                eq(schema.outboundLeads.id, lead.id),
+                eq(schema.outboundLeads.userId, req.user.id),
+                isNull(schema.outboundLeads.campaignId),
+              ),
+            )
+            .returning({ id: schema.outboundLeads.id });
+          if (updated.length !== 1) {
+            throw AppError.fromHttpStatus(
+              409,
+              "A lead changed while it was being approved. Refresh Lead Hunt and try again.",
+            );
+          }
+        }
+
+        const updatedCampaign = await tx
+          .update(schema.outboundCampaigns)
+          .set({ agentId: agent_id, updatedAt: new Date() })
+          .where(
+            and(
+              eq(schema.outboundCampaigns.id, campaign_id),
+              eq(schema.outboundCampaigns.userId, req.user.id),
+              eq(schema.outboundCampaigns.status, "draft"),
+              or(
+                isNull(schema.outboundCampaigns.agentId),
+                eq(schema.outboundCampaigns.agentId, agent_id),
+              ),
+            ),
+          )
+          .returning({ id: schema.outboundCampaigns.id });
+        if (updatedCampaign.length !== 1) {
+          throw AppError.fromHttpStatus(
+            409,
+            "The campaign changed while leads were being approved. Refresh and try again.",
+          );
+        }
+
+        return eligible.length;
+      });
+
+      res.json({ success: true, assigned, campaign_id, agent_id, status: "Queued" });
+    } catch (error: any) {
+      if (error instanceof AppError) throw error;
+      log.error("POST /api/lead-hunt/approve failed", { error: getErrorMessage(error) });
+      throw AppError.fromHttpStatus(500, "Failed to approve Lead Hunt results.");
+    }
+  },
+);
 
 router.get("/api/outbound", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {

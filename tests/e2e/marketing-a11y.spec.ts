@@ -59,7 +59,7 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await expect(headline).toBeVisible();
   await expect(hero).toBeVisible();
   await expect(auth).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to Jordan" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk to Jake" })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
     const headline = document
@@ -90,7 +90,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
-  const demo = page.getByRole("button", { name: "Talk to Jordan" });
+  const demo = page.getByRole("button", { name: "Talk to Jake" });
   await demo.focus();
   await expect(demo).toBeFocused();
   const focusStyle = await demo.evaluate((element) => {

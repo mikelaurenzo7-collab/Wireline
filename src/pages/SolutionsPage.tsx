@@ -6,22 +6,22 @@ import MarketingHero from "../components/marketing/MarketingHero";
 
 const SOLUTIONS = {
   sales: {
-    title: "EVERY GOOD LEAD GETS A NEXT STEP",
+    title: "FIND THE LEAD. MAKE THE CALL. BOOK THE NEXT STEP.",
     description:
-      "Give a trained Sales Bot your offer, qualification rules, calendar, and follow-up playbook. It calls, holds the conversation, texts, and emails until the next step is booked or clearly logged.",
-    primary: { href: "/signup?wedge=sales", label: "Create Sales Bot" },
+      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
+    primary: { href: "/signup?wedge=sales", label: "Get Your Sales Bot" },
     secondary: { href: "/showcase", label: "Hear Browser Demo" },
     sequence: [
-      ["A Lead Reaches Out", "A Phone Bot responds on the channel the lead already chose."],
       [
-        "It Qualifies by Your Rules",
-        "Your offer, criteria, objections, and escalation path guide the conversation.",
+        "Find or Bring the Leads",
+        "Lead Hunt surfaces prospects from a connected source, or you import an approved list.",
       ],
-      ["The Next Step Is Clear", "Booked, handed off, or logged with the full context attached."],
+      ["Review. Then Queue.", "Approve the contacts, playbook, and calling window."],
+      ["Your Bot Calls and Books", "Qualified, booked, handed off, or logged with context."],
     ],
     capabilities: [
       [
-        "Your Offer in Every Call",
+        "Your Playbook in Every Call",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
       [
@@ -33,8 +33,7 @@ const SOLUTIONS = {
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof:
-      "More qualified conversations move forward. Your team spends time where judgment closes the deal.",
+    proof: "Your Bot works the approved queue. Your team takes the next steps.",
   },
   support: {
     title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD",

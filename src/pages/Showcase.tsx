@@ -9,7 +9,9 @@ import MarketingHero from "../components/marketing/MarketingHero";
 import { LANDING_PUBLIC_DEMO_AGENTS } from "../data/contact-agents";
 
 const FREE_SIGNUP = signupHrefForPlan("personal");
-const DEFAULT_SHOWCASE_DEMO = LANDING_PUBLIC_DEMO_AGENTS[0]!;
+const DEFAULT_SHOWCASE_DEMO =
+  LANDING_PUBLIC_DEMO_AGENTS.find((agent) => agent.name === "Jake") ??
+  LANDING_PUBLIC_DEMO_AGENTS[0]!;
 
 export default function Showcase() {
   const [activeDemo, setActiveDemo] = useState(DEFAULT_SHOWCASE_DEMO);

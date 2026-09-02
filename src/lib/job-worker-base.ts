@@ -11,7 +11,8 @@ import { ActionItemSchema } from "./action-types";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
-import { apolloPlatformConfigured, searchLeads as apolloSearch } from "./apollo-service";
+import { apolloReadyForUser, searchLeads as apolloSearch } from "./apollo-service";
+import { LEAD_STATUS } from "./outbound-status";
 import {
   claimTerminalAccountPurge,
   purgeAccount,
@@ -581,14 +582,23 @@ export async function handleJob(job: JobRow): Promise<void> {
 
   if (job.type === "autonomous_prospecting") {
     const p = job.payload as { userId: string };
+    const userId = job.user_id;
+    if (!userId || p.userId !== userId) {
+      log.error("Autonomous prospecting job tenant mismatch", {
+        jobId: job.id,
+        jobUserId: userId || "missing",
+        payloadUserId: p.userId || "missing",
+      });
+      throw new Error("Autonomous prospecting job tenant mismatch.");
+    }
     const [settings] = await drizzle
       .select()
       .from(schema.settings)
-      .where(eq(schema.settings.userId, p.userId))
+      .where(eq(schema.settings.userId, userId))
       .limit(1);
 
     if (!settings?.prospectingEnabled) {
-      log.info("Prospecting disabled for user", { userId: p.userId });
+      log.info("Prospecting disabled for user", { userId });
       await persistJobResult(job.id, {
         skipped: true,
         reason: "prospecting_disabled",
@@ -598,9 +608,9 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    const apolloReady = apolloPlatformConfigured();
+    const apolloReady = await apolloReadyForUser(userId);
     log.info("Starting autonomous prospecting", {
-      userId: p.userId,
+      userId,
       titles: settings.targetTitles,
       apolloReady,
     });
@@ -624,34 +634,64 @@ export async function handleJob(job: JobRow): Promise<void> {
         employee_ranges: (settings.targetEmployeeRanges as string[]) || [],
         limit: 10,
       },
-      p.userId,
+      userId,
     );
 
     let added = 0;
     for (const lead of leads) {
       try {
+        const customerName =
+          `${lead.first_name} ${lead.last_name}`.trim() || lead.company || "Lead";
+        const phoneIdentity = lead.phone.replace(/\D+/g, "");
+        const idempotencyKey = `apollo:${lead.apollo_id || phoneIdentity}`;
         await drizzle.insert(schema.outboundLeads).values({
-          userId: p.userId,
-          customerName: `${lead.first_name} ${lead.last_name}`,
+          userId,
+          customerName,
           customerNumber: lead.phone,
+          phoneNumber: lead.phone,
           email: lead.email,
-          status: "New",
-          context: `Autonomously sourced via Apollo Intelligence for ${lead.title} role at ${lead.company}.`,
+          status: LEAD_STATUS.PENDING,
+          source: "apollo",
+          idempotencyKey,
+          context: `Sourced via Apollo Lead Hunt for ${lead.title || "a decision-maker"} role at ${lead.company || "the matched company"}.`,
+          metadata: {
+            source: "apollo_lead_hunt",
+            call_purpose: "marketing_or_sales",
+            has_express_written_consent: false,
+            lead_hunt: {
+              provider: "apollo",
+              apollo_id: lead.apollo_id || null,
+              title: lead.title || null,
+              company: lead.company || null,
+              phone_source: lead.phone_source || null,
+              linkedin_url: lead.linkedin_url || null,
+              city: lead.city || null,
+              state: lead.state || null,
+              review_status: "pending",
+            },
+          },
         });
         added++;
-      } catch {
-        void 0; /* ignore duplicate lead / constraint violations */
+      } catch (error: any) {
+        const errorCode = error?.code || error?.cause?.code;
+        if (errorCode !== "23505") {
+          log.warn("Lead Hunt could not stage an Apollo result", {
+            userId,
+            errorCode: typeof errorCode === "string" ? errorCode : "unknown",
+          });
+        }
       }
     }
 
     await persistJobResult(job.id, {
       leadsFound: leads.length,
       leadsAdded: added,
+      reviewPending: added,
       apolloReady: true,
     });
 
     log.info("Autonomous prospecting complete", {
-      userId: p.userId,
+      userId,
       leadsFound: leads.length,
       leadsAdded: added,
     });

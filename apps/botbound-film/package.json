@@ -2,7 +2,7 @@
   "name": "@botbound/second-ring-film",
   "version": "1.0.0",
   "private": true,
-  "description": "BotBound launch film package — The Second Ring / Hands Full",
+  "description": "BotBound launch film package — The Second Ring inbound and The First Move outbound",
   "scripts": {
     "audio:generate": "node scripts/generate-audio.mjs && ffmpeg -hide_banner -loglevel error -y -i public/audio/botbound-score.wav -codec:a libmp3lame -b:a 160k public/audio/botbound-score.mp3",
     "captions:export": "node scripts/export-captions.mjs",
@@ -18,6 +18,8 @@
     "render:square": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion render src/index.ts BotBound-SecondRing-10s-Square-4K out/botbound-second-ring-10s-square-4k.mp4 --codec=h264 --crf=15 --pixel-format=yuv420p --audio-codec=aac --audio-bitrate=320k --concurrency=2",
     "render:launch-social": "node scripts/render-launch-social.mjs",
     "qa:launch-social": "node scripts/qa-launch-social.mjs",
+    "render:outbound-social": "node scripts/render-outbound-social.mjs",
+    "qa:outbound-social": "node scripts/qa-outbound-social.mjs",
     "render:all": "npm run render:30 && npm run render:15 && npm run render:6 && npm run render:vertical && npm run render:6-vertical && npm run render:square",
     "still:opening": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-opening.jpg --frame=28 --scale=0.5",
     "still:product": "NODE_OPTIONS=--require=./scripts/remotion-network-shim.cjs remotion still src/index.ts BotBound-SecondRing-30s-4K out/frame-product.jpg --frame=342 --scale=0.5",

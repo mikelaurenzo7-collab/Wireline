@@ -20,6 +20,16 @@ const twilioMessagingServiceSid = z
   .trim()
   .regex(/^MG[a-fA-F0-9]{32}$/, "Must be a Twilio Messaging Service SID beginning with MG");
 
+const targetingTags = z.array(z.string().trim().min(1).max(120)).max(20);
+const targetEmployeeRanges = z
+  .array(
+    z
+      .string()
+      .trim()
+      .regex(/^\d{1,7},\d{1,7}$/, "Must be an Apollo employee range such as 1,50"),
+  )
+  .max(20);
+
 /**
  * POST /api/settings — tenant settings update.
  *
@@ -63,10 +73,10 @@ export const SettingsSchema = z.object({
   handoff_phone: e164.nullable().optional(),
 
   prospecting_enabled: z.boolean().nullable().optional(),
-  target_titles: z.unknown().nullable().optional(),
-  target_industries: z.unknown().nullable().optional(),
-  target_states: z.unknown().nullable().optional(),
-  target_employee_ranges: z.unknown().nullable().optional(),
+  target_titles: targetingTags.nullable().optional(),
+  target_industries: targetingTags.nullable().optional(),
+  target_states: targetingTags.nullable().optional(),
+  target_employee_ranges: targetEmployeeRanges.nullable().optional(),
 
   brand_name: z.string().max(200).nullable().optional(),
   brand_logo_url: z.string().nullable().optional(),

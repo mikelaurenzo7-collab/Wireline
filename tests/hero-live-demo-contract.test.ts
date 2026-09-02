@@ -17,7 +17,7 @@ describe("public live demo contract", () => {
     expect(botProduct).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(botProduct).toContain(
-      'activationLine: "Start free. Every live Bot gets its own number and email."',
+      'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
     );
   });
 

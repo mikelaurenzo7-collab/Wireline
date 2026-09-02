@@ -28,7 +28,7 @@ describe("home landing launch clarity", () => {
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(product).toContain(
-      'activationLine: "Start free. Every live Bot gets its own number and email."',
+      'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
     );
     expect(landing).toContain('variant="inline"');
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");

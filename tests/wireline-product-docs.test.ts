@@ -117,8 +117,9 @@ describe("product documentation and compatibility contract", () => {
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("PUT YOUR BOT ON THE LINE");
-    expect(ogImage).toContain("Your Bot for calls, texts, and email.");
+    expect(ogImage).toContain("FIND. CALL. BOOK.");
+    expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS. ONE BOT.");
+    expect(ogImage).toContain("Find leads. Make calls. Answer inbound.");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");

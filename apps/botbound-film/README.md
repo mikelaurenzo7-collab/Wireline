@@ -1,9 +1,10 @@
-# BotBound — The Second Ring
+# BotBound Launch Films
 
 A deterministic Remotion launch-film source package built around the approved
-BotBound phone-operator robot and the “Hands Full” opening image. Render names
-describe intended placements; they are candidates until the current source
-revision is rendered, inspected, checksummed, and approved.
+BotBound phone-operator robot. It contains the inbound **The Second Ring**
+campaign and the outbound **The First Move** campaign. Render names describe
+intended placements; they are candidates until the current source revision is
+rendered, inspected, checksummed, and approved.
 
 ## Compositions
 
@@ -15,6 +16,9 @@ revision is rendered, inspected, checksummed, and approved.
 | `BotBound-SecondRing-15s-Vertical-4K` | 15s | 2160×3840 | Reels / Shorts / TikTok |
 | `BotBound-SecondRing-6s-Vertical-4K` | 6s | 2160×3840 | Vertical bumper / story placement |
 | `BotBound-SecondRing-10s-Square-4K` | 10s | 2160×2160 | Square feed / launch social |
+| `BotBound-FirstMove-15s-Vertical` | 15s | 1080×1920 | Outbound Reels / Shorts / TikTok |
+| `BotBound-FirstMove-10s-Square` | 10s | 1080×1080 | Outbound LinkedIn / Meta feed |
+| `BotBound-FirstMove-6s-Vertical` | 6s | 1080×1920 | Outbound story / bumper |
 
 All compositions run at 30 fps and use frame-driven Remotion animation only. The editorial source photograph, robot mark, repository-optimized app icon, self-hosted fonts, original deterministic score, phone-ring effect, and approved transfer chime are local to this package. Drive deliveries are release copies, not proof that the current working tree or future commit has passed its release gate; use `VERIFICATION.md` for revision-scoped evidence.
 
@@ -48,6 +52,18 @@ To render all cuts sequentially:
 ```bash
 npm run render:all
 ```
+
+To render and QA the approved outbound suite:
+
+```bash
+npm run render:outbound-social
+npm run qa:outbound-social
+```
+
+The outbound masters use score and confirmation chime only. They contain no
+spoken dialogue, so no caption sidecar is required; the exact on-screen
+sequence and accessibility notes live in
+`brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md`.
 
 ## Accessibility caption sidecars
 
