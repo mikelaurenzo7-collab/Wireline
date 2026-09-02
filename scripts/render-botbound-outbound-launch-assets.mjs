@@ -15,12 +15,18 @@ import { fileURLToPath } from "node:url";
 
 import { Resvg } from "@resvg/resvg-js";
 
+import {
+  assertOutboundRenderReceipt,
+  captureOutboundSourceContext,
+} from "../apps/botbound-film/scripts/lib/motion-release.mjs";
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const campaignRoot = resolve(root, "brand-work/launch-2026-09-outbound");
 const outputRoot = resolve(campaignRoot, "exports");
 const sourceRoot = resolve(campaignRoot, "sources");
 const websiteRoot = resolve(outputRoot, "website");
 const motionRoot = resolve(outputRoot, "motion");
+const filmRoot = resolve(root, "apps/botbound-film");
 const manifestPath = resolve(campaignRoot, "manifest.json");
 const checksumPath = resolve(campaignRoot, "SHA256SUMS.txt");
 const investorPdfPath = resolve(
@@ -124,7 +130,26 @@ function assertApprovedOutboundMotion() {
     );
   }
 
+  const renderReceiptPath = resolve(motionRoot, "render-provenance.json");
+  const renderReceipt = JSON.parse(readFileSync(renderReceiptPath, "utf8"));
+  const currentSource = captureOutboundSourceContext({
+    projectDirectory: filmRoot,
+    repositoryDirectory: root,
+    rendererPath: resolve(filmRoot, "scripts/render-outbound-social.mjs"),
+  });
+  assertOutboundRenderReceipt(renderReceipt, currentSource);
+
   const metadata = JSON.parse(readFileSync(resolve(motionRoot, "metadata.json"), "utf8"));
+  const metadataReceipt = metadata?.provenance?.renderReceipt;
+  if (
+    metadata?.schema !== "botbound.outbound-motion-qa.v2" ||
+    metadata?.campaign !== "THE FIRST MOVE" ||
+    metadataReceipt?.file !== "render-provenance.json" ||
+    metadataReceipt?.sha256 !== sha256File(renderReceiptPath) ||
+    metadata?.provenance?.sourceFingerprint !== renderReceipt.sourceFingerprint
+  ) {
+    throw new Error("Outbound motion QA metadata is not bound to its exact render receipt.");
+  }
   const deliveryByFile = new Map(
     (metadata.deliveries || []).map((delivery) => [String(delivery.file || ""), delivery]),
   );

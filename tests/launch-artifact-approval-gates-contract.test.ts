@@ -44,6 +44,12 @@ describe("launch artifact approval gates", () => {
     expect(motionApproval).toBeGreaterThan(invalidate);
     expect(firstRender).toBeGreaterThan(motionApproval);
     expect(renderer).toContain("Outbound motion inventory is not the approved 6s/10s/15s set");
+    expect(renderer).toContain("assertOutboundRenderReceipt(renderReceipt, currentSource)");
+    expect(renderer).toContain('metadataReceipt?.file !== "render-provenance.json"');
+    expect(renderer).toContain("metadataReceipt?.sha256 !== sha256File(renderReceiptPath)");
+    expect(renderer).toContain(
+      "Outbound motion QA metadata is not bound to its exact render receipt.",
+    );
     expect(checksumPublish).toBeGreaterThan(-1);
     expect(manifestPublish).toBeGreaterThan(checksumPublish);
   });
