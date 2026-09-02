@@ -194,6 +194,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
     );
   }, [calls, query]);
 
+  useEffect(() => {
+    if (!desktop || selectedId || !visibleCalls.length) return;
+    setSelectedId(visibleCalls[0].id);
+  }, [desktop, selectedId, visibleCalls]);
+
   const paginationControl =
     hasMore || loadMoreError ? (
       <div className="border-t border-border p-3">

@@ -156,6 +156,7 @@ describe("authenticated workspace design architecture", () => {
     expect(calls).toContain('aria-label="Open call list"');
     expect(calls).toContain('aria-label="Collapse call list"');
     expect(calls).toContain('className={`${selected ? "hidden" : "block"} h-full');
+    expect(calls).toContain("if (!desktop || selectedId || !visibleCalls.length) return");
   });
 
   it("flattens Activity to one category strip plus one compact subview control", () => {
