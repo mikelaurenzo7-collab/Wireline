@@ -33,7 +33,7 @@ describe("Vercel-compatible tooling pins", () => {
   });
 
   it("documents the single canonical Vercel project and tooling major policy", () => {
-    expect(deployGuide).toContain("Only `revaluate/wireline` may be linked");
+    expect(deployGuide).toContain("Only `revaluate/botbound` may be linked");
     expect(deployGuide).toContain("Vercel – workspace");
     expect(deployGuide).toContain("TypeScript 7.0.2");
     expect(deployGuide).toContain("local user-provided");

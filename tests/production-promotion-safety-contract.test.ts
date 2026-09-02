@@ -1,5 +1,7 @@
-import { readFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -101,15 +103,68 @@ describe("production promotion safety", () => {
       "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
     );
     expect(buildSource).toContain("Canonical production artifact compilation is read-only");
+    expect(buildSource).toContain("node scripts/promote-production-schema.mjs");
+    expect(buildSource).not.toContain("release:promote-schema");
     expect(buildSource).toContain('run("node", ["scripts/run-production-schema-effects.mjs"])');
     expect(schemaPromotionSource).toContain("BOTBOUND_PRODUCTION_SCHEMA_CONFIRM");
     expect(schemaPromotionSource).toContain("BOTBOUND_RELEASE_SHA");
     expect(schemaPromotionSource).toContain("APPLY_APPEND_ONLY_BOTBOUND_MIGRATIONS");
+    expect(schemaPromotionSource).toContain('"status", "--porcelain=v1"');
     expect(schemaPromotionSource).toContain('run("npm", ["run", "db:migrate"]');
     expect(schemaPromotionSource).toContain(
       'run("node", ["scripts/run-production-schema-effects.mjs"]',
     );
   });
+
+  it("refuses to promote uncommitted schema under an otherwise valid release SHA", () => {
+    const tempRepository = mkdtempSync(join(tmpdir(), "botbound-schema-promotion-"));
+    try {
+      execFileSync("git", ["init", "--quiet"], { cwd: tempRepository, stdio: "ignore" });
+      writeFileSync(join(tempRepository, "tracked.txt"), "reviewed\n", "utf8");
+      execFileSync("git", ["add", "tracked.txt"], { cwd: tempRepository, stdio: "ignore" });
+      execFileSync(
+        "git",
+        [
+          "-c",
+          "user.name=BotBound Test",
+          "-c",
+          "user.email=botbound-test@example.invalid",
+          "commit",
+          "--quiet",
+          "-m",
+          "reviewed release",
+        ],
+        { cwd: tempRepository, stdio: "ignore" },
+      );
+      const releaseSha = execFileSync("git", ["rev-parse", "HEAD"], {
+        cwd: tempRepository,
+        encoding: "utf8",
+      }).trim();
+      writeFileSync(join(tempRepository, "uncommitted-migration.sql"), "select 1;\n", "utf8");
+
+      const result = spawnSync(
+        process.execPath,
+        [resolve(process.cwd(), "scripts/promote-production-schema.mjs")],
+        {
+          cwd: tempRepository,
+          env: {
+            ...process.env,
+            BOTBOUND_PRODUCTION_SCHEMA_CONFIRM: "APPLY_APPEND_ONLY_BOTBOUND_MIGRATIONS",
+            BOTBOUND_RELEASE_SHA: releaseSha,
+            POSTGRES_URL: "",
+            DATABASE_URL: "",
+          },
+          encoding: "utf8",
+        },
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("Local release checkout is not clean");
+      expect(result.stderr).not.toContain("POSTGRES_URL or DATABASE_URL is required");
+    } finally {
+      rmSync(tempRepository, { recursive: true, force: true });
+    }
+  }, 15_000);
 
   it("certifies local artifacts without querying or mutating live providers", () => {
     const productBuild = buildSource.indexOf('run("npm", ["run", "build"]);');

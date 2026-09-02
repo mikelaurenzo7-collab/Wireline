@@ -63,7 +63,7 @@ POSTGRES_URL=<canonical-port-5432-session-url> \
   node scripts/promote-production-schema.mjs
 ```
 
-The promotion command rejects a SHA mismatch, a noncanonical Supabase project, a transaction-pooler URL, or a missing typed confirmation. It validates production configuration, applies the committed Drizzle journal, and verifies resulting schema effects.
+The promotion command rejects a SHA mismatch, a dirty checkout, a noncanonical Supabase project, a transaction-pooler URL, or a missing typed confirmation. It validates production configuration, applies the committed Drizzle journal, and verifies resulting schema effects.
 
 Never use `db:push` against shared or production data. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 

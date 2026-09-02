@@ -39,7 +39,7 @@ if (environment === "production" && !isCanonicalProduction) {
 if (isCanonicalProduction && migrationsForced) {
   console.warn(
     "Canonical production artifact compilation is read-only; WIRELINE_RUN_MIGRATIONS=true is ignored. " +
-      "Run npm run release:promote-schema against the exact release SHA before deployment.",
+      "Run node scripts/promote-production-schema.mjs against the exact release SHA before deployment.",
   );
 }
 

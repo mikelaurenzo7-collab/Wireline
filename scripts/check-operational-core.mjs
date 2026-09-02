@@ -102,23 +102,23 @@ requirePattern(
 
 requirePattern(
   "scripts/vercel-build.mjs",
-  /environment === "production"/,
-  "Database migrations must default to production deployments only.",
+  /const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced/,
+  "Canonical Production artifact builds must never execute database migrations.",
 );
 requirePattern(
   "scripts/vercel-build.mjs",
   /WIRELINE_RUN_MIGRATIONS/,
-  "Migration execution must have an explicit environment override.",
+  "Isolated nonproduction migration execution must have an explicit environment override.",
 );
 requirePattern(
   "scripts/vercel-build.mjs",
   /isDuplicateV0Project/,
-  "Duplicate Vercel projects must never migrate the production database by default.",
+  "Duplicate Vercel projects must remain visibly identifiable during isolated migration checks.",
 );
 requirePattern(
   "scripts/vercel-build.mjs",
   /check-deployment-boundaries\.mjs/,
-  "Vercel builds must enforce preview and production credential isolation before migrations.",
+  "Vercel builds must enforce Preview and Production credential isolation before any optional nonproduction migration.",
 );
 requirePattern(
   "scripts/vercel-build.mjs",

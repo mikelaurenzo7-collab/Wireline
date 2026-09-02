@@ -8,8 +8,8 @@ BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, 
 2. Identify the canonical source before editing. Do not create a second source of truth to avoid touching the first.
 3. Make the smallest coherent change that fixes the verified problem.
 4. Add behavioral coverage for defects and durable contract coverage for architectural invariants.
-5. Validate the exact branch head in Vercel before merge.
-6. Squash merge only after review threads, deployment checks, and production-impact questions are closed.
+5. Consolidate the branch into its final reviewed commit, then validate that exact head in Vercel.
+6. Fast-forward that exact reviewed commit into `main` only after review threads, deployment checks, and production-impact questions are closed. Never create a new merge or squash SHA after exact-head evidence is collected.
 7. Verify the promoted production SHA, database state, health endpoint, and runtime errors when the change can affect them.
 
 ## Change standards

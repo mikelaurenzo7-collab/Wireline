@@ -1,6 +1,6 @@
 # Supabase Advisor Posture - 2026-07-07
 
-Last refreshed: **2026-08-18** via Supabase MCP against project `ogenlhodmwvyacvnrsnj` (`us-east-2`, `ACTIVE_HEALTHY`, Postgres 17.6.1).
+Last refreshed: **2026-09-01** via Supabase MCP against project `ogenlhodmwvyacvnrsnj` (`us-east-2`, `ACTIVE_HEALTHY`, Postgres 17.6.1).
 
 ## Security
 
@@ -31,11 +31,11 @@ Remediation reference: https://supabase.com/docs/guides/database/database-linter
 
 The 2026-08-18 live audit found the opposite defect: schema-declared hot-path indexes were **missing**, not unused. `pg_stat_statements` showed `wireline_knowledge` tenant recency and agent+user lookups plus `wireline_jobs` retention deletes without covering indexes. Those names were authored in unjournalled `0018_add_more_performance_indexes.sql` and never reached this database. Journalled migration `0155_hot_path_knowledge_and_jobs_indexes` installs them. Other schema-declared indexes that are still absent sit on tiny or empty tables, or are left-prefixes of covering indexes that already exist; they are deferred until a matching query plan appears.
 
-Do not apply native xAI phone-binding migrations `0152`/`0153` through the Supabase migration tool while the production Vercel path owns that journal. `supabase_migrations` currently ends at `0149`; later journalled tags reach Postgres through `drizzle-kit migrate` on production deploys.
+Production artifact builds are read-only. The explicit exact-SHA schema-promotion path is authoritative for the committed Drizzle journal; an authenticated Supabase migration operation is reserved for the documented urgent path and must receive the same committed SQL plus live effect verification. On 2026-09-01, the application ledger and catalog effects were verified through `0172_remove_retired_xai_voice_bindings`. The separate Supabase dashboard ledger is not BotBound's application migration authority and must never be "tidied" by replaying historical migrations.
 
 ## Current external posture
 
 - Project status: active healthy.
 - Security advisor posture: one warning, accepted because custom auth owns the relevant control.
-- Performance advisor posture: informational unused-index notices remain evidence-gated; missing hot-path indexes were applied in `0155`.
+- Performance advisor posture: informational unused-index notices remain evidence-gated; missing hot-path indexes were applied in `0155`, and the new `0171` send-operation indexes are expected to remain unused until that path receives traffic.
 - Data safety posture: no unused-index drops, no leftover Lovable `kv_store_64639c03` drop, and no drop of `wireline_training_backup_20260609`.

@@ -4,9 +4,9 @@ This root path is retained for legacy links, development-tool discovery, and dep
 
 ## Required operating posture
 
-- Only `revaluate/wireline` may be linked to this repository and own the canonical `botbound.me` production domain. `trywireline.com` is a temporary compatibility origin for registered callback drains only.
+- Only `revaluate/botbound` may be linked to this repository and own the canonical `botbound.me` production domain. `trywireline.com` is a temporary compatibility origin for registered callback drains only.
 - The historical duplicate project produced a red **Vercel – workspace** status; do not copy production secrets into another project to silence it.
-- Production deploys come from reviewed squash merges to `main`; verify the exact merge SHA, migrations, aliases, health, and runtime errors.
+- Production deploys come from the exact reviewed commit fast-forwarded to `main`; verify that same SHA, migrations, aliases, health, and runtime errors.
 - Preview credentials must be sandbox-only or unset, and previews must not migrate the shared production database.
 - Node.js 22, TypeScript 6, and Vite 6 remain approved. TypeScript 7.0.2 previously failed Vercel's local user-provided function compilation step after the application build passed.
 - Never commit environment exports, credentials, provider payloads, live contact rosters, or generated deployment artifacts.

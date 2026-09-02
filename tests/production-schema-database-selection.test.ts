@@ -106,7 +106,10 @@ describe("production schema database selection", () => {
   });
 
   it("passes only the normalized session URL into the explicit production migration command", () => {
-    const buildSource = readFileSync(new URL("../scripts/vercel-build.mjs", import.meta.url), "utf8");
+    const buildSource = readFileSync(
+      new URL("../scripts/vercel-build.mjs", import.meta.url),
+      "utf8",
+    );
     const promotionSource = readFileSync(
       new URL("../scripts/promote-production-schema.mjs", import.meta.url),
       "utf8",
@@ -115,7 +118,12 @@ describe("production schema database selection", () => {
 
     expect(promotionSource).toContain("resolveProductionMigrationDatabaseUrl(databaseUrl)");
     expect(promotionSource).toContain("POSTGRES_URL: selected.connectionString");
-    expect(promotionSource).toContain('run("npm", ["run", "db:migrate"], env);');
+    expect(promotionSource).toContain("DATABASE_POOL_URL: selected.connectionString");
+    expect(promotionSource).toContain("delete promotionEnv.DATABASE_URL");
+    expect(promotionSource).toContain('run("npm", ["run", "db:migrate"], promotionEnv);');
+    expect(promotionSource).toContain(
+      'run("node", ["scripts/run-production-schema-effects.mjs"], promotionEnv);',
+    );
     expect(buildSource).not.toContain("resolveProductionMigrationDatabaseUrl");
     expect(buildSource).toContain(
       "const shouldMigrate = !isCanonicalProduction && !migrationsDisabled && migrationsForced",
@@ -140,9 +148,7 @@ describe("tenant database connection scope", () => {
     expect(() => resolveTenantDatabaseScope("e2e-gold@trywireline.com")).toThrow(
       "INVALID_TENANT_CONTEXT",
     );
-    expect(() => resolveTenantDatabaseScope("not-a-tenant-uuid")).toThrow(
-      "INVALID_TENANT_CONTEXT",
-    );
+    expect(() => resolveTenantDatabaseScope("not-a-tenant-uuid")).toThrow("INVALID_TENANT_CONTEXT");
   });
 
   it("wires the classifier into the pooled connection boundary", () => {

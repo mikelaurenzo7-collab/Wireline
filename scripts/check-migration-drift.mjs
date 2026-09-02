@@ -6,18 +6,18 @@
  *
  * Why this exists
  * ---------------
- * `drizzle-kit migrate` — the only migration step the Vercel build runs — is
- * driven by `drizzle/migrations/meta/_journal.json`, and that journal lists 48
- * of the 153 committed `.sql` files. The other 105 were applied out of band and
- * are outside drizzle's control entirely: a developer who adds one of those
- * files and expects the deploy to run it will be wrong, silently, and the code
- * depending on it will fail at runtime instead of at deploy time.
+ * The explicit Production schema-promotion command runs `drizzle-kit migrate`,
+ * which is driven by `drizzle/migrations/meta/_journal.json`. The journal covers
+ * only a subset of committed `.sql` files; the integrity contract calculates and
+ * pins the fixed historical out-of-band backlog. A developer who adds an
+ * unjournalled file and expects schema promotion to run it will be wrong,
+ * silently, and the code depending on it will fail at runtime instead of at
+ * deploy time.
  *
- * Being journalled is not sufficient either. `0107_recap_artifacts_agent_index`
- * IS in the journal, yet `idx_wireline_recap_artifacts_agent_id` is absent from
- * production — the drizzle bookkeeping records it as applied while its effect
- * is missing. That is worse than an unapplied migration, because every tool
- * that reads the journal reports the schema as correct.
+ * Being journalled is not sufficient either. The live schema can lose or drift
+ * from a recorded effect while Drizzle still reports its migration as applied.
+ * That is worse than an unapplied migration, because every tool that reads only
+ * the journal reports the schema as correct.
  *
  * `scripts/check-production-schema-effects.mjs` already has the right idea and
  * runs on every production build, but its expectations are hand-maintained and

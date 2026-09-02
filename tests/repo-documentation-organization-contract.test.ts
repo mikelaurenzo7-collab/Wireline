@@ -73,7 +73,7 @@ describe("repository and documentation organization", () => {
     expect(databasePointer).not.toContain("POSTGRES_URL=");
     expect(databasePointer).not.toContain("auth.uid() IS NOT NULL");
     expect(deployPointer).toContain("docs/DEPLOYMENT_RUNBOOK.md");
-    expect(deployPointer).toContain("Only `revaluate/wireline` may be linked");
+    expect(deployPointer).toContain("Only `revaluate/botbound` may be linked");
     expect(deployPointer).not.toContain("OWNER_PHONE");
     expect(deployPointer).not.toContain("VAPI_PRIVATE_KEY");
     expect(exists("android/SETUP_CHECKLIST.md")).toBe(false);
@@ -121,7 +121,7 @@ describe("repository and documentation organization", () => {
     const contributing = read("CONTRIBUTING.md");
 
     expect(contributing).toContain("Start from the latest `main` commit");
-    expect(contributing).toContain("Squash merge");
+    expect(contributing).toContain("Fast-forward that exact reviewed commit");
     expect(contributing).toContain("Migrations are append-only");
     expect(contributing).toContain("exact-head Vercel");
     expect(contributing).toContain("docs/AUDIT_INDEX.md");

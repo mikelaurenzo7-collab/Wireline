@@ -9,7 +9,7 @@ BotBound uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 - Run `npm run db:health` before any schema or migration work.
 - Never use `drizzle-kit push` against a shared Wireline database. Wireline intentionally exposes no `db:push` package script.
 - Migrations are append-only. Do not edit a migration that may have run outside a disposable local database.
-- Preview deployments do not run migrations. Production runs the committed migration journal through `scripts/vercel-build.mjs` unless explicitly disabled for a non-live duplicate project.
+- Production artifact builds never run migrations. Preview builds skip them by default and may opt in only within an explicitly isolated nonproduction certification workflow. Promote the committed journal from the exact reviewed SHA with `scripts/promote-production-schema.mjs` before Production deployment.
 - Apply urgent production migrations only after the exact branch head is green, and commit the same migration in the repository before merge.
 - Backfill existing rows before adding constraints that assume the backfill.
 - Use idempotent DDL when a migration may be replayed safely.
@@ -17,7 +17,7 @@ BotBound uses Supabase-hosted PostgreSQL through Drizzle and the transaction poo
 
 ## The migration journal is not the whole history
 
-`npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. Production runs exactly that, from `scripts/vercel-build.mjs`.
+`npm run db:migrate` is `drizzle-kit migrate`, and drizzle-kit executes the **journal** (`drizzle/migrations/meta/_journal.json`), not the directory listing. The controlled Production schema-promotion command applies exactly that journal before deployment.
 
 The two are not the same set. A fixed historical group of SQL files was applied
 out of band before every new application migration began entering the Drizzle
@@ -29,18 +29,16 @@ password_hash` trigger that makes session revocation on password change
 database-owned rather than best-effort application code.
 
 Supabase also exposes its own `supabase_migrations.schema_migrations` ledger in
-the dashboard. That is not BotBound's application migration authority. As of
-August 31, 2026, the Supabase dashboard ledger ends at `0156`, while the live
-`drizzle.__drizzle_migrations` ledger and verified schema objects reach `0168`.
-This is expected dual-ledger history, not a twelve-migration production gap.
-Production promotion must compare the committed Drizzle journal with
-`drizzle.__drizzle_migrations` and concrete catalog objects; never repair or
-replay migrations merely to make the Supabase dashboard number look newer.
+the dashboard. That is not BotBound's application migration authority, and its
+history may differ from the application ledger. Production promotion must
+compare the committed Drizzle journal with `drizzle.__drizzle_migrations` and
+concrete catalog objects; never repair or replay migrations merely to make the
+Supabase dashboard number look newer.
 
 Two consequences to work from, not around:
 
 - **Reading the journal does not tell you what a live database contains, and reading the directory does not either.** Inspect the live schema when it matters, as the verification section below already requires. `npm run db:drift` automates that inspection: it derives the expected objects from every committed `.sql` file — indexes, tables, policies, functions, triggers, added columns — and reports which are absent from the connected database. It is read-only and on demand, never a build gate, and it prints how many statements it could not verify from text (`GRANT`/`REVOKE`/`DROP`/`COMMENT`/data writes, and anything inside a `DO $$ … $$` block, which is conditional by construction) so a clean run is never mistaken for full coverage. A migration reported as drifted **and** `[journalled]` is the dangerous case: drizzle records it as applied while its effect is missing, so `db:migrate` will not repair it and every journal-reading tool will call the schema correct.
-- **Do not back-fill the historical backlog to "tidy" the journal.** Those tags would schedule already-applied DDL to replay on the next production build, and much of it is not idempotent. Reconciling any of it needs live verification per migration and its own change.
+- **Do not back-fill the historical backlog to "tidy" the journal.** Those tags would schedule already-applied DDL to replay during the next explicit schema promotion, and much of it is not idempotent. Reconciling any of it needs live verification per migration and its own change.
 
 Numeric prefixes are reused (`0108`, `0118`, `0120` and others each name two unrelated migrations), so a filename does not establish ordering. The journal does, for the migrations it carries.
 
@@ -94,7 +92,7 @@ Consequences:
 
    Review generated SQL before committing it. Generated output is not automatically correct for backfills, constraint ordering, RLS, grants, or production data.
 
-   `db:generate` diffs `src/db/schema.ts` against the newest `drizzle/migrations/meta/*_snapshot.json` (sorted listing, not the journal). Commit the regenerated snapshot with every journalled migration and keep its numeric index equal to the newest journal `idx` — `tests/migration-journal-integrity-contract.test.ts` pins this. A stale snapshot chain makes the next `db:generate` emit a destructive full-schema diff that the Vercel build's `db:migrate` would execute.
+   `db:generate` diffs `src/db/schema.ts` against the newest `drizzle/migrations/meta/*_snapshot.json` (sorted listing, not the journal). Commit the regenerated snapshot with every journalled migration and keep its numeric index equal to the newest journal `idx` — `tests/migration-journal-integrity-contract.test.ts` pins this. A stale snapshot chain can make the next `db:generate` emit a destructive full-schema diff that the explicit Production schema-promotion command would execute.
 
 3. **Add integrity coverage**
 
@@ -106,7 +104,7 @@ Consequences:
 
 5. **Apply through a controlled path**
 
-   - Normal path: squash merge and let the canonical production Vercel deployment run `npm run db:migrate`.
+   - Normal path: after the exact-head Preview is green, promote the journal from that exact reviewed checkout with `scripts/promote-production-schema.mjs`, verify its effects, then merge and deploy the same SHA to Production.
    - Urgent/pre-merge verification path: apply the committed migration through the authenticated Supabase migration tool only after the exact head is green, then run non-destructive transactional probes.
 
 6. **Verify production**

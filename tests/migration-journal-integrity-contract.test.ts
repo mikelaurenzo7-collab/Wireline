@@ -28,18 +28,19 @@ const numericPrefix = (tag: string): number => {
 };
 
 /**
- * Production applies `drizzle-kit migrate` from scripts/vercel-build.mjs, and
- * drizzle-kit runs the JOURNAL — not the directory listing. A .sql file that is
- * committed but absent from meta/_journal.json therefore never executes on that
- * path, silently and with no error to notice.
+ * Production schema promotion applies `drizzle-kit migrate` from
+ * scripts/promote-production-schema.mjs, and drizzle-kit runs the JOURNAL — not
+ * the directory listing. A .sql file committed but absent from
+ * meta/_journal.json therefore never executes on that path, silently and with
+ * no error to notice.
  *
  * The repository is in that state today for 105 historical migrations: they were
  * applied out of band through the authenticated Supabase migration tool (the
  * urgent path in docs/DATABASE_OPERATIONS.md) and the journal was never
  * back-filled. That history is NOT something to "repair" from here — adding those
- * tags would make the next production build replay DDL that already ran, and much
- * of it is not idempotent. It is pinned instead, so the state is visible and any
- * movement is a reviewed decision rather than drift.
+ * tags would make the next explicit schema promotion replay DDL that already ran,
+ * and much of it is not idempotent. It is pinned instead, so the state is visible
+ * and any movement is a reviewed decision rather than drift.
  *
  * What this contract exists to stop is the forward-going version of the same
  * mistake: a NEW migration authored today, committed, and never journaled.
@@ -60,9 +61,9 @@ describe("migration journal integrity contract", () => {
     // snapshot 41 migrations stale (the state found on 2026-08-14: only
     // 0001/0004 existed), a routine `npm run db:generate` produced a
     // destructive full-create/drop migration that `npm run db:migrate` on the
-    // Vercel build path would then have executed against production. The
-    // snapshot chain was resynced; this pins that the sorted-last snapshot
-    // always carries the same index as the newest journal entry, so a new
+    // explicit Production schema-promotion path would then have executed against
+    // production. The snapshot chain was resynced; this pins that the sorted-last
+    // snapshot always carries the same index as the newest journal entry, so a new
     // journalled migration without its regenerated snapshot fails here instead
     // of arming that footgun again.
     const snapshotIndexes = readdirSync(resolve(MIGRATIONS_DIR, "meta"))

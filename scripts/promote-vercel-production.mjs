@@ -91,7 +91,7 @@ async function assertPromotionCandidate(deploymentId, expectedCommitSha) {
   }
   if (deployment.target !== "production") {
     throw new Error(
-      "Refusing to promote a preview artifact. Preview builds skip production migrations and production-only release gates; create a production-target build instead.",
+      "Refusing to promote a preview artifact. Preview builds do not certify Production schema or run Production-only release gates; create a production-target build instead.",
     );
   }
   if (commitRef !== "main") {
