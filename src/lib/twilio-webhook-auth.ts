@@ -82,9 +82,11 @@ function resolveTwilioRequestUrl(req: Request): string | null {
 }
 
 /**
- * Verify a Twilio webhook with Twilio's official SDK. Production fails closed
- * when the auth token or canonical external URL is unavailable. Development
- * may pass through only when no auth token has been configured.
+ * Verify a Twilio webhook with Twilio's official SDK. Fails closed whenever the
+ * auth token or canonical external URL is unavailable. An explicit dev-only
+ * bypass is available through TWILIO_WEBHOOK_DISABLE_AUTH for local tunnels
+ * (ngrok/cloudflared), but it is rejected in production and never silently
+ * auto-enabled.
  */
 export function evaluateTwilioWebhookAuth(
   req: Request,
@@ -93,7 +95,11 @@ export function evaluateTwilioWebhookAuth(
   if (req.method !== "POST") return { ok: false };
 
   if (!authToken) {
-    return isProductionRuntime() ? { ok: false } : { ok: true };
+    const devBypass = process.env.TWILIO_WEBHOOK_DISABLE_AUTH === "1";
+    if (devBypass && !isProductionRuntime()) {
+      return { ok: true };
+    }
+    return { ok: false };
   }
 
   const signature = firstHeaderValue(req.headers["x-twilio-signature"]);

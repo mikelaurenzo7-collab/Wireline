@@ -75,9 +75,12 @@ router.get("/api/webhooks/meta/leads", (req: Request, res: Response) => {
 //  POST — leadgen event delivery
 // ────────────────────────────────────────────────────────────────────
 
-function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): boolean {
+type MetaSignatureResult = "ok" | "missing_secret" | "mismatch";
+
+function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): MetaSignatureResult {
   const secret = process.env.META_APP_SECRET;
-  if (!secret || !signature) return false;
+  if (!secret) return "missing_secret";
+  if (!signature) return "mismatch";
   if (!Buffer.isBuffer(rawBody)) {
     // Defense in depth — if global express.json() ever runs first the
     // body is a parsed object and createHmac().update() would throw.
@@ -87,7 +90,7 @@ function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): bo
     log.error("Meta signature: rawBody is not a Buffer", {
       bodyType: typeof rawBody,
     });
-    return false;
+    return "mismatch";
   }
   // Header format: "sha256=<hex>"
   let expected: string;
@@ -97,13 +100,15 @@ function verifyMetaSignature(rawBody: Buffer, signature: string | undefined): bo
   } catch (err) {
     if (err instanceof AppError) throw err;
     log.error("Meta signature: HMAC compute failed", { error: getErrorMessage(err) });
-    return false;
+    return "mismatch";
   }
-  if (signature.length !== expected.length) return false;
+  if (signature.length !== expected.length) return "mismatch";
   try {
-    return timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"));
+    return timingSafeEqual(Buffer.from(signature, "utf8"), Buffer.from(expected, "utf8"))
+      ? "ok"
+      : "mismatch";
   } catch {
-    return false;
+    return "mismatch";
   }
 }
 
@@ -205,8 +210,16 @@ router.post("/api/webhooks/meta/leads", metaRateLimiter, async (req: Request, re
   const sig = req.header("x-hub-signature-256");
   const rawBody = req.body as Buffer;
 
-  if (!verifyMetaSignature(rawBody, sig)) {
-    log.warn("Meta webhook signature mismatch");
+  const signatureResult = verifyMetaSignature(rawBody, sig);
+  if (signatureResult === "missing_secret") {
+    // A missing/rotated app secret makes every delivery unverifiable. Fail
+    // with 503 so Meta retries later rather than silently dropping leads,
+    // and log at error level so operators notice the misconfiguration.
+    log.error("Meta webhook: META_APP_SECRET not configured, rejecting delivery");
+    return res.status(503).send("Meta webhook is finishing setup");
+  }
+  if (signatureResult === "mismatch") {
+    log.error("Meta webhook signature mismatch");
     // Acknowledge with 200 so Meta doesn't retry an unverifiable
     // delivery, but log it as a security event.
     return res.status(200).send("OK");

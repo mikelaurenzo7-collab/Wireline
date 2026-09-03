@@ -49,8 +49,14 @@ export function parseCookieHeader(header: string | undefined): Record<string, st
     const eq = trimmed.indexOf("=");
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
-    const value = trimmed.slice(eq + 1).trim();
-    if (key) out[key] = decodeURIComponent(value);
+    const rawValue = trimmed.slice(eq + 1).trim();
+    if (key) {
+      try {
+        out[key] = decodeURIComponent(rawValue);
+      } catch {
+        out[key] = rawValue;
+      }
+    }
   }
   return out;
 }

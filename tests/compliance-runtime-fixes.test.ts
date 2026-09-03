@@ -45,8 +45,8 @@ describe("compliance & runtime fix contracts", () => {
     const compliance = read("src/lib/compliance.ts");
     expect(compliance).toContain("inArray(schema.dncList.phone, candidates)");
     const twilio = read("src/lib/twilio-service.ts");
-    expect(twilio).toContain("dncPhoneCandidates(phone)");
-    expect(twilio).toContain("inArray(schema.dncList.phone, candidates)");
+    expect(twilio).toContain("isDncBlocked(userId, phone)");
+    expect(twilio).toContain("return isDncBlocked(userId, phone)");
   });
 
   it("SMS opt-out handlers write the canonical digits-only DNC key", () => {

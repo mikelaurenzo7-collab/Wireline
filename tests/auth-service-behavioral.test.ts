@@ -34,11 +34,11 @@ describe("signUp legal consent boundary", () => {
 });
 
 describe("hashPassword", () => {
-  it("produces a salt:hash format", () => {
+  it("produces a versioned scrypt salt:hash format", () => {
     const result = hashPassword("test-password");
     const parts = result.split(":");
     expect(parts).toHaveLength(2);
-    expect(parts[0]).toHaveLength(32);
+    expect(parts[0]).toMatch(/^scrypt2\$[0-9a-f]{32}$/);
     expect(parts[1]).toHaveLength(128);
   });
 

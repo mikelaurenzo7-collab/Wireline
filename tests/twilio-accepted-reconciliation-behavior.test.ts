@@ -126,7 +126,7 @@ function installSendMocks(options: {
     resolveAgentSmsFromNumber: vi.fn(async () => null),
   }));
   vi.doMock("../src/lib/compliance", () => ({
-    dncPhoneCandidates: () => ["14155550123"],
+    isDncBlocked: () => false,
   }));
   vi.doMock("../src/lib/launch-readiness", () => ({ isLaunchHardBlocked: () => false }));
   vi.doMock("../src/lib/account-environment-policy", () => ({

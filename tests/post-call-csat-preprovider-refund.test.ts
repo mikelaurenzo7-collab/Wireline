@@ -79,7 +79,7 @@ function installTwilioMocks(
     resolveAgentSmsFromNumber: vi.fn(async () => null),
   }));
   vi.doMock("../src/lib/compliance", () => ({
-    dncPhoneCandidates: () => ["+13125550123"],
+    isDncBlocked: () => false,
   }));
   vi.doMock("../src/lib/launch-readiness", () => ({ isLaunchHardBlocked: () => false }));
   vi.doMock("../src/lib/account-environment-policy", () => ({

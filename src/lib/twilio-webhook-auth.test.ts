@@ -95,4 +95,25 @@ describe("Twilio webhook external-origin binding", () => {
       ok: true,
     });
   });
+
+  it("fails closed when the auth token is missing even outside production", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VERCEL", "");
+    const url = "https://botbound.me/api/twilio-webhook/sms";
+
+    expect(evaluateTwilioWebhookAuth(requestFor(url), undefined)).toEqual({ ok: false });
+  });
+
+  it("allows an explicit dev-only bypass only outside production", () => {
+    const url = "https://botbound.me/api/twilio-webhook/sms";
+
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VERCEL", "");
+    vi.stubEnv("TWILIO_WEBHOOK_DISABLE_AUTH", "1");
+    expect(evaluateTwilioWebhookAuth(requestFor(url), undefined)).toEqual({ ok: true });
+
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("VERCEL", "1");
+    expect(evaluateTwilioWebhookAuth(requestFor(url), undefined)).toEqual({ ok: false });
+  });
 });

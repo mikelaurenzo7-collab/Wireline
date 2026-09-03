@@ -45,7 +45,9 @@ export async function recordVoiceMetrics(
         latencyP50Ms: payload.latencyP50Ms ?? null,
         latencyP95Ms: payload.latencyP95Ms ?? null,
       })
-      .where(eq(schema.callLogs.vapiCallId, payload.vapiCallId));
+      .where(
+        and(eq(schema.callLogs.vapiCallId, payload.vapiCallId), eq(schema.callLogs.userId, userId)),
+      );
   } catch (err) {
     log.warn("recordVoiceMetrics failed", {
       userId,

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Twilio API responses are vendor-defined. */
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
-import { dncPhoneCandidates } from "./compliance";
+import { isDncBlocked } from "./compliance";
 
 import * as schema from "../db/schema";
 import { resolveAgentSmsFromNumber } from "./agent-phone-lines";
@@ -266,15 +266,11 @@ async function tenantOwnsSmsSender(
 
 async function blockedByDnc(userId: string, phone: string): Promise<boolean> {
   // Match every stored variant (digits-only, "+"-prefixed, 10/11-digit) so a
-  // number a tenant added to DNC digits-only still suppresses outbound SMS.
-  const candidates = dncPhoneCandidates(phone);
-  if (candidates.length === 0) return false;
-  const [row] = await drizzle
-    .select({ phone: schema.dncList.phone })
-    .from(schema.dncList)
-    .where(and(eq(schema.dncList.userId, userId), inArray(schema.dncList.phone, candidates)))
-    .limit(1);
-  return !!row;
+  // number a tenant added to DNC digits-only still suppresses outbound SMS, and
+  // honor the shared compliance ledger's Redis failsafe so a legacy STOP that
+  // Twilio accepted but Postgres could not persist still suppresses outbound
+  // SMS/WhatsApp during the disaster window (parity with outbound voice).
+  return isDncBlocked(userId, phone);
 }
 
 function whatsappCustomerRate(): number | null {

@@ -6,8 +6,8 @@ import {
   createHmac,
   timingSafeEqual,
   createHash,
+  type ScryptOptions,
 } from "node:crypto";
-import { promisify } from "node:util";
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { sessionUsers } from "../db/security-schema";
@@ -25,7 +25,56 @@ export {
 } from "./platform-owner-emails";
 import { isOwnerEmail } from "./platform-owner-emails";
 
-const scryptAsync = promisify(scrypt);
+const SCRYPT_KEY_LEN = 64;
+const SCRYPT_SALT_BYTES = 16;
+// OWASP-recommended floor for interactive login. Node's defaults (N=16384,
+// r=8, p=1) are retained only to verify legacy hashes during rehash-on-login.
+// N=2^17 needs 128*N*r = 128MiB, above Node's 32MiB default cap, so raise
+// maxmem to a safe 256MiB.
+const SCRYPT_STRONG = { N: 131072, r: 8, p: 1, maxmem: 256 * 1024 * 1024 } as const;
+// New hashes are prefixed so verification can distinguish the strong cost from
+// the legacy default-cost format. Legacy hashes carry no prefix and are
+// verified with Node's defaults, then upgraded opportunistically on login.
+const SCRYPT_STRONG_PREFIX = "scrypt2$";
+
+// promisify(scrypt) drops the options overload from its inferred type, so wrap
+// the callback API explicitly to keep the strong/legacy cost parameterized.
+function scryptAsync(
+  password: string,
+  salt: string,
+  keylen: number,
+  options: ScryptOptions | undefined,
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const callback = (error: Error | null, derivedKey: Buffer) =>
+      error ? reject(error) : resolve(derivedKey);
+    if (options) scrypt(password, salt, keylen, options, callback);
+    else scrypt(password, salt, keylen, callback);
+  });
+}
+
+function encodePasswordHash(saltHex: string, hashHex: string): string {
+  return `${SCRYPT_STRONG_PREFIX}${saltHex}:${hashHex}`;
+}
+
+function parseStoredHash(
+  storedHash: string,
+): { salt: string; hash: string; strong: boolean } | null {
+  let rest = storedHash;
+  let strong = false;
+  if (storedHash.startsWith(SCRYPT_STRONG_PREFIX)) {
+    strong = true;
+    rest = storedHash.slice(SCRYPT_STRONG_PREFIX.length);
+  }
+  const [salt, hash] = rest.split(":");
+  if (!salt || !hash) return null;
+  return { salt, hash, strong };
+}
+
+function isLegacyPasswordHash(storedHash: string): boolean {
+  const parsed = parseStoredHash(storedHash);
+  return parsed !== null && !parsed.strong;
+}
 
 let cachedJwtSecret: string | null = null;
 
@@ -71,35 +120,47 @@ async function requirePasswordSafety(
 /** Compatibility helper for tests and offline scripts. */
 export function hashPassword(password: string): string {
   requireBoundedPassword(password);
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
+  const salt = randomBytes(SCRYPT_SALT_BYTES).toString("hex");
+  const hash = scryptSync(password, salt, SCRYPT_KEY_LEN, SCRYPT_STRONG).toString("hex");
+  return encodePasswordHash(salt, hash);
 }
 
 async function hashPasswordForRequest(password: string): Promise<string> {
   requireBoundedPassword(password);
-  const salt = randomBytes(16).toString("hex");
-  const key = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${salt}:${Buffer.from(key).toString("hex")}`;
+  const salt = randomBytes(SCRYPT_SALT_BYTES).toString("hex");
+  const key = (await scryptAsync(password, salt, SCRYPT_KEY_LEN, SCRYPT_STRONG)) as Buffer;
+  return encodePasswordHash(salt, Buffer.from(key).toString("hex"));
 }
 
 /** Compatibility helper; request handlers use verifyPasswordForRequest. */
 export function verifyPassword(password: string, storedHash: string): boolean {
   if (!passwordFitsByteLimit(password)) return false;
-  const [salt, hash] = storedHash.split(":");
-  if (!salt || !hash) return false;
-  const key = scryptSync(password, salt, 64);
-  const hashBuf = Buffer.from(hash, "hex");
+  const parsed = parseStoredHash(storedHash);
+  if (!parsed) return false;
+  const key = scryptSync(
+    password,
+    parsed.salt,
+    SCRYPT_KEY_LEN,
+    parsed.strong ? SCRYPT_STRONG : undefined,
+  );
+  const hashBuf = Buffer.from(parsed.hash, "hex");
   if (hashBuf.length !== key.length) return false;
   return timingSafeEqual(hashBuf, key);
 }
 
 async function verifyPasswordForRequest(password: string, storedHash: string): Promise<boolean> {
   if (!passwordFitsByteLimit(password)) return false;
-  const [salt, hash] = storedHash.split(":");
-  if (!salt || !hash) return false;
-  const key = Buffer.from((await scryptAsync(password, salt, 64)) as Buffer);
-  const hashBuf = Buffer.from(hash, "hex");
+  const parsed = parseStoredHash(storedHash);
+  if (!parsed) return false;
+  const key = Buffer.from(
+    (await scryptAsync(
+      password,
+      parsed.salt,
+      SCRYPT_KEY_LEN,
+      parsed.strong ? SCRYPT_STRONG : undefined,
+    )) as Buffer,
+  );
+  const hashBuf = Buffer.from(parsed.hash, "hex");
   if (hashBuf.length !== key.length) return false;
   return timingSafeEqual(hashBuf, key);
 }
@@ -182,6 +243,24 @@ export const authService = {
     if (!(await verifyPasswordForRequest(password, user.passwordHash))) {
       log.warn("Auth: Invalid password", { email });
       return null;
+    }
+
+    // Opportunistically upgrade legacy default-cost scrypt hashes to the strong
+    // cost on a successful login. The write is best-effort: a failure here must
+    // not block sign-in, the account simply retries the upgrade next login.
+    if (isLegacyPasswordHash(user.passwordHash)) {
+      try {
+        const upgraded = await hashPasswordForRequest(password);
+        await drizzle
+          .update(schema.users)
+          .set({ passwordHash: upgraded })
+          .where(eq(schema.users.id, user.id));
+      } catch (err) {
+        log.warn("Auth: legacy password rehash skipped", {
+          email,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
 
     const [[session], [sub]] = await Promise.all([

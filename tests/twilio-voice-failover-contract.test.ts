@@ -16,7 +16,7 @@ describe("Twilio voice failover contract", () => {
   it("fails production callbacks closed through Twilio's official signature verifier", () => {
     expect(auth).toContain("Twilio.validateRequest");
     expect(auth).toMatch(
-      /if \(!authToken\) \{[\s\S]*isProductionRuntime\(\) \? \{ ok: false \} : \{ ok: true \}/,
+      /if \(!authToken\) \{[\s\S]*TWILIO_WEBHOOK_DISABLE_AUTH[\s\S]*return \{ ok: false \}/,
     );
     expect(auth).toContain("TWILIO_ACCOUNT_SID");
   });
