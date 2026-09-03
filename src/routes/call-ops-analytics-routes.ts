@@ -34,7 +34,10 @@ router.get(
       }
 
       const userId = req.user.id;
-      const weekdayExpression = sql<number>`extract(dow from timezone(${timeZone}, ${schema.callLogs.createdAt}))::int`;
+      // Postgres cannot pick a timezone() overload when the zone is an untyped
+      // bound parameter (`unknown`). Cast to text so weekday buckets match the
+      // caller's IANA zone instead of failing the whole analytics request.
+      const weekdayExpression = sql<number>`extract(dow from timezone(${timeZone}::text, ${schema.callLogs.createdAt}))::int`;
 
       const [[aggregate], weekdayRows] = await drizzle.transaction((tx) =>
         serialQueryBatch([
