@@ -197,6 +197,8 @@ describe("authenticated workspace design architecture", () => {
     expect(appointments).toContain("open={pastOpen ?? upcoming.length === 0}");
     expect(appointments).not.toContain("defaultOpen");
     expect(cadences).not.toContain("Multi-touch cadences");
+    expect(cadences).toContain("flex-col items-stretch");
+    expect(cadences).toContain("whitespace-normal");
     expect(inbox).toContain("mailboxConnected === false");
   });
 });
