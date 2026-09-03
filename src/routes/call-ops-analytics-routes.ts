@@ -7,10 +7,12 @@ import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { authenticateUser } from "../middleware/auth";
 import { drizzle, log, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { getErrorMessage } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
+
+/** Intl-resolved IANA names are identifier-shaped; keep the SQL literal conservative. */
+const IANA_ZONE_SQL_SAFE = /^[A-Za-z0-9_/+-]+$/;
 
 /**
  * Exact analytics for Call Ops without moving transcript-bearing call rows into
@@ -32,14 +34,19 @@ router.get(
         }
         throw error;
       }
+      if (!IANA_ZONE_SQL_SAFE.test(timeZone)) {
+        throw AppError.fromHttpStatus(400, "Unsupported timezone.");
+      }
 
       const userId = req.user.id;
-      // Postgres cannot pick a timezone() overload when the zone is an untyped
-      // bound parameter (`unknown`). Cast to text so weekday buckets match the
-      // caller's IANA zone instead of failing the whole analytics request.
-      const weekdayExpression = sql<number>`extract(dow from timezone(${timeZone}::text, ${schema.callLogs.createdAt}))::int`;
+      // Bound timezone parameters cannot be grouped safely (Drizzle repeats the
+      // fragment in SELECT / GROUP BY / ORDER BY) and Postgres cannot pick a
+      // timezone() overload for an untyped bind. Inline the already-validated
+      // IANA name and group by ordinal, matching the Insights heatmap pattern.
+      const zone = sql.raw(`'${timeZone}'`);
+      const weekdayExpression = sql<number>`extract(dow from (${schema.callLogs.createdAt} AT TIME ZONE ${zone}))::int`;
 
-      const [[aggregate], weekdayRows] = await drizzle.transaction((tx) =>
+      const [[aggregate]] = await drizzle.transaction((tx) =>
         serialQueryBatch([
           tx
             .select({
@@ -49,17 +56,31 @@ router.get(
             })
             .from(schema.callLogs)
             .where(eq(schema.callLogs.userId, userId)),
-          tx
-            .select({
-              weekday: weekdayExpression,
-              count: sql`count(*)`,
-            })
-            .from(schema.callLogs)
-            .where(eq(schema.callLogs.userId, userId))
-            .groupBy(weekdayExpression)
-            .orderBy(weekdayExpression),
         ]),
       );
+
+      let weekdayRows: Array<{ weekday: number; count: unknown }> = [];
+      try {
+        const [rows] = await drizzle.transaction((tx) =>
+          serialQueryBatch([
+            tx
+              .select({
+                weekday: weekdayExpression,
+                count: sql`count(*)`,
+              })
+              .from(schema.callLogs)
+              .where(eq(schema.callLogs.userId, userId))
+              .groupBy(sql`1`)
+              .orderBy(sql`1`),
+          ]),
+        );
+        weekdayRows = rows ?? [];
+      } catch (weekdayError) {
+        log.error("Call Ops analytics weekday buckets failed", {
+          userId,
+          error: weekdayError,
+        });
+      }
 
       const totalCalls = Number(aggregate?.totalCalls ?? 0);
       const totalSeconds = Number(aggregate?.totalSeconds ?? 0);
@@ -67,7 +88,7 @@ router.get(
       const avgQaScore =
         avgQaScoreRaw === null || avgQaScoreRaw === undefined ? null : Number(avgQaScoreRaw);
       const weekdayCounts = new Array<number>(7).fill(0);
-      for (const row of weekdayRows || []) {
+      for (const row of weekdayRows) {
         const weekday = Number(row.weekday);
         if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) continue;
         weekdayCounts[weekday] = Number(row.count ?? 0);
@@ -86,7 +107,7 @@ router.get(
       if (error instanceof AppError) throw error;
       log.error("Call Ops analytics failed", {
         userId: req.user?.id,
-        error: getErrorMessage(error),
+        error,
       });
       throw AppError.fromHttpStatus(503, "Call Ops analytics are temporarily unavailable");
     }

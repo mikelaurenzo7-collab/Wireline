@@ -18,10 +18,9 @@ describe("Call Ops analytics truth", () => {
     expect(route).toContain("totalCalls: sql`count(*)`");
     expect(route).toContain("sum(${schema.callLogs.durationSeconds})");
     expect(route).toContain("avg(${schema.callLogs.qaScore})");
-    expect(route).toContain(
-      "extract(dow from timezone(${timeZone}::text, ${schema.callLogs.createdAt}))::int",
-    );
-    expect(route).toContain(".groupBy(weekdayExpression)");
+    expect(route).toContain("AT TIME ZONE ${zone}");
+    expect(route).toContain(".groupBy(sql`1`)");
+    expect(route).toContain("Call Ops analytics weekday buckets failed");
     expect(route).toContain('res.setHeader("Cache-Control", "private, no-store, max-age=0")');
     expect(route).not.toContain("schema.callLogs.transcript");
     expect(route).not.toContain("schema.callLogs.customerNumber");
