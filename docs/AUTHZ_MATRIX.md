@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 383
-**Protected:** 307
+**Routes scanned:** 384
+**Protected:** 308
 **Public (allowlisted):** 76
 **Violations:** 0
 
@@ -327,6 +327,7 @@
 | native-phone-routing-routes.ts | GET | `/api/phone-numbers` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | PATCH | `/api/phone-numbers/:id` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | DELETE | `/api/phone-numbers/:id` | inline | — | — | Protected |
+| native-phone-routing-routes.ts | GET | `/api/phone-numbers/area-codes` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | GET | `/api/phone-numbers/available` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/claim` | inline | — | — | Protected |
 | native-phone-routing-routes.ts | POST | `/api/phone-numbers/provision` | inline | — | — | Protected |
