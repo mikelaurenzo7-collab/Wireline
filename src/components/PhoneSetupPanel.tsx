@@ -224,6 +224,8 @@ export default function PhoneSetupPanel() {
         <EmptyState
           framed
           density="compact"
+          titleTone="ui"
+          withHalo={false}
           icon={<Phone className="size-5" aria-hidden="true" />}
           title="No line yet"
           description="Add a number when this Bot is ready for real calls."

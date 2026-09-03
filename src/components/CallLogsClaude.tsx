@@ -246,6 +246,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
           icon={<Phone className="size-5" aria-hidden="true" />}
           title={agentId ? "No calls for this Bot" : "No calls yet"}
           density="compact"
+          titleTone="ui"
+          withHalo={false}
           action={
             <Button type="button" size="sm" onClick={() => setShowOutboundDial(true)}>
               Dial
@@ -254,7 +256,12 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         />
       ) : error && !calls.length ? null : !visibleCalls.length ? (
         <>
-          <EmptyState title={`No matches in ${calls.length} loaded calls`} density="compact" />
+          <EmptyState
+            title={`No matches in ${calls.length} loaded calls`}
+            density="compact"
+            titleTone="ui"
+            withHalo={false}
+          />
           {paginationControl}
         </>
       ) : (
@@ -307,7 +314,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   );
 
   const reportBody = !selected ? (
-    <EmptyState title="Select a call" density="compact" />
+    <EmptyState title="Select a call" density="compact" titleTone="ui" withHalo={false} />
   ) : (
     <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
       <button

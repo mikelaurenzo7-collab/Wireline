@@ -148,6 +148,7 @@ export default function EmailInbox({
   const [detailError, setDetailError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [mailboxConnected, setMailboxConnected] = useState<boolean | null>(null);
   const selectedIdRef = useRef<string | null>(null);
   const outcomeOperationRef = useRef(0);
   const threadListOperationRef = useRef(0);
@@ -264,6 +265,27 @@ export default function EmailInbox({
       threadListAbortRef.current?.abort();
     };
   }, [loadThreads]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await authFetch("/api/emails/accounts");
+        const body = (await response.json().catch(() => null)) as { accounts?: unknown[] } | null;
+        if (cancelled) return;
+        if (!response.ok) {
+          setMailboxConnected(null);
+          return;
+        }
+        setMailboxConnected(Array.isArray(body?.accounts) && body.accounts.length > 0);
+      } catch {
+        if (!cancelled) setMailboxConnected(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedId) {
@@ -509,6 +531,8 @@ export default function EmailInbox({
               title="Inbox unavailable"
               description={error}
               density="compact"
+              titleTone="ui"
+              withHalo={false}
               action={
                 <Button
                   type="button"
@@ -526,6 +550,8 @@ export default function EmailInbox({
               title="No matching email"
               description="Try a different sender, subject, status, or keyword."
               density="compact"
+              titleTone="ui"
+              withHalo={false}
             />
           ) : !visibleThreads.length ? (
             <EmptyState
@@ -537,8 +563,10 @@ export default function EmailInbox({
                   : "Connected mailbox conversations will appear here."
               }
               density="compact"
+              titleTone="ui"
+              withHalo={false}
               action={
-                !agentId && !accountId ? (
+                !agentId && !accountId && mailboxConnected === false ? (
                   <Button asChild variant="secondary" size="sm">
                     <Link to="/connections">Connect email</Link>
                   </Button>
@@ -598,6 +626,8 @@ export default function EmailInbox({
               icon={<Mail className="size-5" aria-hidden="true" />}
               title="Select a conversation"
               density="compact"
+              titleTone="ui"
+              withHalo={false}
             />
           ) : detailLoading ? (
             <div className="flex h-full min-h-0 flex-col">
@@ -620,6 +650,8 @@ export default function EmailInbox({
                 title="Conversation unavailable"
                 description={detailError}
                 density="compact"
+                titleTone="ui"
+                withHalo={false}
                 action={
                   <Button
                     type="button"

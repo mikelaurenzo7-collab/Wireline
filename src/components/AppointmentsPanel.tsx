@@ -103,7 +103,11 @@ export default function AppointmentsPanel() {
       if (timestamp !== null && timestamp < now) history.push(appointment);
       else future.push(appointment);
     }
-    future.sort((a, b) => (appointmentTimestamp(a) ?? Number.MAX_SAFE_INTEGER) - (appointmentTimestamp(b) ?? Number.MAX_SAFE_INTEGER));
+    future.sort(
+      (a, b) =>
+        (appointmentTimestamp(a) ?? Number.MAX_SAFE_INTEGER) -
+        (appointmentTimestamp(b) ?? Number.MAX_SAFE_INTEGER),
+    );
     history.sort((a, b) => (appointmentTimestamp(b) ?? 0) - (appointmentTimestamp(a) ?? 0));
     return { upcoming: future, past: history };
   }, [appointments]);
@@ -141,9 +145,7 @@ export default function AppointmentsPanel() {
           title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
           action={
             <Button asChild>
-              <Link to="/connections">
-                {calendarConnected ? "Calendar" : "Connect calendar"}
-              </Link>
+              <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
             </Button>
           }
         />
@@ -168,16 +170,21 @@ export default function AppointmentsPanel() {
           </ul>
         ) : (
           <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No upcoming appointments.
+            No upcoming appointments
           </div>
         )}
       </section>
 
       {past.length ? (
-        <details className="rounded-xl border border-border bg-card">
+        <details
+          className="rounded-xl border border-border bg-card"
+          defaultOpen={upcoming.length === 0}
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
             Past
-            <span className="text-xs font-normal tabular-nums text-muted-foreground">{past.length}</span>
+            <span className="text-xs font-normal tabular-nums text-muted-foreground">
+              {past.length}
+            </span>
           </summary>
           <ul className="space-y-2 border-t border-border p-3">
             {past.map((appointment) => (

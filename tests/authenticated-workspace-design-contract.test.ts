@@ -184,6 +184,20 @@ describe("authenticated workspace design architecture", () => {
     expect(hub).toContain('onViewChange("campaigns")');
     expect(hub).toContain("Lead intake");
   });
+
+  it("keeps Lead Hunt as the empty campaign canvas and reveals past appointments", () => {
+    const campaigns = read("src/components/outbound/CampaignsPanel.tsx");
+    const appointments = read("src/components/AppointmentsPanel.tsx");
+    const cadences = read("src/components/Cadences.tsx");
+    const inbox = read("src/components/EmailInbox.tsx");
+
+    expect(campaigns).toContain("{!showCreate ? (");
+    expect(campaigns).toContain("OPS_CHANNEL_EMPTY.campaigns.title");
+    expect(campaigns).not.toContain("icon={Megaphone}");
+    expect(appointments).toContain("defaultOpen={upcoming.length === 0}");
+    expect(cadences).not.toContain("Multi-touch cadences");
+    expect(inbox).toContain("mailboxConnected === false");
+  });
 });
 
 // Exact-head certification marker: the Vercel preview for this commit must run the full clean-room estate.

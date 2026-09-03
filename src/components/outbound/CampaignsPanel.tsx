@@ -3,7 +3,6 @@ import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, X } from "luc
 import { authFetch } from "../../lib/api";
 import { logFetchError } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
-import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
 import { Input } from "../ui/shadcn/Input";
@@ -207,7 +206,7 @@ export default function CampaignsPanel() {
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden />
           </ShadButton>
-          {campaigns.length > 0 ? (
+          {!showCreate ? (
             <ShadButton
               type="button"
               size="sm"
@@ -302,20 +301,8 @@ export default function CampaignsPanel() {
 
       <div className="flex-1 min-h-0 overflow-auto p-4">
         {campaigns.length === 0 && !error ? (
-          <div className="flex w-full flex-col items-center px-2 py-6 sm:px-4">
-            <EmptyState
-              framed
-              density="compact"
-              titleTone="ui"
-              withHalo={false}
-              className="w-full max-w-lg"
-              icon={Megaphone}
-              title={OPS_CHANNEL_EMPTY.campaigns.title}
-              actions={[
-                { label: "Create campaign", onClick: () => setShowCreate(true), primary: true },
-                ...OPS_CHANNEL_EMPTY.campaigns.actions.filter((a) => a.label !== "Create campaign"),
-              ]}
-            />
+          <div className="rounded-xl border border-dashed border-border px-4 py-5 text-center text-sm text-muted-foreground">
+            {OPS_CHANNEL_EMPTY.campaigns.title}
           </div>
         ) : (
           <ul className="space-y-3">

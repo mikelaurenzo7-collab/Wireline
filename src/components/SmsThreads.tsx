@@ -671,6 +671,8 @@ export default function SmsThreads({
               title="Texts unavailable"
               description={fetchErr}
               density="compact"
+              titleTone="ui"
+              withHalo={false}
               action={
                 <Button
                   type="button"
@@ -697,12 +699,16 @@ export default function SmsThreads({
               title="No matching texts"
               description="Try a different number or status."
               density="compact"
+              titleTone="ui"
+              withHalo={false}
             />
           ) : !visibleThreads.length && !fetchErr ? (
             <EmptyState
               icon={<MessageSquare className="size-5" aria-hidden="true" />}
               title={agentId ? "No texts for this Bot" : "No texts yet"}
               density="compact"
+              titleTone="ui"
+              withHalo={false}
             />
           ) : (
             <ul className="divide-y divide-border">
@@ -755,7 +761,12 @@ export default function SmsThreads({
           className={`${listOwnsOnlyState ? "hidden" : activeId ? "block" : "hidden lg:block"} min-h-0`}
         >
           {!activeThread ? (
-            <EmptyState title="Select a conversation" density="compact" />
+            <EmptyState
+              title="Select a conversation"
+              density="compact"
+              titleTone="ui"
+              withHalo={false}
+            />
           ) : (
             <div className="flex h-full min-h-0 flex-col">
               <header className="border-b border-border px-4 py-3 sm:px-5">

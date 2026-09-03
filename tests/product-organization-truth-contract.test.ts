@@ -28,6 +28,8 @@ describe("product organization truth contracts", () => {
     expect(inbox).toContain('title={agentId ? "No email for this Bot" : "No email yet"}');
     expect(inbox).toContain("onClick={() => void loadThreads()}");
     expect(inbox).not.toContain('title="Connect your inbox"');
+    expect(inbox).toContain("/api/emails/accounts");
+    expect(inbox).toContain("mailboxConnected === false");
   });
 
   it("gives Billing one plan surface and one balance top-up surface", () => {

@@ -73,6 +73,7 @@ export default function CallOpsAnalytics() {
           title="Analytics unavailable"
           description={error || "Could not load call analytics."}
           density="compact"
+          titleTone="ui"
           withHalo={false}
           action={retryAction}
         />
@@ -99,6 +100,7 @@ export default function CallOpsAnalytics() {
           title="No call history yet"
           description="Metrics will appear when calls are logged."
           density="compact"
+          titleTone="ui"
           withHalo={false}
         />
       </div>

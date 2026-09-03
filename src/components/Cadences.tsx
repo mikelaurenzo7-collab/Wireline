@@ -284,7 +284,7 @@ export default function Cadences() {
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
-            Multi-touch cadences
+            Sequences
           </h3>
           <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
             Build timed call, SMS, and email follow-up sequences.
