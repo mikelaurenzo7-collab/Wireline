@@ -28,6 +28,9 @@ describe("authenticated mobile cleanup", () => {
 
     expect(knowledge).toContain("grid grid-cols-3 gap-2");
     expect(knowledge).toContain("wl-metric-tile--compact");
+    expect(knowledge).toContain(
+      "const showStats = loading || knowledge.length > 0 || directives.length > 0 || hasPersonality",
+    );
     expect(phone).toContain('shortLabel: "Appts"');
     expect(phone).toContain("WorkspaceControlBand");
   });

@@ -176,6 +176,14 @@ describe("authenticated workspace design architecture", () => {
     expect(settingsTabs).not.toContain('href: "/settings/phone"');
     expect(settingsTabs).toContain("WorkspaceControlBand");
   });
+
+  it("gives outbound dispatch an empty queue instead of a lone intake accordion", () => {
+    const hub = read("src/components/outbound/OutboundHub.tsx");
+    expect(hub).toContain('title="No dispatch queue"');
+    expect(hub).toContain('label: "Lead Hunt"');
+    expect(hub).toContain('onViewChange("campaigns")');
+    expect(hub).toContain("Lead intake");
+  });
 });
 
 // Exact-head certification marker: the Vercel preview for this commit must run the full clean-room estate.

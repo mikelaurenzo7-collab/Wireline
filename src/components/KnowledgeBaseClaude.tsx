@@ -502,6 +502,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const directives = config?.directives ?? [];
   const hasPersonality = !!(config?.personality && config.personality.trim());
   const compactUpload = knowledge.length === 0 && directives.length > 0;
+  const showStats = loading || knowledge.length > 0 || directives.length > 0 || hasPersonality;
 
   const stats: Array<{ value: number; label: string }> = [
     // "Entries", not "Knowledge" — the page title directly above already says
@@ -585,17 +586,19 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
       />
 
-      <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
-        {stats.map((stat, index) => (
-          <MetricTile
-            key={stat.label}
-            label={stat.label}
-            value={loading ? "N/A" : stat.value}
-            reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
-            className="wl-metric-tile--compact min-w-0 items-center px-2 text-center [&_.wl-metric-tile__label]:text-[9px] [&_.wl-metric-tile__label]:tracking-[0.08em]"
-          />
-        ))}
-      </section>
+      {showStats ? (
+        <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
+          {stats.map((stat, index) => (
+            <MetricTile
+              key={stat.label}
+              label={stat.label}
+              value={loading ? "N/A" : stat.value}
+              reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
+              className="wl-metric-tile--compact min-w-0 items-center px-2 text-center [&_.wl-metric-tile__label]:text-[9px] [&_.wl-metric-tile__label]:tracking-[0.08em]"
+            />
+          ))}
+        </section>
+      ) : null}
 
       {error ? (
         <div

@@ -52,6 +52,13 @@ describe("empty-state route hygiene", () => {
     expect(sms).toContain('title={agentId ? "No texts for this Bot" : "No texts yet"}');
     expect(sms).not.toMatch(/href="\/settings\/phone"/);
 
+    const insightsEmpty = read("src/components/insights/shared.tsx");
+    expect(insightsEmpty).toContain(
+      '{ label: "Connect phone", to: "/phone?tab=setup", primary: true }',
+    );
+    expect(insightsEmpty).toContain('{ label: "Call history", to: "/phone" }');
+    expect(insightsEmpty).not.toContain('to: "/studio?section=test"');
+
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, Phone } from "lucide-react";
+import { ChevronDown, Phone, Zap } from "lucide-react";
 import OutboundDialDialog from "../OutboundDialDialog";
 import Cadences from "../Cadences";
 import CampaignsPanel from "./CampaignsPanel";
@@ -8,6 +8,7 @@ import IntakeKeysManager from "../IntakeKeysManager";
 import { WorkspaceTabStrip } from "../layout/WorkspaceTabStrip";
 import { OUTBOUND_VIEW_TABS } from "../../lib/page-sub-tabs";
 import { Button } from "../atoms";
+import { EmptyState } from "../ui/EmptyState";
 
 type OutboundView = (typeof OUTBOUND_VIEW_TABS)[number]["id"];
 
@@ -68,19 +69,38 @@ export default function OutboundHub({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (
-          <div className="px-3 py-4 sm:px-6">
-            <details className="group rounded-xl border border-border bg-card">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
-                Lead intake
-                <ChevronDown
-                  className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
-                  aria-hidden="true"
-                />
-              </summary>
-              <div className="border-t border-border p-3 sm:p-4">
-                <IntakeKeysManager />
-              </div>
-            </details>
+          <div className="flex min-h-full flex-col">
+            <div className="flex flex-1 flex-col justify-center px-3 py-6 sm:px-6">
+              <EmptyState
+                icon={Zap}
+                title="No dispatch queue"
+                density="compact"
+                fill
+                titleTone="ui"
+                withHalo={false}
+                actions={[
+                  {
+                    label: "Lead Hunt",
+                    onClick: () => onViewChange("campaigns"),
+                    primary: true,
+                  },
+                ]}
+              />
+            </div>
+            <div className="px-3 pb-4 sm:px-6">
+              <details className="group rounded-xl border border-border bg-card">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
+                  Lead intake
+                  <ChevronDown
+                    className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <div className="border-t border-border p-3 sm:p-4">
+                  <IntakeKeysManager />
+                </div>
+              </details>
+            </div>
           </div>
         )}
         {activeView === "campaigns" && <CampaignsPanel />}

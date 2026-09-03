@@ -131,7 +131,7 @@ export function InsightEmpty({
           : !agents.some((agent) => agent.phone_number)
             ? [
                 { label: "Connect phone", to: "/phone?tab=setup", primary: true },
-                { label: "Test Bot", to: "/studio?section=test" },
+                { label: "Call history", to: "/phone" },
               ]
             : [...config.actions]);
 
