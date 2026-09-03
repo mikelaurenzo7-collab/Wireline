@@ -5,9 +5,11 @@
  * platform email and signed delivery feedback. Customer OAuth mailboxes, SMS,
  * artifacts, and workspace integrations remain optional capabilities.
  *
- * Federal DNC is intentionally deferred from the GO / score gate until the
- * founder completes business registration with DNCScrub. Marketing outbound
- * still fails closed at runtime via `assertFederalDncForMarketing()`.
+ * Federal DNC is intentionally deferred from the platform GO / score gate until
+ * the founder completes business registration with DNCScrub. Marketing outbound
+ * still fails closed at runtime via `assertFederalDncForMarketing()`, and the
+ * separate outbound_campaign_ready field remains false while any deferred
+ * outbound checklist item is incomplete.
  */
 import { selfServeBillingReleaseBlockers } from "./billing-release";
 import { getIntegrationsStatus } from "./integrations-registry";
@@ -24,17 +26,20 @@ export type CapabilityReadiness = {
 };
 export type LaunchReadinessReport = {
   overall_score: number;
+  /** Backward-compatible platform readiness signal used by the existing hard gate. */
   campaign_ready: boolean;
+  /** True only when the platform and every deferred outbound control are ready. */
+  outbound_campaign_ready: boolean;
   hard_gate_enabled: boolean;
   self_serve_billing_enabled: boolean;
   capabilities: CapabilityReadiness[];
   launch_blockers: string[];
-  /** Ops checklist items that do not fail GO / score / hard-gate. */
+  /** Ops checklist items that do not fail platform GO / score / hard-gate. */
   deferred_checklist: string[];
   generated_at: string;
 };
 
-/** Capability ids that contribute to overall_score and campaign_ready. */
+/** Capability ids that contribute to overall_score and platform campaign_ready. */
 const SCORE_CAPABILITY_IDS = new Set(["core_ready", "billing_ready", "voice_ready", "email_ready"]);
 
 function levelFromBlockers(blockers: string[]): ReadinessLevel {
@@ -119,7 +124,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     {
       id: "compliance_ready",
       label: "Outbound compliance (deferred checklist)",
-      // Visible degraded state for ops; excluded from score / GO / hard-gate.
+      // Visible degraded state for ops; excluded from platform score / GO / hard-gate.
       level: deferred_checklist.length === 0 ? "ready" : "degraded",
       blockers: [...deferred_checklist],
     },
@@ -129,10 +134,12 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const scored = capabilities.filter((capability) => SCORE_CAPABILITY_IDS.has(capability.id));
   const readyCount = scored.filter((capability) => capability.level === "ready").length;
   const campaignReady = launch_blockers.length === 0 && readyCount === scored.length;
+  const outboundCampaignReady = campaignReady && deferred_checklist.length === 0;
 
   return {
     overall_score: Math.round((readyCount / scored.length) * 100),
     campaign_ready: campaignReady,
+    outbound_campaign_ready: outboundCampaignReady,
     hard_gate_enabled: process.env.LAUNCH_HARD_GATE === "true",
     self_serve_billing_enabled: billingReleased,
     capabilities,
@@ -142,7 +149,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   };
 }
 
-/** True when LAUNCH_HARD_GATE=true and any launch capability is not ready. */
+/** True when LAUNCH_HARD_GATE=true and any platform launch capability is not ready. */
 export function isLaunchHardBlocked(): boolean {
   if (process.env.LAUNCH_HARD_GATE !== "true") return false;
   return !evaluateLaunchReadiness().campaign_ready;
@@ -161,6 +168,7 @@ export function launchBlockResponse() {
     code: "LAUNCH_NOT_READY",
     error:
       "Launch hard gate is on and BotBound is not launch-ready (voice, billing, managed email, or core).",
+    outbound_campaign_ready: report.outbound_campaign_ready,
     launch_blockers: report.launch_blockers,
     deferred_checklist: report.deferred_checklist,
     capabilities: report.capabilities,

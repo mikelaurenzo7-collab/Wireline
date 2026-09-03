@@ -1,5 +1,9 @@
 # The First Move - Outbound Copy Kit
 
+## Release control
+
+This copy kit is creative source, not permission to publish. Schedule or spend only after the current launch registry approves the exact copy-and-asset pair, the production SHA passes the full release ladder, and `outbound_campaign_ready` is true.
+
 ## Master campaign
 
 **THE FIRST MOVE**
@@ -16,7 +20,7 @@ Brand close: **PUT YOUR BOT ON THE LINE**
 
 ## Short hooks
 
-- Point it at a market. It finds. Calls. Books.
+- Point it at an approved market. Review the list. Put the queue in motion.
 - The list won't call itself.
 - Your Bot makes the first move.
 - Find the lead. Book the meeting.
@@ -70,9 +74,9 @@ CTA: **GET YOUR INTAKE BOT**
 
 A list is not a pipeline.
 
-BotBound can find leads through connected sources, make the calls, qualify the fit, book the next step, follow up, and report what happened.
+BotBound can find leads through connected sources, prepare an approved queue, make the calls, qualify the fit, book the next step, follow up, and report what happened.
 
-Already have a list? Give it the list and the job.
+Already have a list? Give it the approved list and the job.
 
 **FIND. CALL. BOOK.**
 
@@ -82,7 +86,7 @@ Get your Sales Bot at BotBound.me.
 
 ### Acquisition
 
-**Primary:** Find the lead. Make the call. Book the next step.
+**Primary:** Find the lead. Review the queue. Make the call. Book the next step.
 
 **Headline:** FIND. CALL. BOOK.
 
@@ -92,7 +96,7 @@ Get your Sales Bot at BotBound.me.
 
 ### List-led fallback
 
-**Primary:** Already have a list? Give your Bot the list and the job.
+**Primary:** Already have an approved list? Give your Bot the list and the job.
 
 **Headline:** THE LIST WON'T CALL ITSELF.
 
@@ -104,13 +108,13 @@ Get your Sales Bot at BotBound.me.
 
 **Subject:** Your Bot makes the first move
 
-**Preheader:** Find leads. Make calls. Book the next step.
+**Preheader:** Find leads. Review the queue. Make calls. Book the next step.
 
 **Body:**
 
 The phone does not have to ring first.
 
-Point your Bot at a connected source or give it a list. It finds, calls, qualifies, and books.
+Point your Bot at a connected source or give it an approved list. Review the contacts; once queued, it calls, qualifies, and books.
 
 Start with Sales, Recruiting, Appointments, Reactivation, or Intake.
 

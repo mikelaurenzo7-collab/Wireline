@@ -2,6 +2,8 @@
 
 This package is the outbound-only creative release for BotBound's launch-state product. It does not replace **The Second Ring**, which remains the inbound campaign and historical release.
 
+**Creative-ready is not publication authorization.** Paid or organic outbound promotion stays on hold until the current launch registry marks the exact asset and copy approved, the production SHA has passed its full release ladder, and `outbound_campaign_ready` is true.
+
 ## Campaign system
 
 - Platform: **THE FIRST MOVE**
@@ -54,11 +56,19 @@ launch-2026-09-outbound/
 
 The campaign is written for the registered, configured launch state. Lead discovery requires a connected source such as Apollo or an approved supplied list. Calling, booking, messaging, CRM, and other actions require the relevant enabled services and customer configuration. Do not attach performance percentages, customer counts, guarantees, logos, testimonials, or certifications without documented proof.
 
-## Publish sequence
+The product separates discovery, review, queue approval, calling, and outcome reporting. Copy must not collapse those controls into a claim of unsupervised prospecting or guaranteed booking.
 
-1. Launch the “Point It at a Market” 4:5 master and founder post.
+## Current creative holds
+
+- The existing “Point It at a Market” master is held until its **AUTONOMOUS OUTBOUND** eyebrow is regenerated as **APPROVED OUTBOUND**.
+- The existing investor PDF and PNG are held until regenerated from the corrected approved-markets-and-lists source copy.
+- September 3 “YOUR VOICE BOT” concepts remain exploratory and must not displace **THE FIRST MOVE** without a new campaign decision.
+
+## Publish sequence after release authorization
+
+1. Publish the corrected “Point It at a Market” 4:5 master and founder post.
 2. Follow with the Lead Hunt carousel.
 3. Rotate Sales, Recruiting, Appointment, Reactivation, and Intake role ads.
 4. Retarget with product workflow and price-led creative.
-5. Use the investor one-pager for design-partner and investor outreach.
+5. Use the corrected investor one-pager for design-partner and investor outreach.
 6. Ship the QA-approved motion cuts against the winning static hook.

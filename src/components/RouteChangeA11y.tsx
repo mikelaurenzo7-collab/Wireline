@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 
+import { addTemporaryTabIndex } from "../lib/temporary-tab-index";
+
 function labelFromPath(pathname: string) {
   const segment = pathname.split("/").filter(Boolean)[0];
   if (!segment) return "Home";
@@ -14,10 +16,7 @@ export default function RouteChangeA11y() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    // Track the element whose tabindex we temporarily set to -1 so it can be
-    // restored on cleanup instead of permanently mutating the focus ring of
-    // headings across route changes.
-    let focusedElement: HTMLElement | null = null;
+    let restoreTabIndex: (() => void) | null = null;
 
     const id = window.setTimeout(() => {
       if (location.hash) {
@@ -29,8 +28,7 @@ export default function RouteChangeA11y() {
         }
         const target = targetId ? document.getElementById(targetId) : null;
         if (target) {
-          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-          focusedElement = target;
+          restoreTabIndex = addTemporaryTabIndex(target);
           target.scrollIntoView({ block: "start" });
           target.focus({ preventScroll: true });
         }
@@ -39,8 +37,7 @@ export default function RouteChangeA11y() {
 
         const target = document.querySelector<HTMLElement>("main h1, h1, main");
         if (target) {
-          if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
-          focusedElement = target;
+          restoreTabIndex = addTemporaryTabIndex(target);
           target.focus({ preventScroll: true });
         }
       }
@@ -55,9 +52,7 @@ export default function RouteChangeA11y() {
 
     return () => {
       window.clearTimeout(id);
-      if (focusedElement && focusedElement.getAttribute("tabindex") === "-1") {
-        focusedElement.removeAttribute("tabindex");
-      }
+      restoreTabIndex?.();
     };
   }, [label, location.hash, location.pathname, location.search]);
 

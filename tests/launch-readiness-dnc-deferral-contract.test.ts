@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("launch readiness DNC deferral", () => {
-  it("keeps Federal DNC on a deferred checklist without failing GO or score", () => {
+  it("keeps Federal DNC deferred from platform GO while reporting outbound readiness separately", () => {
     const readiness = read("src/lib/launch-readiness.ts");
     const health = read("src/routes/health-routes.ts");
     const status = read("scripts/generate-launch-status.mjs");
@@ -15,6 +15,10 @@ describe("launch readiness DNC deferral", () => {
     expect(readiness).toContain("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
     expect(readiness).toContain("isFederalDncVendorConfigured");
     expect(readiness).toContain("...emailBlockers");
+    expect(readiness).toContain("outbound_campaign_ready");
+    expect(readiness).toContain(
+      "const outboundCampaignReady = campaignReady && deferred_checklist.length === 0",
+    );
     const scoredCapabilityBlock = readiness.slice(
       readiness.indexOf("const SCORE_CAPABILITY_IDS"),
       readiness.indexOf("]);", readiness.indexOf("const SCORE_CAPABILITY_IDS")) + 3,
@@ -26,12 +30,13 @@ describe("launch readiness DNC deferral", () => {
     );
     expect(readiness).not.toContain("...complianceBlockers");
 
+    expect(health).toContain("outbound_campaign_ready: report.outbound_campaign_ready");
     expect(health).toContain("deferred_checklist: report.deferred_checklist");
     expect(status).toContain("deferred_checklist");
     expect(status).toContain("Only hard launch_blockers fail GO");
   });
 
-  it("fails marketing outbound closed while leaving readiness registration deferred", () => {
+  it("fails marketing outbound closed while leaving platform registration deferred", () => {
     const federal = read("src/lib/federal-dnc-service.ts");
     const gate = read("src/lib/outbound-dial-gate.ts");
     const startup = read("src/lib/startup.ts");

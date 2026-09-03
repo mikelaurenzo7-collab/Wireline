@@ -19,6 +19,14 @@ import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
+import {
+  clearStudioInspectorSectionParams,
+  readStudioInspectorSection,
+  readStudioWorkroomMode,
+  normalizeStudioRouteParams,
+  setStudioInspectorSectionParams,
+  setStudioWorkroomModeParams,
+} from "../lib/studio-route-state";
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
@@ -104,14 +112,6 @@ function StudioEmptyState() {
   );
 }
 
-function initialInspectorSection(value: string | null): InspectorSection {
-  return value === "review" ? "review" : "setup";
-}
-
-function initialWorkroomMode(value: string | null): WorkroomMode {
-  return value === "test" ? "test" : "configure";
-}
-
 export default function StudioWorkspaceV2() {
   const { loading, degraded, refresh } = useAgents();
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
@@ -119,39 +119,68 @@ export default function StudioWorkspaceV2() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
+
+  const sectionParam = params.get("section");
+  const workroomParam = params.get("workroom");
+  const commandParam = params.get("command");
+  const commandNonceParam = params.get("commandNonce");
+  const legacyMode = params.get("mode");
+  const legacyView = params.get("view");
+  const routeState = {
+    section: sectionParam,
+    workroom: workroomParam,
+    command: commandParam,
+    commandNonce: commandNonceParam,
+  };
+
   const [inspectorSection, setInspectorSection] = useState<InspectorSection>(() =>
-    initialInspectorSection(params.get("section")),
+    readStudioInspectorSection(sectionParam),
   );
-  const [workroomMode, setWorkroomMode] = useState<WorkroomMode>(() =>
-    initialWorkroomMode(params.get("section")),
+  const [workroomMode, setWorkroomModeState] = useState<WorkroomMode>(() =>
+    readStudioWorkroomMode(routeState),
   );
   // On narrow viewports the inspector replaces the workroom rather than sitting
   // beside it. On wide screens the inspector is always its own resizable rail.
-  // A deep link that names a config section (e.g. ?section=setup after creating
-  // a Bot) opens the inspector on narrow so the intended surface is visible.
-  const [narrowInspectorOpen, setNarrowInspectorOpen] = useState(() => {
-    const requested = params.get("section");
-    return requested === "setup" || requested === "review";
-  });
-
-  const legacyMode = params.get("mode");
-  const legacyView = params.get("view");
-  const hasCommand = Boolean(params.get("command") || params.get("commandNonce"));
+  // A deep link that names a config section (for example, ?section=setup after
+  // creating a Bot) opens the inspector so the intended surface is visible.
+  const [narrowInspectorOpen, setNarrowInspectorOpen] = useState(
+    () => sectionParam === "setup" || sectionParam === "review",
+  );
 
   useEffect(() => {
-    if (legacyMode !== "workroom" && legacyView !== "workspace") return;
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        next.delete("mode");
-        next.delete("view");
-        return next;
-      },
-      { replace: true },
+    const inspectorRequested = sectionParam === "setup" || sectionParam === "review";
+    if (inspectorRequested) {
+      setInspectorSection(readStudioInspectorSection(sectionParam));
+    }
+    setNarrowInspectorOpen(inspectorRequested);
+    setWorkroomModeState(
+      readStudioWorkroomMode({
+        section: sectionParam,
+        workroom: workroomParam,
+        command: commandParam,
+        commandNonce: commandNonceParam,
+      }),
     );
-    if (legacyMode === "workroom") setWorkroomMode("test");
-    else setInspectorSection("setup");
-  }, [legacyMode, legacyView, setParams]);
+  }, [sectionParam, workroomParam, commandParam, commandNonceParam]);
+
+  useEffect(() => {
+    const needsNormalization =
+      legacyMode === "workroom" ||
+      legacyView === "workspace" ||
+      sectionParam === "test" ||
+      ((commandParam || commandNonceParam) && workroomParam !== "test");
+    if (!needsNormalization) return;
+    // The helper performs the legacy next.delete("mode") / next.delete("view") cleanup.
+    setParams((current) => normalizeStudioRouteParams(current), { replace: true });
+  }, [
+    legacyMode,
+    legacyView,
+    sectionParam,
+    workroomParam,
+    commandParam,
+    commandNonceParam,
+    setParams,
+  ]);
 
   useEffect(() => {
     if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId)
@@ -161,6 +190,9 @@ export default function StudioWorkspaceV2() {
         const next = new URLSearchParams(current);
         next.set("agent", resolvedAgentId);
         if (!requestedId) {
+          if (next.has("command") || next.has("commandNonce")) {
+            next.set("workroom", "test");
+          }
           next.delete("command");
           next.delete("commandNonce");
         }
@@ -174,14 +206,30 @@ export default function StudioWorkspaceV2() {
     if (active?.id) writeStudioLastAgentId(active.id);
   }, [active?.id]);
 
-  const openInspector = useCallback((section: InspectorSection) => {
-    setInspectorSection(section);
-    setNarrowInspectorOpen(true);
-  }, []);
+  const openInspector = useCallback(
+    (section: InspectorSection) => {
+      setInspectorSection(section);
+      setNarrowInspectorOpen(true);
+      setParams((current) => setStudioInspectorSectionParams(current, section), {
+        replace: true,
+      });
+    },
+    [setParams],
+  );
 
   const closeInspector = useCallback(() => {
     setNarrowInspectorOpen(false);
-  }, []);
+    setParams((current) => clearStudioInspectorSectionParams(current), { replace: true });
+  }, [setParams]);
+
+  const setWorkroomMode = useCallback(
+    (mode: WorkroomMode) => {
+      setWorkroomModeState(mode);
+      setNarrowInspectorOpen(false);
+      setParams((current) => setStudioWorkroomModeParams(current, mode), { replace: true });
+    },
+    [setParams],
+  );
 
   const startCustomerTest = useCallback(() => {
     setWorkroomMode("test");
@@ -190,7 +238,7 @@ export default function StudioWorkspaceV2() {
         "Hi, can you explain what you can do and help me take the next step?",
       );
     }, 120);
-  }, []);
+  }, [setWorkroomMode]);
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
@@ -248,10 +296,10 @@ export default function StudioWorkspaceV2() {
       agentId={active.id}
       agentName={active.name}
       markKey={active.mark_key}
-      initialCommand={params.get("command") || undefined}
-      commandNonce={params.get("commandNonce") || undefined}
+      initialCommand={commandParam || undefined}
+      commandNonce={commandNonceParam || undefined}
       layout={splitWorkspace ? "split" : "standalone"}
-      mode={hasCommand ? "test" : workroomMode}
+      mode={workroomMode}
       onModeChange={setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
     />
@@ -270,7 +318,7 @@ export default function StudioWorkspaceV2() {
             type="button"
             role="tab"
             aria-selected={inspectorSection === id}
-            onClick={() => setInspectorSection(id)}
+            onClick={() => openInspector(id)}
             className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
               inspectorSection === id
                 ? "bg-card text-foreground shadow-sm"

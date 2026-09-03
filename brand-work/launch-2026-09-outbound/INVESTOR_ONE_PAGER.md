@@ -2,7 +2,7 @@
 
 ## FIND. CALL. BOOK.
 
-**Autonomous Bots find prospects, make calls, and drive every conversation toward a clear outcome.**
+**Bots work approved markets and lists, make calls, and drive clear outcomes.**
 
 ## The wedge
 
