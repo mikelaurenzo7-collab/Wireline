@@ -194,7 +194,8 @@ describe("authenticated workspace design architecture", () => {
     expect(campaigns).toContain("{!showCreate ? (");
     expect(campaigns).toContain("OPS_CHANNEL_EMPTY.campaigns.title");
     expect(campaigns).not.toContain("icon={Megaphone}");
-    expect(appointments).toContain("defaultOpen={upcoming.length === 0}");
+    expect(appointments).toContain("open={pastOpen ?? upcoming.length === 0}");
+    expect(appointments).not.toContain("defaultOpen");
     expect(cadences).not.toContain("Multi-touch cadences");
     expect(inbox).toContain("mailboxConnected === false");
   });

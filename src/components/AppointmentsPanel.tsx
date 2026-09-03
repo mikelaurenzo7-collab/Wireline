@@ -111,6 +111,7 @@ export default function AppointmentsPanel() {
     history.sort((a, b) => (appointmentTimestamp(b) ?? 0) - (appointmentTimestamp(a) ?? 0));
     return { upcoming: future, past: history };
   }, [appointments]);
+  const [pastOpen, setPastOpen] = useState<boolean | null>(null);
 
   if (loading) {
     return (
@@ -178,7 +179,8 @@ export default function AppointmentsPanel() {
       {past.length ? (
         <details
           className="rounded-xl border border-border bg-card"
-          defaultOpen={upcoming.length === 0}
+          open={pastOpen ?? upcoming.length === 0}
+          onToggle={(event) => setPastOpen(event.currentTarget.open)}
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
             Past
