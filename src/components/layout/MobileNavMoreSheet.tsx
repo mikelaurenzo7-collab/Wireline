@@ -1,8 +1,18 @@
 import { Link } from "react-router";
 
-import { MOBILE_MORE_NAV, isNavActive, type ShellNavItem } from "../../constants/navigation";
+import {
+  MOBILE_MORE_GROUPS,
+  isNavActive,
+  type ShellNavItem,
+} from "../../constants/navigation";
 import { navIcon } from "../nav-icons";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "../ui/shadcn/Sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "../ui/shadcn/Sheet";
 
 type MobileNavMoreSheetProps = {
   open: boolean;
@@ -21,18 +31,25 @@ function MoreNavLink({
 }) {
   const active = isNavActive(pathname, item.href);
   const Icon = navIcon(item.icon);
+
   return (
     <Link
       to={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       data-wireline-nav-href={item.href}
-      className={`flex min-h-[48px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors wl-focus-ring-halo ${
-        active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
-      }`}
+      data-wireline-nav-active={active ? "true" : undefined}
+      className="wl-shell-more-link min-h-[48px] wl-focus-ring-halo"
     >
-      <Icon size={18} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
-      {item.label}
+      <span className="wl-shell-more-icon">
+        <Icon size={18} strokeWidth={active ? 2.2 : 1.9} aria-hidden="true" />
+      </span>
+      <span className="wl-shell-more-copy">
+        <span className="wl-shell-more-label">{item.label}</span>
+        {item.description ? (
+          <span className="wl-shell-more-description">{item.description}</span>
+        ) : null}
+      </span>
     </Link>
   );
 }
@@ -43,20 +60,37 @@ export default function MobileNavMoreSheet({
   pathname,
 }: MobileNavMoreSheetProps) {
   const close = () => onOpenChange(false);
-  const items = MOBILE_MORE_NAV;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="rounded-t-2xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
+        className="wl-shell-more-sheet px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="text-left">
-          <SheetTitle className="wl-display-3 text-left text-lg">More</SheetTitle>
+          <SheetTitle className="wl-shell-more-title text-left">Workspace</SheetTitle>
+          <SheetDescription className="wl-shell-more-intro">
+            Build your Bot, govern its work, and manage the systems behind it.
+          </SheetDescription>
         </SheetHeader>
-        <nav aria-label="More workspace destinations" className="mt-4 grid gap-1">
-          {items.map((item) => (
-            <MoreNavLink key={item.href} item={item} pathname={pathname} onNavigate={close} />
+
+        <nav aria-label="More workspace destinations" className="wl-shell-more-groups">
+          {MOBILE_MORE_GROUPS.map((group) => (
+            <section key={group.label} aria-labelledby={`mobile-more-${group.label}`}>
+              <h2 id={`mobile-more-${group.label}`} className="wl-shell-more-group-label">
+                {group.label}
+              </h2>
+              <div className="wl-shell-more-group-items">
+                {group.items.map((item) => (
+                  <MoreNavLink
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    onNavigate={close}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </nav>
       </SheetContent>

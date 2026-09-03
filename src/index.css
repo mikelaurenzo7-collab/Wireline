@@ -107,11 +107,11 @@
 @import "./styles/brand-identity.css";
 @import "./styles/system-aesthetic-refinement.css";
 @import "./styles/public-mobile-refinement.css";
-@import "./styles/safe-area-ownership.css";
-
-/* Final semantic composition pass. It comes after compatibility and responsive
- * tiers so public and authenticated surfaces share one calm visual finish. */
+/* Broad final composition, then the canonical authenticated shell owner. */
 @import "./styles/botbound-master-polish.css";
+@import "./styles/workspace-shell.css";
+/* Safe-area geometry remains terminal. */
+@import "./styles/safe-area-ownership.css";
 
 body {
   /* `background-color`, not the `background` shorthand: this rule sits after
