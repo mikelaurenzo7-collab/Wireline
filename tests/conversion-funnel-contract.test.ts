@@ -123,10 +123,10 @@ describe("account entry recognizes an existing session without blocking first pa
       'import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";',
     );
     expect(auth).toMatch(
-      /if \(sessionOptional\) \{[\s\S]{0,500}setLoading\(false\);[\s\S]{0,500}if \(!isAuthPortalPath\(location\.pathname\)\) return;/,
+      /if \(sessionOptional\) \{[\s\S]{0,500}setLoading\(false\);[\s\S]{0,500}if \(!isAuthPortalPath\(pathname\)\) return;/,
     );
 
-    const backgroundGate = auth.indexOf("if (!isAuthPortalPath(location.pathname)) return;");
+    const backgroundGate = auth.indexOf("if (!isAuthPortalPath(pathname)) return;");
     const hydrate = auth.indexOf("await migrateLegacyLocalStorage();");
     expect(backgroundGate).toBeGreaterThan(-1);
     expect(hydrate).toBeGreaterThan(backgroundGate);

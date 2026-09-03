@@ -14,6 +14,11 @@ export default function RouteChangeA11y() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    // Track the element whose tabindex we temporarily set to -1 so it can be
+    // restored on cleanup instead of permanently mutating the focus ring of
+    // headings across route changes.
+    let focusedElement: HTMLElement | null = null;
+
     const id = window.setTimeout(() => {
       if (location.hash) {
         let targetId = "";
@@ -25,6 +30,7 @@ export default function RouteChangeA11y() {
         const target = targetId ? document.getElementById(targetId) : null;
         if (target) {
           if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          focusedElement = target;
           target.scrollIntoView({ block: "start" });
           target.focus({ preventScroll: true });
         }
@@ -34,6 +40,7 @@ export default function RouteChangeA11y() {
         const target = document.querySelector<HTMLElement>("main h1, h1, main");
         if (target) {
           if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+          focusedElement = target;
           target.focus({ preventScroll: true });
         }
       }
@@ -46,7 +53,12 @@ export default function RouteChangeA11y() {
       setMessage(`${label} loaded`);
     }, 0);
 
-    return () => window.clearTimeout(id);
+    return () => {
+      window.clearTimeout(id);
+      if (focusedElement && focusedElement.getAttribute("tabindex") === "-1") {
+        focusedElement.removeAttribute("tabindex");
+      }
+    };
   }, [label, location.hash, location.pathname, location.search]);
 
   return (

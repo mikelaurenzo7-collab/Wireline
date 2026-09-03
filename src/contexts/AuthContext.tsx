@@ -85,14 +85,21 @@ async function migrateLegacyLocalStorage(): Promise<void> {
       localStorage.removeItem(LEGACY_STORAGE_KEY);
       return;
     }
-    await fetch("/api/auth/migrate-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${parsed.access_token}`,
-      },
-      credentials: "include",
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
+    try {
+      await fetch("/api/auth/migrate-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${parsed.access_token}`,
+        },
+        credentials: "include",
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
   } catch {
     /* ignore — session hydrate will fail cleanly */
   } finally {
@@ -106,11 +113,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  // Legacy token migration is a one-way, best-effort POST with no durable
+  // result to observe. Run it at most once per mounted session so navigating
+  // between auth-portal routes does not re-issue it.
+  const migratedRef = useRef(false);
+  // Latest location for use inside the hydration effect without depending on
+  // the raw pathname (which would re-fire on every intra-portal navigation).
+  const locationRef = useRef(location);
+  locationRef.current = location;
+
+  // Whether the current path needs a session probe. Public marketing surfaces
+  // do not; workspace and account-entry routes do. Depending on this boolean
+  // (instead of the raw pathname) means intra-portal navigation between, say,
+  // /signin and /signup no longer re-fires the hydration effect, while crossing
+  // from a public page into the portal still hydrates once.
+  const needsAuthProbe =
+    !isSessionOptionalPublicPath(location.pathname) || isAuthPortalPath(location.pathname);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const sessionOptional = isSessionOptionalPublicPath(location.pathname);
+      const pathname = locationRef.current.pathname;
+      const sessionOptional = isSessionOptionalPublicPath(pathname);
       if (user && session) {
         if (!cancelled) setLoading(false);
         return;
@@ -123,12 +147,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // /signin or /signup was rendered as anonymous forever and could start
         // a second account flow instead of returning to their workspace.
         if (!cancelled) setLoading(false);
-        if (!isAuthPortalPath(location.pathname)) return;
+        if (!isAuthPortalPath(pathname)) return;
       }
 
       if (!sessionOptional && !cancelled) setLoading(true);
       try {
-        await migrateLegacyLocalStorage();
+        if (!migratedRef.current) {
+          migratedRef.current = true;
+          await migrateLegacyLocalStorage();
+        }
         const hydrated = await fetchSessionUser();
         if (!cancelled) {
           if (hydrated) {
@@ -146,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, session, user]);
+  }, [needsAuthProbe, session, user]);
 
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {

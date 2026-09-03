@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- recipe payloads bridge loosely typed agent API. */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { authFetch } from "../../lib/api";
 
 /**
@@ -15,9 +15,11 @@ export function useRecipeAsync<T = any>(endpoint: string, extract?: string) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [result, setResult] = useState<T | null>(null);
+  const runIdRef = useRef(0);
 
   const run = useCallback(
     async (body: Record<string, unknown>) => {
+      const runId = ++runIdRef.current;
       setLoading(true);
       setErr(null);
       setResult(null);
@@ -29,11 +31,12 @@ export function useRecipeAsync<T = any>(endpoint: string, extract?: string) {
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error || "Request failed");
+        if (runId !== runIdRef.current) return;
         setResult(extract ? data[extract] : data);
       } catch (e: any) {
-        setErr(e.message);
+        if (runId === runIdRef.current) setErr(e.message);
       } finally {
-        setLoading(false);
+        if (runId === runIdRef.current) setLoading(false);
       }
     },
     [endpoint, extract],

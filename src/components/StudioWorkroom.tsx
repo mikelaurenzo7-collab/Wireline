@@ -184,28 +184,34 @@ const StudioWorkroom = forwardRef<
     [agentId, mode],
   );
 
-  const loadMessages = useCallback(async () => {
-    if (mode === "test") {
-      setMessages([]);
-      setLoading(false);
-      return;
-    }
+  const loadMessages = useCallback(
+    async (signal?: AbortSignal) => {
+      if (mode === "test") {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
 
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await authFetch(
-        `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
-      );
-      if (!response.ok) throw new Error("Conversation could not be loaded.");
-      const payload = await response.json();
-      setMessages(Array.isArray(payload.messages) ? payload.messages : []);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Conversation could not be loaded.");
-    } finally {
-      setLoading(false);
-    }
-  }, [agentId, mode]);
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await authFetch(
+          `/api/agents/${encodeURIComponent(agentId)}/workspace/messages`,
+          { signal },
+        );
+        if (!response.ok) throw new Error("Conversation could not be loaded.");
+        const payload = await response.json();
+        if (signal?.aborted) return;
+        setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+      } catch (reason) {
+        if (signal?.aborted) return;
+        setError(reason instanceof Error ? reason.message : "Conversation could not be loaded.");
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [agentId, mode],
+  );
 
   const {
     state: streamState,
@@ -239,7 +245,9 @@ const StudioWorkroom = forwardRef<
   });
 
   useEffect(() => {
-    void loadMessages();
+    const controller = new AbortController();
+    void loadMessages(controller.signal);
+    return () => controller.abort();
   }, [loadMessages]);
 
   useEffect(() => {
