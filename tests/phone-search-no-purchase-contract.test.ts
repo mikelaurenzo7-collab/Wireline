@@ -38,6 +38,7 @@ describe("phone search does not buy a number", () => {
   it("lets the customer pick a previewed E.164 before purchase", () => {
     const picker = read("src/components/PhoneNumberPicker.tsx");
     expect(picker).toContain('authFetch("/api/phone-numbers/search"');
+    expect(picker).toContain('authFetch("/api/phone-numbers/area-codes")');
     expect(picker).toContain("previewNumbers.has(phoneNumber)");
     expect(picker).toContain('authFetch("/api/phone-numbers/provision"');
     expect(read("src/lib/api-validation-base.ts")).toContain(

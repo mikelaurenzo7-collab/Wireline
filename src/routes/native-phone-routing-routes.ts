@@ -18,7 +18,10 @@ import {
   listNativeAvailableLocalNumbers,
   repairOwnedTwilioOpenAIRouting,
 } from "../lib/voice/native-phone-carrier";
-import { resolveNonProductionPhoneNumberPickerInventory } from "../lib/voice/phone-number-picker-inventory";
+import {
+  listPhoneNumberPickerAreaCodes,
+  resolveNonProductionPhoneNumberPickerInventory,
+} from "../lib/voice/phone-number-picker-inventory";
 import { provisionNativeTenantNumber } from "../lib/voice/native-phone-provisioning";
 import { releaseNativeTenantNumber } from "../lib/voice/native-phone-release";
 import { phoneNumberRateLimiter } from "../middleware/api-rate-limits";
@@ -110,6 +113,15 @@ router.get(
         failed: routing.failures.size,
       },
     });
+  }),
+);
+
+router.get(
+  "/api/phone-numbers/area-codes",
+  authenticateUser,
+  asyncHandler(async (_req: AuthenticatedRequest, res: Response) => {
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json({ area_codes: listPhoneNumberPickerAreaCodes() });
   }),
 );
 

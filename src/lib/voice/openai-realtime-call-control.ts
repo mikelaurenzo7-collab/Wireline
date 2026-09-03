@@ -1,5 +1,8 @@
 import { AppError } from "../api-error";
-import { assertLiveExternalActionAllowed } from "../account-environment-policy";
+import {
+  assertLiveExternalActionAllowed,
+  assertPrivateVoiceSimulationAllowed,
+} from "../account-environment-policy";
 import { enqueue } from "../job-queue";
 import { openAISafetyIdentifierForIdentity } from "../provider-identity-context";
 import { markRealtimeProviderCallOutcome } from "../realtime-provider-outcome";
@@ -28,6 +31,8 @@ const OPENAI_REALTIME_SECRET_TTL_SECONDS = 120;
 
 export const OPENAI_REALTIME_SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
 
+type RealtimeCallAdmission = "live_external" | "private_simulation";
+
 type ServerManagedRealtimeCallInput = {
   userId: string;
   safetyIdentity?: string;
@@ -36,6 +41,12 @@ type ServerManagedRealtimeCallInput = {
   keyPurpose?: OpenAIRealtimeKeyPurpose;
   maxDurationSeconds: number;
   logContext?: Record<string, unknown>;
+  /**
+   * Private simulation admits classified test/demo/production workspaces for
+   * browser Preview Voice. The default remains a live external action so PSTN
+   * and other provider-backed Realtime mints stay production-only.
+   */
+  admission?: RealtimeCallAdmission;
 };
 
 function resolveApiKey(
@@ -155,7 +166,14 @@ export async function createServerManagedOpenAIRealtimeCall(input: ServerManaged
     input.userId !== OPENAI_REALTIME_SYSTEM_USER_ID && TENANT_UUID_RE.test(input.userId);
   if (!isTenantCall) return createServerManagedOpenAIRealtimeCallUnfenced(input);
 
-  await assertLiveExternalActionAllowed(input.userId, "openai_realtime_call_create");
+  if (input.admission === "private_simulation") {
+    await assertPrivateVoiceSimulationAllowed(
+      input.userId,
+      "openai_realtime_private_voice_simulation",
+    );
+  } else {
+    await assertLiveExternalActionAllowed(input.userId, "openai_realtime_call_create");
+  }
   const outcome = await runTenantProviderWorkWithDeletionFence({
     userId: input.userId,
     operation: "openai_realtime_call_create",

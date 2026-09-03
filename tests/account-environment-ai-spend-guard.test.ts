@@ -145,6 +145,52 @@ describe("account-environment AI and provider-spend admission", () => {
     expect(registry).not.toContain("voicesRouter");
   });
 
+  it("admits Studio Preview Voice as private simulation while live Twilio, SMS, email, and number provision stay fenced", () => {
+    const liveVoice = read("src/routes/live-voice-routes.ts");
+    const sessionStart = liveVoice.indexOf('"/api/voice/live/session"');
+    const sessionHandler = liveVoice.indexOf("async (req: AuthenticatedRequest", sessionStart);
+    const session = liveVoice.slice(sessionStart, sessionHandler);
+    expect(session).toContain("enforcePrivateVoiceSimulationSpendCap");
+    expect(session).not.toMatch(/\benforceSpendCap\b/);
+
+    const callControl = read("src/lib/voice/openai-realtime-call-control.ts");
+    const create = callControl.slice(
+      callControl.indexOf("export async function createServerManagedOpenAIRealtimeCall"),
+      callControl.indexOf("async function createServerManagedOpenAIRealtimeCallUnfenced"),
+    );
+    expect(create).toContain('admission === "private_simulation"');
+    expect(create).toContain("assertPrivateVoiceSimulationAllowed");
+    expect(create).toContain("assertLiveExternalActionAllowed");
+    expect(create.indexOf("assertPrivateVoiceSimulationAllowed")).toBeLessThan(
+      create.indexOf("assertLiveExternalActionAllowed"),
+    );
+    expect(create.indexOf("assertLiveExternalActionAllowed")).toBeLessThan(
+      create.indexOf("runTenantProviderWorkWithDeletionFence"),
+    );
+
+    const liveAgent = read("src/lib/voice/openai-live-agent-service.ts");
+    expect(liveAgent).toContain('admission: "private_simulation"');
+
+    const chatgptSimulation = read("src/lib/voice/openai-realtime-service.ts");
+    const simulationCreate = chatgptSimulation.slice(
+      chatgptSimulation.indexOf("export async function createOpenAIRealtimeSimulationCall"),
+    );
+    expect(simulationCreate).not.toContain('admission: "private_simulation"');
+
+    const outbound = read("src/lib/voice/outbound-call-service.ts");
+    expect(outbound).toContain(
+      'await assertLiveExternalActionAllowed(input.userId, "twilio_openai_outbound_call_create")',
+    );
+    const sms = read("src/routes/sms-routes.ts");
+    expect(sms).toContain('await assertLiveExternalActionAllowed(userId, "sms_thread_reply")');
+    const email = read("src/lib/daily-brief.ts");
+    expect(email).toContain('assertLiveExternalActionAllowed(userId, "daily_brief_email")');
+    const provision = read("src/lib/voice/native-phone-provisioning.ts");
+    expect(provision).toContain("liveExternalActionPolicyForUser(input.userId)");
+    const search = read("src/lib/voice/native-phone-carrier.ts");
+    expect(search).toContain("liveExternalActionPolicyForUser(userId)");
+  });
+
   it("places durable environment admission before every tenant job handler", () => {
     const worker = read("src/lib/job-worker.ts");
     const dispatch = worker.slice(

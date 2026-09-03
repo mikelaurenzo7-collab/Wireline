@@ -4,7 +4,7 @@ import { z } from "zod";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate-limits";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
-import { enforceSpendCap } from "../lib/spend-guards";
+import { enforcePrivateVoiceSimulationSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
 import {
   commitRealtimeSessionSpend,
@@ -63,7 +63,7 @@ router.post(
   authenticateUser,
   sessionLimiter,
   enforceLaunchHardGate,
-  enforceSpendCap,
+  enforcePrivateVoiceSimulationSpendCap,
   validateBody(sessionSchema),
   simulationMinuteQuota,
   async (req: AuthenticatedRequest, res: Response) => {

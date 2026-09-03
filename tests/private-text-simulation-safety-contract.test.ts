@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACCOUNT_ENVIRONMENT_UNAVAILABLE,
   privateTextSimulationPolicy,
+  privateVoiceSimulationPolicy,
 } from "../src/lib/account-environment-policy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -12,10 +13,17 @@ describe("private text simulation account admission", () => {
   it("allows every explicit account classification and fails closed on missing state", () => {
     for (const environment of ["production", "demo", "test"] as const) {
       expect(privateTextSimulationPolicy(environment)).toEqual({ allowed: true, environment });
+      expect(privateVoiceSimulationPolicy(environment)).toEqual({ allowed: true, environment });
     }
 
     for (const environment of [null, undefined, "staging"]) {
       expect(privateTextSimulationPolicy(environment)).toMatchObject({
+        allowed: false,
+        environment: null,
+        status: 503,
+        code: ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+      });
+      expect(privateVoiceSimulationPolicy(environment)).toMatchObject({
         allowed: false,
         environment: null,
         status: 503,
@@ -45,7 +53,30 @@ describe("private text simulation account admission", () => {
 
     expect(liveGuard).toContain("assertLiveExternalActionAllowed");
     expect(privateGuard).toContain("assertPrivateTextSimulationAllowed");
+    expect(privateGuard).toContain("assertPrivateVoiceSimulationAllowed");
     expect(privateGuard).not.toContain("assertLiveExternalActionAllowed");
+  });
+
+  it("admits Studio Preview Voice through the private-voice cap, not the live spend fence", () => {
+    const route = read("src/routes/live-voice-routes.ts");
+    const start = route.indexOf('"/api/voice/live/session"');
+    const handler = route.indexOf("async (req: AuthenticatedRequest", start);
+    const admission = route.slice(start, handler);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(handler).toBeGreaterThan(start);
+    expect(admission).toContain("enforcePrivateVoiceSimulationSpendCap");
+    expect(admission).not.toMatch(/\benforceSpendCap\b/);
+    expect(admission).toContain("enforceLaunchHardGate");
+    expect(admission).toContain("simulationMinuteQuota");
+
+    const liveAgent = read("src/lib/voice/openai-live-agent-service.ts");
+    expect(liveAgent).toContain('name: "search_agent_knowledge"');
+    expect(liveAgent).toContain('if (input.name !== "search_agent_knowledge")');
+    expect(liveAgent).toContain('admission: "private_simulation"');
+    expect(liveAgent).not.toMatch(
+      /sendTenantMessage|placeOutboundCall|sendEmail|purchaseNativeNumber/,
+    );
   });
 
   it("keeps the Studio rehearsal text-only and non-dispatching", () => {

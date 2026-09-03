@@ -69,6 +69,22 @@ export function liveExternalActionPolicy(
   };
 }
 
+function classifiedPrivateSimulationPolicy(
+  environment: string | null | undefined,
+  unavailableMessage: string,
+): PrivateTextSimulationPolicy {
+  if (environment === "production" || environment === "demo" || environment === "test") {
+    return { allowed: true, environment };
+  }
+  return {
+    allowed: false,
+    environment: null,
+    status: 503,
+    code: ACCOUNT_ENVIRONMENT_UNAVAILABLE,
+    message: unavailableMessage,
+  };
+}
+
 /**
  * Private text rehearsal is safe in every explicitly classified workspace.
  *
@@ -80,16 +96,27 @@ export function liveExternalActionPolicy(
 export function privateTextSimulationPolicy(
   environment: string | null | undefined,
 ): PrivateTextSimulationPolicy {
-  if (environment === "production" || environment === "demo" || environment === "test") {
-    return { allowed: true, environment };
-  }
-  return {
-    allowed: false,
-    environment: null,
-    status: 503,
-    code: ACCOUNT_ENVIRONMENT_UNAVAILABLE,
-    message: "Private text simulation is unavailable until this workspace is fully configured.",
-  };
+  return classifiedPrivateSimulationPolicy(
+    environment,
+    "Private text simulation is unavailable until this workspace is fully configured.",
+  );
+}
+
+/**
+ * Studio Preview Voice is the spoken equivalent of private text simulation.
+ *
+ * It mints metered OpenAI Realtime audio on the platform key, so callers must
+ * still enforce the tenant's persisted spend cap. It cannot place PSTN, send
+ * SMS or email, or invoke any tool except Training search. Unknown/missing
+ * account state still fails closed before any provider call.
+ */
+export function privateVoiceSimulationPolicy(
+  environment: string | null | undefined,
+): PrivateTextSimulationPolicy {
+  return classifiedPrivateSimulationPolicy(
+    environment,
+    "Preview Voice is unavailable until this workspace is fully configured.",
+  );
 }
 
 async function accountEnvironmentForUser(userId: string): Promise<string | null> {
@@ -115,6 +142,12 @@ export async function privateTextSimulationPolicyForUser(
   return privateTextSimulationPolicy(await accountEnvironmentForUser(userId));
 }
 
+export async function privateVoiceSimulationPolicyForUser(
+  userId: string,
+): Promise<PrivateTextSimulationPolicy> {
+  return privateVoiceSimulationPolicy(await accountEnvironmentForUser(userId));
+}
+
 export async function assertLiveExternalActionAllowed(
   userId: string,
   action: string,
@@ -136,6 +169,22 @@ export async function assertPrivateTextSimulationAllowed(
   action: string,
 ): Promise<void> {
   const policy = await privateTextSimulationPolicyForUser(userId);
+  if (policy.allowed) return;
+
+  log.warn("Private simulation blocked by account environment", {
+    userId,
+    action,
+    accountEnvironment: "missing",
+    code: policy.code,
+  });
+  throw new AppError(policy.status, policy.code, policy.message);
+}
+
+export async function assertPrivateVoiceSimulationAllowed(
+  userId: string,
+  action: string,
+): Promise<void> {
+  const policy = await privateVoiceSimulationPolicyForUser(userId);
   if (policy.allowed) return;
 
   log.warn("Private simulation blocked by account environment", {
