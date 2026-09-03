@@ -379,6 +379,7 @@ export async function createOpenAILiveVoiceCall(input: {
     sdp: input.sdp,
     session,
     maxDurationSeconds: OPENAI_LIVE_VOICE_MAX_SECONDS,
+    admission: "private_simulation",
     logContext: { userId: input.userId, agentId: input.agentId },
   });
   runInBackground(`OpenAI Studio Realtime deadline ${call.callId}`, async () => {

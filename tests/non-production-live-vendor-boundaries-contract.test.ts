@@ -21,12 +21,16 @@ describe("non-production live-vendor mutation boundaries", () => {
       "async function createServerManagedOpenAIRealtimeCallUnfenced",
     );
     const publicBypass = create.indexOf("if (!isTenantCall)");
-    const environment = create.indexOf("assertLiveExternalActionAllowed");
+    const privateAdmission = create.indexOf('admission === "private_simulation"');
+    const privateEnvironment = create.indexOf("assertPrivateVoiceSimulationAllowed");
+    const liveEnvironment = create.indexOf("assertLiveExternalActionAllowed");
     const lease = create.indexOf("runTenantProviderWorkWithDeletionFence");
 
     expect(publicBypass).toBeGreaterThanOrEqual(0);
-    expect(environment).toBeGreaterThan(publicBypass);
-    expect(lease).toBeGreaterThan(environment);
+    expect(privateAdmission).toBeGreaterThan(publicBypass);
+    expect(privateEnvironment).toBeGreaterThan(privateAdmission);
+    expect(liveEnvironment).toBeGreaterThan(privateEnvironment);
+    expect(lease).toBeGreaterThan(liveEnvironment);
     expect(create).toContain('operation: "openai_realtime_call_create"');
     expect(create).toContain("retainOnSuccess: true");
     expect(create).toContain("createServerManagedOpenAIRealtimeCallUnfenced(input)");

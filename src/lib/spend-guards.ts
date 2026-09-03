@@ -17,6 +17,7 @@ import { resolveAiDailySpendAlertUsd } from "./ai-spend-alert";
 import {
   assertLiveExternalActionAllowed,
   assertPrivateTextSimulationAllowed,
+  assertPrivateVoiceSimulationAllowed,
 } from "./account-environment-policy";
 
 interface BudgetRow {
@@ -194,15 +195,38 @@ export async function isHardSpendCapExceeded(userId: string): Promise<boolean> {
   return status === "exceeded";
 }
 
-type SpendCapSurface = "live" | "private_text_simulation";
+type SpendCapSurface = "live" | "private_text_simulation" | "private_voice_simulation";
+
+function spendCapCopy(surface: SpendCapSurface): { unavailable: string; reached: string } {
+  switch (surface) {
+    case "private_text_simulation":
+      return {
+        unavailable:
+          "BotBound could not verify your spend guard. Private text simulation is paused until the check recovers.",
+        reached:
+          "Your provider spend guard has reached its plan-funded limit. Private text simulation resumes next monthly period; review Billing if you need more capacity now.",
+      };
+    case "private_voice_simulation":
+      return {
+        unavailable:
+          "BotBound could not verify your spend guard. Preview Voice is paused until the check recovers.",
+        reached:
+          "Your provider spend guard has reached its plan-funded limit. Preview Voice resumes next monthly period; review Billing if you need more capacity now.",
+      };
+    case "live":
+      return {
+        unavailable:
+          "BotBound could not verify your spend guard. New live work is paused until the check recovers.",
+        reached:
+          "Your provider spend guard has reached its plan-funded limit. New live work resumes next monthly period; review Billing if you need more capacity now.",
+      };
+  }
+}
 
 function sendSpendGuardUnavailable(res: Response, surface: SpendCapSurface) {
   return res.status(503).json({
     code: "SPEND_GUARD_UNAVAILABLE",
-    error:
-      surface === "private_text_simulation"
-        ? "BotBound could not verify your spend guard. Private text simulation is paused until the check recovers."
-        : "BotBound could not verify your spend guard. New live work is paused until the check recovers.",
+    error: spendCapCopy(surface).unavailable,
   });
 }
 
@@ -223,10 +247,7 @@ async function enforcePersistedSpendCap(
 
     return res.status(402).json({
       code: "SPEND_CAP_REACHED",
-      error:
-        surface === "private_text_simulation"
-          ? "Your provider spend guard has reached its plan-funded limit. Private text simulation resumes next monthly period; review Billing if you need more capacity now."
-          : "Your provider spend guard has reached its plan-funded limit. New live work resumes next monthly period; review Billing if you need more capacity now.",
+      error: spendCapCopy(surface).reached,
       recovery_path: "/settings/billing",
       period: snap.period,
       month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
@@ -259,9 +280,10 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
 }
 
 /**
- * Admission for a tool-free private rehearsal. Demo/test classifications are
- * intentional here: the model can only return text, while the ordinary live
- * guard remains in front of calls, messages, integrations, and agent tools.
+ * Admission for a tool-free private text rehearsal. Demo/test classifications
+ * are intentional here: the model can only return text. Preview Voice uses the
+ * sibling private-voice guard. The ordinary live guard remains in front of
+ * PSTN, SMS, email, number provision, and agent tools.
  */
 export async function enforcePrivateTextSimulationSpendCap(
   req: AuthedRequest,
@@ -273,6 +295,23 @@ export async function enforcePrivateTextSimulationSpendCap(
 
   await assertPrivateTextSimulationAllowed(userId, "private_text_simulation");
   return enforcePersistedSpendCap(userId, res, next, "private_text_simulation");
+}
+
+/**
+ * Admission for Studio Preview Voice. Classified test/demo/production
+ * workspaces may mint metered OpenAI Realtime audio. The session cannot
+ * reach PSTN, SMS, or email, and the only tool is Training search.
+ */
+export async function enforcePrivateVoiceSimulationSpendCap(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction,
+) {
+  const userId = req.user?.id;
+  if (!userId) return next();
+
+  await assertPrivateVoiceSimulationAllowed(userId, "private_voice_simulation");
+  return enforcePersistedSpendCap(userId, res, next, "private_voice_simulation");
 }
 
 const AI_DAILY_ALERT_USD = resolveAiDailySpendAlertUsd();

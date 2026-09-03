@@ -283,6 +283,15 @@ describe("AI cost-protection contract", () => {
         path,
       ).toBeLessThan(route.indexOf("session = await createOpenAI"));
     }
+    const liveVoice = read("src/routes/live-voice-routes.ts");
+    expect(liveVoice).toContain("enforcePrivateVoiceSimulationSpendCap");
+    expect(liveVoice).not.toMatch(/\benforceSpendCap\b/);
+    expect(liveVoice).toContain("reserveRealtimeSessionSpend");
+    expect(liveVoice).toContain("releaseRealtimeSessionSpendAfterFailure");
+    expect(liveVoice.indexOf("enforcePrivateVoiceSimulationSpendCap,")).toBeGreaterThan(-1);
+    expect(liveVoice.indexOf("enforcePrivateVoiceSimulationSpendCap,")).toBeLessThan(
+      liveVoice.indexOf("simulationMinuteQuota,"),
+    );
     expect(mcpSimulation).toContain("reservePlatformCostRecord({");
     expect(mcpSimulation.indexOf("reservePlatformCostRecord({")).toBeLessThan(
       mcpSimulation.indexOf("createOpenAIRealtimeSimulationCall({"),
