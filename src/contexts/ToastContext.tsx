@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+  useEffect,
+} from "react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -64,15 +72,35 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Mirror of `toasts` kept in sync so `toast`/`dismiss` can read the current
+  // queue synchronously without running side effects inside a state updater.
+  const toastsRef = useRef<Toast[]>([]);
+  const dismissRef = useRef<(id: string) => void>(() => {});
 
-  const dismiss = useCallback((id: string) => {
+  const clearTimer = useCallback((id: string) => {
     const t = timers.current.get(id);
     if (t) {
       clearTimeout(t);
       timers.current.delete(id);
     }
-    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  const commitToasts = useCallback((next: Toast[]) => {
+    toastsRef.current = next;
+    setToasts(next);
+  }, []);
+
+  const dismiss = useCallback(
+    (id: string) => {
+      clearTimer(id);
+      commitToasts(toastsRef.current.filter((t) => t.id !== id));
+    },
+    [clearTimer, commitToasts],
+  );
+
+  useEffect(() => {
+    dismissRef.current = dismiss;
+  }, [dismiss]);
 
   const toast = useCallback(
     (opts: Omit<Toast, "id">): string => {
@@ -82,49 +110,30 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      let resolvedId = id;
-
-      setToasts((prev) => {
-        const { queue, duplicateId, evictedIds } = mergeToastQueue(prev, { ...opts, id });
-
-        for (const evictedId of evictedIds) {
-          const timer = timers.current.get(evictedId);
-          if (timer) {
-            clearTimeout(timer);
-            timers.current.delete(evictedId);
-          }
-        }
-
-        if (duplicateId) {
-          resolvedId = duplicateId;
-          const prevTimer = timers.current.get(duplicateId);
-          if (prevTimer) {
-            clearTimeout(prevTimer);
-          }
-          if (duration > 0) {
-            timers.current.set(
-              duplicateId,
-              setTimeout(() => dismiss(duplicateId), duration),
-            );
-          } else {
-            timers.current.delete(duplicateId);
-          }
-          return queue;
-        }
-
-        if (duration > 0) {
-          timers.current.set(
-            id,
-            setTimeout(() => dismiss(id), duration),
-          );
-        }
-
-        return queue;
+      const { queue, duplicateId, evictedIds } = mergeToastQueue(toastsRef.current, {
+        ...opts,
+        id,
       });
 
+      for (const evictedId of evictedIds) {
+        clearTimer(evictedId);
+      }
+
+      const resolvedId = duplicateId ?? id;
+      if (duration > 0) {
+        clearTimer(resolvedId);
+        timers.current.set(
+          resolvedId,
+          setTimeout(() => dismissRef.current(resolvedId), duration),
+        );
+      } else {
+        clearTimer(resolvedId);
+      }
+
+      commitToasts(queue);
       return resolvedId;
     },
-    [dismiss],
+    [clearTimer, commitToasts],
   );
 
   const success = useCallback(

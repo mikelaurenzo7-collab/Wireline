@@ -401,6 +401,35 @@
   }
 }
 
+/* Indeterminate route-loading sweep. The bar travels left-to-right across the
+   viewport top while a lazy route chunk materializes, then the shell takes
+   over. Kept independent from the skeleton shimmer so a route transition
+   reads as forward motion rather than a static wait. */
+.route-progress-sweep-bar {
+  transform: translateX(-100%);
+  animation: wl-route-progress-sweep 1.1s var(--wireline-motion-easing-wireline) infinite;
+}
+
+@keyframes wl-route-progress-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  60% {
+    transform: translateX(320%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-progress-sweep-bar {
+    animation: none;
+    transform: translateX(0);
+    opacity: 0.6;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wl-skeleton::after {
     animation: none;

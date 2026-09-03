@@ -60,11 +60,10 @@ describe("authenticated Bot navigation contract", () => {
     expect(shell).not.toContain("orderedAgents");
   });
 
-  it("keeps Studio on a simple Setup, Test, Review loop", () => {
-    expect(studio).toContain('type WorkspaceSection = "setup" | "test" | "review"');
-    expect(studio).toContain('label: "Setup"');
-    expect(studio).toContain('label: "Test"');
-    expect(studio).toContain('label: "Review"');
+  it("keeps Studio as one workroom with a Setup/Review inspector", () => {
+    expect(studio).toContain('type InspectorSection = "setup" | "review"');
+    expect(studio).toContain('type WorkroomMode = "configure" | "test"');
+    expect(studio).toContain('id === "setup" ? "Setup" : "Review"');
     expect(studio).toContain("StudioAgentWorkspacePanel");
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");

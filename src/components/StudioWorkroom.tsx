@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ArrowLeft, Loader2, Phone, Send, Trash2 } from "lucide-react";
+import { Loader2, Phone, Send, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -133,10 +133,9 @@ const StudioWorkroom = forwardRef<
     markKey?: BotMarkKey | null;
     initialCommand?: string;
     commandNonce?: string;
-    onBack: () => void;
-    backLabel?: string;
     layout?: "standalone" | "canvas" | "split";
     mode?: WorkroomMode;
+    onModeChange?: (mode: WorkroomMode) => void;
     allowOutbound?: boolean;
   }
 >(function StudioWorkroom(
@@ -146,10 +145,9 @@ const StudioWorkroom = forwardRef<
     markKey,
     initialCommand,
     commandNonce,
-    onBack,
-    backLabel = "Back",
     layout = "standalone",
     mode = "configure",
+    onModeChange,
     allowOutbound = false,
   },
   ref,
@@ -323,6 +321,31 @@ const StudioWorkroom = forwardRef<
           ? "Replying"
           : "Working";
 
+  const modeToggle = onModeChange ? (
+    <div
+      className="inline-flex items-center rounded-lg bg-muted/45 p-0.5"
+      role="tablist"
+      aria-label="Workroom mode"
+    >
+      {(["configure", "test"] as const).map((option) => (
+        <button
+          key={option}
+          type="button"
+          role="tab"
+          aria-selected={mode === option}
+          onClick={() => onModeChange(option)}
+          className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+            mode === option
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {option === "configure" ? "Build" : "Test"}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   const clearButton = (
     <button
       type="button"
@@ -353,9 +376,11 @@ const StudioWorkroom = forwardRef<
         >
           {split ? (
             <div className="flex min-w-0 items-center gap-2">
-              <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                {mode === "test" ? "Customer test" : "Build"}
-              </span>
+              {onModeChange ? null : (
+                <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  {mode === "test" ? "Customer test" : "Build"}
+                </span>
+              )}
               <span className="wl-preserve-case truncate text-xs font-medium text-foreground">
                 {agentName}
               </span>
@@ -379,6 +404,7 @@ const StudioWorkroom = forwardRef<
             </div>
           )}
           <div className="flex shrink-0 items-center gap-1.5">
+            {modeToggle}
             {mode === "test" && allowOutbound ? (
               <Button
                 type="button"
@@ -392,16 +418,6 @@ const StudioWorkroom = forwardRef<
               </Button>
             ) : null}
             {clearButton}
-            {!split ? (
-              <button
-                type="button"
-                onClick={onBack}
-                className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={backLabel}
-              >
-                <ArrowLeft size={16} aria-hidden="true" />
-              </button>
-            ) : null}
           </div>
         </div>
       </header>

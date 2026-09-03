@@ -7,7 +7,6 @@ import { AgentsProvider } from "./contexts/AgentsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { BrandingProvider } from "./contexts/BrandingContext";
 import { AccountProvider } from "./contexts/AccountContext";
-import TransitionSurface from "./components/TransitionSurface";
 import RouteChangeA11y from "./components/RouteChangeA11y";
 import { useAuth } from "./contexts/AuthContext";
 import { isWorkspaceRoute, usesWorkspaceViewport } from "./lib/workspace-route-scope";
@@ -108,9 +107,27 @@ const PublicNotFound = lazy(() =>
 );
 
 function RouteLoading() {
+  // A route chunk is materializing. Keep this minimal and non-blocking: a
+  // full-screen takeover on every lazy navigation reads as a crash, not a
+  // transition. A thin brand progress sweep plus an unobtrusive skeleton lets
+  // the shell stay visible while the next page resolves.
   return (
-    <div className="fixed inset-0 z-[9999]">
-      <TransitionSurface eyebrow="BotBound" title="Loading" busyLabel="Loading" />
+    <div
+      className="flex min-h-[100dvh] flex-col"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label="Loading page"
+    >
+      <div className="fixed inset-x-0 top-0 z-[9999] h-[2px] overflow-hidden" aria-hidden="true">
+        <div className="route-progress-sweep-bar h-full w-1/3 rounded-full bg-primary" />
+      </div>
+      <div className="flex flex-1 items-center justify-center p-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span className="sr-only">Loading</span>
+          <div className="size-2 rounded-full bg-primary/70" aria-hidden="true" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import {
-  CheckCircle2,
   ChevronsLeft,
   ChevronsRight,
   MessageCircle,
@@ -9,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
@@ -26,20 +25,11 @@ import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 
-type WorkspaceSection = "setup" | "test" | "review";
+type InspectorSection = "setup" | "review";
+type WorkroomMode = "configure" | "test";
 
 const BOT_LANGUAGE = customerAgentLanguage();
 const STUDIO_INSPECTOR_STORAGE_KEY = "wireline:studio-inspector:v1";
-
-const SECTIONS: Array<{
-  id: WorkspaceSection;
-  label: string;
-  icon: typeof Settings2;
-}> = [
-  { id: "setup", label: "Setup", icon: Settings2 },
-  { id: "test", label: "Test", icon: MessageCircle },
-  { id: "review", label: "Review", icon: CheckCircle2 },
-];
 
 function StudioLoadingState() {
   return (
@@ -114,10 +104,12 @@ function StudioEmptyState() {
   );
 }
 
-function normalizeSection(value: string | null): WorkspaceSection {
-  if (value === "test") return "test";
-  if (value === "review" || value === "overview") return "review";
-  return "setup";
+function initialInspectorSection(value: string | null): InspectorSection {
+  return value === "review" ? "review" : "setup";
+}
+
+function initialWorkroomMode(value: string | null): WorkroomMode {
+  return value === "test" ? "test" : "configure";
 }
 
 export default function StudioWorkspaceV2() {
@@ -127,8 +119,21 @@ export default function StudioWorkspaceV2() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
-  const section = normalizeSection(params.get("section"));
-  const inspectorSection = section === "review" ? "review" : "setup";
+  const [inspectorSection, setInspectorSection] = useState<InspectorSection>(() =>
+    initialInspectorSection(params.get("section")),
+  );
+  const [workroomMode, setWorkroomMode] = useState<WorkroomMode>(() =>
+    initialWorkroomMode(params.get("section")),
+  );
+  // On narrow viewports the inspector replaces the workroom rather than sitting
+  // beside it. On wide screens the inspector is always its own resizable rail.
+  // A deep link that names a config section (e.g. ?section=setup after creating
+  // a Bot) opens the inspector on narrow so the intended surface is visible.
+  const [narrowInspectorOpen, setNarrowInspectorOpen] = useState(() => {
+    const requested = params.get("section");
+    return requested === "setup" || requested === "review";
+  });
+
   const legacyMode = params.get("mode");
   const legacyView = params.get("view");
   const hasCommand = Boolean(params.get("command") || params.get("commandNonce"));
@@ -140,11 +145,12 @@ export default function StudioWorkspaceV2() {
         const next = new URLSearchParams(current);
         next.delete("mode");
         next.delete("view");
-        next.set("section", legacyMode === "workroom" ? "test" : "setup");
         return next;
       },
       { replace: true },
     );
+    if (legacyMode === "workroom") setWorkroomMode("test");
+    else setInspectorSection("setup");
   }, [legacyMode, legacyView, setParams]);
 
   useEffect(() => {
@@ -165,51 +171,26 @@ export default function StudioWorkspaceV2() {
   }, [agents, loading, requestedId, resolvedAgentId, setParams]);
 
   useEffect(() => {
-    if (!hasCommand || section === "test") return;
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        next.set("section", "test");
-        return next;
-      },
-      { replace: true },
-    );
-  }, [hasCommand, section, setParams]);
-
-  useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
   }, [active?.id]);
 
-  const setSection = useCallback(
-    (nextSection: WorkspaceSection, replace = false) => {
-      if (!active) return;
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current);
-          next.set("agent", active.id);
-          next.set("section", nextSection);
-          next.delete("view");
-          next.delete("mode");
-          if (nextSection !== "test") {
-            next.delete("command");
-            next.delete("commandNonce");
-          }
-          return next;
-        },
-        { replace },
-      );
-    },
-    [active, setParams],
-  );
+  const openInspector = useCallback((section: InspectorSection) => {
+    setInspectorSection(section);
+    setNarrowInspectorOpen(true);
+  }, []);
+
+  const closeInspector = useCallback(() => {
+    setNarrowInspectorOpen(false);
+  }, []);
 
   const startCustomerTest = useCallback(() => {
-    setSection("test");
+    setWorkroomMode("test");
     window.setTimeout(() => {
       workroomRef.current?.focusComposer(
         "Hi, can you explain what you can do and help me take the next step?",
       );
     }, 120);
-  }, [setSection]);
+  }, []);
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
@@ -234,77 +215,6 @@ export default function StudioWorkspaceV2() {
     );
   }
 
-  const studioTabId = (id: WorkspaceSection) => `studio-tab-${id}`;
-  const studioPanelId = (id: WorkspaceSection) => `studio-panel-${id}`;
-  const handleSectionKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const currentIndex = SECTIONS.findIndex((item) => item.id === section);
-    const lastIndex = SECTIONS.length - 1;
-    let nextIndex = currentIndex;
-    if (event.key === "ArrowRight") {
-      nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
-    } else if (event.key === "ArrowLeft") {
-      nextIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
-    } else if (event.key === "Home") {
-      nextIndex = 0;
-    } else if (event.key === "End") {
-      nextIndex = lastIndex;
-    } else {
-      return;
-    }
-    event.preventDefault();
-    const next = SECTIONS[nextIndex].id;
-    setSection(next);
-    window.requestAnimationFrame(() => document.getElementById(studioTabId(next))?.focus());
-  };
-
-  const sectionTabs = (
-    <nav
-      className="shrink-0 border-b border-border/70 bg-card/45 px-3 py-2 sm:px-5"
-      aria-label="Bot workspace"
-    >
-      <div
-        className="mx-auto grid w-full max-w-md grid-cols-3 gap-1 rounded-xl bg-muted/35 p-1"
-        role="tablist"
-        aria-label={`${BOT_LANGUAGE.singular} workspace`}
-        onKeyDown={handleSectionKeyDown}
-      >
-        {SECTIONS.map((item) => {
-          const selected = section === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              id={studioTabId(item.id)}
-              aria-selected={selected}
-              aria-controls={
-                splitWorkspace && item.id === "test"
-                  ? "studio-split-workspace"
-                  : studioPanelId(item.id)
-              }
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setSection(item.id)}
-              className={`min-w-0 rounded-lg px-2.5 py-2 text-center transition-colors wl-focus-ring-halo ${
-                selected
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <Icon
-                  className={`size-3.5 shrink-0 ${selected ? "text-primary" : ""}`}
-                  aria-hidden="true"
-                />
-                <span className="truncate text-xs font-semibold sm:text-sm">{item.label}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-
   const setupPanel = (
     <StudioAgentWorkspacePanel
       key={active.id}
@@ -313,7 +223,7 @@ export default function StudioWorkspaceV2() {
       isBusinessAgent={Boolean(active.is_business_agent)}
       onTestVoiceInChat={startCustomerTest}
       className="h-full border-t-0"
-      compact={splitWorkspace && section === "test"}
+      compact={splitWorkspace}
     />
   );
 
@@ -324,10 +234,10 @@ export default function StudioWorkspaceV2() {
       agentName={active.name}
       agentRole={active.role}
       phoneNumber={active.phone_number}
-      onEdit={() => setSection("setup")}
+      onEdit={() => openInspector("setup")}
       onTest={startCustomerTest}
       className="h-full"
-      compact={splitWorkspace && section === "test"}
+      compact={splitWorkspace}
     />
   );
 
@@ -340,25 +250,61 @@ export default function StudioWorkspaceV2() {
       markKey={active.mark_key}
       initialCommand={params.get("command") || undefined}
       commandNonce={params.get("commandNonce") || undefined}
-      onBack={() => setSection("setup")}
-      backLabel="Back to setup"
-      layout={splitWorkspace && section === "test" ? "split" : "standalone"}
-      mode={section === "test" ? "test" : "configure"}
+      layout={splitWorkspace ? "split" : "standalone"}
+      mode={hasCommand ? "test" : workroomMode}
+      onModeChange={setWorkroomMode}
       allowOutbound={Boolean(active.phone_number)}
     />
   );
 
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      {sectionTabs}
-
-      {splitWorkspace && section === "test" ? (
-        <div
-          id="studio-split-workspace"
-          role="tabpanel"
-          aria-labelledby={studioTabId(section)}
-          className="flex min-h-0 flex-1 overflow-hidden"
+  const inspectorHeader = (
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 px-3">
+      <div
+        className="flex items-center gap-1 rounded-lg bg-muted/35 p-0.5"
+        role="tablist"
+        aria-label="Bot inspector"
+      >
+        {(["setup", "review"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={inspectorSection === id}
+            onClick={() => setInspectorSection(id)}
+            className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+              inspectorSection === id
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {id === "setup" ? "Setup" : "Review"}
+          </button>
+        ))}
+      </div>
+      {splitWorkspace ? null : (
+        <button
+          type="button"
+          onClick={closeInspector}
+          className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+          aria-label="Back to workroom"
+          title="Back to workroom"
         >
+          <ChevronsRight className="size-4" aria-hidden="true" />
+        </button>
+      )}
+    </header>
+  );
+
+  const inspectorBody = (
+    <div className="min-h-0 flex-1 overflow-hidden">
+      {inspectorSection === "review" ? reviewPanel : setupPanel}
+    </div>
+  );
+
+  if (splitWorkspace) {
+    return (
+      <div className="flex h-full min-h-0 flex-col bg-background">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="min-w-0 flex-1">{workroom}</div>
 
           <WorkspaceResizablePanel
@@ -390,75 +336,57 @@ export default function StudioWorkspaceV2() {
                 </button>
               ) : (
                 <aside className="flex h-full min-h-0 w-full flex-col" aria-label="Bot inspector">
-                  <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 px-3">
-                    <div className="flex items-center gap-1 rounded-lg bg-muted/35 p-0.5">
-                      {(["setup", "review"] as const).map((id) => (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => setSection(id)}
-                          className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors ${
-                            inspectorSection === id
-                              ? "bg-card text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {id === "setup" ? "Setup" : "Review"}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={toggleCollapsed}
-                      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-                      aria-label="Collapse Bot inspector"
-                      title="Collapse inspector"
-                    >
-                      <ChevronsRight className="size-4" aria-hidden="true" />
-                    </button>
-                  </header>
-                  <div className="min-h-0 flex-1 overflow-hidden">
-                    {inspectorSection === "review" ? reviewPanel : setupPanel}
-                  </div>
+                  {inspectorHeader}
+                  {inspectorBody}
                 </aside>
               )
             }
           </WorkspaceResizablePanel>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      {narrowInspectorOpen ? (
+        <>
+          {inspectorHeader}
+          {inspectorBody}
+        </>
       ) : (
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {section === "setup" ? (
-            <div
-              role="tabpanel"
-              id={studioPanelId("setup")}
-              aria-labelledby={studioTabId("setup")}
-              className="h-full min-h-0"
-            >
-              {setupPanel}
-            </div>
-          ) : null}
-          {section === "test" ? (
-            <div
-              role="tabpanel"
-              id={studioPanelId("test")}
-              aria-labelledby={studioTabId("test")}
-              className="h-full min-h-0"
-            >
-              {workroom}
-            </div>
-          ) : null}
-          {section === "review" ? (
-            <div
-              role="tabpanel"
-              id={studioPanelId("review")}
-              aria-labelledby={studioTabId("review")}
-              className="h-full min-h-0"
-            >
-              {reviewPanel}
-            </div>
-          ) : null}
-        </div>
+        <div className="min-h-0 flex-1 overflow-hidden">{workroom}</div>
       )}
+      {!narrowInspectorOpen ? (
+        <nav
+          className="shrink-0 border-t border-border/70 bg-card/45 px-3 py-2 sm:px-5"
+          aria-label="Bot workspace"
+        >
+          <div className="mx-auto grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted/35 p-1">
+            <button
+              type="button"
+              onClick={closeInspector}
+              className="rounded-lg px-2.5 py-2 text-center text-xs font-semibold text-foreground transition-colors bg-card shadow-sm sm:text-sm"
+              aria-current="page"
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <MessageCircle className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+                <span>Workroom</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openInspector(inspectorSection)}
+              className="rounded-lg px-2.5 py-2 text-center text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground sm:text-sm wl-focus-ring-halo"
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>{inspectorSection === "review" ? "Review" : "Setup"}</span>
+              </span>
+            </button>
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }

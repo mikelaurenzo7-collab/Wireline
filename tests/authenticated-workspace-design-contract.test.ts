@@ -122,10 +122,8 @@ describe("authenticated workspace design architecture", () => {
     expect(studio).toContain("minSize={312}");
     expect(studio).toContain("maxSize={520}");
     expect(studio).toContain("collapsedSize={44}");
-    expect(studio.match(/compact=\{splitWorkspace && section === "test"\}/g)).toHaveLength(2);
-    expect(studio).toContain(
-      'layout={splitWorkspace && section === "test" ? "split" : "standalone"}',
-    );
+    expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
+    expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
     expect(setup).toContain("Define the role. {agentName} owns the outcome.");
     expect(setup).toContain("Then let {agentName} handle the work end");

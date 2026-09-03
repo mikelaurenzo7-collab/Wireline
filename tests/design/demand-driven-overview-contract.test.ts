@@ -67,11 +67,10 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).not.toContain("Test conversation completed");
   });
 
-  it("keeps Studio on a simple Setup, Test, Review loop with progressive disclosure", () => {
-    expect(studio).toContain('"setup" | "test" | "review"');
-    expect(studio).toContain('label: "Setup"');
-    expect(studio).toContain('label: "Test"');
-    expect(studio).toContain('label: "Review"');
+  it("keeps Studio as one workroom with a Setup/Review inspector and progressive disclosure", () => {
+    expect(studio).toContain('"setup" | "review"');
+    expect(studio).toContain('"configure" | "test"');
+    expect(studio).toContain('id === "setup" ? "Setup" : "Review"');
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).not.toContain("StudioAgentCanvas");
     expect(setup).not.toMatch(/AgentPresenceLivePreview|VoiceGallery/);

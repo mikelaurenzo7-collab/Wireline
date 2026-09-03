@@ -23,7 +23,11 @@ import { authFetch } from "../lib/api";
 import type { AccountType } from "../lib/account-type";
 import { useAuth } from "./AuthContext";
 
-const STORAGE_KEY = "wl_active_account";
+const STORAGE_KEY_PREFIX = "wl_active_account";
+
+function storageKeyForUser(userId: string): string {
+  return `${STORAGE_KEY_PREFIX}:${userId}`;
+}
 
 export interface Account {
   id: string;
@@ -47,9 +51,9 @@ interface AccountState {
 
 const AccountContext = createContext<AccountState | undefined>(undefined);
 
-function readStoredAccountId(): string | null {
+function readStoredAccountId(userId: string): string | null {
   try {
-    return localStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(storageKeyForUser(userId));
   } catch {
     return null;
   }
@@ -58,15 +62,20 @@ function readStoredAccountId(): string | null {
 export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(readStoredAccountId);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setAccounts([]);
+      setActiveId(null);
       setLoading(false);
       return;
     }
+
+    // Resume this user's saved workspace; never inherit another user's account
+    // id from the unscoped global key or a previous session on a shared browser.
+    setActiveId(readStoredAccountId(user.id));
 
     let cancelled = false;
     (async () => {
@@ -78,11 +87,15 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         const fetched = (data?.accounts ?? []) as Account[];
         if (!cancelled) {
           setAccounts(fetched);
-          if (!activeId && fetched.length > 0) {
-            const primary = fetched.find((a) => a.isPrimary) ?? fetched[0];
+          const stored = readStoredAccountId(user.id);
+          const primary: Account | undefined =
+            (stored && fetched.find((a) => a.id === stored)) ||
+            fetched.find((a) => a.isPrimary) ||
+            fetched[0];
+          if (primary) {
             setActiveId(primary.id);
             try {
-              localStorage.setItem(STORAGE_KEY, primary.id);
+              localStorage.setItem(storageKeyForUser(user.id), primary.id);
             } catch {
               /* non-fatal */
             }
@@ -97,7 +110,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const activeAccount = useMemo(
     () => accounts.find((a) => a.id === activeId) ?? accounts[0] ?? null,
@@ -106,14 +119,19 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const accountType: AccountType = activeAccount?.type ?? "personal";
 
-  const switchAccount = useCallback((accountId: string) => {
-    setActiveId(accountId);
-    try {
-      localStorage.setItem(STORAGE_KEY, accountId);
-    } catch {
-      /* non-fatal */
-    }
-  }, []);
+  const switchAccount = useCallback(
+    (accountId: string) => {
+      setActiveId(accountId);
+      if (user) {
+        try {
+          localStorage.setItem(storageKeyForUser(user.id), accountId);
+        } catch {
+          /* non-fatal */
+        }
+      }
+    },
+    [user],
+  );
 
   const addAccount = useCallback(
     async (type: AccountType, label?: string): Promise<Account | null> => {
