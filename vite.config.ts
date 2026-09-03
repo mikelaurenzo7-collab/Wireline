@@ -48,9 +48,10 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            // @vapi-ai/web is now loaded through a route-level dynamic import.
-            // Let Rollup own that async chunk; forcing the old vendor name emits
-            // an empty artifact and obscures whether the lazy boundary works.
+            // Route-owned dynamic imports should keep their natural async
+            // chunks. Forcing retired provider names into the vendor graph can
+            // emit empty artifacts and obscure whether current lazy boundaries
+            // are working as intended.
             if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion"))
               return "vendor-motion";
             // lucide-react is deliberately NOT forced into a vendor chunk. It
@@ -58,8 +59,8 @@ export default defineConfig(({ mode }) => {
             // chunk that uses it. Naming a shared chunk instead collapsed all
             // ~160 icons into one artifact that index.html modulepreloads, so
             // the marketing homepage — which renders 22 of them — eagerly
-            // fetched every dashboard-only icon. Same reasoning as @vapi-ai/web
-            // above.
+            // fetched every dashboard-only icon. Same reasoning as the
+            // route-owned async chunks above.
             if (/node_modules\/(react|react-dom)\//.test(id)) return "vendor-react";
           },
         },

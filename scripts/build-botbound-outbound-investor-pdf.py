@@ -90,11 +90,11 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     text(c, " BOOK.", 36 + prefix_width, height - 163, "InterTight-ExtraBold", 38, VIOLET_LIGHT)
     text(
         c,
-        "Autonomous Bots find prospects, make calls, and drive clear outcomes.",
+        "Bots work approved markets and lists, make calls, and drive clear outcomes.",
         38,
         height - 193,
         "Inter-SemiBold",
-        11,
+        10.3,
         MIST,
     )
 

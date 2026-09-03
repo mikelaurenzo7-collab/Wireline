@@ -107,6 +107,10 @@
 @import "./styles/brand-identity.css";
 @import "./styles/system-aesthetic-refinement.css";
 @import "./styles/public-mobile-refinement.css";
+/* Broad final composition, then the canonical authenticated shell owner. */
+@import "./styles/botbound-master-polish.css";
+@import "./styles/workspace-shell.css";
+/* Safe-area geometry remains terminal. */
 @import "./styles/safe-area-ownership.css";
 
 body {

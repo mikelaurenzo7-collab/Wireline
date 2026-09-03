@@ -138,6 +138,7 @@ router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, r
     ok: report.campaign_ready,
     overall_score: report.overall_score,
     campaign_ready: report.campaign_ready,
+    outbound_campaign_ready: report.outbound_campaign_ready,
     capabilities: report.capabilities.map((capability) => ({
       id: capability.id,
       level: capability.level,
@@ -146,7 +147,7 @@ router.get("/launch-readiness", healthRateLimiter, requireMonitorToken, (_req, r
       ...(capability.blockers.length > 0 ? { blockers: capability.blockers } : {}),
     })),
     ...(report.launch_blockers.length > 0 ? { launch_blockers: report.launch_blockers } : {}),
-    // Federal DNC and similar ops items stay visible without failing GO/score.
+    // Federal DNC and similar ops items stay visible without failing platform GO/score.
     ...(report.deferred_checklist.length > 0
       ? { deferred_checklist: report.deferred_checklist }
       : {}),
@@ -162,7 +163,11 @@ router.get("/ready", healthRateLimiter, requireMonitorToken, async (_req, res) =
     ok,
     env: { ok: env.valid, invalid: env.errors.length, by_group: env.byGroup },
     db: { ok: db.ok, latency_ms: db.latency_ms },
-    launch: { ok: launch.campaign_ready, overall_score: launch.overall_score },
+    launch: {
+      ok: launch.campaign_ready,
+      outbound_campaign_ready: launch.outbound_campaign_ready,
+      overall_score: launch.overall_score,
+    },
     timestamp: new Date().toISOString(),
   });
 });
