@@ -1,0 +1,508 @@
+/*
+ * BotBound master polish
+ *
+ * Final semantic refinement for the customer-facing business and the
+ * authenticated product. This layer does not invent a second theme or replace
+ * component ownership. It resolves the last visual differences through the
+ * generated canvas, surface, text, border, action, focus, and status tokens.
+ */
+
+:root {
+  --bb-polish-content-max: 90rem;
+  --bb-polish-reading-max: 66ch;
+  --bb-polish-radius: clamp(0.75rem, 0.68rem + 0.2vw, 0.95rem);
+  --bb-polish-rule: color-mix(
+    in srgb,
+    var(--wireline-color-border-default) 82%,
+    transparent
+  );
+  --bb-polish-rule-strong: color-mix(
+    in srgb,
+    var(--wireline-color-border-strong) 74%,
+    transparent
+  );
+  --bb-polish-surface: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 94%,
+    var(--wireline-color-canvas-default)
+  );
+  --bb-polish-surface-raised: color-mix(
+    in srgb,
+    var(--wireline-color-surface-raised, var(--wireline-color-surface-default)) 92%,
+    var(--wireline-color-canvas-default)
+  );
+  --bb-polish-shadow:
+    0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent),
+    0 18px 48px color-mix(in srgb, var(--wireline-color-canvas-default) 74%, transparent);
+  --bb-polish-shadow-soft:
+    0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent),
+    0 10px 30px color-mix(in srgb, var(--wireline-color-canvas-default) 58%, transparent);
+}
+
+::selection {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 34%,
+    transparent
+  );
+  color: var(--wireline-color-text-primary);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared composition                                                         */
+/* -------------------------------------------------------------------------- */
+
+.marketing-surface,
+.wl-workspace-shell {
+  background-color: var(--wireline-color-canvas-default);
+  background-image:
+    radial-gradient(
+      circle at 12% -10%,
+      color-mix(in srgb, var(--wireline-color-action-primary-default) 7%, transparent),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 94% 8%,
+      color-mix(in srgb, var(--wireline-color-action-secondary-default) 4%, transparent),
+      transparent 26rem
+    );
+  background-attachment: fixed;
+}
+
+.marketing-surface :where(.wl-public-rail, .wl-marketing-rail),
+.wl-workspace-shell .wl-workspace-content-inner {
+  width: min(100%, var(--bb-polish-content-max));
+}
+
+.marketing-surface :where(p, li),
+.wl-workspace-shell :where(p, li) {
+  text-wrap: pretty;
+}
+
+.marketing-surface :where(.wl-public-copy, .wl-page-description),
+.wl-workspace-shell :where(.wl-route-copy, .wl-page-description, .wl-card-description) {
+  max-width: var(--bb-polish-reading-max);
+}
+
+.marketing-surface :where(a, button, input, select, textarea),
+.wl-workspace-shell :where(a, button, input, select, textarea, [role="button"]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.marketing-surface :where(a, button, [role="button"]),
+.wl-workspace-shell :where(a, button, [role="button"]) {
+  transition-duration: 160ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public business surfaces                                                   */
+/* -------------------------------------------------------------------------- */
+
+.marketing-surface .marketing-flow {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-surface :where(.marketing-hero-title, .wl-page-title, .wl-public-section-heading) {
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-synthesis: none;
+  letter-spacing: -0.042em;
+  text-shadow: none;
+  text-wrap: balance;
+}
+
+.marketing-surface .wl-public-section-heading {
+  line-height: 1.01;
+}
+
+.marketing-surface :where(.wl-overline, .wl-eyebrow, .studio-kicker) {
+  color: var(--wireline-color-text-secondary);
+  letter-spacing: 0.11em;
+}
+
+.marketing-surface :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .marketing-demo-surface) {
+  border-color: var(--bb-polish-rule);
+  border-radius: var(--bb-polish-radius);
+  background: var(--bb-polish-surface);
+  box-shadow: none;
+}
+
+.marketing-surface :where(.wl-paper-elevated, .wl-panel-elevated, .marketing-demo-surface) {
+  box-shadow: var(--bb-polish-shadow-soft);
+}
+
+.marketing-surface .marketing-ink-panel {
+  border-color: var(--bb-polish-rule-strong);
+  border-radius: var(--bb-polish-radius);
+  box-shadow: var(--bb-polish-shadow-soft);
+}
+
+.marketing-surface .wl-marketing-actions {
+  gap: 0.625rem;
+}
+
+.marketing-surface .wl-marketing-actions > :where(a, button),
+.marketing-surface .marketing-hero__actions > :where(a, button) {
+  min-height: 3rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+}
+
+/* The landing entrance should read as one composed statement rather than
+ * three islands pinned to the top, centre, and bottom of the viewport. */
+.landing-prestige__hero {
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  align-items: start;
+  justify-items: start;
+  gap: clamp(1.15rem, 2.4vh, 1.85rem);
+}
+
+.landing-prestige__hero::before {
+  display: none;
+  content: none;
+}
+
+.landing-prestige__hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-prestige__hero-copy {
+  align-self: auto;
+}
+
+.landing-prestige__hero-lockup .bb-lockup__mark,
+.landing-prestige__hero-lockup .bb-mark-image {
+  filter: none;
+}
+
+.landing-demo-inline__copy strong {
+  font-family: var(--wireline-font-family-display);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.landing-demo-inline :where(a, button) {
+  border-radius: 0.75rem;
+}
+
+/* Pricing is a buying page, not a toolbar. */
+.marketing-surface.wl-pricing-page #plans h1,
+.marketing-surface.wl-pricing-page .wl-pricing-page__title {
+  max-width: 22ch;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.5rem, 1.14rem + 1.2vw, 2.1rem);
+  font-weight: 700;
+  letter-spacing: -0.042em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+/* Short public routes keep their footer/chrome anchored to the viewport floor
+ * while long documents continue to grow naturally. */
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page) {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+}
+
+.wl-ui-caps.wl-ui-caps--document
+  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page)
+  .marketing-flow {
+  flex: 1 1 auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Authenticated product                                                      */
+/* -------------------------------------------------------------------------- */
+
+.wl-workspace-shell .wl-workspace-main {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-canvas-default) 96%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.wl-workspace-shell .wl-workspace-rail-panel > aside[aria-label="Workspace navigation"] {
+  border-color: var(--bb-polish-rule);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 92%,
+    var(--wireline-color-canvas-default)
+  );
+}
+
+.wl-workspace-shell .wl-rail-link {
+  min-height: 2.6rem;
+  border-radius: 0.7rem;
+  color: var(--wireline-color-text-secondary);
+}
+
+.wl-workspace-shell .wl-rail-link:hover {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 78%,
+    transparent
+  );
+  color: var(--wireline-color-text-primary);
+}
+
+.wl-workspace-shell .wl-rail-link[aria-current="page"] {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 28%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 12%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+  box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default);
+}
+
+.wl-workspace-shell .wl-rail-agent-link {
+  border-color: var(--bb-polish-rule);
+  border-radius: 0.75rem;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-subtle) 62%,
+    transparent
+  );
+}
+
+.wl-workspace-shell .wl-rail-agent-link:hover,
+.wl-workspace-shell .wl-rail-agent-link[aria-current="page"] {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 30%,
+    transparent
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 8%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.wl-workspace-shell .wl-workspace-page {
+  gap: clamp(1rem, 0.82rem + 0.45vw, 1.35rem);
+}
+
+.wl-workspace-shell .wl-workspace-page-intro {
+  min-height: auto;
+}
+
+.wl-workspace-shell .wl-workspace-page-intro :where(h1, .wl-display-3),
+.wl-workspace-shell .wl-operate-surface :where(h1, .wl-display-3) {
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-synthesis: none;
+  letter-spacing: -0.038em;
+  line-height: 1.02;
+  text-shadow: none;
+  text-wrap: balance;
+}
+
+.wl-workspace-shell
+  :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .studio-card, .wl-metric-tile) {
+  border-color: var(--bb-polish-rule);
+  border-radius: var(--bb-polish-radius);
+  background: var(--bb-polish-surface);
+  box-shadow: none;
+}
+
+.wl-workspace-shell :where(.wl-paper-elevated, .wl-panel-elevated) {
+  background: var(--bb-polish-surface-raised);
+  box-shadow: var(--bb-polish-shadow-soft);
+}
+
+.wl-workspace-shell :where(.wl-metric-value, .wl-metric-tile__value) {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.035em;
+}
+
+.wl-workspace-shell :where(.wl-data-row, .wl-key-value) {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-border-default) 68%,
+    transparent
+  );
+}
+
+.wl-workspace-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  border-color: var(--bb-polish-rule);
+  border-radius: 0.7rem;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-default) 84%,
+    var(--wireline-color-canvas-default)
+  );
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
+}
+
+.wl-workspace-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover {
+  border-color: var(--bb-polish-rule-strong);
+}
+
+.wl-workspace-shell .wl-composer-dock {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-border-strong) 76%,
+    transparent
+  );
+  border-radius: 1rem;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-surface-raised, var(--wireline-color-surface-default)) 94%,
+    var(--wireline-color-canvas-default)
+  );
+  box-shadow: var(--bb-polish-shadow);
+}
+
+.wl-workspace-shell .wl-composer-dock:focus-within {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 52%,
+    var(--wireline-color-border-default)
+  );
+  box-shadow:
+    0 0 0 3px color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 12%,
+      transparent
+    ),
+    var(--bb-polish-shadow);
+}
+
+.wl-workspace-shell :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip) {
+  border-radius: 0.75rem;
+}
+
+.wl-workspace-shell
+  :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip)
+  :where([data-active="true"], [aria-pressed="true"], [aria-selected="true"]) {
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 12%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-action-primary-default);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 26%, transparent);
+}
+
+.wl-workspace-shell .wl-empty-state {
+  max-width: 40rem;
+}
+
+.wl-workspace-shell .wl-empty-state :where(h2, h3) {
+  font-family: var(--wireline-font-family-display);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Interaction restraint                                                      */
+/* -------------------------------------------------------------------------- */
+
+@media (hover: hover) and (pointer: fine) {
+  .marketing-surface :where(.wl-paper, .wl-panel, .marketing-demo-surface):hover,
+  .wl-workspace-shell :where(.wl-paper, .wl-panel, .studio-card):hover {
+    border-color: var(--bb-polish-rule-strong);
+  }
+
+  .marketing-surface :where(a, button):active,
+  .wl-workspace-shell :where(a, button, [role="button"]):active {
+    transform: scale(0.985);
+  }
+}
+
+.marketing-surface :where(a, button, input, select, textarea):focus-visible,
+.wl-workspace-shell :where(a, button, input, select, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px
+    color-mix(in srgb, var(--wireline-color-focus-default) 16%, transparent);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive composition                                                     */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .marketing-surface,
+  .wl-workspace-shell {
+    background-attachment: scroll;
+  }
+
+  .wl-workspace-shell nav[aria-label="Workspace navigation"] {
+    border-color: var(--bb-polish-rule-strong);
+    background: color-mix(
+      in srgb,
+      var(--wireline-color-surface-default) 90%,
+      transparent
+    );
+    box-shadow: var(--bb-polish-shadow-soft);
+    backdrop-filter: blur(18px) saturate(1.08);
+    -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  }
+}
+
+@media (max-width: 767px) {
+  .landing-prestige__hero {
+    align-content: start;
+    min-height: auto;
+    gap: 1.25rem;
+  }
+
+  .marketing-surface :where(.wl-marketing-actions, .marketing-hero__actions) {
+    width: 100%;
+  }
+
+  .marketing-surface :where(.wl-marketing-actions, .marketing-hero__actions) > :where(a, button) {
+    min-width: 0;
+  }
+
+  .wl-workspace-shell .wl-workspace-page {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .marketing-surface :where(.wl-marketing-actions, .marketing-hero__actions) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketing-surface :where(.wl-marketing-actions, .marketing-hero__actions) > :where(a, button) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-surface *,
+  .wl-workspace-shell * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .wl-workspace-shell nav[aria-label="Workspace navigation"] {
+    background: var(--wireline-color-surface-default);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
