@@ -45,6 +45,7 @@ describe("production build environment gate", () => {
     const bulkAudit = read("scripts/lib/npm-bulk-audit.mjs");
     const osvAudit = read("scripts/lib/osv-audit.mjs");
     const osvBehavior = read("tests/security-audit-osv-fallback.test.mjs");
+    const runner = read("scripts/run-test-estate.mjs");
     const releaseAuditStart = build.indexOf("function runCanonicalReleaseAudit()");
     const nextFunction = build.indexOf("function syncShowcaseIfRequested()", releaseAuditStart);
     const releaseAudit = build.slice(releaseAuditStart, nextFunction);
@@ -88,6 +89,7 @@ describe("production build environment gate", () => {
     expect(osvAudit).toContain("did not provide a recognized severity");
     expect(osvBehavior).toContain("follows per-query pagination");
     expect(osvBehavior).toContain("returns a clean report when every queried version");
+    expect(runner).toContain('"tests/security-audit-osv-fallback.test.mjs"');
     expect(audit).toContain("Security audit gate FAILED");
     expect(audit).toContain("const ACCEPTED = []");
   });
