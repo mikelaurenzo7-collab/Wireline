@@ -42,6 +42,19 @@ export const WIRELINE_DESIGN_VISION = {
     "Primary actions use atoms/Button, not HaloButton, VoidButton, or hand-rolled gradient CTAs on app surfaces.",
     "Navigation IA lives in constants/navigation.ts, never duplicate nav arrays in shell components.",
   ],
+  shell: {
+    componentOwner: "src/components/WorkspaceShell.tsx",
+    styleOwner: "src/styles/workspace-shell.css",
+    hooks: [
+      "wl-shell-rail",
+      "wl-shell-nav-item",
+      "wl-shell-bot-context",
+      "wl-shell-account",
+      "wl-shell-dock",
+      "wl-shell-more-link",
+    ],
+    rule: "Mounted authenticated chrome uses only canonical wl-shell-* hooks. wl-rail-* aliases are migration-only and may not be composed into WorkspaceShell.",
+  },
   tokens: {
     canvas: "#0A0A0E",
     canvasDeeper: "#050508",
@@ -147,6 +160,7 @@ export const WIRELINE_DESIGN_VISION = {
     "wl-chip-suggestion",
     "wl-composer-hero",
     "wl-eyebrow--wired--app",
+    "wl-rail-link",
     "wl-rail-agent-link",
     "wl-overview-greeting",
     "wl-operate-surface",
