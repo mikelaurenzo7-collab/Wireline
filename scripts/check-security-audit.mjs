@@ -59,10 +59,21 @@ try {
   process.exit(1);
 }
 
+const installedVersionCount = countPackageVersions(payload);
+console.log(
+  `Security audit: checking ${installedVersionCount} installed production package versions ` +
+    `across ${Object.keys(payload).length} packages.`,
+);
+
 let report;
 try {
   report = await requestBulkAdvisories(payload, {
     registry: process.env.NPM_AUDIT_REGISTRY || "https://registry.npmjs.org/",
+    onBatch: ({ batchNumber, batchCount, packageCount }) => {
+      console.log(
+        `Security audit: package batch ${batchNumber}/${batchCount} (${packageCount} packages).`,
+      );
+    },
   });
 } catch (error) {
   console.error(
@@ -112,6 +123,6 @@ if (blocking.length) {
 
 console.log(
   `Security audit gate passed: 0 unaccepted high/critical production advisories across ` +
-    `${countPackageVersions(payload)} installed production package versions` +
+    `${installedVersionCount} installed production package versions` +
     `${accepted.length ? ` (${accepted.length} explicitly accepted, listed above)` : ""}.`,
 );
