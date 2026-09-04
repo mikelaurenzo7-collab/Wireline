@@ -264,3 +264,5 @@ describe("OSV dependency audit fallback", () => {
     ).rejects.toThrow("must use HTTPS");
   });
 });
+
+// Exact-head certification marker: run this fallback through the canonical release lane.
