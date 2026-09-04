@@ -196,7 +196,18 @@
     var(--wireline-color-action-primary-default) 8%,
     var(--wireline-color-surface-default)
   );
-  box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default);
+}
+
+.wl-workspace-shell .wl-shell-bot-context[data-wireline-bot-selected="true"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -1px;
+  width: 2px;
+  height: 1rem;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: var(--wireline-color-action-primary-default);
 }
 
 .wl-shell-bot-copy,
@@ -511,6 +522,9 @@
     border-color: Highlight;
     background: Canvas;
     color: CanvasText;
-    box-shadow: inset 2px 0 0 Highlight;
+  }
+
+  .wl-shell-bot-context[data-wireline-bot-selected="true"]::before {
+    background: Highlight;
   }
 }
