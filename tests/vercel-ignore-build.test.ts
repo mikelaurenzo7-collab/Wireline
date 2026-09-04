@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isExplicitBuildRequested,
   isIgnorableChangeSet,
   isNonRuntimeOnlyPath,
   resolveVercelDiffRange,
@@ -37,6 +38,19 @@ describe("Vercel ignored-build classifier", () => {
     "brand-work/launch/assets/poster.png",
   ])("retains the build for %s", (file) => {
     expect(isNonRuntimeOnlyPath(file)).toBe(false);
+  });
+
+  it("never ignores an explicitly requested exact-head deep audit", () => {
+    expect(
+      isExplicitBuildRequested({
+        VERCEL_GIT_COMMIT_MESSAGE:
+          "test: certify authenticated design ownership [launch-deep-audit]",
+      }),
+    ).toBe(true);
+    expect(
+      isExplicitBuildRequested({ VERCEL_GIT_COMMIT_MESSAGE: "docs: update launch notes" }),
+    ).toBe(false);
+    expect(isExplicitBuildRequested({})).toBe(false);
   });
 
   it("diffs from the last successful Vercel deployment and fails closed without it", () => {
