@@ -5,6 +5,9 @@ const BULK_AUDIT_PATH = "-/npm/v1/security/advisories/bulk";
 const KNOWN_SEVERITIES = new Set(["info", "low", "moderate", "medium", "high", "critical"]);
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429]);
 const BLOCKING_SEVERITIES = new Set(["high", "critical"]);
+const DEFAULT_ATTEMPTS = 2;
+const DEFAULT_TIMEOUT_MS = 180_000;
+const DEFAULT_MAX_PACKAGES_PER_REQUEST = 80;
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -68,6 +71,40 @@ export function countPackageVersions(payload) {
   );
 }
 
+export function chunkBulkAuditPayload(
+  payload,
+  maxPackagesPerRequest = DEFAULT_MAX_PACKAGES_PER_REQUEST,
+) {
+  if (!isRecord(payload)) {
+    throw new Error("Bulk Advisory payload must be an object");
+  }
+  if (!Number.isInteger(maxPackagesPerRequest) || maxPackagesPerRequest < 1) {
+    throw new Error("maxPackagesPerRequest must be a positive integer");
+  }
+
+  const entries = Object.entries(payload);
+  if (!entries.length) {
+    throw new Error("Bulk Advisory payload must contain at least one package");
+  }
+
+  for (const [packageName, versions] of entries) {
+    if (
+      !packageName ||
+      !Array.isArray(versions) ||
+      !versions.length ||
+      versions.some((version) => typeof version !== "string" || !version.trim())
+    ) {
+      throw new Error(`Bulk Advisory payload contained invalid versions for ${packageName || "a package"}`);
+    }
+  }
+
+  const chunks = [];
+  for (let index = 0; index < entries.length; index += maxPackagesPerRequest) {
+    chunks.push(Object.fromEntries(entries.slice(index, index + maxPackagesPerRequest)));
+  }
+  return chunks;
+}
+
 function maybeGunzip(body) {
   const bytes = Buffer.isBuffer(body) ? body : Buffer.from(body);
   if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
@@ -114,29 +151,44 @@ export function resolveBulkAuditEndpoint(registry = DEFAULT_REGISTRY) {
   return new URL(BULK_AUDIT_PATH, base).toString();
 }
 
-export async function requestBulkAdvisories(
+function mergeBulkAdvisoryReports(target, report) {
+  if (!isRecord(report)) {
+    throw new Error("npm Bulk Advisory endpoint returned an unexpected response shape");
+  }
+
+  for (const [packageName, entries] of Object.entries(report)) {
+    if (!Array.isArray(entries)) {
+      throw new Error(`Bulk Advisory report entry for ${packageName} was not an array`);
+    }
+    target[packageName] = [...(target[packageName] || []), ...entries];
+  }
+  return target;
+}
+
+async function requestBulkAdvisoryBatch(
   payload,
   {
-    registry = DEFAULT_REGISTRY,
-    fetchImpl = globalThis.fetch,
-    attempts = 3,
-    timeoutMs = 20_000,
-    retryDelayMs = 400,
-    sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
-  } = {},
+    endpoint,
+    fetchImpl,
+    attempts,
+    timeoutMs,
+    retryDelayMs,
+    sleep,
+    batchNumber,
+    batchCount,
+  },
 ) {
-  if (typeof fetchImpl !== "function") throw new Error("A Fetch API implementation is required");
-  if (!Number.isInteger(attempts) || attempts < 1) throw new Error("attempts must be a positive integer");
-
-  const endpoint = resolveBulkAuditEndpoint(registry);
-  // npm-registry-fetch uses `gzip: true` for this route. Match that wire
-  // format: the registry can stall on a real uncompressed lockfile payload.
   const requestBody = gzipSync(Buffer.from(JSON.stringify(payload)));
   let lastError;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    let timedOut = false;
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+
     try {
       const response = await fetchImpl(endpoint, {
         method: "POST",
@@ -145,6 +197,7 @@ export async function requestBulkAdvisories(
           "Content-Encoding": "gzip",
           "Content-Type": "application/json",
           "User-Agent": "BotBound dependency security audit",
+          "npm-command": "audit",
         },
         body: requestBody,
         signal: controller.signal,
@@ -163,7 +216,13 @@ export async function requestBulkAdvisories(
       }
       return decodeBulkAdvisoryBody(body);
     } catch (error) {
-      lastError = error;
+      const normalizedError = timedOut
+        ? new Error(
+            `npm Bulk Advisory request timed out after ${timeoutMs}ms ` +
+              `(batch ${batchNumber}/${batchCount}, attempt ${attempt}/${attempts})`,
+          )
+        : error;
+      lastError = normalizedError;
       const nonRetryable = isRecord(error) && error.nonRetryable === true;
       if (nonRetryable || attempt === attempts) break;
       await sleep(retryDelayMs * 2 ** (attempt - 1));
@@ -175,6 +234,52 @@ export async function requestBulkAdvisories(
   throw lastError instanceof Error
     ? lastError
     : new Error("npm Bulk Advisory endpoint request failed without an error detail");
+}
+
+export async function requestBulkAdvisories(
+  payload,
+  {
+    registry = DEFAULT_REGISTRY,
+    fetchImpl = globalThis.fetch,
+    attempts = DEFAULT_ATTEMPTS,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    retryDelayMs = 500,
+    maxPackagesPerRequest = DEFAULT_MAX_PACKAGES_PER_REQUEST,
+    sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+    onBatch = () => {},
+  } = {},
+) {
+  if (typeof fetchImpl !== "function") throw new Error("A Fetch API implementation is required");
+  if (!Number.isInteger(attempts) || attempts < 1) throw new Error("attempts must be a positive integer");
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1) throw new Error("timeoutMs must be a positive integer");
+  if (typeof onBatch !== "function") throw new Error("onBatch must be a function");
+
+  const endpoint = resolveBulkAuditEndpoint(registry);
+  const batches = chunkBulkAuditPayload(payload, maxPackagesPerRequest);
+  const mergedReport = {};
+
+  for (let index = 0; index < batches.length; index += 1) {
+    const batch = batches[index];
+    const batchNumber = index + 1;
+    onBatch({
+      batchNumber,
+      batchCount: batches.length,
+      packageCount: Object.keys(batch).length,
+    });
+    const report = await requestBulkAdvisoryBatch(batch, {
+      endpoint,
+      fetchImpl,
+      attempts,
+      timeoutMs,
+      retryDelayMs,
+      sleep,
+      batchNumber,
+      batchCount: batches.length,
+    });
+    mergeBulkAdvisoryReports(mergedReport, report);
+  }
+
+  return mergedReport;
 }
 
 function advisoryId(advisory) {
