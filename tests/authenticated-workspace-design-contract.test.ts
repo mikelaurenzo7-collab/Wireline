@@ -235,4 +235,4 @@ describe("authenticated workspace design architecture", () => {
   });
 });
 
-// Exact-head certification marker: the Vercel preview for this commit must run the full clean-room estate.
+// Exact-head certification marker: authenticated design ownership tranche, September 4, 2026.
