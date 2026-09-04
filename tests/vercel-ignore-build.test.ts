@@ -64,3 +64,5 @@ describe("Vercel ignored-build classifier", () => {
     expect(resolveVercelDiffRange({ VERCEL_GIT_PREVIOUS_SHA: "HEAD^" })).toBeNull();
   });
 });
+
+// Exact-head certification must exercise the ignored-build override and the full release audit.
