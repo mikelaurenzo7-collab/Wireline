@@ -153,7 +153,7 @@ describe("npm Bulk Advisory security gate", () => {
         new Promise((_resolve, reject) => {
           signal.addEventListener(
             "abort",
-            () => reject(new DOMException("This operation was aborted", "AbortError")),
+            () => reject(new globalThis.DOMException("This operation was aborted", "AbortError")),
             { once: true },
           );
         }),
