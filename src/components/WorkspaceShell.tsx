@@ -226,7 +226,7 @@ function DesktopRail({
       {agent ? (
         <Link
           to={`/studio?agent=${encodeURIComponent(agent.id)}`}
-          aria-label={collapsed ? `Current Bot: ${agent.name}` : undefined}
+          aria-label={`Current Bot: ${agent.name}`}
           title={collapsed ? agent.name : undefined}
           data-wireline-bot-selected="true"
           className="wl-rail-agent-link wl-shell-bot-context"
@@ -240,7 +240,6 @@ function DesktopRail({
           />
           {!collapsed ? (
             <span className="wl-shell-bot-copy">
-              <span className="wl-shell-bot-eyebrow">Current Bot</span>
               <span className="wl-shell-bot-name">{agent.name}</span>
             </span>
           ) : null}
@@ -273,7 +272,6 @@ function DesktopRail({
           {!collapsed ? (
             <span className="wl-shell-account-copy">
               <span className="wl-shell-account-name">{displayName}</span>
-              <span className="wl-shell-account-meta">Settings</span>
             </span>
           ) : null}
         </Link>

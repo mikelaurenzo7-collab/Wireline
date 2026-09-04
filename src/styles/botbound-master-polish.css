@@ -8,9 +8,8 @@
  */
 
 :root {
-  --bb-polish-content-max: 90rem;
   --bb-polish-reading-max: 66ch;
-  --bb-polish-radius: clamp(0.75rem, 0.68rem + 0.2vw, 0.95rem);
+  --bb-polish-radius: var(--wireline-radius-lg);
   --bb-polish-rule: color-mix(
     in srgb,
     var(--wireline-color-border-default) 82%,
@@ -31,12 +30,8 @@
     var(--wireline-color-surface-raised, var(--wireline-color-surface-default)) 92%,
     var(--wireline-color-canvas-default)
   );
-  --bb-polish-shadow:
-    0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 4%, transparent),
-    0 18px 48px color-mix(in srgb, var(--wireline-color-canvas-default) 74%, transparent);
-  --bb-polish-shadow-soft:
-    0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent),
-    0 10px 30px color-mix(in srgb, var(--wireline-color-canvas-default) 58%, transparent);
+  --bb-polish-shadow: var(--wireline-elevation-md);
+  --bb-polish-shadow-soft: var(--wireline-elevation-card);
 }
 
 ::selection {
@@ -69,11 +64,6 @@
   background-attachment: fixed;
 }
 
-.marketing-surface :where(.wl-public-rail, .wl-marketing-rail),
-.wl-workspace-shell .wl-workspace-content-inner {
-  width: min(100%, var(--bb-polish-content-max));
-}
-
 .marketing-surface :where(p, li),
 .wl-workspace-shell :where(p, li) {
   text-wrap: pretty;
@@ -91,8 +81,8 @@
 
 .marketing-surface :where(a, button, [role="button"]),
 .wl-workspace-shell :where(a, button, [role="button"]) {
-  transition-duration: 160ms;
-  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-duration: var(--wireline-motion-duration-fast);
+  transition-timing-function: var(--wireline-motion-easing-standard);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -122,14 +112,18 @@
   letter-spacing: 0.11em;
 }
 
-.marketing-surface :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .marketing-demo-surface) {
+.marketing-surface
+  :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .marketing-demo-surface):not(
+    [class*="bg-"]
+  ) {
   border-color: var(--bb-polish-rule);
   border-radius: var(--bb-polish-radius);
   background: var(--bb-polish-surface);
   box-shadow: none;
 }
 
-.marketing-surface :where(.wl-paper-elevated, .wl-panel-elevated, .marketing-demo-surface) {
+.marketing-surface
+  :where(.wl-paper-elevated, .wl-panel-elevated, .marketing-demo-surface):not([class*="bg-"]) {
   box-shadow: var(--bb-polish-shadow-soft);
 }
 
@@ -182,7 +176,7 @@
 
 .landing-demo-inline__copy strong {
   font-family: var(--wireline-font-family-display);
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: -0.025em;
 }
 
@@ -229,68 +223,7 @@
   );
 }
 
-.wl-workspace-shell .wl-workspace-rail-panel > aside[aria-label="Workspace navigation"] {
-  border-color: var(--bb-polish-rule);
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-default) 92%,
-    var(--wireline-color-canvas-default)
-  );
-}
-
-.wl-workspace-shell .wl-rail-link {
-  min-height: 2.6rem;
-  border-radius: 0.7rem;
-  color: var(--wireline-color-text-secondary);
-}
-
-.wl-workspace-shell .wl-rail-link:hover {
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-subtle) 78%,
-    transparent
-  );
-  color: var(--wireline-color-text-primary);
-}
-
-.wl-workspace-shell .wl-rail-link[aria-current="page"] {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 28%,
-    transparent
-  );
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 12%,
-    var(--wireline-color-surface-default)
-  );
-  color: var(--wireline-color-action-primary-default);
-  box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default);
-}
-
-.wl-workspace-shell .wl-rail-agent-link {
-  border-color: var(--bb-polish-rule);
-  border-radius: 0.75rem;
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-surface-subtle) 62%,
-    transparent
-  );
-}
-
-.wl-workspace-shell .wl-rail-agent-link:hover,
-.wl-workspace-shell .wl-rail-agent-link[aria-current="page"] {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 30%,
-    transparent
-  );
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 8%,
-    var(--wireline-color-surface-default)
-  );
-}
+/* workspace-shell.css is the sole owner of authenticated rail and dock chrome. */
 
 .wl-workspace-shell .wl-workspace-page {
   gap: clamp(1rem, 0.82rem + 0.45vw, 1.35rem);
@@ -312,14 +245,19 @@
 }
 
 .wl-workspace-shell
-  :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .studio-card, .wl-metric-tile) {
+  .wl-workspace-content
+  :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .studio-card, .wl-metric-tile):not(
+    [class*="bg-"]
+  ) {
   border-color: var(--bb-polish-rule);
   border-radius: var(--bb-polish-radius);
   background: var(--bb-polish-surface);
   box-shadow: none;
 }
 
-.wl-workspace-shell :where(.wl-paper-elevated, .wl-panel-elevated) {
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(.wl-paper-elevated, .wl-panel-elevated):not([class*="bg-"]) {
   background: var(--bb-polish-surface-raised);
   box-shadow: var(--bb-polish-shadow-soft);
 }
@@ -337,7 +275,9 @@
   );
 }
 
-.wl-workspace-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
   border-color: var(--bb-polish-rule);
   border-radius: 0.7rem;
   background: color-mix(
@@ -349,7 +289,9 @@
     color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
 }
 
-.wl-workspace-shell :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover {
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover {
   border-color: var(--bb-polish-rule-strong);
 }
 
@@ -383,11 +325,14 @@
     var(--bb-polish-shadow);
 }
 
-.wl-workspace-shell :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip) {
+.wl-workspace-shell
+  .wl-workspace-content
+  :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip) {
   border-radius: 0.75rem;
 }
 
 .wl-workspace-shell
+  .wl-workspace-content
   :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip)
   :where([data-active="true"], [aria-pressed="true"], [aria-selected="true"]) {
   background: color-mix(
@@ -400,11 +345,11 @@
     color-mix(in srgb, var(--wireline-color-action-primary-default) 26%, transparent);
 }
 
-.wl-workspace-shell .wl-empty-state {
+.wl-workspace-shell .wl-workspace-content .wl-empty-state {
   max-width: 40rem;
 }
 
-.wl-workspace-shell .wl-empty-state :where(h2, h3) {
+.wl-workspace-shell .wl-workspace-content .wl-empty-state :where(h2, h3) {
   font-family: var(--wireline-font-family-display);
   letter-spacing: -0.035em;
   text-wrap: balance;
@@ -415,23 +360,13 @@
 /* -------------------------------------------------------------------------- */
 
 @media (hover: hover) and (pointer: fine) {
-  .marketing-surface :where(.wl-paper, .wl-panel, .marketing-demo-surface):hover,
-  .wl-workspace-shell :where(.wl-paper, .wl-panel, .studio-card):hover {
+  .marketing-surface
+    :where(.wl-paper, .wl-panel, .marketing-demo-surface):not([class*="bg-"]):hover,
+  .wl-workspace-shell
+    .wl-workspace-content
+    :where(.wl-paper, .wl-panel, .studio-card):not([class*="bg-"]):hover {
     border-color: var(--bb-polish-rule-strong);
   }
-
-  .marketing-surface :where(a, button):active,
-  .wl-workspace-shell :where(a, button, [role="button"]):active {
-    transform: scale(0.985);
-  }
-}
-
-.marketing-surface :where(a, button, input, select, textarea):focus-visible,
-.wl-workspace-shell :where(a, button, input, select, textarea, [role="button"]):focus-visible {
-  outline: 2px solid var(--wireline-color-focus-default);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 5px
-    color-mix(in srgb, var(--wireline-color-focus-default) 16%, transparent);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -442,18 +377,6 @@
   .marketing-surface,
   .wl-workspace-shell {
     background-attachment: scroll;
-  }
-
-  .wl-workspace-shell nav[aria-label="Workspace navigation"] {
-    border-color: var(--bb-polish-rule-strong);
-    background: color-mix(
-      in srgb,
-      var(--wireline-color-surface-default) 90%,
-      transparent
-    );
-    box-shadow: var(--bb-polish-shadow-soft);
-    backdrop-filter: blur(18px) saturate(1.08);
-    -webkit-backdrop-filter: blur(18px) saturate(1.08);
   }
 }
 
@@ -496,13 +419,5 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .wl-workspace-shell nav[aria-label="Workspace navigation"] {
-    background: var(--wireline-color-surface-default);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }

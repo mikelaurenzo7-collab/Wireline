@@ -142,7 +142,26 @@ describe("authenticated workspace design architecture", () => {
     expect(workroom).toContain('textarea.style.minHeight = "52px"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");
     expect(workroom).toContain('window.matchMedia("(pointer: fine)").matches');
-    expect(workroom).toContain("Shift+Enter line break");
+    expect(workroom).toContain("event.shiftKey");
+    expect(workroom).not.toContain("Shift+Enter line break");
+  });
+
+  it("keeps the canonical shell readable and preserves semantic surfaces", () => {
+    const shell = read("src/styles/workspace-shell.css");
+    const master = read("src/styles/botbound-master-polish.css");
+    const typeIntegrity = read("src/styles/type-integrity.css");
+
+    expect(shell).not.toMatch(/font-weight:\s*(560|650)/);
+    expect(shell).not.toMatch(/font-size:\s*0\.(5625|625)rem/);
+    expect(master).not.toContain("--bb-polish-content-max");
+    expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
+    expect(master).toContain(':not([class*="bg-"])');
+    expect(master).not.toContain(".wl-workspace-shell .wl-workspace-rail-panel");
+    expect(master).not.toContain('.wl-workspace-shell nav[aria-label="Workspace navigation"]');
+    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:focus-visible/);
+    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:active/);
+    expect(typeIntegrity).toContain(".wl-shell-dock-item");
+    expect(typeIntegrity).toContain(".wl-shell-more-group-label");
   });
 
   it("lets call triage resize or fold the history list without changing mobile list-to-report flow", () => {

@@ -78,7 +78,7 @@ function StudioEmptyState() {
       <EmptyState
         icon={Sparkles}
         title="Build Your Bot"
-        description="Describe the work. Configure calls, texts, email, tools, and the workflow around them."
+        description="Describe the role and outcome."
         className="wl-composer-dock mx-auto w-full max-w-3xl"
       >
         <div className="mx-auto mt-2 w-full max-w-xl text-left">
@@ -93,7 +93,7 @@ function StudioEmptyState() {
             value={brief}
             onChange={(event) => setBrief(event.target.value)}
             className="min-h-[92px] w-full resize-none rounded-xl border border-border bg-card p-4 text-base leading-6 placeholder:text-[var(--wireline-color-text-tertiary)] focus-visible:border-[var(--wireline-color-focus-default)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)]/40 sm:resize-y md:text-[15px]"
-            placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups…"
+            placeholder="Answer calls, qualify leads, book appointments…"
           />
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Button asChild>
@@ -102,9 +102,6 @@ function StudioEmptyState() {
                 Create Bot
               </Link>
             </Button>
-            <span className="text-xs text-muted-foreground">
-              Choose a role starter or make it entirely custom.
-            </span>
           </div>
         </div>
       </EmptyState>
@@ -250,7 +247,7 @@ export default function StudioWorkspaceV2() {
         fill
         icon={Users}
         title="Choose a Bot"
-        description="Select one, or create a new role in this workspace."
+        description="Select or create one."
         action={
           <Button asChild>
             <Link to="/studio?create=1">
@@ -376,7 +373,7 @@ export default function StudioWorkspaceV2() {
                 >
                   <ChevronsLeft className="size-4 shrink-0" aria-hidden="true" />
                   <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                    className="text-xs font-semibold uppercase tracking-[0.14em]"
                     style={{ writingMode: "vertical-rl" }}
                   >
                     {inspectorSection === "review" ? "Review" : "Setup"}

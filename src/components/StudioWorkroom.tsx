@@ -17,6 +17,7 @@ import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
+import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
 
 type StudioMessage = {
@@ -102,7 +103,7 @@ function MessageBubble({
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
         {mode === "test" ? (
-          <p className="mt-1 text-right text-[10px] text-muted-foreground">Customer</p>
+          <p className="mt-1 text-right text-xs text-muted-foreground">Customer</p>
         ) : null}
       </article>
     );
@@ -153,7 +154,7 @@ const StudioWorkroom = forwardRef<
   ref,
 ) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
-  const [draft, setDraft] = useState(initialCommand || "");
+  const [draft, setDraft] = useState(initialCommand?.trim() || "");
   const [loading, setLoading] = useState(mode === "configure");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +162,7 @@ const StudioWorkroom = forwardRef<
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
   const split = layout === "split";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
   const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
@@ -251,8 +253,13 @@ const StudioWorkroom = forwardRef<
   }, [loadMessages]);
 
   useEffect(() => {
-    if (initialCommand?.trim()) {
-      setDraft(initialCommand);
+    const previousInjectedCommand = injectedCommandRef.current;
+    const nextInjectedCommand = initialCommand?.trim() || null;
+    injectedCommandRef.current = nextInjectedCommand;
+    setDraft((current) =>
+      reconcileStudioCommandDraft(current, previousInjectedCommand, nextInjectedCommand),
+    );
+    if (nextInjectedCommand) {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [initialCommand, commandNonce]);
@@ -385,7 +392,7 @@ const StudioWorkroom = forwardRef<
           {split ? (
             <div className="flex min-w-0 items-center gap-2">
               {onModeChange ? null : (
-                <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   {mode === "test" ? "Customer test" : "Build"}
                 </span>
               )}
@@ -489,11 +496,6 @@ const StudioWorkroom = forwardRef<
                   ? "Start with a real customer question"
                   : "Describe what should change"}
               </h3>
-              {mode === "configure" ? (
-                <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                  Use plain language. BotBound will propose the smallest useful update.
-                </p>
-              ) : null}
             </div>
           )}
         </div>
@@ -542,32 +544,22 @@ const StudioWorkroom = forwardRef<
               }}
               rows={1}
               disabled={sending}
-              placeholder={
-                mode === "test"
-                  ? "Ask as a customer…"
-                  : `Tell BotBound what ${agentName} should change…`
-              }
+              placeholder={mode === "test" ? "Ask as a customer…" : "Describe a change…"}
               className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
             />
             <div className="wl-composer-dock__toolbar">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
                   {mode === "test" ? "Test" : "Build"}
-                </span>
-                <span className="hidden truncate text-[10px] text-muted-foreground sm:inline">
-                  {mode === "configure" ? "Changes stay reviewable" : "No customer data is changed"}
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="hidden text-[10px] text-muted-foreground lg:inline">
-                  Enter send · Shift+Enter line break
-                </span>
                 <Button
                   type="button"
                   size="sm"
                   disabled={!draft.trim() || sending}
                   onClick={submit}
-                  className="min-w-9 transition-all active:scale-[0.985]"
+                  className="min-w-9"
                   aria-busy={sending}
                   aria-label={sending ? "Sending" : "Send"}
                 >

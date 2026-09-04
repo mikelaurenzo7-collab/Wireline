@@ -81,6 +81,20 @@ describe("authenticated minimal copy contract", () => {
     expect(read("src/routes/qa-routes-v2.ts")).toContain('router.get("/stats"');
   });
 
+  it("keeps the new shell and Studio chrome label-first", () => {
+    const shell = read("src/components/WorkspaceShell.tsx");
+    const more = read("src/components/layout/MobileNavMoreSheet.tsx");
+    const studio = read("src/components/StudioWorkroom.tsx");
+
+    expect(shell).not.toContain(">Current Bot</span>");
+    expect(shell).not.toContain('className="wl-shell-account-meta"');
+    expect(more).toContain(">More</SheetTitle>");
+    expect(more).toContain('<SheetDescription className="sr-only">');
+    expect(more).not.toContain("item.description");
+    expect(studio).not.toContain("Changes stay reviewable");
+    expect(studio).not.toContain("Shift+Enter line break");
+  });
+
   it("keeps channel empty states title-only", () => {
     const ops = read("src/lib/wireline-ops-design.ts");
     expect(ops).not.toMatch(/OPS_CHANNEL_EMPTY[\s\S]*eyebrow:/);
