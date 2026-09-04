@@ -35,13 +35,32 @@ body {
   font-weight: 600;
 }
 
+/* The canonical workspace shell uses only shipped static weights. */
+.wl-workspace-shell
+  :is(
+    .wl-shell-search,
+    .wl-shell-nav-item,
+    .wl-shell-account,
+    .wl-shell-bot-name,
+    .wl-shell-account-name,
+    .wl-shell-page-title,
+    .wl-shell-dock-item,
+    .wl-shell-more-title,
+    .wl-shell-more-group-label,
+    .wl-shell-more-label
+  ) {
+  font-weight: 600;
+}
+
 /* Compact labels remain compact without becoming low-resolution microtype. */
 :where(
     .marketing-proof-chip,
     .marketing-tag-success,
     .wl-transition-detail dt,
     .wl-workspace-header .wl-overline
-  ) {
+  ),
+.wl-workspace-shell
+  :is(.wl-shell-search-key, .wl-shell-dock-item, .wl-shell-more-group-label) {
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.25;

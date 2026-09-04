@@ -4,6 +4,7 @@ import {
   clearStudioInspectorSectionParams,
   normalizeStudioRouteParams,
   readStudioWorkroomMode,
+  reconcileStudioCommandDraft,
   setStudioInspectorSectionParams,
   setStudioWorkroomModeParams,
 } from "../src/lib/studio-route-state";
@@ -142,5 +143,15 @@ describe("Studio route state", () => {
       "test",
     );
     expect(test.toString()).toBe("agent=bot-1&section=setup&workroom=test");
+  });
+
+  it("clears only an untouched route-injected command", () => {
+    expect(reconcileStudioCommandDraft("Call this lead", "Call this lead", null)).toBe("");
+    expect(
+      reconcileStudioCommandDraft("Call this lead tomorrow", "Call this lead", null),
+    ).toBe("Call this lead tomorrow");
+    expect(reconcileStudioCommandDraft("", null, "  New customer question  ")).toBe(
+      "New customer question",
+    );
   });
 });

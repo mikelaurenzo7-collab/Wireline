@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isExplicitBuildRequested,
   isIgnorableChangeSet,
   isNonRuntimeOnlyPath,
   resolveVercelDiffRange,
@@ -39,6 +40,19 @@ describe("Vercel ignored-build classifier", () => {
     expect(isNonRuntimeOnlyPath(file)).toBe(false);
   });
 
+  it("never ignores an explicitly requested exact-head deep audit", () => {
+    expect(
+      isExplicitBuildRequested({
+        VERCEL_GIT_COMMIT_MESSAGE:
+          "test: certify authenticated design ownership [launch-deep-audit]",
+      }),
+    ).toBe(true);
+    expect(
+      isExplicitBuildRequested({ VERCEL_GIT_COMMIT_MESSAGE: "docs: update launch notes" }),
+    ).toBe(false);
+    expect(isExplicitBuildRequested({})).toBe(false);
+  });
+
   it("diffs from the last successful Vercel deployment and fails closed without it", () => {
     const previousSha = "a".repeat(40);
 
@@ -50,3 +64,5 @@ describe("Vercel ignored-build classifier", () => {
     expect(resolveVercelDiffRange({ VERCEL_GIT_PREVIOUS_SHA: "HEAD^" })).toBeNull();
   });
 });
+
+// Exact-head certification must exercise the ignored-build override and the full release audit.

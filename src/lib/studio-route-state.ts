@@ -20,6 +20,21 @@ export function readStudioWorkroomMode(input: StudioRouteStateInput): StudioWork
     : "configure";
 }
 
+/**
+ * Keep a route-injected command synchronized without erasing a user's edits.
+ * Removing the URL command clears the draft only while it still equals the
+ * exact command BotBound injected.
+ */
+export function reconcileStudioCommandDraft(
+  currentDraft: string,
+  previousInjectedCommand: string | null,
+  nextInjectedCommand: string | null,
+): string {
+  const next = nextInjectedCommand?.trim() || null;
+  if (next) return next;
+  return previousInjectedCommand && currentDraft === previousInjectedCommand ? "" : currentDraft;
+}
+
 function canonicalStudioParams(current: URLSearchParams): URLSearchParams {
   const next = new URLSearchParams(current);
   next.delete("mode");

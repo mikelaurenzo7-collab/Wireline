@@ -17,7 +17,7 @@ describe("authenticated workspace design architecture", () => {
     expect(panel).toContain("if (cleanupRef.current === cleanup) cleanupRef.current = null");
   });
 
-  it("makes the global rail foldable and resizable instead of a fixed desktop column", () => {
+  it("makes the global rail foldable, resizable, and canonically owned", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const polish = read("src/styles/application-polish.css");
     expect(shell).toContain("WorkspaceResizablePanel");
@@ -26,6 +26,13 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).toContain("maxSize={320}");
     expect(shell).toContain("collapsedSize={68}");
     expect(shell).toContain("wireline:workspace-rail:v1");
+    expect(shell).toContain('className="wl-shell-nav-item wl-focus-ring-halo"');
+    expect(shell).toContain('className="wl-shell-bot-context wl-focus-ring-halo"');
+    expect(shell).toContain(
+      'className="wl-shell-account min-h-[44px] wl-focus-ring-halo"',
+    );
+    expect(shell).not.toContain("wl-rail-link");
+    expect(shell).not.toContain("wl-rail-agent-link");
     expect(shell).not.toContain("lg:grid-cols-[236px_minmax(0,1fr)]");
     expect(polish).not.toContain("grid-template-columns: 224px");
     expect(polish).not.toMatch(
@@ -142,7 +149,34 @@ describe("authenticated workspace design architecture", () => {
     expect(workroom).toContain('textarea.style.minHeight = "52px"');
     expect(workroom).toContain("Math.min(Math.max(textarea.scrollHeight, 52), 160)");
     expect(workroom).toContain('window.matchMedia("(pointer: fine)").matches');
-    expect(workroom).toContain("Shift+Enter line break");
+    expect(workroom).toContain("event.shiftKey");
+    expect(workroom).not.toContain("Shift+Enter line break");
+  });
+
+  it("keeps the canonical shell readable and preserves semantic surfaces", () => {
+    const shell = read("src/styles/workspace-shell.css");
+    const master = read("src/styles/botbound-master-polish.css");
+    const typeIntegrity = read("src/styles/type-integrity.css");
+
+    expect(shell).not.toMatch(/font-weight:\s*(560|650)/);
+    expect(shell).not.toMatch(/font-size:\s*0\.(5625|625)rem/);
+    expect(shell).not.toContain(".wl-rail-link");
+    expect(shell).not.toContain(".wl-rail-agent-link");
+    expect(shell).toContain(
+      '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
+    );
+    expect(shell).toContain(
+      '.wl-shell-bot-context[data-wireline-bot-selected="true"]::before',
+    );
+    expect(master).not.toContain("--bb-polish-content-max");
+    expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
+    expect(master).toContain(':not([class*="bg-"])');
+    expect(master).not.toContain(".wl-workspace-shell .wl-workspace-rail-panel");
+    expect(master).not.toContain('.wl-workspace-shell nav[aria-label="Workspace navigation"]');
+    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:focus-visible/);
+    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:active/);
+    expect(typeIntegrity).toContain(".wl-shell-dock-item");
+    expect(typeIntegrity).toContain(".wl-shell-more-group-label");
   });
 
   it("lets call triage resize or fold the history list without changing mobile list-to-report flow", () => {
@@ -201,4 +235,4 @@ describe("authenticated workspace design architecture", () => {
   });
 });
 
-// Exact-head certification marker: the Vercel preview for this commit must run the full clean-room estate.
+// Exact-head certification marker: authenticated design ownership tranche, September 4, 2026.

@@ -41,6 +41,20 @@ describe("BotBound design vision", () => {
       rule:
         "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
     });
+    expect(WIRELINE_DESIGN_VISION.shell).toEqual({
+      componentOwner: "src/components/WorkspaceShell.tsx",
+      styleOwner: "src/styles/workspace-shell.css",
+      hooks: [
+        "wl-shell-rail",
+        "wl-shell-nav-item",
+        "wl-shell-bot-context",
+        "wl-shell-account",
+        "wl-shell-dock",
+        "wl-shell-more-link",
+      ],
+      rule:
+        "Mounted authenticated chrome uses only canonical wl-shell-* hooks. wl-rail-* aliases are migration-only and may not be composed into WorkspaceShell.",
+    });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
@@ -69,6 +83,8 @@ describe("BotBound design vision", () => {
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-paper");
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-letterpress");
     expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-composer-dock");
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-rail-link");
+    expect(WIRELINE_DESIGN_VISION.legacyAliases).toContain("wl-rail-agent-link");
     expect(WIRELINE_DESIGN_VISION.retiredDesignNames).toEqual(
       expect.arrayContaining(["Letterpress", "Obsidian", "Aurora", "Paper"]),
     );
@@ -124,13 +140,24 @@ describe("BotBound design vision", () => {
     expect(read("ios/WirelineShared/WirelineBrand.swift")).toContain("static let wire");
   });
 
-  it("centralizes workspace page intros and adjustable-pane behavior", () => {
+  it("centralizes workspace page intros, shell ownership, and adjustable-pane behavior", () => {
+    const shellComponent = read(WIRELINE_DESIGN_VISION.shell.componentOwner);
+    const shellStyles = read(WIRELINE_DESIGN_VISION.shell.styleOwner);
+
     expect(read("src/pages/EmailPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/TemplatesPage.tsx")).toContain("WorkspacePageIntro");
     expect(read("src/pages/ClientAppsPage.tsx")).toContain("WorkspacePageIntro");
     expect(existsSync("src/hooks/useLivePresence.ts")).toBe(false);
-    expect(read("src/components/WorkspaceShell.tsx")).toContain("WorkspaceResizablePanel");
+    expect(shellComponent).toContain("WorkspaceResizablePanel");
     expect(read("src/components/CallLogsClaude.tsx")).toContain("WorkspaceResizablePanel");
+    expect(shellComponent).not.toContain('className="wl-rail-link');
+    expect(shellComponent).not.toContain('className="wl-rail-agent-link');
+    for (const hook of WIRELINE_DESIGN_VISION.shell.hooks) {
+      expect(shellComponent + shellStyles).toContain(hook);
+    }
+    expect(shellStyles).toContain(
+      '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
+    );
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {

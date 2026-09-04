@@ -46,9 +46,6 @@ function MoreNavLink({
       </span>
       <span className="wl-shell-more-copy">
         <span className="wl-shell-more-label">{item.label}</span>
-        {item.description ? (
-          <span className="wl-shell-more-description">{item.description}</span>
-        ) : null}
       </span>
     </Link>
   );
@@ -68,10 +65,8 @@ export default function MobileNavMoreSheet({
         className="wl-shell-more-sheet px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
       >
         <SheetHeader className="text-left">
-          <SheetTitle className="wl-shell-more-title text-left">Workspace</SheetTitle>
-          <SheetDescription className="wl-shell-more-intro">
-            Build your Bot, govern its work, and manage the systems behind it.
-          </SheetDescription>
+          <SheetTitle className="wl-shell-more-title text-left">More</SheetTitle>
+          <SheetDescription className="sr-only">More workspace destinations.</SheetDescription>
         </SheetHeader>
 
         <nav aria-label="More workspace destinations" className="wl-shell-more-groups">
