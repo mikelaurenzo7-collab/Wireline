@@ -93,7 +93,7 @@ describe("OSV dependency audit fallback", () => {
         );
       }
 
-      const id = decodeURIComponent(new URL(url).pathname.split("/").at(-1));
+      const id = decodeURIComponent(new globalThis.URL(url).pathname.split("/").at(-1));
       return new globalThis.Response(
         JSON.stringify({
           id,
