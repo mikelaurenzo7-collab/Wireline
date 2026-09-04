@@ -72,6 +72,8 @@ console.log(
     `across ${Object.keys(payload).length} packages.`,
 );
 
+// This executable is deliberately part of the deployment boundary: any change
+// to audit behavior must run the exact-head canonical release lane before merge.
 let advisories;
 let auditSource;
 let npmFailure;
