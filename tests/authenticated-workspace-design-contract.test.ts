@@ -17,7 +17,7 @@ describe("authenticated workspace design architecture", () => {
     expect(panel).toContain("if (cleanupRef.current === cleanup) cleanupRef.current = null");
   });
 
-  it("makes the global rail foldable and resizable instead of a fixed desktop column", () => {
+  it("makes the global rail foldable, resizable, and canonically owned", () => {
     const shell = read("src/components/WorkspaceShell.tsx");
     const polish = read("src/styles/application-polish.css");
     expect(shell).toContain("WorkspaceResizablePanel");
@@ -26,6 +26,13 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).toContain("maxSize={320}");
     expect(shell).toContain("collapsedSize={68}");
     expect(shell).toContain("wireline:workspace-rail:v1");
+    expect(shell).toContain('className="wl-shell-nav-item wl-focus-ring-halo"');
+    expect(shell).toContain('className="wl-shell-bot-context wl-focus-ring-halo"');
+    expect(shell).toContain(
+      'className="wl-shell-account min-h-[44px] wl-focus-ring-halo"',
+    );
+    expect(shell).not.toContain("wl-rail-link");
+    expect(shell).not.toContain("wl-rail-agent-link");
     expect(shell).not.toContain("lg:grid-cols-[236px_minmax(0,1fr)]");
     expect(polish).not.toContain("grid-template-columns: 224px");
     expect(polish).not.toMatch(
@@ -153,6 +160,12 @@ describe("authenticated workspace design architecture", () => {
 
     expect(shell).not.toMatch(/font-weight:\s*(560|650)/);
     expect(shell).not.toMatch(/font-size:\s*0\.(5625|625)rem/);
+    expect(shell).not.toContain(".wl-rail-link");
+    expect(shell).not.toContain(".wl-rail-agent-link");
+    expect(shell).toContain(
+      '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
+    );
+    expect(shell).toContain("box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default)");
     expect(master).not.toContain("--bb-polish-content-max");
     expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
     expect(master).toContain(':not([class*="bg-"])');
