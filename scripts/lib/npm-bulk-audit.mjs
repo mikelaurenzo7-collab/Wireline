@@ -1,4 +1,4 @@
-import { gunzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 const DEFAULT_REGISTRY = "https://registry.npmjs.org/";
 const BULK_AUDIT_PATH = "-/npm/v1/security/advisories/bulk";
@@ -129,7 +129,9 @@ export async function requestBulkAdvisories(
   if (!Number.isInteger(attempts) || attempts < 1) throw new Error("attempts must be a positive integer");
 
   const endpoint = resolveBulkAuditEndpoint(registry);
-  const requestBody = JSON.stringify(payload);
+  // npm-registry-fetch uses `gzip: true` for this route. Match that wire
+  // format: the registry can stall on a real uncompressed lockfile payload.
+  const requestBody = gzipSync(Buffer.from(JSON.stringify(payload)));
   let lastError;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -140,7 +142,7 @@ export async function requestBulkAdvisories(
         method: "POST",
         headers: {
           Accept: "application/json",
-          "Accept-Encoding": "identity",
+          "Content-Encoding": "gzip",
           "Content-Type": "application/json",
           "User-Agent": "BotBound dependency security audit",
         },
@@ -203,7 +205,7 @@ export function flattenBulkAdvisories(report) {
         !KNOWN_SEVERITIES.has(entry.severity.toLowerCase()) ||
         typeof entry.vulnerable_versions !== "string"
       ) {
-        throw new Error( `Bulk Advisory report contained a malformed advisory for ${packageName}`);
+        throw new Error(`Bulk Advisory report contained a malformed advisory for ${packageName}`);
       }
 
       const normalized = {

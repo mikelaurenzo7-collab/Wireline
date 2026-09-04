@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildProductionPackagePayload,
@@ -52,6 +52,21 @@ describe("npm Bulk Advisory security gate", () => {
 
     expect(decodeBulkAdvisoryBody(json)).toEqual(report);
     expect(decodeBulkAdvisoryBody(gzipSync(json))).toEqual(report);
+  });
+
+  it("matches npm-registry-fetch's gzipped Bulk Advisory request format", async () => {
+    const payload = { runtime: ["1.0.0"] };
+    let request;
+    const fetchImpl = vi.fn(async (_url, init) => {
+      request = init;
+      return new globalThis.Response("{}", { status: 200 });
+    });
+
+    await expect(
+      requestBulkAdvisories(payload, { fetchImpl, timeoutMs: 1_000 }),
+    ).resolves.toEqual({});
+    expect(request.headers["Content-Encoding"]).toBe("gzip");
+    expect(JSON.parse(gunzipSync(request.body).toString("utf8"))).toEqual(payload);
   });
 
   it("retries transient endpoint failures but never retries a terminal 4xx response", async () => {
