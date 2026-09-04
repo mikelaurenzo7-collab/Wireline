@@ -165,7 +165,9 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).toContain(
       '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
     );
-    expect(shell).toContain("box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default)");
+    expect(shell).toContain(
+      '.wl-shell-bot-context[data-wireline-bot-selected="true"]::before',
+    );
     expect(master).not.toContain("--bb-polish-content-max");
     expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
     expect(master).toContain(':not([class*="bg-"])');
