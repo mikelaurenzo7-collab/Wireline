@@ -31,6 +31,10 @@ export function isIgnorableChangeSet(files) {
   return files.length > 0 && files.every(isNonRuntimeOnlyPath);
 }
 
+export function isExplicitBuildRequested(environment = process.env) {
+  return String(environment.VERCEL_GIT_COMMIT_MESSAGE || "").includes("[launch-deep-audit]");
+}
+
 export function resolveVercelDiffRange(environment = process.env) {
   const previousSha = String(environment.VERCEL_GIT_PREVIOUS_SHA || "").trim();
   if (!/^[0-9a-f]{40}$/i.test(previousSha)) return null;
@@ -57,6 +61,12 @@ function changedFiles(environment = process.env) {
 }
 
 function main() {
+  if (isExplicitBuildRequested()) {
+    console.log("Vercel build retained: [launch-deep-audit] explicitly requested exact-head certification.");
+    process.exitCode = 1;
+    return;
+  }
+
   const files = changedFiles();
   if (!files) {
     console.log(
