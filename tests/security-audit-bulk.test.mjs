@@ -3,6 +3,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
 import {
   buildProductionPackagePayload,
+  chunkBulkAuditPayload,
   classifyHighSeverityAdvisories,
   decodeBulkAdvisoryBody,
   flattenBulkAdvisories,
@@ -36,6 +37,22 @@ describe("npm Bulk Advisory security gate", () => {
     });
   });
 
+  it("splits deterministic package batches without losing versions", () => {
+    expect(
+      chunkBulkAuditPayload(
+        {
+          alpha: ["1.0.0"],
+          beta: ["2.0.0", "2.1.0"],
+          gamma: ["3.0.0"],
+        },
+        2,
+      ),
+    ).toEqual([
+      { alpha: ["1.0.0"], beta: ["2.0.0", "2.1.0"] },
+      { gamma: ["3.0.0"] },
+    ]);
+  });
+
   it("decodes both ordinary JSON and unlabeled gzip bodies", () => {
     const report = {
       runtime: [
@@ -54,7 +71,7 @@ describe("npm Bulk Advisory security gate", () => {
     expect(decodeBulkAdvisoryBody(gzipSync(json))).toEqual(report);
   });
 
-  it("matches npm-registry-fetch's gzipped Bulk Advisory request format", async () => {
+  it("matches npm-registry-fetch's gzipped request format for every batch", async () => {
     const payload = { runtime: ["1.0.0"] };
     let request;
     const fetchImpl = vi.fn(async (_url, init) => {
@@ -66,7 +83,43 @@ describe("npm Bulk Advisory security gate", () => {
       requestBulkAdvisories(payload, { fetchImpl, timeoutMs: 1_000 }),
     ).resolves.toEqual({});
     expect(request.headers["Content-Encoding"]).toBe("gzip");
+    expect(request.headers["npm-command"]).toBe("audit");
     expect(JSON.parse(gunzipSync(request.body).toString("utf8"))).toEqual(payload);
+  });
+
+  it("requests bounded batches, merges reports, and exposes progress", async () => {
+    const progress = [];
+    const fetchImpl = vi.fn(async (_url, options) => {
+      const packages = Object.keys(
+        JSON.parse(gunzipSync(options.body).toString("utf8")),
+      );
+      return new globalThis.Response(
+        JSON.stringify(Object.fromEntries(packages.map((packageName) => [packageName, []]))),
+        { status: 200 },
+      );
+    });
+
+    await expect(
+      requestBulkAdvisories(
+        {
+          alpha: ["1.0.0"],
+          beta: ["2.0.0"],
+          gamma: ["3.0.0"],
+        },
+        {
+          fetchImpl,
+          maxPackagesPerRequest: 2,
+          onBatch: (event) => progress.push(event),
+          timeoutMs: 1_000,
+        },
+      ),
+    ).resolves.toEqual({ alpha: [], beta: [], gamma: [] });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(progress).toEqual([
+      { batchNumber: 1, batchCount: 2, packageCount: 2 },
+      { batchNumber: 2, batchCount: 2, packageCount: 1 },
+    ]);
   });
 
   it("retries transient endpoint failures but never retries a terminal 4xx response", async () => {
@@ -92,6 +145,33 @@ describe("npm Bulk Advisory security gate", () => {
       ),
     ).rejects.toThrow("HTTP 400");
     expect(terminalFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports bounded timeout context instead of a generic AbortError", async () => {
+    const abortingFetch = vi.fn(
+      (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener(
+            "abort",
+            () => reject(new DOMException("This operation was aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+    );
+
+    await expect(
+      requestBulkAdvisories(
+        { runtime: ["1.0.0"] },
+        {
+          attempts: 2,
+          fetchImpl: abortingFetch,
+          retryDelayMs: 0,
+          sleep: async () => {},
+          timeoutMs: 5,
+        },
+      ),
+    ).rejects.toThrow("timed out after 5ms (batch 1/1, attempt 2/2)");
+    expect(abortingFetch).toHaveBeenCalledTimes(2);
   });
 
   it("classifies only validated high and critical advisories as release blockers", () => {
@@ -129,11 +209,12 @@ describe("npm Bulk Advisory security gate", () => {
     });
   });
 
-  it("fails closed on malformed reports and unsafe registry URLs", () => {
+  it("fails closed on malformed reports, malformed payloads, and unsafe registry URLs", () => {
     expect(() => flattenBulkAdvisories({ runtime: { severity: "high" } })).toThrow(
       "was not an array",
     );
     expect(() => decodeBulkAdvisoryBody(Buffer.from("not-json"))).toThrow("invalid JSON");
+    expect(() => chunkBulkAuditPayload({ runtime: [] })).toThrow("invalid versions");
     expect(() => resolveBulkAuditEndpoint("http://registry.example.com")).toThrow("must use HTTPS");
     expect(resolveBulkAuditEndpoint("http://localhost:4873/registry")).toBe(
       "http://localhost:4873/registry/-/npm/v1/security/advisories/bulk",
