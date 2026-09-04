@@ -42,6 +42,7 @@ describe("production build environment gate", () => {
   it("runs the fail-closed dependency audit in every canonical production certification", () => {
     const build = read("scripts/vercel-build.mjs");
     const audit = read("scripts/check-security-audit.mjs");
+    const bulkAudit = read("scripts/lib/npm-bulk-audit.mjs");
     const releaseAuditStart = build.indexOf("function runCanonicalReleaseAudit()");
     const nextFunction = build.indexOf("function syncShowcaseIfRequested()", releaseAuditStart);
     const releaseAudit = build.slice(releaseAuditStart, nextFunction);
@@ -61,8 +62,15 @@ describe("production build environment gate", () => {
       releaseAudit.indexOf('run("node", ["scripts/run-test-estate.mjs"'),
     );
 
-    expect(audit).toContain('execSync("npm audit --json --omit=dev"');
-    expect(audit).toContain('!["high", "critical"].includes(vuln.severity)');
+    expect(audit).toContain("buildProductionPackagePayload");
+    expect(audit).toContain("requestBulkAdvisories");
+    expect(audit).not.toContain("npm audit --json");
+    expect(bulkAudit).toContain('const BULK_AUDIT_PATH = "-/npm/v1/security/advisories/bulk"');
+    expect(bulkAudit).toContain("gunzipSync");
+    expect(bulkAudit).toContain("entry.dev === true");
+    expect(bulkAudit).toContain(
+      'const BLOCKING_SEVERITIES = new Set(["high", "critical"])',
+    );
     expect(audit).toContain("Security audit gate FAILED");
     expect(audit).toContain("const ACCEPTED = []");
   });

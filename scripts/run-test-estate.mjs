@@ -32,10 +32,11 @@ const canonicalReleaseSecondPass =
 
 // The large launch-critical tranche is executed explicitly by vercel-build.mjs
 // before this explicitly selected second pass. These additional files cover
-// migration surfaces that changed after that tranche was established. Keeping this list
-// short and explicit makes the release authority inspectable and prevents old
+// late release-gate additions and migration surfaces. Keeping this list short
+// and explicit makes the release authority inspectable and prevents old
 // implementation-coupled tests from silently redefining current product truth.
 const CANONICAL_RELEASE_SECOND_PASS = [
+  "tests/security-audit-bulk.test.mjs",
   "tests/botbound-brand-casing-contract.test.ts",
   "tests/brand-bot-identity-contract.test.ts",
   "tests/bot-managed-identity-contract.test.ts",
