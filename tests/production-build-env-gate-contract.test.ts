@@ -43,6 +43,8 @@ describe("production build environment gate", () => {
     const build = read("scripts/vercel-build.mjs");
     const audit = read("scripts/check-security-audit.mjs");
     const bulkAudit = read("scripts/lib/npm-bulk-audit.mjs");
+    const osvAudit = read("scripts/lib/osv-audit.mjs");
+    const osvBehavior = read("tests/security-audit-osv-fallback.test.mjs");
     const releaseAuditStart = build.indexOf("function runCanonicalReleaseAudit()");
     const nextFunction = build.indexOf("function syncShowcaseIfRequested()", releaseAuditStart);
     const releaseAudit = build.slice(releaseAuditStart, nextFunction);
@@ -64,6 +66,10 @@ describe("production build environment gate", () => {
 
     expect(audit).toContain("buildProductionPackagePayload");
     expect(audit).toContain("requestBulkAdvisories");
+    expect(audit).toContain("requestOsvAdvisories");
+    expect(audit).toContain("attempts: 1");
+    expect(audit).toContain("timeoutMs: 60_000");
+    expect(audit).toContain('auditSource = "OSV.dev"');
     expect(audit).not.toContain("npm audit --json");
     expect(bulkAudit).toContain('const BULK_AUDIT_PATH = "-/npm/v1/security/advisories/bulk"');
     expect(bulkAudit).toContain("gunzipSync");
@@ -71,6 +77,17 @@ describe("production build environment gate", () => {
     expect(bulkAudit).toContain(
       'const BLOCKING_SEVERITIES = new Set(["high", "critical"])',
     );
+    expect(osvAudit).toContain(
+      'const DEFAULT_QUERY_ENDPOINT = "https://api.osv.dev/v1/querybatch"',
+    );
+    expect(osvAudit).toContain(
+      'const DEFAULT_VULNERABILITY_ENDPOINT = "https://api.osv.dev/v1/vulns/"',
+    );
+    expect(osvAudit).toContain("next_page_token");
+    expect(osvAudit).toContain('method: "GET"');
+    expect(osvAudit).toContain("did not provide a recognized severity");
+    expect(osvBehavior).toContain("follows per-query pagination");
+    expect(osvBehavior).toContain("returns a clean report when every queried version");
     expect(audit).toContain("Security audit gate FAILED");
     expect(audit).toContain("const ACCEPTED = []");
   });
