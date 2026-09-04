@@ -171,6 +171,7 @@
 }
 
 .wl-workspace-shell .wl-shell-bot-context {
+  position: relative;
   min-height: 2.75rem;
   gap: 0.625rem;
   margin-top: 0.75rem;
@@ -180,6 +181,22 @@
   background: color-mix(in srgb, var(--wireline-color-surface-raised) 58%, transparent);
   color: var(--wireline-color-text-primary);
   text-decoration: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.wl-workspace-shell .wl-shell-bot-context[data-wireline-bot-selected="true"] {
+  border-color: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 30%,
+    var(--wireline-color-border-default)
+  );
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 8%,
+    var(--wireline-color-surface-default)
+  );
+  box-shadow: inset 2px 0 0 var(--wireline-color-action-primary-default);
 }
 
 .wl-shell-bot-copy,
@@ -489,9 +506,11 @@
 }
 
 @media (forced-colors: active) {
-  :where(.wl-shell-nav-item, .wl-shell-account, .wl-shell-dock-item, .wl-shell-more-link)[data-wireline-nav-active="true"] {
+  :where(.wl-shell-nav-item, .wl-shell-account, .wl-shell-dock-item, .wl-shell-more-link)[data-wireline-nav-active="true"],
+  .wl-shell-bot-context[data-wireline-bot-selected="true"] {
     border-color: Highlight;
     background: Canvas;
     color: CanvasText;
+    box-shadow: inset 2px 0 0 Highlight;
   }
 }
