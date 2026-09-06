@@ -39,6 +39,8 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/security-audit-bulk.test.mjs",
   "tests/security-audit-osv-fallback.test.mjs",
   "tests/vercel-ignore-build.test.ts",
+  "tests/page-meta-navigation.test.ts",
+  "tests/marketing-disclosure.test.tsx",
   "tests/botbound-brand-casing-contract.test.ts",
   "tests/brand-bot-identity-contract.test.ts",
   "tests/bot-managed-identity-contract.test.ts",

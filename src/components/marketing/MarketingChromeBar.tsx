@@ -1,6 +1,6 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { ChevronUp } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import { cn } from "../../lib/utils";
 import { WirelineWordmark } from "../brand/WirelineBrand";
@@ -40,7 +40,7 @@ const RESOURCE_LINKS = [
   { to: "/support", label: "Support" },
 ] as const;
 
-/** Always visible in the bar itself — the four a visitor reaches for by name. */
+/** Always visible in the bar itself. */
 const BAR_LINKS = [
   { to: "/trust", label: "Trust" },
   { to: "/privacy", label: "Privacy" },
@@ -55,28 +55,32 @@ const COLUMNS = [
 ] as const;
 
 /**
- * The pinned marketing chrome bar.
- *
- * It replaces a four-column sitemap footer that ran 300px on desktop and 700px
- * on mobile — on the landing page, the tallest single block on the page, sitting
- * directly below a trust section that already repeated three of its own links.
- * Pinned, it costs 45px and stays reachable from every panel.
- *
- * The sitemap is not deleted, it is collapsed: every link stays in the rendered
- * markup so crawlers and assistive technology still see the full internal link
- * graph. The disclosure is a plain button and a panel rather than
- * `<details>/<summary>`, because Chrome lays a `<summary>` out through the
- * details shadow slot and it shrink-wraps its own text no matter what width it
- * is given — measured at 727px inside a 1440px bar, which threw the row's
- * right-aligned control two thirds of the way across the frame instead of onto
- * the rail's right edge.
+ * Compact pinned marketing footer with a native disclosure button.
+ * Links stay in the markup; the hidden panel stays out of the focus order
+ * and accessibility tree until expanded. Navigation dismisses the panel
+ * without stealing route focus; Escape returns focus to the disclosure.
  */
 export default function MarketingChromeBar({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.key]);
 
   return (
-    <footer className={cn("marketing-chrome-bar", className)}>
+    <footer
+      className={cn("marketing-chrome-bar", className)}
+      onKeyDown={(event) => {
+        if (event.defaultPrevented || event.key !== "Escape" || !open) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(false);
+        triggerRef.current?.focus();
+      }}
+    >
       <div id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
         <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-4 lg:px-8">
           {COLUMNS.map(({ heading, links }) => (
@@ -86,7 +90,8 @@ export default function MarketingChromeBar({ className }: { className?: string }
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setOpen(false)}
+                  className="wl-focus-ring-halo inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -97,7 +102,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             <button
               type="button"
               data-compact="true"
-              className="inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="wl-focus-ring-halo inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
               onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
             >
               Privacy Choices
@@ -120,7 +125,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
               <Link
                 key={link.to}
                 to={link.to}
-                className="inline-flex min-h-8 shrink-0 items-center transition-colors hover:text-foreground"
+                className="wl-focus-ring-halo inline-flex min-h-8 shrink-0 items-center transition-colors hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -128,15 +133,16 @@ export default function MarketingChromeBar({ className }: { className?: string }
           </nav>
 
           <button
+            ref={triggerRef}
             type="button"
             aria-expanded={open}
             aria-controls={panelId}
             onClick={() => setOpen((value) => !value)}
-            className="ml-auto inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="wl-focus-ring-halo ml-auto inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
             Sitemap
             <ChevronUp
-              className={cn("size-3.5 transition-transform duration-200", open && "rotate-180")}
+              className={cn("size-3.5 transition-transform duration-200 motion-reduce:transition-none", open && "rotate-180")}
               aria-hidden="true"
             />
           </button>

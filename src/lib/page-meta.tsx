@@ -98,6 +98,13 @@ export function PageMeta({
       "robots",
       noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1",
     );
+    // Both directives are prerendered. Update both when navigating away from
+    // a noindex shell so its Googlebot policy cannot stick to a public page.
+    setMeta(
+      "name",
+      "googlebot",
+      noIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large",
+    );
     setCanonical(canonicalUrl || null);
     setMeta("property", "og:title", fullTitle);
     setMeta("property", "og:description", resolvedDescription);
