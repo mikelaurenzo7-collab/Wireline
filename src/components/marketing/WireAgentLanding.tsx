@@ -1,5 +1,16 @@
 import { useEffect } from "react";
-import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  CalendarDays,
+  Check,
+  Headphones,
+  PhoneIncoming,
+  PhoneOutgoing,
+  ShieldCheck,
+  WandSparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import AuthAccessPanel from "../auth/AuthAccessPanel";
@@ -28,6 +39,20 @@ const DIRECTION_LABELS = {
   outbound: "Outbound",
   hybrid: "Inbound + outbound",
 } as const;
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  "sales-rep": PhoneOutgoing,
+  "front-desk": PhoneIncoming,
+  recruiter: BriefcaseBusiness,
+  "appointment-setter": CalendarDays,
+  "customer-support": Headphones,
+  custom: WandSparkles,
+};
+const GETTING_STARTED = [
+  { title: "Build", detail: "Pick a role. Give your Bot one clear job." },
+  { title: "Train", detail: "Add your knowledge, tone, and boundaries." },
+  { title: "Launch", detail: "Test privately. Activate live channels when ready." },
+  { title: "Improve", detail: "Review conversations. Refine what happens next." },
+] as const;
 const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
@@ -70,6 +95,9 @@ export default function WireAgentLanding() {
               />
             </Link>
             <div className="landing-prestige__hero-copy">
+              <p className="landing-prestige__eyebrow">
+                AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
+              </p>
               <h1 id="landing-prestige-title">
                 <span>PUT YOUR BOT</span>
                 <span>ON THE LINE</span>
@@ -81,18 +109,39 @@ export default function WireAgentLanding() {
                   to={signupHrefForPlan("personal", { template: "sales-rep" })}
                   onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
                 >
-                  <span>OUTBOUND</span>
+                  <span className="landing-prestige__direction-label">
+                    <PhoneOutgoing aria-hidden="true" /> OUTBOUND
+                  </span>
                   <strong>FIND. CALL. BOOK.</strong>
+                  <span className="landing-prestige__direction-action">
+                    Build a Sales Rep <ArrowRight aria-hidden="true" />
+                  </span>
                 </Link>
                 <Link
                   className="landing-prestige__direction is-inbound"
                   to={signupHrefForPlan("personal", { template: "front-desk" })}
                   onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
                 >
-                  <span>INBOUND</span>
+                  <span className="landing-prestige__direction-label">
+                    <PhoneIncoming aria-hidden="true" /> INBOUND
+                  </span>
                   <strong>ANSWER. QUALIFY. ROUTE.</strong>
+                  <span className="landing-prestige__direction-action">
+                    Build a Front Desk <ArrowRight aria-hidden="true" />
+                  </span>
                 </Link>
               </nav>
+              <div className="landing-prestige__explore">
+                <p>Build &amp; test free. Activate when ready.</p>
+                <nav aria-label="Explore BotBound">
+                  <Link to="/features">
+                    How it works <ArrowRight aria-hidden="true" />
+                  </Link>
+                  <Link to="/pricing">
+                    Explore pricing <ArrowRight aria-hidden="true" />
+                  </Link>
+                </nav>
+              </div>
             </div>
           </div>
 
@@ -107,37 +156,61 @@ export default function WireAgentLanding() {
         </section>
 
         <div className="landing-prestige__desktop-only">
+          <section
+            className="landing-prestige__getting-started"
+            aria-label="From idea to a live Bot"
+          >
+            <ol className="landing-prestige__rail landing-prestige__steps">
+              {GETTING_STARTED.map((step, index) => (
+                <li key={step.title}>
+                  <span className="landing-prestige__step-number" aria-hidden="true">
+                    0{index + 1}
+                  </span>
+                  <div>
+                    <h2>{step.title}</h2>
+                    <p>{step.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
           <section id="solutions" className="landing-prestige__section landing-prestige__roles">
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
                 <p>OUTBOUND + INBOUND</p>
                 <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
+                <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
               </header>
               <div className="landing-prestige__role-grid">
-                {FEATURED_TEMPLATES.map((template) => (
-                  <article key={template.key} className="landing-prestige__role-card">
-                    <div className="landing-prestige__role-topline">
+                {FEATURED_TEMPLATES.map((template) => {
+                  const Icon = ROLE_ICONS[template.key] ?? WandSparkles;
+                  return (
+                    <article key={template.key} className="landing-prestige__role-card">
+                      <div className="landing-prestige__role-topline">
+                        <Icon aria-hidden="true" />
+                        <span>{DIRECTION_LABELS[template.direction]}</span>
+                      </div>
                       <h3>{template.name}</h3>
-                      <span>{DIRECTION_LABELS[template.direction]}</span>
-                    </div>
-                    <p>{template.summary}</p>
-                    <ul>
-                      {template.moves.map((move) => (
-                        <li key={move}>
-                          <Check aria-hidden="true" />
-                          <span>{move}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      to={signupHrefForPlan("personal", { template: template.key })}
-                      onClick={() => trackSignupIntent("role_starter", template.name)}
-                    >
-                      Build this role
-                      <ArrowRight aria-hidden="true" />
-                    </Link>
-                  </article>
-                ))}
+                      <p>{template.summary}</p>
+                      <ul>
+                        {template.moves.map((move) => (
+                          <li key={move}>
+                            <Check aria-hidden="true" />
+                            <span>{move}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <Link
+                        to={signupHrefForPlan("personal", { template: template.key })}
+                        aria-label={`Build ${template.name === "Create Your Own" ? "a custom Bot" : `a ${template.name} Bot`}`}
+                        onClick={() => trackSignupIntent("role_starter", template.name)}
+                      >
+                        Build this role
+                        <ArrowRight aria-hidden="true" />
+                      </Link>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -146,7 +219,8 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
                 <p>PRICING</p>
-                <h2>BUILD FREE. GO LIVE WHEN IT EARNS THE LINE.</h2>
+                <h2>BUILD FREE. GO LIVE ON YOUR TERMS.</h2>
+                <span>One private Bot to start. More live Bots as your business grows.</span>
               </header>
               <div className="landing-prestige__price-grid">
                 {PUBLIC_PLANS.map(({ id, plan }) => {

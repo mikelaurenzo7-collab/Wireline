@@ -80,6 +80,38 @@
   font-size: 0.875rem;
 }
 
+.wl-access-panel__welcome {
+  margin-bottom: 0.8rem;
+  text-align: left;
+}
+
+.wl-access-panel__welcome > p {
+  margin: 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.35rem, 2.1vw, 1.65rem);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+}
+
+.wl-access-panel__welcome > span {
+  display: block;
+  margin-top: 0.55rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.wl-access-panel__heading:has(.wl-access-panel__welcome) {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.wl-access-panel__welcome + .wl-access-panel__intent {
+  margin-top: 0;
+}
+
 .wl-access-panel__intent {
   display: inline-flex;
   margin-top: 0.8rem;

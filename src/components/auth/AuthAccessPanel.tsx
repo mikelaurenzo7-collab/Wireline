@@ -554,6 +554,12 @@ export default function AuthAccessPanel({
       <div className="wl-access-panel__card">
         <header className="wl-access-panel__heading">
           {embedded ? <h2>{title}</h2> : <h1>{title}</h1>}
+          {embedded && isSignUp ? (
+            <div className="wl-access-panel__welcome">
+              <p>Your first Bot starts here.</p>
+              <span>Build and test privately before you activate.</span>
+            </div>
+          ) : null}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}
           {isSignUp && intentLabel ? (
             <span className="wl-access-panel__intent">{intentLabel}</span>
