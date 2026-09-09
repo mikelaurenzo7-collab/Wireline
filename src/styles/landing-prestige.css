@@ -369,7 +369,7 @@
 }
 
 .landing-prestige__roles {
-  padding-block: clamp(5rem, 9vw, 8.5rem);
+  padding-block: clamp(3.5rem, 6vw, 6rem);
 }
 
 .landing-prestige__section-heading {
@@ -410,7 +410,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.8rem;
-  margin-top: clamp(2.5rem, 5vw, 4.5rem);
+  margin-top: clamp(2rem, 3.5vw, 3rem);
 }
 
 .landing-prestige__role-card {

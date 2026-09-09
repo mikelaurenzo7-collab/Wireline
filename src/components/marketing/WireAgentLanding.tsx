@@ -202,10 +202,10 @@ export default function WireAgentLanding() {
                       </ul>
                       <Link
                         to={signupHrefForPlan("personal", { template: template.key })}
-                        aria-label={`Build ${template.name === "Create Your Own" ? "a custom Bot" : `a ${template.name} Bot`}`}
                         onClick={() => trackSignupIntent("role_starter", template.name)}
                       >
                         Build this role
+                        <span className="sr-only">: {template.name}</span>
                         <ArrowRight aria-hidden="true" />
                       </Link>
                     </article>
