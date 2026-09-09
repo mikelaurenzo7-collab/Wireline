@@ -23,7 +23,7 @@ import {
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { planById } from "../../lib/plan-catalog";
-import { getStoredSignupIntent, recommendedPlanFromIntent } from "../../lib/signup-intent";
+import { activationBillingHref, getStoredSignupIntent } from "../../lib/signup-intent";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -91,15 +91,21 @@ export default function PostCreateActivationWizard({
     if (stored === "wire") return "launch";
     return isWizardStep(stored) ? stored : "train";
   });
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-  const [loadingPhone, setLoadingPhone] = useState(true);
+  const [refreshedPhoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [refreshingPhone, setLoadingPhone] = useState(true);
+  // Background identity provisioning may finish after the initial number read.
+  // Consume its result directly without remounting the guide or resetting its step.
+  const phoneNumber = refreshedPhoneNumber || payload.phoneNumber || null;
+  const loadingPhone = !phoneNumber && refreshingPhone;
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
   // a customer who just built and trained a Bot, and may already have privately
   // tested it. It gets a designed panel with a direct route to billing, never a
   // bare destructive notice.
-  const [activationNeeded, setActivationNeeded] = useState(false);
+  const [activationRequested, setActivationNeeded] = useState(false);
+  const activationNeeded =
+    !phoneNumber && (activationRequested || payload.phoneActivationRequired === true);
   const [testStarted, setTestStarted] = useState(false);
 
   const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"];
@@ -249,11 +255,7 @@ export default function PostCreateActivationWizard({
   // Builder signup's stored intent (and the no-intent default) is "personal",
   // which cannot activate a number — the CTA promising "$19/mo" must land on
   // Starter, never on the free tier.
-  const activationPlanPath = useMemo(() => {
-    const recommended = recommendedPlanFromIntent(getStoredSignupIntent());
-    const paidPlan = recommended === "personal" ? "starter" : recommended;
-    return `/settings/billing?plan=${encodeURIComponent(paidPlan)}&interval=month`;
-  }, []);
+  const activationPlanPath = useMemo(() => activationBillingHref(getStoredSignupIntent()), []);
 
   const markWireFunnelEvents = useCallback(() => {
     emitProductEventOnce({ event: "wire_started", agentId: payload.agentId });

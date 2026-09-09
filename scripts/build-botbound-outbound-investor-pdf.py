@@ -130,7 +130,7 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
             "ONE WORKSPACE. EVERY OUTBOUND JOB.",
             "Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.",
         ),
-        ("BUILD FREE. LIVE FROM $19/MO.", "Private simulation before live work. Capacity grows with the account."),
+        ("BUILD FREE. PLANS FROM $19/MO.", "Starter: 1 live Bot and 50 voice minutes/month. Activation availability applies."),
     ]
     row_y = why_y - 39
     for title, detail in rows:

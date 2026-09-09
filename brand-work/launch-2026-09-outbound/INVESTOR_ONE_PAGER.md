@@ -27,7 +27,7 @@ Start with Sales, Recruiting, Appointment Setting, Reactivation, or Debt-Resolut
 - Calls plus text, email, actions, and outcome records.
 - Private simulation before launch.
 - Dedicated production number slots for active paid Bots.
-- Free Builder; live plans from $19/month.
+- Free Builder; plans from $19/month. Starter includes 1 live Bot and 50 voice minutes per month; activation availability applies.
 
 ## Expansion
 
@@ -36,6 +36,10 @@ Land with one outbound role. Expand to more jobs, more live Bots, higher voice c
 ## Evidence posture
 
 Launch with real product proof, not manufactured traction. Customer logos, testimonials, ROI, conversion rates, revenue, and performance metrics enter the story only when documented and permissioned.
+
+## Product truth boundary
+
+Lead discovery requires a connected source or an approved supplied list. Calling, booking, messaging, CRM, and other actions require the relevant enabled services and customer configuration. Discovery, review, queue approval, calling, and outcome reporting are distinct controls. This brief describes the product and catalog; it does not certify public outbound availability or guarantee bookings, revenue, or universal compliance.
 
 **PUT YOUR BOT ON THE LINE**
 

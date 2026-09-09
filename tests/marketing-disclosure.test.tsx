@@ -5,6 +5,9 @@ import MarketingChromeBar from "../src/components/marketing/MarketingChromeBar";
 const hooks = vi.hoisted(() => ({
   open: false,
   locationKey: "initial",
+  pathname: "/",
+  search: "",
+  hash: "",
   setOpen: vi.fn(),
   focus: vi.fn(),
   effects: [] as Array<{ effect: () => void; dependencies: unknown[] }>,
@@ -25,7 +28,12 @@ vi.mock("react", async (importOriginal) => {
 
 vi.mock("react-router", () => ({
   Link: "a",
-  useLocation: () => ({ key: hooks.locationKey }),
+  useLocation: () => ({
+    key: hooks.locationKey,
+    pathname: hooks.pathname,
+    search: hooks.search,
+    hash: hooks.hash,
+  }),
 }));
 vi.mock("../src/components/brand/WirelineBrand", () => ({ WirelineWordmark: "span" }));
 vi.mock("lucide-react", () => ({ ChevronUp: "svg" }));
@@ -37,7 +45,7 @@ type ElementProps = {
   to?: string;
   "aria-expanded"?: boolean;
   "aria-controls"?: string;
-  onClick?: () => void;
+  onClick?: (event: ReturnType<typeof clickEvent>) => void;
   onKeyDown?: (event: ReturnType<typeof keyboardEvent>) => void;
 };
 
@@ -52,9 +60,32 @@ function keyboardEvent(key = "Escape", defaultPrevented = false) {
   return { key, defaultPrevented, preventDefault: vi.fn(), stopPropagation: vi.fn() };
 }
 
+function clickEvent(overrides: Partial<{
+  button: number;
+  defaultPrevented: boolean;
+  metaKey: boolean;
+  altKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+}> = {}) {
+  return {
+    button: 0,
+    defaultPrevented: false,
+    metaKey: false,
+    altKey: false,
+    ctrlKey: false,
+    shiftKey: false,
+    preventDefault: vi.fn(),
+    ...overrides,
+  };
+}
+
 beforeEach(() => {
   hooks.open = false;
   hooks.locationKey = "initial";
+  hooks.pathname = "/";
+  hooks.search = "";
+  hooks.hash = "";
   hooks.effects = [];
   vi.clearAllMocks();
 });
@@ -102,13 +133,54 @@ describe("marketing sitemap disclosure", () => {
     expect(hooks.focus).not.toHaveBeenCalled();
   });
 
-  it("dismisses when a sitemap link is selected, including the current destination", () => {
+  it("dismisses on a new destination without taking route-owned focus", () => {
     hooks.open = true;
     const elements = descendants(MarketingChromeBar({}));
     const pricing = elements.find((element) => element.props.to === "/pricing");
     expect(pricing).toBeDefined();
-    pricing?.props.onClick?.();
+    pricing?.props.onClick?.(clickEvent());
     expect(hooks.setOpen).toHaveBeenCalledWith(false);
     expect(hooks.focus).not.toHaveBeenCalled();
+  });
+
+  it("returns focus to the trigger when the selected destination is already current", () => {
+    hooks.open = true;
+    hooks.pathname = "/pricing";
+    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    pricing?.props.onClick?.(clickEvent());
+    expect(hooks.setOpen).toHaveBeenCalledWith(false);
+    expect(hooks.focus).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    { search: "?plan=pro", hash: "" },
+    { search: "", hash: "#plans" },
+  ])("leaves focus to navigation when the query or fragment changes", ({ search, hash }) => {
+    hooks.open = true;
+    hooks.pathname = "/pricing";
+    hooks.search = search;
+    hooks.hash = hash;
+    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    pricing?.props.onClick?.(clickEvent());
+    expect(hooks.setOpen).toHaveBeenCalledWith(false);
+    expect(hooks.focus).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { shiftKey: true },
+    { altKey: true },
+    { button: 1 },
+    { defaultPrevented: true },
+  ])("preserves the panel and focus for modified or handled clicks: %j", (modifiers) => {
+    hooks.open = true;
+    hooks.pathname = "/pricing";
+    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    const event = clickEvent(modifiers);
+    pricing?.props.onClick?.(event);
+    expect(hooks.setOpen).not.toHaveBeenCalled();
+    expect(hooks.focus).not.toHaveBeenCalled();
+    expect(event.preventDefault).not.toHaveBeenCalled();
   });
 });

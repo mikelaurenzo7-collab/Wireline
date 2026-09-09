@@ -18,7 +18,11 @@ import { cn } from "../lib/utils";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import {
+  billingIntervalFromIntent,
+  getStoredSignupIntent,
+  recommendedPlanFromIntent,
+} from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
 import { emitProductEvent } from "../lib/product-event-client";
 import {
@@ -87,10 +91,7 @@ export default function StripeBillingCard({
   const [error, setError] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<"month" | "year">(() => {
     try {
-      const fromUrl = new URLSearchParams(window.location.search).get("interval");
-      if (fromUrl === "year") return "year";
-      const stored = getStoredSignupIntent()?.preferredBillingInterval;
-      if (stored === "year") return "year";
+      return billingIntervalFromIntent(getStoredSignupIntent(), window.location.search);
     } catch {
       /* ignore */
     }

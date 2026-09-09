@@ -192,7 +192,14 @@ def render():
         text(c, title, x + 10, flow_y + 21, "PlexBold", 7.0, WHITE)
         text(c, detail, x + 10, flow_y + 9, "Inter", 5.9, PLATINUM)
         if idx < 3:
-            text(c, "→", x + flow_w + 2, flow_y + 13, "InterBold", 8, VIOLET)
+            # Draw connectors as vectors; the bundled Inter subset lacks arrows.
+            arrow_x = x + flow_w + 2
+            arrow_y = flow_y + 17.5
+            c.setStrokeColor(VIOLET)
+            c.setLineWidth(0.8)
+            c.line(arrow_x, arrow_y, arrow_x + 7, arrow_y)
+            c.line(arrow_x + 4.5, arrow_y + 2.5, arrow_x + 7, arrow_y)
+            c.line(arrow_x + 4.5, arrow_y - 2.5, arrow_x + 7, arrow_y)
 
     # Product proof pillars without fabricated traction.
     proof_y = 217
@@ -204,7 +211,7 @@ def render():
         ("10", "built-in OpenAI voices"),
         ("1", "selected voice per runtime session"),
         ("3", "connected customer channels"),
-        ("4", "Build → Train → Launch → Improve"),
+        ("4", "Build / Train / Launch / Improve"),
     ]
     proof_x = [43, 176, 327, 434]
     proof_sizes = [18, 18, 18, 18]
@@ -230,8 +237,8 @@ def render():
         100,
         277,
         97,
-        "Build free. Go live from $19/month.",
-        "A low-friction builder becomes a paid operating relationship when a Bot goes live. Additional Bots expand with the business.",
+        "Build free. Plans from $19/month.",
+        "Starter includes 1 Bot and 50 voice minutes/month. Live phone and email setup depend on account eligibility and availability. Additional Bots expand with the business.",
         "BUSINESS MODEL",
     )
 
@@ -242,7 +249,7 @@ def render():
     text(c, "Investor and design-partner conversations for a controlled launch.", 102, 62, "InterBold", 9.2, BLACK_VIOLET)
     right_text(c, "support@botbound.me", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
 
-    text(c, "Current-worktree product and pricing snapshot · 2026-09-01 · No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
+    text(c, "Product and pricing review · 2026-09-09 · Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
     right_text(c, "PUT YOUR BOT ON THE LINE", 583, 27, "PlexBold", 5.8, LILAC)
 
     c.showPage()

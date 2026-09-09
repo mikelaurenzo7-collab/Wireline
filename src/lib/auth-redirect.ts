@@ -1,4 +1,9 @@
-import { parseSignupIntent, recommendedPlanFromIntent, type SignupIntent } from "./signup-intent";
+import {
+  getStoredSignupIntent,
+  parseSignupIntent,
+  recommendedPlanFromIntent,
+  type SignupIntent,
+} from "./signup-intent";
 import { clearFreshSignupSession, isFreshSignupSession } from "./post-signup-onboarding";
 
 /** Legacy capability profile retained for account, billing, and migration compatibility. */
@@ -116,6 +121,10 @@ export function resolvePostAuthDestination(
     }
     persistAuthRedirect(null);
     clearFreshSignupSession();
+    const template =
+      parseSignupIntent(search)?.preferredTemplateId ||
+      getStoredSignupIntent()?.preferredTemplateId;
+    if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
     return "/studio?create=1";
   }
 

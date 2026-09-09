@@ -51,12 +51,16 @@ export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
   }
 }
 
-/** Update background provisioning state without moving the user's current step. */
-export function updatePostCreateWizard(payload: PostCreateWizardPayload): void {
+/** Update background provisioning state without moving the user's current step.
+ * A finished request must never reopen a dismissed guide or replace another Bot. */
+export function updatePostCreateWizard(payload: PostCreateWizardPayload): boolean {
   try {
+    if (readPostCreateWizard()?.agentId !== payload.agentId) return false;
     persistPostCreateWizardPayload(payload);
+    return true;
   } catch {
     /* ignore quota / private mode */
+    return false;
   }
 }
 

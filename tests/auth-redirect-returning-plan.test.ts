@@ -72,6 +72,53 @@ describe("post-auth destination", () => {
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
   });
 
+  it("opens the role selected on a marketing CTA after email signup", () => {
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "?plan=free&template=front-desk")).toBe(
+      "/studio?create=1&template=front-desk",
+    );
+    expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  });
+
+  it("restores a trusted role after the OAuth round trip clears the signup query", () => {
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({ preferredTemplateId: "sales-rep", capturedAt: "2026-09-09T00:00:00Z" }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "")).toBe(
+      "/studio?create=1&template=sales-rep",
+    );
+    // Signup attribution must not reopen creation on a later sign-in.
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
+  });
+
+  it("prefers the current trusted role over older signup attribution", () => {
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({ preferredTemplateId: "sales-rep", capturedAt: "2026-09-09T00:00:00Z" }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "?template=front-desk")).toBe(
+      "/studio?create=1&template=front-desk",
+    );
+  });
+
+  it("ignores unrecognized roles at the fresh-signup redirect boundary", () => {
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({ preferredTemplateId: "unknown-role", capturedAt: "2026-09-09T00:00:00Z" }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+
+    expect(resolvePostAuthDestination("personal", "?template=unknown-role")).toBe(
+      "/studio?create=1",
+    );
+  });
+
   it("preserves a paid plan intent for returning users", () => {
     expect(resolvePostAuthDestination("business", "?plan=starter&interval=year")).toBe(
       "/settings/billing?plan=starter&interval=year",

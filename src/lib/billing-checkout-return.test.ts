@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activatedPostCreateWizard,
   checkoutReturnFlowFromSearch,
   checkoutReturnUrlWithoutProof,
   classifyCheckoutReturn,
@@ -99,5 +100,76 @@ describe("billing Checkout return recovery", () => {
     expect(shouldResumePostCreateLaunch("plan", "pending", true, "launch")).toBe(false);
     expect(shouldResumePostCreateLaunch("plan", "fulfilled", false, "launch")).toBe(false);
     expect(shouldResumePostCreateLaunch("plan", "fulfilled", true, "test")).toBe(false);
+  });
+});
+
+describe("saved launch guide after plan fulfillment", () => {
+  const savedWizard = Object.freeze({
+    agentId: "bot_checkout",
+    agentName: "Reception",
+    phoneProvisionRequested: true,
+    phoneProvisioned: false,
+    phoneActivationRequired: true,
+    phoneNumber: null,
+    emailProvisionRequested: true,
+    emailProvisioned: true,
+    emailAddress: "reception@example.test",
+    identityBootstrapComplete: true,
+  });
+
+  it("clears the old activation rejection while preserving completed identity work", () => {
+    expect(
+      activatedPostCreateWizard("plan", "fulfilled", savedWizard.agentId, savedWizard, "launch"),
+    ).toEqual({ ...savedWizard, phoneActivationRequired: false });
+    expect(savedWizard.phoneActivationRequired).toBe(true);
+  });
+
+  it.each(["pending", "invalid", "expired", "retryable", "retired"] as const)(
+    "leaves the guide untouched for a %s checkout",
+    (outcome) => {
+      expect(
+        activatedPostCreateWizard("plan", outcome, savedWizard.agentId, savedWizard, "launch"),
+      ).toBeNull();
+      expect(savedWizard.phoneActivationRequired).toBe(true);
+    },
+  );
+
+  it("does not treat a Runtime Balance purchase as plan activation", () => {
+    expect(
+      activatedPostCreateWizard(
+        "runtime_balance", "fulfilled", savedWizard.agentId, savedWizard, "launch",
+      ),
+    ).toBeNull();
+  });
+
+  it("does not resume a different Bot selected while checkout verification was pending", () => {
+    const differentWizard = { ...savedWizard, agentId: "bot_new", agentName: "Sales" };
+    expect(
+      activatedPostCreateWizard(
+        "plan", "fulfilled", savedWizard.agentId, differentWizard, "launch",
+      ),
+    ).toBeNull();
+    expect(differentWizard.phoneActivationRequired).toBe(true);
+  });
+
+  it("does not revive a dismissed guide or resume a newly opened one", () => {
+    expect(
+      activatedPostCreateWizard("plan", "fulfilled", savedWizard.agentId, null, "launch"),
+    ).toBeNull();
+    expect(
+      activatedPostCreateWizard("plan", "fulfilled", null, savedWizard, "launch"),
+    ).toBeNull();
+  });
+
+  it.each(["train", "test", null])("does not move the saved %s step to Launch", (step) => {
+    expect(
+      activatedPostCreateWizard("plan", "fulfilled", savedWizard.agentId, savedWizard, step),
+    ).toBeNull();
+  });
+
+  it("accepts the legacy wire step without resetting completed bootstrap state", () => {
+    expect(
+      activatedPostCreateWizard("plan", "fulfilled", savedWizard.agentId, savedWizard, "wire"),
+    ).toEqual({ ...savedWizard, phoneActivationRequired: false });
   });
 });

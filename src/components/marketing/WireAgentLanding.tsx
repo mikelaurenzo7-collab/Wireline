@@ -173,7 +173,7 @@ export default function WireAgentLanding() {
                         <li>
                           {free
                             ? "Private simulation"
-                            : `${plan.voice_minutes_monthly} call minutes`}
+                            : `${plan.voice_minutes_monthly} call minutes/month`}
                         </li>
                         <li>
                           {free
@@ -191,6 +191,15 @@ export default function WireAgentLanding() {
                     </article>
                   );
                 })}
+              </div>
+              <div className="mt-6 flex justify-center">
+                <Link
+                  to="/pricing"
+                  className="wl-focus-ring-halo inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                >
+                  Compare plans &amp; usage
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
               </div>
             </div>
           </section>

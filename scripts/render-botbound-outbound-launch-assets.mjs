@@ -497,7 +497,7 @@ render(
       <rect width="1080" height="1350" fill="url(#verticalShade)" opacity=".84"/>
       ${brandLockup(62, 54, 66, iconData)}
       <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">LAUNCH MASTER / 01</text>
-      ${eyebrow("AUTONOMOUS OUTBOUND", 62, 246, 19)}
+      ${eyebrow("APPROVED OUTBOUND", 62, 246, 19)}
       <text x="54" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-6.2">
         <tspan x="54">POINT IT</tspan><tspan x="54" dy="112" fill="${palette.violet}">AT A MARKET.</tspan>
       </text>

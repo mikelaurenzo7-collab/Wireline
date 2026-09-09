@@ -90,7 +90,21 @@ export default function MarketingChromeBar({ className }: { className?: string }
                 <Link
                   key={link.to}
                   to={link.to}
-                  onClick={() => setOpen(false)}
+                  onClick={(event) => {
+                    if (
+                      event.defaultPrevented ||
+                      event.button !== 0 ||
+                      event.metaKey || event.altKey || event.ctrlKey || event.shiftKey
+                    ) {
+                      return;
+                    }
+                    setOpen(false);
+                    // Same-location navigation does not rerun the route focus
+                    // effect. Keep focus visible when its link becomes hidden.
+                    if (link.to === `${location.pathname}${location.search}${location.hash}`) {
+                      triggerRef.current?.focus();
+                    }
+                  }}
                   className="wl-focus-ring-halo inline-flex min-h-8 items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.label}

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  activationBillingHref,
+  billingIntervalFromIntent,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
@@ -63,4 +65,35 @@ describe("signup-intent", () => {
       }),
     ).toBeNull();
   });
+
+  it("carries the selected paid plan and annual interval into activation", () => {
+    expect(activationBillingHref(parseSignupIntent("?plan=starter-plus&interval=year"))).toBe(
+      "/settings/billing?plan=team&interval=year",
+    );
+  });
+
+  it("keeps Free Builder activation on Starter and preserves the selected interval", () => {
+    expect(activationBillingHref(parseSignupIntent("?plan=free&interval=year"))).toBe(
+      "/settings/billing?plan=starter&interval=year",
+    );
+    expect(activationBillingHref(null)).toBe("/settings/billing?plan=starter&interval=month");
+  });
+
+  it.each([
+    ["?interval=month", "year", "month"],
+    ["?interval=year", "month", "year"],
+    ["", "year", "year"],
+    ["?interval=weekly", "year", "year"],
+    ["", "month", "month"],
+  ] as const)(
+    "resolves billing choice %s ahead of stored %s",
+    (search, preferredBillingInterval, expected) => {
+      expect(
+        billingIntervalFromIntent(
+          { preferredBillingInterval, capturedAt: "2026-09-09T00:00:00Z" },
+          search,
+        ),
+      ).toBe(expected);
+    },
+  );
 });

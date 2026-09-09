@@ -9,6 +9,7 @@ import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/Wor
 import WorkspaceShell from "../components/WorkspaceShell";
 import { authFetch } from "../lib/api";
 import {
+  activatedPostCreateWizard,
   checkoutReturnFlowFromSearch,
   checkoutReturnUrlWithoutProof,
   classifyCheckoutReturn,
@@ -18,7 +19,11 @@ import {
   type CheckoutReturnOutcome,
   type CheckoutReturnVerification,
 } from "../lib/billing-checkout-return";
-import { readPostCreateWizard, readPostCreateWizardStep } from "../lib/wireline-create-flow";
+import {
+  readPostCreateWizard,
+  readPostCreateWizardStep,
+  updatePostCreateWizard,
+} from "../lib/wireline-create-flow";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import {
   CONVERSATION_BALANCE_COPY,
@@ -83,6 +88,7 @@ export default function BillingSettings() {
         let checkoutOutcome: CheckoutReturnOutcome | null = null;
         let verification: CheckoutReturnVerification | null = null;
         let resumePostCreateLaunch = false;
+        const resumeWizardAgentId = readPostCreateWizard()?.agentId ?? null;
 
         if (returnFlow && returnedSessionId) {
           for (const retryDelayMs of CHECKOUT_VERIFY_RETRY_DELAYS_MS) {
@@ -191,12 +197,20 @@ export default function BillingSettings() {
             ),
           );
         }
-        if (resumePostCreateLaunch && !cancelled) {
-          // The wizard payload and Launch step survive Stripe in sessionStorage.
-          // Return to Studio only after the server has proved plan fulfillment;
-          // Studio will reopen the exact Bot at the saved Launch decision.
-          window.location.replace("/studio");
-          return;
+        if (resumePostCreateLaunch && !cancelled && returnFlow && checkoutOutcome) {
+          const wizard = activatedPostCreateWizard(
+            returnFlow,
+            checkoutOutcome,
+            resumeWizardAgentId,
+            readPostCreateWizard(),
+            readPostCreateWizardStep(),
+          );
+          // Persist the fulfilled plan before reopening this same Bot's guide.
+          // A dismissed or replaced guide must not be resumed by a late return.
+          if (wizard && updatePostCreateWizard(wizard)) {
+            window.location.replace("/studio");
+            return;
+          }
         }
         if (!cancelled) setBillingReady(true);
 

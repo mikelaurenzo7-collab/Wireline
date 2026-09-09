@@ -151,10 +151,17 @@ export default function AgentStudioHome() {
         // endpoints that intentionally return ACTIVATION_REQUIRED.
         identityBootstrapComplete: true,
       };
-      updatePostCreateWizard(updated);
+      const persisted = updatePostCreateWizard(updated);
+      // An open guide still works when sessionStorage is unavailable. A stale
+      // request may only persist into its existing guide, never reopen one.
+      if (!active && !persisted) return;
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       void refresh();
-      if (active) setPostCreateWizard(updated);
+      if (active) {
+        setPostCreateWizard((current) =>
+          current?.agentId === payload.agentId ? updated : current,
+        );
+      }
     });
 
     return () => {
@@ -184,6 +191,7 @@ export default function AgentStudioHome() {
       />
       {postCreateWizard ? (
         <PostCreateActivationWizard
+          key={postCreateWizard.agentId}
           payload={postCreateWizard}
           onClose={() => {
             setPostCreateWizard(null);

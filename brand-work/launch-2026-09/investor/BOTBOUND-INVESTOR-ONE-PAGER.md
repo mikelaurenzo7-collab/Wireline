@@ -32,25 +32,25 @@ The goal is not another generic chat window. It is a practical operating layer b
 - **One carrier layer:** Twilio supplies numbers, PSTN/SIP transport, and SMS.
 - **Server-owned policy:** BotBound keeps tools, approvals, account state, compliance boundaries, and outcome persistence on the server.
 - **Private rehearsal before live work:** Free Builder supports one draft Bot and bounded private simulation before paid activation.
-- **Clear commercial boundary:** every active paid Bot receives a dedicated production number within plan capacity; live plans begin at $19/month; usage beyond included capacity stays prepaid rather than becoming an automatic surprise overage.
+- **Clear commercial boundary:** plans begin at $19/month and include phone-number capacity. Live phone and email setup depend on account eligibility and availability. Extra voice is $0.22/minute, prepaid, with no automatic overages.
 
 ## Business model
 
 BotBound combines a free private builder with recurring paid live plans.
 
 - **Free Builder:** $0; one private draft Bot and private simulation.
-- **Starter:** from $19/month for one live Bot and one dedicated production number.
-- **Starter Plus:** $39/month for two live Bots in one workspace.
-- **Pro:** $79/month for up to five specialized Bots with routing, approvals, and broader connected actions.
-- **Scale:** $159/month for up to fifteen live Bots; intentionally absent from the current public self-serve catalog.
+- **Starter:** $19/month or $190/year; one Bot, one included phone number, and 50 pooled voice minutes each month.
+- **Starter Plus:** $39/month or $390/year; two Bots, two included phone numbers, and 100 pooled voice minutes each month.
+- **Pro:** $79/month or $790/year; up to five Bots, five included phone numbers, and 190 pooled voice minutes each month, with routing and approvals.
+- **Scale:** custom pricing for 25+ Bot capacity and a tailored rollout; contact BotBound to scope the deployment.
 
 The pricing model makes voice capacity, carrier resources, flexible runtime, and managed AI usage explicit. It does not rely on hidden postpaid overages.
 
 ## Launch posture
 
-BotBound is preparing a founder-led, product-proof launch. The company is using explicit demo and founder accounts to dogfood creation, training, live calls, text/email continuation, approvals, outcomes, billing, and the desktop/mobile experience before expanding acquisition.
+BotBound is preparing a controlled design-partner pilot. Before expanding acquisition, the release must demonstrate a complete real checkout lifecycle, a consented non-demo inbound call, support handling, repeat usage, and contribution margin. Preview checks and demo accounts are useful development evidence; they do not establish that these live milestones are complete.
 
-The immediate objective is credible product proof and a small group of design partners — not manufactured scale. Customer logos, testimonials, traction, revenue, ROI, and performance metrics will be used only when they are real, permissioned, and documented.
+The immediate objective is credible product proof with a small group of design partners. Customer logos, testimonials, traction, revenue, ROI, and performance metrics will be used only when they are real, permissioned, and documented.
 
 ## The conversation we want
 

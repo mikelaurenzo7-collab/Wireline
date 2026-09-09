@@ -8,6 +8,7 @@ import {
   readPostCreateWizardStep,
   stashPostCreateWizard,
   stashPostCreateWizardStep,
+  updatePostCreateWizard,
 } from "../src/lib/wireline-create-flow";
 
 const payload = {
@@ -74,5 +75,40 @@ describe("wireline create flow wizard persistence", () => {
     expect(readPostCreateWizardStep()).toBeNull();
     expect(sessionStorage.getItem(POST_CREATE_WIZARD_KEY)).toBeNull();
     expect(sessionStorage.getItem(POST_CREATE_WIZARD_STEP_KEY)).toBeNull();
+  });
+
+  it("applies a background phone result without resetting the current setup step", () => {
+    stashPostCreateWizard(payload);
+    stashPostCreateWizardStep("launch");
+    const updated = {
+      ...payload,
+      phoneProvisioned: true,
+      phoneNumber: "+12025550123",
+      identityBootstrapComplete: true,
+    };
+
+    expect(updatePostCreateWizard(updated)).toBe(true);
+    expect(readPostCreateWizard()).toEqual(updated);
+    expect(readPostCreateWizardStep()).toBe("launch");
+  });
+
+  it("does not resurrect a dismissed guide when provisioning finishes later", () => {
+    stashPostCreateWizard(payload);
+    clearPostCreateWizard();
+
+    expect(updatePostCreateWizard({ ...payload, identityBootstrapComplete: true })).toBe(false);
+    expect(readPostCreateWizard()).toBeNull();
+    expect(readPostCreateWizardStep()).toBeNull();
+  });
+
+  it("does not let an older Bot's background result overwrite the current guide", () => {
+    stashPostCreateWizard(payload);
+    const current = { ...payload, agentId: "agent_test_2", agentName: "Sales" };
+    stashPostCreateWizard(current);
+    stashPostCreateWizardStep("test");
+
+    expect(updatePostCreateWizard({ ...payload, identityBootstrapComplete: true })).toBe(false);
+    expect(readPostCreateWizard()).toEqual(current);
+    expect(readPostCreateWizardStep()).toBe("test");
   });
 });

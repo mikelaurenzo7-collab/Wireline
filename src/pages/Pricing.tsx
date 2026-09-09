@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
@@ -34,8 +34,8 @@ const PAID_TIERS = [
     ctaAnnual: "Start for $190/yr",
     ctaPath: signupHrefForPlan("starter"),
     highlights: [
-      "1 live Bot with its own production number",
-      "50 included live-voice minutes",
+      "1 live Bot with its own phone number",
+      `${planById.starter.voice_minutes_monthly} voice minutes each month`,
       "Call, text, email, and automatic outcomes",
       `$${planById.starter.runtime_allowance_usd_monthly} Runtime + $${planById.starter.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance`,
       "No automatic overages",
@@ -53,8 +53,8 @@ const PAID_TIERS = [
     ctaAnnual: "Choose Annual Starter Plus",
     ctaPath: signupHrefForPlan("team"),
     highlights: [
-      "2 live Bots with 2 production numbers",
-      "100 included live-voice minutes",
+      "2 live Bots with 2 phone numbers",
+      `${planById.team.voice_minutes_monthly} voice minutes each month`,
       "Call, text, email, and full Lead Hunt",
       `$${planById.team.runtime_allowance_usd_monthly} Runtime + $${planById.team.ai_spend_allowance_usd_monthly} managed AI allowance`,
       "No automatic overages",
@@ -72,8 +72,8 @@ const PAID_TIERS = [
     ctaAnnual: "Go Pro Annually",
     ctaPath: signupHrefForPlan("business"),
     highlights: [
-      "Up to 5 live Bots with 5 production numbers",
-      "190 included live-voice minutes",
+      "Up to 5 live Bots with 5 phone numbers",
+      `${planById.business.voice_minutes_monthly} voice minutes each month`,
       "Lead Hunt, routing, and approvals",
       "Connected calendar, CRM, mailbox, and actions",
       `$${planById.business.runtime_allowance_usd_monthly} Runtime + $${planById.business.ai_spend_allowance_usd_monthly} managed AI allowance; no automatic overages`,
@@ -99,7 +99,7 @@ const FREE_BUILDER_HIGHLIGHTS = [
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `Every active paid Bot gets its own BotBound production number. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
+    body: `Every active paid Bot gets its own BotBound phone number. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
   },
   {
     title: "Text / SMS",
@@ -122,15 +122,15 @@ const FAQ = [
   ],
   [
     "Is the BotBound number free?",
-    "Every active paid Bot gets its own BotBound production number at no extra line fee within the plan's Bot capacity. Free Builder is a private creation and simulation tier; carrier resources allocate when a Bot becomes paid and active.",
+    "Every active paid Bot gets its own BotBound phone number at no extra line fee within the plan's Bot capacity. Free Builder is a private creation and simulation tier; carrier resources allocate when a Bot becomes paid and active.",
   ],
   [
     "Why are there two Starter plans?",
-    "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second production number, more voice minutes, and fuller Lead Hunt and enrichment in the same workspace.",
+    "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second phone number, more voice minutes, and fuller Lead Hunt and enrichment in the same workspace.",
   ],
   [
     "Does every paid Bot get a phone number?",
-    "Yes. Every active paid Bot gets one dedicated BotBound production number. Unused plan capacity does not allocate a number until a Bot actually exists and is active, so you never carry orphan line spend.",
+    "Yes. Every active paid Bot gets one dedicated BotBound phone number. Numbers are added when a Bot becomes active; unused plan capacity does not allocate a number.",
   ],
   [
     "What happens when included voice minutes run out?",
@@ -213,7 +213,7 @@ export default function Pricing() {
               Start free. Go live from $19.
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">
-              Every active paid Bot gets its own BotBound production number.
+              Every active paid Bot gets its own BotBound phone number.
             </p>
             <div className="marketing-hero__actions mt-6">
               <div
@@ -298,9 +298,9 @@ export default function Pricing() {
                     {featured ? (
                       <span
                         className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground shadow-sm"
-                        aria-label="Most popular plan"
+                        aria-label="Recommended plan"
                       >
-                        Most Popular
+                        Recommended
                       </span>
                     ) : null}
                     <h2 className="wl-card-title">{publicName}</h2>
@@ -345,6 +345,11 @@ export default function Pricing() {
             )}
           </div>
 
+          <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
+            Included usage is shown per month. Extra voice is {TOPUP_RATE}, prepaid.
+            No automatic overages. Live phone and email setup depend on account eligibility and availability.
+          </p>
+
           <article
             id="scale"
             className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
@@ -354,7 +359,7 @@ export default function Pricing() {
               <span className="text-sm text-muted-foreground">Custom</span>
             </div>
             <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
-              25+ live Bot capacity, committed voice, text, email, and data economics, custom
+              25+ live Bot capacity, tailored voice, text, email, and data usage, custom
               telephony and integrations, security, rollout, and support plan
             </p>
             <Link
@@ -365,11 +370,17 @@ export default function Pricing() {
             </Link>
           </article>
 
-          <details className="pricing-more mx-auto mt-2 w-full max-w-5xl text-left">
-            <summary className="pricing-more__summary mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground marker:hidden">
-              Channel rules and launch questions
+          <details className="pricing-more group mx-auto mt-2 w-full max-w-5xl text-left">
+            <summary className="pricing-more__summary wl-focus-ring-halo mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground marker:hidden">
+              Usage details &amp; FAQs
+              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
             </summary>
             <div className="pricing-more__body mt-3">
+              <p className="mx-auto mb-4 max-w-3xl text-center text-sm leading-6 text-muted-foreground">
+                Runtime Allowance covers optional texts and generated work. The managed AI allowance
+                covers AI, research, and enrichment. Annual plans receive a full year of Runtime
+                Allowance at the start of the billing period.
+              </p>
               <p className="mx-auto max-w-4xl text-center text-xs leading-5 text-muted-foreground">
                 <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
                 {SHARED_PAID_FEATURES.join(". ")}

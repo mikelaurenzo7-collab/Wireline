@@ -314,6 +314,23 @@ export function recommendedPlanFromIntent(intent: SignupIntent | null | undefine
   return "personal";
 }
 
+/** A current billing choice takes precedence over earlier signup attribution. */
+export function billingIntervalFromIntent(
+  intent: SignupIntent | null | undefined,
+  search = "",
+): "month" | "year" {
+  const explicit = parseSignupIntent(search)?.preferredBillingInterval;
+  return explicit || (intent?.preferredBillingInterval === "year" ? "year" : "month");
+}
+
+/** Carry signup preferences into the existing paid activation path. */
+export function activationBillingHref(intent: SignupIntent | null | undefined): string {
+  const recommended = recommendedPlanFromIntent(intent);
+  const plan = recommended === "personal" ? "starter" : recommended;
+  const params = new URLSearchParams({ plan, interval: billingIntervalFromIntent(intent) });
+  return `/settings/billing?${params.toString()}`;
+}
+
 export function getSignupWedgeRecommendation(
   wedge: string | null | undefined,
 ): SignupWedgeRecommendation | null {
