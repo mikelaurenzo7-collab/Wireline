@@ -217,6 +217,9 @@ export default function AuthAccessPanel({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthPending, setOauthPending] = useState<OAuthProvider | null>(null);
+  // State updates render the pending UI; this ref also fences events that fire
+  // before React commits that render, across email and OAuth entry paths.
+  const requestPendingRef = useRef(false);
   const [availableProviders, setAvailableProviders] = useState<OAuthProviderAvailability | null>(
     null,
   );
@@ -303,7 +306,8 @@ export default function AuthAccessPanel({
     navigate(resolvePostAuthDestination(workspaceMode, location.search), { replace: true });
   }, [authLoading, user, navigate, workspaceMode, location.search, legacyBrowserHandoffUrl]);
 
-  const changeMode = (next: Exclude<AuthMode, "reset">) => {
+  const changeMode = (next: AuthMode) => {
+    if (requestPendingRef.current) return;
     setMode(next);
     setError(null);
     setMessage(null);
@@ -311,20 +315,21 @@ export default function AuthAccessPanel({
     if (next === "signup") {
       setSignupIntent((current) => defaultFreeIntent(current));
     }
-    if (!embedded) {
+    if (!embedded && next !== "reset") {
       const nextPath = next === "signup" ? "/signup" : "/signin";
       if (location.pathname !== nextPath) navigate(`${nextPath}${location.search}`);
     }
   };
 
   const startOAuth = async (provider: OAuthProvider) => {
-    if (loading || oauthPending) return;
+    if (requestPendingRef.current) return;
     if (isSignUp && !agreedToTerms) {
       setInvalidField(null);
       setError(TERMS_CONSENT_ERROR);
       termsRef.current?.focus();
       return;
     }
+    requestPendingRef.current = true;
     setOauthPending(provider);
     setError(null);
     setInvalidField(null);
@@ -361,6 +366,7 @@ export default function AuthAccessPanel({
       clearFreshSignupSession();
       window.location.assign(payload.url);
     } catch (caught) {
+      requestPendingRef.current = false;
       setOauthPending(null);
       setError(cleanThrownMessage(caught) || "Sign-in is temporarily unavailable.");
     }
@@ -380,7 +386,7 @@ export default function AuthAccessPanel({
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (loading) return;
+    if (requestPendingRef.current) return;
     setError(null);
     setMessage(null);
     setInvalidField(null);
@@ -409,6 +415,7 @@ export default function AuthAccessPanel({
       return;
     }
 
+    requestPendingRef.current = true;
     setLoading(true);
     try {
       if (isReset) {
@@ -500,6 +507,7 @@ export default function AuthAccessPanel({
     } catch (caught) {
       setError(cleanThrownMessage(caught) || "Authentication failed. Please try again.");
     } finally {
+      requestPendingRef.current = false;
       setLoading(false);
     }
   };
@@ -568,10 +576,20 @@ export default function AuthAccessPanel({
 
         {!isReset ? (
           <div className="wl-access-panel__tabs" role="group" aria-label="Account access mode">
-            <button type="button" aria-pressed={!isSignUp} onClick={() => changeMode("signin")}>
+            <button
+              type="button"
+              aria-pressed={!isSignUp}
+              disabled={disabled}
+              onClick={() => changeMode("signin")}
+            >
               Sign In
             </button>
-            <button type="button" aria-pressed={isSignUp} onClick={() => changeMode("signup")}>
+            <button
+              type="button"
+              aria-pressed={isSignUp}
+              disabled={disabled}
+              onClick={() => changeMode("signup")}
+            >
               Create Account
             </button>
           </div>
@@ -584,6 +602,7 @@ export default function AuthAccessPanel({
               id={termsId}
               name="termsAccepted"
               checked={agreedToTerms}
+              disabled={disabled}
               required
               aria-labelledby={termsLabelId}
               aria-invalid={error === TERMS_CONSENT_ERROR}
@@ -647,7 +666,7 @@ export default function AuthAccessPanel({
                 required
                 autoComplete="email"
                 spellCheck={false}
-                disabled={loading}
+                disabled={disabled}
                 aria-invalid={invalidField === "email"}
                 aria-describedby={invalidField === "email" ? emailErrorId : undefined}
                 value={email}
@@ -676,7 +695,7 @@ export default function AuthAccessPanel({
                   required
                   autoComplete={isSignUp ? "new-password" : "current-password"}
                   minLength={isSignUp ? 8 : undefined}
-                  disabled={loading}
+                  disabled={disabled}
                   aria-invalid={invalidField === "password"}
                   aria-describedby={invalidField === "password" ? passwordErrorId : undefined}
                   value={password}
@@ -693,6 +712,7 @@ export default function AuthAccessPanel({
                   type="button"
                   className="wl-access-panel__reveal"
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={disabled}
                   onClick={() => setShowPassword((current) => !current)}
                 >
                   {showPassword ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
@@ -702,12 +722,8 @@ export default function AuthAccessPanel({
                 <button
                   type="button"
                   className="wl-access-panel__forgot"
-                  onClick={() => {
-                    setMode("reset");
-                    setError(null);
-                    setMessage(null);
-                    setInvalidField(null);
-                  }}
+                  disabled={disabled}
+                  onClick={() => changeMode("reset")}
                 >
                   Forgot?
                 </button>
@@ -732,12 +748,8 @@ export default function AuthAccessPanel({
             <button
               type="button"
               className="wl-access-panel__back"
-              onClick={() => {
-                setMode("signin");
-                setError(null);
-                setMessage(null);
-                setInvalidField(null);
-              }}
+              disabled={disabled}
+              onClick={() => changeMode("signin")}
             >
               <ArrowLeft aria-hidden="true" /> Back to sign in
             </button>
@@ -746,7 +758,7 @@ export default function AuthAccessPanel({
           {error ? (
             <StatusNotice id={errorId} tone="destructive" title={error}>
               {isSignUp && /already exists/i.test(error) ? (
-                <button type="button" onClick={() => changeMode("signin")}>
+                <button type="button" disabled={disabled} onClick={() => changeMode("signin")}>
                   Sign in instead
                 </button>
               ) : null}
@@ -754,7 +766,7 @@ export default function AuthAccessPanel({
           ) : null}
           {message ? <StatusNotice tone="success" title={message} /> : null}
 
-          <button type="submit" className="wl-access-panel__submit" disabled={loading}>
+          <button type="submit" className="wl-access-panel__submit" disabled={disabled}>
             {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
             <span>
               {loading
