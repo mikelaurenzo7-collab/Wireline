@@ -116,7 +116,7 @@ export default function VerticalLanding({
   };
 
   return (
-    <MarketingPageFrame stickyCta>
+    <MarketingPageFrame stickyCta stickyCtaHref={cfg.primaryCta.href}>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -159,9 +159,9 @@ export default function VerticalLanding({
                   <Icon className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-semibold tracking-[-.025em] text-foreground">
+                  <h2 className="text-lg font-semibold tracking-[-.025em] text-foreground">
                     {title}
-                  </h3>
+                  </h2>
                   <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{pain.body}</p>
                 </div>
               </article>
@@ -234,7 +234,7 @@ export default function VerticalLanding({
               </div>
               <CtaLink
                 href={cfg.primaryCta.href}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded bg-[var(--wireline-color-text-primary)] px-5 text-sm font-semibold text-[var(--wireline-color-canvas-default)]"
+                className="marketing-btn-primary min-h-12 gap-2 px-5 text-sm font-semibold"
               >
                 {cfg.primaryCta.label} <ArrowRight className="h-4 w-4" />
               </CtaLink>

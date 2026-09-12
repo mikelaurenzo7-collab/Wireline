@@ -117,9 +117,9 @@ export default function Developers() {
             </a>
           </div>
 
-          <p id="mcp-apps-heading" className="wl-eyebrow mt-9 text-muted-foreground">
+          <h2 id="mcp-apps-heading" className="wl-eyebrow mt-9 text-muted-foreground">
             Connect Once
-          </p>
+          </h2>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
@@ -131,7 +131,9 @@ export default function Developers() {
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <h3 className="wl-card-title">{title}</h3>
-                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{description}</p>
+                <p className="mt-1.5 flex-1 text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
                 <Button variant="outline" size="sm" asChild className="mt-3">
                   <a href={href} target="_blank" rel="noopener noreferrer">
                     {action} <ExternalLink className="h-3.5 w-3.5 opacity-60" />
@@ -174,12 +176,12 @@ export default function Developers() {
             {MCP_BOUNDARIES.map((endpoint) => (
               <li
                 key={endpoint.path}
-                className="wl-stitch-card flex flex-wrap items-baseline gap-x-3 gap-y-1 p-3 text-left"
+                className="wl-stitch-card flex min-w-0 flex-col items-start gap-3 p-4 text-left"
               >
-                <code className="rounded border border-brand/20 bg-brand/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
+                <code className="max-w-full whitespace-normal break-words rounded border border-brand/20 bg-brand/10 px-2 py-1 font-mono text-xs font-semibold leading-5 text-primary [overflow-wrap:anywhere]">
                   {endpoint.path}
                 </code>
-                <span className="min-w-0 flex-1 text-sm leading-6 text-muted-foreground">
+                <span className="text-sm leading-6 text-muted-foreground">
                   {endpoint.description}
                 </span>
               </li>

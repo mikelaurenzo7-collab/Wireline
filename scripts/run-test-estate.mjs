@@ -43,6 +43,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/marketing-disclosure.test.tsx",
   "tests/auth-access-pending.test.tsx",
   "tests/workspace-mobile-section-picker.test.tsx",
+  "tests/marketing-signup-continuity.test.tsx",
   "tests/workspace-panel-collapse.test.tsx",
   "tests/route-change-a11y-focus.test.tsx",
   "tests/sms-thread-drafts.test.tsx",

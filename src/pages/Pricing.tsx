@@ -50,7 +50,7 @@ const PAID_TIERS = [
     tagline: "Two Live Bots from $39/month",
     detail: `Two live Bots, two numbers, ${planById.team.voice_minutes_monthly} voice minutes, and fuller Lead Hunt and enrichment.`,
     ctaMonthly: "Choose Starter Plus",
-    ctaAnnual: "Choose Annual Starter Plus",
+    ctaAnnual: "Choose Starter Plus",
     ctaPath: signupHrefForPlan("team"),
     highlights: [
       "2 live Bots with 2 phone numbers",
@@ -346,8 +346,8 @@ export default function Pricing() {
           </div>
 
           <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
-            Included usage is shown per month. Extra voice is {TOPUP_RATE}, prepaid.
-            No automatic overages. Live phone and email setup depend on account eligibility and availability.
+            Included usage is shown per month. Extra voice is {TOPUP_RATE}, prepaid. No automatic
+            overages. Live phone and email setup depend on account eligibility and availability.
           </p>
 
           <article
@@ -359,8 +359,8 @@ export default function Pricing() {
               <span className="text-sm text-muted-foreground">Custom</span>
             </div>
             <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
-              25+ live Bot capacity, tailored voice, text, email, and data usage, custom
-              telephony and integrations, security, rollout, and support plan
+              25+ live Bot capacity, tailored voice, text, email, and data usage, custom telephony
+              and integrations, security, rollout, and support plan
             </p>
             <Link
               to="/contact?topic=enterprise"
@@ -373,7 +373,10 @@ export default function Pricing() {
           <details className="pricing-more group mx-auto mt-2 w-full max-w-5xl text-left">
             <summary className="pricing-more__summary wl-focus-ring-halo mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground marker:hidden">
               Usage details &amp; FAQs
-              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+              <ChevronDown
+                className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                aria-hidden="true"
+              />
             </summary>
             <div className="pricing-more__body mt-3">
               <p className="mx-auto mb-4 max-w-3xl text-center text-sm leading-6 text-muted-foreground">

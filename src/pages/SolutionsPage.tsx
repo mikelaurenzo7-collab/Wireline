@@ -82,7 +82,7 @@ export default function SolutionsPage() {
   const page = SOLUTIONS[key];
 
   return (
-    <MarketingPageFrame className="wl-solutions-page" stickyCta>
+    <MarketingPageFrame className="wl-solutions-page" stickyCta stickyCtaHref={page.primary.href}>
       <PageMeta
         title={`${page.title} | BotBound`}
         description={page.description}
@@ -122,7 +122,7 @@ export default function SolutionsPage() {
                 <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
                   0{index + 1}
                 </span>
-                <h3 className="wl-card-title">{title}</h3>
+                <h2 className="wl-card-title">{title}</h2>
               </span>
               <p className="mx-auto mt-2 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
                 {copy}

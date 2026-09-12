@@ -294,8 +294,13 @@ export default function TrustPackPage() {
                 key={item}
                 className="flex gap-3 rounded-lg border border-border/70 bg-background/60 p-4 text-sm leading-6 text-foreground/85"
               >
-                <span className="font-mono text-brand">{String(index + 1).padStart(2, "0")}</span>
-                {item}
+                <span
+                  className="w-6 shrink-0 whitespace-nowrap font-mono tabular-nums text-brand"
+                  aria-hidden="true"
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="min-w-0">{item}</span>
               </li>
             ))}
           </ol>

@@ -206,7 +206,7 @@ export function ContactPage() {
                   ))}
                 </div>
               </fieldset>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid items-end gap-4 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
                   Email
                   <Input
@@ -219,9 +219,12 @@ export function ContactPage() {
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  Company or organization{" "}
-                  <span className="font-normal text-muted-foreground">(optional)</span>
+                  <span>
+                    Company or organization{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </span>
                   <Input
+                    autoComplete="organization"
                     value={company}
                     onChange={(event) => setCompany(event.target.value)}
                     placeholder="Optional"
@@ -229,8 +232,10 @@ export function ContactPage() {
                 </label>
               </div>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
-                Callback number{" "}
-                <span className="font-normal text-muted-foreground">(optional)</span>
+                <span>
+                  Callback number{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </span>
                 <Input
                   type="tel"
                   autoComplete="tel"

@@ -20,6 +20,7 @@ interface MarketingPageFrameProps {
   longform?: boolean;
   /** Opt-in mobile bottom conversion bar. Public pages already carry in-flow CTAs. */
   stickyCta?: boolean;
+  stickyCtaHref?: string;
   stickyCtaSecondaryHref?: string;
   stickyCtaSecondaryLabel?: string;
   footer?: boolean;
@@ -41,6 +42,7 @@ export default function MarketingPageFrame({
   children,
   longform = false,
   stickyCta = false,
+  stickyCtaHref,
   stickyCtaSecondaryHref,
   stickyCtaSecondaryLabel,
   footer = true,
@@ -108,6 +110,7 @@ export default function MarketingPageFrame({
       {footer ? <MarketingChromeBar /> : null}
       {stickyCta ? (
         <MarketingStickyCta
+          href={stickyCtaHref}
           secondaryHref={stickyCtaSecondaryHref}
           secondaryLabel={stickyCtaSecondaryLabel}
         />

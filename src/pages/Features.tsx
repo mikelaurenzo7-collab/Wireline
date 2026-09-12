@@ -111,9 +111,9 @@ export default function Features() {
             ))}
           </ul>
 
-          <p className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
+          <h2 className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
             The Controls That Make It Reliable
-          </p>
+          </h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
               <FeatureCard key={title} icon={Icon} title={title} body={body} />
