@@ -20,7 +20,7 @@ describe("E2E design and BotBound brand polish", () => {
 
   it("keeps shared workspace tabs comfortable at compact density", () => {
     const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
-    expect(tabs).toContain('"min-h-10 px-3 text-[13px] sm:px-3.5"');
+    expect(tabs).toContain('"min-h-[44px] px-3 text-[13px] sm:min-h-10 sm:px-3.5"');
     expect(tabs).toContain("overflow-x-auto overscroll-x-contain");
     expect(tabs).toContain("focus-visible:outline-offset-2");
   });
