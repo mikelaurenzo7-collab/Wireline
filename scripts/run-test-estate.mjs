@@ -45,7 +45,10 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/workspace-mobile-section-picker.test.tsx",
   "tests/workspace-panel-collapse.test.tsx",
   "tests/route-change-a11y-focus.test.tsx",
+  "tests/sms-thread-drafts.test.tsx",
   "tests/authenticated-workspace-design-contract.test.ts",
+  "tests/design/agent-navigation-contract.test.ts",
+  "tests/design/demand-driven-overview-contract.test.ts",
   "tests/studio-canvas-vision-contract.test.ts",
   "tests/navigation-ia-contract.test.ts",
   "tests/auth-redirect-returning-plan.test.ts",
@@ -63,9 +66,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/stripe-account-identity.test.ts",
 ];
 
-const effectiveArgs = canonicalReleaseSecondPass
-  ? [...CANONICAL_RELEASE_SECOND_PASS]
-  : extraArgs;
+const effectiveArgs = canonicalReleaseSecondPass ? [...CANONICAL_RELEASE_SECOND_PASS] : extraArgs;
 
 // Exact-head preview audits use the same clean-room environment through the
 // compact reporter, but print only actionable failures. The canonical tranche

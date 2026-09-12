@@ -35,6 +35,11 @@ interface SmsMessage {
   agent_id: string | null;
 }
 
+interface SmsReplyDraft {
+  body: string;
+  notice: string | null;
+}
+
 type PendingSmsSendState = "sending" | "retryable" | "ambiguous";
 
 type PendingSmsSend = {
@@ -152,10 +157,9 @@ export default function SmsThreads({
   const [fetchErr, setFetchErr] = useState<string | null>(null);
   const [threadErr, setThreadErr] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [reply, setReply] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, SmsReplyDraft>>({});
   const [sending, setSending] = useState(false);
   const [drafting, setDrafting] = useState(false);
-  const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [pendingSends, setPendingSends] = useState<Record<string, PendingSmsSend>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -170,12 +174,32 @@ export default function SmsThreads({
   const activeAgentIdRef = useRef<string | null>(agentId || null);
   const activeIdRef = useRef<string | null>(null);
 
+  const reply = activeId ? replyDrafts[activeId]?.body || "" : "";
+  const draftNotice = activeId ? replyDrafts[activeId]?.notice || null : null;
+
+  function updateReplyDraft(update: Partial<SmsReplyDraft>) {
+    if (!activeId) return;
+    setReplyDrafts((current) => ({
+      ...current,
+      [activeId]: { ...(current[activeId] ?? { body: "", notice: null }), ...update },
+    }));
+  }
+
+  function setReply(body: string) {
+    updateReplyDraft({ body });
+  }
+
+  function setDraftNotice(notice: string | null) {
+    updateReplyDraft({ notice });
+  }
+
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId || null;
     threadListOperationRef.current += 1;
     threadListFetchRef.current?.abort();
     setThreads([]);
     setActiveId(null);
+    setReplyDrafts({});
     setMessages([]);
     setFetchErr(null);
     setThreadErr(null);
@@ -193,11 +217,9 @@ export default function SmsThreads({
     setMessages([]);
     setMessagesLoading(Boolean(activeId));
     setThreadErr(null);
-    setDraftNotice(null);
     setDraftError(null);
     setDrafting(false);
     setSending(false);
-    setReply("");
   }, [activeId]);
 
   const fetchThreads = useCallback(async () => {
@@ -406,7 +428,6 @@ export default function SmsThreads({
     const operation = ++draftOperationRef.current;
     setDrafting(true);
     setDraftError(null);
-    setDraftNotice(null);
     try {
       const response = await authFetch(`/api/sms/threads/${threadId}/draft`, { method: "POST" });
       const body = (await response.json().catch(() => ({}))) as {
@@ -473,7 +494,6 @@ export default function SmsThreads({
     const operation = ++sendOperationRef.current;
     draftOperationRef.current += 1;
     setDrafting(false);
-    setDraftNotice(null);
     setDraftError(null);
     const idempotencyKey = previousPending?.idempotencyKey || createSmsIdempotencyKey(threadId);
     const sendingRecord: PendingSmsSend = {
@@ -493,7 +513,6 @@ export default function SmsThreads({
     rememberPendingSend(threadId, sendingRecord);
     setSending(true);
     setThreadErr(null);
-    setReply("");
     setMessages((current) => [...current, optimistic]);
 
     try {
@@ -567,6 +586,16 @@ export default function SmsThreads({
 
       if (response.ok && result?.ok === true) {
         forgetPendingSend(threadId);
+        // Keep drafts until carrier acceptance, including when the user
+        // switches conversations while the request is in flight.
+        if (activeAgentIdRef.current === requestedAgentId) {
+          setReplyDrafts((current) => {
+            if (current[threadId]?.body.trim() !== body) return current;
+            const next = { ...current };
+            delete next[threadId];
+            return next;
+          });
+        }
         success("SMS queued", "The carrier accepted the message for delivery.");
         if (activeIdRef.current === threadId) {
           await fetchMessages(threadId, activeThreadFetchRef.current?.signal);
@@ -828,7 +857,7 @@ export default function SmsThreads({
               </div>
 
               <details className="group shrink-0 border-t border-border bg-card/35">
-                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
                   <span>Outcome</span>
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <span className="max-w-28 truncate font-normal capitalize">

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Volume2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
 import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
@@ -31,6 +31,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [choicesOpen, setChoicesOpen] = useState(false);
   const activeAgentIdRef = useRef(agentId);
   const saveOperationRef = useRef(0);
 
@@ -44,6 +45,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
     setSelectedVoiceId(null);
     setSelectedProvider(null);
     setNotice(null);
+    setChoicesOpen(false);
     if (!agentId) {
       setLoading(false);
       return;
@@ -159,7 +161,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
           onClick={() => void selectVoice(voice)}
           disabled={Boolean(savingVoiceId)}
           aria-pressed={selected}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left disabled:cursor-wait disabled:opacity-70"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg text-left wl-focus-ring-halo disabled:cursor-wait disabled:opacity-70"
         >
           <span
             className={`grid size-9 shrink-0 place-items-center rounded-full ${
@@ -187,25 +189,17 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
     );
   }
 
-  const selectedIsAvailable = includedVoices.some(
+  const selectedVoice = includedVoices.find(
     (voice) => voice.id === selectedVoiceId && voice.provider === selectedProvider,
   );
+  const selectedIsAvailable = Boolean(selectedVoice);
+
+  useEffect(() => {
+    if (!loading && !selectedIsAvailable) setChoicesOpen(true);
+  }, [loading, selectedIsAvailable]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setPreviewOpen((open) => !open)}
-          disabled={loading || Boolean(savingVoiceId) || !selectedIsAvailable}
-          aria-expanded={previewOpen}
-          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-        >
-          <Volume2 className="size-4" aria-hidden="true" />
-          {previewOpen ? "Close preview" : "Preview voice"}
-        </button>
-      </div>
-
+    <div className="space-y-3">
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {error ? (
         <StatusNotice tone="destructive" title="Voice unavailable">
@@ -219,24 +213,61 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
           Loading…
         </div>
       ) : (
-        <>
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              10 built-in OpenAI voices
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Choose the OpenAI voice that fits this Bot. It stays consistent throughout each
-              session and is shared by browser tests and live phone calls. Change it anytime between
-              sessions. A preview starts a new private browser voice session with the saved choice.
-            </p>
+        <details
+          className="group rounded-xl border border-border bg-background"
+          open={choicesOpen}
+          onToggle={(event) => setChoicesOpen(event.currentTarget.open)}
+        >
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-3 wl-focus-ring-halo">
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-foreground">
+                {selectedVoice
+                  ? selectedVoice.name.split("·")[0].trim()
+                  : selectedVoiceId
+                    ? "Unavailable voice"
+                    : "Choose a voice"}
+              </span>
+              {selectedVoice ? (
+                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                  {selectedVoice.name.split("·").slice(1).join("·").trim()}
+                </span>
+              ) : null}
+            </span>
+            <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
+              Change voice
+              <ChevronDown
+                className="size-4 transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
+            </span>
+          </summary>
+          <div className="space-y-3 border-t border-border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>{includedVoices.length} built-in voices</span>
+              <span>Saves automatically</span>
+            </div>
             <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
           </div>
-        </>
+        </details>
       )}
 
       {!loading && !selectedIsAvailable ? (
         <StatusNotice tone="warning">Choose a voice before the next call.</StatusNotice>
       ) : null}
+
+      <p className="text-xs leading-5 text-muted-foreground">
+        Used for calls and browser tests. Preview starts a private voice session.
+      </p>
+      <button
+        type="button"
+        onClick={() => setPreviewOpen((open) => !open)}
+        disabled={loading || Boolean(savingVoiceId) || !selectedIsAvailable}
+        aria-expanded={previewOpen}
+        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted wl-focus-ring-halo"
+      >
+        <Volume2 className="size-4" aria-hidden="true" />
+        {previewOpen ? "Close preview" : "Preview voice"}
+      </button>
 
       {previewOpen && selectedIsAvailable ? (
         <OpenAILiveVoiceSandbox

@@ -251,24 +251,11 @@ export default function StudioAgentWorkspacePanel({
                 : "wl-preserve-case text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Define the role. {agentName} owns the outcome.
+            Tone & knowledge
           </h2>
-          <p
-            className={`${compact ? "mt-1.5 text-xs leading-5" : "mt-2 max-w-2xl text-sm leading-6"} wl-preserve-case text-muted-foreground`}
-          >
-            Set the standards, knowledge, and guardrails. Then let {agentName} handle the work end
-            to end.
-          </p>
         </header>
 
-        <section className={sectionClass} aria-labelledby="essentials-heading">
-          <h3
-            id="essentials-heading"
-            className={`${compact ? "mb-3 text-base" : "mb-4 text-lg"} font-semibold tracking-tight text-foreground`}
-          >
-            Essentials
-          </h3>
-
+        <section className={sectionClass} aria-label="Tone and knowledge">
           {loadingSetup ? (
             <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -344,17 +331,17 @@ export default function StudioAgentWorkspacePanel({
                         type="button"
                         aria-pressed={selected}
                         onClick={() => setSetupPersonality(option)}
-                        className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                        className={`min-h-11 rounded-xl border px-3 py-2.5 text-left transition-colors wl-focus-ring-halo ${
                           selected
                             ? "border-primary/40 bg-primary/5"
                             : "border-border bg-background hover:bg-muted/60"
                         }`}
                       >
-                        <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
+                          {option}
                           {selected ? (
                             <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
                           ) : null}
-                          {option}
                         </span>
                       </button>
                     );
@@ -387,7 +374,7 @@ export default function StudioAgentWorkspacePanel({
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                     className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
-                    Knowledge
+                    View all
                   </Link>
                 </div>
                 <textarea
@@ -417,7 +404,7 @@ export default function StudioAgentWorkspacePanel({
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {applyingSetup ? "Saving…" : "Save"}
+                {applyingSetup ? "Saving…" : "Save changes"}
               </Button>
             </div>
           )}
@@ -437,7 +424,7 @@ export default function StudioAgentWorkspacePanel({
           className={`${compact ? "rounded-xl" : "rounded-2xl"} group border border-border bg-card`}
         >
           <summary
-            className={`flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-foreground ${
+            className={`flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl text-sm font-semibold text-foreground wl-focus-ring-halo ${
               compact ? "min-h-12 px-4" : "min-h-14 px-5 sm:px-6"
             }`}
           >
@@ -462,9 +449,14 @@ export default function StudioAgentWorkspacePanel({
             onClick={onTestVoiceInChat}
             className="justify-center"
           >
-            Test
+            Test Bot
           </Button>
-          <Button asChild size={compact ? "sm" : undefined} className="justify-center">
+          <Button
+            asChild
+            size={compact ? "sm" : undefined}
+            variant="secondary"
+            className="justify-center"
+          >
             <Link to="/connections">
               <PlugZap className="size-4" aria-hidden="true" />
               Connections

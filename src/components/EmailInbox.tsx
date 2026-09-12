@@ -497,6 +497,7 @@ export default function EmailInbox({
           size="sm"
           onClick={() => void syncInbox()}
           disabled={syncing}
+          aria-label="Refresh email"
         >
           {syncing ? (
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -719,8 +720,8 @@ export default function EmailInbox({
               </div>
 
               <footer className="shrink-0 border-t border-border bg-card/35">
-                <details className="group sm:hidden">
-                  <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground">
+                <details className="group">
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
                     <span>Outcome</span>
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <span className="max-w-28 truncate font-normal">
@@ -732,9 +733,8 @@ export default function EmailInbox({
                       />
                     </span>
                   </summary>
-                  <div className="border-t border-border p-3">{outcomePanel}</div>
+                  <div className="border-t border-border p-3 sm:p-4">{outcomePanel}</div>
                 </details>
-                <div className="hidden p-4 sm:block">{outcomePanel}</div>
               </footer>
             </div>
           ) : null}

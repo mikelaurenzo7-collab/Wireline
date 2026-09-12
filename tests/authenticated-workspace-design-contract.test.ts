@@ -131,8 +131,8 @@ describe("authenticated workspace design architecture", () => {
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
-    expect(setup).toContain("Define the role. {agentName} owns the outcome.");
-    expect(setup).toContain("Then let {agentName} handle the work end");
+    expect(setup).toContain("Tone & knowledge");
+    expect(review).toContain("Setup summary");
     expect(setup).not.toContain("one clear job");
     expect(setup).toContain("wl-preserve-case text-lg font-semibold");
     expect(review).toContain(

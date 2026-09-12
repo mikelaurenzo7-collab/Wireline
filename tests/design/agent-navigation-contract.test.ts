@@ -54,8 +54,10 @@ describe("authenticated Bot navigation contract", () => {
     expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
     expect(studioChrome).toContain('aria-label="Switch Bot"');
     expect(studioChrome).toContain("agents.map");
-    expect(studioChrome).toContain("/inbox?agent=");
-    expect(studioChrome).toContain("/phone?agent=");
+    expect(studioChrome).not.toContain("/inbox?agent=");
+    expect(studioChrome).not.toContain("/phone?agent=");
+    expect(navigation).toContain('href: "/inbox"');
+    expect(navigation).toContain('href: "/phone"');
     expect(shell).toContain("Current Bot");
     expect(shell).not.toContain("orderedAgents");
   });
@@ -99,8 +101,8 @@ describe("authenticated Bot navigation contract", () => {
     expect(studioPanel).toContain("<SimpleVoicePicker");
     expect(studioPanel).toContain("Phone voice");
     expect(studioPanel).not.toMatch(/VoiceGallery|AgentPresenceLivePreview/);
-    expect(studioReview).toContain("Managed phone voice");
-    expect(studioReview).toContain("Browser-ready; live line not connected");
+    expect(studioReview).toContain("Phone voice");
+    expect(studioReview).toContain("No phone connected");
   });
 
   it("makes Fast Start role-first, posture-neutral, and free of provider complexity", () => {

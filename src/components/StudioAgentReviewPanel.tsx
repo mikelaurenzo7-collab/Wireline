@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, MessageCircle, PhoneCall, Settings2 } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button, Skeleton } from "./atoms";
@@ -127,7 +127,7 @@ export default function StudioAgentReviewPanel({
                 : "text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Is <span className="wl-preserve-case">{agentName}</span> ready for customers?
+            Setup summary
           </h2>
         </header>
 
@@ -137,30 +137,27 @@ export default function StudioAgentReviewPanel({
           </StatusNotice>
         ) : null}
 
-        <section hidden={Boolean(error)} className={sectionClass} aria-label="Launch summary">
+        <section hidden={Boolean(error)} className={sectionClass} aria-label="Setup summary">
           {loading ? (
-            <div className={compact ? "grid gap-3" : "grid gap-4 sm:grid-cols-2"} aria-busy="true">
+            <div className="divide-y divide-border" aria-busy="true">
               {Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="rounded-xl border border-border bg-background p-4">
+                <div key={index} className="py-3 first:pt-0 last:pb-0">
                   <Skeleton shape="text" className="h-3 w-20" />
-                  <Skeleton shape="text" className="mt-3 h-5 w-40 max-w-full" />
+                  <Skeleton shape="text" className="mt-1.5 h-5 w-40 max-w-full" />
                 </div>
               ))}
             </div>
           ) : (
-            <dl className={compact ? "grid gap-2.5" : "grid gap-3 sm:grid-cols-2"}>
+            <dl className="divide-y divide-border">
               {[
-                { label: "Customer-facing job", value: role },
+                { label: "Role", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                { label: "Opening greeting", value: openingGreeting(config?.directives) },
-                { label: "Managed phone voice", value: voiceName },
+                { label: "Greeting", value: openingGreeting(config?.directives) },
+                { label: "Phone voice", value: voiceName },
               ].map((item) => (
-                <div
-                  key={item.label}
-                  className={`rounded-xl border border-border bg-background ${compact ? "p-3" : "p-4"}`}
-                >
-                  <dt className="text-xs font-semibold text-muted-foreground">{item.label}</dt>
-                  <dd className="mt-1.5 text-sm font-semibold leading-5 text-foreground">
+                <div key={item.label} className="py-3 first:pt-0 last:pb-0">
+                  <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
+                  <dd className="wl-preserve-case mt-1 break-words text-sm leading-6 text-foreground">
                     {item.value}
                   </dd>
                 </div>
@@ -171,13 +168,11 @@ export default function StudioAgentReviewPanel({
 
         <StatusNotice
           tone={hasPhone ? "success" : "warning"}
-          title={
-            hasPhone ? "Live customer line connected" : "Browser-ready; live line not connected"
-          }
+          title={hasPhone ? "Phone connected" : "No phone connected"}
         >
           {hasPhone
-            ? `${agentName} is live at ${phoneNumber}. Place one inbound test before sharing the number.`
-            : "Test in the browser, then connect a phone line when the greeting and handoff are ready."}
+            ? `Call ${phoneNumber} to test ${agentName} before sharing the number.`
+            : "Test in the browser, then connect a phone when you're ready."}
         </StatusNotice>
 
         <section className={sectionClass} aria-label="Next actions">
@@ -219,35 +214,41 @@ export default function StudioAgentReviewPanel({
               </Button>
             </div>
           </div>
-          <div
-            className={`mt-4 flex flex-wrap border-t border-border pt-3 text-sm ${
-              compact ? "gap-x-3 gap-y-1.5" : "gap-x-4 gap-y-2"
-            }`}
-          >
-            <Link
-              to="/phone?tab=setup#company-identity"
-              className="font-medium text-primary hover:underline"
-            >
-              Caller identity
-            </Link>
-            <Link
-              to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
-              className="font-medium text-primary hover:underline"
-            >
-              Add knowledge
-            </Link>
-            <Link to="/connections" className="font-medium text-primary hover:underline">
-              Connections
-            </Link>
-            {!compact ? (
+          <details className="group mt-4 border-t border-border pt-1">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-sm font-medium text-muted-foreground wl-focus-ring-halo">
+              More settings
+              <ChevronDown
+                className="size-4 transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
+            </summary>
+            <div className="grid text-sm">
+              <Link
+                to="/phone?tab=setup#company-identity"
+                className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
+              >
+                Caller identity
+              </Link>
+              <Link
+                to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
+                className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
+              >
+                Knowledge
+              </Link>
+              <Link
+                to="/connections"
+                className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
+              >
+                Connections
+              </Link>
               <Link
                 to="/settings/customization"
-                className="font-medium text-primary hover:underline"
+                className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
               >
                 Appearance & brand
               </Link>
-            ) : null}
-          </div>
+            </div>
+          </details>
         </section>
       </div>
     </div>
