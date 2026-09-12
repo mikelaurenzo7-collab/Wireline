@@ -41,6 +41,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/vercel-ignore-build.test.ts",
   "tests/page-meta-navigation.test.ts",
   "tests/marketing-disclosure.test.tsx",
+  "tests/privacy-choices-focus.test.tsx",
   "tests/auth-access-pending.test.tsx",
   "tests/workspace-mobile-section-picker.test.tsx",
   "tests/marketing-signup-continuity.test.tsx",

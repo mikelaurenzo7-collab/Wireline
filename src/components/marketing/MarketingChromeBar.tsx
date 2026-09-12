@@ -57,18 +57,24 @@ const COLUMNS = [
 /**
  * Compact pinned marketing footer with a native disclosure button.
  * Links stay in the markup; the hidden panel stays out of the focus order
- * and accessibility tree until expanded. Navigation dismisses the panel
- * without stealing route focus; Escape returns focus to the disclosure.
+ * and accessibility tree until expanded. Opening enters the links above the
+ * trigger; navigation keeps route focus and Escape returns to the disclosure.
  */
 export default function MarketingChromeBar({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   useEffect(() => {
     setOpen(false);
   }, [location.key]);
+
+  useEffect(() => {
+    // The panel precedes the trigger, so Tab would otherwise skip every link.
+    if (open) panelRef.current?.querySelector<HTMLAnchorElement>("a[href]")?.focus();
+  }, [open]);
 
   return (
     <footer
@@ -81,7 +87,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
         triggerRef.current?.focus();
       }}
     >
-      <div id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
+      <div ref={panelRef} id={panelId} className="marketing-chrome-bar__panel" hidden={!open}>
         <div className="wl-public-rail grid grid-cols-2 gap-x-8 gap-y-6 px-5 py-6 text-left sm:grid-cols-4 lg:px-8">
           {COLUMNS.map(({ heading, links }) => (
             <nav key={heading} aria-label={heading} className="flex flex-col items-start gap-0.5">
@@ -94,7 +100,10 @@ export default function MarketingChromeBar({ className }: { className?: string }
                     if (
                       event.defaultPrevented ||
                       event.button !== 0 ||
-                      event.metaKey || event.altKey || event.ctrlKey || event.shiftKey
+                      event.metaKey ||
+                      event.altKey ||
+                      event.ctrlKey ||
+                      event.shiftKey
                     ) {
                       return;
                     }
@@ -156,7 +165,10 @@ export default function MarketingChromeBar({ className }: { className?: string }
           >
             Sitemap
             <ChevronUp
-              className={cn("size-3.5 transition-transform duration-200 motion-reduce:transition-none", open && "rotate-180")}
+              className={cn(
+                "size-3.5 transition-transform duration-200 motion-reduce:transition-none",
+                open && "rotate-180",
+              )}
               aria-hidden="true"
             />
           </button>

@@ -10,6 +10,7 @@ const hooks = vi.hoisted(() => ({
   hash: "",
   setOpen: vi.fn(),
   focus: vi.fn(),
+  firstLinkFocus: vi.fn(),
   effects: [] as Array<{ effect: () => void; dependencies: unknown[] }>,
 }));
 
@@ -19,7 +20,12 @@ vi.mock("react", async (importOriginal) => {
     ...original,
     useId: () => "sitemap-panel",
     useState: () => [hooks.open, hooks.setOpen],
-    useRef: () => ({ current: { focus: hooks.focus } }),
+    useRef: () => ({
+      current: {
+        focus: hooks.focus,
+        querySelector: () => ({ focus: hooks.firstLinkFocus }),
+      },
+    }),
     useEffect: (effect: () => void, dependencies: unknown[]) => {
       hooks.effects.push({ effect, dependencies });
     },
@@ -60,14 +66,16 @@ function keyboardEvent(key = "Escape", defaultPrevented = false) {
   return { key, defaultPrevented, preventDefault: vi.fn(), stopPropagation: vi.fn() };
 }
 
-function clickEvent(overrides: Partial<{
-  button: number;
-  defaultPrevented: boolean;
-  metaKey: boolean;
-  altKey: boolean;
-  ctrlKey: boolean;
-  shiftKey: boolean;
-}> = {}) {
+function clickEvent(
+  overrides: Partial<{
+    button: number;
+    defaultPrevented: boolean;
+    metaKey: boolean;
+    altKey: boolean;
+    ctrlKey: boolean;
+    shiftKey: boolean;
+  }> = {},
+) {
   return {
     button: 0,
     defaultPrevented: false,
@@ -93,8 +101,14 @@ beforeEach(() => {
 describe("marketing sitemap disclosure", () => {
   it("keeps the panel hidden and describes the controlled element while closed", () => {
     const elements = descendants(MarketingChromeBar({}));
-    expect(elements.find((element) => element.props.id === "sitemap-panel")?.props.hidden).toBe(true);
-    expect(elements.find((element) => element.props["aria-controls"] === "sitemap-panel")?.props["aria-expanded"]).toBe(false);
+    expect(elements.find((element) => element.props.id === "sitemap-panel")?.props.hidden).toBe(
+      true,
+    );
+    expect(
+      elements.find((element) => element.props["aria-controls"] === "sitemap-panel")?.props[
+        "aria-expanded"
+      ],
+    ).toBe(false);
   });
 
   it("dismisses an open panel with Escape and returns focus to its trigger", () => {
@@ -108,29 +122,50 @@ describe("marketing sitemap disclosure", () => {
     expect(event.stopPropagation).toHaveBeenCalledOnce();
   });
 
+  it("enters the revealed links when the sitemap opens", () => {
+    hooks.open = true;
+    MarketingChromeBar({});
+    for (const entry of hooks.effects) entry.effect();
+    expect(hooks.firstLinkFocus).toHaveBeenCalledOnce();
+    expect(hooks.focus).not.toHaveBeenCalled();
+  });
+
+  it("keeps focus outside the hidden links while the sitemap is closed", () => {
+    MarketingChromeBar({});
+    for (const entry of hooks.effects) entry.effect();
+    expect(hooks.firstLinkFocus).not.toHaveBeenCalled();
+    expect(hooks.focus).not.toHaveBeenCalled();
+  });
+
   it.each([
     { open: false, key: "Escape", prevented: false },
     { open: true, key: "Enter", prevented: false },
     { open: true, key: "Escape", prevented: true },
-  ])("does not steal a key it does not own: $key / $open / $prevented", ({ open, key, prevented }) => {
-    hooks.open = open;
-    const root = MarketingChromeBar({}) as ReactElement<ElementProps>;
-    const event = keyboardEvent(key, prevented);
-    root.props.onKeyDown?.(event);
-    expect(hooks.setOpen).not.toHaveBeenCalled();
-    expect(hooks.focus).not.toHaveBeenCalled();
-    expect(event.preventDefault).not.toHaveBeenCalled();
-  });
+  ])(
+    "does not steal a key it does not own: $key / $open / $prevented",
+    ({ open, key, prevented }) => {
+      hooks.open = open;
+      const root = MarketingChromeBar({}) as ReactElement<ElementProps>;
+      const event = keyboardEvent(key, prevented);
+      root.props.onKeyDown?.(event);
+      expect(hooks.setOpen).not.toHaveBeenCalled();
+      expect(hooks.focus).not.toHaveBeenCalled();
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    },
+  );
 
   it("closes after navigation without moving focus away from the new route", () => {
     hooks.open = true;
     hooks.locationKey = "next-route";
     MarketingChromeBar({});
-    expect(hooks.effects).toHaveLength(1);
-    expect(hooks.effects[0].dependencies).toEqual(["next-route"]);
-    hooks.effects[0].effect();
+    const navigationEffect = hooks.effects.find(({ dependencies }) =>
+      dependencies.includes("next-route"),
+    );
+    expect(navigationEffect).toBeDefined();
+    navigationEffect?.effect();
     expect(hooks.setOpen).toHaveBeenCalledWith(false);
     expect(hooks.focus).not.toHaveBeenCalled();
+    expect(hooks.firstLinkFocus).not.toHaveBeenCalled();
   });
 
   it("dismisses on a new destination without taking route-owned focus", () => {
@@ -146,7 +181,9 @@ describe("marketing sitemap disclosure", () => {
   it("returns focus to the trigger when the selected destination is already current", () => {
     hooks.open = true;
     hooks.pathname = "/pricing";
-    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    const pricing = descendants(MarketingChromeBar({})).find(
+      (element) => element.props.to === "/pricing",
+    );
     pricing?.props.onClick?.(clickEvent());
     expect(hooks.setOpen).toHaveBeenCalledWith(false);
     expect(hooks.focus).toHaveBeenCalledOnce();
@@ -160,7 +197,9 @@ describe("marketing sitemap disclosure", () => {
     hooks.pathname = "/pricing";
     hooks.search = search;
     hooks.hash = hash;
-    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    const pricing = descendants(MarketingChromeBar({})).find(
+      (element) => element.props.to === "/pricing",
+    );
     pricing?.props.onClick?.(clickEvent());
     expect(hooks.setOpen).toHaveBeenCalledWith(false);
     expect(hooks.focus).not.toHaveBeenCalled();
@@ -176,7 +215,9 @@ describe("marketing sitemap disclosure", () => {
   ])("preserves the panel and focus for modified or handled clicks: %j", (modifiers) => {
     hooks.open = true;
     hooks.pathname = "/pricing";
-    const pricing = descendants(MarketingChromeBar({})).find((element) => element.props.to === "/pricing");
+    const pricing = descendants(MarketingChromeBar({})).find(
+      (element) => element.props.to === "/pricing",
+    );
     const event = clickEvent(modifiers);
     pricing?.props.onClick?.(event);
     expect(hooks.setOpen).not.toHaveBeenCalled();

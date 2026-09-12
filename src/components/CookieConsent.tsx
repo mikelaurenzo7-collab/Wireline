@@ -42,6 +42,7 @@ export default function CookieConsent() {
   const [hasSession, setHasSession] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (noticeAcknowledged()) return;
@@ -79,6 +80,14 @@ export default function CookieConsent() {
 
   useEffect(() => {
     const openPrivacyChoices = () => {
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLElement &&
+        activeElement !== document.body &&
+        !privacyPanelRef.current?.contains(activeElement)
+      ) {
+        returnFocusRef.current = activeElement;
+      }
       setExplicitlyOpened(true);
       setVisible(true);
     };
@@ -107,6 +116,15 @@ export default function CookieConsent() {
         }),
       );
       setVisible(false);
+      const returnTarget = returnFocusRef.current;
+      if (
+        privacyPanelRef.current?.contains(document.activeElement) &&
+        returnTarget?.isConnected &&
+        !returnTarget.closest("[hidden], [inert]")
+      ) {
+        returnTarget.focus({ preventScroll: true });
+      }
+      returnFocusRef.current = null;
     },
     [privacySignalEnabled],
   );
@@ -122,7 +140,7 @@ export default function CookieConsent() {
   useEffect(() => {
     if (!visible) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      if (e.key === "Escape" && !e.defaultPrevented) dismiss();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -182,7 +200,11 @@ export default function CookieConsent() {
                 <Link
                   to="/privacy"
                   className="text-brand hover:text-brand/80 underline"
-                  onClick={dismiss}
+                  onClick={() => {
+                    // The destination page owns focus after navigation.
+                    returnFocusRef.current = null;
+                    dismiss();
+                  }}
                 >
                   Privacy
                 </Link>
