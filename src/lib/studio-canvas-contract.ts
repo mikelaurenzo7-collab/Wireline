@@ -99,8 +99,8 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
     { id: "bot-switcher", pattern: /aria-label="Switch Bot"/ },
     { id: "bot-switch-options", pattern: /agents\.map/ },
-    { id: "scoped-inbox", pattern: /\/inbox\?agent=/ },
-    { id: "scoped-calls", pattern: /\/phone\?agent=/ },
+    { id: "settings-entry", pattern: /id="studio-settings-toggle"/ },
+    { id: "settings-expanded-state", pattern: /aria-expanded=\{inspectorOpen\}/ },
   ],
   canvas: [
     { id: "single-workroom", pattern: /onModeChange=\{setWorkroomMode\}/ },
@@ -114,7 +114,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state", pattern: /Build Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },
-    { id: "single-studio-nav", pattern: /grid-cols-2[\s\S]*Workroom/ },
+    { id: "progressive-inspector", pattern: /collapsed=\{!inspectorOpen\}/ },
   ],
   workroom: [
     { id: "composer-dock", pattern: /wl-composer-dock/ },

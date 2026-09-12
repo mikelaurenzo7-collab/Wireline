@@ -1,4 +1,4 @@
-import { ChevronDown, Inbox, Phone, Plus } from "lucide-react";
+import { ChevronDown, Plus, Settings2 } from "lucide-react";
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 
@@ -8,10 +8,15 @@ import AgentPresenceSlot from "../AgentPresenceSlot";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
+import {
+  clearStudioInspectorSectionParams,
+  setStudioInspectorSectionParams,
+} from "../../lib/studio-route-state";
 
 export default function StudioContextChrome() {
   const { agents, resolvedId, phoneLookupDegraded } = useStudioActiveAgentId();
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const inspectorOpen = ["setup", "review"].includes(searchParams.get("section") || "");
   const activeAgent = resolvedId ? (agents.find((agent) => agent.id === resolvedId) ?? null) : null;
   const lineStatus = activeAgent ? agentLineStatus(activeAgent, phoneLookupDegraded) : null;
   const readyLabel = activeAgent ? agentReadinessLabel(activeAgent, phoneLookupDegraded) : null;
@@ -64,7 +69,7 @@ export default function StudioContextChrome() {
                       value={activeAgent.id}
                       onChange={(event) => selectAgent(event.target.value)}
                       aria-label="Switch Bot"
-                      className="wl-preserve-case h-9 w-full appearance-none truncate rounded-lg border border-transparent bg-transparent pl-2 pr-8 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted/55 focus:border-border focus:bg-card"
+                      className="wl-preserve-case min-h-[44px] w-full appearance-none truncate rounded-lg border border-transparent bg-transparent pl-2 pr-8 text-base font-semibold text-foreground outline-none transition-colors hover:bg-muted/55 focus:border-border focus:bg-card sm:min-h-9 sm:text-sm"
                     >
                       {agents.map((agent) => (
                         <option key={agent.id} value={agent.id}>
@@ -91,30 +96,28 @@ export default function StudioContextChrome() {
 
         <div className="flex shrink-0 items-center gap-1">
           {activeAgent ? (
-            <>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="hidden size-9 px-0 lg:inline-flex"
-                aria-label={`Open ${activeAgent.name} Inbox`}
-              >
-                <Link to={`/inbox?agent=${encodeURIComponent(activeAgent.id)}`}>
-                  <Inbox className="size-4" aria-hidden="true" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="hidden size-9 px-0 lg:inline-flex"
-                aria-label={`Open ${activeAgent.name} calls`}
-              >
-                <Link to={`/phone?agent=${encodeURIComponent(activeAgent.id)}`}>
-                  <Phone className="size-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </>
+            <Button
+              id="studio-settings-toggle"
+              type="button"
+              variant={inspectorOpen ? "secondary" : "ghost"}
+              size="sm"
+              className="min-h-[44px] px-2.5"
+              aria-label="Bot settings"
+              aria-expanded={inspectorOpen}
+              aria-controls={inspectorOpen ? "studio-inspector" : undefined}
+              onClick={() =>
+                setSearchParams(
+                  (current) =>
+                    inspectorOpen
+                      ? clearStudioInspectorSectionParams(current)
+                      : setStudioInspectorSectionParams(current, "setup"),
+                  { replace: true },
+                )
+              }
+            >
+              <Settings2 className="size-4" aria-hidden="true" />
+              Settings
+            </Button>
           ) : null}
           {readyLabel ? (
             <span
@@ -132,7 +135,7 @@ export default function StudioContextChrome() {
               asChild
               variant="secondary"
               size="sm"
-              className="size-9 px-0 sm:size-auto sm:px-3"
+              className="size-11 px-0 sm:h-9 sm:w-auto sm:px-3"
             >
               <Link to="/studio?create=1" aria-label={language.createCta}>
                 <Plus className="size-4" aria-hidden="true" />

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { ChevronDown } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 
 import { cn } from "../../lib/utils";
 
@@ -26,12 +27,16 @@ type WorkspaceTabStripProps = {
    * `"always"` wraps at every width so a late tab cannot clip mid-word.
    */
   wrap?: boolean | "always";
+  /** Use a native section picker on phones when a long strip would require swiping. */
+  mobileSelect?: boolean;
 };
 
 function tabClassName(active: boolean, density: "default" | "compact") {
   return cn(
     "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-lg border font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60",
-    density === "compact" ? "min-h-10 px-3 text-[13px] sm:px-3.5" : "min-h-[44px] px-4 text-sm",
+    density === "compact"
+      ? "min-h-[44px] px-3 text-[13px] sm:min-h-10 sm:px-3.5"
+      : "min-h-[44px] px-4 text-sm",
     active
       ? "border-primary/35 bg-primary/15 text-primary shadow-none"
       : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -63,7 +68,9 @@ export function WorkspaceTabStrip({
   density = "default",
   align = "center",
   wrap = false,
+  mobileSelect = false,
 }: WorkspaceTabStripProps) {
+  const navigate = useNavigate();
   const compact = density === "compact";
   const wrapAlways = wrap === "always";
   const wrapAtLarge = wrap === true;
@@ -138,78 +145,106 @@ export function WorkspaceTabStrip({
       : undefined;
 
   return (
-    <nav
-      ref={navRef}
-      aria-label={ariaLabel}
-      data-density={density}
-      data-align={align}
-      style={edgeMask ? { maskImage: edgeMask, WebkitMaskImage: edgeMask } : undefined}
-      className={cn(
-        "wl-workspace-tabs w-full",
-        wrapAlways
-          ? "overflow-visible"
-          : wrapAtLarge
-            ? "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
-            : "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        compact ? "min-h-10" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
-        className,
-      )}
-    >
-      <div
+    <>
+      {mobileSelect ? (
+        <label className="relative block w-full sm:hidden">
+          <span className="sr-only">{ariaLabel}</span>
+          <select
+            value={activeId}
+            onChange={(event) => {
+              const tab = tabs.find((item) => item.id === event.target.value);
+              if (!tab) return;
+              if (tab.href) navigate(tab.href);
+              else onSelect?.(tab.id);
+            }}
+            className="min-h-[44px] w-full appearance-none rounded-lg border border-border bg-card py-2 pl-3 pr-10 text-base font-semibold text-foreground wl-focus-ring-halo"
+          >
+            {tabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>
+                {tab.ariaLabel ?? tab.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+        </label>
+      ) : null}
+      <nav
+        ref={navRef}
+        aria-label={ariaLabel}
+        data-density={density}
+        data-align={align}
+        style={edgeMask ? { maskImage: edgeMask, WebkitMaskImage: edgeMask } : undefined}
         className={cn(
-          "flex items-center",
+          "wl-workspace-tabs w-full",
           wrapAlways
-            ? "w-full min-w-0 flex-wrap"
+            ? "overflow-visible"
             : wrapAtLarge
-              ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap"
-              : "min-w-max",
-          compact ? "gap-1" : "gap-2",
-          wrapAlways
-            ? align === "start"
-              ? "justify-start"
-              : "justify-center"
-            : wrapAtLarge
-              ? align === "start"
-                ? "justify-start"
-                : "lg:justify-center"
-              : align === "center" && "mx-auto",
+              ? "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+              : "overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          compact ? "min-h-10" : "mb-4 min-h-[44px] border-b border-border/70 pb-3",
+          className,
+          mobileSelect && "hidden sm:block",
         )}
       >
-        {tabs.map((tab) => {
-          const active = tab.id === activeId;
-          const fullLabel = tab.ariaLabel ?? tab.label;
-          const accessibleLabel = tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined);
-          if (tab.href) {
+        <div
+          className={cn(
+            "flex items-center",
+            wrapAlways
+              ? "w-full min-w-0 flex-wrap"
+              : wrapAtLarge
+                ? "min-w-max lg:w-full lg:min-w-0 lg:flex-wrap"
+                : "min-w-max",
+            compact ? "gap-1" : "gap-2",
+            wrapAlways
+              ? align === "start"
+                ? "justify-start"
+                : "justify-center"
+              : wrapAtLarge
+                ? align === "start"
+                  ? "justify-start"
+                  : "lg:justify-center"
+                : align === "center" && "mx-auto",
+          )}
+        >
+          {tabs.map((tab) => {
+            const active = tab.id === activeId;
+            const fullLabel = tab.ariaLabel ?? tab.label;
+            const accessibleLabel = tab.ariaLabel ?? (tab.shortLabel ? fullLabel : undefined);
+            if (tab.href) {
+              return (
+                <Link
+                  key={tab.id}
+                  to={tab.href}
+                  aria-label={accessibleLabel}
+                  title={fullLabel}
+                  aria-current={active ? "page" : undefined}
+                  data-active={active ? "true" : "false"}
+                  className={tabClassName(active, density)}
+                >
+                  <WorkspaceTabLabel tab={tab} />
+                </Link>
+              );
+            }
             return (
-              <Link
+              <button
                 key={tab.id}
-                to={tab.href}
+                type="button"
                 aria-label={accessibleLabel}
                 title={fullLabel}
-                aria-current={active ? "page" : undefined}
+                aria-pressed={active}
                 data-active={active ? "true" : "false"}
+                onClick={() => onSelect?.(tab.id)}
                 className={tabClassName(active, density)}
               >
                 <WorkspaceTabLabel tab={tab} />
-              </Link>
+              </button>
             );
-          }
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              aria-label={accessibleLabel}
-              title={fullLabel}
-              aria-pressed={active}
-              data-active={active ? "true" : "false"}
-              onClick={() => onSelect?.(tab.id)}
-              className={tabClassName(active, density)}
-            >
-              <WorkspaceTabLabel tab={tab} />
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+          })}
+        </div>
+      </nav>
+    </>
   );
 }

@@ -95,7 +95,7 @@ export default function PhonePage() {
       value={activeAgentId}
       onChange={(event) => setAgentScope(event.target.value)}
       aria-label="Filter call history by Bot"
-      className="h-9 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+      className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:max-w-[10rem] sm:px-2 sm:text-xs wl-focus-ring-halo"
     >
       <option value="">All Bots</option>
       {agents.map((agent) => (
@@ -127,6 +127,7 @@ export default function PhonePage() {
                   ariaLabel="Call sections"
                   density="compact"
                   align="start"
+                  mobileSelect
                   className="mb-0 min-w-0 flex-1 border-b-0 pb-0"
                 />
               }

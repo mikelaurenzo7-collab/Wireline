@@ -4,10 +4,7 @@ import { useSearchParams } from "react-router";
 import EmailInbox from "../components/EmailInbox";
 import SmsThreads from "../components/SmsThreads";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
-import {
-  WorkspacePageFrame,
-  WorkspacePageIntro,
-} from "../components/layout/WorkspacePageFrame";
+import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
@@ -72,15 +69,11 @@ export default function EmailPage() {
 
   const availableMailboxes = useMemo(
     () =>
-      activeAgentId
-        ? mailboxes.filter((mailbox) => mailbox.agentId === activeAgentId)
-        : mailboxes,
+      activeAgentId ? mailboxes.filter((mailbox) => mailbox.agentId === activeAgentId) : mailboxes,
     [activeAgentId, mailboxes],
   );
   const requestedAccountId = params.get("account")?.trim() || "";
-  const activeAccountId = availableMailboxes.some(
-    (mailbox) => mailbox.id === requestedAccountId,
-  )
+  const activeAccountId = availableMailboxes.some((mailbox) => mailbox.id === requestedAccountId)
     ? requestedAccountId
     : "";
 
@@ -128,7 +121,7 @@ export default function EmailPage() {
             value={activeAgentId}
             onChange={(event) => setAgentScope(event.target.value)}
             aria-label="Filter Inbox by Bot"
-            className="h-9 min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+            className="min-h-[44px] min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All Bots</option>
             {agents.map((agent) => (
@@ -143,7 +136,7 @@ export default function EmailPage() {
             value={activeAccountId}
             onChange={(event) => setMailboxScope(event.target.value)}
             aria-label="Filter email by mailbox"
-            className="h-9 min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+            className="min-h-[44px] min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All mailboxes</option>
             {availableMailboxes.map((mailbox) => (

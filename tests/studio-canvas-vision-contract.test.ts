@@ -90,13 +90,20 @@ describe("Studio Canvas vision contract", () => {
       "pointer-resize",
       "keyboard-resize",
       "bot-switcher",
-      "scoped-inbox",
-      "scoped-calls",
+      "settings-entry",
+      "settings-expanded-state",
+      "progressive-inspector",
     ]) {
       expect(tsManifest, id).toContain(`id: "${id}"`);
       expect(deployManifest, id).toContain(`id: "${id}"`);
     }
-    for (const retired of ["overview-title", "unified-inbox", "bot-roster", "agent-preview-cap", "agent-overflow-link"]) {
+    for (const retired of [
+      "overview-title",
+      "unified-inbox",
+      "bot-roster",
+      "agent-preview-cap",
+      "agent-overflow-link",
+    ]) {
       expect(tsManifest).not.toContain(retired);
       expect(deployManifest).not.toContain(retired);
     }

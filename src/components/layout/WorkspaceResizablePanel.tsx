@@ -26,6 +26,8 @@ type WorkspaceResizablePanelProps = {
   maxSize: number;
   collapsedSize?: number;
   defaultCollapsed?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   className?: string;
   resizeHandleLabel: string;
   children: (state: WorkspaceResizablePanelRenderState) => ReactNode;
@@ -68,6 +70,8 @@ export default function WorkspaceResizablePanel({
   maxSize,
   collapsedSize = 0,
   defaultCollapsed = false,
+  collapsed: controlledCollapsed,
+  onCollapsedChange,
   className,
   resizeHandleLabel,
   children,
@@ -76,8 +80,16 @@ export default function WorkspaceResizablePanel({
   const [size, setSize] = useState(() =>
     clamp(typeof initial.size === "number" ? initial.size : defaultSize, minSize, maxSize),
   );
-  const [collapsed, setCollapsed] = useState(
+  const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(
     typeof initial.collapsed === "boolean" ? initial.collapsed : defaultCollapsed,
+  );
+  const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
+  const setCollapsed = useCallback(
+    (next: boolean) => {
+      if (controlledCollapsed === undefined) setUncontrolledCollapsed(next);
+      onCollapsedChange?.(next);
+    },
+    [controlledCollapsed, onCollapsedChange],
   );
   const [resizing, setResizing] = useState(false);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -101,18 +113,18 @@ export default function WorkspaceResizablePanel({
   const resetSize = useCallback(() => {
     setSize(clamp(defaultSize, minSize, maxSize));
     setCollapsed(false);
-  }, [defaultSize, maxSize, minSize]);
+  }, [defaultSize, maxSize, minSize, setCollapsed]);
 
   const toggleCollapsed = useCallback(() => {
-    setCollapsed((current) => !current);
-  }, []);
+    setCollapsed(!collapsed);
+  }, [collapsed, setCollapsed]);
 
   const resizeBy = useCallback(
     (delta: number) => {
       setCollapsed(false);
       setSize((current) => clamp(current + delta, minSize, maxSize));
     },
-    [maxSize, minSize],
+    [maxSize, minSize, setCollapsed],
   );
 
   const stopResize = useCallback(() => {
@@ -158,7 +170,7 @@ export default function WorkspaceResizablePanel({
       window.addEventListener("pointerup", cleanup, { once: true });
       window.addEventListener("pointercancel", cleanup, { once: true });
     },
-    [collapsed, defaultSize, maxSize, minSize, side, size, stopResize],
+    [collapsed, defaultSize, maxSize, minSize, setCollapsed, side, size, stopResize],
   );
 
   const handleResizeKeyDown = useCallback(
@@ -181,7 +193,7 @@ export default function WorkspaceResizablePanel({
         setSize(maxSize);
       }
     },
-    [maxSize, minSize, resizeBy, side],
+    [maxSize, minSize, resizeBy, setCollapsed, side],
   );
 
   const renderedSize = collapsed ? collapsedSize : size;

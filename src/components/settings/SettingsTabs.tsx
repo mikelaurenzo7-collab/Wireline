@@ -42,6 +42,7 @@ export default function SettingsTabs() {
           activeId={activeTab}
           density="compact"
           align="start"
+          mobileSelect
           className="mb-0 border-b-0 pb-0"
         />
       }

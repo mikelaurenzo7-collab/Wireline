@@ -170,6 +170,7 @@ function DesktopRail({
   const secondaryRouteParent = desktopNavParentHref(pathname);
   const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
   const settingsActive = isNavActive(pathname, "/settings");
+  const studioActive = isNavActive(pathname, "/studio");
 
   return (
     <aside
@@ -223,7 +224,7 @@ function DesktopRail({
         secondaryRouteParent={secondaryRouteParent}
       />
 
-      {agent ? (
+      {agent && !studioActive ? (
         <Link
           to={`/studio?agent=${encodeURIComponent(agent.id)}`}
           aria-label={`Current Bot: ${agent.name}`}
@@ -264,14 +265,15 @@ function DesktopRail({
           data-wireline-nav-active={settingsActive ? "true" : undefined}
           className="wl-shell-account min-h-[44px] wl-focus-ring-halo"
           aria-label="Account settings"
-          title={collapsed ? "Account settings" : undefined}
+          title="Account settings"
         >
           <span className="wl-shell-account-avatar">
             {userInitial(user?.full_name, user?.email)}
           </span>
           {!collapsed ? (
             <span className="wl-shell-account-copy">
-              <span className="wl-shell-account-name">{displayName}</span>
+              <span className="wl-shell-account-name">Settings</span>
+              <span className="block truncate text-xs text-muted-foreground">{displayName}</span>
             </span>
           ) : null}
         </Link>

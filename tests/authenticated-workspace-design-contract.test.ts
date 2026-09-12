@@ -28,9 +28,7 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).toContain("wireline:workspace-rail:v1");
     expect(shell).toContain('className="wl-shell-nav-item wl-focus-ring-halo"');
     expect(shell).toContain('className="wl-shell-bot-context wl-focus-ring-halo"');
-    expect(shell).toContain(
-      'className="wl-shell-account min-h-[44px] wl-focus-ring-halo"',
-    );
+    expect(shell).toContain('className="wl-shell-account min-h-[44px] wl-focus-ring-halo"');
     expect(shell).not.toContain("wl-rail-link");
     expect(shell).not.toContain("wl-rail-agent-link");
     expect(shell).not.toContain("lg:grid-cols-[236px_minmax(0,1fr)]");
@@ -128,7 +126,8 @@ describe("authenticated workspace design architecture", () => {
     expect(studio).toContain("defaultSize={372}");
     expect(studio).toContain("minSize={312}");
     expect(studio).toContain("maxSize={520}");
-    expect(studio).toContain("collapsedSize={44}");
+    expect(studio).toContain("collapsedSize={0}");
+    expect(studio).toContain("collapsed={!inspectorOpen}");
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
@@ -162,12 +161,8 @@ describe("authenticated workspace design architecture", () => {
     expect(shell).not.toMatch(/font-size:\s*0\.(5625|625)rem/);
     expect(shell).not.toContain(".wl-rail-link");
     expect(shell).not.toContain(".wl-rail-agent-link");
-    expect(shell).toContain(
-      '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
-    );
-    expect(shell).toContain(
-      '.wl-shell-bot-context[data-wireline-bot-selected="true"]::before',
-    );
+    expect(shell).toContain('.wl-shell-bot-context[data-wireline-bot-selected="true"]');
+    expect(shell).toContain('.wl-shell-bot-context[data-wireline-bot-selected="true"]::before');
     expect(master).not.toContain("--bb-polish-content-max");
     expect(master).toContain("--bb-polish-shadow: var(--wireline-elevation-md);");
     expect(master).toContain(':not([class*="bg-"])');

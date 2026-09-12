@@ -1,12 +1,4 @@
-import {
-  ChevronsLeft,
-  ChevronsRight,
-  MessageCircle,
-  Plus,
-  Settings2,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { Plus, Sparkles, Users, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -114,6 +106,7 @@ export default function StudioWorkspaceV2() {
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
+  const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
 
@@ -136,20 +129,15 @@ export default function StudioWorkspaceV2() {
   const [workroomMode, setWorkroomModeState] = useState<WorkroomMode>(() =>
     readStudioWorkroomMode(routeState),
   );
-  // On narrow viewports the inspector replaces the workroom rather than sitting
-  // beside it. On wide screens the inspector is always its own resizable rail.
-  // A deep link that names a config section (for example, ?section=setup after
-  // creating a Bot) opens the inspector so the intended surface is visible.
-  const [narrowInspectorOpen, setNarrowInspectorOpen] = useState(
-    () => sectionParam === "setup" || sectionParam === "review",
-  );
+  // Settings are requested explicitly, including links from creation and review.
+  // The route owns visibility so a saved desktop collapse cannot hide a deep link.
+  const inspectorOpen = sectionParam === "setup" || sectionParam === "review";
 
   useEffect(() => {
     const inspectorRequested = sectionParam === "setup" || sectionParam === "review";
     if (inspectorRequested) {
       setInspectorSection(readStudioInspectorSection(sectionParam));
     }
-    setNarrowInspectorOpen(inspectorRequested);
     setWorkroomModeState(
       readStudioWorkroomMode({
         section: sectionParam,
@@ -206,7 +194,6 @@ export default function StudioWorkspaceV2() {
   const openInspector = useCallback(
     (section: InspectorSection) => {
       setInspectorSection(section);
-      setNarrowInspectorOpen(true);
       setParams((current) => setStudioInspectorSectionParams(current, section), {
         replace: true,
       });
@@ -215,15 +202,17 @@ export default function StudioWorkspaceV2() {
   );
 
   const closeInspector = useCallback(() => {
-    setNarrowInspectorOpen(false);
     setParams((current) => clearStudioInspectorSectionParams(current), { replace: true });
+    requestAnimationFrame(() => document.getElementById("studio-settings-toggle")?.focus());
   }, [setParams]);
 
   const setWorkroomMode = useCallback(
     (mode: WorkroomMode) => {
       setWorkroomModeState(mode);
-      setNarrowInspectorOpen(false);
-      setParams((current) => setStudioWorkroomModeParams(current, mode), { replace: true });
+      setParams(
+        (current) => clearStudioInspectorSectionParams(setStudioWorkroomModeParams(current, mode)),
+        { replace: true },
+      );
     },
     [setParams],
   );
@@ -307,16 +296,36 @@ export default function StudioWorkspaceV2() {
       <div
         className="flex items-center gap-1 rounded-lg bg-muted/35 p-0.5"
         role="tablist"
-        aria-label="Bot inspector"
+        aria-label="Bot settings"
       >
-        {(["setup", "review"] as const).map((id) => (
+        {(["setup", "review"] as const).map((id, index) => (
           <button
             key={id}
+            ref={(element) => {
+              inspectorTabRefs.current[index] = element;
+            }}
+            id={`studio-inspector-tab-${id}`}
             type="button"
             role="tab"
             aria-selected={inspectorSection === id}
+            aria-controls="studio-inspector-panel"
+            tabIndex={inspectorSection === id ? 0 : -1}
             onClick={() => openInspector(id)}
-            className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+            onKeyDown={(event) => {
+              const nextIndex =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? 1
+                    : event.key === "ArrowLeft" || event.key === "ArrowRight"
+                      ? 1 - index
+                      : null;
+              if (nextIndex === null) return;
+              event.preventDefault();
+              openInspector(nextIndex === 0 ? "setup" : "review");
+              inspectorTabRefs.current[nextIndex]?.focus();
+            }}
+            className={`min-h-[44px] rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors wl-focus-ring-halo ${
               inspectorSection === id
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -326,111 +335,68 @@ export default function StudioWorkspaceV2() {
           </button>
         ))}
       </div>
-      {splitWorkspace ? null : (
-        <button
-          type="button"
-          onClick={closeInspector}
-          className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
-          aria-label="Back to workroom"
-          title="Back to workroom"
-        >
-          <ChevronsRight className="size-4" aria-hidden="true" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={closeInspector}
+        className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo"
+        aria-label="Close Bot settings"
+        title="Close settings"
+      >
+        <X className="size-4" aria-hidden="true" />
+      </button>
     </header>
   );
 
   const inspectorBody = (
-    <div className="min-h-0 flex-1 overflow-hidden">
+    <div
+      id="studio-inspector-panel"
+      role="tabpanel"
+      aria-labelledby={`studio-inspector-tab-${inspectorSection}`}
+      className="min-h-0 flex-1 overflow-hidden"
+    >
       {inspectorSection === "review" ? reviewPanel : setupPanel}
     </div>
   );
 
-  if (splitWorkspace) {
-    return (
-      <div className="flex h-full min-h-0 flex-col bg-background">
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div className="min-w-0 flex-1">{workroom}</div>
-
-          <WorkspaceResizablePanel
-            storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
-            side="right"
-            defaultSize={372}
-            minSize={312}
-            maxSize={520}
-            collapsedSize={44}
-            resizeHandleLabel="Resize Bot inspector"
-            className="border-l border-border/70 bg-card/25"
-          >
-            {({ collapsed, toggleCollapsed }) =>
-              collapsed ? (
-                <button
-                  type="button"
-                  onClick={toggleCollapsed}
-                  className="flex h-full w-full flex-col items-center gap-3 py-3 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground wl-focus-ring-halo"
-                  aria-label="Open Bot inspector"
-                  title="Open Bot inspector"
-                >
-                  <ChevronsLeft className="size-4 shrink-0" aria-hidden="true" />
-                  <span
-                    className="text-xs font-semibold uppercase tracking-[0.14em]"
-                    style={{ writingMode: "vertical-rl" }}
-                  >
-                    {inspectorSection === "review" ? "Review" : "Setup"}
-                  </span>
-                </button>
-              ) : (
-                <aside className="flex h-full min-h-0 w-full flex-col" aria-label="Bot inspector">
-                  {inspectorHeader}
-                  {inspectorBody}
-                </aside>
-              )
-            }
-          </WorkspaceResizablePanel>
-        </div>
-      </div>
-    );
-  }
+  const inspector = (
+    <aside
+      id="studio-inspector"
+      className="flex h-full min-h-0 w-full flex-col"
+      aria-label="Bot settings"
+    >
+      {inspectorHeader}
+      {inspectorBody}
+    </aside>
+  );
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background">
-      {narrowInspectorOpen ? (
-        <>
-          {inspectorHeader}
-          {inspectorBody}
-        </>
-      ) : (
-        <div className="min-h-0 flex-1 overflow-hidden">{workroom}</div>
-      )}
-      {!narrowInspectorOpen ? (
-        <nav
-          className="shrink-0 border-t border-border/70 bg-card/45 px-3 py-2 sm:px-5"
-          aria-label="Bot workspace"
+    <div className="flex h-full min-h-0 overflow-hidden bg-background">
+      {/* Keep drafts and in-flight conversations intact while mobile settings are open. */}
+      <div
+        className={`${!splitWorkspace && inspectorOpen ? "hidden" : "block"} min-h-0 min-w-0 flex-1 overflow-hidden`}
+      >
+        {workroom}
+      </div>
+      {splitWorkspace ? (
+        <WorkspaceResizablePanel
+          storageKey={STUDIO_INSPECTOR_STORAGE_KEY}
+          side="right"
+          defaultSize={372}
+          minSize={312}
+          maxSize={520}
+          collapsedSize={0}
+          collapsed={!inspectorOpen}
+          onCollapsedChange={(collapsed) => {
+            if (collapsed) closeInspector();
+            else if (!inspectorOpen) openInspector(inspectorSection);
+          }}
+          resizeHandleLabel="Resize Bot inspector"
+          className={inspectorOpen ? "border-l border-border/70 bg-card/25" : undefined}
         >
-          <div className="mx-auto grid w-full max-w-md grid-cols-2 gap-1 rounded-xl bg-muted/35 p-1">
-            <button
-              type="button"
-              onClick={closeInspector}
-              className="rounded-lg px-2.5 py-2 text-center text-xs font-semibold text-foreground transition-colors bg-card shadow-sm sm:text-sm"
-              aria-current="page"
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <MessageCircle className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
-                <span>Workroom</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => openInspector(inspectorSection)}
-              className="rounded-lg px-2.5 py-2 text-center text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground sm:text-sm wl-focus-ring-halo"
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />
-                <span>{inspectorSection === "review" ? "Review" : "Setup"}</span>
-              </span>
-            </button>
-          </div>
-        </nav>
+          {({ collapsed }) => (collapsed ? null : inspector)}
+        </WorkspaceResizablePanel>
+      ) : inspectorOpen ? (
+        <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{inspector}</div>
       ) : null}
     </div>
   );

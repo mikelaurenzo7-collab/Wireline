@@ -54,7 +54,9 @@ export default function RouteChangeA11y() {
       window.clearTimeout(id);
       restoreTabIndex?.();
     };
-  }, [label, location.hash, location.pathname, location.search]);
+    // Section switches and filters update the query within the current page.
+    // Preserve their control's focus so keyboard navigation can continue.
+  }, [label, location.hash, location.pathname]);
 
   return (
     <div aria-live="polite" className="sr-only" data-testid="route-announcer" role="status">
