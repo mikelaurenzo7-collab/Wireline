@@ -44,9 +44,9 @@ describe("BotBound brand migration", () => {
       shortcuts: Array<{ name: string; url: string }>;
     };
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('slogan: "MEET YOUR NEXT SALES HIRE"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
-    expect(product).toContain('promise: "Your Bot for calls, texts, and email."');
+    expect(product).toContain('promise: "AI sales bots that answer leads, qualify buyers, and help book the next step."');
     expect(manifest.name).toContain("BotBound");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.start_url).toBe("/studio");
@@ -88,3 +88,4 @@ describe("BotBound brand migration", () => {
     expect(oauth).not.toContain("botbound.ai");
   });
 });
+

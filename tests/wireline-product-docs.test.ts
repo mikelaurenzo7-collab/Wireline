@@ -46,7 +46,7 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("Build -> Train -> Launch -> Improve");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
-    expect(launchTruth).toContain("Put Your Bot on the Line.");
+    expect(launchTruth).toContain("Meet your next sales hire.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
     expect(readme).toContain("same workspace model");
     expect(readme).toContain("included number");
@@ -160,3 +160,4 @@ describe("product documentation and compatibility contract", () => {
     }
   });
 });
+

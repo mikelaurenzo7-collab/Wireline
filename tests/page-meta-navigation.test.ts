@@ -66,7 +66,7 @@ describe("page metadata across client navigation", () => {
     expect(content("robots")).toBe("noindex, nofollow");
     expect(content("googlebot")).toBe("noindex, nofollow");
 
-    PageMeta({ title: "BotBound | Put Your Bot on the Line", path: "/" });
+    PageMeta({ title: "BotBound | AI Sales Bots | Meet Your Next Sales Hire", path: "/" });
     expect(content("robots")).toBe("index, follow, max-image-preview:large, max-snippet:-1");
     expect(content("googlebot")).toBe("index, follow, max-image-preview:large");
     expect(select('link[rel="canonical"]')?.attributes.get("href")).toBe("https://botbound.me/");
@@ -108,3 +108,4 @@ describe("page metadata across client navigation", () => {
     expect(select("#botbound-page-jsonld")).toBeNull();
   });
 });
+
