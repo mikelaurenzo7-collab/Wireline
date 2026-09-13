@@ -66,11 +66,11 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
 
   for (const [pattern, description] of [
     [
-      /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
+      /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\} defaultTemplateId="sales-rep"\s*\/>/,
       "root landing must embed concise account creation",
     ],
     [
-      /<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/,
+      /<span>YOUR NEXT<\/span>[\s\S]*<span>SALES HIRE<\/span>/,
       "root landing must use BotBound hero",
     ],
     [
@@ -78,8 +78,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
       "root landing must source the concise activation promise",
     ],
     [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
-    [/FIND\. CALL\. BOOK\./, "hero must retain the outbound activation path"],
-    [/ANSWER\. QUALIFY\. ROUTE\./, "hero must retain the inbound activation path"],
+    [/REACH\. QUALIFY\. BOOK\./, "hero must retain the outbound activation path"],
+    [/ANSWER\. QUALIFY\. BOOK\./, "hero must retain the inbound activation path"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],
@@ -239,3 +239,4 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
     "developer surface must call customer objects Bots",
   );
 }
+

@@ -1,9 +1,12 @@
 import type { ReactElement, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import AuthAccessPanel from "../src/components/auth/AuthAccessPanel";
+import AuthAccessPanel, { type AuthAccessPanelProps } from "../src/components/auth/AuthAccessPanel";
 
 const harness = vi.hoisted(() => ({
   states: [] as unknown[],
+  panelProps: {} as AuthAccessPanelProps,
+  capturedIntent: null as Record<string, unknown> | null,
+  persistedIntent: vi.fn(),
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
   refCursor: 0,
@@ -62,8 +65,8 @@ vi.mock("../src/lib/auth-redirect", () => ({
   workspaceFromIntent: () => "personal",
 }));
 vi.mock("../src/lib/signup-intent", () => ({
-  captureSignupIntentFromLocation: () => null,
-  persistSignupIntent: (intent: unknown) => intent,
+  captureSignupIntentFromLocation: () => harness.capturedIntent,
+  persistSignupIntent: (intent: unknown) => { harness.persistedIntent(intent); return intent; },
   sanitizeSignupIntent: (intent: unknown) => intent,
   signupTemplateLabel: () => "",
   syncSignupIntent: vi.fn(),
@@ -109,7 +112,7 @@ function descendants(node: ReactNode): Array<ReactElement<Props>> {
 function render() {
   harness.stateCursor = 0;
   harness.refCursor = 0;
-  return descendants(AuthAccessPanel({ embedded: true, initialMode: "signin" }));
+  return descendants(AuthAccessPanel({ embedded: true, initialMode: "signin", ...harness.panelProps }));
 }
 
 function find(predicate: (element: ReactElement<Props>) => boolean) {
@@ -171,6 +174,8 @@ async function mount() {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
+  harness.panelProps = {};
+  harness.capturedIntent = null;
   harness.states = [];
   harness.refs = [];
   harness.effects = [];
@@ -334,5 +339,53 @@ describe("account access pending requests", () => {
     expect(
       find((element) => element.props.className === "wl-access-panel__back").props.disabled,
     ).not.toBe(true);
+  });
+});
+
+
+describe("sales landing signup intent", () => {
+  async function prepareSignup() {
+    harness.panelProps = { initialMode: "signup", defaultTemplateId: "sales-rep" };
+    await mount();
+    find((element) => element.props.name === "termsAccepted").props.onChange?.({
+      target: { value: "", checked: true },
+    });
+  }
+
+  it("sends a fresh embedded email signup into the Sales Rep setup", async () => {
+    await prepareSignup();
+    await form()();
+    const [url, request] = actionRequests()[0];
+    expect(url).toBe("/api/auth/signup");
+    expect(JSON.parse(request.body)).toMatchObject({ preferredPlanId: "personal" });
+    expect(harness.persistedIntent).toHaveBeenCalledWith(expect.objectContaining({ preferredTemplateId: "sales-rep" }));
+  });
+
+  it("persists Sales Rep intent before an OAuth signup leaves the page", async () => {
+    await prepareSignup();
+
+    await control("Continue with Google").props.onClick?.();
+    expect(harness.persistedIntent).toHaveBeenCalledWith(expect.objectContaining({ preferredTemplateId: "sales-rep" }));
+    expect(actionRequests()[0][0]).toBe("/api/auth/google/url");
+  });
+
+  it.each([
+    { preferredPlanId: "business", preferredBillingInterval: "year", preferredTemplateId: "recruiter" },
+    { preferredPlanId: "team", signupWedge: "support" },
+  ])("preserves a prior explicit role or wedge: %j", async (choice) => {
+    harness.capturedIntent = { ...choice, capturedAt: "2026-09-13T00:00:00Z" };
+    await prepareSignup();
+    await form()();
+    expect(harness.states).toContainEqual(expect.objectContaining(choice));
+    const { preferredTemplateId: _template, ...submittedChoice } = choice;
+    expect(JSON.parse(actionRequests()[0][1].body)).toMatchObject(submittedChoice);
+  });
+
+  it("adds the sales default without replacing paid plan or campaign attribution", async () => {
+    harness.capturedIntent = { preferredPlanId: "business", preferredBillingInterval: "year", utmCampaign: "sales_launch", capturedAt: "2026-09-13T00:00:00Z" };
+    await prepareSignup();
+    expect(harness.persistedIntent).toHaveBeenCalledWith(expect.objectContaining({ ...harness.capturedIntent, preferredTemplateId: "sales-rep" }));
+    await form()();
+    expect(JSON.parse(actionRequests()[0][1].body)).toMatchObject({ preferredPlanId: "business", preferredBillingInterval: "year", utmCampaign: "sales_launch" });
   });
 });

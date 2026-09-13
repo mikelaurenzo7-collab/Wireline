@@ -9,10 +9,10 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Put Your Bot on the Line");
-    expect(index).toContain("Your Bot for calls, texts, and email.");
+    expect(index).toContain("BotBound | AI Sales Bots | Meet Your Next Sales Hire");
+    expect(index).toContain("AI sales bots that answer leads, qualify buyers, and help book the next step.");
     expect(index).toContain('"name":"BotBound"');
-    expect(index).toContain('"slogan":"Put Your Bot on the Line"');
+    expect(index).toContain('"slogan":"Meet Your Next Sales Hire"');
     expect(index).toContain('"logo":"https://botbound.me/botbound-icon-512.png"');
     expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
@@ -61,25 +61,25 @@ describe("BotBound static marketing metadata", () => {
     const landing = read("src/pages/LandingPage.tsx");
     const pageMeta = read("src/lib/page-meta.tsx");
 
-    expect(landing).toContain('title="BotBound | Put Your Bot on the Line"');
+    expect(landing).toContain('title="BotBound | AI Sales Bots | Meet Your Next Sales Hire"');
     expect(landing).toContain("BOT_MARKETING_VOICE.subline");
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
-    expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email."');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | AI Sales Bots | Meet Your Next Sales Hire"');
+    expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "AI sales bots that answer leads, qualify buyers, and help book the next step."');
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the outbound-first, inbound-capable story", () => {
+  it("keeps the OG image aligned with the sales-bot campaign", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("FIND. CALL. BOOK.");
-    expect(ogImage).toContain("Outbound sales. Inbound calls. One Bot.");
-    expect(ogImage).toContain("GET YOUR SALES BOT");
+    expect(ogImage).toContain("AI SALES BOTS");
+    expect(ogImage).toContain("Answer leads. Qualify buyers. Book the next step.");
+    expect(ogImage).toContain("BUILD &amp; TEST FREE");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain("#8B5CF6");
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
@@ -104,9 +104,9 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | Put Your Bot on the Line");
+    expect(manifest.name).toBe("BotBound | AI Sales Bots | Meet Your Next Sales Hire");
     expect(manifest.short_name).toBe("BotBound");
-    expect(manifest.description).toBe("Your Bot for calls, texts, and email.");
+    expect(manifest.description).toBe("AI sales bots that answer leads, qualify buyers, and help book the next step.");
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([
@@ -120,3 +120,4 @@ describe("BotBound static marketing metadata", () => {
     expect(manifest.shortcuts.some((shortcut) => shortcut.url === "/agents")).toBe(false);
   });
 });
+

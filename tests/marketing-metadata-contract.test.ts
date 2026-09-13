@@ -14,10 +14,10 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("BotBound | Put Your Bot on the Line");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
+    expect(staticHead).toContain("BotBound | AI Sales Bots | Meet Your Next Sales Hire");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | AI Sales Bots | Meet Your Next Sales Hire"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("Your Bot for calls, texts, and email.");
+      expect(source).toContain("AI sales bots that answer leads, qualify buyers, and help book the next step.");
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");
@@ -109,7 +109,7 @@ describe("marketing metadata contract", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
-    expect(pricing).toContain("launch from $19/month");
+    expect(pricing).toContain("Activate from $19/month");
     expect(pricing).toContain("plan.price_usd_monthly");
     expect(contact).toContain('planById("starter")');
     expect(contact).toContain('planById("team")');
@@ -134,3 +134,4 @@ describe("marketing metadata contract", () => {
     }
   });
 });
+

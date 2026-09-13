@@ -1,7 +1,7 @@
 {
-  "name": "BotBound | Put Your Bot on the Line",
+  "name": "BotBound | AI Sales Bots | Meet Your Next Sales Hire",
   "short_name": "BotBound",
-  "description": "Your Bot for calls, texts, and email.",
+  "description": "AI sales bots that answer leads, qualify buyers, and help book the next step.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
@@ -24,3 +24,4 @@
   ],
   "prefer_related_applications": false
 }
+

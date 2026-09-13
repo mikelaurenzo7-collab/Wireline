@@ -1,6 +1,6 @@
 # BotBound Launch Source of Truth
 
-Date: 2026-08-11  
+Updated: 2026-09-13 (original authority: 2026-08-11)  
 Status: **Active launch authority**  
 Scope: public positioning, launch creative, dogfood proof, and pre-customer GTM
 
@@ -8,12 +8,18 @@ This document is the tie-breaker for active launch language and creative status.
 
 ## One buyer story
 
-**Headline:** Put Your Bot on the Line.
+**Category:** AI sales bots.
+**Headline:** Meet your next sales hire.
+**Product ambition:** Every lead. A next step.
 **Operating loop:** **Build -> Train -> Launch -> Improve**  
-**Primary CTA:** Build Your Bot
-**Offer:** Build free. Go live from $19/mo.  
+**Primary CTA:** Build & test free
+**Offer:** Private simulation free. Activation and live usage paid.  
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
-**Product model:** One BotBound workspace for every role and use case.
+**Product model:** Lead with a sales bot; retain other roles as expansion.
+
+The owner requested a simpler sales-bot brand and an ambitious product vision on 2026-09-13. This supersedes the prior generic hero. Sales hire is a campaign metaphor for clearly identified AI software, not an employment service or a claim that one Bot replaces an entire human role.
+
+The product destination includes persistent deal memory, adaptive next-step plans, quote assistance, and a useful daily decision view. These are proposed capabilities; current launch assets must not imply they are already shipped. Current strategy and creative: https://drive.google.com/drive/folders/1KGRPCkQH1DLPURJOXTVp3BL1rCp0OgBO.
 
 The public story has one operating loop. Do not rotate among `Brief -> Train -> Launch -> Improve`, `Create -> Train -> Wire -> Run`, and `Build -> Train -> Launch -> Improve` as competing brand spines.
 
@@ -34,8 +40,8 @@ Use concrete operating language. Show the finished work, not abstract AI capabil
 
 Use:
 
-- Bot or Phone Bot
-- One product across every role
+- AI sales bot or Bot
+- Sales as the front door; other roles as expansion
 - Calls, texts, email
 - Follow-up and logged outcomes
 - Every active paid Bot gets a dedicated production number
@@ -44,9 +50,9 @@ Use:
 
 Avoid on broad public surfaces:
 
-- AI employee as a product noun
+- AI employee as a literal product or employment claim
 - Personal or Business as a workspace, signup, or pricing lane
-- one-employee promises
+- one-employee replacement or staffing-equivalence promises
 - fully autonomous
 - guaranteed bookings or revenue
 - customer-count, ROI, or testimonial claims that do not yet have real customer evidence
@@ -66,7 +72,13 @@ BotBound does not need fake social proof. Until real customers exist, launch pro
 
 Never manufacture customer logos, quotes, usage counts, revenue claims, or implied adoption.
 
-## Creative status — 2026-08-11
+## Current campaign status - 2026-09-13
+
+Your Next Sales Hire contains seven artwork formats and six music-led films (30, 15, and 6 seconds in wide and vertical). Cinematic mascot imagery and typography are brand creative, not product footage or evidence of customer outcomes. Product concept screens in the strategy book are explicitly illustrative future experiences. Narration is optional production copy; the delivered films have original instrumental music and on-screen text.
+
+Website source is prepared in PR #1218. Vercel reports Account is blocked, so the campaign cutover is not deployed. Preserve the exact-source preview, review, and production verification gates when deployment access returns.
+
+## Historical creative status - 2026-08-11
 
 ### Rejected historical masters
 
@@ -92,7 +104,7 @@ A separate five-second cinematic missed-call hook was also generated for optiona
 
 ## Publish gate for every reel
 
-A reel is publishable only when all of the following are true:
+A product-proof reel is publishable only when all of the following are true. Typographic brand films without product footage instead require accurate claims, visual and audio QA, deliberate end cards, and transcripts; they must never be represented as live product proof:
 
 - product picture was captured from the exact production source commit being promoted;
 - no 404, sign-in wall, loading hold, error screen, or dead route appears in the edit;
@@ -178,7 +190,8 @@ The immediate GTM objective is not to imply scale. It is to create enough credib
 Launch-clean means the repository, runtime, website, and creative all tell the same truth:
 
 **Build. Train. Launch. Improve.**
-**Your Bot for calls, texts, and email.**
-**Build free. Go live from $19/mo.**
+**AI sales bots. Meet your next sales hire.**
+**Private simulation free. Activation and live usage paid.**
 
 Everything else should support that story or get out of the way.
+

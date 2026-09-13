@@ -146,7 +146,7 @@ export default function WireAgentLanding() {
           </div>
 
           <div className="landing-prestige__auth">
-            <AuthAccessPanel embedded initialMode="signup" showBrand={false} />
+            <AuthAccessPanel embedded initialMode="signup" showBrand={false} defaultTemplateId="sales-rep" />
             <nav className="landing-prestige__mobile-links" aria-label="Public information">
               <Link to="/privacy">Privacy</Link>
               <Link to="/terms">Terms</Link>

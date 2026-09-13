@@ -139,7 +139,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/auth/AuthAccessPanel.tsx",
     authAccessPanel,
-    /function defaultFreeIntent\(current:[\s\S]*if \(current\) return current;/,
+    /function defaultFreeIntent\([\s\S]*preferredPlanId: "personal"[\s\S]*\.\.\.current/,
     "explicit paid signup intent must survive the default-free landing path",
   );
   mustInclude(
@@ -317,3 +317,4 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");
   }
 }
+

@@ -81,9 +81,9 @@ describe("BotBound product voice", () => {
   it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
-      slogan: "PUT YOUR BOT ON THE LINE",
+      slogan: "MEET YOUR NEXT SALES HIRE",
       supportingLine: "CALL · TEXT · EMAIL",
-      promise: "Your Bot for calls, texts, and email.",
+      promise: "AI sales bots that answer leads, qualify buyers, and help book the next step.",
     });
     expect(BRAND_SYSTEM).toMatchObject({
       northStar: BOT_BRAND.promise,
@@ -106,7 +106,7 @@ describe("BotBound product voice", () => {
       "Never use Wire as a customer-facing setup step, nav label, or CTA. After create, the guide is Train, Test, Launch.",
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
-      "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
+      "Use BotBound for the brand and sales bot for the main marketing category. Keep existing role and configuration names accurate.",
     );
   });
 
@@ -222,8 +222,8 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("YOUR NEXT");
+    expect(landing).toContain("SALES HIRE");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -312,3 +312,4 @@ describe("BotBound product voice", () => {
     expect(existsSync("src/components/marketing/PublicSiteHeader.tsx")).toBe(false);
   });
 });
+

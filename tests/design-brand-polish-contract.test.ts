@@ -183,7 +183,7 @@ describe("E2E design and BotBound brand polish", () => {
     const prestige = withoutComments(read("src/styles/landing-prestige.css"));
     const auth = read("src/styles/auth-access-panel.css");
     expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} defaultTemplateId="sales-rep" />',
     );
     expect(landing).toMatch(/<span>YOUR NEXT<\/span>[\s\S]*<span>SALES HIRE<\/span>/);
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");

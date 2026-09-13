@@ -53,6 +53,7 @@ export type AuthAccessPanelProps = {
   embedded?: boolean;
   showBrand?: boolean;
   className?: string;
+  defaultTemplateId?: string;
 };
 
 const TERMS_CONSENT_ERROR = "Accept the Terms and Privacy Policy above to continue.";
@@ -135,12 +136,19 @@ function signupIntentLabel(intent: SignupIntent | null): string | null {
   return parts.join(" · ");
 }
 
-function defaultFreeIntent(current: SignupIntent | null): SignupIntent | null {
-  if (current) return current;
+function defaultFreeIntent(
+  current: SignupIntent | null,
+  defaultTemplateId?: string,
+): SignupIntent | null {
+  if (current && (!defaultTemplateId || current.preferredTemplateId || current.signupWedge)) {
+    return current;
+  }
   return persistSignupIntent({
     preferredPlanId: "personal",
     preferredBillingInterval: "month",
     capturedAt: new Date().toISOString(),
+    ...current,
+    ...(defaultTemplateId ? { preferredTemplateId: defaultTemplateId } : {}),
   });
 }
 
@@ -207,6 +215,7 @@ export default function AuthAccessPanel({
   embedded = false,
   showBrand = true,
   className,
+  defaultTemplateId,
 }: AuthAccessPanelProps) {
   const { signIn, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -258,12 +267,13 @@ export default function AuthAccessPanel({
   useEffect(() => {
     captureDemoSourceFromLocation();
     persistAuthRedirect(readRedirectFromSearch(location.search));
-    const intent = captureSignupIntentFromLocation();
+    const captured = captureSignupIntentFromLocation();
+    const intent = isSignUp ? defaultFreeIntent(captured, defaultTemplateId) : captured;
     if (intent) {
       setSignupIntent(intent);
       setWorkspaceMode(workspaceFromIntent(intent));
     }
-  }, [location.search]);
+  }, [location.search, isSignUp, defaultTemplateId]);
 
   useEffect(() => {
     persistWorkspaceMode(workspaceMode);
@@ -313,7 +323,7 @@ export default function AuthAccessPanel({
     setMessage(null);
     setInvalidField(null);
     if (next === "signup") {
-      setSignupIntent((current) => defaultFreeIntent(current));
+      setSignupIntent((current) => defaultFreeIntent(current, defaultTemplateId));
     }
     if (!embedded && next !== "reset") {
       const nextPath = next === "signup" ? "/signup" : "/signin";
@@ -334,6 +344,9 @@ export default function AuthAccessPanel({
     setError(null);
     setInvalidField(null);
     try {
+      if (isSignUp) {
+        setSignupIntent(defaultFreeIntent(sanitizeSignupIntent(signupIntent), defaultTemplateId));
+      }
       const response = await fetch(`/api/auth/${provider}/url`, {
         headers: {
           Accept: "application/json",
@@ -434,7 +447,7 @@ export default function AuthAccessPanel({
       }
 
       const effectiveIntent = isSignUp
-        ? defaultFreeIntent(sanitizeSignupIntent(signupIntent))
+        ? defaultFreeIntent(sanitizeSignupIntent(signupIntent), defaultTemplateId)
         : null;
       if (isSignUp && effectiveIntent !== signupIntent) setSignupIntent(effectiveIntent);
       const demoSource = isSignUp ? readDemoSourceCookie() : null;

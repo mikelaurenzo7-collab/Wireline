@@ -22,31 +22,31 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Put Your Bot on the Line<\/title>/,
+    /<title>BotBound \| AI Sales Bots \| Meet Your Next Sales Hire<\/title>/,
     "static metadata must use the BotBound hero",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Your Bot for calls, texts, and email\./,
+    /AI sales bots that answer leads, qualify buyers, and help book the next step\./,
     "static metadata must carry the unified multi-channel promise",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Put Your Bot on the Line"/,
+    /DEFAULT_TITLE = "BotBound \| AI Sales Bots \| Meet Your Next Sales Hire"/,
     "runtime metadata must use the BotBound hero",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email\."/,
+    /DEFAULT_DESCRIPTION = "AI sales bots that answer leads, qualify buyers, and help book the next step\."/,
     "runtime metadata must carry the unified promise",
   );
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| Put Your Bot on the Line"/,
+    /"name"\s*:\s*"BotBound \| AI Sales Bots \| Meet Your Next Sales Hire"/,
     "install metadata must use BotBound",
   );
   mustExclude(
@@ -65,7 +65,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"PUT YOUR BOT ON THE LINE"/,
+    /slogan:\s*"MEET YOUR NEXT SALES HIRE"/,
     "shared model must preserve the approved BotBound hero",
   );
   mustInclude(
@@ -116,13 +116,13 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
+    /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\} defaultTemplateId="sales-rep"\s*\/>/,
     "landing must embed concise account creation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/,
+    /<span>YOUR NEXT<\/span>[\s\S]*<span>SALES HIRE<\/span>/,
     "landing must render the approved two-line hero",
   );
   mustInclude(
@@ -209,3 +209,4 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
       failures.push(`${file}: retired product language present: ${[...new Set(found)].join(", ")}`);
   }
 }
+
