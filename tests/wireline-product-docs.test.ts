@@ -30,8 +30,13 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("your Bot across calls, texts, and email");
     expect(readme).toContain("active paid Bot gets a dedicated production number");
     expect(readme).toContain("BotBound-managed email identity");
-    expect(readme).toContain("Draft Bots stay private until activation");
-    expect(readme).toContain("unused Bot capacity does not pre-provision carrier numbers");
+    expect(readme).toContain(
+      "Web creation on an active paid account starts identity setup automatically",
+    );
+    expect(readme).toContain(
+      "connected-client drafts stay private until their phone line is activated from BotBound",
+    );
+    expect(readme).toContain("Unused Bot capacity does not pre-provision carrier numbers");
     expectNoTerms(readme, retiredProductTerms);
   });
 

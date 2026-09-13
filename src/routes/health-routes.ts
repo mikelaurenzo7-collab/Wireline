@@ -27,6 +27,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
 import { errorReportRoute } from "../lib/error-report-route";
+import { errorReportContext } from "../lib/error-report-context";
 
 const router = express.Router();
 const healthRateLimiter = createIpRateLimiter({
@@ -67,7 +68,7 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
 
   const stack = typeof body.stack === "string" ? body.stack.slice(0, 4_000) : undefined;
   const route = errorReportRoute(body.url);
-  const context = body.context && typeof body.context === "object" ? body.context : {};
+  const context = errorReportContext(body.context) ?? {};
   const contextKeys = Object.keys(context).slice(0, 20);
   const stackTop = stack?.split("\n").slice(0, 3).join("\n").slice(0, 800);
   const componentTop =
@@ -76,8 +77,19 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
       : undefined;
   const errorClass =
     typeof context.errorClass === "string" ? context.errorClass.slice(0, 80) : "browser";
+  const widget = context.widget;
+  const source = context.source;
   const fingerprint = createHash("sha256")
-    .update([errorClass, message, route || "unknown", stackTop || componentTop || ""].join("|"))
+    .update(
+      [
+        errorClass,
+        message,
+        route || "unknown",
+        stackTop || componentTop || "",
+        widget || "",
+        source || "",
+      ].join("|"),
+    )
     .digest("hex")
     .slice(0, 16);
 
@@ -88,10 +100,18 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
     route,
     stackTop,
     componentTop,
+    widget,
+    source,
     contextKeys,
   });
   reportError(new Error(message), {
-    tags: { surface: "browser", route: route || "unknown", error_class: errorClass },
+    tags: {
+      surface: "browser",
+      route: route || "unknown",
+      error_class: errorClass,
+      ...(widget ? { widget } : {}),
+      ...(source ? { source } : {}),
+    },
     fingerprint,
     browser_stack: stack,
     context_keys: contextKeys,

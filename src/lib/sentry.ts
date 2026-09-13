@@ -3,6 +3,7 @@
 // Server-side call sites fall back to console.error.
 
 import { errorReportRoute } from "./error-report-route";
+import { errorReportContext } from "./error-report-context";
 import { getErrorMessage, sanitizeErrorMessage } from "./server-utils";
 
 type SentryNamespace = Record<string, never>;
@@ -18,22 +19,13 @@ export function captureException(error: unknown, context?: Record<string, unknow
 
   if (typeof window !== "undefined") {
     try {
-      // The server consumes only these diagnostic fields. Arbitrary context
-      // can contain customer records, credentials, or circular objects.
+      // Preserve safe diagnostic labels without forwarding arbitrary customer
+      // records, credentials, or circular objects from caller context.
       const payload = JSON.stringify({
         message,
         stack,
         url: errorReportRoute(window.location.href),
-        context: context
-          ? {
-              ...(typeof context.errorClass === "string"
-                ? { errorClass: sanitizeErrorMessage(context.errorClass).slice(0, 80) }
-                : {}),
-              ...(typeof context.componentStack === "string"
-                ? { componentStack: sanitizeErrorMessage(context.componentStack) }
-                : {}),
-            }
-          : undefined,
+        context: errorReportContext(context),
       });
       if (navigator.sendBeacon) {
         navigator.sendBeacon(

@@ -30,6 +30,28 @@ describe("paid identity allocation capacity", () => {
   it("keeps an orphan assignment in the capacity count", () => {
     expect(selectPaidBotIdentityAgents(bots, [{ agentId: "deleted-bot" }], 1)).toEqual([]);
   });
+  it("does not reopen capacity with a detached line beside an over-capacity orphan", () => {
+    expect(
+      selectPaidBotIdentityAgents(bots, [{ agentId: null }, { agentId: "deleted-bot" }], 1),
+    ).toEqual([]);
+  });
+  it("does not reopen capacity with a detached line beside duplicate assignments", () => {
+    expect(
+      selectPaidBotIdentityAgents(
+        bots,
+        [{ agentId: null }, { agentId: "oldest" }, { agentId: "oldest" }],
+        2,
+      ),
+    ).toEqual(["oldest"]);
+  });
+  it("keeps connected-client drafts private until a phone line is explicitly attached", () => {
+    const draft = {
+      id: "oldest",
+      businessVariables: { customizationProfile: { source: "chatgpt_mcp" } },
+    };
+    expect(selectPaidBotIdentityAgents([draft, { id: "newest" }], [], 2)).toEqual(["newest"]);
+    expect(selectPaidBotIdentityAgents([draft], [{ agentId: "oldest" }], 1)).toEqual(["oldest"]);
+  });
   it("keeps the same selected roster as earlier jobs finish provisioning", () => {
     expect(selectPaidBotIdentityAgents(bots, [], 2)).toEqual(["oldest", "middle"]);
     expect(selectPaidBotIdentityAgents(bots, [{ agentId: "middle" }], 2).sort()).toEqual([

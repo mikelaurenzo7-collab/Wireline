@@ -4,7 +4,10 @@ const h = vi.hoisted(() => ({
   slots: 1,
   status: "active",
   planId: "starter",
-  agents: [{ id: "oldest" }, { id: "newest" }],
+  agents: [{ id: "oldest" }, { id: "newest" }] as Array<{
+    id: string;
+    businessVariables?: unknown;
+  }>,
   lines: [] as Array<{ agentId: string | null }>,
   jobs: [] as Array<{ payload: { agentId: string } }>,
   target: "newest",
@@ -29,6 +32,7 @@ vi.mock("../src/db/schema", () => ({
     userId: "agent.user",
     name: "agent.name",
     createdAt: "agent.created",
+    businessVariables: "agent.variables",
   },
   subscriptions: {
     table: "subscriptions",
@@ -165,6 +169,20 @@ beforeEach(() => {
 });
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it("does not enqueue or provision a private connected-client draft on a paid account", async () => {
+    h.agents = [
+      { id: "newest", businessVariables: { customizationProfile: { source: "chatgpt_mcp" } } },
+    ];
+    await expect(enqueuePaidBotIdentityReconciliation("tenant")).resolves.toMatchObject({
+      agents: 0,
+      queued: 0,
+    });
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "newest" }),
+    ).resolves.toMatchObject({ eligible: false });
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
   it("creates no mailbox when a competing phone request wins the final slot", async () => {
     h.target = "oldest";
     h.phoneProvision.mockImplementation(async () => {

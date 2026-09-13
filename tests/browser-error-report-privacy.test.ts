@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { captureException } from "../src/lib/sentry";
 import { errorReportRoute } from "../src/lib/error-report-route";
+import { errorReportContext } from "../src/lib/error-report-context";
 
 describe("error report route boundary", () => {
   it.each([
@@ -83,6 +84,25 @@ describe("browser error reporting privacy", () => {
       expect(body).not.toContain(secret);
     }
     expect(body).toContain("[REDACTED]");
+  });
+  it("preserves safe widget and browser-source grouping labels in transport", () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    captureException(new Error("Widget failed"), { widget: "RecentCalls", source: "window-error" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).context).toEqual({
+      widget: "RecentCalls",
+      source: "window-error",
+    });
+  });
+  it("applies the same bounded label privacy to legacy server context", () => {
+    const safe = errorReportContext({
+      widget: "x".repeat(500),
+      source: "/oauth?code=fake_secret",
+      customer: "private customer",
+    });
+    expect(safe?.widget).toHaveLength(80);
+    expect(JSON.stringify(safe)).not.toContain("fake_secret");
+    expect(safe).not.toHaveProperty("customer");
   });
 
   it("does not amplify an application error when context is circular", () => {

@@ -150,7 +150,7 @@ async function paidPlanForUser(
 
   const [agents, lines, phoneSlots] = await Promise.all([
     drizzle
-      .select({ id: schema.agents.id })
+      .select({ id: schema.agents.id, businessVariables: schema.agents.businessVariables })
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id)),

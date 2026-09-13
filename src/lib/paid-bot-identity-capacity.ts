@@ -5,7 +5,7 @@
  * lines on one Bot or orphan assignments still consume the account's slots.
  */
 export function selectPaidBotIdentityAgents(
-  agents: ReadonlyArray<{ id: string }>,
+  agents: ReadonlyArray<{ id: string; businessVariables?: unknown }>,
   lines: ReadonlyArray<{ agentId: string | null }>,
   phoneSlots: number,
 ): string[] {
@@ -14,8 +14,21 @@ export function selectPaidBotIdentityAgents(
   const assigned = new Set(lines.map((line) => line.agentId).filter(Boolean));
   const existing = agents.filter((agent) => assigned.has(agent.id)).slice(0, capacity);
   const reusable = lines.filter((line) => line.agentId === null).length;
-  const available = Math.max(0, capacity - lines.length) + reusable;
+  const available = Math.max(0, capacity - (lines.length - reusable));
   const newCount = Math.min(capacity - existing.length, available);
-  const next = agents.filter((agent) => !assigned.has(agent.id)).slice(0, newCount);
+  const next = agents
+    .filter((agent) => {
+      if (assigned.has(agent.id)) return false;
+      // The shared draft service persists this profile for MCP/connected-client
+      // drafts. Its existing live boundary is an owned phone line; account-wide
+      // Stripe reconciliation must not silently cross that boundary. Web-created
+      // Bots retain their existing paid-account automatic setup behavior.
+      const variables = agent.businessVariables;
+      if (variables && typeof variables === "object" && "customizationProfile" in variables) {
+        return false;
+      }
+      return true;
+    })
+    .slice(0, newCount);
   return [...existing, ...next].map((agent) => agent.id);
 }
