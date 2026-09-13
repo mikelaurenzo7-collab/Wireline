@@ -39,7 +39,7 @@ describe("paid Bot identity reconciliation", () => {
     expect(fenceIndex).toBeGreaterThanOrEqual(0);
     expect(identity).toContain('operation: "paid_bot_identity_reconcile"');
     expect(mailIndex).toBeGreaterThan(fenceIndex);
-    expect(phoneIndex).toBeGreaterThan(mailIndex);
+    expect(phoneIndex).toBeGreaterThan(fenceIndex);
     expect(identity).toContain("if (!fenced.performed)");
     expect(identity).toContain("account deletion is in progress");
   });
@@ -58,14 +58,15 @@ describe("paid Bot identity reconciliation", () => {
     );
   });
 
-  it("creates the mailbox before any carrier spend", () => {
+  it("secures phone capacity before creating a managed mailbox", () => {
     const fencedIndex = identity.indexOf("runTenantProviderWorkWithDeletionFence({");
     const emailIndex = identity.indexOf("await ensurePaidBotMailbox", fencedIndex);
     const phoneIndex = identity.indexOf("await ensurePaidBotPhone", fencedIndex);
 
     expect(identity).not.toContain("AGENTMAIL_MANAGED_INBOX_CAPACITY");
     expect(emailIndex).toBeGreaterThan(fencedIndex);
-    expect(phoneIndex).toBeGreaterThan(emailIndex);
+    expect(phoneIndex).toBeGreaterThan(fencedIndex);
+    expect(emailIndex).toBeGreaterThan(phoneIndex);
   });
 
   it("documents the production-owned AgentMail credential and BotBound domain", () => {
