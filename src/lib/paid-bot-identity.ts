@@ -11,6 +11,7 @@ import {
   hasExactAgentMailManagedScope,
   listAgentMailInboxes,
   listAgentMailWebhooks,
+  publicAgentMailWebhookUrl,
   verifyAgentMailCredentials,
 } from "./agentmail-mail";
 import {
@@ -104,7 +105,11 @@ function normalizedManagedDomain(): string | null {
     .toLowerCase()
     .replace(/^@/, "");
   if (!value) return null;
-  if (!/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(value) || !value.includes(".")) {
+  if (
+    value.length > 253 ||
+    !value.includes(".") ||
+    !value.split(".").every((label) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label))
+  ) {
     throw new Error("AGENTMAIL_DEFAULT_DOMAIN is invalid.");
   }
   if (value !== "botbound.me" && !value.endsWith(".botbound.me")) {
@@ -328,7 +333,7 @@ async function ensureManagedDeliveryWebhook(input: {
   }
 }
 
-async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: string) {
+async function preparePaidBotMailbox(userId: string, agentId: string) {
   const existingAccounts = await drizzle
     .select({
       id: schema.emailAccounts.id,
@@ -352,12 +357,32 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
     throw new Error("Credential vault is not configured for managed email.");
   const apiKey = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is required for managed Bot email.");
+  const domain = normalizedManagedDomain();
+  if (!domain) {
+    throw new Error(
+      "AGENTMAIL_DEFAULT_DOMAIN is required before paid Bot managed-email provisioning can run.",
+    );
+  }
+  if (!publicAgentMailWebhookUrl("configuration-check")) {
+    throw new Error("AgentMail webhook registration requires a public APP_URL.");
+  }
+  if (existing && !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
+    throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
+  }
+  // Validate the platform credential with a read, before any carrier purchase
+  // or mailbox reservation. No provider or database resources are changed.
+  await listAgentMailInboxes(apiKey);
+  return { existing, apiKey, domain };
+}
 
+async function ensurePaidBotMailbox(
+  userId: string,
+  agentId: string,
+  agentName: string,
+  prepared: Awaited<ReturnType<typeof preparePaidBotMailbox>>,
+) {
+  const { existing, apiKey, domain } = prepared;
   if (existing) {
-    const domain = normalizedManagedDomain();
-    if (!domain || !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
-      throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
-    }
     const inbox = await resolveManagedInbox({
       apiKey,
       agentId,
@@ -375,12 +400,6 @@ async function ensurePaidBotMailbox(userId: string, agentId: string, agentName: 
     return { email: existing.emailAddress, reused: true };
   }
 
-  const domain = normalizedManagedDomain();
-  if (!domain) {
-    throw new Error(
-      "AGENTMAIL_DEFAULT_DOMAIN is required before paid Bot managed-email provisioning can run.",
-    );
-  }
   const reservedEmailAddress = `${managedMailboxUsername(agentName, agentId)}@${domain}`;
   // Persist the deterministic BotBound-managed address before calling the
   // provider. If AgentMail accepts creation and the process crashes, terminal
@@ -451,13 +470,19 @@ export async function ensurePaidBotIdentity(input: {
       await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
       const currentPlan = await paidPlanForUser(input.userId, input.agentId);
       if (!currentPlan.eligible) return ineligibleIdentity(currentPlan.planId);
+      const mailbox = await preparePaidBotMailbox(input.userId, input.agentId);
 
       // Secure tenant-owned phone capacity before creating a managed mailbox.
       // Native phone persistence serializes competing provision/claim requests;
       // losing the last slot must not leave an unpaired mailbox above capacity.
       // A later mailbox failure is retried against this same owned phone line.
       const phone = await ensurePaidBotPhone(input.userId, input.agentId);
-      const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
+      const email = await ensurePaidBotMailbox(
+        input.userId,
+        input.agentId,
+        agent.name || "Bot",
+        mailbox,
+      );
 
       return {
         eligible: true,

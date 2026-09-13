@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const h = vi.hoisted(() => ({
   slots: 1,
@@ -10,12 +10,21 @@ const h = vi.hoisted(() => ({
   }>,
   lines: [] as Array<{ agentId: string | null }>,
   jobs: [] as Array<{ payload: { agentId: string } }>,
+  accounts: [] as Array<{
+    id: string;
+    emailAddress: string;
+    oauthGrantedScopes: string;
+    refreshToken: string | null;
+  }>,
   target: "newest",
   beforePerform: undefined as undefined | (() => void),
   enqueue: vi.fn(),
   provider: vi.fn(),
   phoneProvision: vi.fn(),
   ownedNumbers: vi.fn(),
+  vaultConfigured: vi.fn(),
+  inboxesRead: vi.fn(),
+  webhookUrl: vi.fn(),
   fence: vi.fn(),
 }));
 
@@ -70,7 +79,7 @@ vi.mock("../src/lib/server-context", () => ({
           : table === "phones"
             ? h.lines
             : table === "emails"
-              ? []
+              ? h.accounts
               : table === "jobs"
                 ? h.jobs
                 : "name" in fields
@@ -126,7 +135,7 @@ vi.mock("../src/lib/voice/native-phone-release", () => ({
 }));
 vi.mock("../src/lib/secret-vault", () => ({
   encryptSecret: h.provider,
-  isVaultConfigured: h.provider,
+  isVaultConfigured: h.vaultConfigured,
 }));
 vi.mock("../src/lib/owned-email-account", () => ({
   EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE: "ownership conflict",
@@ -139,8 +148,9 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   createAgentMailInbox: h.provider,
   deleteAgentMailWebhook: h.provider,
   ensureAgentMailWebhook: h.provider,
-  hasExactAgentMailManagedScope: h.provider,
-  listAgentMailInboxes: h.provider,
+  hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
+  listAgentMailInboxes: h.inboxesRead,
+  publicAgentMailWebhookUrl: h.webhookUrl,
   listAgentMailWebhooks: h.provider,
   verifyAgentMailCredentials: h.provider,
 }));
@@ -159,6 +169,7 @@ beforeEach(() => {
   h.agents = [{ id: "oldest" }, { id: "newest" }];
   h.lines = [];
   h.jobs = [];
+  h.accounts = [];
   h.beforePerform = undefined;
   h.enqueue.mockResolvedValue({ jobId: "test-job" });
   h.provider.mockImplementation(() => {
@@ -166,9 +177,74 @@ beforeEach(() => {
   });
   h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
+  h.vaultConfigured.mockReturnValue(true);
+  h.inboxesRead.mockResolvedValue([]);
+  h.webhookUrl.mockReturnValue("https://botbound.me/api/webhooks/agentmail/configuration-check");
+  vi.stubEnv("AGENTMAIL_API_KEY", "test-only-agentmail-key");
+  vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.me");
 });
+afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it.each([
+    {
+      name: "missing or invalid vault",
+      setup: () => h.vaultConfigured.mockReturnValue(false),
+      error: "Credential vault",
+    },
+    {
+      name: "missing AgentMail key",
+      setup: () => vi.stubEnv("AGENTMAIL_API_KEY", ""),
+      error: "AGENTMAIL_API_KEY",
+    },
+    {
+      name: "missing managed domain",
+      setup: () => vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", ""),
+      error: "AGENTMAIL_DEFAULT_DOMAIN",
+    },
+    {
+      name: "malformed managed domain",
+      setup: () => vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bad..botbound.me"),
+      error: "AGENTMAIL_DEFAULT_DOMAIN",
+    },
+    {
+      name: "non-BotBound domain",
+      setup: () => vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "other.example"),
+      error: "AGENTMAIL_DEFAULT_DOMAIN",
+    },
+    {
+      name: "invalid webhook origin",
+      setup: () => h.webhookUrl.mockReturnValue(null),
+      error: "public APP_URL",
+    },
+    {
+      name: "rejected AgentMail credential",
+      setup: () => h.inboxesRead.mockRejectedValue(new Error("AgentMail credential rejected")),
+      error: "AgentMail credential rejected",
+    },
+    {
+      name: "stored mailbox on another domain",
+      setup: () => {
+        h.accounts = [
+          {
+            id: "mailbox",
+            emailAddress: "legacy@other.example",
+            oauthGrantedScopes: "managed",
+            refreshToken: null,
+          },
+        ];
+      },
+      error: "Existing managed mailbox",
+    },
+  ])("rejects $name before buying or reserving a phone", async ({ setup, error }) => {
+    h.target = "oldest";
+    setup();
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      error,
+    );
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
   it("retains connected draft protection after a web business-profile edit", async () => {
     const id = "agent-0123456789abcdef0123456789abcdef";
     h.target = id;
