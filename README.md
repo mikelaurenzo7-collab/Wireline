@@ -18,7 +18,7 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. After crea
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every Bot. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Every paid Bot includes a **production-number slot**. BotBound provisions the number only when the role needs one, so unused Bot capacity does not create unnecessary carrier spend.
+Every **active paid Bot gets a dedicated production number and BotBound-managed email identity**, up to plan capacity. Draft Bots stay private until activation; unused Bot capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` for the commercial contract.
 
 ## Technology and ownership
 

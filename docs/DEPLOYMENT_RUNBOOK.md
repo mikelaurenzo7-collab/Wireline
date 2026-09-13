@@ -1,7 +1,7 @@
 # BotBound Deployment Runbook
 
 Status: **Canonical production runbook**  
-Last reconciled: **August 31, 2026**
+Last reconciled: **September 13, 2026**
 
 BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/botbound` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
@@ -186,7 +186,7 @@ Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMai
 
 All public tables must remain under RLS. Promotion uses append-only Drizzle migrations and verifies the exact journal plus schema effects. BotBound's application ledger is `drizzle.__drizzle_migrations`; the Supabase dashboard's separate migration history may show an older number and is not a reason to replay already-applied DDL. Do not infer safety from a successful rebase or either ledger alone; compare the committed Drizzle journal, the live Drizzle ledger, and concrete schema objects. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md#the-migration-journal-is-not-the-whole-history).
 
-Enable leaked-password protection before broad signup acquisition.
+BotBound uses its own authentication, not Supabase Auth. Before broad signup acquisition, verify that the deployed BotBound signup and reset flows enforce the HIBP password check and fail closed when screening is unavailable (`src/lib/breached-passwords.ts`). A Supabase Auth leaked-password advisor is not evidence about BotBound's custom auth controls; changing that setting does not certify these flows.
 
 ## Self-serve billing control
 

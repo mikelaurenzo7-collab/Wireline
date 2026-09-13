@@ -26,6 +26,7 @@ import {
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { reportError } from "../lib/error-reporter";
+import { errorReportRoute } from "../lib/error-report-route";
 
 const router = express.Router();
 const healthRateLimiter = createIpRateLimiter({
@@ -65,15 +66,7 @@ router.post("/report", clientReportRateLimiter, (req, res) => {
   }
 
   const stack = typeof body.stack === "string" ? body.stack.slice(0, 4_000) : undefined;
-  let route: string | undefined;
-  if (typeof body.url === "string") {
-    try {
-      const parsed = new URL(body.url);
-      route = `${parsed.pathname}${parsed.search}`.slice(0, 500);
-    } catch {
-      route = undefined;
-    }
-  }
+  const route = errorReportRoute(body.url);
   const context = body.context && typeof body.context === "object" ? body.context : {};
   const contextKeys = Object.keys(context).slice(0, 20);
   const stackTop = stack?.split("\n").slice(0, 3).join("\n").slice(0, 800);

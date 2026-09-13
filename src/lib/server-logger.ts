@@ -1,6 +1,8 @@
 // Structured logger + prod flag with no Node-only dependencies.
 // Imported by browser code (e.g. Recaps) as well as the API bundle.
 
+import { sanitizeErrorMessage } from "./server-utils";
+
 export const IS_PROD = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
 
 type LogLevel = "debug" | "info" | "warn" | "error";
@@ -14,10 +16,13 @@ const SENSITIVE_KEY_PATTERN =
   /password|passwd|secret|authorization|cookie|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|passwordhash/i;
 
 function sanitizeString(value: string, key: string): string {
-  if ((key === "error" || key === "message" || /error$/i.test(key)) && /failed query:|\bparams?:/i.test(value)) {
+  if (
+    (key === "error" || key === "message" || /error$/i.test(key)) &&
+    /failed query:|\bparams?:/i.test(value)
+  ) {
     return "Database operation failed [detail redacted]";
   }
-  const sanitized = value
+  const sanitized = sanitizeErrorMessage(value)
     .replace(EMAIL_PATTERN, "[redacted-email]")
     .replace(BEARER_PATTERN, "Bearer [redacted]");
   return sanitized.length > 4_000 ? `${sanitized.slice(0, 4_000)} [truncated]` : sanitized;

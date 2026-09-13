@@ -2,6 +2,21 @@ import { describe, expect, it } from "vitest";
 import { sanitizeLogFieldsForProduction } from "../src/lib/server-logger";
 
 describe("production logger privacy", () => {
+  it("redacts signed URLs and basic credentials in arbitrary diagnostic fields", () => {
+    const safe = sanitizeLogFieldsForProduction({
+      route: "/reset-password?token=fake_reset_secret&source=email",
+      nested: [
+        { stackTop: "at https://botbound.me/oauth-complete?code=fake_oauth_code:1:2" },
+        { detail: "Basic ZmFrZTpmYWtl" },
+      ],
+    });
+    const serialized = JSON.stringify(safe);
+    for (const secret of ["fake_reset_secret", "fake_oauth_code", "ZmFrZTpmYWtl"]) {
+      expect(serialized).not.toContain(secret);
+    }
+    expect(safe?.route).toContain("/reset-password?token=[REDACTED]&source=email");
+  });
+
   it("redacts email addresses, credentials, and database query payloads recursively", () => {
     const sanitized = sanitizeLogFieldsForProduction({
       email: "founder@example.com",
