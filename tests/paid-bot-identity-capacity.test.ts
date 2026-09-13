@@ -52,6 +52,16 @@ describe("paid identity allocation capacity", () => {
     expect(selectPaidBotIdentityAgents([draft, { id: "newest" }], [], 2)).toEqual(["newest"]);
     expect(selectPaidBotIdentityAgents([draft], [{ agentId: "oldest" }], 1)).toEqual(["oldest"]);
   });
+  it("retains legacy draft protection after business customization metadata is replaced", () => {
+    const id = "agent-0123456789abcdef0123456789abcdef";
+    expect(
+      selectPaidBotIdentityAgents([{ id, businessVariables: { businessName: "Updated" } }], [], 1),
+    ).toEqual([]);
+    expect(selectPaidBotIdentityAgents([{ id }], [{ agentId: id }], 1)).toEqual([id]);
+    expect(
+      selectPaidBotIdentityAgents([{ id: "agent-123e4567-e89b-42d3-a456-426614174000" }], [], 1),
+    ).toHaveLength(1);
+  });
   it("keeps the same selected roster as earlier jobs finish provisioning", () => {
     expect(selectPaidBotIdentityAgents(bots, [], 2)).toEqual(["oldest", "middle"]);
     expect(selectPaidBotIdentityAgents(bots, [{ agentId: "middle" }], 2).sort()).toEqual([

@@ -23,6 +23,10 @@ export function selectPaidBotIdentityAgents(
       // drafts. Its existing live boundary is an owned phone line; account-wide
       // Stripe reconciliation must not silently cross that boundary. Web-created
       // Bots retain their existing paid-account automatic setup behavior.
+      // Legacy connected drafts use the immutable 16-byte hex ID minted by
+      // createAgentDraft. Keep that provenance when a business-profile edit
+      // replaces customization metadata; ordinary web creation uses a UUID ID.
+      if (/^agent-[0-9a-f]{32}$/i.test(agent.id)) return false;
       const variables = agent.businessVariables;
       if (variables && typeof variables === "object" && "customizationProfile" in variables) {
         return false;

@@ -169,6 +169,20 @@ beforeEach(() => {
 });
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it("retains connected draft protection after a web business-profile edit", async () => {
+    const id = "agent-0123456789abcdef0123456789abcdef";
+    h.target = id;
+    h.agents = [{ id, businessVariables: { businessName: "Edited in Studio" } }];
+    await expect(enqueuePaidBotIdentityReconciliation("tenant")).resolves.toMatchObject({
+      agents: 0,
+      queued: 0,
+    });
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: id })).resolves.toMatchObject({
+      eligible: false,
+    });
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
   it("does not enqueue or provision a private connected-client draft on a paid account", async () => {
     h.agents = [
       { id: "newest", businessVariables: { customizationProfile: { source: "chatgpt_mcp" } } },
