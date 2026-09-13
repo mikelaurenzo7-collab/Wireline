@@ -123,6 +123,10 @@ describe("paid Bot identity reconciliation", () => {
       "Re-run with --apply only after Twilio and the verified AgentMail custom domain are production-ready",
     );
     expect(ops).toContain("ensurePaidBotIdentity");
+    expect(ops).toContain("getPaidBotIdentityAgentIds(row.userId)");
+    expect(ops).toContain("intentionallyIneligibleBots");
+    expect(ops).toContain("hasExactAgentMailManagedScope(row.scopes)");
+    expect(endpoint).toContain("skipped: !identity.eligible");
   });
 
   it("attaches automatic identity activation to create, Stripe, and the durable worker", () => {

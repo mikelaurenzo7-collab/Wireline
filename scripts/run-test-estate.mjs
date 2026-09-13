@@ -45,6 +45,7 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/browser-error-report-privacy.test.ts",
   "tests/paid-bot-identity-capacity.test.ts",
   "tests/paid-bot-identity-admission.test.ts",
+  "tests/paid-bot-identity-audit.test.ts",
   "tests/auth-access-pending.test.tsx",
   "tests/workspace-mobile-section-picker.test.tsx",
   "tests/marketing-signup-continuity.test.tsx",

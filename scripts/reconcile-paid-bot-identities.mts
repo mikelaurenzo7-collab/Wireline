@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 import { and, asc, eq, inArray } from "drizzle-orm";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import * as schema from "../src/db/schema";
-import { ensurePaidBotIdentity } from "../src/lib/paid-bot-identity";
+import { ensurePaidBotIdentity, getPaidBotIdentityAgentIds } from "../src/lib/paid-bot-identity";
+import { hasExactAgentMailManagedScope } from "../src/lib/agentmail-mail";
 import { drizzle } from "../src/lib/server-context";
 
 const APPLY = process.argv.includes("--apply");
 const PAID_PLANS = ["starter", "team", "business", "enterprise"] as const;
-const ACTIVE_STATUSES = ["active", "trialing"] as const;
+const ACTIVE_STATUSES = ["active"] as const;
 
 type Candidate = {
   agentId: string;
@@ -17,7 +20,7 @@ type Candidate = {
   status: string;
 };
 
-async function candidates(): Promise<Candidate[]> {
+async function candidates(): Promise<{ eligible: Candidate[]; intentionallyIneligible: number }> {
   const rows = await drizzle
     .select({
       agentId: schema.agents.id,
@@ -38,13 +41,26 @@ async function candidates(): Promise<Candidate[]> {
     )
     .orderBy(asc(schema.agents.userId), asc(schema.agents.createdAt));
 
-  return rows.map((row) => ({
-    agentId: row.agentId,
-    userId: row.userId,
-    name: row.name || "Bot",
-    plan: row.plan || "unknown",
-    status: row.status || "unknown",
-  }));
+  const rosterByUser = new Map<string, Set<string>>();
+  const eligibleRows = [] as typeof rows;
+  for (const row of rows) {
+    let roster = rosterByUser.get(row.userId);
+    if (!roster) {
+      roster = new Set(await getPaidBotIdentityAgentIds(row.userId));
+      rosterByUser.set(row.userId, roster);
+    }
+    if (roster.has(row.agentId)) eligibleRows.push(row);
+  }
+  return {
+    intentionallyIneligible: rows.length - eligibleRows.length,
+    eligible: eligibleRows.map((row) => ({
+      agentId: row.agentId,
+      userId: row.userId,
+      name: row.name || "Bot",
+      plan: row.plan || "unknown",
+      status: row.status || "unknown",
+    })),
+  };
 }
 
 async function existingIdentity(candidate: Candidate) {
@@ -56,12 +72,15 @@ async function existingIdentity(candidate: Candidate) {
         and(
           eq(schema.phoneNumbers.userId, candidate.userId),
           eq(schema.phoneNumbers.agentId, candidate.agentId),
-          eq(schema.phoneNumbers.status, "active"),
         ),
       )
       .limit(1),
     drizzle
-      .select({ id: schema.emailAccounts.id, email: schema.emailAccounts.emailAddress })
+      .select({
+        id: schema.emailAccounts.id,
+        email: schema.emailAccounts.emailAddress,
+        scopes: schema.emailAccounts.oauthGrantedScopes,
+      })
       .from(schema.emailAccounts)
       .where(
         and(
@@ -69,17 +88,16 @@ async function existingIdentity(candidate: Candidate) {
           eq(schema.emailAccounts.agentId, candidate.agentId),
           eq(schema.emailAccounts.provider, "agentmail"),
         ),
-      )
-      .limit(1),
+      ),
   ]);
   return {
     phone: phones[0]?.phone || null,
-    email: mailboxes[0]?.email || null,
+    email: mailboxes.find((row) => hasExactAgentMailManagedScope(row.scopes))?.email || null,
   };
 }
 
-async function main() {
-  const rows = await candidates();
+export async function main() {
+  const { eligible: rows, intentionallyIneligible } = await candidates();
   const inspected = [] as Array<{
     agentId: string;
     name: string;
@@ -107,6 +125,7 @@ async function main() {
       {
         mode: APPLY ? "apply" : "dry-run",
         paidBots: inspected.length,
+        intentionallyIneligibleBots: intentionallyIneligible,
         complete: inspected.length - missing.length,
         missingIdentity: missing.length,
         missing: missing.map(({ agentId, name, plan, phone, email }) => ({
@@ -131,6 +150,7 @@ async function main() {
     }
     return;
   }
+  if (!rows.length) return;
 
   if (!process.env.AGENTMAIL_DEFAULT_DOMAIN?.trim()) {
     throw new Error(
@@ -176,7 +196,9 @@ async function main() {
   if (failures.length) process.exitCode = 1;
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.stack || error.message : error);
-  process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.stack || error.message : error);
+    process.exitCode = 1;
+  });
+}

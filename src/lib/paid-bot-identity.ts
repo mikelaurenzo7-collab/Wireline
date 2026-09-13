@@ -64,8 +64,8 @@ export async function enqueuePaidBotIdentityReconciliation(userId: string): Prom
   queued: number;
   alreadyQueued: number;
 }> {
-  const [plan, existingJobs] = await Promise.all([
-    paidPlanForUser(userId),
+  const [agentIds, existingJobs] = await Promise.all([
+    getPaidBotIdentityAgentIds(userId),
     drizzle
       .select({ payload: schema.jobs.payload })
       .from(schema.jobs)
@@ -81,7 +81,7 @@ export async function enqueuePaidBotIdentityReconciliation(userId: string): Prom
     existingJobs.map((job) => queuedIdentityAgentId(job.payload)).filter(Boolean),
   );
   let queued = 0;
-  for (const agentId of plan.agentIds) {
+  for (const agentId of agentIds) {
     if (activeAgentIds.has(agentId)) continue;
     const result = await enqueue(drizzle, {
       userId,
@@ -92,9 +92,9 @@ export async function enqueuePaidBotIdentityReconciliation(userId: string): Prom
     if (result.jobId) queued += 1;
   }
   return {
-    agents: plan.agentIds.length,
+    agents: agentIds.length,
     queued,
-    alreadyQueued: plan.agentIds.length - queued,
+    alreadyQueued: agentIds.length - queued,
   };
 }
 
@@ -176,6 +176,11 @@ function ineligibleIdentity(planId: string | null): PaidBotIdentityResult {
     phoneReused: false,
     emailReused: false,
   };
+}
+
+/** Read-only eligibility shared by queue admission and operator audits. */
+export async function getPaidBotIdentityAgentIds(userId: string): Promise<string[]> {
+  return (await paidPlanForUser(userId)).agentIds;
 }
 
 async function assertTwilioOwnedNumber(phoneNumber: string): Promise<void> {

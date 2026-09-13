@@ -8,7 +8,7 @@ import { drizzle, log } from "../src/lib/server-context";
 import { getErrorMessage } from "../src/lib/server-utils";
 
 const PAID_PLANS = ["starter", "team", "business", "enterprise"] as const;
-const ACTIVE_STATUSES = ["active", "trialing"] as const;
+const ACTIVE_STATUSES = ["active"] as const;
 const DEFAULT_BATCH = 10;
 const MAX_BATCH = 25;
 const MAX_CURSOR_LENGTH = 256;
@@ -53,11 +53,7 @@ function reconciliationCursor(req: IncomingMessage): ReconciliationCursor {
   const raw = requestUrl(req).searchParams.get("cursor");
   if (raw == null || raw === "") return { value: null, error: false };
   const cursor = raw.trim();
-  if (
-    !cursor ||
-    cursor.length > MAX_CURSOR_LENGTH ||
-    !/^[A-Za-z0-9._:-]+$/.test(cursor)
-  ) {
+  if (!cursor || cursor.length > MAX_CURSOR_LENGTH || !/^[A-Za-z0-9._:-]+$/.test(cursor)) {
     return { value: null, error: true };
   }
   return { value: cursor, error: false };
@@ -115,6 +111,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     agentId: string;
     plan: string | null;
     ok: boolean;
+    eligible?: boolean;
+    skipped?: boolean;
     phone?: string | null;
     email?: string | null;
     error?: string;
@@ -130,6 +128,8 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         agentId: row.agentId,
         plan: row.plan,
         ok: true,
+        eligible: identity.eligible,
+        skipped: !identity.eligible,
         phone: identity.phone,
         email: identity.email,
       });
@@ -150,6 +150,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   send(res, failed ? 207 : 200, {
     ok: failed === 0,
     processed: results.length,
+    intentionally_ineligible: results.filter((result) => result.skipped).length,
     failed,
     has_more: hasMore,
     next_cursor: nextCursor,
