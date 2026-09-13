@@ -11,6 +11,8 @@ const h = vi.hoisted(() => ({
   beforePerform: undefined as undefined | (() => void),
   enqueue: vi.fn(),
   provider: vi.fn(),
+  phoneProvision: vi.fn(),
+  ownedNumbers: vi.fn(),
   fence: vi.fn(),
 }));
 
@@ -110,10 +112,10 @@ vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
 }));
 vi.mock("../src/lib/job-queue", () => ({ enqueue: (...args: unknown[]) => h.enqueue(...args) }));
 vi.mock("../src/lib/twilio-service", () => ({
-  getTwilioClient: (...args: unknown[]) => h.provider(...args),
+  getTwilioClient: () => ({ incomingPhoneNumbers: { list: h.ownedNumbers } }),
 }));
 vi.mock("../src/lib/voice/native-phone-provisioning", () => ({
-  provisionNativeTenantNumber: (...args: unknown[]) => h.provider(...args),
+  provisionNativeTenantNumber: (...args: unknown[]) => h.phoneProvision(...args),
 }));
 vi.mock("../src/lib/voice/native-phone-release", () => ({
   releaseNativeTenantNumber: (...args: unknown[]) => h.provider(...args),
@@ -158,9 +160,49 @@ beforeEach(() => {
   h.provider.mockImplementation(() => {
     throw new Error("Provider work must not run");
   });
+  h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
+  h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
 });
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it("creates no mailbox when a competing phone request wins the final slot", async () => {
+    h.target = "oldest";
+    h.phoneProvision.mockImplementation(async () => {
+      h.lines = [{ agentId: "newest" }];
+      return { ok: false, code: "PHONE_CAPACITY_REACHED", error: "Phone capacity was claimed" };
+    });
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "Phone capacity was claimed",
+    );
+    expect(h.phoneProvision).toHaveBeenCalledOnce();
+    expect(h.provider).not.toHaveBeenCalled();
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).resolves.toMatchObject({ eligible: false });
+    expect(h.phoneProvision).toHaveBeenCalledOnce();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
+  it("retains phone ownership so a failed mailbox can be retried for the same Bot", async () => {
+    h.target = "oldest";
+    h.phoneProvision.mockImplementation(async () => {
+      const reused = h.lines.some((line) => line.agentId === "oldest");
+      h.lines = [{ agentId: "oldest" }];
+      return { ok: true, phoneNumber: "+12025550123", reused };
+    });
+    h.provider.mockImplementation(() => {
+      expect(h.lines).toEqual([{ agentId: "oldest" }]);
+      throw new Error("Mailbox temporarily unavailable");
+    });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+        "Mailbox temporarily unavailable",
+      );
+    }
+    expect(h.phoneProvision).toHaveBeenCalledTimes(2);
+    expect(h.ownedNumbers).toHaveBeenCalledTimes(2);
+    expect(h.provider).toHaveBeenCalledTimes(2);
+    expect(h.lines).toEqual([{ agentId: "oldest" }]);
+  });
   it("still admits the eligible Bot to the managed-identity path", async () => {
     h.target = "oldest";
     await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(

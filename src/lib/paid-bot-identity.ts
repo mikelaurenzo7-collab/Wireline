@@ -439,10 +439,12 @@ export async function ensurePaidBotIdentity(input: {
       const currentPlan = await paidPlanForUser(input.userId, input.agentId);
       if (!currentPlan.eligible) return ineligibleIdentity(currentPlan.planId);
 
-      // Resolve the mailbox first so a provider-side provisioning failure does
-      // not create carrier spend for a Bot that lacks its complete identity.
-      const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
+      // Secure tenant-owned phone capacity before creating a managed mailbox.
+      // Native phone persistence serializes competing provision/claim requests;
+      // losing the last slot must not leave an unpaired mailbox above capacity.
+      // A later mailbox failure is retried against this same owned phone line.
       const phone = await ensurePaidBotPhone(input.userId, input.agentId);
+      const email = await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot");
 
       return {
         eligible: true,

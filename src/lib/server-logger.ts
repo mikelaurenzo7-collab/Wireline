@@ -14,12 +14,13 @@ const EMAIL_PATTERN = /\b[A-Z0-9._%+-]{1,64}@[A-Z0-9.-]{1,255}\.[A-Z]{2,63}\b/gi
 const BEARER_PATTERN = /\bBearer\s+[^\s,;]+/gi;
 const SENSITIVE_KEY_PATTERN =
   /password|passwd|secret|authorization|cookie|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|passwordhash/i;
+const CORRELATION_UUID_KEYS = new Set(["requestId", "jobId", "operationId"]);
 
 function sanitizeString(value: string, key: string): string {
-  // Request IDs are random correlation handles, not tenant identifiers. Keep
-  // valid UUIDs intact so browser, API, and provider failures can be joined.
+  // These explicit operational handles join requests, durable jobs, and carrier
+  // purchase claims to their diagnostics. Tenant/resource UUIDs remain redacted.
   if (
-    key === "requestId" &&
+    CORRELATION_UUID_KEYS.has(key) &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
   ) {
     return value;
