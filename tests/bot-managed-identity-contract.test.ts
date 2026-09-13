@@ -6,14 +6,14 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("BotBound managed Bot identity", () => {
-  it("provisions email and phone after the Bot record is committed without coupling their failures", () => {
+  it("uses the shared server reconciler after the Bot record is committed", () => {
     const bootstrap = read("src/lib/bot-identity-bootstrap.ts");
-    expect(bootstrap).toContain(
-      "Promise.all([bootstrapMailbox(agentId), bootstrapPhone(agentId)])",
-    );
-    expect(bootstrap).toContain(`/managed-mailbox`);
-    expect(bootstrap).toContain('authFetch("/api/phone-numbers/provision"');
-    expect(bootstrap).toContain("body: JSON.stringify({ agent_id: agentId })");
+    const routes = read("src/routes/agentmail-routes.ts");
+    expect(bootstrap).toContain(`/managed-identity`);
+    expect(bootstrap).not.toContain("/api/phone-numbers/provision");
+    expect(bootstrap).not.toContain("Promise.all");
+    expect(routes).toContain('"/api/agents/:agentId/managed-identity"');
+    expect(routes).toContain("ensurePaidBotIdentity({ userId, agentId })");
     expect(bootstrap).toContain('body?.code === "ACTIVATION_REQUIRED"');
     expect(bootstrap).toContain("status: 0");
   });
@@ -49,8 +49,9 @@ describe("BotBound managed Bot identity", () => {
     );
 
     expect(routes).toContain("hasManagedMailboxEntitlement");
-    expect(routes).toContain("plan.price_usd_monthly > 0");
-    expect(routes).toContain("plan.included_phone_numbers > 0");
+    expect(routes).toContain("getPaidBotIdentityAgentIds(userId)");
+    expect(routes).toContain("assertTwilioOwnedNumber(line.phoneNumber)");
+    expect(routes).not.toContain('subscription.status === "trialing"');
     expect(endpoint).toContain('"ACTIVATION_REQUIRED"');
     expect(endpoint.indexOf("hasManagedMailboxEntitlement")).toBeLessThan(
       endpoint.indexOf("resolveManagedBotInbox"),

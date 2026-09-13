@@ -18,6 +18,7 @@ import {
   normalizeAgentMailInbox,
   resolveAgentMailInbox,
   verifyAgentMailCredentials,
+  verifyManagedAgentMailDomainIdentity,
 } from "../lib/agentmail-mail";
 import {
   EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
@@ -25,7 +26,11 @@ import {
 } from "../lib/owned-email-account";
 import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import { planById } from "../lib/plan-catalog";
+import {
+  assertTwilioOwnedNumber,
+  ensurePaidBotIdentity,
+  getPaidBotIdentityAgentIds,
+} from "../lib/paid-bot-identity";
 import { encryptSecret, decryptSecret, isVaultConfigured } from "../lib/secret-vault";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
@@ -147,20 +152,16 @@ function managedMailboxDomain(): string | null {
   return value === "botbound.me" || value.endsWith(".botbound.me") ? value : null;
 }
 
-async function hasManagedMailboxEntitlement(userId: string): Promise<boolean> {
-  const [subscription] = await drizzle
-    .select({ planId: schema.subscriptions.plan, status: schema.subscriptions.status })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
+async function hasManagedMailboxEntitlement(userId: string, agentId: string): Promise<boolean> {
+  if (!(await getPaidBotIdentityAgentIds(userId)).includes(agentId)) return false;
+  const [line] = await drizzle
+    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
+    .from(schema.phoneNumbers)
+    .where(and(eq(schema.phoneNumbers.userId, userId), eq(schema.phoneNumbers.agentId, agentId)))
     .limit(1);
-  const plan = planById(subscription?.planId);
-  return Boolean(
-    subscription &&
-    (subscription.status === "active" || subscription.status === "trialing") &&
-    plan &&
-    plan.price_usd_monthly > 0 &&
-    plan.included_phone_numbers > 0,
-  );
+  if (!line?.phoneNumber) return false;
+  await assertTwilioOwnedNumber(line.phoneNumber);
+  return true;
 }
 
 function managedMailboxUsername(agentName: string, agentId: string): string {
@@ -273,6 +274,53 @@ async function resolveManagedBotInbox(input: {
   }
 }
 
+/** One server-owned sequence for automatic web setup and its idempotent retries. */
+router.post(
+  "/api/agents/:agentId/managed-identity",
+  authenticateUser,
+  managedMailboxRateLimiter,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user.id;
+    const agentId = String(req.params.agentId || "").trim();
+    const [agent] = await drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+      .limit(1);
+    if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
+
+    try {
+      const identity = await ensurePaidBotIdentity({ userId, agentId });
+      if (!identity.eligible) {
+        throw new AppError(
+          402,
+          "ACTIVATION_REQUIRED",
+          "Activate an eligible paid Bot before setting up its phone and email.",
+        );
+      }
+      res.json({
+        ok: true,
+        phone_number: identity.phone,
+        email: identity.email,
+        custom_domain: true,
+        phone_reused: identity.phoneReused,
+        email_reused: identity.emailReused,
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      log.warn("Managed Bot identity setup deferred", {
+        userId,
+        agentId,
+        error: getErrorMessage(error),
+      });
+      throw AppError.fromHttpStatus(
+        503,
+        "Bot phone and email setup is temporarily unavailable. Please try again.",
+      );
+    }
+  },
+);
+
 /**
  * POST /api/agents/:agentId/managed-mailbox
  *
@@ -304,7 +352,7 @@ router.post(
       .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
       .limit(1);
     if (!agent) throw AppError.fromHttpStatus(404, "Bot not found.");
-    if (!(await hasManagedMailboxEntitlement(userId))) {
+    if (!(await hasManagedMailboxEntitlement(userId, agentId))) {
       throw new AppError(
         402,
         "ACTIVATION_REQUIRED",
@@ -342,6 +390,16 @@ router.post(
       // settling. Thrown/ambiguous outcomes are retained by the fence itself.
       retainOnSuccess: true,
       perform: async (): Promise<{ status: number; body: Record<string, unknown> }> => {
+        // Compatibility mailbox requests cannot bypass the shared paid roster,
+        // serialized phone ownership, or a downgrade while waiting for the fence.
+        if (!(await hasManagedMailboxEntitlement(userId, agentId))) {
+          throw new AppError(
+            402,
+            "ACTIVATION_REQUIRED",
+            "Activate a paid Bot phone line before setting up its managed email.",
+          );
+        }
+        await verifyManagedAgentMailDomainIdentity(apiKey);
         if (existingManaged) {
           if (!existingManaged.emailAddress.toLowerCase().endsWith(`@${requiredDomain}`)) {
             throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");

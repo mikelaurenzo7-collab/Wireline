@@ -13,6 +13,7 @@ import {
   listAgentMailWebhooks,
   publicAgentMailWebhookUrl,
   verifyAgentMailCredentials,
+  verifyManagedAgentMailDomainIdentity,
 } from "./agentmail-mail";
 import {
   EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE,
@@ -369,8 +370,10 @@ async function preparePaidBotMailbox(userId: string, agentId: string) {
   if (existing && !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
     throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
   }
-  // Validate the platform credential with a read, before any carrier purchase
-  // or mailbox reservation. No provider or database resources are changed.
+  // Prove that this credential owns the exact verified BotBound domain before
+  // any carrier purchase or mailbox reservation. A valid inbox list alone
+  // could belong to a different organization.
+  await verifyManagedAgentMailDomainIdentity(apiKey);
   await listAgentMailInboxes(apiKey);
   return { existing, apiKey, domain };
 }
@@ -466,6 +469,9 @@ export async function ensurePaidBotIdentity(input: {
   const fenced = await runTenantProviderWorkWithDeletionFence({
     userId: input.userId,
     operation: "paid_bot_identity_reconcile",
+    // Match the managed mailbox route's crash horizon for accepted provider
+    // operations, including successful automatic web setup.
+    retainOnSuccess: true,
     perform: async (): Promise<PaidBotIdentityResult> => {
       await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
       const currentPlan = await paidPlanForUser(input.userId, input.agentId);

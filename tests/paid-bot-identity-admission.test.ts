@@ -24,6 +24,7 @@ const h = vi.hoisted(() => ({
   ownedNumbers: vi.fn(),
   vaultConfigured: vi.fn(),
   inboxesRead: vi.fn(),
+  domainIdentity: vi.fn(),
   webhookUrl: vi.fn(),
   fence: vi.fn(),
 }));
@@ -115,10 +116,12 @@ vi.mock("../src/lib/account-environment-policy", () => ({
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   runTenantProviderWorkWithDeletionFence: async ({
     perform,
+    retainOnSuccess,
   }: {
     perform: () => Promise<unknown>;
+    retainOnSuccess: boolean;
   }) => {
-    h.fence();
+    h.fence(retainOnSuccess);
     h.beforePerform?.();
     return { performed: true, result: await perform() };
   },
@@ -153,6 +156,7 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   publicAgentMailWebhookUrl: h.webhookUrl,
   listAgentMailWebhooks: h.provider,
   verifyAgentMailCredentials: h.provider,
+  verifyManagedAgentMailDomainIdentity: h.domainIdentity,
 }));
 
 import {
@@ -179,6 +183,7 @@ beforeEach(() => {
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
   h.vaultConfigured.mockReturnValue(true);
   h.inboxesRead.mockResolvedValue([]);
+  h.domainIdentity.mockResolvedValue(undefined);
   h.webhookUrl.mockReturnValue("https://botbound.me/api/webhooks/agentmail/configuration-check");
   vi.stubEnv("AGENTMAIL_API_KEY", "test-only-agentmail-key");
   vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.me");
@@ -236,6 +241,11 @@ describe("paid identity admission at queue and provider boundaries", () => {
       },
       error: "Existing managed mailbox",
     },
+    ...["unowned", "unverified"].map((state) => ({
+      name: `${state} managed domain`,
+      setup: () => h.domainIdentity.mockRejectedValue(new Error(`Managed domain ${state}`)),
+      error: `Managed domain ${state}`,
+    })),
   ])("rejects $name before buying or reserving a phone", async ({ setup, error }) => {
     h.target = "oldest";
     setup();
@@ -307,6 +317,7 @@ describe("paid identity admission at queue and provider boundaries", () => {
       );
     }
     expect(h.phoneProvision).toHaveBeenCalledTimes(2);
+    expect(h.fence).toHaveBeenCalledWith(true);
     expect(h.ownedNumbers).toHaveBeenCalledTimes(2);
     expect(h.provider).toHaveBeenCalledTimes(2);
     expect(h.lines).toEqual([{ agentId: "oldest" }]);
