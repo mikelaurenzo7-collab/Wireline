@@ -26,8 +26,8 @@ const PAID_TIERS = [
   {
     plan: planById.starter,
     publicName: "Starter",
-    eyebrow: "Put Your Phone Bot Live",
-    tagline: "Your Phone Bot from $19/month",
+    eyebrow: "Put Your Sales Bot Live",
+    tagline: "Your sales bot from $19/month",
     detail:
       "One focused Phone Bot for inbound calls, outbound calls, or scheduling, with an included BotBound number.",
     ctaMonthly: "Start for $19",
@@ -197,7 +197,7 @@ export default function Pricing() {
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
         title="PRICING | FROM $19/MONTH | BotBound"
-        description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
+        description="Build and test your sales bot free. Activate from $19/month, with included numbers and call minutes, plus clear prepaid usage controls."
         path="/pricing"
       />
       <script

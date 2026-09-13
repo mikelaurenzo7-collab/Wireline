@@ -14,8 +14,8 @@ export const BRAND_SYSTEM = {
   proofLoop: ["Build", "Train", "Launch", "Improve"],
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
-    "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
-    "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
+    "Lead public acquisition with AI sales bots; calls, text, and email explain how the work gets done.",
+    "Use BotBound for the brand and sales bot for the main marketing category. Keep existing role and configuration names accurate.",
     "Treat workspace architecture as product proof, never as a marketing headline.",
     "Use Bot as the customer-facing object while keeping agent as the technical domain.",
     "Use Phone Bot, Conversation Bot, and Human Bot as configuration lenses, never separate products or workspaces.",
@@ -161,7 +161,7 @@ export const CLIENT_SURFACE_POSTURE = {
 
 /** Retained export name for compatibility with older marketing modules. */
 export const BUSINESS_MARKETING_VOICE = {
-  eyebrow: "PHONE BOTS FOR CALLS, TEXT, AND EMAIL",
+  eyebrow: "AI SALES BOTS FOR YOUR BUSINESS",
   proof: ["Answers calls", "Makes calls", "Sends texts", "Continues by email", "Logs outcomes"],
   differentiator: "BotBound keeps valuable conversations moving across calls, text, and email.",
   beforeStrip: OUTBOUND_WEDGE.beforeStrip,

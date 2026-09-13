@@ -16,32 +16,32 @@ import { signupHrefForPlan } from "../lib/signup-intent";
 const CORE_FEATURES = [
   {
     icon: Workflow,
-    title: "One Conversation Memory",
+    title: "Keep the Buyer in Context",
     body: "Calls, texts, and email share approved knowledge, customer context, rules, and history.",
   },
   {
     icon: CheckCircle2,
-    title: "Work That Finishes",
-    body: "Book, update, recap, route the exception, and preserve proof. Not just a transcript.",
+    title: "Move the Sale Forward",
+    body: "Book the appointment, send the follow-up, or hand the opportunity to the right person.",
   },
   {
     icon: CalendarClock,
-    title: "Scheduling and Handoff",
+    title: "Book the Next Step",
     body: "Offer real availability and pass the request without making the customer repeat context.",
   },
   {
     icon: ShieldCheck,
-    title: "Approvals and Safety",
+    title: "Your Rules, Applied",
     body: "Keep sensitive actions behind controls and audit what happened before and after execution.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Training by Workflow",
-    body: "Tune your Bot for sales, support, billing, scheduling, recovery, or a custom playbook.",
+    title: "Teach It Your Offer",
+    body: "Give your Bot your services, answers, qualification questions, tone, and handoff rules.",
   },
   {
     icon: BarChart3,
-    title: "Outcomes over Activity",
+    title: "See What Happened",
     body: "See what happened, what changed, and what needs attention across every channel.",
   },
 ] as const;
@@ -56,7 +56,7 @@ export default function Features() {
     >
       <PageMeta
         title="FEATURES | BotBound"
-        description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
+        description="Train an AI sales bot on your offer. Answer leads, qualify interest, book appointments, and follow up across calls, text, and email."
         path="/features"
       />
 
@@ -66,9 +66,9 @@ export default function Features() {
       <section className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-6xl text-center">
           <div className="mx-auto mb-8 max-w-3xl text-center">
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Features</p>
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">AI sales bots</p>
             <h1 className="marketing-hero-title mx-auto mt-4 max-w-[18ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              IT CALLS OUT. IT ANSWERS IN.
+              EVERY LEAD. A NEXT STEP.
             </h1>
             <div className="marketing-hero__actions mt-7">
               <Link
@@ -112,7 +112,7 @@ export default function Features() {
           </ul>
 
           <h2 className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
-            The Controls That Make It Reliable
+            The Work Behind the Next Step
           </h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {CORE_FEATURES.map(({ icon: Icon, title, body }) => (

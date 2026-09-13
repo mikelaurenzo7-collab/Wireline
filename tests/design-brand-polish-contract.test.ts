@@ -171,8 +171,8 @@ describe("E2E design and BotBound brand polish", () => {
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain('aria-label="Choose Bot direction"');
-    expect(landing).toContain("FIND. CALL. BOOK.");
-    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).toContain("REACH. QUALIFY. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. BOOK.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");
@@ -185,7 +185,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain(
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
-    expect(landing).toMatch(/<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/);
+    expect(landing).toMatch(/<span>YOUR NEXT<\/span>[\s\S]*<span>SALES HIRE<\/span>/);
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("BotBoundLockup");
     expect(landing).toContain('className="landing-prestige__hero-lockup"');

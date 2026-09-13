@@ -5,9 +5,9 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
   name: "BotBound",
-  slogan: "PUT YOUR BOT ON THE LINE",
+  slogan: "MEET YOUR NEXT SALES HIRE",
   supportingLine: "CALL · TEXT · EMAIL",
-  promise: "Your Bot for calls, texts, and email.",
+  promise: "AI sales bots that answer leads, qualify buyers, and help book the next step.",
 } as const;
 
 export const BOT_PRODUCT_TYPES = [
@@ -197,7 +197,7 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
-  activationLine: "Find leads. Make calls. Answer demand. Book the next step.",
+  activationLine: "Answer leads. Qualify buyers. Book the next step.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;

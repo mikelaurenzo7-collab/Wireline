@@ -5,8 +5,8 @@ import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
-export const HOME_DESCRIPTION = "Your Bot for calls, texts, and email.";
+export const HOME_TITLE = "BotBound | AI Sales Bots | Meet Your Next Sales Hire";
+export const HOME_DESCRIPTION = "AI sales bots that answer leads, qualify buyers, and help book the next step.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -52,12 +52,12 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "PRICING | FROM $19/MONTH",
     description:
-      "Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build and test your sales bot free. Activate from $19/month, with included numbers and call minutes, plus clear prepaid usage controls.",
   },
   "/features": {
     title: "FEATURES",
     description:
-      "Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory.",
+      "Train an AI sales bot on your offer. Answer leads, qualify interest, book appointments, and follow up across calls, text, and email.",
   },
   "/compare": {
     title: "WHY BOTBOUND | COMPARE BOTS",
@@ -65,9 +65,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
   },
   "/about": {
-    title: "ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH",
+    title: "ABOUT BOTBOUND | AI SALES BOTS",
     description:
-      "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
+      "BotBound builds AI sales bots for businesses with more opportunity than time. Our ambition: give every lead a clear next step and every owner more room to do their best work.",
   },
   "/blog": {
     title: "BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS",
@@ -133,9 +133,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
       "BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026.",
   },
   "/solutions/sales": {
-    title: "FIND THE LEAD. MAKE THE CALL. BOOK THE NEXT STEP. | BotBound",
+    title: "GIVE EVERY LEAD A NEXT STEP | BotBound",
     description:
-      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
+      "Give your sales bot your offer, approved leads, and qualification rules. It calls, qualifies, helps book the next step, and keeps the outcome in view.",
   },
   "/solutions/support": {
     title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD | BotBound",

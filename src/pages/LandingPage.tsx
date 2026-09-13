@@ -38,7 +38,7 @@ export default function LandingPage() {
   return (
     <>
       <PageMeta
-        title="BotBound | Put Your Bot on the Line"
+        title="BotBound | AI Sales Bots | Meet Your Next Sales Hire"
         description={PUBLIC_DESCRIPTION}
         path="/"
       />

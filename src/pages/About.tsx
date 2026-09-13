@@ -9,11 +9,11 @@ import WireSignalArt from "../components/marketing/WireSignalArt";
    what turned this page into a second landing page. */
 const POSITIONS = [
   {
-    heading: "Independent",
-    copy: "No reseller in the middle, and no account manager between you and the people who build it. Support goes to the same inbox we read.",
+    heading: "Our Ambition",
+    copy: "A business should be able to give a sales bot a goal and trust it to keep the next step moving. We are building toward that: less chasing, more conversations that go somewhere.",
   },
   {
-    heading: "Trained, Not Templated",
+    heading: "Your Business Comes First",
     copy: "A Bot learns your tone, scripts, service knowledge, rules, and handoffs. It does not ship as a generic script you edit around.",
   },
   {
@@ -37,8 +37,8 @@ export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
-        title="ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH"
-        description="BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it."
+        title="ABOUT BOTBOUND | AI SALES BOTS"
+        description="BotBound builds AI sales bots for businesses with more opportunity than time. Our ambition: give every lead a clear next step and every owner more room to do their best work."
         path="/about"
       />
 
@@ -47,7 +47,7 @@ export default function About() {
           <div>
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
             <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              BUILT BY THE PEOPLE WHO ANSWER THE SUPPORT EMAIL
+              MORE ROOM FOR YOUR BEST WORK
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a

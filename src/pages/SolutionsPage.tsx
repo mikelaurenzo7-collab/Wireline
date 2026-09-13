@@ -4,9 +4,9 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "FIND THE LEAD. MAKE THE CALL. BOOK THE NEXT STEP.",
+    title: "GIVE EVERY LEAD A NEXT STEP",
     description:
-      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
+      "Give your sales bot your offer, approved leads, and qualification rules. It calls, qualifies, helps book the next step, and keeps the outcome in view.",
     primary: { href: "/signup?wedge=sales", label: "Get Your Sales Bot" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
@@ -31,7 +31,7 @@ const SOLUTIONS = {
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof: "Your Bot works the approved queue. Your team takes the next steps.",
+    proof: "Your sales bot handles the conversation. Your team stays close to the opportunity.",
   },
   support: {
     title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD",
@@ -92,7 +92,7 @@ export default function SolutionsPage() {
       <section className="marketing-section marketing-section--screen">
         <div className="mx-auto mb-8 max-w-6xl text-center">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-            {key === "sales" ? "Outbound" : "Inbound"}
+            {key === "sales" ? "AI sales bots" : "Inbound"}
           </p>
           <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
             {page.title}

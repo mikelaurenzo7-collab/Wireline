@@ -48,8 +48,8 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   custom: WandSparkles,
 };
 const GETTING_STARTED = [
-  { title: "Build", detail: "Pick a role. Give your Bot one clear job." },
-  { title: "Train", detail: "Add your knowledge, tone, and boundaries." },
+  { title: "Build", detail: "Choose the sales job you want handled." },
+  { title: "Train", detail: "Teach your offer, voice, and boundaries." },
   { title: "Launch", detail: "Test privately. Activate live channels when ready." },
   { title: "Improve", detail: "Review conversations. Refine what happens next." },
 ] as const;
@@ -96,11 +96,11 @@ export default function WireAgentLanding() {
             </Link>
             <div className="landing-prestige__hero-copy">
               <p className="landing-prestige__eyebrow">
-                AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
+                AI SALES BOTS. BUILT AROUND YOUR BUSINESS.
               </p>
               <h1 id="landing-prestige-title">
-                <span>PUT YOUR BOT</span>
-                <span>ON THE LINE</span>
+                <span>YOUR NEXT</span>
+                <span>SALES HIRE</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
               <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
@@ -112,9 +112,9 @@ export default function WireAgentLanding() {
                   <span className="landing-prestige__direction-label">
                     <PhoneOutgoing aria-hidden="true" /> OUTBOUND
                   </span>
-                  <strong>FIND. CALL. BOOK.</strong>
+                  <strong>REACH. QUALIFY. BOOK.</strong>
                   <span className="landing-prestige__direction-action">
-                    Build a Sales Rep <ArrowRight aria-hidden="true" />
+                    Build a sales bot <ArrowRight aria-hidden="true" />
                   </span>
                 </Link>
                 <Link
@@ -125,14 +125,14 @@ export default function WireAgentLanding() {
                   <span className="landing-prestige__direction-label">
                     <PhoneIncoming aria-hidden="true" /> INBOUND
                   </span>
-                  <strong>ANSWER. QUALIFY. ROUTE.</strong>
+                  <strong>ANSWER. QUALIFY. BOOK.</strong>
                   <span className="landing-prestige__direction-action">
-                    Build a Front Desk <ArrowRight aria-hidden="true" />
+                    Capture inbound leads <ArrowRight aria-hidden="true" />
                   </span>
                 </Link>
               </nav>
               <div className="landing-prestige__explore">
-                <p>Build &amp; test free. Activate when ready.</p>
+                <p>Build &amp; test free. Activate live channels when ready.</p>
                 <nav aria-label="Explore BotBound">
                   <Link to="/features">
                     How it works <ArrowRight aria-hidden="true" />
@@ -177,9 +177,9 @@ export default function WireAgentLanding() {
           <section id="solutions" className="landing-prestige__section landing-prestige__roles">
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
-                <p>OUTBOUND + INBOUND</p>
-                <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
-                <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
+                <p>START WITH SALES. GROW FROM THERE.</p>
+                <h2>GIVE YOUR NEXT HIRE A CLEAR JOB.</h2>
+                <span>Start with sales, booking, or inbound demand. Expand into the other work your business needs.</span>
               </header>
               <div className="landing-prestige__role-grid">
                 {FEATURED_TEMPLATES.map((template) => {

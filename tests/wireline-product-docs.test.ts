@@ -115,18 +115,18 @@ describe("product documentation and compatibility contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("BotBound | Put Your Bot on the Line");
-    expect(head).toContain("Your Bot for calls, texts, and email.");
+    expect(head).toContain("BotBound | AI Sales Bots | Meet Your Next Sales Hire");
+    expect(head).toContain("AI sales bots that answer leads, qualify buyers, and help book the next step.");
     expect(head).toContain('"name":"BotBound"');
-    expect(head).toContain('"slogan":"Put Your Bot on the Line"');
+    expect(head).toContain('"slogan":"Meet Your Next Sales Hire"');
     expect(head).not.toContain("WIRE YOUR PHONE BOT");
     expect(head).not.toContain("VOICE-FIRST");
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("FIND. CALL. BOOK.");
-    expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS. ONE BOT.");
-    expect(ogImage).toContain("Find leads. Make calls. Answer inbound.");
+    expect(ogImage).toContain("MEET YOUR NEXT SALES HIRE");
+    expect(ogImage).toContain("AI SALES BOTS");
+    expect(ogImage).toContain("Answer leads. Qualify buyers. Book the next step.");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");
