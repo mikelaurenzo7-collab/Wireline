@@ -30,7 +30,7 @@ function sanitizeString(value: string, key: string): string {
   ) {
     return "Database operation failed [detail redacted]";
   }
-  const sanitized = sanitizeErrorMessage(value)
+  const sanitized = sanitizeErrorMessage(value, 4_000)
     .replace(EMAIL_PATTERN, "[redacted-email]")
     .replace(BEARER_PATTERN, "Bearer [redacted]");
   return sanitized.length > 4_000 ? `${sanitized.slice(0, 4_000)} [truncated]` : sanitized;

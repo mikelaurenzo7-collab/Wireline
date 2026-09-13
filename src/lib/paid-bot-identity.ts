@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import {
@@ -19,6 +19,8 @@ import {
 } from "./owned-email-account";
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { planById } from "./plan-catalog";
+import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
+import { selectPaidBotIdentityAgents } from "./paid-bot-identity-capacity";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { encryptSecret, isVaultConfigured } from "./secret-vault";
@@ -53,7 +55,7 @@ function queuedIdentityAgentId(payload: unknown): string | null {
 }
 
 /**
- * Attach every current Bot to the durable identity worker after paid
+ * Attach only Bots covered by current phone capacity to the worker after paid
  * activation. Existing pending/running/retryable jobs are reused; completed or
  * dead jobs do not suppress a later Stripe reconciliation repair.
  */
@@ -62,11 +64,8 @@ export async function enqueuePaidBotIdentityReconciliation(userId: string): Prom
   queued: number;
   alreadyQueued: number;
 }> {
-  const [agents, existingJobs] = await Promise.all([
-    drizzle
-      .select({ id: schema.agents.id })
-      .from(schema.agents)
-      .where(eq(schema.agents.userId, userId)),
+  const [plan, existingJobs] = await Promise.all([
+    paidPlanForUser(userId),
     drizzle
       .select({ payload: schema.jobs.payload })
       .from(schema.jobs)
@@ -82,20 +81,20 @@ export async function enqueuePaidBotIdentityReconciliation(userId: string): Prom
     existingJobs.map((job) => queuedIdentityAgentId(job.payload)).filter(Boolean),
   );
   let queued = 0;
-  for (const agent of agents) {
-    if (activeAgentIds.has(agent.id)) continue;
+  for (const agentId of plan.agentIds) {
+    if (activeAgentIds.has(agentId)) continue;
     const result = await enqueue(drizzle, {
       userId,
       type: PAID_BOT_IDENTITY_JOB_TYPE,
-      payload: { userId, agentId: agent.id },
+      payload: { userId, agentId },
     });
-    activeAgentIds.add(agent.id);
+    activeAgentIds.add(agentId);
     if (result.jobId) queued += 1;
   }
   return {
-    agents: agents.length,
+    agents: plan.agentIds.length,
     queued,
-    alreadyQueued: agents.length - queued,
+    alreadyQueued: plan.agentIds.length - queued,
   };
 }
 
@@ -133,7 +132,8 @@ function managedMailboxUsername(agentName: string, agentId: string): string {
 
 async function paidPlanForUser(
   userId: string,
-): Promise<{ eligible: boolean; planId: string | null }> {
+  agentId?: string,
+): Promise<{ eligible: boolean; planId: string | null; agentIds: string[] }> {
   const [row] = await drizzle
     .select({ planId: schema.subscriptions.plan, status: schema.subscriptions.status })
     .from(schema.subscriptions)
@@ -142,12 +142,39 @@ async function paidPlanForUser(
   const planId = row?.planId?.trim() || null;
   const status = row?.status?.trim().toLowerCase() || "";
   const plan = planById(planId);
+  const paid =
+    Boolean(planId) &&
+    PAID_IDENTITY_STATUSES.has(status) &&
+    Boolean(plan && plan.price_usd_monthly > 0 && plan.included_phone_numbers > 0);
+  if (!paid) return { eligible: false, planId, agentIds: [] };
+
+  const [agents, lines, phoneSlots] = await Promise.all([
+    drizzle
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(eq(schema.agents.userId, userId))
+      .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id)),
+    drizzle
+      .select({ agentId: schema.phoneNumbers.agentId })
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.userId, userId)),
+    getIncludedPhoneLineSlots(userId),
+  ]);
+  // The phone entitlement already includes purchased extras. A stored Bot-only
+  // grant must not silently expand paid carrier/mailbox allocation. Recheck in
+  // the worker as well as at enqueue time so stale jobs cannot outlive a downgrade.
+  const agentIds = selectPaidBotIdentityAgents(agents, lines, phoneSlots);
+  return { eligible: agentId ? agentIds.includes(agentId) : agentIds.length > 0, planId, agentIds };
+}
+
+function ineligibleIdentity(planId: string | null): PaidBotIdentityResult {
   return {
-    eligible:
-      Boolean(planId) &&
-      PAID_IDENTITY_STATUSES.has(status) &&
-      Boolean(plan && plan.price_usd_monthly > 0 && plan.included_phone_numbers > 0),
+    eligible: false,
     planId,
+    phone: null,
+    email: null,
+    phoneReused: false,
+    emailReused: false,
   };
 }
 
@@ -397,25 +424,20 @@ export async function ensurePaidBotIdentity(input: {
       .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
       .limit(1)
       .then((rows) => rows[0] ?? null),
-    paidPlanForUser(input.userId),
+    paidPlanForUser(input.userId, input.agentId),
   ]);
   if (!agent) throw new Error("Paid Bot identity job references a Bot that no longer exists.");
   if (!plan.eligible) {
-    return {
-      eligible: false,
-      planId: plan.planId,
-      phone: null,
-      email: null,
-      phoneReused: false,
-      emailReused: false,
-    };
+    return ineligibleIdentity(plan.planId);
   }
 
   const fenced = await runTenantProviderWorkWithDeletionFence({
     userId: input.userId,
     operation: "paid_bot_identity_reconcile",
-    perform: async () => {
+    perform: async (): Promise<PaidBotIdentityResult> => {
       await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
+      const currentPlan = await paidPlanForUser(input.userId, input.agentId);
+      if (!currentPlan.eligible) return ineligibleIdentity(currentPlan.planId);
 
       // Resolve the mailbox first so a provider-side provisioning failure does
       // not create carrier spend for a Bot that lacks its complete identity.
@@ -424,7 +446,7 @@ export async function ensurePaidBotIdentity(input: {
 
       return {
         eligible: true,
-        planId: plan.planId,
+        planId: currentPlan.planId,
         phone: phone.phoneNumber,
         email: email.email,
         phoneReused: phone.reused,

@@ -34,7 +34,10 @@ const AUTH_IN_ERROR_RE = /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/-]+=*/gi;
 const SECRET_QUERY_VALUE_RE =
   /([?&](?:access_token|auth|authorization|code|credential|key|password|secret|signature|token)=)[^&#\s]+/gi;
 
-export function sanitizeErrorMessage(message: string): string {
+export function sanitizeErrorMessage(
+  message: string,
+  maxLength: 2_000 | 4_000 = MAX_ERROR_MESSAGE_LENGTH,
+): string {
   const overScanWindow = message.length > MAX_ERROR_SCAN_LENGTH;
   const sanitized = (overScanWindow ? message.slice(0, MAX_ERROR_SCAN_LENGTH) : message)
     .replace(DRIZZLE_PARAMS_RE, "$1 [redacted-params]")
@@ -43,8 +46,8 @@ export function sanitizeErrorMessage(message: string): string {
     .replace(AUTH_IN_ERROR_RE, "$1 [REDACTED]")
     .replace(SECRET_QUERY_VALUE_RE, "$1[REDACTED]");
 
-  if (!overScanWindow && sanitized.length <= MAX_ERROR_MESSAGE_LENGTH) return sanitized;
-  return `${sanitized.slice(0, MAX_ERROR_MESSAGE_LENGTH)}…[truncated]`;
+  if (!overScanWindow && sanitized.length <= maxLength) return sanitized;
+  return `${sanitized.slice(0, maxLength)}…[truncated]`;
 }
 
 /**

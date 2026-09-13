@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import { sanitizeLogFieldsForProduction } from "../src/lib/server-logger";
 
 describe("production logger privacy", () => {
+  it("retains the four-kilobyte diagnostic window after redaction", () => {
+    const detail = `${"x".repeat(3_200)} provider_response_tail`;
+    expect(sanitizeLogFieldsForProduction({ detail })?.detail).toBe(detail);
+    const oversized = sanitizeLogFieldsForProduction({ detail: "x".repeat(5_000) })?.detail;
+    expect(oversized).toBe(`${"x".repeat(4_000)} [truncated]`);
+  });
+
   it("redacts signed URLs and basic credentials in arbitrary diagnostic fields", () => {
     const safe = sanitizeLogFieldsForProduction({
       route: "/reset-password?token=fake_reset_secret&source=email",
