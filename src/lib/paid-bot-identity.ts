@@ -160,6 +160,14 @@ async function paidPlanForUser(
       .where(eq(schema.phoneNumbers.userId, userId)),
     getIncludedPhoneLineSlots(userId),
   ]);
+  // A paid active subscription includes at least one phone slot. Zero/invalid
+  // live capacity indicates an inconsistent account projection, not an
+  // intentionally private or over-capacity Bot. Surface it for retry/repair.
+  if (!Number.isFinite(phoneSlots) || phoneSlots < 1) {
+    throw new Error(
+      "PAID_IDENTITY_ENTITLEMENT_MISMATCH: Active paid subscription has no live phone entitlement. Reconcile subscription and account settings before provisioning.",
+    );
+  }
   // The phone entitlement already includes purchased extras. A stored Bot-only
   // grant must not silently expand paid carrier/mailbox allocation. Recheck in
   // the worker as well as at enqueue time so stale jobs cannot outlive a downgrade.
@@ -183,7 +191,7 @@ export async function getPaidBotIdentityAgentIds(userId: string): Promise<string
   return (await paidPlanForUser(userId)).agentIds;
 }
 
-async function assertTwilioOwnedNumber(phoneNumber: string): Promise<void> {
+export async function assertTwilioOwnedNumber(phoneNumber: string): Promise<void> {
   const client = getTwilioClient();
   if (!client) throw new Error("Twilio is not configured for paid Bot identity provisioning.");
   const rows = await client.incomingPhoneNumbers.list({ phoneNumber, limit: 1 });

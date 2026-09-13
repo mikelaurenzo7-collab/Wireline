@@ -4,9 +4,14 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as schema from "../src/db/schema";
-import { ensurePaidBotIdentity, getPaidBotIdentityAgentIds } from "../src/lib/paid-bot-identity";
+import {
+  assertTwilioOwnedNumber,
+  ensurePaidBotIdentity,
+  getPaidBotIdentityAgentIds,
+} from "../src/lib/paid-bot-identity";
 import { hasExactAgentMailManagedScope } from "../src/lib/agentmail-mail";
 import { drizzle } from "../src/lib/server-context";
+import { getErrorMessage } from "../src/lib/server-utils";
 
 const APPLY = process.argv.includes("--apply");
 const PAID_PLANS = ["starter", "team", "business", "enterprise"] as const;
@@ -90,8 +95,23 @@ async function existingIdentity(candidate: Candidate) {
         ),
       ),
   ]);
+  const phone = phones[0]?.phone || null;
+  let phoneOwnership: "verified" | "unverified" | "missing" = phone ? "unverified" : "missing";
+  let phoneOwnershipError: string | null = null;
+  if (phone) {
+    try {
+      // This is the same read-only account-ownership check used by provisioning.
+      // Stored legacy/imported phone rows alone are not carrier ownership proof.
+      await assertTwilioOwnedNumber(phone);
+      phoneOwnership = "verified";
+    } catch (error) {
+      phoneOwnershipError = getErrorMessage(error);
+    }
+  }
   return {
-    phone: phones[0]?.phone || null,
+    phone,
+    phoneOwnership,
+    phoneOwnershipError,
     email: mailboxes.find((row) => hasExactAgentMailManagedScope(row.scopes))?.email || null,
   };
 }
@@ -104,6 +124,8 @@ export async function main() {
     plan: string;
     phone: string | null;
     email: string | null;
+    phoneOwnership: "verified" | "unverified" | "missing";
+    phoneOwnershipError: string | null;
     complete: boolean;
   }>;
 
@@ -115,7 +137,9 @@ export async function main() {
       plan: candidate.plan,
       phone: current.phone,
       email: current.email,
-      complete: Boolean(current.phone && current.email),
+      phoneOwnership: current.phoneOwnership,
+      phoneOwnershipError: current.phoneOwnershipError,
+      complete: Boolean(current.phoneOwnership === "verified" && current.email),
     });
   }
 
@@ -124,17 +148,23 @@ export async function main() {
     JSON.stringify(
       {
         mode: APPLY ? "apply" : "dry-run",
+        scope: "Entitlement eligibility, Twilio ownership, and local managed-mailbox records",
+        deliveryVerified: false,
         paidBots: inspected.length,
         intentionallyIneligibleBots: intentionallyIneligible,
         complete: inspected.length - missing.length,
         missingIdentity: missing.length,
-        missing: missing.map(({ agentId, name, plan, phone, email }) => ({
-          agentId,
-          name,
-          plan,
-          hasPhone: Boolean(phone),
-          hasManagedEmail: Boolean(email),
-        })),
+        missing: missing.map(
+          ({ agentId, name, plan, phone, email, phoneOwnership, phoneOwnershipError }) => ({
+            agentId,
+            name,
+            plan,
+            hasPhone: Boolean(phone),
+            hasManagedEmail: Boolean(email),
+            phoneOwnership,
+            phoneOwnershipError,
+          }),
+        ),
       },
       null,
       2,

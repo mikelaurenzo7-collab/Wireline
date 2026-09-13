@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
   phones: [] as Array<{ phone: string }>,
   mailboxes: [] as Array<{ email: string; scopes: string }>,
   roster: vi.fn(),
+  ownership: vi.fn(),
   provision: vi.fn(),
   inspected: [] as string[],
 }));
@@ -92,6 +93,7 @@ vi.mock("../src/lib/server-context", () => ({
   },
 }));
 vi.mock("../src/lib/paid-bot-identity", () => ({
+  assertTwilioOwnedNumber: (...args: unknown[]) => h.ownership(...args),
   getPaidBotIdentityAgentIds: (...args: unknown[]) => h.roster(...args),
   ensurePaidBotIdentity: (...args: unknown[]) => h.provision(...args),
 }));
@@ -113,6 +115,7 @@ beforeEach(() => {
   h.mailboxes = [];
   h.inspected = [];
   h.roster.mockImplementation(async () => h.eligible);
+  h.ownership.mockResolvedValue(undefined);
   h.provision.mockImplementation(() => {
     throw new Error("Dry run must never provision");
   });
@@ -123,6 +126,26 @@ afterEach(() => {
 });
 
 describe("paid identity operator dry-run audit", () => {
+  it("fails on an entitlement projection error rather than reporting intentional skips", async () => {
+    h.roster.mockRejectedValue(new Error("PAID_IDENTITY_ENTITLEMENT_MISMATCH"));
+    await expect(main()).rejects.toThrow("PAID_IDENTITY_ENTITLEMENT_MISMATCH");
+    expect(console.log).not.toHaveBeenCalled();
+    expect(h.provision).not.toHaveBeenCalled();
+  });
+  it("does not pass a stored phone row whose configured-account ownership is unverified", async () => {
+    h.phones = [{ phone: "+12025550123" }];
+    h.mailboxes = [{ email: "managed@botbound.me", scopes: "managed" }];
+    h.ownership.mockRejectedValue(new Error("Phone is not owned by the configured Twilio account"));
+    await main();
+    expect(JSON.parse(vi.mocked(console.log).mock.calls[0][0])).toMatchObject({
+      complete: 0,
+      missingIdentity: 1,
+      missing: [{ hasPhone: true, phoneOwnership: "unverified" }],
+    });
+    expect(h.ownership).toHaveBeenCalledWith("+12025550123");
+    expect(process.exitCode).toBe(2);
+    expect(h.provision).not.toHaveBeenCalled();
+  });
   it("reports intentionally ineligible Bots without a repair failure or provider work", async () => {
     h.eligible = [];
     await main();

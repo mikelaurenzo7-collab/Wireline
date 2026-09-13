@@ -273,10 +273,22 @@ describe("paid identity admission at queue and provider boundaries", () => {
     h.beforePerform = () => {
       h.slots = 0;
     };
-    await expect(
-      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
-    ).resolves.toMatchObject({ eligible: false });
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "PAID_IDENTITY_ENTITLEMENT_MISMATCH",
+    );
     expect(h.fence).toHaveBeenCalledOnce();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
+  it("surfaces active-subscription projection mismatches instead of intentional skips", async () => {
+    h.slots = 0;
+    await expect(enqueuePaidBotIdentityReconciliation("tenant")).rejects.toThrow(
+      "PAID_IDENTITY_ENTITLEMENT_MISMATCH",
+    );
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "newest" })).rejects.toThrow(
+      "PAID_IDENTITY_ENTITLEMENT_MISMATCH",
+    );
+    expect(h.enqueue).not.toHaveBeenCalled();
+    expect(h.phoneProvision).not.toHaveBeenCalled();
     expect(h.provider).not.toHaveBeenCalled();
   });
   it.each(["trialing", "canceled", "past_due"])(
