@@ -13,14 +13,14 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('slogan: "MEET YOUR NEXT SALES HIRE"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>PUT YOUR BOT<\/span>[\s\S]*?<span>ON THE LINE<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>YOUR NEXT<\/span>[\s\S]*?<span>SALES HIRE<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -34,7 +34,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const css = read("src/styles/landing-prestige.css");
 
     expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} defaultTemplateId="sales-rep" />',
     );
     expect(landing).not.toContain("PrecisionPublicHeader");
     expect(css).toMatch(
@@ -119,8 +119,8 @@ describe("BotBound public iPhone prestige contract", () => {
     const styles = read("src/styles/bot-mark.css");
 
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("FIND. CALL. BOOK.");
-    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).toContain("REACH. QUALIFY. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. BOOK.");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
@@ -136,7 +136,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("PICK THE WORK. PUT A BOT ON IT.");
+    expect(landing).toContain("GIVE YOUR NEXT HIRE A CLEAR JOB.");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("DIRECTION_LABELS[template.direction]");
     expect(landing).not.toContain("template.category");
@@ -182,3 +182,4 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(designCss).not.toMatch(/Letterpress design system|Obsidian canvas|Aurora palette/i);
   });
 });
+

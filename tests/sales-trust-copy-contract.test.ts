@@ -77,8 +77,8 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("YOUR NEXT");
+    expect(landing).toContain("SALES HIRE");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);
@@ -113,3 +113,4 @@ describe("sales trust copy contract", () => {
     expect(compare).toContain('signupHrefForPlan("personal")');
   });
 });
+

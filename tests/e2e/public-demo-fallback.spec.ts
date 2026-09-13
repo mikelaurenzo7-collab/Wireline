@@ -61,9 +61,9 @@ test("home offers outbound and inbound account paths without a public audio cont
   await openPage(page, "/");
 
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+FIND\. CALL\. BOOK\./ });
+  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+REACH\. QUALIFY\. BOOK\./ });
   const inbound = directions.getByRole("link", {
-    name: /INBOUND\s+ANSWER\. QUALIFY\. ROUTE\./,
+    name: /INBOUND\s+ANSWER\. QUALIFY\. BOOK\./,
   });
   await expect(outbound).toHaveAttribute(
     "href",
@@ -96,3 +96,4 @@ test("legacy public voice endpoints return deterministic provider-free retiremen
     });
   }
 });
+

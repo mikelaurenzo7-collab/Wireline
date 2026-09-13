@@ -16,10 +16,10 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("Illustrative Workflow");
     expect(landing).not.toContain("Booked and logged");
     expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} defaultTemplateId="sales-rep" />',
     );
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("YOUR NEXT");
+    expect(landing).toContain("SALES HIRE");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");
@@ -28,11 +28,11 @@ describe("home landing launch clarity", () => {
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(product).toContain(
-      'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
+      'activationLine: "Answer leads. Qualify buyers. Book the next step."',
     );
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("FIND. CALL. BOOK.");
-    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).toContain("REACH. QUALIFY. BOOK.");
+    expect(landing).toContain("ANSWER. QUALIFY. BOOK.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
       'const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]',
@@ -52,3 +52,4 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain("—");
   });
 });
+

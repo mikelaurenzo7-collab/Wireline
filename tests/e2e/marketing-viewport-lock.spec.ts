@@ -206,14 +206,14 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await openPublicRoute(page, "/");
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "YOUR NEXT SALES HIRE" })).toBeVisible();
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  await expect(directions.getByText("FIND. CALL. BOOK.", { exact: true })).toBeVisible();
-  await expect(directions.getByText("ANSWER. QUALIFY. ROUTE.", { exact: true })).toBeVisible();
+  await expect(directions.getByText("REACH. QUALIFY. BOOK.", { exact: true })).toBeVisible();
+  await expect(directions.getByText("ANSWER. QUALIFY. BOOK.", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." }),
+    page.getByRole("heading", { name: "GIVE YOUR NEXT HIRE A CLEAR JOB." }),
   ).toBeAttached();
 
   const metrics = await publicMetrics(page);
@@ -322,3 +322,4 @@ test("showcase redirects into free account creation without horizontal escape", 
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "showcase redirect");
 });
+

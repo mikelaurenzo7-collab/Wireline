@@ -14,12 +14,12 @@ describe("canonical BotBound public prestige certification", () => {
     const landingCss = read("src/styles/landing-prestige.css");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('slogan: "MEET YOUR NEXT SALES HIRE"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
+      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} defaultTemplateId="sales-rep" />',
     );
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
@@ -49,3 +49,4 @@ describe("canonical BotBound public prestige certification", () => {
     expect(designVision).not.toMatch(/Aurora Letterpress|Obsidian Design System/i);
   });
 });
+
