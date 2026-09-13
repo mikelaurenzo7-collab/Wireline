@@ -28,8 +28,10 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("Wire / Launch");
     expect(readme).toContain("Studio / Improve");
     expect(readme).toContain("your Bot across calls, texts, and email");
-    expect(readme).toContain("production-number slot");
-    expect(readme).toContain("provisions the number only when the role needs one");
+    expect(readme).toContain("active paid Bot gets a dedicated production number");
+    expect(readme).toContain("BotBound-managed email identity");
+    expect(readme).toContain("Draft Bots stay private until activation");
+    expect(readme).toContain("unused Bot capacity does not pre-provision carrier numbers");
     expectNoTerms(readme, retiredProductTerms);
   });
 

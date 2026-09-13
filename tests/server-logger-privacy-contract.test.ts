@@ -39,6 +39,17 @@ describe("production logger privacy", () => {
     expect(serialized).toContain("[redacted-email]");
   });
 
+  it("preserves a real request correlation UUID while redacting tenant UUIDs", () => {
+    const id = "123e4567-e89b-42d3-a456-426614174000";
+    expect(sanitizeLogFieldsForProduction({ requestId: id, userId: id })).toEqual({
+      requestId: id,
+      userId: "[redacted-id]",
+    });
+    expect(
+      JSON.stringify(sanitizeLogFieldsForProduction({ requestId: "/path?token=fake_secret" })),
+    ).not.toContain("fake_secret");
+  });
+
   it("preserves operationally useful non-sensitive fields", () => {
     expect(
       sanitizeLogFieldsForProduction({ requestId: "req_123", status: 503, provider: "twilio" }),

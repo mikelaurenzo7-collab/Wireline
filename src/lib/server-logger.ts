@@ -16,6 +16,14 @@ const SENSITIVE_KEY_PATTERN =
   /password|passwd|secret|authorization|cookie|api[_-]?key|access[_-]?token|refresh[_-]?token|private[_-]?key|passwordhash/i;
 
 function sanitizeString(value: string, key: string): string {
+  // Request IDs are random correlation handles, not tenant identifiers. Keep
+  // valid UUIDs intact so browser, API, and provider failures can be joined.
+  if (
+    key === "requestId" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  ) {
+    return value;
+  }
   if (
     (key === "error" || key === "message" || /error$/i.test(key)) &&
     /failed query:|\bparams?:/i.test(value)
