@@ -80,6 +80,7 @@ type ElementProps = {
   value?: string;
   disabled?: boolean;
   maxLength?: number;
+  hidden?: boolean;
   message?: { role: string; content: string };
   "aria-label"?: string;
   onClick?: () => void;
@@ -102,6 +103,7 @@ function descendants(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(descendants);
   if (!node || typeof node !== "object" || !("props" in node)) return [];
   const element = node as Element;
+  if (element.props.hidden) return [];
   return [element, ...descendants(element.props.children)];
 }
 function text(node: ReactNode): string {
@@ -130,31 +132,53 @@ function invoke(instance: Instance, component: Renderable, props: unknown) {
 function mount(initial: Partial<Props> = {}) {
   let props: Props = { agentId: "bot-1", agentName: "Sales Bot", mode: "test", ...initial };
   const outer = newInstance();
-  let session: Instance | undefined;
-  let sessionKey: string | null = null;
+  const sessions = new Map<string, Instance>();
   let tree: ReactNode;
   const render = () => {
     for (let pass = 0; pass < 20; pass++) {
       tree = invoke(outer, StudioWorkroom as unknown as Renderable, props);
-      const child = tree as ReactElement;
-      if (typeof child.type === "object" && child.type && "render" in child.type) {
-        if (!session || sessionKey !== child.key) {
-          if (session) dispose(session);
-          session = newInstance();
-          sessionKey = child.key;
+      const seen = new Set<string>();
+      const renderSessions = (node: ReactNode): ReactNode => {
+        if (Array.isArray(node)) return node.map(renderSessions);
+        if (!node || typeof node !== "object" || !("props" in node)) return node;
+        const child = node as ReactElement<{ children?: ReactNode; agentId?: string }>;
+        if (
+          typeof child.type === "object" &&
+          child.type &&
+          "render" in child.type &&
+          child.props.agentId
+        ) {
+          const key = String(child.key);
+          seen.add(key);
+          let session = sessions.get(key);
+          if (!session) {
+            session = newInstance();
+            sessions.set(key, session);
+          }
+          return invoke(session, child.type as unknown as Renderable, child.props);
         }
-        tree = invoke(session, child.type as unknown as Renderable, child.props);
-      }
+        return {
+          ...child,
+          props: { ...child.props, children: renderSessions(child.props.children) },
+        };
+      };
+      tree = renderSessions(tree);
+      for (const [key, session] of sessions)
+        if (!seen.has(key)) {
+          dispose(session);
+          sessions.delete(key);
+        }
       for (const effect of outer.effects.splice(0)) effect();
-      for (const effect of session?.effects.splice(0) || []) effect();
-      if (!outer.dirty && !session?.dirty) return;
+      for (const session of sessions.values())
+        for (const effect of session.effects.splice(0)) effect();
+      if (!outer.dirty && [...sessions.values()].every((session) => !session.dirty)) return;
     }
     throw new Error("Workroom did not settle");
   };
   render();
   unmount = () => {
     dispose(outer);
-    if (session) dispose(session);
+    for (const session of sessions.values()) dispose(session);
   };
   const find = (predicate: (element: Element) => boolean) => {
     render();
@@ -255,14 +279,19 @@ describe("Studio customer rehearsal", () => {
   });
 
   it("fences same-tick duplicate sends and reset while a reply is pending", async () => {
-    const ui = mount();
+    const onModeChange = vi.fn();
+    const ui = mount({ onModeChange });
     ui.type("What do you offer?");
     const send = ui.button("Send").props.onClick!;
     const reset = ui.button("Reset test conversation").props.onClick!;
+    const switchMode = ui.button("Build").props.onClick!;
     send();
     send();
     reset();
+    switchMode();
     await ui.flush();
+    expect(onModeChange).not.toHaveBeenCalled();
+    expect(ui.button("Build").props.disabled).toBe(true);
     expect(streams).toHaveLength(1);
     expect(ui.messages().map((m) => m.content)).toEqual(["What do you offer?"]);
     expect(ui.button("Reset test conversation").props.disabled).toBe(true);
@@ -300,7 +329,32 @@ describe("Studio customer rehearsal", () => {
     });
   });
 
-  it("aborts the previous mode and keeps its late reply out of Build", async () => {
+  it("keeps the send lock until a completed reply's transport has settled", async () => {
+    const ui = mount();
+    ui.type("First question");
+    ui.button("Send").props.onClick?.();
+    await ui.flush();
+    streams[0].controller.enqueue(
+      new TextEncoder().encode('event: done\ndata: {"reply":"First reply"}\n\n'),
+    );
+    await ui.flush();
+    expect(ui.composer().props.disabled).toBe(true);
+    expect(ui.button("Reset test conversation").props.disabled).toBe(true);
+    streams[0].controller.close();
+    streams[0].closed = true;
+    await ui.flush();
+    expect(ui.composer().props.disabled).toBe(false);
+    ui.type("Next question");
+    ui.button("Send").props.onClick?.();
+    await ui.flush();
+    expect(streams).toHaveLength(2);
+    expect(streams[1].body.history).toEqual([
+      { role: "customer", content: "First question" },
+      { role: "employee", content: "First reply" },
+    ]);
+  });
+
+  it("keeps a pending turn alive in its original mode and retains the reply", async () => {
     harness.authFetch.mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -322,11 +376,17 @@ describe("Studio customer rehearsal", () => {
     const old = streams[0];
     ui.update({ mode: "configure" });
     await ui.flush();
-    expect(old.signal.aborted).toBe(true);
+    expect(old.signal.aborted).toBe(false);
     expect(ui.messages().map((m) => m.content)).toEqual(["Saved Build conversation"]);
     finish(old, { reply: "Late customer reply" });
     await ui.flush();
     expect(ui.messages().map((m) => m.content)).toEqual(["Saved Build conversation"]);
+    ui.update({ mode: "test" });
+    expect(ui.messages().map((m) => m.content)).toEqual([
+      "Customer-only question",
+      "Late customer reply",
+    ]);
+    ui.update({ mode: "configure" });
     ui.type("Use a warmer greeting");
     ui.button("Send").props.onClick?.();
     await ui.flush();
@@ -411,6 +471,39 @@ describe("Studio customer rehearsal", () => {
     ui.button("Send").props.onClick?.();
     await ui.flush();
     expect(streams).toHaveLength(1);
+  });
+
+  it("keeps a pending clear attached to Build across route-driven mode changes", async () => {
+    const clear = deferred<Response>();
+    const onModeChange = vi.fn();
+    harness.authFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            messages: [
+              { id: "saved", role: "agent", content: "Saved advice", createdAt: "2026-09-14" },
+            ],
+          }),
+        ),
+      )
+      .mockReturnValueOnce(clear.promise);
+    const ui = mount({ mode: "configure", onModeChange });
+    await ui.flush();
+    const switchMode = ui.button("Test").props.onClick!;
+    ui.button("Clear conversation").props.onClick?.();
+    switchMode();
+    await ui.flush();
+    expect(onModeChange).not.toHaveBeenCalled();
+    expect(ui.button("Test").props.disabled).toBe(true);
+    ui.update({ mode: "test" });
+    ui.update({ mode: "configure" });
+    expect(ui.button("Clear conversation").props.disabled).toBe(true);
+    expect(ui.messages().map((m) => m.content)).toEqual(["Saved advice"]);
+    clear.resolve(new Response("{}"));
+    await ui.flush();
+    expect(ui.messages()).toEqual([]);
+    expect(ui.button("Test").props.disabled).toBe(false);
+    expect(harness.authFetch).toHaveBeenCalledTimes(2);
   });
 
   it("does not restore or automatically replay a failed Build command", async () => {
