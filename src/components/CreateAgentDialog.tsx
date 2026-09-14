@@ -327,7 +327,7 @@ export default function CreateAgentDialog({
           },
         });
       }
-      const wizardPayload: PostCreateWizardPayload = {
+      const wizardPayload: PostCreateWizardPayload & { ownerId: string } = {
         agentId: body.id,
         agentName: finalName,
         ownerId: user.id,

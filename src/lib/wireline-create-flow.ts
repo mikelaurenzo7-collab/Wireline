@@ -46,7 +46,7 @@ function persistPostCreateWizardPayload(payload: PostCreateWizardPayload): void 
 }
 
 /** Start a fresh post-create guide at Train. */
-export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
+export function stashPostCreateWizard(payload: PostCreateWizardPayload & { ownerId: string }): void {
   try {
     persistPostCreateWizardPayload(payload);
     sessionStorage.setItem(POST_CREATE_WIZARD_STEP_KEY, "train");

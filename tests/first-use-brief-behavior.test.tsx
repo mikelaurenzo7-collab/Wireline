@@ -1,9 +1,12 @@
 import { type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CreateAgentDialog from "../src/components/CreateAgentDialog";
+import AgentTemplates from "../src/components/AgentTemplates";
+import type { DeployValues } from "../src/components/DeployAgentModal";
 import PostCreateActivationWizard from "../src/components/onboarding/PostCreateActivationWizard";
 import {
   readPostCreateWizard,
+  readPostCreateWizardForOwner,
   stashPostCreateWizard,
   type PostCreateWizardPayload,
 } from "../src/lib/wireline-create-flow";
@@ -20,6 +23,7 @@ const harness = vi.hoisted(() => ({
   created: vi.fn(),
   close: vi.fn(),
   event: vi.fn(),
+  user: { id: "owner-1" } as { id: string } | null,
 }));
 
 // Exercise the real component handlers and their session-storage boundary.
@@ -54,10 +58,15 @@ vi.mock("../src/contexts/AgentsContext", () => ({
   AGENTS_CHANGED_EVENT: "agents-changed",
   useAgents: () => ({ agents: [], refresh: vi.fn() }),
 }));
-vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: "owner-1" } }) }));
+vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: harness.user }) }));
+vi.mock("../src/contexts/ToastContext", () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}));
+vi.mock("../src/components/DeployAgentModal", () => ({ default: "deploy-modal" }));
 vi.mock("../src/lib/api", () => ({
   authFetch: (...args: unknown[]) => harness.fetch(...args),
   safeJson: (response: Response) => response.json().catch(() => null),
+  isApiErrorBody: (body: unknown) => Boolean(body && typeof body === "object" && "error" in body),
 }));
 vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
@@ -84,11 +93,13 @@ type Props = {
   id?: string;
   value?: string;
   disabled?: boolean;
+  open?: boolean;
   "aria-label"?: string;
   "aria-expanded"?: boolean;
   onClick?: () => void | Promise<void>;
   onChange?: (event: { target: { value: string } }) => void;
   onSubmit?: (event: { preventDefault: () => void }) => Promise<void>;
+  onConfirm?: (values: DeployValues) => Promise<void>;
 };
 type Element = ReactElement<Props>;
 
@@ -136,7 +147,7 @@ const saved = { success: true, readiness: { rules: 1, facts: 0, tone: false } };
 const empty = { success: true, readiness: { rules: 0, facts: 0, tone: false } };
 const brief =
   "We sell bookkeeping to local businesses. Ask about team size and offer a consultation.";
-const payload: PostCreateWizardPayload = {
+const payload: PostCreateWizardPayload & { ownerId: string } = {
   agentId: "sales-bot-1",
   agentName: "Sales Rep Bot",
   ownerId: "owner-1",
@@ -151,13 +162,14 @@ beforeEach(() => {
   harness.refs = [];
   harness.effects = [];
   harness.mounting = true;
+  harness.user = { id: "owner-1" };
   const storage = new Map<string, string>();
   vi.stubGlobal("sessionStorage", {
     getItem: (key: string) => storage.get(key) ?? null,
     setItem: (key: string, value: string) => storage.set(key, value),
     removeItem: (key: string) => storage.delete(key),
   });
-  vi.stubGlobal("window", { dispatchEvent: vi.fn() });
+  vi.stubGlobal("window", { dispatchEvent: vi.fn(), location: { search: "" } });
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => {
     callback();
     return 1;
@@ -380,5 +392,44 @@ describe("starting-brief recovery", () => {
     });
     expect(readPostCreateWizard()?.pendingBrief).toBe("");
     expect(button(component, "Save starting brief").props.disabled).toBe(true);
+  });
+});
+
+describe("template-gallery setup continuity", () => {
+  const component = () => AgentTemplates();
+  beforeEach(() => {
+    window.location.search = "?template=sales-sdr";
+    harness.fetch.mockImplementation((_url: string, options?: { method?: string }) =>
+      Promise.resolve(
+        response(options?.method === "POST" ? { id: "template-bot-1" } : { agents: [] }),
+      ),
+    );
+  });
+
+  it("binds a template-created guide to its owner before navigating to Studio", async () => {
+    mount(component);
+    const modal = find(component, (element) => element.type === "deploy-modal");
+    expect(modal.props.open).toBe(true);
+    await modal.props.onConfirm?.({ name: "My sales Bot", voiceId: "alloy", gender: "female" });
+    expect(readPostCreateWizardForOwner("owner-1")).toMatchObject({
+      agentId: "template-bot-1",
+      ownerId: "owner-1",
+      phoneProvisionRequested: false,
+      phoneProvisioned: false,
+    });
+    expect(harness.navigate).toHaveBeenCalledWith("/studio?agent=template-bot-1&section=setup");
+  });
+
+  it("does not create an unbound template Bot after the local session is lost", async () => {
+    harness.user = null;
+    mount(component);
+    await find(component, (element) => element.type === "deploy-modal").props.onConfirm?.({
+      name: "My sales Bot",
+      voiceId: "alloy",
+      gender: "female",
+    });
+    expect(harness.fetch.mock.calls.some(([, options]) => options?.method === "POST")).toBe(false);
+    expect(readPostCreateWizard()).toBeNull();
+    expect(harness.navigate).not.toHaveBeenCalled();
   });
 });

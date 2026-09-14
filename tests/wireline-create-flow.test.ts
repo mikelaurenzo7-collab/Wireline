@@ -16,6 +16,7 @@ import {
 const payload = {
   agentId: "agent_test_1",
   agentName: "Reception",
+  ownerId: "owner-1",
   markKey: "spark-rose" as const,
   phoneProvisionRequested: true,
   phoneProvisioned: false,
@@ -176,7 +177,7 @@ describe("wireline create flow wizard persistence", () => {
   });
 
   it("does not reveal a legacy unbound guide to the next signed-in account", () => {
-    stashPostCreateWizard(payload);
+    sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify({ ...payload, ownerId: undefined }));
     expect(readPostCreateWizardForOwner("owner-1")).toBeNull();
     expect(readPostCreateWizard()).toBeNull();
   });
