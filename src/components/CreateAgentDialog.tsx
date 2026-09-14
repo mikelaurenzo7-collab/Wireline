@@ -6,7 +6,9 @@ import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { authFetch, safeJson } from "../lib/api";
+import { trainingExtractionWasSaved } from "../lib/training-extraction-result";
 import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import {
   stashCreateWarning,
@@ -119,6 +121,7 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { agents, refresh } = useAgents();
+  const { user } = useAuth();
   const initialTemplate = useMemo(() => templateForKey(initialTemplateKey), [initialTemplateKey]);
   const [name, setName] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>(initialTemplate.key);
@@ -136,9 +139,11 @@ export default function CreateAgentDialog({
   unavailableMarkKeysRef.current = unavailableMarkKeys;
   const markCapacityReached = unavailableMarkKeys.size >= BOT_MARK_CHOICES.length;
   const [brief, setBrief] = useState(initialBrief);
+  const [showRoles, setShowRoles] = useState(!initialTemplateKey);
   const briefIsTemplateTextRef = useRef(true);
   const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
   const [error, setError] = useState("");
   const briefRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLFormElement>(null);
@@ -151,6 +156,7 @@ export default function CreateAgentDialog({
     if (!open) return;
     const nextTemplate = templateForKey(initialTemplateKey);
     setTemplateKey(nextTemplate.key);
+    setShowRoles(!BOT_ROLE_TEMPLATES.some((template) => template.key === initialTemplateKey));
     setMarkKey(
       firstAvailableBotMarkKey(nextTemplate.key, unavailableMarkKeysRef.current) ??
         defaultBotMarkKey(nextTemplate.key),
@@ -158,7 +164,7 @@ export default function CreateAgentDialog({
     markWasChosenRef.current = false;
     setName("");
     setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary));
-    briefIsTemplateTextRef.current = true;
+    briefIsTemplateTextRef.current = !initialBrief.trim();
     setError("");
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
@@ -171,7 +177,7 @@ export default function CreateAgentDialog({
   }, [markKey, open, templateKey, unavailableMarkKeys]);
 
   function close() {
-    if (creating) return;
+    if (creatingRef.current) return;
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
@@ -195,7 +201,11 @@ export default function CreateAgentDialog({
 
   async function create(event: FormEvent) {
     event.preventDefault();
-    if (creating) return;
+    if (creatingRef.current) return;
+    if (!user?.id) {
+      setError("Sign in again to keep building your Bot.");
+      return;
+    }
     if (markCapacityReached) {
       setError(
         "Every available Bot identity is already in use. Contact support before adding another Bot.",
@@ -210,6 +220,7 @@ export default function CreateAgentDialog({
     // capability profile. It never creates a second customer-facing workspace.
     const legacyCapabilityProfile = isBusinessTemplateCategory(selectedTemplate.category);
 
+    creatingRef.current = true;
     setCreating(true);
     setError("");
 
@@ -237,7 +248,6 @@ export default function CreateAgentDialog({
 
       let trainingApplied = false;
       if (finalBrief) {
-        trainingApplied = true;
         try {
           const extractRes = await authFetch("/api/train/extract", {
             method: "POST",
@@ -252,7 +262,7 @@ export default function CreateAgentDialog({
               ].join("\n"),
             }),
           });
-          if (!extractRes.ok) trainingApplied = false;
+          trainingApplied = extractRes.ok && trainingExtractionWasSaved(await safeJson(extractRes));
         } catch {
           trainingApplied = false;
         }
@@ -279,7 +289,7 @@ export default function CreateAgentDialog({
         });
       } else if (finalBrief) {
         stashCreateWarning(
-          `${finalName} was created, but the starting brief didn't fully apply. Open Studio and paste it into Set Up to try again.`,
+          `${finalName} was created. Your starting brief still needs to be saved; edit or retry it in the setup guide.`,
         );
       }
       emitProductEvent({
@@ -320,9 +330,11 @@ export default function CreateAgentDialog({
       const wizardPayload: PostCreateWizardPayload = {
         agentId: body.id,
         agentName: finalName,
+        ownerId: user.id,
         markKey: isBotMarkKey(body.mark_key) ? body.mark_key : null,
         phoneProvisionRequested: false,
         phoneProvisioned: false,
+        ...(trainingApplied ? {} : { pendingBrief: finalBrief }),
       };
       stashPostCreateWizard(wizardPayload);
       onCreated?.(wizardPayload);
@@ -332,6 +344,7 @@ export default function CreateAgentDialog({
     } catch {
       setError("Bot could not be created. Try again.");
     } finally {
+      creatingRef.current = false;
       setCreating(false);
     }
   }
@@ -399,7 +412,7 @@ export default function CreateAgentDialog({
                   Start With a Role
                 </h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Proven roles and Create Your Own all lead to the same configurable Bot.
+                  Choose a starting point, then make it yours.
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5" aria-label="Available Bot channels">
@@ -414,81 +427,90 @@ export default function CreateAgentDialog({
               </div>
             </div>
 
-            <div
-              className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
-              role="group"
-              aria-label="Bot role starters"
-            >
-              {BOT_ROLE_TEMPLATES.map((template) => {
-                const selected = templateKey === template.key;
-                return (
-                  <button
-                    key={template.key}
-                    type="button"
-                    onClick={() => {
-                      setTemplateKey(template.key);
-                      if (!markWasChosenRef.current) {
-                        setMarkKey(
-                          firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
-                            defaultBotMarkKey(template.key),
-                        );
-                      }
-                      if (briefIsTemplateTextRef.current || !brief.trim()) {
-                        briefIsTemplateTextRef.current = true;
-                        setBrief(template.key === "custom" ? "" : template.summary);
-                      }
-                    }}
-                    className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? SELECTED : IDLE}`}
-                    aria-pressed={selected}
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-foreground">{template.name}</span>
-                      <span
-                        className={`grid size-5 place-items-center rounded-full border text-[10px] ${
-                          selected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border text-transparent"
-                        }`}
-                      >
-                        <Check size={12} aria-hidden="true" />
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
-                      {template.direction}
-                    </span>
-                    <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
-                      {template.summary}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">
+                  {templateForKey(templateKey).name}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {templateForKey(templateKey).summary}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={creating}
+                aria-expanded={showRoles}
+                aria-controls="create-role-options"
+                onClick={() => setShowRoles((current) => !current)}
+                className="shrink-0"
+              >
+                {showRoles ? "Hide roles" : "Change role"}
+              </Button>
             </div>
-          </section>
 
-          <section className="mt-6" aria-labelledby="bot-mark-heading">
-            <div className="mb-3">
-              <h3 id="bot-mark-heading" className="text-sm font-semibold text-foreground">
-                Choose a Mark
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                This symbol identifies your Bot everywhere in BotBound.
-              </p>
-            </div>
-            <BotMarkPicker
-              value={markKey}
-              onChange={(nextMarkKey) => {
-                markWasChosenRef.current = true;
-                setMarkKey(nextMarkKey);
-              }}
-              seed={`new:${templateKey}`}
-              name={name.trim() || defaultName(templateKey)}
-              disabled={creating || markCapacityReached}
-              unavailableKeys={unavailableMarkKeys}
-            />
+            {showRoles ? (
+              <div
+                id="create-role-options"
+                className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
+                role="group"
+                aria-label="Bot role starters"
+              >
+                {BOT_ROLE_TEMPLATES.map((template) => {
+                  const selected = templateKey === template.key;
+                  return (
+                    <button
+                      key={template.key}
+                      type="button"
+                      disabled={creating}
+                      onClick={() => {
+                        setTemplateKey(template.key);
+                        if (!markWasChosenRef.current) {
+                          setMarkKey(
+                            firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
+                              defaultBotMarkKey(template.key),
+                          );
+                        }
+                        if (briefIsTemplateTextRef.current || !brief.trim()) {
+                          briefIsTemplateTextRef.current = true;
+                          setBrief(template.key === "custom" ? "" : template.summary);
+                        }
+                        setShowRoles(false);
+                        requestAnimationFrame(() => briefRef.current?.focus());
+                      }}
+                      className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? SELECTED : IDLE}`}
+                      aria-pressed={selected}
+                    >
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-foreground">
+                          {template.name}
+                        </span>
+                        <span
+                          className={`grid size-5 place-items-center rounded-full border text-[10px] ${
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border text-transparent"
+                          }`}
+                        >
+                          <Check size={12} aria-hidden="true" />
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                        {template.direction}
+                      </span>
+                      <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
+                        {template.summary}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </section>
 
           <label className="mt-6 block">
-            <span className="mb-2 block text-xs font-semibold text-foreground">
+            <span className="mb-2 block text-sm font-semibold text-foreground">
               Describe the Job
             </span>
             <Textarea
@@ -498,28 +520,61 @@ export default function CreateAgentDialog({
                 briefIsTemplateTextRef.current = false;
                 setBrief(event.target.value);
               }}
-              placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups"
-              className="min-h-[120px] text-[15px]"
-              resize="none"
+              disabled={creating}
+              maxLength={10000}
+              aria-describedby="create-brief-help"
+              placeholder="We help local businesses with website design. Ask about their goals, budget, and timing. Offer a consultation; send custom pricing questions to me."
+              className="min-h-[150px] text-[15px]"
+              resize="vertical"
             />
           </label>
+          <p id="create-brief-help" className="mt-2 text-xs leading-5 text-muted-foreground">
+            What do you offer? Who should it help? What should happen next? Include any prices,
+            limits, or questions that need you.
+          </p>
 
-          <label className="mt-5 grid gap-1.5">
-            <span className="text-xs font-semibold text-foreground">
-              {language.nameLabel}{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
-            </span>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={defaultName(templateKey)}
-              autoComplete="off"
-            />
-          </label>
+          <details className="mt-5 rounded-xl border border-border px-4 py-3">
+            <summary className="cursor-pointer text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Customize name &amp; mark
+            </summary>
+            <label className="mt-4 grid gap-1.5">
+              <span className="text-xs font-semibold text-foreground">
+                {language.nameLabel}{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+              </span>
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                disabled={creating}
+                placeholder={defaultName(templateKey)}
+                autoComplete="off"
+              />
+            </label>
+            <section className="mt-5" aria-labelledby="bot-mark-heading">
+              <div className="mb-3">
+                <h3 id="bot-mark-heading" className="text-sm font-semibold text-foreground">
+                  Choose a Mark
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  This symbol identifies your Bot everywhere in BotBound.
+                </p>
+              </div>
+              <BotMarkPicker
+                value={markKey}
+                onChange={(nextMarkKey) => {
+                  markWasChosenRef.current = true;
+                  setMarkKey(nextMarkKey);
+                }}
+                seed={`new:${templateKey}`}
+                name={name.trim() || defaultName(templateKey)}
+                disabled={creating || markCapacityReached}
+                unavailableKeys={unavailableMarkKeys}
+              />
+            </section>
+          </details>
 
           <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            After creation, configure the playbook, phone voice, channels, knowledge, tools,
-            guardrails, approvals, and handoffs in Studio.
+            Create your Bot, then try a private test in Studio.
           </p>
 
           {error ? (

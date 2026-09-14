@@ -15,6 +15,10 @@ export type PostCreateWizardStep = "train" | "channels" | "wire" | "test" | "lau
 export type PostCreateWizardPayload = {
   agentId: string;
   agentName: string;
+  /** New guides are bound to the signed-in account, including their recovery brief. */
+  ownerId?: string;
+  /** Keep an unapplied starting brief available for an explicit retry on this Bot. */
+  pendingBrief?: string;
   /** Persisted Bot identity returned by the create boundary. Optional for legacy sessions. */
   markKey?: BotMarkKey | null;
   /** BotBound attempted the managed phone identity after the Bot record committed. */
@@ -55,11 +59,26 @@ export function stashPostCreateWizard(payload: PostCreateWizardPayload): void {
  * A finished request must never reopen a dismissed guide or replace another Bot. */
 export function updatePostCreateWizard(payload: PostCreateWizardPayload): boolean {
   try {
-    if (readPostCreateWizard()?.agentId !== payload.agentId) return false;
-    persistPostCreateWizardPayload(payload);
+    const current = readPostCreateWizard();
+    if (current?.agentId !== payload.agentId) return false;
+    // Identity setup can finish after a brief retry. Its older snapshot must
+    // neither restore a saved brief nor replace the user's latest edits.
+    persistPostCreateWizardPayload({ ...payload, pendingBrief: current.pendingBrief });
     return true;
   } catch {
     /* ignore quota / private mode */
+    return false;
+  }
+}
+
+/** Change only the current Bot's brief; never reopen a guide or reset its step. */
+export function updatePostCreateBrief(agentId: string, pendingBrief: string | null): boolean {
+  try {
+    const current = readPostCreateWizard();
+    if (current?.agentId !== agentId) return false;
+    persistPostCreateWizardPayload({ ...current, pendingBrief: pendingBrief ?? undefined });
+    return true;
+  } catch {
     return false;
   }
 }
@@ -72,6 +91,8 @@ export function parsePostCreateWizardPayload(raw: string | null): PostCreateWiza
     if (!parsed?.agentId || !parsed?.agentName) return null;
     return {
       ...parsed,
+      ownerId: typeof parsed.ownerId === "string" ? parsed.ownerId : undefined,
+      pendingBrief: typeof parsed.pendingBrief === "string" ? parsed.pendingBrief : undefined,
       markKey: isBotMarkKey(parsed.markKey) ? parsed.markKey : null,
     };
   } catch {
@@ -86,6 +107,18 @@ export function readPostCreateWizard(): PostCreateWizardPayload | null {
   } catch {
     return null;
   }
+}
+
+/** A browser tab can outlive a login. Never display another account's brief. */
+export function readPostCreateWizardForOwner(
+  ownerId: string | null | undefined,
+): PostCreateWizardPayload | null {
+  if (!ownerId) return null;
+  const payload = readPostCreateWizard();
+  if (!payload) return null;
+  if (payload.ownerId === ownerId) return payload;
+  clearPostCreateWizard();
+  return null;
 }
 
 export function stashPostCreateWizardStep(step: PostCreateWizardStep): void {

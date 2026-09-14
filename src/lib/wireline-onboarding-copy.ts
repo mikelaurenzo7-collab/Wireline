@@ -37,17 +37,15 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Train",
       title: "Teach it the job",
       detail:
-        "Greeting and description are saved. Add a site, document, or policy if the first call needs it.",
-      salesHint:
-        "Train what matters on day one, hear it privately, then put it on a live number.",
+        "Add the facts, policies, and handoff rules your Bot needs for its first conversation.",
+      salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
       secondary: "Continue to test",
     },
     launch: {
       label: "Launch",
       title: "Put it on the line",
-      detail:
-        "Every paid plan includes a US number. Callers reach this Bot directly.",
+      detail: "Every paid plan includes a US number. Callers reach this Bot directly.",
       primary: "Get a number",
       skip: "Launch later",
       activationRequired: "Your Bot is trained. A live number needs a plan.",
