@@ -58,7 +58,7 @@ describe("authenticated mobile cleanup", () => {
     expect(studio).toContain('title="Build Your Bot"');
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).toContain("Create Bot");
-    expect(studio).toContain("Choose a role starter or make it entirely custom.");
+    expect(studio).toContain('description="Describe the role and outcome."');
     expect(studio).not.toContain("dayGreeting");
     expect(studio).not.toContain("Good morning");
   });
