@@ -7,6 +7,7 @@ import StripeBillingCard, { BillingTrustFooter } from "../components/StripeBilli
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
+import { useAuth } from "../contexts/AuthContext";
 import { authFetch } from "../lib/api";
 import {
   activatedPostCreateWizard,
@@ -20,7 +21,7 @@ import {
   type CheckoutReturnVerification,
 } from "../lib/billing-checkout-return";
 import {
-  readPostCreateWizard,
+  readPostCreateWizardForOwner,
   readPostCreateWizardStep,
   updatePostCreateWizard,
 } from "../lib/wireline-create-flow";
@@ -61,6 +62,8 @@ function waitForCheckoutRetry(delayMs: number): Promise<void> {
 }
 
 export default function BillingSettings() {
+  const { user } = useAuth();
+  const ownerId = user?.id;
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
@@ -76,9 +79,13 @@ export default function BillingSettings() {
   );
 
   useEffect(() => {
+    if (!ownerId) return;
     let cancelled = false;
     async function load() {
       setLoading(true);
+      setBillingReady(!hasCheckoutReturnToVerify(window.location.search));
+      setSubscription(null);
+      setBalanceUsd(null);
       setLoadError(null);
       setCheckoutReturnNotice(null);
       try {
@@ -88,7 +95,7 @@ export default function BillingSettings() {
         let checkoutOutcome: CheckoutReturnOutcome | null = null;
         let verification: CheckoutReturnVerification | null = null;
         let resumePostCreateLaunch = false;
-        const resumeWizardAgentId = readPostCreateWizard()?.agentId ?? null;
+        const resumeWizardAgentId = readPostCreateWizardForOwner(ownerId)?.agentId ?? null;
 
         if (returnFlow && returnedSessionId) {
           for (const retryDelayMs of CHECKOUT_VERIFY_RETRY_DELAYS_MS) {
@@ -173,7 +180,7 @@ export default function BillingSettings() {
               ? shouldResumePostCreateLaunch(
                   returnFlow,
                   checkoutOutcome,
-                  Boolean(readPostCreateWizard()),
+                  Boolean(readPostCreateWizardForOwner(ownerId)),
                   readPostCreateWizardStep(),
                 )
               : false;
@@ -202,7 +209,7 @@ export default function BillingSettings() {
             returnFlow,
             checkoutOutcome,
             resumeWizardAgentId,
-            readPostCreateWizard(),
+            readPostCreateWizardForOwner(ownerId),
             readPostCreateWizardStep(),
           );
           // Persist the fulfilled plan before reopening this same Bot's guide.
@@ -212,7 +219,8 @@ export default function BillingSettings() {
             return;
           }
         }
-        if (!cancelled) setBillingReady(true);
+        if (cancelled) return;
+        setBillingReady(true);
 
         const [statusRes, balanceRes] = await Promise.all([
           authFetch("/api/billing/status"),
@@ -255,7 +263,7 @@ export default function BillingSettings() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [ownerId]);
 
   const plan = useMemo(
     () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,

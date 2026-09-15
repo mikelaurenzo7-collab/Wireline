@@ -29,7 +29,10 @@ export default function AuthPortal() {
           tabIndex={-1}
         >
           <div className="w-full max-w-[520px]">
-            <AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />
+            <AuthAccessPanel
+              initialMode={isSignupRoute ? "signup" : "signin"}
+              defaultTemplateId="sales-rep"
+            />
           </div>
         </main>
       </div>

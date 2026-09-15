@@ -312,7 +312,9 @@ describe("code review hardening contracts", () => {
     expect(founderFleet).toContain("systemPrompt: persona.systemPrompt");
     expect(founderFleet).toContain("FOUNDER_FLEET_SEED_CONTRACT_VERSION");
     expect(founderBootstrap).toContain("currentManagedContracts");
-    expect(auth).toContain('<AuthAccessPanel initialMode={isSignupRoute ? "signup" : "signin"} />');
+    expect(auth).toMatch(
+      /<AuthAccessPanel\s+initialMode=\{isSignupRoute \? "signup" : "signin"\}\s+defaultTemplateId="sales-rep"\s*\/>/,
+    );
     expect(authAccess).toContain('const termsId = embedded ? "landing-auth-terms" : "auth-terms";');
     expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");
     expect(authAccess).toContain("aria-labelledby={termsLabelId}");

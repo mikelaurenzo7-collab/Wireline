@@ -1,13 +1,28 @@
 # BotBound Brand and Launch Asset Index
 
-Status: revision 4 creative release candidate, 2026-09-01. The creative package is complete for owner review; it is not a deployment record or blanket paid-media authorization.
+Status: current AI sales-bot campaign, updated 2026-09-15. Website changes remain a release candidate; creative completion is not a deployment record or paid-media authorization.
+
+## Current campaign: Your Next Sales Hire
+
+- Positioning authority: `../docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`.
+- Current creative and editable production source: https://drive.google.com/drive/folders/1KGRPCkQH1DLPURJOXTVp3BL1rCp0OgBO.
+- Category: **AI sales bots.** Headline: **Meet your next sales hire.**
+- Product ambition: **Every lead. A next step.**
+- Offer: private simulation free; activation and live usage paid.
+- Seven artwork formats and six music-led films. Generated brand creative and proposed product concepts are not evidence of shipped capabilities or customer outcomes.
+
+The Second Ring packages below are historical. Their exports, captions, scripts,
+and screenshots must not be used as the current launch package. The old
+`brand:launch` command is retired. Explicit historical reproduction uses
+`npm run brand:launch:archive` and writes only to
+`brand-work/archives/second-ring/exports`, never the active export directory.
 
 The production identity is the friendly white/platinum robot visibly gripping a violet phone receiver, paired with a complete Inter Tight ExtraBold `BotBound` wordmark. Both B glyphs are complete and unbroken.
 
-## Source of truth
+## Historical release references
 
 - Launch library: https://drive.google.com/drive/folders/1IuBVwWQIFQZbBCeSW5DKLxeBOmSygTuF
-- Current versioned creative release: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
+- Historical revision 4 creative release: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
 - Local release assembly (Google Drive is canonical): `launch-2026-09/`; Git retains the human-authored copy, provenance, original source art, and regeneration inputs, while rendered delivery masters and generated manifests stay in the private Drive release.
 - Native Google Slides launch deck: https://docs.google.com/presentation/d/1VDwq4RTI86V1DKfKRkcEG7ojve52-JVqMeTYFhy7GIQ/edit?usp=drivesdk
 - Decks and GTM folder: https://drive.google.com/drive/folders/12ynmOVkcvJJKHc-PNhv9gSLKh3jHRyIu
@@ -27,7 +42,7 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 
 ## Campaign and finished placements
 
-### Revision 4 — The Second Ring, 2026-09-01
+### Historical revision 4 — The Second Ring, 2026-09-01
 
 The paths below describe the generated local layout and the matching private
 Drive delivery. A fresh checkout recreates the delivery files from the committed
@@ -93,6 +108,7 @@ Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-deliver
 - `DELIVERY-SHA256SUMS-R3.txt` covers the 62-file certified Drive delivery snapshot.
 - `SOURCE-SHA256SUMS.txt` covers the compact repository source package and preserves the archived revision 3 browser proof.
 - Product, native, billing, OG, and browser icons: `npm run assets`
-- Launch placements: `npm run brand:launch`
+- Current launch placements and editable source: use the current campaign folder above.
+- Historical Second Ring placements only: `npm run brand:launch:archive`, isolated to `brand-work/archives/second-ring/exports`.
 - Fresh current-release browser proof: `npm run brand:proof`, followed by visual review and checksum refresh
-- Film compositions and render commands: `apps/botbound-film`
+- Historical Second Ring film compositions and render commands: `apps/botbound-film`

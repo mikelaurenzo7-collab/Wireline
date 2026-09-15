@@ -4,6 +4,11 @@ Approved production direction: the friendly white/platinum robot visibly grippin
 
 Current Drive links, launch revision, and complete delivery inventory: `CURRENT-ASSET-INDEX.md`.
 
+The current campaign is **Your Next Sales Hire**, under the **AI sales bots**
+category. The Second Ring stills, placements, and motion package below are
+historical reproduction inputs. They do not define the current launch campaign.
+Use the current index for approved creative, editable source, and release status.
+
 ## Identity
 
 - `selected/botbound-app-icon.png`
@@ -71,5 +76,6 @@ The files in `apps/botbound-film/out/` are intentionally ignored by Git and deli
 ## Regeneration
 
 - Product, native, billing, OG, and browser icons: `npm run assets`
-- Launch placements: `node scripts/render-botbound-launch-assets.mjs`
-- Film compositions and render commands: `apps/botbound-film`
+- Current launch placements and editable source: follow `CURRENT-ASSET-INDEX.md`.
+- Historical Second Ring placements only: `npm run brand:launch:archive`. Output is isolated to `brand-work/archives/second-ring/exports`; the retired renderer rejects unqualified invocation before reading inputs or writing files.
+- Historical Second Ring film compositions and render commands: `apps/botbound-film`

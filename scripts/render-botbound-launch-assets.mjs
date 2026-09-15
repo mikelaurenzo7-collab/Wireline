@@ -4,8 +4,18 @@ import { fileURLToPath } from "node:url";
 import { Resvg } from "@resvg/resvg-js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// This renderer owns the historical Second Ring campaign only. Require an
+// explicit archive request before reading inputs or creating any output.
+if (!process.argv.includes("--historical-second-ring")) {
+  console.error(
+    "The Second Ring renderer is retired. Use brand-work/CURRENT-ASSET-INDEX.md " +
+      "for the current AI sales-bot campaign. For historical reproduction only, " +
+      "run npm run brand:launch:archive; it writes only to brand-work/archives/second-ring/exports.",
+  );
+  process.exit(1);
+}
 const work = resolve(root, "brand-work");
-const output = resolve(work, "exports");
+const output = resolve(work, "archives/second-ring/exports");
 const fonts = [
   resolve(root, "brand-work/fonts/InterTight-ExtraBold.ttf"),
   resolve(root, "brand-work/fonts/Inter-Regular.ttf"),

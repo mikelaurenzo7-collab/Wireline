@@ -1,6 +1,6 @@
 # BotBound Launch Source of Truth
 
-Updated: 2026-09-13 (original authority: 2026-08-11)  
+Updated: 2026-09-15 (original authority: 2026-08-11)  
 Status: **Active launch authority**  
 Scope: public positioning, launch creative, dogfood proof, and pre-customer GTM
 
@@ -77,6 +77,11 @@ Never manufacture customer logos, quotes, usage counts, revenue claims, or impli
 Your Next Sales Hire contains seven artwork formats and six music-led films (30, 15, and 6 seconds in wide and vertical). Cinematic mascot imagery and typography are brand creative, not product footage or evidence of customer outcomes. Product concept screens in the strategy book are explicitly illustrative future experiences. Narration is optional production copy; the delivered films have original instrumental music and on-screen text.
 
 Website source is prepared in PR #1218. Vercel reports Account is blocked, so the campaign cutover is not deployed. Preserve the exact-source preview, review, and production verification gates when deployment access returns.
+
+The current creative inventory and editable production source are linked from
+`../brand-work/CURRENT-ASSET-INDEX.md`. The old `brand:launch` command is retired;
+`brand:launch:archive` explicitly reproduces The Second Ring into an isolated
+archive directory. It cannot regenerate or overwrite the current campaign.
 
 ## Historical creative status - 2026-08-11
 
@@ -194,4 +199,3 @@ Launch-clean means the repository, runtime, website, and creative all tell the s
 **Private simulation free. Activation and live usage paid.**
 
 Everything else should support that story or get out of the way.
-

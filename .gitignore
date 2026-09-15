@@ -171,3 +171,6 @@ wireline-*-assets*.zip
 
 # Local sandbox-only Vitest override; not part of CI
 vitest.sandbox.config.ts
+
+# Explicit historical campaign reproduction is local output.
+brand-work/archives/

@@ -103,7 +103,8 @@ describe("activation path contract", () => {
     expect(copy).toContain("Skip test");
     expect(copy).toContain("Put it on the line");
     expect(billing).toContain("shouldResumePostCreateLaunch(");
-    expect(billing).toContain("Boolean(readPostCreateWizard())");
+    expect(billing).toContain("Boolean(readPostCreateWizardForOwner(ownerId))");
+    expect(billing).not.toMatch(/\breadPostCreateWizard\(/);
     expect(billing).toContain("readPostCreateWizardStep()");
     expect(billing).toContain('window.location.replace("/studio")');
     expect(billing.indexOf("window.history.replaceState")).toBeLessThan(

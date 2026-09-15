@@ -133,8 +133,8 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/AuthPortal.tsx",
     authPortal,
-    /<AuthAccessPanel initialMode=\{isSignupRoute \? "signup" : "signin"\}\s*\/>/,
-    "dedicated auth routes must use the same access panel as the landing entrance",
+    /<AuthAccessPanel\s+initialMode=\{isSignupRoute \? "signup" : "signin"\}\s+defaultTemplateId="sales-rep"\s*\/>/,
+    "dedicated auth routes must share the access panel and its sales starter default",
   );
   mustInclude(
     "src/components/auth/AuthAccessPanel.tsx",
@@ -317,4 +317,3 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
     mustExclude(file, read(file), /Â|â|�/, "authenticated surfaces must not expose mojibake");
   }
 }
-
