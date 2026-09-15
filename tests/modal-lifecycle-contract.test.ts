@@ -58,11 +58,14 @@ describe("authenticated modal lifecycle contract", () => {
     expect(trialGate).toContain("onClick={closeModal}");
 
     for (const [path, guard] of [
-      ["src/components/CreateAgentDialog.tsx", "if (creating) return"],
+      ["src/components/CreateAgentDialog.tsx", "if (creatingRef.current) return"],
       ["src/components/DeployAgentModal.tsx", "if (!deploying) onClose()"],
       ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
       ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
-      ["src/components/onboarding/PostCreateActivationWizard.tsx", "if (provisioning) return"],
+      [
+        "src/components/onboarding/PostCreateActivationWizard.tsx",
+        "if (provisioning || savingBriefRef.current) return",
+      ],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],
     ] as const) {
       expect(source(path), path).toContain(guard);

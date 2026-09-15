@@ -5,9 +5,11 @@ import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 
 import RoleplaySandbox from "../RoleplaySandbox";
-import { Button } from "../atoms";
+import { Button, Textarea } from "../atoms";
 import { StatusNotice } from "../molecules";
-import { authFetch } from "../../lib/api";
+import { authFetch, safeJson } from "../../lib/api";
+import { trainingExtractionWasSaved } from "../../lib/training-extraction-result";
+import { AGENTS_CHANGED_EVENT } from "../../contexts/AgentsContext";
 import {
   ACTIVATION_PENDING_COPY,
   POST_CREATE_WIZARD_COPY,
@@ -17,6 +19,7 @@ import {
   clearPostCreateWizard,
   readPostCreateWizardStep,
   stashPostCreateWizardStep,
+  updatePostCreateBrief,
   type PostCreateWizardPayload,
   type PostCreateWizardStep,
 } from "../../lib/wireline-create-flow";
@@ -86,6 +89,7 @@ export default function PostCreateActivationWizard({
   onClose,
 }: PostCreateActivationWizardProps) {
   const [step, setStepState] = useState<WizardStep>(() => {
+    if (typeof payload.pendingBrief === "string") return "train";
     const stored = readPostCreateWizardStep();
     if (stored === "channels") return "test";
     if (stored === "wire") return "launch";
@@ -107,6 +111,50 @@ export default function PostCreateActivationWizard({
   const activationNeeded =
     !phoneNumber && (activationRequested || payload.phoneActivationRequired === true);
   const [testStarted, setTestStarted] = useState(false);
+  const [pendingBrief, setPendingBrief] = useState(payload.pendingBrief ?? "");
+  const [briefNeedsSaving, setBriefNeedsSaving] = useState(
+    typeof payload.pendingBrief === "string",
+  );
+  const [savingBrief, setSavingBrief] = useState(false);
+  const savingBriefRef = useRef(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
+  const [briefSaved, setBriefSaved] = useState(false);
+
+  async function saveStartingBrief() {
+    if (savingBriefRef.current || !pendingBrief.trim()) return;
+    savingBriefRef.current = true;
+    setSavingBrief(true);
+    setBriefError(null);
+    try {
+      const response = await authFetch("/api/train/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentId: payload.agentId, message: pendingBrief.trim() }),
+      });
+      if (!response.ok) {
+        setBriefError("Your brief wasn't saved. Your Bot is still here; try again in a moment.");
+        return;
+      }
+      if (!trainingExtractionWasSaved(await safeJson(response))) {
+        setBriefError("Add a specific fact, operating rule, or tone instruction, then try again.");
+        return;
+      }
+      updatePostCreateBrief(payload.agentId, null);
+      setBriefNeedsSaving(false);
+      setBriefSaved(true);
+      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
+      emitProductEvent({
+        event: "training_asset_added",
+        agentId: payload.agentId,
+        metadata: { source: "fast_start_brief_retry", object: "bot" },
+      });
+    } catch {
+      setBriefError("Your brief wasn't saved. Check your connection and try again.");
+    } finally {
+      savingBriefRef.current = false;
+      setSavingBrief(false);
+    }
+  }
 
   const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"];
   const stepIndex = stepOrder.indexOf(step);
@@ -232,7 +280,7 @@ export default function PostCreateActivationWizard({
   }
 
   function dismiss() {
-    if (provisioning) return;
+    if (provisioning || savingBriefRef.current) return;
     if (step === "complete" && phoneNumber && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -245,7 +293,8 @@ export default function PostCreateActivationWizard({
       });
     }
     setPostSignupFlowActive(false);
-    clearPostCreateWizard();
+    if (briefNeedsSaving) stashPostCreateWizardStep("train");
+    else clearPostCreateWizard();
     onClose();
   }
 
@@ -304,7 +353,7 @@ export default function PostCreateActivationWizard({
       role="dialog"
       aria-modal="true"
       aria-labelledby="post-create-wizard-title"
-      aria-busy={provisioning}
+      aria-busy={provisioning || savingBrief}
     >
       <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-[var(--radius-xl)]">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
@@ -322,7 +371,7 @@ export default function PostCreateActivationWizard({
           <button
             type="button"
             onClick={dismiss}
-            disabled={provisioning}
+            disabled={provisioning || savingBrief}
             className="grid size-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
             aria-label="Close setup guide"
           >
@@ -349,11 +398,7 @@ export default function PostCreateActivationWizard({
                 ) : null}
                 <p
                   className={`wl-overline truncate ${
-                    active
-                      ? "text-foreground"
-                      : done
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                    active ? "text-foreground" : done ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   {POST_CREATE_WIZARD_COPY.steps[id].label}
@@ -371,12 +416,64 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.train.title}
                 </p>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.train.detail}
+                  {briefNeedsSaving
+                    ? "Your Bot is created. Save its starting brief before the first test."
+                    : POST_CREATE_WIZARD_COPY.steps.train.detail}
                 </p>
                 <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-foreground">
                   {POST_CREATE_WIZARD_COPY.steps.train.salesHint}
                 </p>
               </div>
+              {briefNeedsSaving ? (
+                <div className="rounded-xl border border-border bg-muted/25 p-4">
+                  <label
+                    htmlFor="post-create-starting-brief"
+                    className="text-sm font-semibold text-foreground"
+                  >
+                    Your starting brief
+                  </label>
+                  <Textarea
+                    id="post-create-starting-brief"
+                    value={pendingBrief}
+                    onChange={(event) => {
+                      setPendingBrief(event.target.value);
+                      updatePostCreateBrief(payload.agentId, event.target.value);
+                      setBriefError(null);
+                    }}
+                    disabled={savingBrief}
+                    maxLength={10000}
+                    className="mt-2 min-h-[140px]"
+                    aria-describedby="post-create-brief-help"
+                  />
+                  <p
+                    id="post-create-brief-help"
+                    className="mt-2 text-xs leading-5 text-muted-foreground"
+                  >
+                    Include your offer, the people you help, and the next step to aim for.
+                  </p>
+                  {briefError ? (
+                    <StatusNotice tone="destructive" title="Brief needs attention" className="mt-3">
+                      {briefError}
+                    </StatusNotice>
+                  ) : null}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3"
+                    disabled={savingBrief || !pendingBrief.trim()}
+                    onClick={() => void saveStartingBrief()}
+                  >
+                    {savingBrief ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    ) : null}
+                    {savingBrief ? "Saving brief…" : "Save starting brief"}
+                  </Button>
+                </div>
+              ) : briefSaved ? (
+                <StatusNotice tone="success" title="Starting brief saved">
+                  Try a customer question and check how your Bot responds.
+                </StatusNotice>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="secondary" size="sm">
                   <Link to={`/knowledge?agent=${encodeURIComponent(payload.agentId)}`}>
@@ -386,6 +483,7 @@ export default function PostCreateActivationWizard({
                 <Button
                   type="button"
                   size="sm"
+                  disabled={briefNeedsSaving || savingBrief}
                   onClick={() => {
                     setStep("test");
                   }}
@@ -441,7 +539,10 @@ export default function PostCreateActivationWizard({
                     {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
                   </p>
                   <Button asChild size="sm" className="mt-3">
-                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("launch")}>
+                    <Link
+                      to={activationPlanPath}
+                      onClick={() => stashPostCreateWizardStep("launch")}
+                    >
                       {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
                     </Link>
                   </Button>
@@ -477,12 +578,7 @@ export default function PostCreateActivationWizard({
                       )}
                       {POST_CREATE_WIZARD_COPY.steps.launch.primary}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => finish()}
-                    >
+                    <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
                       {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
                   </>
@@ -581,19 +677,14 @@ export default function PostCreateActivationWizard({
               variant="ghost"
               size="sm"
               onClick={dismiss}
-              disabled={provisioning}
+              disabled={provisioning || savingBrief}
             >
               Skip for now
             </Button>
           ) : null}
           {step === "test" ? (
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setStep("launch")}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("launch")}>
                 {POST_CREATE_WIZARD_COPY.steps.test.skip}
               </Button>
               <Button
@@ -613,7 +704,12 @@ export default function PostCreateActivationWizard({
                   <Link to="/phone?tab=setup">{POST_CREATE_WIZARD_COPY.complete.phoneCta}</Link>
                 </Button>
               ) : null}
-              <Button type="button" size="sm" onClick={dismiss} disabled={provisioning}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={dismiss}
+                disabled={provisioning || savingBrief}
+              >
                 {POST_CREATE_WIZARD_COPY.complete.studioCta}
               </Button>
             </>

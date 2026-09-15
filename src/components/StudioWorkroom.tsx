@@ -1,4 +1,6 @@
 import {
+  type Dispatch,
+  type SetStateAction,
   forwardRef,
   useCallback,
   useEffect,
@@ -126,20 +128,104 @@ function MessageBubble({
   );
 }
 
-const StudioWorkroom = forwardRef<
+type StudioWorkroomProps = {
+  agentId: string;
+  agentName: string;
+  markKey?: BotMarkKey | null;
+  initialCommand?: string;
+  commandNonce?: string;
+  layout?: "standalone" | "canvas" | "split";
+  mode?: WorkroomMode;
+  onModeChange?: (mode: WorkroomMode) => void;
+  allowOutbound?: boolean;
+};
+
+type WorkroomDrafts = { agentId: string; configure: string; test: string };
+
+const StudioWorkroom = forwardRef<StudioWorkroomHandle, StudioWorkroomProps>(
+  function StudioWorkroom(props, ref) {
+    const { agentId, mode = "configure", initialCommand, commandNonce } = props;
+    const [drafts, setDrafts] = useState<WorkroomDrafts>(() => ({
+      agentId,
+      configure: "",
+      test: initialCommand?.trim() || "",
+    }));
+    const injectedCommandRef = useRef({ agentId, command: initialCommand?.trim() || null });
+    const [visitedModes, setVisitedModes] = useState<WorkroomMode[]>([mode]);
+    useEffect(() => {
+      setVisitedModes((current) => (current.includes(mode) ? current : [...current, mode]));
+    }, [mode]);
+    const mountedModes = visitedModes.includes(mode) ? visitedModes : [...visitedModes, mode];
+
+    // Route commands belong to the customer test. Removing one must not erase
+    // an edited test question or touch the separate Build draft.
+    useEffect(() => {
+      const previous = injectedCommandRef.current;
+      const nextCommand = initialCommand?.trim() || null;
+      injectedCommandRef.current = { agentId, command: nextCommand };
+      setDrafts((current) => {
+        const scoped = current.agentId === agentId ? current : { agentId, configure: "", test: "" };
+        return {
+          ...scoped,
+          test: reconcileStudioCommandDraft(
+            scoped.test,
+            previous.agentId === agentId ? previous.command : null,
+            nextCommand,
+          ),
+        };
+      });
+    }, [agentId, initialCommand, commandNonce]);
+
+    const updateDraft = useCallback(
+      (targetMode: WorkroomMode, next: SetStateAction<string>) => {
+        setDrafts((current) => {
+          const scoped =
+            current.agentId === agentId ? current : { agentId, configure: "", test: "" };
+          return {
+            ...scoped,
+            [targetMode]: typeof next === "function" ? next(scoped[targetMode]) : next,
+          };
+        });
+      },
+      [agentId],
+    );
+
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        {mountedModes.map((option) => (
+          <div
+            key={`${agentId}:${option}`}
+            hidden={option !== mode}
+            className={option === mode ? "min-h-0 flex-1" : "hidden"}
+          >
+            <StudioWorkroomSession
+              {...props}
+              key={`${agentId}:${option}`}
+              ref={option === mode ? ref : undefined}
+              mode={option}
+              active={option === mode}
+              initialCommand={option === "test" ? initialCommand : undefined}
+              commandNonce={option === "test" ? commandNonce : undefined}
+              draft={drafts.agentId === agentId ? drafts[option] : ""}
+              onDraftChange={(next) => updateDraft(option, next)}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+);
+
+// Each visited mode owns its transcript and stream lifecycle. Keep it mounted
+// when hidden: aborting a browser fetch does not cancel server work or writes.
+const StudioWorkroomSession = forwardRef<
   StudioWorkroomHandle,
-  {
-    agentId: string;
-    agentName: string;
-    markKey?: BotMarkKey | null;
-    initialCommand?: string;
-    commandNonce?: string;
-    layout?: "standalone" | "canvas" | "split";
-    mode?: WorkroomMode;
-    onModeChange?: (mode: WorkroomMode) => void;
-    allowOutbound?: boolean;
+  StudioWorkroomProps & {
+    active: boolean;
+    draft: string;
+    onDraftChange: Dispatch<SetStateAction<string>>;
   }
->(function StudioWorkroom(
+>(function StudioWorkroomSession(
   {
     agentId,
     agentName,
@@ -150,11 +236,13 @@ const StudioWorkroom = forwardRef<
     mode = "configure",
     onModeChange,
     allowOutbound = false,
+    active,
+    draft,
+    onDraftChange: setDraft,
   },
   ref,
 ) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
-  const [draft, setDraft] = useState(initialCommand?.trim() || "");
   const [loading, setLoading] = useState(mode === "configure");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +250,12 @@ const StudioWorkroom = forwardRef<
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const sendingRef = useRef(false);
+  const clearingRef = useRef(false);
+  const messageSequenceRef = useRef(0);
+  const pendingMessageRef = useRef<{ id: string; content: string } | null>(null);
   const split = layout === "split";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
   const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
@@ -175,7 +268,7 @@ const StudioWorkroom = forwardRef<
         requestAnimationFrame(() => inputRef.current?.focus());
       },
     }),
-    [],
+    [setDraft],
   );
 
   const endpoint = useMemo(
@@ -224,7 +317,7 @@ const StudioWorkroom = forwardRef<
       setMessages((current) => [
         ...current,
         {
-          id: `agent-${Date.now()}`,
+          id: `agent-${Date.now()}-${++messageSequenceRef.current}`,
           role: "agent",
           content: typeof payload.reply === "string" ? payload.reply : "Done.",
           createdAt: new Date().toISOString(),
@@ -235,13 +328,19 @@ const StudioWorkroom = forwardRef<
           },
         },
       ]);
-      setSending(false);
+      pendingMessageRef.current = null;
       resetStream();
-      requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
+      const pending = pendingMessageRef.current;
+      if (mode === "test" && pending) {
+        // A failed private turn is safe to edit and resend explicitly. Do not
+        // replay Build commands, which may already have produced real changes.
+        setMessages((current) => current.filter((item) => item.id !== pending.id));
+        setDraft((current) => (current.trim() ? current : pending.content));
+      }
+      pendingMessageRef.current = null;
       setError(message);
-      setSending(false);
       resetStream();
     },
   });
@@ -253,21 +352,19 @@ const StudioWorkroom = forwardRef<
   }, [loadMessages]);
 
   useEffect(() => {
-    const previousInjectedCommand = injectedCommandRef.current;
-    const nextInjectedCommand = initialCommand?.trim() || null;
-    injectedCommandRef.current = nextInjectedCommand;
-    setDraft((current) =>
-      reconcileStudioCommandDraft(current, previousInjectedCommand, nextInjectedCommand),
-    );
-    if (nextInjectedCommand) {
+    if (active && initialCommand?.trim()) {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
-  }, [initialCommand, commandNonce]);
+  }, [active, initialCommand, commandNonce]);
+
+  useEffect(() => {
+    if (!active) setShowOutboundDial(false);
+  }, [active]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, streamState.phase, split]);
+  }, [messages, streamState.phase, split, active]);
 
   useEffect(() => {
     const textarea = inputRef.current;
@@ -279,7 +376,15 @@ const StudioWorkroom = forwardRef<
 
   const submit = useCallback(() => {
     const text = draft.trim();
-    if (!text || sending) return;
+    if (!text || loading || sending || clearing || sendingRef.current || clearingRef.current)
+      return;
+    if (mode === "test" && text.length > 4000) {
+      setError("Use 4,000 characters or fewer for a customer test.");
+      return;
+    }
+    sendingRef.current = true;
+    const pending = { id: `account-${Date.now()}-${++messageSequenceRef.current}`, content: text };
+    pendingMessageRef.current = pending;
     const history = messages.slice(-12).map((message) => ({
       role: message.role === "Account Holder" ? "customer" : "employee",
       content: message.content,
@@ -287,7 +392,7 @@ const StudioWorkroom = forwardRef<
     setMessages((current) => [
       ...current,
       {
-        id: `account-${Date.now()}`,
+        id: pending.id,
         role: "Account Holder",
         content: text,
         createdAt: new Date().toISOString(),
@@ -296,11 +401,22 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
-    void streamSend({ content: text, history: mode === "test" ? history : undefined });
-  }, [draft, messages, mode, sending, streamSend]);
+    // A done/error callback can run before the SSE body finishes draining.
+    // Keep the lock until send() settles so the next turn cannot reuse its
+    // completion state while the previous transport is still active.
+    void streamSend({ content: text, history: mode === "test" ? history : undefined }).finally(
+      () => {
+        sendingRef.current = false;
+        setSending(false);
+        requestAnimationFrame(() => {
+          if (activeRef.current) inputRef.current?.focus();
+        });
+      },
+    );
+  }, [draft, messages, mode, loading, sending, clearing, setDraft, streamSend]);
 
   const clearConversation = useCallback(async () => {
-    if (clearing) return;
+    if (loading || sending || clearing || sendingRef.current || clearingRef.current) return;
     if (mode === "test") {
       setMessages([]);
       setError(null);
@@ -309,6 +425,7 @@ const StudioWorkroom = forwardRef<
     }
     if (!window.confirm("Clear this conversation?")) return;
 
+    clearingRef.current = true;
     setClearing(true);
     setError(null);
     try {
@@ -323,9 +440,10 @@ const StudioWorkroom = forwardRef<
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Conversation could not be cleared.");
     } finally {
+      clearingRef.current = false;
       setClearing(false);
     }
-  }, [agentId, clearing, mode]);
+  }, [agentId, clearing, loading, sending, mode]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -348,8 +466,12 @@ const StudioWorkroom = forwardRef<
           type="button"
           role="tab"
           aria-selected={mode === option}
-          onClick={() => onModeChange(option)}
-          className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+          disabled={sending || clearing}
+          onClick={() => {
+            if (sendingRef.current || clearingRef.current) return;
+            onModeChange(option);
+          }}
+          className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 wl-focus-ring-halo ${
             mode === option
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -364,7 +486,7 @@ const StudioWorkroom = forwardRef<
   const clearButton = (
     <button
       type="button"
-      disabled={!messages.length || clearing}
+      disabled={!messages.length || loading || sending || clearing}
       onClick={() => void clearConversation()}
       className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
@@ -496,6 +618,12 @@ const StudioWorkroom = forwardRef<
                   ? "Start with a real customer question"
                   : "Describe what should change"}
               </h3>
+              {mode === "test" ? (
+                <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+                  Try your offer, a buying question, or a handoff. This private test does not book,
+                  send, or change anything outside this conversation.
+                </p>
+              ) : null}
             </div>
           )}
         </div>
@@ -504,8 +632,8 @@ const StudioWorkroom = forwardRef<
       <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
         <div className="mx-auto max-w-3xl">
           {showStarterPrompts ? (
-            <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5" aria-label="Starter prompts">
-              {quickPrompts.slice(0, 3).map((prompt) => (
+            <div className="mb-2 flex flex-wrap gap-1.5" aria-label="Starter prompts">
+              {quickPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
@@ -513,7 +641,7 @@ const StudioWorkroom = forwardRef<
                     setDraft(prompt);
                     requestAnimationFrame(() => inputRef.current?.focus());
                   }}
-                  className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0`}
+                  className={`${WL_COMPOSER_CLASSES.starterChip} max-w-full text-left`}
                 >
                   {prompt}
                 </button>
@@ -521,11 +649,11 @@ const StudioWorkroom = forwardRef<
             </div>
           ) : null}
           <div className={WL_COMPOSER_CLASSES.composerDock}>
-            <label className="sr-only" htmlFor="studio-workroom-message">
+            <label className="sr-only" htmlFor={`studio-workroom-message-${mode}`}>
               {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
             </label>
             <textarea
-              id="studio-workroom-message"
+              id={`studio-workroom-message-${mode}`}
               ref={inputRef}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
@@ -543,7 +671,8 @@ const StudioWorkroom = forwardRef<
                 submit();
               }}
               rows={1}
-              disabled={sending}
+              disabled={loading || sending || clearing}
+              maxLength={mode === "test" ? 4000 : undefined}
               placeholder={mode === "test" ? "Ask as a customer…" : "Describe a change…"}
               className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
             />
@@ -557,7 +686,7 @@ const StudioWorkroom = forwardRef<
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!draft.trim() || sending}
+                  disabled={!draft.trim() || loading || sending || clearing}
                   onClick={submit}
                   className="min-w-9"
                   aria-busy={sending}
@@ -573,7 +702,7 @@ const StudioWorkroom = forwardRef<
       </div>
 
       <OutboundDialDialog
-        open={showOutboundDial}
+        open={active && showOutboundDial}
         onClose={() => setShowOutboundDial(false)}
         initialAgentId={agentId}
       />

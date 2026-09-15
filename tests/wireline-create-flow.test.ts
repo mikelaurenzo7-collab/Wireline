@@ -5,15 +5,18 @@ import {
   POST_CREATE_WIZARD_STEP_KEY,
   clearPostCreateWizard,
   readPostCreateWizard,
+  readPostCreateWizardForOwner,
   readPostCreateWizardStep,
   stashPostCreateWizard,
   stashPostCreateWizardStep,
   updatePostCreateWizard,
+  updatePostCreateBrief,
 } from "../src/lib/wireline-create-flow";
 
 const payload = {
   agentId: "agent_test_1",
   agentName: "Reception",
+  ownerId: "owner-1",
   markKey: "spark-rose" as const,
   phoneProvisionRequested: true,
   phoneProvisioned: false,
@@ -110,5 +113,72 @@ describe("wireline create flow wizard persistence", () => {
     expect(updatePostCreateWizard({ ...payload, identityBootstrapComplete: true })).toBe(false);
     expect(readPostCreateWizard()).toEqual(current);
     expect(readPostCreateWizardStep()).toBe("test");
+  });
+
+  it("does not restore a successfully saved brief when identity setup finishes late", () => {
+    const pending = { ...payload, pendingBrief: "Ask about timing." };
+    stashPostCreateWizard(pending);
+    expect(updatePostCreateBrief(payload.agentId, null)).toBe(true);
+    stashPostCreateWizardStep("test");
+    updatePostCreateWizard({ ...pending, identityBootstrapComplete: true });
+    expect(readPostCreateWizard()?.pendingBrief).toBeUndefined();
+    expect(readPostCreateWizardStep()).toBe("test");
+  });
+
+  it("preserves the latest brief edit and identity fields whichever request finishes first", () => {
+    const pending = { ...payload, pendingBrief: "Original brief" };
+    stashPostCreateWizard(pending);
+    updatePostCreateBrief(payload.agentId, "Ask about budget and timing.");
+    updatePostCreateWizard({
+      ...pending,
+      phoneNumber: "+12025550123",
+      identityBootstrapComplete: true,
+    });
+    expect(readPostCreateWizard()).toMatchObject({
+      pendingBrief: "Ask about budget and timing.",
+      phoneNumber: "+12025550123",
+    });
+    updatePostCreateBrief(payload.agentId, null);
+    expect(readPostCreateWizard()).toMatchObject({
+      phoneNumber: "+12025550123",
+      identityBootstrapComplete: true,
+    });
+    expect(readPostCreateWizard()?.pendingBrief).toBeUndefined();
+  });
+
+  it("never lets a stale brief retry change another Bot's guide or reopen a dismissed one", () => {
+    stashPostCreateWizard({ ...payload, agentId: "new-bot", pendingBrief: "New brief" });
+    expect(updatePostCreateBrief(payload.agentId, null)).toBe(false);
+    expect(readPostCreateWizard()?.pendingBrief).toBe("New brief");
+    clearPostCreateWizard();
+    expect(updatePostCreateBrief("new-bot", "Late edit")).toBe(false);
+    expect(readPostCreateWizard()).toBeNull();
+  });
+
+  it("rejects a malformed persisted brief while keeping a valid guide", () => {
+    sessionStorage.setItem(
+      POST_CREATE_WIZARD_KEY,
+      JSON.stringify({ ...payload, pendingBrief: { text: "forged" } }),
+    );
+    expect(readPostCreateWizard()?.pendingBrief).toBeUndefined();
+    expect(readPostCreateWizard()?.agentId).toBe(payload.agentId);
+  });
+
+  it("resumes a brief only for the account that created the guide", () => {
+    stashPostCreateWizard({
+      ...payload,
+      ownerId: "owner-1",
+      pendingBrief: "Private business rules",
+    });
+    expect(readPostCreateWizardForOwner(null)).toBeNull();
+    expect(readPostCreateWizardForOwner("owner-1")?.pendingBrief).toBe("Private business rules");
+    expect(readPostCreateWizardForOwner("owner-2")).toBeNull();
+    expect(readPostCreateWizard()).toBeNull();
+  });
+
+  it("does not reveal a legacy unbound guide to the next signed-in account", () => {
+    sessionStorage.setItem(POST_CREATE_WIZARD_KEY, JSON.stringify({ ...payload, ownerId: undefined }));
+    expect(readPostCreateWizardForOwner("owner-1")).toBeNull();
+    expect(readPostCreateWizard()).toBeNull();
   });
 });

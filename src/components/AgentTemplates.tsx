@@ -26,6 +26,7 @@ import {
 import { useNavigate } from "react-router";
 import { authFetch, safeJson, isApiErrorBody } from "../lib/api";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
 import { cn } from "../lib/utils";
 import { BRAND } from "../constants/brand-colors";
 import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
@@ -539,6 +540,7 @@ function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
 
 export default function AgentTemplates() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { success: toastSuccess, error: toastError } = useToast();
 
   const [activeCategory, setActiveCategory] = useState<(typeof CATEGORIES)[number]>("All");
@@ -598,6 +600,10 @@ export default function AgentTemplates() {
 
   const handleConfirmedDeploy = async (values: DeployValues) => {
     if (!modalTemplate) return;
+    if (!user?.id) {
+      toastError("Sign in to continue", "Sign in again to create your Bot from this template.");
+      return;
+    }
     setDeploying(modalTemplate.id);
     try {
       const uniqueId = `${modalTemplate.id}-${Date.now()}`;
@@ -634,6 +640,7 @@ export default function AgentTemplates() {
       stashPostCreateWizard({
         agentId: createdId,
         agentName: values.name,
+        ownerId: user.id,
         markKey:
           typeof data === "object" && data && "mark_key" in data && isBotMarkKey(data.mark_key)
             ? data.mark_key

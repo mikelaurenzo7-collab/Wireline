@@ -44,7 +44,7 @@ const MARKET_OPTIONS = [
   {
     name: "Goodcall",
     price: "$79/agent/mo",
-    usage: "Unlimited minutes and tokens; 100 unique customers monthly on Starter",
+    usage: "Unlimited minutes and tokens; 100 unique customers monthly, then $0.50/customer on Starter",
     fit: "Flat rate AI phone answering where customer count limits fit the call pattern",
     href: "https://www.goodcall.com/pricing",
     source: "Goodcall pricing",
@@ -53,7 +53,7 @@ const MARKET_OPTIONS = [
   {
     name: "Smith.ai",
     price: "$0 free · Pro from $150/mo",
-    usage: "25 live calls on Free; 75 included live calls on the first paid Pro tier",
+    usage: "25 live calls/month on Free, then $3/call; 75 calls/month on the first paid Pro tier",
     fit: "AI receptionist buyers who prefer per-call capacity and service-backed tiers",
     href: "https://smith.ai/pricing/ai-receptionist",
     source: "Smith.ai pricing",
@@ -62,7 +62,7 @@ const MARKET_OPTIONS = [
   {
     name: "Bland",
     price: "$0 platform · $0.14/min",
-    usage: "Start bundles model and speech costs; transfers are $0.05/min",
+    usage: "Start bundles model and speech costs; telephony is extra. Transfers are $0.05/min, waived with your own carrier",
     fit: "Developers who want API-first voice with bundled model and speech costs",
     href: "https://www.bland.ai/pricing",
     source: "Bland pricing",
@@ -221,7 +221,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1, 2026 and may
+            Public prices were checked on the linked official pages on September 15, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.

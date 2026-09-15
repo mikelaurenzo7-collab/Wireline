@@ -61,7 +61,7 @@ describe("marketing metadata contract", () => {
 
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
-    expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);
+    expect(compare.match(/September 15,\s+2026/g)).toHaveLength(1);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",
@@ -134,4 +134,3 @@ describe("marketing metadata contract", () => {
     }
   });
 });
-
