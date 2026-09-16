@@ -438,7 +438,8 @@ describe("subscription Checkout recovery", () => {
       const res = await checkout();
       expect(res.status).toHaveBeenCalledWith(409);
       expect(h.fulfill).toHaveBeenCalledTimes(1);
-      expect(row.status).toBe(paymentStatus === "paid" ? "completed" : "creating");
+      expect(row.status).toBe(paymentStatus === "paid" ? "completed" : "open");
+      expect(row.stripe_checkout_session_id).toBe("cs_existing");
     },
   );
 

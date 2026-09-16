@@ -506,6 +506,13 @@ router.post(
       checkoutResolved = true;
       resolvedSession = session;
       if (session.status === "complete") {
+        const persisted = await markCheckoutOperation(operationId, req.user.id, {
+          status: "open",
+          stripeCustomerId: customerId,
+          stripeCheckoutSessionId: session.id,
+          failureCode: null,
+        });
+        if (!persisted) return checkoutOperationChanged(res, operationId);
         return await reconcileCompletedCheckout(session, res, operationId);
       }
       if (session.status === "expired") {

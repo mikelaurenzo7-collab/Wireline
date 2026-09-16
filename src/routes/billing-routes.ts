@@ -16,6 +16,7 @@ import {
   stripeCheckoutIntegrationIdentifier,
   stripeCheckoutTaxConfig,
   stripeInvoiceIdForCharge,
+  stripeSubscriptionIdForInvoice,
   isMissingStripeResource,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
@@ -179,9 +180,7 @@ async function reverseRuntimeAllowanceForCharge(
     if (!invoiceId) return;
 
     const invoice = await stripe.invoices.retrieve(invoiceId);
-    const subField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
-      .subscription;
-    const subscriptionId = typeof subField === "string" ? subField : subField?.id;
+    const subscriptionId = stripeSubscriptionIdForInvoice(invoice);
     if (!subscriptionId) return;
 
     const [row] = await drizzle

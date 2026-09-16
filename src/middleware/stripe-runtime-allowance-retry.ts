@@ -13,6 +13,7 @@ import {
   subscriptionBillingInterval,
   basePlanInvoiceShare,
   stripeInvoiceIdForCharge,
+  stripeSubscriptionIdForInvoice,
 } from "../lib/stripe-helpers";
 import { basePlanFromStripeSubscription } from "../lib/stripe-base-plan";
 import {
@@ -97,10 +98,7 @@ async function resolveSubscriptionAllowanceContext(
   }
 
   const invoice = await stripe.invoices.retrieve(invoiceId);
-  const subscriptionField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
-    .subscription;
-  const subscriptionId =
-    typeof subscriptionField === "string" ? subscriptionField : subscriptionField?.id;
+  const subscriptionId = stripeSubscriptionIdForInvoice(invoice);
   if (!subscriptionId) {
     log.info("subscription allowance operation skipped: invoice has no subscription", {
       chargeId: charge.id,

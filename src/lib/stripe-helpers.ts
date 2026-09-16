@@ -99,6 +99,28 @@ type LegacyInvoiceCharge = Stripe.Charge & {
   invoice?: string | Stripe.Invoice | null;
 };
 
+/** Resolve current invoice parents while retaining pre-Basil payload support. */
+export function stripeSubscriptionIdForInvoice(invoice: Stripe.Invoice): string | null {
+  if (invoice.parent) {
+    if (invoice.parent.type !== "subscription_details") return null;
+    const subscription = invoice.parent.subscription_details?.subscription;
+    const id = typeof subscription === "string" ? subscription : subscription?.id;
+    if (!id) {
+      // A subscription invoice with missing linkage must remain retryable;
+      // silently treating it as unrelated would acknowledge a skipped reversal.
+      throw new Error(`Stripe invoice ${invoice.id} is missing its parent subscription.`);
+    }
+    return id;
+  }
+
+  const legacy = invoice as Stripe.Invoice & {
+    subscription?: string | { id: string } | null;
+  };
+  return typeof legacy.subscription === "string"
+    ? legacy.subscription
+    : (legacy.subscription?.id ?? null);
+}
+
 /**
  * Resolve the invoice funded by a Charge across Stripe API generations.
  *
