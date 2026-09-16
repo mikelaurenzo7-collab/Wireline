@@ -62,7 +62,8 @@ const MARKET_OPTIONS = [
   {
     name: "Bland",
     price: "$0 platform · $0.14/min",
-    usage: "Start bundles model and speech costs; transfers are $0.05/min",
+    usage:
+      "Start bundles model and speech costs; transfer time is $0.05/min and telephony is billed separately",
     fit: "Developers who want API-first voice with bundled model and speech costs",
     href: "https://www.bland.ai/pricing",
     source: "Bland pricing",
@@ -70,8 +71,9 @@ const MARKET_OPTIONS = [
   },
   {
     name: "Retell",
-    price: "$0.07 to $0.31/min",
-    usage: "Pay-as-you-go voice components; phone numbers and messaging have separate rates",
+    price: "From $0.07/min",
+    usage:
+      "Published voice range is $0.07 to $0.31/min; model choices, add-ons, phone numbers, and messaging can add costs",
     fit: "Developers optimizing model, voice, telephony, and add-on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
@@ -221,7 +223,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1, 2026 and may
+            Public prices were checked on the linked official pages on September 16, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.

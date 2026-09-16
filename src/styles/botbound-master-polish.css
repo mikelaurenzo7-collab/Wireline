@@ -109,7 +109,7 @@
 
 .marketing-surface :where(.wl-overline, .wl-eyebrow, .studio-kicker) {
   color: var(--wireline-color-text-secondary);
-  letter-spacing: 0.11em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
 }
 
 .marketing-surface

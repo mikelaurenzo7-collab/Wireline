@@ -115,6 +115,8 @@ export default function OpenAILiveVoiceSandbox({
   const reportedStarted = useRef(false);
   const reportedCompleted = useRef(false);
   const generation = useRef(0);
+  const sessionInProgress = useRef(false);
+  const signalingAbort = useRef<AbortController | null>(null);
   const deadlineTimer = useRef<number | null>(null);
 
   const upsertLine = (id: string, role: Line["role"], text: string, replace = false) => {
@@ -136,17 +138,20 @@ export default function OpenAILiveVoiceSandbox({
     upsertLine(id, "Bot", text);
   };
 
-  const updateUserTranscript = (text: string, itemId?: unknown) => {
+  const updateUserTranscript = (text: string, itemId?: unknown, replace = true) => {
     if (!text) return;
     const id =
       typeof itemId === "string" && itemId
         ? `user-${itemId}`
         : userLineId.current || `user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     userLineId.current = id;
-    upsertLine(id, "You", text, true);
+    upsertLine(id, "You", text, replace);
   };
 
   const release = useCallback(() => {
+    sessionInProgress.current = false;
+    signalingAbort.current?.abort();
+    signalingAbort.current = null;
     if (deadlineTimer.current !== null) window.clearTimeout(deadlineTimer.current);
     deadlineTimer.current = null;
     channel.current?.close();
@@ -249,15 +254,30 @@ export default function OpenAILiveVoiceSandbox({
             ? event.delta
             : "",
         event.item_id,
+        type === "conversation.item.input_audio_transcription.completed",
       );
     if (type === "input_audio_buffer.speech_started") setState("listening");
     if (type === "output_audio_buffer.started") setState("speaking");
     if (type === "output_audio_buffer.stopped") setState("listening");
     if (type === "response.done") {
+      const response = event.response as
+        | {
+            status?: string;
+            output?: Array<{ type?: string; role?: string }>;
+          }
+        | undefined;
+      if (response?.status === "failed") {
+        fail("The Bot could not complete its response. Try the live test again.");
+        return;
+      }
       assistantLineId.current = null;
       userLineId.current = null;
       onAgentAudioEnd?.();
-      if (reportedStarted.current && !reportedCompleted.current) {
+      const answered =
+        response?.status === "completed" &&
+        Array.isArray(response.output) &&
+        response.output.some((item) => item?.type === "message" && item.role === "assistant");
+      if (answered && reportedStarted.current && !reportedCompleted.current) {
         reportedCompleted.current = true;
         onTestCompleted?.();
       }
@@ -301,8 +321,10 @@ export default function OpenAILiveVoiceSandbox({
   };
 
   const start = async () => {
-    if (["connecting", "listening", "speaking", "thinking"].includes(state)) return;
+    // React state alone cannot reject two clicks from the same render.
+    if (sessionInProgress.current) return;
     stop();
+    sessionInProgress.current = true;
     const currentGeneration = generation.current;
     reportedStarted.current = false;
     reportedCompleted.current = false;
@@ -329,6 +351,7 @@ export default function OpenAILiveVoiceSandbox({
       channel.current = events;
       mic.getTracks().forEach((track) => connection.addTrack(track, mic));
       connection.ontrack = (event) => {
+        if (currentGeneration !== generation.current) return;
         const remoteStream = event.streams[0] || new MediaStream([event.track]);
         attachRemoteAudio(remoteStream);
       };
@@ -359,15 +382,24 @@ export default function OpenAILiveVoiceSandbox({
       };
 
       const offer = await connection.createOffer();
+      if (currentGeneration !== generation.current) return;
       await connection.setLocalDescription(offer);
       await waitForIceGathering(connection);
+      // Ending a test or changing Bots while ICE gathers must not create a
+      // provider session after its local peer has already been released.
+      if (currentGeneration !== generation.current) return;
       const sdp = connection.localDescription?.sdp || offer.sdp || "";
+      const abort = new AbortController();
+      signalingAbort.current = abort;
       const response = await authFetch("/api/voice/live/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agentId, sdp }),
+        signal: abort.signal,
       });
       const session = (await response.json().catch(() => null)) as SignalResponse | null;
+      if (currentGeneration !== generation.current) return;
+      signalingAbort.current = null;
       if (!response.ok || !session?.sdp) {
         const sessionError = (session as { error?: unknown } | null)?.error;
         throw new Error(
@@ -377,6 +409,7 @@ export default function OpenAILiveVoiceSandbox({
         );
       }
       await connection.setRemoteDescription({ type: "answer", sdp: session.sdp });
+      if (currentGeneration !== generation.current) return;
       const maxDurationSeconds = Math.max(15, Math.min(300, session.maxDurationSeconds || 300));
       deadlineTimer.current = window.setTimeout(() => {
         if (currentGeneration !== generation.current) return;
@@ -387,7 +420,7 @@ export default function OpenAILiveVoiceSandbox({
       const greeting = session.greeting?.trim();
       if (greeting) {
         const sendGreeting = () => {
-          if (events.readyState !== "open") return;
+          if (currentGeneration !== generation.current || events.readyState !== "open") return;
           events.send(
             JSON.stringify({
               type: "response.create",
@@ -408,7 +441,12 @@ export default function OpenAILiveVoiceSandbox({
     }
   };
 
-  useEffect(() => () => stop(), [stop]);
+  useEffect(() => {
+    setLines([]);
+    setError("");
+    setState("idle");
+    return () => stop();
+  }, [agentId, stop]);
   const active = ["connecting", "listening", "speaking", "thinking"].includes(state);
   const activity = voiceActivity(state);
 

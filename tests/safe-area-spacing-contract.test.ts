@@ -72,7 +72,9 @@ describe("safe-area spacing ownership", () => {
     expect(workspaceSpacing?.[2]).toMatch(/\bpx-3\b/);
     expect(workspaceSpacing?.[2]).toMatch(/\bsm:px-6\b/);
     expect(workspaceSpacing?.[2]).toMatch(/\blg:px-(?:7|8)\b/);
-    expect(workspaceSpacing?.[2]).toMatch(/\bxl:px-(?:9|10)\b/);
+    // The large-screen gutter also applies at xl; a separate breakpoint is
+    // optional, but it must never reset the inherited horizontal safe space.
+    expect(workspaceSpacing?.[2]).not.toMatch(/\bxl:(?:p|px|pl|pr)-0\b/);
     expect(workspaceSpacing?.[2]).toContain("lg:pb-6");
     expect(responsive).not.toContain(
       "padding-bottom: calc(5.25rem + env(safe-area-inset-bottom));",

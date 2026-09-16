@@ -190,7 +190,7 @@ function DesktopRail({
           onClick={onToggleCollapsed}
           aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
           title={collapsed ? "Expand navigation" : "Collapse navigation"}
-          className="wl-shell-icon-button wl-shell-collapse wl-focus-ring-halo"
+          className="wl-shell-icon-button wl-focus-ring-halo"
         >
           {collapsed ? (
             <ChevronsRight className="size-4" aria-hidden="true" />

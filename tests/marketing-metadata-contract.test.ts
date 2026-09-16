@@ -61,7 +61,13 @@ describe("marketing metadata contract", () => {
 
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
-    expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);
+    // Freshness is enforced by sales-trust-copy-contract. Pin the dated source
+    // disclosure here without freezing every future verification to one day.
+    expect(
+      compare.match(
+        /Public prices were checked on the linked official pages on\s+[A-Z][a-z]+ \d{1,2},\s+20\d{2}/g,
+      ),
+    ).toHaveLength(1);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",

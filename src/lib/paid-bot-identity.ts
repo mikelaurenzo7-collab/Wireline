@@ -219,16 +219,22 @@ async function ensurePaidBotPhone(userId: string, agentId: string) {
   try {
     await assertTwilioOwnedNumber(provisioned.phoneNumber);
   } catch (error) {
-    // Paid Bot identity is Twilio-strict. Release an unverifiable allocation
-    // and let the durable job retry rather than silently changing ownership.
-    await releaseNativeTenantNumber(userId, provisioned.phoneNumber).catch((releaseError) =>
-      log.error("Unverifiable paid Bot line could not be released", {
-        userId,
-        agentId,
-        phoneNumber: provisioned.phoneNumber,
-        error: getErrorMessage(releaseError),
-      }),
-    );
+    // A failed lookup must not retire an existing customer line. Fail this
+    // reconciliation closed and retry its ownership check without changing
+    // the carrier allocation. Compensate only a purchase from this attempt.
+    if (!provisioned.reused) {
+      try {
+        const released = await releaseNativeTenantNumber(userId, provisioned.phoneNumber);
+        if (!released.ok) throw new Error(released.error || "Phone release was not confirmed.");
+      } catch (releaseError) {
+        log.error("Unverifiable paid Bot line could not be released", {
+          userId,
+          agentId,
+          phoneSuffix: provisioned.phoneNumber.slice(-4),
+          error: getErrorMessage(releaseError),
+        });
+      }
+    }
     throw error;
   }
 

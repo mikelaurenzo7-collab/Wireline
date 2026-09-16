@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
+import { WorkspaceTabStrip } from "../../src/components/layout/WorkspaceTabStrip";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -50,22 +54,38 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(studio).not.toContain("Good morning");
     expect(studio).not.toContain("dayGreeting");
     expect(chrome).toContain('aria-label="Switch Bot"');
-    expect(chrome).toContain("/inbox?agent=");
-    expect(chrome).toContain("/phone?agent=");
-    expect(chrome.match(/hidden size-9 px-0 lg:inline-flex/g)).toHaveLength(2);
+    expect(chrome).toContain('aria-label="Bot settings"');
+    expect(chrome).toContain("aria-expanded={inspectorOpen}");
+    expect(chrome).not.toContain("/inbox?agent=");
+    expect(chrome).not.toContain("/phone?agent=");
+    const navigation = read("src/constants/navigation.ts");
+    expect(navigation).toContain('href: "/inbox"');
+    expect(navigation).toContain('href: "/phone"');
   });
 
-  it("uses navigation semantics only for links and pressed-state semantics for in-page tabs", () => {
-    const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
-    const linkBranch = tabs.slice(
-      tabs.indexOf("if (tab.href)"),
-      tabs.indexOf("return (", tabs.indexOf("if (tab.href)") + 30),
+  it.each(["inbox", "details"])("renders correct tab semantics with %s selected", (activeId) => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(WorkspaceTabStrip, {
+          tabs: [
+            { id: "inbox", label: "Inbox", href: "/inbox" },
+            { id: "details", label: "Details" },
+          ],
+          activeId,
+          ariaLabel: "Workspace sections",
+          mobileSelect: true,
+        }),
+      ),
     );
-    const buttonBranch = tabs.slice(tabs.lastIndexOf("<button"), tabs.lastIndexOf("</button>") + 9);
-
-    expect(linkBranch).toContain('aria-current={active ? "page" : undefined}');
-    expect(buttonBranch).toContain("aria-pressed={active}");
-    expect(buttonBranch).not.toContain("aria-current");
+    const link = markup.match(/<a\b[^>]*>/)?.[0];
+    const button = markup.match(/<button\b[^>]*>/)?.[0];
+    if (activeId === "inbox") expect(link).toContain('aria-current="page"');
+    else expect(link).not.toContain("aria-current");
+    expect(link).not.toContain("aria-pressed");
+    expect(button).toContain(`aria-pressed="${activeId === "details"}"`);
+    expect(button).not.toContain("aria-current");
   });
 
   it("removes decorative ledger treatment from authenticated task surfaces", () => {

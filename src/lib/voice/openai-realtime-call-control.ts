@@ -75,7 +75,10 @@ function validateSdp(raw: string): string {
   if (sdp.length < 100 || sdp.length > 60_000 || !sdp.startsWith("v=")) {
     throw AppError.fromHttpStatus(400, "A valid WebRTC offer is required.");
   }
-  return sdp;
+  // RFC 8866 requires every SDP line, including the last, to end in CRLF.
+  // Trimming the browser offer without restoring that terminator makes valid
+  // offers fail against strict WebRTC parsers.
+  return `${sdp}\r\n`;
 }
 
 export async function hangupOpenAIRealtimeCall(input: {
@@ -282,20 +285,6 @@ async function createServerManagedOpenAIRealtimeCallUnfenced(
       );
     }
 
-    const answer = await response.text();
-    if (!answer.startsWith("v=")) {
-      const failure = openAIRealtimeProviderFailure(response, "webrtc_answer_invalid");
-      log.warn("OpenAI Realtime WebRTC call creation failed", {
-        ...input.logContext,
-        purpose,
-        ...openAIRealtimeFailureLogFields(failure),
-      });
-      throw markRealtimeProviderCallOutcome(
-        AppError.fromHttpStatus(502, "Live voice session could not be created."),
-        true,
-      );
-    }
-
     const location = response.headers.get("location") || "";
     const callId = location.split("/").filter(Boolean).pop()?.trim() || "";
     if (!validCallId(callId)) {
@@ -311,7 +300,20 @@ async function createServerManagedOpenAIRealtimeCallUnfenced(
       );
     }
 
+    let answer: string;
     try {
+      // The provider already created a call. Reading or validating its answer
+      // can still fail, so both belong inside the emergency-hangup boundary.
+      answer = await response.text();
+      if (!answer.startsWith("v=")) {
+        const failure = openAIRealtimeProviderFailure(response, "webrtc_answer_invalid");
+        log.warn("OpenAI Realtime WebRTC call creation failed", {
+          ...input.logContext,
+          purpose,
+          ...openAIRealtimeFailureLogFields(failure),
+        });
+        throw AppError.fromHttpStatus(502, "Live voice session could not be created.");
+      }
       await scheduleAuthoritativeHangup({
         userId: input.userId,
         callId,
@@ -320,7 +322,7 @@ async function createServerManagedOpenAIRealtimeCallUnfenced(
         keyFingerprint: key.fingerprint,
         maxDurationSeconds: duration,
       });
-    } catch {
+    } catch (error) {
       // Never hand an unbounded provider session to the browser. Best-effort
       // immediate hangup also limits spend if the durable queue is unavailable.
       try {
@@ -347,7 +349,12 @@ async function createServerManagedOpenAIRealtimeCallUnfenced(
           true,
         );
       }
-      throw AppError.fromHttpStatus(503, "Live voice safety controls are temporarily unavailable.");
+      throw markRealtimeProviderCallOutcome(
+        error instanceof AppError
+          ? error
+          : AppError.fromHttpStatus(503, "Live voice safety controls are temporarily unavailable."),
+        false,
+      );
     }
 
     return {

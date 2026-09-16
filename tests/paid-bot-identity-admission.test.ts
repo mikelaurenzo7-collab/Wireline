@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   enqueue: vi.fn(),
   provider: vi.fn(),
   phoneProvision: vi.fn(),
+  phoneRelease: vi.fn(),
   ownedNumbers: vi.fn(),
   vaultConfigured: vi.fn(),
   inboxesRead: vi.fn(),
@@ -134,7 +135,7 @@ vi.mock("../src/lib/voice/native-phone-provisioning", () => ({
   provisionNativeTenantNumber: (...args: unknown[]) => h.phoneProvision(...args),
 }));
 vi.mock("../src/lib/voice/native-phone-release", () => ({
-  releaseNativeTenantNumber: (...args: unknown[]) => h.provider(...args),
+  releaseNativeTenantNumber: (...args: unknown[]) => h.phoneRelease(...args),
 }));
 vi.mock("../src/lib/secret-vault", () => ({
   encryptSecret: h.provider,
@@ -180,6 +181,7 @@ beforeEach(() => {
     throw new Error("Provider work must not run");
   });
   h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
+  h.phoneRelease.mockResolvedValue({ ok: true });
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
   h.vaultConfigured.mockReturnValue(true);
   h.inboxesRead.mockResolvedValue([]);
@@ -191,6 +193,34 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it.each(["temporary lookup failure", "missing ownership record"])(
+    "preserves an existing phone line after %s",
+    async (failure) => {
+      h.target = "oldest";
+      h.lines = [{ agentId: "oldest" }];
+      h.phoneProvision.mockResolvedValue({ ok: true, phoneNumber: "+12025550123", reused: true });
+      if (failure === "temporary lookup failure") {
+        h.ownedNumbers.mockRejectedValue(new Error("Twilio temporarily unavailable"));
+      } else {
+        h.ownedNumbers.mockResolvedValue([]);
+      }
+      await expect(
+        ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+      ).rejects.toThrow();
+      expect(h.phoneRelease).not.toHaveBeenCalled();
+      expect(h.provider).not.toHaveBeenCalled();
+    },
+  );
+  it("compensates only a newly provisioned line when ownership verification fails", async () => {
+    h.target = "oldest";
+    h.phoneProvision.mockResolvedValue({ ok: true, phoneNumber: "+12025550123", reused: false });
+    h.ownedNumbers.mockResolvedValue([]);
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "Paid Bot line is not owned",
+    );
+    expect(h.phoneRelease).toHaveBeenCalledExactlyOnceWith("tenant", "+12025550123");
+    expect(h.provider).not.toHaveBeenCalled();
+  });
   it.each([
     {
       name: "missing or invalid vault",

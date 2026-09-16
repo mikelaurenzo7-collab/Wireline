@@ -100,7 +100,7 @@
   font-family: var(--wireline-font-family-mono);
   font-size: clamp(0.65rem, 0.85vw, 0.75rem);
   font-weight: 650;
-  letter-spacing: 0.09em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
   line-height: 1.6;
   text-wrap: balance;
 }
