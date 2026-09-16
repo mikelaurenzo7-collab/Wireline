@@ -44,6 +44,7 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set([
 
 async function markCheckoutOperation(
   id: string,
+  userId: string,
   values: {
     status: "creating" | "open" | "completed" | "failed" | "expired";
     stripeCustomerId?: string | null;
@@ -51,11 +52,56 @@ async function markCheckoutOperation(
     checkoutUrl?: string | null;
     failureCode?: string | null;
   },
-) {
-  await drizzle
+): Promise<boolean> {
+  const updated = await drizzle
     .update(checkoutOperations)
     .set({ ...values, updatedAt: new Date() })
-    .where(eq(checkoutOperations.id, id));
+    .where(
+      and(
+        eq(checkoutOperations.id, id),
+        eq(checkoutOperations.userId, userId),
+        inArray(
+          checkoutOperations.status,
+          values.status === "creating" ? ["creating"] : ACTIVE_OPERATION_STATES,
+        ),
+        ...(values.status === "creating"
+          ? [sql`${checkoutOperations.expiresAt} > clock_timestamp()`]
+          : []),
+      ),
+    )
+    .returning({ id: checkoutOperations.id });
+  return updated.length > 0;
+}
+
+function checkoutOperationChanged(res: Response, operationId: string): Response {
+  return res.status(409).json({
+    code: "CHECKOUT_OPERATION_CHANGED",
+    error: "This checkout changed while the request was running. Refresh billing.",
+    operation_id: operationId,
+  });
+}
+
+function checkoutStateUnclear(res: Response, operationId: string): Response {
+  return res.status(409).json({
+    code: "CHECKOUT_STATE_UNCLEAR",
+    error: "Your previous checkout needs reconciliation before another purchase. Contact support.",
+    operation_id: operationId,
+  });
+}
+
+async function reconcileCompletedCheckout(
+  session: Stripe.Checkout.Session,
+  res: Response,
+  operationId: string,
+): Promise<Response> {
+  const fulfillment = await fulfillStripeCheckoutSession(session);
+  return res.status(409).json({
+    code: fulfillment.paymentSettled ? "CHECKOUT_COMPLETED" : "CHECKOUT_PAYMENT_PROCESSING",
+    error: fulfillment.paymentSettled
+      ? "Your previous checkout is complete. Refresh billing to see your subscription."
+      : "Your previous payment is still processing. Wait before starting another checkout.",
+    operation_id: operationId,
+  });
 }
 
 /**
@@ -66,6 +112,7 @@ async function markCheckoutOperation(
  */
 async function failCheckoutOperation(
   id: string,
+  userId: string,
   values: {
     stripeCustomerId?: string | null;
     failureCode?: string | null;
@@ -74,7 +121,13 @@ async function failCheckoutOperation(
   await drizzle
     .update(checkoutOperations)
     .set({ status: "failed", ...values, updatedAt: new Date() })
-    .where(and(eq(checkoutOperations.id, id), eq(checkoutOperations.status, "creating")));
+    .where(
+      and(
+        eq(checkoutOperations.id, id),
+        eq(checkoutOperations.userId, userId),
+        eq(checkoutOperations.status, "creating"),
+      ),
+    );
 }
 
 async function ensureStripeCustomer(
@@ -242,17 +295,9 @@ router.post(
       });
     }
 
-    await drizzle
-      .update(checkoutOperations)
-      .set({ status: "expired", updatedAt: new Date() })
-      .where(
-        and(
-          eq(checkoutOperations.userId, req.user.id),
-          inArray(checkoutOperations.status, ACTIVE_OPERATION_STATES),
-          sql`${checkoutOperations.expiresAt} < clock_timestamp()`,
-        ),
-      );
-
+    // A local timeout never proves an existing Stripe URL unpayable. Keep the
+    // shared checkout slot until its owning flow confirms the provider state.
+    const createdOperationExpiresAt = new Date(Date.now() + CHECKOUT_TTL_MS);
     const [createdOperation] = await drizzle
       .insert(checkoutOperations)
       .values({
@@ -260,7 +305,7 @@ router.post(
         planId: plan.id,
         billingInterval: interval,
         status: "creating",
-        expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
+        expiresAt: createdOperationExpiresAt,
       })
       .onConflictDoNothing()
       .returning({ id: checkoutOperations.id });
@@ -279,6 +324,7 @@ router.post(
           stripeCustomerId: checkoutOperations.stripeCustomerId,
           stripeCheckoutSessionId: checkoutOperations.stripeCheckoutSessionId,
           checkoutUrl: checkoutOperations.checkoutUrl,
+          expiresAt: checkoutOperations.expiresAt,
         })
         .from(checkoutOperations)
         .where(
@@ -288,26 +334,48 @@ router.post(
           ),
         )
         .limit(1);
-      const samePlan = active?.planId === plan.id && active?.billingInterval === interval;
-      if (active?.status === "open" && active.checkoutUrl) {
+      // Runtime Balance and retired add-on flows share this table and mutex.
+      // They alone own their Session lifecycle and settlement reconciliation.
+      if (!active || !planById(active.planId) || active.planId === "personal") {
+        return res.status(409).json({
+          code: "CHECKOUT_ALREADY_IN_PROGRESS",
+          error: "Another checkout is already in progress. Complete or cancel it first.",
+          operation_id: active?.id,
+        });
+      }
+      const samePlan = active.planId === plan.id && active.billingInterval === interval;
+      if (active.status === "open" || active.stripeCheckoutSessionId) {
         // Ask Stripe whether the cached session is still payable before
         // deciding anything. The webhook now completes operations, but a
         // lagging or dropped delivery would otherwise hand back a consumed
         // session's dead URL (subscribe → cancel → retry within the 24h TTL)
         // or 409-brick every other plan until the TTL sweep.
-        let remoteStatus: Stripe.Checkout.Session.Status | null = null;
-        if (active.stripeCheckoutSessionId) {
-          try {
-            const remoteSession = await stripe.checkout.sessions.retrieve(
-              active.stripeCheckoutSessionId,
-            );
-            remoteStatus = remoteSession.status;
-          } catch (error) {
-            if (!isMissingStripeResource(error)) throw error;
-          }
+        if (!active.stripeCheckoutSessionId) return checkoutStateUnclear(res, active.id);
+        let remoteSession: Stripe.Checkout.Session | null = null;
+        try {
+          remoteSession = await stripe.checkout.sessions.retrieve(active.stripeCheckoutSessionId);
+        } catch (error) {
+          if (!isMissingStripeResource(error)) throw error;
         }
+        if (
+          remoteSession &&
+          (remoteSession.mode !== "subscription" ||
+            remoteSession.metadata?.purpose === "live_video_addon" ||
+            remoteSession.metadata?.wireline_user_id !== req.user.id ||
+            remoteSession.metadata?.wireline_checkout_operation_id !== active.id)
+        ) {
+          return checkoutStateUnclear(res, active.id);
+        }
+        const remoteStatus = remoteSession?.status;
         if (samePlan && remoteStatus === "open") {
-          return res.json({ url: active.checkoutUrl, reused: true, operation_id: active.id });
+          if (!remoteSession?.url) return checkoutStateUnclear(res, active.id);
+          return res.json({ url: remoteSession.url, reused: true, operation_id: active.id });
+        }
+        if (remoteSession?.status === "complete") {
+          return reconcileCompletedCheckout(remoteSession, res, active.id);
+        }
+        if (remoteSession && remoteStatus !== "open" && remoteStatus !== "expired") {
+          return checkoutStateUnclear(res, active.id);
         }
         if (remoteStatus === "open" && active.stripeCheckoutSessionId) {
           // Different plan requested while the old session is still payable:
@@ -326,18 +394,12 @@ router.post(
             });
           }
         }
-        await drizzle
-          .update(checkoutOperations)
-          .set({
-            status: remoteStatus === "complete" ? "completed" : "expired",
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(checkoutOperations.id, active.id),
-              inArray(checkoutOperations.status, ACTIVE_OPERATION_STATES),
-            ),
-          );
+        const expired = await markCheckoutOperation(active.id, req.user.id, {
+          status: "expired",
+          failureCode: null,
+        });
+        if (!expired) return checkoutOperationChanged(res, active.id);
+        const renewedExpiresAt = new Date(Date.now() + CHECKOUT_TTL_MS);
         const [renewed] = await drizzle
           .insert(checkoutOperations)
           .values({
@@ -345,7 +407,7 @@ router.post(
             planId: plan.id,
             billingInterval: interval,
             status: "creating",
-            expiresAt: new Date(Date.now() + CHECKOUT_TTL_MS),
+            expiresAt: renewedExpiresAt,
           })
           .onConflictDoNothing()
           .returning({ id: checkoutOperations.id });
@@ -357,6 +419,9 @@ router.post(
           });
         }
       } else if (active?.status === "creating" && samePlan) {
+        // Aged idempotency keys can be pruned by Stripe, so blindly retrying or
+        // freeing this reservation could create a second payable Session.
+        if (active.expiresAt.getTime() <= Date.now()) return checkoutStateUnclear(res, active.id);
         operationId = active.id;
         operationCustomerId = active.stripeCustomerId || null;
         resumed = true;
@@ -374,6 +439,7 @@ router.post(
     let customerResolved = false;
     let checkoutAttempted = false;
     let checkoutResolved = false;
+    let resolvedSession: Stripe.Checkout.Session | null = null;
     let createdSession: { id: string; url: string } | null = null;
 
     try {
@@ -389,11 +455,12 @@ router.post(
       // Persist to the durable operation first. If the subscription projection
       // write fails, the same active operation can resume with this exact
       // customer instead of creating another Stripe object.
-      await markCheckoutOperation(operationId, {
+      const customerPersisted = await markCheckoutOperation(operationId, req.user.id, {
         status: "creating",
         stripeCustomerId: customerId,
         failureCode: null,
       });
+      if (!customerPersisted) return checkoutOperationChanged(res, operationId);
       await persistStripeCustomerId(req.user.id, customerId);
 
       if (ensuredCustomer.recovered) {
@@ -437,16 +504,45 @@ router.post(
         { idempotencyKey: `wireline-checkout-${operationId}` },
       );
       checkoutResolved = true;
-      if (!session.url) throw new Error("Stripe Checkout returned no hosted URL");
+      resolvedSession = session;
+      if (session.status === "complete") {
+        return await reconcileCompletedCheckout(session, res, operationId);
+      }
+      if (session.status === "expired") {
+        const expired = await markCheckoutOperation(operationId, req.user.id, {
+          status: "expired",
+        });
+        if (!expired) return checkoutOperationChanged(res, operationId);
+        return res.status(409).json({
+          code: "CHECKOUT_EXPIRED",
+          error: "Your previous checkout expired. Try again to start a new checkout.",
+          operation_id: operationId,
+        });
+      }
+      if (!session.url || session.status !== "open") {
+        const persisted = await markCheckoutOperation(operationId, req.user.id, {
+          status: "open",
+          stripeCustomerId: customerId,
+          stripeCheckoutSessionId: session.id,
+          failureCode: "stripe_checkout_url_missing",
+        });
+        if (!persisted) return checkoutOperationChanged(res, operationId);
+        return res.status(202).json({
+          code: "CHECKOUT_RECONCILING",
+          error: "Checkout is being reconciled. Retry the same plan safely.",
+          operation_id: operationId,
+        });
+      }
       createdSession = { id: session.id, url: session.url };
 
-      await markCheckoutOperation(operationId, {
+      const opened = await markCheckoutOperation(operationId, req.user.id, {
         status: "open",
         stripeCustomerId: customerId,
         stripeCheckoutSessionId: createdSession.id,
         checkoutUrl: createdSession.url,
         failureCode: null,
       });
+      if (!opened) return checkoutOperationChanged(res, operationId);
 
       emitServerProductEvent({
         event: "subscription_checkout_started",
@@ -488,13 +584,14 @@ router.post(
       });
     } catch (error) {
       if (createdSession) {
-        await markCheckoutOperation(operationId, {
+        const persisted = await markCheckoutOperation(operationId, req.user.id, {
           status: "open",
           stripeCustomerId: customerId,
           stripeCheckoutSessionId: createdSession.id,
           checkoutUrl: createdSession.url,
           failureCode: "post_stripe_persistence_failed",
-        }).catch(() => {});
+        }).catch(() => null);
+        if (persisted === false) return checkoutOperationChanged(res, operationId);
         log.error("Stripe Checkout exists but operation persistence failed", {
           operationId,
           sessionId: createdSession.id,
@@ -508,8 +605,28 @@ router.post(
         });
       }
 
+      if (resolvedSession) {
+        await markCheckoutOperation(operationId, req.user.id, {
+          status: "open",
+          stripeCustomerId: customerId,
+          stripeCheckoutSessionId: resolvedSession.id,
+          failureCode: "settlement_reconciliation_failed",
+        }).catch(() => {});
+        log.error("Stripe Checkout requires settlement reconciliation", {
+          operationId,
+          sessionId: resolvedSession.id,
+          userId: req.user.id,
+          error: getErrorMessage(error),
+        });
+        return res.status(202).json({
+          code: "CHECKOUT_RECONCILING",
+          error: "Your previous checkout is being reconciled. Retry the same plan safely.",
+          operation_id: operationId,
+        });
+      }
+
       if (customerResolved && !checkoutAttempted) {
-        await markCheckoutOperation(operationId, {
+        await markCheckoutOperation(operationId, req.user.id, {
           status: "creating",
           stripeCustomerId: customerId,
           failureCode: "customer_state_persistence_failed",
@@ -529,7 +646,7 @@ router.post(
       }
 
       if (!checkoutAttempted && isAmbiguousStripeError(error)) {
-        await markCheckoutOperation(operationId, {
+        await markCheckoutOperation(operationId, req.user.id, {
           status: "creating",
           stripeCustomerId: customerId,
           failureCode: "stripe_customer_outcome_unknown",
@@ -548,7 +665,7 @@ router.post(
       }
 
       if (checkoutAttempted && !checkoutResolved && isAmbiguousStripeError(error)) {
-        await markCheckoutOperation(operationId, {
+        await markCheckoutOperation(operationId, req.user.id, {
           status: "creating",
           stripeCustomerId: customerId,
           failureCode: "stripe_checkout_outcome_unknown",
@@ -566,7 +683,7 @@ router.post(
         });
       }
 
-      await failCheckoutOperation(operationId, {
+      await failCheckoutOperation(operationId, req.user.id, {
         stripeCustomerId: customerId,
         failureCode: "stripe_checkout_failed",
       }).catch(() => {});

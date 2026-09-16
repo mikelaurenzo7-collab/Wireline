@@ -42,7 +42,7 @@ describe("checkout Stripe-customer recovery contract", () => {
 
   it("persists the durable operation before the subscription projection", () => {
     const operationWrite = source.indexOf(
-      'await markCheckoutOperation(operationId, {\n        status: "creating"',
+      'await markCheckoutOperation(operationId, req.user.id, {\n        status: "creating"',
     );
     const projectionWrite = source.indexOf(
       "await persistStripeCustomerId(req.user.id, customerId)",

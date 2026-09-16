@@ -244,6 +244,7 @@ export const authService = {
       log.warn("Auth: Invalid password", { email });
       return null;
     }
+    let verifiedPasswordHash = user.passwordHash;
 
     // Opportunistically upgrade legacy default-cost scrypt hashes to the strong
     // cost on a successful login. The write is best-effort: a failure here must
@@ -251,10 +252,17 @@ export const authService = {
     if (isLegacyPasswordHash(user.passwordHash)) {
       try {
         const upgraded = await hashPasswordForRequest(password);
-        await drizzle
+        const [rehashed] = await drizzle
           .update(schema.users)
           .set({ passwordHash: upgraded })
-          .where(eq(schema.users.id, user.id));
+          .where(
+            and(eq(schema.users.id, user.id), eq(schema.users.passwordHash, verifiedPasswordHash)),
+          )
+          .returning({ passwordHash: schema.users.passwordHash });
+        // A reset or another login changed the credential while scrypt ran.
+        // Never replace that newer credential with the old password's rehash.
+        if (!rehashed?.passwordHash) return null;
+        verifiedPasswordHash = rehashed.passwordHash;
       } catch (err) {
         log.warn("Auth: legacy password rehash skipped", {
           email,
@@ -267,7 +275,9 @@ export const authService = {
       drizzle
         .select({ sessionVersion: sessionUsers.sessionVersion })
         .from(sessionUsers)
-        .where(eq(sessionUsers.id, user.id))
+        .where(
+          and(eq(sessionUsers.id, user.id), eq(schema.users.passwordHash, verifiedPasswordHash)),
+        )
         .limit(1),
       drizzle
         .select({ plan: schema.subscriptions.plan })
@@ -275,7 +285,10 @@ export const authService = {
         .where(eq(schema.subscriptions.userId, user.id))
         .limit(1),
     ]);
-    if (!session) throw new Error("Authenticated user session state is unavailable");
+    // Read the generation only while the verified credential is still current.
+    // A reset before this read rejects the login; a reset after it invalidates
+    // the returned generation through the normal authentication fence.
+    if (!session) return null;
 
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
