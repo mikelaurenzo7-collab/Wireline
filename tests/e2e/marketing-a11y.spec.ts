@@ -59,7 +59,9 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await expect(headline).toBeVisible();
   await expect(hero).toBeVisible();
   await expect(auth).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to Jake" })).toBeVisible();
+  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
+  await expect(directions.getByRole("link", { name: /Build a Sales Rep/ })).toBeVisible();
+  await expect(directions.getByRole("link", { name: /Build a Front Desk/ })).toBeVisible();
 
   const bounds = await page.evaluate(() => {
     const headline = document
@@ -90,15 +92,18 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   await page.setViewportSize({ width: 1365, height: 900 });
   await gotoHomepageWithMain(page);
 
-  const demo = page.getByRole("button", { name: "Talk to Jake" });
-  await demo.focus();
-  await expect(demo).toBeFocused();
-  const focusStyle = await demo.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
-  });
-  expect(focusStyle.outlineStyle).not.toBe("none");
-  expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
+  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
+  for (const name of [/Build a Sales Rep/, /Build a Front Desk/]) {
+    const entry = directions.getByRole("link", { name });
+    await entry.focus();
+    await expect(entry).toBeFocused();
+    const focusStyle = await entry.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+    });
+    expect(focusStyle.outlineStyle).not.toBe("none");
+    expect(Number.parseFloat(focusStyle.outlineWidth)).toBeGreaterThanOrEqual(2);
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHomepageWithMain(page);
