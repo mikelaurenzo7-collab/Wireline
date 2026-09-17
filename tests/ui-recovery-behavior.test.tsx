@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   states: [] as any[],
   refs: [] as any[],
+  callbacks: [] as any[],
   effects: [] as any[],
   pending: [] as any[],
   stateCursor: 0,
   refCursor: 0,
+  callbackCursor: 0,
   effectCursor: 0,
   success: vi.fn(),
   error: vi.fn(),
@@ -16,6 +18,7 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
   signIn: vi.fn(),
   signOut: vi.fn(),
+  refreshAgents: vi.fn(),
   user: { id: "owner", email: "owner@example.com" } as any,
   authLoading: false,
   params: new URLSearchParams(),
@@ -50,7 +53,13 @@ vi.mock("react", async (original) => ({
   useRef: (initial: any) => (h.refs[h.refCursor++] ??= { current: initial }),
   useEffect: (callback: () => any, deps: any[]) => effect(callback, deps),
   useLayoutEffect: (callback: () => any, deps: any[]) => effect(callback, deps),
-  useCallback: (callback: any) => callback,
+  useCallback: (callback: any, deps: any[]) => {
+    const index = h.callbackCursor++;
+    const previous = h.callbacks[index];
+    if (!previous || deps.some((value, i) => !Object.is(value, previous.deps[i])))
+      h.callbacks[index] = { callback, deps };
+    return h.callbacks[index].callback;
+  },
   useMemo: (callback: () => any) => callback(),
 }));
 vi.mock("react-router", () => ({
@@ -68,7 +77,7 @@ vi.mock("../src/contexts/AgentsContext", () => ({
     agents: h.agents,
     loading: h.agentsLoading,
     degraded: h.degraded,
-    refresh: vi.fn(),
+    refresh: h.refreshAgents,
   }),
 }));
 vi.mock("../src/lib/api", () => ({
@@ -76,6 +85,12 @@ vi.mock("../src/lib/api", () => ({
   refreshSessionIfNeeded: vi.fn(),
   authFetch: h.fetch,
   safeJson: (response: Response) => response.json(),
+  readApiJson: async (response: Response) => {
+    const data = await response.json();
+    return response.ok
+      ? { ok: true, data }
+      : { ok: false, status: response.status, error: data.error };
+  },
 }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "meta" }));
 vi.mock("../src/lib/auth-redirect", () => ({
@@ -150,6 +165,25 @@ vi.mock("../src/components/ui/shadcn/Select", () => ({
 }));
 vi.mock("../src/components/EmailInbox", () => ({ default: "email-inbox" }));
 vi.mock("../src/components/SmsThreads", () => ({ default: "sms-inbox" }));
+vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));
+vi.mock("../src/components/RoleplaySandbox", () => ({ default: "roleplay" }));
+vi.mock("../src/lib/product-event-client", () => ({
+  emitProductEvent: vi.fn(),
+  emitProductEventOnce: vi.fn(),
+}));
+vi.mock("../src/lib/post-signup-onboarding", () => ({ setPostSignupFlowActive: vi.fn() }));
+vi.mock("../src/lib/wireline-create-flow", () => ({
+  clearPostCreateWizard: vi.fn(),
+  readPostCreateWizardStep: () => "launch",
+  stashPostCreateWizardStep: vi.fn(),
+}));
+vi.mock("../src/lib/signup-intent", async (original) => ({
+  ...(await original<typeof import("../src/lib/signup-intent")>()),
+  activationBillingHref: () => "/settings/billing",
+  getStoredSignupIntent: () => "starter",
+}));
+import PhoneNumberPicker from "../src/components/PhoneNumberPicker";
+import PostCreateActivationWizard from "../src/components/onboarding/PostCreateActivationWizard";
 import EmailPage from "../src/pages/EmailPage";
 import PhoneSetupPanel from "../src/components/PhoneSetupPanel";
 import RouteChangeA11y from "../src/components/RouteChangeA11y";
@@ -171,7 +205,7 @@ function descendants(node: ReactNode): ReactElement<any>[] {
   return [element, ...descendants(element.props.children), ...descendants(element.props.secondary)];
 }
 function render(page: () => ReactNode) {
-  h.stateCursor = h.refCursor = h.effectCursor = 0;
+  h.stateCursor = h.refCursor = h.effectCursor = h.callbackCursor = 0;
   const elements = descendants(page());
   h.pending.splice(0).forEach((callback) => callback());
   return elements;
@@ -210,6 +244,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.states = [];
   h.refs = [];
+  h.callbacks = [];
   h.effects = [];
   h.pending = [];
   h.user = { id: "owner", email: "owner@example.com" };
@@ -783,5 +818,414 @@ describe("inbox filter recovery", () => {
     render(EmailPage);
     await settle();
     expect(render(EmailPage).find((e) => e.type === "email-inbox")?.props.accountId).toBe("mail-a");
+  });
+});
+
+describe("second pass: phone setup mutations", () => {
+  async function ready() {
+    h.agents = [
+      { id: "bot-a", name: "Front desk" },
+      { id: "bot-b", name: "Appointments" },
+    ];
+    h.fetch.mockImplementation(async () =>
+      Response.json({
+        numbers: [{ id: "line-a", phone_number: "+15555550100", agent_id: "bot-a" }],
+      }),
+    );
+    render(PhoneSetupPanel);
+    await settle();
+    click(PhoneSetupPanel, " Add line");
+    render(PhoneSetupPanel);
+  }
+  const activate = () =>
+    render(PhoneSetupPanel).find(
+      (e) => e.type === "button" && content(e.props.children) === "Activate",
+    )!;
+  it("keeps the Bot selected for a new line across rerenders", async () => {
+    await ready();
+    render(PhoneSetupPanel)
+      .find((e) => e.type === "select")!
+      .props.onValueChange("bot-b");
+    render(PhoneSetupPanel);
+    expect(render(PhoneSetupPanel).find((e) => e.type === "select")!.props.value).toBe("bot-b");
+    h.fetch.mockResolvedValue(Response.json({ error: "Unavailable" }, { status: 503 }));
+    activate().props.onClick();
+    await settle();
+    expect(JSON.parse(h.fetch.mock.lastCall![1].body).agent_id).toBe("bot-b");
+  });
+  it("submits activation only once before a rerender", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    const action = activate().props.onClick;
+    action();
+    action();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    done(Response.json({ error: "Unavailable" }, { status: 503 }));
+    await settle();
+  });
+  it("blocks new activation and assignment when the Bot roster is degraded", async () => {
+    await ready();
+    h.degraded = true;
+    h.fetch.mockClear();
+    expect(activate().props.disabled).toBe(true);
+    activate().props.onClick();
+    render(PhoneSetupPanel)
+      .find((e) => e.type === "select" && e.props.value === "bot-a")
+      ?.props.onValueChange("bot-b");
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+  it("does not confirm activation for a malformed success payload", async () => {
+    await ready();
+    h.fetch.mockImplementation(async () => Response.json({}));
+    activate().props.onClick();
+    await settle();
+    expect(
+      render(PhoneSetupPanel).some((e) => e.type === "notice" && e.props.tone === "success"),
+    ).toBe(false);
+  });
+  it("submits an assignment only once before a rerender", async () => {
+    await ready();
+    const assignment = render(PhoneSetupPanel)
+      .filter((e) => e.type === "select")
+      .at(-1)!;
+    let done!: (response: Response) => void;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    assignment.props.onValueChange("bot-b");
+    assignment.props.onValueChange("bot-a");
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(h.fetch.mock.lastCall![1].body)).toEqual({ agent_id: "bot-b" });
+    done(Response.json({ error: "Unavailable" }, { status: 503 }));
+    await settle();
+  });
+  it("does not confirm an assignment without an explicit acknowledgement", async () => {
+    await ready();
+    h.fetch.mockImplementation(async () => Response.json({}));
+    render(PhoneSetupPanel)
+      .filter((e) => e.type === "select")
+      .at(-1)!
+      .props.onValueChange("bot-b");
+    await settle();
+    expect(
+      render(PhoneSetupPanel).some((e) => e.type === "notice" && e.props.tone === "success"),
+    ).toBe(false);
+    expect(
+      render(PhoneSetupPanel).some(
+        (e) => e.type === "notice" && e.props.title === "Lines need attention",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("second pass: team and scoped inbox uncertainty", () => {
+  it.each([403, 503])("does not infer Owner from a %s team response", async (status) => {
+    h.fetch.mockImplementation(async () => Response.json({ error: "Unavailable" }, { status }));
+    render(TeamSettings);
+    await settle();
+    const elements = render(TeamSettings);
+    expect(elements.some((e) => e.type === "badge" && content(e.props.children) === "Owner")).toBe(
+      false,
+    );
+    expect(
+      elements.some(
+        (e) => e.type === "notice" && content(e.props.children).includes("Starter Plus"),
+      ),
+    ).toBe(false);
+  });
+  it("rejects malformed team data and offers a local retry", async () => {
+    h.fetch.mockImplementation(async () => Response.json({}));
+    render(TeamSettings);
+    await settle();
+    expect(
+      render(TeamSettings).some(
+        (e) => e.type === "notice" && e.props.title === "Team settings could not be loaded",
+      ),
+    ).toBe(true);
+    h.fetch.mockImplementation(async () => Response.json({ members: [] }));
+    click(TeamSettings, "Try again");
+    await settle();
+    expect(
+      render(TeamSettings).some(
+        (e) => e.type === "notice" && e.props.title === "Team settings could not be loaded",
+      ),
+    ).toBe(false);
+  });
+  it.each(["bot-a", "not-cached"])(
+    "preserves Bot scope %s when the roster is unavailable",
+    async (agentId) => {
+      h.params.set("agent", agentId);
+      h.degraded = true;
+      h.fetch.mockImplementation(async () => Response.json({ accounts: [] }));
+      render(EmailPage);
+      await settle();
+      const elements = render(EmailPage);
+      expect(elements.some((e) => e.type === "email-inbox")).toBe(false);
+      const notice = elements.find(
+        (e) => e.type === "notice" && e.props.title === "Selected Bot unavailable",
+      );
+      expect(notice).toBeDefined();
+      notice!.props.action.props.onClick();
+      expect(h.refreshAgents).toHaveBeenCalledOnce();
+      expect(h.params.get("agent")).toBe(agentId);
+    },
+  );
+});
+
+describe("second pass: roster response validation", () => {
+  async function provider() {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    const { AgentsProvider } = await vi.importActual<
+      typeof import("../src/contexts/AgentsContext")
+    >("../src/contexts/AgentsContext");
+    return () => render(() => AgentsProvider({ children: null }))[0].props.value;
+  }
+  it.each([{ numbers: [], degraded: true }, {}])(
+    "keeps unknown phone lookup separate from no line: %j",
+    async (numbers) => {
+      h.fetch.mockImplementation(async (url) =>
+        Response.json(url === "/api/agents" ? { agents: h.agents } : numbers),
+      );
+      const read = await provider();
+      read();
+      await settle();
+      expect(read().phoneLookupDegraded).toBe(true);
+    },
+  );
+  it("retains the last roster if refresh returns malformed data", async () => {
+    vi.useFakeTimers();
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(url === "/api/agents" ? { agents: h.agents } : { numbers: [] }),
+    );
+    const read = await provider();
+    read();
+    await settle();
+    expect(read().agents).toHaveLength(1);
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(url === "/api/agents" ? {} : { numbers: [] }),
+    );
+    read().refresh();
+    read();
+    await settle();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(read().agents[0]?.id).toBe("bot-a");
+    expect(read().degraded).toBe(true);
+  });
+});
+
+describe("second pass: setup guide provisioning", () => {
+  const payload = {
+    agentId: "bot-a",
+    agentName: "Front desk",
+    phoneProvisioned: false,
+    phoneProvisionRequested: false,
+  };
+  const page = () => PostCreateActivationWizard({ payload, onClose: h.navigate });
+  const provision = () =>
+    render(page).find(
+      (e) => e.type === "button" && content(e.props.children).includes("Get a number"),
+    )!;
+  async function ready() {
+    h.fetch.mockImplementation(async () => Response.json({ numbers: [] }));
+    render(page);
+    await settle();
+  }
+  it("waits for the initial line check before provisioning", () => {
+    h.fetch.mockImplementation(() => new Promise(() => {}));
+    expect(provision().props.disabled).toBe(true);
+    provision().props.onClick();
+    expect(h.fetch.mock.calls.some((call) => call[0] === "/api/phone-numbers/provision")).toBe(
+      false,
+    );
+  });
+  it.each(["malformed", "degraded", "outage"])(
+    "offers retry instead of activation after a %s line check",
+    async (kind) => {
+      h.fetch.mockImplementation(async () =>
+        Response.json(kind === "degraded" ? { numbers: [], degraded: true } : {}, {
+          status: kind === "outage" ? 503 : 200,
+        }),
+      );
+      render(page);
+      await settle();
+      expect(provision()?.props.disabled ?? true).toBe(true);
+      expect(
+        render(page).some(
+          (e) => e.type === "button" && content(e.props.children) === "Refresh line status",
+        ),
+      ).toBe(true);
+      expect(
+        render(page).some(
+          (e) => e.type === "div" && content(e.props.children).includes("No live line yet"),
+        ),
+      ).toBe(false);
+    },
+  );
+  it("fences duplicate activation and prevents dismissal while it is pending", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    const elements = render(page);
+    const action = elements.find(
+      (e) => e.type === "button" && content(e.props.children).includes("Get a number"),
+    )!.props.onClick;
+    action();
+    action();
+    elements.find((e) => e.props["aria-label"] === "Close setup guide")!.props.onClick();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.navigate).not.toHaveBeenCalled();
+    done(Response.json({ error: "Unavailable" }, { status: 503 }));
+    await settle();
+  });
+  it("does not finish setup when activation acknowledgement is missing", async () => {
+    await ready();
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(url === "/api/phone-numbers/provision" ? {} : { numbers: [] }),
+    );
+    provision().props.onClick();
+    await settle();
+    expect(h.states[0]).toBe("launch");
+  });
+  it("requires reconciliation when activation succeeded but no line is returned", async () => {
+    await ready();
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(url === "/api/phone-numbers/provision" ? { ok: true } : { numbers: [] }),
+    );
+    provision().props.onClick();
+    await settle();
+    expect(h.states[0]).toBe("launch");
+    expect(
+      render(page).some(
+        (e) => e.type === "button" && content(e.props.children) === "Refresh line status",
+      ),
+    ).toBe(true);
+    expect(provision()?.props.disabled ?? true).toBe(true);
+  });
+  it("recovers a line check and finishes only after the assigned line is returned", async () => {
+    h.fetch.mockImplementation(async () => Response.json({}, { status: 503 }));
+    render(page);
+    await settle();
+    h.fetch.mockImplementation(async () => Response.json({ numbers: [] }));
+    click(page, "Refresh line status");
+    await settle();
+    expect(provision().props.disabled).toBe(false);
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(
+        url.endsWith("provision")
+          ? { ok: true, phone_number: "+15555550100" }
+          : { numbers: [{ agent_id: "bot-a", phone_number: "+15555550100" }] },
+      ),
+    );
+    provision().props.onClick();
+    await settle();
+    expect(h.states[0]).toBe("complete");
+  });
+  it("describes a forbidden activation without claiming the session expired", async () => {
+    await ready();
+    h.fetch.mockImplementation(async () =>
+      Response.json({ code: "PHONE_CAPACITY_REACHED" }, { status: 403 }),
+    );
+    provision().props.onClick();
+    await settle();
+    const notices = render(page)
+      .filter((e) => e.type === "notice")
+      .map((e) => e.props.title)
+      .join(" ");
+    expect(notices).toContain("workspace access and plan limits");
+    expect(notices).not.toContain("session expired");
+  });
+});
+
+describe("second pass: number picker confirmation", () => {
+  const page = () => PhoneNumberPicker({ agentId: "bot-a", onClaim: h.success });
+  const inventory = (url: string) =>
+    Response.json(
+      url.endsWith("area-codes")
+        ? { area_codes: [] }
+        : { available: [{ phone_number: "+15555550100", area_code: "555", region: "Example" }] },
+    );
+  async function ready() {
+    h.fetch.mockImplementation(async (url) => inventory(url));
+    render(page);
+    await settle();
+  }
+  const claim = () =>
+    render(page).find(
+      (e) => e.props.onClick && content(e.props.children).includes("(555) 555-0100"),
+    )!.props.onClick;
+  it("submits a number claim only once before a rerender", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    const action = claim();
+    const first = action();
+    const second = action();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    done(Response.json({ ok: true, phone_number: "+15555550100" }));
+    await Promise.all([first, second]);
+    expect(h.success).toHaveBeenCalledOnce();
+  });
+  it("retains the claim error after refreshing inventory", async () => {
+    await ready();
+    h.fetch.mockImplementation(async (url) =>
+      url.endsWith("claim")
+        ? Response.json({ error: "Number already taken" }, { status: 409 })
+        : inventory(url),
+    );
+    await claim()();
+    expect(
+      render(page).some((e) => content(e.props.children).includes("Number already taken")),
+    ).toBe(true);
+  });
+  it("does not confirm a malformed claim response", async () => {
+    await ready();
+    h.fetch.mockImplementation(async (url) =>
+      url.endsWith("claim") ? Response.json({}) : inventory(url),
+    );
+    await claim()();
+    expect(h.success).not.toHaveBeenCalled();
+  });
+  it("requires an acknowledgement for numbers found by area-code search too", async () => {
+    await ready();
+    const input = render(page).find((e) => e.type === "input")!;
+    input.props.onChange({ target: { value: "555" } });
+    await render(page)
+      .find((e) => e.type === "button" && content(e.props.children).includes("Find numbers"))!
+      .props.onClick();
+    h.fetch.mockImplementation(async (url) =>
+      url.endsWith("provision") ? Response.json({}) : inventory(url),
+    );
+    await claim()();
+    expect(h.fetch.mock.calls.some((call) => call[0] === "/api/phone-numbers/provision")).toBe(
+      true,
+    );
+    expect(h.success).not.toHaveBeenCalled();
+  });
+  it("reports the actual returned line when the server reuses an existing number", async () => {
+    await ready();
+    h.fetch.mockImplementation(async () =>
+      Response.json({ ok: true, reused: true, phone_number: "+15555550200" }),
+    );
+    await claim()();
+    expect(h.success).toHaveBeenCalledExactlyOnceWith("+15555550200");
   });
 });

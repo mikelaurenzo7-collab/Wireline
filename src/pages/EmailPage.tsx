@@ -32,7 +32,12 @@ const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
  */
 export default function EmailPage() {
   const [params, setParams] = useSearchParams();
-  const { agents, loading: agentsLoading } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const [mailboxes, setMailboxes] = useState<MailboxAccount[]>([]);
   const [mailboxesLoading, setMailboxesLoading] = useState(true);
   const [mailboxesError, setMailboxesError] = useState(false);
@@ -128,6 +133,7 @@ export default function EmailPage() {
     Boolean(activeTab === "email" && requestedAccountId && mailboxesLoading);
   const mailboxScopeUnavailable =
     activeTab === "email" && Boolean(requestedAccountId) && mailboxesError;
+  const botScopeUnavailable = Boolean(requestedAgentId && agentsDegraded);
   const invalidScope =
     Boolean(requestedAgentId && !agentsLoading && !activeAgentId) ||
     Boolean(
@@ -209,6 +215,18 @@ export default function EmailPage() {
           {scopedLoading ? (
             <StatusNotice title="Loading selected inbox" aria-busy="true">
               Checking the Bot and mailbox in this link.
+            </StatusNotice>
+          ) : botScopeUnavailable ? (
+            <StatusNotice
+              tone="warning"
+              title="Selected Bot unavailable"
+              action={
+                <Button type="button" variant="secondary" onClick={refreshAgents}>
+                  Try again
+                </Button>
+              }
+            >
+              Your Bot filter is preserved. Retry when the workspace connection recovers.
             </StatusNotice>
           ) : mailboxScopeUnavailable ? (
             <StatusNotice

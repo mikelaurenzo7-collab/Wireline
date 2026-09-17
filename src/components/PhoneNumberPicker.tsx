@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, MapPin, Search, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { authFetch, readApiJson } from "../lib/api";
@@ -44,6 +44,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
   const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
+  const claimInFlight = useRef(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -83,6 +84,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   }, []);
 
   const claim = async (phoneNumber: string) => {
+    if (claimInFlight.current) return;
+    claimInFlight.current = true;
     setClaiming(phoneNumber);
     setError(null);
     try {
@@ -96,10 +99,18 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           }),
         });
         const data = await res.json();
-        if (!res.ok || data.ok === false) {
-          throw new Error(data.error || "Could not activate that number");
+        if (
+          !res.ok ||
+          data?.ok !== true ||
+          typeof data.phone_number !== "string" ||
+          !data.phone_number.trim()
+        ) {
+          throw new Error(
+            data?.error ||
+              "Could not confirm that number's activation. Refresh before trying again.",
+          );
         }
-        onClaim?.(data.phone_number || phoneNumber);
+        onClaim?.(data.phone_number);
         return;
       }
       const res = await authFetch("/api/phone-numbers/claim", {
@@ -107,14 +118,22 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         body: JSON.stringify({ phone_number: phoneNumber, agent_id: agentId }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Could not claim that number");
+      if (
+        !res.ok ||
+        data?.ok !== true ||
+        typeof data.phone_number !== "string" ||
+        !data.phone_number.trim()
+      ) {
+        throw new Error(
+          data?.error || "Could not confirm that number's activation. Refresh before trying again.",
+        );
       }
-      onClaim?.(phoneNumber);
+      onClaim?.(data.phone_number);
     } catch (e: any) {
-      setError(e?.message || "Claim failed");
       await refresh();
+      setError(e?.message || "Claim failed");
     } finally {
+      claimInFlight.current = false;
       setClaiming(null);
     }
   };
@@ -258,8 +277,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           ) : (
             <div className="rounded-md wl-panel border border-border p-5 text-center">
               <p className="text-[length:var(--wireline-typography-caption-size)] text-muted">
-                No numbers in pool right now. Search by area code to preview available lines
-                without buying one until you pick it.
+                No numbers in pool right now. Search by area code to preview available lines without
+                buying one until you pick it.
               </p>
             </div>
           )}

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus, Users, X } from "lucide-react";
-import { Link } from "react-router";
 
 import { Badge, Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
@@ -77,6 +76,7 @@ export default function TeamSettings() {
   });
 
   const displayMembers = useMemo(() => {
+    if (loading || teamAccess !== "ok") return [];
     if (members.length > 0) return members;
     if (!user?.email) return [];
     return [
@@ -86,7 +86,7 @@ export default function TeamSettings() {
         role: "owner",
       },
     ];
-  }, [members, user?.email, user?.id]);
+  }, [loading, teamAccess, members, user?.email, user?.id]);
 
   async function loadTeam() {
     setLoading(true);
@@ -105,9 +105,9 @@ export default function TeamSettings() {
         setMembers([]);
         return;
       }
-      if (!response.ok)
+      if (!response.ok || !Array.isArray(payload?.members))
         throw new Error(payload?.error || payload?.message || String(response.status));
-      setMembers(Array.isArray(payload?.members) ? payload.members : []);
+      setMembers(payload.members);
     } catch {
       setTeamAccess("error");
       setMembers([]);
@@ -168,27 +168,28 @@ export default function TeamSettings() {
         <WorkspacePageIntro title="Team" titleHidden />
 
         {teamAccess === "restricted" ? (
-          <StatusNotice tone="info" title="Solo workspace">
-            Team invites are available on Starter Plus and Pro plans.{" "}
-            <Link
-              to="/settings/billing"
-              className="font-semibold text-primary underline underline-offset-2"
-            >
-              Review billing
-            </Link>{" "}
-            to add seats.
+          <StatusNotice tone="info" title="Team access restricted">
+            Your current account cannot manage this workspace's team. Ask a workspace owner or admin
+            for access.
           </StatusNotice>
         ) : null}
 
         {teamAccess === "certifying" ? (
           <StatusNotice tone="info" title="Invites unavailable">
-            Invites open after shared-workspace security certification.
+            Team invitations are temporarily unavailable. Please try again later.
           </StatusNotice>
         ) : null}
 
         {teamAccess === "error" ? (
           <StatusNotice tone="destructive" title="Team settings could not be loaded">
-            Your workspace is unaffected. Refresh this page to retry the team status check.
+            Your workspace is unaffected. Retry the team status check.
+            <button
+              type="button"
+              onClick={() => void loadTeam()}
+              className="mt-3 flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
+            >
+              Try again
+            </button>
           </StatusNotice>
         ) : null}
 
@@ -211,7 +212,7 @@ export default function TeamSettings() {
               onClick={openInviteDialog}
               title={
                 teamAccess === "certifying"
-                  ? "Invitations will open after shared workspace certification."
+                  ? "Team invitations are temporarily unavailable."
                   : undefined
               }
             >
@@ -228,6 +229,8 @@ export default function TeamSettings() {
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               Loading team…
             </div>
+          ) : teamAccess !== "ok" ? (
+            <p className="mt-5 text-sm text-muted-foreground">The member list is unavailable.</p>
           ) : displayMembers.length ? (
             <div className="mt-5 grid gap-3">
               {displayMembers.map((member) => (

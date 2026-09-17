@@ -117,9 +117,12 @@ async function fetchAgentsWithRetry(attempts = 2): Promise<{
       const numbersBody = numbersResponse?.ok
         ? await numbersResponse.json().catch(() => null)
         : null;
-      const phoneLookupDegraded = !numbersResponse?.ok;
+      const phoneLookupDegraded =
+        !numbersResponse?.ok ||
+        numbersBody?.degraded === true ||
+        !Array.isArray(numbersBody?.numbers);
       const numbersByAgent = parsePhoneNumberMap(numbersBody);
-      if (response.ok && body) {
+      if (response.ok && Array.isArray(body?.agents)) {
         return {
           agents: parseAgentsPayload(body, numbersByAgent),
           degraded: body.degraded === true,

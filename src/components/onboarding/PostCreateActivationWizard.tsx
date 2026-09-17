@@ -44,8 +44,11 @@ function safeProvisionError(
   raw: string | null | undefined,
 ): string {
   const normalized = code?.toLowerCase();
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return "Your session expired. Sign in again to continue connecting a number.";
+  }
+  if (status === 403) {
+    return "Your account cannot connect this number. Check workspace access and plan limits.";
   }
   if (status === 402 || normalized === "activation_required") {
     return POST_CREATE_WIZARD_COPY.steps.launch.activationRequired;
@@ -93,11 +96,13 @@ export default function PostCreateActivationWizard({
   });
   const [refreshedPhoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [refreshingPhone, setLoadingPhone] = useState(true);
+  const [phoneLookupUnavailable, setPhoneLookupUnavailable] = useState(false);
   // Background identity provisioning may finish after the initial number read.
   // Consume its result directly without remounting the guide or resetting its step.
   const phoneNumber = refreshedPhoneNumber || payload.phoneNumber || null;
   const loadingPhone = !phoneNumber && refreshingPhone;
   const [provisioning, setProvisioning] = useState(false);
+  const provisionInFlight = useRef(false);
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
   // a customer who just built and trained a Bot, and may already have privately
@@ -136,17 +141,23 @@ export default function PostCreateActivationWizard({
     try {
       const response = await authFetch("/api/phone-numbers");
       if (!response.ok) {
+        setPhoneLookupUnavailable(true);
         setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
         return { ok: false, phoneNumber: null };
       }
       const body = await response.json();
-      const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
+      if (body?.degraded || !Array.isArray(body?.numbers)) {
+        throw new Error("Phone line status unavailable");
+      }
+      const numbers = body.numbers;
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
       const next = match?.phone_number ?? null;
       setPhoneNumber(next);
+      setPhoneLookupUnavailable(false);
       setWireError(null);
       return { ok: true, phoneNumber: next };
     } catch {
+      setPhoneLookupUnavailable(true);
       setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
       return { ok: false, phoneNumber: null };
     } finally {
@@ -163,7 +174,8 @@ export default function PostCreateActivationWizard({
   }, [refreshPhone]);
 
   async function provisionLine() {
-    if (provisioning) return;
+    if (provisionInFlight.current || refreshingPhone || phoneLookupUnavailable) return;
+    provisionInFlight.current = true;
     setProvisioning(true);
     setWireError(null);
     setActivationNeeded(false);
@@ -183,7 +195,8 @@ export default function PostCreateActivationWizard({
         setActivationNeeded(true);
         return;
       }
-      if (!response.ok || body?.ok === false) {
+      if (!response.ok || body?.ok !== true) {
+        if (response.ok) setPhoneLookupUnavailable(true);
         setWireError(safeProvisionError(response.status, body?.code, body?.error || body?.message));
         return;
       }
@@ -206,10 +219,17 @@ export default function PostCreateActivationWizard({
         agentId: payload.agentId,
       });
       const refreshed = await refreshPhone();
-      if (refreshed.ok) finish(refreshed.phoneNumber);
+      if (refreshed.ok && refreshed.phoneNumber) finish(refreshed.phoneNumber);
+      else if (refreshed.ok) {
+        setPhoneLookupUnavailable(true);
+        setWireError(
+          "Activation was accepted, but the line is not yet visible. Refresh line status before trying again.",
+        );
+      }
     } catch {
       setWireError("Could not provision a number.");
     } finally {
+      provisionInFlight.current = false;
       setProvisioning(false);
     }
   }
@@ -233,6 +253,7 @@ export default function PostCreateActivationWizard({
 
   function dismiss() {
     if (provisioning) return;
+    if (provisionInFlight.current) return;
     if (step === "complete" && phoneNumber && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -349,11 +370,7 @@ export default function PostCreateActivationWizard({
                 ) : null}
                 <p
                   className={`wl-overline truncate ${
-                    active
-                      ? "text-foreground"
-                      : done
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                    active ? "text-foreground" : done ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   {POST_CREATE_WIZARD_COPY.steps[id].label}
@@ -412,6 +429,8 @@ export default function PostCreateActivationWizard({
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   Checking your line…
                 </div>
+              ) : phoneLookupUnavailable ? (
+                <p className="text-sm text-muted-foreground">Line status is unavailable.</p>
               ) : hasLine && phoneNumber ? (
                 <div className="rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
                   <p className="text-xs font-semibold text-primary">
@@ -441,7 +460,10 @@ export default function PostCreateActivationWizard({
                     {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
                   </p>
                   <Button asChild size="sm" className="mt-3">
-                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("launch")}>
+                    <Link
+                      to={activationPlanPath}
+                      onClick={() => stashPostCreateWizardStep("launch")}
+                    >
                       {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
                     </Link>
                   </Button>
@@ -450,8 +472,20 @@ export default function PostCreateActivationWizard({
                 <StatusNotice tone="destructive" title={wireError} />
               ) : null}
 
+              {phoneLookupUnavailable ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={refreshingPhone || provisioning}
+                  onClick={() => void refreshPhone()}
+                >
+                  Refresh line status
+                </Button>
+              ) : null}
+
               <div className="flex flex-wrap gap-2">
-                {hasLine ? (
+                {hasLine && !phoneLookupUnavailable ? (
                   <Button
                     type="button"
                     size="sm"
@@ -467,7 +501,7 @@ export default function PostCreateActivationWizard({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={provisioning}
+                      disabled={provisioning || refreshingPhone || phoneLookupUnavailable}
                       onClick={() => void provisionLine()}
                     >
                       {provisioning ? (
@@ -481,7 +515,10 @@ export default function PostCreateActivationWizard({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      onClick={() => finish()}
+                      disabled={provisioning}
+                      onClick={() => {
+                        if (!provisionInFlight.current) finish();
+                      }}
                     >
                       {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
@@ -588,12 +625,7 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "test" ? (
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setStep("launch")}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("launch")}>
                 {POST_CREATE_WIZARD_COPY.steps.test.skip}
               </Button>
               <Button

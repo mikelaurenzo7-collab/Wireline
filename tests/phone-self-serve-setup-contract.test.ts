@@ -38,9 +38,9 @@ describe("self-service calling setup", () => {
   it("keeps activation failures recoverable and exposes a real inbound test", () => {
     const setup = read("src/components/PhoneSetupPanel.tsx");
 
-    expect(setup).toContain("body.recovery_path");
-    expect(setup).toContain('body.code === "ACTIVATION_REQUIRED"');
-    expect(setup).toContain('body.code === "SUBSCRIPTION_REQUIRED"');
+    expect(setup).toContain("body?.recovery_path");
+    expect(setup).toContain('body?.code === "ACTIVATION_REQUIRED"');
+    expect(setup).toContain('body?.code === "SUBSCRIPTION_REQUIRED"');
     expect(setup).toContain("Open billing");
     expect(setup).toContain("href={`tel:${activeNumber.phone_number}`}");
     expect(setup).toContain("Caller identity");

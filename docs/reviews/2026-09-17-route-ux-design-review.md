@@ -106,7 +106,7 @@ Keep the existing typography roles, spacing tokens, violet action color, monochr
 
 No visual redesign or aesthetic approval is claimed. The remaining review needs accepted screenshots and interaction on public and authenticated pages at 320/390/768/1280px, both themes, representative long/empty/error content, zoom, reduced motion, and keyboard-only navigation. Inspect text contrast, grid density, wrapping, table affordances, sticky/safe-area behavior, focus visibility, and modal recovery before visual sign-off.
 
-## Verification record
+## First-pass verification record (`dd22f463`)
 
 - New component regression file: 46 cases. The final focused run passed 79 checks across 6 files, including Studio preferences, route focus, and responsive/source contracts.
 - Before-fix countercheck for the first 26 cases reproduced 23 failures against the previously saved source; all 26 passed after fixes. Later cases cover admin, lazy focus, cookie storage/sign-out, line-status and inbox-scope behavior.
@@ -116,3 +116,22 @@ No visual redesign or aesthetic approval is claimed. The remaining review needs 
 - Dependency audit: 397 installed production package versions across 381 packages, no unaccepted high/critical advisories. Production build (41 marketing route shells), no-database server import smoke, and browser-extension policy checks passed. Generated download archives were restored after the build.
 - Prior saved head `b07109c` passed full verification: 3,654 tests, 82 browser checks; 6 credentialed visual checks skipped. That prior result is **not** an exact-head browser result for these new UI changes.
 - Current-head browser/E2E and live/provider checks are **not run**, under the stated preview restriction. Draft status and deployment gates remain in force; no merge or production promotion.
+
+## Second pass — follow-up to `dd22f463`
+
+Rechecked the saved changes and adjacent phone setup, onboarding, roster, team, and Inbox paths against their server response contracts. Both the draft PR and main branch were unchanged at the start. This pass uses source inspection and controlled component/service responses; the visual and live-provider boundaries above still apply.
+
+| Area | Reproduced gap | Correction |
+| --- | --- | --- |
+| New phone line | Choosing another Bot snapped back to the existing line's Bot; rapid events could submit duplicate activation or assignment requests; malformed responses could confirm an unacknowledged assignment. | Preserve a valid draft selection, fence simultaneous mutations before React rerenders, and require explicit operation acknowledgement. Block changes while the Bot roster is unavailable. |
+| Setup guide | Activation could begin before the initial line check, proceed after unknown/degraded status, or finish without a returned assigned line. | Require a completed valid check, provide local status retry, require explicit activation acknowledgement and a returned line, prevent duplicate requests/dismissal during activation, and distinguish access denial from an expired session. |
+| Number picker | Duplicate claim events could submit twice; malformed success responses triggered confirmation; refreshing inventory erased the claim error; reused lines were reported as the requested number instead of the returned number. | Fence claims, require explicit success and a returned number on claim/provision paths, preserve the actual returned identity, and retain the operation error after inventory refresh. |
+| Team | Access denial was mislabeled as a paid-plan limitation; failure/malformed data could show an inferred Owner row. | Describe access restrictions accurately, withhold the member list when unavailable, reject malformed results, and offer local retry. Remove internal certification wording from customer guidance. |
+| Shared roster | Malformed successful responses looked like an empty roster; degraded or malformed phone lookup looked like no line. | Validate response shape, retain the last known roster on malformed refresh, and propagate phone lookup uncertainty. |
+| Scoped Inbox | A degraded roster could still mount the scoped inbox or claim that its selected Bot no longer existed. | Preserve the requested scope in an unavailable state with roster retry. |
+
+Added **28 regression cases**, bringing the UI recovery file to 74 cases. Before application changes, the first 22 new cases all failed against the saved source. After fixes, the focused run passed **108 checks across 5 files**, including successful recovery to a confirmed assigned line, the area-code search path, and reuse of a different existing number. One existing source contract was tightened so onboarding completion requires a returned line as well as a successful refresh.
+
+Second-pass broad verification passed: **565 files / 3,728 tests**, application TypeScript, repository ESLint, design checks, production build, and no-database server import smoke. Line coverage is **36.83%**. The first full run identified two additional stale source assertions for null-safe response access and customer-facing availability wording; those assertions were updated without changing the underlying recovery or certification gates. Their 8 checks passed separately, then the complete coverage suite passed. Generated download archives were restored after building.
+
+These are command-level results, not a new full browser-inclusive `verify:full` invocation. Current-head visual/browser execution and live-provider calls remain unrun; the PR stays in draft and no production settings were changed.

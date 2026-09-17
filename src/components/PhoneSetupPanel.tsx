@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, MapPin, Phone, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
@@ -68,6 +68,7 @@ export default function PhoneSetupPanel() {
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
+  const operationInFlight = useRef(false);
 
   const activeNumber =
     numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
@@ -87,12 +88,14 @@ export default function PhoneSetupPanel() {
   }, [location.hash]);
 
   useEffect(() => {
+    // The new-line draft is independent of the existing line's assignment.
+    // Keep a valid choice instead of snapping it back after every selection.
+    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
     const currentAgentId = activeNumber?.agent_id || "";
     if (currentAgentId && agents.some((agent) => agent.id === currentAgentId)) {
       setSelectedAgentId(currentAgentId);
       return;
     }
-    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
     setSelectedAgentId(agents[0]?.id || "");
   }, [activeNumber?.agent_id, agents, selectedAgentId]);
 
@@ -125,12 +128,21 @@ export default function PhoneSetupPanel() {
   }, []);
 
   async function provisionNumber() {
-    if (working || loading || linesUnavailable || !selectedAgentId) return;
+    if (
+      operationInFlight.current ||
+      loading ||
+      linesUnavailable ||
+      agentsLoading ||
+      agentsDegraded ||
+      !agents.some((agent) => agent.id === selectedAgentId)
+    )
+      return;
     const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
       setError("Enter a 3-digit area code, or leave it blank.");
       return;
     }
+    operationInFlight.current = true;
     setWorking(true);
     setMessage(null);
     setError(null);
@@ -145,14 +157,17 @@ export default function PhoneSetupPanel() {
         }),
       });
       const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
-      if (!response.ok || body.ok === false) {
+      if (!response.ok || body?.ok !== true) {
+        if (response.ok) setLinesUnavailable(true);
         setRecoveryPath(
-          body.recovery_path ||
-            (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+          body?.recovery_path ||
+            (body?.code === "ACTIVATION_REQUIRED" || body?.code === "SUBSCRIPTION_REQUIRED"
               ? "/settings/billing"
               : null),
         );
-        throw new Error(body.error || "Could not activate a number.");
+        throw new Error(
+          body?.error || "Could not confirm activation. Refresh line status before trying again.",
+        );
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
       await loadNumbers();
@@ -161,12 +176,23 @@ export default function PhoneSetupPanel() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not activate a number.");
     } finally {
+      operationInFlight.current = false;
       setWorking(false);
     }
   }
 
   async function attachAgent(agentId: string | null) {
-    if (!activeNumber || attaching || loading || linesUnavailable) return;
+    if (
+      !activeNumber ||
+      operationInFlight.current ||
+      loading ||
+      linesUnavailable ||
+      agentsLoading ||
+      agentsDegraded ||
+      (agentId !== null && !agents.some((agent) => agent.id === agentId))
+    )
+      return;
+    operationInFlight.current = true;
     setAttaching(true);
     setMessage(null);
     setError(null);
@@ -177,7 +203,13 @@ export default function PhoneSetupPanel() {
         body: JSON.stringify({ agent_id: agentId }),
       });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Could not update this line.");
+      if (!response.ok || body?.success !== true) {
+        if (response.ok) setLinesUnavailable(true);
+        throw new Error(
+          body?.error ||
+            "Could not confirm the assignment. Refresh line status before trying again.",
+        );
+      }
       setNumbers((current) =>
         current.map((number) =>
           number.id === activeNumber.id
@@ -196,6 +228,7 @@ export default function PhoneSetupPanel() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update this line.");
     } finally {
+      operationInFlight.current = false;
       setAttaching(false);
     }
   }
@@ -289,6 +322,10 @@ export default function PhoneSetupPanel() {
                 <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
                   Loading…
                 </div>
+              ) : agentsDegraded ? (
+                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
+                  Bots unavailable.
+                </div>
               ) : agents.length ? (
                 <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
                   <SelectTrigger className="h-10" aria-label="Bot for this line">
@@ -302,10 +339,6 @@ export default function PhoneSetupPanel() {
                     ))}
                   </SelectContent>
                 </Select>
-              ) : agentsDegraded ? (
-                <div className="flex h-10 items-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
-                  Bots unavailable.
-                </div>
               ) : (
                 <Button asChild variant="secondary">
                   <Link to="/studio?create=1">Create Bot</Link>
@@ -338,7 +371,7 @@ export default function PhoneSetupPanel() {
               type="button"
               size="sm"
               onClick={() => void provisionNumber()}
-              disabled={working || agentsLoading || !selectedAgentId}
+              disabled={working || attaching || agentsLoading || agentsDegraded || !selectedAgentId}
             >
               {working ? "Activating…" : "Activate"}
             </Button>
@@ -369,7 +402,7 @@ export default function PhoneSetupPanel() {
                       {formatPhone(number.phone_number)}
                     </strong>
                     <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {bot?.name || "Unassigned"}
+                      {bot?.name || (number.agent_id ? "Bot unavailable" : "Unassigned")}
                     </span>
                   </span>
                   {selected ? (
@@ -415,7 +448,7 @@ export default function PhoneSetupPanel() {
                   onValueChange={(value) =>
                     void attachAgent(value === PHONE_AGENT_UNSET ? null : value)
                   }
-                  disabled={attaching || agentsLoading}
+                  disabled={attaching || working || agentsLoading || agentsDegraded}
                 >
                   <SelectTrigger className="h-10" aria-label="Assigned Bot">
                     <SelectValue placeholder="Assign Bot" />
