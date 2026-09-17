@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { Request } from "express";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { sessionUsers } from "../db/security-schema";
 import { AppError } from "./api-error";
 import { resolveCanonicalAppUrl } from "./app-url";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
@@ -33,22 +34,77 @@ export function isMcpResourceBound(resource: string | null | undefined, req?: Re
   return resource === mcpResourceUrl(req);
 }
 
+export type McpGrantTransaction = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
+// Recovery, disconnect, authorization, and refresh all take this lock before
+// touching grant rows. A grant read before recovery cannot mint new credentials
+// after recovery's deletion has committed.
+export async function lockMcpGrantOwner(tx: McpGrantTransaction, userId: string) {
+  const [owner] = await tx
+    .select()
+    .from(sessionUsers)
+    .where(eq(sessionUsers.id, userId))
+    .for("update");
+  return owner ?? null;
+}
+
+export type StoredMcpGrant = {
+  user_id: string;
+  email: string;
+  client_id: string;
+  redirect_uri: string;
+  scope: string;
+  code_challenge: string;
+  resource: string | null;
+  expires_at: Date | string;
+};
+
+export async function consumeMcpGrant<T>(
+  kind: "authorization_code" | "refresh_token",
+  hash: string,
+  perform: (tx: McpGrantTransaction, grant: StoredMcpGrant) => Promise<T>,
+): Promise<T | null> {
+  const table =
+    kind === "authorization_code"
+      ? sql`wireline_mcp_oauth_codes`
+      : sql`wireline_mcp_refresh_tokens`;
+  const key = kind === "authorization_code" ? sql`code_hash` : sql`token_hash`;
+  return drizzle.transaction(async (tx) => {
+    const candidate = await tx.execute<{ user_id: string }>(sql`
+      SELECT user_id FROM ${table} WHERE ${key} = ${hash} LIMIT 1
+    `);
+    const userId = candidate.rows[0]?.user_id;
+    if (!userId || !(await lockMcpGrantOwner(tx, userId))) return null;
+    const claimed = await tx.execute<StoredMcpGrant>(sql`
+      DELETE FROM ${table} WHERE ${key} = ${hash} AND user_id = ${userId}::uuid RETURNING *
+    `);
+    const grant = claimed.rows[0];
+    if (!grant) return null;
+    return perform(tx, grant);
+  });
+}
+
 export async function revokeMcpAccessTokensForClient(
   userId: string,
   clientId: string,
+  db: Pick<McpGrantTransaction, "execute"> = drizzle,
 ): Promise<void> {
-  await drizzle.execute(sql`
+  await db.execute(sql`
     DELETE FROM wireline_mcp_access_tokens
     WHERE user_id = ${userId}::uuid AND client_id = ${clientId}
   `);
 }
 
-export async function revokeAllMcpGrantsForUser(userId: string): Promise<void> {
-  await Promise.all([
-    drizzle.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE user_id = ${userId}::uuid`),
-    drizzle.execute(sql`DELETE FROM wireline_mcp_refresh_tokens WHERE user_id = ${userId}::uuid`),
-    drizzle.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE user_id = ${userId}::uuid`),
-  ]);
+export async function revokeAllMcpGrantsForUser(
+  userId: string,
+  tx: McpGrantTransaction | undefined = undefined,
+): Promise<void> {
+  if (!tx)
+    return drizzle.transaction((transaction) => revokeAllMcpGrantsForUser(userId, transaction));
+  if (!(await lockMcpGrantOwner(tx, userId))) return;
+  await tx.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE user_id = ${userId}::uuid`);
+  await tx.execute(sql`DELETE FROM wireline_mcp_refresh_tokens WHERE user_id = ${userId}::uuid`);
+  await tx.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE user_id = ${userId}::uuid`);
 }
 
 export async function pruneExpiredMcpOAuthRows(): Promise<void> {

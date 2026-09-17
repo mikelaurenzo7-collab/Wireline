@@ -448,39 +448,60 @@ export const authService = {
   },
 
   async createPasswordResetToken(email: string, requestedIp?: string) {
-    const [user] = await drizzle
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.email, email))
-      .limit(1);
-    if (!user) return null;
+    return drizzle.transaction(async (tx) => {
+      // Use the same account-first lock order as recovery. A concurrent insert
+      // must not slip past the reset's sweep of outstanding credentials.
+      const [user] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1)
+        .for("update");
+      if (!user) return null;
 
-    const plaintext = randomBytes(32).toString("base64url");
-    const tokenHash = createHash("sha256").update(plaintext).digest("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60_000);
-    await drizzle.insert(schema.passwordResetTokens).values({
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-      requestedIp: requestedIp || null,
+      const plaintext = randomBytes(32).toString("base64url");
+      const tokenHash = createHash("sha256").update(plaintext).digest("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60_000);
+      await tx.insert(schema.passwordResetTokens).values({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+        requestedIp: requestedIp || null,
+      });
+      return { token: plaintext, userId: user.id, expiresAt };
     });
-    return { token: plaintext, userId: user.id, expiresAt };
   },
 
   async completePasswordReset(token: string, newPassword: string) {
     if (!token || !newPassword || newPassword.length < 8) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const now = new Date();
     await requirePasswordSafety(newPassword, "reset");
     const newHash = await hashPasswordForRequest(newPassword);
 
     const reset = await drizzle.transaction(async (tx) => {
+      const [candidate] = await tx
+        .select({ userId: schema.passwordResetTokens.userId })
+        .from(schema.passwordResetTokens)
+        .where(eq(schema.passwordResetTokens.tokenHash, tokenHash))
+        .limit(1);
+      if (!candidate) return null;
+
+      // Lock the account before any token rows. Two different reset links must
+      // not claim each other's rows in opposite order or both change a password.
+      const [owner] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, candidate.userId))
+        .for("update");
+      if (!owner) return null;
+      const now = new Date();
       const [claimed] = await tx
         .update(schema.passwordResetTokens)
         .set({ usedAt: now })
         .where(
           and(
             eq(schema.passwordResetTokens.tokenHash, tokenHash),
+            eq(schema.passwordResetTokens.userId, owner.id),
             gte(schema.passwordResetTokens.expiresAt, now),
             isNull(schema.passwordResetTokens.usedAt),
           ),
@@ -488,12 +509,22 @@ export const authService = {
         .returning({ userId: schema.passwordResetTokens.userId });
       if (!claimed) return null;
 
+      await tx
+        .update(schema.passwordResetTokens)
+        .set({ usedAt: now })
+        .where(
+          and(
+            eq(schema.passwordResetTokens.userId, claimed.userId),
+            isNull(schema.passwordResetTokens.usedAt),
+          ),
+        );
+
       const [changed] = await tx
         .update(schema.users)
         .set({ passwordHash: newHash, updatedAt: now })
         .where(eq(schema.users.id, claimed.userId))
         .returning({ id: schema.users.id });
-      if (!changed) return null;
+      if (!changed) throw new Error("Reset user is unavailable");
 
       // Rotate the session generation in the same transaction as the password.
       //
@@ -517,26 +548,14 @@ export const authService = {
         .where(eq(sessionUsers.id, changed.id))
         .returning({ sessionVersion: sessionUsers.sessionVersion });
       if (!session) throw new Error("Reset user session state is unavailable");
+      // Recovery is only complete when the old connector credentials are gone.
+      // Keep their deletion in this transaction so failure preserves a usable
+      // reset link and rolls back the password and session changes together.
+      const { revokeAllMcpGrantsForUser } = await import("./mcp-oauth-security");
+      await revokeAllMcpGrantsForUser(changed.id, tx);
       return { userId: changed.id, sessionVersion: session.sessionVersion };
     });
     if (!reset) return null;
-
-    // Third-party MCP grants are credentials too, and they outlive the session
-    // fence entirely — chatgpt-mcp-account-routes authorizes a bearer purely on
-    // the access-token row's expires_at, with no reference to sessionVersion.
-    // A reset that leaves them standing hands the attacker a connector with the
-    // account's full tool surface for the rest of the token's life. Best-effort:
-    // the password change itself has already committed and must be reported as
-    // done even if this sweep fails.
-    try {
-      const { revokeAllMcpGrantsForUser } = await import("./mcp-oauth-security");
-      await revokeAllMcpGrantsForUser(reset.userId);
-    } catch (error) {
-      log.error("Password reset could not revoke MCP grants", {
-        user_id: reset.userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
 
     const [user] = await drizzle
       .select()
