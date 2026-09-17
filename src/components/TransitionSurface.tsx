@@ -52,10 +52,12 @@ export default function TransitionSurface({
             {description ? <p className="wl-transition-description">{description}</p> : null}
           </header>
 
-          <div className="wl-transition-status" role="status" aria-live="polite" aria-busy="true">
-            <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-            <span>{busyLabel}</span>
-          </div>
+          {busyLabel ? (
+            <div className="wl-transition-status" role="status" aria-live="polite" aria-busy="true">
+              <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+              <span>{busyLabel}</span>
+            </div>
+          ) : null}
 
           {details.length ? (
             <dl className="wl-transition-details">

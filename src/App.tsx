@@ -118,6 +118,7 @@ function RouteLoading() {
       aria-live="polite"
       aria-busy="true"
       aria-label="Loading page"
+      data-route-loading
     >
       <div className="fixed inset-x-0 top-0 z-[9999] h-[2px] overflow-hidden" aria-hidden="true">
         <div className="route-progress-sweep-bar h-full w-1/3 rounded-full bg-primary" />

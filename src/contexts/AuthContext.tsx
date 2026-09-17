@@ -72,17 +72,29 @@ async function fetchSessionUser(): Promise<User | null> {
 const STALE_BROWSER_TOKEN_KEYS = ["wireline_token"];
 
 function clearStaleBrowserTokens(): void {
-  for (const key of STALE_BROWSER_TOKEN_KEYS) localStorage.removeItem(key);
+  try {
+    for (const key of STALE_BROWSER_TOKEN_KEYS) localStorage.removeItem(key);
+  } catch {
+    // Cookie-based sessions remain usable when browser storage is blocked.
+  }
+}
+
+function clearLegacySession(): void {
+  try {
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    // Removing a retired cache must not prevent a confirmed session transition.
+  }
 }
 
 async function migrateLegacyLocalStorage(): Promise<void> {
   clearStaleBrowserTokens();
-  const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!stored) return;
   try {
+    const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!stored) return;
     const parsed = JSON.parse(stored) as { access_token?: string };
     if (!parsed.access_token) {
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      clearLegacySession();
       return;
     }
     const controller = new AbortController();
@@ -103,7 +115,7 @@ async function migrateLegacyLocalStorage(): Promise<void> {
   } catch {
     /* ignore — session hydrate will fail cleanly */
   } finally {
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    clearLegacySession();
     clearStaleBrowserTokens();
   }
 }
@@ -177,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      clearLegacySession();
       clearStudioLastAgentId();
       setSession(null);
       setUser(null);
@@ -208,18 +220,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const signIn = useCallback((newSession: Session) => {
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    clearLegacySession();
     setSession({ user: newSession.user });
     setUser(newSession.user);
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
-    } catch {
-      /* still clear local state */
-    }
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    const response = await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
+    if (!response.ok) throw new Error("Sign-out did not complete. Please try again.");
+    clearLegacySession();
     clearStudioLastAgentId();
     setSession(null);
     setUser(null);

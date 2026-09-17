@@ -11,7 +11,9 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(admin).not.toContain(".catch(() => ({ numbers: [] }))");
     expect(admin).toContain("numbersJson?.degraded");
     expect(admin).toContain("Phone numbers unavailable");
-    expect(admin).toContain("if (!settingsRes.ok || !agentsRes.ok)");
+    expect(admin).toContain(
+      "if (!settingsRes.ok || !agentsRes.ok || !settingsJson || !agentsJson)",
+    );
     expect(admin).toContain("finally {\n      setIsLoading(false);");
     expect(admin).toContain("numbersRes.ok && !numbersJson?.degraded");
     expect(admin).toContain("if (!res.ok)");

@@ -15,8 +15,8 @@ const customizationLinks = [
     icon: Building2,
   },
   {
-    label: "Voice & knowledge",
-    detail: "Facts, documents, and tone for your Bot.",
+    label: "Knowledge",
+    detail: "Facts, documents, and approved answers for your Bot.",
     href: "/knowledge",
     icon: Mic2,
   },

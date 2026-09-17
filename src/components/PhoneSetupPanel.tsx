@@ -15,6 +15,8 @@ type PhoneNumberRecord = {
   agent_id?: string | null;
   campaign_label?: string | null;
   created_at?: string | null;
+  native_voice_status?: string;
+  native_voice_error?: string | null;
 };
 
 type ProvisionResponse = {
@@ -36,10 +38,19 @@ function formatPhone(value?: string | null) {
 }
 
 function formatProvisionedDate(value?: string | null) {
-  if (!value) return "Active";
+  if (!value) return "Date unavailable";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Active";
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function lineStatus(number: PhoneNumberRecord): string {
+  if (!number.agent_id) return "Unassigned";
+  if (number.native_voice_status === "active") return "Active";
+  if (number.native_voice_status === "configuration_required") return "Setup needed";
+  if (number.native_voice_status === "degraded" || number.native_voice_status === "unavailable")
+    return "Needs attention";
+  return "Status unavailable";
 }
 
 export default function PhoneSetupPanel() {
@@ -47,6 +58,7 @@ export default function PhoneSetupPanel() {
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [linesUnavailable, setLinesUnavailable] = useState(false);
   const [working, setWorking] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState("");
@@ -90,15 +102,18 @@ export default function PhoneSetupPanel() {
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
+      if (!response.ok || body?.degraded || !Array.isArray(body?.numbers))
+        throw new Error(body?.error || "Phone numbers unavailable.");
       const nextNumbers = Array.isArray(body?.numbers) ? body.numbers : [];
       setNumbers(nextNumbers);
+      setLinesUnavailable(false);
       setSelectedNumberId((current) =>
         current && nextNumbers.some((number: PhoneNumberRecord) => number.id === current)
           ? current
           : (nextNumbers[0]?.id ?? null),
       );
     } catch (reason) {
+      setLinesUnavailable(true);
       setError(reason instanceof Error ? reason.message : "Phone numbers unavailable.");
     } finally {
       setLoading(false);
@@ -110,7 +125,7 @@ export default function PhoneSetupPanel() {
   }, []);
 
   async function provisionNumber() {
-    if (working || !selectedAgentId) return;
+    if (working || loading || linesUnavailable || !selectedAgentId) return;
     const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
       setError("Enter a 3-digit area code, or leave it blank.");
@@ -151,7 +166,7 @@ export default function PhoneSetupPanel() {
   }
 
   async function attachAgent(agentId: string | null) {
-    if (!activeNumber || attaching) return;
+    if (!activeNumber || attaching || loading || linesUnavailable) return;
     setAttaching(true);
     setMessage(null);
     setError(null);
@@ -165,11 +180,19 @@ export default function PhoneSetupPanel() {
       if (!response.ok) throw new Error(body?.error || "Could not update this line.");
       setNumbers((current) =>
         current.map((number) =>
-          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
+          number.id === activeNumber.id
+            ? {
+                ...number,
+                agent_id: agentId,
+                native_voice_status: "unknown",
+                native_voice_error: null,
+              }
+            : number,
         ),
       );
       setSelectedAgentId(agentId || "");
       setMessage(agentId ? "Bot assigned." : "Line unassigned.");
+      await loadNumbers();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update this line.");
     } finally {
@@ -184,9 +207,15 @@ export default function PhoneSetupPanel() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Lines</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{numbers.length} active</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {loading
+              ? "Loading…"
+              : linesUnavailable
+                ? "Status unavailable"
+                : `${numbers.length} line${numbers.length === 1 ? "" : "s"}`}
+          </p>
         </div>
-        {numbers.length > 0 ? (
+        {!loading && !linesUnavailable && numbers.length > 0 ? (
           <Button
             type="button"
             size="sm"
@@ -208,6 +237,16 @@ export default function PhoneSetupPanel() {
               <Button asChild size="sm" variant="secondary">
                 <Link to={recoveryPath}>Open billing</Link>
               </Button>
+            ) : linesUnavailable ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                disabled={loading}
+                onClick={() => void loadNumbers()}
+              >
+                Try again
+              </Button>
             ) : undefined
           }
         >
@@ -220,7 +259,7 @@ export default function PhoneSetupPanel() {
         <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
           Loading lines…
         </div>
-      ) : numbers.length === 0 && !addingLine ? (
+      ) : !linesUnavailable && numbers.length === 0 && !addingLine ? (
         <EmptyState
           framed
           density="compact"
@@ -238,7 +277,7 @@ export default function PhoneSetupPanel() {
         />
       ) : null}
 
-      {addingLine ? (
+      {addingLine && !loading && !linesUnavailable ? (
         <section
           className="rounded-xl border border-border bg-card p-4 sm:p-5"
           aria-label="Add phone line"
@@ -312,7 +351,7 @@ export default function PhoneSetupPanel() {
         </section>
       ) : null}
 
-      {numbers.length > 0 ? (
+      {!loading && !linesUnavailable && numbers.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-[15rem_minmax(0,1fr)]">
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {numbers.map((number) => {
@@ -352,7 +391,7 @@ export default function PhoneSetupPanel() {
                     {formatPhone(activeNumber.phone_number)}
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Active · {formatProvisionedDate(activeNumber.created_at)}
+                    {lineStatus(activeNumber)} · {formatProvisionedDate(activeNumber.created_at)}
                   </p>
                 </div>
                 <Button asChild size="sm" variant="secondary">
@@ -362,6 +401,12 @@ export default function PhoneSetupPanel() {
                   </a>
                 </Button>
               </div>
+
+              {activeNumber.native_voice_error ? (
+                <StatusNotice tone="warning" title="Line routing needs attention" className="mt-4">
+                  {activeNumber.native_voice_error}
+                </StatusNotice>
+              ) : null}
 
               <label className="mt-5 grid gap-1.5">
                 <span className="text-xs font-semibold text-foreground">Assigned Bot</span>

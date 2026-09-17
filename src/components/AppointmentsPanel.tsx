@@ -58,6 +58,7 @@ export default function AppointmentsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +93,7 @@ export default function AppointmentsPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
@@ -126,7 +127,20 @@ export default function AppointmentsPanel() {
   if (error) {
     return (
       <div className="flex w-full justify-center px-4 py-8 sm:px-6">
-        <StatusNotice tone="warning" title="Appointments unavailable" className="w-full max-w-lg">
+        <StatusNotice
+          tone="warning"
+          title="Appointments unavailable"
+          className="w-full max-w-lg"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setAttempt((value) => value + 1)}
+            >
+              Try again
+            </Button>
+          }
+        >
           {error}
         </StatusNotice>
       </div>

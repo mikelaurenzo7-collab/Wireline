@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router";
 import { CheckCircle2, LayoutTemplate, Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
@@ -20,12 +19,17 @@ export function SupportPage() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const inFlight = useRef(false);
+  const [fallbackHref, setFallbackHref] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inFlight.current) return;
+    setFallbackHref(null);
+    inFlight.current = true;
     setSubmitting(true);
     setError(null);
     let responseStatus: number | null = null;
@@ -45,8 +49,14 @@ export function SupportPage() {
       const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
       if (!payload?.sent) throw new Error("Support ticket was not delivered.");
       setSubmitted(true);
-      if (typeof window !== "undefined" && (window as any).plausible) {
-        (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
+      // Optional analytics must never change a confirmed delivery result.
+      try {
+        (window as { plausible?: (name: string, options?: unknown) => void }).plausible?.(
+          "SupportTicketSubmitted",
+          { props: { issueType } },
+        );
+      } catch {
+        // The request was delivered even if telemetry is unavailable.
       }
     } catch (reason) {
       const message =
@@ -57,14 +67,15 @@ export function SupportPage() {
         message.includes("(5");
       if (isTransport) {
         const fallback = `mailto:support@botbound.me?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
-        window.location.href = fallback;
+        setFallbackHref(fallback);
         setError(
-          "The ticket service did not respond, so your email client has opened with everything filled in.",
+          "The ticket service did not confirm delivery. Your draft is still here. Try again or use email below.",
         );
       } else {
         setError(message);
       }
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };
@@ -111,7 +122,7 @@ export function SupportPage() {
             Send a request
           </h2>
           {submitted ? (
-            <div className="py-10 text-center">
+            <div role="status" className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Request received</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -173,7 +184,7 @@ export function SupportPage() {
                         ? "Bot name, approximate call time, what happened, and what should have happened."
                         : "What you did, what happened, and what you expected."
                   }
-                  className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
+                  className="w-full resize-none rounded border border-border bg-card px-3 py-3 text-base leading-6 text-foreground outline-none focus:border-primary md:text-sm"
                 />
               </label>
               {error && (
@@ -181,6 +192,14 @@ export function SupportPage() {
                   {error}
                 </p>
               )}
+              {fallbackHref ? (
+                <a
+                  href={fallbackHref}
+                  className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center px-4 text-sm"
+                >
+                  Open draft in email app
+                </a>
+              ) : null}
               <button
                 type="submit"
                 disabled={submitting}

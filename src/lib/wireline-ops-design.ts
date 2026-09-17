@@ -185,7 +185,9 @@ export const OPS_CHANNEL_EMPTY = {
   },
   contactNotFound: {
     title: "Contact not found",
-    actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
+    actions: [
+      { label: "Back to Lead Hunt", to: "/phone?tab=outbound&view=campaigns", primary: true },
+    ],
   },
   contactTimeline: {
     title: "No interactions yet",

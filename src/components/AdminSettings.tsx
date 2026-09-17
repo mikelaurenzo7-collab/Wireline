@@ -17,6 +17,7 @@ import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { OPS_ADMIN, type OpsAdminTab } from "../lib/wireline-ops-design";
 import { BRAND } from "../constants/brand-colors";
 import { LIVE_VOICE_MODEL, LIVE_VOICE_PROVIDER } from "../lib/ai-models";
+import { StatusNotice } from "./molecules/StatusNotice";
 
 // Modularized Panels
 import { AccountsPanel } from "./admin/AccountsPanel";
@@ -112,6 +113,7 @@ export default function AdminSettings() {
   const [agents, setAgents] = useState<any[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeletingNumber, setIsDeletingNumber] = useState<number | string | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealthPayload | null>(null);
@@ -202,6 +204,7 @@ export default function AdminSettings() {
 
   const fetchData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const [settingsRes, agentsRes, numbersRes] = await Promise.all([
         authFetch("/api/settings"),
@@ -213,9 +216,8 @@ export default function AdminSettings() {
       const agentsJson = agentsRes.ok ? await agentsRes.json() : null;
       const numbersJson = numbersRes.ok ? await numbersRes.json() : null;
 
-      if (!settingsRes.ok || !agentsRes.ok) {
-        toastError("Settings unavailable", "Could not load settings. Please refresh.");
-        return;
+      if (!settingsRes.ok || !agentsRes.ok || !settingsJson || !agentsJson) {
+        throw new Error("Could not load settings. Retry before making changes.");
       }
 
       if (!numbersRes.ok || numbersJson?.degraded) {
@@ -260,6 +262,7 @@ export default function AdminSettings() {
         setTeamMembers(teamData.members || []);
       }
     } catch (e) {
+      setLoadError("Could not load settings. Retry before making changes.");
       clientLog.error("admin-settings:load", e);
       toastError("Settings unavailable", "Could not load settings. Please refresh.");
     } finally {
@@ -322,8 +325,15 @@ export default function AdminSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, role }),
       });
-      if (!res.ok) throw new Error("Invite failed");
-      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
+      const payload = await res.json().catch(() => null);
+      if (!res.ok || payload?.success !== true) throw new Error(payload?.error || "Invite failed");
+      if (payload.email_sent === true)
+        toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
+      else
+        toastError(
+          "Invitation needs email delivery",
+          `The invitation for ${email} was saved, but email delivery was not confirmed. Invite the same email again to retry.`,
+        );
       fetchData();
     } catch (e: any) {
       toastError("Invite failed", e.message);
@@ -343,11 +353,15 @@ export default function AdminSettings() {
 
   const addPhoneNumber = async (phone_number: string) => {
     try {
-      await authFetch("/api/phone-numbers/claim", {
+      const response = await authFetch("/api/phone-numbers/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone_number }),
       });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.error || "The number could not be added.");
+      }
       fetchData();
       toastSuccess("Number added", phone_number);
     } catch (e: any) {
@@ -357,11 +371,12 @@ export default function AdminSettings() {
 
   const updateNumberAgent = async (id: string | number, agent_id: string) => {
     try {
-      await authFetch(`/api/phone-numbers/${id}`, {
+      const response = await authFetch(`/api/phone-numbers/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agent_id }),
       });
+      if (!response.ok) throw new Error("The number assignment was not saved.");
       fetchData();
     } catch (e) {
       clientLog.error("admin-settings:assign-number", e);
@@ -417,9 +432,17 @@ export default function AdminSettings() {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || "Deletion failed");
       }
-      await signOut();
     } catch (e: any) {
       toastError("Account deletion failed", e.message);
+      return;
+    }
+    try {
+      await signOut();
+    } catch {
+      toastError(
+        "Deletion requested; sign-out incomplete",
+        "Your account deletion was requested. Retry sign-out from Account settings.",
+      );
     }
   };
 
@@ -468,6 +491,17 @@ export default function AdminSettings() {
                   icon={<Settings className="w-7 h-7" />}
                   label={OPS_ADMIN.loading}
                 />
+              ) : loadError ? (
+                <StatusNotice tone="destructive" title="Settings unavailable">
+                  {loadError}
+                  <button
+                    type="button"
+                    onClick={() => void fetchData()}
+                    className="mt-3 flex min-h-11 items-center font-semibold text-primary underline underline-offset-4"
+                  >
+                    Try again
+                  </button>
+                </StatusNotice>
               ) : (
                 <>
                   {activeTab === "accounts" && (

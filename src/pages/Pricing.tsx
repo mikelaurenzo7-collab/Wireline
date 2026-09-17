@@ -225,7 +225,7 @@ export default function Pricing() {
                   type="button"
                   onClick={() => setBillingInterval("month")}
                   className={cn(
-                    "min-h-10 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
                     billingInterval === "month"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -238,7 +238,7 @@ export default function Pricing() {
                   type="button"
                   onClick={() => setBillingInterval("year")}
                   className={cn(
-                    "min-h-10 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
                     billingInterval === "year"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -420,7 +420,7 @@ export default function Pricing() {
                     key={question}
                     className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
                   >
-                    <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center text-[13px] font-semibold leading-5 text-foreground marker:hidden">
                       {question}
                     </summary>
                     <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{answer}</p>

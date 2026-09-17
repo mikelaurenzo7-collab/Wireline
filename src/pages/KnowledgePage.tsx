@@ -8,6 +8,7 @@ import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/Wor
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import WorkspaceRecovery from "../components/WorkspaceRecovery";
+import { StatusNotice } from "../components/molecules/StatusNotice";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
@@ -55,7 +56,10 @@ export default function KnowledgePage() {
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
-  const agentId = params.get("agent") || agents[0]?.id || "";
+  const requestedAgentId = params.get("agent");
+  const agentId = requestedAgentId
+    ? agents.find((agent) => agent.id === requestedAgentId)?.id || ""
+    : agents[0]?.id || "";
   const rawRequestedTab = params.get("tab");
   const requestedTab = rawRequestedTab as KnowledgeTabId | null;
   const activeTab = knowledgeTabs.some((tab) => tab.id === requestedTab)
@@ -85,12 +89,14 @@ export default function KnowledgePage() {
 
   const secondaryControls = (
     <>
-      <Button asChild variant="secondary" size="sm" className="shrink-0 justify-center">
-        <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
-          <MessageCircle size={15} aria-hidden="true" />
-          Test in Studio
-        </Link>
-      </Button>
+      {agentId ? (
+        <Button asChild variant="secondary" size="sm" className="shrink-0 justify-center">
+          <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
+            <MessageCircle size={15} aria-hidden="true" />
+            Test in Studio
+          </Link>
+        </Button>
+      ) : null}
       {populated && activeTab === "knowledge" ? (
         <NativeSelect
           value={agentId}
@@ -108,6 +114,11 @@ export default function KnowledgePage() {
           aria-label="Choose Bot"
           className="min-w-[160px] max-w-[12rem] sm:w-auto"
         >
+          {!agentId ? (
+            <option value="" disabled>
+              Choose a Bot
+            </option>
+          ) : null}
           {agents.map((agent) => (
             <option key={agent.id} value={agent.id}>
               {agent.name}
@@ -120,10 +131,18 @@ export default function KnowledgePage() {
 
   return (
     <WorkspaceShell contentClassName={populated ? "pt-1 pb-24 sm:pb-6" : "pt-0"}>
-      {!loading && !agents.length ? (
+      {loading || degraded || !agents.length ? (
         <WorkspacePageFrame mode="standard" className="flex min-h-0 flex-1 flex-col">
           <WorkspacePageIntro title="Knowledge" />
-          {degraded ? <WorkspaceRecovery onRetry={refresh} /> : <EmptyKnowledge />}
+          {loading ? (
+            <StatusNotice title="Loading Bots" aria-busy="true">
+              Your knowledge workspace will be ready in a moment.
+            </StatusNotice>
+          ) : degraded ? (
+            <WorkspaceRecovery onRetry={refresh} />
+          ) : (
+            <EmptyKnowledge />
+          )}
         </WorkspacePageFrame>
       ) : (
         <WorkspacePageFrame mode="standard">
@@ -145,7 +164,13 @@ export default function KnowledgePage() {
             secondary={secondaryControls}
           />
 
-          {activeTab === "knowledge" ? (
+          {activeTab === "knowledge" && !agentId ? (
+            <StatusNotice tone="warning" title="Choose an available Bot">
+              The Bot in this link is no longer available in this workspace. Select a Bot above to
+              view or edit its knowledge.
+            </StatusNotice>
+          ) : null}
+          {activeTab === "knowledge" && agentId ? (
             <div className="space-y-5">
               <WebsiteKnowledgeImport
                 agentId={agentId}

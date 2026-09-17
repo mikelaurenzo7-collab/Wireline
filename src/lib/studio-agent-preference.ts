@@ -6,15 +6,27 @@ function studioStorage(): Storage | null {
 }
 
 export function readStudioLastAgentId(): string | null {
-  return studioStorage()?.getItem(KEY) ?? null;
+  try {
+    return studioStorage()?.getItem(KEY) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function writeStudioLastAgentId(id: string): void {
-  studioStorage()?.setItem(KEY, id);
+  try {
+    studioStorage()?.setItem(KEY, id);
+  } catch {
+    // Remembering a Bot is optional when storage is unavailable.
+  }
 }
 
 export function clearStudioLastAgentId(): void {
-  studioStorage()?.removeItem(KEY);
+  try {
+    studioStorage()?.removeItem(KEY);
+  } catch {
+    // A cached preference must not prevent signing out.
+  }
 }
 
 /**

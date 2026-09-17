@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -67,24 +67,43 @@ const MCP_CLIENTS = [
 
 export default function Developers() {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const copyTimer = useRef<number | null>(null);
+  const mounted = useRef(true);
 
   const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.me";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = `${appOrigin}/mcp`;
 
-  const handleCopy = useCallback(() => {
-    void navigator.clipboard.writeText(mcpEndpoint);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+  const handleCopy = useCallback(async () => {
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    setCopied(false);
+    setCopyError(null);
+    try {
+      await navigator.clipboard.writeText(mcpEndpoint);
+      if (!mounted.current) return;
+      setCopied(true);
+      copyTimer.current = window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      if (mounted.current)
+        setCopyError("Copy is unavailable. Select the endpoint above and copy it manually.");
+    }
   }, [mcpEndpoint]);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.location.hash !== "#mcp-endpoint") return;
     const node = document.getElementById("mcp-endpoint");
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
-    handleCopy();
-  }, [handleCopy]);
+    node?.scrollIntoView({ block: "start" });
+  }, []);
 
   return (
     <MarketingPageFrame>
@@ -160,6 +179,11 @@ export default function Developers() {
                 {copied ? "Copied" : "Copy Endpoint"}
               </Button>
             </div>
+            {copyError ? (
+              <p role="alert" className="mt-3 text-sm text-destructive">
+                {copyError}
+              </p>
+            ) : null}
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Connected apps help new users create a BotBound account and build their first Phone
               Bot. This connector cannot place calls, send messages, provision numbers, or launch a

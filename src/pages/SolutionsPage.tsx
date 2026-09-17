@@ -78,7 +78,7 @@ type SolutionKey = keyof typeof SOLUTIONS;
 
 export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
-  const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
+  const key = (Object.hasOwn(SOLUTIONS, wedge) ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
 
   return (

@@ -41,9 +41,26 @@ vi.mock("../src/lib/temporary-tab-index", () => ({
 }));
 
 let focused: "heading" | "anchor" | "control" | null = null;
-const heading = { focus: vi.fn(() => { focused = "heading"; }) };
-const anchor = { focus: vi.fn(() => { focused = "anchor"; }), scrollIntoView: vi.fn() };
-const sectionControl = { focus: vi.fn(() => { focused = "control"; }) };
+const heading = {
+  focus: vi.fn(() => {
+    focused = "heading";
+  }),
+  closest: () => null,
+  querySelector: () => null,
+};
+const anchor = {
+  focus: vi.fn(() => {
+    focused = "anchor";
+  }),
+  scrollIntoView: vi.fn(),
+  closest: () => null,
+  querySelector: () => null,
+};
+const sectionControl = {
+  focus: vi.fn(() => {
+    focused = "control";
+  }),
+};
 const scrollTo = vi.fn();
 
 function render(location: Partial<typeof harness.location> = {}) {
@@ -68,9 +85,19 @@ beforeEach(() => {
   harness.pendingEffect = undefined;
   harness.cleanup = undefined;
   vi.stubGlobal("window", { setTimeout, clearTimeout, scrollTo });
+  vi.stubGlobal(
+    "MutationObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
   vi.stubGlobal("document", {
-    querySelector: () => heading,
+    body: {},
+    querySelector: (selector: string) => (selector === "[data-route-loading]" ? null : heading),
     getElementById: (id: string) => (id === "usage" ? anchor : null),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
   });
 });
 

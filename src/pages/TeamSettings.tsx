@@ -55,10 +55,12 @@ export default function TeamSettings() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [inviteDelivered, setInviteDelivered] = useState(false);
+  const inviteInFlight = useRef(false);
   const inviteDialogRef = useRef<HTMLDivElement>(null);
 
   function openInviteDialog() {
-    if (teamAccess !== "ok") return;
+    if (loading || teamAccess !== "ok") return;
     setInviteError(null);
     setIsInviteOpen(true);
   }
@@ -120,7 +122,8 @@ export default function TeamSettings() {
 
   const handleInvite = async (event: FormEvent) => {
     event.preventDefault();
-    if (!inviteEmail || inviting || teamAccess !== "ok") return;
+    if (!inviteEmail || inviteInFlight.current || loading || teamAccess !== "ok") return;
+    inviteInFlight.current = true;
     setInviting(true);
     setInviteError(null);
     setInviteSuccess(null);
@@ -130,11 +133,18 @@ export default function TeamSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
+      const payload = (await response.json().catch(() => null)) as
+        (TeamErrorPayload & { success?: boolean; email_sent?: boolean }) | null;
+      if (!response.ok || payload?.success !== true) {
         throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
       }
-      setInviteSuccess(`Invitation sent to ${inviteEmail}.`);
+      const delivered = payload.email_sent === true;
+      setInviteDelivered(delivered);
+      setInviteSuccess(
+        delivered
+          ? `Invitation sent to ${inviteEmail}.`
+          : `The invitation for ${inviteEmail} was saved, but email delivery was not confirmed. Use Invite with the same email to retry delivery.`,
+      );
       setIsInviteOpen(false);
       setInviteEmail("");
       setInviteRole("member");
@@ -142,11 +152,12 @@ export default function TeamSettings() {
     } catch (error) {
       setInviteError(error instanceof Error ? error.message : "Invite could not be sent.");
     } finally {
+      inviteInFlight.current = false;
       setInviting(false);
     }
   };
 
-  const canInvite = teamAccess === "ok";
+  const canInvite = !loading && teamAccess === "ok";
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
@@ -182,7 +193,10 @@ export default function TeamSettings() {
         ) : null}
 
         {inviteSuccess ? (
-          <StatusNotice tone="success" title="Invite sent">
+          <StatusNotice
+            tone={inviteDelivered ? "success" : "warning"}
+            title={inviteDelivered ? "Invite sent" : "Invitation needs email delivery"}
+          >
             {inviteSuccess}
           </StatusNotice>
         ) : null}

@@ -185,7 +185,7 @@ const PACKS: Record<string, TrustPack> = {
 
 export default function TrustPackPage() {
   const { vertical } = useParams<{ vertical: string }>();
-  const pack = vertical ? PACKS[vertical] : null;
+  const pack = vertical && Object.hasOwn(PACKS, vertical) ? PACKS[vertical] : null;
   /*
    * These four pages are submitted in sitemap.xml and are where regulated
    * buyers get sent, so the build prerenders their head from
@@ -202,8 +202,11 @@ export default function TrustPackPage() {
       <MarketingChrome>
         <PageMeta title="Trust pack not found | BotBound" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
-          <p className="text-muted">Trust pack not found.</p>
-          <Link to="/security" className="wl-label mt-4 inline-block text-brand">
+          <h1 className="text-xl font-semibold text-foreground">Trust pack not found</h1>
+          <Link
+            to="/security"
+            className="wl-label mt-4 inline-flex min-h-11 items-center text-brand"
+          >
             Security overview
           </Link>
         </div>

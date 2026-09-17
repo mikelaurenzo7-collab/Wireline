@@ -151,7 +151,12 @@ export default function Compare() {
             <h2 className="wl-stitch-display text-balance">Compare the Model, Not the Sticker</h2>
           </div>
 
-          <div className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card">
+          <div
+            role="region"
+            aria-label="Plan comparison, scroll horizontally for more columns"
+            tabIndex={0}
+            className="wl-focus-ring-halo mt-8 w-full max-w-full overflow-x-auto border border-border bg-card"
+          >
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
                 Public launch pricing and buying-model comparison for BotBound and selected
@@ -162,6 +167,7 @@ export default function Compare() {
                   {["Option", "Public Entry Price", "Usage Boundary", "Best Fit", "Source"].map(
                     (heading) => (
                       <th
+                        scope="col"
                         key={heading}
                         className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
                       >
@@ -180,7 +186,10 @@ export default function Compare() {
                     }
                     key={option.name}
                   >
-                    <th className="px-5 py-5 align-top text-sm font-semibold text-foreground">
+                    <th
+                      scope="row"
+                      className="px-5 py-5 align-top text-sm font-semibold text-foreground"
+                    >
                       {option.name}
                       {option.internal ? (
                         <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">

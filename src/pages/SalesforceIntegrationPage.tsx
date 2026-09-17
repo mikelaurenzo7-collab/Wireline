@@ -43,7 +43,19 @@ function formatConnectedAt(value?: string): string {
   }).format(date);
 }
 
-function ConnectionSummary({ connection }: { connection: SalesforceConnection | null }) {
+function ConnectionSummary({
+  connection,
+  unavailable,
+}: {
+  connection: SalesforceConnection | null;
+  unavailable: boolean;
+}) {
+  if (unavailable)
+    return (
+      <StatusNotice title="Connection status unknown">
+        The status check failed. Refresh above to check again; your connection has not been changed.
+      </StatusNotice>
+    );
   if (!connection) {
     return (
       <Skeleton
@@ -193,7 +205,13 @@ export default function SalesforceIntegrationPage() {
           action={
             <div className="flex items-center gap-2">
               <Badge variant={isConnected ? "success" : "warning"}>
-                {isConnected ? "Connected" : "Connection required"}
+                {connectionError
+                  ? "Status unavailable"
+                  : isRefreshing
+                    ? "Checking connection"
+                    : isConnected
+                      ? "Connected"
+                      : "Connection required"}
               </Badge>
               <Button
                 type="button"
@@ -227,7 +245,13 @@ export default function SalesforceIntegrationPage() {
                   <h2 className="font-semibold text-foreground">Call activity</h2>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
-                  {callActivitySyncEnabled && isConnected ? "Active" : "Paused"}
+                  {connectionError
+                    ? "Status unavailable"
+                    : isRefreshing
+                      ? "Checking"
+                      : callActivitySyncEnabled && isConnected
+                        ? "Active"
+                        : "Paused"}
                 </Badge>
               </div>
 
@@ -243,7 +267,7 @@ export default function SalesforceIntegrationPage() {
                   className="shrink-0"
                   checked={Boolean(isConnected && callActivitySyncEnabled)}
                   onCheckedChange={(checked) => void updateCallActivityPreference(checked)}
-                  disabled={!isConnected || saveState === "saving"}
+                  disabled={!isConnected || isRefreshing || saveState === "saving"}
                   aria-describedby="salesforce-activity-sync-description"
                   aria-label="Log completed calls to Salesforce"
                 />
@@ -268,7 +292,7 @@ export default function SalesforceIntegrationPage() {
                   {saveError}
                 </StatusNotice>
               ) : null}
-              {!isConnected && !isRefreshing ? (
+              {!isConnected && !isRefreshing && !connectionError ? (
                 <StatusNotice
                   className="mt-5"
                   tone="warning"
@@ -305,7 +329,7 @@ export default function SalesforceIntegrationPage() {
           </div>
 
           <aside className="space-y-6">
-            <ConnectionSummary connection={connection} />
+            <ConnectionSummary connection={connection} unavailable={Boolean(connectionError)} />
           </aside>
         </div>
 

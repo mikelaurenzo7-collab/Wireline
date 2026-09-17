@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { CheckCircle2, Loader2, TriangleAlert } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import MarketingChrome from "../components/marketing/MarketingChrome";
@@ -15,34 +15,64 @@ function readInviteToken(search: string, hash: string): string {
   const fragmentToken = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash)
     .get("token")
     ?.trim();
-  return fragmentToken || queryToken || sessionStorage.getItem(PENDING_INVITE_KEY)?.trim() || "";
+  if (fragmentToken || queryToken) return fragmentToken || queryToken || "";
+  try {
+    return sessionStorage.getItem(PENDING_INVITE_KEY)?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+function storeInviteToken(token: string): boolean {
+  try {
+    if (token) sessionStorage.setItem(PENDING_INVITE_KEY, token);
+    else sessionStorage.removeItem(PENDING_INVITE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export default function AcceptInvite() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [token] = useState(() => readInviteToken(location.search, location.hash));
   const started = useRef(false);
+  const mounted = useRef(true);
+  const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState<"idle" | "working" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
   useLayoutEffect(() => {
-    if (token) sessionStorage.setItem(PENDING_INVITE_KEY, token);
+    if (token) storeInviteToken(token);
     if (location.search || location.hash) {
       window.history.replaceState(window.history.state, "", location.pathname);
     }
   }, [location.hash, location.pathname, location.search, token]);
 
   useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (loading || started.current) return;
     if (!token) {
-      sessionStorage.removeItem(PENDING_INVITE_KEY);
       setStatus("error");
       setMessage("This invitation link is incomplete.");
       return;
     }
     if (!user) {
+      if (!storeInviteToken(token)) {
+        setStatus("error");
+        setMessage(
+          "Allow session storage in your browser, then reopen your invitation to sign in.",
+        );
+        return;
+      }
       navigate(`/signup?redirect=${encodeURIComponent("/accept-invite")}`, { replace: true });
       return;
     }
@@ -57,26 +87,46 @@ export default function AcceptInvite() {
     })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
+        if (!mounted.current) return;
+        if (!response.ok || payload?.success !== true) {
           throw new Error(
             typeof payload?.error === "string"
               ? payload.error
               : "The invitation could not be accepted.",
           );
         }
-        sessionStorage.removeItem(PENDING_INVITE_KEY);
+        storeInviteToken("");
         setStatus("success");
         setMessage("You now have access to the shared workspace.");
-        window.setTimeout(() => window.location.assign("/studio"), 900);
       })
       .catch((error: unknown) => {
-        sessionStorage.removeItem(PENDING_INVITE_KEY);
+        if (!mounted.current) return;
         setStatus("error");
         setMessage(
           error instanceof Error ? error.message : "The invitation could not be accepted.",
         );
       });
-  }, [loading, navigate, token, user]);
+  }, [attempt, loading, navigate, token, user]);
+
+  async function switchAccount() {
+    if (!storeInviteToken(token)) {
+      setMessage(
+        "Allow session storage in your browser before switching accounts, then reopen the invitation.",
+      );
+      return;
+    }
+    setStatus("working");
+    try {
+      await signOut();
+      if (mounted.current)
+        navigate(`/signin?redirect=${encodeURIComponent("/accept-invite")}`, { replace: true });
+    } catch {
+      if (mounted.current) {
+        setStatus("error");
+        setMessage("Sign-out did not complete. Try again.");
+      }
+    }
+  }
 
   const working = status === "idle" || status === "working";
 
@@ -133,12 +183,48 @@ export default function AcceptInvite() {
           </p>
 
           {status === "error" ? (
-            <Link
-              to="/signin"
-              className="marketing-btn-secondary mt-7 inline-flex min-h-12 w-full items-center justify-center"
+            <div className="mt-7 grid gap-3">
+              {token ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    started.current = false;
+                    setAttempt((value) => value + 1);
+                  }}
+                  className="marketing-btn-primary inline-flex min-h-12 w-full items-center justify-center"
+                >
+                  Try again
+                </button>
+              ) : null}
+              {user && token ? (
+                <>
+                  <p className="break-words text-sm text-muted-foreground">
+                    Signed in as {user.email}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void switchAccount()}
+                    className="marketing-btn-secondary inline-flex min-h-12 w-full items-center justify-center"
+                  >
+                    Sign in with another email
+                  </button>
+                </>
+              ) : null}
+              <a
+                href="/settings/team"
+                className="marketing-btn-secondary inline-flex min-h-12 w-full items-center justify-center"
+              >
+                View workspaces
+              </a>
+            </div>
+          ) : status === "success" ? (
+            <button
+              type="button"
+              onClick={() => window.location.assign("/studio")}
+              className="marketing-btn-primary mt-7 inline-flex min-h-12 w-full items-center justify-center"
             >
-              Sign in with another email
-            </Link>
+              Open workspace
+            </button>
           ) : null}
         </section>
       </div>

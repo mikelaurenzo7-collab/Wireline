@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import React, { useLayoutEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 
 import { useAuth } from "../contexts/AuthContext";
 import { PageMeta } from "../lib/page-meta";
@@ -29,7 +29,8 @@ function readResetTokenFromLocation(): string {
  */
 export default function ResetPassword() {
   const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const inFlight = useRef(false);
+  const mounted = useRef(true);
   const resetTokenRef = useRef(readResetTokenFromLocation());
   const [token] = useState<string | null>(() => resetTokenRef.current || null);
   const [password, setPassword] = useState("");
@@ -37,6 +38,14 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [destination, setDestination] = useState("/signin");
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!window.location.search && !window.location.hash) return;
@@ -45,6 +54,7 @@ export default function ResetPassword() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inFlight.current) return;
     setError(null);
 
     if (!token) {
@@ -63,6 +73,7 @@ export default function ResetPassword() {
       return;
     }
 
+    inFlight.current = true;
     setLoading(true);
     try {
       const response = await fetch("/api/auth/reset-password", {
@@ -77,6 +88,7 @@ export default function ResetPassword() {
         data = {};
       }
 
+      if (!mounted.current) return;
       if (!response.ok) {
         const message =
           data?.error ||
@@ -87,18 +99,25 @@ export default function ResetPassword() {
       }
 
       setSuccess(true);
-      if (data.user) {
-        signIn({ user: data.user });
-        const destination = resolvePostAuthDestination(
-          readStoredWorkspaceMode() || "personal",
-          window.location.search,
-        );
-        window.setTimeout(() => navigate(destination, { replace: true }), 900);
+      if (typeof data?.user?.id === "string" && typeof data?.user?.email === "string") {
+        try {
+          signIn({ user: data.user });
+          setDestination(
+            resolvePostAuthDestination(
+              readStoredWorkspaceMode() || "personal",
+              window.location.search,
+            ),
+          );
+        } catch {
+          // The password changed even if local session hydration failed.
+          // Keep a usable sign-in action instead of retrying the consumed token.
+        }
       }
     } catch (caughtError: any) {
-      setError(caughtError.message || "Reset failed");
+      if (mounted.current) setError(caughtError.message || "Reset failed");
     } finally {
-      setLoading(false);
+      inFlight.current = false;
+      if (mounted.current) setLoading(false);
     }
   };
 
@@ -125,9 +144,18 @@ export default function ResetPassword() {
           </div>
 
           {success ? (
-            <StatusNotice tone="success" title="Password updated">
-              Signing you in securely…
-            </StatusNotice>
+            <div className="space-y-4">
+              <StatusNotice tone="success" title="Password updated">
+                {destination === "/signin"
+                  ? "Sign in with your new password to continue."
+                  : "Your new password is ready. Continue to your workspace."}
+              </StatusNotice>
+              <Button asChild variant="editorial" className="min-h-12 w-full">
+                <Link to={destination} replace>
+                  {destination === "/signin" ? "Continue to sign in" : "Open workspace"}
+                </Link>
+              </Button>
+            </div>
           ) : !token ? (
             <StatusNotice tone="destructive" title="This reset link is incomplete">
               Request a new one from the{" "}

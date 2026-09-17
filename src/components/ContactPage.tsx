@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   ArrowLeft,
@@ -41,12 +41,16 @@ export function ContactPage() {
   );
   const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");
+  const inFlight = useRef(false);
+  const [fallbackHref, setFallbackHref] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inFlight.current) return;
+    setFallbackHref(null);
     setError(null);
 
     const normalizedEmail = email.trim();
@@ -65,6 +69,7 @@ export function ContactPage() {
       return;
     }
 
+    inFlight.current = true;
     setSubmitting(true);
     const contextLines = [
       company.trim() ? `Company: ${company.trim()}` : null,
@@ -99,14 +104,14 @@ export function ContactPage() {
         throw new Error("Message was not delivered.");
       }
       setSubmitted(true);
-      if (
-        typeof window !== "undefined" &&
-        (window as { plausible?: (name: string, options?: unknown) => void }).plausible
-      ) {
-        (window as { plausible: (name: string, options?: unknown) => void }).plausible(
+      // Optional analytics must never change a confirmed delivery result.
+      try {
+        (window as { plausible?: (name: string, options?: unknown) => void }).plausible?.(
           "ContactMessageSubmitted",
           { props: { inquiryType } },
         );
+      } catch {
+        // The request was delivered even if telemetry is unavailable.
       }
     } catch (reason) {
       const message =
@@ -118,14 +123,17 @@ export function ContactPage() {
         ) ||
         message.includes("(5");
       if (isTransport) {
-        window.location.href = `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
+        setFallbackHref(
+          `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`,
+        );
         setError(
-          "The message service did not respond, so your email client has opened with the note prepared.",
+          "The message service did not confirm delivery. Your draft is still here. Try again or use email below.",
         );
       } else {
         setError(message);
       }
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };
@@ -183,7 +191,7 @@ export function ContactPage() {
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
           {submitted ? (
-            <div className="py-10 text-center">
+            <div role="status" className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
               <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
               <p className="mt-2 text-sm text-muted-foreground">We'll follow up at {email}.</p>
@@ -260,7 +268,7 @@ export function ContactPage() {
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   rows={6}
-                  className="w-full rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
+                  className="w-full rounded border border-border bg-card px-3 py-3 text-base leading-6 text-foreground outline-none focus:border-primary md:text-sm"
                   placeholder={
                     inquiryType === "sales"
                       ? "Team size, calls you need covered, systems you use today, and your timeline."
@@ -273,6 +281,14 @@ export function ContactPage() {
                   {error}
                 </p>
               )}
+              {fallbackHref ? (
+                <a
+                  href={fallbackHref}
+                  className="marketing-btn-secondary inline-flex min-h-11 w-full items-center justify-center px-4 text-sm"
+                >
+                  Open draft in email app
+                </a>
+              ) : null}
               <button
                 type="submit"
                 disabled={submitting}

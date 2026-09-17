@@ -18,7 +18,12 @@ import { SignalOrbFrame } from "../ui/SignalOrbFrame";
  */
 export default function RouteFallback() {
   return (
-    <div className="h-full w-full flex flex-col" aria-live="polite" aria-busy="true">
+    <div
+      className="h-full w-full flex flex-col"
+      aria-live="polite"
+      aria-busy="true"
+      data-route-loading
+    >
       <div className="shrink-0 h-px relative overflow-hidden mb-5" aria-hidden="true">
         <div className="route-progress-sweep-bar absolute inset-y-0 -left-1/3 w-1/3 rounded-full" />
       </div>
