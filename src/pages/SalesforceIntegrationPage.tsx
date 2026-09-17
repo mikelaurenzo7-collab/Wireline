@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Cloud, ExternalLink, FileText, Loader2, RefreshCcw, Send } from "lucide-react";
 
@@ -128,26 +128,51 @@ export default function SalesforceIntegrationPage() {
   const [callActivitySyncEnabled, setCallActivitySyncEnabled] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const mounted = useRef(false);
+  const operationInFlight = useRef(false);
+  const operationId = useRef(0);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      operationInFlight.current = false;
+      operationId.current += 1;
+    };
+  }, []);
 
   const refreshConnection = useCallback(async () => {
+    if (!mounted.current || operationInFlight.current) return;
+    operationInFlight.current = true;
+    const request = ++operationId.current;
+    const isCurrent = () => mounted.current && request === operationId.current;
     setIsRefreshing(true);
     setConnectionError(null);
+    setConnection(null);
     try {
       const response = await authFetch("/api/oauth/crm/status");
       if (!response.ok) throw new Error("Could not load the Salesforce connection state.");
-      const data = (await response.json()) as CrmStatusResponse;
-      const salesforce = { connected: false, ...data.salesforce };
+      const data = (await response.json()) as CrmStatusResponse | null;
+      if (typeof data?.salesforce?.connected !== "boolean") {
+        throw new Error("Could not load the Salesforce connection state.");
+      }
+      if (!isCurrent()) return;
+      const salesforce = data.salesforce;
       setConnection(salesforce);
       setCallActivitySyncEnabled(salesforce.sync_preferences?.callActivitySyncEnabled ?? true);
       setSaveState("idle");
       setSaveError(null);
     } catch (error) {
+      if (!isCurrent()) return;
       setConnectionError(
         error instanceof Error ? error.message : "Could not load the Salesforce connection state.",
       );
-      setConnection({ connected: false });
+      setConnection(null);
     } finally {
-      setIsRefreshing(false);
+      if (isCurrent()) {
+        operationInFlight.current = false;
+        setIsRefreshing(false);
+      }
     }
   }, []);
 
@@ -158,7 +183,10 @@ export default function SalesforceIntegrationPage() {
   const isConnected = Boolean(connection?.connected && connection.configured !== false);
 
   const updateCallActivityPreference = async (nextValue: boolean) => {
-    if (!isConnected || saveState === "saving") return;
+    if (!mounted.current || !isConnected || operationInFlight.current) return;
+    operationInFlight.current = true;
+    const request = ++operationId.current;
+    const isCurrent = () => mounted.current && request === operationId.current;
 
     const previousValue = callActivitySyncEnabled;
     setCallActivitySyncEnabled(nextValue);
@@ -171,11 +199,11 @@ export default function SalesforceIntegrationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ callActivitySyncEnabled: nextValue }),
       });
-      const payload = (await response.json().catch(() => ({}))) as PreferenceResponse;
-      if (!response.ok || typeof payload.preferences?.callActivitySyncEnabled !== "boolean") {
-        throw new Error(payload.error || "Could not update Salesforce call activity delivery.");
+      const payload = (await response.json().catch(() => null)) as PreferenceResponse | null;
+      if (!response.ok || typeof payload?.preferences?.callActivitySyncEnabled !== "boolean") {
+        throw new Error(payload?.error || "Could not update Salesforce call activity delivery.");
       }
-
+      if (!isCurrent()) return;
       setCallActivitySyncEnabled(payload.preferences.callActivitySyncEnabled);
       setConnection((current) =>
         current
@@ -187,6 +215,7 @@ export default function SalesforceIntegrationPage() {
       );
       setSaveState("saved");
     } catch (error) {
+      if (!isCurrent()) return;
       setCallActivitySyncEnabled(previousValue);
       setSaveState("error");
       setSaveError(
@@ -194,6 +223,8 @@ export default function SalesforceIntegrationPage() {
           ? error.message
           : "Could not update Salesforce call activity delivery.",
       );
+    } finally {
+      if (isCurrent()) operationInFlight.current = false;
     }
   };
 
@@ -268,7 +299,6 @@ export default function SalesforceIntegrationPage() {
                   checked={Boolean(isConnected && callActivitySyncEnabled)}
                   onCheckedChange={(checked) => void updateCallActivityPreference(checked)}
                   disabled={!isConnected || isRefreshing || saveState === "saving"}
-                  aria-describedby="salesforce-activity-sync-description"
                   aria-label="Log completed calls to Salesforce"
                 />
               </div>

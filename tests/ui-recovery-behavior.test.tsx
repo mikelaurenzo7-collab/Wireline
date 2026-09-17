@@ -105,6 +105,8 @@ vi.mock("../src/components/atoms", () => ({
   NativeSelect: "select",
   EmptyState: "empty-state",
   Badge: "badge",
+  Skeleton: "skeleton",
+  Switch: "switch",
 }));
 vi.mock("../src/components/molecules", () => ({ FormField: "label", StatusNotice: "notice" }));
 vi.mock("../src/components/molecules/StatusNotice", () => ({ StatusNotice: "notice" }));
@@ -197,6 +199,12 @@ import SolutionsPage from "../src/pages/SolutionsPage";
 import TrustPackPage from "../src/components/TrustPackPage";
 import Developers from "../src/pages/Developers";
 import TeamSettings from "../src/pages/TeamSettings";
+import AppointmentsPanel from "../src/components/AppointmentsPanel";
+import SalesforceIntegrationPage from "../src/pages/SalesforceIntegrationPage";
+import CrmConnectionCard from "../src/components/CrmConnectionCard";
+import MailboxConnectionCard from "../src/components/MailboxConnectionCard";
+vi.mock("../src/components/IntegrationCapabilityPanel", () => ({ default: "capabilities" }));
+vi.mock("../src/components/layout/IntegrationLogos", () => ({ getIntegrationLogo: () => null }));
 
 function descendants(node: ReactNode): ReactElement<any>[] {
   if (Array.isArray(node)) return node.flatMap(descendants);
@@ -1227,5 +1235,502 @@ describe("second pass: number picker confirmation", () => {
     );
     await claim()();
     expect(h.success).toHaveBeenCalledExactlyOnceWith("+15555550200");
+  });
+});
+
+describe("appointment and calendar recovery", () => {
+  const appointment = {
+    id: "appointment-a",
+    date: "2030-01-02",
+    time: "10:00",
+    customer_name: "Example",
+    status: "Scheduled",
+  };
+  const hasAppointment = () =>
+    render(AppointmentsPanel).some((e) => e.props.appointment?.id === appointment.id);
+  it.each(["offline", "unavailable", "malformed"])(
+    "preserves appointments when the calendar is %s",
+    async (kind) => {
+      h.fetch.mockImplementation(async (url) => {
+        if (url.startsWith("/api/appointments"))
+          return Response.json({ appointments: [appointment] });
+        if (kind === "offline") throw new Error("Offline");
+        return Response.json({}, { status: kind === "unavailable" ? 503 : 200 });
+      });
+      render(AppointmentsPanel);
+      await settle();
+      expect(hasAppointment()).toBe(true);
+      expect(
+        render(AppointmentsPanel).some(
+          (e) => e.type === "notice" && e.props.title === "Calendar status unavailable",
+        ),
+      ).toBe(true);
+    },
+  );
+  it("does not recommend reconnecting when calendar status is unknown", async () => {
+    h.fetch.mockImplementation(async (url) =>
+      url.startsWith("/api/appointments")
+        ? Response.json({ appointments: [] })
+        : Response.json({}, { status: 503 }),
+    );
+    render(AppointmentsPanel);
+    await settle();
+    expect(
+      render(AppointmentsPanel).some(
+        (e) => e.type === "empty-state" && e.props.title === "Connect a calendar",
+      ),
+    ).toBe(false);
+  });
+  it("rejects malformed appointment data instead of showing an empty schedule", async () => {
+    h.fetch.mockImplementation(async (url) =>
+      Response.json(url.startsWith("/api/appointments") ? {} : { accounts: [] }),
+    );
+    render(AppointmentsPanel);
+    await settle();
+    expect(
+      render(AppointmentsPanel).some(
+        (e) => e.type === "notice" && e.props.title === "Appointments unavailable",
+      ),
+    ).toBe(true);
+  });
+  it("shows loaded appointments without waiting for the calendar lookup", async () => {
+    h.fetch.mockImplementation((url) =>
+      url.startsWith("/api/appointments")
+        ? Promise.resolve(Response.json({ appointments: [appointment] }))
+        : new Promise(() => {}),
+    );
+    render(AppointmentsPanel);
+    await settle();
+    expect(hasAppointment()).toBe(true);
+  });
+  it("ignores appointment bodies that finish after unmount", async () => {
+    let done!: (value: unknown) => void;
+    h.fetch.mockImplementation(async (url) =>
+      url.startsWith("/api/appointments")
+        ? {
+            ok: true,
+            json: () =>
+              new Promise((resolve) => {
+                done = resolve;
+              }),
+          }
+        : Response.json({ accounts: [] }),
+    );
+    render(AppointmentsPanel);
+    await settle();
+    unmount();
+    const before = [...h.states];
+    done({ appointments: [appointment] });
+    await settle();
+    expect(h.states).toEqual(before);
+  });
+  it("retries calendar status without reloading or hiding appointments", async () => {
+    h.fetch.mockImplementation(async (url) =>
+      url.startsWith("/api/appointments")
+        ? Response.json({ appointments: [appointment] })
+        : Response.json({}, { status: 503 }),
+    );
+    render(AppointmentsPanel);
+    await settle();
+    const notice = render(AppointmentsPanel).find(
+      (e) => e.props.title === "Calendar status unavailable",
+    )!;
+    h.fetch.mockClear().mockImplementation(async () => Response.json({ accounts: [] }));
+    descendants(notice.props.action)
+      .find((e) => e.type === "button")!
+      .props.onClick();
+    render(AppointmentsPanel);
+    await settle();
+    expect(hasAppointment()).toBe(true);
+    expect(h.fetch.mock.calls.map((call) => call[0])).toEqual(["/api/calendar/accounts"]);
+    expect(
+      render(AppointmentsPanel).some((e) => e.props.title === "Calendar status unavailable"),
+    ).toBe(false);
+  });
+});
+
+describe("Salesforce status and preference ordering", () => {
+  const connected = {
+    salesforce: {
+      connected: true,
+      configured: true,
+      sync_preferences: { callActivitySyncEnabled: true },
+    },
+  };
+  const toggle = () => render(SalesforceIntegrationPage).find((e) => e.type === "switch")!;
+  const refresh = () =>
+    descendants(
+      render(SalesforceIntegrationPage).find((e) => e.type === "workspace-intro")!.props.action,
+    ).find((e) => e.type === "button")!.props.onClick;
+  async function ready() {
+    h.fetch.mockImplementation(async () => Response.json(connected));
+    render(SalesforceIntegrationPage);
+    await settle();
+  }
+  it.each([{}, { salesforce: { connected: "false" } }])(
+    "rejects malformed status: %j",
+    async (payload) => {
+      h.fetch.mockImplementation(async () => Response.json(payload));
+      render(SalesforceIntegrationPage);
+      await settle();
+      const elements = render(SalesforceIntegrationPage);
+      expect(
+        elements.some(
+          (e) => e.type === "notice" && e.props.title === "Connection state unavailable",
+        ),
+      ).toBe(true);
+      expect(toggle().props.disabled).toBe(true);
+    },
+  );
+  it("fences duplicate preference changes before a rerender", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    const change = toggle().props.onCheckedChange;
+    change(false);
+    change(true);
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    done(Response.json({ preferences: { callActivitySyncEnabled: false } }));
+    await settle();
+    expect(toggle().props.checked).toBe(false);
+  });
+  it("does not start a preference write while status refresh is pending", async () => {
+    await ready();
+    const change = toggle().props.onCheckedChange;
+    h.fetch.mockClear().mockImplementation(() => new Promise(() => {}));
+    refresh()();
+    change(false);
+    expect(h.fetch.mock.calls.some((call) => call[1]?.method === "PUT")).toBe(false);
+  });
+  it("does not let refresh overtake a pending preference write", async () => {
+    await ready();
+    const reload = refresh();
+    h.fetch.mockClear().mockImplementation(() => new Promise(() => {}));
+    toggle().props.onCheckedChange(false);
+    reload();
+    expect(h.fetch.mock.calls.filter((call) => call[0] === "/api/oauth/crm/status")).toHaveLength(
+      0,
+    );
+  });
+  it("ignores a saved preference after unmount", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    h.fetch.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    toggle().props.onCheckedChange(false);
+    unmount();
+    const before = [...h.states];
+    done(Response.json({ preferences: { callActivitySyncEnabled: false } }));
+    await settle();
+    expect(h.states).toEqual(before);
+  });
+  it("reports a malformed save response and restores the previous preference", async () => {
+    await ready();
+    h.fetch.mockImplementation(async () => Response.json(null));
+    toggle().props.onCheckedChange(false);
+    await settle();
+    const notice = render(SalesforceIntegrationPage).find(
+      (e) => e.type === "notice" && e.props.title === "Call activity sync was not updated",
+    );
+    expect(content(notice?.props.children)).toBe(
+      "Could not update Salesforce call activity delivery.",
+    );
+    expect(toggle().props.checked).toBe(true);
+    h.fetch.mockImplementation(async () =>
+      Response.json({ preferences: { callActivitySyncEnabled: false } }),
+    );
+    toggle().props.onCheckedChange(false);
+    await settle();
+    expect(toggle().props.checked).toBe(false);
+    expect(
+      render(SalesforceIntegrationPage).some((e) => e.props.title === "Call activity sync updated"),
+    ).toBe(true);
+  });
+});
+
+describe("integration notification destination recovery", () => {
+  const providers = [
+    "salesforce",
+    "hubspot",
+    "slack",
+    "x",
+    "zoom",
+    "apollo",
+    "meta",
+    "shopify",
+    "square",
+    "microsoft_teams",
+    "microsoft_excel",
+    "google_sheets",
+  ];
+  const status = () =>
+    Object.fromEntries(
+      providers.map((key) => [
+        key,
+        {
+          configured: true,
+          connected: key === "slack" || key === "microsoft_teams",
+          ...(key === "slack" ? { default_channel_id: "slack-a" } : {}),
+        },
+      ]),
+    );
+  const teams = [
+    {
+      team_id: "team-a",
+      team_name: "Operations",
+      channel_id: "19:alerts@thread.tacv2",
+      channel_name: "Alerts",
+    },
+  ];
+  const response = (url: string) =>
+    Response.json(
+      url.endsWith("/status")
+        ? status()
+        : {
+            channels: url.includes("microsoft_teams")
+              ? teams
+              : [
+                  { id: "slack-a", name: "general" },
+                  { id: "slack-b", name: "alerts" },
+                ],
+          },
+    );
+  const select = (label: string) =>
+    render(CrmConnectionCard).find(
+      (e) =>
+        e.type === "select" &&
+        descendants(e.props.children).some((child) => child.props["aria-label"] === label),
+    )!;
+  async function ready() {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async (url) => response(url));
+    render(CrmConnectionCard);
+    await settle();
+    render(CrmConnectionCard);
+    await settle();
+  }
+  it("keeps colon-containing Teams channel IDs intact", async () => {
+    await ready();
+    const action = select("Default Teams team and channel").props.onValueChange;
+    h.fetch.mockImplementation(async (url) =>
+      url.endsWith("notify-target") ? Response.json({ ok: true }) : response(url),
+    );
+    await action("team-a:19:alerts@thread.tacv2");
+    const request = h.fetch.mock.calls.find((call) => call[0].endsWith("notify-target"));
+    expect(JSON.parse(request![1].body).channel_id).toBe("19:alerts@thread.tacv2");
+    await settle();
+    expect(select("Default Teams team and channel").props.value).toBe(
+      "team-a:19:alerts@thread.tacv2",
+    );
+  });
+  it.each(["Default Slack channel", "Default Teams team and channel"])(
+    "reports a rejected update for %s",
+    async (label) => {
+      await ready();
+      h.fetch.mockImplementation(async (url, options) =>
+        options?.method === "POST"
+          ? Response.json({ error: "Destination denied" }, { status: 403 })
+          : response(url),
+      );
+      await select(label).props.onValueChange(
+        label.includes("Slack") ? "slack-b" : "team-a:19:alerts@thread.tacv2",
+      );
+      await settle();
+      expect(
+        render(CrmConnectionCard).some(
+          (e) => e.type === "notice" && content(e.props.children).includes("Destination denied"),
+        ),
+      ).toBe(true);
+      expect(select(label).props.value).toBe(label.includes("Slack") ? "slack-a" : "__unset__");
+    },
+  );
+  it("fences simultaneous destination changes", async () => {
+    await ready();
+    let done!: (response: Response) => void;
+    const action = select("Default Slack channel").props.onValueChange;
+    h.fetch.mockClear().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    const first = action("slack-b");
+    const second = action("slack-a");
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    done(Response.json({ ok: true }));
+    await Promise.all([first, second]);
+    await settle();
+    expect(select("Default Slack channel").props.value).toBe("slack-b");
+  });
+  it("surfaces an unavailable channel list instead of an empty selector", async () => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async (url) =>
+      url.endsWith("/status") ? response(url) : Response.json({}, { status: 503 }),
+    );
+    render(CrmConnectionCard);
+    await settle();
+    render(CrmConnectionCard);
+    await settle();
+    const elements = render(CrmConnectionCard);
+    expect(
+      elements.some((e) => e.type === "notice" && e.props.title === "Slack channels unavailable"),
+    ).toBe(true);
+    expect(
+      elements.some((e) => e.type === "notice" && e.props.title === "Teams channels unavailable"),
+    ).toBe(true);
+  });
+  it.each(["offline", "malformed"])("recovers locally from %s channel lists", async (failure) => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async (url) => {
+      if (url.endsWith("/status")) return response(url);
+      if (failure === "offline") throw new Error("Offline");
+      return Response.json({ channels: null });
+    });
+    render(CrmConnectionCard);
+    await settle();
+    render(CrmConnectionCard);
+    await settle();
+    const notices = render(CrmConnectionCard).filter(
+      (e) =>
+        e.props.title === "Slack channels unavailable" ||
+        e.props.title === "Teams channels unavailable",
+    );
+    expect(notices).toHaveLength(2);
+    h.fetch.mockClear().mockImplementation(async (url) => response(url));
+    notices.forEach((notice) =>
+      descendants(notice.props.action)
+        .find((e) => e.type === "button")!
+        .props.onClick(),
+    );
+    render(CrmConnectionCard);
+    await settle();
+    expect(select("Default Slack channel")).toBeDefined();
+    expect(select("Default Teams team and channel")).toBeDefined();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+  });
+  it.each(["offline", "unacknowledged"])(
+    "retains the selected channel after an %s save",
+    async (failure) => {
+      await ready();
+      h.fetch.mockImplementation(async () => {
+        if (failure === "offline") throw new Error("Offline");
+        return Response.json({});
+      });
+      select("Default Slack channel").props.onValueChange("slack-b");
+      await settle();
+      expect(select("Default Slack channel").props.value).toBe("slack-a");
+      expect(
+        render(CrmConnectionCard).some(
+          (e) => e.props.title === "Notification destination was not updated",
+        ),
+      ).toBe(true);
+      h.fetch.mockImplementation(async () => Response.json({ ok: true }));
+      select("Default Slack channel").props.onValueChange("slack-b");
+      await settle();
+      expect(select("Default Slack channel").props.value).toBe("slack-b");
+    },
+  );
+  it("ignores a destination save arriving after departure", async () => {
+    await ready();
+    let done!: (value: Response) => void;
+    h.fetch.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    select("Default Slack channel").props.onValueChange("slack-b");
+    unmount();
+    const before = [...h.states];
+    done(Response.json({ ok: true }));
+    await settle();
+    expect(h.states).toEqual(before);
+  });
+  it("rejects malformed integration status instead of treating providers as unavailable", async () => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async () => Response.json({}));
+    render(CrmConnectionCard);
+    await settle();
+    expect(
+      render(CrmConnectionCard).some(
+        (e) => e.type === "notice" && e.props.title === "Integration connections unavailable",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("mailbox connection status validation", () => {
+  it("keeps the newest account refresh when an older request finishes last", async () => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async () => Response.json({}, { status: 503 }));
+    render(MailboxConnectionCard);
+    await settle();
+    const notice = render(MailboxConnectionCard).find(
+      (e) => e.props.title === "Inbox connection status unavailable",
+    )!;
+    const retry = descendants(notice.props.action).find((e) => e.type === "button")!.props.onClick;
+    let old!: (response: Response) => void;
+    h.fetch
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            old = resolve;
+          }),
+      )
+      .mockImplementationOnce(async () =>
+        Response.json({
+          accounts: [{ id: "new", emailAddress: "new@example.com", provider: "google" }],
+        }),
+      );
+    retry();
+    retry();
+    await settle();
+    old(Response.json({ accounts: [] }));
+    await settle();
+    expect(
+      render(MailboxConnectionCard).some((e) =>
+        content(e.props.children).includes("new@example.com"),
+      ),
+    ).toBe(true);
+  });
+  it("rejects malformed connected-account responses", async () => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    h.fetch.mockImplementation(async () => Response.json({}));
+    render(MailboxConnectionCard);
+    await settle();
+    expect(
+      render(MailboxConnectionCard).some(
+        (e) => e.type === "notice" && e.props.title === "Inbox connection status unavailable",
+      ),
+    ).toBe(true);
+  });
+  it("ignores account data arriving after departure", async () => {
+    Object.assign(window, { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+    let done!: (response: Response) => void;
+    h.fetch.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    );
+    render(MailboxConnectionCard);
+    unmount();
+    const before = [...h.states];
+    done(
+      Response.json({
+        accounts: [{ id: "mail-a", emailAddress: "example@example.com", provider: "google" }],
+      }),
+    );
+    await settle();
+    expect(h.states).toEqual(before);
   });
 });

@@ -135,3 +135,21 @@ Added **28 regression cases**, bringing the UI recovery file to 74 cases. Before
 Second-pass broad verification passed: **565 files / 3,728 tests**, application TypeScript, repository ESLint, design checks, production build, and no-database server import smoke. Line coverage is **36.83%**. The first full run identified two additional stale source assertions for null-safe response access and customer-facing availability wording; those assertions were updated without changing the underlying recovery or certification gates. Their 8 checks passed separately, then the complete coverage suite passed. Generated download archives were restored after building.
 
 These are command-level results, not a new full browser-inclusive `verify:full` invocation. Current-head visual/browser execution and live-provider calls remain unrun; the PR stays in draft and no production settings were changed.
+
+## Integration and calendar continuation — follow-up to `b21d239`
+
+Rechecked the remaining calendar, Salesforce preference, notification destination, and connected-mailbox recovery paths. Server response contracts were inspected alongside the components. This continuation retains the same source/component evidence boundary and existing design system.
+
+| Area | Reproduced gap | Correction |
+| --- | --- | --- |
+| Appointments | A failed or slow calendar lookup hid valid appointments. Unknown calendar state suggested reconnecting, and malformed appointment data looked like an empty schedule. | Load appointments independently, validate the collection, distinguish checking/unavailable/disconnected calendar states, and retry calendar status without reloading appointments. Ignore responses after departure. |
+| Salesforce | Malformed status looked disconnected; same-render preference events duplicated requests; status refresh and preference writes could overtake one another. A null save payload exposed an internal error. | Validate the connection flag, serialize refresh and preference writes, require a returned boolean preference, retain rollback/retry, and ignore late results. Remove a dangling description reference from the switch. |
+| Teams destination | Splitting the selected value at `:` truncated channel IDs such as `19:alerts@thread.tacv2`. | Resolve the full selected option and send its intact team/channel IDs and names. Update the visible selection only after acknowledgement. |
+| Slack/Teams recovery | Channel network errors were unhandled; HTTP failures looked like empty lists; destination saves ignored failures and allowed overlapping updates. | Separate unavailable lists from confirmed empty lists, add local channel retries, fence destination changes, require explicit acknowledgement, preserve the prior selection on failure, and show save errors. |
+| Integration/mailbox status | Malformed status responses looked empty or unavailable by provider; old mailbox refreshes could replace newer data; responses could update state after departure. | Validate collection/provider status shapes, offer the existing status retry, and discard obsolete or post-unmount results. |
+
+Added **29 regression cases**, bringing the UI recovery file to **103 cases**. The first 22 cases all failed against the saved source before application fixes. Final focused verification passed **148 checks across 6 files**, including successful retries, preserved appointment visibility, full Teams channel IDs, acknowledged destination changes, preference rollback/retry, response ordering, and departure guards. These tests use controlled responses and do not contact providers.
+
+Broad verification passed on the first run: **565 files / 3,757 tests**, application TypeScript, repository ESLint, design checks, production build, and no-database server import smoke. Repository line coverage is **37.49%**; this is not complete behavioral coverage. Generated download archives were restored after building. Documentation/local-link and source-control hygiene checks also passed.
+
+These are command-level results, not a new full browser-inclusive `verify:full` invocation. Current-head browser/visual and live-provider verification remain pending; no merge, deployment, purchase, or production service change was performed.

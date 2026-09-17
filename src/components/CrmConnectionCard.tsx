@@ -246,6 +246,28 @@ export default function CrmConnectionCard() {
     { team_id: string; team_name: string; channel_id: string; channel_name: string }[]
   >([]);
   const [teamsTargetsLoading, setTeamsTargetsLoading] = useState(false);
+  const [slackChannelsError, setSlackChannelsError] = useState<string | null>(null);
+  const [teamsTargetsError, setTeamsTargetsError] = useState<string | null>(null);
+  const [slackAttempt, setSlackAttempt] = useState(0);
+  const [teamsAttempt, setTeamsAttempt] = useState(0);
+  const [savingTarget, setSavingTarget] = useState(false);
+  const [targetError, setTargetError] = useState<string | null>(null);
+  const mounted = useRef(false);
+  const statusRequest = useRef(0);
+  const statusLoading = useRef(false);
+  const targetSaveInFlight = useRef(false);
+  const lifecycle = useRef(0);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      lifecycle.current += 1;
+      statusRequest.current += 1;
+      statusLoading.current = false;
+      targetSaveInFlight.current = false;
+    };
+  }, []);
   // Shopify OAuth is per-store, so the Account Holder must supply their
   // myshopify domain before the Connect button can build the install
   // URL. Held here until they click Connect.
@@ -255,17 +277,31 @@ export default function CrmConnectionCard() {
   const [shopDomainOpen, setShopDomainOpen] = useState(false);
 
   const fetchStatus = useCallback(async () => {
+    if (!mounted.current || targetSaveInFlight.current) return;
+    const request = ++statusRequest.current;
+    const isCurrent = () => mounted.current && request === statusRequest.current;
+    statusLoading.current = true;
     try {
       const r = await authFetch("/api/oauth/crm/status");
       if (!r.ok) throw new Error("Could not load integration connections.");
-      setState(await r.json());
+      const data = (await r.json()) as IntegrationState | null;
+      if (!data || !PROVIDERS.every(({ key }) => typeof data[key]?.connected === "boolean")) {
+        throw new Error("Could not load integration connections.");
+      }
+      if (!isCurrent()) return;
+      setState(data);
       setError(null);
     } catch (reason) {
+      if (!isCurrent()) return;
+      setState(null);
       setError(
         reason instanceof Error ? reason.message : "Could not load integration connections.",
       );
     } finally {
-      setLoading(false);
+      if (isCurrent()) {
+        statusLoading.current = false;
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -296,12 +332,17 @@ export default function CrmConnectionCard() {
     let cancelled = false;
     (async () => {
       setSlackChannelsLoading(true);
+      setSlackChannelsError(null);
       try {
         const r = await authFetch("/api/oauth/slack/channels");
-        if (r.ok && !cancelled) {
-          const d = await r.json();
-          setSlackChannels(d.channels || []);
+        if (!r.ok) throw new Error("Could not load Slack channels.");
+        const d = await r.json();
+        if (!Array.isArray(d?.channels)) {
+          throw new Error("Could not load Slack channels.");
         }
+        if (!cancelled) setSlackChannels(d.channels);
+      } catch {
+        if (!cancelled) setSlackChannelsError("Try loading the channel list again.");
       } finally {
         if (!cancelled) setSlackChannelsLoading(false);
       }
@@ -309,7 +350,7 @@ export default function CrmConnectionCard() {
     return () => {
       cancelled = true;
     };
-  }, [slackConnected]);
+  }, [slackConnected, slackAttempt]);
 
   useEffect(() => {
     if (!teamsConnected) {
@@ -319,12 +360,17 @@ export default function CrmConnectionCard() {
     let cancelled = false;
     (async () => {
       setTeamsTargetsLoading(true);
+      setTeamsTargetsError(null);
       try {
         const r = await authFetch("/api/oauth/microsoft_teams/channels");
-        if (r.ok && !cancelled) {
-          const d = await r.json();
-          setTeamsTargets(d.channels || []);
+        if (!r.ok) throw new Error("Could not load Teams channels.");
+        const d = await r.json();
+        if (!Array.isArray(d?.channels)) {
+          throw new Error("Could not load Teams channels.");
         }
+        if (!cancelled) setTeamsTargets(d.channels);
+      } catch {
+        if (!cancelled) setTeamsTargetsError("Try loading the team and channel list again.");
       } finally {
         if (!cancelled) setTeamsTargetsLoading(false);
       }
@@ -332,7 +378,77 @@ export default function CrmConnectionCard() {
     return () => {
       cancelled = true;
     };
-  }, [teamsConnected]);
+  }, [teamsConnected, teamsAttempt]);
+
+  async function updateNotificationTarget(provider: "slack" | "microsoft_teams", value: string) {
+    if (
+      !mounted.current ||
+      targetSaveInFlight.current ||
+      statusLoading.current ||
+      !value ||
+      value === CRM_SELECT_UNSET
+    )
+      return;
+    const slackChannel =
+      provider === "slack" ? slackChannels.find((channel) => channel.id === value) : null;
+    const teamsTarget =
+      provider === "microsoft_teams"
+        ? teamsTargets.find((target) => `${target.team_id}:${target.channel_id}` === value)
+        : null;
+    if (provider === "slack" && (!slackConnected || slackChannelsError || !slackChannel)) return;
+    if (provider === "microsoft_teams" && (!teamsConnected || teamsTargetsError || !teamsTarget))
+      return;
+
+    targetSaveInFlight.current = true;
+    const generation = lifecycle.current;
+    const isCurrent = () => mounted.current && generation === lifecycle.current;
+    setSavingTarget(true);
+    setTargetError(null);
+    try {
+      const response = await authFetch(
+        provider === "slack"
+          ? "/api/oauth/slack/default-channel"
+          : "/api/oauth/microsoft_teams/notify-target",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(slackChannel ? { channel_id: slackChannel.id } : teamsTarget),
+        },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok || body?.ok !== true) {
+        throw new Error(
+          typeof body?.error === "string"
+            ? body.error
+            : "Could not save the notification destination. Try again.",
+        );
+      }
+      if (!isCurrent()) return;
+      setState((current) =>
+        current
+          ? {
+              ...current,
+              [provider]: {
+                ...current[provider],
+                ...(slackChannel ? { default_channel_id: slackChannel.id } : teamsTarget),
+              },
+            }
+          : current,
+      );
+    } catch (reason) {
+      if (isCurrent())
+        setTargetError(
+          reason instanceof Error
+            ? reason.message
+            : "Could not save the notification destination. Try again.",
+        );
+    } finally {
+      if (isCurrent()) {
+        targetSaveInFlight.current = false;
+        setSavingTarget(false);
+      }
+    }
+  }
 
   useEffect(() => {
     const handler = (e: MessageEvent) => {
@@ -350,6 +466,7 @@ export default function CrmConnectionCard() {
   }, [fetchStatus, stopPopupPoll]);
 
   const connect = (provider: ProviderKey) => async () => {
+    if (targetSaveInFlight.current) return;
     // Shopify needs the merchant's myshopify domain appended as a
     // query param so the per-store install URL can be built.
     let endpoint = `/api/oauth/${provider}/url`;
@@ -410,6 +527,7 @@ export default function CrmConnectionCard() {
   };
 
   const disconnect = (provider: ProviderKey) => async () => {
+    if (targetSaveInFlight.current) return;
     if (
       !confirm(
         `Disconnect ${PROVIDERS.find((p) => p.key === provider)?.label}? Your Bots will lose access to this integration.`,
@@ -435,6 +553,7 @@ export default function CrmConnectionCard() {
   };
 
   const retry = () => {
+    if (targetSaveInFlight.current) return;
     setLoading(true);
     void fetchStatus();
   };
@@ -474,6 +593,14 @@ export default function CrmConnectionCard() {
 
   return (
     <div className="space-y-4">
+      {targetError ? (
+        <StatusNotice tone="destructive" title="Notification destination was not updated">
+          {targetError}
+        </StatusNotice>
+      ) : null}
+      {savingTarget ? (
+        <StatusNotice title="Saving notification destination" aria-busy="true" />
+      ) : null}
       {error ? (
         <StatusNotice
           tone="destructive"
@@ -509,6 +636,7 @@ export default function CrmConnectionCard() {
             onClick={retry}
             className="rounded-full wl-label"
             aria-label="Refresh integration status"
+            disabled={savingTarget}
           >
             <Loader2 className="w-3 h-3" />
             Refresh
@@ -629,6 +757,7 @@ export default function CrmConnectionCard() {
                           size="icon"
                           disableAnimations
                           onClick={disconnect(key)}
+                          disabled={savingTarget}
                           className="h-8 w-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                           title="Disconnect"
                           aria-label={`Disconnect ${label}`}
@@ -643,6 +772,7 @@ export default function CrmConnectionCard() {
                         size="sm"
                         disableAnimations
                         onClick={disconnect(key)}
+                        disabled={savingTarget}
                         className="h-8 rounded-md wl-micro-meta font-medium text-foreground/70 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/10"
                         title="Disconnect saved connection"
                         aria-label={`Disconnect ${label}`}
@@ -657,7 +787,7 @@ export default function CrmConnectionCard() {
                         size="sm"
                         disableAnimations
                         onClick={connect(key)}
-                        disabled={isConnecting}
+                        disabled={isConnecting || savingTarget}
                         aria-label={isConnecting ? `Connecting ${label}` : `Connect ${label}`}
                         className={cn(
                           "rounded-md wl-micro-meta font-medium",
@@ -726,18 +856,32 @@ export default function CrmConnectionCard() {
                       <div className="flex items-center gap-2 wl-micro-meta--muted">
                         <Loader2 className="w-3 h-3 animate-spin" /> Loading channels…
                       </div>
+                    ) : slackChannelsError ? (
+                      <StatusNotice
+                        tone="warning"
+                        title="Slack channels unavailable"
+                        action={
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSlackAttempt((value) => value + 1)}
+                          >
+                            Retry channels
+                          </ShadButton>
+                        }
+                      >
+                        {slackChannelsError}
+                      </StatusNotice>
+                    ) : slackChannels.length === 0 ? (
+                      <p className="wl-micro-meta--muted">
+                        No Slack channels are available to this connection.
+                      </p>
                     ) : (
                       <Select
                         value={s.default_channel_id || CRM_SELECT_UNSET}
-                        onValueChange={async (v) => {
-                          if (!v || v === CRM_SELECT_UNSET) return;
-                          await authFetch("/api/oauth/slack/default-channel", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ channel_id: v }),
-                          });
-                          fetchStatus();
-                        }}
+                        disabled={savingTarget}
+                        onValueChange={(value) => void updateNotificationTarget("slack", value)}
                       >
                         <SelectTrigger
                           aria-label="Default Slack channel"
@@ -769,6 +913,27 @@ export default function CrmConnectionCard() {
                       <div className="flex items-center gap-2 wl-micro-meta--muted">
                         <Loader2 className="w-3 h-3 animate-spin" /> Loading teams…
                       </div>
+                    ) : teamsTargetsError ? (
+                      <StatusNotice
+                        tone="warning"
+                        title="Teams channels unavailable"
+                        action={
+                          <ShadButton
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTeamsAttempt((value) => value + 1)}
+                          >
+                            Retry channels
+                          </ShadButton>
+                        }
+                      >
+                        {teamsTargetsError}
+                      </StatusNotice>
+                    ) : teamsTargets.length === 0 ? (
+                      <p className="wl-micro-meta--muted">
+                        No Teams channels are available to this connection.
+                      </p>
                     ) : (
                       <Select
                         value={
@@ -776,24 +941,10 @@ export default function CrmConnectionCard() {
                             ? `${s.team_id}:${s.channel_id}`
                             : CRM_SELECT_UNSET
                         }
-                        onValueChange={async (raw) => {
-                          if (!raw || raw === CRM_SELECT_UNSET) return;
-                          const [team_id, channel_id] = raw.split(":");
-                          const pick = teamsTargets.find(
-                            (t) => t.team_id === team_id && t.channel_id === channel_id,
-                          );
-                          await authFetch("/api/oauth/microsoft_teams/notify-target", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              team_id,
-                              channel_id,
-                              team_name: pick?.team_name,
-                              channel_name: pick?.channel_name,
-                            }),
-                          });
-                          fetchStatus();
-                        }}
+                        disabled={savingTarget}
+                        onValueChange={(value) =>
+                          void updateNotificationTarget("microsoft_teams", value)
+                        }
                       >
                         <SelectTrigger
                           aria-label="Default Teams team and channel"

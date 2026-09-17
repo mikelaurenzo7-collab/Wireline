@@ -57,8 +57,10 @@ export default function AppointmentsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+  const [calendarLoading, setCalendarLoading] = useState(true);
   const [attempt, setAttempt] = useState(0);
+  const [calendarAttempt, setCalendarAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,23 +68,11 @@ export default function AppointmentsPanel() {
       setLoading(true);
       setError(null);
       try {
-        const [apptRes, calendarRes] = await Promise.all([
-          authFetch("/api/appointments?limit=100"),
-          authFetch("/api/calendar/accounts"),
-        ]);
-        if (cancelled) return;
-        if (!apptRes.ok) {
-          setError("Could not load appointments.");
-          return;
-        }
-        const apptData = (await apptRes.json()) as { appointments?: Appointment[] };
-        setAppointments(Array.isArray(apptData.appointments) ? apptData.appointments : []);
-        if (calendarRes.ok) {
-          const calData = (await calendarRes.json().catch(() => null)) as {
-            accounts?: unknown[];
-          } | null;
-          setCalendarConnected(Array.isArray(calData?.accounts) && calData.accounts.length > 0);
-        }
+        const apptRes = await authFetch("/api/appointments?limit=100");
+        if (!apptRes.ok) throw new Error("Could not load appointments.");
+        const apptData = (await apptRes.json()) as { appointments?: Appointment[] } | null;
+        if (!Array.isArray(apptData?.appointments)) throw new Error("Invalid appointments.");
+        if (!cancelled) setAppointments(apptData.appointments);
       } catch {
         if (!cancelled) setError("Could not load appointments.");
       } finally {
@@ -94,6 +84,29 @@ export default function AppointmentsPanel() {
       cancelled = true;
     };
   }, [attempt]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCalendar() {
+      setCalendarLoading(true);
+      setCalendarConnected(null);
+      try {
+        const response = await authFetch("/api/calendar/accounts");
+        if (!response.ok) throw new Error("Could not load calendar status.");
+        const data = (await response.json()) as { accounts?: unknown[] } | null;
+        if (!Array.isArray(data?.accounts)) throw new Error("Invalid calendar status.");
+        if (!cancelled) setCalendarConnected(data.accounts.length > 0);
+      } catch {
+        if (!cancelled) setCalendarConnected(null);
+      } finally {
+        if (!cancelled) setCalendarLoading(false);
+      }
+    }
+    void loadCalendar();
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarAttempt]);
 
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
@@ -113,6 +126,25 @@ export default function AppointmentsPanel() {
     return { upcoming: future, past: history };
   }, [appointments]);
   const [pastOpen, setPastOpen] = useState<boolean | null>(null);
+  const calendarNotice = calendarLoading ? (
+    <StatusNotice title="Checking calendar connection" aria-busy="true" />
+  ) : calendarConnected === null ? (
+    <StatusNotice
+      tone="warning"
+      title="Calendar status unavailable"
+      action={
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setCalendarAttempt((value) => value + 1)}
+        >
+          Retry calendar check
+        </Button>
+      }
+    >
+      Your appointments are shown independently. Try checking the calendar connection again.
+    </StatusNotice>
+  ) : null;
 
   if (loading) {
     return (
@@ -150,26 +182,31 @@ export default function AppointmentsPanel() {
   if (appointments.length === 0) {
     return (
       <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
-        <EmptyState
-          framed
-          density="compact"
-          titleTone="ui"
-          withHalo={false}
-          className="w-full max-w-lg"
-          icon={<CalendarDays className="size-5" aria-hidden="true" />}
-          title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
-          action={
-            <Button asChild>
-              <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
-            </Button>
-          }
-        />
+        {calendarNotice ? (
+          <div className="w-full max-w-lg">{calendarNotice}</div>
+        ) : (
+          <EmptyState
+            framed
+            density="compact"
+            titleTone="ui"
+            withHalo={false}
+            className="w-full max-w-lg"
+            icon={<CalendarDays className="size-5" aria-hidden="true" />}
+            title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
+            action={
+              <Button asChild>
+                <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
+              </Button>
+            }
+          />
+        )}
       </div>
     );
   }
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
+      {calendarNotice}
       <section aria-labelledby="upcoming-appointments">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 id="upcoming-appointments" className="text-sm font-semibold text-foreground">
