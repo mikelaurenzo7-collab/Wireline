@@ -1,5 +1,6 @@
 import {
   getStoredSignupIntent,
+  getSignupWedgeRecommendation,
   parseSignupIntent,
   recommendedPlanFromIntent,
   type SignupIntent,
@@ -121,9 +122,13 @@ export function resolvePostAuthDestination(
     }
     persistAuthRedirect(null);
     clearFreshSignupSession();
+    const currentIntent = parseSignupIntent(search);
+    const storedIntent = getStoredSignupIntent();
     const template =
-      parseSignupIntent(search)?.preferredTemplateId ||
-      getStoredSignupIntent()?.preferredTemplateId;
+      currentIntent?.preferredTemplateId ||
+      storedIntent?.preferredTemplateId ||
+      getSignupWedgeRecommendation(currentIntent?.signupWedge || storedIntent?.signupWedge)
+        ?.templateId;
     if (template) return `/studio?create=1&template=${encodeURIComponent(template)}`;
     return "/studio?create=1";
   }

@@ -3,7 +3,10 @@ import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules/StatusNotice";
-import StripeBillingCard, { BillingTrustFooter } from "../components/StripeBillingCard";
+import StripeBillingCard, {
+  BillingTrustFooter,
+  type CheckoutAvailability,
+} from "../components/StripeBillingCard";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -71,6 +74,7 @@ export default function BillingSettings() {
     null,
   );
   const [statusUnavailable, setStatusUnavailable] = useState(false);
+  const [checkoutAvailability, setCheckoutAvailability] = useState<CheckoutAvailability>("loading");
   const [billingReady, setBillingReady] = useState(() =>
     typeof window === "undefined" ? true : !hasCheckoutReturnToVerify(window.location.search),
   );
@@ -263,6 +267,9 @@ export default function BillingSettings() {
   );
   const paidPlan = isPaidPlan(subscription?.plan_id) && Boolean(plan && plan.id !== "personal");
   const canAddBalance =
+    !loading &&
+    billingReady &&
+    checkoutAvailability === "available" &&
     !statusUnavailable &&
     paidPlan &&
     (subscription?.status === "active" || subscription?.status === "trialing");
@@ -274,9 +281,11 @@ export default function BillingSettings() {
       setActionError(
         statusUnavailable
           ? "Billing status is unavailable. Retry before adding Runtime Balance."
-          : paidPlan
-            ? "Restore your active subscription before adding Runtime Balance."
-            : "Choose Starter, Starter Plus, or Pro before adding Runtime Balance.",
+          : checkoutAvailability !== "available"
+            ? "Balance top-ups are unavailable. Refresh this page to check again."
+            : paidPlan
+              ? "Restore your active subscription before adding Runtime Balance."
+              : "Choose Starter, Starter Plus, or Pro before adding Runtime Balance.",
       );
       return;
     }
@@ -324,6 +333,7 @@ export default function BillingSettings() {
           showBalanceTopUp={false}
           showTrustFooter={false}
           billingReady={billingReady}
+          onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
 
         {!loading && !statusUnavailable && paidPlan && plan ? (
@@ -362,11 +372,17 @@ export default function BillingSettings() {
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   {statusUnavailable
                     ? "Billing status could not be verified. No balance action is available until it reloads."
-                    : !canAddBalance
-                      ? "Available after a live plan is active."
-                      : balanceDue > 0
-                        ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
-                        : "Extra usage draws only from this balance, never an automatic overage invoice."}
+                    : checkoutAvailability === "loading"
+                      ? "Checking top-up availability…"
+                      : checkoutAvailability === "unavailable"
+                        ? "Top-up status is unavailable. Refresh this page to retry."
+                        : checkoutAvailability === "paused"
+                          ? "Balance top-ups are paused. Check back later."
+                          : !canAddBalance
+                            ? "Available after a live plan is active."
+                            : balanceDue > 0
+                              ? "A previous live action finished after coverage ran out. Restore this amount before another paid action."
+                              : "Extra usage draws only from this balance, never an automatic overage invoice."}
                 </p>
 
                 {canAddBalance ? (

@@ -56,14 +56,14 @@ export const CAMPAIGN_VO = [
     file: "wireline-ai-voice-agent-30s.mp3",
     targetSeconds: 30,
     speed: 1,
-    text: "Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month.",
+    text: "A Bot trained for your calls, with outcomes you can review. Build free. Plans from nineteen dollars a month. Live setup depends on availability.",
   },
   {
     id: "founder-60s",
     file: "wireline-founder-60s.mp3",
     targetSeconds: 60,
     speed: 0.8,
-    text: "I built BotBound because calls are still where real work happens, and they are still too easy to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a Bot of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Front desk, sales, support, or any role you define. One Bot, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a dedicated production number for every active paid Bot.",
+    text: "I built BotBound because calls are where real work happens, and they are too easy to miss. Build a Bot for your business. Train it on your facts and rules. Test it privately. When your account and number are ready, put it on the line. Connect the tools it needs to book, follow up, or hand off. Review the outcomes and improve its playbook. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.",
   },
 ];
 
@@ -122,12 +122,8 @@ export function campaignTrackFingerprintFromProvenance({ track, expectedEngine, 
  * release gate self-contained without undercounting valid lower-version MP3s.
  */
 export function mp3DurationSeconds(buffer) {
-  const mpeg1Layer3Bitrates = [
-    0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320,
-  ];
-  const mpeg2Layer3Bitrates = [
-    0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160,
-  ];
+  const mpeg1Layer3Bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+  const mpeg2Layer3Bitrates = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
   const sampleRatesByVersion = {
     3: [44_100, 48_000, 32_000],
     2: [22_050, 24_000, 16_000],
@@ -218,7 +214,9 @@ function parseArgs() {
     throw new Error(`Unknown engine "${engine}". BotBound campaign speech uses OpenAI only.`);
   }
   if (!OPENAI_VOICE_IDS.has(voiceId)) {
-    throw new Error(`Unknown OpenAI voice "${voiceId}". Choose one of: ${[...OPENAI_VOICE_IDS].join(", ")}.`);
+    throw new Error(
+      `Unknown OpenAI voice "${voiceId}". Choose one of: ${[...OPENAI_VOICE_IDS].join(", ")}.`,
+    );
   }
 
   return {

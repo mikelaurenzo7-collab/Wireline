@@ -136,6 +136,12 @@ for (const failure of ["unavailable", "malformed"] as const) {
     });
     await page.goto("/studio?agent=bot-front-desk");
     const guide = page.getByRole("dialog", { name: "Next up for Front Desk" });
+    // Disabled also describes the initial request. Observe the actual failure
+    // before allowing the mock to recover, or a pending mount lookup can win.
+    await expect(
+      guide.getByText("Couldn't refresh phone lines. Retry before provisioning another number."),
+    ).toBeVisible();
+    await expect(guide.getByRole("button", { name: "Retry line lookup" })).toBeEnabled();
     await expect(guide.getByRole("button", { name: "Get a number", exact: true })).toBeDisabled();
     await expect(guide.getByText("No live line yet.", { exact: false })).toHaveCount(0);
     recovered = true;

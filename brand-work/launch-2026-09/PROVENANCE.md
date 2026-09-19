@@ -127,15 +127,15 @@ Caption timing and copy are owned by `apps/botbound-film/src/captions.ts` and `a
 
 ## Factual source map
 
-| Claim | Repository authority |
-| --- | --- |
-| One Bot across calls, texts, and email | `../../README.md`, `../../src/pages/Pricing.tsx` |
-| Build -> Train -> Launch -> Improve | `../../docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md` |
-| Build free; paid live from $19/month | `../../src/lib/plan-catalog.ts`, `../../src/pages/Pricing.tsx` |
-| Ten built-in OpenAI Realtime voices | `../../src/lib/voice-catalog.ts`, `../../docs/OPENAI_REALTIME_VOICE.md` |
-| Selected voice fixed for active session | `../../docs/OPENAI_REALTIME_VOICE.md` |
-| OpenAI live runtime; Twilio carrier/numbers/SMS | `../../docs/OPENAI_REALTIME_VOICE.md`, `../../docs/VENDOR_LAUNCH_MAP.md` |
-| Configured tools/approvals determine actions | `../../README.md`, `../../src/lib/plan-catalog.ts` |
+| Claim                                                             | Repository authority                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| One Bot across calls, texts, and email                            | `../../README.md`, `../../src/pages/Pricing.tsx`                         |
+| Build -> Train -> Launch -> Improve                               | `../../docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`                        |
+| Build free; plans from $19/month; activation availability applies | `../../src/lib/plan-catalog.ts`, `../../src/pages/Pricing.tsx`           |
+| Ten built-in OpenAI Realtime voices                               | `../../src/lib/voice-catalog.ts`, `../../docs/OPENAI_REALTIME_VOICE.md`  |
+| Selected voice fixed for active session                           | `../../docs/OPENAI_REALTIME_VOICE.md`                                    |
+| OpenAI live runtime; Twilio carrier/numbers/SMS                   | `../../docs/OPENAI_REALTIME_VOICE.md`, `../../docs/VENDOR_LAUNCH_MAP.md` |
+| Configured tools/approvals determine actions                      | `../../README.md`, `../../src/lib/plan-catalog.ts`                       |
 
 ## Provider and media boundaries
 

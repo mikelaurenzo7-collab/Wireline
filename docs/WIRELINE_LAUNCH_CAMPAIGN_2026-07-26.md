@@ -1,7 +1,9 @@
 # BotBound Launch Campaign
 
-Updated: 2026-08-15  
-Status: **Active founder-launch pack**  
+Updated: 2026-09-19
+
+Status: **Founder launch preparation**
+
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 This document owns launch copy, voiceover masters, campaign language, and cut briefs. The launch source of truth owns positioning and proof posture. If they disagree, the launch source of truth wins.
@@ -23,7 +25,7 @@ Start with one useful workflow. Add Bots or workflow breadth only when real use 
 
 ## Founder Launch Execution Priority
 
-The current release is a controlled production launch, not a broad brand campaign.
+The current phase is preparation for a controlled launch. Production activation remains subject to the current launch and vendor readiness checks.
 
 1. Recruit **3–5 consented design partners** in appointment-driven or service businesses.
 2. Prove one real `$19` lifecycle: checkout -> signed webhook -> entitlement -> allowance -> portal -> cancel -> refund or reversal.
@@ -36,7 +38,7 @@ Founder time and cash go to onboarding, call quality, support, and direct custom
 ## Launch Offer
 
 - Primary CTA: **Build Your Bot**
-- Price line: **Build free. Go live from $19/mo.**
+- Price line: **Build free. Plans from $19/mo. Live setup depends on availability.**
 - Live plan floor: **Starter — $19/mo**
 - Builder posture: Free Builder is for building, training, and private simulation before paid live use.
 - Number promise: Every active paid Bot gets a dedicated production number.
@@ -44,14 +46,14 @@ Founder time and cash go to onboarding, call quality, support, and direct custom
 
 ## Brand Spine
 
-| Element      | Current Copy                                                          |
-| ------------ | --------------------------------------------------------------------- |
-| North star   | Your Bot for calls, texts, and email.                                 |
-| Compact line | Start with one useful Bot. Add more when real work proves the need.   |
-| Outcome line | Capture the call, send the follow-up, log the outcome.                |
-| Product loop | Build -> Train -> Launch -> Improve                                   |
-| CTA          | Build Your Bot                                                        |
-| Price        | Build free. Go live from $19/mo.                                      |
+| Element      | Current Copy                                                        |
+| ------------ | ------------------------------------------------------------------- |
+| North star   | Your Bot for calls, texts, and email.                               |
+| Compact line | Start with one useful Bot. Add more when real work proves the need. |
+| Outcome line | Capture the call, send the follow-up, log the outcome.              |
+| Product loop | Build -> Train -> Launch -> Improve                                 |
+| CTA          | Build Your Bot                                                      |
+| Price        | Build free. Plans from $19/mo. Live setup depends on availability.  |
 
 ## Claim Guardrails
 
@@ -83,10 +85,10 @@ The picture must be real BotBound product proof from the exact production commit
 
 These generated tracks are for **marketing/reference use only**. They are not the production phone-call speech path.
 
-`npm run campaign:vo` currently renders four named tracks into the gitignored
-`official-assets/audio/` directory. The first three are active campaign
-references; the legacy Live Video output is compatibility-only and must not be
-published.
+`npm run campaign:vo` renders three campaign reference tracks into the gitignored
+`official-assets/audio/` directory. The historical Live Video output must not be
+regenerated or published. Changed copy requires a fresh audio fingerprint;
+previous exports are not current narration.
 
 ### Missed call — 15s
 
@@ -98,7 +100,7 @@ File: `wireline-missed-call-15s.mp3`
 
 File: `wireline-ai-voice-agent-30s.mp3`
 
-> Every call answered the way you trained it, and logged where you can check the work. Build free. Go live from nineteen dollars a month.
+> A Bot trained for your calls, with outcomes you can review. Build free. Plans from nineteen dollars a month. Live setup depends on availability.
 
 This narration enters late. The missed-call moment, real captured Bot audio, finished work, and end card carry the cut.
 
@@ -106,7 +108,7 @@ This narration enters late. The missed-call moment, real captured Bot audio, fin
 
 File: `wireline-founder-60s.mp3`
 
-> I built BotBound because calls are still where real work happens, and they are still too easy to miss. Every missed call is a customer deciding to try the next name on the list. So we made it simple to build a Bot of your own. Train it on your facts and rules in plain language. Let it practice in private simulation. Only then does it touch a real number. From that moment it answers your calls, sends the follow-up text or email, and logs every outcome so you can check its work. Front desk, sales, support, or any role you define. One Bot, or a team when volume proves the need. Build free. Go live from nineteen dollars a month, with a dedicated production number for every active paid Bot.
+> I built BotBound because calls are where real work happens, and they are too easy to miss. Build a Bot for your business. Train it on your facts and rules. Test it privately. When your account and number are ready, put it on the line. Connect the tools it needs to book, follow up, or hand off. Review the outcomes and improve its playbook. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.
 
 ### Retired Live Video proof — do not publish
 
@@ -123,9 +125,9 @@ retired; identity badges remain. See `docs/PRODUCT_SHOWCASE_MATRIX.md`.
 
 I built BotBound because calls are still where real work shows up, and they are still too easy to miss.
 
-Build a Bot around one useful job. Train it on your facts and rules, test it privately, then launch it when you are ready. Review the call, follow-up, and outcome in one operating loop.
+Build a Bot around one useful job. Train it on your facts and rules, test it privately, then launch it when your account and number are ready. Review the call, follow-up, and outcome in one operating loop.
 
-Build free. Go live from $19/mo at botbound.me.
+Build free at botbound.me. Plans from $19/mo. Live setup depends on availability.
 
 ### Short post
 
@@ -133,7 +135,7 @@ You cannot answer every call. Your Bot can.
 
 Build it. Train it. Launch it. Improve it from the work.
 
-Build free. Go live from $19/mo.
+Build free. Plans from $19/mo. Live setup depends on availability.
 
 ### Design-partner outreach
 
@@ -147,7 +149,7 @@ Do not spend against these concepts until the advertised workflow has passed fou
 
 - Primary text: “Every missed call is someone trying the next name on the list. Build a BotBound Bot to handle the call, continue the follow-up, and log the outcome while you stay on the job.”
 - Headline: **Your Bot Can Answer**
-- Description: **Build free. Go live from $19/mo.**
+- Description: **Build free. Plans from $19/mo. Live setup depends on availability.**
 - CTA: **Build Your Bot**
 
 ### One Product, Every Role

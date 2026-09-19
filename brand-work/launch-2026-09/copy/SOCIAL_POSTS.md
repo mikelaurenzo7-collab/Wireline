@@ -96,14 +96,14 @@ Build free at BotBound.me.
 
 ## Reel on-screen copy — 15 seconds
 
-| Time | Copy | Direction |
-| --- | --- | --- |
-| 0:00-0:02 | OF COURSE IT RANG NOW. | Let the human problem land before the logo. |
-| 0:02-0:05 | FIRST RING: YOU'RE WORKING. | Sparse type; preserve the cinematic scene. |
-| 0:05-0:08 | SECOND RING: YOUR BOT. | Violet signal transition. |
-| 0:08-0:11 | CALLS. TEXTS. EMAIL. | Show only authentic product proof if UI appears. |
-| 0:11-0:13 | THE CALL STILL GETS ANSWERED. | Do not imply guaranteed completion of configured actions. |
-| 0:13-0:15 | PUT YOUR BOT ON THE LINE. / BOTBOUND.ME | Hold for readability. |
+| Time      | Copy                                    | Direction                                                 |
+| --------- | --------------------------------------- | --------------------------------------------------------- |
+| 0:00-0:02 | OF COURSE IT RANG NOW.                  | Let the human problem land before the logo.               |
+| 0:02-0:05 | FIRST RING: YOU'RE WORKING.             | Sparse type; preserve the cinematic scene.                |
+| 0:05-0:08 | SECOND RING: YOUR BOT.                  | Violet signal transition.                                 |
+| 0:08-0:11 | CALLS. TEXTS. EMAIL.                    | Show only authentic product proof if UI appears.          |
+| 0:11-0:13 | THE CALL STILL GETS ANSWERED.           | Do not imply guaranteed completion of configured actions. |
+| 0:13-0:15 | PUT YOUR BOT ON THE LINE. / BOTBOUND.ME | Hold for readability.                                     |
 
 ## Six-second bumper
 
@@ -222,7 +222,7 @@ https://botbound.me/?utm_source=x&utm_medium=organic&utm_campaign=second_ring_la
 
 ### Preview text
 
-Build one Bot for calls, texts, and email. Start free; go live from $19/month.
+Build one Bot for calls, texts, and email. Build free. Plans from $19/month. Activation availability applies.
 
 ### Body
 

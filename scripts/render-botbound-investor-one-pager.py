@@ -61,9 +61,11 @@ def wrap(c, value, x, y, width, font="Inter", size=8.4, leading=11, color=PLATIN
             line = word
     if line:
         lines.append(line)
-    for idx, line_value in enumerate(lines[:max_lines]):
+    if len(lines) > max_lines:
+        raise ValueError(f"Investor copy exceeds its {max_lines}-line layout: {value}")
+    for idx, line_value in enumerate(lines):
         text(c, line_value, x, y - idx * leading, font, size, color)
-    return y - min(len(lines), max_lines) * leading
+    return y - len(lines) * leading
 
 
 def eyebrow(c, value, x, y):
@@ -89,7 +91,7 @@ def render():
     OUT.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(PDF_PATH), pagesize=letter)
     page_w, page_h = letter
-    c.setTitle("BotBound Investor One-Pager — September 2026")
+    c.setTitle("BotBound Investor One-Pager - September 2026")
     c.setAuthor("BotBound")
     c.setSubject("Investor and design-partner overview")
 
@@ -119,7 +121,7 @@ def render():
     text(c, "ON THE LINE.", 31, 627, "InterTightExtra", 34, VIOLET)
     wrap(
         c,
-        "The operating layer for one trained Bot across calls, texts, and email—so the work keeps moving when the human cannot stop to answer.",
+        "One trained Bot across calls, texts, and email. Keep work moving when the owner cannot stop to answer.",
         33,
         595,
         360,
@@ -177,10 +179,10 @@ def render():
     eyebrow(c, "How the line works", 31, 365)
     flow_y = 319
     flow_labels = [
-        ("CUSTOMER", "calls · texts · email"),
-        ("CHANNEL RAILS", "Twilio voice + SMS · email"),
-        ("BOTBOUND", "policy · memory · actions"),
-        ("OPENAI", "Realtime voice · intelligence"),
+        ("CUSTOMER", "calls / texts / email"),
+        ("CHANNEL RAILS", "Twilio voice + SMS / email"),
+        ("BOTBOUND", "policy / memory / actions"),
+        ("OPENAI", "Realtime voice / intelligence"),
     ]
     flow_w = 127
     flow_gap = 11
@@ -249,7 +251,7 @@ def render():
     text(c, "Investor and design-partner conversations for a controlled launch.", 102, 62, "InterBold", 9.2, BLACK_VIOLET)
     right_text(c, "support@botbound.me", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
 
-    text(c, "Product and pricing review · 2026-09-09 · Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
+    text(c, "Review: 2026-09-19. Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
     right_text(c, "PUT YOUR BOT ON THE LINE", 583, 27, "PlexBold", 5.8, LILAC)
 
     c.showPage()

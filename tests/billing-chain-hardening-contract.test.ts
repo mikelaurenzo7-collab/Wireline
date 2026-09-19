@@ -104,7 +104,7 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(billingPage).toContain("CHECKOUT_VERIFY_RETRY_DELAYS_MS");
     expect(billingPage).toContain("window.history.state");
     expect(billingCard).toContain("billingReady?: boolean");
-    expect(billingCard).toContain("if (billingReady) refresh()");
+    expect(billingCard).toMatch(/if \(billingReady\) \{\s*void refresh\(\);/);
     expect(billingCard).not.toContain("window.history.replaceState");
   });
 

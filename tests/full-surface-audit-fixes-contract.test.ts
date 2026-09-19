@@ -36,7 +36,7 @@ describe("call-log reliability truth", () => {
   it("the claimed OpenAI call row receives the session's terminal reliability outcome", () => {
     const claimIdx = handlers.indexOf("let callLogId = preclaimedCallLogId ?? null");
     const sessionIdx = handlers.indexOf(
-      "outcome = await runRealtimeSession(input, runtime, ownerFence.signal)",
+      "outcome = await runRealtimeSession(input, runtime, ownerFence.signal, accountElapsed)",
     );
     const finalizerIdx = handlers.indexOf("async function persistFinishedCall");
     const enqueueIdx = handlers.indexOf("await enqueuePostCallDigest(", finalizerIdx);

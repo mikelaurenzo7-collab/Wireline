@@ -491,7 +491,7 @@ export default function AuthAccessPanel({
         throw new Error("Authentication succeeded but user payload was missing.");
 
       if (isSignUp) {
-        await syncSignupIntent(effectiveIntent).catch(() => {});
+        void syncSignupIntent(effectiveIntent).catch(() => {});
         markFreshSignupSession();
         emitProductEventOnce({
           event: "signup_completed",

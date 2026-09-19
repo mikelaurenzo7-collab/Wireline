@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- billing and analytics provider errors remain loosely typed. */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
 import {
@@ -53,6 +53,8 @@ const PLAN_ACCENTS: Record<string, string> = {
 const CHECKOUT_RELEASE_MESSAGE =
   "New purchases are temporarily unavailable. Please try again soon.";
 
+export type CheckoutAvailability = "loading" | "available" | "paused" | "unavailable";
+
 type StripeBillingCardProps = {
   /**
    * Some account surfaces do not load the customer's actual balance. Keep the
@@ -72,12 +74,15 @@ type StripeBillingCardProps = {
    * sync and overwriting the reconciled state in this card.
    */
   billingReady?: boolean;
+  /** Share the verified checkout gate with the page's canonical balance controls. */
+  onCheckoutAvailabilityChange?: (availability: CheckoutAvailability) => void;
 };
 
 export default function StripeBillingCard({
   showBalanceTopUp = true,
   showTrustFooter = true,
   billingReady = true,
+  onCheckoutAvailabilityChange,
 }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
@@ -98,10 +103,14 @@ export default function StripeBillingCard({
     return "month";
   });
 
-  const refresh = async () => {
+  const refreshGeneration = useRef(0);
+  const refresh = useCallback(async () => {
+    const generation = ++refreshGeneration.current;
+    const isCurrent = () => generation === refreshGeneration.current;
     setLoading(true);
     setError(null);
     setSelfServeBillingReleased(false);
+    onCheckoutAvailabilityChange?.("loading");
     try {
       const [statusRaw, plansRaw] = await Promise.all([
         authFetch("/api/billing/status"),
@@ -115,15 +124,17 @@ export default function StripeBillingCard({
       if (!statusRes || !plansRes || !Array.isArray(plansRes.plans)) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
       }
+      if (!isCurrent()) return;
       const livePlans = plansRes.plans;
       const configured =
         statusRes.stripe_configured === true && plansRes.stripe_configured === true;
       setStripeConfigured(configured);
-      setSelfServeBillingReleased(
+      const checkoutAvailable =
         configured &&
-          plansRes.checkout_available === true &&
-          livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true),
-      );
+        plansRes.checkout_available === true &&
+        livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true);
+      setSelfServeBillingReleased(checkoutAvailable);
+      onCheckoutAvailabilityChange?.(checkoutAvailable ? "available" : "paused");
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
@@ -137,15 +148,27 @@ export default function StripeBillingCard({
       );
       setPlans(livePlans);
     } catch (e: any) {
+      if (!isCurrent()) return;
+      onCheckoutAvailabilityChange?.("unavailable");
       setError(e?.message || "Load failed");
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  };
+  }, [onCheckoutAvailabilityChange]);
 
   useEffect(() => {
-    if (billingReady) refresh();
-  }, [billingReady]);
+    if (billingReady) {
+      void refresh();
+    } else {
+      setLoading(true);
+      setSelfServeBillingReleased(false);
+      onCheckoutAvailabilityChange?.("loading");
+    }
+    // A checkout reconciliation, new refresh, or unmount retires earlier reads.
+    return () => {
+      refreshGeneration.current += 1;
+    };
+  }, [billingReady, refresh, onCheckoutAvailabilityChange]);
 
   const startCheckout = async (planId: string, interval: "month" | "year" = billingInterval) => {
     const hasActive =
@@ -158,7 +181,7 @@ export default function StripeBillingCard({
       interval === "year"
         ? selectedPlan?.annual_configured === true
         : selectedPlan?.configured === true;
-    if (!selfServeBillingReleased || !selectedIntervalReady) {
+    if (!billingReady || !selfServeBillingReleased || !selectedIntervalReady) {
       setError(CHECKOUT_RELEASE_MESSAGE);
       return;
     }
@@ -213,7 +236,7 @@ export default function StripeBillingCard({
   };
 
   const startCreditCheckout = async (amountUsd: number) => {
-    if (!selfServeBillingReleased) {
+    if (!billingReady || !selfServeBillingReleased) {
       setError(CHECKOUT_RELEASE_MESSAGE);
       return;
     }
@@ -258,7 +281,7 @@ export default function StripeBillingCard({
     }
   };
 
-  if (loading) {
+  if (loading || !billingReady) {
     return (
       <div className="wl-panel flex items-center gap-4 p-10">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />

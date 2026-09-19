@@ -78,7 +78,7 @@ const captures = [
     route: "/pricing",
     width: 1600,
     height: 1000,
-    expectedText: "START FREE. GO LIVE FROM $19.",
+    expectedText: "BUILD FREE. PLANS FROM $19.",
   },
   {
     name: "06-pricing-mobile-430x932",
@@ -86,7 +86,7 @@ const captures = [
     width: 430,
     height: 932,
     mobile: true,
-    expectedText: "START FREE. GO LIVE FROM $19.",
+    expectedText: "BUILD FREE. PLANS FROM $19.",
   },
   {
     name: "07-signin-desktop-1600x1000",

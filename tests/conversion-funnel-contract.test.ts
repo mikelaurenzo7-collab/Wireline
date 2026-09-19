@@ -85,7 +85,9 @@ describe("OAuth signups get the same onboarding as email signups", () => {
     expect(assignIdx).toBeGreaterThan(clearIdx);
 
     const completion = read("src/pages/OAuthComplete.tsx");
-    expect(completion).toContain("await syncSignupIntent(getStoredSignupIntent())");
+    // Optional attribution survives OAuth without delaying authenticated entry.
+    expect(completion).toContain("void syncSignupIntent(getStoredSignupIntent()).catch");
+    expect(completion).not.toContain("await syncSignupIntent(");
     expect(completion).toContain("if (data.is_new_user === true) markFreshSignupSession()");
   });
 });

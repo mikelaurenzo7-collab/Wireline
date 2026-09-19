@@ -1,10 +1,14 @@
 # BotBound Promotional Asset Audit — 2026-09-01
 
+Historical snapshot only. The counts and acceptance results below record the September 1 audit; they do not establish current deployment health, source/render parity, or permission to publish. Current source selection belongs to `CURRENT-ASSET-INDEX.md`; launch and vendor readiness belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+
+Inventory correction, 2026-09-19: the generator previously assigned release labels by campaign directory, including source documents and unverified renders. It now records file roles and review candidates, detects supported format mismatches, includes SRT captions, and explicitly leaves release approval and source currency unassessed. A regenerated inventory does not reproduce or recertify the historical approval claims below.
+
 ## Outcome
 
 All 343 promotional, identity, release, motion-source, launch-ops, and QA files in the audit inventory were inspected or classified. The machine-readable JSON and sortable CSV snapshots are certified in the Google Drive release archive and intentionally excluded from Git; `scripts/build-botbound-promotional-asset-inventory.mjs` regenerates them on demand.
 
-The current outbound release is approved for handoff. Historical, invalid, and superseded files remain preserved for provenance but are explicitly excluded from the outbound release and Google Drive upload.
+The September 1 audit recorded the outbound release as approved for handoff. That historical decision does not apply to later source edits or local renders. Historical, invalid, and superseded files remain preserved for provenance and excluded from release selection.
 
 ## Disposition
 
@@ -60,7 +64,7 @@ The public message now uses one brand promise and two concise directions:
 - **OUTBOUND — FIND. CALL. BOOK.**
 - **INBOUND — ANSWER. QUALIFY. ROUTE.**
 
-The homepage offers direct Sales Bot and Front Desk Bot creation paths with no public voice-demo control. The former Showcase route now redirects to private account creation. Sales is the first role, Front Desk is second, and the Sales solution begins with lead discovery or an approved list, then review, queue, call, qualify, book, and record.
+The homepage offers direct Sales Bot and Front Desk Bot creation paths with no public voice-demo control. Correction, 2026-09-19: `/showcase` is a public role-exploration page; voice rehearsal requires an account. Sales is the first role, Front Desk is second, and the Sales solution begins with lead discovery or an approved list, then review, queue, call, qualify, book, and record.
 
 ## Release acceptance
 

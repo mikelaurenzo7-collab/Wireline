@@ -36,7 +36,9 @@ import {
   OPENAI_OUTBOUND_SIP_TOKEN_HEADER,
   OPENAI_REALTIME_CALLS_URL,
   normalizeOpenAIPhoneNumber,
+  resolveOpenAISipSessionMaxSeconds,
 } from "../lib/voice/openai-sip-config";
+import { forwardOpenAISipWebhook } from "../lib/voice/openai-sip-worker-dispatch";
 import {
   applyInboundAdmission,
   claimOpenAISipCall,
@@ -300,254 +302,268 @@ router.post(
   "/api/webhooks/openai/realtime",
   webhookLimiter,
   asyncHandler(async (req: Request, res: ExpressResponse) => {
-    const { raw, payload } = parseBody(req);
-    const verification = verifyStandardWebhook({
-      rawBody: raw,
-      headers: {
-        webhookId: String(req.get("webhook-id") || ""),
-        webhookTimestamp: String(req.get("webhook-timestamp") || ""),
-        webhookSignature: String(req.get("webhook-signature") || ""),
-      },
-      signingSecret: String(process.env.OPENAI_WEBHOOK_SECRET || ""),
-    });
-    if (!verification.ok) {
-      log.warn("OpenAI Realtime webhook signature rejected", { reason: verification.reason });
-      throw AppError.unauthorized("Invalid OpenAI webhook signature.");
-    }
-    if (payload.type !== "realtime.call.incoming") {
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-
-    const callId = typeof payload.data?.call_id === "string" ? payload.data.call_id.trim() : "";
-    const outboundToken = sipHeader(payload, OPENAI_OUTBOUND_SIP_TOKEN_HEADER);
-    const inboundToken = sipHeader(payload, OPENAI_INBOUND_SIP_TOKEN_HEADER);
-    if (!callId || callId.length > 256 || Boolean(outboundToken) === Boolean(inboundToken)) {
-      throw AppError.badRequest("The incoming call event is missing routing information.");
-    }
-
-    const inboundVerification = inboundToken ? verifyOpenAIInboundToken(inboundToken) : null;
-    if (inboundVerification && !inboundVerification.ok) {
-      log.warn("OpenAI inbound SIP token rejected", { reason: inboundVerification.reason });
-      await rejectCall(callId, 403);
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-    const calledNumber = inboundVerification?.ok ? inboundVerification.claims.calledNumber : null;
-    const callerNumber = inboundVerification?.ok ? inboundVerification.claims.callerNumber : null;
-
-    const context = outboundToken
-      ? await resolveOutboundContext(outboundToken, callId)
-      : await resolveInboundContext(calledNumber!, callerNumber);
-    if (!context) {
-      log.warn("OpenAI incoming call rejected: no active BotBound line", {
-        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
-      });
-      await rejectCall(callId, 404);
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-
-    const environment = await liveExternalActionPolicyForUser(context.call.userId);
-    if (!environment.allowed) {
-      await rejectCall(callId, 603);
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-
-    const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
-    if (inboundVerification?.ok) {
-      sessionInput.inboundTwilioCallSid = inboundVerification.claims.twilioCallSid;
-    }
-    let runtime: Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
+    res.locals.voiceWorkerHandlerActive = true;
     try {
-      runtime = applyInboundAdmission(
-        await buildOpenAIRealtimeAgentRuntime({
-          userId: sessionInput.userId,
-          agentId: sessionInput.agentId,
-          surface: "phone",
-        }),
-        sessionInput,
-      );
-    } catch (error) {
-      await rejectCall(callId, 603);
-      throw error;
-    }
-
-    const lease = await acquireAccountOperationLease({
-      userId: sessionInput.userId,
-      kind: "provider",
-      operation: "openai_sip_call_session",
-      ttlMs: 10 * 60_000,
-    });
-    if (!lease) {
-      await rejectCall(callId, 486);
-      res.status(202).json({ received: true, handled: false });
-      return;
-    }
-
-    let callClaim: OpenAISipCallClaim | "retry" | null;
-    try {
-      callClaim = await claimOpenAISipCall(sessionInput);
-    } catch (error) {
-      await runPreSessionCleanup(sessionInput.userId, [
-        {
-          name: "account_lease_release",
-          operation: () =>
-            releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+      const { raw, payload } = parseBody(req);
+      const verification = verifyStandardWebhook({
+        rawBody: raw,
+        headers: {
+          webhookId: String(req.get("webhook-id") || ""),
+          webhookTimestamp: String(req.get("webhook-timestamp") || ""),
+          webhookSignature: String(req.get("webhook-signature") || ""),
         },
-        { name: "provider_reject", operation: () => rejectCall(callId, 603) },
-      ]);
-      throw error;
-    }
-    if (callClaim === "retry") {
-      await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
-      res.setHeader("Retry-After", "2");
-      res.status(503).json({ received: true, handled: false, retry: true });
-      return;
-    }
-    if (callClaim === null) {
-      await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
-      log.info("Duplicate OpenAI incoming-call webhook suppressed before spend or acceptance", {
-        calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
+        signingSecret: String(process.env.OPENAI_WEBHOOK_SECRET || ""),
       });
-      res.status(202).json({ received: true, handled: true, duplicate: true });
-      return;
-    }
-    const claimedCallLogId = callClaim.callLogId;
-
-    let reservation: Awaited<ReturnType<typeof reserveRealtimeSessionSpend>>;
-    try {
-      reservation = await reserveRealtimeSessionSpend(
-        req,
-        sessionInput.userId,
-        "openai_sip",
-        `openai-sip:${callId}`,
-      );
-    } catch (error) {
-      const owned = await settleOwnedPreSessionFailure({
-        call: sessionInput,
-        claim: callClaim,
-        reason: "spend_reservation_failed",
-      });
-      await runPreSessionCleanup(sessionInput.userId, [
-        {
-          name: "account_lease_release",
-          operation: () =>
-            releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
-        },
-        ...(owned ? [{ name: "provider_reject", operation: () => rejectCall(callId, 603) }] : []),
-      ]);
-      if (error instanceof AppError && (error.status === 402 || error.status === 503)) {
-        log.warn("OpenAI incoming call rejected: spend reservation failed", {
-          code: error.code,
-        });
+      if (!verification.ok) {
+        log.warn("OpenAI Realtime webhook signature rejected", { reason: verification.reason });
+        throw AppError.unauthorized("Invalid OpenAI webhook signature.");
+      }
+      if (payload.type !== "realtime.call.incoming") {
         res.status(202).json({ received: true, handled: false });
         return;
       }
-      throw error;
-    }
 
-    try {
-      await acceptCall(callId, runtime.session as Record<string, unknown>);
-    } catch (error) {
-      const ambiguous = shouldRetainRealtimeReservation(error);
-      let owned = false;
-      if (ambiguous) {
-        try {
-          await releaseOpenAISipClaimForRetry({ call: sessionInput, claim: callClaim });
-          owned = true;
-        } catch (releaseError) {
-          log.error("OpenAI SIP ambiguous accept could not release its claim for retry", {
+      if (await forwardOpenAISipWebhook(req, res, raw)) return;
+
+      const callId = typeof payload.data?.call_id === "string" ? payload.data.call_id.trim() : "";
+      const outboundToken = sipHeader(payload, OPENAI_OUTBOUND_SIP_TOKEN_HEADER);
+      const inboundToken = sipHeader(payload, OPENAI_INBOUND_SIP_TOKEN_HEADER);
+      if (!callId || callId.length > 256 || Boolean(outboundToken) === Boolean(inboundToken)) {
+        throw AppError.badRequest("The incoming call event is missing routing information.");
+      }
+
+      const inboundVerification = inboundToken ? verifyOpenAIInboundToken(inboundToken) : null;
+      if (inboundVerification && !inboundVerification.ok) {
+        log.warn("OpenAI inbound SIP token rejected", { reason: inboundVerification.reason });
+        await rejectCall(callId, 403);
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
+      const calledNumber = inboundVerification?.ok ? inboundVerification.claims.calledNumber : null;
+      const callerNumber = inboundVerification?.ok ? inboundVerification.claims.callerNumber : null;
+
+      const context = outboundToken
+        ? await resolveOutboundContext(outboundToken, callId)
+        : await resolveInboundContext(calledNumber!, callerNumber);
+      if (!context) {
+        log.warn("OpenAI incoming call rejected: no active BotBound line", {
+          calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
+        });
+        await rejectCall(callId, 404);
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
+
+      const environment = await liveExternalActionPolicyForUser(context.call.userId);
+      if (!environment.allowed) {
+        await rejectCall(callId, 603);
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
+
+      const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
+      if (inboundVerification?.ok) {
+        sessionInput.inboundTwilioCallSid = inboundVerification.claims.twilioCallSid;
+      }
+      let runtime: Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
+      try {
+        runtime = applyInboundAdmission(
+          await buildOpenAIRealtimeAgentRuntime({
             userId: sessionInput.userId,
-            errorClass: releaseError instanceof Error ? releaseError.name : typeof releaseError,
-          });
-        }
-      } else {
-        owned = await settleOwnedPreSessionFailure({
+            agentId: sessionInput.agentId,
+            surface: "phone",
+          }),
+          sessionInput,
+        );
+      } catch (error) {
+        await rejectCall(callId, 603);
+        throw error;
+      }
+
+      const lease = await acquireAccountOperationLease({
+        userId: sessionInput.userId,
+        kind: "provider",
+        operation: "openai_sip_call_session",
+        ttlMs: (resolveOpenAISipSessionMaxSeconds() + 5 * 60) * 1_000,
+      });
+      if (!lease) {
+        await rejectCall(callId, 486);
+        res.status(202).json({ received: true, handled: false });
+        return;
+      }
+
+      let callClaim: OpenAISipCallClaim | "retry" | null;
+      try {
+        callClaim = await claimOpenAISipCall(sessionInput);
+      } catch (error) {
+        await runPreSessionCleanup(sessionInput.userId, [
+          {
+            name: "account_lease_release",
+            operation: () =>
+              releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          },
+          { name: "provider_reject", operation: () => rejectCall(callId, 603) },
+        ]);
+        throw error;
+      }
+      if (callClaim === "retry") {
+        await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+        res.setHeader("Retry-After", "2");
+        res.status(503).json({ received: true, handled: false, retry: true });
+        return;
+      }
+      if (callClaim === null) {
+        await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+        log.info("Duplicate OpenAI incoming-call webhook suppressed before spend or acceptance", {
+          calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
+        });
+        res.status(202).json({ received: true, handled: true, duplicate: true });
+        return;
+      }
+      const claimedCallLogId = callClaim.callLogId;
+
+      let reservation: Awaited<ReturnType<typeof reserveRealtimeSessionSpend>>;
+      try {
+        reservation = await reserveRealtimeSessionSpend(
+          req,
+          sessionInput.userId,
+          "openai_sip",
+          `openai-sip:${callId}`,
+        );
+      } catch (error) {
+        const owned = await settleOwnedPreSessionFailure({
           call: sessionInput,
           claim: callClaim,
-          reason: "provider_accept_failed",
+          reason: "spend_reservation_failed",
         });
+        await runPreSessionCleanup(sessionInput.userId, [
+          {
+            name: "account_lease_release",
+            operation: () =>
+              releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          },
+          ...(owned ? [{ name: "provider_reject", operation: () => rejectCall(callId, 603) }] : []),
+        ]);
+        if (error instanceof AppError && (error.status === 402 || error.status === 503)) {
+          log.warn("OpenAI incoming call rejected: spend reservation failed", {
+            code: error.code,
+          });
+          res.status(202).json({ received: true, handled: false });
+          return;
+        }
+        throw error;
       }
-      await runPreSessionCleanup(sessionInput.userId, [
-        {
-          name: "account_lease_release",
-          operation: () =>
-            releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
-        },
-        ...(owned
-          ? [
-              {
-                name: "spend_reservation_release",
-                operation: () => releaseRealtimeSessionSpendAfterFailure(req, reservation, error),
-              },
-            ]
-          : []),
-        ...(!ambiguous && owned
-          ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }]
-          : []),
-      ]);
-      throw error;
-    }
-    try {
-      await commitRealtimeSessionSpend(reservation);
-    } catch (error) {
-      const owned = await settleOwnedPreSessionFailure({
-        call: sessionInput,
-        claim: callClaim,
-        reason: "spend_commit_failed",
-      });
-      await runPreSessionCleanup(sessionInput.userId, [
-        {
-          name: "account_lease_release",
-          operation: () =>
-            releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
-        },
-        ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
-      ]);
-      throw error;
-    }
 
-    // Register the durable runtime with Vercel before advancing the claim to
-    // running, but hold all session/provider work behind this startup gate.
-    // This closes the freeze/crash window between the durable transition and
-    // waitUntil ownership without letting a worker run on an unconfirmed claim.
-    let releaseSessionStartup!: (start: boolean) => void;
-    const sessionStartup = new Promise<boolean>((resolve) => {
-      releaseSessionStartup = resolve;
-    });
-    runInBackground("openai-sip-call-session", async () => {
-      const shouldStart = await sessionStartup;
-      if (!shouldStart) return;
       try {
-        await runOpenAISipCallSession(sessionInput, runtime, claimedCallLogId, callClaim);
-      } finally {
-        await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+        await acceptCall(callId, runtime.session as Record<string, unknown>);
+      } catch (error) {
+        const ambiguous = shouldRetainRealtimeReservation(error);
+        let owned = false;
+        if (ambiguous) {
+          try {
+            await releaseOpenAISipClaimForRetry({ call: sessionInput, claim: callClaim });
+            owned = true;
+          } catch (releaseError) {
+            log.error("OpenAI SIP ambiguous accept could not release its claim for retry", {
+              userId: sessionInput.userId,
+              errorClass: releaseError instanceof Error ? releaseError.name : typeof releaseError,
+            });
+          }
+        } else {
+          owned = await settleOwnedPreSessionFailure({
+            call: sessionInput,
+            claim: callClaim,
+            reason: "provider_accept_failed",
+          });
+        }
+        await runPreSessionCleanup(sessionInput.userId, [
+          {
+            name: "account_lease_release",
+            operation: () =>
+              releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          },
+          ...(owned
+            ? [
+                {
+                  name: "spend_reservation_release",
+                  operation: () => releaseRealtimeSessionSpendAfterFailure(req, reservation, error),
+                },
+              ]
+            : []),
+          ...(!ambiguous && owned
+            ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }]
+            : []),
+        ]);
+        throw error;
       }
-    });
+      try {
+        await commitRealtimeSessionSpend(reservation);
+      } catch (error) {
+        const owned = await settleOwnedPreSessionFailure({
+          call: sessionInput,
+          claim: callClaim,
+          reason: "spend_commit_failed",
+        });
+        await runPreSessionCleanup(sessionInput.userId, [
+          {
+            name: "account_lease_release",
+            operation: () =>
+              releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          },
+          ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
+        ]);
+        throw error;
+      }
 
-    try {
-      await markOpenAISipCallRunning({ call: sessionInput, claim: callClaim });
-    } catch (error) {
-      releaseSessionStartup(false);
-      const owned = await settleOwnedPreSessionFailure({
-        call: sessionInput,
-        claim: callClaim,
-        reason: "session_start_failed",
+      // Register the durable runtime with Vercel before advancing the claim to
+      // running, but hold all session/provider work behind this startup gate.
+      // This closes the freeze/crash window between the durable transition and
+      // waitUntil ownership without letting a worker run on an unconfirmed claim.
+      let releaseSessionStartup!: (start: boolean) => void;
+      const sessionStartup = new Promise<boolean>((resolve) => {
+        releaseSessionStartup = resolve;
       });
-      await runPreSessionCleanup(sessionInput.userId, [
-        {
-          name: "account_lease_release",
-          operation: () =>
-            releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
-        },
-        ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
-      ]);
-      throw error;
+      runInBackground("openai-sip-call-session", async () => {
+        const shouldStart = await sessionStartup;
+        if (!shouldStart) return;
+        try {
+          await runOpenAISipCallSession(
+            sessionInput,
+            runtime,
+            claimedCallLogId,
+            callClaim,
+            reservation,
+          );
+        } finally {
+          await releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId });
+        }
+      });
+
+      try {
+        await markOpenAISipCallRunning({ call: sessionInput, claim: callClaim });
+      } catch (error) {
+        releaseSessionStartup(false);
+        const owned = await settleOwnedPreSessionFailure({
+          call: sessionInput,
+          claim: callClaim,
+          reason: "session_start_failed",
+        });
+        await runPreSessionCleanup(sessionInput.userId, [
+          {
+            name: "account_lease_release",
+            operation: () =>
+              releaseAccountOperationLease({ id: lease.id, userId: sessionInput.userId }),
+          },
+          ...(owned ? [{ name: "provider_hangup", operation: () => hangupCall(callId) }] : []),
+        ]);
+        throw error;
+      }
+      releaseSessionStartup(true);
+      res.status(202).json({ received: true, handled: true });
+    } finally {
+      res.locals.voiceWorkerHandlerActive = false;
+      res.locals.voiceWorkerAdmissionRelease?.();
     }
-    releaseSessionStartup(true);
-    res.status(202).json({ received: true, handled: true });
   }),
 );
 

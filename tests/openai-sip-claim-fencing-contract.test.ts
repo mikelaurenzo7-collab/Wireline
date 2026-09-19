@@ -53,7 +53,9 @@ describe("OpenAI SIP durable ownership fencing", () => {
     expect(source).toContain("if (!ownsSession()) break");
     expect(source).toContain("if (liveSipSessions.get(input.callId) === sessionHandle)");
     expect(source).toContain("eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken)");
-    expect(source).toContain("ownerFence.signal.aborted && terminalPersistedByOwner");
+    expect(source).toMatch(
+      /if\s*\(\s*ownerFence\.signal\.aborted\s*&&\s*terminalPersistedByOwner\s*&&\s*outcome\.endedReason !== "transferred"\s*\)\s*\{\s*await hangupOpenAISipCall\(input\.callId\)/,
+    );
   });
 
   it("settles pre-session recovery jobs with the queue's canonical terminal state", () => {

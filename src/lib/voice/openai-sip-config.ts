@@ -1,9 +1,13 @@
 import { getCanonicalAppUrl } from "../app-url";
+import { isPersistentVoiceWorkerConfigured } from "./openai-sip-worker-config";
 
 export const OPENAI_REALTIME_CALLS_URL = "https://api.openai.com/v1/realtime/calls";
 export const OPENAI_REALTIME_SIDEBAND_URL = "wss://api.openai.com/v1/realtime";
 export const OPENAI_SIP_WEBHOOK_PATH = "/api/webhooks/openai/realtime";
-export const OPENAI_SIP_DEFAULT_MAX_SECONDS = 300 as const;
+// OpenAI Realtime sessions support at most 60 minutes. The persistent voice
+// worker, never a Vercel request, owns production SIP sessions for this horizon.
+export const OPENAI_SIP_DEFAULT_MAX_SECONDS = 3_600 as const;
+export const OPENAI_SIP_PROVIDER_MAX_SECONDS = 3_600 as const;
 export const OPENAI_OUTBOUND_SIP_TOKEN_HEADER = "X-BotBound-Token" as const;
 export const OPENAI_INBOUND_SIP_TOKEN_HEADER = "X-BB-Inbound" as const;
 
@@ -22,9 +26,10 @@ export function normalizeOpenAIPhoneNumber(value: unknown): string | null {
 }
 
 export function resolveOpenAISipSessionMaxSeconds(env: NodeJS.ProcessEnv = process.env): number {
-  const raw = Number(env.OPENAI_SIP_MAX_CALL_SECONDS);
-  if (!Number.isFinite(raw)) return OPENAI_SIP_DEFAULT_MAX_SECONDS;
-  return Math.max(30, Math.min(300, Math.floor(raw)));
+  const configured = env.OPENAI_SIP_MAX_CALL_SECONDS?.trim();
+  const raw = configured ? Number(configured) : NaN;
+  if (!Number.isFinite(raw) || raw <= 0) return OPENAI_SIP_DEFAULT_MAX_SECONDS;
+  return Math.max(30, Math.min(OPENAI_SIP_PROVIDER_MAX_SECONDS, Math.floor(raw)));
 }
 
 export function buildOpenAISipRealtimeUrl(callId: string): string {
@@ -126,6 +131,7 @@ export function openAISipConfigured(env: NodeJS.ProcessEnv = process.env): boole
   return Boolean(
     String(env.OPENAI_API_KEY || "").trim() &&
     /^proj_[A-Za-z0-9_-]{8,}$/.test(String(env.OPENAI_PROJECT_ID || "").trim()) &&
-    String(env.OPENAI_WEBHOOK_SECRET || "").trim(),
+    String(env.OPENAI_WEBHOOK_SECRET || "").trim() &&
+    isPersistentVoiceWorkerConfigured(env),
   );
 }

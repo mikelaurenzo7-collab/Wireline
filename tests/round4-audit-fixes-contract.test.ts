@@ -116,8 +116,8 @@ describe("round-4 audit fix contracts", () => {
     const config = read("src/lib/voice/openai-sip-config.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
     expect(factory).not.toContain("latency.silenceTimeoutSeconds");
-    expect(config).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 300");
-    expect(config).toContain("Math.max(30, Math.min(300");
+    expect(config).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 3_600");
+    expect(config).toContain("Math.max(30, Math.min(OPENAI_SIP_PROVIDER_MAX_SECONDS");
     expect(session).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
   });
 
@@ -156,7 +156,7 @@ describe("round-4 audit fix contracts", () => {
     expect(publicRoutes).not.toMatch(
       /createServerManagedOpenAIRealtimeCall|createPublicOpenAILiveDemoCall|reserveRealtimeSessionSpend/,
     );
-    expect(sipConfig).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 300");
+    expect(sipConfig).toContain("OPENAI_SIP_DEFAULT_MAX_SECONDS = 3_600");
     expect(sipSession).toContain("resolveOpenAISipSessionMaxSeconds() * 1_000");
     expect(inbound).toContain('timeLimit="${resolveOpenAISipSessionMaxSeconds()}"');
   });

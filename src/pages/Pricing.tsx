@@ -131,11 +131,11 @@ const FAQ = [
   ],
   [
     "What happens when included voice minutes run out?",
-    `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. An active call is never cut off; only the next new action pauses until coverage is restored.`,
+    `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. Balance depletion does not cut off an active call; the session duration limit still applies. New live actions pause when coverage is exhausted.`,
   ],
   [
     "How long can a call last?",
-    "Calls run as long as the conversation needs. Included minutes and prepaid Runtime Balance cover usage; running out of balance does not end an active call.",
+    "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser tests and message-taking flows have a 5-minute maximum. Reaching a session limit ends the call; running out of balance during a live call does not.",
   ],
   [
     "Why keep live usage prepaid?",

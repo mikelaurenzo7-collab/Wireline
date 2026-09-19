@@ -55,7 +55,7 @@ export type SignupIntent = {
 export type SignupWedgeRecommendation = {
   label: string;
   defaultPlanId: SignupPlanId;
-  templateId: string;
+  templateId: (typeof BOT_ROLE_TEMPLATES)[number]["key"];
   templateLabel: string;
 };
 
@@ -63,58 +63,58 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   "home-services": {
     label: "home services",
     defaultPlanId: "team",
-    templateId: "lead-qualifier-inbound",
-    templateLabel: "Inbound Lead Qualifier",
+    templateId: "lead-qualifier",
+    templateLabel: "Lead Qualifier",
   },
   medical: {
     label: "medical",
     defaultPlanId: "business",
-    templateId: "scheduler-medical",
-    templateLabel: "Medical Office Scheduler",
+    templateId: "appointment-setter",
+    templateLabel: "Appointment Setter",
   },
   legal: {
     label: "legal",
     defaultPlanId: "business",
-    templateId: "lead-qualifier-inbound",
-    templateLabel: "Inbound Lead Qualifier",
+    templateId: "lead-qualifier",
+    templateLabel: "Lead Qualifier",
   },
   "real-estate": {
     label: "real estate",
     defaultPlanId: "team",
-    templateId: "scheduler-realestate",
-    templateLabel: "Real Estate Tour Booker",
+    templateId: "appointment-setter",
+    templateLabel: "Appointment Setter",
   },
   personal: {
     label: "personal",
     defaultPlanId: "personal",
-    templateId: "personal-concierge",
-    templateLabel: "Personal Concierge",
+    templateId: "personal-assistant",
+    templateLabel: "Personal Assistant",
   },
   insurance: {
     label: "insurance",
     defaultPlanId: "business",
-    templateId: "lead-qualifier-inbound",
-    templateLabel: "Inbound Lead Qualifier",
+    templateId: "lead-qualifier",
+    templateLabel: "Lead Qualifier",
   },
   restaurants: {
     label: "restaurants",
     defaultPlanId: "team",
-    templateId: "ecommerce-phone-order",
-    templateLabel: "Phone Order Bot",
+    templateId: "front-desk",
+    templateLabel: "Front Desk",
   },
   sales: {
     label: "sales",
     defaultPlanId: "business",
-    templateId: "sales-sdr",
-    templateLabel: "SDR, Outbound Prospecting",
+    templateId: "sales-rep",
+    templateLabel: "Sales Rep",
   },
   support: {
     label: "customer coverage",
     // One-Bot front desk — Starter ($19), not Pro. Wedge-only CTAs
     // omit ?plan= so billing does not pretune a mismatched badge.
     defaultPlanId: "starter",
-    templateId: "support-tier1",
-    templateLabel: "Tier-1 Phone Support",
+    templateId: "front-desk",
+    templateLabel: "Front Desk",
   },
 };
 
@@ -343,16 +343,25 @@ export function signupHrefForWedge(wedge: SignupWedgeKey, planId?: SignupPlanId)
   return `/signup?wedge=${encodeURIComponent(wedge)}&plan=${encodeURIComponent(publicSignupPlanSlug(plan))}`;
 }
 
+export const SIGNUP_INTENT_SYNC_TIMEOUT_MS = 5_000;
+
+/** Attribution is best effort and must never hold account access open indefinitely. */
 export async function syncSignupIntent(intent: SignupIntent | null): Promise<void> {
   if (!hasSignupIntent(intent)) return;
-  const response = await fetch("/api/auth/signup-intent", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(intent),
-  });
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    console.error("signup intent sync failed", response.status, body.slice(0, 240));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SIGNUP_INTENT_SYNC_TIMEOUT_MS);
+  try {
+    const response = await fetch("/api/auth/signup-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(intent),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error("signup intent sync failed", response.status);
+    }
+  } finally {
+    clearTimeout(timeout);
   }
 }

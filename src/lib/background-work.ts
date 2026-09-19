@@ -26,6 +26,17 @@ function vercelWaitUntil(promise: Promise<unknown>): boolean {
   return true;
 }
 
+const activeBackgroundWork = new Set<Promise<unknown>>();
+
+export function activeBackgroundWorkCount(): number {
+  return activeBackgroundWork.size;
+}
+
+/** Call only after admission has stopped; includes work spawned by a draining call. */
+export async function drainBackgroundWork(): Promise<void> {
+  while (activeBackgroundWork.size) await Promise.allSettled([...activeBackgroundWork]);
+}
+
 export function runInBackground(label: string, work: () => Promise<unknown>): void {
   const promise = work().catch((error: unknown) => {
     // Post-response work has no error middleware behind it — this catch IS
@@ -37,5 +48,7 @@ export function runInBackground(label: string, work: () => Promise<unknown>): vo
     });
     reportError(error, { tags: { surface: "background", label } });
   });
+  activeBackgroundWork.add(promise);
+  void promise.then(() => activeBackgroundWork.delete(promise));
   vercelWaitUntil(promise);
 }

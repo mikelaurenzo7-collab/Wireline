@@ -12,6 +12,7 @@ const harness = vi.hoisted(() => ({
   fetch: vi.fn(),
   navigate: vi.fn(),
   signIn: vi.fn(),
+  syncIntent: vi.fn(),
 }));
 
 // Exercise the real component handlers with persistent hook state, without a
@@ -66,7 +67,7 @@ vi.mock("../src/lib/signup-intent", () => ({
   persistSignupIntent: (intent: unknown) => intent,
   sanitizeSignupIntent: (intent: unknown) => intent,
   signupTemplateLabel: () => "",
-  syncSignupIntent: vi.fn(),
+  syncSignupIntent: harness.syncIntent,
 }));
 vi.mock("../src/lib/plan-catalog", () => ({ STRIPE_PLANS: [] }));
 vi.mock("../src/lib/demo-attribution-client", () => ({
@@ -171,6 +172,7 @@ async function mount() {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
+  harness.syncIntent.mockReset().mockResolvedValue(undefined);
   harness.states = [];
   harness.refs = [];
   harness.effects = [];
@@ -201,6 +203,28 @@ describe("account access pending requests", () => {
     expect(actionRequests()).toHaveLength(1);
   });
 
+  it("enters the workspace while optional attribution remains pending", async () => {
+    await mount();
+    await control("Create Account").props.onClick?.();
+    find((element) => element.props.name === "termsAccepted").props.onChange?.({
+      target: { value: "", checked: true },
+    });
+    let finishSync!: () => void;
+    const attribution = new Promise<void>((resolve) => {
+      finishSync = resolve;
+    });
+    harness.syncIntent.mockReturnValueOnce(attribution);
+    const user = { id: "new-account", email: "qa@example.test" };
+    harness.fetch.mockResolvedValueOnce(response({ user }));
+    const submitting = form()();
+    try {
+      await vi.waitFor(() => expect(harness.signIn).toHaveBeenCalledWith({ user }));
+      expect(harness.syncIntent).toHaveBeenCalledOnce();
+    } finally {
+      finishSync();
+      await submitting;
+    }
+  });
   it("keeps consent fixed while an agreed signup is pending", async () => {
     await mount();
     await control("Create Account").props.onClick?.();

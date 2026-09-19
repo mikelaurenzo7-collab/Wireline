@@ -80,7 +80,7 @@ export default function OAuthComplete() {
           setError("Sign-in response was incomplete. Please try again.");
           return;
         }
-        await syncSignupIntent(getStoredSignupIntent()).catch(() => {});
+        void syncSignupIntent(getStoredSignupIntent()).catch(() => {});
         if (data.is_new_user === true) markFreshSignupSession();
         signIn({ user });
         navigate(resolvePostAuthDestination(readStoredWorkspaceMode(), ""), {

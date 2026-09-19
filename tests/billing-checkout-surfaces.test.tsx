@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   effects: [] as Array<() => unknown>,
   listener: undefined as undefined | ((event: { detail: { code: string } }) => void),
   fetch: vi.fn(),
+  checkoutAvailability: vi.fn(),
   subscription: null as Record<string, unknown> | null,
   catalog: {} as Record<string, unknown>,
 }));
@@ -27,6 +28,7 @@ vi.mock("react", async (original) => ({
     ];
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
+  useCallback: (callback: unknown) => callback,
   useEffect: (effect: () => unknown) => h.effects.push(effect),
 }));
 vi.mock("react-router", () => ({ Link: "a" }));
@@ -65,11 +67,15 @@ function text(node: ReactNode): string {
   if (isValidElement<Props>(node)) return text(node.props.children);
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
-function render(surface: Surface) {
+function render(surface: Surface, cardProps: Parameters<typeof StripeBillingCard>[0] = {}) {
   h.stateCursor = 0;
   h.refCursor = 0;
   h.effects = [];
-  return descendants(surface === "card" ? StripeBillingCard() : TrialGateModal());
+  return descendants(
+    surface === "card"
+      ? StripeBillingCard({ onCheckoutAvailabilityChange: h.checkoutAvailability, ...cardProps })
+      : TrialGateModal(),
+  );
 }
 function button(surface: Surface, label: string) {
   const found = render(surface).find(
@@ -102,6 +108,7 @@ beforeEach(() => {
   h.subscription = null;
   h.catalog = { stripe_configured: true, checkout_available: true, plans: [paidPlan()] };
   h.fetch.mockReset();
+  h.checkoutAvailability.mockReset();
   h.fetch.mockImplementation(async (path: string) => ({
     ok: true,
     status: 200,
@@ -158,12 +165,19 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
       expect(control.props.disabled).toBe(true);
       await control.props.onClick?.();
       expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+      if (surface === "card") {
+        expect(h.checkoutAvailability.mock.calls.map(([state]) => state)).toEqual([
+          "loading",
+          "paused",
+        ]);
+      }
     },
   );
   it("opens a configured monthly plan only when the server gate is open", async () => {
     await mount(surface);
     const control = button(surface, surface === "card" ? "Subscribe" : "Pick Starter");
     expect(control.props.disabled).toBe(false);
+    if (surface === "card") expect(h.checkoutAvailability).toHaveBeenLastCalledWith("available");
     await control.props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
@@ -182,6 +196,29 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
   });
 });
 
+it.each(["http", "network", "malformed"])(
+  "reports unavailable checkout after a %s catalog failure",
+  async (failure) => {
+    const usualFetch = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string) => {
+      if (path !== "/api/billing/plans") return usualFetch(path);
+      if (failure === "network") return Promise.reject(new Error("offline"));
+      return Promise.resolve({
+        ok: failure !== "http",
+        status: 503,
+        json: async () => ({ plans: null }),
+      });
+    });
+    render("card");
+    h.effects[0]();
+    expect(h.checkoutAvailability).toHaveBeenLastCalledWith("loading");
+    await vi.waitFor(() => expect(h.checkoutAvailability).toHaveBeenLastCalledWith("unavailable"));
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/conversation-balance/checkout")).toBe(
+      false,
+    );
+  },
+);
+
 it("keeps existing subscription management available while new purchases are paused", async () => {
   h.catalog.checkout_available = false;
   h.subscription = {
@@ -199,3 +236,84 @@ it("keeps existing subscription management available while new purchases are pau
   await portal.props.onClick?.();
   expect(h.fetch).toHaveBeenCalledWith("/api/billing/portal", { method: "POST" });
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
+
+it.each(["success", "failure"] as const)(
+  "ignores an older billing %s after a newer refresh has closed checkout",
+  async (outcome) => {
+    const oldStatus = deferred<unknown>();
+    const usualFetch = h.fetch.getMockImplementation()!;
+    const oldCatalog = { ...h.catalog };
+    let reads = 0;
+    h.fetch.mockImplementation((path: string) => {
+      reads += 1;
+      if (reads === 1) return oldStatus.promise;
+      if (reads === 2) return Promise.resolve({ ok: true, json: async () => oldCatalog });
+      return usualFetch(path);
+    });
+
+    render("card");
+    const retireOldRead = h.effects[0]() as () => void;
+    retireOldRead();
+    render("card", { billingReady: false });
+    const finishReconciliation = h.effects[0]() as () => void;
+    h.catalog.checkout_available = false;
+    finishReconciliation();
+    render("card", { billingReady: true });
+    h.effects[0]();
+    await vi.waitFor(() => expect(h.checkoutAvailability).toHaveBeenLastCalledWith("paused"));
+    const reportedBeforeOldRead = h.checkoutAvailability.mock.calls.length;
+
+    if (outcome === "success") {
+      oldStatus.resolve({
+        ok: true,
+        json: async () => ({ stripe_configured: true, subscription: null, agent_count: 1 }),
+      });
+    } else {
+      oldStatus.reject(new Error("An obsolete request failed"));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(h.checkoutAvailability.mock.calls).toHaveLength(reportedBeforeOldRead);
+    expect(button("card", "Checkout paused").props.disabled).toBe(true);
+    expect(render("card").some((element) => text(element).includes("obsolete"))).toBe(false);
+  },
+);
+
+it.each(["reconciliation", "unmount"] as const)(
+  "retires in-flight billing reads when %s begins",
+  async (transition) => {
+    const catalog = deferred<unknown>();
+    const usualFetch = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string) =>
+      path === "/api/billing/plans" ? catalog.promise : usualFetch(path),
+    );
+    render("card");
+    const cleanup = h.effects[0]() as () => void;
+    cleanup();
+    if (transition === "reconciliation") {
+      render("card", { billingReady: false });
+      h.effects[0]();
+    }
+    const reportsBeforeCompletion = h.checkoutAvailability.mock.calls.length;
+    catalog.resolve({ ok: true, json: async () => h.catalog });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(h.checkoutAvailability.mock.calls).toHaveLength(reportsBeforeCompletion);
+    expect(h.checkoutAvailability).toHaveBeenLastCalledWith("loading");
+    if (transition === "reconciliation") {
+      const controls = render("card", { billingReady: false });
+      expect(controls.some((element) => text(element).includes("Loading your plan"))).toBe(true);
+      expect(controls.some((element) => element.type === "button")).toBe(false);
+    }
+  },
+);

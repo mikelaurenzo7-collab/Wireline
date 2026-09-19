@@ -23,7 +23,10 @@ describe("durable post-call customer follow-up", () => {
     const claimTransaction = source.indexOf("return drizzle.transaction(async (tx)", claim);
     const recoveryEnqueue = source.indexOf("await enqueuePostCallDigest(", claimTransaction);
     const finalizer = source.indexOf("async function persistFinishedCall");
-    const transaction = source.indexOf("await drizzle.transaction(async (tx)", finalizer);
+    const transaction = source.indexOf(
+      "await withOpenAISipControlLock(input.call.userId, input.call.callId, async (tx)",
+      finalizer,
+    );
     const terminalUpdate = source.indexOf(".update(schema.callLogs)", transaction);
     const durableEnqueue = source.indexOf("await enqueuePostCallDigest(", terminalUpdate);
     const metering = source.indexOf('runFinalizerStep("voice_usage"', durableEnqueue);
@@ -33,6 +36,25 @@ describe("durable post-call customer follow-up", () => {
     expect(recoveryEnqueue).toBeGreaterThan(claimTransaction);
     expect(recoveryEnqueue).toBeLessThan(finalizer);
     expect(transaction).toBeGreaterThan(finalizer);
+    // The transfer race tests exercise immediate sideband close and remote
+    // control. This structural check also protects atomic queue persistence:
+    // the helper must own one real transaction and pass that same tx through.
+    const controlHelper = source.slice(
+      source.indexOf("async function withOpenAISipControlLock"),
+      source.indexOf("async function lockOpenAISipControl"),
+    );
+    expect(controlHelper).toMatch(
+      /return await drizzle\.transaction\(async \(tx\) => \{\s*await lockOpenAISipControl\(tx, userId, callId\);\s*return operation\(tx\);/,
+    );
+    const terminalWork = source.slice(transaction, metering);
+    expect(terminalWork).toMatch(/await tx\s*\.update\(schema\.callLogs\)/);
+    expect(terminalWork).toContain("eq(schema.callLogs.userId, input.call.userId)");
+    expect(terminalWork).toContain(
+      "eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken)",
+    );
+    expect(terminalWork).toMatch(
+      /await enqueuePostCallDigest\([\s\S]*?\},\s*tx,\s*\{ runAt: new Date\(\), refreshPending: true \}/,
+    );
     expect(terminalUpdate).toBeGreaterThan(transaction);
     expect(durableEnqueue).toBeGreaterThan(terminalUpdate);
     expect(metering).toBeGreaterThan(durableEnqueue);

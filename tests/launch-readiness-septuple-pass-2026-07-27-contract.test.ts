@@ -59,7 +59,10 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
       "Couldn't refresh phone lines. Retry before provisioning another number.",
     );
     expect(wizard).toContain("const refreshed = await refreshPhone()");
-    expect(wizard).toContain("if (refreshed.ok) finish(refreshed.phoneNumber)");
+    // Inventory success also needs confirmed routing before launch can finish.
+    expect(wizard).toContain("if (!refreshed.ok || !refreshed.active) return;");
+    expect(wizard).toContain("finish(refreshed.phoneNumber)");
+    expect(wizard).toContain("disabled={provisioning || refreshingPhone || phoneLookupFailed}");
   });
 
   it("keeps Call Logs and Cadences usable when secondary fetches fail", () => {

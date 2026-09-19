@@ -107,13 +107,31 @@ describe("durable enqueue failure contract", () => {
   it("does not acknowledge OpenAI SIP finalization before durable follow-up enqueue", () => {
     const session = read("src/lib/voice/openai-sip-session.ts");
     const persist = session.indexOf("async function persistFinishedCall");
-    const transaction = session.indexOf("await drizzle.transaction(async (tx)", persist);
+    const transaction = session.indexOf(
+      "await withOpenAISipControlLock(input.call.userId, input.call.callId, async (tx)",
+      persist,
+    );
     const terminalUpdate = session.indexOf(".update(schema.callLogs)", transaction);
     const enqueue = session.indexOf("await enqueuePostCallDigest(", terminalUpdate);
     const inlineFinalization = session.indexOf('runFinalizerStep("ai_disclosure"', enqueue);
     const awaitPersist = session.indexOf("await persistFinishedCall({", inlineFinalization);
     expect(persist).toBeGreaterThan(-1);
     expect(transaction).toBeGreaterThan(persist);
+    const controlHelper = session.slice(
+      session.indexOf("async function withOpenAISipControlLock"),
+      session.indexOf("async function lockOpenAISipControl"),
+    );
+    expect(controlHelper).toMatch(
+      /return await drizzle\.transaction\(async \(tx\) => \{\s*await lockOpenAISipControl\(tx, userId, callId\);\s*return operation\(tx\);/,
+    );
+    const terminalWork = session.slice(transaction, inlineFinalization);
+    expect(terminalWork).toMatch(/await tx\s*\.update\(schema\.callLogs\)/);
+    expect(terminalWork).toMatch(
+      /await enqueuePostCallDigest\([\s\S]*?\},\s*tx,\s*\{ runAt: new Date\(\), refreshPending: true \}/,
+    );
+    expect(terminalWork).toContain(
+      'if (!updated) throw new Error("OpenAI SIP terminal call row could not be persisted.")',
+    );
     expect(terminalUpdate).toBeGreaterThan(transaction);
     expect(enqueue).toBeGreaterThan(terminalUpdate);
     expect(inlineFinalization).toBeGreaterThan(enqueue);

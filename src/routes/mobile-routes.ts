@@ -1123,6 +1123,7 @@ router.post(
           error: "This call does not have an active OpenAI transfer session.",
         });
       }
+      // REFER persists its successful transfer signal for the remote worker.
       await referOpenAISipCall(req.user.id, providerCallId, destination);
       notifyOpenAISipCallTransferred(providerCallId);
       res.json({ success: true });

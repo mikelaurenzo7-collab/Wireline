@@ -13,12 +13,12 @@ No alternate voice provider or automatic model fallback is permitted.
 
 ## Transport map
 
-| Surface | Transport | Runtime |
-| --- | --- | --- |
-| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route | OpenAI Realtime |
-| Inbound phone | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime |
-| Outbound phone | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime |
-| SMS | Twilio signed webhook and Messaging Service/number | BotBound messaging runtime |
+| Surface                                           | Transport                                                                         | Runtime                    |
+| ------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------- |
+| Authenticated Studio / ChatGPT private simulation | Browser WebRTC offer sent to a same-origin BotBound route                         | OpenAI Realtime            |
+| Inbound phone                                     | Twilio signed webhook → BotBound TwiML → OpenAI project SIP URI                   | OpenAI Realtime            |
+| Outbound phone                                    | Twilio customer leg + AMD → attempt-bound BotBound TwiML → OpenAI project SIP URI | OpenAI Realtime            |
+| SMS                                               | Twilio signed webhook and Messaging Service/number                                | BotBound messaging runtime |
 
 The OpenAI project SIP URI is:
 
@@ -103,3 +103,118 @@ Official implementation references:
 - <https://developers.openai.com/api/docs/guides/realtime-server-controls>
 - <https://developers.openai.com/api/docs/guides/realtime-conversations>
 - <https://developers.openai.com/api/docs/models/gpt-realtime-2.1>
+
+## Persistent business-call worker and duration
+
+Full inbound and outbound business calls default to **60 minutes**, the documented
+OpenAI Realtime session maximum. An explicit positive `OPENAI_SIP_MAX_CALL_SECONDS`
+setting can shorten this, with a minimum of 30 seconds and maximum of 3600.
+Missing, blank, invalid, zero, and negative values select the 3600-second default.
+Twilio's Dial time limit and the sideband timer use the same setting. At one minute
+remaining, the worker logs a warning and instructs the Bot to explain the limit,
+agree the next step, and offer an approved callback or transfer. It does not splice
+a new session into the same call or promise unlimited duration.
+
+Private Studio/ChatGPT rehearsals remain five minutes. Inbound overflow,
+after-hours, and completion-grace message-taking remains five minutes; a suspended
+subscription's short notice remains 20 seconds. Balance exhaustion alone does not
+cut an admitted full conversation. Existing subscription, daily-minute,
+concurrency, environment, DNC, and spend admission controls remain in place.
+
+### Why the worker is separate
+
+The Vercel API function is configured for 600 seconds. Vercel `waitUntil` shares
+that function timeout, so it cannot own a one-hour sideband. Vercel continues to
+own the public application, signed Twilio callbacks, and job sweeps. After verifying
+OpenAI's original signature, its SIP webhook forwards the untouched signed bytes
+to a persistent Node 22 worker. Both a distinct service secret and the original
+OpenAI signature are checked before the worker resolves the tenant, reserves spend,
+claims the call, or accepts it. Failed or timed-out forwarding returns retryable
+503; an accepted worker call continues independently, and existing durable claims
+suppress duplicate signed deliveries.
+
+Mobile handoffs persist confirmed transfer state for the worker to observe.
+REFER, deadline/error cleanup and terminal persistence share a tenant/call lock,
+so successful transfers are not subsequently hung up by the Bot's watchdog.
+Account and destination policy are rechecked after lock acquisition immediately
+before REFER. At most two control transactions use the five-connection pool at
+once, leaving capacity for active-call leases and accounting. Local notifications
+are only a fast path; cross-process handoff behavior is part of release proof.
+
+The worker runs the same SIP router and runtime, including tool handling, DNC,
+rolling database ownership leases, transcript capture, terminal persistence and
+the durable post-call job. The account-deletion lease now covers the configured
+call duration plus five minutes. A sudden host/process failure is still a call
+failure, not seamless failover: carrier time limits and the existing recovery
+job bound and reconcile abandoned work, and unknown transcripts/durations must
+never be invented. A live crash/continuity drill remains release proof.
+
+### Deployment and shutdown
+
+No paid worker host is provisioned by this change. Long-call activation stays
+blocked until an always-on instance and its production configuration are deployed.
+A Vercel function, scale-to-zero service, or host that kills WebSocket processes
+after a short request deadline is not suitable.
+
+- Build: `npm run build:voice-worker`; run: `npm run start:voice-worker`.
+- Container: `docker build -f deploy/voice-worker/Dockerfile -t botbound-voice-worker .`.
+  The Docker context includes only package manifests, reviewed source and the
+  Dockerfile; environment files and credentials are excluded. Container build
+  and runtime smoke must be performed on a Docker-capable host before deployment.
+- Use a separate HTTPS worker origin with TLS termination. Set
+  `WIRELINE_VOICE_WORKER_URL` and a random, independent
+  `WIRELINE_VOICE_WORKER_SECRET` of at least 32 bytes on Vercel. Put the same
+  service secret on the worker. Neither value belongs in browser code.
+- The worker needs the reviewed production database connection, tenant JWT/token
+  secrets, OpenAI SIP configuration, canonical `APP_URL=https://botbound.me`,
+  Twilio credentials, vault key, and credentials required by its approved Bot
+  tools. These remain server-side. Do not set `VERCEL=1` on the worker; its
+  entrypoint selects the worker role and prevents forwarding loops.
+- Set `OPENAI_SIP_MAX_CALL_SECONDS=3600` on **both** web and worker. Existing
+  production values of 300 remain explicit shorter limits until changed.
+- `WIRELINE_VOICE_WORKER_MAX_CALLS` defaults to 10, allowed range 1–200.
+  It bounds in-flight admission plus active background work on each instance;
+  supporting background tasks can conservatively occupy a slot. Tune only after
+  concurrency/load testing and confirmation of provider/project limits.
+- Startup validates secrets/configuration and performs a read-only database
+  connectivity check before listening. `GET /healthz` returns only a readiness
+  boolean and turns 503 during drain. This is process/admission readiness, not a
+  continuous probe of provider balances or downstream health.
+- Before a rolling deployment, send authenticated `POST /drain` with the
+  `x-botbound-voice-worker-key` header. Remove the instance from admission traffic;
+  authenticated `GET /drain` reports pending handlers and active background work.
+  Wait for both to reach zero before stopping/replacing the instance.
+- SIGTERM also drains. It waits for HTTP completion, pending admission handlers
+  (including disconnected clients), then registered call work. The host must
+  allow the full call horizon plus five minutes, **65 minutes at the default**,
+  or use the pre-drain procedure. A host-enforced 30-second shutdown grace will
+  interrupt calls despite application cleanup.
+- Keep the Vercel minute job sweep and production alerts enabled. Prove one
+  inbound and one approved outbound call beyond five minutes, late tool use,
+  final transcript/usage, service-auth rejection, duplicate delivery, overload,
+  and zero-loss rolling drain before enabling sales.
+
+### Rolling provider estimate
+
+The existing initial five-minute provider-spend reservation remains at its
+configured amount (default $1). There is no new $12 customer wallet hold to
+start a call. As already-admitted SIP work proceeds, its committed provider-cost
+estimate grows in five-minute windows (default $12 at one hour). Updates lock
+the same budget row as new-work admission, are monotonic and idempotent, and
+never erase a larger estimate. The next action sees this spend; the active
+conversation continues. Failed writes retry during the call and through durable
+post-call replay after DNC, presence and customer usage settle.
+
+These are conservative internal estimates, not measured OpenAI invoices or
+additional customer charges. Customer usage still uses included voice minutes
+and prepaid Runtime Balance from the frozen call-end duration; slow database
+cleanup adds no billable minutes. Estimates remain attributed to the call's
+start month. A call spanning UTC month-end therefore retains its continuing
+estimate in that period; the resulting next-period cap exposure is bounded by
+the configured maximum duration and concurrency, not a strict cross-month
+per-token ceiling. Shortening a completed duration does not refund an uncertain
+larger provider estimate.
+
+Official limits:
+[OpenAI session lifecycle](https://developers.openai.com/api/docs/guides/realtime-conversations#session-lifecycle-events);
+[Vercel waitUntil timeout](https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package#waituntil).

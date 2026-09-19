@@ -1,0 +1,9 @@
+**
+!package.json
+!package-lock.json
+!src/
+!src/**
+!deploy/
+!deploy/voice-worker/
+!deploy/voice-worker/Dockerfile
+!deploy/voice-worker/Dockerfile.dockerignore

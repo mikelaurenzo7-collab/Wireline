@@ -91,13 +91,19 @@ export default function PostCreateActivationWizard({
     if (stored === "wire") return "launch";
     return isWizardStep(stored) ? stored : "train";
   });
-  const [refreshedPhoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [phoneLookup, setPhoneLookup] = useState<{
+    phoneNumber: string | null;
+    active: boolean;
+    status: string | null;
+  } | null>(null);
+  const phoneRequestId = useRef(0);
   const [refreshingPhone, setLoadingPhone] = useState(true);
   const [phoneLookupFailed, setPhoneLookupFailed] = useState(false);
-  // Background identity provisioning may finish after the initial number read.
-  // Consume its result directly without remounting the guide or resetting its step.
-  const phoneNumber = refreshedPhoneNumber || payload.phoneNumber || null;
-  const loadingPhone = !phoneNumber && refreshingPhone;
+  // A reserved number is not proof of working routing. A successful inventory
+  // read is authoritative, including when an older payload's line was removed.
+  const phoneNumber = phoneLookup ? phoneLookup.phoneNumber : payload.phoneNumber || null;
+  const loadingPhone = refreshingPhone;
+  const hasLiveLine = Boolean(phoneLookup?.active && !refreshingPhone && !phoneLookupFailed);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
@@ -132,30 +138,34 @@ export default function PostCreateActivationWizard({
   const refreshPhone = useCallback(async (): Promise<{
     ok: boolean;
     phoneNumber: string | null;
+    active: boolean;
   }> => {
+    const requestId = ++phoneRequestId.current;
     setLoadingPhone(true);
     try {
       const response = await authFetch("/api/phone-numbers");
-      if (!response.ok) {
-        setPhoneLookupFailed(true);
-        setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
-        return { ok: false, phoneNumber: null };
-      }
+      if (!response.ok) throw new Error("Phone inventory unavailable");
       const body = await response.json();
       if (!Array.isArray(body?.numbers)) throw new Error("Invalid phone inventory");
+      if (requestId !== phoneRequestId.current)
+        return { ok: false, phoneNumber: null, active: false };
       const numbers = body.numbers;
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
-      const next = match?.phone_number ?? null;
+      const next =
+        typeof match?.phone_number === "string" ? match.phone_number.trim() || null : null;
+      const active = Boolean(next && match?.native_voice_status === "active");
       setPhoneLookupFailed(false);
-      setPhoneNumber(next);
+      setPhoneLookup({ phoneNumber: next, active, status: match?.native_voice_status ?? null });
       setWireError(null);
-      return { ok: true, phoneNumber: next };
+      return { ok: true, phoneNumber: next, active };
     } catch {
-      setPhoneLookupFailed(true);
-      setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
-      return { ok: false, phoneNumber: null };
+      if (requestId === phoneRequestId.current) {
+        setPhoneLookupFailed(true);
+        setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
+      }
+      return { ok: false, phoneNumber: null, active: false };
     } finally {
-      setLoadingPhone(false);
+      if (requestId === phoneRequestId.current) setLoadingPhone(false);
     }
   }, [payload.agentId]);
 
@@ -163,9 +173,11 @@ export default function PostCreateActivationWizard({
     setPostSignupFlowActive(true);
     void refreshPhone();
     return () => {
+      phoneRequestId.current += 1;
       setPostSignupFlowActive(false);
     };
-  }, [refreshPhone]);
+    // Verify background provisioning without remounting or resetting the step.
+  }, [refreshPhone, payload.phoneNumber, payload.phoneProvisioned]);
 
   async function provisionLine() {
     if (provisioning || refreshingPhone || phoneLookupFailed) return;
@@ -183,15 +195,24 @@ export default function PostCreateActivationWizard({
         error?: string;
         message?: string;
         code?: string;
+        phone_number?: string;
+        activation_pending?: boolean;
       };
       if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
         setActivationNeeded(true);
         return;
       }
       if (!response.ok || body?.ok === false) {
+        if (body?.activation_pending && typeof body.phone_number === "string") {
+          setPhoneLookup({ phoneNumber: body.phone_number, active: false, status: "degraded" });
+          await refreshPhone();
+          return;
+        }
         setWireError(safeProvisionError(response.status, body?.code, body?.error || body?.message));
         return;
       }
+      const refreshed = await refreshPhone();
+      if (!refreshed.ok || !refreshed.active) return;
       emitProductEventOnce({
         event: "phone_channel_wired",
         agentId: payload.agentId,
@@ -210,8 +231,7 @@ export default function PostCreateActivationWizard({
         event: "wire_started",
         agentId: payload.agentId,
       });
-      const refreshed = await refreshPhone();
-      if (refreshed.ok) finish(refreshed.phoneNumber);
+      finish(refreshed.phoneNumber);
     } catch {
       setWireError("Could not provision a number.");
     } finally {
@@ -219,10 +239,9 @@ export default function PostCreateActivationWizard({
     }
   }
 
-  function finish(line: string | null = phoneNumber) {
+  function finish(line: string | null = hasLiveLine ? phoneNumber : null) {
     setStep("complete");
-    // Use the resolved line, not React state: provision just called setPhoneNumber
-    // and finish() would otherwise emit against a stale null.
+    // Provision passes its freshly confirmed line because state has not rendered yet.
     if (line && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -238,7 +257,7 @@ export default function PostCreateActivationWizard({
 
   function dismiss() {
     if (provisioning) return;
-    if (step === "complete" && phoneNumber && testStarted) {
+    if (step === "complete" && hasLiveLine && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
         agentId: payload.agentId,
@@ -263,6 +282,7 @@ export default function PostCreateActivationWizard({
   const activationPlanPath = useMemo(() => activationBillingHref(getStoredSignupIntent()), []);
 
   const markWireFunnelEvents = useCallback(() => {
+    if (!hasLiveLine) return;
     emitProductEventOnce({ event: "wire_started", agentId: payload.agentId });
     if (phoneNumber) {
       emitProductEventOnce({
@@ -280,10 +300,10 @@ export default function PostCreateActivationWizard({
         agentId: payload.agentId,
       });
     }
-  }, [payload.agentId, phoneNumber]);
+  }, [payload.agentId, phoneNumber, hasLiveLine]);
 
   const completeCopy = useMemo(() => {
-    if (hasLine && phoneNumber) {
+    if (hasLiveLine && phoneNumber) {
       return {
         title: POST_CREATE_WIZARD_COPY.complete.liveTitle,
         detail: POST_CREATE_WIZARD_COPY.complete.liveDetail(
@@ -292,11 +312,17 @@ export default function PostCreateActivationWizard({
         ),
       };
     }
+    if (hasLine) {
+      return {
+        title: "Your number is reserved",
+        detail: "Calling is not confirmed yet. Open Phone setup to finish connecting this number.",
+      };
+    }
     return {
       title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
       detail: POST_CREATE_WIZARD_COPY.complete.deferredDetail(payload.agentName),
     };
-  }, [hasLine, phoneNumber, payload.agentName]);
+  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName]);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: dismiss });
@@ -413,7 +439,7 @@ export default function PostCreateActivationWizard({
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   Checking your line…
                 </div>
-              ) : hasLine && phoneNumber ? (
+              ) : hasLiveLine && phoneNumber ? (
                 <div className="rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
                   <p className="text-xs font-semibold text-primary">
                     {ACTIVATION_PENDING_COPY.phoneLabel}
@@ -425,6 +451,18 @@ export default function PostCreateActivationWizard({
                     {payload.phoneProvisioned
                       ? "Your line is connected from Fast Start."
                       : "This number is connected to this Bot."}
+                  </p>
+                </div>
+              ) : hasLine && phoneNumber ? (
+                <div className="rounded-xl border border-border bg-card px-4 py-3">
+                  <p className="text-xs font-semibold text-foreground">Number reserved</p>
+                  <p className="mt-1 font-mono text-lg tabular-nums text-foreground">
+                    {formatPhone(phoneNumber)}
+                  </p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {phoneLookup?.status === "configuration_required"
+                      ? "Calling needs platform setup. Open Phone setup or contact BotBound support."
+                      : "Calling is not confirmed yet. Retry the connection without purchasing another number."}
                   </p>
                 </div>
               ) : phoneLookupFailed ? null : (
@@ -471,7 +509,7 @@ export default function PostCreateActivationWizard({
               ) : null}
 
               <div className="flex flex-wrap gap-2">
-                {hasLine ? (
+                {hasLiveLine ? (
                   <Button
                     type="button"
                     size="sm"
@@ -482,6 +520,20 @@ export default function PostCreateActivationWizard({
                   >
                     Continue
                   </Button>
+                ) : hasLine ? (
+                  <>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={refreshingPhone || provisioning}
+                      onClick={() => void refreshPhone()}
+                    >
+                      Retry connection
+                    </Button>
+                    <Button asChild variant="secondary" size="sm">
+                      <Link to="/phone?tab=setup">Open Phone setup</Link>
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button
@@ -536,7 +588,7 @@ export default function PostCreateActivationWizard({
                   });
                 }}
               />
-              {hasLine && phoneNumber ? (
+              {hasLiveLine && phoneNumber ? (
                 <div className="rounded-xl border border-border bg-card/60 px-4 py-3">
                   <p className="text-xs font-semibold text-foreground">
                     {ACTIVATION_PENDING_COPY.phoneLabel}
@@ -580,7 +632,7 @@ export default function PostCreateActivationWizard({
                   {completeCopy.detail}
                 </p>
               </div>
-              {hasLine && phoneNumber ? (
+              {hasLiveLine && phoneNumber ? (
                 <p className="text-xs text-muted-foreground">
                   {ACTIVATION_PENDING_COPY.browserTestDetail}
                 </p>
@@ -618,9 +670,11 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "complete" ? (
             <>
-              {!hasLine ? (
+              {!hasLiveLine ? (
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/phone?tab=setup">{POST_CREATE_WIZARD_COPY.complete.phoneCta}</Link>
+                  <Link to="/phone?tab=setup">
+                    {hasLine ? "Open Phone setup" : POST_CREATE_WIZARD_COPY.complete.phoneCta}
+                  </Link>
                 </Button>
               ) : null}
               <Button type="button" size="sm" onClick={dismiss} disabled={provisioning}>

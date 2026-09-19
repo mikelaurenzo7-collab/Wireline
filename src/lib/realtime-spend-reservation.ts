@@ -1,9 +1,12 @@
 import type { Request } from "express";
+import { and, eq } from "drizzle-orm";
+import * as schema from "../db/schema";
 
 import { AppError } from "./api-error";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
 import {
   commitPlatformCostReservation,
+  extendCommittedPlatformCostReservation,
   markPlatformCostReservationAmbiguous,
   platformCostReserveUsd,
   releasePlatformCostReservationIfReserved,
@@ -11,7 +14,7 @@ import {
   type PlatformCostReservation,
 } from "../middleware/audit-middleware";
 import { releaseSimulationMinuteQuota } from "../middleware/api-rate-limits";
-import { log } from "./server-context";
+import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { shouldRetainRealtimeReservation } from "./realtime-provider-outcome";
 
@@ -21,14 +24,15 @@ export async function reserveRealtimeSessionSpend(
   surface: string,
   idempotencyKey?: string,
 ): Promise<PlatformCostReservation> {
+  const reserveUsd = platformCostReserveUsd("openai_realtime_session");
   const decision = await reservePlatformCostRecord({
     userId,
     action: "voice.realtime.session",
     provider: "openai",
     model: OPENAI_REALTIME_DEFAULT_MODEL,
-    costUsd: platformCostReserveUsd("openai_realtime_session"),
+    costUsd: reserveUsd,
     idempotencyKey,
-    requestMeta: { surface },
+    requestMeta: { surface, reserve_window_seconds: 300, reserve_window_usd: reserveUsd },
   });
 
   if (decision.reserved) return decision.reservation;
@@ -98,4 +102,34 @@ export async function releaseRealtimeSessionSpendAfterFailure(
       quotaError: getErrorMessage(error),
     });
   }
+}
+
+/** Durable post-call replay repairs a missed final rolling estimate. */
+export async function reconcileOpenAISipDurationSpend(
+  userId: string,
+  callId: string,
+  seconds: number,
+): Promise<void> {
+  if (seconds <= 300) return;
+  const [receipt] = await drizzle
+    .select({ id: schema.auditLog.id, costUsd: schema.auditLog.costUsd })
+    .from(schema.auditLog)
+    .where(
+      and(
+        eq(schema.auditLog.userId, userId),
+        eq(schema.auditLog.action, "voice.realtime.session"),
+        eq(schema.auditLog.idempotencyKey, "openai-sip:" + callId),
+      ),
+    )
+    .limit(1);
+  if (!receipt) throw new Error("SIP duration accounting receipt is missing.");
+  await extendCommittedPlatformCostReservation(
+    {
+      userId,
+      auditId: receipt.id,
+      costUsd: Number(receipt.costUsd),
+      adopted: true,
+    },
+    seconds,
+  );
 }

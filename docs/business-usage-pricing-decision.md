@@ -49,23 +49,38 @@ Runtime Balance top-ups cover extra voice at a flat **$0.22/min** across paid ti
 automatic postpaid overages. SMS outbound segments still bill Runtime Balance at **$0.02/segment**
 (`SMS_COST_PER_SEGMENT_USD` in `src/lib/sms-billing.ts`).
 
-## Call length vs the "8 second" research timeout (locked 2026-07-20)
+## Call length and the "8 second" research timeout (updated 2026-09-19)
 
-**There is no 8-second call-duration budget.** `LIVE_RESEARCH_TIMEOUT_MS` (default `8000`) is only the
-HTTP timeout for mid-call _public web research_ (Perplexity → Gemini) so a caller is not held in
-silence while a lookup runs. PSTN calls continue for as long as the conversation needs.
+`LIVE_RESEARCH_TIMEOUT_MS` (default `8000`) limits one mid-call public-web research request
+(Perplexity → Gemini). It does not set the phone call's duration.
 
-Commercial protection is minutes + prepaid wallet, not call hard-caps:
+Standard live SIP calls support **up to 60 minutes per session**, matching OpenAI's session
+maximum. The runtime default and upper bound are 3,600 seconds. A positive
+`OPENAI_SIP_MAX_CALL_SECONDS` can set a shorter limit, with a 30-second minimum; an existing
+explicit value of `300` continues to limit that deployment to five minutes until updated.
+Private browser rehearsals and limited take-a-message flows retain a five-minute maximum;
+suspended-account notices remain limited to 20 seconds.
 
-1. **Included monthly voice minutes** per paid tier (and +50 min per extra-Bot add-on).
-2. **Conversation Balance top-ups** fund overflow at the plan's `overage_per_min_usd` — no silent
-   postpaid meter, no surprise invoice.
-3. **Active calls finish normally**; depleted coverage blocks only the _next_ new live action.
-4. Soft near-limit warnings in product UI; hard gate only when coverage is gone.
+Production and Vercel call admission require a configured persistent voice worker. Deploy and
+verify that worker, then align the web and worker duration configuration before enabling longer
+live calls. Missing worker configuration fails closed. A configuration change alone does not
+prove a long call survives deployment boundaries; exercise the worker and carrier path before
+advertising deployment readiness.
 
-This is the intentional "happy user + protected margin" model. Do **not** reintroduce artificial
-short call caps for profitability, and do not rebuild the Stripe catalog unless
-`plan-catalog.ts` / live Stripe prices actually diverge.
+Balance protection and session duration have separate rules:
+
+1. **Included monthly voice minutes** apply per paid tier, with +50 minutes per extra-Bot add-on.
+2. **Runtime Balance top-ups** fund overflow at the plan's `overage_per_min_usd`, with no automatic
+   postpaid meter or surprise invoice.
+3. **An admitted standard live call is not terminated when balance depletes.** Depleted coverage
+   blocks the next new live action. Normal hangup, transfer, safety termination, and the session
+   duration limit still apply.
+4. Soft near-limit warnings keep spend visible. Session-limit warnings help callers wrap up;
+   they do not promise unlimited duration or seamless continuation into another session.
+
+Keep margin protection in included capacity, prepaid balance, and new-action admission. Preserve
+the provider's session boundary, and do not rebuild the Stripe catalog unless `plan-catalog.ts`
+and live Stripe prices diverge.
 
 ## Target commercial structure (historical — see status note above)
 

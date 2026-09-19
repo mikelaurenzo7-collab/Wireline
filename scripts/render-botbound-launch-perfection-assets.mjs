@@ -16,10 +16,7 @@ const fonts = [
   resolve(root, "brand-work/fonts/IBMPlexMono-Bold.ttf"),
 ];
 
-const generatedBakery = resolve(
-  campaignRoot,
-  "sources/botbound-hands-full-bakery-original.png",
-);
+const generatedBakery = resolve(campaignRoot, "sources/botbound-hands-full-bakery-original.png");
 const generatedBadTiming = resolve(
   campaignRoot,
   "sources/botbound-impeccably-bad-timing-florist-portrait.png",
@@ -102,7 +99,8 @@ writePng(
     width: 3840,
     height: 2160,
     title: "The Second Ring belongs to your Bot",
-    description: "A minimal BotBound billboard with the approved phone Bot and violet signal rings.",
+    description:
+      "A minimal BotBound billboard with the approved phone Bot and violet signal rings.",
     defs: canvasDefs(),
     content: `${signalData ? `<image href="${signalData}" width="3840" height="2160" preserveAspectRatio="xMidYMid slice"/>` : `<rect width="3840" height="2160" fill="url(#canvas)"/><rect width="3840" height="2160" fill="url(#aura)"/>`}
       <rect width="3840" height="2160" fill="url(#photoShade)" opacity=".9"/>
@@ -122,7 +120,8 @@ writePng(
     width: 1200,
     height: 627,
     title: "You cannot answer every call. Your Bot can.",
-    description: "BotBound launch creative showing a baker at work with the approved Bot answering.",
+    description:
+      "BotBound launch creative showing a baker at work with the approved Bot answering.",
     defs: canvasDefs(),
     content: `<image href="${bakeryData}" width="1200" height="675" y="-24" preserveAspectRatio="xMidYMid slice"/>
       <rect width="1200" height="627" fill="url(#photoShade)"/>
@@ -143,7 +142,8 @@ writePng(
     width: 1080,
     height: 1350,
     title: "Of course it rang now",
-    description: "A comedic BotBound launch ad about a call arriving while a florist has both hands full.",
+    description:
+      "A comedic BotBound launch ad about a call arriving while a florist has both hands full.",
     defs: canvasDefs(),
     content: `<image href="${badTimingData}" width="1080" height="1350" preserveAspectRatio="xMidYMid slice"/>
       <rect width="1080" height="1350" fill="url(#verticalShade)"/>
@@ -167,12 +167,12 @@ writePng(
     defs: canvasDefs(),
     content: `<image href="${badTimingData}" width="1080" height="1920" preserveAspectRatio="xMidYMid slice"/>
       <rect width="1080" height="1920" fill="url(#verticalShade)"/>
-      ${brandLockup(68, 72, 72, iconData)}
-      <text x="66" y="300" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="22" font-weight="700" letter-spacing="4">IMPECCABLY BAD TIMING</text>
-      <text x="58" y="448" fill="#F8F7FC" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-6"><tspan x="58">OF COURSE</tspan><tspan x="58" dy="116">IT RANG</tspan><tspan x="58" dy="116" fill="#A78BFA">NOW.</tspan></text>
-      <rect x="64" y="1668" width="952" height="3" fill="#A78BFA" opacity=".66"/>
-      <text x="64" y="1760" fill="#F8F7FC" font-family="Inter Tight" font-size="52" font-weight="800">THE CALL STILL GETS ANSWERED.</text>
-      <text x="66" y="1832" fill="#C7CCD6" font-family="Inter" font-size="31" font-weight="600">Build free at BotBound.me</text>`,
+      ${brandLockup(96, 236, 72, iconData)}
+      <text x="96" y="390" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="22" font-weight="700" letter-spacing="4">IMPECCABLY BAD TIMING</text>
+      <text x="90" y="526" fill="#F8F7FC" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-6"><tspan x="90">OF COURSE</tspan><tspan x="90" dy="116">IT RANG</tspan><tspan x="90" dy="116" fill="#A78BFA">NOW.</tspan></text>
+      <rect x="96" y="1328" width="840" height="3" fill="#A78BFA" opacity=".66"/>
+      <text x="96" y="1418" fill="#F8F7FC" font-family="Inter Tight" font-size="66" font-weight="800"><tspan x="96">THE CALL STILL</tspan><tspan x="96" dy="70">GETS ANSWERED.</tspan></text>
+      <text x="96" y="1554" fill="#F8F7FC" font-family="Inter" font-size="31" font-weight="600">Build free at BotBound.me</text>`,
   }),
   1080,
 );
@@ -198,17 +198,28 @@ writePng(
   carouselBase(
     1,
     `<text x="58" y="306" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="22" font-weight="700" letter-spacing="4">VOICE IS PART OF THE BUSINESS</text>
-      <text x="54" y="470" fill="#F8F7FC" font-family="Inter Tight" font-size="108" font-weight="800" letter-spacing="-5.8"><tspan x="54">YOUR BOT</tspan><tspan x="54" dy="108">SHOULD SOUND</tspan><tspan x="54" dy="108" fill="#A78BFA">LIKE YOU.</tspan></text>
+      <text x="54" y="470" fill="#F8F7FC" font-family="Inter Tight" font-size="108" font-weight="800" letter-spacing="-5.8"><tspan x="54">A VOICE</tspan><tspan x="54" dy="108">FOR YOUR</tspan><tspan x="54" dy="108" fill="#A78BFA">BUSINESS.</tspan></text>
       ${signalRings(760, 930, 122, 4)}
       <image href="${operatorData}" x="585" y="755" width="440" height="440"/>
-      <text x="60" y="730" fill="#F8F7FC" font-family="Inter" font-size="30" font-weight="600">Choice for the customer. Consistency at runtime.</text>`,
-    "Your Bot should sound like your business",
+      <text x="60" y="750" fill="#F8F7FC" font-family="Inter" font-size="30" font-weight="600">Preview voices. Pick your tone.</text>`,
+    "A voice for your business",
     "The first slide in BotBound's OpenAI voice carousel.",
   ),
   1080,
 );
 
-const voiceNames = ["ALLOY", "ASH", "BALLAD", "CORAL", "ECHO", "SAGE", "SHIMMER", "VERSE", "MARIN", "CEDAR"];
+const voiceNames = [
+  "ALLOY",
+  "ASH",
+  "BALLAD",
+  "CORAL",
+  "ECHO",
+  "SAGE",
+  "SHIMMER",
+  "VERSE",
+  "MARIN",
+  "CEDAR",
+];
 const voiceCards = voiceNames
   .map((name, index) => {
     const col = index % 2;
@@ -261,10 +272,10 @@ writePng(
   carouselBase(
     4,
     `<text x="58" y="292" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="22" font-weight="700" letter-spacing="4">CONSISTENCY IS THE FEATURE</text>
-      <text x="54" y="442" fill="#F8F7FC" font-family="Inter Tight" font-size="97" font-weight="800" letter-spacing="-5"><tspan x="54">ONE SELECTED</tspan><tspan x="54" dy="100">VOICE THROUGH</tspan><tspan x="54" dy="100" fill="#A78BFA">THE CONVERSATION.</tspan></text>
+      <text x="54" y="442" fill="#F8F7FC" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-5"><tspan x="54">ONE VOICE.</tspan><tspan x="54" dy="112">THE WHOLE</tspan><tspan x="54" dy="112" fill="#A78BFA">CALL.</tspan></text>
       <path d="M72 920 C160 780 234 1032 326 884 S492 744 580 912 S752 1050 830 870 S956 792 1012 900" fill="none" stroke="#A78BFA" stroke-width="15" stroke-linecap="round"/>
       ${signalRings(540, 916, 128, 4)}
-      <text x="58" y="1136" fill="#F8F7FC" font-family="Inter" font-size="32" font-weight="650">The selected voice stays stable for that runtime session.</text>`,
+      <text x="58" y="1136" fill="#F8F7FC" font-family="Inter" font-size="32" font-weight="600">Your chosen voice, throughout the call.</text>`,
     "One selected voice through the conversation",
     "BotBound keeps the selected OpenAI voice consistent through each runtime session.",
   ),
@@ -308,7 +319,8 @@ writePng(
     width: 1200,
     height: 627,
     title: "From first ring to next action",
-    description: "A BotBound product proof ad showing answer, booking, confirmation, and outcome logging.",
+    description:
+      "A BotBound product proof ad showing answer, booking, confirmation, and outcome logging.",
     defs: canvasDefs(),
     content: `<rect width="1200" height="627" fill="url(#canvas)"/><rect width="1200" height="627" fill="url(#aura)"/>
       ${wordmark(62, 68, 42)}
@@ -327,7 +339,8 @@ writePng(
     width: 1080,
     height: 1080,
     title: "The Call Sheet",
-    description: "A bold BotBound social concept showing the inconvenient moments when a Bot can answer.",
+    description:
+      "A bold BotBound social concept showing the inconvenient moments when a Bot can answer.",
     defs: canvasDefs(),
     content: `<rect width="1080" height="1080" fill="#050508"/><rect width="1080" height="1080" fill="url(#aura)"/>
       ${brandLockup(58, 50, 68, iconData)}

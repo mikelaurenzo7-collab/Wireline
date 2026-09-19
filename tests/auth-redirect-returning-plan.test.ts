@@ -7,7 +7,12 @@ import {
   resolvePostAuthDestination,
 } from "../src/lib/auth-redirect";
 import { FRESH_SIGNUP_SESSION_KEY } from "../src/lib/post-signup-onboarding";
-import { SIGNUP_INTENT_STORAGE_KEY } from "../src/lib/signup-intent";
+import {
+  SIGNUP_INTENT_STORAGE_KEY,
+  SIGNUP_WEDGE_KEYS,
+  SIGNUP_WEDGE_RECOMMENDATIONS,
+  parseSignupIntent,
+} from "../src/lib/signup-intent";
 
 function createStorage(): Storage {
   const values = new Map<string, string>();
@@ -88,9 +93,7 @@ describe("post-auth destination", () => {
     );
     sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
 
-    expect(resolvePostAuthDestination("personal", "")).toBe(
-      "/studio?create=1&template=sales-rep",
-    );
+    expect(resolvePostAuthDestination("personal", "")).toBe("/studio?create=1&template=sales-rep");
     // Signup attribution must not reopen creation on a later sign-in.
     expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
   });
@@ -107,6 +110,44 @@ describe("post-auth destination", () => {
     );
   });
 
+  it.each(SIGNUP_WEDGE_KEYS)(
+    "opens a current role for the %s solution after email and OAuth signup",
+    (wedge) => {
+      const template = SIGNUP_WEDGE_RECOMMENDATIONS[wedge].templateId;
+      expect(parseSignupIntent(`?template=${template}`)?.preferredTemplateId).toBe(template);
+      sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+      expect(resolvePostAuthDestination("business", `?wedge=${wedge}`)).toBe(
+        `/studio?create=1&template=${template}`,
+      );
+      localStorage.setItem(
+        SIGNUP_INTENT_STORAGE_KEY,
+        JSON.stringify({ signupWedge: wedge, capturedAt: "2026-09-19T00:00:00Z" }),
+      );
+      sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+      expect(resolvePostAuthDestination("business", "")).toBe(
+        `/studio?create=1&template=${template}`,
+      );
+    },
+  );
+
+  it("keeps an explicit role choice ahead of a solution recommendation", () => {
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+    expect(resolvePostAuthDestination("business", "?wedge=sales&template=front-desk")).toBe(
+      "/studio?create=1&template=front-desk",
+    );
+    localStorage.setItem(
+      SIGNUP_INTENT_STORAGE_KEY,
+      JSON.stringify({
+        signupWedge: "sales",
+        preferredTemplateId: "appointment-setter",
+        capturedAt: "2026-09-19T00:00:00Z",
+      }),
+    );
+    sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+    expect(resolvePostAuthDestination("business", "")).toBe(
+      "/studio?create=1&template=appointment-setter",
+    );
+  });
   it("ignores unrecognized roles at the fresh-signup redirect boundary", () => {
     localStorage.setItem(
       SIGNUP_INTENT_STORAGE_KEY,

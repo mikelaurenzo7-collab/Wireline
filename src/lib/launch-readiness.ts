@@ -16,6 +16,7 @@ import { getIntegrationsStatus } from "./integrations-registry";
 import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
+import { isPersistentVoiceWorkerConfigured } from "./voice/openai-sip-worker-config";
 
 export type ReadinessLevel = "ready" | "degraded" | "blocked";
 export type CapabilityReadiness = {
@@ -60,6 +61,8 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const billingReleased = billingReleaseBlockers.length === 0;
 
   const voiceBlockers: string[] = [];
+  if (!isPersistentVoiceWorkerConfigured())
+    voiceBlockers.push("WIRELINE_VOICE_WORKER_URL+WIRELINE_VOICE_WORKER_SECRET");
   if (!envPresent("OPENAI_API_KEY")) voiceBlockers.push("OPENAI_API_KEY");
   if (!envPresent("OPENAI_PROJECT_ID")) voiceBlockers.push("OPENAI_PROJECT_ID");
   if (!envPresent("OPENAI_WEBHOOK_SECRET")) voiceBlockers.push("OPENAI_WEBHOOK_SECRET");

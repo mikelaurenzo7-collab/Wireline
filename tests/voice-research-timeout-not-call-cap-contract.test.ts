@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { resolveOpenAISipSessionMaxSeconds } from "../src/lib/voice/openai-sip-config";
 
 /**
  * Guard: LIVE_RESEARCH_TIMEOUT_MS must remain a public-research HTTP timeout,
@@ -21,9 +22,35 @@ describe("live research timeout is not a call-duration cap", () => {
     expect(source).not.toMatch(/LIVE_RESEARCH_TIMEOUT/);
   });
 
-  it("surfaces call-length clarity on the public pricing FAQ", () => {
+  it("distinguishes the live session limit from billing and research timeouts in pricing", () => {
     const source = readFileSync(resolve("src/pages/Pricing.tsx"), "utf8");
     expect(source).toMatch(/How long can a call last\?/);
-    expect(source).toMatch(/Calls run as long as the conversation needs/);
+    expect(source).toContain("up to 60 minutes per session");
+    expect(source).toContain("unless a shorter limit is configured");
+    expect(source).toContain("Balance depletion does not cut off an active call");
+    expect(source).not.toContain("Calls run as long as the conversation needs");
+    expect(source).not.toContain("An active call is never cut off");
   });
+
+  it.each([
+    { configured: undefined, expected: 3600 },
+    { configured: "30", expected: 30 },
+    { configured: "120", expected: 120 },
+    { configured: "300", expected: 300 },
+    { configured: "3600", expected: 3600 },
+    { configured: "9999", expected: 3600 },
+    { configured: "0", expected: 3600 },
+    { configured: "-10", expected: 3600 },
+    { configured: "", expected: 3600 },
+    { configured: "invalid", expected: 3600 },
+  ])(
+    "keeps the published upper bound honest with duration configuration $configured",
+    ({ configured, expected }) => {
+      const seconds = resolveOpenAISipSessionMaxSeconds({
+        OPENAI_SIP_MAX_CALL_SECONDS: configured,
+      });
+      expect(seconds).toBe(expected);
+      expect(seconds).toBeLessThanOrEqual(60 * 60);
+    },
+  );
 });

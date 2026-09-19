@@ -639,6 +639,90 @@ export async function commitPlatformCostReservation(
 }
 
 /**
+ * Account elapsed, already-admitted SIP work without interrupting a live call.
+ * This is a conservative provider estimate, not a customer wallet charge.
+ * Lock the same budget row as admission so concurrent new work sees the debit;
+ * retries and shorter final elapsed reports can never reduce recorded spend.
+ */
+export async function extendCommittedPlatformCostReservation(
+  reservation: PlatformCostReservation,
+  elapsedSeconds: number,
+): Promise<void> {
+  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
+    throw new Error("Realtime elapsed duration must be finite and nonnegative.");
+  }
+  const windows = Math.max(1, Math.ceil(elapsedSeconds / 300));
+  const delta = await drizzle.transaction(async (tx) => {
+    await tx
+      .select({ userId: schema.spendBudgets.userId })
+      .from(schema.spendBudgets)
+      .where(eq(schema.spendBudgets.userId, reservation.userId))
+      .for("update");
+    const [row] = await tx
+      .select({
+        costUsd: schema.auditLog.costUsd,
+        metadata: schema.auditLog.metadata,
+      })
+      .from(schema.auditLog)
+      .where(
+        and(
+          eq(schema.auditLog.id, reservation.auditId),
+          eq(schema.auditLog.userId, reservation.userId),
+        ),
+      )
+      .limit(1)
+      .for("update");
+    const metadata: Record<string, unknown> =
+      row?.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {};
+    // The caller holds an admitted SIP session or authoritative terminal call.
+    // A transient initial commit-metadata failure must be recoverable here.
+    const state = metadata.accounting_state;
+    if (
+      !row ||
+      metadata.surface !== "openai_sip" ||
+      !["committed", "reserved_before_provider", "provider_outcome_ambiguous"].includes(
+        String(state),
+      )
+    ) {
+      throw new Error("Admitted realtime spend receipt is unavailable.");
+    }
+    const recoveringCommit = state !== "committed";
+    const unit = Number(metadata.reserve_window_usd ?? reservation.costUsd);
+    if (!(unit > 0) || !Number.isFinite(unit)) throw new Error("Invalid realtime reserve window.");
+    const previous = Number(row.costUsd || 0);
+    const next = Math.max(previous, Math.round(unit * windows * 100) / 100);
+    if (next === previous && !recoveringCommit) return 0;
+    await tx
+      .update(schema.auditLog)
+      .set({
+        costUsd: String(next),
+        metadata: {
+          ...metadata,
+          accounting_state: "committed",
+          reserve_window_usd: unit,
+          reserve_window_seconds: 300,
+          observed_duration_seconds: Math.ceil(elapsedSeconds),
+          cost_basis: "realtime_duration_estimate",
+        },
+      })
+      .where(
+        and(
+          eq(schema.auditLog.id, reservation.auditId),
+          eq(schema.auditLog.userId, reservation.userId),
+        ),
+      );
+    return recoveringCommit ? next : next - previous;
+  });
+  if (delta > 0) {
+    clearBudgetCache(reservation.userId);
+    recordDailySpend(delta);
+    await evaluateSpend(reservation.userId, delta);
+  }
+}
+
+/**
  * Daily AI-token ceiling, evaluated BEFORE the model call.
  *
  * `claude_tokens_daily` is described in tenant-quotas.ts as a hard cap and is

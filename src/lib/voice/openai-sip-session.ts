@@ -25,6 +25,11 @@ import {
 } from "../tcpa-consent";
 import { persistTranscriptDncSuppression } from "../call-dnc-suppression";
 import { trackVoiceMinutes } from "../voice-usage";
+import { reconcileOpenAISipDurationSpend } from "../realtime-spend-reservation";
+import {
+  extendCommittedPlatformCostReservation,
+  type PlatformCostReservation,
+} from "../../middleware/audit-middleware";
 import {
   type NativeInboundAdmission,
   type NativeInboundAdmissionMode,
@@ -118,6 +123,7 @@ type PendingToolCall = {
 type RealtimeRuntime = Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
 
 type RealtimeSessionOutcome = {
+  endedAt: number | null;
   transcript: string;
   endedReason: string;
   pipelineError: string | null;
@@ -373,6 +379,61 @@ async function openaiCallControl(
   }
 }
 
+// The shared worker pool has five connections. Provider control is bounded
+// to two transactions so slow REFERs cannot consume every lease/accounting slot.
+let activeSipControlTransactions = 0;
+const sipControlWaiters: Array<() => void> = [];
+
+async function withOpenAISipControlLock<T>(
+  userId: string,
+  callId: string,
+  operation: (tx: OpenAISipTransaction) => Promise<T>,
+): Promise<T> {
+  if (activeSipControlTransactions >= 2) {
+    await new Promise<void>((resolve) => sipControlWaiters.push(resolve));
+  } else {
+    activeSipControlTransactions += 1;
+  }
+  try {
+    return await drizzle.transaction(async (tx) => {
+      await lockOpenAISipControl(tx, userId, callId);
+      return operation(tx);
+    });
+  } finally {
+    const next = sipControlWaiters.shift();
+    if (next) next();
+    else activeSipControlTransactions -= 1;
+  }
+}
+
+async function lockOpenAISipControl(
+  tx: OpenAISipTransaction,
+  userId: string,
+  callId: string,
+): Promise<void> {
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`openai-sip-control:${userId}:${callId}`}))`,
+  );
+}
+
+async function readOpenAISipTransferStatus(
+  tx: OpenAISipTransaction,
+  userId: string,
+  callId: string,
+): Promise<string | undefined> {
+  const [presence] = await tx
+    .select({ status: schema.signalPresence.status })
+    .from(schema.signalPresence)
+    .where(
+      and(
+        eq(schema.signalPresence.id, providerCallId(callId)),
+        eq(schema.signalPresence.userId, userId),
+      ),
+    )
+    .limit(1);
+  return presence?.status ?? undefined;
+}
+
 export async function referOpenAISipCall(
   userId: string,
   callId: string,
@@ -385,14 +446,31 @@ export async function referOpenAISipCall(
   }
 
   // A call may outlive an operator's environment reclassification. Re-check
-  // the tenant at the irreversible provider boundary, after all local work and
-  // immediately before REFER. Hangup deliberately remains available for safe
-  // cleanup in every environment.
-  await assertExternalEntityActionAllowed(userId, "openai_sip_call_refer", {
-    phone: phone || undefined,
+  // the tenant after any call-control lock wait and immediately before REFER.
+  // Control concurrency is capped below pool capacity, leaving connections for
+  // these DB-backed guards and active-call leases. Hangup remains available
+  // for safe cleanup in every environment.
+  await withOpenAISipControlLock(userId, callId, async (tx) => {
+    const status = await readOpenAISipTransferStatus(tx, userId, callId);
+    if (status === "transferred") return;
+    if (!status) throw AppError.conflict("That call is no longer active.");
+    await assertExternalEntityActionAllowed(userId, "openai_sip_call_refer", {
+      phone: phone || undefined,
+    });
+    await assertLiveExternalActionAllowed(userId, "openai_sip_call_refer");
+    await openaiCallControl(callId, "refer", { target_uri: targetUri });
+    // Publish only confirmed REFER success. The worker may be another process;
+    // its heartbeat and terminal transition read this tenant-scoped signal.
+    await tx
+      .update(schema.signalPresence)
+      .set({ status: "transferred" })
+      .where(
+        and(
+          eq(schema.signalPresence.id, providerCallId(callId)),
+          eq(schema.signalPresence.userId, userId),
+        ),
+      );
   });
-  await assertLiveExternalActionAllowed(userId, "openai_sip_call_refer");
-  await openaiCallControl(callId, "refer", { target_uri: targetUri });
 }
 
 export function hangupOpenAISipCall(callId: string): Promise<void> {
@@ -401,7 +479,7 @@ export function hangupOpenAISipCall(callId: string): Promise<void> {
 
 const liveSipSessions = new Map<string, { notifyTransferred: () => void }>();
 
-/** Close the local realtime session after an external REFER without hanging up PSTN. */
+/** Local fast path only; referOpenAISipCall persists the signal for remote workers first. */
 export function notifyOpenAISipCallTransferred(callId: string): void {
   liveSipSessions.get(callId)?.notifyTransferred();
 }
@@ -1070,6 +1148,7 @@ async function persistFinishedCall(input: {
   callLogId: bigint;
   agentName: string;
   connectedAt: number | null;
+  endedAt: number | null;
   transcript: string;
   endedReason: string;
   pipelineError: string | null;
@@ -1082,22 +1161,31 @@ async function persistFinishedCall(input: {
   claim?: OpenAISipCallClaim;
 }) {
   const durationSeconds = input.connectedAt
-    ? Math.max(0, Math.round((Date.now() - input.connectedAt) / 1_000))
+    ? Math.max(0, Math.round(((input.endedAt ?? Date.now()) - input.connectedAt) / 1_000))
     : 0;
   const summary = deterministicSummary(input.transcript);
   const direction = callDirection(input.call);
+  let endedReason = input.endedReason;
 
   // The terminal call row and its unique post-call job commit together. The
   // inline steps below improve latency, but the queue is the durable owner and
   // re-drives every idempotent critical step after a crash or transient error.
-  await drizzle.transaction(async (tx) => {
+  await withOpenAISipControlLock(input.call.userId, input.call.callId, async (tx) => {
+    const transferStatus = await readOpenAISipTransferStatus(
+      tx,
+      input.call.userId,
+      input.call.callId,
+    );
+    if (transferStatus === "transferred" && endedReason !== "caller-dnc") {
+      endedReason = "transferred";
+    }
     const [updated] = await tx
       .update(schema.callLogs)
       .set({
         durationSeconds,
         summary,
         transcript: input.transcript || null,
-        endedReason: input.endedReason,
+        endedReason,
         pipelineError: input.pipelineError,
         toolCallsTotal: input.toolCallsTotal,
         toolCallsFailed: input.toolCallsFailed,
@@ -1120,6 +1208,17 @@ async function persistFinishedCall(input: {
       .returning({ id: schema.callLogs.id });
     if (!updated) throw new Error("OpenAI SIP terminal call row could not be persisted.");
 
+    // Retire control authority atomically with terminal state, under the same
+    // lock as REFER. A late mobile request cannot revive a completed session.
+    await tx
+      .delete(schema.signalPresence)
+      .where(
+        and(
+          eq(schema.signalPresence.id, providerCallId(input.call.callId)),
+          eq(schema.signalPresence.userId, input.call.userId),
+        ),
+      );
+
     await enqueuePostCallDigest(
       {
         userId: input.call.userId,
@@ -1133,7 +1232,7 @@ async function persistFinishedCall(input: {
         durationSeconds,
         summary,
         transcript: input.transcript,
-        endedReason: input.endedReason,
+        endedReason,
         pipelineError: input.pipelineError,
         vapiCallType: direction === "outbound" ? "openai_sip_outbound" : "openai_sip_inbound",
         vapiCallId: providerCallId(input.call.callId),
@@ -1186,7 +1285,7 @@ async function persistFinishedCall(input: {
     settleOutboundLead({
       call: input.call,
       summary,
-      endedReason: input.endedReason,
+      endedReason,
       pipelineError: input.pipelineError,
     }),
   );
@@ -1198,6 +1297,7 @@ async function persistFinishedCall(input: {
       vapiCallId: providerCallId(input.call.callId),
     }),
   );
+  return endedReason;
 }
 
 /**
@@ -1326,12 +1426,16 @@ export async function replayOpenAISipPostCallFinalization(input: {
     durationSeconds,
     vapiCallId: providerId,
   });
+  // Critical DNC, presence and customer usage settle before optional estimate
+  // replay. Throwing here keeps the durable job retryable without blocking them.
+  await reconcileOpenAISipDurationSpend(input.userId, input.finalization.callId, durationSeconds);
 }
 
 async function runRealtimeSession(
   input: OpenAISipIncomingCall,
   runtime: RealtimeRuntime,
   ownershipSignal?: AbortSignal,
+  accountElapsed?: (seconds: number) => Promise<void>,
 ): Promise<RealtimeSessionOutcome> {
   const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) throw new Error("OpenAI_API_KEY is missing during SIP session startup.");
@@ -1343,6 +1447,7 @@ async function runRealtimeSession(
   let endedReason = "provider-disconnected";
   let pipelineError: string | null = null;
   let connectedAt: number | null = null;
+  let endedAt: number | null = null;
   let toolCallsTotal = 0;
   let toolCallsFailed = 0;
   let escalationAttempted = false;
@@ -1357,6 +1462,9 @@ async function runRealtimeSession(
   let callerDncHangupStarted = false;
   let eventChain = Promise.resolve();
   let maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
+  let durationWarningTimer: ReturnType<typeof setTimeout> | null = null;
+  let accountingTimer: ReturnType<typeof setInterval> | null = null;
+  let accountingWork = Promise.resolve();
   let heartbeat: ReturnType<typeof setInterval> | null = null;
   let missedPongs = 0;
 
@@ -1787,18 +1895,61 @@ async function runRealtimeSession(
             : admissionMode === "take_message"
               ? 300_000
               : resolveOpenAISipSessionMaxSeconds() * 1_000;
-        maxDurationTimer = setTimeout(() => {
-          if (!ownsSession()) return;
-          if (endedReason === "transferred" || endedReason === "caller-dnc") return;
-          endedReason = "botbound-max-duration";
-          void hangupOpenAISipCall(input.callId).catch(() => {
-            log.warn("OpenAI max-duration hangup could not be confirmed", {
+        if (accountElapsed) {
+          accountingTimer = setInterval(() => {
+            if (!ownsSession() || connectedAt === null || endedAt !== null) return;
+            const elapsed = (Date.now() - connectedAt) / 1_000;
+            accountingWork = accountingWork.then(() => accountElapsed(elapsed));
+          }, 30_000);
+        }
+        if (maxDurationMs >= 600_000) {
+          durationWarningTimer = setTimeout(() => {
+            if (!ownsSession() || ws.readyState !== WebSocket.OPEN) return;
+            log.warn("Business call approaching its session limit", {
+              userId: input.userId,
               callId: providerCallId(input.callId),
+              remainingSeconds: 60,
             });
-          });
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.close(1000, "BotBound maximum duration reached");
-          }
+            // Guide the next conversational turn without interrupting speech
+            // or creating a competing response while another one is playing.
+            sendJson(ws, {
+              type: "session.update",
+              session: {
+                type: "realtime",
+                instructions:
+                  instructions +
+                  "\n\nThis call reaches its session limit in one minute. Briefly tell the caller, summarize the agreed next step, and offer an approved callback or human transfer if more time is needed. Do not promise automatic continuation.",
+              },
+            });
+          }, maxDurationMs - 60_000);
+        }
+        maxDurationTimer = setTimeout(() => {
+          if (!ownsSession() || endedAt !== null) return;
+          if (endedReason === "transferred" || endedReason === "caller-dnc") return;
+          void withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+            // REFER or finalization may have completed while this lock waited.
+            if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+            if (endedReason === "transferred" || endedReason === "caller-dnc") return;
+            if (
+              (await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred"
+            ) {
+              notifyTransferred();
+              return;
+            }
+            if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
+            endedReason = "botbound-max-duration";
+            await hangupOpenAISipCall(input.callId);
+          })
+            .catch(() => {
+              log.warn("OpenAI max-duration hangup could not be confirmed", {
+                callId: providerCallId(input.callId),
+              });
+            })
+            .finally(() => {
+              if (ownsSession() && endedAt === null && ws.readyState === WebSocket.OPEN) {
+                ws.close(1000, "BotBound maximum duration reached");
+              }
+            });
         }, maxDurationMs);
 
         heartbeat = setInterval(() => {
@@ -1815,7 +1966,7 @@ async function runRealtimeSession(
             )
             .limit(1)
             .then(([row]) => {
-              if (row?.status === "transferred" || row?.status === "transferring") {
+              if (row?.status === "transferred") {
                 notifyTransferred();
               }
             })
@@ -1854,6 +2005,8 @@ async function runRealtimeSession(
         rejectOnce(error);
       });
       ws.on("close", (code, reason) => {
+        endedAt ??= Date.now();
+        if (accountingTimer) clearInterval(accountingTimer);
         if (code !== 1000 && endedReason === "provider-disconnected") {
           endedReason = `provider-close-${code}`;
         }
@@ -1878,25 +2031,41 @@ async function runRealtimeSession(
     });
     try {
       if (ownsSession() && endedReason !== "transferred" && endedReason !== "caller-dnc") {
-        await hangupOpenAISipCall(input.callId);
+        await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+          if (!ownsSession()) return;
+          if (
+            (await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred"
+          ) {
+            notifyTransferred();
+            return;
+          }
+          if (ownsSession()) await hangupOpenAISipCall(input.callId);
+        });
       }
     } catch {
       // The provider may already have ended the call.
     }
   } finally {
+    endedAt ??= Date.now();
     ownershipSignal?.removeEventListener("abort", abortForLostOwnership);
     if (liveSipSessions.get(input.callId) === sessionHandle) {
       liveSipSessions.delete(input.callId);
     }
     if (maxDurationTimer) clearTimeout(maxDurationTimer);
+    if (durationWarningTimer) clearTimeout(durationWarningTimer);
+    if (accountingTimer) clearInterval(accountingTimer);
     if (heartbeat) clearInterval(heartbeat);
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
       ws.terminate();
     }
     flushAssistantTurn();
+    await accountingWork;
+    if (accountElapsed && connectedAt !== null)
+      await accountElapsed((endedAt - connectedAt) / 1_000);
   }
 
   return {
+    endedAt,
     transcript: compactOpenAITranscript(transcriptLines),
     endedReason,
     pipelineError,
@@ -1915,6 +2084,7 @@ export async function runOpenAISipCallSession(
   admittedRuntime?: RealtimeRuntime,
   preclaimedCallLogId?: bigint,
   claim?: OpenAISipCallClaim,
+  spendReservation?: PlatformCostReservation,
 ): Promise<void> {
   return tenantStore.run(input.userId, async () => {
     let leaseHeartbeat: ReturnType<typeof setTimeout> | null = null;
@@ -2003,6 +2173,7 @@ export async function runOpenAISipCallSession(
       endedReason: "runtime-startup-error",
       pipelineError: "startup",
       connectedAt: null,
+      endedAt: null,
       toolCallsTotal: 0,
       toolCallsFailed: 0,
       escalationAttempted: false,
@@ -2043,7 +2214,28 @@ export async function runOpenAISipCallSession(
           });
         });
       }
-      outcome = await runRealtimeSession(input, runtime, ownerFence.signal);
+      let accountedWindows = 1;
+      const accountElapsed = spendReservation
+        ? async (seconds: number) => {
+            const windows = Math.max(1, Math.ceil(seconds / 300));
+            if (windows <= accountedWindows) return;
+            try {
+              await extendCommittedPlatformCostReservation(spendReservation, seconds);
+              accountedWindows = windows;
+            } catch (error) {
+              // Actual admitted work can cross the cap; new work must see its cost.
+              // A transient persistence failure retries on the next heartbeat and
+              // at completion, while retaining the prior conservative debit.
+              log.error("Active SIP duration spend accounting failed", {
+                userId: input.userId,
+                callId: providerCallId(input.callId),
+                elapsedSeconds: Math.ceil(seconds),
+              });
+              reportError(error, { tags: { surface: "sip-duration-accounting" } });
+            }
+          }
+        : undefined;
+      outcome = await runRealtimeSession(input, runtime, ownerFence.signal, accountElapsed);
     } catch (error) {
       log.error("OpenAI SIP session startup failed", {
         userId: input.userId,
@@ -2065,11 +2257,12 @@ export async function runOpenAISipCallSession(
       if (leaseSafetyTimer) clearTimeout(leaseSafetyTimer);
       let terminalPersistedByOwner = false;
       try {
-        await persistFinishedCall({
+        outcome.endedReason = await persistFinishedCall({
           call: input,
           callLogId,
           agentName,
           connectedAt: outcome.connectedAt,
+          endedAt: outcome.endedAt,
           transcript: outcome.transcript,
           endedReason: outcome.endedReason,
           pipelineError: outcome.pipelineError,
@@ -2087,7 +2280,11 @@ export async function runOpenAISipCallSession(
         // owner-fenced terminal write proves this worker still owned the call,
         // it must also end the now-silent provider leg. A real takeover fails
         // that write and therefore cannot be hung up by the stale worker.
-        if (ownerFence.signal.aborted && terminalPersistedByOwner) {
+        if (
+          ownerFence.signal.aborted &&
+          terminalPersistedByOwner &&
+          outcome.endedReason !== "transferred"
+        ) {
           await hangupOpenAISipCall(input.callId).catch(() => {
             log.warn("OpenAI SIP ownership-abort hangup could not be confirmed", {
               userId: input.userId,

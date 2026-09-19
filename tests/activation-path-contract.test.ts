@@ -85,7 +85,9 @@ describe("activation path contract", () => {
     );
     expect(wizard).toContain('if (stored === "channels") return "test"');
     expect(wizard).toContain('if (stored === "wire") return "launch"');
-    expect(wizard).toContain("function finish(line: string | null = phoneNumber)");
+    expect(wizard).toContain(
+      "function finish(line: string | null = hasLiveLine ? phoneNumber : null)",
+    );
     expect(wizard).toContain("if (line && testStarted)");
     expect(wizard).toContain("disabled={!testStarted}");
     expect(wizard).not.toContain('event: "launch_readiness_reached"');

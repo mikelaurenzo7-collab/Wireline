@@ -207,7 +207,9 @@ function assertApprovedOutboundMotion() {
       !/^[0-9a-f]{64}$/i.test(String(artifact.sha256 || "")) ||
       artifact.sha256.toLowerCase() !== evidenceDigest
     ) {
-      throw new Error(`Outbound motion QA evidence is not bound to current approval: ${approvedPath}`);
+      throw new Error(
+        `Outbound motion QA evidence is not bound to current approval: ${approvedPath}`,
+      );
     }
   }
 }
@@ -441,15 +443,15 @@ render(
     title: "Find. Call. Book.",
     description: "Vertical BotBound outbound story master.",
     content: `${atmosphericBackground(1080, 1920, portraitData, { vertical: true })}
-      ${brandLockup(68, 72, 76, iconData)}
-      ${eyebrow("THE FIRST MOVE", 68, 326, 20)}
-      <text x="58" y="520" fill="${palette.platinum}" font-family="Inter Tight" font-size="160" font-weight="800" letter-spacing="-8">
-        <tspan x="58">FIND.</tspan><tspan x="58" dy="158">CALL.</tspan><tspan x="58" dy="158" fill="${palette.violet}">BOOK.</tspan>
+      ${brandLockup(96, 236, 76, iconData)}
+      ${eyebrow("THE FIRST MOVE", 96, 400, 20)}
+      <text x="90" y="584" fill="${palette.platinum}" font-family="Inter Tight" font-size="160" font-weight="800" letter-spacing="-8">
+        <tspan x="90">FIND.</tspan><tspan x="90" dy="158">CALL.</tspan><tspan x="90" dy="158" fill="${palette.violet}">BOOK.</tspan>
       </text>
-      <rect x="66" y="1408" width="948" height="3" fill="${palette.violet}" opacity=".72"/>
-      <text x="66" y="1500" fill="${palette.platinum}" font-family="Inter Tight" font-size="52" font-weight="800">YOUR BOT MAKES THE FIRST MOVE.</text>
-      ${ctaPill("GET YOUR SALES BOT", 66, 1566, 402, 82, 23)}
-      <text x="1014" y="1634" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="19" font-weight="700" letter-spacing="2.8">BOTBOUND.ME</text>`,
+      <rect x="96" y="1306" width="840" height="3" fill="${palette.violet}" opacity=".72"/>
+      <text x="96" y="1392" fill="${palette.platinum}" font-family="Inter Tight" font-size="58" font-weight="800"><tspan x="96">YOUR BOT MAKES</tspan><tspan x="96" dy="64">THE FIRST MOVE.</tspan></text>
+      ${ctaPill("BUILD FREE", 96, 1490, 300, 74, 23)}
+      <text x="936" y="1540" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="19" font-weight="700" letter-spacing="2.8">BOTBOUND.ME</text>`,
   },
   1080,
 );
@@ -828,7 +830,7 @@ render(
       ${brandLockup(92, 72, 86, iconData)}
       ${eyebrow("INVESTOR BRIEF · OUTBOUND WEDGE", 94, 250, 20)}
       <text x="86" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="126" font-weight="800" letter-spacing="-6.8">FIND. CALL. <tspan fill="${palette.violet}">BOOK.</tspan></text>
-      <text x="92" y="474" fill="${palette.mist}" font-family="Inter" font-size="31" font-weight="600">Autonomous Bots find prospects, make calls, and drive clear outcomes.</text>
+      <text x="92" y="474" fill="${palette.mist}" font-family="Inter" font-size="31" font-weight="600">Bots work approved markets and lists, make calls, and drive clear outcomes.</text>
 
       <text x="92" y="644" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">THE WEDGE</text>
       <text x="88" y="734" fill="${palette.ink}" font-family="Inter Tight" font-size="58" font-weight="800" letter-spacing="-2.8"><tspan x="88">OUTBOUND IS STILL A STACK.</tspan><tspan x="88" dy="66" fill="#6D52B5">BOTBOUND MAKES IT A BOT.</tspan></text>
@@ -846,8 +848,8 @@ render(
       <text x="92" y="1582" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Sales · Recruiting · Appointments · Reactivation · Intake</text>
       <text x="92" y="1688" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">ONE WORKSPACE. EVERY OUTBOUND JOB.</text>
       <text x="92" y="1736" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.</text>
-      <text x="92" y="1842" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">BUILD FREE. LIVE FROM $19/MO.</text>
-      <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Private simulation before live work. Capacity grows with the account.</text>
+      <text x="92" y="1842" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">BUILD FREE. PLANS FROM $19/MO.</text>
+      <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Starter: 1 live Bot and 50 voice minutes/month. Activation availability applies.</text>
 
       <rect x="92" y="1972" width="1416" height="2" fill="#C9C3B7"/>
       <text x="92" y="2028" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>
@@ -986,7 +988,9 @@ try {
     `${JSON.stringify(
       {
         campaign: "The First Move",
-        scope: "outbound-only creative release",
+        scope: "outbound campaign review candidate",
+        publicationStatus:
+          "held pending current production, destination, and campaign readiness checks",
         generatedAt: new Date().toISOString(),
         renderer: "scripts/render-botbound-outbound-launch-assets.mjs",
         files: manifestFiles,
@@ -1009,11 +1013,11 @@ try {
     `${checksumFiles.map((file) => `${file.sha256}  ${file.path}`).join("\n")}\n`,
   );
 
-  // Publish the manifest last: it is the approval marker for the complete set.
+  // Install the manifest last so it describes a complete verified candidate set.
   renameSync(stagedChecksumPath, checksumPath);
   renameSync(stagedManifestPath, manifestPath);
-  console.log(`Wrote ${manifestFiles.length} approved release manifest entries.`);
-  console.log(`Wrote ${checksumFiles.length} approved release checksums.`);
+  console.log(`Wrote ${manifestFiles.length} review-candidate manifest entries.`);
+  console.log(`Wrote ${checksumFiles.length} review-candidate checksums.`);
 } finally {
   rmSync(approvalStagingDirectory, { recursive: true, force: true });
 }

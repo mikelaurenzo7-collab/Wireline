@@ -134,10 +134,13 @@ describe("code review hardening contracts", () => {
 
   it("compensates and rethrows OpenAI call-accept failures so the provider can retry", () => {
     const routes = read("src/routes/openai-sip-routes.ts");
-    const accept = routes.slice(
-      routes.indexOf("try {\n      await acceptCall(callId"),
-      routes.indexOf("try {\n      await commitRealtimeSessionSpend"),
-    );
+    // Worker admission adds an outer try/finally; compensation is independent
+    // of indentation. Keep the slice bounded by the actual provider operations.
+    const acceptStart = routes.indexOf("await acceptCall(callId");
+    const commitStart = routes.indexOf("await commitRealtimeSessionSpend", acceptStart);
+    expect(acceptStart).toBeGreaterThan(-1);
+    expect(commitStart).toBeGreaterThan(acceptStart);
+    const accept = routes.slice(acceptStart, commitStart);
     expect(accept).toContain("releaseAccountOperationLease");
     expect(accept).toContain("releaseRealtimeSessionSpendAfterFailure");
     expect(accept).toContain("hangupCall(callId)");
