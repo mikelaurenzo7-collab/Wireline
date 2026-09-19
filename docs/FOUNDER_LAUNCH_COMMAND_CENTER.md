@@ -70,7 +70,7 @@ These are real external readiness items, not reasons to rewrite working product 
 
 ### Resend delivery feedback
 
-Production sending is configured, but signed delivery feedback is not active until both are true:
+Verify signed delivery feedback through both controls:
 
 1. Resend has a production webhook pointing at `https://botbound.me/api/webhooks/resend`;
 2. `RESEND_WEBHOOK_SECRET` is set in production Vercel.
@@ -79,7 +79,7 @@ The receiver, schema, suppression semantics, and rollback path are already imple
 
 ### AgentMail managed Bot email
 
-Paid Bot mailbox provisioning remains blocked until all of these are true:
+Verify paid Bot mailbox provisioning against all of these controls:
 
 1. an organization-scoped `AGENTMAIL_API_KEY` has the required inbox, message, webhook, and domain-read permissions;
 2. `AGENTMAIL_DEFAULT_DOMAIN` is `botbound.me` or a verified BotBound subdomain;

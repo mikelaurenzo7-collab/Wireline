@@ -98,7 +98,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("marketing sitemap disclosure", () => {
+describe("marketing exploration disclosure", () => {
   it("keeps the panel hidden and describes the controlled element while closed", () => {
     const elements = descendants(MarketingChromeBar({}));
     expect(elements.find((element) => element.props.id === "sitemap-panel")?.props.hidden).toBe(
@@ -122,7 +122,7 @@ describe("marketing sitemap disclosure", () => {
     expect(event.stopPropagation).toHaveBeenCalledOnce();
   });
 
-  it("enters the revealed links when the sitemap opens", () => {
+  it("enters the revealed links when exploration opens", () => {
     hooks.open = true;
     MarketingChromeBar({});
     for (const entry of hooks.effects) entry.effect();
@@ -130,7 +130,7 @@ describe("marketing sitemap disclosure", () => {
     expect(hooks.focus).not.toHaveBeenCalled();
   });
 
-  it("keeps focus outside the hidden links while the sitemap is closed", () => {
+  it("keeps focus outside the hidden links while exploration is closed", () => {
     MarketingChromeBar({});
     for (const entry of hooks.effects) entry.effect();
     expect(hooks.firstLinkFocus).not.toHaveBeenCalled();

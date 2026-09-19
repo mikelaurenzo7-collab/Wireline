@@ -93,6 +93,7 @@ export default function PostCreateActivationWizard({
   });
   const [refreshedPhoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [refreshingPhone, setLoadingPhone] = useState(true);
+  const [phoneLookupFailed, setPhoneLookupFailed] = useState(false);
   // Background identity provisioning may finish after the initial number read.
   // Consume its result directly without remounting the guide or resetting its step.
   const phoneNumber = refreshedPhoneNumber || payload.phoneNumber || null;
@@ -136,17 +137,21 @@ export default function PostCreateActivationWizard({
     try {
       const response = await authFetch("/api/phone-numbers");
       if (!response.ok) {
+        setPhoneLookupFailed(true);
         setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
         return { ok: false, phoneNumber: null };
       }
       const body = await response.json();
-      const numbers = Array.isArray(body?.numbers) ? body.numbers : [];
+      if (!Array.isArray(body?.numbers)) throw new Error("Invalid phone inventory");
+      const numbers = body.numbers;
       const match = numbers.find((row: { agent_id?: string }) => row.agent_id === payload.agentId);
       const next = match?.phone_number ?? null;
+      setPhoneLookupFailed(false);
       setPhoneNumber(next);
       setWireError(null);
       return { ok: true, phoneNumber: next };
     } catch {
+      setPhoneLookupFailed(true);
       setWireError("Couldn't refresh phone lines. Retry before provisioning another number.");
       return { ok: false, phoneNumber: null };
     } finally {
@@ -163,7 +168,7 @@ export default function PostCreateActivationWizard({
   }, [refreshPhone]);
 
   async function provisionLine() {
-    if (provisioning) return;
+    if (provisioning || refreshingPhone || phoneLookupFailed) return;
     setProvisioning(true);
     setWireError(null);
     setActivationNeeded(false);
@@ -349,11 +354,7 @@ export default function PostCreateActivationWizard({
                 ) : null}
                 <p
                   className={`wl-overline truncate ${
-                    active
-                      ? "text-foreground"
-                      : done
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                    active ? "text-foreground" : done ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   {POST_CREATE_WIZARD_COPY.steps[id].label}
@@ -426,13 +427,13 @@ export default function PostCreateActivationWizard({
                       : "This number is connected to this Bot."}
                   </p>
                 </div>
-              ) : (
+              ) : phoneLookupFailed ? null : (
                 <div className="rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
                   No live line yet. Connect one to receive real calls with this Bot.
                 </div>
               )}
 
-              {activationNeeded ? (
+              {activationNeeded && !phoneLookupFailed ? (
                 <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
                   <p className="text-sm font-semibold text-foreground">
                     {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
@@ -441,13 +442,32 @@ export default function PostCreateActivationWizard({
                     {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
                   </p>
                   <Button asChild size="sm" className="mt-3">
-                    <Link to={activationPlanPath} onClick={() => stashPostCreateWizardStep("launch")}>
+                    <Link
+                      to={activationPlanPath}
+                      onClick={() => stashPostCreateWizardStep("launch")}
+                    >
                       {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
                     </Link>
                   </Button>
                 </div>
               ) : wireError ? (
-                <StatusNotice tone="destructive" title={wireError} />
+                <StatusNotice
+                  tone="destructive"
+                  title={wireError}
+                  action={
+                    phoneLookupFailed ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => void refreshPhone()}
+                        disabled={refreshingPhone}
+                      >
+                        Retry line lookup
+                      </Button>
+                    ) : undefined
+                  }
+                />
               ) : null}
 
               <div className="flex flex-wrap gap-2">
@@ -467,7 +487,7 @@ export default function PostCreateActivationWizard({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={provisioning}
+                      disabled={provisioning || refreshingPhone || phoneLookupFailed}
                       onClick={() => void provisionLine()}
                     >
                       {provisioning ? (
@@ -477,12 +497,7 @@ export default function PostCreateActivationWizard({
                       )}
                       {POST_CREATE_WIZARD_COPY.steps.launch.primary}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => finish()}
-                    >
+                    <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
                       {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
                   </>
@@ -588,12 +603,7 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "test" ? (
             <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setStep("launch")}
-              >
+              <Button type="button" variant="secondary" size="sm" onClick={() => setStep("launch")}>
                 {POST_CREATE_WIZARD_COPY.steps.test.skip}
               </Button>
               <Button

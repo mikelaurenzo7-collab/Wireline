@@ -76,6 +76,8 @@ export interface ClientPlan {
 export interface BillingPlansResponse {
   plans: ClientPlan[];
   stripe_configured: boolean;
+  /** Platform checkout gates are open; plan/interval and tenant checks still apply. */
+  checkout_available: boolean;
 }
 
 /** GET /api/billing/usage — mirrors WorkspaceUsageSnapshot */

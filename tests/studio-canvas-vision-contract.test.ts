@@ -93,6 +93,9 @@ describe("Studio Canvas vision contract", () => {
       "settings-entry",
       "settings-expanded-state",
       "progressive-inspector",
+      "workroom-key",
+      "workroom-mode-isolation",
+      "workroom-draft-preservation",
     ]) {
       expect(tsManifest, id).toContain(`id: "${id}"`);
       expect(deployManifest, id).toContain(`id: "${id}"`);

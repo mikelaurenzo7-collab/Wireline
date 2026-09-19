@@ -389,7 +389,6 @@ export default function CompanyIdentityPack() {
 
   return (
     <section
-      id="company-identity"
       className="studio-card mt-5 scroll-mt-24 p-5 sm:p-6"
       aria-labelledby="company-identity-title"
     >

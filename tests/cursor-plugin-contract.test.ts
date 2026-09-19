@@ -91,7 +91,8 @@ describe("Cursor Directory plugin contract", () => {
     }
     expect(skill).toContain("not a software development kit");
     expect(publicDocs).toContain("not a repo voice SDK");
-    expect(apps).toContain("Not a repo voice SDK");
+    expect(apps).toContain("Create a BotBound account and your first Phone Bot from Cursor.");
+    expect(apps).toMatch(/manage\s+live calls, messages, numbers, and billing in Studio/);
     expect(apps).toContain("/cursor-plugin.html");
     expect(apps).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(apps).not.toContain("https://trywireline.com/mcp");

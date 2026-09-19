@@ -8,10 +8,10 @@ import { WirelineWordmark } from "../brand/WirelineBrand";
 const OPEN_PRIVACY_CHOICES_EVENT = "wireline:open-privacy-choices";
 
 const PRODUCT_LINKS = [
-  { to: "/solutions/sales", label: "Sales" },
-  { to: "/solutions/support", label: "Support" },
   { to: "/features", label: "Features" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/solutions/sales", label: "Sales Bots" },
+  { to: "/solutions/support", label: "Support Bots" },
   { to: "/compare", label: "Compare" },
 ] as const;
 
@@ -34,7 +34,6 @@ const COMPANY_LINKS = [
 ] as const;
 
 const RESOURCE_LINKS = [
-  { to: "/features", label: "How It Works" },
   { to: "/developers", label: "Developers" },
   { to: "/trust", label: "Trust Center" },
   { to: "/support", label: "Support" },
@@ -163,7 +162,7 @@ export default function MarketingChromeBar({ className }: { className?: string }
             onClick={() => setOpen((value) => !value)}
             className="wl-focus-ring-halo ml-auto inline-flex min-h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
           >
-            Sitemap
+            Explore
             <ChevronUp
               className={cn(
                 "size-3.5 transition-transform duration-200 motion-reduce:transition-none",

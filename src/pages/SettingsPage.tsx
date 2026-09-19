@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { KeyRound, LogOut, Mail, ShieldCheck, Trash2, UserRound } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
+import { useNavigate } from "react-router";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -303,22 +303,6 @@ export default function SettingsPage() {
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <p className="wl-eyebrow wl-eyebrow--muted">Security</p>
           <div className="mt-5 grid gap-3">
-            <div className="wl-data-row wl-data-row--framed">
-              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
-                <ShieldCheck size={15} />
-              </span>
-              <span className="wl-data-row__main">
-                <span className="wl-data-row__title">Consent and DNC</span>
-                <span className="wl-data-row__detail">
-                  DNC, consent ledger, scrub status, and audit export
-                </span>
-              </span>
-              <span className="wl-data-row__trailing">
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/settings/compliance">Open</Link>
-                </Button>
-              </span>
-            </div>
             <div className="wl-data-row wl-data-row--framed">
               <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
                 <KeyRound size={15} />

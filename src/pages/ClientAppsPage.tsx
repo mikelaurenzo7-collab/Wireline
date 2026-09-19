@@ -37,17 +37,17 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Create a BotBound account, then draft and privately simulate a Phone Bot in ChatGPT.",
+    blurb: "Build and privately rehearse your Phone Bot in ChatGPT.",
     status: CLIENT_SURFACE_POSTURE.chatgpt.status,
     statusVariant: "info" as const,
-    action: "MCP setup",
+    action: "Set up",
     href: "/settings/apps#chatgpt-mcp",
     emphasis: "primary" as const,
   },
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build your first Phone Bot from Claude with the same account-bound connector.",
+    blurb: "Build and privately rehearse your Phone Bot in Claude.",
     status: CLIENT_SURFACE_POSTURE.claude.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.claude.action,
@@ -57,8 +57,7 @@ const clientSurfaces = [
   {
     icon: Terminal,
     title: "Cursor",
-    blurb:
-      "Install the Cursor plugin to create a BotBound account and your first Phone Bot. Not a repo voice SDK.",
+    blurb: "Create a BotBound account and your first Phone Bot from Cursor.",
     status: CLIENT_SURFACE_POSTURE.cursor.status,
     statusVariant: "info" as const,
     action: CLIENT_SURFACE_POSTURE.cursor.action,
@@ -68,7 +67,7 @@ const clientSurfaces = [
   {
     icon: TabletSmartphone,
     title: "Android",
-    blurb: "Internal beta for call wake and on-the-go approvals. Not required for launch.",
+    blurb: "Call alerts and approvals on the go.",
     status: CLIENT_SURFACE_POSTURE.android.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.android.action,
@@ -78,7 +77,7 @@ const clientSurfaces = [
   {
     icon: Smartphone,
     title: "iPhone",
-    blurb: "Planned native app. Join the waitlist. Web Studio remains the full product.",
+    blurb: "A native app is planned. Use Studio in your browser today.",
     status: CLIENT_SURFACE_POSTURE.ios.status,
     statusVariant: "outline" as const,
     action: CLIENT_SURFACE_POSTURE.ios.action,
@@ -164,19 +163,17 @@ export default function ClientAppsPage() {
           className="mt-6 scroll-mt-24 border-t border-border/70 pt-5"
           aria-labelledby="chatgpt-mcp-heading"
         >
-          <p className="wl-overline text-primary">Account-Bound MCP</p>
+          <p className="wl-overline text-primary">Connect your account</p>
           <h2
             id="chatgpt-mcp-heading"
             className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
-            Build Your First Phone Bot in Cursor, ChatGPT, or Claude
+            Build and rehearse in your preferred app
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Add <code className="wl-code">{MCP_SERVER_URL}</code> where you already work. New users
-            create a <WirelineWordmark inline /> account during OAuth, then build their first Phone
-            Bot in that chat. Privately rehearse it there. Numbers, live calls, messaging, billing,
-            and launch stay in Studio. This is not a way to embed <WirelineWordmark inline /> in
-            another repo.
+            Add <code className="wl-code">{MCP_SERVER_URL}</code> in your app's connector settings
+            and sign in to <WirelineWordmark inline />. Build and rehearse privately there; manage
+            live calls, messages, numbers, and billing in Studio.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
             <Button asChild variant="outline" size="sm">
@@ -200,7 +197,7 @@ export default function ClientAppsPage() {
               </a>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/developers">Public Developer Notes</Link>
+              <Link to="/developers">Developer guide</Link>
             </Button>
           </div>
           <McpCoachingPanel />

@@ -112,13 +112,17 @@ export default function StripeBillingCard({
       }
       const statusRes = (await statusRaw.json().catch(() => null)) as BillingStatusResponse | null;
       const plansRes = (await plansRaw.json().catch(() => null)) as BillingPlansResponse | null;
-      if (!statusRes || !plansRes) {
+      if (!statusRes || !plansRes || !Array.isArray(plansRes.plans)) {
         throw new Error("Billing details could not be loaded. Refresh and try again.");
       }
-      const livePlans = plansRes.plans || [];
-      setStripeConfigured(!!statusRes.stripe_configured && !!plansRes.stripe_configured);
+      const livePlans = plansRes.plans;
+      const configured =
+        statusRes.stripe_configured === true && plansRes.stripe_configured === true;
+      setStripeConfigured(configured);
       setSelfServeBillingReleased(
-        livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true),
+        configured &&
+          plansRes.checkout_available === true &&
+          livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true),
       );
       setSub(statusRes.subscription || null);
       setAgentCount(statusRes.agent_count ?? 0);
@@ -291,12 +295,11 @@ export default function StripeBillingCard({
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 border border-[var(--wireline-color-feedback-warning-border)] bg-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_14%,transparent)]">
             <AlertTriangle className="w-5 h-5 text-[var(--wireline-color-status-warning)]" />
           </div>
-          <h3 className="wl-display-mark text-2xl text-foreground">Billing is finishing setup</h3>
+          <h3 className="wl-display-mark text-2xl text-foreground">Billing is unavailable</h3>
         </div>
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
-          Your account is active. The billing portal is being provisioned and will be live shortly.
-          You can keep using BotBound. We'll email you the moment self-serve plan changes are
-          available, or{" "}
+          Online billing is unavailable right now. Your saved Bots are still here. Please try again
+          later or{" "}
           <Link to="/contact" className="text-brand hover:underline">
             talk to BotBound
           </Link>{" "}
@@ -510,7 +513,10 @@ function PlanPicker({
             const isFree = plan.is_free === true;
             const annual = plan.price_usd_annual > 0;
             const showAnnual = billingInterval === "year" && annual;
-            const canSubscribe = !isFree && (showAnnual ? plan.annual_configured : plan.configured);
+            const canSubscribe =
+              checkoutReleased &&
+              !isFree &&
+              (showAnnual ? plan.annual_configured === true : plan.configured === true);
             const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
             const priceSuffix = showAnnual ? "/yr" : "/mo";
             const monthsSaved =

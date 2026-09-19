@@ -30,7 +30,6 @@ import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deleti
 import { getTwilioClient } from "./twilio-service";
 import { enqueue } from "./job-queue";
 import { provisionNativeTenantNumber } from "./voice/native-phone-provisioning";
-import { releaseNativeTenantNumber } from "./voice/native-phone-release";
 
 // A Stripe trial is not a paid activation. Real carrier numbers and durable
 // AgentMail inboxes are created only after Stripe reports an active paid
@@ -216,21 +215,11 @@ async function ensurePaidBotPhone(userId: string, agentId: string) {
     throw new Error(provisioned.error || "Paid Bot phone provisioning did not return a number.");
   }
 
-  try {
-    await assertTwilioOwnedNumber(provisioned.phoneNumber);
-  } catch (error) {
-    // Paid Bot identity is Twilio-strict. Release an unverifiable allocation
-    // and let the durable job retry rather than silently changing ownership.
-    await releaseNativeTenantNumber(userId, provisioned.phoneNumber).catch((releaseError) =>
-      log.error("Unverifiable paid Bot line could not be released", {
-        userId,
-        agentId,
-        phoneNumber: provisioned.phoneNumber,
-        error: getErrorMessage(releaseError),
-      }),
-    );
-    throw error;
-  }
+  // Provisioning has already persisted tenant ownership, including reused live
+  // lines. An unavailable or inconclusive read must never surrender that number
+  // to the carrier. Fail closed before mailbox work and let the durable retry
+  // verify the same reserved line; explicit release owns destructive cleanup.
+  await assertTwilioOwnedNumber(provisioned.phoneNumber);
 
   return {
     phoneNumber: provisioned.phoneNumber,

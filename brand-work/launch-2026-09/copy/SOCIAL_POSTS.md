@@ -22,7 +22,7 @@ One Bot can carry the conversation across calls, texts, and email under one iden
 
 You can't answer every call. Your Bot can.
 
-Build free. Go live from $19/month.
+Build free. Plans from $19/month. Activation availability applies.
 
 Put your Bot on the line: https://botbound.me/?utm_source=linkedin&utm_medium=organic&utm_campaign=second_ring_launch_202609
 
@@ -207,7 +207,7 @@ Choice at setup. Consistency in the conversation.
 
 You can't answer every call. Your Bot can.
 
-Build free. Go live from $19/month.
+Build free. Plans from $19/month. Activation availability applies.
 
 https://botbound.me/?utm_source=x&utm_medium=organic&utm_campaign=second_ring_launch_202609
 
@@ -236,7 +236,7 @@ One Bot can carry a conversation across calls, texts, and email. Choose from ten
 
 You can't answer every call. Your Bot can.
 
-**Build free. Go live from $19/month.**
+**Build free. Plans from $19/month. Activation availability applies.**
 
 [Build your Bot](https://botbound.me/?utm_source=email&utm_medium=launch&utm_campaign=second_ring_launch_202609)
 
@@ -251,7 +251,7 @@ These are copy candidates, not authorization to spend or publish.
 
 **Primary text:** Of course it rang now. Keep both hands on the work while your Bot starts the conversation across calls, texts, and email.
 **Headline:** You can't answer every call. Your Bot can.
-**Description:** Build free. Go live from $19/month.
+**Description:** Build free. Plans from $19/month. Activation availability applies.
 **CTA:** Build Your Bot
 
 ### Variant B — product clarity

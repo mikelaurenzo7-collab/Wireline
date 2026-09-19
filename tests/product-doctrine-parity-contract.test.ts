@@ -60,16 +60,18 @@ describe("product doctrine parity", () => {
     }
   });
 
-  it("describes paid phone capacity as provisioned slots rather than guaranteed idle lines", () => {
+  it("allocates identity to active paid Bots without pre-provisioning unused capacity", () => {
     const root = read("README.md");
     const pricing = read("src/pages/Pricing.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
-    expect(root).toContain("Every paid Bot includes a **production-number slot**");
-    expect(root).toContain("provisions the number only when the role needs one");
-    expect(pricing).toContain("Every active paid Bot gets its own BotBound production number");
+    expect(root).toContain(
+      "Every **active paid Bot gets a dedicated production number and BotBound-managed email identity**",
+    );
+    expect(root).toContain("Unused Bot capacity does not pre-provision carrier numbers");
+    expect(pricing).toContain("Every active paid Bot gets its own BotBound phone number");
     expect(pricing).not.toContain("Every active paid Bot gets its own production number");
-    expect(pricing).toContain("Unused plan capacity does not allocate a number");
+    expect(pricing).toContain("Free Builder and unused Bot slots do not receive live numbers.");
     expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
     expect(catalog).toContain("Unused Bot capacity does not pre-provision orphan carrier numbers");
     expect(catalog).toContain(

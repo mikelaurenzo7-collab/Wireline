@@ -23,7 +23,7 @@ describe("live research timeout is not a call-duration cap", () => {
 
   it("surfaces call-length clarity on the public pricing FAQ", () => {
     const source = readFileSync(resolve("src/pages/Pricing.tsx"), "utf8");
-    expect(source).toMatch(/Are live calls limited to a few seconds\?/);
+    expect(source).toMatch(/How long can a call last\?/);
     expect(source).toMatch(/Calls run as long as the conversation needs/);
   });
 });

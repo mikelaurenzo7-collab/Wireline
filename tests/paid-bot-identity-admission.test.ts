@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   enqueue: vi.fn(),
   provider: vi.fn(),
   phoneProvision: vi.fn(),
+  phoneRelease: vi.fn(),
   ownedNumbers: vi.fn(),
   vaultConfigured: vi.fn(),
   inboxesRead: vi.fn(),
@@ -134,7 +135,7 @@ vi.mock("../src/lib/voice/native-phone-provisioning", () => ({
   provisionNativeTenantNumber: (...args: unknown[]) => h.phoneProvision(...args),
 }));
 vi.mock("../src/lib/voice/native-phone-release", () => ({
-  releaseNativeTenantNumber: (...args: unknown[]) => h.provider(...args),
+  releaseNativeTenantNumber: (...args: unknown[]) => h.phoneRelease(...args),
 }));
 vi.mock("../src/lib/secret-vault", () => ({
   encryptSecret: h.provider,
@@ -180,6 +181,7 @@ beforeEach(() => {
     throw new Error("Provider work must not run");
   });
   h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
+  h.phoneRelease.mockResolvedValue({ ok: true });
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
   h.vaultConfigured.mockReturnValue(true);
   h.inboxesRead.mockResolvedValue([]);
@@ -191,6 +193,53 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it.each([false, true])(
+    "preserves a persisted line on transient carrier verification failure (reused=%s)",
+    async (reused) => {
+      h.target = "oldest";
+      h.lines = [{ agentId: "oldest" }];
+      h.phoneProvision.mockResolvedValue({ ok: true, phoneNumber: "+12025550123", reused });
+      const unavailable = Object.assign(new Error("Twilio temporarily unavailable"), {
+        status: 503,
+      });
+      h.ownedNumbers.mockRejectedValue(unavailable);
+
+      await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toBe(
+        unavailable,
+      );
+
+      expect(h.phoneRelease).not.toHaveBeenCalled();
+      expect(h.provider).not.toHaveBeenCalled();
+      expect(h.lines).toEqual([{ agentId: "oldest" }]);
+
+      // The durable retry reuses the same reservation after ownership recovers.
+      h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
+      await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+        "Provider work must not run",
+      );
+      expect(h.phoneRelease).not.toHaveBeenCalled();
+      expect(h.phoneProvision).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it("retains an unverified existing line for reconciliation without provisioning a mailbox", async () => {
+    h.target = "oldest";
+    h.lines = [{ agentId: "oldest" }];
+    h.phoneProvision.mockResolvedValue({
+      ok: true,
+      phoneNumber: "+12025550123",
+      reused: true,
+    });
+    h.ownedNumbers.mockResolvedValue([]);
+
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "Paid Bot line is not owned by the configured Twilio account",
+    );
+
+    expect(h.phoneRelease).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
+
   it.each([
     {
       name: "missing or invalid vault",

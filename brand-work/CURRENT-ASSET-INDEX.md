@@ -2,6 +2,19 @@
 
 Status: revision 4 creative release candidate, 2026-09-01. The creative package is complete for owner review; it is not a deployment record or blanket paid-media authorization.
 
+Source review: **2026-09-17**. This index covers both campaign families below. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+
+## Choose the current source
+
+| Need | Working source | Release boundary |
+| --- | --- | --- |
+| Inbound owner/operator story | `launch-2026-09/` — **The Second Ring** | Creative candidate; source-current deployed proof and working destination required before a launch claim |
+| Outbound Sales Bot story | `launch-2026-09-outbound/` — **The First Move** | Publishing held until outbound readiness and the exact copy-and-asset pair are approved |
+| Shared brand and broad GTM copy | `gtm/BOTBOUND-LAUNCH-COPY-KIT.md` | Build free first; authenticated private rehearsal; paid activation depends on current availability |
+| Existing film and new logo/call explorations | `../apps/botbound-film/` and `logo-motion-2026-09/` | Working creative; an asset's existence is not a release approval |
+
+The website explains inbound and outbound together. The First Move does not replace the inbound campaign. Corrected source copy must be carried into each generated image, PDF, video, caption, and remote delivery before that asset can be reapproved; an older render does not inherit a later source correction.
+
 The production identity is the friendly white/platinum robot visibly gripping a violet phone receiver, paired with a complete Inter Tight ExtraBold `BotBound` wordmark. Both B glyphs are complete and unbroken.
 
 ## Source of truth

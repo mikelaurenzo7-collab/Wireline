@@ -1043,7 +1043,8 @@ const PATHS: Record<string, PathItem> = {
   "/api/billing/plans": {
     get: {
       summary: "Public plan catalog",
-      description: "No auth. Returns the available plans and their human-readable feature lists.",
+      description:
+        "No auth. Returns the plan catalog and whether platform checkout gates are open. Plan, billing interval, and tenant eligibility checks still apply.",
       operationId: "listBillingPlans",
       tags: ["Billing"],
       security: auth.none,
@@ -1051,7 +1052,22 @@ const PATHS: Record<string, PathItem> = {
         "200": {
           description: "Plan catalog.",
           content: {
-            "application/json": { schema: { type: "object", additionalProperties: true } },
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["plans", "stripe_configured", "checkout_available"],
+                properties: {
+                  plans: { type: "array", items: { type: "object", additionalProperties: true } },
+                  stripe_configured: { type: "boolean" },
+                  checkout_available: {
+                    type: "boolean",
+                    description:
+                      "True when Stripe is configured and the self-serve billing release and hard launch gates permit checkout. Does not expose operational blockers.",
+                  },
+                },
+                additionalProperties: false,
+              },
+            },
           },
         },
       },

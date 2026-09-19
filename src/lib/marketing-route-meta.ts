@@ -52,7 +52,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
     title: "PRICING | FROM $19/MONTH",
     description:
-      "Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear.",
+      "Build a Bot free. Paid plans start at $19/month, with included numbers, call minutes, text, email, and prepaid usage controls. Check live activation availability.",
   },
   "/features": {
     title: "FEATURES",

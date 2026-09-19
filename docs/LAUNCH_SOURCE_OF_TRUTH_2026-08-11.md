@@ -11,7 +11,7 @@ This document is the tie-breaker for active launch language and creative status.
 **Headline:** Put Your Bot on the Line.
 **Operating loop:** **Build -> Train -> Launch -> Improve**  
 **Primary CTA:** Build Your Bot
-**Offer:** Build free. Go live from $19/mo.  
+**Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
 **Product model:** One BotBound workspace for every role and use case.
 
@@ -179,6 +179,6 @@ Launch-clean means the repository, runtime, website, and creative all tell the s
 
 **Build. Train. Launch. Improve.**
 **Your Bot for calls, texts, and email.**
-**Build free. Go live from $19/mo.**
+**Build free. Plans from $19/mo. Live activation subject to availability.**
 
 Everything else should support that story or get out of the way.

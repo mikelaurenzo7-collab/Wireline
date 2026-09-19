@@ -61,7 +61,11 @@ describe("marketing metadata contract", () => {
 
   it("keeps the public market reference tied to current first-party sources", () => {
     const compare = read("src/pages/Compare.tsx");
-    expect(compare.match(/August 1,\s+2026/g)).toHaveLength(1);
+    expect(
+      compare.match(
+        /Public prices were checked on the linked official pages on\s+[A-Z][a-z]+ \d{1,2},\s+20\d{2}/g,
+      ),
+    ).toHaveLength(1);
     for (const href of [
       "https://www.goodcall.com/pricing",
       "https://smith.ai/pricing/ai-receptionist",
@@ -109,7 +113,8 @@ describe("marketing metadata contract", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
-    expect(pricing).toContain("launch from $19/month");
+    expect(pricing).toContain("Paid plans start at $19/month");
+    expect(pricing).toContain("Check live activation availability.");
     expect(pricing).toContain("plan.price_usd_monthly");
     expect(contact).toContain('planById("starter")');
     expect(contact).toContain('planById("team")');

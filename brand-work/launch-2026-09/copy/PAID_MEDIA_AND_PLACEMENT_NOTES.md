@@ -46,7 +46,7 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 
 - Your Bot for calls, texts, and email.
 - Build -> Train -> Launch -> Improve.
-- Build free. Go live from $19/month.
+- Build free. Plans from $19/month. Activation availability applies.
 - Ten built-in OpenAI Realtime voice choices.
 - One selected voice stays stable through an active runtime session.
 - Every active paid Bot receives a dedicated BotBound production number within plan capacity.

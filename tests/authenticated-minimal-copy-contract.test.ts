@@ -22,6 +22,7 @@ describe("authenticated minimal copy contract", () => {
 
     expect(connectionsPage).toContain("MailboxConnectionCard");
     expect(connectionsPage).toContain("CrmConnectionCard");
+    expect(connectionsPage).toContain("Business tools");
     expect(connectionsPage).not.toMatch(/IntegrationOperatingMap|data-wireline-integration-map/);
     expect(introTags).toHaveLength(1);
     expect(introTags[0]).toContain('title="Connections"');

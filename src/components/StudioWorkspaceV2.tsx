@@ -22,7 +22,10 @@ import {
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
-import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
+import StudioWorkroom, {
+  type StudioWorkroomDraft,
+  type StudioWorkroomHandle,
+} from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 
 type InspectorSection = "setup" | "review";
@@ -106,6 +109,9 @@ export default function StudioWorkspaceV2() {
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
+  // A mode change ends its stream, but its unsent draft belongs to the Bot and
+  // mode. Keep drafts above the keyed workroom rather than dropping user edits.
+  const workroomDraftsRef = useRef(new Map<string, StudioWorkroomDraft>());
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
@@ -275,15 +281,18 @@ export default function StudioWorkspaceV2() {
     />
   );
 
+  const workroomKey = `${active.id}:${workroomMode}`;
   const workroom = (
     <StudioWorkroom
-      key={active.id}
+      key={workroomKey}
       ref={workroomRef}
       agentId={active.id}
       agentName={active.name}
       markKey={active.mark_key}
       initialCommand={commandParam || undefined}
       commandNonce={commandNonceParam || undefined}
+      initialDraft={workroomDraftsRef.current.get(workroomKey)}
+      onDraftChange={(draft) => workroomDraftsRef.current.set(workroomKey, draft)}
       layout={splitWorkspace ? "split" : "standalone"}
       mode={workroomMode}
       onModeChange={setWorkroomMode}

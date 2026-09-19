@@ -59,6 +59,12 @@ export type StudioWorkroomHandle = {
   focusComposer: (text?: string) => void;
 };
 
+export type StudioWorkroomDraft = {
+  text: string;
+  command: string | null;
+  commandNonce: string | null;
+};
+
 function AgentAvatar({
   agentName,
   markKey,
@@ -134,6 +140,8 @@ const StudioWorkroom = forwardRef<
     markKey?: BotMarkKey | null;
     initialCommand?: string;
     commandNonce?: string;
+    initialDraft?: StudioWorkroomDraft;
+    onDraftChange?: (draft: StudioWorkroomDraft) => void;
     layout?: "standalone" | "canvas" | "split";
     mode?: WorkroomMode;
     onModeChange?: (mode: WorkroomMode) => void;
@@ -146,6 +154,8 @@ const StudioWorkroom = forwardRef<
     markKey,
     initialCommand,
     commandNonce,
+    initialDraft,
+    onDraftChange,
     layout = "standalone",
     mode = "configure",
     onModeChange,
@@ -154,7 +164,21 @@ const StudioWorkroom = forwardRef<
   ref,
 ) {
   const [messages, setMessages] = useState<StudioMessage[]>([]);
-  const [draft, setDraft] = useState(initialCommand?.trim() || "");
+  const [draft, setDraft] = useState(() => {
+    const command = initialCommand?.trim() || null;
+    if (
+      initialDraft &&
+      initialDraft.command === command &&
+      initialDraft.commandNonce === (commandNonce || null)
+    ) {
+      return initialDraft.text;
+    }
+    return reconcileStudioCommandDraft(
+      initialDraft?.text || "",
+      initialDraft?.command || null,
+      command,
+    );
+  });
   const [loading, setLoading] = useState(mode === "configure");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -163,6 +187,7 @@ const StudioWorkroom = forwardRef<
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const injectedCommandRef = useRef<string | null>(initialCommand?.trim() || null);
+  const injectedCommandNonceRef = useRef<string | null>(commandNonce || null);
   const split = layout === "split";
   const quickPrompts = mode === "test" ? TEST_PROMPTS : CONFIGURE_PROMPTS;
   const showStarterPrompts = !loading && !sending && messages.length === 0 && !draft.trim();
@@ -255,14 +280,29 @@ const StudioWorkroom = forwardRef<
   useEffect(() => {
     const previousInjectedCommand = injectedCommandRef.current;
     const nextInjectedCommand = initialCommand?.trim() || null;
+    const nextNonce = commandNonce || null;
+    const commandChanged =
+      previousInjectedCommand !== nextInjectedCommand ||
+      injectedCommandNonceRef.current !== nextNonce;
     injectedCommandRef.current = nextInjectedCommand;
-    setDraft((current) =>
-      reconcileStudioCommandDraft(current, previousInjectedCommand, nextInjectedCommand),
-    );
+    injectedCommandNonceRef.current = nextNonce;
+    if (commandChanged) {
+      setDraft((current) =>
+        reconcileStudioCommandDraft(current, previousInjectedCommand, nextInjectedCommand),
+      );
+    }
     if (nextInjectedCommand) {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [initialCommand, commandNonce]);
+
+  useEffect(() => {
+    onDraftChange?.({
+      text: draft,
+      command: initialCommand?.trim() || null,
+      commandNonce: commandNonce || null,
+    });
+  }, [commandNonce, draft, initialCommand, onDraftChange]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -279,7 +319,7 @@ const StudioWorkroom = forwardRef<
 
   const submit = useCallback(() => {
     const text = draft.trim();
-    if (!text || sending) return;
+    if (!text || sending || loading || clearing) return;
     const history = messages.slice(-12).map((message) => ({
       role: message.role === "Account Holder" ? "customer" : "employee",
       content: message.content,
@@ -297,10 +337,10 @@ const StudioWorkroom = forwardRef<
     setError(null);
     setSending(true);
     void streamSend({ content: text, history: mode === "test" ? history : undefined });
-  }, [draft, messages, mode, sending, streamSend]);
+  }, [clearing, draft, loading, messages, mode, sending, streamSend]);
 
   const clearConversation = useCallback(async () => {
-    if (clearing) return;
+    if (clearing || sending || loading) return;
     if (mode === "test") {
       setMessages([]);
       setError(null);
@@ -325,7 +365,7 @@ const StudioWorkroom = forwardRef<
     } finally {
       setClearing(false);
     }
-  }, [agentId, clearing, mode]);
+  }, [agentId, clearing, loading, mode, sending]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -364,7 +404,7 @@ const StudioWorkroom = forwardRef<
   const clearButton = (
     <button
       type="button"
-      disabled={!messages.length || clearing}
+      disabled={!messages.length || clearing || sending || loading}
       onClick={() => void clearConversation()}
       className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
@@ -557,7 +597,7 @@ const StudioWorkroom = forwardRef<
                 <Button
                   type="button"
                   size="sm"
-                  disabled={!draft.trim() || sending}
+                  disabled={!draft.trim() || sending || loading || clearing}
                   onClick={submit}
                   className="min-w-9"
                   aria-busy={sending}

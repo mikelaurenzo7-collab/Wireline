@@ -132,7 +132,7 @@ export default function WireAgentLanding() {
                 </Link>
               </nav>
               <div className="landing-prestige__explore">
-                <p>Build &amp; test free. Activate when ready.</p>
+                <p>Build &amp; test free. Explore live plans.</p>
                 <nav aria-label="Explore BotBound">
                   <Link to="/features">
                     How it works <ArrowRight aria-hidden="true" />

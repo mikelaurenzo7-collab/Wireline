@@ -158,7 +158,7 @@ export default function CreateAgentDialog({
     markWasChosenRef.current = false;
     setName("");
     setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary));
-    briefIsTemplateTextRef.current = true;
+    briefIsTemplateTextRef.current = !initialBrief.trim();
     setError("");
     const frame = requestAnimationFrame(() => briefRef.current?.focus());
     return () => cancelAnimationFrame(frame);
@@ -425,6 +425,7 @@ export default function CreateAgentDialog({
                   <button
                     key={template.key}
                     type="button"
+                    disabled={creating}
                     onClick={() => {
                       setTemplateKey(template.key);
                       if (!markWasChosenRef.current) {
@@ -493,6 +494,7 @@ export default function CreateAgentDialog({
             </span>
             <Textarea
               ref={briefRef}
+              disabled={creating}
               value={brief}
               onChange={(event) => {
                 briefIsTemplateTextRef.current = false;
@@ -510,6 +512,7 @@ export default function CreateAgentDialog({
               <span className="font-normal text-muted-foreground">(optional)</span>
             </span>
             <Input
+              disabled={creating}
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder={defaultName(templateKey)}

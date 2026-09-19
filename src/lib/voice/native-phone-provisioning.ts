@@ -208,46 +208,62 @@ async function provisionNativeTenantNumberUnfenced(input: {
     .select({ held: sql<number>`count(*)` })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, input.userId));
-  if (Number(held || 0) >= phoneSlots) {
-    if (input.agentId) {
-      const [reusable] = await drizzle
+  const atCapacity = Number(held || 0) >= phoneSlots;
+  if (input.agentId && (atCapacity || (!input.areaCode && !input.preferredPhoneNumber))) {
+    const agentId = input.agentId;
+    // Automatic identity setup should use a number already owned by the tenant
+    // before adding recurring carrier cost. Serialize both the Bot recheck and
+    // the detached-line claim so concurrent setup requests cannot attach two
+    // existing lines to the same Bot.
+    const claimed = await runCompanyIdentityMutation<
+      typeof schema.phoneNumbers.$inferSelect | null
+    >(input.userId, "phone_number_changed", async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(schema.phoneNumbers)
+        .where(
+          and(
+            eq(schema.phoneNumbers.userId, input.userId),
+            eq(schema.phoneNumbers.agentId, agentId),
+          ),
+        )
+        .limit(1);
+      if (existing) return existing;
+
+      const [reusable] = await tx
         .select()
         .from(schema.phoneNumbers)
         .where(
           and(eq(schema.phoneNumbers.userId, input.userId), isNull(schema.phoneNumbers.agentId)),
         )
         .limit(1);
-      if (reusable) {
-        const claimed = await runCompanyIdentityMutation(
-          input.userId,
-          "phone_number_changed",
-          async (tx) => {
-            const [row] = await tx
-              .update(schema.phoneNumbers)
-              .set({ agentId: input.agentId })
-              .where(
-                and(
-                  eq(schema.phoneNumbers.id, reusable.id),
-                  eq(schema.phoneNumbers.userId, input.userId),
-                  isNull(schema.phoneNumbers.agentId),
-                ),
-              )
-              .returning({ id: schema.phoneNumbers.id });
-            return row ?? null;
-          },
-        );
-        if (claimed) {
-          return activateLine({
-            userId: input.userId,
-            agentId: input.agentId,
-            lineId: reusable.id,
-            phoneNumber: reusable.phoneNumber,
-            carrierNumberId: reusable.vapiNumberId,
-            reused: true,
-          });
-        }
-      }
+      if (!reusable) return null;
+
+      const [row] = await tx
+        .update(schema.phoneNumbers)
+        .set({ agentId })
+        .where(
+          and(
+            eq(schema.phoneNumbers.id, reusable.id),
+            eq(schema.phoneNumbers.userId, input.userId),
+            isNull(schema.phoneNumbers.agentId),
+          ),
+        )
+        .returning();
+      return row ?? null;
+    });
+    if (claimed) {
+      return activateLine({
+        userId: input.userId,
+        agentId: input.agentId,
+        lineId: claimed.id,
+        phoneNumber: claimed.phoneNumber,
+        carrierNumberId: claimed.vapiNumberId,
+        reused: true,
+      });
     }
+  }
+  if (atCapacity) {
     return {
       ok: false,
       code: "PHONE_CAPACITY_REACHED",

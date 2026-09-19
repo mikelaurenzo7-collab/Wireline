@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -6,6 +6,7 @@ import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { signupHrefForPlan } from "../lib/signup-intent";
 import { cn } from "../lib/utils";
+import type { BillingPlansResponse } from "../types/api-billing";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
@@ -99,7 +100,7 @@ const FREE_BUILDER_HIGHLIGHTS = [
 const CHANNEL_RULES = [
   {
     title: "Voice + Included Number",
-    body: `Every active paid Bot gets its own BotBound phone number. Extra minutes stay prepaid at ${TOPUP_RATE}; live calls never cut mid-conversation.`,
+    body: `Every active paid Bot gets its own BotBound phone number. Extra minutes stay prepaid at ${TOPUP_RATE}; running out of balance does not end an active call.`,
   },
   {
     title: "Text / SMS",
@@ -121,24 +122,20 @@ const FAQ = [
     "Yes. A single BotBound Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
-    "Is the BotBound number free?",
-    "Every active paid Bot gets its own BotBound phone number at no extra line fee within the plan's Bot capacity. Free Builder is a private creation and simulation tier; carrier resources allocate when a Bot becomes paid and active.",
+    "Does every paid Bot get a phone number?",
+    "Yes. Each active paid Bot includes a dedicated number at no extra line fee, within plan capacity. Free Builder and unused Bot slots do not receive live numbers.",
   ],
   [
     "Why are there two Starter plans?",
     "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second phone number, more voice minutes, and fuller Lead Hunt and enrichment in the same workspace.",
   ],
   [
-    "Does every paid Bot get a phone number?",
-    "Yes. Every active paid Bot gets one dedicated BotBound phone number. Numbers are added when a Bot becomes active; unused plan capacity does not allocate a number.",
-  ],
-  [
     "What happens when included voice minutes run out?",
     `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. An active call is never cut off; only the next new action pauses until coverage is restored.`,
   ],
   [
-    "Are live calls limited to a few seconds?",
-    "No. Calls run as long as the conversation needs. Included monthly minutes and prepaid Runtime Balance fund duration; there is no artificial short hard cap for profitability. Separate mid-call web research tools use a short network timeout so callers are not left waiting in silence.",
+    "How long can a call last?",
+    "Calls run as long as the conversation needs. Included minutes and prepaid Runtime Balance cover usage; running out of balance does not end an active call.",
   ],
   [
     "Why keep live usage prepaid?",
@@ -191,13 +188,56 @@ const pricingJsonLd = {
 
 export default function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [billingPlans, setBillingPlans] = useState<BillingPlansResponse | null>(null);
+  const [availability, setAvailability] = useState<"loading" | "ready" | "unavailable">("loading");
   const annual = billingInterval === "year";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    const timeout = window.setTimeout(() => controller.abort(), 10_000);
+
+    void fetch("/api/billing/plans", { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Plan availability could not be loaded.");
+        const payload = (await response.json()) as BillingPlansResponse;
+        if (!payload || !Array.isArray(payload.plans)) {
+          throw new Error("Plan availability is incomplete.");
+        }
+        if (active) {
+          setBillingPlans(payload);
+          setAvailability("ready");
+        }
+      })
+      .catch(() => {
+        if (active) setAvailability("unavailable");
+      })
+      .finally(() => window.clearTimeout(timeout));
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  const canActivate = (planId: StripePlanId) => {
+    const livePlan = billingPlans?.plans.find((plan) => plan?.id === planId);
+    return (
+      billingPlans?.checkout_available === true &&
+      billingPlans?.stripe_configured === true &&
+      livePlan?.contact_sales === false &&
+      livePlan.configured === true &&
+      (!annual || livePlan.annual_configured === true)
+    );
+  };
+  const anyPaidActivationAvailable = PAID_TIERS.some(({ plan }) => canActivate(plan.id));
 
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
         title="PRICING | FROM $19/MONTH | BotBound"
-        description="Build a Bot free and launch from $19/month. Included numbers, call minutes, text, email, Lead Hunt, and prepaid usage controls stay clear."
+        description="Build a Bot free. Paid plans start at $19/month, with included numbers, call minutes, text, email, and prepaid usage controls. Check live activation availability."
         path="/pricing"
       />
       <script
@@ -210,7 +250,7 @@ export default function Pricing() {
           <div className="mx-auto mb-8 max-w-3xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
             <h1 className="marketing-hero-title mx-auto mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              Start free. Go live from $19.
+              Build free. Plans from $19.
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">
               Every active paid Bot gets its own BotBound phone number.
@@ -251,6 +291,19 @@ export default function Pricing() {
             </div>
           </div>
 
+          <p
+            role="status"
+            className="mx-auto mb-4 max-w-3xl text-xs leading-5 text-muted-foreground"
+          >
+            {availability === "loading"
+              ? "Checking activation availability…"
+              : availability === "unavailable"
+                ? "Activation status unavailable. Build free and check back."
+                : anyPaidActivationAvailable
+                  ? "Build free. Activate when ready."
+                  : "Build free. Paid activation is currently unavailable."}
+          </p>
+
           <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
             <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
               <h2 className="wl-card-title">Free Builder</h2>
@@ -286,6 +339,7 @@ export default function Pricing() {
                 const priceSuffix = showAnnual ? "/year" : "/month";
                 const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
                 const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
+                const activationAvailable = canActivate(plan.id);
                 return (
                   <article
                     key={plan.id}
@@ -336,7 +390,11 @@ export default function Pricing() {
                         featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
                       }`}
                     >
-                      {showAnnual ? ctaAnnual : ctaMonthly}{" "}
+                      {activationAvailable
+                        ? showAnnual
+                          ? ctaAnnual
+                          : ctaMonthly
+                        : `Set up ${publicName}`}{" "}
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </article>

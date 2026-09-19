@@ -8,7 +8,7 @@ The phone has impeccable timing. BotBound gives the second ring somewhere useful
 - **Master promise:** You can't answer every call. Your Bot can.
 - **Campaign close:** Put your Bot on the line.
 - **Product line:** Your Bot for calls, texts, and email.
-- **Offer:** Build free. Go live from $19/mo.
+- **Offer:** Build free. Plans from $19/mo. Activation availability applies.
 - **Public operating loop:** Build -> Train -> Launch -> Improve.
 
 This is a launch-release creative system, not a folder of disconnected posts. Each asset moves from a familiar owner/operator problem — the call that arrives while the work is happening — to the same clear product idea: one trained Bot can carry a business conversation across calls, texts, and email under one identity, rule set, approval posture, and outcome record.

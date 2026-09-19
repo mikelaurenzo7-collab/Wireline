@@ -34,7 +34,7 @@ const DIFFERENCES = [
 const MARKET_OPTIONS = [
   {
     name: "BotBound",
-    price: "$0 to build · live from $19/mo",
+    price: "$0 to build · plans from $19/mo",
     usage: "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
     fit: "Owners who want their Bot across calls, live conversations, text, email, follow-up, and outcomes",
     href: "/pricing",
@@ -62,7 +62,7 @@ const MARKET_OPTIONS = [
   {
     name: "Bland",
     price: "$0 platform · $0.14/min",
-    usage: "Start bundles model and speech costs; transfers are $0.05/min",
+    usage: "Model and speech included; carrier costs separate; transfers $0.05/min",
     fit: "Developers who want API-first voice with bundled model and speech costs",
     href: "https://www.bland.ai/pricing",
     source: "Bland pricing",
@@ -71,7 +71,7 @@ const MARKET_OPTIONS = [
   {
     name: "Retell",
     price: "$0.07 to $0.31/min",
-    usage: "Pay-as-you-go voice components; phone numbers and messaging have separate rates",
+    usage: "Some speech-to-speech models cost more; phone numbers and messaging are separate",
     fit: "Developers optimizing model, voice, telephony, and add-on choices per deployment",
     href: "https://www.retellai.com/pricing",
     source: "Retell pricing",
@@ -146,7 +146,7 @@ export default function Compare() {
       <section className="marketing-section">
         <div className="mx-auto w-full min-w-0 max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Compare the Model, Not the Sticker</h2>
+            <h2 className="wl-stitch-display text-balance">Compare pricing models</h2>
           </div>
 
           <div className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card">
@@ -221,7 +221,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on August 1, 2026 and may
+            Public prices were checked on the linked official pages on September 19, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.

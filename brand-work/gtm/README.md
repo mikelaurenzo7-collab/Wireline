@@ -2,6 +2,8 @@
 
 `BOTBOUND-LAUNCH-COPY-KIT.md` is the working source for launch messaging, channel copy, campaign sequencing, and attribution names.
 
+The 2026-09-17 source review removes retired public-demo CTAs and keeps paid-plan intent separate from live activation availability. Existing decks, contact sheets, and remote renders require their own copy and destination check; they are not recertified by this edit. See `../CURRENT-ASSET-INDEX.md` for both inbound and outbound campaign sources.
+
 Use it with:
 
 - `../BOTBOUND-BRAND-GUIDE.md` for identity, color, typography, and robot rules.

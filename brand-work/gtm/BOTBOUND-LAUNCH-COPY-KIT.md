@@ -1,6 +1,6 @@
 # BotBound Launch Copy Kit
 
-- Status: launch-ready working copy, pending final production and legal sign-off
+- Status: working copy reviewed 2026-09-17; publication pending current production and destination checks
 - Campaign: The Second Ring
 - Brand line: Put Your Bot on the Line.
 - Primary destination: `https://botbound.me`
@@ -10,7 +10,7 @@
 This kit is intentionally free of invented customers, performance metrics, certifications, awards, market leadership claims, and unsupported availability language. Before publishing:
 
 1. Replace every bracketed placeholder.
-2. Confirm the live product, billing, demo line, support inbox, and destination URL.
+2. Confirm the live product, billing availability, authenticated private rehearsal, support inbox, and destination URL. Public call and audio demos are retired; `/showcase` is role exploration.
 3. Recheck plan names and prices against `src/lib/plan-catalog.ts` and `/pricing`.
 4. Confirm rights for every image, voice, score, font, and person in the final media.
 5. Run final legal review on disclosure, consent, privacy, call recording, and channel-specific claims.
@@ -69,11 +69,13 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 - Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
 - Primary proof verbs: answer, qualify, book, confirm, text, email, route, hand off, follow up, log
 
-Use **Configure** for the formal product lifecycle. Use **train** as a natural verb when explaining knowledge, rules, examples, and practice. The existing campaign film may retain its approved Train frame.
+Use **Build -> Train -> Launch -> Improve** for the public lifecycle. After Bot creation, the setup guide is **Train -> Test -> Launch**. Use configure as a natural verb for individual settings, not as a competing lifecycle step.
 
 ## 3. Approved tagline bank
 
-### Tier 1: always safe
+### Tier 1: brand and campaign lines
+
+Campaign promises still require the current availability and context checks above. They are not guarantees that every call will be answered.
 
 - Put Your Bot on the Line.
 - Your Bot for calls, texts, and email.
@@ -160,7 +162,9 @@ Proof rail:
 
 CTA:
 
-> HEAR IT LIVE
+> BUILD AND TEST FREE
+
+Destination: `/signup?plan=free`. Supporting line: Create a free account, then hear your Bot in a private rehearsal. No public audio or live customer call is implied.
 
 ## 5. Press release draft
 
@@ -522,15 +526,16 @@ Footer: BOTBOUND.ME
 | Intent | CTA | Destination | Use | Supporting line |
 | --- | --- | --- | --- | --- |
 | Awareness | **WATCH THE SECOND RING** | Approved film page or hosted video | Launch day hero, press, YouTube | See what happens on the second ring. |
-| Curiosity | **HEAR IT LIVE** | `/showcase` | Homepage, product proof, retargeting | Hear what your customer hears. |
+| Curiosity | **EXPLORE BOTS** | `/showcase` | Homepage, product education, retargeting | Find a role, then build and hear your own Bot privately. |
+| Private rehearsal | **BUILD AND TEST FREE** | `/signup?plan=free` | Voice education, trust, product proof | Create a free account to hear your Bot privately. |
 | Exploration | **SEE WHAT A BOT CAN DO** | `/features` | Press, deck, organic social | Calls, texts, email, tools, and outcomes. |
 | High intent | **BUILD YOUR BOT** | `/signup?plan=free` | Homepage, film end card, email | Build free. Put it on a number when it is ready. |
 | Low-friction start | **START FREE** | `/signup?plan=free` | Paid social, mobile, pricing | One private draft Bot and simulation. |
 | Role-led | **BUILD THIS ROLE** | `/signup?plan=free&template=[template-key]` | Role cards, vertical campaigns | Start with the job. Rewrite every rule. |
 | Pricing | **SEE PRICING** | `/pricing` | Email footer, comparison, FAQ | Free Builder, then live paid plans. |
-| Starter purchase | **START FOR $19** | `/signup?plan=starter` | Pricing only, after live price check | One live Voice Bot and one included number. |
-| Starter Plus purchase | **START FOR $39** | `/signup?plan=starter-plus` | Pricing only, after live price check | Two live Bots and two included numbers. |
-| Pro purchase | **START FOR $79** | `/signup?plan=pro` | Pricing only, after live price check | Up to five live Bots and five included numbers. |
+| Starter intent | **BUILD FOR STARTER** | `/signup?plan=starter` | Pricing while activation is unavailable | Free setup; Starter is $19/month when activation is available. |
+| Starter Plus intent | **BUILD FOR STARTER PLUS** | `/signup?plan=starter-plus` | Pricing while activation is unavailable | Free setup; Starter Plus is $39/month when activation is available. |
+| Pro intent | **BUILD FOR PRO** | `/signup?plan=pro` | Pricing while activation is unavailable | Free setup; Pro is $79/month when activation is available. |
 | Trust | **SEE HOW CONTROL WORKS** | `/security` | Pricing, sales follow-up | Your line. Your rules. |
 | Founder contact | **TALK THROUGH THE JOB** | `/contact` | High-consideration or complex use case | Bring one workflow worth fixing. |
 
@@ -538,9 +543,9 @@ Footer: BOTBOUND.ME
 
 - Use one primary CTA per placement.
 - Use **Build Your Bot** when the audience understands the product.
-- Use **Hear It Live** when trust is the main barrier.
+- Use **Build and Test Free** for private voice rehearsal, or **Explore Bots** for role discovery. Never promise public audio at `/showcase`.
 - Use **Start Free** when space is limited and the destination is Free Builder.
-- Keep pricing out of broad awareness creative unless the live catalog is rechecked on publish day.
+- Keep pricing out of broad awareness creative unless the live catalog is rechecked on publish day. Purchase language such as **Start for $19** also requires `/api/billing/plans` to confirm Stripe and that plan's selected billing interval are available; a catalog price alone is not activation evidence.
 - Do not use **Book a demo** when the destination is self-serve signup.
 
 ## 14. UTM naming convention
@@ -623,9 +628,9 @@ The sequence moves from tension to character, then from character to product pro
 - **Goal:** turn attention into proof.
 - **Hero asset:** 15-second horizontal cut and product outcome frames.
 - **Copy:** `ANSWERED · BOOKED · CONFIRMED · LOGGED`
-- **CTA:** `HEAR IT LIVE.`
+- **CTA:** `BUILD AND TEST FREE.`
 - **Channels:** LinkedIn carousel or still sequence, X thread, retargeting, sales follow-up.
-- **Product destination:** `/showcase`.
+- **Product destination:** `/signup?plan=free`, with account creation before private rehearsal.
 
 ### Day 5: Pick the work
 
@@ -691,7 +696,7 @@ These repository sources are the basis for the facts in this kit. If a source ch
 | Product voice, proof loop, role framing, shared context, and trust language | `src/lib/product-copy.ts` |
 | Current homepage hero, Free Builder action, role cards, pricing summaries, and trust close | `src/components/marketing/WireAgentLanding.tsx` |
 | Current page metadata and production origin | `src/pages/LandingPage.tsx`, `src/lib/brand.ts` |
-| Live demo destination and "Hear what your customer hears" language | `src/pages/Showcase.tsx` |
+| Role exploration and account-required private rehearsal boundary | `src/pages/Showcase.tsx`, `README.md` |
 | Feature claims for shared memory, scheduling, handoff, approvals, training, and outcome records | `src/pages/Features.tsx` |
 | Free Builder, paid plan capacities, included minutes and numbers, annual prices, and prepaid usage controls | `src/lib/plan-catalog.ts` |
 | Public pricing presentation, current CTA paths, channel explanations, FAQ language, and `$19/month` Starter entry point | `src/pages/Pricing.tsx` |
@@ -701,7 +706,7 @@ These repository sources are the basis for the facts in this kit. If a source ch
 
 ### Pricing facts used sparingly
 
-This kit uses **Build free** and the pricing-page CTA **Start for $19** only where appropriate. The active repository catalog currently defines Free Builder at $0 and Starter at $19 monthly or $190 annually. Do not carry those figures into evergreen image pixels, press syndication, or OOH without a publish-day catalog check.
+This kit uses **Build free** and **Build for Starter** while paid activation is unavailable. The active repository catalog defines Free Builder at $0 and Starter at $19 monthly or $190 annually. The public pricing page checks live availability before displaying a purchase CTA. Do not carry catalog figures into evergreen image pixels, press syndication, or OOH without a publish-day catalog and activation check.
 
 ### Availability posture
 

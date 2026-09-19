@@ -39,12 +39,13 @@ type CheckoutTier = {
 
 /**
  * Public self-serve plans only. Prefer live `/api/billing/plans` so annual CTAs
- * honor `annual_configured` and the exact-SHA release gate. The local catalog
+ * honor `annual_configured` and the platform checkout gates. The local catalog
  * is display-only and stays disabled until the live contract is verified.
  */
 function selfServeTiers(
   preferredInterval: "month" | "year",
   livePlans: ClientPlan[] | null,
+  checkoutAvailable: boolean,
 ): CheckoutTier[] {
   const hasLiveCatalog = livePlans !== null;
   const source = hasLiveCatalog
@@ -70,7 +71,7 @@ function selfServeTiers(
     // When the customer preferred annual but Stripe annual is not configured,
     // fall back to monthly rather than offering a broken checkout.
     const useAnnual = wantAnnual && annualReady;
-    const monthlyReady = plan.configured !== false;
+    const monthlyReady = checkoutAvailable && plan.configured === true;
     return {
       id: plan.id,
       label: plan.name,
@@ -81,7 +82,7 @@ function selfServeTiers(
       disabled: !monthlyReady,
       disabledReason: !monthlyReady
         ? hasLiveCatalog
-          ? "Self-serve checkout is not available for this deployment yet."
+          ? "Checkout is temporarily unavailable. Your Bot is saved."
           : "Checking checkout availability."
         : wantAnnual && !annualReady
           ? "Annual billing is not configured for this plan yet. Monthly is shown."
@@ -133,6 +134,7 @@ export default function TrialGateModal() {
   const [error, setError] = useState<string | null>(null);
   const [resend, setResend] = useState<ResendOutcome>("idle");
   const [livePlans, setLivePlans] = useState<ClientPlan[] | null>(null);
+  const [checkoutAvailable, setCheckoutAvailable] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const checkoutAbortRef = useRef<AbortController | null>(null);
 
@@ -157,6 +159,7 @@ export default function TrialGateModal() {
       checkoutAbortRef.current = null;
       setPending(null);
       setLivePlans(null);
+      setCheckoutAvailable(false);
       setDetail(customEvent.detail);
       setError(null);
       setResend("idle");
@@ -180,10 +183,17 @@ export default function TrialGateModal() {
         const data = (await safeJson<BillingPlansResponse>(
           response,
         )) as BillingPlansResponse | null;
-        if (!cancelled) setLivePlans(data?.plans ?? []);
+        if (!data || !Array.isArray(data.plans)) {
+          throw new Error("Checkout availability could not be verified.");
+        }
+        if (!cancelled) {
+          setLivePlans(data.plans);
+          setCheckoutAvailable(data.stripe_configured === true && data.checkout_available === true);
+        }
       } catch {
         if (!cancelled && !controller.signal.aborted) {
           setLivePlans([]);
+          setCheckoutAvailable(false);
           setError("Checkout availability could not be verified. Refresh and try again.");
         }
       }
@@ -200,7 +210,7 @@ export default function TrialGateModal() {
   const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const preferredInterval =
     getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
-  const checkoutTiers = selfServeTiers(preferredInterval, livePlans);
+  const checkoutTiers = selfServeTiers(preferredInterval, livePlans, checkoutAvailable);
   const catalogPending = livePlans === null;
   const checkoutUnavailable =
     !catalogPending &&
@@ -221,6 +231,15 @@ export default function TrialGateModal() {
     checkoutTiers.some((tier) => !tier.disabled && tier.interval === "month" && tier.price > 0);
 
   async function checkout(planId: string, interval: "month" | "year") {
+    if (
+      !checkoutAvailable ||
+      !checkoutTiers.some(
+        (tier) => tier.id === planId && tier.interval === interval && !tier.disabled,
+      )
+    ) {
+      setError("Checkout is temporarily unavailable. Your Bot is saved.");
+      return;
+    }
     checkoutAbortRef.current?.abort();
     const controller = new AbortController();
     checkoutAbortRef.current = controller;
@@ -488,8 +507,7 @@ export default function TrialGateModal() {
                   {checkoutUnavailable && (
                     <p className="mb-3 flex items-start gap-2 text-xs leading-relaxed text-foreground/65">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
-                      Self-serve checkout is temporarily unavailable while launch certification
-                      completes. Your saved work is unaffected.
+                      Checkout is temporarily unavailable. Your Bot is saved.
                     </p>
                   )}
                   {annualFallbackNote && (

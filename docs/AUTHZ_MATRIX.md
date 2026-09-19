@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 384
-**Protected:** 308
+**Routes scanned:** 385
+**Protected:** 309
 **Public (allowlisted):** 76
 **Violations:** 0
 
@@ -130,6 +130,7 @@
 | agent-workspace-routes.ts | GET | `/api/agents/:id/workspace/overview` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/run-action` | inline | — | — | Protected |
 | agent-workspace-routes.ts | POST | `/api/agents/:id/workspace/toggle-tool` | inline | — | — | Protected |
+| agentmail-routes.ts | POST | `/api/agents/:agentId/managed-identity` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/agents/:agentId/managed-mailbox` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/connect` | inline | — | — | Protected |
 | agentmail-routes.ts | POST | `/api/integrations/agentmail/disconnect` | inline | — | — | Protected |

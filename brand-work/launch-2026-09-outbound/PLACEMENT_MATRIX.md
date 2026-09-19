@@ -39,7 +39,7 @@ Use the destination `https://botbound.me/signup?template=sales-rep` with:
 
 `utm_source={platform}&utm_medium={paid_social|organic_social|email}&utm_campaign=first_move_launch&utm_content={asset_slug}`
 
-Keep one `asset_slug` per master so the creative, placement, and signup intent can be joined without guessing.
+Keep one `asset_slug` per master for placement reporting. Current signup intent persists `utm_source`, `utm_medium`, and `utm_campaign`; it does not persist `utm_content`. Do not claim asset-level signup attribution until that connection is implemented and verified. Use distinct campaign names for separately measured tests, and keep personal data out of tracking parameters.
 
 ## Mechanical notes
 

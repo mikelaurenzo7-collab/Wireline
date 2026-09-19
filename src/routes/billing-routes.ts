@@ -28,6 +28,8 @@ import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { selfServeBillingEnabled } from "../lib/billing-release";
+import { isLaunchHardBlocked } from "../lib/launch-readiness";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import { isLiveVideoCatalogReady } from "../lib/video-presenter/live-video-entitlements";
 import { resolveAgentEntitlement } from "../lib/agent-entitlements";
@@ -575,7 +577,17 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
 // ─── Billing plans / checkout / portal ─────────────────────────────────────
 
 router.get("/billing/plans", (_req: Request, res: Response) => {
-  res.json({ plans: plansForClient(), stripe_configured: stripeAvailable() });
+  const stripeConfigured = stripeAvailable();
+  // Match checkout's platform admission gates without exposing operational
+  // blockers, provider configuration, or tenant-specific eligibility publicly.
+  // Clients must also check the selected plan and interval's catalog flags.
+  const checkoutAvailable = stripeConfigured && selfServeBillingEnabled() && !isLaunchHardBlocked();
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    plans: plansForClient(),
+    stripe_configured: stripeConfigured,
+    checkout_available: checkoutAvailable,
+  });
 });
 
 router.get("/billing/usage", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {

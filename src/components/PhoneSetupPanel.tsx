@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, MapPin, Phone, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
@@ -47,6 +47,7 @@ export default function PhoneSetupPanel() {
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
   const [working, setWorking] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState("");
@@ -56,6 +57,7 @@ export default function PhoneSetupPanel() {
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
+  const companyIdentityRef = useRef<HTMLDetailsElement>(null);
 
   const activeNumber =
     numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
@@ -67,38 +69,48 @@ export default function PhoneSetupPanel() {
   useEffect(() => {
     if (location.hash !== "#company-identity") return;
     const id = window.setTimeout(() => {
-      document
-        .getElementById("company-identity")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const section = companyIdentityRef.current;
+      if (!section) return;
+      section.open = true;
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 0);
     return () => window.clearTimeout(id);
   }, [location.hash]);
 
   useEffect(() => {
-    const currentAgentId = activeNumber?.agent_id || "";
-    if (currentAgentId && agents.some((agent) => agent.id === currentAgentId)) {
-      setSelectedAgentId(currentAgentId);
-      return;
-    }
-    if (selectedAgentId && agents.some((agent) => agent.id === selectedAgentId)) return;
-    setSelectedAgentId(agents[0]?.id || "");
-  }, [activeNumber?.agent_id, agents, selectedAgentId]);
+    // The new-line form is independent of the line currently being inspected.
+    // Reapplying activeNumber.agent_id here would undo the customer's selection.
+    setSelectedAgentId((current) =>
+      agents.some((agent) => agent.id === current) ? current : agents[0]?.id || "",
+    );
+  }, [agents]);
 
-  async function loadNumbers() {
+  async function loadNumbers(preferredAgentId?: string) {
     setLoading(true);
     setError(null);
+    setRecoveryPath(null);
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
-      const nextNumbers = Array.isArray(body?.numbers) ? body.numbers : [];
+      if (!Array.isArray(body?.numbers))
+        throw new Error("Phone numbers could not be verified. Try again.");
+      const nextNumbers: PhoneNumberRecord[] = body.numbers;
       setNumbers(nextNumbers);
-      setSelectedNumberId((current) =>
-        current && nextNumbers.some((number: PhoneNumberRecord) => number.id === current)
-          ? current
-          : (nextNumbers[0]?.id ?? null),
-      );
+      setInventoryUnavailable(false);
+      setSelectedNumberId((current) => {
+        const preferred = preferredAgentId
+          ? nextNumbers.find((number) => number.agent_id === preferredAgentId)
+          : undefined;
+        return (
+          preferred?.id ??
+          (current && nextNumbers.some((number) => number.id === current)
+            ? current
+            : (nextNumbers[0]?.id ?? null))
+        );
+      });
     } catch (reason) {
+      setInventoryUnavailable(true);
       setError(reason instanceof Error ? reason.message : "Phone numbers unavailable.");
     } finally {
       setLoading(false);
@@ -110,7 +122,7 @@ export default function PhoneSetupPanel() {
   }, []);
 
   async function provisionNumber() {
-    if (working || !selectedAgentId) return;
+    if (working || loading || inventoryUnavailable || !selectedAgentId) return;
     const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
       setError("Enter a 3-digit area code, or leave it blank.");
@@ -140,7 +152,7 @@ export default function PhoneSetupPanel() {
         throw new Error(body.error || "Could not activate a number.");
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
-      await loadNumbers();
+      await loadNumbers(selectedAgentId);
       setAddingLine(false);
       setAreaCode("");
     } catch (reason) {
@@ -151,7 +163,7 @@ export default function PhoneSetupPanel() {
   }
 
   async function attachAgent(agentId: string | null) {
-    if (!activeNumber || attaching) return;
+    if (!activeNumber || attaching || loading || inventoryUnavailable) return;
     setAttaching(true);
     setMessage(null);
     setError(null);
@@ -168,7 +180,6 @@ export default function PhoneSetupPanel() {
           number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
         ),
       );
-      setSelectedAgentId(agentId || "");
       setMessage(agentId ? "Bot assigned." : "Line unassigned.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update this line.");
@@ -184,7 +195,13 @@ export default function PhoneSetupPanel() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Lines</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">{numbers.length} active</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {loading
+              ? "Checking lines…"
+              : inventoryUnavailable
+                ? "Lines unavailable"
+                : `${numbers.length} active`}
+          </p>
         </div>
         {numbers.length > 0 ? (
           <Button
@@ -192,6 +209,7 @@ export default function PhoneSetupPanel() {
             size="sm"
             variant="secondary"
             onClick={() => setAddingLine((value) => !value)}
+            disabled={loading || inventoryUnavailable || working}
           >
             <Plus className="size-4" aria-hidden="true" />
             Add line
@@ -208,6 +226,15 @@ export default function PhoneSetupPanel() {
               <Button asChild size="sm" variant="secondary">
                 <Link to={recoveryPath}>Open billing</Link>
               </Button>
+            ) : inventoryUnavailable ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => void loadNumbers()}
+                disabled={loading}
+              >
+                Retry
+              </Button>
             ) : undefined
           }
         >
@@ -220,7 +247,7 @@ export default function PhoneSetupPanel() {
         <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
           Loading lines…
         </div>
-      ) : numbers.length === 0 && !addingLine ? (
+      ) : !inventoryUnavailable && numbers.length === 0 && !addingLine ? (
         <EmptyState
           framed
           density="compact"
@@ -238,7 +265,7 @@ export default function PhoneSetupPanel() {
         />
       ) : null}
 
-      {addingLine ? (
+      {addingLine && !inventoryUnavailable ? (
         <section
           className="rounded-xl border border-border bg-card p-4 sm:p-5"
           aria-label="Add phone line"
@@ -251,7 +278,11 @@ export default function PhoneSetupPanel() {
                   Loading…
                 </div>
               ) : agents.length ? (
-                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <Select
+                  value={selectedAgentId}
+                  onValueChange={setSelectedAgentId}
+                  disabled={working || loading}
+                >
                   <SelectTrigger className="h-10" aria-label="Bot for this line">
                     <SelectValue placeholder="Select Bot" />
                   </SelectTrigger>
@@ -284,6 +315,7 @@ export default function PhoneSetupPanel() {
                   type="text"
                   inputMode="numeric"
                   maxLength={3}
+                  disabled={working || loading}
                   value={normalizedAreaCode}
                   onChange={(event) =>
                     setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
@@ -299,12 +331,20 @@ export default function PhoneSetupPanel() {
               type="button"
               size="sm"
               onClick={() => void provisionNumber()}
-              disabled={working || agentsLoading || !selectedAgentId}
+              disabled={
+                working || loading || inventoryUnavailable || agentsLoading || !selectedAgentId
+              }
             >
               {working ? "Activating…" : "Activate"}
             </Button>
             {numbers.length ? (
-              <Button type="button" size="sm" variant="ghost" onClick={() => setAddingLine(false)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setAddingLine(false)}
+                disabled={working}
+              >
                 Cancel
               </Button>
             ) : null}
@@ -312,7 +352,7 @@ export default function PhoneSetupPanel() {
         </section>
       ) : null}
 
-      {numbers.length > 0 ? (
+      {numbers.length > 0 && !inventoryUnavailable ? (
         <div className="grid gap-3 md:grid-cols-[15rem_minmax(0,1fr)]">
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             {numbers.map((number) => {
@@ -323,6 +363,7 @@ export default function PhoneSetupPanel() {
                   key={number.id}
                   type="button"
                   onClick={() => setSelectedNumberId(number.id)}
+                  aria-pressed={selected}
                   className={`flex w-full items-center justify-between gap-3 border-b border-border px-3 py-3 text-left last:border-b-0 ${selected ? "bg-primary/7" : "hover:bg-muted/45"}`}
                 >
                   <span className="min-w-0">
@@ -370,7 +411,7 @@ export default function PhoneSetupPanel() {
                   onValueChange={(value) =>
                     void attachAgent(value === PHONE_AGENT_UNSET ? null : value)
                   }
-                  disabled={attaching || agentsLoading}
+                  disabled={attaching || agentsLoading || loading || working}
                 >
                   <SelectTrigger className="h-10" aria-label="Assigned Bot">
                     <SelectValue placeholder="Assign Bot" />
@@ -398,6 +439,7 @@ export default function PhoneSetupPanel() {
       ) : null}
 
       <details
+        ref={companyIdentityRef}
         id="company-identity"
         className="rounded-xl border border-border bg-card"
         data-visual-qa-state={

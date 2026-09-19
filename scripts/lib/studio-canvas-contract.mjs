@@ -109,6 +109,16 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "deep-editor", pattern: /StudioAgentWorkspacePanel/ },
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
+    // Request lifetimes are isolated by Bot and mode; drafts live above them.
+    { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{workroomKey\}/ },
+    {
+      id: "workroom-mode-isolation",
+      pattern: /const workroomKey = `\$\{active\.id\}:\$\{workroomMode\}`/,
+    },
+    {
+      id: "workroom-draft-preservation",
+      pattern: /initialDraft=\{workroomDraftsRef\.current\.get\(workroomKey\)\}/,
+    },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state", pattern: /Build Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },

@@ -63,23 +63,47 @@ async function releaseNativeTenantNumberUnfenced(
     };
   }
 
+  let carrierReleased = false;
   try {
-    await releaseTwilioLine(carrierId);
-  } catch (error) {
-    log.warn("Twilio number release could not be confirmed", {
-      userId,
-      phoneSuffix: phoneNumber.slice(-4),
-      carrierIdSuffix: carrierId.slice(-6),
-      error: getErrorMessage(error),
-    });
-    return {
-      ok: false,
-      error: "The carrier could not confirm release. The number remains attached for a safe retry.",
-    };
-  }
+    return await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
+      // Ownership lookup can be slow, so do it before taking the company lock.
+      // Recheck the snapshot under the same lock used to claim detached lines,
+      // then hold it through carrier deletion and retirement of the local row.
+      const [current] = await tx
+        .select()
+        .from(schema.phoneNumbers)
+        .where(and(eq(schema.phoneNumbers.id, row.id), eq(schema.phoneNumbers.userId, userId)))
+        .limit(1);
+      if (
+        !current ||
+        current.phoneNumber !== row.phoneNumber ||
+        current.vapiNumberId !== row.vapiNumberId ||
+        current.agentId !== row.agentId
+      ) {
+        return {
+          ok: false,
+          error:
+            "This line changed while release was pending. Refresh Phone and retry if it should still be released.",
+        };
+      }
 
-  try {
-    await runCompanyIdentityMutation(userId, "phone_number_changed", async (tx) => {
+      try {
+        await releaseTwilioLine(carrierId);
+        carrierReleased = true;
+      } catch (error) {
+        log.warn("Twilio number release could not be confirmed", {
+          userId,
+          phoneSuffix: phoneNumber.slice(-4),
+          carrierIdSuffix: carrierId.slice(-6),
+          error: getErrorMessage(error),
+        });
+        return {
+          ok: false,
+          error:
+            "The carrier could not confirm release. The number remains attached for a safe retry.",
+        };
+      }
+
       await tx
         .delete(schema.phoneNumbers)
         .where(and(eq(schema.phoneNumbers.id, row.id), eq(schema.phoneNumbers.userId, userId)));
@@ -101,9 +125,20 @@ async function releaseNativeTenantNumberUnfenced(
           .set({ twilioSmsFromNumber: replacement?.phoneNumber ?? null, updatedAt: new Date() })
           .where(eq(schema.settings.userId, userId));
       }
+      return { ok: true };
     });
-    return { ok: true };
   } catch (error) {
+    if (!carrierReleased) {
+      log.warn("Phone release could not acquire or verify local ownership", {
+        userId,
+        phoneSuffix: phoneNumber.slice(-4),
+        error: getErrorMessage(error),
+      });
+      return {
+        ok: false,
+        error: "BotBound could not verify the line for release. Refresh Phone and retry.",
+      };
+    }
     log.error("Twilio carrier released but local phone retirement failed", {
       userId,
       phoneSuffix: phoneNumber.slice(-4),

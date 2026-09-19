@@ -50,16 +50,16 @@ describe("authenticated seeded-state visual QA contract", () => {
     expect(studio).not.toContain("Good morning");
     expect(studio).not.toContain("dayGreeting");
     expect(chrome).toContain('aria-label="Switch Bot"');
-    expect(chrome).toContain("/inbox?agent=");
-    expect(chrome).toContain("/phone?agent=");
-    expect(chrome.match(/hidden size-9 px-0 lg:inline-flex/g)).toHaveLength(2);
+    expect(chrome).toContain('aria-label="Bot settings"');
+    expect(chrome).toContain('aria-controls={inspectorOpen ? "studio-inspector" : undefined}');
+    expect(chrome).toContain('to="/studio?create=1"');
   });
 
   it("uses navigation semantics only for links and pressed-state semantics for in-page tabs", () => {
     const tabs = read("src/components/layout/WorkspaceTabStrip.tsx");
     const linkBranch = tabs.slice(
-      tabs.indexOf("if (tab.href)"),
-      tabs.indexOf("return (", tabs.indexOf("if (tab.href)") + 30),
+      tabs.indexOf("<Link"),
+      tabs.indexOf("</Link>") + "</Link>".length,
     );
     const buttonBranch = tabs.slice(tabs.lastIndexOf("<button"), tabs.lastIndexOf("</button>") + 9);
 

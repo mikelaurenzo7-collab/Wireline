@@ -82,6 +82,32 @@ Before production merge, require:
 
 GitHub Actions billing/startup failures that do not execute repository code are tracked separately and are not treated as code evidence. Exact-head Vercel certification remains the compensating release gate while that external billing condition persists.
 
+## Funding review order
+
+Treat balances and invoice amounts as dated evidence, never as permanent facts in this map.
+A readable API key, a READY build, or an empty error log does not prove funded service.
+
+| Priority | Account | Verify before allocating money |
+| --- | --- | --- |
+| Restore availability | Vercel | Open invoices, project pause, deployment limits, and canonical health. Restore the canonical project; do not duplicate it. |
+| Protect phone continuity | Twilio | Actual balance/currency, recharge failures, recurring number inventory, and carrier eligibility. Reuse detached owned numbers before automatic purchase. |
+| Protect Bot runtime | OpenAI API | Correct organization/project, credit or billing status, usage limits, and Realtime access. An enabled model key alone does not prove funded usage. |
+| Preserve infrastructure | Supabase, Upstash, domain registrar | Active plan, invoices, usage limits, renewal date and payment method. Check the selected account before paying. |
+| Deliver email | Resend, AgentMail | Plan/quota, verified BotBound domain, signed callbacks, and sending/receiving proof. A domain being verified does not certify callback delivery. |
+| Collect customer payments | Stripe | Account requirements, payout eligibility, negative balances or failed debits, and a controlled checkout lifecycle. Do not add funds just to manufacture test evidence. |
+| Restore release automation | GitHub | Billing/spending limits and whether jobs actually executed. Never classify a test failure as a billing failure. |
+| Optional paid features | Vercel AI Gateway, Gemini, Perplexity, Apollo, X | Only fund the route or integration actually enabled and needed by the approved cohort. Track its quota separately from the primary runtime. |
+| Later launch gates | Federal DNC, Apple Developer, Google Play | Registration/approval and relevant service funding when those surfaces are deliberately opened. These are not substitutes for core pilot evidence. |
+
+Review CRM/calendar/commerce OAuth connections (Google, Microsoft, Yahoo, HubSpot, Salesforce,
+Shopify, Square, Zoom, Slack, Meta, DocuSign) against the selected tenant's subscription and scopes.
+Code support alone does not mean the founder needs to buy every vendor subscription.
+Retired Vapi, LiveAvatar, and HeyGen runtime paths are not core launch funding targets.
+
+For each current account check, retain the observation time, selected account, source,
+actual amount/currency if visible, service impact, next action, and an explicit unknown when
+access is unavailable. Never turn an unread balance into zero or a healthy status.
+
 ## Executable probes
 
 - `npm run vendor:readiness` — non-billable provider/configuration snapshot. Treat its output as point-in-time evidence; product policy is defined by current source and this map.

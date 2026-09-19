@@ -105,11 +105,15 @@ describe("industry-leader audit hardening contracts", () => {
     expect(caps).toContain("Not available on live calls yet");
   });
 
-  it("routes Goals customization CTA to Insights goals view", () => {
+  it("keeps Appearance focused while Goals remains discoverable in Activity", () => {
     const customization = read("src/pages/CustomizationSettings.tsx");
-    expect(customization).toContain('href: "/insights?tab=performance&view=goals"');
-    expect(customization).toContain("Success targets");
-    expect(customization).not.toMatch(/label:\s*"Goals"[\s\S]*?href:\s*"\/knowledge"/);
+    expect(customization).toContain("<AppearanceSettings />");
+    expect(customization).toContain("<WorkspaceBrandingSettings />");
+    expect(customization).not.toContain("Success targets");
+    expect(read("src/lib/page-sub-tabs.ts")).toContain('goals: { id: "goals", label: "Goals"');
+    expect(read("src/components/insights/InsightsView.tsx")).toContain(
+      'goals: wrap("Goals", <GoalsView />)',
+    );
   });
 
   it("keeps the public changelog provider-neutral without stale runtime claims", () => {

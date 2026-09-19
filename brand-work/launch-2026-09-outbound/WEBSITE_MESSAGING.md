@@ -16,6 +16,8 @@ Secondary CTA: **EXPLORE BOTS**
 
 Offer: **Build free. Every active paid Bot gets its own number and email.**
 
+Pricing support: **Paid plans from $19/month. Live activation depends on current availability.** The public pricing page reads `/api/billing/plans`; catalog prices alone must not produce an immediate-purchase promise.
+
 Conversion note: **Create a free account to build, train, and hear your Bot privately before it goes live.**
 
 ## Direction split

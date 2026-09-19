@@ -10,16 +10,8 @@
 :root {
   --bb-polish-reading-max: 66ch;
   --bb-polish-radius: var(--wireline-radius-lg);
-  --bb-polish-rule: color-mix(
-    in srgb,
-    var(--wireline-color-border-default) 82%,
-    transparent
-  );
-  --bb-polish-rule-strong: color-mix(
-    in srgb,
-    var(--wireline-color-border-strong) 74%,
-    transparent
-  );
+  --bb-polish-rule: color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
+  --bb-polish-rule-strong: color-mix(in srgb, var(--wireline-color-border-strong) 74%, transparent);
   --bb-polish-surface: color-mix(
     in srgb,
     var(--wireline-color-surface-default) 94%,
@@ -35,11 +27,7 @@
 }
 
 ::selection {
-  background: color-mix(
-    in srgb,
-    var(--wireline-color-action-primary-default) 34%,
-    transparent
-  );
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 34%, transparent);
   color: var(--wireline-color-text-primary);
 }
 
@@ -109,7 +97,7 @@
 
 .marketing-surface :where(.wl-overline, .wl-eyebrow, .studio-kicker) {
   color: var(--wireline-color-text-secondary);
-  letter-spacing: 0.11em;
+  letter-spacing: var(--wireline-typography-overline-letterSpacing);
 }
 
 .marketing-surface
@@ -246,9 +234,14 @@
 
 .wl-workspace-shell
   .wl-workspace-content
-  :where(.wl-paper, .wl-paper-elevated, .wl-panel, .wl-panel-elevated, .studio-card, .wl-metric-tile):not(
-    [class*="bg-"]
-  ) {
+  :where(
+    .wl-paper,
+    .wl-paper-elevated,
+    .wl-panel,
+    .wl-panel-elevated,
+    .studio-card,
+    .wl-metric-tile
+  ):not([class*="bg-"]) {
   border-color: var(--bb-polish-rule);
   border-radius: var(--bb-polish-radius);
   background: var(--bb-polish-surface);
@@ -268,11 +261,7 @@
 }
 
 .wl-workspace-shell :where(.wl-data-row, .wl-key-value) {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-border-default) 68%,
-    transparent
-  );
+  border-color: color-mix(in srgb, var(--wireline-color-border-default) 68%, transparent);
 }
 
 .wl-workspace-shell
@@ -285,8 +274,7 @@
     var(--wireline-color-surface-default) 84%,
     var(--wireline-color-canvas-default)
   );
-  box-shadow: inset 0 1px 0
-    color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wireline-color-text-primary) 3%, transparent);
 }
 
 .wl-workspace-shell
@@ -296,11 +284,7 @@
 }
 
 .wl-workspace-shell .wl-composer-dock {
-  border-color: color-mix(
-    in srgb,
-    var(--wireline-color-border-strong) 76%,
-    transparent
-  );
+  border-color: color-mix(in srgb, var(--wireline-color-border-strong) 76%, transparent);
   border-radius: 1rem;
   background: color-mix(
     in srgb,
@@ -317,11 +301,7 @@
     var(--wireline-color-border-default)
   );
   box-shadow:
-    0 0 0 3px color-mix(
-      in srgb,
-      var(--wireline-color-action-primary-default) 12%,
-      transparent
-    ),
+    0 0 0 3px color-mix(in srgb, var(--wireline-color-action-primary-default) 12%, transparent),
     var(--bb-polish-shadow);
 }
 

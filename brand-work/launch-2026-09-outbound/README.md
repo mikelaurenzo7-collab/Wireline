@@ -11,7 +11,7 @@ This package is the outbound-only creative release for BotBound's launch-state p
 - Compact lockup: **FIND. CALL. BOOK.**
 - Product CTA: **GET YOUR SALES BOT**
 - Brand close: **PUT YOUR BOT ON THE LINE**
-- Offer: **Build free. Go live from $19/mo.**
+- Offer: **Build free. Plans from $19/mo. Activation availability applies.**
 
 ## Scope
 
@@ -59,6 +59,8 @@ The campaign is written for the registered, configured launch state. Lead discov
 The product separates discovery, review, queue approval, calling, and outcome reporting. Copy must not collapse those controls into a claim of unsupervised prospecting or guaranteed booking.
 
 ## Current creative holds
+
+- The 2026-09-17 copy review adds a preparation-stage founder post, clarifies activation availability, and keeps queue approval separate from runtime permission. Existing exports retain their own recorded status until regenerated and checked against the revised copy; this source edit is not a new rendered release.
 
 - The existing “Point It at a Market” master is held until its **AUTONOMOUS OUTBOUND** eyebrow is regenerated as **APPROVED OUTBOUND**.
 - The existing investor PDF and PNG are held until regenerated from the corrected approved-markets-and-lists source copy.
