@@ -35,6 +35,8 @@ type ThreadsResponse = {
   error?: string;
 };
 
+type InboxError = { source: "threads" | "sync"; message: string };
+
 const OUTCOME_META: Record<
   OutcomeStatus,
   { label: string; variant: NonNullable<BadgeProps["variant"]> }
@@ -144,7 +146,7 @@ export default function EmailInbox({
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [outcomeBusy, setOutcomeBusy] = useState<OutcomeStatus | "handoff" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<InboxError | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -184,7 +186,7 @@ export default function EmailInbox({
   }, [selectedId]);
 
   const loadThreads = useCallback(async () => {
-    if (filterKeyRef.current !== filterKey) return;
+    if (filterKeyRef.current !== filterKey) return false;
     threadListAbortRef.current?.abort();
     const controller = new AbortController();
     threadListAbortRef.current = controller;
@@ -205,15 +207,20 @@ export default function EmailInbox({
       });
       const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
       if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
-      if (!isCurrentRequest()) return;
+      if (!isCurrentRequest()) return false;
       const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
       setThreads(nextThreads);
       setSelectedId((current) =>
         current && nextThreads.some((thread) => thread.id === current) ? current : null,
       );
+      return true;
     } catch (cause) {
-      if (!isCurrentRequest()) return;
-      setError(cause instanceof Error ? cause.message : "Could not load email conversations.");
+      if (!isCurrentRequest()) return false;
+      setError({
+        source: "threads",
+        message: cause instanceof Error ? cause.message : "Could not load email conversations.",
+      });
+      return false;
     } finally {
       if (isCurrentRequest()) setLoading(false);
     }
@@ -315,6 +322,7 @@ export default function EmailInbox({
       syncOperationRef.current === operation && filterKeyRef.current === requestedFilter;
     setSyncing(true);
     setError(null);
+    setNotice(null);
     try {
       const response = await authFetch("/api/emails/sync", { method: "POST" });
       const body = (await response.json().catch(() => null)) as {
@@ -324,12 +332,15 @@ export default function EmailInbox({
       } | null;
       if (!response.ok) throw new Error(body?.error || "Try again in a moment.");
       if (!isCurrentRequest()) return;
-      await loadThreads();
-      if (!isCurrentRequest()) return;
+      const loaded = await loadThreads();
+      if (!isCurrentRequest() || !loaded) return;
       setNotice(body?.message || "Inbox refreshed.");
     } catch (cause) {
       if (!isCurrentRequest()) return;
-      setError(cause instanceof Error ? cause.message : "Could not refresh email.");
+      setError({
+        source: "sync",
+        message: cause instanceof Error ? cause.message : "Could not refresh email.",
+      });
     } finally {
       if (isCurrentRequest()) setSyncing(false);
     }
@@ -480,6 +491,18 @@ export default function EmailInbox({
 
   if (loading && !threads.length) return <InboxLoadingState frameClass={frameClass} />;
 
+  const retryAction = error ? (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      disabled={loading || syncing}
+      onClick={() => void (error.source === "sync" ? syncInbox() : loadThreads())}
+    >
+      Retry
+    </Button>
+  ) : undefined;
+
   return (
     <section className={frameClass} aria-label="Email inbox">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
@@ -514,8 +537,13 @@ export default function EmailInbox({
         </StatusNotice>
       ) : null}
       {error && threads.length ? (
-        <StatusNotice tone="destructive" title="Inbox Unavailable" className="mx-3 mt-3 sm:mx-4">
-          {error}
+        <StatusNotice
+          tone="destructive"
+          title="Inbox Unavailable"
+          className="mx-3 mt-3 sm:mx-4"
+          action={retryAction}
+        >
+          {error.message}
         </StatusNotice>
       ) : null}
 
@@ -530,20 +558,11 @@ export default function EmailInbox({
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
               title="Inbox Unavailable"
-              description={error}
+              description={error.message}
               density="compact"
               titleTone="ui"
               withHalo={false}
-              action={
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => void loadThreads()}
-                >
-                  Retry
-                </Button>
-              }
+              action={retryAction}
             />
           ) : hasSearch && !visibleThreads.length ? (
             <EmptyState

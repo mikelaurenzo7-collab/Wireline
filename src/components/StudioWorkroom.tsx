@@ -453,7 +453,7 @@ const StudioWorkroom = forwardRef<
       >
         <div
           className={`mx-auto flex w-full max-w-3xl justify-between gap-4 ${
-            split ? "items-center" : "items-start"
+            split ? "items-center" : "flex-col items-start sm:flex-row"
           }`}
         >
           {split ? (

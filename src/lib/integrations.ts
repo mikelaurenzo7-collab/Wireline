@@ -441,7 +441,9 @@ export class IntegrationService {
     );
     if (!r.ok) {
       log.warn("Microsoft inbox fetch non-200", { status: r.status });
-      return [];
+      // The shared inbox collector reports thrown provider failures to the
+      // sync route. Returning [] here falsely claims the mailbox is up to date.
+      throw new Error("Microsoft inbox could not be refreshed. Try again or reconnect Microsoft.");
     }
     const data = (await r.json()) as any;
     return (data.value || []).map((m: any) => ({

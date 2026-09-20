@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect, useRef, useId } from "react";
+import { useState, useEffect, useRef, useId, type MouseEvent } from "react";
 import { motion } from "motion/react";
 import {
   Shield,
@@ -82,6 +82,11 @@ export default function DncManager() {
   const addReasonId = useId();
   const toolbarTriggerRef = useRef<HTMLButtonElement>(null);
   const addTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const openAddDialog = (event: MouseEvent<HTMLButtonElement>) => {
+    addTriggerRef.current = event.currentTarget;
+    setShowAdd(true);
+  };
 
   // CSV import
   const fileRef = useRef<HTMLInputElement>(null);
@@ -320,10 +325,7 @@ export default function DncManager() {
                 variant="default"
                 size="sm"
                 data-toolbar-dialog-action
-                onClick={(event) => {
-                  addTriggerRef.current = event.currentTarget;
-                  setShowAdd(true);
-                }}
+                onClick={openAddDialog}
               >
                 <Plus className="w-3.5 h-3.5" />
                 {OPS_CHANNEL_TOOLBAR.dnc.add}
@@ -368,6 +370,7 @@ export default function DncManager() {
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
                 <Input
+                  ref={searchInputRef}
                   type="search"
                   aria-label="Search blocked numbers"
                   placeholder="Search numbers…"
@@ -408,7 +411,7 @@ export default function DncManager() {
                       ? [
                           {
                             label: "Add first number",
-                            onClick: () => setShowAdd(true),
+                            onClick: openAddDialog,
                             primary: true,
                           },
                           {
@@ -514,11 +517,20 @@ export default function DncManager() {
           showClose={!adding}
           aria-busy={adding}
           onCloseAutoFocus={(event) => {
-            // A mobile toolbar action disappears when its drawer hands off.
-            // Return to the persistent Page Actions trigger in that case.
-            if (!addTriggerRef.current || addTriggerRef.current.isConnected) return;
+            // This dialog opens from a plain button, so Radix has no trigger.
+            // Drawer and empty-state openers may disappear. Keep the fallback
+            // visible: Page Actions on mobile, the persistent search on desktop.
+            const opener = addTriggerRef.current;
+            const toolbarTrigger = toolbarTriggerRef.current;
+            const target =
+              opener?.isConnected && opener.getClientRects().length
+                ? opener
+                : toolbarTrigger?.getClientRects().length
+                  ? toolbarTrigger
+                  : searchInputRef.current;
+            if (!target) return;
             event.preventDefault();
-            toolbarTriggerRef.current?.focus();
+            target.focus();
             addTriggerRef.current = null;
           }}
           onEscapeKeyDown={(event) => {

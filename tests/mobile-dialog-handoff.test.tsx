@@ -113,6 +113,7 @@ function render(component: () => ReactNode) {
 
 class Target {
   isConnected = true;
+  visible = true;
   focus = vi.fn();
   constructor(
     public marked = false,
@@ -123,6 +124,9 @@ class Target {
   }
   matches() {
     return this.disabled;
+  }
+  getClientRects() {
+    return this.visible ? [{}] : [];
   }
 }
 
@@ -197,6 +201,62 @@ describe("mobile dialog handoff", () => {
     });
     expect(preventDefault).toHaveBeenCalledOnce();
     expect(persistentTrigger.focus).toHaveBeenCalledOnce();
+  });
+
+  it("returns to the connected desktop DNC opener instead of relying on a missing Radix trigger", () => {
+    const toolbarNode = render(DncManager).find((node) => node.type === ClientToolbar)!;
+    const action = descendants(toolbarNode.props.actions).find(
+      (node) => node.props["data-toolbar-dialog-action"],
+    )!;
+    const opener = new Target(true);
+    const persistentTrigger = new Target();
+    toolbarNode.props.actionTriggerRef!.current = persistentTrigger;
+    action.props.onClick!({ currentTarget: opener });
+    const preventDefault = vi.fn();
+    render(DncManager).find((node) => node.type === "dialog-content")!.props.onCloseAutoFocus!({
+      preventDefault,
+    });
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(opener.focus).toHaveBeenCalledOnce();
+    expect(persistentTrigger.focus).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["returns to the empty-state Add First Number opener", false, false, "opener"],
+    ["uses persistent search when the first add removes the desktop opener", true, false, "search"],
+    ["uses Page Actions when the first add removes the mobile opener", true, true, "toolbar"],
+  ] as const)("%s", (_label, removed, mobile, expected) => {
+    render(DncManager);
+    hooks.states[1] = false; // The initial empty inventory finished loading.
+    const emptyState = render(DncManager).find((node) => node.type === "empty-state")!;
+    const actions = emptyState.props.actions as unknown as Array<{
+      label: string;
+      onClick: (event: { currentTarget: Target }) => void;
+    }>;
+    const opener = new Target();
+    actions
+      .find((action) => action.label === "Add first number")!
+      .onClick({
+        currentTarget: opener,
+      });
+    const nodes = render(DncManager);
+    expect(nodes.find((node) => node.type === "dialog-root")!.props.open).toBe(true);
+    opener.isConnected = !removed;
+    const toolbar = new Target();
+    toolbar.visible = mobile;
+    nodes.find((node) => node.type === ClientToolbar)!.props.actionTriggerRef!.current = toolbar;
+    const search = new Target();
+    nodes.find(
+      (node) => node.props["aria-label"] === "Search blocked numbers",
+    )!.props.ref!.current = search;
+    const preventDefault = vi.fn();
+    nodes.find((node) => node.type === "dialog-content")!.props.onCloseAutoFocus!({
+      preventDefault,
+    });
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(opener.focus).toHaveBeenCalledTimes(expected === "opener" ? 1 : 0);
+    expect(toolbar.focus).toHaveBeenCalledTimes(expected === "toolbar" ? 1 : 0);
+    expect(search.focus).toHaveBeenCalledTimes(expected === "search" ? 1 : 0);
   });
 });
 

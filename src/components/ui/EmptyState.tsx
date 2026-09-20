@@ -1,5 +1,5 @@
 import { isValidElement } from "react";
-import type { ElementType, ReactNode } from "react";
+import type { ElementType, MouseEventHandler, ReactNode } from "react";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { motion, useReducedMotion } from "motion/react";
 import { Link } from "react-router";
@@ -13,7 +13,7 @@ import { SignalOrbFrame } from "./SignalOrbFrame";
 interface Action {
   label: string;
   to?: string;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
   primary?: boolean;
 }
 
