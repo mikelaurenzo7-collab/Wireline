@@ -97,7 +97,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     dismissRef.current = dismiss;
   }, [dismiss]);
 
-  useEffect(() => () => timers.clearAll(), [timers]);
+  useEffect(() => {
+    // Strict Mode replays effects with the visible queue still intact. Keep
+    // its unread time and pause reasons, while cancelling callbacks on teardown.
+    timers.activate();
+    return () => timers.deactivate();
+  }, [timers]);
 
   const toast = useCallback(
     (opts: Omit<Toast, "id">): string => {

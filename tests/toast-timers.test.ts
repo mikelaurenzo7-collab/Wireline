@@ -111,4 +111,46 @@ describe("notification reading time", () => {
     expect(expired).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it("preserves unread time and focus pauses across effect cleanup and replay", () => {
+    const expired = vi.fn();
+    const timers = createToastTimers(expired);
+    timers.schedule("one-shot", 1000);
+    timers.schedule("reading", 2000);
+    timers.schedule("persistent", 0);
+    vi.advanceTimersByTime(250);
+    timers.pause("reading", "focus");
+    timers.deactivate();
+    timers.deactivate();
+    expect(vi.getTimerCount()).toBe(0);
+    vi.advanceTimersByTime(5000);
+    expect(expired).not.toHaveBeenCalled();
+
+    timers.activate();
+    timers.activate();
+    vi.advanceTimersByTime(749);
+    expect(expired).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(expired).toHaveBeenCalledExactlyOnceWith("one-shot");
+    timers.resume("reading", "focus");
+    vi.advanceTimersByTime(1750);
+    expect(expired.mock.calls).toEqual([["one-shot"], ["reading"]]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("defers timers scheduled during cleanup until reactivation and cancels them on unmount", () => {
+    const expired = vi.fn();
+    const timers = createToastTimers(expired);
+    timers.deactivate();
+    timers.schedule("new", 1000);
+    vi.advanceTimersByTime(5000);
+    expect(expired).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    timers.activate();
+    expect(vi.getTimerCount()).toBe(1);
+    timers.deactivate();
+    vi.advanceTimersByTime(5000);
+    expect(expired).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });
