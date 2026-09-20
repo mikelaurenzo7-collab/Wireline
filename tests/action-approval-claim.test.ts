@@ -32,7 +32,8 @@ vi.mock("../src/lib/server-context", async () => {
             rows = rows.filter(
               (row) =>
                 row.metadata.approvalTaskIds?.includes(h.task.id) &&
-                ["processing", "completed"].includes(row.metadata.status),
+                (row.metadata.status === "processing" ||
+                  (row.metadata.status === "completed" && row.metadata.output?.queued !== true)),
             );
           }
           return Promise.resolve(rows).then(resolve);
@@ -118,6 +119,70 @@ beforeEach(() => {
 });
 
 describe("task approval at the durable action boundary", () => {
+  it("lets an operator edit a cached draft because nothing was sent", async () => {
+    await runIdempotentActionExecution({
+      ...input,
+      execute: async () => ({ success: true, queued: true }),
+    });
+    await expect(
+      drizzle.transaction((tx) => assertTaskCanBeEdited(tx, "tenant", "task")),
+    ).resolves.toBeUndefined();
+  });
+
+  it("serializes concurrent approvals of a previously queued draft", async () => {
+    await runIdempotentActionExecution({
+      ...input,
+      approvalTask: undefined,
+      execute: async () => ({ success: true, queued: true }),
+    });
+    let finish!: () => void;
+    let started!: () => void;
+    const startedPromise = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const finishPromise = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const execute = vi.fn(async () => {
+      started();
+      await finishPromise;
+      return { success: true };
+    });
+    const first = runIdempotentActionExecution({ ...input, execute });
+    await startedPromise;
+    const second = await runIdempotentActionExecution({ ...input, execute });
+    expect(second.success).toBe(false);
+    finish();
+    expect((await first).success).toBe(true);
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
+  it("executes a previously queued autonomous draft only once after explicit approval", async () => {
+    await runIdempotentActionExecution({
+      ...input,
+      approvalTask: undefined,
+      execute: async () => ({ success: true, queued: true }),
+    });
+    const execute = vi.fn(async () => ({ success: true }));
+    await runIdempotentActionExecution({ ...input, execute });
+    await runIdempotentActionExecution({ ...input, execute });
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(h.records[0].metadata.output).toEqual({ success: true });
+  });
+
+  it("preserves a blocked approval's actionable error code on retry", async () => {
+    const execute = vi.fn(async () => ({
+      success: false,
+      errorCode: "COMMUNICATION_BLOCKED",
+      error: "Edit this email.",
+    }));
+    await runIdempotentActionExecution({ ...input, execute });
+    expect(await runIdempotentActionExecution({ ...input, execute })).toMatchObject({
+      errorCode: "COMMUNICATION_BLOCKED",
+    });
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects cancellation that wins after the route read but before the action claim", async () => {
     h.task.status = "cancelled";
     const execute = vi.fn(async () => ({ success: true }));

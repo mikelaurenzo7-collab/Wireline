@@ -6,6 +6,7 @@ const h = vi.hoisted(() => ({
   queries: [] as { sql: string; params: unknown[] }[],
   inTransaction: false,
   committed: false,
+  runStatus: null as string | null,
 }));
 vi.mock("express", () => ({
   Router: () =>
@@ -42,6 +43,24 @@ vi.mock("../src/lib/server-context", async () => {
       };
     }
     if (sql.startsWith('select "id" from "wireline_outbound_leads"')) return { rows: [["1"]] };
+    if (sql.startsWith("select") && sql.includes('from "wireline_cadence_runs"') && h.runStatus) {
+      return {
+        rows: [
+          [
+            "run",
+            "tenant",
+            "sequence",
+            "1",
+            0,
+            null,
+            h.runStatus,
+            "Original review reason",
+            "2026-09-20T12:00:00Z",
+            "2026-09-20T12:00:00Z",
+          ],
+        ],
+      };
+    }
     if (sql.startsWith('insert into "wireline_cadence_runs"'))
       return {
         rows: [
@@ -92,9 +111,52 @@ beforeEach(() => {
   h.queries = [];
   h.inTransaction = false;
   h.committed = false;
+  h.runStatus = null;
 });
 
 describe("sequence recovery persistence boundaries", () => {
+  it.each(["completed", "failed"])(
+    "returns a conflict instead of pausing a %s run",
+    async (status) => {
+      h.runStatus = status;
+      await expect(invoke("post", "/api/cadences/runs/:id/pause")).rejects.toMatchObject({
+        status: 409,
+      });
+    },
+  );
+
+  it("returns an already-paused run with its original review reason", async () => {
+    h.runStatus = "paused";
+    const response = await invoke("post", "/api/cadences/runs/:id/pause");
+    expect(response.json).toHaveBeenCalledWith({
+      run: expect.objectContaining({ status: "paused", lastResult: "Original review reason" }),
+    });
+  });
+
+  it("does not expose a missing or foreign run", async () => {
+    await expect(invoke("post", "/api/cadences/runs/:id/pause")).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(h.queries.every((query) => query.params.includes("tenant"))).toBe(true);
+  });
+
+  it("deletes a sequence and pauses only active runs in one transaction", async () => {
+    await invoke("delete", "/api/cadences/:id");
+    const update = h.queries.find((q) => q.sql.startsWith('update "wireline_cadence_runs"'))!;
+    expect(update.sql.split(" where ")[1]).toContain('"wireline_cadence_runs"."status" =');
+    expect(update.params).toEqual(expect.arrayContaining(["sequence", "tenant", "active"]));
+    expect(update.sql).toContain('"next_due_at" =');
+    expect(h.committed).toBe(true);
+  });
+
+  it("does not overwrite terminal runs or review reasons when pausing", async () => {
+    await invoke("post", "/api/cadences/runs/:id/pause").catch(() => undefined);
+    const update = h.queries[0];
+    expect(update.sql.split(" where ")[1]).toContain('"wireline_cadence_runs"."status" =');
+    expect(update.params).toContain("active");
+    expect(update.sql).toContain('"next_due_at" =');
+  });
+
   it("restores only legacy parent-paused runs with no active or newer enrollment", async () => {
     await invoke("patch", "/api/cadences/:id", { active: true });
     const recovery = h.queries.find((q) => q.sql.startsWith('update "wireline_cadence_runs"'))!;

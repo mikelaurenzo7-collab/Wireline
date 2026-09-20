@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useId } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -26,35 +26,18 @@ import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
 import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../lib/wireline-ops-design";
 import { cn } from "../lib/utils";
-
-type StepType = "call" | "sms" | "email";
-type Step = { type: StepType; delayHours: number; template?: string };
-
-interface Cadence {
-  id: string;
-  name: string;
-  description: string | null;
-  steps: Step[];
-  active: boolean;
-  createdAt: string;
-}
-
-interface CadenceRun {
-  id: string;
-  cadenceId: string;
-  leadId: string | number;
-  currentStep: number;
-  status: string;
-  nextDueAt: string | null;
-  lastResult: string | null;
-  contactName?: string | null;
-  contactNumber?: string | null;
-  contactEmail?: string | null;
-}
+import {
+  parseCadences,
+  parseCadenceRuns,
+  type Cadence,
+  type CadenceRun,
+  type Step,
+  type StepType,
+} from "../lib/cadence-response";
 
 const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] = [
   {
-    name: "Standard 3-touch",
+    name: "Standard 3-Touch",
     description: "Call · wait 24h · SMS · wait 48h · Call",
     steps: [
       { type: "call", delayHours: 0 },
@@ -67,7 +50,7 @@ const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] 
     ],
   },
   {
-    name: "Warm intro week",
+    name: "Warm Intro Week",
     description: "Email · call · SMS · call",
     steps: [
       {
@@ -86,7 +69,7 @@ const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] 
     ],
   },
   {
-    name: "Demo-day reminder",
+    name: "Demo-Day Reminder",
     description: "SMS day-of, then SMS confirm after",
     steps: [
       {
@@ -127,29 +110,35 @@ export default function Cadences() {
   const [draftDescription, setDraftDescription] = useState("");
   const [draftSteps, setDraftSteps] = useState<Step[]>([{ type: "call", delayHours: 0 }]);
   const [saving, setSaving] = useState(false);
+  const loadAbortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async () => {
+    loadAbortRef.current?.abort();
+    const controller = new AbortController();
+    loadAbortRef.current = controller;
     setLoading(true);
     setLoadErr(null);
     setRunsWarning(null);
     try {
       const [cR, rR] = await Promise.all([
-        authFetch("/api/cadences"),
-        authFetch("/api/cadences/runs"),
+        authFetch("/api/cadences", { signal: controller.signal }).catch(() => null),
+        authFetch("/api/cadences/runs", { signal: controller.signal }).catch(() => null),
       ]);
-      if (!cR.ok) {
+      const [cD, rD] = await Promise.all([
+        cR?.ok ? cR.json().catch(() => null) : null,
+        rR?.ok ? rR.json().catch(() => null) : null,
+      ]);
+      if (controller.signal.aborted) return;
+      const sequences = parseCadences(cD);
+      const currentRuns = parseCadenceRuns(rD);
+      if (!sequences) {
         throw new Error("Could not load sequences. Check your connection and retry.");
       }
-      const cD = await cR.json();
-      setCadences(cD.cadences || []);
-      if (rR.ok) {
-        const d = await rR.json();
-        setRuns(d.runs || []);
-      } else {
-        setRuns([]);
-        setRunsWarning("Sequences loaded, but recent runs could not be refreshed.");
-      }
+      setCadences(sequences);
+      setRuns(currentRuns ?? []);
+      setRunsWarning(currentRuns === null ? "Run status unavailable." : null);
     } catch (e) {
+      if (controller.signal.aborted) return;
       logFetchError("Failed to load cadences", e);
       setCadences([]);
       setRuns([]);
@@ -159,11 +148,18 @@ export default function Cadences() {
           : "Could not load sequences. Check your connection and retry.",
       );
     } finally {
-      setLoading(false);
+      if (loadAbortRef.current === controller && !controller.signal.aborted) {
+        loadAbortRef.current = null;
+        setLoading(false);
+      }
     }
   }, []);
   useEffect(() => {
-    load();
+    void load();
+    return () => {
+      loadAbortRef.current?.abort();
+      loadAbortRef.current = null;
+    };
   }, [load]);
 
   const loadTemplate = (t: (typeof STARTER_TEMPLATES)[number]) => {
@@ -202,7 +198,7 @@ export default function Cadences() {
         await handleApiError(r, "Failed to save sequence");
         return;
       }
-      toastSuccess("Sequence created", `"${draftName}" is live.`);
+      toastSuccess("Sequence Created");
       setShowBuilder(false);
       setDraftName("");
       setDraftDescription("");
@@ -273,8 +269,8 @@ export default function Cadences() {
       <div className="h-full min-h-[200px] flex items-center justify-center">
         <EmptyState
           icon={Repeat}
-          eyebrow="Sequences unavailable"
-          title="Couldn't Load Cadences"
+          eyebrow="Sequences Unavailable"
+          title="Couldn't Load Sequences"
           description={loadErr}
           actions={[{ label: "Retry", onClick: load, primary: true }]}
           density="compact"
@@ -288,9 +284,15 @@ export default function Cadences() {
   return (
     <div className="h-full space-y-4 overflow-y-auto px-2 pb-4 pt-4 sm:px-6">
       {runsWarning ? (
-        <p className="text-sm text-[var(--wireline-color-status-warning)]" role="status">
-          {runsWarning}
-        </p>
+        <div
+          className="flex items-center justify-between gap-3 text-sm text-[var(--wireline-color-status-warning)]"
+          role="status"
+        >
+          <span>{runsWarning}</span>
+          <ShadButton type="button" variant="ghost" size="sm" onClick={() => void load()}>
+            Retry
+          </ShadButton>
+        </div>
       ) : null}
       <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -392,7 +394,7 @@ export default function Cadences() {
                   )}
                   {runsByCadence[c.id] > 0 && (
                     <span className="wl-label px-1.5 py-0.5 rounded bg-brand/15 text-brand border border-brand/30">
-                      {runsByCadence[c.id]} active run{runsByCadence[c.id] === 1 ? "" : "s"}
+                      {runsByCadence[c.id]} Enrolled
                     </span>
                   )}
                 </div>
@@ -426,7 +428,7 @@ export default function Cadences() {
                   disableAnimations
                   onClick={() => togglePause(c)}
                   title={c.active ? "Pause" : "Resume"}
-                  aria-label={c.active ? "Pause cadence" : "Resume cadence"}
+                  aria-label={c.active ? "Pause sequence" : "Resume sequence"}
                   className="w-8 h-8 rounded-md text-muted hover:text-foreground"
                 >
                   {c.active ? (
@@ -442,7 +444,7 @@ export default function Cadences() {
                   disableAnimations
                   onClick={() => remove(c)}
                   title="Delete"
-                  aria-label="Delete cadence"
+                  aria-label="Delete sequence"
                   className="w-8 h-8 rounded-md text-muted hover:text-rose-500 hover:bg-rose-500/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

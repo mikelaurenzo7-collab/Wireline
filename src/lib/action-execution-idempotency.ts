@@ -41,7 +41,10 @@ export async function assertTaskCanBeEdited(
         eq(schema.auditLog.eventType, ACTION_EVENT_TYPE),
         eq(schema.auditLog.resourceType, ACTION_RESOURCE_TYPE),
         sql`${schema.auditLog.metadata}->'approvalTaskIds' @> jsonb_build_array(${taskId}::text)`,
-        sql`${schema.auditLog.metadata}->>'status' in ('processing', 'completed')`,
+        sql`(${schema.auditLog.metadata}->>'status' = 'processing' or (
+          ${schema.auditLog.metadata}->>'status' = 'completed'
+          and ${schema.auditLog.metadata} #>> '{output,queued}' is distinct from 'true'
+        ))`,
       ),
     )
     .limit(1);
@@ -116,6 +119,7 @@ function cachedResult(metadata: Record<string, unknown>): ActionResult | null {
     ...(typeof row.queued === "boolean" ? { queued: row.queued } : {}),
     ...(typeof row.actionId === "string" ? { actionId: row.actionId } : {}),
     ...(typeof row.error === "string" ? { error: row.error } : {}),
+    ...(typeof row.errorCode === "string" ? { errorCode: row.errorCode } : {}),
   };
 }
 
@@ -196,14 +200,32 @@ async function claimExecution(input: {
       const metadata = metadataRecord(existing.metadata);
       if (input.approvalTask) {
         const taskIds = Array.isArray(metadata.approvalTaskIds) ? metadata.approvalTaskIds : [];
+        // A supervisor can turn an automatic email into a draft under the auto
+        // key. That is not a provider success. Explicit approval may claim it
+        // once; the advisory lock excludes concurrent approvals of that draft.
+        const queuedDraft =
+          input.phase === "auto" &&
+          metadata.status === "completed" &&
+          cachedResult(metadata)?.queued === true;
         await tx
           .update(schema.auditLog)
           .set({
             // Completion can finish concurrently; append claim ownership without
             // restoring the status/output from this earlier read.
-            metadata: sql`coalesce(${schema.auditLog.metadata}, '{}'::jsonb) || ${JSON.stringify({ approvalTaskIds: [...new Set([...taskIds, input.approvalTask.id])] })}::jsonb`,
+            metadata: sql`coalesce(${schema.auditLog.metadata}, '{}'::jsonb) || ${JSON.stringify({
+              approvalTaskIds: [...new Set([...taskIds, input.approvalTask.id])],
+              ...(queuedDraft
+                ? {
+                    status: "processing",
+                    output: null,
+                    completedAt: null,
+                    startedAt: new Date().toISOString(),
+                  }
+                : {}),
+            })}::jsonb`,
           })
           .where(eq(schema.auditLog.id, existing.id));
+        if (queuedDraft) return { kind: "claimed", auditId: existing.id };
       }
       return resultForExisting(metadata);
     }
@@ -252,6 +274,7 @@ async function finishExecution(
           ...(typeof result.queued === "boolean" ? { queued: result.queued } : {}),
           ...(result.actionId ? { actionId: result.actionId } : {}),
           ...(result.error ? { error: result.error.slice(0, 800) } : {}),
+          ...(result.errorCode ? { errorCode: result.errorCode } : {}),
         },
         ...(error
           ? {

@@ -4,14 +4,14 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, like, ne, gte } from "drizzle-orm";
+import { eq, and, desc, like, ne, gte, inArray } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
-import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";
+import { ACTIVE_OPERATOR_TASK_STATUSES, isManualOperatorTask } from "../lib/operator-work-status";
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
@@ -359,9 +359,30 @@ router.post(
         throw AppError.fromHttpStatus(409, "This task is no longer active.");
       }
 
-      // Prefer the structured `payload` (written by the AI Action Engine);
-      // fall back to legacy `customerInfo` for rows created before
-      // `wireline_follow_up_tasks.payload` existed.
+      const taskType = task.taskType;
+      if (isManualOperatorTask(taskType)) {
+        const completed = await drizzle.transaction(async (tx) => {
+          await assertTaskCanBeEdited(tx, userId, taskId);
+          return tx
+            .update(schema.followUpTasks)
+            .set({ status: "completed", resolutionNotes: "Completed by Account Holder" })
+            .where(
+              and(
+                eq(schema.followUpTasks.id, taskId),
+                eq(schema.followUpTasks.userId, userId),
+                eq(schema.followUpTasks.taskType, taskType),
+                inArray(schema.followUpTasks.status, [...ACTIVE_OPERATOR_TASK_STATUSES]),
+              ),
+            )
+            .returning({ id: schema.followUpTasks.id });
+        });
+        if (!completed.length)
+          throw AppError.fromHttpStatus(409, "This task changed in another session.");
+        touchNavCounts(userId);
+        return res.json({ success: true, manual_task: true });
+      }
+
+      // Prefer structured action payloads; preserve legacy customerInfo rows.
       const actionItem: ActionItem = {
         type: task.taskType as any,
         priority: task.priority as any,
@@ -380,6 +401,12 @@ router.post(
         "auto",
       );
 
+      if (result.queued) {
+        return res.status(409).json({
+          code: "ACTION_NOT_EXECUTED",
+          error: "This action is still a draft. Refresh and review it before approving.",
+        });
+      }
       if (result.success) {
         await drizzle
           .update(schema.followUpTasks)
@@ -413,7 +440,13 @@ router.post(
 
         res.json({ success: true });
       } else {
-        res.status(result.errorCode === "TASK_CHANGED" ? 409 : 500).json({
+        const status =
+          result.errorCode === "TASK_CHANGED"
+            ? 409
+            : result.errorCode === "COMMUNICATION_BLOCKED"
+              ? 422
+              : 500;
+        res.status(status).json({
           code: result.errorCode || "INTERNAL_ERROR",
           error: result.error || "Action execution failed",
         });

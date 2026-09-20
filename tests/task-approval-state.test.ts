@@ -51,9 +51,11 @@ vi.mock("../src/lib/server-context", async () => {
         limit: () => query,
         for: () => query,
         then: (resolve: (value: Row[]) => unknown) =>
-          Promise.resolve([{ ...(table === schema.followUpTasks ? h.task : h.thread) }]).then(
-            resolve,
-          ),
+          Promise.resolve(
+            table === schema.auditLog
+              ? []
+              : [{ ...(table === schema.followUpTasks ? h.task : h.thread) }],
+          ).then(resolve),
       };
       return query;
     },
@@ -129,6 +131,24 @@ beforeEach(() => {
 });
 
 describe("approval lifecycle boundaries", () => {
+  it.each(["internal_task", "follow_up", "ticket", "callback", "human_escalation"])(
+    "completes human %s work without invoking the action engine",
+    async (taskType) => {
+      h.task.taskType = taskType;
+      await invoke("action");
+      expect(h.executeAction).not.toHaveBeenCalled();
+      expect(h.task.status).toBe("completed");
+      expect(h.task.resolutionNotes).toBe("Completed by Account Holder");
+    },
+  );
+
+  it("does not label a queued draft as an executed action", async () => {
+    h.task.taskType = "send_email";
+    h.executeAction.mockResolvedValue({ success: true, queued: true });
+    await invoke("action");
+    expect(h.task.status).toBe("pending");
+  });
+
   it.each(["cancelled", "archived", null])("does not execute a %s task", async (status) => {
     Object.assign(h.task, { status, taskType: "send_email" });
     await expect(invoke("action")).rejects.toMatchObject({ status: 409 });

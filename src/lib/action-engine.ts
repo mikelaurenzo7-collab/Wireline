@@ -268,7 +268,7 @@ export async function executeAction(
 async function executeAutonomousAction(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  context: { sourceId: string; sourceType: string; approvalTaskId?: string },
   agentTimeZone: string | null,
 ): Promise<ActionResult> {
   if (AUTONOMOUS_LIVE_EXTERNAL_ACTIONS.has(action.type)) {
@@ -304,11 +304,16 @@ async function executeAutonomousAction(
           context: `Autonomy mode: auto. Source type: ${context.sourceType}.`,
         });
       } catch (err) {
-        // The supervisor THROWS on a block — it never returns approved:false —
-        // so the old `if (!reviewed.approved)` draft fallback was dead code and
-        // blocked autonomous emails were dropped entirely. Convert a block into
-        // the intended pending draft task so a human can review and send it.
+        // Keep an existing approval pending and editable. Only autonomous work
+        // needs a new draft; requeueing an approval falsely reports it as sent.
         if (err instanceof ClientCommunicationBlockedError) {
+          if (context.approvalTaskId) {
+            return {
+              success: false,
+              errorCode: "COMMUNICATION_BLOCKED",
+              error: `Edit this email before approving: ${err.message}`,
+            };
+          }
           return handleSendEmail(
             userId,
             {

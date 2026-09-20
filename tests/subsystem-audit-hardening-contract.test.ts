@@ -141,13 +141,8 @@ describe("voice comms tools record a real task instead of fabricating follow-ups
     expect(smsBlock).toMatch(/catch[\s\S]{0,600}recordCommsFollowUpTask/);
   });
 
-  it("action-engine converts a supervisor block into a pending draft task", () => {
-    const engine = read("src/lib/action-engine.ts");
-    expect(engine).toContain("ClientCommunicationBlockedError");
-    expect(engine).toMatch(
-      /catch \(err\)[\s\S]{0,400}ClientCommunicationBlockedError[\s\S]{0,200}handleSendEmail/,
-    );
-  });
+  // Blocked automatic email and manual approval are exercised behaviorally in
+  // action-email-approval.test.ts, including the no-duplicate-draft boundary.
 });
 
 describe("inbound webhook keeps the tenant binding from a resolved line", () => {

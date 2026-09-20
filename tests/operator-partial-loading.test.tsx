@@ -1,0 +1,271 @@
+import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import Cadences from "../src/components/Cadences";
+import ApprovalInbox from "../src/components/ApprovalInbox";
+
+const h = vi.hoisted(() => ({
+  states: [] as unknown[],
+  refs: [] as Array<{ current: unknown }>,
+  stateCursor: 0,
+  refCursor: 0,
+  effects: [] as Array<() => void | (() => void)>,
+  fetch: vi.fn(),
+}));
+vi.mock("react", async (original) => ({
+  ...(await original<typeof import("react")>()),
+  useState(initial: unknown) {
+    const index = h.stateCursor++;
+    if (!(index in h.states)) h.states[index] = typeof initial === "function" ? initial() : initial;
+    return [
+      h.states[index],
+      (next: unknown) => {
+        h.states[index] = typeof next === "function" ? next(h.states[index]) : next;
+      },
+    ];
+  },
+  useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
+  useEffect: (effect: () => void | (() => void)) => h.effects.push(effect),
+  useCallback: (callback: unknown) => callback,
+  useMemo: (factory: () => unknown) => factory(),
+  useId: () => "builder",
+}));
+vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
+vi.mock("../src/contexts/ToastContext", () => ({ useToast: () => ({ success: vi.fn() }) }));
+vi.mock("../src/hooks/useApiError", () => ({
+  useApiError: () => ({ handleApiError: vi.fn(), handleCatchError: vi.fn() }),
+}));
+vi.mock("../src/lib/product-event-client", () => ({ emitProductEventOnce: vi.fn() }));
+vi.mock("../src/components/ui/EmptyState", () => ({ EmptyState: "empty-state" }));
+vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));
+vi.mock("../src/components/layout/ClientRouteLoading", () => ({ default: "loading" }));
+vi.mock("../src/components/layout/WorkspaceTabStrip", () => ({ WorkspaceTabStrip: "tabs" }));
+vi.mock("../src/components/molecules", () => ({ StatusNotice: "notice" }));
+
+type Props = {
+  children?: ReactNode;
+  title?: string;
+  tabs?: Array<{ id: string; label: string; shortLabel: string }>;
+  onClick?: () => void;
+  onChange?: (event: { target: { value: string } }) => void;
+  placeholder?: string;
+  task?: { id: string };
+};
+function elements(node: ReactNode): Array<ReactElement<Props>> {
+  if (Array.isArray(node)) return node.flatMap(elements);
+  if (!isValidElement<Props>(node)) return [];
+  return [node, ...elements(node.props.children)];
+}
+function textOf(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join(" ");
+  return isValidElement<Props>(node) ? textOf(node.props.children) : "";
+}
+function render(component: () => ReactNode = Cadences) {
+  h.stateCursor = 0;
+  h.refCursor = 0;
+  h.effects = [];
+  return component();
+}
+async function flush() {
+  for (let i = 0; i < 60; i++) await Promise.resolve();
+}
+function json(value: unknown) {
+  return new Response(JSON.stringify(value));
+}
+const sequence = (name = "Follow Up") => ({
+  id: "sequence",
+  name,
+  description: null,
+  active: false,
+  steps: [{ type: "sms", delayHours: 0 }],
+  createdAt: "2026-09-20T12:00:00Z",
+});
+const triage = {
+  hot_leads: [{ id: "lead" }],
+  compliance: [],
+  pending_tasks: [],
+  escalations: [],
+  knowledge_gaps: [],
+  counts: { hot_leads: 1, escalations: 0, knowledge_gaps: 0 },
+};
+beforeEach(() => {
+  h.states = [];
+  h.refs = [];
+  h.effects = [];
+  h.fetch.mockReset();
+});
+
+describe("sequence load integrity", () => {
+  it.each(["network", "json", "shape"])(
+    "keeps sequences available when run status fails: %s",
+    async (failure) => {
+      h.fetch.mockImplementation((url: string) => {
+        if (url === "/api/cadences") return Promise.resolve(json({ cadences: [sequence()] }));
+        if (failure === "network") return Promise.reject(new Error("offline"));
+        return Promise.resolve(failure === "json" ? new Response("not json") : json({ runs: {} }));
+      });
+      render();
+      h.effects[0]();
+      await flush();
+      const tree = render();
+      expect(textOf(tree)).toContain("Follow Up");
+      expect(textOf(tree)).toContain("Run status unavailable");
+      expect(
+        elements(tree).find((node) => textOf(node.props.children) === "Retry")?.props.onClick,
+      ).toBeTypeOf("function");
+    },
+  );
+
+  it.each([{}, { cadences: {} }, { cadences: [{ ...sequence(), steps: null }] }])(
+    "shows a recoverable error for malformed sequences: %j",
+    async (body) => {
+      h.fetch.mockImplementation((url: string) =>
+        Promise.resolve(json(url === "/api/cadences" ? body : { runs: [] })),
+      );
+      render();
+      h.effects[0]();
+      await flush();
+      expect(
+        elements(render()).some((node) => node.props.title === "Couldn't Load Sequences"),
+      ).toBe(true);
+    },
+  );
+
+  it("recovers missing run status without losing the sequence", async () => {
+    let unavailable = true;
+    h.fetch.mockImplementation((url: string) => {
+      if (url === "/api/cadences") return Promise.resolve(json({ cadences: [sequence()] }));
+      return Promise.resolve(
+        unavailable
+          ? new Response("", { status: 503 })
+          : json({
+              runs: [
+                {
+                  id: "run",
+                  cadenceId: "sequence",
+                  leadId: "1",
+                  currentStep: 0,
+                  status: "active",
+                  nextDueAt: null,
+                  lastResult: null,
+                },
+              ],
+            }),
+      );
+    });
+    render();
+    h.effects[0]();
+    await flush();
+    const retry = elements(render()).find(
+      (node) => node.type === "button" && textOf(node.props.children) === "Retry",
+    );
+    expect(retry).toBeDefined();
+    unavailable = false;
+    retry!.props.onClick!();
+    await flush();
+    expect(textOf(render())).not.toContain("Run status unavailable");
+    expect(textOf(render())).toMatch(/1\s+Enrolled/);
+    expect(textOf(render())).not.toContain("active run");
+  });
+
+  it("ignores a superseded load even when its transport ignores abort", async () => {
+    let release!: () => void;
+    const oldLoad = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let calls = 0;
+    h.fetch.mockImplementation((url: string) => {
+      calls++;
+      if (calls <= 2)
+        return oldLoad.then(() =>
+          json(url === "/api/cadences" ? { cadences: [sequence("Old Sequence")] } : { runs: [] }),
+        );
+      return Promise.resolve(
+        json(url === "/api/cadences" ? { cadences: [sequence("Current Sequence")] } : { runs: [] }),
+      );
+    });
+    render();
+    const start = h.effects[0];
+    start();
+    start();
+    await flush();
+    release();
+    await flush();
+    expect(textOf(render())).toContain("Current Sequence");
+    expect(textOf(render())).not.toContain("Old Sequence");
+  });
+});
+
+describe("approval count availability", () => {
+  it.each(["tasks", "triage"])(
+    "omits only counts from the unavailable %s source",
+    async (failed) => {
+      h.fetch.mockImplementation((url: string) => {
+        const isTriage = url === "/api/triage";
+        return Promise.resolve(
+          (isTriage ? failed === "triage" : failed === "tasks")
+            ? new Response("", { status: 503 })
+            : json(isTriage ? triage : { tasks: [] }),
+        );
+      });
+      render(() => ApprovalInbox({}));
+      h.effects[0]();
+      await flush();
+      const nodes = elements(render(() => ApprovalInbox({})));
+      expect(nodes.filter((node) => node.type === "notice")).toHaveLength(1);
+      const tabs = nodes.find((node) => node.type === "tabs")!.props.tabs!;
+      const pending = tabs.find((tab) => tab.id === "pending")!;
+      const hot = tabs.find((tab) => tab.id === "hot_leads")!;
+      expect(pending.label).toBe(failed === "tasks" ? "Pending Actions" : "Pending Actions (0)");
+      expect(hot.label).toBe(failed === "triage" ? "Hot Leads" : "Hot Leads (1)");
+      expect(pending.shortLabel).toBe(failed === "tasks" ? "Pending" : "Pending (0)");
+    },
+  );
+});
+
+describe("approval message edits", () => {
+  it.each([
+    ["send_email", "Message that will execute on approval"],
+    ["send_text_message", "Message that will execute on approval"],
+    ["send_email", "Email or CRM subject"],
+  ])(
+    "does not send old %s content when the edited %s is cleared",
+    async (taskType, placeholder) => {
+      const task = {
+        id: "task",
+        task_type: taskType,
+        status: "pending",
+        payload: {
+          to: "customer@example.test",
+          subject: "Original Subject",
+          body: "Original message",
+        },
+      };
+      h.fetch.mockImplementation((url: string) =>
+        Promise.resolve(json(url === "/api/triage" ? triage : { tasks: [task] })),
+      );
+      render(() => ApprovalInbox({}));
+      h.effects[0]();
+      await flush();
+      const card = elements(render(() => ApprovalInbox({}))).find(
+        (node) => node.props.task?.id === "task",
+      )!;
+      h.states = [];
+      h.refs = [];
+      const renderCard = () => render(() => (card.type as (props: Props) => ReactNode)(card.props));
+      elements(renderCard()).find(
+        (node) => node.type === "button" && textOf(node.props.children) === "Edit",
+      )!.props.onClick!();
+      elements(renderCard()).find((node) => node.props.placeholder === placeholder)!.props
+        .onChange!({ target: { value: "   " } });
+      h.fetch.mockClear();
+      h.fetch.mockImplementation(() => Promise.resolve(json({ success: true })));
+      elements(renderCard()).find(
+        (node) => node.type === "button" && textOf(node.props.children).trim() === "Approve",
+      )!.props.onClick!();
+      await flush();
+      expect(h.fetch).not.toHaveBeenCalled();
+      expect(textOf(renderCard())).toContain("before approving");
+    },
+  );
+});

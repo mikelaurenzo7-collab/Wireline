@@ -21,6 +21,7 @@ import {
 } from "../lib/approval-inbox-response";
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { formatPhone } from "../lib/safe-number";
+import { isManualOperatorTask } from "../lib/operator-work-status";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
@@ -178,6 +179,7 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
 
 function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   const manualHandoff = isHumanHandoff(task);
+  const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -194,13 +196,20 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     const payload = editablePayloadFields(task);
     return typeof payload.subject === "string" ? payload.subject : "";
   });
-  const evidence = evidenceSnippet(task, editing && !manualHandoff);
+  const evidence = evidenceSnippet(task, editing && !manualTask);
 
   async function approve() {
     setBusy(true);
     setError(null);
     try {
-      if (!manualHandoff && editing) {
+      if (!manualTask && editing) {
+        const type = rawTaskType(task);
+        if ((type === "send_email" || type === "send_text_message") && !editBody.trim()) {
+          throw new Error("Add a message before approving.");
+        }
+        if (type === "send_email" && !editSubject.trim()) {
+          throw new Error("Add a subject before approving.");
+        }
         const basePayload = editablePayloadFields(task);
         const nextPayload: Record<string, unknown> = { ...basePayload };
         if (editSubject.trim()) nextPayload.subject = editSubject.trim();
@@ -236,10 +245,10 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(
-          body?.error || (manualHandoff ? "Could not complete this handoff." : "Approval failed."),
+          body?.error || (manualTask ? "Could not complete this task." : "Approval failed."),
         );
       }
-      if (!manualHandoff) {
+      if (!manualTask) {
         emitProductEventOnce({
           event: "first_next_action_approved",
           agentId: task.agentId || task.agent_id || undefined,
@@ -251,8 +260,8 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
       setError(
         reason instanceof Error
           ? reason.message
-          : manualHandoff
-            ? "Could not complete this handoff."
+          : manualTask
+            ? "Could not complete this task."
             : "Approval failed.",
       );
     } finally {
@@ -323,7 +332,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               {evidence}
             </p>
           ) : null}
-          {!manualHandoff && editing ? (
+          {!manualTask && editing ? (
             <div className="mt-3 grid gap-3">
               <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Subject
@@ -357,7 +366,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             </div>
           ) : null}
           {error ? (
-            <p className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
+            <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
               <AlertTriangle size={12} aria-hidden="true" />
               {error}
             </p>
@@ -371,9 +380,9 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               ) : (
                 <Check className="size-3.5" aria-hidden="true" />
               )}
-              {manualHandoff ? "Complete" : "Approve"}
+              {manualTask ? "Complete" : "Approve"}
             </ShadButton>
-            {!manualHandoff ? (
+            {!manualTask ? (
               <ShadButton
                 type="button"
                 size="sm"
@@ -522,11 +531,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const actionableTasks = bucketItems.filter(
     (item) => item.task_type !== "hot_lead_review" && item.task_type !== "escalation_review",
   );
+  const bucketUnavailable =
+    bucket === "pending" || bucket === "compliance" ? tasksUnavailable : triageUnavailable;
 
   const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
     // A failed load must not dress the tabs in confident "(0)" counts beside
     // an error banner — a zero is a claim about the data, not a placeholder.
-    if (error || loading) {
+    const sourceUnavailable =
+      key === "pending" || key === "compliance" ? tasksUnavailable : triageUnavailable;
+    if (error || loading || sourceUnavailable) {
       return { id: key, label: BUCKET_LABELS[key], shortLabel: BUCKET_SHORT_LABELS[key] };
     }
     const count =
@@ -554,13 +567,17 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         className="mb-0 border-b-0 pb-0"
       />
 
-      {!error && (triageUnavailable || tasksUnavailable) ? (
-        <StatusNotice tone="warning" title="Approval Data Partial">
-          {triageUnavailable && tasksUnavailable
-            ? "Triage and active operator work are temporarily unavailable."
-            : triageUnavailable
-              ? "Triage queues are temporarily unavailable. Active operator work is still current."
-              : "Active operator work is temporarily unavailable. Triage queues are still current."}
+      {!error && !loading && (triageUnavailable || tasksUnavailable) ? (
+        <StatusNotice
+          tone="warning"
+          title={tasksUnavailable ? "Actions Unavailable" : "Triage Unavailable"}
+          action={
+            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
+              Retry
+            </ShadButton>
+          }
+        >
+          Other queues are still available.
         </StatusNotice>
       ) : null}
 
@@ -581,31 +598,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         >
           Nothing was changed. Try again to load approvals.
         </StatusNotice>
-      ) : (bucket === "pending" || bucket === "compliance") && tasksUnavailable ? (
-        <StatusNotice
-          tone="destructive"
-          title="Active Operator Work Unavailable"
-          action={
-            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
-              Try again
-            </ShadButton>
-          }
-        >
-          Could not load active operator work.
-        </StatusNotice>
-      ) : bucket !== "pending" && bucket !== "compliance" && triageUnavailable ? (
-        <StatusNotice
-          tone="destructive"
-          title="Triage Queues Unavailable"
-          action={
-            <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
-              Try again
-            </ShadButton>
-          }
-        >
-          Could not load this triage queue.
-        </StatusNotice>
-      ) : bucket === "pending" || bucket === "compliance" ? (
+      ) : bucketUnavailable ? null : bucket === "pending" || bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
           <ApprovalEmptyCard
             title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}

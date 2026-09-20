@@ -182,19 +182,23 @@ router.delete(
   authenticateUser,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
-    await drizzle
-      .delete(schema.cadences)
-      .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)));
-    // Pause any active runs for this cadence so the worker doesn't trip.
-    await drizzle
-      .update(schema.cadenceRuns)
-      .set({ status: "paused", updatedAt: new Date() })
-      .where(
-        and(
-          eq(schema.cadenceRuns.cadenceId, req.params.id),
-          eq(schema.cadenceRuns.userId, req.user.id),
-        ),
-      );
+    await drizzle.transaction(async (tx) => {
+      await tx
+        .delete(schema.cadences)
+        .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)));
+      // Keep settled history and existing review reasons intact. Enrollment
+      // locks the same parent row, so it cannot race between these writes.
+      await tx
+        .update(schema.cadenceRuns)
+        .set({ status: "paused", nextDueAt: null, updatedAt: new Date() })
+        .where(
+          and(
+            eq(schema.cadenceRuns.cadenceId, req.params.id),
+            eq(schema.cadenceRuns.userId, req.user.id),
+            eq(schema.cadenceRuns.status, "active"),
+          ),
+        );
+    });
     res.json({ ok: true });
   },
 );
@@ -278,12 +282,33 @@ router.post(
     if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const [row] = (await drizzle
       .update(schema.cadenceRuns)
-      .set({ status: "paused", updatedAt: new Date(), lastResult: "paused by account holder" })
+      .set({
+        status: "paused",
+        nextDueAt: null,
+        updatedAt: new Date(),
+        lastResult: "paused by account holder",
+      })
       .where(
-        and(eq(schema.cadenceRuns.id, req.params.id), eq(schema.cadenceRuns.userId, req.user.id)),
+        and(
+          eq(schema.cadenceRuns.id, req.params.id),
+          eq(schema.cadenceRuns.userId, req.user.id),
+          eq(schema.cadenceRuns.status, "active"),
+        ),
       )
       .returning()) as any[];
-    if (!row) throw AppError.fromHttpStatus(404, "Run not found");
+    if (!row) {
+      const [existing] = await drizzle
+        .select()
+        .from(schema.cadenceRuns)
+        .where(
+          and(eq(schema.cadenceRuns.id, req.params.id), eq(schema.cadenceRuns.userId, req.user.id)),
+        )
+        .limit(1);
+      if (!existing) throw AppError.fromHttpStatus(404, "Run not found");
+      if (existing.status !== "paused")
+        throw AppError.fromHttpStatus(409, "Only active runs can be paused.");
+      return res.json({ run: existing });
+    }
     res.json({ run: row });
   },
 );
