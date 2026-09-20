@@ -117,23 +117,35 @@ for (const width of [320, 390, 1440]) {
   });
 }
 
-test("a name conflict reveals the optional name field without losing the brief", async ({
-  page,
-}) => {
-  await mockWorkspace(page);
-  await page.route("**/api/agents", async (route) => {
-    if (route.request().method() === "POST") {
-      await route.fulfill({ status: 409, json: { code: "name_conflict" } });
-    } else await route.fallback();
+for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_mark_conflict"]) {
+  test(`creation conflict ${code} reveals and focuses the relevant control`, async ({ page }) => {
+    await mockWorkspace(page);
+    await page.route("**/api/agents", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ status: 409, json: { code } });
+      } else await route.fallback();
+    });
+    await page.goto("/studio?create=1");
+    const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
+    const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
+    await brief.fill("Book repair appointments.");
+    await dialog.getByRole("button", { name: "Create Bot", exact: true }).click();
+    await expect(dialog.getByRole("button", { name: /Name & appearance/ })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    if (code.toLowerCase() === "bot_mark_conflict") {
+      await expect(
+        dialog
+          .getByRole("radiogroup", { name: "Bot identity symbol" })
+          .getByRole("radio", { checked: true }),
+      ).toBeFocused();
+      await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).not.toBeFocused();
+      await expect(dialog.getByText(/Choose another mark or color/)).toBeVisible();
+    } else await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeFocused();
+    await expect(brief).toHaveValue("Book repair appointments.");
   });
-  await page.goto("/studio?create=1");
-  const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
-  const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
-  await brief.fill("Book repair appointments.");
-  await dialog.getByRole("button", { name: "Create Bot", exact: true }).click();
-  await expect(dialog.getByRole("textbox", { name: /Bot Name/ })).toBeFocused();
-  await expect(brief).toHaveValue("Book repair appointments.");
-});
+}
 
 test("password reset names and focuses the invalid field and permits reviewing both entries", async ({
   page,

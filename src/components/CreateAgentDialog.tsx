@@ -279,11 +279,18 @@ export default function CreateAgentDialog({
       if (!response.ok || !body?.id) {
         if (isCurrentAccount()) {
           setError(safeCreateAgentError(response.status, body?.code, body?.error));
-          if (response.status === 409 || body?.code === "bot_mark_conflict") {
+          const markConflict = body?.code?.toLowerCase() === "bot_mark_conflict";
+          if (response.status === 409 || markConflict) {
             setCustomizing(true);
-            if (body?.code !== "bot_mark_conflict") {
-              requestAnimationFrame(() => nameRef.current?.focus());
-            }
+            requestAnimationFrame(() => {
+              if (markConflict) {
+                dialogRef.current
+                  ?.querySelector<HTMLButtonElement>(
+                    '[data-bot-mark-picker] [role="radio"][aria-checked="true"]:not(:disabled)',
+                  )
+                  ?.focus();
+              } else nameRef.current?.focus();
+            });
           }
         }
         return;
