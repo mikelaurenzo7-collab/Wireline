@@ -91,8 +91,10 @@ describe("Cursor Directory plugin contract", () => {
     }
     expect(skill).toContain("not a software development kit");
     expect(publicDocs).toContain("not a repo voice SDK");
-    expect(apps).toContain("Create a BotBound account and your first Phone Bot from Cursor.");
-    expect(apps).toMatch(/manage\s+live calls, messages, numbers, and billing in Studio/);
+    expect(apps).toContain("Build your Bot from your editor.");
+    expect(apps.replace(/\s+/g, " ")).toContain(
+      "manage live calls, messages, numbers, and billing in Studio",
+    );
     expect(apps).toContain("/cursor-plugin.html");
     expect(apps).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(apps).not.toContain("https://trywireline.com/mcp");
@@ -117,7 +119,9 @@ describe("Cursor Directory plugin contract", () => {
     expect(skill).toContain("train_wireline_agent");
     expect(panel).toContain("/api/mcp/connections");
     expect(panel).toContain("/api/mcp/coaching-writes");
-    expect(panel).toContain("Allow connected apps to save Training");
+    expect(panel).toContain("Save Training");
+    expect(panel).toContain('htmlFor="mcp-coaching-writes"');
+    expect(panel).toContain('aria-label="Allow connected apps to save Training"');
     expect(read("src/lib/mcp-coaching-preferences.ts")).toContain(
       'MCP_COACHING_WRITES_KEY = "mcp_coaching_writes"',
     );

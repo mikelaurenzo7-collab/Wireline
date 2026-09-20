@@ -1,17 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
+  Check,
+  Copy,
   MessageSquareText,
   MonitorDown,
-  Smartphone,
   Sparkles,
-  TabletSmartphone,
   Terminal,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { Badge, Button } from "../components/atoms";
-import { WirelineWordmark } from "../components/brand/WirelineBrand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import McpCoachingPanel from "../components/settings/McpCoachingPanel";
 import WorkspaceShell from "../components/WorkspaceShell";
@@ -19,7 +18,7 @@ import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
-const MCP_SERVER_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/mcp`;
+const MCP_SERVER_URL = BOTBOUND_PRODUCTION_ORIGIN + "/mcp";
 const CURSOR_MCP_INSTALL_URL =
   "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
 
@@ -27,181 +26,204 @@ const clientSurfaces = [
   {
     icon: MonitorDown,
     title: "BotBound Command",
-    blurb: "Send the page you are viewing into Studio as call or follow-up context.",
-    status: CLIENT_SURFACE_POSTURE.browser.status,
-    statusVariant: "info" as const,
-    action: CLIENT_SURFACE_POSTURE.browser.action,
+    blurb: "Bring a page into Studio.",
+    action: "Install Guide",
     href: "/settings/apps/command",
-    emphasis: "primary" as const,
   },
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Build and privately rehearse your Phone Bot in ChatGPT.",
-    status: CLIENT_SURFACE_POSTURE.chatgpt.status,
-    statusVariant: "info" as const,
-    action: "Set up",
+    blurb: "Build and rehearse privately.",
+    action: "Set Up",
     href: "/settings/apps#chatgpt-mcp",
-    emphasis: "primary" as const,
   },
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build and privately rehearse your Phone Bot in Claude.",
-    status: CLIENT_SURFACE_POSTURE.claude.status,
-    statusVariant: "info" as const,
-    action: CLIENT_SURFACE_POSTURE.claude.action,
+    blurb: "Build and rehearse privately.",
+    action: "Connect",
     href: "https://claude.ai/settings/connectors",
-    emphasis: "primary" as const,
   },
   {
     icon: Terminal,
     title: "Cursor",
-    blurb: "Create a BotBound account and your first Phone Bot from Cursor.",
-    status: CLIENT_SURFACE_POSTURE.cursor.status,
-    statusVariant: "info" as const,
-    action: CLIENT_SURFACE_POSTURE.cursor.action,
+    blurb: "Build your Bot from your editor.",
+    action: "Install Guide",
     href: "/cursor-plugin.html",
-    emphasis: "primary" as const,
-  },
-  {
-    icon: TabletSmartphone,
-    title: "Android",
-    blurb: "Call alerts and approvals on the go.",
-    status: CLIENT_SURFACE_POSTURE.android.status,
-    statusVariant: "outline" as const,
-    action: CLIENT_SURFACE_POSTURE.android.action,
-    href: "/support",
-    emphasis: "muted" as const,
-  },
-  {
-    icon: Smartphone,
-    title: "iPhone",
-    blurb: "A native app is planned. Use Studio in your browser today.",
-    status: CLIENT_SURFACE_POSTURE.ios.status,
-    statusVariant: "outline" as const,
-    action: CLIENT_SURFACE_POSTURE.ios.action,
-    href: "/support",
-    emphasis: "muted" as const,
   },
 ] as const;
 
 export default function ClientAppsPage() {
   const location = useLocation();
+  const setupRef = useRef<HTMLDetailsElement>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
+
   useEffect(() => {
     if (location.hash !== "#chatgpt-mcp") return;
     const id = window.setTimeout(() => {
-      document.getElementById("chatgpt-mcp")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      const setup = setupRef.current;
+      if (!setup) return;
+      setup.open = true;
+      setup.scrollIntoView({ behavior: "smooth", block: "start" });
+      setup.querySelector("summary")?.focus({ preventScroll: true });
     }, 0);
     return () => window.clearTimeout(id);
-  }, [location.hash, location.pathname]);
+  }, [location.hash, location.pathname, location.key]);
+
+  async function copyEndpoint() {
+    try {
+      await navigator.clipboard.writeText(MCP_SERVER_URL);
+      setCopied(true);
+      setCopyError(false);
+    } catch {
+      setCopied(false);
+      setCopyError(true);
+    }
+  }
 
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="narrow">
+      <WorkspacePageFrame>
         <SettingsTabs />
         <WorkspacePageIntro title="Apps" titleHidden />
-        <section
-          className="grid gap-3 md:grid-cols-2"
-          aria-label="BotBound apps and companion surfaces"
-        >
-          {clientSurfaces.map(
-            ({ icon: Icon, title, blurb, status, statusVariant, action, href, emphasis }) => {
+        <section aria-label="BotBound apps and companion surfaces">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-foreground">Companion Apps</h2>
+            <Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>
+          </div>
+          <div className="divide-y divide-border/60">
+            {clientSurfaces.map(({ icon: Icon, title, blurb, action, href }) => {
+              const external = href.startsWith("https://");
               const documentLink = href.endsWith(".html");
-              const external =
-                href.startsWith("https://") || href.startsWith("mailto:") || documentLink;
               return (
                 <article
                   key={title}
-                  className={
-                    emphasis === "muted"
-                      ? "wl-paper group flex min-h-[152px] flex-col border-dashed p-5 opacity-90"
-                      : "wl-paper wl-paper-elevated group flex min-h-[152px] flex-col p-5 transition-all hover:border-primary/30"
-                  }
+                  className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-4 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                      <Icon size={17} aria-hidden="true" />
-                    </span>
-                    <Badge variant={statusVariant}>{status}</Badge>
+                  <span className="grid size-10 place-items-center rounded-lg bg-accent text-primary">
+                    <Icon size={18} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-foreground">{title}</h3>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{blurb}</p>
                   </div>
-                  <h2 className="mt-5 font-[var(--wireline-font-family-display)] text-[22px] font-normal leading-tight tracking-[-0.02em] text-foreground">
-                    {title}
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{blurb}</p>
                   <Button
                     asChild
-                    variant="link"
-                    className="mt-auto w-fit px-0 pt-4 text-sm text-primary"
+                    variant="outline"
+                    size="sm"
+                    className="col-start-2 w-fit sm:col-start-auto"
                   >
-                    {external ? (
+                    {external || documentLink ? (
                       <a
                         href={href}
-                        {...(href.startsWith("https://")
-                          ? { target: "_blank", rel: "noreferrer" }
-                          : {})}
+                        {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+                        aria-label={action + ": " + title}
                       >
-                        {action} <ArrowUpRight size={14} />
+                        {action}
+                        <ArrowUpRight size={14} />
                       </a>
                     ) : (
-                      <Link to={href}>
-                        {action} <ArrowUpRight size={14} />
+                      <Link to={href} aria-label={action + ": " + title}>
+                        {action}
+                        <ArrowUpRight size={14} />
                       </Link>
                     )}
                   </Button>
                 </article>
               );
-            },
-          )}
+            })}
+          </div>
         </section>
 
-        <section
+        <details
+          ref={setupRef}
           id="chatgpt-mcp"
-          className="mt-6 scroll-mt-24 border-t border-border/70 pt-5"
-          aria-labelledby="chatgpt-mcp-heading"
+          className="scroll-mt-24 border-y border-border/60 py-3"
         >
-          <p className="wl-overline text-primary">Connect your account</p>
-          <h2
-            id="chatgpt-mcp-heading"
-            className="mt-2 text-base font-semibold tracking-tight text-foreground"
-          >
-            Build and Rehearse in Your Preferred App
-          </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            Add <code className="wl-code">{MCP_SERVER_URL}</code> in your app's connector settings
-            and sign in to <WirelineWordmark inline />. Build and rehearse privately there; manage
-            live calls, messages, numbers, and billing in Studio.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <Button asChild variant="outline" size="sm">
-              <a href="https://chatgpt.com/" target="_blank" rel="noreferrer">
-                Open ChatGPT <ArrowUpRight size={14} />
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href="https://claude.ai/settings/connectors" target="_blank" rel="noreferrer">
-                Open Claude <ArrowUpRight size={14} />
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href="/cursor-plugin.html">
-                Cursor Plugin <ArrowUpRight size={14} />
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <a href={CURSOR_MCP_INSTALL_URL}>
-                Add to Cursor <ArrowUpRight size={14} />
-              </a>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/developers">Developer guide</Link>
-            </Button>
+          <summary className="cursor-pointer py-2 text-sm font-semibold text-foreground wl-focus-ring-halo">
+            Connection Setup
+          </summary>
+          <div className="space-y-3 pb-2 pt-3">
+            <p className="text-sm text-muted-foreground">
+              Add this URL in your app's connector settings, then sign in.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <code className="min-w-0 break-all text-sm text-foreground">{MCP_SERVER_URL}</code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void copyEndpoint()}
+                aria-label="Copy MCP URL"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? "Copied" : "Copy URL"}
+              </Button>
+            </div>
+            {copyError ? (
+              <p role="alert" className="text-sm text-muted-foreground">
+                Copy the URL above manually.
+              </p>
+            ) : null}
+            <p className="sr-only" role="status">
+              {copied ? "MCP URL copied." : ""}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Build and rehearse privately; manage live calls, messages, numbers, and billing in
+              Studio.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button asChild variant="outline" size="sm">
+                <a href="https://chatgpt.com/" target="_blank" rel="noreferrer">
+                  Open ChatGPT
+                  <ArrowUpRight size={14} />
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={CURSOR_MCP_INSTALL_URL}>
+                  Add to Cursor
+                  <ArrowUpRight size={14} />
+                </a>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/developers">Developer Guide</Link>
+              </Button>
+            </div>
           </div>
+        </details>
+
+        <section aria-labelledby="app-access-heading">
+          <h2 id="app-access-heading" className="text-lg font-semibold text-foreground">
+            App Access
+          </h2>
           <McpCoachingPanel />
         </section>
+
+        <details className="border-t border-border/60 py-3">
+          <summary className="cursor-pointer py-2 text-sm font-semibold text-foreground wl-focus-ring-halo">
+            Mobile Apps
+          </summary>
+          <div className="space-y-3 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm text-foreground">Android</span>
+              <Badge variant="outline">{CLIENT_SURFACE_POSTURE.android.status}</Badge>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm text-foreground">iPhone</span>
+              <Badge variant="outline">{CLIENT_SURFACE_POSTURE.ios.status}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Use BotBound in your mobile browser today.
+            </p>
+            <Button asChild variant="link" size="sm" className="px-0">
+              <Link to="/support">
+                Ask About Access
+                <ArrowUpRight size={14} />
+              </Link>
+            </Button>
+          </div>
+        </details>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

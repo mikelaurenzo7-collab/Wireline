@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { Link } from "react-router";
-import { CheckCircle2, LayoutTemplate, Loader2, Mail, MessageSquare, Send } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
@@ -16,6 +16,7 @@ const ISSUE_TYPES = [
 ] as const;
 
 export function SupportPage() {
+  const topicLabelId = useId();
   const [issueType, setIssueType] = useState<(typeof ISSUE_TYPES)[number]["value"]>("tech");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -83,30 +84,32 @@ export function SupportPage() {
           </h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
+        <nav
+          aria-label="Support Options"
+          className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"
+        >
           <a
             href="mailto:support@botbound.me"
-            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center gap-2 rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Email</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
+            <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Email Us
           </a>
-          <Link to="/studio" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
-            <MessageSquare className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Studio</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Review your Bots and activity
-            </p>
+          <Link
+            to="/studio"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
+          >
+            Studio
           </Link>
-          <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
-            <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Product Tour</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">See how BotBound works</p>
+          <Link
+            to="/features"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
+          >
+            Product Tour
           </Link>
-        </section>
+        </nav>
 
-        <section className="mt-8 wl-stitch-card p-6 sm:p-8">
+        <section className="mt-5 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
             Send a Request
           </h2>
@@ -121,8 +124,24 @@ export function SupportPage() {
           ) : (
             <form onSubmit={onSubmit} className="mt-7 space-y-5">
               <fieldset>
-                <legend className="block wl-stitch-label mb-2">Topic</legend>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <legend id={topicLabelId} className="block wl-stitch-label mb-2">
+                  Topic
+                </legend>
+                <select
+                  aria-labelledby={topicLabelId}
+                  value={issueType}
+                  onChange={(event) =>
+                    setIssueType(event.target.value as (typeof ISSUE_TYPES)[number]["value"])
+                  }
+                  className="wl-focus-ring-halo block min-h-11 w-full min-w-0 rounded border border-border bg-card px-3 py-2 text-base text-foreground sm:hidden"
+                >
+                  {ISSUE_TYPES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="hidden gap-2 sm:grid sm:grid-cols-3">
                   {ISSUE_TYPES.map((item) => (
                     <button
                       type="button"

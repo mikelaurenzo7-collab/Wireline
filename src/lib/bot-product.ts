@@ -66,7 +66,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Front Desk",
     category: "Operations" as const,
     direction: "inbound" as const,
-    summary: "Own the first five minutes of every inbound conversation.",
+    summary: "Welcome callers, answer questions, and book appointments.",
     outcomes: ["Route Calls", "Capture Intake", "Book Appointments"],
     moves: [
       "Intent + urgency + routing",

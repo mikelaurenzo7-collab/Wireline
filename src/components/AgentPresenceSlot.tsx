@@ -42,7 +42,7 @@ export default function AgentPresenceSlot(props: AgentPresenceProps) {
     className = "",
   } = props;
   const seed = agentId || name || "bot";
-  const markSize = variant === "badge" ? 28 : variant === "stage" ? 88 : 40;
+  const markSize = variant === "stage" ? 28 : 24;
 
   if (variant === "badge" || variant === "inline") {
     return (
@@ -60,20 +60,18 @@ export default function AgentPresenceSlot(props: AgentPresenceProps) {
 
   const roleLabel = displayRole(role);
   return (
-    <div className={`wl-presence wl-presence--stage${className ? ` ${className}` : ""}`}>
-      <div className="wl-presence__frame wl-presence__frame--ink">
-        <BotMark
-          seed={seed}
-          name={name}
-          markKey={markKey}
-          size={markSize}
-          active={speaking}
-          title={`${name || "Bot"} mark`}
-        />
-      </div>
-      <div className="wl-presence__strip" role="status">
-        <strong>{name || "Bot"}</strong>
-        {roleLabel ? <span className="wl-presence__chip">{roleLabel}</span> : null}
+    <div className={`inline-flex items-center gap-3${className ? ` ${className}` : ""}`}>
+      <BotMark
+        seed={seed}
+        name={name}
+        markKey={markKey}
+        size={markSize}
+        active={speaking}
+        title={`${name || "Bot"} mark`}
+      />
+      <div className="flex min-w-0 flex-col text-sm" role="status">
+        <strong className="font-semibold">{name || "Bot"}</strong>
+        {roleLabel ? <span className="text-xs text-muted-foreground">{roleLabel}</span> : null}
       </div>
     </div>
   );

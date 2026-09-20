@@ -73,6 +73,8 @@ export default function StudioAgentWorkspacePanel({
     [agentName],
   );
   const { agents } = useAgents();
+  const savedMarkKey =
+    agents.find((agent) => agent.id === agentId)?.mark_key ?? defaultBotMarkKey(agentId);
   const { user } = useAuth();
   const fallbackDraftsRef = useRef<StudioSetupDrafts | null>(null);
   if (!fallbackDraftsRef.current || fallbackDraftsRef.current.ownerId !== (user?.id ?? null)) {
@@ -334,7 +336,7 @@ export default function StudioAgentWorkspacePanel({
                       seed={agentId}
                       name={agentName}
                       markKey={setupMarkKey}
-                      size={32}
+                      size={24}
                       title={`${agentName} identity mark`}
                     />
                     <span className="min-w-0">
@@ -483,7 +485,7 @@ export default function StudioAgentWorkspacePanel({
           >
             Phone Voice
           </h3>
-          <SimpleVoicePicker agentId={agentId} agentName={agentName} />
+          <SimpleVoicePicker agentId={agentId} agentName={agentName} markKey={savedMarkKey} />
         </section>
 
         <AgentToolPermissions

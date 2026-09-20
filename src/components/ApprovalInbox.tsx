@@ -100,7 +100,7 @@ function isHumanHandoff(task: FollowUpTaskRow): boolean {
   return rawTaskType(task) === "human_handoff";
 }
 
-function evidenceSnippet(task: FollowUpTaskRow): string {
+function evidenceSnippet(task: FollowUpTaskRow, omitEditableFields = false): string {
   const payload = (task.payload || task.customer_info || task.customerInfo || {}) as Record<
     string,
     unknown
@@ -110,9 +110,27 @@ function evidenceSnippet(task: FollowUpTaskRow): string {
   if (typeof payload.summary === "string") parts.push(payload.summary);
   if (typeof payload.reasoning === "string") parts.push(payload.reasoning);
   if (task.description) parts.push(task.description);
-  if (typeof payload.to === "string") parts.unshift(`To: ${payload.to}`);
-  const uniqueParts = [...new Set(parts.map((part) => part.trim()).filter(Boolean))];
-  return uniqueParts.join("\n\n").slice(0, 600) || "No evidence snippet attached.";
+  const editableBody = typeof payload.body === "string" ? payload.body : payload.description;
+  const editableParts = omitEditableFields
+    ? new Set(
+        [editableBody, task.description]
+          .filter((part): part is string => typeof part === "string")
+          .map((part) => part.trim()),
+      )
+    : null;
+  const uniqueParts = [
+    ...new Set(
+      parts.map((part) => part.trim()).filter((part) => part && !editableParts?.has(part)),
+    ),
+  ];
+  if (typeof payload.to === "string") {
+    const recipient = `To: ${payload.to}`;
+    if (!uniqueParts.includes(recipient)) uniqueParts.unshift(recipient);
+  }
+  return (
+    uniqueParts.join("\n\n").slice(0, 600) ||
+    (omitEditableFields ? "" : "No evidence snippet attached.")
+  );
 }
 
 function actionIcon(task: FollowUpTaskRow) {
@@ -176,6 +194,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     const payload = editablePayloadFields(task);
     return typeof payload.subject === "string" ? payload.subject : "";
   });
+  const evidence = evidenceSnippet(task, editing && !manualHandoff);
 
   async function approve() {
     setBusy(true);
@@ -274,7 +293,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   return (
     <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <span className="mt-0.5 hidden size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary sm:grid">
           {actionIcon(task)}
         </span>
         <div className="min-w-0 flex-1">
@@ -294,12 +313,14 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
               <span className="text-xs text-muted-foreground">{task.agent.name}</span>
             ) : null}
           </div>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-            {evidenceSnippet(task)}
-          </p>
+          {evidence ? (
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              {evidence}
+            </p>
+          ) : null}
           {!manualHandoff && editing ? (
-            <div className="mt-3 grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
-              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+            <div className="mt-3 grid gap-3">
+              <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Subject
                 <input
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
@@ -308,7 +329,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                   placeholder="Email or CRM subject"
                 />
               </label>
-              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
+              <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Message
                 <textarea
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
@@ -318,8 +339,8 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                   placeholder="Message that will execute on approval"
                 />
               </label>
-              <label className="grid gap-1.5 text-xs font-medium text-muted-foreground">
-                Internal notes
+              <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
+                Internal Notes
                 <textarea
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   rows={2}
@@ -355,7 +376,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                 disabled={busy}
                 onClick={() => setEditing((value) => !value)}
               >
-                {editing ? "Cancel edit" : "Edit"}
+                {editing ? "Cancel Edit" : "Edit"}
               </ShadButton>
             ) : null}
             <ShadButton

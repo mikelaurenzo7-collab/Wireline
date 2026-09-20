@@ -14,8 +14,11 @@ const BALANCE_TITLE = CONVERSATION_BALANCE_COPY.title;
 export default function UsageMeter({
   compact = false,
   onUpgrade,
+  showBalance = true,
 }: {
   compact?: boolean;
+  /** Hide the repeated balance summary only when the containing page already owns it. */
+  showBalance?: boolean;
   /** When provided, approaching/extra-usage states surface a one-click upgrade CTA. */
   onUpgrade?: () => void;
 }) {
@@ -231,7 +234,7 @@ export default function UsageMeter({
         </Button>
       )}
 
-      {(credit !== 0 || hasExtraUsage || isBlocked) && (
+      {showBalance && (credit !== 0 || hasExtraUsage || isBlocked) && (
         <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/8">
           <span className="flex items-center gap-2 wl-label text-foreground/55 font-medium">
             <Wallet className="w-3.5 h-3.5" />

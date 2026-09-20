@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { Badge, Button, Switch } from "../atoms";
+import { Button, Switch } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
 
@@ -32,26 +32,32 @@ export default function McpCoachingPanel() {
   const [connections, setConnections] = useState<McpConnection[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-    const response = await authFetch("/api/mcp/connections");
-    const data = (await response.json().catch(() => null)) as McpConnectionsResponse | null;
-    if (!response.ok) {
-      throw new Error(data?.error || "Couldn't load connected apps.");
-    }
-    setEnabled(data?.coaching_writes_enabled === true);
-    setConnections(Array.isArray(data?.connections) ? data.connections : []);
-  }, []);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadVersion, setLoadVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setLoadError(null);
     void (async () => {
       try {
-        await load();
+        const response = await authFetch("/api/mcp/connections");
+        const data = (await response.json().catch(() => null)) as McpConnectionsResponse | null;
+        if (!active) return;
+        if (!response.ok) {
+          throw new Error(data?.error || "Couldn't load connected apps.");
+        }
+        if (
+          typeof data?.coaching_writes_enabled !== "boolean" ||
+          !Array.isArray(data.connections)
+        ) {
+          throw new Error("Couldn't load connected apps.");
+        }
+        setEnabled(data.coaching_writes_enabled);
+        setConnections(data.connections);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Couldn't load connected apps.");
+        setLoadError(err instanceof Error ? err.message : "Couldn't load connected apps.");
       } finally {
         if (active) setLoading(false);
       }
@@ -59,10 +65,18 @@ export default function McpCoachingPanel() {
     return () => {
       active = false;
     };
-  }, [load]);
+  }, [loadVersion]);
+
+  function retryLoad() {
+    if (loading) return;
+    setLoading(true);
+    setLoadError(null);
+    setError(null);
+    setLoadVersion((value) => value + 1);
+  }
 
   async function updateWrites(next: boolean) {
-    if (saving) return;
+    if (loading || loadError || saving) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -92,7 +106,7 @@ export default function McpCoachingPanel() {
   }
 
   async function disconnectAll() {
-    if (disconnecting) return;
+    if (loading || loadError || disconnecting) return;
     if (!confirmDisconnect) {
       setConfirmDisconnect(true);
       return;
@@ -122,18 +136,18 @@ export default function McpCoachingPanel() {
   }
 
   return (
-    <div className="mt-5 space-y-4">
-      <div className="flex items-start justify-between gap-4 rounded-[var(--radius-md)] border border-border bg-muted/20 p-4">
-        <label htmlFor="mcp-coaching-writes" className="min-w-0">
-          <span className="block font-medium text-foreground">
-            Allow connected apps to save Training
-          </span>
+    <div className="mt-3 space-y-4">
+      <div className="flex items-start justify-between gap-4 py-3">
+        <label
+          htmlFor="mcp-coaching-writes"
+          className="wl-preserve-case min-w-0 normal-case tracking-normal"
+        >
+          <span className="block font-medium text-foreground">Save Training</span>
           <span
             id="mcp-coaching-writes-help"
             className="mt-1 block text-sm leading-6 text-muted-foreground"
           >
-            Off by default. When on, a confirmed fact or rule from Cursor, ChatGPT, or Claude lands
-            in Training. It never places a live call or launches the agent.
+            Save only facts and rules you confirm. Off by default. No live calls or Bot activation.
           </span>
         </label>
         <Switch
@@ -141,7 +155,7 @@ export default function McpCoachingPanel() {
           className="shrink-0"
           checked={enabled}
           onCheckedChange={(checked) => void updateWrites(checked)}
-          disabled={loading || saving}
+          disabled={loading || Boolean(loadError) || saving}
           aria-describedby="mcp-coaching-writes-help"
           aria-label="Allow connected apps to save Training"
         />
@@ -149,26 +163,45 @@ export default function McpCoachingPanel() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading connected apps…</p>
+      ) : loadError ? (
+        <StatusNotice tone="destructive" title="App Access Unavailable">
+          <p>{loadError}</p>
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={retryLoad}>
+            Retry
+          </Button>
+        </StatusNotice>
       ) : connections.length === 0 ? (
-        <p className="text-sm leading-6 text-muted-foreground">
-          No connected apps yet. After OAuth, they appear here. New users create a BotBound account
-          during Connect, then build their first Bot in that chat.
-        </p>
+        <p className="text-sm leading-6 text-muted-foreground">No connected apps.</p>
       ) : (
-        <ul className="space-y-2" aria-label="Connected MCP apps">
+        <ul className="divide-y divide-border/60" aria-label="Connected MCP apps">
           {connections.map((connection) => (
-            <li
-              key={`${connection.client}-${connection.created_at}`}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-[var(--radius-md)] border border-border/70 px-3 py-2"
-            >
-              <div className="min-w-0">
+            <li key={`${connection.client}-${connection.created_at}`} className="py-3">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-medium text-foreground">{connection.client}</p>
                 <p className="text-xs text-muted-foreground">
-                  Connected {formatWhen(connection.created_at)} · expires{" "}
-                  {formatWhen(connection.expires_at)}
+                  Expires {formatWhen(connection.expires_at)}
                 </p>
               </div>
-              <Badge variant="outline">{connection.scope}</Badge>
+              <details className="mt-1 text-sm text-muted-foreground">
+                <summary className="w-fit cursor-pointer py-2 wl-focus-ring-halo">
+                  Permissions
+                </summary>
+                <p className="pb-1">Connected {formatWhen(connection.created_at)}</p>
+                <p className="break-words pb-2">
+                  {connection.scope
+                    .split(/\s+/)
+                    .map((scope) =>
+                      scope === "agents.read"
+                        ? "Read Bot Context"
+                        : scope === "agents.write"
+                          ? "Edit Drafts & Training"
+                          : scope === "demo.voice"
+                            ? "Private Rehearsals"
+                            : scope,
+                    )
+                    .join(" · ")}
+                </p>
+              </details>
             </li>
           ))}
         </ul>
@@ -179,7 +212,7 @@ export default function McpCoachingPanel() {
           type="button"
           variant={confirmDisconnect ? "destructive" : "outline"}
           size="sm"
-          disabled={disconnecting}
+          disabled={loading || Boolean(loadError) || disconnecting}
           onClick={() => void disconnectAll()}
         >
           {disconnecting

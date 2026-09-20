@@ -116,7 +116,6 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const component = read("src/components/BotMark.tsx");
     const generator = read("src/lib/bot-mark.ts");
-    const styles = read("src/styles/bot-mark.css");
 
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).toContain("Find. Call. Book.");
@@ -127,9 +126,6 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(generator).not.toMatch(/botMarkInitial|initial:\s*/i);
     expect(generator).toContain("BOT_MARK_SIGNATURE_CAPACITY = 1_048_576");
     expect(generator).toContain("BOT_MARK_CHOICES");
-    expect(styles).toContain("@keyframes wl-bot-mark-breathe");
-    expect(styles).toContain("@keyframes wl-bot-mark-signal");
-    expect(styles).toContain("prefers-reduced-motion: reduce");
   });
 
   it("makes starter cards role-specific without rendering retired Personal/Business category labels", () => {

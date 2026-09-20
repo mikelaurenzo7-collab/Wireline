@@ -566,7 +566,7 @@ const StudioWorkroom = forwardRef<
                 <AgentFace
                   seed={agentName}
                   markKey={markKey}
-                  size={48}
+                  size={28}
                   title={`${agentName} mark`}
                 />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">
