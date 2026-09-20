@@ -94,7 +94,7 @@ describe("BotBound product voice", () => {
       defaultRole: "Your Bot",
       productTypes: BOT_PRODUCT_TYPES,
       brandSpine: ["Build", "Train", "Launch"],
-      proofLoop: ["Build", "Train", "Launch", "Improve"],
+      proofLoop: ["Build", "Train", "Launch"],
     });
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",

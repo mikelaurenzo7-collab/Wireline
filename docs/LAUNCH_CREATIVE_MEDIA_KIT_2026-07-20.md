@@ -11,7 +11,7 @@ This kit owns asset delivery, capture/certification, tool briefs, and placement.
 
 One story across public creative:
 
-**Build -> Train -> Launch -> Improve**
+**Build -> Train -> Launch**
 
 Use:
 
@@ -170,9 +170,8 @@ The technical scene map can use current product surfaces while still expressing 
 | Build       | Create/Studio intake and focused Bot setup                                                                                                            |
 | Train       | Knowledge/training facts, rules, voice, and behavior                                                                                                  |
 | Launch      | Phone/Connections setup and enabled channels                                                                                                          |
-| Improve     | Call history, transcript, outcome, analytics, or follow-up review                                                                                     |
 
-Implementation surface names do not create a second brand narrative.
+Implementation surface names do not create a second brand narrative. Call history, transcripts, outcomes, analytics, and follow-up review demonstrate completed work after launch; they are not a fourth setup step.
 
 ## Raw-Source Visual Acceptance
 
@@ -200,7 +199,7 @@ The captured call and Bot response are the proof center. Do not fill the whole c
 
 ### Founder / Product Proof — 45-60s
 
-Show **Build -> Train -> Launch -> Improve** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
+Show **Build -> Train -> Launch** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
 
 ### Historical Live Video Proof — do not deliver
 
@@ -223,7 +222,7 @@ Create a premium BotBound launch ad using authentic product imagery or approved 
 
 ### Founder video
 
-Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch, Improve in that order. Keep the product readable and let captured Bot audio take over where voice quality is being proved.
+Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch in that order. Keep the product readable and let captured Bot audio take over where voice quality is being proved.
 
 ### Short-form edit
 
@@ -235,7 +234,7 @@ The former presenter edit brief is retained as rejected historical provenance. D
 
 ### Launch deck
 
-Six slides maximum: BotBound; the missed-call/follow-up problem; Build -> Train -> Launch -> Improve; role and use-case proof; exact product proof; Build free / Go live from $19/mo. Do not include Live Video.
+Six slides maximum: BotBound; the missed-call/follow-up problem; Build -> Train -> Launch; role and use-case proof; exact product proof; Build free / Go live from $19/mo. Do not include Live Video.
 
 ## Asset Organization
 

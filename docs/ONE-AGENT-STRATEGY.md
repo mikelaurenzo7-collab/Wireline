@@ -48,7 +48,8 @@ Avoid:
 1. Build a focused Bot from a role starter or blank canvas.
 2. Configure knowledge, tone, rules, channels, tools, approvals, and handoffs.
 3. Test privately, then launch on an eligible paid-plan number.
-4. Improve from logged conversations, outcomes, and follow-up.
+
+Logged conversations, outcomes, and follow-up remain available for review. Owners can refine the Bot when useful; setup ends at launch.
 
 ## Success metric
 

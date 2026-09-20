@@ -205,15 +205,6 @@
   margin-top: 1.25rem;
 }
 
-.marketing-surface.wl-features-page .marketing-section .marketing-hero__actions,
-.marketing-surface.wl-features-page .marketing-hero__actions {
-  margin-top: 1.1rem;
-}
-
-.marketing-surface.wl-features-page .marketing-hero-title {
-  max-width: 18ch;
-}
-
 /* Same story for the hero's visual slot: 48px of margin and 36px of padding on
    a bordered card, sized for a hero that owned a screen.
 

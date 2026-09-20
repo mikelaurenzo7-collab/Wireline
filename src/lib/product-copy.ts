@@ -11,7 +11,7 @@ export const BRAND_SYSTEM = {
   defaultRole: "Your Bot",
   productTypes: BOT_PRODUCT_TYPES,
   brandSpine: ["Build", "Train", "Launch"],
-  proofLoop: ["Build", "Train", "Launch", "Improve"],
+  proofLoop: ["Build", "Train", "Launch"],
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
     "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
@@ -35,6 +35,7 @@ export const BRAND_SYSTEM = {
     "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
     "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
+    "The public setup journey ends at Launch. Present conversation review and later refinements as optional controls, never a fourth setup step.",
     "Avoid em dashes, inflated AI language, repetitive descriptor copy, and stacked claims on public buying surfaces.",
   ],
 } as const;
@@ -149,7 +150,7 @@ export const MARKETING_VOICE = {
 
 export const CLIENT_SURFACE_POSTURE = {
   summary:
-    "Launch on the web. Build, Train, Launch, and Improve are complete in the browser; the rest are optional companions. None are required for the core product.",
+    "Build, train, and launch on the web. Optional companion apps keep your Bot close at hand.",
   browser: { status: "Early access", action: "Install Guide" },
   chatgpt: { status: "Early access", action: "Open Guide" },
   claude: { status: "Early access", action: "Add Connector" },

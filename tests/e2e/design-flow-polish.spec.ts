@@ -101,6 +101,31 @@ for (const width of [320, 390, 1440]) {
     );
     await page.goto("/features");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    const setup = page.getByRole("list", { name: "Get started" });
+    await expect(setup.getByRole("listitem")).toHaveCount(3);
+    await expect(setup).toContainText("Launch");
+    await expect(setup).not.toContainText("Improve");
+    if (width >= 1024) {
+      const geometry = await page.evaluate(() => {
+        const title = document.querySelector("h1")!;
+        const range = document.createRange();
+        range.selectNodeContents(title);
+        const cards = document.querySelector(".wl-stitch-card")!.getBoundingClientRect();
+        const action = document
+          .querySelector(".wl-features-intro .marketing-hero__actions")!
+          .getBoundingClientRect();
+        return {
+          lines: range.getClientRects().length,
+          titleLeft: title.getBoundingClientRect().left,
+          cardLeft: cards.left,
+          actionLeft: action.left,
+        };
+      });
+      expect(geometry.lines).toBe(1);
+      expect(Math.abs(geometry.titleLeft - geometry.cardLeft)).toBeLessThan(2);
+      expect(Math.abs(geometry.actionLeft - geometry.cardLeft)).toBeLessThan(2);
+    }
     const header = page.locator("header.wl-public-header");
     await expect
       .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))

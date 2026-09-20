@@ -1,6 +1,6 @@
 # BotBound Launch Source of Truth
 
-Established 2026-08-11; source reviewed 2026-09-19.
+Established 2026-08-11; source reviewed 2026-09-20.
 
 **Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.
 
@@ -17,13 +17,13 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 ## One buyer story
 
 **Headline:** Put Your Bot on the Line.
-**Operating loop:** **Build -> Train -> Launch -> Improve**  
+**Setup journey:** **Build -> Train -> Launch**
 **Primary CTA:** Build Your Bot
 **Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
 **Product model:** One BotBound workspace for every role and use case.
 
-The public story has one operating loop. Do not rotate among `Brief -> Train -> Launch -> Improve`, `Create -> Train -> Wire -> Run`, and `Build -> Train -> Launch -> Improve` as competing brand spines.
+The public story has three setup steps and ends at Launch. Conversation review and later refinements are available controls, not a fourth requirement. Keep technical navigation separate from this customer-facing journey.
 
 ### Product language versus technical architecture
 
@@ -34,7 +34,8 @@ Publicly:
 1. **Build** the Bot and give it a job.
 2. **Train** it on facts, rules, voice, and behavior.
 3. **Launch** it on the channels the user enables.
-4. **Improve** it from real outcomes and review.
+
+Private testing belongs before launch. Logged conversations, outcomes, approvals, and handoffs remain available afterward so the owner can review or adjust the Bot when useful.
 
 ## Positioning guardrails
 
@@ -139,10 +140,9 @@ Structure:
 - Build
 - Train
 - Launch
-- Improve
 - CTA
 
-Favor motion that proves a state change: configured agent, connected channel, live action, logged result.
+Favor motion that proves a state change: configured agent, connected channel, live action, logged result. A logged result proves completed work; it is not an additional setup step.
 
 ### 3. Founder Walkthrough — 45-60 seconds
 
@@ -185,7 +185,7 @@ The immediate GTM objective is not to imply scale. It is to create enough credib
 
 Launch-clean means the repository, runtime, website, and creative all tell the same truth:
 
-**Build. Train. Launch. Improve.**
+**Build. Train. Launch.**
 **Your Bot for calls, texts, and email.**
 **Build free. Plans from $19/mo. Live activation subject to availability.**
 

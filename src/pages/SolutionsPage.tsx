@@ -90,62 +90,61 @@ export default function SolutionsPage() {
       />
 
       <section className="marketing-section marketing-section--screen">
-        <div className="mx-auto mb-8 max-w-6xl text-center">
-          <p className="wl-eyebrow wl-eyebrow--wired text-primary">
-            {key === "sales" ? "Outbound" : "Inbound"}
-          </p>
-          <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            {page.title}
-          </h1>
-          <div className="marketing-hero__actions mt-7">
-            <Link
-              to={page.primary.href}
-              className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
-            >
-              {page.primary.label}
-            </Link>
-            <Link
-              to={page.secondary.href}
-              className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
-            >
-              {page.secondary.label}
-            </Link>
+        <div className="wl-public-rail">
+          <div className="mx-auto mb-8 max-w-6xl text-center">
+            <p className="wl-eyebrow wl-eyebrow--wired text-primary">
+              {key === "sales" ? "Outbound" : "Inbound"}
+            </p>
+            <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
+              {page.title}
+            </h1>
+            <div className="marketing-hero__actions mt-7">
+              <Link
+                to={page.primary.href}
+                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+              >
+                {page.primary.label}
+              </Link>
+              <Link
+                to={page.secondary.href}
+                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+              >
+                {page.secondary.label}
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section className="marketing-section marketing-section--screen">
-        <ol className="grid gap-3 sm:grid-cols-3">
-          {page.sequence.map(([title, copy], index) => (
-            <li key={title} className="wl-stitch-card px-4 py-5 text-center">
-              <span className="flex items-center justify-center gap-2">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
-                  0{index + 1}
+          <ol className="grid gap-3 sm:grid-cols-3">
+            {page.sequence.map(([title, copy], index) => (
+              <li key={title} className="wl-stitch-card px-4 py-5 text-center">
+                <span className="flex items-center justify-center gap-2">
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--wireline-color-action-primary-container)] font-mono text-[10px] font-semibold text-primary">
+                    0{index + 1}
+                  </span>
+                  <h2 className="wl-card-title">{title}</h2>
                 </span>
-                <h2 className="wl-card-title">{title}</h2>
-              </span>
-              <p className="mx-auto mt-2 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
-                {copy}
-              </p>
-            </li>
-          ))}
-        </ol>
+                <p className="mx-auto mt-2 max-w-[36ch] text-[13px] leading-[1.5] text-muted-foreground">
+                  {copy}
+                </p>
+              </li>
+            ))}
+          </ol>
 
-        <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
-          {page.capabilities.map(([title, copy]) => (
-            <li
-              key={title}
-              className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-            >
-              {title}
-              <span className="sr-only">{copy}</span>
-            </li>
-          ))}
-        </ul>
+          <ul className="mt-8 flex flex-wrap items-center justify-center gap-2">
+            {page.capabilities.map(([title, copy]) => (
+              <li
+                key={title}
+                className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+              >
+                {title}
+                <span className="sr-only">{copy}</span>
+              </li>
+            ))}
+          </ul>
 
-        <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
-          {page.proof}
-        </p>
+          <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-6 text-muted-foreground">
+            {page.proof}
+          </p>
+        </div>
       </section>
     </MarketingPageFrame>
   );

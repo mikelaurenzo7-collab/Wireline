@@ -16,33 +16,33 @@ import { signupHrefForPlan } from "../lib/signup-intent";
 const CORE_FEATURES = [
   {
     icon: Workflow,
-    title: "One Conversation Memory",
-    body: "Calls, texts, and email share approved knowledge, customer context, rules, and history.",
+    title: "Shared Context",
+    body: "Keep approved knowledge and customer history across calls, texts, and email.",
   },
   {
     icon: CheckCircle2,
-    title: "Work That Finishes",
-    body: "Book, update, recap, route the exception, and preserve proof. Not just a transcript.",
+    title: "Calls and Follow-ups",
+    body: "Make calls, answer customers, and follow up by text or email.",
   },
   {
     icon: CalendarClock,
     title: "Scheduling and Handoff",
-    body: "Offer real availability and pass the request without making the customer repeat context.",
+    body: "Check availability, book time, and hand off with context.",
   },
   {
     icon: ShieldCheck,
-    title: "Approvals and Safety",
-    body: "Keep sensitive actions behind controls and audit what happened before and after execution.",
+    title: "Your Rules and Approvals",
+    body: "Set boundaries for sensitive actions and review the activity log.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Training by Workflow",
-    body: "Tune your Bot for sales, support, billing, scheduling, recovery, or a custom playbook.",
+    title: "Your Playbook",
+    body: "Choose a role. Add the knowledge and instructions it needs.",
   },
   {
     icon: BarChart3,
-    title: "Outcomes over Activity",
-    body: "See what happened, what changed, and what needs attention across every channel.",
+    title: "Clear Outcomes",
+    body: "See completed work, next steps, and requests that need you.",
   },
 ] as const;
 
@@ -60,59 +60,43 @@ export default function Features() {
         path="/features"
       />
 
-      {/*
-        Channels as text chips, then the six control cards that carry the argument.
-      */}
       <section className="marketing-section marketing-section--screen">
-        <div className="wl-public-rail mx-auto max-w-6xl text-center">
-          <div className="mx-auto mb-8 max-w-3xl text-center">
-            <p className="wl-eyebrow wl-eyebrow--wired text-primary">Features</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 max-w-[18ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              IT CALLS OUT. IT ANSWERS IN.
+        <div className="wl-public-rail mx-auto max-w-6xl">
+          <header className="wl-features-intro text-left">
+            <p className="wl-eyebrow text-primary">Features</p>
+            <h1 className="marketing-hero-title mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
+              BOTS THAT CALL, TEXT &amp; EMAIL
             </h1>
-            <div className="marketing-hero__actions mt-7">
-              <Link
-                to={signupHrefForPlan("personal")}
-                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
-              >
-                START FREE
-              </Link>
-              <Link
-                to="/pricing"
-                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
-              >
-                SEE PRICING
-              </Link>
+            <div className="wl-features-intro__next">
+              <div className="marketing-hero__actions">
+                <Link
+                  to={signupHrefForPlan("personal")}
+                  className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+                >
+                  START FREE
+                </Link>
+                <Link
+                  to="/pricing"
+                  className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+                >
+                  SEE PRICING
+                </Link>
+              </div>
+              <ol className="wl-features-intro__steps" aria-label="Get started">
+                {MARKETING_VOICE.spine.map((step, index) => (
+                  <li key={step}>
+                    <span aria-hidden="true" className="text-primary">
+                      0{index + 1}
+                    </span>
+                    <span className="wl-overline text-foreground">{step}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
+          </header>
 
-          <p className="sr-only">Build. Train. Launch. Improve.</p>
-          <ol className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-            {MARKETING_VOICE.proof.map((step, index) => (
-              <li key={step} className="flex items-center gap-2">
-                {index > 0 ? (
-                  <span aria-hidden="true" className="text-xs text-muted-foreground">
-                    /
-                  </span>
-                ) : null}
-                <span className="wl-overline text-foreground">{step}</span>
-              </li>
-            ))}
-          </ol>
-
-          <ul className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            {MARKETING_VOICE.channelProof.map((title) => (
-              <li
-                key={title}
-                className="wl-channel-chip inline-flex items-center rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-              >
-                {title}
-              </li>
-            ))}
-          </ul>
-
-          <h2 className="wl-eyebrow mx-auto mt-4 text-center text-muted-foreground">
-            The Controls That Make It Reliable
+          <h2 className="wl-features-controls wl-eyebrow text-muted-foreground">
+            Built Around Your Business
           </h2>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
@@ -139,7 +123,7 @@ function FeatureCard({
       <span className="wl-accent-icon-chip mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg">
         <Icon size={16} aria-hidden="true" />
       </span>
-      <h3 className="wl-card-title max-w-[18ch]">{title}</h3>
+      <h3 className="wl-card-title">{title}</h3>
       <p className="mt-1.5 max-w-[36ch] text-[13px] leading-[1.55] text-muted-foreground">{body}</p>
     </article>
   );

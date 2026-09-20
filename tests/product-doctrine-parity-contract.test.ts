@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-const PUBLIC_LOOP = "Build -> Train -> Launch -> Improve";
+const PUBLIC_LOOP = "Build -> Train -> Launch";
 
 describe("product doctrine parity", () => {
   it("keeps one public operating loop across active source-of-truth documents", () => {
@@ -14,10 +14,19 @@ describe("product doctrine parity", () => {
       "docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md",
       "docs/PRODUCT_SHOWCASE_MATRIX.md",
       "docs/CLIENT_SURFACES.md",
+      "brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md",
+      "brand-work/launch-2026-09/README.md",
+      "brand-work/launch-2026-09/copy/SOCIAL_POSTS.md",
+      "brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md",
+      "brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md",
     ];
 
     for (const path of activeDocs) {
-      expect(read(path), path).toContain(PUBLIC_LOOP);
+      const source = read(path);
+      expect(source, path).toContain(PUBLIC_LOOP);
+      expect(source, path).not.toMatch(
+        /Build\s*(?:->|→|\.|,)\s*Train\s*(?:->|→|\.|,)\s*Launch\s*(?:->|→|\.|,)\s*Improve/,
+      );
     }
 
     const root = read("README.md");

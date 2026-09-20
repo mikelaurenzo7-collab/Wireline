@@ -8,7 +8,7 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 Recruit **3–5 design partners** with an obvious missed-call, inbound-response, scheduling, or follow-up problem and prove one useful workflow end to end within seven days.
 
-> Build → Train → Launch → Improve.
+> Build → Train → Launch.
 
 The first partners are for evidence, not scale. Do not optimize for logo count, broad vertical coverage, or cold-dial volume before the product has real customer outcomes.
 

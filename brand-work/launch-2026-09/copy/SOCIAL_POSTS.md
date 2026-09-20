@@ -1,6 +1,6 @@
 # The Second Ring — Launch Copy Pack
 
-Every post in this file is written for the September 2026 BotBound campaign. The copy stays inside the current product truth: one Bot across calls, texts, and email; Free Builder; paid live plans from $19/month; OpenAI Realtime voices; Twilio carrier and SMS; configured tools and approvals determine available actions.
+Every post in this file is written for the September 2026 BotBound campaign. The copy stays inside the current product truth: Bots across calls, texts, and email; Free Builder; paid live plans from $19/month; OpenAI Realtime voices; Twilio carrier and SMS; configured tools and approvals determine available actions.
 
 Use `Bot` with a capital B when referring to a customer's BotBound Bot. Use `BotBound` exactly as styled. Do not substitute “AI employee,” “fully autonomous,” “never miss a call,” or invented customer proof.
 
@@ -16,7 +16,7 @@ That call may be ordinary. Its timing is not.
 
 We built BotBound for the second ring.
 
-Build a Bot. Train it on the facts, rules, voice, and behavior that matter. Launch it on the channels you enable. Then improve it from the outcomes you review.
+Build a Bot. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
 
 One Bot can carry the conversation across calls, texts, and email under one identity and one operating context. Users can choose from ten built-in OpenAI Realtime voices, and the selected voice stays consistent through the active conversation.
 
@@ -32,7 +32,7 @@ Put your Bot on the line: https://botbound.me/?utm_source=linkedin&utm_medium=or
 
 Your best work should not stop every time the phone rings.
 
-BotBound gives you one Bot for calls, texts, and email — built around your facts, rules, voice, and approvals.
+Bots for calls, texts, and email. Built around your facts, rules, voice, and approvals.
 
 You can't answer every call. Your Bot can.
 
@@ -46,7 +46,7 @@ Both hands occupied. One customer waiting. The phone developing a sudden and pas
 
 The work does not need to stop at the second ring.
 
-Build your Bot. Train it. Launch it when you're ready. Improve it from the conversations and outcomes you review.
+Build your Bot. Train it. Launch it when you're ready.
 
 Put your Bot on the line.
 
@@ -171,7 +171,7 @@ Build your Bot at BotBound.me.
 
 We are building BotBound around a simple operating problem: customer demand arrives on its own schedule, while the people who can answer it are usually doing the work.
 
-BotBound gives an owner one trained Bot across calls, texts, and email. The product loop is deliberately practical: Build. Train. Launch. Improve.
+BotBound gives owners trained Bots for calls, texts, and email. Setup is simple: Build. Train. Launch.
 
 We are opening conversations with investors and early design partners who understand owner-led and service businesses where missed calls, delayed follow-up, and disconnected tools create avoidable friction.
 
@@ -189,9 +189,9 @@ We built BotBound for the second ring. 🧵
 
 ### Post 2
 
-Build a Bot. Train it on your facts, rules, voice, and behavior. Launch it on the channels you enable. Improve it from the outcomes you review.
+Build a Bot. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
 
-Build -> Train -> Launch -> Improve.
+Build -> Train -> Launch.
 
 ### Post 3
 
@@ -222,7 +222,7 @@ https://botbound.me/?utm_source=x&utm_medium=organic&utm_campaign=second_ring_la
 
 ### Preview text
 
-Build one Bot for calls, texts, and email. Build free. Plans from $19/month. Activation availability applies.
+Build Bots for calls, texts, and email. Start free. Plans from $19/month. Activation availability applies.
 
 ### Body
 
@@ -230,7 +230,7 @@ The phone rarely waits for an empty calendar and two free hands.
 
 BotBound gives the second ring somewhere useful to go.
 
-Build a Bot around the job you need done. Train it on the facts, rules, voice, and behavior that matter. Launch it on the channels you enable. Then improve it from the outcomes you review.
+Build a Bot around the job you need done. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
 
 One Bot can carry a conversation across calls, texts, and email. Choose from ten built-in OpenAI Realtime voices; the selected voice stays consistent through the active conversation.
 
@@ -256,7 +256,7 @@ These are copy candidates, not authorization to spend or publish.
 
 ### Variant B — product clarity
 
-**Primary text:** One Bot. Your facts, rules, voice, and approvals. Calls, texts, email, follow-up, and outcomes in one operating context.
+**Primary text:** Your Bots. Your facts, rules, voice, and approvals. Calls, texts, email, follow-up, and outcomes with shared context.
 **Headline:** Put Your Bot on the Line.
 **Description:** Start with Free Builder.
 **CTA:** Learn More

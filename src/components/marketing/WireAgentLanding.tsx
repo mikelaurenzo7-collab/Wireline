@@ -48,10 +48,9 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   custom: WandSparkles,
 };
 const GETTING_STARTED = [
-  { title: "Build", detail: "Pick a role. Give your Bot one clear job." },
-  { title: "Train", detail: "Add your knowledge, tone, and boundaries." },
-  { title: "Launch", detail: "Test privately. Activate live channels when ready." },
-  { title: "Improve", detail: "Review conversations. Refine what happens next." },
+  { title: "Build", detail: "Choose a role and a job." },
+  { title: "Train", detail: "Add your knowledge and rules." },
+  { title: "Launch", detail: "Test privately. Go live when ready." },
 ] as const;
 const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {

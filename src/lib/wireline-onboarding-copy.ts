@@ -1,6 +1,6 @@
 /**
  * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
- * Public loop: Build → Train → Launch → Improve.
+ * Public setup journey: Build → Train → Launch.
  * After create, the setup guide is Train → Test → Launch.
  */
 

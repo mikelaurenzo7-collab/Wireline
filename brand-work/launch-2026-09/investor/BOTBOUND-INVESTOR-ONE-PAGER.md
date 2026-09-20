@@ -2,22 +2,21 @@
 
 ## Put your Bot on the line.
 
-**BotBound is the operating layer for one trained Bot across calls, texts, and email.**
+**BotBound is the operating layer for trained Bots across calls, texts, and email.**
 
 Customer demand arrives on its own schedule. The people best equipped to answer it are often doing the work: serving a customer, driving to the next job, making the product, or running the operation. A missed call and a delayed follow-up are usually not separate software problems. They are one broken conversation.
 
 ## The product
 
-BotBound gives an owner one Bot with one identity, operating context, rule set, approval posture, and outcome record across voice, SMS, and email.
+BotBound gives businesses configurable Bots for voice, SMS, and email. Each Bot has its own identity, operating context, rules, approvals, and outcome record.
 
-**Build -> Train -> Launch -> Improve**
+**Build -> Train -> Launch**
 
 - **Build** a focused Bot around a real job.
 - **Train** it on facts, sources, rules, voice, tone, tools, and workflows.
 - **Launch** it on the channels the owner enables.
-- **Improve** it from real conversations, outcomes, approvals, and review.
 
-The Bot can answer a call, continue the conversation by text or email, and leave the next action ready for review when the required tools, permissions, approvals, and handoffs are configured.
+The Bot can answer a call, continue the conversation by text or email, and leave the next action ready for review when the required tools, permissions, approvals, and handoffs are configured. Conversation history and optional refinements remain available after launch.
 
 ## Why this wedge matters
 

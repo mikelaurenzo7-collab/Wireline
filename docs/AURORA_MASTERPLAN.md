@@ -19,7 +19,7 @@ This document preserves the execution companion to the Aurora visual rebrand (vi
 
 The palette change is an opportunity to tighten brand voice consistency, not just hex values.
 
-1. **Current positioning:** _"Your Bot for calls, texts, and email."_ Public surfaces use **Bot** or **Phone Bot** and the **Build -> Train -> Launch -> Improve** loop. Technical implementation may retain `agent`, `Create`, and `Wire` where contracts require them.
+1. **Current positioning:** _"Your Bot for calls, texts, and email."_ Public surfaces use **Bot** or **Phone Bot** and the **Build -> Train -> Launch** loop. Technical implementation may retain `agent`, `Create`, and `Wire` where contracts require them.
 2. **Naming discipline:** keep `Bot`, `Phone Bot`, `Training`, `Wire`, `Studio`, and `Runtime Balance` as the customer-facing product nouns. Concrete roles describe jobs; they do not create separate products or workspaces.
 3. **Visual voice under Aurora:** violet reads as _modern, confident, premium AI_ (aligns with category leaders); silver reads as _precision instrument_, not decoration — reserve it for the wire motif (rules, node dots, focus-adjacent accents), never as a second competing accent color. Write this rule into any future design-system onboarding doc for new contributors.
 4. **Motion signature:** the existing `wl-wire-pulse` traveling-signal animation is a strong, ownable brand motion. Extend it deliberately to the Studio thinking state, call-connecting state, and human-handoff moment—but nowhere else, so it stays special-occasion rather than ambient noise.

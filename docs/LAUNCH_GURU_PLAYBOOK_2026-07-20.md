@@ -9,7 +9,7 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 | Area | Current Direction |
 | --- | --- |
 | Product | Your Bot for calls, texts, and email |
-| Core loop | Build -> Train -> Launch -> Improve |
+| Core loop | Build -> Train -> Launch |
 | Public hero | Put Your Bot on the Line. |
 | CTA | Build Your Bot |
 | Price line | Build free. Plans from $19/mo. Live activation subject to availability. |
@@ -124,7 +124,7 @@ Choose owner-operated or small-team businesses with a visible missed-call, inbou
 
 For each partner, prove one workflow end to end within seven days:
 
-**Build -> Train -> Launch -> Improve**
+**Build -> Train -> Launch**
 
 Cold marketing outbound is **not** a prerequisite. Federal marketing DNC remains fail-closed until the external credential is configured; start with inbound and consented/non-marketing workflows that can be proven now.
 
@@ -196,7 +196,9 @@ Do not promote an internal target to a public performance promise.
 
 ## Funnel
 
-`Founder outreach / content -> botbound.me -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow -> Review outcomes -> Improve -> expand only when useful`
+`Founder outreach / content -> botbound.me -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow`
+
+After launch, review outcomes for product evidence and support. Owners can adjust or expand when useful; neither is another setup requirement.
 
 ## Messaging Tests
 
@@ -207,7 +209,7 @@ Do not promote an internal target to a public performance promise.
 | Front desk | Give the next important call a trained first response and visible follow-up. | Build Your Bot |
 | Expansion | Start with one useful Bot. Add more when real work proves the need. | Build Your Bot |
 
-All active creative must resolve to **Build -> Train -> Launch -> Improve** rather than introducing a separate workflow slogan.
+All active creative must resolve to **Build -> Train -> Launch** rather than introducing a separate workflow slogan.
 
 ## Daily Founder Review
 

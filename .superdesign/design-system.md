@@ -71,7 +71,7 @@ The home page uses the shared BotBound header and footer around a vertical story
 
 1. Hero: a short outcome-led headline, concise supporting copy, and a free-start primary action.
 2. Product preview: clearly illustrated examples of calls, text, and email. Examples are never presented as real customer activity.
-3. Operating loop: Build, Train, Launch, Improve.
+3. Setup journey: Build, Train, Launch. Review and refinements are optional controls after launch, not another setup step.
 4. Roles: useful starting points for one configurable Bot.
 5. Pricing: Free Builder, Starter, Starter Plus, and Pro with explicit limits and billing periods.
 6. A focused closing action.

@@ -1,6 +1,6 @@
 # BotBound Documentation
 
-BotBound's public operating loop is **Build -> Train -> Launch -> Improve**. After create, the setup guide is **Train -> Test -> Launch**. The repository still uses technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
+BotBound's public operating loop is **Build -> Train -> Launch**. After create, the setup guide is **Train -> Test -> Launch**. The repository still uses technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
 Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job rather than choosing Personal or Business, and every role starter enters the same workspace model. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Every active paid Bot has an included number. Outbound, inbound, and hybrid modes are first-class.
 

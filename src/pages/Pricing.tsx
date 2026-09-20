@@ -247,9 +247,9 @@ export default function Pricing() {
 
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-[1500px] text-center">
-          <div className="mx-auto mb-8 max-w-3xl text-center">
+          <div className="mx-auto mb-8 max-w-6xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
               Build free. Plans from $19.
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">
@@ -257,7 +257,7 @@ export default function Pricing() {
             </p>
             <div className="marketing-hero__actions mt-6">
               <div
-                className="inline-flex rounded-full border border-border bg-muted/40 p-1"
+                className="inline-flex justify-self-center rounded-full border border-border bg-muted/40 p-1"
                 role="group"
                 aria-label="Billing interval"
               >
@@ -265,7 +265,7 @@ export default function Pricing() {
                   type="button"
                   onClick={() => setBillingInterval("month")}
                   className={cn(
-                    "min-h-10 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
                     billingInterval === "month"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -278,7 +278,7 @@ export default function Pricing() {
                   type="button"
                   onClick={() => setBillingInterval("year")}
                   className={cn(
-                    "min-h-10 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
+                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
                     billingInterval === "year"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",

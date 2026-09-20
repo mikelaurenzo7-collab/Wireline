@@ -8,7 +8,7 @@ This document turns BotBound research into an execution system. It is not a back
 4. **Expansion** — one useful Bot becomes more Bots, surfaces, numbers, teammates, and governed workflows.
 
 The canonical public promise is **Your Bot for calls, texts, and email.** The
-public loop is **Build -> Train -> Launch -> Improve**. Technical surfaces may
+public loop is **Build -> Train -> Launch**. Technical surfaces may
 retain **Create -> Train -> Wire -> Run** and `agent` identifiers where contracts
 require them. BotBound is one protected product and workspace across web,
 browser, native mobile, and ChatGPT—not a set of audience modes or disconnected

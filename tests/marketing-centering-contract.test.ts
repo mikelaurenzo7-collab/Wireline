@@ -107,7 +107,7 @@ describe("marketing centering contract", () => {
     expect(documentFlow).toContain("overflow: visible;");
   });
 
-  it("lets a one-screen panel fill the flow instead of sitting under the header", () => {
+  it("keeps a solutions story together without a second padded hero section", () => {
     const frameCss = read("src/styles/viewport-first-marketing.css");
     const executableCss = frameCss.replace(/\/\*[\s\S]*?\*\//g, "");
     const solutionsPage = read("src/pages/SolutionsPage.tsx");
@@ -115,7 +115,8 @@ describe("marketing centering contract", () => {
     expect(frameCss).toContain(".marketing-flow > .marketing-frame-stack");
     expect(executableCss).toContain(".marketing-flow > .marketing-frame-stack > *");
     expect(executableCss).not.toContain("padding-block: 0.45rem");
-    expect(solutionsPage.match(/marketing-section--screen/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(solutionsPage.match(/marketing-section--screen/g)).toHaveLength(1);
+    expect(solutionsPage).toContain('className="wl-public-rail"');
   });
 
   it("keeps the retired Sarah call preview fully removed from use cases", () => {
@@ -139,7 +140,7 @@ describe("marketing centering contract", () => {
     expect(blog).toContain("structuredData={structuredData}");
   });
 
-  it("keeps primary public marketing surfaces centered", () => {
+  it("gives public marketing surfaces an explicit copy alignment", () => {
     for (const path of [
       "src/pages/Features.tsx",
       "src/pages/Pricing.tsx",
@@ -150,7 +151,7 @@ describe("marketing centering contract", () => {
       "src/pages/VerticalLanding.tsx",
     ]) {
       expect(
-        /text-center|wl-marketing-center|!text-left/.test(read(path)),
+        /\btext-(?:center|left|right)\b|wl-marketing-center/.test(read(path)),
         `${path} should explicitly declare its copy alignment`,
       ).toBe(true);
     }

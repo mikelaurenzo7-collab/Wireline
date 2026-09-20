@@ -45,7 +45,7 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 ### Cleared factual territory, subject to final current-state check
 
 - Your Bot for calls, texts, and email.
-- Build -> Train -> Launch -> Improve.
+- Build -> Train -> Launch.
 - Build free. Plans from $19/month. Activation availability applies.
 - Ten built-in OpenAI Realtime voice choices.
 - One selected voice stays stable through an active runtime session.

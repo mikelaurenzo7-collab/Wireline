@@ -121,7 +121,7 @@ def render():
     text(c, "ON THE LINE.", 31, 627, "InterTightExtra", 34, VIOLET)
     wrap(
         c,
-        "One trained Bot across calls, texts, and email. Keep work moving when the owner cannot stop to answer.",
+        "Bots for calls, texts, and email. Keep work moving when the owner cannot stop to answer.",
         33,
         595,
         360,
@@ -160,8 +160,8 @@ def render():
         row_y,
         col_w,
         row_h,
-        "One Bot, trained once",
-        "Give it the job, knowledge, tone, rules, tools, approvals, and handoffs. Then launch it across the channels the work already uses.",
+        "Your Bots, your rules",
+        "Build each Bot around a job, with your knowledge, rules, tools, approvals, and handoffs. Launch the channels the work needs.",
         "02 / PRODUCT",
     )
     panel(
@@ -170,9 +170,9 @@ def render():
         row_y,
         col_w,
         row_h,
-        "Review makes it better",
-        "Calls become outcomes. Text and email keep the next step moving. Humans review, correct, approve, and improve the playbook.",
-        "03 / LOOP",
+        "Keep the next step moving",
+        "Calls, texts, and email share context. Configured tools handle next steps; approvals and handoffs keep the owner in control.",
+        "03 / OUTCOMES",
     )
 
     # Product architecture—simple enough to scan in one breath.
@@ -213,7 +213,7 @@ def render():
         ("10", "built-in OpenAI voices"),
         ("1", "selected voice per runtime session"),
         ("3", "connected customer channels"),
-        ("4", "Build / Train / Launch / Improve"),
+        ("3", "Build / Train / Launch"),
     ]
     proof_x = [43, 176, 327, 434]
     proof_sizes = [18, 18, 18, 18]
@@ -251,7 +251,7 @@ def render():
     text(c, "Investor and design-partner conversations for a controlled launch.", 102, 62, "InterBold", 9.2, BLACK_VIOLET)
     right_text(c, "support@botbound.me", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
 
-    text(c, "Review: 2026-09-19. Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
+    text(c, "Copy review: 2026-09-20. Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
     right_text(c, "PUT YOUR BOT ON THE LINE", 583, 27, "PlexBold", 5.8, LILAC)
 
     c.showPage()

@@ -23,7 +23,7 @@ Campaign close:
 | 0:05-0:09 | The robot lifts the receiver. A live-call state appears with restraint. The baker keeps working. | Bot: "Good morning. How can I help?" |
 | 0:09-0:15 | Intercut bakery, auto shop, and florist. Every owner stays in flow while the Bot handles the call. | Customer: "Can I pick up twelve croissants at eight?" Bot: "Absolutely. I have you down for eight." |
 | 0:15-0:22 | One continuous proof chain: appointment booked, confirmation text sent, conversation logged. | Three clean confirmations, synced to practical action. |
-| 0:22-0:26 | Violet signal traces the product loop: Build, Train, Launch, Improve. | Score opens. Mono labels land with soft ticks. |
+| 0:22-0:26 | Violet signal traces the product loop: Build, Train, Launch. | Score opens. Mono labels land with soft ticks. |
 | 0:26-0:30 | Approved robot, complete BotBound wordmark, and CTA on obsidian. | VO: "You can't answer every call. Your Bot can." Chime resolves. |
 
 ## Cutdowns

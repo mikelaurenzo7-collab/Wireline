@@ -207,6 +207,11 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await openPublicRoute(page, "/");
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
+  await expect(page.locator(".landing-prestige__steps h2")).toHaveText([
+    "Build",
+    "Train",
+    "Launch",
+  ]);
   await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
   await expect(directions.getByText("FIND. CALL. BOOK.", { exact: true })).toBeVisible();
@@ -244,6 +249,11 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await openPublicRoute(page, "/");
 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
+  await expect(page.locator(".landing-prestige__steps h2")).toHaveText([
+    "Build",
+    "Train",
+    "Launch",
+  ]);
   await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();

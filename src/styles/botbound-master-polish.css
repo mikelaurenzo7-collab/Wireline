@@ -175,9 +175,9 @@
 /* Pricing is a buying page, not a toolbar. */
 .marketing-surface.wl-pricing-page #plans h1,
 .marketing-surface.wl-pricing-page .wl-pricing-page__title {
-  max-width: 22ch;
+  max-width: none;
   font-family: var(--wireline-font-family-display);
-  font-size: clamp(1.5rem, 1.14rem + 1.2vw, 2.1rem);
+  font-size: clamp(1.9rem, 3.4vw, 2.9rem);
   font-weight: 700;
   letter-spacing: -0.042em;
   line-height: 1.04;
@@ -186,16 +186,13 @@
 
 /* Short public routes keep their footer/chrome anchored to the viewport floor
  * while long documents continue to grow naturally. */
-.wl-ui-caps.wl-ui-caps--document
-  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page) {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.marketing-page-frame {
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
 }
 
-.wl-ui-caps.wl-ui-caps--document
-  .marketing-surface:is(.wl-features-page, .wl-pricing-page, .wl-showcase-page, .wl-about-page)
-  .marketing-flow {
+.wl-ui-caps.wl-ui-caps--document .marketing-surface.marketing-page-frame .marketing-flow {
   flex: 1 1 auto;
 }
 

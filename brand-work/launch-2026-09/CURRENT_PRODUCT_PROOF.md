@@ -91,7 +91,8 @@ BotBound launch proof should show an observable product state change, not a gene
 1. **Build:** create a focused Bot from a blank or clearly labeled demo account.
 2. **Train:** add or verify facts, sources, rules, voice, behavior, and workflow boundaries.
 3. **Launch:** show the enabled channel, assigned production number, routing, and relevant account state.
-4. **Improve:** review a real, explicitly labeled test conversation and its transcript, outcome, note, next action, approval, or handoff.
+
+Then show the completed work: a real, explicitly labeled test conversation and its transcript, outcome, note, next action, approval, or handoff. This verifies the result, not a fourth setup step.
 
 The strongest proof chain is a clearly labeled test call, a real configured follow-up text or email, and the corresponding outcome/log appearing in BotBound. Dogfood evidence is not customer evidence.
 
@@ -109,7 +110,7 @@ To replace the internal preview with public product proof, capture these surface
 | P06 | Phone / Launch       | Correct number and channel readiness for the demo account                   | Required | Recommended |
 | P07 | Live test            | Real test call in progress or completed                                     | Required | Optional    |
 | P08 | Inbox / continuation | Real labeled test SMS or email continuation                                 | Required | Recommended |
-| P09 | Outcome / Improve    | Transcript, outcome, follow-up, approval, or handoff ready for review       | Required | Recommended |
+| P09 | Outcome / review     | Transcript, outcome, follow-up, approval, or handoff ready for review       | Required | Recommended |
 | P10 | Billing boundary     | Honest Free Builder versus paid-live state                                  | Required | Optional    |
 
 Do not capture secrets, full personal phone numbers, private email addresses, access tokens, provider identifiers, payment data, or real customer data.

@@ -67,7 +67,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/about": {
     title: "ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH",
     description:
-      "BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it.",
+      "BotBound is an independent platform for Bots that call, text, and email. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
   },
   "/blog": {
     title: "BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS",

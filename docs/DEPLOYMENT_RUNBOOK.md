@@ -15,7 +15,7 @@ The next release target is a controlled design-partner pilot. This runbook is no
 
 The customer operating loop is:
 
-> **Build → Train → Launch → Improve**
+> **Build → Train → Launch**
 
 A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid web account can prepare the Bot's managed number and mailbox automatically within plan capacity. That background setup is not proof that its knowledge or customer workflow is ready.
 

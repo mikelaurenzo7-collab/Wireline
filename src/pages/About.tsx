@@ -10,19 +10,19 @@ import WireSignalArt from "../components/marketing/WireSignalArt";
 const POSITIONS = [
   {
     heading: "Independent",
-    copy: "No reseller in the middle, and no account manager between you and the people who build it. Support goes to the same inbox we read.",
+    copy: "Built independently. Support goes directly to the founder.",
   },
   {
-    heading: "Trained, Not Templated",
-    copy: "A Bot learns your tone, scripts, service knowledge, rules, and handoffs. It does not ship as a generic script you edit around.",
+    heading: "Your Knowledge and Rules",
+    copy: "Set each Bot's tone, knowledge, instructions, and handoffs.",
   },
   {
     heading: "Under Your Control",
     copy: "Calling-hour rules, Do Not Call checks, opt-outs, approvals, and escalation boundaries are enforced in the runtime before execution.",
   },
   {
-    heading: "One Record",
-    copy: "The call, live conversation, follow-up text, email, and outcome stay on one thread. Nothing is finished until it is written down.",
+    heading: "Visible Outcomes",
+    copy: "Review calls, messages, handoffs, and outcomes in your workspace.",
   },
 ] as const;
 
@@ -38,7 +38,7 @@ export default function About() {
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
         title="ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH"
-        description="BotBound is an independent platform for Phone Bots, Conversation Bots, Human Bots, and role-based Bots. See how we build, what the runtime enforces, and how to reach the people who make it."
+        description="BotBound is an independent platform for Bots that call, text, and email. Set your knowledge and rules, review outcomes, and reach the founder directly for support."
         path="/about"
       />
 
@@ -47,7 +47,7 @@ export default function About() {
           <div>
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
             <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              BUILT BY THE PEOPLE WHO ANSWER THE SUPPORT EMAIL
+              BUILT BY THE FOUNDER WHO SUPPORTS YOU
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a

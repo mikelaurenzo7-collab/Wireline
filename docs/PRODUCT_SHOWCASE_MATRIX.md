@@ -4,7 +4,7 @@ Status: **Active canonical showcase**. This document keeps every meaningful BotB
 
 ## Commercial posture
 
-BotBound's commercial posture is broad Phone Bot coverage: people, teams, and businesses can create Bots that answer, route, book, qualify, text outcomes, follow up, and escalate. Vertical pages and templates are proof routes, not admission gates. Every public surface should reinforce the canonical operating loop before it branches outward: **Build -> Train -> Launch -> Improve**. The authenticated product implements that loop through Create, Training, Connections, and Studio; those are product architecture, not a second public brand spine.
+BotBound's commercial posture is broad Phone Bot coverage: people, teams, and businesses can create Bots that answer, route, book, qualify, text outcomes, follow up, and escalate. Vertical pages and templates are proof routes, not admission gates. Every public surface should reinforce the canonical operating loop before it branches outward: **Build -> Train -> Launch**. The authenticated product implements that loop through Create, Training, Connections, and Studio; those are product architecture, not a second public brand spine.
 
 ## Showcase pillars
 
@@ -27,7 +27,7 @@ BotBound's commercial posture is broad Phone Bot coverage: people, teams, and bu
 
 | Surface           | Role                                                | Must showcase                                                                                             | Must not do                                                                                                                         |
 | ----------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Web app           | Primary command center and setup workbench.         | Build -> Train -> Launch -> Improve, implemented through Create -> Training -> Connections -> Studio.            | Hide critical launch controls behind ambiguous dashboard language or present technical navigation as a competing public narrative.  |
+| Web app           | Primary command center and setup workbench.         | Build -> Train -> Launch, implemented through Create -> Training -> Connections -> Studio.            | Hide critical launch controls behind ambiguous dashboard language or present technical navigation as a competing public narrative.  |
 | API               | Server-owned execution and authorization boundary.  | Stable partner contracts, webhooks, mobile adapters, MCP tools.                                           | Let clients own provider keys, billing decisions, or tenant authorization.                                                          |
 | iOS / Android     | Urgent control surface.                             | Calls, handoff, notifications, approvals, recent summaries, wallet.                                       | Become a full admin clone before core urgent loops are flawless.                                                                    |
 | Browser extension | Explicit context capture.                           | Prepare call, extract facts, draft follow-up, send context to Studio.                                     | Harvest pages silently or store auth tokens.                                                                                        |
@@ -60,7 +60,7 @@ Every feature in this matrix should map to one of those states before paid acqui
 
 | Feature                                                       | Status             | Notes                                                                                                                                             |
 | ------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build -> Train -> Launch -> Improve (web)                     | **Live**           | Canonical public operating loop; implemented through Create, Training, Connections, and Studio on botbound.me                                    |
+| Build -> Train -> Launch (web)                     | **Live**           | Canonical public operating loop; implemented through Create, Training, Connections, and Studio on botbound.me                                    |
 | Included capacity + Runtime Allowance + Runtime Balance       | **Live**           | Paid plans consume included voice/runtime capacity first; prepaid Runtime Balance funds explicit overflow with no automatic postpaid overage      |
 | Outbound hub + campaigns + cadences                           | **Live**           | Federal DNC integration and applicable consent/registration remain required for marketing use in production                                      |
 | Trust Center (`/trust`)                                       | **Live**           | Current control posture and explicit compliance boundaries                                                                                        |

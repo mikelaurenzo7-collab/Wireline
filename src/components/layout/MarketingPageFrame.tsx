@@ -54,7 +54,12 @@ export default function MarketingPageFrame({
   const activeSection = location.hash.replace(/^#/, "") || sectionLinks?.[0]?.id;
 
   return (
-    <div className={cn("marketing-surface bg-background text-foreground", className)}>
+    <div
+      className={cn(
+        "marketing-surface marketing-page-frame bg-background text-foreground",
+        className,
+      )}
+    >
       <PrecisionPublicHeader />
 
       <main

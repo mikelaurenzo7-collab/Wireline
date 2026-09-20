@@ -99,12 +99,12 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 - Customer-facing noun: **Bot**
 - Acquisition wedge: **Phone Bot**
 - Broader promise: **Your Bot for calls, texts, and email.**
-- Product lifecycle: **Build. Train. Launch. Improve.**
-- Approved film loop already in The Second Ring treatment: **Build. Train. Launch. Improve.**
+- Setup journey: **Build. Train. Launch.**
+- Film setup sequence: **Build. Train. Launch.** Existing renders require copy review before reuse.
 - Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
 - Primary proof verbs: answer, qualify, book, confirm, text, email, route, hand off, follow up, log
 
-Use **Build -> Train -> Launch -> Improve** for the public lifecycle. After Bot creation, the setup guide is **Train -> Test -> Launch**. Use configure as a natural verb for individual settings, not as a competing lifecycle step.
+Use **Build -> Train -> Launch** for the public setup journey. After Bot creation, the setup guide is **Train -> Test -> Launch**. Conversation review and later refinements remain optional controls, not a fourth setup step. Use configure as a natural verb for individual settings, not as a competing lifecycle step.
 
 ## 3. Approved tagline bank
 
@@ -215,7 +215,7 @@ Publish only after the launch gate is signed off. Replace all bracketed fields a
 
 ### Subheadline
 
-**The web platform lets businesses build one Bot around a real job, configure its knowledge and rules, and activate a dedicated production number on a paid plan.**
+**Build Bots around real jobs. Set their knowledge and rules. Activate dedicated numbers within your paid plan's capacity.**
 
 ### Release
 

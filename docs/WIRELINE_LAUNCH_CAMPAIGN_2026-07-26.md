@@ -14,12 +14,13 @@ This document owns launch copy, voiceover masters, campaign language, and cut br
 
 BotBound helps people and teams build Bots around useful work.
 
-The public operating loop is **Build -> Train -> Launch -> Improve**:
+The public operating loop is **Build -> Train -> Launch**:
 
 1. **Build** one Bot around a clear job.
 2. **Train** it on facts, rules, voice, and behavior.
 3. **Launch** it on the calls and follow-up channels the user enables.
-4. **Improve** it from transcripts, outcomes, and review.
+
+Conversations and outcomes stay available for review after launch. Optional refinements are controls, not another setup step.
 
 Start with one useful workflow. Add Bots or workflow breadth only when real use proves the need.
 
@@ -51,7 +52,7 @@ Founder time and cash go to onboarding, call quality, support, and direct custom
 | North star   | Your Bot for calls, texts, and email.                               |
 | Compact line | Start with one useful Bot. Add more when real work proves the need. |
 | Outcome line | Capture the call, send the follow-up, log the outcome.              |
-| Product loop | Build -> Train -> Launch -> Improve                                 |
+| Product loop | Build -> Train -> Launch                                 |
 | CTA          | Build Your Bot                                                      |
 | Price        | Build free. Plans from $19/mo. Live setup depends on availability.  |
 
@@ -73,7 +74,7 @@ Avoid:
 - customer counts, testimonials, ROI claims, or implied adoption before real customer evidence supports them;
 - public WhatsApp claims while it remains outside the launch posture;
 - presenting retired Live Video as an active feature, add-on, or proof surface;
-- any workflow spine other than **Build -> Train -> Launch -> Improve**.
+- any workflow spine other than **Build -> Train -> Launch**.
 
 ## Primary Hook
 
@@ -133,7 +134,7 @@ Build free at botbound.me. Plans from $19/mo. Live setup depends on availability
 
 You cannot answer every call. Your Bot can.
 
-Build it. Train it. Launch it. Improve it from the work.
+Build it. Train it. Launch it.
 
 Build free. Plans from $19/mo. Live setup depends on availability.
 
@@ -156,7 +157,7 @@ Do not spend against these concepts until the advertised workflow has passed fou
 
 - Primary text: “Call delegation, front-desk coverage, support triage, lead response, and appointment follow-up, trained privately before live use.”
 - Headline: **One BotBound Product**
-- Description: **Build -> Train -> Launch -> Improve**
+- Description: **Build -> Train -> Launch**
 - CTA: **Start free**
 
 ## Video / Reel Doctrine
@@ -187,7 +188,7 @@ Primary proof cut. Use real captured Bot audio as the center. Silence may carry 
 
 ### 3. Founder / Product Proof — 45–60s
 
-Explain **Build -> Train -> Launch -> Improve** through one working customer job, not a sped-up tour of every feature.
+Explain **Build -> Train -> Launch** through one working customer job, not a sped-up tour of every feature.
 
 ### Two Rings — 6s bumper
 

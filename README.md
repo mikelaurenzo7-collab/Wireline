@@ -2,12 +2,13 @@
 
 BotBound is the operating layer for **your Bot across calls, texts, and email**. Start with one trained Bot or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-The public operating loop is **Build -> Train -> Launch -> Improve**. After create, the setup guide is **Train -> Test -> Launch**. Product architecture expresses that loop through Create, Training, Wire, and Studio:
+The public setup journey is **Build -> Train -> Launch**. After create, the setup guide is **Train -> Test -> Launch**. Product architecture supports that journey through Create, Training, and Wire:
 
 1. **Create / Build** a focused Bot quickly.
 2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
 3. **Wire / Launch** it to an included number slot, integrations, routing, approvals, and billing controls.
-4. **Studio / Improve** operates calls, texts, follow-up, approvals, handoffs, review, and iteration from real outcomes.
+
+**Studio / Operations** brings calls, texts, follow-up, approvals, handoffs, and logged outcomes together. Conversation review and later refinements remain available after launch; they are not another setup step.
 
 ## Product surface
 

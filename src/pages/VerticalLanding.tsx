@@ -126,7 +126,7 @@ export default function VerticalLanding({
 
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl">
         <div className="mb-9 text-center">
-          <h1 className="marketing-hero-title mx-auto max-w-[20ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
+          <h1 className="marketing-hero-title mx-auto text-[clamp(1.9rem,3.4vw,2.9rem)]">
             {cfg.headline}
           </h1>
           <div className="marketing-hero__actions mt-7">

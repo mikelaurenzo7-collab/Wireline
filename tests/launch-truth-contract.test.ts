@@ -98,7 +98,8 @@ describe("launch truth contract", () => {
     const authorities = [commandCenter, campaign, mediaKit, playbook];
 
     for (const source of authorities) {
-      expect(source).toContain("Build -> Train -> Launch -> Improve");
+      expect(source).toContain("Build -> Train -> Launch");
+      expect(source).not.toContain("Build -> Train -> Launch -> Improve");
       expect(source).not.toContain("Create -> Train -> Wire -> Run");
       expect(source).not.toContain("Brief -> Train -> Launch -> Improve");
     }

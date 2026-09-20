@@ -76,9 +76,9 @@ export default function Blog() {
       />
 
       <section className="marketing-section marketing-section--screen mx-auto max-w-6xl text-center">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-6xl">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Notes</p>
-          <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto mt-4 max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
+          <h1 className="marketing-hero-title mx-auto mt-4 text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
             PRACTICAL NOTES FOR GETTING TIME BACK
           </h1>
         </div>

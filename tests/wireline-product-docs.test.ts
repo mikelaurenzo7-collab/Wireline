@@ -23,10 +23,10 @@ describe("product documentation and compatibility contract", () => {
     const readme = read("README.md");
     expect(readme).toContain("BotBound Command");
     expect(readme).toContain("BotBound Letterpress design system");
-    expect(readme).toContain("Build -> Train -> Launch -> Improve");
+    expect(readme).toContain("Build -> Train -> Launch");
     expect(readme).toContain("Create / Build");
     expect(readme).toContain("Wire / Launch");
-    expect(readme).toContain("Studio / Improve");
+    expect(readme).toContain("Studio / Operations");
     expect(readme).toContain("your Bot across calls, texts, and email");
     expect(readme).toContain("active paid Bot gets a dedicated production number");
     expect(readme).toContain("BotBound-managed email identity");
@@ -43,9 +43,9 @@ describe("product documentation and compatibility contract", () => {
   it("keeps the docs index aligned with current product truth", () => {
     const readme = read("docs/README.md");
     const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    expect(readme).toContain("Build -> Train -> Launch -> Improve");
+    expect(readme).toContain("Build -> Train -> Launch");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    expect(launchTruth).toContain("**Build. Train. Launch. Improve.**");
+    expect(launchTruth).toContain("**Build. Train. Launch.**");
     expect(launchTruth).toContain("Put Your Bot on the Line.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
     expect(readme).toContain("same workspace model");

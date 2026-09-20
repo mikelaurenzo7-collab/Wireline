@@ -4,12 +4,12 @@ These are ready-to-personalize outreach drafts for the September 2026 **The Seco
 
 ## The story in one breath
 
-BotBound gives owner-led businesses one trained Bot across calls, texts, and email. The launch centers on an ordinary but expensive moment: the phone rings while both hands are already doing the work. Customers can choose from ten built-in OpenAI Realtime voices; the selected voice remains consistent through the active conversation. Twilio stays the phone and SMS carrier. Build free; paid live plans begin at $19/month.
+BotBound gives owner-led businesses trained Bots for calls, texts, and email. The launch centers on an ordinary but expensive moment: the phone rings while both hands are already doing the work. Customers can choose from ten built-in OpenAI Realtime voices; the selected voice remains consistent through the active conversation. Twilio stays the phone and SMS carrier. Build free; paid live plans begin at $19/month.
 
 ## Subject lines
 
 - The phone has impeccable timing. BotBound was built for the second ring.
-- Launch: one Bot for calls, texts, and email
+- Launch: Bots for calls, texts, and email
 - A voice-AI launch without fake customer logos or fake traction
 - Story idea: what happens after the missed call?
 - Put your Bot on the line
@@ -20,7 +20,7 @@ Hi [Name] —
 
 The phone still carries high-intent demand for service and owner-led businesses, but it usually rings while the person who knows what to do is already doing the work.
 
-We built BotBound for that second ring: one trained Bot that can carry a conversation across calls, texts, and email under the business's facts, rules, tools, approvals, and handoffs.
+We built BotBound for that second ring: trained Bots that can carry conversations across calls, texts, and email under the business's facts, rules, tools, approvals, and handoffs.
 
 The product uses OpenAI Realtime for live conversation and Twilio for phone/SMS transport. Users can choose from ten built-in OpenAI voices while keeping the selected voice consistent through an active session.
 
@@ -34,7 +34,7 @@ support@botbound.me
 
 Hi [Name] — you talk about the part of business software that either helps in the middle of the work or becomes one more thing to manage.
 
-BotBound starts with a blunt problem: the phone rings when both hands are occupied. You build one Bot, train it on the job, launch only the channels you want, and improve it from outcomes you review.
+BotBound starts with a blunt problem: the phone rings when both hands are occupied. Build Bots around the work. Train each on your knowledge and rules. Test privately, then launch the channels you want.
 
 If you want to put it through an honest operator test, we would rather give you a real workflow than a scripted testimonial. Interested?
 
@@ -53,7 +53,7 @@ Possible discussion:
 
 ## Launch boilerplate
 
-BotBound is the operating layer for one trained Bot across calls, texts, and email. Businesses build the Bot around a real job, train it on the facts and rules that matter, launch it on enabled channels, and improve it through review. BotBound uses OpenAI Realtime for live conversation and Twilio for phone and SMS transport. Learn more at BotBound.me.
+BotBound is the operating layer for trained Bots across calls, texts, and email. Businesses build Bots around real jobs, train them on the facts and rules that matter, and launch them on enabled channels after private testing. BotBound uses OpenAI Realtime for live conversation and Twilio for phone and SMS transport. Learn more at BotBound.me.
 
 ## Media reply: “Is this one voice for every business?”
 
