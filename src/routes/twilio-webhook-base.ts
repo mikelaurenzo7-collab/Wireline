@@ -29,6 +29,7 @@ import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, inArray, or, sql } from "drizzle-orm";
 import { sanitizePhone } from "../lib/agent-runtime-helpers";
+import { smsOutcomeAfterMessage } from "../lib/sms-thread-outcome";
 import { dncPhoneCandidates, normalizeDncPhone } from "../lib/compliance";
 import { reportError } from "../lib/error-reporter";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
@@ -493,11 +494,7 @@ export async function persistInboundSmsEvidence(
       // New evidence must not silently undo an account-holder-owned outcome.
       // In particular, `escalated` is paired with an active human-handoff task
       // in Approvals. Reopening is an explicit operator action in the inbox.
-      status: ["waiting", "escalated", "booked", "resolved", "routing_conflict"].includes(
-        thread.status || "",
-      )
-        ? thread.status
-        : "open",
+      status: smsOutcomeAfterMessage(schema.smsThreads.status),
       // The exact destination line is the assignment source of truth. Project
       // null too so a released/unassigned line cannot keep using a stale Bot.
       agentId: input.agentId ?? null,

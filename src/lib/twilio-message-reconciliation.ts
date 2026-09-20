@@ -1,10 +1,11 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { enqueue, type JobRow } from "./job-queue";
 import { refundRuntimeUsage, reserveRuntimeUsage } from "./runtime-usage-billing";
 import { drizzle, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
+import { smsOutcomeAfterMessage } from "./sms-thread-outcome";
 import type { TwilioMessageChannel } from "./twilio-service-base";
 
 export type TwilioMessageReconciliationStep = "billing_adjustment" | "outbound_persistence";
@@ -74,27 +75,19 @@ export async function persistAcceptedTwilioOutbound(
     // holder replying from an escalated thread would silently move Inbox back
     // to `open` while its human-handoff task remained active in Approvals.
     // A new accepted attempt may clear only transport-derived/unknown state.
-    const preservedStatus = [
-      "waiting",
-      "escalated",
-      "booked",
-      "resolved",
-      "routing_conflict",
-    ].includes(current.status || "")
-      ? current.status
-      : "open";
-    const routingConflict = preservedStatus === "routing_conflict";
     await drizzle
       .update(schema.smsThreads)
       .set({
         lastMessageAt: new Date(),
-        status: preservedStatus,
+        status: smsOutcomeAfterMessage(schema.smsThreads.status),
         unreadCount: 0,
-        ...(!routingConflict && input.agentId && !current.agentId
-          ? { agentId: input.agentId }
+        ...(input.agentId
+          ? {
+              agentId: sql`case when ${schema.smsThreads.status} = 'routing_conflict' then ${schema.smsThreads.agentId} else coalesce(${schema.smsThreads.agentId}, ${input.agentId}) end`,
+            }
           : {}),
       })
-      .where(eq(schema.smsThreads.id, current.id));
+      .where(and(eq(schema.smsThreads.id, current.id), eq(schema.smsThreads.userId, input.userId)));
   } else {
     // First-contact races with the inbound webhook. Adopt the unique-index
     // winner so a retry of this reconciliation can still write the message.

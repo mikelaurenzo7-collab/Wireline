@@ -385,20 +385,22 @@ export const spendBudgetSchema = z.object({
 // ============================================================================
 
 export const createCadenceSchema = z.object({
-  name: z.string().min(1, "Name is required").max(200),
+  name: z.string().trim().min(1, "Name is required").max(200),
   description: z.string().max(1000).optional().nullable(),
-  agentId: z.string().optional().nullable(),
+  agentId: z.string().trim().min(1).max(120).optional().nullable(),
   steps: z.array(z.record(z.string(), z.unknown())).min(1, "At least one step is required"),
   active: z.boolean().default(true),
 });
 
-export const updateCadenceSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  description: z.string().max(1000).optional().nullable(),
-  agentId: z.string().optional().nullable(),
-  steps: z.array(z.record(z.string(), z.unknown())).optional(),
-  active: z.boolean().optional(),
-});
+export const updateCadenceSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().max(1000).optional().nullable(),
+    agentId: z.string().trim().min(1).max(120).optional().nullable(),
+    steps: z.array(z.record(z.string(), z.unknown())).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, { message: "No changes supplied." });
 
 // ============================================================================
 // Intake Route Schemas

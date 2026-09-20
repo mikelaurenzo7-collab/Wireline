@@ -11,6 +11,7 @@ import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
+import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
@@ -345,6 +346,13 @@ router.post(
 
       if (task.status === "completed") {
         throw AppError.fromHttpStatus(400, "Task is already completed");
+      }
+      if (
+        !ACTIVE_OPERATOR_TASK_STATUSES.includes(
+          task.status as (typeof ACTIVE_OPERATOR_TASK_STATUSES)[number],
+        )
+      ) {
+        throw AppError.fromHttpStatus(409, "This task is no longer active.");
       }
 
       // Prefer the structured `payload` (written by the AI Action Engine);

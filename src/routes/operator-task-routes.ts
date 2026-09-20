@@ -1,8 +1,8 @@
 import { Router, type NextFunction, type Response } from "express";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { AppError } from "../lib/api-error";
-import { ACTIVE_HANDOFF_TASK_STATUSES } from "../lib/conversation-outcome";
+import { ACTIVE_HANDOFF_TASK_STATUSES, handoffAdvisoryLockKey } from "../lib/conversation-outcome";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -26,6 +26,11 @@ async function syncConversationFromHandoff(
 ): Promise<void> {
   if (!input.sourceId) return;
   const sourceType = input.sourceType as HandoffSourceType | null;
+  if (sourceType !== "email_thread" && sourceType !== "sms_thread") return;
+  // Use the same conversation lock and thread-before-task order as the outcome
+  // routes. Otherwise completion and re-escalation can deadlock or disagree.
+  const lockKey = handoffAdvisoryLockKey(input.userId, sourceType, input.sourceId);
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
   if (sourceType === "email_thread") {
     await tx
       .update(schema.emailThreads)
@@ -37,6 +42,21 @@ async function syncConversationFromHandoff(
         ),
       );
   } else if (sourceType === "sms_thread") {
+    const [thread] = await tx
+      .select({ status: schema.smsThreads.status })
+      .from(schema.smsThreads)
+      .where(
+        and(eq(schema.smsThreads.id, input.sourceId), eq(schema.smsThreads.userId, input.userId)),
+      )
+      .limit(1)
+      .for("update");
+    if (thread?.status === "routing_conflict") {
+      throw new AppError(
+        409,
+        "SMS_THREAD_ROUTING_CONFLICT",
+        "Resolve this conversation's Twilio sending line before changing its outcome.",
+      );
+    }
     await tx
       .update(schema.smsThreads)
       .set({ status: input.status })
@@ -120,17 +140,30 @@ router.post(
         })
         .from(schema.followUpTasks)
         .where(
-          and(eq(schema.followUpTasks.id, req.params.id), eq(schema.followUpTasks.userId, req.user.id)),
+          and(
+            eq(schema.followUpTasks.id, req.params.id),
+            eq(schema.followUpTasks.userId, req.user.id),
+          ),
         )
         .limit(1);
 
       if (!task || task.taskType !== HUMAN_HANDOFF_TASK_TYPE) return next();
       if (task.status === "completed") return res.json({ success: true, already_completed: true });
-      if (!ACTIVE_HANDOFF_TASK_STATUSES.includes(task.status as (typeof ACTIVE_HANDOFF_TASK_STATUSES)[number])) {
+      if (
+        !ACTIVE_HANDOFF_TASK_STATUSES.includes(
+          task.status as (typeof ACTIVE_HANDOFF_TASK_STATUSES)[number],
+        )
+      ) {
         throw AppError.fromHttpStatus(409, "This handoff is no longer active.");
       }
 
       await drizzle.transaction(async (tx) => {
+        await syncConversationFromHandoff(tx, {
+          userId: req.user.id,
+          sourceType: task.sourceType,
+          sourceId: task.sourceId,
+          status: "resolved",
+        });
         const completed = await tx
           .update(schema.followUpTasks)
           .set({
@@ -148,12 +181,6 @@ router.post(
         if (!completed.length) {
           throw AppError.fromHttpStatus(409, "This handoff changed in another session.");
         }
-        await syncConversationFromHandoff(tx, {
-          userId: req.user.id,
-          sourceType: task.sourceType,
-          sourceId: task.sourceId,
-          status: "resolved",
-        });
       });
 
       touchNavCounts(req.user.id);
@@ -185,7 +212,10 @@ router.post(
         })
         .from(schema.followUpTasks)
         .where(
-          and(eq(schema.followUpTasks.id, req.params.id), eq(schema.followUpTasks.userId, req.user.id)),
+          and(
+            eq(schema.followUpTasks.id, req.params.id),
+            eq(schema.followUpTasks.userId, req.user.id),
+          ),
         )
         .limit(1);
 
@@ -193,11 +223,21 @@ router.post(
       if (task.taskType !== HUMAN_HANDOFF_TASK_TYPE) {
         throw AppError.fromHttpStatus(400, "Only human handoffs can use this route.");
       }
-      if (!ACTIVE_HANDOFF_TASK_STATUSES.includes(task.status as (typeof ACTIVE_HANDOFF_TASK_STATUSES)[number])) {
+      if (
+        !ACTIVE_HANDOFF_TASK_STATUSES.includes(
+          task.status as (typeof ACTIVE_HANDOFF_TASK_STATUSES)[number],
+        )
+      ) {
         throw AppError.fromHttpStatus(409, "This handoff is no longer active.");
       }
 
       await drizzle.transaction(async (tx) => {
+        await syncConversationFromHandoff(tx, {
+          userId: req.user.id,
+          sourceType: task.sourceType,
+          sourceId: task.sourceId,
+          status: "open",
+        });
         const dismissed = await tx
           .update(schema.followUpTasks)
           .set({
@@ -215,12 +255,6 @@ router.post(
         if (!dismissed.length) {
           throw AppError.fromHttpStatus(409, "This handoff changed in another session.");
         }
-        await syncConversationFromHandoff(tx, {
-          userId: req.user.id,
-          sourceType: task.sourceType,
-          sourceId: task.sourceId,
-          status: "open",
-        });
       });
 
       touchNavCounts(req.user.id);

@@ -260,7 +260,7 @@ export async function executeStep(
     const result = await sendTenantMessage(cadence.userId, {
       to: lead.customerNumber,
       body,
-      agentId: cadence.agentId ?? lead.agentId ?? undefined,
+      agentId: agentId ?? undefined,
     });
     return {
       ok: result.ok,
@@ -290,6 +290,9 @@ const CADENCE_STEP_LEASE_MS = 15 * 60 * 1000;
 const CADENCE_TEMPORAL_DEFER_MS = 60 * 60 * 1000;
 const CADENCE_EXCEPTION_RETRY_MS = 15 * 60 * 1000;
 const STEP_EXCEPTION_RETRY_PREFIX = "step exception (will retry): ";
+const STEP_IN_FLIGHT_PREFIX = "step awaiting outcome: ";
+const STEP_VERIFICATION_REQUIRED =
+  "Paused: verify the previous step's outcome before re-enrolling.";
 
 export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Promise<{
   processed: number;
@@ -302,7 +305,15 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
   const dueRuns = await drizzle
     .select()
     .from(schema.cadenceRuns)
-    .where(and(eq(schema.cadenceRuns.status, "active"), lte(schema.cadenceRuns.nextDueAt, now)))
+    .where(
+      and(
+        eq(schema.cadenceRuns.status, "active"),
+        lte(schema.cadenceRuns.nextDueAt, now),
+        // Keep a parent pause reversible, and exclude paused sequences before
+        // LIMIT so their overdue runs cannot starve other scheduled outreach.
+        sql`not exists (select 1 from ${schema.cadences} where ${schema.cadences.id} = ${schema.cadenceRuns.cadenceId} and ${schema.cadences.userId} = ${schema.cadenceRuns.userId} and ${schema.cadences.active} = false)`,
+      ),
+    )
     .orderBy(asc(schema.cadenceRuns.nextDueAt))
     .limit(limit);
 
@@ -341,28 +352,64 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
   const leadById = new Map(leadRows.map((lead) => [lead.id, lead]));
 
   for (const run of dueRuns) {
+    const cadenceRowRaw = cadenceById.get(run.cadenceId);
+    const cadenceRow =
+      cadenceRowRaw && cadenceRowRaw.userId === run.userId ? cadenceRowRaw : undefined;
+    // The parent may have been paused after the due-run scan.
+    if (cadenceRow?.active === false) continue;
+    let ownsRun = false;
+    let providerStepStarted = false;
+    const leaseUntil = new Date(Date.now() + CADENCE_STEP_LEASE_MS);
+    const pendingResult = `${STEP_IN_FLIGHT_PREFIX}${run.currentStep}`;
+    const ownedRun = and(
+      eq(schema.cadenceRuns.id, run.id),
+      eq(schema.cadenceRuns.userId, run.userId),
+      eq(schema.cadenceRuns.status, "active"),
+      eq(schema.cadenceRuns.currentStep, run.currentStep),
+      eq(schema.cadenceRuns.nextDueAt, leaseUntil),
+      eq(schema.cadenceRuns.lastResult, pendingResult),
+    );
     try {
       const claimed = await drizzle
         .update(schema.cadenceRuns)
-        .set({ nextDueAt: new Date(Date.now() + CADENCE_STEP_LEASE_MS), updatedAt: now })
+        .set({ nextDueAt: leaseUntil, lastResult: pendingResult, updatedAt: now })
         .where(
           and(
             eq(schema.cadenceRuns.id, run.id),
+            eq(schema.cadenceRuns.userId, run.userId),
             eq(schema.cadenceRuns.status, "active"),
+            eq(schema.cadenceRuns.currentStep, run.currentStep),
+            eq(schema.cadenceRuns.nextDueAt, run.nextDueAt!),
             lte(schema.cadenceRuns.nextDueAt, now),
           ),
         )
         .returning({ id: schema.cadenceRuns.id });
       if (!claimed.length) continue;
+      ownsRun = true;
 
-      const cadenceRowRaw = cadenceById.get(run.cadenceId);
-      const cadenceRow =
-        cadenceRowRaw && cadenceRowRaw.userId === run.userId ? cadenceRowRaw : undefined;
-      if (!cadenceRow || cadenceRow.active === false) {
+      // A lease expiring does not prove that a provider action failed. The
+      // previous worker may have sent it and then lost database access or died.
+      // Keep that durable uncertainty across restarts instead of sending again.
+      if ((run.lastResult || "").startsWith(STEP_IN_FLIGHT_PREFIX)) {
+        providerStepStarted = true;
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            status: "paused",
+            nextDueAt: null,
+            lastResult: STEP_VERIFICATION_REQUIRED,
+            updatedAt: now,
+          })
+          .where(ownedRun);
+        failed++;
+        continue;
+      }
+
+      if (!cadenceRow) {
         await drizzle
           .update(schema.cadenceRuns)
           .set({ status: "paused", updatedAt: now, lastResult: "cadence inactive or deleted" })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         continue;
       }
 
@@ -372,7 +419,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         await drizzle
           .update(schema.cadenceRuns)
           .set({ status: "failed", updatedAt: now, lastResult: "lead no longer exists" })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         failed++;
         continue;
       }
@@ -384,7 +431,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         await drizzle
           .update(schema.cadenceRuns)
           .set({ status: "completed", updatedAt: now, lastResult: "all steps complete" })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         completed++;
         continue;
       }
@@ -394,7 +441,10 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
         operation: "cadence_provider_step",
         ttlMs: 15 * 60_000,
         retainOnSuccess: true,
-        perform: () => executeStep(step, cadenceRow as any, leadRow as any),
+        perform: () => {
+          providerStepStarted = true;
+          return executeStep(step, cadenceRow as any, leadRow as any);
+        },
       });
       if (!fencedStep.performed) {
         await drizzle
@@ -405,10 +455,13 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
             lastResult: "account deletion in progress, provider step cancelled",
             updatedAt: now,
           })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         continue;
       }
       const stepResult = fencedStep.result;
+      // These outcomes are explicitly proven to precede a provider side effect.
+      if (stepResult.defer || stepResult.failRun || stepResult.retryable)
+        providerStepStarted = false;
 
       if (stepResult.defer) {
         await drizzle
@@ -418,7 +471,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
             lastResult: stepResult.result,
             updatedAt: now,
           })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         deferred++;
         continue;
       }
@@ -432,7 +485,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
             lastResult: stepResult.result,
             updatedAt: now,
           })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         continue;
       }
 
@@ -449,7 +502,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
                   updatedAt: now,
                 },
           )
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         if (alreadyRetried) failed++;
         else deferred++;
         continue;
@@ -467,7 +520,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
             lastResult: stepResult.result,
             updatedAt: now,
           })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         completed++;
       } else {
         await drizzle
@@ -478,11 +531,25 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
             lastResult: stepResult.result,
             updatedAt: now,
           })
-          .where(eq(schema.cadenceRuns.id, run.id));
+          .where(ownedRun);
         advanced++;
       }
     } catch (error: any) {
       log.error("cadence tick run failed", { runId: run.id, error: error?.message });
+      if (!ownsRun) continue;
+      if (providerStepStarted) {
+        await drizzle
+          .update(schema.cadenceRuns)
+          .set({
+            status: "paused",
+            nextDueAt: null,
+            lastResult: STEP_VERIFICATION_REQUIRED,
+            updatedAt: now,
+          })
+          .where(ownedRun);
+        failed++;
+        continue;
+      }
       const alreadyRetried = (run.lastResult || "").startsWith(STEP_EXCEPTION_RETRY_PREFIX);
       await drizzle
         .update(schema.cadenceRuns)
@@ -495,7 +562,7 @@ export async function tickDueCadenceRuns({ limit = 50 }: { limit?: number }): Pr
                 updatedAt: now,
               },
         )
-        .where(eq(schema.cadenceRuns.id, run.id));
+        .where(ownedRun);
       if (alreadyRetried) failed++;
     }
   }

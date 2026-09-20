@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 import { liveExternalActionPolicy } from "../src/lib/account-environment-policy";
 import { resolveTwilioInboundEnvironment } from "../src/lib/twilio-inbound-environment";
@@ -259,7 +260,7 @@ describe("signed Twilio SMS reclassification fence", () => {
     messageInsert.values = vi.fn(() => messageInsert);
     messageInsert.onConflictDoNothing = vi.fn(() => messageInsert);
     messageInsert.returning = vi.fn(async () => [{ id: 2n }]);
-    const set = vi.fn(() => ({ where: vi.fn(async () => []) }));
+    const set = vi.fn((_patch: Record<string, unknown>) => ({ where: vi.fn(async () => []) }));
     let insertCall = 0;
     const tx: any = {
       insert: vi.fn(() => (insertCall++ === 0 ? threadInsert : messageInsert)),
@@ -279,10 +280,14 @@ describe("signed Twilio SMS reclassification fence", () => {
 
     expect(set).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: "escalated",
         agentId: null,
       }),
     );
+    const patch = set.mock.calls[0][0] as { status: Parameters<PgDialect["sqlToQuery"]>[0] };
+    const statusQuery = new PgDialect().sqlToQuery(patch.status);
+    expect(statusQuery.sql).toContain('then "wireline_sms_threads"."status"');
+    expect(statusQuery.sql).toContain("'escalated'");
+    expect(statusQuery.params).toEqual([]);
   });
 
   async function loadBaseSmsRouter() {

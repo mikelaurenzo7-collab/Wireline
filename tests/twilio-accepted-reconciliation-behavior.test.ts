@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 type ProviderOutcome =
   { kind: "accepted"; numSegments?: string } | { kind: "rejected"; status: number };
@@ -67,7 +68,7 @@ function installSendMocks(options: {
         throw new Error("message history unavailable");
       })
     : vi.fn(async () => undefined);
-  const updateSet = vi.fn(() => ({ where: updateWhere }));
+  const updateSet = vi.fn((_patch: Record<string, unknown>) => ({ where: updateWhere }));
   const update = vi.fn(() => ({ set: updateSet }));
   const insertValues = vi.fn(() => ({
     onConflictDoNothing: vi.fn(async () => undefined),
@@ -316,7 +317,7 @@ describe("Twilio accepted-message reliability", () => {
     );
   });
 
-  it.each(["waiting", "escalated", "booked", "resolved"])(
+  it.each(["open", "waiting", "escalated", "booked", "resolved", "routing_conflict"])(
     "preserves the operator-owned %s outcome after carrier acceptance",
     async (threadStatus) => {
       const mocks = installSendMocks({
@@ -332,9 +333,16 @@ describe("Twilio accepted-message reliability", () => {
       });
 
       expect(result).toMatchObject({ ok: true, sid: "SMaccepted123" });
-      expect(mocks.updateSet).toHaveBeenCalledWith(
-        expect.objectContaining({ status: threadStatus }),
-      );
+      const patch = mocks.updateSet.mock.calls[0][0] as unknown as {
+        status: Parameters<PgDialect["sqlToQuery"]>[0];
+      };
+      const query = new PgDialect().sqlToQuery(patch.status);
+      // Even if the row changed after the initial read, UPDATE must evaluate
+      // the current column. Binding threadStatus here reopens resolved work.
+      expect(query.sql).toContain('then "wireline_sms_threads"."status"');
+      expect(query.sql).toContain("'routing_conflict'");
+      expect(query.sql).toContain("else 'open' end");
+      expect(query.params).toEqual([]);
     },
   );
 

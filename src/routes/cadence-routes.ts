@@ -20,7 +20,7 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, getTableColumns, inArray } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { validateBody, createCadenceSchema, updateCadenceSchema } from "../lib/api-validation";
@@ -36,27 +36,50 @@ interface CadenceStep {
 
 function validateSteps(input: any): CadenceStep[] {
   if (!Array.isArray(input) || input.length === 0) {
-    throw new Error("steps must be a non-empty array");
+    throw AppError.badRequest("steps must be a non-empty array");
   }
   return input.map((raw, i) => {
     if (!raw || typeof raw !== "object") {
-      throw new Error(`step ${i}: must be an object`);
+      throw AppError.badRequest(`step ${i}: must be an object`);
     }
     const t = raw.type;
     if (t !== "call" && t !== "sms" && t !== "email") {
-      throw new Error(`step ${i}: type must be call | sms | email`);
+      throw AppError.badRequest(`step ${i}: type must be call | sms | email`);
     }
     const delayHours = Number(raw.delayHours);
-    if (!Number.isFinite(delayHours) || delayHours < 0) {
-      throw new Error(`step ${i}: delayHours must be a non-negative number`);
+    if (
+      !Number.isFinite(delayHours) ||
+      delayHours < 0 ||
+      !Number.isFinite(new Date(Date.now() + delayHours * 3_600_000).getTime())
+    ) {
+      throw AppError.badRequest(`step ${i}: delayHours must be a valid non-negative delay`);
     }
     return {
       type: t,
       delayHours,
       template: typeof raw.template === "string" ? raw.template : undefined,
-      agentId: typeof raw.agentId === "string" ? raw.agentId : undefined,
+      agentId: typeof raw.agentId === "string" ? raw.agentId.trim() || undefined : undefined,
     } satisfies CadenceStep;
   });
+}
+
+async function assertCadenceAgentsOwned(
+  userId: string,
+  agentId?: string | null,
+  steps: CadenceStep[] = [],
+) {
+  const ids = [
+    ...new Set(
+      [agentId, ...steps.map((step) => step.agentId)].filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (!ids.length) return;
+  const agents = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.userId, userId), inArray(schema.agents.id, ids)));
+  const ownedIds = new Set(agents.map((agent) => agent.id));
+  if (ids.some((id) => !ownedIds.has(id))) throw AppError.notFound("Bot not found.");
 }
 
 router.get("/api/cadences", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -78,6 +101,7 @@ router.post(
     try {
       const name = (req.body?.name || "").toString().trim();
       const steps = validateSteps(req.body?.steps);
+      await assertCadenceAgentsOwned(req.user.id, req.body?.agentId, steps);
       const [row] = (await drizzle
         .insert(schema.cadences)
         .values({
@@ -91,10 +115,9 @@ router.post(
         .returning()) as any[];
       res.json({ cadence: row });
     } catch (e: any) {
-      res.status(400).json({
-        code: "BAD_REQUEST",
-        error: e?.message || "Invalid cadence",
-      });
+      if (e instanceof AppError) throw e;
+      log.error("Create cadence failed", { userId: req.user.id, error: e?.message });
+      throw AppError.internal("Could not save this sequence.");
     }
   },
 );
@@ -117,6 +140,8 @@ router.patch(
         throw AppError.fromHttpStatus(400, String(e?.message || "Invalid steps"));
       }
     }
+    if (!Object.keys(patch).length) throw AppError.badRequest("No changes supplied.");
+    await assertCadenceAgentsOwned(req.user.id, patch.agentId, patch.steps);
     const [row] = (await drizzle
       .update(schema.cadences)
       .set(patch)
@@ -240,8 +265,20 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const rows = await drizzle
-      .select()
+      .select({
+        ...getTableColumns(schema.cadenceRuns),
+        contactName: schema.outboundLeads.customerName,
+        contactNumber: schema.outboundLeads.customerNumber,
+        contactEmail: schema.outboundLeads.email,
+      })
       .from(schema.cadenceRuns)
+      .leftJoin(
+        schema.outboundLeads,
+        and(
+          eq(schema.outboundLeads.id, schema.cadenceRuns.leadId),
+          eq(schema.outboundLeads.userId, schema.cadenceRuns.userId),
+        ),
+      )
       .where(eq(schema.cadenceRuns.userId, req.user.id))
       .orderBy(desc(schema.cadenceRuns.createdAt))
       .limit(200);

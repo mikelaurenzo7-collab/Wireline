@@ -13,6 +13,7 @@ import {
   Loader2,
   Zap,
   Repeat,
+  ChevronDown,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import { logFetchError } from "../lib/utils";
@@ -46,6 +47,9 @@ interface CadenceRun {
   status: string;
   nextDueAt: string | null;
   lastResult: string | null;
+  contactName?: string | null;
+  contactNumber?: string | null;
+  contactEmail?: string | null;
 }
 
 const STARTER_TEMPLATES: { name: string; description: string; steps: Step[] }[] = [
@@ -247,6 +251,12 @@ export default function Cadences() {
     if (r.status === "active") acc[r.cadenceId] = (acc[r.cadenceId] || 0) + 1;
     return acc;
   }, {});
+  const reviewRunsByCadence = runs.reduce<Record<string, CadenceRun[]>>((acc, run) => {
+    if (run.status === "paused" || run.status === "failed") {
+      (acc[run.cadenceId] ??= []).push(run);
+    }
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -364,10 +374,10 @@ export default function Cadences() {
           {cadences.map((c) => (
             <div
               key={c.id}
-              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap touch-press hover:scale-[1.02]"
+              className="rounded-md wl-panel border border-border p-4 flex items-center gap-4 flex-wrap"
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h4 className="wl-preserve-case text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
                     {c.name}
                   </h4>
@@ -438,6 +448,41 @@ export default function Cadences() {
                   <Trash2 className="w-3.5 h-3.5" />
                 </ShadButton>
               </div>
+              {reviewRunsByCadence[c.id]?.length > 0 && (
+                <details className="group basis-full min-w-0 border-t border-border pt-3">
+                  <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-3 rounded text-sm font-medium text-amber-600 dark:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand [&::-webkit-details-marker]:hidden">
+                    <span>
+                      {reviewRunsByCadence[c.id].length}{" "}
+                      {reviewRunsByCadence[c.id].length === 1 ? "Run Needs" : "Runs Need"} Review
+                    </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <ul className="mt-2 divide-y divide-border">
+                    {reviewRunsByCadence[c.id].map((run) => (
+                      <li key={run.id} className="space-y-1 py-3 text-sm">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                          <span className="font-medium text-foreground break-words">
+                            {run.contactName ||
+                              run.contactEmail ||
+                              run.contactNumber ||
+                              `Contact ${run.leadId}`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Step {run.currentStep + 1} ·{" "}
+                            {run.status === "failed" ? "Failed" : "Paused"}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground break-words">
+                          {run.lastResult || "Review this contact before continuing."}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           ))}
         </div>

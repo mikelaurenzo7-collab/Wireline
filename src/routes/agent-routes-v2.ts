@@ -776,7 +776,12 @@ router.post(
       });
     } else if (type === "directive") {
       if (isPrefixReplace) {
-        await drizzle.transaction(async (tx: typeof drizzle) => {
+        await drizzle.transaction(async (tx) => {
+          // Serialize replacements even when there is no directive to delete.
+          // A transaction alone allows two initial saves to insert both values.
+          await tx.execute(
+            sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${req.params.id} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
+          );
           await tx.delete(schema.directives).where(
             and(
               eq(schema.directives.agentId, req.params.id),
