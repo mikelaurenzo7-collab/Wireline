@@ -84,6 +84,10 @@ const CANONICAL_RELEASE_SECOND_PASS = [
   "tests/browser-extension-contract.test.ts",
   "tests/stripe-brand-asset-contract.test.ts",
   "tests/stripe-account-identity.test.ts",
+  "tests/create-brief-recovery.test.tsx",
+  "tests/create-brief-recovery-storage.test.ts",
+  "tests/stripe-webhook-readiness.test.ts",
+  "scripts/lib/product-proof-files.test.ts",
 ];
 
 const effectiveArgs = canonicalReleaseSecondPass ? [...CANONICAL_RELEASE_SECOND_PASS] : extraArgs;

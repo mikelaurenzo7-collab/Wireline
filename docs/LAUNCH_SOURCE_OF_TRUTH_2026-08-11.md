@@ -1,10 +1,18 @@
 # BotBound Launch Source of Truth
 
-Date: 2026-08-11  
-Status: **Active launch authority**  
-Scope: public positioning, launch creative, dogfood proof, and pre-customer GTM
+Established 2026-08-11; source reviewed 2026-09-19.
+
+**Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.
 
 This document is the tie-breaker for active launch language and creative status. Historical audits remain historical. The campaign pack and creative media kit still own detailed scripts, shot lists, and production mechanics, but when their high-level positioning or asset-status language conflicts with this file, this file wins.
+
+## Current launch boundary
+
+The first design-partner workflow is one inbound Front Desk Bot and one configured, permitted follow-up. Outbound campaign acquisition remains held until `outbound_campaign_ready` and its audience, destination, copy, and media pass review. Working numbers, cinematic call displays, polished assets, and a local build do not establish this readiness.
+
+Use `FOUNDER_LAUNCH_COMMAND_CENTER.md` for the standing operational checklist and `LAUNCH_GURU_PLAYBOOK_2026-07-20.md` for the funding and recovery sequence. Record current balances, invoices, source revisions and provider results in the timestamped release evidence; these evergreen checklists do not establish live account status. Use `../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md` for the five-piece partner kit and setup/support template. Current public UI capture commands and their simulated-API boundary live in `../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md`.
+
+A local source capture is internal UI evidence. A product-proof claim needs the exact deployed commit and observable labeled test activity. The August and September 1 snapshots below remain historical; later source corrections do not recertify their renders or Drive copies.
 
 ## One buyer story
 
@@ -66,7 +74,7 @@ BotBound does not need fake social proof. Until real customers exist, launch pro
 
 Never manufacture customer logos, quotes, usage counts, revenue claims, or implied adoption.
 
-## Creative status — 2026-08-11
+## Historical creative status — 2026-08-11
 
 ### Rejected historical masters
 
@@ -166,7 +174,7 @@ Dogfood evidence must stay clearly separated from customer evidence.
 
 The immediate GTM objective is not to imply scale. It is to create enough credible product proof to recruit the first design partners.
 
-1. Publish the strongest source-current founder/product reel.
+1. Prepare the strongest exact-deployed-source founder/product reel. Publish only after the destination, evidence, and launch gates pass.
 2. Use the 15-second cut for targeted owner/operator acquisition once its current-source picture and real agent-audio proof are certified.
 3. Drive every generic acquisition path to Free Builder first; paid intent can enter through Pricing.
 4. Personally recruit a small number of design partners whose missed-call or follow-up problem is obvious and measurable.

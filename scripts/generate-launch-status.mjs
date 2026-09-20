@@ -2,6 +2,10 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
 import {
+  evaluateStripeWebhookReadiness,
+  getPinnedStripeApiVersion,
+} from "./lib/stripe-webhook-readiness.mjs";
+import {
   STRIPE_BRAND_PRIMARY_COLOR,
   STRIPE_BRAND_SECONDARY_COLOR,
   STRIPE_PUBLIC_BRAND,
@@ -32,7 +36,7 @@ import {
 } from "./lib/production-url.mjs";
 
 const { Pool } = pg;
-const PINNED_STRIPE_API_VERSION = "2026-08-26.dahlia";
+const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion();
 const root = resolve(import.meta.dirname, "..");
 const outputArg = process.argv.indexOf("--output");
 const outputPath = resolve(
@@ -370,10 +374,8 @@ async function stripeStatus() {
     portalConfiguration &&
     (portalConfiguration.business_profile?.headline !==
       "Manage your BotBound billing, invoices, and subscription." ||
-      portalConfiguration.business_profile?.privacy_policy_url !==
-        `${canonicalOrigin}/privacy` ||
-      portalConfiguration.business_profile?.terms_of_service_url !==
-        `${canonicalOrigin}/terms`)
+      portalConfiguration.business_profile?.privacy_policy_url !== `${canonicalOrigin}/privacy` ||
+      portalConfiguration.business_profile?.terms_of_service_url !== `${canonicalOrigin}/terms`)
   ) {
     portalFindings.push("legal_urls_mismatch");
   }
@@ -438,36 +440,16 @@ async function stripeStatus() {
   // hardcoded copy here drifted once the dispute-funds handlers landed and
   // reported a correct endpoint as carrying two extra events.
   const expectedWebhookEvents = getHandledStripeWebhookEvents();
-  const webhookEndpoints = Array.isArray(webhookResult.body?.data) ? webhookResult.body.data : [];
-  const canonicalWebhooks = webhookEndpoints.filter(
-    (endpoint) =>
-      endpoint?.status === "enabled" &&
-      String(endpoint?.url || "").replace(/\/+$/, "") ===
-        `${canonicalOrigin}/api/stripe-webhook`,
+  const webhookReadiness = evaluateStripeWebhookReadiness(
+    webhookResult,
+    expectedWebhookEvents,
+    PINNED_STRIPE_API_VERSION,
   );
-  const webhook = canonicalWebhooks.length === 1 ? canonicalWebhooks[0] : null;
-  const enabledWebhookEvents = Array.isArray(webhook?.enabled_events)
-    ? [...webhook.enabled_events].sort()
-    : [];
-  const missingWebhookEvents = expectedWebhookEvents.filter(
-    (event) => !enabledWebhookEvents.includes(event),
-  );
-  const extraWebhookEvents = enabledWebhookEvents.filter(
-    (event) => event !== "*" && !expectedWebhookEvents.includes(event),
-  );
-  const webhookFindings = [];
-  if (!webhookResult.ok) webhookFindings.push("webhook_inventory_unreachable");
-  if (webhookResult.body?.has_more === true) webhookFindings.push("webhook_inventory_truncated");
-  if (canonicalWebhooks.length !== 1) {
-    webhookFindings.push(`canonical_endpoint_count_${canonicalWebhooks.length}`);
-  }
-  if (webhook && webhook.livemode !== true) webhookFindings.push("endpoint_not_livemode");
-  if (webhook && webhook.api_version !== PINNED_STRIPE_API_VERSION) {
-    webhookFindings.push("endpoint_api_version_mismatch");
-  }
-  if (missingWebhookEvents.length > 0) webhookFindings.push("handled_events_missing");
-  if (extraWebhookEvents.length > 0) webhookFindings.push("unhandled_events_enabled");
-  const webhookReady = Boolean(webhook && webhookFindings.length === 0);
+  const webhook = webhookReadiness.endpoint;
+  const missingWebhookEvents = webhookReadiness.missingEvents;
+  const extraWebhookEvents = webhookReadiness.extraEvents;
+  const webhookFindings = webhookReadiness.findings;
+  const webhookReady = webhookReadiness.ready;
   const automaticTaxEnabled = process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true";
   const activeTaxRegistrations = Array.isArray(taxRegistrationsResult.body?.data)
     ? taxRegistrationsResult.body.data.filter((registration) => registration?.status === "active")
@@ -539,7 +521,7 @@ async function stripeStatus() {
     },
     webhook: {
       endpoint_present: Boolean(webhook),
-      canonical_endpoint_count: canonicalWebhooks.length,
+      canonical_endpoint_count: webhookReadiness.canonicalEndpointCount,
       livemode: webhook?.livemode === true,
       api_version: webhook?.api_version ?? null,
       expected_api_version: PINNED_STRIPE_API_VERSION,

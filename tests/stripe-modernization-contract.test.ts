@@ -20,10 +20,12 @@ describe("Stripe Checkout modernization contract", () => {
     const apiVersion = read("src/lib/stripe-api-version.ts");
     expect(apiVersion).toContain('"2026-08-26.dahlia"');
     expect(helpers).toContain("export { STRIPE_API_VERSION }");
+    const aligner = read("scripts/align-stripe-webhook-events.mjs");
+    expect(aligner).toContain("const API_VERSION = getPinnedStripeApiVersion()");
+    expect(aligner).toContain("evaluateStripeWebhookReadiness(");
 
     for (const file of [
       "scripts/deactivate-retired-stripe-default-prices.mjs",
-      "scripts/align-stripe-webhook-events.mjs",
       "scripts/audit-stripe-product-copy-live.mjs",
       "scripts/audit-stripe-catalog-live.mjs",
       "scripts/setup-stripe-catalog.mjs",

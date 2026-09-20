@@ -4,6 +4,8 @@ import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { promisify } from "node:util";
+import { acquireProductProofLock, assertProductProofManifest } from "./lib/product-proof-files.mjs";
+import { readProductProofSource } from "./lib/product-proof-source.mjs";
 
 const repoRoot = process.cwd();
 const releaseRoot = path.join(repoRoot, "brand-work", "launch-2026-09");
@@ -74,16 +76,22 @@ async function sha256(file) {
     .digest("hex");
 }
 
-async function assertApprovedProductProof(repositoryBaseSha) {
+async function assertCurrentProductProof(repositoryBaseSha) {
   const proofRoot = path.join(releaseRoot, "exports", "product-proof");
   const proofManifestPath = path.join(proofRoot, "botbound-current-worktree-proof.json");
   let proof;
   try {
     proof = JSON.parse(await readFile(proofManifestPath, "utf8"));
   } catch (error) {
-    throw new Error("Launch release cannot include product proof without its approval manifest.", {
+    throw new Error("Launch release cannot include product proof without its integrity manifest.", {
       cause: error,
     });
+  }
+  assertProductProofManifest(proof);
+  if (proof.sourceSnapshot.sha256 !== readProductProofSource(repoRoot).sourceSnapshot.sha256) {
+    throw new Error(
+      "Product proof predates current public-source edits. Run npm run brand:proof again.",
+    );
   }
   if (
     proof.exactWorktreePreview !== true ||
@@ -95,10 +103,10 @@ async function assertApprovedProductProof(repositoryBaseSha) {
     !Array.isArray(proof.results) ||
     proof.results.length === 0
   ) {
-    throw new Error("Launch product-proof approval manifest has invalid source provenance.");
+    throw new Error("Launch product-proof integrity manifest has invalid source provenance.");
   }
 
-  const approvedFrameNames = new Set();
+  const acceptedFrameNames = new Set();
   for (const result of proof.results) {
     const absolute = path.resolve(repoRoot, String(result.output || ""));
     const relative = path.relative(proofRoot, absolute);
@@ -114,7 +122,7 @@ async function assertApprovedProductProof(repositoryBaseSha) {
       result.consoleErrors?.length ||
       result.failedRequests?.length
     ) {
-      throw new Error(`Launch product-proof result is not approved: ${result.name || "unknown"}`);
+      throw new Error(`Launch product-proof result is not accepted: ${result.name || "unknown"}`);
     }
     const bytes = await readFile(absolute);
     const digest = createHash("sha256").update(bytes).digest("hex");
@@ -126,17 +134,17 @@ async function assertApprovedProductProof(repositoryBaseSha) {
     ) {
       throw new Error(`Launch product-proof frame does not match its manifest: ${relative}`);
     }
-    approvedFrameNames.add(relative);
+    acceptedFrameNames.add(relative);
   }
 
   const releaseFrameNames = (await readdir(proofRoot, { withFileTypes: true }))
     .filter((entry) => entry.isFile() && entry.name.endsWith("-exact-worktree-preview.png"))
     .map((entry) => entry.name);
   if (
-    releaseFrameNames.length !== approvedFrameNames.size ||
-    releaseFrameNames.some((name) => !approvedFrameNames.has(name))
+    releaseFrameNames.length !== acceptedFrameNames.size ||
+    releaseFrameNames.some((name) => !acceptedFrameNames.has(name))
   ) {
-    throw new Error("Launch product-proof directory contains stale or unapproved frames.");
+    throw new Error("Launch product-proof directory contains stale or unaccepted frames.");
   }
   const contactSheetName = "botbound-exact-worktree-proof-contact-sheet-1920x1400.png";
   const contactSheetPath = path.join(proofRoot, contactSheetName);
@@ -149,60 +157,70 @@ async function assertApprovedProductProof(repositoryBaseSha) {
     !/^[0-9a-f]{64}$/i.test(String(proof.contactSheet?.sha256 || "")) ||
     proof.contactSheet.sha256.toLowerCase() !== contactSheetDigest
   ) {
-    throw new Error("Launch product-proof contact sheet does not match its approval manifest.");
+    throw new Error("Launch product-proof contact sheet does not match its integrity manifest.");
   }
 }
 
-const repositoryBaseSha = await git(["rev-parse", "HEAD"]);
-const repositoryDirty = Boolean(await git(["status", "--porcelain"]));
+const releaseProofLock = acquireProductProofLock(repoRoot, {
+  purpose: "release-assembly",
+  pid: process.pid,
+});
+try {
+  const repositoryBaseSha = await git(["rev-parse", "HEAD"]);
+  const repositoryDirty = Boolean(await git(["status", "--porcelain"]));
 
-await assertApprovedProductProof(repositoryBaseSha);
+  await assertCurrentProductProof(repositoryBaseSha);
 
-const allFiles = (await walk(releaseRoot))
-  .map((absolute) => ({
-    absolute,
-    relative: path.relative(releaseRoot, absolute).split(path.sep).join("/"),
-  }))
-  .filter(({ relative }) => {
-    if (ignored.has(relative)) return false;
-    const parts = relative.toLowerCase().split("/");
-    return !parts.some((part) => ["_rejected", "rejected", "quarantine"].includes(part));
-  })
-  .sort((a, b) => a.relative.localeCompare(b.relative));
+  const allFiles = (await walk(releaseRoot))
+    .map((absolute) => ({
+      absolute,
+      relative: path.relative(releaseRoot, absolute).split(path.sep).join("/"),
+    }))
+    .filter(({ relative }) => {
+      if (ignored.has(relative)) return false;
+      const parts = relative.toLowerCase().split("/");
+      return !parts.some((part) =>
+        ["_history", "_rejected", "rejected", "quarantine"].includes(part),
+      );
+    })
+    .sort((a, b) => a.relative.localeCompare(b.relative));
 
-const assets = [];
-for (const file of allFiles) {
-  const fileStat = await stat(file.absolute);
-  assets.push({
-    path: file.relative,
-    category: categoryFor(file.relative),
-    mime_type: mimeFor(file.relative),
-    bytes: fileStat.size,
-    sha256: await sha256(file.absolute),
-    release_status: releaseStatusFor(file.relative),
-  });
+  const assets = [];
+  for (const file of allFiles) {
+    const fileStat = await stat(file.absolute);
+    assets.push({
+      path: file.relative,
+      category: categoryFor(file.relative),
+      mime_type: mimeFor(file.relative),
+      bytes: fileStat.size,
+      sha256: await sha256(file.absolute),
+      release_status: releaseStatusFor(file.relative),
+    });
+  }
+
+  const manifest = {
+    release: "BotBound Launch Release — 2026-09-01",
+    campaign: "The Second Ring",
+    generated_at: new Date().toISOString(),
+    repository_base_sha: repositoryBaseSha,
+    repository_worktree_status: repositoryDirty ? "dirty" : "clean",
+    deployment_status: "not deployed by this release-preparation pass",
+    paid_media_status: "hold pending explicit approval and release gates",
+    product_proof_status: "worktree preview is not deployed production proof",
+    asset_count: assets.length,
+    total_bytes: assets.reduce((sum, asset) => sum + asset.bytes, 0),
+    assets,
+  };
+
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(
+    checksumsPath,
+    `${assets.map((asset) => `${asset.sha256}  ${asset.path}`).join("\n")}\n`,
+    "utf8",
+  );
+
+  console.log(`Wrote ${path.relative(repoRoot, manifestPath)} with ${assets.length} assets.`);
+  console.log(`Wrote ${path.relative(repoRoot, checksumsPath)}.`);
+} finally {
+  releaseProofLock();
 }
-
-const manifest = {
-  release: "BotBound Launch Release — 2026-09-01",
-  campaign: "The Second Ring",
-  generated_at: new Date().toISOString(),
-  repository_base_sha: repositoryBaseSha,
-  repository_worktree_status: repositoryDirty ? "dirty" : "clean",
-  deployment_status: "not deployed by this release-preparation pass",
-  paid_media_status: "hold pending explicit approval and release gates",
-  product_proof_status: "worktree preview is not deployed production proof",
-  asset_count: assets.length,
-  total_bytes: assets.reduce((sum, asset) => sum + asset.bytes, 0),
-  assets,
-};
-
-await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-await writeFile(
-  checksumsPath,
-  `${assets.map((asset) => `${asset.sha256}  ${asset.path}`).join("\n")}\n`,
-  "utf8",
-);
-
-console.log(`Wrote ${path.relative(repoRoot, manifestPath)} with ${assets.length} assets.`);
-console.log(`Wrote ${path.relative(repoRoot, checksumsPath)}.`);

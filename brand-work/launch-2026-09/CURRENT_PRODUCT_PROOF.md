@@ -1,14 +1,50 @@
 # Current Product Proof — Status and Capture Standard
 
-## Status on 2026-09-01
+## Current capture workflow
 
-**A source-current exact-worktree preview now exists. It is not deployed-production proof and is not certified for public product-proof use.**
+A file named “current” is not evidence of current source. The adjacent JSON must match the intended Git commit and the tracked/non-ignored source fingerprint, pass all seven route checks, and match the screenshot and contact-sheet hashes. Ignored generated files, environment values, installed dependencies, authenticated behavior, and deployed availability are outside that fingerprint.
+
+The September 1 record below is historical. Preserve it as a reference; it does not establish today's UI or deployment state.
+
+For a credential-free local UI review, run these in separate terminals from the repository root, with other heavy checks stopped:
+
+```powershell
+node scripts/start-botbound-proof-api-stub.mjs
+```
+
+```powershell
+npx vite --config scripts/vite-product-proof.config.ts --host 127.0.0.1 --port 3002 --strictPort
+```
+
+Then capture:
+
+```powershell
+npm run brand:proof
+```
+
+The command verifies the local source nonce, records a pre/post source fingerprint, waits for actual route headlines and settled paused Pricing, and produces all seven screenshots plus a contact sheet. Auth and billing responses are **simulated**: the preview is signed out and paid activation is unavailable. This verifies public layout in that state, not provider configuration, checkout, sign-in, or live calling.
+
+Review each full-size image and its final placement. The JSON says `humanVisualReview: required`; passing automation is not visual or publication approval. File names describe logical viewports; screenshots use a 2× device scale. The mobile Home image is a hero crop.
+
+Capture failures preserve the preceding batch. Successful replacements archive it in `exports/product-proof/_history/`; history and `_rejected/` are excluded from release assembly. A stale `.botbound-proof-source-identity.json` after a crashed run must only be removed after verifying no capture is still running. The legacy capture entry point now forwards to this workflow and cannot overwrite the August archive.
+
+After capture and review, assemble the local candidate receipt:
+
+```powershell
+node scripts/build-botbound-launch-release-manifest.mjs
+```
+
+The builder rejects old provenance, source edits, missing/extra frames, failed route checks, overflow, and mismatched hashes. It records a **creative candidate**, not a production launch. Re-run capture after a new commit or public-source edit. No upload, release, or media purchase occurs.
+
+## Historical status on 2026-09-01
+
+**The September 1 preview was accepted for internal review at that time. It is historical, not current or deployed-production proof.**
 
 The September package contains seven accepted public-surface preview frames and a contact sheet captured from the active Vite source worktree. It also contains two explicitly rejected frames in a local quarantine. Authenticated Studio proof is intentionally absent because this source-only preview did not use production credentials.
 
 The static campaign art and the 6s, 10s, and 15s motion cuts remain illustrations, editorial compositions, product-fact graphics, configured examples, or cinematic concepts. They are not screenshots or recordings of a deployed BotBound product state. The earlier Google Drive proof set captured on localhost on 2026-08-20 is stale for this release. Historical video sources containing a visible authenticated 404 remain rejected.
 
-Current repository base at the start of this pass:
+Historical repository base at the start of the September 1 pass:
 
 - Branch: `master`
 - Local base SHA: `13fd4807f43a352d1d7a11da7c03f50460b0caee`
@@ -17,7 +53,7 @@ Current repository base at the start of this pass:
 
 Do not describe the base SHA as the final creative or product release. A release record must point to the exact committed and deployed source used for capture.
 
-## Completed exact-worktree preview
+## Historical exact-worktree preview
 
 - **Label:** EXACT WORKTREE PREVIEW — NOT DEPLOYED PRODUCTION
 - **Capture time:** 2026-09-01T07:38:50.637Z
@@ -28,15 +64,15 @@ Do not describe the base SHA as the final creative or product release. A release
 
 Accepted preview frames:
 
-| Surface | Viewport | Preview status |
-| --- | --- | --- |
-| Home | 1600 × 1000 desktop | Accepted for internal exact-worktree review |
+| Surface   | Viewport              | Preview status                                              |
+| --------- | --------------------- | ----------------------------------------------------------- |
+| Home      | 1600 × 1000 desktop   | Accepted for internal exact-worktree review                 |
 | Home hero | 430 × 630 mobile crop | Accepted; intentionally ends before the account form begins |
-| Features | 1600 × 1000 desktop | Accepted for internal exact-worktree review |
-| Features | 430 × 932 mobile | Accepted for internal exact-worktree review |
-| Pricing | 1600 × 1000 desktop | Accepted for internal exact-worktree review |
-| Pricing | 430 × 932 mobile | Accepted for internal exact-worktree review |
-| Sign in | 1600 × 1000 desktop | Accepted for internal exact-worktree review |
+| Features  | 1600 × 1000 desktop   | Accepted for internal exact-worktree review                 |
+| Features  | 430 × 932 mobile      | Accepted for internal exact-worktree review                 |
+| Pricing   | 1600 × 1000 desktop   | Accepted for internal exact-worktree review                 |
+| Pricing   | 430 × 932 mobile      | Accepted for internal exact-worktree review                 |
+| Sign in   | 1600 × 1000 desktop   | Accepted for internal exact-worktree review                 |
 
 The capture record reports HTTP 200 for all accepted frames, no horizontal overflow, no page errors, and no console errors. The Home and Sign in captures record the expected locally aborted auth-provider request; that request was not treated as deployed-auth proof.
 
@@ -63,18 +99,18 @@ The strongest proof chain is a clearly labeled test call, a real configured foll
 
 To replace the internal preview with public product proof, capture these surfaces from one exact deployed source commit:
 
-| ID | Surface | Required state | Desktop | Mobile |
-| --- | --- | --- | --- | --- |
-| P01 | Home | Current public promise and CTA | Required | Required |
-| P02 | Pricing | Free Builder and paid live plans from $19/month | Required | Required |
-| P03 | Create / Build | Blank-to-Bot creation path | Required | Required |
-| P04 | Training | Real labeled demo facts, rules, voice, and behavior | Required | Recommended |
-| P05 | Voice selection | Current ten-voice OpenAI roster and saved choice | Required | Recommended |
-| P06 | Phone / Launch | Correct number and channel readiness for the demo account | Required | Recommended |
-| P07 | Live test | Real test call in progress or completed | Required | Optional |
-| P08 | Inbox / continuation | Real labeled test SMS or email continuation | Required | Recommended |
-| P09 | Outcome / Improve | Transcript, outcome, follow-up, approval, or handoff ready for review | Required | Recommended |
-| P10 | Billing boundary | Honest Free Builder versus paid-live state | Required | Optional |
+| ID  | Surface              | Required state                                                              | Desktop  | Mobile      |
+| --- | -------------------- | --------------------------------------------------------------------------- | -------- | ----------- |
+| P01 | Home                 | Current public promise and CTA                                              | Required | Required    |
+| P02 | Pricing              | Free Builder, plans from $19/month, and actual paid-activation availability | Required | Required    |
+| P03 | Create / Build       | Blank-to-Bot creation path                                                  | Required | Required    |
+| P04 | Training             | Real labeled demo facts, rules, voice, and behavior                         | Required | Recommended |
+| P05 | Voice selection      | Current ten-voice OpenAI roster and saved choice                            | Required | Recommended |
+| P06 | Phone / Launch       | Correct number and channel readiness for the demo account                   | Required | Recommended |
+| P07 | Live test            | Real test call in progress or completed                                     | Required | Optional    |
+| P08 | Inbox / continuation | Real labeled test SMS or email continuation                                 | Required | Recommended |
+| P09 | Outcome / Improve    | Transcript, outcome, follow-up, approval, or handoff ready for review       | Required | Recommended |
+| P10 | Billing boundary     | Honest Free Builder versus paid-live state                                  | Required | Optional    |
 
 Do not capture secrets, full personal phone numbers, private email addresses, access tokens, provider identifiers, payment data, or real customer data.
 
@@ -143,6 +179,6 @@ Notes:
 
 ## Current release instruction
 
-Use the accepted September contact sheet for internal exact-worktree QA and source-current visual comparison only. Use the static campaign art as campaign art, the configured-example card as an example, and the motion cuts as cinematic campaign concepts.
+Use the latest passing, hash-matched local capture for internal UI review only. The September 1 contact sheet remains historical reference. Use the static campaign art as campaign art, the configured-example card as an example, and the motion cuts as cinematic campaign concepts.
 
 Until a completed deployed-production record says **CERTIFIED**, do not market any of those assets as current production-screen proof. Google Drive delivery, visual QA, rendering, captions, hashes, or a clean local capture do not substitute for exact-SHA deployment and authenticated production evidence. Provenance beats polish.

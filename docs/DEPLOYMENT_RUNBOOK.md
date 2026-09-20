@@ -1,21 +1,23 @@
 # BotBound Deployment Runbook
 
 Status: **Canonical production runbook**  
-Last reconciled: **September 13, 2026**
+Last reconciled: **September 19, 2026**
 
 BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/botbound` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
+
+Production telephone calls also require the persistent Node 22 voice worker in `deploy/voice-worker/`. Vercel owns the public application and signed callback entry; the worker owns the call's sideband connection, tools, transcript and settlement. Both services must run the same reviewed release. A healthy website alone does not certify telephone service.
 
 Only the canonical `revaluate/botbound` project may own the GitHub integration, production environment, and `botbound.me` alias. Never copy production credentials into a duplicate Vercel project to bypass a failed gate.
 
 ## Current launch posture
 
-BotBound is approved for a controlled design-partner pilot, not broad self-serve acquisition. Paid media, broad invitations, cold outbound, and regulated-data onboarding remain closed until one real checkout lifecycle, one consented non-demo inbound call, support handling, repeat usage, and contribution margin are verified.
+The next release target is a controlled design-partner pilot. This runbook is not launch approval: admission remains closed until the exact release, funded providers, persistent voice worker and founder workflow proof pass the gates below. Paid media, broad invitations, cold outbound, and regulated-data onboarding remain closed until one real checkout lifecycle, one consented non-demo inbound call, support handling, repeat usage, and contribution margin are verified.
 
 The customer operating loop is:
 
 > **Build → Train → Launch → Improve**
 
-A Bot must pass a private browser test before paid telephone-number wiring.
+A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid web account can prepare the Bot's managed number and mailbox automatically within plan capacity. That background setup is not proof that its knowledge or customer workflow is ready.
 
 ## Non-negotiable release invariants
 
@@ -26,6 +28,7 @@ A Bot must pass a private browser test before paid telephone-number wiring.
 5. Preview credentials and data must be isolated from production.
 6. Validation evidence must match the exact commit that reaches `main`; a green stale deployment is not evidence.
 7. A deployment is not released until the canonical alias, health response, served source SHA, and runtime-error stream are verified.
+8. Telephone readiness includes the persistent worker, matched duration settings, verified number ownership, and a call lasting beyond five minutes. A Vercel timeout increase cannot replace this proof.
 
 ## Canonical release sequence
 
@@ -35,11 +38,14 @@ A Bot must pass a private browser test before paid telephone-number wiring.
 2. Create a focused branch from that exact SHA.
 3. Run targeted checks while iterating.
 4. Run `npm run verify:full` for auth, billing, compliance, CSP, provider, data-access, migration, or shared-runtime changes.
+   Voice worker changes also require `npm run build:voice-worker` and a container build/runtime smoke on a Docker-capable host. The web build does not compile or deploy the worker.
 5. Push the final exact head and require its Vercel preview to reach `READY`.
 6. Resolve every review thread.
 7. Reconcile the branch with the latest `main` and repeat the exact-head preview if `main` moved.
 
-### 2. Run the external provider preflight
+### 2. Inspect infrastructure and providers
+
+Confirm account access, current invoices/credits, a suitable always-on worker host, and read-only database health (`npm run db:health`) before scheduling the release. See the founder sequence in [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md). An absent host, blocked deployment account, unknown required credit balance or failed recharge remains unresolved, even when source checks pass.
 
 From a secure operator environment containing the canonical production configuration, run:
 
@@ -48,9 +54,11 @@ WIRELINE_RECONCILE_STRIPE_PORTAL=true \
   node scripts/run-release-provider-preflight.mjs
 ```
 
-This command is read-only. It verifies provider readiness, the managed Stripe Customer Portal, Stripe webhook coverage, and the Resend negative-delivery webhook contract. It must not contain or invoke an `--apply` path.
+This command is read-only. It verifies provider readiness, authenticated worker readiness, the managed Stripe Customer Portal, Stripe webhook coverage, and the Resend negative-delivery webhook contract. It must not contain or invoke an `--apply` path. Worker verification expects `WIRELINE_EXPECTED_SOURCE_REVISION`, otherwise `VERCEL_GIT_COMMIT_SHA`, otherwise the local Git HEAD; set the expected exact release explicitly when those environments differ.
 
 When provider drift is confirmed, use the owning explicit repair command, inspect the result, rerun the read-only preflight, and preserve redacted evidence. Never embed provider mutation in Vercel build, Preview, or an automatic retry loop.
+
+On a first worker deployment, its readiness check is expected to remain blocked until step 4. Record that blocker explicitly; rerun the complete preflight after worker deployment and before enabling telephone admission.
 
 ### 3. Promote the exact schema journal
 
@@ -67,12 +75,32 @@ The promotion command rejects a SHA mismatch, a dirty checkout, a noncanonical S
 
 Never use `db:push` against shared or production data. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md).
 
-### 4. Merge and deploy
+### 4. Prepare the persistent voice worker
 
-1. Merge only the reviewed exact head into `main` without force.
-2. Follow the resulting exact `main` SHA into a new **production-target** Vercel deployment.
+Use the exact reviewed release commit, after its preview and schema gates pass. Build an immutable image from that checkout:
+
+```bash
+docker build -f deploy/voice-worker/Dockerfile \
+  --build-arg VOICE_WORKER_SOURCE_REVISION=<40-character-release-sha> \
+  -t botbound-voice-worker:<release-sha> .
+```
+
+Build only from the clean exact release checkout; the revision argument labels the image and does not verify the source by itself. Keep the source SHA, image digest, host revision and redacted verification results together in the release record. Tags alone are mutable and do not establish provenance. The worker's source, credentials and schema must match the web release being promoted.
+
+- Deploy an always-on Node 22 process with HTTPS termination and sufficient WebSocket lifetime. Do not use a Vercel function or scale-to-zero host for this process.
+- Configure the separate worker origin and independent service secret, canonical `APP_URL`, production database, OpenAI SIP credentials and required Bot tool credentials as described in [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md#deployment-and-shutdown). Keep these in the host's server-side secret store.
+- Match `OPENAI_SIP_MAX_CALL_SECONDS=3600` on web and worker when enabling one-hour calls. A retained explicit value of `300` still limits calls to five minutes.
+- Verify startup, public `GET /healthz`, authenticated `GET /readyz`, rejection without the service credential, capacity handling, and the authenticated drain procedure. The provider preflight verifies worker revision, tenant-role database access, maximum call duration and keyed agreement on the OpenAI project/webhook and internal signing settings. This does not verify all optional tool credentials, provider credit, correct carrier routing or successful calls.
+- For replacement, bring up the new verified instance, remove the old instance from admission traffic and drain it. Wait for both active work and pending handlers to reach zero before stopping it. Allow 65 minutes at the default call duration, or complete pre-drain before the host's shorter termination window begins.
+- Verify the complete provider preflight again. Keep checkout and traffic admission closed while any gate remains unresolved.
+
+### 5. Merge and deploy the web application
+
+1. Fast-forward `main` to the reviewed, certified head without force, preserving the exact SHA verified on the worker. Do not create a merge or squash commit after certification. If `main` advances or integration changes the source SHA, certify that new head and rebuild and verify its worker before promotion.
+2. Follow that same exact `main` SHA into a new **production-target** Vercel deployment.
 3. Do not promote a Preview artifact by changing its alias. Preview and Production have different environment and schema guarantees.
 4. Wait for the exact deployment to reach `READY` and own `botbound.me`.
+5. Confirm this production deployment uses the verified worker origin, matching service secret and duration setting. Keep the previous worker available until all its calls drain; a web deployment must not interrupt an active call.
 
 For an environment-only redeploy, select the intended source deployment and exact SHA explicitly:
 
@@ -86,7 +114,7 @@ VERCEL_TOKEN=... \
 
 The redeploy command creates a candidate; it does not declare the candidate live. The waiter must certify the same deployment ID, exact SHA, canonical project, `main` ref, production target, alias ownership, and served source header.
 
-### 5. Verify production
+### 6. Verify production and the first workflow
 
 Verify all of the following before declaring the release complete:
 
@@ -103,6 +131,10 @@ Then inspect:
 - database journal and schema effects;
 - read-only Stripe, Resend, AgentMail, OpenAI, and Twilio readiness applicable to the change;
 - billing, voice, email, and OAuth fail-closed behavior.
+
+Before admitting the pilot, complete a clean-account build, train, private rehearsal, controlled billing lifecycle, phone activation and consented inbound call. Prove a call beyond five minutes, late tool use, owner handoff, transcript/outcome and duration-based settlement. Exercise worker failure/continuity and rolling drain. Use the live approved workflow for outbound/SMS proof only after its specific consent and carrier gates pass. Record the exact source and provider evidence; seeded founder/demo activity is not customer traction.
+
+Only then recapture production marketing proof, review its final exports and open the documented pilot cohort. Local screenshots and a green build are preparation evidence, not a substitute for this sequence.
 
 ## Vercel build contract
 
@@ -156,9 +188,13 @@ Repository branch protection and required checks should be enabled as soon as th
 
 OpenAI Realtime is the managed browser and telephone voice runtime. Twilio owns customer numbers, PSTN transport, and SMS. Vapi and xAI SIP are retired from the production runtime.
 
+The persistent worker is required for production SIP admission. Full business calls default to 60 minutes; private rehearsals and message-taking retain their documented shorter limits. Check both deployed duration settings and an actual long call before advertising the longer runtime as available.
+
 No hardcoded founder showcase number owns a live route. Inbound PSTN or SIP must resolve through a current tenant-owned `wireline_phone_numbers` assignment. The former founder PSTN canary and its scheduled job are retired; any future reprovisioning exercise must introduce a new, explicitly reviewed probe rather than silently reactivating launch-era numbers.
 
 A full carrier launch still requires direct Twilio control-plane verification of Trust Hub, A2P, CNAM, STIR/SHAKEN, geo permissions, usage triggers, callbacks, and number inventory. Application logs or database rows are not substitutes for those console controls.
+
+Reconcile existing numbers read-only against tenant, Bot, plan, account environment and recent usage before cutover or cost cleanup. A seeded Bot or founder/demo assignment does not make a line disposable. Preserve the old routing and ownership evidence, change one verified low-risk line first, and prove its approved workflow before moving the rest. Never release or reroute the inventory merely because the legacy provider appears in its callback URL.
 
 ### Stripe
 
@@ -206,5 +242,7 @@ To close paid checkout, set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, redeplo
 ## Rollback and incident response
 
 Determine whether the incident is code, environment, schema, or provider state before acting. A Vercel rollback does not reverse database migrations or external-provider mutations.
+
+For a voice incident, stop new admission to the affected worker and preserve active calls where possible. Roll web and worker back to a compatible reviewed pair; do not terminate the old worker until it drains. Inspect pending claims and durable post-call recovery before retrying uncertain provider actions. A healthy replacement does not recover the media or transcript of a crashed call.
 
 Prefer backward-compatible, append-only schema changes. After rollback, verify the production alias, health endpoint, served source SHA, affected route, provider behavior, and runtime-error stream. Record evidence and the forward fix in [INCIDENT_RESPONSE.md](./INCIDENT_RESPONSE.md).

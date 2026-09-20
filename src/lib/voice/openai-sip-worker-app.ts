@@ -6,8 +6,13 @@ import {
   verifyVoiceWorkerServiceAuth,
 } from "./openai-sip-worker-dispatch";
 import { OPENAI_SIP_WEBHOOK_PATH } from "./openai-sip-config";
+import type { VoiceWorkerReadiness } from "./openai-sip-worker-readiness";
 
-export function createVoiceWorkerApp(router: Router, maxCalls: number) {
+export function createVoiceWorkerApp(
+  router: Router,
+  maxCalls: number,
+  readReadiness?: () => Promise<VoiceWorkerReadiness>,
+) {
   if (!Number.isInteger(maxCalls) || maxCalls < 1 || maxCalls > 200) {
     throw new Error("WIRELINE_VOICE_WORKER_MAX_CALLS must be an integer between 1 and 200.");
   }
@@ -34,6 +39,21 @@ export function createVoiceWorkerApp(router: Router, maxCalls: number) {
       return;
     }
     next();
+  });
+  // Read-only deployment proof is private; public liveness never exposes metadata.
+  app.get("/readyz", async (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    if (draining || !readReadiness) {
+      res.status(503).json({ ready: false });
+      return;
+    }
+    try {
+      const readiness = await readReadiness();
+      if (draining) res.status(503).json({ ready: false });
+      else res.json(readiness);
+    } catch {
+      res.status(503).json({ ready: false });
+    }
   });
   // Operators call this before removing an instance from the load balancer.
   // Existing calls keep their sideband connection while new deliveries retry.

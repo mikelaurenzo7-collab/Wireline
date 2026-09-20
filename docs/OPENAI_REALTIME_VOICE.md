@@ -1,7 +1,7 @@
 # OpenAI Realtime Voice — Browser and Twilio PSTN
 
 **Status:** Canonical production voice policy  
-**Updated:** September 2, 2026
+**Updated:** September 19, 2026
 
 BotBound uses one live-conversation runtime: OpenAI Realtime on
 `gpt-realtime-2.1`. This applies to customer Bots, founder-owned internal Bot
@@ -157,10 +157,15 @@ A Vercel function, scale-to-zero service, or host that kills WebSocket processes
 after a short request deadline is not suitable.
 
 - Build: `npm run build:voice-worker`; run: `npm run start:voice-worker`.
-- Container: `docker build -f deploy/voice-worker/Dockerfile -t botbound-voice-worker .`.
+- Container: `docker build -f deploy/voice-worker/Dockerfile --build-arg VOICE_WORKER_SOURCE_REVISION=<40-character-release-sha> -t botbound-voice-worker:<release-sha> .`.
   The Docker context includes only package manifests, reviewed source and the
   Dockerfile; environment files and credentials are excluded. Container build
   and runtime smoke must be performed on a Docker-capable host before deployment.
+- Build only from the clean reviewed checkout and record the image digest. The
+  required build argument populates `WIRELINE_VOICE_WORKER_SOURCE_REVISION` and
+  the image revision label. Non-container deployments must set that worker-only
+  value explicitly. A supplied SHA labels the source; it does not prove the
+  checkout or image is authentic by itself.
 - Use a separate HTTPS worker origin with TLS termination. Set
   `WIRELINE_VOICE_WORKER_URL` and a random, independent
   `WIRELINE_VOICE_WORKER_SECRET` of at least 32 bytes on Vercel. Put the same
@@ -177,9 +182,22 @@ after a short request deadline is not suitable.
   supporting background tasks can conservatively occupy a slot. Tune only after
   concurrency/load testing and confirmation of provider/project limits.
 - Startup validates secrets/configuration and performs a read-only database
-  connectivity check before listening. `GET /healthz` returns only a readiness
+  tenant-role check before listening. `GET /healthz` returns only a readiness
   boolean and turns 503 during drain. This is process/admission readiness, not a
   continuous probe of provider balances or downstream health.
+- Authenticated `GET /readyz` uses the same service header as `/drain`. It returns
+  the readiness protocol, source revision, maximum call duration and a keyed
+  fingerprint of OpenAI project/webhook and internal JWT settings only after a
+  read-only database transaction verifies tenant-role access. It returns 503
+  during drain or database failure. The public health route exposes none of this
+  metadata. Optional Bot tool credentials and live provider credit still need
+  their own checks.
+- `node --import tsx scripts/check-voice-worker-readiness.mts` is the isolated
+  read-only deployment probe; `npm run vendor:readiness` includes it as a required
+  gate. Set `WIRELINE_EXPECTED_SOURCE_REVISION` to the exact release SHA, or use
+  its fallback of `VERCEL_GIT_COMMIT_SHA` then local Git HEAD. Unknown source,
+  unavailable worker, authentication failure, version/configuration mismatch,
+  drain and database failure all block readiness without exposing secrets.
 - Before a rolling deployment, send authenticated `POST /drain` with the
   `x-botbound-voice-worker-key` header. Remove the instance from admission traffic;
   authenticated `GET /drain` reports pending handlers and active background work.

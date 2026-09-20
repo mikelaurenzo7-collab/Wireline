@@ -1,6 +1,6 @@
 # BotBound Launch Copy Kit
 
-- Status: working copy reviewed 2026-09-17; publication pending current production and destination checks
+- Status: working copy reviewed 2026-09-19; publication pending current production and destination checks
 - Campaign: The Second Ring
 - Brand line: Put Your Bot on the Line.
 - Primary destination: `https://botbound.me`
@@ -14,6 +14,41 @@ This kit is intentionally free of invented customers, performance metrics, certi
 3. Recheck plan names and prices against `src/lib/plan-catalog.ts` and `/pricing`.
 4. Confirm rights for every image, voice, score, font, and person in the final media.
 5. Run final legal review on disclosure, consent, privacy, call recording, and channel-specific claims.
+
+## First design-partner kit
+
+Start with **one inbound Front Desk Bot and one configured, permitted follow-up**. Outbound acquisition is a separate release: The First Move assets stay held until `outbound_campaign_ready` and the exact destination, audience, copy, and asset pass review.
+
+Use five pieces:
+
+| Piece                  | Existing source                                                                  | Release boundary                                                                                 |
+| ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Founder post           | Section 6 below                                                                  | Replace placeholders; link to working Free Builder                                               |
+| One campaign still     | `../launch-2026-09/exports/social/botbound-hands-full-linkedin-1200x627.png`     | Campaign illustration; review the final crop and paired copy                                     |
+| One product cut        | A newly captured, labeled test call → permitted follow-up → logged outcome       | Pending exact deployed-source evidence; historical films and cinematic art do not fill this slot |
+| One-pager              | `../launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md` and its reviewed PDF | Explain the workflow; verify contact details and current plan availability                       |
+| Setup and support note | Template below                                                                   | Confirm live readiness before inviting real calls                                                |
+
+### Partner setup and support note
+
+**Subject:** Set up your first Front Desk Bot
+
+Hi [first name],
+
+Let's start with one job: answering [business]'s incoming calls and handling [one agreed next step].
+
+1. Build free at `https://botbound.me/signup?plan=free`.
+2. Add your hours, services, common questions, and when the Bot should hand off to you.
+3. Rehearse privately. We'll check the answers and agree which follow-ups it may send.
+4. Before real calls, confirm activation is available, the number and routing are ready, and a labeled test call produces the expected follow-up and Inbox record.
+
+Free setup can continue while live activation is unavailable. I'll confirm the live test result before we direct customer calls to the Bot.
+
+For help, reply or email `support@botbound.me` with the Bot name, what you expected, and the time of the issue. Do not send passwords, payment details, or private customer conversations. If a live answer or follow-up fails, keep using your existing contact path while we investigate.
+
+[Founder name]
+
+This is a draft to send after personal review, not a promise that onboarding, routing, or support has already been completed. Confirm the support inbox works before using the note.
 
 ## 1. Launch thesis
 
@@ -49,15 +84,15 @@ The approved BotBound operator is not a generic chatbot mascot. It is a friendly
 
 Use the highest layer that fits the audience's awareness. Do not stack every layer into one placement.
 
-| Layer | Job | Approved message | Where it belongs |
-| --- | --- | --- | --- |
-| Brand | Create memory | **Put Your Bot on the Line.** | End frames, homepage hero, lockups, OOH |
-| Category | Explain the product | **Your Bot for calls, texts, and email.** | Homepage, press, deck, profiles |
-| Campaign | Create tension | **You can't answer every call. Your Bot can.** | Hero film, paid social, OOH |
-| Situation | Make it personal | **Busy doing the work? Your Bot can answer.** | Vertical creative, role ads, email |
-| Proof | Show the finished job | **Answers the call. Books the work. Sends the follow-up.** | Product cutdowns, retargeting, demo |
-| Control | Reduce risk | **Your line. Your rules.** | Pricing, trust, onboarding |
-| Action | Convert intent | **Build free. Put it on a number when it is ready.** | Homepage, signup, launch email |
+| Layer     | Job                   | Approved message                                           | Where it belongs                        |
+| --------- | --------------------- | ---------------------------------------------------------- | --------------------------------------- |
+| Brand     | Create memory         | **Put Your Bot on the Line.**                              | End frames, homepage hero, lockups, OOH |
+| Category  | Explain the product   | **Your Bot for calls, texts, and email.**                  | Homepage, press, deck, profiles         |
+| Campaign  | Create tension        | **You can't answer every call. Your Bot can.**             | Hero film, paid social, OOH             |
+| Situation | Make it personal      | **Busy doing the work? Your Bot can answer.**              | Vertical creative, role ads, email      |
+| Proof     | Show the finished job | **Answers the call. Books the work. Sends the follow-up.** | Product cutdowns, retargeting, demo     |
+| Control   | Reduce risk           | **Your line. Your rules.**                                 | Pricing, trust, onboarding              |
+| Action    | Convert intent        | **Build free. Put it on a number when it is ready.**       | Homepage, signup, launch email          |
 
 ### Product language spine
 
@@ -80,10 +115,12 @@ Campaign promises still require the current availability and context checks abov
 - Put Your Bot on the Line.
 - Your Bot for calls, texts, and email.
 - You can't answer every call. Your Bot can.
-- The call still gets answered.
+- Give the call a next step.
 - Your line. Your rules.
 
 ### Tier 2: proof-led
+
+Use these lines only beside a demonstrated, labeled test result or a clearly labeled configured example. Booking and follow-up are capabilities under the Bot's permissions and available tools, not guaranteed outcomes.
 
 - Answers the call. Books the work. Sends the follow-up.
 - Your Bot. One conversation across calls, texts, and email.
@@ -276,7 +313,7 @@ Put Your Bot on the Line.<br>
 1. Put Your Bot on the Line.
 2. The phone rang. Your Bot answered.
 3. Meet BotBound, your Bot for the line
-4. Your hands are full. The call still gets answered.
+4. Your hands are full. Give the call a next step.
 5. The Second Ring is here.
 
 ### Preheader options
@@ -382,7 +419,7 @@ Answered. Booked. Texted. Logged. Put Your Bot on the Line.
 
 **Primary caption**
 
-The call still gets answered. Your Bot can take the line, handle the next step, and keep the outcome. Build free at `BotBound.me`.
+Give the call a next step. Your Bot can take the line, handle the next step, and keep the outcome. Build free at `BotBound.me`.
 
 **Story overlay sequence**
 
@@ -430,7 +467,7 @@ Put Your Bot on the Line.<br>
 
 POV: the phone rings at the exact moment you cannot reach it.
 
-The call still gets answered.
+Give the call a next step.
 
 Build free at `BotBound.me`.
 
@@ -507,6 +544,8 @@ Footer: BOTBOUND.ME
 
 ### Booking proof
 
+Only pair this with a real labeled test booking or a visibly labeled configured example; it is not a general campaign promise.
+
 > THE CALL CAME IN.<br>
 > THE JOB GOT BOOKED.
 
@@ -523,21 +562,21 @@ Footer: BOTBOUND.ME
 
 ## 13. CTA matrix
 
-| Intent | CTA | Destination | Use | Supporting line |
-| --- | --- | --- | --- | --- |
-| Awareness | **WATCH THE SECOND RING** | Approved film page or hosted video | Launch day hero, press, YouTube | See what happens on the second ring. |
-| Curiosity | **EXPLORE BOTS** | `/showcase` | Homepage, product education, retargeting | Find a role, then build and hear your own Bot privately. |
-| Private rehearsal | **BUILD AND TEST FREE** | `/signup?plan=free` | Voice education, trust, product proof | Create a free account to hear your Bot privately. |
-| Exploration | **SEE WHAT A BOT CAN DO** | `/features` | Press, deck, organic social | Calls, texts, email, tools, and outcomes. |
-| High intent | **BUILD YOUR BOT** | `/signup?plan=free` | Homepage, film end card, email | Build free. Put it on a number when it is ready. |
-| Low-friction start | **START FREE** | `/signup?plan=free` | Paid social, mobile, pricing | One private draft Bot and simulation. |
-| Role-led | **BUILD THIS ROLE** | `/signup?plan=free&template=[template-key]` | Role cards, vertical campaigns | Start with the job. Rewrite every rule. |
-| Pricing | **SEE PRICING** | `/pricing` | Email footer, comparison, FAQ | Free Builder, then live paid plans. |
-| Starter intent | **BUILD FOR STARTER** | `/signup?plan=starter` | Pricing while activation is unavailable | Free setup; Starter is $19/month when activation is available. |
-| Starter Plus intent | **BUILD FOR STARTER PLUS** | `/signup?plan=starter-plus` | Pricing while activation is unavailable | Free setup; Starter Plus is $39/month when activation is available. |
-| Pro intent | **BUILD FOR PRO** | `/signup?plan=pro` | Pricing while activation is unavailable | Free setup; Pro is $79/month when activation is available. |
-| Trust | **SEE HOW CONTROL WORKS** | `/security` | Pricing, sales follow-up | Your line. Your rules. |
-| Founder contact | **TALK THROUGH THE JOB** | `/contact` | High-consideration or complex use case | Bring one workflow worth fixing. |
+| Intent              | CTA                       | Destination                                 | Use                                      | Supporting line                                                     |
+| ------------------- | ------------------------- | ------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| Awareness           | **WATCH THE SECOND RING** | Approved film page or hosted video          | Launch day hero, press, YouTube          | See what happens on the second ring.                                |
+| Curiosity           | **EXPLORE BOTS**          | `/showcase`                                 | Homepage, product education, retargeting | Find a role, then build and hear your own Bot privately.            |
+| Private rehearsal   | **BUILD AND TEST FREE**   | `/signup?plan=free`                         | Voice education, trust, product proof    | Create a free account to hear your Bot privately.                   |
+| Exploration         | **SEE WHAT A BOT CAN DO** | `/features`                                 | Press, deck, organic social              | Calls, texts, email, tools, and outcomes.                           |
+| High intent         | **BUILD YOUR BOT**        | `/signup?plan=free`                         | Homepage, film end card, email           | Build free. Put it on a number when it is ready.                    |
+| Low-friction start  | **START FREE**            | `/signup?plan=free`                         | Paid social, mobile, pricing             | One private draft Bot and simulation.                               |
+| Role-led            | **BUILD THIS ROLE**       | `/signup?plan=free&template=[template-key]` | Role cards, vertical campaigns           | Start with the job. Rewrite every rule.                             |
+| Pricing             | **SEE PRICING**           | `/pricing`                                  | Email footer, comparison, FAQ            | Free Builder, then live paid plans.                                 |
+| Starter intent      | **SET UP STARTER**        | `/signup?plan=starter`                      | Pricing while activation is unavailable  | Free setup; Starter is $19/month when activation is available.      |
+| Starter Plus intent | **SET UP STARTER PLUS**   | `/signup?plan=starter-plus`                 | Pricing while activation is unavailable  | Free setup; Starter Plus is $39/month when activation is available. |
+| Pro intent          | **SET UP PRO**            | `/signup?plan=pro`                          | Pricing while activation is unavailable  | Free setup; Pro is $79/month when activation is available.          |
+| Trust               | **SEE HOW CONTROL WORKS** | `/security`                                 | Pricing, sales follow-up                 | Your line. Your rules.                                              |
+| Founder contact     | **TALK THROUGH THE JOB**  | `/contact`                                  | High-consideration or complex use case   | Bring one workflow worth fixing.                                    |
 
 ### CTA rules
 
@@ -556,13 +595,13 @@ Footer: BOTBOUND.ME
 
 ### Required parameters
 
-| Parameter | Format | Examples |
-| --- | --- | --- |
-| `utm_source` | lowercase platform or partner | `linkedin`, `instagram`, `x`, `youtube`, `email`, `partner_name`, `ooh` |
-| `utm_medium` | channel type | `organic_social`, `paid_social`, `video`, `email`, `partner`, `ooh`, `pr` |
-| `utm_campaign` | brand + initiative + concept + date | `bb_launch_second_ring_202608` |
-| `utm_content` | format + length + concept + variant | `video_30s_hands_full_v1`, `still_square_auto_v1`, `email_founder_v1` |
-| `utm_term` | optional audience or paid keyword | `small_business_owner`, `front_desk`, `appointment_setter` |
+| Parameter      | Format                              | Examples                                                                  |
+| -------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| `utm_source`   | lowercase platform or partner       | `linkedin`, `instagram`, `x`, `youtube`, `email`, `partner_name`, `ooh`   |
+| `utm_medium`   | channel type                        | `organic_social`, `paid_social`, `video`, `email`, `partner`, `ooh`, `pr` |
+| `utm_campaign` | brand + initiative + concept + date | `bb_launch_second_ring_202608`                                            |
+| `utm_content`  | format + length + concept + variant | `video_30s_hands_full_v1`, `still_square_auto_v1`, `email_founder_v1`     |
+| `utm_term`     | optional audience or paid keyword   | `small_business_owner`, `front_desk`, `appointment_setter`                |
 
 ### Naming rules
 
@@ -690,19 +729,19 @@ The sequence moves from tension to character, then from character to product pro
 
 These repository sources are the basis for the facts in this kit. If a source changes, recertify the corresponding copy.
 
-| Fact used in this kit | Current repository source |
-| --- | --- |
-| Brand name, line, product promise, customer-facing Bot noun, and channel labels | `src/lib/bot-product.ts` |
-| Product voice, proof loop, role framing, shared context, and trust language | `src/lib/product-copy.ts` |
-| Current homepage hero, Free Builder action, role cards, pricing summaries, and trust close | `src/components/marketing/WireAgentLanding.tsx` |
-| Current page metadata and production origin | `src/pages/LandingPage.tsx`, `src/lib/brand.ts` |
-| Role exploration and account-required private rehearsal boundary | `src/pages/Showcase.tsx`, `README.md` |
-| Feature claims for shared memory, scheduling, handoff, approvals, training, and outcome records | `src/pages/Features.tsx` |
-| Free Builder, paid plan capacities, included minutes and numbers, annual prices, and prepaid usage controls | `src/lib/plan-catalog.ts` |
-| Public pricing presentation, current CTA paths, channel explanations, FAQ language, and `$19/month` Starter entry point | `src/pages/Pricing.tsx` |
-| Approved robot, hand, receiver, wordmark, typography, palette, photography, motion, and identity governance | `brand-work/BOTBOUND-BRAND-GUIDE.md` |
-| The Second Ring premise, film script, cutdowns, approved campaign lines, and delivery standard | `brand-work/SECOND-RING-CAMPAIGN.md` |
-| Current identity, campaign stills, placements, Remotion outputs, and regeneration paths | `brand-work/README.md` |
+| Fact used in this kit                                                                                                   | Current repository source                       |
+| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Brand name, line, product promise, customer-facing Bot noun, and channel labels                                         | `src/lib/bot-product.ts`                        |
+| Product voice, proof loop, role framing, shared context, and trust language                                             | `src/lib/product-copy.ts`                       |
+| Current homepage hero, Free Builder action, role cards, pricing summaries, and trust close                              | `src/components/marketing/WireAgentLanding.tsx` |
+| Current page metadata and production origin                                                                             | `src/pages/LandingPage.tsx`, `src/lib/brand.ts` |
+| Role exploration and account-required private rehearsal boundary                                                        | `src/pages/Showcase.tsx`, `README.md`           |
+| Feature claims for shared memory, scheduling, handoff, approvals, training, and outcome records                         | `src/pages/Features.tsx`                        |
+| Free Builder, paid plan capacities, included minutes and numbers, annual prices, and prepaid usage controls             | `src/lib/plan-catalog.ts`                       |
+| Public pricing presentation, current CTA paths, channel explanations, FAQ language, and `$19/month` Starter entry point | `src/pages/Pricing.tsx`                         |
+| Approved robot, hand, receiver, wordmark, typography, palette, photography, motion, and identity governance             | `brand-work/BOTBOUND-BRAND-GUIDE.md`            |
+| The Second Ring premise, film script, cutdowns, approved campaign lines, and delivery standard                          | `brand-work/SECOND-RING-CAMPAIGN.md`            |
+| Current identity, campaign stills, placements, Remotion outputs, and regeneration paths                                 | `brand-work/README.md`                          |
 
 ### Pricing facts used sparingly
 

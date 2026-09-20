@@ -11,7 +11,7 @@ The public operating loop is **Build -> Train -> Launch -> Improve**. After crea
 
 ## Product surface
 
-- **Web/API - live:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime.
+- **Web/API - core product:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime. Availability and pilot admission depend on the release gates in `docs/DEPLOYMENT_RUNBOOK.md`.
 - **BotBound Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks. Technical package paths retain the `wireline` namespace for compatibility.
 - **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first Bot, privately rehearse, then continue in BotBound.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
@@ -26,6 +26,7 @@ Every **active paid Bot gets a dedicated production number and BotBound-managed 
 - **Design:** the **BotBound Letterpress design system**, generated from shared Aurora tokens for web, browser, iOS, and Android. Technical token filenames retain the `wireline` namespace.
 - **Managed reasoning:** OpenAI GPT-5.6 Terra primary with Vercel AI Gateway and Gemini continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
 - **Voice/PSTN:** OpenAI Realtime owns authenticated Studio/ChatGPT rehearsals, founder-owned internal Bot profiles, and every customer phone conversation. Public voice previews are retired. Twilio owns carrier transport, numbers, SIP, and SMS. There is no alternate call runtime.
+- **Persistent phone worker:** production SIP calls require a separate always-on Node 22 service built from `src/entrypoints/voice-worker.ts`. Vercel forwards verified webhooks; the worker maintains calls for up to 60 minutes and drains before replacement. The web deployment alone does not start this service. See `deploy/voice-worker/` and `docs/OPENAI_REALTIME_VOICE.md`.
 - **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
 - **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
 - **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.
@@ -60,6 +61,8 @@ node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
 ```
 
 Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.
+
+Phone-worker releases additionally require `npm run build:voice-worker`, container/runtime verification and the two-service release sequence in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md). Founder funding, workflow proof and publication steps live in [docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md).
 
 ## Repository map
 

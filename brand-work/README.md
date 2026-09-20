@@ -1,75 +1,58 @@
-# BotBound Brand and Launch Asset Index
+# BotBound Brand and Launch Assets
 
-Approved production direction: the friendly white/platinum robot visibly gripping a violet receiver, paired with a complete Inter Tight ExtraBold `BotBound` wordmark.
+Start with [CURRENT-ASSET-INDEX.md](CURRENT-ASSET-INDEX.md) for campaign sources, recorded Drive deliveries, and evidence boundaries. The product identity is the white/platinum operator holding a violet receiver, with the complete `BotBound` wordmark.
 
-Current Drive links, launch revision, and complete delivery inventory: `CURRENT-ASSET-INDEX.md`.
+## First customer kit
 
-## Identity
+Use [the launch copy kit](gtm/BOTBOUND-LAUNCH-COPY-KIT.md#first-design-partner-kit): one founder post, one campaign still, one exact-source product cut, one one-pager, and a short setup/support note. The first pilot is inbound Front Desk plus a configured, permitted follow-up. A missing production-proof cut stays pending.
 
-- `selected/botbound-app-icon.png`
-- `selected/botbound-operator-primary.png`
-- `exports/identity/botbound-lockup-obsidian-1600x480.png`
-- `exports/identity/botbound-lockup-platinum-1600x480.png`
-- `exports/identity/botbound-lockup-transparent-1600x480.png`
+- Inbound creative: [The Second Ring](launch-2026-09/README.md)
+- Outbound creative and its separate hold: [The First Move](launch-2026-09-outbound/README.md)
+- Public UI capture instructions: [Current Product Proof](launch-2026-09/CURRENT_PRODUCT_PROOF.md)
+- Current operational status: [Founder Launch Command Center](../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md)
 
-## Campaign source stills
+## Source and delivery
 
-- `commercial/hands-full-opening-2560x1440.jpg`
-- `launch-stills/botbound-second-ring-bakery-hero-2560x1440.jpg`
-- `launch-stills/botbound-hands-full-auto-social-1600-square.jpg`
-- `launch-stills/botbound-second-ring-florist-story-1440x2560.jpg`
+Identity sources are in `selected/`, `public/brand/` at the repository root, and the release's `exports/brand/`. Use the dimensional operator for hero art; keep both B glyphs complete. Brand rules: [BOTBOUND-BRAND-GUIDE.md](BOTBOUND-BRAND-GUIDE.md).
 
-Full-resolution PNG originals and finished delivery plates live in the certified Google Drive launch tree linked from `CURRENT-ASSET-INDEX.md`.
+`commercial/`, `launch-stills/`, and `exports/` preserve earlier campaign sources and revision 3 placements. The August 20 captures in `exports/product-proof/` and [design-qa.md](../design-qa.md) are historical; do not cite them as current product proof.
 
-## Finished placements
+The Drive links in the current index identify recorded deliveries. Local source fixes and regenerated files do not update or recertify those remote copies automatically.
 
-- `exports/social/botbound-launch-linkedin-1200x627.png`
-- `exports/social/botbound-launch-instagram-1080-square.png`
-- `exports/social/botbound-launch-story-1080x1920.png`
-- `exports/ooh/botbound-second-ring-billboard-4k.png`
-- `exports/email/botbound-launch-email-header-1200x400.png`
-- `exports/commercial/botbound-commercial-endframe-4k.png`
+## Motion
 
-## Guides
+[The film package](../apps/botbound-film/README.md) owns composition recipes and render instructions. Registered compositions are not an inventory of completed exports. The inbound release currently has 6-second vertical, 10-second square, and 15-second vertical campaign cuts under `launch-2026-09/exports/motion/`, with caption sidecars. Review their metadata, picture, audio, and captions together before use.
 
-- `BOTBOUND-BRAND-GUIDE.md`
-- `SECOND-RING-CAMPAIGN.md`
+Local film, logo, and cinematic explorations remain working creative. Illustrative LIVE, BOOKED, waveform, and call-screen elements do not establish real product or customer activity. Do not link to a planned `apps/botbound-film/out/` master until that file exists and has been reviewed.
 
-## Product proof and GTM
+## Public UI capture
 
-- Archived 2026-08-20 browser captures and comparison; not current release evidence: `exports/product-proof/`
-- Founder launch deck, contact sheet, and copy system: `gtm/`
-- Historical revision 3 browser and accessibility record: `../design-qa.md`
+Keep the main app on port 3000. With heavy checks stopped, run each command in its own terminal from the repository root:
 
-Current browser proof remains pending until the production build is recaptured, visually reviewed, and checksummed. Do not publish or cite the archived captures as proof of the current release.
+```powershell
+node scripts/start-botbound-proof-api-stub.mjs
+```
 
-## Motion package and review outputs
+```powershell
+npx vite --config scripts/vite-product-proof.config.ts --host 127.0.0.1 --port 3002 --strictPort
+```
 
-- Remotion source, production notes, render commands, and composition registry: `../apps/botbound-film/`
-- 30-second 4K H.264/AAC master: `../apps/botbound-film/out/botbound-second-ring-30s-4k.mp4`
-- 30-second H.264/AAC review master: `../apps/botbound-film/out/botbound-second-ring-30s-review.mp4`
-- 30-second editorial contact sheet: `../apps/botbound-film/out/qa-30s-contact-sheet.jpg`
-- 15-second horizontal H.264/AAC review: `../apps/botbound-film/out/botbound-second-ring-15s-review.mp4`
-- 15-second horizontal contact sheet: `../apps/botbound-film/out/qa-15s-contact-sheet.jpg`
-- 15-second vertical H.264/AAC review: `../apps/botbound-film/out/botbound-second-ring-15s-vertical-review.mp4`
-- 15-second vertical contact sheet: `../apps/botbound-film/out/qa-15s-vertical-contact-sheet.jpg`
-- 6-second H.264/AAC review proof: `../apps/botbound-film/out/botbound-second-ring-6s-review.mp4`
-- 6-second vertical H.264/AAC review: `../apps/botbound-film/out/botbound-second-ring-6s-vertical-review.mp4`
-- 10-second square H.264/AAC review: `../apps/botbound-film/out/botbound-second-ring-10s-square-review.mp4`
-- JSON, SRT, and WebVTT captions: `../apps/botbound-film/public/captions/`
-- Editorial review frames: `../apps/botbound-film/out/frame-*.jpg`
-- Horizontal and vertical composition QA frames: `../apps/botbound-film/out/qa-*.jpg`
+```powershell
+npm run brand:proof
+```
 
-The files in `apps/botbound-film/out/` are intentionally ignored by Git and delivered through the certified Google Drive launch tree. The checked-in Remotion package recreates them. Broadcast or platform-specific transcodes should be rendered from the registered 4K compositions, then checksummed before release.
+The capture targets port 3002 and uses the simulated API on port 3001. Finish source edits before capture and leave them unchanged until it completes. Review all seven full-size frames and the contact sheet before using the internal UI evidence.
 
-## Integrity
+## Regeneration and integrity
 
-- `DELIVERY-SHA256SUMS-R3.txt` is the immutable 62-file manifest for the certified Drive delivery snapshot. Video and full-resolution entries verify after that package is restored from Drive.
-- `SOURCE-SHA256SUMS.txt` covers the compact, reproducible repository inputs and preserves the archived revision 3 browser proof included with this branch.
-- Paths in both manifests are repository-relative.
+- `npm run assets`: product identity derivatives.
+- `npm run brand:launch`: current inbound static campaign candidates.
+- `npm run brand:proof`: current credential-free public UI capture and contact sheet; see the capture instructions above for the two local services.
+- `node scripts/build-botbound-launch-release-manifest.mjs`: assemble an inbound candidate receipt only after current proof passes.
+- `node scripts/build-botbound-promotional-asset-inventory.mjs`: inventory local roles and file signatures; approval and source currency remain unassessed.
+- `node scripts/refresh-botbound-source-checksums.mjs --index`: hash the staged source package after explicitly staging reviewed files; this preserves unrelated working-tree creative.
+- `node scripts/refresh-botbound-source-checksums.mjs --index --check`: verify those hashes without changing files.
 
-## Regeneration
+The checksum command preserves its existing path list; it does not add or stage files. Its default mode hashes working-tree bytes, so use `--index` for a reviewed commit that excludes film WIP. Stage the refreshed checksum file only after review.
 
-- Product, native, billing, OG, and browser icons: `npm run assets`
-- Launch placements: `node scripts/render-botbound-launch-assets.mjs`
-- Film compositions and render commands: `apps/botbound-film`
+`DELIVERY-SHA256SUMS-R3.txt` preserves the historical 62-file Drive delivery receipt. `SOURCE-SHA256SUMS.txt` covers the compact repository inputs; neither asserts current deployment or publication approval.

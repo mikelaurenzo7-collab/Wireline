@@ -63,11 +63,21 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
     ]) {
       expect(stripeBranch).toContain(code);
     }
-    expect(script).toContain('const PINNED_STRIPE_API_VERSION = "2026-08-26.dahlia"');
-    expect(script).toContain("webhookResult.body?.has_more === true");
-    expect(script).toContain("canonicalWebhooks.length !== 1");
-    expect(script).toContain("webhook.livemode !== true");
-    expect(script).toContain("webhook.api_version !== PINNED_STRIPE_API_VERSION");
+    expect(script).toContain("const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion()");
+    expect(script).toContain("evaluateStripeWebhookReadiness(");
+    expect(script).toContain("const webhookReady = webhookReadiness.ready");
+    const webhookGate = read("scripts/lib/stripe-webhook-readiness.mjs");
+    // Shared behavior is exercised with mismatched versions, duplicate and
+    // incomplete inventories in stripe-webhook-readiness.test.ts.
+    for (const blocker of [
+      "webhook_inventory_unreachable",
+      "webhook_inventory_truncated",
+      "webhook_inventory_completeness_unknown",
+      "canonical_endpoint_count_",
+      "endpoint_not_livemode",
+      "endpoint_api_version_mismatch",
+    ])
+      expect(webhookGate).toContain(blocker);
   });
 });
 

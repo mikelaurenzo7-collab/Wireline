@@ -1,7 +1,7 @@
 import "../lib/load-env";
 import "express-async-errors";
 import { sql } from "drizzle-orm";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import { drainBackgroundWork } from "../lib/background-work";
 import { tryResolveDatabaseConnection } from "../lib/database-connection";
 import { getCanonicalAppUrl } from "../lib/app-url";
@@ -12,12 +12,26 @@ import {
 import { voiceWorkerServiceSecret } from "../lib/voice/openai-sip-worker-config";
 import { createVoiceWorkerApp } from "../lib/voice/openai-sip-worker-app";
 import openAISipRouter from "../routes/openai-sip-routes";
+import {
+  readVoiceWorkerReadiness,
+  voiceWorkerSourceRevision,
+} from "../lib/voice/openai-sip-worker-readiness";
+
+// A synthetic tenant validates RLS role/GUC access without customer reads.
+const checkWorkerDatabase = () =>
+  tenantStore.run("00000000-0000-4000-8000-000000000000", () =>
+    drizzle.transaction(async (tx) => {
+      await tx.execute(sql`SET LOCAL statement_timeout = '5000'`);
+      await tx.execute(sql`SELECT 1`);
+    }),
+  );
 
 async function startVoiceWorker() {
   if (process.env.VERCEL === "1")
     throw new Error("The voice worker requires a persistent Node process.");
   process.env.WIRELINE_VOICE_WORKER = "true";
   voiceWorkerServiceSecret();
+  voiceWorkerSourceRevision();
   if (!tryResolveDatabaseConnection()) throw new Error("Voice worker database is not configured.");
   if (!openAISipConfigured())
     throw new Error("Voice worker OpenAI SIP configuration is incomplete.");
@@ -37,11 +51,13 @@ async function startVoiceWorker() {
   }
   // Read-only startup check. A worker must not advertise readiness before it
   // can reach the shared persistence used for tenant and call ownership.
-  await drizzle.execute(sql`SELECT 1`);
+  await checkWorkerDatabase();
   const maxCalls = Number(process.env.WIRELINE_VOICE_WORKER_MAX_CALLS || 10);
   const port = Number(process.env.PORT || 8080);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid worker PORT.");
-  const { app, beginDrain, drainAdmissions } = createVoiceWorkerApp(openAISipRouter, maxCalls);
+  const { app, beginDrain, drainAdmissions } = createVoiceWorkerApp(openAISipRouter, maxCalls, () =>
+    readVoiceWorkerReadiness(checkWorkerDatabase),
+  );
   const server = app.listen(port, "0.0.0.0", () => {
     log.info("Persistent voice worker ready", {
       port,

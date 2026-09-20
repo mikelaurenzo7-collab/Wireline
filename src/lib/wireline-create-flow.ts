@@ -4,7 +4,8 @@ import { isBotMarkKey, type BotMarkKey } from "./bot-mark";
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
 /** Post-create wizard payload — Train → Test → Launch after create.
- *  Private rehearsal comes before paid number provisioning.
+ *  Private rehearsal comes before customer traffic. Free Builder stays private;
+ *  a paid Bot's managed phone and mailbox can prepare in the background.
  *  "wire" and "channels" survive in the step type only as legacy stored
  *  values. The wizard coerces them on mount; no live path renders them. */
 export const POST_CREATE_WIZARD_KEY = "wireline:post-create-wizard";

@@ -11,6 +11,15 @@ import {
 } from "../lib/bot-mark";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  CREATE_BRIEF_MAX_CHARS,
+  clearCreateBrief,
+  isCreateBriefRecoveryOwner,
+  readCreateBrief,
+  rememberCreateBrief,
+} from "../lib/create-brief-recovery";
+import { extractionPersistedSomething } from "../lib/training-extraction-result";
 import { Button } from "./atoms";
 import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
@@ -48,20 +57,6 @@ function existingGreeting(directives: AgentSetupResponse["directives"]) {
   return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
 }
 
-/** Did /api/train/extract actually persist a useful fact/rule/tone signal? */
-async function extractionPersistedSomething(response: Response): Promise<boolean> {
-  try {
-    const body = (await response.json()) as {
-      readiness?: { rules?: number; facts?: number; tone?: boolean };
-    };
-    const readiness = body?.readiness;
-    if (!readiness) return true;
-    return Boolean(readiness.rules) || Boolean(readiness.facts) || Boolean(readiness.tone);
-  } catch {
-    return true;
-  }
-}
-
 export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
@@ -75,6 +70,8 @@ export default function StudioAgentWorkspacePanel({
     [agentName],
   );
   const { agents } = useAgents();
+  const { user } = useAuth();
+  const activeUserIdRef = useRef(user?.id ?? null);
   const unavailableMarkKeys = useMemo(
     () =>
       new Set<BotMarkKey>(
@@ -90,6 +87,7 @@ export default function StudioAgentWorkspacePanel({
   const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
   const [setupGreeting, setSetupGreeting] = useState("");
   const [setupKnowledge, setSetupKnowledge] = useState("");
+  const [recoveringBrief, setRecoveringBrief] = useState(false);
   const [loadingSetup, setLoadingSetup] = useState(true);
   const [applyingSetup, setApplyingSetup] = useState(false);
   const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
@@ -102,7 +100,11 @@ export default function StudioAgentWorkspacePanel({
 
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId;
-  }, [agentId]);
+    activeUserIdRef.current = user?.id ?? null;
+    return () => {
+      activeUserIdRef.current = null;
+    };
+  }, [agentId, user?.id]);
 
   useEffect(() => {
     if (!agentId) return;
@@ -115,7 +117,9 @@ export default function StudioAgentWorkspacePanel({
     setSetupPersonality("Clear");
     setSetupMarkKey(defaultBotMarkKey(agentId));
     setSetupGreeting("");
-    setSetupKnowledge("");
+    const recovered = user?.id ? readCreateBrief(user.id, agentId) : "";
+    setSetupKnowledge(recovered);
+    setRecoveringBrief(Boolean(recovered));
     setLoadedPersonality(null);
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
@@ -143,7 +147,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey]);
+  }, [agentId, reloadKey, user?.id]);
 
   async function saveManual(
     type: "personality" | "directive",
@@ -161,9 +165,13 @@ export default function StudioAgentWorkspacePanel({
   }
 
   async function applySetup() {
-    if (!agentId) return;
+    if (!agentId || !user?.id) return;
     const setupAgentId = agentId;
-    const isCurrentAgent = () => activeAgentIdRef.current === setupAgentId;
+    const setupUserId = user.id;
+    const isCurrentAgent = () =>
+      activeAgentIdRef.current === setupAgentId &&
+      activeUserIdRef.current === setupUserId &&
+      isCreateBriefRecoveryOwner(setupUserId);
     setApplyingSetup(true);
     setSetupError(null);
     setSetupNotice(null);
@@ -188,9 +196,10 @@ export default function StudioAgentWorkspacePanel({
             : "Bot mark could not be saved.",
         );
       }
+      if (!isCurrentAgent()) return;
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
-
       await saveManual("personality", personalityText);
+      if (!isCurrentAgent()) return;
       if (isCurrentAgent()) setLoadedPersonality(personalityText);
       await saveManual(
         "directive",
@@ -198,6 +207,7 @@ export default function StudioAgentWorkspacePanel({
         GREETING_PREFIX,
       );
       let knowledgeCaptured = true;
+      if (!isCurrentAgent()) return;
       if (knowledgeTrimmed) {
         const knowledgeResponse = await authFetch("/api/train/extract", {
           method: "POST",
@@ -209,6 +219,10 @@ export default function StudioAgentWorkspacePanel({
         }
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
         if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
+        if (knowledgeCaptured && isCurrentAgent()) {
+          clearCreateBrief(setupUserId, setupAgentId, knowledgeTrimmed);
+          setRecoveringBrief(false);
+        }
       }
 
       if (isCurrentAgent()) {
@@ -329,6 +343,7 @@ export default function StudioAgentWorkspacePanel({
                       <button
                         key={option}
                         type="button"
+                        disabled={applyingSetup}
                         aria-pressed={selected}
                         onClick={() => setSetupPersonality(option)}
                         className={`min-h-11 rounded-xl border px-3 py-2.5 text-left transition-colors wl-focus-ring-halo ${
@@ -353,6 +368,7 @@ export default function StudioAgentWorkspacePanel({
                 <span className="text-sm font-semibold text-foreground">Opening greeting</span>
                 <textarea
                   id="setup-greeting"
+                  disabled={applyingSetup}
                   value={setupGreeting}
                   onChange={(event) => setSetupGreeting(event.target.value)}
                   placeholder={defaultGreeting}
@@ -379,14 +395,31 @@ export default function StudioAgentWorkspacePanel({
                 </div>
                 <textarea
                   id="setup-knowledge"
+                  disabled={applyingSetup}
+                  maxLength={recoveringBrief ? CREATE_BRIEF_MAX_CHARS : undefined}
                   value={setupKnowledge}
-                  onChange={(event) => setSetupKnowledge(event.target.value)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setSetupKnowledge(next);
+                    if (recoveringBrief && user?.id) {
+                      if (next.trim()) rememberCreateBrief(user.id, agentId, next);
+                      else {
+                        clearCreateBrief(user.id, agentId);
+                        setRecoveringBrief(false);
+                      }
+                    }
+                  }}
                   className={`${compact ? "min-h-20" : "min-h-24"} w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm leading-6 outline-none focus:border-primary/50`}
                   placeholder="Facts, preferences, policies, calendar rules, and handoffs…"
                 />
               </div>
 
               {setupNotice ? <StatusNotice tone="success">{setupNotice}</StatusNotice> : null}
+              {recoveringBrief ? (
+                <StatusNotice tone="info">
+                  Your starting brief is preserved above. Review it, then save changes to apply it.
+                </StatusNotice>
+              ) : null}
               {setupError ? (
                 <StatusNotice tone="destructive" title="Needs attention">
                   {setupError}

@@ -22,7 +22,7 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 ## Source of truth
 
 - Launch library: https://drive.google.com/drive/folders/1IuBVwWQIFQZbBCeSW5DKLxeBOmSygTuF
-- Current versioned creative release: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
+- Recorded September 1 creative delivery: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
 - Local release assembly (Google Drive is canonical): `launch-2026-09/`; Git retains the human-authored copy, provenance, original source art, and regeneration inputs, while rendered delivery masters and generated manifests stay in the private Drive release.
 - Native Google Slides launch deck: https://docs.google.com/presentation/d/1VDwq4RTI86V1DKfKRkcEG7ojve52-JVqMeTYFhy7GIQ/edit?usp=drivesdk
 - Decks and GTM folder: https://drive.google.com/drive/folders/12ynmOVkcvJJKHc-PNhv9gSLKh3jHRyIu
@@ -44,8 +44,8 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 
 ### Revision 4 — The Second Ring, 2026-09-01
 
-The paths below describe the generated local layout and the matching private
-Drive delivery. A fresh checkout recreates the delivery files from the committed
+The paths below describe the generated local layout. The September 1 Drive
+snapshot has not been recertified against subsequent local edits or renders. A fresh checkout recreates the delivery files from the committed
 source package; it does not treat PNG, PDF, MP4, or QA output as application source.
 
 - Campaign overview, truth boundaries, and release status: `launch-2026-09/README.md`
@@ -109,6 +109,7 @@ Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-deliver
 - `SOURCE-SHA256SUMS.txt` covers the compact repository source package and preserves the archived revision 3 browser proof.
 - Product, native, billing, OG, and browser icons: `npm run assets`
 - Launch placements: `npm run brand:launch`
-- Current worktree proof source: `node scripts/capture-botbound-current-worktree-proof.mjs`. Fresh capture remains pending successful source-identity and current-route checks, followed by visual review and checksums. Local output is not deployed-production proof.
-- `npm run brand:proof` writes to the archived `brand-work/exports/product-proof/` path. Do not run it to refresh current proof or overwrite the preserved revision 3 evidence.
+- Current public UI proof: `npm run brand:proof`. Start the credential-free API stub and Vite proof server as described in `launch-2026-09/CURRENT_PRODUCT_PROOF.md`. The command creates all seven frames plus the contact sheet and preserves preceding batches in excluded `_history/` storage. Simulated auth and paused billing are explicit; local output is not deployed-production proof or publication approval.
+- The legacy capture script forwards to current proof. It no longer writes to the archived revision 3 path.
+- Source receipt for a reviewed commit: `node scripts/refresh-botbound-source-checksums.mjs --index`, then `--index --check`. Explicitly stage reviewed sources first; do not include unrelated film WIP. The default command hashes working-tree bytes.
 - Film compositions and render commands: `apps/botbound-film`

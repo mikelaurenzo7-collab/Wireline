@@ -16,9 +16,13 @@
 import Stripe from "stripe";
 import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import {
+  evaluateStripeWebhookReadiness,
+  getPinnedStripeApiVersion,
+} from "./lib/stripe-webhook-readiness.mjs";
 import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
-const API_VERSION = "2026-08-26.dahlia";
+const API_VERSION = getPinnedStripeApiVersion();
 const WEBHOOK_URL = `${CANONICAL_PRODUCTION_URL}/api/stripe-webhook`;
 
 const apply = process.argv.includes("--apply");
@@ -45,30 +49,21 @@ if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project")
 
 const stripe = new Stripe(stripeKey, { apiVersion: API_VERSION });
 const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
-if (endpoints.has_more) {
-  console.error("Stripe webhook inventory exceeds 100 endpoints; refusing a partial audit.");
-  process.exit(1);
-}
-const canonicalEndpoints = endpoints.data.filter(
-  (candidate) => candidate.url === WEBHOOK_URL && candidate.status === "enabled",
+const readiness = evaluateStripeWebhookReadiness(
+  { ok: true, body: endpoints },
+  handledEvents,
+  API_VERSION,
 );
-if (canonicalEndpoints.length !== 1) {
+if (readiness.identityFindings.length) {
+  console.error(`Stripe webhook identity is blocked: ${readiness.identityFindings.join(", ")}.`);
   console.error(
-    `Expected exactly one enabled live endpoint for ${WEBHOOK_URL}; found ${canonicalEndpoints.length}.`,
+    `Require one enabled live endpoint for ${WEBHOOK_URL}, pinned to ${API_VERSION}, and a complete inventory. An API-version change requires a replacement endpoint and signing-secret rotation before disabling the old endpoint; event alignment cannot repair it.`,
   );
   process.exit(1);
 }
-const [endpoint] = canonicalEndpoints;
-if (endpoint.livemode !== true || endpoint.api_version !== API_VERSION) {
-  console.error(
-    `Endpoint ${endpoint.id} must be live and pinned to ${API_VERSION}; current version is ${endpoint.api_version || "unset"}. Create a replacement endpoint and rotate its signing secret before disabling this one.`,
-  );
-  process.exit(1);
-}
-
-const enabled = [...(endpoint.enabled_events || [])].sort();
-const missing = handledEvents.filter((event) => !enabled.includes(event));
-const extra = enabled.filter((event) => event !== "*" && !handledEvents.includes(event));
+const endpoint = readiness.endpoint;
+const missing = readiness.missingEvents;
+const extra = readiness.extraEvents;
 
 console.log(`Endpoint: ${endpoint.id} (${endpoint.status})`);
 console.log(`Handled by server: ${handledEvents.join(", ")}`);

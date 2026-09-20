@@ -1,8 +1,7 @@
 /* global document, window */
 
-import { execFileSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -10,9 +9,18 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
+import {
+  acquireProductProofLock,
+  assertContainedPath,
+  assertProofOutputDirectory,
+  assertProductProofManifest,
+  publishProofFiles,
+} from "./lib/product-proof-files.mjs";
+import { renderProductProofContactSheet } from "./lib/product-proof-contact-sheet.mjs";
+import { readProductProofSource } from "./lib/product-proof-source.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const baseUrl = (process.env.BOTBOUND_CAPTURE_BASE_URL ?? "http://127.0.0.1:3000").replace(
+const baseUrl = (process.env.BOTBOUND_CAPTURE_BASE_URL ?? "http://127.0.0.1:3002").replace(
   /\/$/,
   "",
 );
@@ -21,19 +29,7 @@ const outputDir = path.resolve(
   process.env.BOTBOUND_CAPTURE_OUTPUT_DIR ?? "brand-work/launch-2026-09/exports/product-proof",
 );
 
-const git = (args) =>
-  execFileSync("git", args, {
-    cwd: repositoryRoot,
-    encoding: "utf8",
-    windowsHide: true,
-  }).trim();
-
-const revision = {
-  commit: git(["rev-parse", "HEAD"]),
-  branch: git(["branch", "--show-current"]),
-  dirty: Boolean(git(["status", "--porcelain"])),
-};
-const identityPath = path.join(repositoryRoot, ".botbound-proof-source-identity.json");
+const { revision, sourceSnapshot } = readProductProofSource(repositoryRoot);
 const proofManifestPath = path.join(outputDir, "botbound-current-worktree-proof.json");
 const proofReadmePath = path.join(outputDir, "README.md");
 const proofContactSheetPath = path.join(
@@ -93,33 +89,31 @@ const captures = [
     route: "/signin",
     width: 1600,
     height: 1000,
-    expectedText: "CREATE ACCOUNT",
+    expectedText: "SIGN IN",
   },
 ];
 
+assertProofOutputDirectory(repositoryRoot, outputDir);
 await mkdir(outputDir, { recursive: true });
 const existingProofFrames = (await readdir(outputDir, { withFileTypes: true }))
   .filter((entry) => entry.isFile() && entry.name.endsWith("-exact-worktree-preview.png"))
-  .map((entry) => path.join(outputDir, entry.name));
-await Promise.all(
-  [proofManifestPath, proofReadmePath, proofContactSheetPath, ...existingProofFrames].map(
-    (ownedPath) => rm(ownedPath, { force: true }),
-  ),
-);
+  .map((entry) => entry.name);
 const stagingParent = path.join(outputDir, "_rejected");
 await mkdir(stagingParent, { recursive: true });
+assertContainedPath(await realpath(outputDir), await realpath(stagingParent));
 const stagingDir = await mkdtemp(path.join(stagingParent, ".botbound-proof-staging-"));
 const stagedManifestPath = path.join(stagingDir, path.basename(proofManifestPath));
 const stagedReadmePath = path.join(stagingDir, path.basename(proofReadmePath));
 
 let sourceIdentity;
+let releaseProofLock;
 try {
   const expectedSourceIdentity = { commit: revision.commit, nonce: randomUUID() };
-  await writeFile(identityPath, `${JSON.stringify(expectedSourceIdentity)}\n`, "utf8");
-  try {
+  releaseProofLock = acquireProductProofLock(repositoryRoot, expectedSourceIdentity);
+  {
     const identityResponse = await fetch(
       `${baseUrl}/__botbound_proof_identity?nonce=${encodeURIComponent(expectedSourceIdentity.nonce)}`,
-      { headers: { "Cache-Control": "no-store" } },
+      { headers: { "Cache-Control": "no-store" }, signal: AbortSignal.timeout(10_000) },
     );
     if (!identityResponse.ok) {
       throw new Error(
@@ -133,8 +127,18 @@ try {
     ) {
       throw new Error("Capture server is not serving this exact BotBound worktree and proof run.");
     }
-  } finally {
-    await rm(identityPath, { force: true });
+  }
+  const apiResponse = await fetch(`${baseUrl}/api/__botbound_proof_status`, {
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
+  });
+  if (!apiResponse.ok) throw new Error("Start the credential-free proof API stub before capture.");
+  const apiEvidence = await apiResponse.json();
+  if (
+    apiEvidence.mode !== "credential-free-simulated-api" ||
+    apiEvidence.checkout_available !== false
+  ) {
+    throw new Error("Product proof requires the explicitly simulated, activation-paused API.");
   }
 
   const browser = await chromium.launch({
@@ -171,7 +175,12 @@ try {
         // React StrictMode tears down the first provider-availability effect and
         // aborts its fetch before issuing the settled request. It is intentional,
         // invisible, and not a network defect in the captured route.
-        if (failure.url.endsWith("/api/auth/providers") && failure.error === "net::ERR_ABORTED") {
+        if (
+          ["/api/auth/providers", "/api/billing/plans"].some((route) =>
+            failure.url.endsWith(route),
+          ) &&
+          failure.error === "net::ERR_ABORTED"
+        ) {
           expectedAbortedRequests.push(failure);
           return;
         }
@@ -201,10 +210,21 @@ try {
         .first()
         .waitFor({ state: "visible", timeout: 60_000 });
       await page.waitForFunction(
-        (expectedText) => document.body.innerText.includes(expectedText),
+        (expectedText) =>
+          document
+            .querySelector("h1")
+            ?.innerText.replace(/\s+/g, " ")
+            .trim()
+            .toUpperCase()
+            .includes(expectedText),
         capture.expectedText,
         { timeout: 30_000 },
       );
+      if (capture.route === "/pricing") {
+        await page
+          .getByText("Build free. Paid activation is currently unavailable.", { exact: true })
+          .waitFor({ state: "visible", timeout: 15_000 });
+      }
       await page.evaluate(async () => {
         await Promise.race([
           document.fonts.ready,
@@ -220,7 +240,6 @@ try {
           transition-duration: 0.001ms !important;
           caret-color: transparent !important;
         }
-        [data-vite-dev-id], vite-error-overlay { display: none !important; }
       `,
       });
       await page.waitForTimeout(250);
@@ -253,7 +272,14 @@ try {
           title: document.title,
           heading: document.querySelector("h1")?.textContent?.trim() ?? null,
           rootMounted: Boolean(document.getElementById("root")?.childElementCount),
-          expectedTextMatched: document.body.innerText.includes(expectedText),
+          expectedTextMatched: Boolean(
+            document
+              .querySelector("h1")
+              ?.innerText.replace(/\s+/g, " ")
+              .trim()
+              .toUpperCase()
+              .includes(expectedText),
+          ),
         }),
         capture.expectedText,
       );
@@ -296,6 +322,10 @@ try {
     captureRuntime: "Vite source preview",
     revision,
     sourceIdentity,
+    sourceSnapshot,
+    apiEvidence,
+    humanVisualReview: "required",
+    publicationApproval: "not-assessed",
     results,
   };
 
@@ -319,6 +349,16 @@ try {
     );
   }
 
+  const sourceAfterCapture = readProductProofSource(repositoryRoot);
+  if (sourceAfterCapture.sourceSnapshot.sha256 !== sourceSnapshot.sha256) {
+    throw new Error(
+      "Public source changed during capture. The preceding proof batch is preserved; capture again after edits finish.",
+    );
+  }
+  assertProductProofManifest(manifest);
+  const rendered = renderProductProofContactSheet(repositoryRoot, stagingDir, manifest);
+  await writeFile(path.join(stagingDir, rendered.contactSheet.file), rendered.png);
+  manifest.contactSheet = rendered.contactSheet;
   await writeFile(stagedManifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(
     stagedReadmePath,
@@ -327,22 +367,29 @@ try {
       `Captured from \`${revision.branch}\` at \`${revision.commit}\` on ${manifest.capturedAt}. ` +
       `The working tree was ${revision.dirty ? "dirty (the active launch work in progress)" : "clean"}.\n\n` +
       `The Home, Features, Pricing, and Sign in images are public-surface proof. ` +
-      `The mobile Home proof is intentionally cropped to the complete hero and demo card, before the account form begins. ` +
+      `The mobile Home image is a 430 × 630 hero crop, not a full-page record. ` +
+      `Auth and billing availability use a credential-free simulated API with paid activation paused; this does not verify sign-in, checkout, vendor balances, or live calling. ` +
       `Authenticated Studio proof is intentionally omitted because this source-only preview has no production credentials. ` +
       `Do not substitute archived August 2026 captures for this set.\n\n` +
-      `The local \`_rejected/\` quarantine contains superseded loading or partial-form frames. ` +
+      `The local \`_history/\` directory preserves preceding proof batches. The \`_rejected/\` quarantine holds historical rejected frames and temporary capture staging. ` +
       `It is not part of the release set and must not be uploaded or published.\n`,
   );
 
-  for (const capture of captures) {
-    const filename = `${capture.name}-exact-worktree-preview.png`;
-    await rename(path.join(stagingDir, filename), path.join(outputDir, filename));
-  }
-  await rename(stagedReadmePath, proofReadmePath);
-  // The manifest is the approval marker and must be the final published file.
-  await rename(stagedManifestPath, proofManifestPath);
+  publishProofFiles({
+    outputDir,
+    stagingDir,
+    fileNames: [
+      ...captures.map((capture) => `${capture.name}-exact-worktree-preview.png`),
+      path.basename(proofReadmePath),
+      path.basename(proofContactSheetPath),
+      path.basename(proofManifestPath),
+    ],
+    retiredNames: existingProofFrames,
+  });
 
   console.log(`Captured ${results.length} exact-worktree previews in ${outputDir}`);
 } finally {
+  releaseProofLock?.();
+  assertContainedPath(await realpath(outputDir), await realpath(stagingDir));
   await rm(stagingDir, { recursive: true, force: true });
 }

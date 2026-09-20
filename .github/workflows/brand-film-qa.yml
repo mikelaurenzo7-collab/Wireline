@@ -16,6 +16,9 @@ on:
       - scripts/capture-botbound-current-worktree-proof.mjs
       - scripts/build-botbound-launch-release-manifest.mjs
       - scripts/vite-product-proof.config.ts
+      - scripts/lib/product-proof-*
+      - scripts/start-botbound-proof-api-stub.mjs
+      - tests/launch-artifact-approval-gates-contract.test.ts
       - scripts/render-image-assets.mjs
       - .github/workflows/brand-film-qa.yml
   push:
@@ -33,6 +36,9 @@ on:
       - scripts/capture-botbound-current-worktree-proof.mjs
       - scripts/build-botbound-launch-release-manifest.mjs
       - scripts/vite-product-proof.config.ts
+      - scripts/lib/product-proof-*
+      - scripts/start-botbound-proof-api-stub.mjs
+      - tests/launch-artifact-approval-gates-contract.test.ts
       - scripts/render-image-assets.mjs
       - .github/workflows/brand-film-qa.yml
   workflow_dispatch:
@@ -63,6 +69,8 @@ jobs:
           node --check scripts/render-botbound-product-proof-contact-sheet.mjs
           node --check scripts/capture-botbound-current-worktree-proof.mjs
           node --check scripts/build-botbound-launch-release-manifest.mjs
+          for file in scripts/lib/product-proof-*.mjs; do node --check "$file"; done
+          node --check scripts/start-botbound-proof-api-stub.mjs
 
       - name: Install film dependencies
         working-directory: apps/botbound-film

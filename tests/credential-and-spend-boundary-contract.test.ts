@@ -289,7 +289,7 @@ describe("Studio only clears the essentials box when something was stored", () =
 
   it("reads the readiness counts rather than trusting the 200", () => {
     expect(source).toContain("extractionPersistedSomething");
-    const check = source.slice(source.indexOf("async function extractionPersistedSomething"));
+    const check = read("src/lib/training-extraction-result.ts");
     expect(check).toContain("readiness");
   });
 

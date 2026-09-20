@@ -10,6 +10,7 @@ describe("vendor readiness contract", () => {
   it("probes launch-critical providers without billable inference, calls, or messages", () => {
     for (const id of [
       "postgres",
+      "voice_worker",
       "upstash",
       "openai",
       "ai_gateway",

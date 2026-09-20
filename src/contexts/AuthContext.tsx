@@ -12,6 +12,10 @@ import { AUTH_SESSION_EXPIRED_EVENT, refreshSessionIfNeeded } from "../lib/api";
 import { LEGACY_STORAGE_KEY } from "../lib/session-cookie";
 import { isAuthPortalPath, isSessionOptionalPublicPath } from "../lib/public-routes";
 import { clearStudioLastAgentId } from "../lib/studio-agent-preference";
+import {
+  setCreateBriefRecoveryOwner,
+  suspendCreateBriefRecovery,
+} from "../lib/create-brief-recovery";
 
 export interface User {
   id: string;
@@ -51,7 +55,7 @@ const SESSION_PROBE_MS = 8_000;
 const SESSION_REFRESH_INTERVAL_MS = 25 * 60_000;
 const SESSION_REFRESH_THROTTLE_MS = 5 * 60_000;
 
-async function fetchSessionUser(): Promise<User | null> {
+async function fetchSessionUser(): Promise<User | null | undefined> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
   try {
@@ -59,11 +63,13 @@ async function fetchSessionUser(): Promise<User | null> {
       credentials: "include",
       signal: controller.signal,
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { user?: User };
-    return data.user ?? null;
+    if (res.status === 401 || res.status === 403) return null;
+    if (!res.ok) return undefined;
+    const data = (await res.json()) as { user?: User | null } | null;
+    if (data?.user === null) return null;
+    return typeof data?.user?.id === "string" && data.user.id ? data.user : undefined;
   } catch {
-    return null;
+    return undefined;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -117,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // result to observe. Run it at most once per mounted session so navigating
   // between auth-portal routes does not re-issue it.
   const migratedRef = useRef(false);
+  const authRevisionRef = useRef(0);
   // Latest location for use inside the hydration effect without depending on
   // the raw pathname (which would re-fire on every intra-portal navigation).
   const locationRef = useRef(location);
@@ -132,6 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let cancelled = false;
+    const authRevision = authRevisionRef.current;
     (async () => {
       const pathname = locationRef.current.pathname;
       const sessionOptional = isSessionOptionalPublicPath(pathname);
@@ -151,13 +159,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!sessionOptional && !cancelled) setLoading(true);
+      suspendCreateBriefRecovery();
       try {
         if (!migratedRef.current) {
           migratedRef.current = true;
           await migrateLegacyLocalStorage();
         }
         const hydrated = await fetchSessionUser();
-        if (!cancelled) {
+        if (!cancelled && authRevisionRef.current === authRevision) {
+          if (hydrated !== undefined) setCreateBriefRecoveryOwner(hydrated?.id ?? null);
           if (hydrated) {
             setUser(hydrated);
             setSession({ user: hydrated });
@@ -177,6 +187,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const onSessionExpired = (_event: Event) => {
+      authRevisionRef.current += 1;
+      setCreateBriefRecoveryOwner(null);
       localStorage.removeItem(LEGACY_STORAGE_KEY);
       clearStudioLastAgentId();
       setSession(null);
@@ -208,12 +220,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const signIn = useCallback((newSession: Session) => {
+    authRevisionRef.current += 1;
+    setCreateBriefRecoveryOwner(newSession.user.id);
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     setSession({ user: newSession.user });
     setUser(newSession.user);
   }, []);
 
   const signOut = useCallback(async () => {
+    authRevisionRef.current += 1;
+    setCreateBriefRecoveryOwner(null);
     try {
       await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
     } catch {

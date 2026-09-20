@@ -9,7 +9,12 @@
  *   node --env-file=.env.production scripts/check-vendor-readiness.mjs
  */
 
+import { spawnSync } from "node:child_process";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
+import {
+  evaluateStripeWebhookReadiness,
+  getPinnedStripeApiVersion,
+} from "./lib/stripe-webhook-readiness.mjs";
 import {
   STRIPE_PUBLIC_BRAND,
   STRIPE_PUBLIC_SUPPORT_EMAIL,
@@ -23,6 +28,43 @@ import {
 import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
 
 const checks = [];
+const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion();
+
+// Reuse the runtime URL, duration and signing-parity resolvers; no provider
+// credentials are printed or passed through a shell command.
+const workerProbe = spawnSync(
+  process.execPath,
+  ["--import", "tsx", "scripts/check-voice-worker-readiness.mts"],
+  {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: "utf8",
+    timeout: 20_000,
+    maxBuffer: 64 * 1024,
+    stdio: ["ignore", "pipe", "pipe"],
+  },
+);
+let workerReadiness = { ready: false, detail: "Worker readiness probe could not complete." };
+try {
+  const result = JSON.parse(workerProbe.stdout || "{}");
+  if (typeof result.ready === "boolean" && typeof result.detail === "string") {
+    workerReadiness = result;
+  }
+} catch {
+  // Child errors may contain local configuration; only the safe result escapes.
+}
+record(
+  "voice_worker",
+  true,
+  workerReadiness.ready && workerProbe.status === 0 ? "ready" : "blocked",
+  workerReadiness.detail,
+  "Maintain a persistent worker host with enough capacity and a tested graceful drain.",
+  {
+    expected_source_revision: workerReadiness.expected_source_revision ?? null,
+    worker_source_revision: workerReadiness.worker_source_revision ?? null,
+    max_call_seconds: workerReadiness.max_call_seconds ?? null,
+  },
+);
 
 function record(id, required, level, detail, fundingAction = null, metadata = undefined) {
   checks.push({
@@ -208,32 +250,50 @@ const [
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/account", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/balance", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/webhook_endpoints?limit=100", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/tax/settings", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   present("STRIPE_SECRET_KEY")
     ? readJson("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
+        headers: {
+          Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+          "Stripe-Version": PINNED_STRIPE_API_VERSION,
+        },
       })
     : null,
   agentmailHeaders
@@ -480,25 +540,15 @@ const stripePortalReady = Boolean(stripePortalConfigurations?.ok && stripePortal
 // two dispute-funds events from Stripe, which is what debits and re-credits
 // tenant Runtime Allowance when dispute funds move.
 const expectedStripeWebhookEvents = getHandledStripeWebhookEvents();
-const stripeWebhookInventory = arrayAt(stripeWebhookEndpoints?.body, "data");
-const stripeWebhook = stripeWebhookInventory.find(
-  (endpoint) =>
-    endpoint?.status === "enabled" &&
-    String(endpoint?.url || "").replace(/\/+$/, "") ===
-      `${CANONICAL_PRODUCTION_URL}/api/stripe-webhook`,
+const stripeWebhookReadiness = evaluateStripeWebhookReadiness(
+  stripeWebhookEndpoints,
+  expectedStripeWebhookEvents,
+  PINNED_STRIPE_API_VERSION,
 );
-const stripeEnabledWebhookEvents = Array.isArray(stripeWebhook?.enabled_events)
-  ? [...stripeWebhook.enabled_events].sort()
-  : [];
-const stripeMissingWebhookEvents = expectedStripeWebhookEvents.filter(
-  (event) => !stripeEnabledWebhookEvents.includes(event),
-);
-const stripeExtraWebhookEvents = stripeEnabledWebhookEvents.filter(
-  (event) => event !== "*" && !expectedStripeWebhookEvents.includes(event),
-);
-const stripeWebhookReady = Boolean(
-  stripeWebhook && stripeMissingWebhookEvents.length === 0 && stripeExtraWebhookEvents.length === 0,
-);
+const stripeWebhook = stripeWebhookReadiness.endpoint;
+const stripeMissingWebhookEvents = stripeWebhookReadiness.missingEvents;
+const stripeExtraWebhookEvents = stripeWebhookReadiness.extraEvents;
+const stripeWebhookReady = stripeWebhookReadiness.ready;
 const stripeAutomaticTaxEnabled = process.env.STRIPE_AUTOMATIC_TAX_ENABLED === "true";
 const stripeActiveTaxRegistrations = stripeTaxRegistrations?.ok
   ? arrayAt(stripeTaxRegistrations.body, "data").filter(
@@ -527,7 +577,9 @@ const stripeFundingAction = !stripeBalanceRead
       : !stripePortalReady
         ? "Exercise BotBound portal bootstrap (or create a Dashboard default) and verify payment methods, invoices, and cancellation."
         : !stripeWebhookReady
-          ? `Align the enabled botbound.me webhook endpoint to the ${expectedStripeWebhookEvents.length} server-handled events (npm run stripe:webhook:align).`
+          ? stripeWebhookReadiness.identityFindings.includes("endpoint_api_version_mismatch")
+            ? `Replace the canonical Stripe webhook with a live endpoint pinned to ${PINNED_STRIPE_API_VERSION}, rotate its signing secret, then disable the old endpoint. Event alignment cannot change this version.`
+            : `Run npm run stripe:webhook:check and resolve ${stripeWebhookReadiness.findings.join(", ")} before launch. Event-only drift can then use npm run stripe:webhook:align.`
           : !stripeTaxReady
             ? "Disable STRIPE_AUTOMATIC_TAX_ENABLED, or activate Stripe Tax settings and at least one applicable registration after qualified tax review."
             : "No prepaid funding required; keep payout bank, portal, webhook, and the deliberate tax posture healthy.";
@@ -565,6 +617,11 @@ record(
     portal_subscription_cancel: stripePortalFeatures.subscription_cancel?.enabled === true,
     portal_ready: stripePortalReady,
     webhook_ready: stripeWebhookReady,
+    webhook_canonical_endpoint_count: stripeWebhookReadiness.canonicalEndpointCount,
+    webhook_livemode: stripeWebhook?.livemode === true,
+    webhook_api_version: stripeWebhook?.api_version ?? null,
+    webhook_expected_api_version: PINNED_STRIPE_API_VERSION,
+    webhook_findings: stripeWebhookReadiness.findings,
     webhook_missing_events: stripeMissingWebhookEvents,
     webhook_extra_events: stripeExtraWebhookEvents,
     automatic_tax_enabled: stripeAutomaticTaxEnabled,

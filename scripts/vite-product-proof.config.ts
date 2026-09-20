@@ -39,6 +39,8 @@ export default defineConfig((context) => {
     ],
     server: {
       ...base.server,
+      port: 3002,
+      strictPort: true,
       // Concurrent launch rendering writes large binary files below brand-work.
       // Ignoring that output estate keeps Windows file locks from killing the
       // exact-source preview watcher during capture.
@@ -48,8 +50,8 @@ export default defineConfig((context) => {
       },
       proxy: {
         ...base.server?.proxy,
-        // The proof run is credential-free. A tiny local stub answers only the
-        // signed-out auth probes so public routes can settle deterministically.
+        // The proof run is credential-free. The local stub simulates signed-out
+        // auth and paused billing availability; it is not live vendor evidence.
         "/api": {
           target: "http://127.0.0.1:3001",
           changeOrigin: true,

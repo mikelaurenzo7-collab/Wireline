@@ -78,7 +78,7 @@ A dry, graphic take on the owner's evening: hands full, with a customer, under t
 
 ### 7. Release brand kit
 
-Current launch-ready brand derivatives are collected under `exports/brand/`:
+Brand derivatives for candidate use are collected under `exports/brand/`:
 
 - `botbound-app-icon.png`
 - `botbound-operator-polished.png`
@@ -121,23 +121,23 @@ The one-pager contains no invented traction, customer, revenue, TAM, ROI, or fun
 - `CURRENT-RELEASE-POINTER.md`
 - `PROVENANCE.md`
 
-The product contact sheet is a source-current, dirty-worktree Vite preview. It is useful for internal visual QA and current-state comparison, but it is explicitly **not deployed production proof**. See `CURRENT_PRODUCT_PROOF.md` for the exact boundary and production-certification checklist.
+The September 1 product contact sheet is historical. A fresh local capture is current only when its JSON matches the intended commit, source fingerprint, accepted frames, and contact-sheet hashes. That workflow uses simulated auth and paused billing responses; it is **not deployed production proof**. See `CURRENT_PRODUCT_PROOF.md` for the commands and evidence boundary.
 
 ## Release status
 
 The static compositions are production-quality creative masters. That describes their craft and technical readiness; it is not blanket authorization to buy media or imply product proof.
 
-| Asset class | Creative status | Permitted now | Remaining gate |
-| --- | --- | --- | --- |
-| Campaign illustrations and graphic posts | Master complete | Internal, investor, sales, and organic candidate use after final owner review | Brand/legal/rights review before broad paid placement |
-| Voice carousel | Master complete; product facts source-checked | Organic and sales candidate use after final owner review | Recheck roster and runtime policy immediately before publication |
-| Ring to Next Action | Master complete; configured example labeled | Sales and product-education candidate use | Never strip the example label or capability disclaimer |
-| Billboard | OOH master concept complete | Pitch, event screen, mockup, and media-planning use | Media-owner mechanical specs, rights review, location context, and explicit spend approval |
-| Brand export kit | Current icon, operator, lockups, and OG image collected | Current release design, sales, and investor use after destination QA | Final owner review and destination-specific contrast/crop check |
-| Motion/reels | Three cuts rendered; duration/codec, captions, hashes, and sampled-frame QA complete | Cinematic campaign review and organic candidate use after final owner/rights review | Not product proof; paid placement still requires claims, rights, channel, and explicit spend approval |
-| Investor one-pager | Source, rendered PDF, and preview complete; visual QA passed | Investor/design-partner conversation support after final owner review | Confirm final contact and fundraising posture before distribution |
-| Exact-worktree screenshots | Seven accepted public-surface preview frames and one contact sheet complete | Internal current-state QA and release comparison only | Dirty local Vite preview; exact deployed SHA and authenticated production proof remain pending |
-| Deployed product proof | Not yet certified | None as public production proof | Commit, deploy, exact-SHA health match, authenticated capture, frame review, and recorded release provenance |
+| Asset class                              | Creative status                                                                        | Permitted now                                                                       | Remaining gate                                                                                                                                     |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Campaign illustrations and graphic posts | Master complete                                                                        | Internal, investor, sales, and organic candidate use after final owner review       | Brand/legal/rights review before broad paid placement                                                                                              |
+| Voice carousel                           | Master complete; product facts source-checked                                          | Organic and sales candidate use after final owner review                            | Recheck roster and runtime policy immediately before publication                                                                                   |
+| Ring to Next Action                      | Master complete; configured example labeled                                            | Sales and product-education candidate use                                           | Never strip the example label or capability disclaimer                                                                                             |
+| Billboard                                | OOH master concept complete                                                            | Pitch, event screen, mockup, and media-planning use                                 | Media-owner mechanical specs, rights review, location context, and explicit spend approval                                                         |
+| Brand export kit                         | Current icon, operator, lockups, and OG image collected                                | Current release design, sales, and investor use after destination QA                | Final owner review and destination-specific contrast/crop check                                                                                    |
+| Motion/reels                             | Three cuts rendered; duration/codec, captions, hashes, and sampled-frame QA complete   | Cinematic campaign review and organic candidate use after final owner/rights review | Not product proof; paid placement still requires claims, rights, channel, and explicit spend approval                                              |
+| Investor one-pager                       | Source, rendered PDF, and preview complete; visual QA passed                           | Investor/design-partner conversation support after final owner review               | Confirm final contact and fundraising posture before distribution                                                                                  |
+| Exact-worktree screenshots               | September 1 set is historical; use only a fresh matching capture for current UI review | Internal UI review with explicitly simulated auth and billing                       | Seven current accepted frames, contact-sheet hashes, source fingerprint, and human visual review; deployed and authenticated proof remain separate |
+| Deployed product proof                   | Not yet certified                                                                      | None as public production proof                                                     | Commit, deploy, exact-SHA health match, authenticated capture, frame review, and recorded release provenance                                       |
 
 ## Rules that keep the campaign honest
 
@@ -151,10 +151,10 @@ The static compositions are production-quality creative masters. That describes 
 
 ## Recommended launch sequence
 
-1. **Founder reveal:** publish Hands Full with the founder LinkedIn post.
+1. **First pilot package:** select one Front Desk workflow, Hands Full, the founder LinkedIn post, the one-pager, and the setup/support note in `../gtm/BOTBOUND-LAUNCH-COPY-KIT.md`. Publish only after the destination and current launch gates pass.
 2. **Problem recognition:** follow with Impeccably Bad Timing and The Call Sheet.
 3. **Product education:** publish the five-slide OpenAI voice carousel.
-4. **Operating proof:** use the September exact-worktree preview for internal QA, then publish product proof only after the production checklist in `CURRENT_PRODUCT_PROOF.md` passes.
+4. **Operating proof:** use a fresh hash-matched exact-worktree preview for internal QA, then publish product proof only after the production checklist in `CURRENT_PRODUCT_PROOF.md` passes.
 5. **Design-partner recruitment:** use the investor one-pager and founder outreach copy without implying existing traction.
 6. **Paid test:** activate one restrained, measurable campaign only after founder dogfood, claims, rights, landing page, tracking, billing, phone, and compliance gates pass.
 7. **OOH:** use The Signal only after an explicit media buy and site-specific legibility review.

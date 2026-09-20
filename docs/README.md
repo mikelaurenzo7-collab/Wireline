@@ -100,7 +100,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Document                                                                  | Role                                                                                                 |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [BotBound brand workspace](../brand-work/README.md)                       | Brand-delivery entry point, Drive library, source/master split, and integrity workflow.              |
-| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)               | Canonical repository and Drive inventory for launch-ready identity, campaign, proof, and GTM assets. |
+| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)               | Canonical identity, campaign and GTM inventory, with creative candidates and release evidence. |
 | [BotBound brand guide](../brand-work/BOTBOUND-BRAND-GUIDE.md)             | Identity, wordmark, typography, palette, spacing, and usage rules.                                   |
 | [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)             | Campaign platform, story system, claims, channel behavior, and commercial direction.                 |
 | [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)          | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                              |
@@ -119,7 +119,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md) | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
 | [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md) | Website message hierarchy that preserves inbound coverage while leading with outbound.       |
 | [Outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md) | Investor narrative for the outbound wedge and expansion path.                               |
-| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md) | Approved asset-to-channel mapping and placement guidance.                                    |
+| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md) | Candidate asset-to-channel mapping and placement guidance; publication remains gated.           |
 | [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md) | Alt text, motion, contrast, and accessible publishing notes.                         |
 | [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md) | Source, model, render, QA, and checksum provenance for the outbound library.                    |
 | [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md) | Approved atmospheric source provenance and usage constraints.                              |

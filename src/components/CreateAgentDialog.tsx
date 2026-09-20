@@ -1,4 +1,12 @@
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -6,6 +14,14 @@ import { Button, Input, Textarea } from "./atoms";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  CREATE_BRIEF_MAX_CHARS,
+  clearCreateBrief,
+  isCreateBriefRecoveryOwner,
+  rememberCreateBrief,
+} from "../lib/create-brief-recovery";
+import { extractionPersistedSomething } from "../lib/training-extraction-result";
 import { authFetch, safeJson } from "../lib/api";
 import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import {
@@ -119,6 +135,9 @@ export default function CreateAgentDialog({
   const navigate = useNavigate();
   const [, setParams] = useSearchParams();
   const { agents, refresh } = useAgents();
+  const { user } = useAuth();
+  const activeUserIdRef = useRef(user?.id ?? null);
+  const createAbortRef = useRef<AbortController | null>(null);
   const initialTemplate = useMemo(() => templateForKey(initialTemplateKey), [initialTemplateKey]);
   const [name, setName] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>(initialTemplate.key);
@@ -146,6 +165,16 @@ export default function CreateAgentDialog({
 
   useModalFocusTrap(dialogRef, { active: open, onEscape: close });
   useBodyScrollLock(open);
+
+  useLayoutEffect(() => {
+    activeUserIdRef.current = user?.id ?? null;
+    return () => {
+      activeUserIdRef.current = null;
+      // Navigation may leave a committed Bot behind; finish its brief for the
+      // same account, while account changes cancel any further training.
+      if (!isCreateBriefRecoveryOwner(user?.id ?? "")) createAbortRef.current?.abort();
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -195,7 +224,14 @@ export default function CreateAgentDialog({
 
   async function create(event: FormEvent) {
     event.preventDefault();
-    if (creating) return;
+    if (creating || createAbortRef.current) return;
+    const creationUserId = user?.id;
+    if (!creationUserId) {
+      setError("Your session expired. Sign in again to keep building.");
+      return;
+    }
+    const isCurrentAccount = () =>
+      activeUserIdRef.current === creationUserId && isCreateBriefRecoveryOwner(creationUserId);
     if (markCapacityReached) {
       setError(
         "Every available Bot identity is already in use. Contact support before adding another Bot.",
@@ -204,6 +240,12 @@ export default function CreateAgentDialog({
     }
     const selectedTemplate = templateForKey(templateKey);
     const finalBrief = brief.trim() || selectedTemplate.summary;
+    if (finalBrief.length > CREATE_BRIEF_MAX_CHARS) {
+      setError(
+        "Keep the starting brief under 10,000 characters. Add longer materials in Knowledge after creation.",
+      );
+      return;
+    }
     const finalName = name.trim() || defaultName(templateKey);
     const role = TECHNICAL_ROLE_BY_TEMPLATE[templateKey];
     // Compatibility only: legacy records and provider defaults still store a
@@ -212,10 +254,13 @@ export default function CreateAgentDialog({
 
     setCreating(true);
     setError("");
+    const controller = new AbortController();
+    createAbortRef.current = controller;
 
     try {
       const response = await authFetch("/api/agents", {
         method: "POST",
+        signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: finalName,
@@ -230,17 +275,20 @@ export default function CreateAgentDialog({
         error?: string;
         code?: string;
       } | null;
+      if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
       if (!response.ok || !body?.id) {
-        setError(safeCreateAgentError(response.status, body?.code, body?.error));
+        if (isCurrentAccount())
+          setError(safeCreateAgentError(response.status, body?.code, body?.error));
         return;
       }
 
       let trainingApplied = false;
       if (finalBrief) {
-        trainingApplied = true;
+        rememberCreateBrief(creationUserId, body.id, finalBrief);
         try {
           const extractRes = await authFetch("/api/train/extract", {
             method: "POST",
+            signal: controller.signal,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               agentId: body.id,
@@ -252,12 +300,15 @@ export default function CreateAgentDialog({
               ].join("\n"),
             }),
           });
-          if (!extractRes.ok) trainingApplied = false;
+          trainingApplied = await extractionPersistedSomething(extractRes);
         } catch {
           trainingApplied = false;
         }
       }
 
+      if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
+      if (trainingApplied) clearCreateBrief(creationUserId, body.id, finalBrief);
+      if (!isCurrentAccount()) return;
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       refresh();
       if (trainingApplied) {
@@ -279,7 +330,7 @@ export default function CreateAgentDialog({
         });
       } else if (finalBrief) {
         stashCreateWarning(
-          `${finalName} was created, but the starting brief didn't fully apply. Open Studio and paste it into Set Up to try again.`,
+          `${finalName} was created. Your starting brief is preserved in Tone & knowledge. Review it and save changes to try again.`,
         );
       }
       emitProductEvent({
@@ -330,9 +381,11 @@ export default function CreateAgentDialog({
       navigate(`/studio?agent=${encodeURIComponent(body.id)}&section=setup`, { replace: true });
       onClose();
     } catch {
-      setError("Bot could not be created. Try again.");
+      if (isCurrentAccount() && !controller.signal.aborted)
+        setError("Bot could not be created. Try again.");
     } finally {
-      setCreating(false);
+      if (createAbortRef.current === controller) createAbortRef.current = null;
+      if (isCurrentAccount()) setCreating(false);
     }
   }
 
@@ -495,6 +548,7 @@ export default function CreateAgentDialog({
             <Textarea
               ref={briefRef}
               disabled={creating}
+              maxLength={CREATE_BRIEF_MAX_CHARS}
               value={brief}
               onChange={(event) => {
                 briefIsTemplateTextRef.current = false;

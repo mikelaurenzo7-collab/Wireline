@@ -8,21 +8,26 @@ const read = (relativePath: string) => readFileSync(resolve(process.cwd(), relat
 describe("launch artifact approval gates", () => {
   it("publishes exact-worktree proof only after content and diagnostics are bound", () => {
     const capture = read("scripts/capture-botbound-current-worktree-proof.mjs");
-    const framePublish = capture.indexOf("await rename(path.join(stagingDir, filename)");
-    const manifestPublish = capture.indexOf("await rename(stagedManifestPath, proofManifestPath)");
+    const validation = capture.indexOf("assertProductProofManifest(manifest)");
+    const batchPublish = capture.indexOf("publishProofFiles({", validation);
+    const frameEntry = capture.indexOf("...captures.map(", batchPublish);
+    const manifestEntry = capture.indexOf("path.basename(proofManifestPath)", batchPublish);
 
     expect(capture).toContain('createHash("sha256").update(outputBytes).digest("hex")');
     expect(capture).toContain("bytes: outputBytes.byteLength");
     expect(capture).toContain("result.consoleErrors.length > 0");
     expect(capture).toContain("result.failedRequests.length > 0");
     expect(capture).toContain("result.finalRouteMatched");
-    expect(framePublish).toBeGreaterThan(-1);
-    expect(manifestPublish).toBeGreaterThan(framePublish);
+    expect(validation).toBeGreaterThan(-1);
+    expect(batchPublish).toBeGreaterThan(validation);
+    expect(frameEntry).toBeGreaterThan(batchPublish);
+    expect(manifestEntry).toBeGreaterThan(frameEntry);
+    expect(capture).toContain("acquireProductProofLock(repositoryRoot");
   });
 
   it("refuses to assemble a release from stale or byte-swapped product proof", () => {
     const release = read("scripts/build-botbound-launch-release-manifest.mjs");
-    const approval = release.indexOf("await assertApprovedProductProof(repositoryBaseSha)");
+    const approval = release.indexOf("await assertCurrentProductProof(repositoryBaseSha)");
     const inventory = release.indexOf("const allFiles =", approval);
 
     expect(approval).toBeGreaterThan(-1);
@@ -32,7 +37,11 @@ describe("launch artifact approval gates", () => {
     expect(release).toContain("proof.revision.commit !== repositoryBaseSha");
     expect(release).toContain("relative !== path.basename(relative)");
     expect(release).toContain("proof.contactSheet.sha256.toLowerCase() !== contactSheetDigest");
-    expect(release).toContain("stale or unapproved frames");
+    expect(release).toContain("stale or unaccepted frames");
+    expect(release).toContain("assertProductProofManifest(proof)");
+    expect(release).toContain(
+      "proof.sourceSnapshot.sha256 !== readProductProofSource(repoRoot).sourceSnapshot.sha256",
+    );
   });
 
   it("binds the outbound campaign manifest to one exact, currently approved motion set", () => {
@@ -92,6 +101,8 @@ describe("launch artifact approval gates", () => {
       "scripts/render-botbound-product-proof-contact-sheet.mjs",
       "scripts/capture-botbound-current-worktree-proof.mjs",
       "scripts/build-botbound-launch-release-manifest.mjs",
+      "scripts/lib/product-proof-*",
+      "scripts/start-botbound-proof-api-stub.mjs",
     ]) {
       expect(workflow).toContain(script);
     }
