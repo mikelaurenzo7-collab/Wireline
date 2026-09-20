@@ -168,7 +168,7 @@ export default function ClientAppsPage() {
             id="chatgpt-mcp-heading"
             className="mt-2 text-base font-semibold tracking-tight text-foreground"
           >
-            Build and rehearse in your preferred app
+            Build and Rehearse in Your Preferred App
           </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
             Add <code className="wl-code">{MCP_SERVER_URL}</code> in your app's connector settings

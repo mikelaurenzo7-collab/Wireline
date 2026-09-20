@@ -244,7 +244,7 @@ export default function RecentCallArtifactRequests() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="wl-eyebrow wl-eyebrow--muted">Create on demand</p>
-          <h2 className="mt-2 wl-card-title">Recent call files</h2>
+          <h2 className="mt-2 wl-card-title">Recent Call Files</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Request the default {formatLabel} file for an individual completed call. BotBound saves
             it to your configured destination and keeps only the job metadata and link.
@@ -257,7 +257,7 @@ export default function RecentCallArtifactRequests() {
 
       {error ? (
         <div className="mt-4">
-          <StatusNotice tone="destructive" title="Recent calls unavailable">
+          <StatusNotice tone="destructive" title="Recent Calls Unavailable">
             {error}
           </StatusNotice>
         </div>
@@ -265,7 +265,7 @@ export default function RecentCallArtifactRequests() {
 
       {!enabled ? (
         <div className="mt-4">
-          <StatusNotice tone="warning" title="Choose defaults first">
+          <StatusNotice tone="warning" title="Choose Defaults First">
             Enable special files and select a connected destination above, then save your report
             preferences.
           </StatusNotice>

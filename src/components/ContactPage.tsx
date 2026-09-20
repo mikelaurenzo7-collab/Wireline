@@ -44,14 +44,25 @@ export function ContactPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
+
+  const normalizedEmail = email.trim();
+  const normalizedSubject = subject.trim();
+  const normalizedBody = body.trim();
+  const contextLines = [
+    company.trim() ? `Company: ${company.trim()}` : null,
+    phone.trim() ? `Preferred callback: ${phone.trim()}` : null,
+  ].filter(Boolean);
+  const composedBody = contextLines.length
+    ? `${contextLines.join("\n")}\n\n${normalizedBody}`
+    : normalizedBody;
+  const emailFallbackHref = `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setEmailFallbackAvailable(false);
 
-    const normalizedEmail = email.trim();
-    const normalizedSubject = subject.trim();
-    const normalizedBody = body.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setError("Enter a valid email address.");
       return;
@@ -66,13 +77,6 @@ export function ContactPage() {
     }
 
     setSubmitting(true);
-    const contextLines = [
-      company.trim() ? `Company: ${company.trim()}` : null,
-      phone.trim() ? `Preferred callback: ${phone.trim()}` : null,
-    ].filter(Boolean);
-    const composedBody = contextLines.length
-      ? `${contextLines.join("\n")}\n\n${normalizedBody}`
-      : normalizedBody;
     let responseStatus: number | null = null;
     try {
       const response = await fetch("/api/support/ticket", {
@@ -112,16 +116,12 @@ export function ContactPage() {
       const message =
         reason instanceof Error ? reason.message : "The message service did not respond.";
       const isTransport =
+        responseStatus === null ||
         (responseStatus !== null && responseStatus >= 500) ||
-        /did not respond|failed to fetch|network|503|502|504|Message was not delivered/i.test(
-          message,
-        ) ||
-        message.includes("(5");
+        (responseStatus >= 200 && responseStatus < 300);
       if (isTransport) {
-        window.location.href = `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
-        setError(
-          "The message service did not respond, so your email client has opened with the note prepared.",
-        );
+        setEmailFallbackAvailable(true);
+        setError("Delivery wasn't confirmed. Retry or send by email.");
       } else {
         setError(message);
       }
@@ -147,7 +147,7 @@ export function ContactPage() {
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
           <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            Talk through the Bot you need
+            Talk Through the Bot You Need
           </h1>
         </div>
 
@@ -157,12 +157,12 @@ export function ContactPage() {
             className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
           >
             <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Email us</h2>
+            <h2 className="mt-5 font-semibold text-foreground">Email Us</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
           </a>
           <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">See how it works</h2>
+            <h2 className="mt-5 font-semibold text-foreground">See How It Works</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Calls, follow-up, outcomes
             </p>
@@ -172,7 +172,7 @@ export function ContactPage() {
             className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5 text-center"
           >
             <Sparkles className="mx-auto h-5 w-5" />
-            <h2 className="mt-5 font-semibold">See plans</h2>
+            <h2 className="mt-5 font-semibold">See Plans</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
               Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $
               {STARTER_PLUS_PRICE}/mo.
@@ -181,11 +181,11 @@ export function ContactPage() {
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a note</h2>
+          <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a Note</h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Message received</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">Message Received</h3>
               <p className="mt-2 text-sm text-muted-foreground">We'll follow up at {email}.</p>
             </div>
           ) : (
@@ -272,6 +272,15 @@ export function ContactPage() {
                 <p role="alert" className="text-sm text-destructive">
                   {error}
                 </p>
+              )}
+              {emailFallbackAvailable && (
+                <a
+                  href={emailFallbackHref}
+                  className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
+                >
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  Send by Email
+                </a>
               )}
               <button
                 type="submit"

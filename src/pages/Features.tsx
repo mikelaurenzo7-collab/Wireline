@@ -10,7 +10,6 @@ import {
 import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
-import { MARKETING_VOICE } from "../lib/product-copy";
 import { signupHrefForPlan } from "../lib/signup-intent";
 
 const CORE_FEATURES = [
@@ -21,7 +20,7 @@ const CORE_FEATURES = [
   },
   {
     icon: CheckCircle2,
-    title: "Calls and Follow-ups",
+    title: "Calls and Follow-Ups",
     body: "Make calls, answer customers, and follow up by text or email.",
   },
   {
@@ -55,7 +54,7 @@ export default function Features() {
       stickyCtaSecondaryLabel="See Pricing"
     >
       <PageMeta
-        title="FEATURES | BotBound"
+        title="Features | BotBound"
         description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
         path="/features"
       />
@@ -65,33 +64,21 @@ export default function Features() {
           <header className="wl-features-intro text-left">
             <p className="wl-eyebrow text-primary">Features</p>
             <h1 className="marketing-hero-title mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              BOTS THAT CALL, TEXT &amp; EMAIL
+              Inbound &amp; Outbound Bots
             </h1>
-            <div className="wl-features-intro__next">
-              <div className="marketing-hero__actions">
-                <Link
-                  to={signupHrefForPlan("personal")}
-                  className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
-                >
-                  START FREE
-                </Link>
-                <Link
-                  to="/pricing"
-                  className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
-                >
-                  SEE PRICING
-                </Link>
-              </div>
-              <ol className="wl-features-intro__steps" aria-label="Get started">
-                {MARKETING_VOICE.spine.map((step, index) => (
-                  <li key={step}>
-                    <span aria-hidden="true" className="text-primary">
-                      0{index + 1}
-                    </span>
-                    <span className="wl-overline text-foreground">{step}</span>
-                  </li>
-                ))}
-              </ol>
+            <div className="marketing-hero__actions">
+              <Link
+                to={signupHrefForPlan("personal")}
+                className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
+              >
+                START FREE
+              </Link>
+              <Link
+                to="/pricing"
+                className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
+              >
+                SEE PRICING
+              </Link>
             </div>
           </header>
 

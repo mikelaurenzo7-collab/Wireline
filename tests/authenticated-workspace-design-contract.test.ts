@@ -47,15 +47,15 @@ describe("authenticated workspace design architecture", () => {
       expect(source).toContain("wl-channel-inbox-grid");
       expect(source).toContain('data-empty={listOwnsOnlyState ? "true" : undefined}');
     }
-    expect(email).toContain('title="No matching email"');
+    expect(email).toContain('title="No Matching Email"');
     expect(email).toContain("setDetail(null);");
     expect(email).toContain("setDetailError(null);");
     expect(email).toContain("detailError && !detail");
     expect(email).toContain("function EmailBackButton");
-    expect(email).toContain('title="Conversation needs attention"');
+    expect(email).toContain('title="Conversation Needs Attention"');
     expect(email).toContain("onClick={() => void loadThreadDetail(selectedId)}");
-    expect(sms).toContain('title="No matching texts"');
-    expect(sms).toContain('title="Texts unavailable"');
+    expect(sms).toContain('title="No Matching Texts"');
+    expect(sms).toContain('title="Texts Unavailable"');
     expect(sms).toContain("onClick={() => void fetchThreads()}");
     expect(polish).toContain('.wl-channel-inbox-grid[data-empty="true"]');
     expect(polish).not.toContain(".wl-channel-inbox-grid:has(");
@@ -131,8 +131,8 @@ describe("authenticated workspace design architecture", () => {
     expect(studio.match(/compact=\{splitWorkspace\}/g)).toHaveLength(2);
     expect(studio).toContain('layout={splitWorkspace ? "split" : "standalone"}');
     expect(setup).toContain('data-wireline-studio-setup-density={compact ? "inspector" : "page"}');
-    expect(setup).toContain("Tone & knowledge");
-    expect(review).toContain("Setup summary");
+    expect(setup).toContain("Tone & Knowledge");
+    expect(review).toContain("Setup Summary");
     expect(setup).not.toContain("one clear job");
     expect(setup).toContain("wl-preserve-case text-lg font-semibold");
     expect(review).toContain(
@@ -206,7 +206,7 @@ describe("authenticated workspace design architecture", () => {
 
   it("gives outbound dispatch an empty queue instead of a lone intake accordion", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="No dispatch queue"');
+    expect(hub).toContain('title="No Dispatch Queue"');
     expect(hub).toContain('label: "Lead Hunt"');
     expect(hub).toContain('onViewChange("campaigns")');
     expect(hub).toContain("Lead intake");

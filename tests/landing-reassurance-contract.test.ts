@@ -18,8 +18,8 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain(
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("Put Your Bot");
+    expect(landing).toContain("on the Line");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");
@@ -31,8 +31,8 @@ describe("home landing launch clarity", () => {
       'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
     );
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("FIND. CALL. BOOK.");
-    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).toContain("Find. Call. Book.");
+    expect(landing).toContain("Answer. Qualify. Route.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
       'const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"]',
@@ -46,7 +46,7 @@ describe("home landing launch clarity", () => {
   it("keeps conversion explicit and owner control visible", () => {
     expect(landing).toContain('id="pricing"');
     expect(landing).toContain("to={signupHrefForPlan(id)}");
-    expect(landing).toContain("YOUR LINE. YOUR RULES.");
+    expect(landing).toContain("Your Line. Your Rules.");
     expect(landing).toContain('to="/security"');
     expect(landing).not.toContain("Put your first voice agent to work");
     expect(landing).not.toContain("—");

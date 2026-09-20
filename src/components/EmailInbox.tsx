@@ -434,7 +434,7 @@ export default function EmailInbox({
       <div className="grid gap-2 sm:grid-cols-3">
         <ConversationActivity
           state="complete"
-          title="Last activity"
+          title="Last Activity"
           detail={formatTimestamp(selected.lastMessageAt)}
         />
         <ConversationActivity
@@ -514,7 +514,7 @@ export default function EmailInbox({
         </StatusNotice>
       ) : null}
       {error && threads.length ? (
-        <StatusNotice tone="destructive" title="Inbox unavailable" className="mx-3 mt-3 sm:mx-4">
+        <StatusNotice tone="destructive" title="Inbox Unavailable" className="mx-3 mt-3 sm:mx-4">
           {error}
         </StatusNotice>
       ) : null}
@@ -529,7 +529,7 @@ export default function EmailInbox({
           {error && !threads.length ? (
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
-              title="Inbox unavailable"
+              title="Inbox Unavailable"
               description={error}
               density="compact"
               titleTone="ui"
@@ -548,7 +548,7 @@ export default function EmailInbox({
           ) : hasSearch && !visibleThreads.length ? (
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
-              title="No matching email"
+              title="No Matching Email"
               description="Try a different sender, subject, status, or keyword."
               density="compact"
               titleTone="ui"
@@ -557,7 +557,7 @@ export default function EmailInbox({
           ) : !visibleThreads.length ? (
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
-              title={agentId ? "No email for this Bot" : "No email yet"}
+              title={agentId ? "No Email for This Bot" : "No Email Yet"}
               description={
                 agentId || accountId
                   ? undefined
@@ -625,7 +625,7 @@ export default function EmailInbox({
           {!selectedId ? (
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
-              title="Select a conversation"
+              title="Select a Conversation"
               density="compact"
               titleTone="ui"
               withHalo={false}
@@ -648,7 +648,7 @@ export default function EmailInbox({
               </div>
               <EmptyState
                 icon={<Mail className="size-5" aria-hidden="true" />}
-                title="Conversation unavailable"
+                title="Conversation Unavailable"
                 description={detailError}
                 density="compact"
                 titleTone="ui"
@@ -689,7 +689,7 @@ export default function EmailInbox({
               {detailError ? (
                 <StatusNotice
                   tone="destructive"
-                  title="Conversation needs attention"
+                  title="Conversation Needs Attention"
                   className="m-3 sm:m-4"
                 >
                   {detailError}

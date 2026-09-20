@@ -69,7 +69,7 @@ def wrap(c, value, x, y, width, font="Inter", size=8.4, leading=11, color=PLATIN
 
 
 def eyebrow(c, value, x, y):
-    text(c, value.upper(), x, y, "PlexBold", 7.4, LILAC)
+    text(c, value, x, y, "PlexBold", 7.4, LILAC)
 
 
 def panel(c, x, y, w, h, title, body, number=None):
@@ -115,10 +115,10 @@ def render():
     # Wordmark and investor context.
     text(c, "Bot", 32, 754, "InterExtra", 19, WHITE)
     text(c, "Bound", 64, 754, "InterExtra", 19, VIOLET)
-    right_text(c, "INVESTOR + DESIGN-PARTNER BRIEF", 580, 758, "PlexBold", 6.6, LILAC)
-    eyebrow(c, "The second ring", 33, 714)
-    text(c, "PUT YOUR BOT", 31, 663, "InterTightExtra", 34, WHITE)
-    text(c, "ON THE LINE.", 31, 627, "InterTightExtra", 34, VIOLET)
+    right_text(c, "Investor + Design-Partner Brief", 580, 758, "PlexBold", 6.6, LILAC)
+    eyebrow(c, "The Second Ring", 33, 714)
+    text(c, "Put Your Bot", 31, 663, "InterTightExtra", 34, WHITE)
+    text(c, "on the Line", 31, 627, "InterTightExtra", 34, VIOLET)
     wrap(
         c,
         "Bots for calls, texts, and email. Keep work moving when the owner cannot stop to answer.",
@@ -150,7 +150,7 @@ def render():
         row_y,
         col_w,
         row_h,
-        "A costly interruption",
+        "A Costly Interruption",
         "Owner-operators are forced to choose between the customer in front of them and the customer trying to reach them.",
         "01 / PROBLEM",
     )
@@ -160,8 +160,8 @@ def render():
         row_y,
         col_w,
         row_h,
-        "Your Bots, your rules",
-        "Build each Bot around a job, with your knowledge, rules, tools, approvals, and handoffs. Launch the channels the work needs.",
+        "Your Bots, Your Rules",
+        "Bots for calls, texts, and email, with your knowledge, rules, approvals, and handoffs.",
         "02 / PRODUCT",
     )
     panel(
@@ -170,19 +170,19 @@ def render():
         row_y,
         col_w,
         row_h,
-        "Keep the next step moving",
+        "Keep the Next Step Moving",
         "Calls, texts, and email share context. Configured tools handle next steps; approvals and handoffs keep the owner in control.",
         "03 / OUTCOMES",
     )
 
     # Product architecture—simple enough to scan in one breath.
-    eyebrow(c, "How the line works", 31, 365)
+    eyebrow(c, "How the Line Works", 31, 365)
     flow_y = 319
     flow_labels = [
-        ("CUSTOMER", "calls / texts / email"),
-        ("CHANNEL RAILS", "Twilio voice + SMS / email"),
-        ("BOTBOUND", "policy / memory / actions"),
-        ("OPENAI", "Realtime voice / intelligence"),
+        ("Customer", "calls / texts / email"),
+        ("Channel Rails", "Twilio voice + SMS / email"),
+        ("BotBound", "policy / memory / actions"),
+        ("OpenAI", "Realtime voice / intelligence"),
     ]
     flow_w = 127
     flow_gap = 11
@@ -208,19 +208,18 @@ def render():
     c.setFillColor(BLACK_VIOLET)
     c.setStrokeColor(HexColor("#3E3554"))
     c.roundRect(28, proof_y, 556, 83, 10, fill=1, stroke=1)
-    eyebrow(c, "What exists now", 42, proof_y + 61)
+    eyebrow(c, "What Exists Now", 42, proof_y + 61)
     proof = [
         ("10", "built-in OpenAI voices"),
         ("1", "selected voice per runtime session"),
         ("3", "connected customer channels"),
-        ("3", "Build / Train / Launch"),
     ]
-    proof_x = [43, 176, 327, 434]
-    proof_sizes = [18, 18, 18, 18]
+    proof_x = [43, 228, 413]
+    proof_sizes = [18, 18, 18]
     for idx, (number, label) in enumerate(proof):
         x = proof_x[idx]
         text(c, number, x, proof_y + 31, "InterTightExtra", proof_sizes[idx], VIOLET)
-        wrap(c, label, x + 25, proof_y + 36, 97 if idx != 3 else 116, "InterSemi", 6.7, 8.4, WHITE, 3)
+        wrap(c, label, x + 25, proof_y + 36, 126, "InterSemi", 6.7, 8.4, WHITE, 3)
 
     # Market motion and business model.
     panel(
@@ -229,7 +228,7 @@ def render():
         100,
         270,
         97,
-        "The wedge",
+        "The Wedge",
         "Appointment-driven and service businesses where both hands are already doing the work: home services, automotive, salons, clinics, property services, hospitality, and local operators.",
         "GO-TO-MARKET",
     )
@@ -239,7 +238,7 @@ def render():
         100,
         277,
         97,
-        "Build free. Plans from $19/month.",
+        "Build Free. Plans from $19/month",
         "Starter includes 1 Bot and 50 voice minutes/month. Live phone and email setup depend on account eligibility and availability. Additional Bots expand with the business.",
         "BUSINESS MODEL",
     )
@@ -252,7 +251,7 @@ def render():
     right_text(c, "support@botbound.me", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
 
     text(c, "Copy review: 2026-09-20. Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
-    right_text(c, "PUT YOUR BOT ON THE LINE", 583, 27, "PlexBold", 5.8, LILAC)
+    right_text(c, "Put Your Bot on the Line", 583, 27, "PlexBold", 5.8, LILAC)
 
     c.showPage()
     c.save()

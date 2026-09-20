@@ -12,7 +12,7 @@ Retain the existing Wireline Letterpress foundation: quiet obsidian/near-white s
 
 1. **Controls need a containment contract.** Long labels and flex-row actions can exceed their available width, especially in narrow workspace headers.
 2. **Mobile density is too large.** Several headings, cards, and public-page sections consume more vertical space than the information warrants.
-3. **Uppercase needs governance.** It is effective for labels and actions but reduces readability and increases overflow risk when applied to long text.
+3. **Titles use Title Case.** Author heroes, headings, card titles, dialog titles, and empty-state titles consistently. Preserve authored casing in CSS; reserve uppercase for compact labels and deliberately cased actions.
 4. **The public and authenticated surfaces need different density modes.** Marketing can use larger display hierarchy; workspaces should favor efficient scanning and primary-task visibility.
 5. **Mobile should be its own layout.** It needs intentional action collapse, compact navigation, and full-width primary actions.
 
@@ -20,13 +20,13 @@ Retain the existing Wireline Letterpress foundation: quiet obsidian/near-white s
 
 ### Breakpoints
 
-| Viewport | Mode | Primary behavior |
-| --- | --- | --- |
-| 320–479px | Compact phone | Single column, icon-first utility actions, 44px targets |
-| 480–767px | Phone | Single column, full-width primary calls to action |
-| 768–1023px | Tablet | Two-column content where useful; desktop navigation remains collapsed until space is stable |
-| 1024–1279px | Laptop | Persistent workspace navigation, restrained page rails |
-| 1280px+ | Desktop | Spacious rails, multi-column information layouts |
+| Viewport    | Mode          | Primary behavior                                                                            |
+| ----------- | ------------- | ------------------------------------------------------------------------------------------- |
+| 320–479px   | Compact phone | Single column, icon-first utility actions, 44px targets                                     |
+| 480–767px   | Phone         | Single column, full-width primary calls to action                                           |
+| 768–1023px  | Tablet        | Two-column content where useful; desktop navigation remains collapsed until space is stable |
+| 1024–1279px | Laptop        | Persistent workspace navigation, restrained page rails                                      |
+| 1280px+     | Desktop       | Spacious rails, multi-column information layouts                                            |
 
 ### Spacing tokens
 
@@ -45,9 +45,10 @@ Use a 4px base with an 8px rhythm:
 
 ### Type roles
 
-- Display: marketing hero only.
-- Page title: route-level hierarchy.
-- Section title: short editorial statement.
+- Display: marketing hero only, authored in Title Case.
+- Page title: route-level hierarchy, authored in Title Case.
+- Section, card, dialog, and empty-state titles: short Title Case headings with proper names and acronyms preserved.
+- Title styling: no CSS uppercase or automatic case conversion; preserve customer-authored names exactly.
 - Body: natural case, 16px minimum in editable/input contexts.
 - Overline: compact uppercase label only.
 - Button label: normal case by default; uppercase only for deliberate marketing calls to action.

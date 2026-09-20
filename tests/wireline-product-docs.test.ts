@@ -23,7 +23,10 @@ describe("product documentation and compatibility contract", () => {
     const readme = read("README.md");
     expect(readme).toContain("BotBound Command");
     expect(readme).toContain("BotBound Letterpress design system");
-    expect(readme).toContain("Build -> Train -> Launch");
+    expect(readme).toContain(
+      "Public marketing leads with capabilities, outcomes, and a clear signup action.",
+    );
+    expect(readme).toContain("Train -> Test -> Launch");
     expect(readme).toContain("Create / Build");
     expect(readme).toContain("Wire / Launch");
     expect(readme).toContain("Studio / Operations");
@@ -43,9 +46,10 @@ describe("product documentation and compatibility contract", () => {
   it("keeps the docs index aligned with current product truth", () => {
     const readme = read("docs/README.md");
     const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    expect(readme).toContain("Build -> Train -> Launch");
+    expect(readme).toContain("It does not require a setup sequence.");
+    expect(readme).toContain("Train -> Test -> Launch");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
-    expect(launchTruth).toContain("**Build. Train. Launch.**");
+    expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
     expect(launchTruth).toContain("Put Your Bot on the Line.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
     expect(readme).toContain("same workspace model");
@@ -124,8 +128,9 @@ describe("product documentation and compatibility contract", () => {
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("FIND. CALL. BOOK.");
-    expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS. ONE BOT.");
+    expect(ogImage).toContain("Find. Call. Book");
+    expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS.");
+    expect(ogImage).not.toContain("ONE BOT.");
     expect(ogImage).toContain("Find leads. Make calls. Answer inbound.");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");

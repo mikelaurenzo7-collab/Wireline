@@ -220,7 +220,7 @@ export default function PhoneSetupPanel() {
       {error ? (
         <StatusNotice
           tone="destructive"
-          title="Lines need attention"
+          title="Lines Need Attention"
           action={
             recoveryPath ? (
               <Button asChild size="sm" variant="secondary">
@@ -254,7 +254,7 @@ export default function PhoneSetupPanel() {
           titleTone="ui"
           withHalo={false}
           icon={<Phone className="size-5" aria-hidden="true" />}
-          title="No line yet"
+          title="No Line Yet"
           description="Add a number when this Bot is ready for real calls."
           action={
             <Button type="button" onClick={() => setAddingLine(true)}>

@@ -11,7 +11,7 @@ This kit owns asset delivery, capture/certification, tool briefs, and placement.
 
 One story across public creative:
 
-**Build -> Train -> Launch**
+**Bots for calls, texts, and email.**
 
 Use:
 
@@ -36,13 +36,13 @@ Legacy filenames containing older provider or positioning language may remain fo
 
 ## Brand System
 
-| Element         | Direction                                                                                                               |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Canvas          | Cool near-white or cool obsidian                                                                                        |
-| Accent          | Electric violet with restrained platinum wire detail                                                                    |
-| Mood            | Premium, operational, clear, outcome-driven                                                                             |
-| Product imagery | Phone Bot, call, follow-up, booking/handoff, transcript, and outcome                                                    |
-| Avoid           | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks, unlabeled synthetic avatar proof           |
+| Element         | Direction                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| Canvas          | Cool near-white or cool obsidian                                                                              |
+| Accent          | Electric violet with restrained platinum wire detail                                                          |
+| Mood            | Premium, operational, clear, outcome-driven                                                                   |
+| Product imagery | Phone Bot, call, follow-up, booking/handoff, transcript, and outcome                                          |
+| Avoid           | Generic call-center stock, humanoid robots, abstract AI blobs, vendor marks, unlabeled synthetic avatar proof |
 
 ## Required Audio Deliverables
 
@@ -65,13 +65,13 @@ captured Bot audio when selling live-call quality.
 
 ## Required Launch Cuts
 
-| Cut                     | Format                    | Purpose                                                                   | Current posture                                                                                                    |
-| ----------------------- | ------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Missed Call             | 9:16, 15s                 | Fast problem -> Bot -> outcome -> CTA                                     | Recapture against exact production before publishing                                                               |
-| Second Ring             | 9:16 / 1:1 / 16:9, ~30s   | Primary paid-social voice-quality proof                                   | Needs certified captured call/product picture                                                                      |
-| Founder / Product Proof | 16:9, 45-60s              | Founder-led explanation and product proof                                 | Recapture against exact production before publishing                                                               |
-| Two Rings               | 6s bumper                 | Minimal missed-call scroll-stop                                           | Derive from certified captured-call proof                                                                          |
-| sound-off variants      | matching paid formats     | Muted-viewer accessibility without UI clutter                             | Produce from each certified paid cut                                                                               |
+| Cut                     | Format                  | Purpose                                       | Current posture                                      |
+| ----------------------- | ----------------------- | --------------------------------------------- | ---------------------------------------------------- |
+| Missed Call             | 9:16, 15s               | Fast problem -> Bot -> outcome -> CTA         | Recapture against exact production before publishing |
+| Second Ring             | 9:16 / 1:1 / 16:9, ~30s | Primary paid-social voice-quality proof       | Needs certified captured call/product picture        |
+| Founder / Product Proof | 16:9, 45-60s            | Founder-led explanation and product proof     | Recapture against exact production before publishing |
+| Two Rings               | 6s bumper               | Minimal missed-call scroll-stop               | Derive from certified captured-call proof            |
+| sound-off variants      | matching paid formats   | Muted-viewer accessibility without UI clutter | Produce from each certified paid cut                 |
 
 ## Creative Status — 2026-08-14
 
@@ -163,15 +163,14 @@ The wrapper proves:
 
 ### Current capture map
 
-The technical scene map can use current product surfaces while still expressing the public loop:
+Use this internal capture map to gather product evidence. Do not display it as setup steps in public creative:
 
-| Public beat | Product evidence                                                                                                                                      |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build       | Create/Studio intake and focused Bot setup                                                                                                            |
-| Train       | Knowledge/training facts, rules, voice, and behavior                                                                                                  |
-| Launch      | Phone/Connections setup and enabled channels                                                                                                          |
+| Evidence area     | Product evidence                                                              |
+| ----------------- | ----------------------------------------------------------------------------- |
+| Bot configuration | Create/Studio intake, role, job, knowledge, voice, rules, and private testing |
+| Enabled channels  | Ready Phone/Connections setup and enabled channels                            |
 
-Implementation surface names do not create a second brand narrative. Call history, transcripts, outcomes, analytics, and follow-up review demonstrate completed work after launch; they are not a fourth setup step.
+Implementation surface names do not create a second brand narrative. Call history, transcripts, outcomes, analytics, and follow-up review demonstrate completed work; they are not another setup step.
 
 ## Raw-Source Visual Acceptance
 
@@ -199,7 +198,7 @@ The captured call and Bot response are the proof center. Do not fill the whole c
 
 ### Founder / Product Proof — 45-60s
 
-Show **Build -> Train -> Launch** with enough time for viewers to understand each useful transition. Do not turn the cut into a speed-run of every tab.
+Show a useful conversation and its completed follow-up or logged outcome. Keep the product readable; do not add setup-step labels.
 
 ### Historical Live Video Proof — do not deliver
 
@@ -222,7 +221,7 @@ Create a premium BotBound launch ad using authentic product imagery or approved 
 
 ### Founder video
 
-Use the canonical founder narration from the campaign pack with exact-production product footage. Show Build, Train, Launch in that order. Keep the product readable and let captured Bot audio take over where voice quality is being proved.
+Use the canonical founder narration from the campaign pack with exact-production product footage. Show a useful call and its follow-up or logged outcome. Keep the product readable and let captured Bot audio take over where voice quality is being proved.
 
 ### Short-form edit
 
@@ -234,7 +233,7 @@ The former presenter edit brief is retained as rejected historical provenance. D
 
 ### Launch deck
 
-Six slides maximum: BotBound; the missed-call/follow-up problem; Build -> Train -> Launch; role and use-case proof; exact product proof; Build free / Go live from $19/mo. Do not include Live Video.
+Six slides maximum: BotBound; the missed-call/follow-up problem; product capabilities; role and use-case proof; exact product proof; Build free / Go live from $19/mo. Do not include Live Video.
 
 ## Asset Organization
 
@@ -251,12 +250,12 @@ Never label a historical edit `final` without also recording whether it is relea
 
 ## Placement Plan
 
-| Channel                           | Preferred asset                      | Gate                                                                        |
-| --------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- |
-| Homepage / sales support          | 16:9 product-proof cut               | Exact-production capture certified                                          |
-| LinkedIn organic                  | Founder post + founder/product proof | Current claims and UI                                                       |
-| X / short social                  | Missed-call still or short cut       | Current price/domain                                                        |
-| Meta / LinkedIn paid              | Missed Call / Second Ring            | Phone + checkout dogfood complete                                           |
-| Reels / TikTok                    | 9:16 Missed Call / Second Ring       | Legible vertical reframe + captions                                         |
+| Channel                  | Preferred asset                      | Gate                                |
+| ------------------------ | ------------------------------------ | ----------------------------------- |
+| Homepage / sales support | 16:9 product-proof cut               | Exact-production capture certified  |
+| LinkedIn organic         | Founder post + founder/product proof | Current claims and UI               |
+| X / short social         | Missed-call still or short cut       | Current price/domain                |
+| Meta / LinkedIn paid     | Missed Call / Second Ring            | Phone + checkout dogfood complete   |
+| Reels / TikTok           | 9:16 Missed Call / Second Ring       | Legible vertical reframe + captions |
 
 Paid acquisition starts only after the workflow being advertised has passed founder dogfood. Creative polish is not a substitute for product evidence.

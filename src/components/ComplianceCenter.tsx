@@ -80,7 +80,7 @@ export default function ComplianceCenter() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
-              Prove what happened on every call
+              Prove What Happened on Every Call
             </h2>
             <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
               BotBound helps you prove who was called, why they were callable, what was disclosed,
@@ -171,7 +171,7 @@ export default function ComplianceCenter() {
           <section className="wl-paper wl-paper-elevated p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Consent ledger</h3>
+                <h3 className="text-sm font-semibold text-foreground">Consent Ledger</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Recent disclosure and consent events (rule version{" "}
                   {summary.consent_rule_version || "N/A"}).

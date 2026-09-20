@@ -114,7 +114,7 @@ describe("entitlement delivery survives webhook failure", () => {
 
     expect(expiredIdx).toBeGreaterThan(-1);
     expect(pendingIdx).toBeGreaterThan(expiredIdx);
-    expect(billingPage).toContain('title: "Checkout expired"');
+    expect(billingPage).toContain('title: "Checkout Expired"');
     expect(billingPage).toContain("Your current billing options are shown below.");
   });
 

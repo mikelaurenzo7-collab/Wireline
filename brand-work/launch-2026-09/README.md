@@ -9,17 +9,16 @@ The phone has impeccable timing. BotBound gives the second ring somewhere useful
 - **Campaign close:** Put your Bot on the line.
 - **Product line:** Your Bot for calls, texts, and email.
 - **Offer:** Build free. Plans from $19/mo. Activation availability applies.
-- **Public operating loop:** Build -> Train -> Launch.
 
 This is a launch-release creative system, not a folder of disconnected posts. Each asset moves from a familiar owner/operator problem — the call that arrives while the work is happening — to the same clear product idea: one trained Bot can carry a business conversation across calls, texts, and email under one identity, rule set, approval posture, and outcome record.
 
 ### Copy revision — September 20
 
-The public setup journey now ends at **Launch**. Conversation review and later refinements remain available controls, not a fourth setup step. Current text sources and the investor PDF renderer reflect this change.
+Public marketing now leads with capabilities, outcomes, and a clear signup action, without a setup-step list. Current text sources and the investor PDF renderer reflect this change.
 
-The local investor PDF at `exports/investor/botbound-investor-one-pager-2026-09.pdf` and its preview were regenerated and visually checked on September 20. They show three setup steps and completed work with owner controls, without implying ongoing repair work. This is a copy and layout review, not production certification.
+The local investor PDF at `exports/investor/botbound-investor-one-pager-2026-09.pdf` and its preview were regenerated and visually checked on September 20. They show product capabilities and completed work with owner controls, without a public setup sequence. This is a copy and layout review, not production certification.
 
-Recapture Home and Features product images after the current layout and copy changes. Review earlier film renders and any Drive copies for the retired four-step language before distribution. Local source and PDF changes do not update historical images, videos, or remote copies.
+Recapture Home and Features product images after the current layout and copy changes. Review earlier film renders and any Drive copies for the retired setup-step language before distribution. Local source and PDF changes do not update historical images, videos, or remote copies.
 
 ## Product truth carried by the work
 

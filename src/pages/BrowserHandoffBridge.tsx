@@ -86,9 +86,10 @@ export default function BrowserHandoffBridge() {
     return (
       <TransitionSurface
         eyebrow="Studio"
-        title="Handoff unavailable"
+        title="Handoff Unavailable"
         description={error}
         busyLabel=""
+        actions={[{ href: "/studio", label: "Open Studio" }]}
       />
     );
   }
@@ -96,7 +97,7 @@ export default function BrowserHandoffBridge() {
   return (
     <TransitionSurface
       eyebrow="Studio"
-      title="Securing browser context"
+      title="Securing Browser Context"
       description="Signing your page capture before opening Studio…"
       busyLabel="Preparing Studio"
     />

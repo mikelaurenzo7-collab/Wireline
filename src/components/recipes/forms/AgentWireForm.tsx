@@ -160,7 +160,7 @@ export function AgentWireForm({
               ))}
             </ul>
           </ResultCard>
-          <ResultCard title="What it knows">
+          <ResultCard title="What It Knows">
             <ul className="list-disc list-inside text-foreground/85 space-y-1">
               {design.seed_knowledge.map((k: string, i: number) => (
                 <li key={i}>{k}</li>
@@ -177,7 +177,7 @@ export function AgentWireForm({
             </ResultCard>
           )}
           {design.reasoning && (
-            <ResultCard title="Why this fits">
+            <ResultCard title="Why This Fits">
               <p className="text-foreground/65">{design.reasoning}</p>
             </ResultCard>
           )}

@@ -21,7 +21,7 @@ export default function AppShell() {
     return (
       <TransitionSurface
         eyebrow="Workspace"
-        title="Opening your workspace"
+        title="Opening Your Workspace"
         busyLabel="Checking your session"
       />
     );

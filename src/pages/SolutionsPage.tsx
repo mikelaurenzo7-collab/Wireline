@@ -4,7 +4,7 @@ import { PageMeta } from "../lib/page-meta";
 
 const SOLUTIONS = {
   sales: {
-    title: "FIND THE LEAD. MAKE THE CALL. BOOK THE NEXT STEP.",
+    title: "Find the Lead. Make the Call. Book the Next Step.",
     description:
       "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
     primary: { href: "/signup?wedge=sales", label: "Get Your Sales Bot" },
@@ -34,7 +34,7 @@ const SOLUTIONS = {
     proof: "Your Bot works the approved queue. Your team takes the next steps.",
   },
   support: {
-    title: "A FRONT DESK THAT ANSWERS BEFORE DEMAND GOES COLD",
+    title: "A Front Desk That Answers Before Demand Goes Cold",
     description:
       "Give a trained Front Desk Bot your policies, calendar, and handoff rules. It answers calls, holds natural conversations, continues by text and email, then resolves or routes the next step.",
     primary: {

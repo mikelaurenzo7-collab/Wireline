@@ -30,7 +30,10 @@ export default function UnifiedInbox({
   const SelectedIcon = selected ? conversationChannelIcon(selected.channel) : Inbox;
 
   return (
-    <section className="wl-paper wl-paper-elevated overflow-hidden" aria-labelledby="unified-inbox-title">
+    <section
+      className="wl-paper wl-paper-elevated overflow-hidden"
+      aria-labelledby="unified-inbox-title"
+    >
       <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -150,7 +153,7 @@ export default function UnifiedInbox({
                       {conversationChannelLabel(selected.channel)} Conversation
                     </p>
                     <h3 className="mt-1 truncate text-xl font-semibold text-foreground">
-                      {selected.contact || "Unknown contact"}
+                      {selected.contact || "Unknown Contact"}
                     </h3>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {[

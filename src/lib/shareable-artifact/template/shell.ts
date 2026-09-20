@@ -155,6 +155,7 @@ const BASE_STYLES = `
       color: var(--wl-textPrimary);
       max-width: 26ch;
       text-wrap: balance;
+      text-transform: none;
     }
 
     .wl-hero em {
@@ -230,8 +231,8 @@ const BASE_STYLES = `
     .wl-section-label {
       font-family: var(--wl-font-mono);
       font-size: 11px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-transform: none;
       color: var(--wl-textTertiary);
       display: flex;
       align-items: center;
@@ -399,8 +400,8 @@ const BASE_STYLES = `
       color: var(--wl-textTertiary);
       font-family: var(--wl-font-mono);
       font-size: 11px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-transform: none;
       display: flex;
       align-items: center;
       gap: var(--wl-space-3);

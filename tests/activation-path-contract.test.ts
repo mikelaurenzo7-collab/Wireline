@@ -26,7 +26,7 @@ describe("activation path contract", () => {
 
     expect(overview).toContain("ActivationChecklist");
     expect(studioSetup).not.toContain("ActivationChecklist");
-    expect(studioSetup).toContain("Tone & knowledge");
+    expect(studioSetup).toContain("Tone & Knowledge");
     expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save changes"}');
     expect(overview).toContain("FirstRunWorkspace");
     expect(overview).toContain("degraded && !hasBots");
@@ -103,7 +103,7 @@ describe("activation path contract", () => {
     expect(copy).toContain("Continue to test");
     expect(copy).toContain("Continue to launch");
     expect(copy).toContain("Skip test");
-    expect(copy).toContain("Put it on the line");
+    expect(copy).toContain("Put It on the Line");
     expect(billing).toContain("shouldResumePostCreateLaunch(");
     expect(billing).toContain("Boolean(readPostCreateWizard())");
     expect(billing).toContain("readPostCreateWizardStep()");

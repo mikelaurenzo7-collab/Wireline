@@ -193,6 +193,6 @@ describe("authenticated responsive polish contract", () => {
     // page label — the heading is kept for the outline the way Studio and Admin
     // above keep theirs, rather than printing "Team" twice.
     expect(team).toContain('<WorkspacePageIntro title="Team" titleHidden />');
-    expect(admin).toContain('<h1 className="sr-only">Admin workspace</h1>');
+    expect(admin).toContain('<h1 className="sr-only">Admin Workspace</h1>');
   });
 });

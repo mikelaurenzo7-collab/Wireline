@@ -69,11 +69,11 @@ for (const route of PUBLIC_ROUTES) {
  * Assert the served response directly: no redirect, and the route's own head.
  */
 const PRERENDERED_HEAD = [
-  { route: "/pricing", title: "PRICING | FROM $19/MONTH | BotBound" },
-  { route: "/features", title: "FEATURES | BotBound" },
+  { route: "/pricing", title: "Pricing | From $19/Month | BotBound" },
+  { route: "/features", title: "Features | BotBound" },
   {
     route: "/for/legal",
-    title: "BOTBOUND FOR LAW FIRMS | PHONE BOTS FOR INTAKE AND CONSULT ROUTING",
+    title: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",
   },
 ];
 
@@ -109,7 +109,7 @@ test("unknown anonymous path renders the public 404 instead of sign-in", async (
     waitUntil: "domcontentloaded",
   });
   expect(response!.status()).toBeLessThan(400);
-  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Page Not Found" })).toBeVisible({
     timeout: 15_000,
   });
   await expect(page).toHaveURL(/\/this-route-does-not-exist$/);

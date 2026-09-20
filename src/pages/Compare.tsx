@@ -105,7 +105,7 @@ export default function Compare() {
       stickyCtaSecondaryLabel="See Pricing"
     >
       <PageMeta
-        title="WHY BOTBOUND | COMPARE BOTS"
+        title="Why BotBound | Compare Bots"
         description="Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing."
         path="/compare"
       />
@@ -146,7 +146,7 @@ export default function Compare() {
       <section className="marketing-section">
         <div className="mx-auto w-full min-w-0 max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Compare pricing models</h2>
+            <h2 className="wl-stitch-display text-balance">Compare Pricing Models</h2>
           </div>
 
           <div className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card">
@@ -161,7 +161,7 @@ export default function Compare() {
                     (heading) => (
                       <th
                         key={heading}
-                        className="px-5 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+                        className="px-5 py-4 text-xs font-semibold tracking-[0.04em] text-muted-foreground"
                       >
                         {heading}
                       </th>

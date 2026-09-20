@@ -65,7 +65,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"PUT YOUR BOT ON THE LINE"/,
+    /slogan:\s*"Put Your Bot on the Line"/,
     "shared model must preserve the approved BotBound hero",
   );
   mustInclude(
@@ -90,7 +90,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /title:\s*"YOUR BOT\. ALREADY MOVING\."/,
+    /title:\s*"Your Bot\. Already Moving"/,
     "shared model must preserve the operating promise",
   );
   for (const channel of ["Call", "Text", "Email"])
@@ -122,7 +122,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/,
+    /<span>Put Your Bot<\/span>[\s\S]*<span>on the Line<\/span>/,
     "landing must render the approved two-line hero",
   );
   mustInclude(

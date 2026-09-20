@@ -236,7 +236,7 @@ export default function Pricing() {
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
-        title="PRICING | FROM $19/MONTH | BotBound"
+        title="Pricing | From $19/Month | BotBound"
         description="Build a Bot free. Paid plans start at $19/month, with included numbers, call minutes, text, email, and prepaid usage controls. Check live activation availability."
         path="/pricing"
       />
@@ -250,7 +250,7 @@ export default function Pricing() {
           <div className="mx-auto mb-8 max-w-6xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
             <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              Build free. Plans from $19.
+              Build Free. Plans from $19
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">
               Every active paid Bot gets its own BotBound phone number.
@@ -447,7 +447,7 @@ export default function Pricing() {
                 {SHARED_PAID_FEATURES.join(". ")}
               </p>
               <h2 className="wl-public-section-heading mx-auto text-center">
-                Your Bot. No seat tax. Clear costs.
+                Your Bot. No Seat Tax. Clear Costs.
               </h2>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {CHANNEL_RULES.map(({ title, body }) => (
@@ -471,7 +471,7 @@ export default function Pricing() {
                 </Link>
                 .
               </p>
-              <h2 className="wl-public-section-heading mx-auto mt-6 text-center">Before launch</h2>
+              <h2 className="wl-public-section-heading mx-auto mt-6 text-center">Before Launch</h2>
               <div className="mt-4 grid gap-2 md:grid-cols-2">
                 {FAQ.map(([question, answer]) => (
                   <details

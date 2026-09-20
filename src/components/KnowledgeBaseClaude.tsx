@@ -516,7 +516,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     directives.length > 0 ? (
       <section className="wl-paper wl-paper-elevated p-5">
         <div className="mb-3 flex items-center justify-between">
-          <div className="wl-eyebrow">Active rules</div>
+          <h2 className="text-base font-semibold leading-6 text-foreground">Active Rules</h2>
           <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
             {directives.length} total
           </span>
@@ -587,14 +587,17 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       />
 
       {showStats ? (
-        <section className="grid grid-cols-3 gap-2 sm:gap-3.5" aria-label="Knowledge stats">
+        <section
+          className="wl-knowledge-stats grid grid-cols-3 gap-2 sm:gap-3.5"
+          aria-label="Knowledge stats"
+        >
           {stats.map((stat, index) => (
             <MetricTile
               key={stat.label}
               label={stat.label}
               value={loading ? "N/A" : stat.value}
               reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
-              className="wl-metric-tile--compact min-w-0 items-center px-2 text-center [&_.wl-metric-tile__label]:text-[9px] [&_.wl-metric-tile__label]:tracking-[0.08em]"
+              className="wl-metric-tile--compact min-w-0 items-center text-center"
             />
           ))}
         </section>
@@ -632,7 +635,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
           <>
             <div className="mb-1 flex items-center justify-between">
-              <div className="wl-eyebrow">Ingested knowledge</div>
+              <h2 className="text-base font-semibold leading-6 text-foreground">
+                Ingested Knowledge
+              </h2>
               <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
                 {knowledge.length} total
               </span>
@@ -825,9 +830,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           aria-hidden="true"
         />
         <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
-          <div className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
-            Add documents
-          </div>
+          <h2 className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
+            Add Documents
+          </h2>
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >

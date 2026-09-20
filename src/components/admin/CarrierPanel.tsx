@@ -152,7 +152,7 @@ export function CarrierPanel({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto pb-4 xl:grid-cols-2">
-      <Panel title="Managed call runtime" hint="RELIABLE BY DEFAULT" icon={Cpu} scroll>
+      <Panel title="Managed Call Runtime" hint="RELIABLE BY DEFAULT" icon={Cpu} scroll>
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
             <p className="text-sm font-semibold text-foreground">
@@ -199,11 +199,11 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      <Panel title="Get a phone number" hint="LOCAL CUSTOMER LINE" icon={Phone} scroll>
+      <Panel title="Get a Phone Number" hint="LOCAL CUSTOMER LINE" icon={Phone} scroll>
         <PhoneNumberPicker onClaim={onSyncNumbers} />
       </Panel>
 
-      <Panel title="Phone number routing" hint="WHO ANSWERS EACH LINE" icon={Phone} scroll>
+      <Panel title="Phone Number Routing" hint="WHO ANSWERS EACH LINE" icon={Phone} scroll>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-5 text-muted-foreground">
@@ -308,7 +308,7 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      <Panel title="Text messaging" hint="FOLLOW-UP · ALERTS" icon={MessageSquareText} scroll>
+      <Panel title="Text Messaging" hint="FOLLOW-UP · ALERTS" icon={MessageSquareText} scroll>
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
             <div>

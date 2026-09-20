@@ -13,14 +13,14 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('slogan: "Put Your Bot on the Line"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>PUT YOUR BOT<\/span>[\s\S]*?<span>ON THE LINE<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>Put Your Bot<\/span>[\s\S]*?<span>on the Line<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -119,8 +119,8 @@ describe("BotBound public iPhone prestige contract", () => {
     const styles = read("src/styles/bot-mark.css");
 
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("FIND. CALL. BOOK.");
-    expect(landing).toContain("ANSWER. QUALIFY. ROUTE.");
+    expect(landing).toContain("Find. Call. Book.");
+    expect(landing).toContain("Answer. Qualify. Route.");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);
@@ -136,7 +136,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("PICK THE WORK. PUT A BOT ON IT.");
+    expect(landing).toContain("Pick the Work. Put a Bot on It");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("DIRECTION_LABELS[template.direction]");
     expect(landing).not.toContain("template.category");

@@ -732,7 +732,7 @@ export default function AgentTemplates() {
                     titleTone="ui"
                     withHalo={false}
                     icon={Search}
-                    title={q ? `No templates match “${search.trim()}”` : "No templates match"}
+                    title={q ? `No Templates Match “${search.trim()}”` : "No Templates Match"}
                     description={
                       search
                         ? "Try a broader job name, or clear the search to browse everything."

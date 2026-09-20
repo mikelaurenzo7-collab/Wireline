@@ -16,15 +16,17 @@ Campaign close:
 
 ## 30-second hero film: Hands Full
 
-| Time | Picture | Sound and copy |
-| --- | --- | --- |
-| 0:00-0:02 | Extreme detail: flour-covered hands fold dough. A black desk phone rings just out of reach. | Room tone, dough, first mechanical ring. No music. |
-| 0:02-0:05 | The second ring leaves the phone as a single violet signal. It crosses the bench and resolves into the BotBound receiver and robot. | Ring bends into the D5-A5 BotBound chime. Low pulse begins. |
-| 0:05-0:09 | The robot lifts the receiver. A live-call state appears with restraint. The baker keeps working. | Bot: "Good morning. How can I help?" |
-| 0:09-0:15 | Intercut bakery, auto shop, and florist. Every owner stays in flow while the Bot handles the call. | Customer: "Can I pick up twelve croissants at eight?" Bot: "Absolutely. I have you down for eight." |
-| 0:15-0:22 | One continuous proof chain: appointment booked, confirmation text sent, conversation logged. | Three clean confirmations, synced to practical action. |
-| 0:22-0:26 | Violet signal traces the product loop: Build, Train, Launch. | Score opens. Mono labels land with soft ticks. |
-| 0:26-0:30 | Approved robot, complete BotBound wordmark, and CTA on obsidian. | VO: "You can't answer every call. Your Bot can." Chime resolves. |
+**Publication hold:** the original 30-second source and caption sidecars now replace the process-step diagram with **Your Bots. Your Rules.** Publish only after a fresh render of that source passes visual, audio, and caption review and receives delivery checksums. Existing renders and Drive copies are not approved evidence for this revision. The dialogue and voiceover below describe creative direction; the current original film communicates dialogue visually over music, rings, and the chime.
+
+| Time      | Picture                                                                                                                             | Sound and copy                                                                                      |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 0:00-0:02 | Extreme detail: flour-covered hands fold dough. A black desk phone rings just out of reach.                                         | Room tone, dough, first mechanical ring. No music.                                                  |
+| 0:02-0:05 | The second ring leaves the phone as a single violet signal. It crosses the bench and resolves into the BotBound receiver and robot. | Ring bends into the D5-A5 BotBound chime. Low pulse begins.                                         |
+| 0:05-0:09 | The robot lifts the receiver. A live-call state appears with restraint. The baker keeps working.                                    | Bot: "Good morning. How can I help?"                                                                |
+| 0:09-0:15 | Intercut bakery, auto shop, and florist. Every owner stays in flow while the Bot handles the call.                                  | Customer: "Can I pick up twelve croissants at eight?" Bot: "Absolutely. I have you down for eight." |
+| 0:15-0:22 | One continuous proof chain: appointment booked, confirmation text sent, conversation logged.                                        | Three clean confirmations, synced to practical action.                                              |
+| 0:22-0:26 | BotBound operator on obsidian with a restrained violet glow.                                                                        | Your Bots. Your Rules. Score continues.                                                             |
+| 0:26-0:30 | Approved robot, complete BotBound wordmark, and CTA on obsidian.                                                                    | VO: "You can't answer every call. Your Bot can." Chime resolves.                                    |
 
 ## Cutdowns
 
@@ -69,7 +71,7 @@ Proof:
 
 - Answers the call. Books the work. Sends the follow-up.
 - Calls, texts, and email. Handled under your rules.
-- Build it. Train it. Put it on a number.
+- Your Bots. Your Rules.
 
 Social launch caption:
 
@@ -83,7 +85,7 @@ PR descriptor:
 
 1. Tease the first ring with detail crops and no product explanation.
 2. Reveal the robot on the second ring.
-3. Lead launch day with the 30-second film and flagship bakery still.
+3. Lead launch day with the flagship bakery still; add the 30-second film only after the revised render clears the publication hold above.
 4. Follow with product-proof cutdowns showing booked, texted, and logged outcomes.
 5. Retarget with the 6-second bumper and direct CTA.
 

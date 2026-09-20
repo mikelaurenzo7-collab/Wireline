@@ -111,7 +111,7 @@ describe("shareable-artifact templates", () => {
     expect(html).toContain("Oct 6 – Oct 12");
     expect(html).toContain("Voice minutes");
     expect(html).toContain("<svg");
-    expect(html).toContain("Outcome mix");
+    expect(html).toContain("Outcome Mix");
     expect(html).toContain("Booked cleaning");
   });
 

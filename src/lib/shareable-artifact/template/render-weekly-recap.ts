@@ -86,7 +86,7 @@ function renderTotals(content: WeeklyRecapContent): string {
     .join("");
   return `
     <section class="wl-section" aria-labelledby="wl-totals-label">
-      <h2 class="wl-section-label" id="wl-totals-label">The week</h2>
+      <h2 class="wl-section-label" id="wl-totals-label">The Week</h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:var(--wl-space-5) var(--wl-space-6);align-items:end;">
         ${cells}
       </div>
@@ -122,7 +122,7 @@ function renderOutcomeMix(content: WeeklyRecapContent): string {
     .join("");
   return `
     <section class="wl-section" aria-labelledby="wl-mix-label">
-      <h2 class="wl-section-label" id="wl-mix-label">Outcome mix</h2>
+      <h2 class="wl-section-label" id="wl-mix-label">Outcome Mix</h2>
       <div style="display:grid;gap:var(--wl-space-3);">${bars}</div>
     </section>`;
 }
@@ -145,7 +145,7 @@ function renderTopMoments(content: WeeklyRecapContent): string {
     .join("");
   return `
     <section class="wl-section" aria-labelledby="wl-topmoments-label">
-      <h2 class="wl-section-label" id="wl-topmoments-label">Top moments</h2>
+      <h2 class="wl-section-label" id="wl-topmoments-label">Top Moments</h2>
       <ul class="wl-moment-list">${items}
       </ul>
     </section>`;
@@ -174,7 +174,7 @@ function renderFollowUps(content: WeeklyRecapContent): string {
     .join("");
   return `
     <section class="wl-section" aria-labelledby="wl-followups-label">
-      <h2 class="wl-section-label" id="wl-followups-label">Open follow-ups</h2>
+      <h2 class="wl-section-label" id="wl-followups-label">Open Follow-Ups</h2>
       <ul class="wl-action-list">${items}
       </ul>
     </section>`;
@@ -182,12 +182,12 @@ function renderFollowUps(content: WeeklyRecapContent): string {
 
 export function renderWeeklyRecap(content: WeeklyRecapContent, brand: WorkspaceBrand): string {
   const eyebrow = `Weekly review · ${content.period.label}`;
-  const title = `Weekly review · ${content.period.label}, ${brand.displayName}`;
+  const title = `Weekly Review · ${content.period.label}, ${brand.displayName}`;
   const hero = content.headline?.trim() ? content.headline : buildDefaultHeadline(content);
 
   const body = `
     <section class="wl-section" aria-labelledby="wl-week-label">
-      <h2 class="wl-visually-hidden" id="wl-week-label">Weekly summary</h2>
+      <h2 class="wl-visually-hidden" id="wl-week-label">Weekly Summary</h2>
       <h1 class="wl-hero">${escapeHtml(hero)}</h1>
       <div class="wl-metadata" aria-hidden="true">
         <dt>Period</dt>

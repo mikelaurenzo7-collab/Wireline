@@ -1,10 +1,6 @@
-/* Letterpress typography scale — three cased tiers, one display family.
- *   1. Eyebrow/kicker  — IBM Plex Mono, UPPERCASE, micro, wide tracking.
- *   2. Title/Hero/Header — Inter Tight, UPPERCASE, large, tight tracking.
- *   3. Subheader/description/copy — Inter, sentence case.
- * Case does the ranking: titles and heros shout in caps; the supporting line
- * beneath them stays sentence case. Applied via text-transform so the copy
- * strings themselves never change. */
+/* Letterpress typography: titles are authored in Title Case and rendered as
+ * written. Compact labels and controls retain their uppercase treatment;
+ * explanatory copy stays in sentence case. Customer text is never recased. */
 
 /* Three knobs, all live. There is deliberately no separate display tracking:
  * the cased title tier below sets one value for every title size, and a fourth
@@ -67,18 +63,8 @@
   line-height: 0.96;
 }
 
-/* Title tier — page titles, section headers, and heros carry the display face
- * in UPPERCASE. Descriptive sentence headings, subheaders, and body copy are
- * deliberately left out so case alone separates the title from its support
- * line. Caps get a hair more tracking than the tight lowercase display so the
- * letterforms breathe. */
-/* Semantic title classes only. The size-display classes (wl-display-1/2/3,
- * wl-display-mark) are deliberately NOT here — they are also used for data
- * readouts (a plan name, a runtime balance, the 404 mark), and uppercasing
- * those would shout the value. Static titles that use a display size opt in
- * explicitly at their element (WorkspacePageIntro/OperateIntro carry
- * `uppercase`). The Overview greeting deliberately stays sentence case: it is a
- * warm personal line that embeds the user's name, not a system label. */
+/* Titles use authored Title Case. Size-only display classes also render data,
+ * so case must never be inferred from font size or rewritten by CSS. */
 .wl-page-title,
 .wl-app-page-title,
 .wl-section-title,
@@ -88,30 +74,13 @@
 .wl-stitch-display,
 .marketing-hero__title,
 .wl-stitch-marketing-hero {
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: -0.01em;
 }
 
-/* The authenticated workspace ranks by case the same way the marketing surface
- * does. Section, card, and empty-state headings sat in sentence case here while
- * the identical construct shouted on marketing, so the two halves of the product
- * read as two design systems: 42% of the workspace's rendered text was
- * lowercase, most of it headings and inline calls to action.
- *
- * Same exclusions as marketing: long-form prose, anything the customer authored,
- * and literal values read exactly as written. Presentation only — the copy
- * strings never change.
- *
- * Reaching headings by element also reaches two tiers that are not the title
- * tier, so both are named out explicitly:
- *
- *   - The eyebrow classes. A section kicker is often authored as a heading
- *     element (`<h3 class="text-eyebrow">AI USAGE</h3>`). Without this, the
- *     title tier's -0.025em overrode the label tier's tracking on exactly the
- *     nodes the same change was unifying — the rule undid its own commit.
- *   - `.wl-display-mark`. It is deliberately kept out of the cased title tier
- *     (see the note above) because it renders values: a plan name, a runtime
- *     balance, the 404 mark. Reaching it by element defeats that. */
+/* Workspace titles share the public title policy. Compact headings keep label
+ * tracking, and data values retain their own typography. The terminal heading
+ * rule preserves authored case even when a heading uses an eyebrow class. */
 .wl-workspace-shell
   :is(h1, h2, h3, h4, h5, h6):not(.wl-preserve-case, .prose *, :has(code, time, [data-value])):not(
     .wl-display-mark,
@@ -126,7 +95,7 @@
     .wl-label,
     .wl-insight-label
   ) {
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: var(--wl-caps-title-tracking);
 }
 
@@ -307,24 +276,12 @@
   letter-spacing: normal !important;
 }
 
-/* Field captions and column headers join the label tier: caps with the wide
- * label tracking, at whatever size the field authored. */
-/* Dialog titles are titles. A sentence-case modal heading sitting above cased
- * labels and buttons was the one place the system visibly broke.
- *
- * Now that the portalled surfaces carry `wl-ui-caps`, this rule finally reaches
- * a real modal — and so does the generic heading rule above it, which was never
- * meant to restyle one. Measured, it also took the title from weight 600 to 700
- * and from a 1.15 line-height to 1.05. The Dialog atom authors
- * `font-semibold leading-[1.15]` deliberately, for a title that has to stay
- * contained in a fixed box and now wraps sooner because caps are wider; a
- * contract pins that string. Restating both here keeps the rendered result equal
- * to the authored one, which is the divergence this whole pass exists to close.
- * Case is the only thing the system changes here. */
+/* Portalled dialogs carry the presentation-only `wl-cased` marker. Their
+ * titles share authored Title Case while retaining the atoms' compact weight. */
 :is(.wl-ui-caps, .wl-cased)
   :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 /* Each modal title keeps the measure its own atom authored. Dialog and Sheet

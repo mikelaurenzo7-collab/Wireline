@@ -90,8 +90,8 @@ describe("authenticated mobile cleanup", () => {
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");
     expect(voice).not.toContain("live PSTN");
-    expect(inbox).toContain("Inbox unavailable");
-    expect(inbox).toContain("No email yet");
+    expect(inbox).toContain("Inbox Unavailable");
+    expect(inbox).toContain("No Email Yet");
     expect(inbox).toContain("Refresh");
   });
 
@@ -101,7 +101,7 @@ describe("authenticated mobile cleanup", () => {
     const phoneSetup = read("src/components/PhoneSetupPanel.tsx");
 
     expect(setup).toContain("setupLoadError");
-    expect(setup).toContain('title="Setup unavailable"');
+    expect(setup).toContain('title="Setup Unavailable"');
     expect(setup).toContain("setReloadKey((current) => current + 1)");
     expect(setup).toContain("activeAgentIdRef.current === setupAgentId");
     expect(review).toContain("setConfig(null)");

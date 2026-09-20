@@ -81,7 +81,7 @@ describe("BotBound product voice", () => {
   it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
-      slogan: "PUT YOUR BOT ON THE LINE",
+      slogan: "Put Your Bot on the Line",
       supportingLine: "CALL · TEXT · EMAIL",
       promise: "Your Bot for calls, texts, and email.",
     });
@@ -93,9 +93,14 @@ describe("BotBound product voice", () => {
       buyingNoun: "Bot",
       defaultRole: "Your Bot",
       productTypes: BOT_PRODUCT_TYPES,
-      brandSpine: ["Build", "Train", "Launch"],
-      proofLoop: ["Build", "Train", "Launch"],
     });
+    expect(BRAND_SYSTEM).not.toHaveProperty("brandSpine");
+    expect(BRAND_SYSTEM).not.toHaveProperty("proofLoop");
+    expect(MARKETING_VOICE).not.toHaveProperty("spine");
+    expect(MARKETING_VOICE).not.toHaveProperty("proof");
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Public marketing leads with capabilities, outcomes, and a clear signup action. Do not add a public setup sequence or repeat process slogans. Keep operational setup guidance inside the product.",
+    );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     );
@@ -107,6 +112,9 @@ describe("BotBound product voice", () => {
     );
     expect(BRAND_SYSTEM.toneRules).toContain(
       "Do not stack BotBound with Phone Bot or Voice Bot as a compound noun. The brand already contains Bot. Say BotBound, or say Phone Bot, not both.",
+    );
+    expect(BRAND_SYSTEM.toneRules).toContain(
+      "Author every product title and heading in Title Case, including heroes, page titles, section titles, cards, dialogs, and empty-state titles. Never uppercase headings with CSS.",
     );
   });
 
@@ -128,7 +136,7 @@ describe("BotBound product voice", () => {
       plural: "Bots",
       navLabel: "Bot Studio",
       createCta: "Create Bot",
-      setupPrompt: "What should your Bot do?",
+      setupPrompt: "What Should Your Bot Do?",
     });
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
     expect(formatAgentRoleLabel("ceo")).toBe("Lead Bot");
@@ -222,8 +230,8 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("Put Your Bot");
+    expect(landing).toContain("on the Line");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");

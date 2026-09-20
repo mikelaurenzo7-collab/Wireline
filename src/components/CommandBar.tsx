@@ -453,7 +453,7 @@ export default function CommandBar() {
                     density="compact"
                     className="m-4 min-h-48 border-dashed"
                     icon={<Terminal className="size-5" />}
-                    title="No matches"
+                    title="No Matches"
                   />
                 )}
               </ScrollArea>

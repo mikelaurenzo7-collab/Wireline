@@ -12,11 +12,11 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     const overview = read("src/components/CallOpsOverview.tsx");
     expect(logs).toContain('if (!response.ok) throw new Error("Could not load calls.")');
     expect(logs).not.toContain("response.ok ? response.json() : null");
-    expect(logs).toContain('title="Call history unavailable"');
+    expect(logs).toContain('title="Call History Unavailable"');
     expect(logs).toContain("!calls.length && !error");
     expect(logs).toContain("error && !calls.length ? null");
     expect(probe).toContain("if (!response.ok) throw new Error");
-    expect(probe).toContain('title="Calls unavailable"');
+    expect(probe).toContain('title="Calls Unavailable"');
     expect(probe).toContain("Nothing has been erased.");
     expect(overview).toContain('{metricsLoading || metricsError ? "N/A" : kpi.value}');
   });
@@ -24,7 +24,7 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
   it("surfaces Webhooks and Intake Keys load failures instead of empty success", () => {
     const webhooks = read("src/components/WebhooksManager.tsx");
     const intake = read("src/components/IntakeKeysManager.tsx");
-    expect(webhooks).toContain("Couldn't load webhooks");
+    expect(webhooks).toContain("Couldn't Load Webhooks");
     expect(webhooks).toContain("setLoadError(message)");
     expect(intake).toContain("Couldn't load intake keys.");
     expect(intake).toContain("setLoadError(");
@@ -45,7 +45,7 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(billing).toContain("if (!statusRaw.ok || !plansRaw.ok)");
     expect(billing).toContain("Billing details could not be loaded");
     expect(billing).toContain("if (error && !stripeConfigured)");
-    expect(billing).toContain("Billing unavailable");
+    expect(billing).toContain("Billing Unavailable");
   });
 
   it("keeps the compact CookieConsent non-modal and avoids fake no-line after phone refresh failure", () => {
@@ -73,7 +73,7 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
     expect(logs).toContain("The calls already shown remain available.");
     expect(logs).toContain("{desktop ? (");
     expect(logs).not.toContain("{!error && desktop ? (");
-    expect(overview).toContain('title="Operational metrics unavailable"');
+    expect(overview).toContain('title="Operational Metrics Unavailable"');
     expect(overview).toContain("Call history and all-time analytics remain available.");
     expect(overview).toContain("<CallOpsAnalytics />");
     expect(cadences).toContain("setRunsWarning(");

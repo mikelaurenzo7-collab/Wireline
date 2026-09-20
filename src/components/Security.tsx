@@ -28,7 +28,7 @@ import MarketingChrome from "./marketing/MarketingChrome";
 const SECTIONS = [
   {
     icon: Lock,
-    title: "Encryption everywhere",
+    title: "Encryption Everywhere",
     items: [
       "HTTPS is enforced on public endpoints. HSTS is configured with includeSubDomains and preload.",
       "Passwords are hashed with Node.js scrypt and a random per-user salt. They are never stored in plaintext.",
@@ -38,7 +38,7 @@ const SECTIONS = [
   },
   {
     icon: ShieldCheck,
-    title: "Strict browser security headers",
+    title: "Strict Browser Security Headers",
     items: [
       "Content-Security-Policy: explicit allowlist; no unsafe-eval. Blocks classic XSS at the browser layer.",
       "Cross-Origin-Opener-Policy: same-origin-allow-popups. Restricts opener relationships while preserving user-initiated OAuth connections.",
@@ -48,7 +48,7 @@ const SECTIONS = [
   },
   {
     icon: KeyRound,
-    title: "Webhook signature verification",
+    title: "Webhook Signature Verification",
     items: [
       "Inbound webhook paths use provider-appropriate signatures or timing-safe shared-secret verification.",
       "Invalid signatures are rejected; timestamped HMAC paths enforce a five-minute replay window.",
@@ -57,7 +57,7 @@ const SECTIONS = [
   },
   {
     icon: Eye,
-    title: "What we store, and what we don't",
+    title: "What We Store, and What We Don't",
     items: [
       "Call transcripts are stored in the managed database with configurable retention per tenant (365-day default; supported range 90 to 365 days).",
       "Managed full-call provider audio recording is disabled by default. Caller-submitted voicemail or message-recording features may create audio when intentionally used.",
@@ -67,7 +67,7 @@ const SECTIONS = [
   },
   {
     icon: HeartPulse,
-    title: "Healthcare-sensitive controls",
+    title: "Healthcare-Sensitive Controls",
     items: [
       "Per-agent compliance_mode = 'hipaa' tightens runtime behavior and data-handling defaults. This setting is not a certification or compliance determination.",
       "Do not send, store, or process PHI unless BotBound confirms both a signed BAA and an approved configuration in writing.",
@@ -76,7 +76,7 @@ const SECTIONS = [
   },
   {
     icon: CreditCard,
-    title: "Card data stays with Stripe",
+    title: "Card Data Stays with Stripe",
     items: [
       "BotBound never touches card data. Payments are processed through Stripe Checkout with PCI scope reduction.",
       "We hold tokenized customer references only.",
@@ -93,7 +93,7 @@ const SECTIONS = [
   },
   {
     icon: ServerCog,
-    title: "Operational security",
+    title: "Operational Security",
     items: [
       "High-risk authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
       "Database migrations are versioned, reviewed, and applied through the deployment pipeline.",
@@ -103,7 +103,7 @@ const SECTIONS = [
   },
   {
     icon: Database,
-    title: "Database posture",
+    title: "Database Posture",
     items: [
       "Postgres on Supabase (US-East). Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
       "Foreign-key and server-owned deletion paths remove user-owned downstream data.",
@@ -112,7 +112,7 @@ const SECTIONS = [
   },
   {
     icon: BugPlay,
-    title: "Responsible disclosure",
+    title: "Responsible Disclosure",
     items: [
       "Found a vulnerability? Email security@botbound.me with details.",
       "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
@@ -124,7 +124,7 @@ const SECTIONS = [
 const TRUST_PACK_SECTIONS = [
   {
     icon: ShieldCheck,
-    title: "Tenant isolation",
+    title: "Tenant Isolation",
     items: [
       "Authenticated product reads and writes are scoped through server-owned tenant context rather than client-supplied filters alone.",
       "Provider credentials, OAuth tokens, and billing authority never ship to browsers or mobile clients.",
@@ -133,7 +133,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: Globe2,
-    title: "BotBound Command (browser extension)",
+    title: "BotBound Command (Browser Extension)",
     items: [
       "Early access handoff only. Install from Apps in Studio; store listings are not GA.",
       "Page context is sent only when you explicitly click Send to Studio. No background harvesting.",
@@ -142,7 +142,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: ServerCog,
-    title: "Native mobile clients",
+    title: "Native Mobile Clients",
     items: [
       "Optional companions. Android is internal beta; iPhone is planned. The web app is the GA product.",
       "When available, natives use short-lived Bearer sessions against the same API; prompts, billing, and compliance stay server-owned.",
@@ -151,7 +151,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: HeartPulse,
-    title: "Call compliance (TCPA / DNC)",
+    title: "Call Compliance (TCPA / DNC)",
     items: [
       "Outbound calls require consent checks before dial. Marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
@@ -160,7 +160,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: CreditCard,
-    title: "Billing & spend controls",
+    title: "Billing & Spend Controls",
     items: [
       "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice and SMS from funded balance after included minutes. Free Builder cannot run live voice until a paid plan is active.",
       "Every paid plan draws extra voice, SMS, and enrichment from prepaid Runtime Balance with visible rates; active calls finish, and the next action pauses if coverage is depleted.",
@@ -169,7 +169,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: Eye,
-    title: "Account deletion & data rights",
+    title: "Account Deletion & Data Rights",
     items: [
       "Self-serve account deletion runs a server-owned workflow over user-owned product data.",
       "GDPR/CCPA erasure requests follow the same workflow. Contact security@botbound.me for current privacy and security documentation.",
@@ -178,7 +178,7 @@ const TRUST_PACK_SECTIONS = [
   },
   {
     icon: Database,
-    title: "Subprocessors & vendors",
+    title: "Subprocessors & Vendors",
     items: [
       "Production voice: Twilio provides phone numbers, PSTN transport, SIP, and SMS. OpenAI Realtime runs every browser and phone conversation from the same 10-voice roster; OpenAI also provides the primary structured runtime. BotBound does not operate a separate voice-cloning provider.",
       "Payments: Stripe (PCI scope reduced, BotBound never stores card numbers).",
@@ -216,7 +216,7 @@ export default function Security() {
               </div>
               <div className="text-center">
                 <h1 className="wl-public-section-heading max-w-[22ch]">
-                  {isTrustHub ? "How BotBound earns live calls" : "How we keep your data safe"}
+                  {isTrustHub ? "How BotBound Earns Live Calls" : "How We Keep Your Data Safe"}
                 </h1>
               </div>
             </div>

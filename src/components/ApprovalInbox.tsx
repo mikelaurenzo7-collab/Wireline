@@ -487,7 +487,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       />
 
       {!error && (triageUnavailable || tasksUnavailable) ? (
-        <StatusNotice tone="warning" title="Approval data partial">
+        <StatusNotice tone="warning" title="Approval Data Partial">
           {triageUnavailable && tasksUnavailable
             ? "Triage and active operator work are temporarily unavailable."
             : triageUnavailable
@@ -504,17 +504,19 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : error ? (
         <StatusNotice
           tone="destructive"
-          title="Approval inbox could not load. Nothing was changed."
+          title="Approvals Unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try again
             </ShadButton>
           }
-        />
+        >
+          Nothing was changed. Try again to load approvals.
+        </StatusNotice>
       ) : (bucket === "pending" || bucket === "compliance") && tasksUnavailable ? (
         <StatusNotice
           tone="destructive"
-          title="Active operator work unavailable"
+          title="Active Operator Work Unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try again
@@ -526,7 +528,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : bucket !== "pending" && bucket !== "compliance" && triageUnavailable ? (
         <StatusNotice
           tone="destructive"
-          title="Triage queues unavailable"
+          title="Triage Queues Unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
               Try again
@@ -538,7 +540,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : bucket === "pending" || bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
           <ApprovalEmptyCard
-            title={bucket === "compliance" ? "Compliance queue clear" : "Approval queue clear"}
+            title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}
             description={
               bucket === "compliance"
                 ? "Compliance-sensitive follow-ups will appear here before anything executes."
@@ -569,7 +571,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         )
       ) : bucketItems.length === 0 ? (
         <ApprovalEmptyCard
-          title={`${BUCKET_SHORT_LABELS[bucket]} clear`}
+          title={`${BUCKET_SHORT_LABELS[bucket]} Clear`}
           description="Evidence-backed items will appear here automatically."
         />
       ) : (

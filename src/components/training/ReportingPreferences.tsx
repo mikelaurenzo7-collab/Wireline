@@ -210,7 +210,7 @@ export default function ReportingPreferences() {
 
   if (!preferences || !connections) {
     return (
-      <StatusNotice tone="destructive" title="Report settings unavailable">
+      <StatusNotice tone="destructive" title="Report Settings Unavailable">
         {error || "Reload the page and try again."}
       </StatusNotice>
     );
@@ -226,7 +226,7 @@ export default function ReportingPreferences() {
             <ShieldCheck size={20} />
           </span>
           <div>
-            <h2 className="wl-card-title">Normal post-call process</h2>
+            <h2 className="wl-card-title">Normal Post-Call Process</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               Always on. Every completed call receives an outcome, structured note, next action,
               lead or CRM update, quality review, and audit trail. Special files below are optional
@@ -237,7 +237,7 @@ export default function ReportingPreferences() {
       </section>
 
       {noStorageConnected ? (
-        <StatusNotice tone="warning" title="Connect a report destination">
+        <StatusNotice tone="warning" title="Connect a Report Destination">
           Connect Google or Microsoft before enabling native files. BotBound writes the finished
           file to your workspace and keeps only the job metadata and external link.{" "}
           <Link to="/connections" className="font-semibold underline underline-offset-4">
@@ -250,7 +250,7 @@ export default function ReportingPreferences() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="wl-eyebrow wl-eyebrow--muted">On request</p>
-            <h2 className="mt-2 wl-card-title">Special call files</h2>
+            <h2 className="mt-2 wl-card-title">Special Call Files</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Choose the default file your team can request from an individual call. Nothing is
               generated or sent automatically.
@@ -318,7 +318,7 @@ export default function ReportingPreferences() {
 
       <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
         <p className="wl-eyebrow wl-eyebrow--muted">Opt in</p>
-        <h2 className="mt-2 wl-card-title">Automatic operating report</h2>
+        <h2 className="mt-2 wl-card-title">Automatic Operating Report</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
           Receive a polished daily or weekly performance report covering calls, outcomes,
           appointments, quality, open follow-ups, and the highest-value next actions.
@@ -416,7 +416,7 @@ export default function ReportingPreferences() {
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Could not save reports">
+        <StatusNotice tone="destructive" title="Could Not Save Reports">
           {error}
         </StatusNotice>
       ) : null}

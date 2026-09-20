@@ -139,9 +139,9 @@ function DangerZone() {
     <section className="wl-paper wl-paper-elevated border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="wl-eyebrow wl-eyebrow--muted text-[var(--wireline-color-status-error)]">
-            Delete account
-          </p>
+          <h2 className="text-base font-semibold leading-6 text-[var(--wireline-color-status-error)]">
+            Delete Account
+          </h2>
           <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
             Stops future subscription renewal and schedules permanent deletion after a 30-day grace
             period. Paid access may remain through the current billing period. Type DELETE to
@@ -183,11 +183,11 @@ function DangerZone() {
           title={
             renewalStopNeedsAttention
               ? deletionScheduled
-                ? "Deletion scheduled: billing action needed"
-                : "Deletion canceled: billing review needed"
+                ? "Deletion Scheduled: Billing Action Needed"
+                : "Deletion Canceled: Billing Review Needed"
               : deletionScheduled
-                ? "Deletion scheduled"
-                : "Deletion canceled"
+                ? "Deletion Scheduled"
+                : "Deletion Canceled"
           }
         >
           {message}
@@ -206,7 +206,7 @@ function DangerZone() {
         </Button>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" className="mt-4" title="Deletion unavailable">
+        <StatusNotice tone="destructive" className="mt-4" title="Deletion Unavailable">
           {error}
         </StatusNotice>
       ) : null}
@@ -293,7 +293,7 @@ export default function SettingsPage() {
         <WorkspacePageIntro title="Account" titleHidden />
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-eyebrow--muted">Profile</p>
+          <h2 className="text-base font-semibold leading-6 text-foreground">Profile</h2>
           <div className="mt-5 grid gap-3">
             <ProfileRow icon={UserRound} label="Name" value={displayName} />
             <ProfileRow icon={Mail} label="Email" value={email || "N/A"} wrapValue />
@@ -301,7 +301,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-          <p className="wl-eyebrow wl-eyebrow--muted">Security</p>
+          <h2 className="text-base font-semibold leading-6 text-foreground">Security</h2>
           <div className="mt-5 grid gap-3">
             <div className="wl-data-row wl-data-row--framed">
               <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
@@ -347,7 +347,7 @@ export default function SettingsPage() {
             </div>
           </div>
           {error ? (
-            <StatusNotice tone="destructive" className="mt-4" title="Security action unavailable">
+            <StatusNotice tone="destructive" className="mt-4" title="Security Action Unavailable">
               {error}
             </StatusNotice>
           ) : null}

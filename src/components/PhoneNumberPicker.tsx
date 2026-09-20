@@ -24,7 +24,7 @@ interface PhoneNumberPickerProps {
   agentId?: string;
   /** Callback after a number is successfully claimed. */
   onClaim?: (phoneNumber: string) => void;
-  /** Optional label override; defaults to "Pick a phone number". */
+  /** Optional label override; defaults to "Pick a Phone Number". */
   title?: string;
 }
 
@@ -166,7 +166,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-2xl text-foreground leading-none">
-            {title || "Pick a phone number"}
+            {title || "Pick a Phone Number"}
           </h3>
           <p className="text-[length:var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">
             Each agent gets its own number so callers can reach it directly.
@@ -258,8 +258,8 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           ) : (
             <div className="rounded-md wl-panel border border-border p-5 text-center">
               <p className="text-[length:var(--wireline-typography-caption-size)] text-muted">
-                No numbers in pool right now. Search by area code to preview available lines
-                without buying one until you pick it.
+                No numbers in pool right now. Search by area code to preview available lines without
+                buying one until you pick it.
               </p>
             </div>
           )}

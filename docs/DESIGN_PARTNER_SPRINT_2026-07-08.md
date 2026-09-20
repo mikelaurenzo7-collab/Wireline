@@ -8,7 +8,7 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 Recruit **3–5 design partners** with an obvious missed-call, inbound-response, scheduling, or follow-up problem and prove one useful workflow end to end within seven days.
 
-> Build → Train → Launch.
+> Prove a useful call, a configured follow-up, and the logged outcome.
 
 The first partners are for evidence, not scale. Do not optimize for logo count, broad vertical coverage, or cold-dial volume before the product has real customer outcomes.
 
@@ -26,15 +26,15 @@ Choose a partner because the problem is measurable, not because the logo looks i
 
 ## Seven-day proof loop
 
-| Step | Evidence |
-| --- | --- |
-| 1 | Partner creates a real account and one focused Bot |
-| 2 | The Bot is trained on the partner's real facts, rules, voice, and handoff posture |
-| 3 | A private test call passes before live traffic |
-| 4 | Partner activates a paid plan and claims or connects the live number |
-| 5 | One real inbound call is handled, or a consented non-marketing outbound call is completed where permitted |
-| 6 | The same workflow continues by text, email, booking, approval, or human handoff when useful |
-| 7 | The outcome and transcript/log are visible and the partner reviews what should improve |
+| Step | Evidence                                                                                                  |
+| ---- | --------------------------------------------------------------------------------------------------------- |
+| 1    | Partner creates a real account and one focused Bot                                                        |
+| 2    | The Bot is trained on the partner's real facts, rules, voice, and handoff posture                         |
+| 3    | A private test call passes before live traffic                                                            |
+| 4    | Partner activates a paid plan and claims or connects the live number                                      |
+| 5    | One real inbound call is handled, or a consented non-marketing outbound call is completed where permitted |
+| 6    | The same workflow continues by text, email, booking, approval, or human handoff when useful               |
+| 7    | The outcome and transcript/log are visible and the partner reviews what should improve                    |
 
 A booked appointment is useful proof when the workflow calls for one. It is not the only valid outcome; qualified demand, resolved service, a clean handoff, or completed follow-up can prove value too.
 

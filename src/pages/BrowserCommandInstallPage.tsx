@@ -4,7 +4,6 @@ import { Link } from "react-router";
 import { Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
-import { BotBoundWordmark } from "../components/brand/BotBoundBrand";
 import SettingsTabs from "../components/settings/SettingsTabs";
 import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
@@ -47,7 +46,7 @@ export default function BrowserCommandInstallPage() {
         </div>
         <WorkspacePageIntro
           title="Install BotBound Command"
-          description={`${CLIENT_SURFACE_POSTURE.browser.status}. Explicit page context only. No background browsing, no token storage, no outbound from the extension.`}
+          description={`${CLIENT_SURFACE_POSTURE.browser.status}. Send a page to Studio without leaving your browser.`}
         />
 
         <section className="mt-2 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
@@ -58,28 +57,21 @@ export default function BrowserCommandInstallPage() {
               </span>
               <div>
                 <h2 className="font-[var(--wireline-font-family-display)] text-[22px] font-normal tracking-[-0.02em]">
-                  What you get
+                  What You Get
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Send the active tab (title, URL, selection, tel: links) into Studio as reference
-                  context. <BotBoundWordmark inline /> still owns dialing, texts, Knowledge,
-                  billing, and launch.
+                  Send page details, selected text, and phone links to your Bot. Sign in to BotBound
+                  to continue in Studio.
                 </p>
               </div>
             </div>
-            <ul className="mt-5 space-y-2 text-sm leading-6 text-muted-foreground">
-              <li>No host permissions and no silent page harvesting.</li>
-              <li>You must be signed in to BotBound for Studio handoff to complete.</li>
-              <li>Store listings stay deferred until this in-product path is the default.</li>
-            </ul>
           </article>
 
           <article className="wl-paper border border-border/80 bg-muted/20 p-6">
-            <p className="wl-overline text-primary">Privacy</p>
+            <h2 className="text-lg font-semibold text-foreground">Privacy</h2>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              The extension reads the active page only after you click a command. Context rides in
-              the Studio URL fragment, then is stripped and labeled reference-only before anything
-              reaches your Bot.
+              The extension reads a page only when you ask. It cannot browse in the background,
+              store account tokens, or place calls. Shared content is treated as reference material.
             </p>
           </article>
         </section>

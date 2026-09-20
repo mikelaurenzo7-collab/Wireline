@@ -226,7 +226,7 @@ export default function EmailPage() {
         {mailboxStatus === "error" && activeTab === "email" && !activeAccountId && !scopeError ? (
           <StatusNotice
             tone="warning"
-            title="Mailbox filters unavailable"
+            title="Mailbox Filters Unavailable"
             className="mb-3"
             action={
               <Button variant="secondary" size="sm" onClick={retryScope}>
@@ -247,7 +247,7 @@ export default function EmailPage() {
               Loading selected inbox…
             </div>
           ) : scopeError ? (
-            <StatusNotice tone="warning" title="Selected inbox unavailable" className="my-3">
+            <StatusNotice tone="warning" title="Selected Inbox Unavailable" className="my-3">
               <p>{scopeError}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button variant="secondary" size="sm" onClick={retryScope}>

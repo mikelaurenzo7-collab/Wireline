@@ -42,7 +42,7 @@ test("showcase redirects to free account creation without requesting microphone 
   await openPage(page, "/showcase");
 
   await expect(page).toHaveURL(/\/signup\?plan=free$/);
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(page.locator("#showcase-preview")).toHaveCount(0);
   expect(publicVoiceRequests).toEqual([]);
   expect(await page.evaluate(() => window.__botboundMicRequests ?? 0)).toBe(0);
@@ -61,9 +61,9 @@ test("home offers outbound and inbound account paths without a public audio cont
   await openPage(page, "/");
 
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+FIND\. CALL\. BOOK\./ });
+  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+Find\. Call\. Book\./ });
   const inbound = directions.getByRole("link", {
-    name: /INBOUND\s+ANSWER\. QUALIFY\. ROUTE\./,
+    name: /INBOUND\s+Answer\. Qualify\. Route\./,
   });
   await expect(outbound).toHaveAttribute(
     "href",

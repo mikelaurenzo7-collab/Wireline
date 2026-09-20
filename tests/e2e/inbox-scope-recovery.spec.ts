@@ -84,7 +84,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
       ),
     );
     await page.goto("/inbox?account=mail-desk");
-    await expect(page.getByText("Selected inbox unavailable", { exact: true })).toBeVisible();
+    await expect(page.getByText("Selected Inbox Unavailable", { exact: true })).toBeVisible();
     expect(requests).toHaveLength(0);
     await expect(page).toHaveURL(/account=mail-desk/);
     recovered = true;
@@ -97,7 +97,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
 test("an unavailable Bot does not silently become All Bots", async ({ page }) => {
   const requests = await mockWorkspace(page);
   await page.goto("/inbox?agent=removed-bot");
-  await expect(page.getByText("Selected inbox unavailable", { exact: true })).toBeVisible();
+  await expect(page.getByText("Selected Inbox Unavailable", { exact: true })).toBeVisible();
   expect(requests).toHaveLength(0);
   await expect(page.getByRole("combobox", { name: "Filter Inbox by Bot" })).toHaveValue(
     "removed-bot",
@@ -159,7 +159,7 @@ test("a mailbox for a different Bot stays blocked until the user changes the fil
 }) => {
   const requests = await mockWorkspace(page);
   await page.goto("/inbox?agent=bot-desk&account=mail-sales");
-  await expect(page.getByText("Selected inbox unavailable", { exact: true })).toBeVisible();
+  await expect(page.getByText("Selected Inbox Unavailable", { exact: true })).toBeVisible();
   expect(requests).toHaveLength(0);
   await page.getByRole("combobox", { name: "Filter email by mailbox" }).selectOption("mail-desk");
   await expect.poll(() => requests.length).toBeGreaterThan(0);

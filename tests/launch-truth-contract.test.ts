@@ -44,7 +44,7 @@ describe("launch truth contract", () => {
     expect(security).toContain("Do not send, store, or process PHI");
     expect(trust).toContain("BotBound does not claim HIPAA compliance or certification.");
     expect(trust).toContain("SSO, residency, DPA, BAA, support, and other enterprise terms");
-    expect(trust).toContain("Important boundary");
+    expect(trust).toContain("Important Boundary");
     expect(trust).toContain("reserve spend before the provider runs");
     expect(trust).toContain("transcript-first call records");
     expect(trust).not.toContain("always-on hard cap");
@@ -56,7 +56,7 @@ describe("launch truth contract", () => {
     const security = read("src/components/Security.tsx");
 
     expect(changelog).toContain('date: "Aug 11, 2026"');
-    expect(changelog).toContain('title: "Deeper release checks before anything ships"');
+    expect(changelog).toContain('title: "Deeper Release Checks Before Anything Ships"');
     expect(changelog).toContain("the non-E2E test suite");
     expect(changelog).toContain("Post-promotion health checks verify the live service");
     expect(changelog).not.toContain("the full test suite");
@@ -65,7 +65,7 @@ describe("launch truth contract", () => {
     expect(changelog).toContain("automated screenshot capture and responsive-layout auditing");
     expect(changelog).not.toContain("Playwright screenshot capture");
     expect(changelog).not.toContain("committed baselines");
-    expect(changelog).toContain('title: "BotBound runtime monitoring"');
+    expect(changelog).toContain('title: "BotBound Runtime Monitoring"');
     expect(changelog).toContain("Customer-impacting issues surface through BotBound");
     expect(changelog).not.toContain("botbound.me/status");
     expect(changelog).not.toContain("trywireline.com/status");
@@ -98,7 +98,8 @@ describe("launch truth contract", () => {
     const authorities = [commandCenter, campaign, mediaKit, playbook];
 
     for (const source of authorities) {
-      expect(source).toContain("Build -> Train -> Launch");
+      expect(source).not.toMatch(/(?:Customize|Train)\s*(?:->|→|\.|,)\s*Employ/);
+      expect(source).not.toContain("Build -> Train -> Launch");
       expect(source).not.toContain("Build -> Train -> Launch -> Improve");
       expect(source).not.toContain("Create -> Train -> Wire -> Run");
       expect(source).not.toContain("Brief -> Train -> Launch -> Improve");

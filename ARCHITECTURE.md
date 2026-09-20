@@ -1,10 +1,10 @@
 # BotBound Architecture
 
 BotBound is one Bot product and workspace across calls, texts, email, tools, and
-outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**;
-this supports the public **Build -> Train -> Launch -> Improve** story.
+outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**.
+Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list.
 
-A customer builds a Bot, trains it with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Test -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes feed review and continued training.
+A customer configures a Bot with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Test -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes remain available for optional review and later refinements. Ongoing review is not an additional setup step.
 
 ## Product boundary
 
@@ -24,7 +24,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 | Entry                | `src/main.tsx`                                                                                                                                                                        |
 | Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                                                             |
 | Session boundary     | `src/components/layout/AppShell.tsx`, `src/components/WorkspaceShell.tsx`                                                                                                             |
-| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` resolve to `/studio`                                                            |
+| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` resolve to `/studio`                                                             |
 | Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                                                               |
 | Train                | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/ReportingPreferences.tsx`, `src/components/training/RecentCallArtifactRequests.tsx` |
 | Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                                                            |

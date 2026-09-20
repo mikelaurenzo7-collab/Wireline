@@ -8,7 +8,7 @@ This document turns BotBound research into an execution system. It is not a back
 4. **Expansion** — one useful Bot becomes more Bots, surfaces, numbers, teammates, and governed workflows.
 
 The canonical public promise is **Your Bot for calls, texts, and email.** The
-public loop is **Build -> Train -> Launch**. Technical surfaces may
+public story leads with capabilities and outcomes, without a setup sequence. Technical surfaces may
 retain **Create -> Train -> Wire -> Run** and `agent` identifiers where contracts
 require them. BotBound is one protected product and workspace across web,
 browser, native mobile, and ChatGPT—not a set of audience modes or disconnected
@@ -34,7 +34,7 @@ BotBound should be studied like a regulated communications product, a conversion
 
 | Question                                                                                            | Why it matters                                       | Required evidence                                                                                             | Decision unlocked                                       |
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Can a new user create, train, test, and launch one useful Bot without founder intervention?           | Activation is the product.                           | 10 observed onboarding sessions; time-to-trained-Bot; drop-off points; rage clicks; failed validation events. | Simplify onboarding, templates, and first-run training. |
+| Can a new user create, train, test, and launch one useful Bot without founder intervention?         | Activation is the product.                           | 10 observed onboarding sessions; time-to-trained-Bot; drop-off points; rage clicks; failed validation events. | Simplify onboarding, templates, and first-run training. |
 | Does the Bot behave correctly in real calls under messy caller behavior?                            | Voice trust determines retention.                    | 100-call dogfood set across everyday delegation, owner-operated, front desk, sales, and support use cases.    | Launch readiness for public traffic.                    |
 | Are phone provisioning, call routing, SMS, transcripts, and follow-up reliable enough for paid use? | The line cannot feel experimental once live.         | Synthetic probes, provider error taxonomy, end-to-end traces, retry/fallback results.                         | Production launch and SLA posture.                      |
 | Is the public story understood in under five seconds on mobile?                                     | Mobile browser is the first impression.              | Five-second tests, first-click tests, mobile scroll maps, CTA comprehension.                                  | Hero/landing iteration and ad readiness.                |

@@ -126,7 +126,7 @@ export default function AppointmentsPanel() {
   if (error) {
     return (
       <div className="flex w-full justify-center px-4 py-8 sm:px-6">
-        <StatusNotice tone="warning" title="Appointments unavailable" className="w-full max-w-lg">
+        <StatusNotice tone="warning" title="Appointments Unavailable" className="w-full max-w-lg">
           {error}
         </StatusNotice>
       </div>

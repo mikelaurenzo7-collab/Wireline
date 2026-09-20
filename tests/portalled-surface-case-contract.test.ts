@@ -9,21 +9,9 @@ import { describe, expect, it } from "vitest";
  *
  * The cased tiers are scoped to a marker class that sits on the <App/> root
  * (src/App.tsx). A portal moves its content out to `document.body`, making it a
- * *sibling* of that root rather than a descendant — so no cased tier ever
- * reached a modal, dropdown, select, sheet or tooltip. Every one of them
- * rendered in sentence case with default tracking while the page behind it
- * shouted.
- *
- * Measured directly, same markup in both positions:
- *
- *   [data-slot="dialog-title"]   inside the marker: uppercase   portalled: none
- *   label                        inside the marker: 1.44px      portalled: -0.08px
- *   button                       inside the marker: 0.72px      portalled: -0.08px
- *
- * The rule written for exactly this case — "a sentence-case modal heading
- * sitting above cased labels and buttons was the one place the system visibly
- * broke" — could never fire, because it requires an ancestor a portal
- * guarantees is absent.
+ * *sibling* of that root rather than a descendant. The neutral marker lets
+ * dialogs retain authored Title Case while sharing the control and label
+ * typography used by the page behind them.
  *
  * There are two markers, and the difference is the whole point of this file.
  * `wl-ui-caps` is the application shell: foundation.css gives it layout
@@ -107,7 +95,7 @@ describe("portalled surface case contract", () => {
         `[data-slot="${slot}"]`,
       );
     }
-    expect(titleRule).toContain("text-transform: uppercase");
+    expect(titleRule).toContain("text-transform: none");
 
     const dialog = source("src/components/atoms/Dialog.tsx");
     expect(dialog).toMatch(/data-slot="dialog-content"/);

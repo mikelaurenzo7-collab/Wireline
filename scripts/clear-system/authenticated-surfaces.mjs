@@ -238,7 +238,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/KnowledgeBaseClaude.tsx",
     knowledgeBase,
-    /onDrop=\{onDrop\}[\s\S]*Add documents/,
+    /onDrop=\{onDrop\}[\s\S]*<h2\b[^>]*>\s*Add Documents\s*<\/h2>/,
     "Knowledge Base must retain the accessible ingestion drop zone",
   );
 

@@ -106,8 +106,8 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     expect(HOME_TITLE).toBe("BotBound | Put Your Bot on the Line");
     expect(HOME_DESCRIPTION).toBe("Your Bot for calls, texts, and email.");
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("PUT YOUR BOT");
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("ON THE LINE");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Put Your Bot");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("on the Line");
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });

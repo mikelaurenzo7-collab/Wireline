@@ -155,7 +155,8 @@ export default function MailboxConnectionCard() {
     // Managed Bot mailboxes are platform identity, not customer connections.
     // They are intentionally absent from this surface and cannot be removed here.
     if (account.provider === "agentmail") return;
-    if (!window.confirm(`Disconnect ${account.emailAddress}? New messages will stop syncing.`)) return;
+    if (!window.confirm(`Disconnect ${account.emailAddress}? New messages will stop syncing.`))
+      return;
     setBusy(account.id);
     setError(null);
     try {
@@ -182,11 +183,11 @@ export default function MailboxConnectionCard() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
-            Optional inbox connections
+            Email Connections
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Your Bot email identity is managed automatically by BotBound. Connect an existing
-            mailbox only when you want the Bot to read or act through that separate account.
+            Connect another inbox if your Bot needs its messages. Its BotBound email is managed for
+            you.
           </p>
         </div>
         <Mail className="size-5 text-primary" aria-hidden="true" />
@@ -206,9 +207,14 @@ export default function MailboxConnectionCard() {
         <div className="mt-5">
           <StatusNotice
             tone="destructive"
-            title="Inbox connection status unavailable"
+            title="Inbox Connection Status Unavailable"
             action={
-              <Button type="button" size="sm" variant="secondary" onClick={() => void loadAccounts()}>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void loadAccounts()}
+              >
                 <RefreshCw className="size-3.5" aria-hidden="true" />
                 Retry
               </Button>
@@ -221,13 +227,15 @@ export default function MailboxConnectionCard() {
       ) : (
         <>
           {error ? (
-            <StatusNotice tone="destructive" title="Inbox action unavailable" className="mt-4">
+            <StatusNotice tone="destructive" title="Inbox Action Unavailable" className="mt-4">
               {error}
             </StatusNotice>
           ) : null}
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {PROVIDERS.map((provider) => {
-              const providerAccounts = customerAccounts.filter((item) => item.provider === provider.id);
+              const providerAccounts = customerAccounts.filter(
+                (item) => item.provider === provider.id,
+              );
               const isBusy = busy === provider.id;
               return (
                 <article
@@ -240,8 +248,12 @@ export default function MailboxConnectionCard() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">{provider.label}</span>
-                        {providerAccounts.length ? <Badge variant="outline">Connected</Badge> : null}
+                        <span className="text-sm font-semibold text-foreground">
+                          {provider.label}
+                        </span>
+                        {providerAccounts.length ? (
+                          <Badge variant="outline">Connected</Badge>
+                        ) : null}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                         {provider.detail}
@@ -278,7 +290,10 @@ export default function MailboxConnectionCard() {
                   ) : null}
 
                   {provider.id === "icloud" && showIcloudForm ? (
-                    <form className="mt-auto grid gap-2 pt-4" onSubmit={(event) => void connectIcloud(event)}>
+                    <form
+                      className="mt-auto grid gap-2 pt-4"
+                      onSubmit={(event) => void connectIcloud(event)}
+                    >
                       <input
                         type="email"
                         required
@@ -300,11 +315,14 @@ export default function MailboxConnectionCard() {
                         className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
                       />
                       <p className="text-[11px] leading-relaxed text-muted-foreground">
-                        Generate one in Apple ID under Sign-In and Security → App-Specific Passwords.
+                        Generate one in Apple ID under Sign-In and Security → App-Specific
+                        Passwords.
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         <Button type="submit" size="sm" disabled={isBusy}>
-                          {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                          {isBusy ? (
+                            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                          ) : null}
                           Connect
                         </Button>
                         <Button
@@ -326,7 +344,9 @@ export default function MailboxConnectionCard() {
                         disabled={isBusy}
                         onClick={() => void connect(provider.id)}
                       >
-                        {isBusy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+                        {isBusy ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : null}
                         {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
                       </Button>
                     </div>

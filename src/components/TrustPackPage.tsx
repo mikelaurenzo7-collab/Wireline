@@ -19,32 +19,32 @@ type TrustPack = {
 const PACKS: Record<string, TrustPack> = {
   medical: {
     eyebrow: "Healthcare-sensitive workflows",
-    title: "Controls before credentials",
+    title: "Controls Before Credentials",
     subtitle:
       "A practical review of the safeguards available today, with explicit boundaries for protected health information.",
     controls: [
       {
-        title: "Tenant-scoped data access",
+        title: "Tenant-Scoped Data Access",
         detail:
           "Server-owned tenant context and row-level policies isolate account data on authenticated database paths.",
       },
       {
-        title: "Recording off by default",
+        title: "Recording Off by Default",
         detail:
           "Audio capture requires an explicit tenant choice; transcript and recording retention are configurable.",
       },
       {
-        title: "Consent and do-not-call checks",
+        title: "Consent and Do-Not-Call Checks",
         detail:
           "Outbound voice paths apply consent and tenant do-not-call controls before expensive provider actions.",
       },
       {
-        title: "Auditable operations",
+        title: "Auditable Operations",
         detail:
           "Security-relevant activity, communication outcomes, and usage events are recorded where the runtime produces them.",
       },
       {
-        title: "Deletion workflow",
+        title: "Deletion Workflow",
         detail:
           "Self-serve deletion queues user-owned product data for purge and stops future subscription renewal when Stripe confirms it.",
       },
@@ -60,32 +60,32 @@ const PACKS: Record<string, TrustPack> = {
   },
   legal: {
     eyebrow: "Legal & professional services",
-    title: "Confidentiality-aware, never presumptive",
+    title: "Confidentiality-Aware, Never Presumptive",
     subtitle:
       "Controls for structured intake and client communication without pretending software can determine privilege, conflicts, or legal advice.",
     controls: [
       {
-        title: "Tenant-scoped access",
+        title: "Tenant-Scoped Access",
         detail:
           "Authenticated reads and writes are constrained by server-owned account context and database isolation policies.",
       },
       {
-        title: "Approved communication scripts",
+        title: "Approved Communication Scripts",
         detail:
           "Teams define the disclosures, questions, escalation rules, and action boundaries their agents may use.",
       },
       {
-        title: "Human approval paths",
+        title: "Human Approval Paths",
         detail:
           "Sensitive next steps can route to staff review rather than being executed autonomously.",
       },
       {
-        title: "Recording off by default",
+        title: "Recording Off by Default",
         detail:
           "Audio capture is opt-in and should be enabled only after the firm approves jurisdiction-specific disclosures.",
       },
       {
-        title: "Retention, export, and deletion",
+        title: "Retention, Export, and Deletion",
         detail:
           "Tenant settings and server-owned workflows support operational data review and lifecycle management.",
       },
@@ -101,32 +101,32 @@ const PACKS: Record<string, TrustPack> = {
   },
   insurance: {
     eyebrow: "Insurance agencies",
-    title: "Logged work, licensed decisions",
+    title: "Logged Work, Licensed Decisions",
     subtitle:
       "Operational controls for policyholder communication while keeping regulated advice and carrier-specific decisions with qualified people.",
     controls: [
       {
-        title: "Communication audit trail",
+        title: "Communication Audit Trail",
         detail:
           "Call outcomes, transcripts, and workflow events are retained according to the tenant's configured policy.",
       },
       {
-        title: "Consent and do-not-call controls",
+        title: "Consent and Do-Not-Call Controls",
         detail:
           "Outbound voice paths check consent posture and tenant suppression lists before dialing.",
       },
       {
-        title: "Licensed human handoff",
+        title: "Licensed Human Handoff",
         detail:
           "Workflows can route quotes, coverage questions, bind requests, and exceptions to qualified staff.",
       },
       {
-        title: "Recording policy controls",
+        title: "Recording Policy Controls",
         detail:
           "Recording defaults off and should be enabled only with approved disclosures and jurisdictional review.",
       },
       {
-        title: "Connected-system logging",
+        title: "Connected-System Logging",
         detail:
           "When a supported CRM path is configured, approved outcomes can be written back from server-owned integration routes.",
       },
@@ -142,32 +142,32 @@ const PACKS: Record<string, TrustPack> = {
   },
   enterprise: {
     eyebrow: "Enterprise review",
-    title: "Proof that matches the product",
+    title: "Proof That Matches the Product",
     subtitle:
       "A concise starting point for security, procurement, and operations teams evaluating BotBound today.",
     controls: [
       {
-        title: "Tenant isolation",
+        title: "Tenant Isolation",
         detail:
           "Server-owned account context and row-level database policies constrain authenticated product access.",
       },
       {
-        title: "Team access boundaries",
+        title: "Team Access Boundaries",
         detail:
           "Account roles, route ownership checks, and server-held provider credentials keep authority out of the browser.",
       },
       {
-        title: "Provider spend protection",
+        title: "Provider Spend Protection",
         detail:
           "Live calls and prepaid Runtime Balance reserve spend before the provider runs. Customers can lower spend alerts. Some training and research paths still meter after the request.",
       },
       {
-        title: "Data lifecycle controls",
+        title: "Data Lifecycle Controls",
         detail:
           "Configurable retention, export paths, transcript-first call records, and a server-owned deletion workflow support review.",
       },
       {
-        title: "Security review channel",
+        title: "Security Review Channel",
         detail:
           "Buyers can send scoped architecture, privacy, and operational questions to security@botbound.me.",
       },
@@ -200,7 +200,7 @@ export default function TrustPackPage() {
   if (!pack) {
     return (
       <MarketingChrome>
-        <PageMeta title="Trust pack not found | BotBound" noIndex />
+        <PageMeta title="Trust Pack Not Found | BotBound" noIndex />
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-muted">Trust pack not found.</p>
           <Link to="/security" className="wl-label mt-4 inline-block text-brand">
@@ -242,7 +242,7 @@ export default function TrustPackPage() {
           <div className="text-center">
             <p className="wl-overline text-brand">Available today</p>
             <h2 id="shipping-now" className="font-display mt-2 text-2xl text-foreground">
-              What ships now
+              What Ships Now
             </h2>
           </div>
           <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -273,7 +273,7 @@ export default function TrustPackPage() {
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
             <div>
               <h2 id="boundary" className="text-sm font-semibold text-foreground">
-                Important boundary
+                Important Boundary
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{pack.boundary}</p>
             </div>
@@ -283,7 +283,7 @@ export default function TrustPackPage() {
         <section className="mt-10 rounded-[1.05rem] border border-border bg-background/45 p-6 sm:p-8">
           <div className="text-center">
             <FileCheck2 className="mx-auto h-5 w-5 text-brand" aria-hidden="true" />
-            <h2 className="font-display mt-3 text-2xl text-foreground">Buyer review checklist</h2>
+            <h2 className="font-display mt-3 text-2xl text-foreground">Buyer Review Checklist</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               Resolve these items before placing the workflow into production.
             </p>
@@ -307,7 +307,7 @@ export default function TrustPackPage() {
         </section>
 
         <section className="mt-10 border-t border-border pt-8 text-center">
-          <h2 className="font-display text-2xl text-foreground">Review the real workflow</h2>
+          <h2 className="font-display text-2xl text-foreground">Review the Real Workflow</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             Bring your use case, data map, and approval rules. BotBound will separate what is
             available today from anything that still needs contractual or technical work.

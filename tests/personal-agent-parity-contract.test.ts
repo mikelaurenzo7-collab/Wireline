@@ -1,8 +1,17 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PERSONAL_DEFAULT_TEMPLATE_ID, PERSONAL_FAST_START_ROLE, resolveCreateEnabledTools, resolveCreatePersonality } from "../src/lib/agent-create-defaults";
-import { BUSINESS_TOOL_NAMES, getDefaultAgentTools, resolveAgentTools } from "../src/lib/agent-capabilities";
+import {
+  PERSONAL_DEFAULT_TEMPLATE_ID,
+  PERSONAL_FAST_START_ROLE,
+  resolveCreateEnabledTools,
+  resolveCreatePersonality,
+} from "../src/lib/agent-create-defaults";
+import {
+  BUSINESS_TOOL_NAMES,
+  getDefaultAgentTools,
+  resolveAgentTools,
+} from "../src/lib/agent-capabilities";
 import { BOT_ROLE_TEMPLATES, BOT_WORKSPACE_PROMISE } from "../src/lib/bot-product";
 import { PRODUCT_POSTURE, customerAgentLanguage } from "../src/lib/product-copy";
 
@@ -12,7 +21,11 @@ describe("unified Bot workspace compatibility", () => {
   it("preserves rich personal defaults without splitting the product", () => {
     expect(PERSONAL_FAST_START_ROLE).toBe("personal_assistant");
     expect(PERSONAL_DEFAULT_TEMPLATE_ID).toBe("personal-concierge");
-    const personality = resolveCreatePersonality({ role: PERSONAL_FAST_START_ROLE, isBusinessAgent: false, agentName: "Sarah" });
+    const personality = resolveCreatePersonality({
+      role: PERSONAL_FAST_START_ROLE,
+      isBusinessAgent: false,
+      agentName: "Sarah",
+    });
     expect(personality).toContain("elite personal assistant");
     expect(personality).toContain("You represent your principal");
     const tools = resolveCreateEnabledTools("personal_assistant", false);
@@ -29,15 +42,28 @@ describe("unified Bot workspace compatibility", () => {
   it("resolves both legacy profile flags to the same customer-facing Bot language", () => {
     expect(customerAgentLanguage("personal")).toEqual(customerAgentLanguage("business"));
     expect(PRODUCT_POSTURE.personal).toEqual(PRODUCT_POSTURE.business);
-    expect(customerAgentLanguage("personal")).toMatchObject({ singular: "Bot", plural: "Bots", navLabel: "Bot Studio", createCta: "Create Bot" });
-    expect(BOT_WORKSPACE_PROMISE.title).toBe("YOUR BOT. ALREADY MOVING.");
+    expect(customerAgentLanguage("personal")).toMatchObject({
+      singular: "Bot",
+      plural: "Bots",
+      navLabel: "Bot Studio",
+      createCta: "Create Bot",
+    });
+    expect(BOT_WORKSPACE_PROMISE.title).toBe("Your Bot. Already Moving");
     expect(BOT_WORKSPACE_PROMISE.description).toContain("Context carries forward");
   });
 
   it("keeps operations, everyday, and custom starters in one role catalog", () => {
     const categories = new Set(BOT_ROLE_TEMPLATES.map((template) => template.category));
     expect(categories).toEqual(new Set(["Operations", "Everyday", "Custom"]));
-    expect(BOT_ROLE_TEMPLATES.map((template) => template.name)).toEqual(expect.arrayContaining(["Front Desk", "Sales Rep", "Personal Assistant", "Family Concierge", "Create Your Own"]));
+    expect(BOT_ROLE_TEMPLATES.map((template) => template.name)).toEqual(
+      expect.arrayContaining([
+        "Front Desk",
+        "Sales Rep",
+        "Personal Assistant",
+        "Family Concierge",
+        "Create Your Own",
+      ]),
+    );
   });
 
   it("keeps creation and Overview free of posture routing", () => {

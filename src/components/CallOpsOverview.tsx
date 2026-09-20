@@ -84,14 +84,14 @@ export default function CallOpsOverview() {
             Call Ops
           </p>
           <h2 id="call-ops-now-title" className="mt-1 text-base font-semibold text-foreground">
-            Current workspace
+            Current Workspace
           </h2>
         </div>
 
         {metricsError ? (
           <StatusNotice
             tone="warning"
-            title="Operational metrics unavailable"
+            title="Operational Metrics Unavailable"
             action={
               <Button
                 type="button"
@@ -129,7 +129,7 @@ export default function CallOpsOverview() {
             All Time
           </p>
           <h2 id="call-ops-all-time-title" className="mt-1 text-base font-semibold text-foreground">
-            Call performance
+            Call Performance
           </h2>
         </div>
         <CallOpsAnalytics />

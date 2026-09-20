@@ -98,11 +98,10 @@ export default function WebsiteKnowledgeImport({
             id="website-knowledge-title"
             className="text-sm font-semibold text-[var(--wireline-color-text-primary)]"
           >
-            Train from a website page
+            Website Knowledge
           </h2>
           <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
-            Paste one public HTTPS page. BotBound reads page text only, blocks private networks and
-            unsafe redirects, and saves only explicit facts and operating rules.
+            Add facts and rules from one public HTTPS page.
           </p>
         </div>
       </div>

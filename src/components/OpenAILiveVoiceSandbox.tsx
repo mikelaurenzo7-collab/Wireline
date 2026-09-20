@@ -48,25 +48,25 @@ function voiceActivity(state: VoiceState) {
   if (state === "error")
     return {
       state: "failed" as const,
-      title: "Live voice needs attention",
+      title: "Live Voice Needs Attention",
       detail: "The test stopped before the conversation could continue.",
     };
   if (state === "connecting")
     return {
       state: "pending" as const,
-      title: "Connecting live voice",
+      title: "Connecting Live Voice",
       detail: "Setting up a private browser session for this agent.",
     };
   if (state === "thinking")
     return {
       state: "active" as const,
-      title: "Checking approved knowledge",
+      title: "Checking Approved Knowledge",
       detail: "BotBound is using only the agent's approved Training context.",
     };
   if (state === "speaking")
     return {
       state: "active" as const,
-      title: "Bot speaking",
+      title: "Bot Speaking",
       detail: "You can interrupt naturally at any time.",
     };
   if (state === "listening")
@@ -77,7 +77,7 @@ function voiceActivity(state: VoiceState) {
     };
   return {
     state: "pending" as const,
-    title: "Ready for a private live test",
+    title: "Ready for a Private Live Test",
     detail: "Start a test to speak with this agent using its configured rules and Training facts.",
   };
 }
@@ -491,7 +491,7 @@ export default function OpenAILiveVoiceSandbox({
         <StatusNotice
           tone="destructive"
           className="mt-3"
-          title="Live voice interrupted"
+          title="Live Voice Interrupted"
           action={
             <button
               type="button"

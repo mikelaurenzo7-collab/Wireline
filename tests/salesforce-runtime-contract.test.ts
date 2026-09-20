@@ -37,8 +37,8 @@ describe("Salesforce activity delivery contract", () => {
 
     expect(page).toContain("/api/oauth/crm/salesforce/preferences");
     expect(page).toContain("setCallActivitySyncEnabled(previousValue)");
-    expect(page).toContain('title="Call activity sync updated"');
-    expect(page).toContain('title="Call activity sync was not updated"');
+    expect(page).toContain('title="Call Activity Sync Updated"');
+    expect(page).toContain('title="Call Activity Sync Was Not Updated"');
     expect(page).not.toContain("Preview configuration");
     expect(page).not.toContain("Save preview choices");
     expect(page).not.toContain("Draft saved for this session");

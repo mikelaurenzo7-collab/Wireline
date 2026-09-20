@@ -20,8 +20,8 @@ export function renderNotFound(brand: WorkspaceBrand = FALLBACK_BRAND): string {
   const eyebrow = "This recap is no longer active";
   const body = `
     <section class="wl-section" aria-labelledby="wl-notfound-label">
-      <h2 class="wl-visually-hidden" id="wl-notfound-label">Recap unavailable</h2>
-      <h1 class="wl-hero">The link you followed is no longer active.</h1>
+      <h2 class="wl-visually-hidden" id="wl-notfound-label">Recap Unavailable</h2>
+      <h1 class="wl-hero">The Link You Followed Is No Longer Active</h1>
       <p style="color: var(--wl-textSecondary); line-height: 1.65; max-width: 60ch;">
         Recaps are shared under private, time-limited links. This one has expired,
         been revoked, or was never issued. If you were expecting to see the
@@ -30,5 +30,5 @@ export function renderNotFound(brand: WorkspaceBrand = FALLBACK_BRAND): string {
       </p>
       <div class="wl-wire-rule" role="separator" aria-hidden="true"><span></span></div>
     </section>`;
-  return renderShell({ title: "Recap unavailable, BotBound", eyebrow, body, brand });
+  return renderShell({ title: "Recap Unavailable, BotBound", eyebrow, body, brand });
 }

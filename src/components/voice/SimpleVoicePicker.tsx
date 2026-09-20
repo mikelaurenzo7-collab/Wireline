@@ -202,7 +202,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
     <div className="space-y-3">
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Voice unavailable">
+        <StatusNotice tone="destructive" title="Voice Unavailable">
           {error}
         </StatusNotice>
       ) : null}

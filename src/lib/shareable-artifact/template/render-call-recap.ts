@@ -122,7 +122,7 @@ function renderActions(content: CallRecapContent): string {
     .join("");
   return `
     <section class="wl-section" aria-labelledby="wl-actions-label">
-      <h2 class="wl-section-label" id="wl-actions-label">Next actions</h2>
+      <h2 class="wl-section-label" id="wl-actions-label">Next Actions</h2>
       <ul class="wl-action-list">${items}
       </ul>
     </section>`;
@@ -154,7 +154,7 @@ function renderSummary(content: CallRecapContent): string {
   if (!content.summary || !content.summary.trim()) return "";
   return `
     <section class="wl-section" aria-labelledby="wl-summary-label">
-      <h2 class="wl-section-label" id="wl-summary-label">What happened</h2>
+      <h2 class="wl-section-label" id="wl-summary-label">What Happened</h2>
       <p style="color: var(--wl-textSecondary); line-height: 1.65; max-width: 60ch;">${escapeHtml(content.summary)}</p>
     </section>`;
 }
@@ -162,14 +162,14 @@ function renderSummary(content: CallRecapContent): string {
 export function renderCallRecap(content: CallRecapContent, brand: WorkspaceBrand): string {
   const outcomeClass = OUTCOME_DOT_CLASS[content.outcome] ?? "";
   const eyebrow = "Call recap";
-  const title = `Call recap · ${content.outcomeLabel}, ${brand.displayName}`;
+  const title = `Call Recap · ${content.outcomeLabel}, ${brand.displayName}`;
   const agentLabel = content.agent.role
     ? `${content.agent.name}, ${content.agent.role}`
     : content.agent.name;
 
   const body = `
     <section class="wl-section" aria-labelledby="wl-hero-label">
-      <h2 class="wl-visually-hidden" id="wl-hero-label">Call outcome</h2>
+      <h2 class="wl-visually-hidden" id="wl-hero-label">Call Outcome</h2>
       <div>
         <span class="wl-outcome-pill ${outcomeClass}">
           <span>${escapeHtml(content.outcomeLabel)}</span>

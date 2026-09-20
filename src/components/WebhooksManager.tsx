@@ -141,14 +141,14 @@ export default function WebhooksManager() {
         ) : loadError ? (
           <EmptyState
             icon={AlertTriangle}
-            title="Couldn't load webhooks"
+            title="Couldn't Load Webhooks"
             description={loadError}
             actions={[{ label: "Retry", onClick: () => void refresh(), primary: true }]}
           />
         ) : hooks.length === 0 ? (
           <EmptyState
             icon={Webhook}
-            title="No webhooks"
+            title="No Webhooks"
             actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
           />
         ) : (

@@ -123,33 +123,33 @@ export default function BillingSettings() {
               if (returnFlow === "runtime_balance" && verification.credit_granted) {
                 setCheckoutReturnNotice({
                   tone: "success",
-                  title: "Runtime Balance added",
+                  title: "Runtime Balance Added",
                   message: "Your prepaid balance is ready for calls, texts, and live work.",
                 });
               } else if (returnFlow === "plan" && verification.synced) {
                 setCheckoutReturnNotice({
                   tone: "success",
-                  title: "Plan confirmed",
+                  title: "Plan Confirmed",
                   message: "Your BotBound plan and workspace access are up to date.",
                 });
               }
             } else if (checkoutOutcome === "retired") {
               setCheckoutReturnNotice({
                 tone: "info",
-                title: "Legacy checkout reconciled",
+                title: "Legacy Checkout Reconciled",
                 message:
                   "Live video is retired and was not activated. Any legacy billing record was preserved for support review.",
               });
             } else if (checkoutOutcome === "expired") {
               setCheckoutReturnNotice({
                 tone: "info",
-                title: "Checkout expired",
+                title: "Checkout Expired",
                 message: "No payment was completed. Your current billing options are shown below.",
               });
             } else if (checkoutOutcome === "pending") {
               setCheckoutReturnNotice({
                 tone: "info",
-                title: "Payment processing",
+                title: "Payment Processing",
                 message:
                   returnFlow === "runtime_balance"
                     ? "Your Runtime Balance will update automatically after payment is confirmed."
@@ -160,14 +160,14 @@ export default function BillingSettings() {
             } else if (checkoutOutcome === "invalid") {
               setCheckoutReturnNotice({
                 tone: "info",
-                title: "Checkout reference unavailable",
+                title: "Checkout Reference Unavailable",
                 message:
                   "This checkout could not be matched to your account. Your current billing status is shown below.",
               });
             } else {
               setCheckoutReturnNotice({
                 tone: "info",
-                title: "Still confirming checkout",
+                title: "Still Confirming Checkout",
                 message:
                   "We could not confirm this checkout yet. Its secure reference has been retained, so refreshing this page will retry safely.",
               });
@@ -324,7 +324,7 @@ export default function BillingSettings() {
         ) : null}
 
         {loadError ? (
-          <StatusNotice tone="destructive" title="Billing details need attention" className="mb-6">
+          <StatusNotice tone="destructive" title="Billing Details Need Attention" className="mb-6">
             {loadError}
           </StatusNotice>
         ) : null}
@@ -347,9 +347,9 @@ export default function BillingSettings() {
           <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-eyebrow text-muted-foreground">
+                <h2 className="text-base font-semibold leading-6 text-foreground">
                   {CONVERSATION_BALANCE_COPY.title}
-                </p>
+                </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
                   Prepaid coverage for live voice, SMS, and enrichment beyond included plan usage.
                 </p>
@@ -424,7 +424,7 @@ export default function BillingSettings() {
         </section>
 
         {actionError ? (
-          <StatusNotice tone="destructive" title="Billing action unavailable" className="mt-4">
+          <StatusNotice tone="destructive" title="Billing Action Unavailable" className="mt-4">
             {actionError}
           </StatusNotice>
         ) : null}

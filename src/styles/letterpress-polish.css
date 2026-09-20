@@ -314,6 +314,10 @@
  * break instead of clipping the compact tile. Confined to this tier on purpose:
  * breaking at 360px regressed the three-up Knowledge tiles. */
 @media (max-width: 22rem) {
+  .wl-knowledge-stats .wl-metric-tile--compact {
+    padding-inline: 0.5rem;
+  }
+
   .wl-metric-tile--compact .wl-metric-tile__label {
     min-width: 0;
     overflow-wrap: anywhere;

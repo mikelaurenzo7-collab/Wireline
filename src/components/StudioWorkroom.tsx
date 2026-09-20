@@ -448,7 +448,7 @@ const StudioWorkroom = forwardRef<
               <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
                 {mode === "test" ? (
                   <>
-                    Talk to <span className="wl-preserve-case">{agentName}</span> like a customer
+                    Talk to <span className="wl-preserve-case">{agentName}</span> Like a Customer
                   </>
                 ) : (
                   <>
@@ -479,7 +479,7 @@ const StudioWorkroom = forwardRef<
 
       {error ? (
         <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
-          <StatusNotice tone="destructive" title="Conversation issue">
+          <StatusNotice tone="destructive" title="Conversation Issue">
             {error}
           </StatusNotice>
         </div>
@@ -533,8 +533,8 @@ const StudioWorkroom = forwardRef<
               <AgentFace seed={agentName} markKey={markKey} size={48} title={`${agentName} mark`} />
               <h3 className="mt-4 text-lg font-semibold text-foreground">
                 {mode === "test"
-                  ? "Start with a real customer question"
-                  : "Describe what should change"}
+                  ? "Start with a Real Customer Question"
+                  : "Describe What Should Change"}
               </h3>
             </div>
           )}

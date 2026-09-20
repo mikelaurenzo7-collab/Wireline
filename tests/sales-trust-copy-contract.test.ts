@@ -62,7 +62,7 @@ describe("sales trust copy contract", () => {
     const wedges = read("src/data/vertical-wedges.ts");
     const product = read("src/lib/bot-product.ts");
     expect(wedges).toContain(
-      'metaTitle: "BOTBOUND FOR SALES TEAMS | PHONE BOTS FOR LEAD FOLLOW-UP"',
+      'metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up"',
     );
     expect(wedges).toContain(
       'headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"',
@@ -77,8 +77,8 @@ describe("sales trust copy contract", () => {
 
   it("keeps the landing customer-facing without internal design meta", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
-    expect(landing).toContain("PUT YOUR BOT");
-    expect(landing).toContain("ON THE LINE");
+    expect(landing).toContain("Put Your Bot");
+    expect(landing).toContain("on the Line");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toMatch(/homepage now leads/i);
     expect(landing).not.toMatch(/live desk/i);

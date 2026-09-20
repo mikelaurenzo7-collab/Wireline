@@ -79,7 +79,7 @@ export default function LearningMetricsView() {
   if (loadError) {
     return (
       <EmptyState
-        title="Learning metrics unavailable"
+        title="Learning Metrics Unavailable"
         description={loadError}
         icon={BrainCircuit}
         actions={[{ label: "Studio", to: "/studio", primary: true }]}

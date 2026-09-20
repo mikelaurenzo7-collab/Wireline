@@ -47,11 +47,6 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   "customer-support": Headphones,
   custom: WandSparkles,
 };
-const GETTING_STARTED = [
-  { title: "Build", detail: "Choose a role and a job." },
-  { title: "Train", detail: "Add your knowledge and rules." },
-  { title: "Launch", detail: "Test privately. Go live when ready." },
-] as const;
 const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
@@ -98,8 +93,8 @@ export default function WireAgentLanding() {
                 AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
               </p>
               <h1 id="landing-prestige-title">
-                <span>PUT YOUR BOT</span>
-                <span>ON THE LINE</span>
+                <span>Put Your Bot</span>
+                <span>on the Line</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
               <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
@@ -111,7 +106,7 @@ export default function WireAgentLanding() {
                   <span className="landing-prestige__direction-label">
                     <PhoneOutgoing aria-hidden="true" /> OUTBOUND
                   </span>
-                  <strong>FIND. CALL. BOOK.</strong>
+                  <strong className="wl-preserve-case">Find. Call. Book.</strong>
                   <span className="landing-prestige__direction-action">
                     Build a Sales Rep <ArrowRight aria-hidden="true" />
                   </span>
@@ -124,7 +119,7 @@ export default function WireAgentLanding() {
                   <span className="landing-prestige__direction-label">
                     <PhoneIncoming aria-hidden="true" /> INBOUND
                   </span>
-                  <strong>ANSWER. QUALIFY. ROUTE.</strong>
+                  <strong className="wl-preserve-case">Answer. Qualify. Route.</strong>
                   <span className="landing-prestige__direction-action">
                     Build a Front Desk <ArrowRight aria-hidden="true" />
                   </span>
@@ -155,29 +150,11 @@ export default function WireAgentLanding() {
         </section>
 
         <div className="landing-prestige__desktop-only">
-          <section
-            className="landing-prestige__getting-started"
-            aria-label="From idea to a live Bot"
-          >
-            <ol className="landing-prestige__rail landing-prestige__steps">
-              {GETTING_STARTED.map((step, index) => (
-                <li key={step.title}>
-                  <span className="landing-prestige__step-number" aria-hidden="true">
-                    0{index + 1}
-                  </span>
-                  <div>
-                    <h2>{step.title}</h2>
-                    <p>{step.detail}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
           <section id="solutions" className="landing-prestige__section landing-prestige__roles">
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
                 <p>OUTBOUND + INBOUND</p>
-                <h2>PICK THE WORK. PUT A BOT ON IT.</h2>
+                <h2>Pick the Work. Put a Bot on It</h2>
                 <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
               </header>
               <div className="landing-prestige__role-grid">
@@ -218,7 +195,7 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__rail">
               <header className="landing-prestige__section-heading">
                 <p>PRICING</p>
-                <h2>BUILD FREE. GO LIVE ON YOUR TERMS.</h2>
+                <h2>Build Free. Go Live on Your Terms</h2>
                 <span>One private Bot to start. More live Bots as your business grows.</span>
               </header>
               <div className="landing-prestige__price-grid">
@@ -281,7 +258,7 @@ export default function WireAgentLanding() {
             <div className="landing-prestige__rail landing-prestige__trust-inner">
               <div>
                 <ShieldCheck aria-hidden="true" />
-                <strong>YOUR LINE. YOUR RULES.</strong>
+                <strong className="wl-preserve-case">Your Line. Your Rules.</strong>
               </div>
               <nav aria-label="Trust links">
                 <Link to="/security">Security</Link>

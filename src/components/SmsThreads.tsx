@@ -682,7 +682,7 @@ export default function SmsThreads({
       </div>
 
       {fetchErr && threads.length ? (
-        <StatusNotice tone="destructive" title="Texts unavailable" className="m-3 sm:m-4">
+        <StatusNotice tone="destructive" title="Texts Unavailable" className="m-3 sm:m-4">
           {fetchErr}
         </StatusNotice>
       ) : null}
@@ -697,7 +697,7 @@ export default function SmsThreads({
           {fetchErr && !threads.length ? (
             <EmptyState
               icon={<MessageSquare className="size-5" aria-hidden="true" />}
-              title="Texts unavailable"
+              title="Texts Unavailable"
               description={fetchErr}
               density="compact"
               titleTone="ui"
@@ -725,7 +725,7 @@ export default function SmsThreads({
           ) : hasSearch && !visibleThreads.length ? (
             <EmptyState
               icon={<MessageSquare className="size-5" aria-hidden="true" />}
-              title="No matching texts"
+              title="No Matching Texts"
               description="Try a different number or status."
               density="compact"
               titleTone="ui"
@@ -791,7 +791,7 @@ export default function SmsThreads({
         >
           {!activeThread ? (
             <EmptyState
-              title="Select a conversation"
+              title="Select a Conversation"
               density="compact"
               titleTone="ui"
               withHalo={false}
@@ -820,7 +820,7 @@ export default function SmsThreads({
               {threadErr ? (
                 <StatusNotice
                   tone="destructive"
-                  title="Conversation unavailable"
+                  title="Conversation Unavailable"
                   className="m-3 sm:m-4"
                 >
                   {threadErr}
@@ -888,28 +888,28 @@ export default function SmsThreads({
               >
                 {draftNotice ? <StatusNotice tone="info">{draftNotice}</StatusNotice> : null}
                 {draftError ? (
-                  <StatusNotice tone="destructive" title="Bot could not write this reply">
+                  <StatusNotice tone="destructive" title="Bot Could Not Write This Reply">
                     {draftError}
                   </StatusNotice>
                 ) : null}
                 {activePendingSend?.state === "ambiguous" ? (
-                  <StatusNotice tone="destructive" title="Delivery status unknown">
+                  <StatusNotice tone="destructive" title="Delivery Status Unknown">
                     {activePendingSend.message ||
                       "The carrier may have accepted the previous message. Do not resend it; contact support."}
                   </StatusNotice>
                 ) : activePendingSend?.state === "retryable" ? (
-                  <StatusNotice tone="warning" title="Safe retry pending">
+                  <StatusNotice tone="warning" title="Safe Retry Pending">
                     {activePendingSend.message ||
                       "Re-enter the exact same message to retry with its existing operation key."}
                   </StatusNotice>
                 ) : null}
                 {routingConflict ? (
-                  <StatusNotice tone="warning" title="Sending line needs review">
+                  <StatusNotice tone="warning" title="Sending Line Needs Review">
                     This customer reached more than one Bot number. BotBound will not draft or send
                     until the conversation is assigned to a specific destination line.
                   </StatusNotice>
                 ) : missingDestination ? (
-                  <StatusNotice tone="warning" title="Sending line unavailable">
+                  <StatusNotice tone="warning" title="Sending Line Unavailable">
                     This conversation has no verified destination number. BotBound will not draft or
                     send until a specific Twilio line is attached.
                   </StatusNotice>

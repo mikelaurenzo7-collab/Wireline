@@ -428,7 +428,7 @@ export default function CompanyIdentityPack() {
             <div className="flex items-start gap-3">
               <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Business profile</h3>
+                <h3 className="text-sm font-semibold text-foreground">Business Profile</h3>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">{identity.guarantee}</p>
               </div>
             </div>
@@ -608,7 +608,7 @@ export default function CompanyIdentityPack() {
       ) : null}
 
       {message ? (
-        <StatusNotice tone="info" className="mt-5" title="Company identity updated">
+        <StatusNotice tone="info" className="mt-5" title="Company Identity Updated">
           {message}
         </StatusNotice>
       ) : null}
@@ -618,7 +618,7 @@ export default function CompanyIdentityPack() {
         <StatusNotice
           tone="destructive"
           className="mt-5"
-          title="Company identity could not load. Your saved details are unchanged."
+          title="Company Identity Could Not Load. Your Saved Details Are Unchanged."
           action={
             <button
               type="button"

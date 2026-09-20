@@ -480,8 +480,8 @@ export default function GoalsView() {
           <p className="text-eyebrow text-brand mb-1">Monthly targets · {data.period_label}</p>
           <h2 className="font-display text-2xl md:text-3xl text-foreground leading-tight">
             {activeGoals === 0
-              ? "Set your first Bot goal"
-              : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "goal" : "goals"} on pace`}
+              ? "Set Your First Bot Goal"
+              : `${onPace} of ${activeGoals} ${activeGoals === 1 ? "Goal" : "Goals"} on Pace`}
           </h2>
           <p className="mt-1 text-caption max-w-md leading-relaxed">
             Goals measure live Bot activity against an even daily run-rate for the current calendar

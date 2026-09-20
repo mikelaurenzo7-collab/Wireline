@@ -66,7 +66,7 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
           </span>
           <div className="min-w-0">
             <h2 className="text-lg font-semibold tracking-[-.02em] text-foreground">
-              Salesforce connection
+              Salesforce Connection
             </h2>
             <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
           </div>
@@ -213,7 +213,7 @@ export default function SalesforceIntegrationPage() {
           }
         />
         {connectionError ? (
-          <StatusNotice tone="warning" title="Connection state unavailable">
+          <StatusNotice tone="warning" title="Connection State Unavailable">
             {connectionError}
           </StatusNotice>
         ) : null}
@@ -224,7 +224,7 @@ export default function SalesforceIntegrationPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-center gap-2">
                   <Send className="size-5 text-primary" />
-                  <h2 className="font-semibold text-foreground">Call activity</h2>
+                  <h2 className="font-semibold text-foreground">Call Activity</h2>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
                   {callActivitySyncEnabled && isConnected ? "Active" : "Paused"}
@@ -250,12 +250,12 @@ export default function SalesforceIntegrationPage() {
               </div>
 
               {saveState === "saving" ? (
-                <StatusNotice className="mt-5" tone="info" title="Saving call activity preference">
+                <StatusNotice className="mt-5" tone="info" title="Saving Call Activity Preference">
                   Updating the delivery rule for future Salesforce Tasks.
                 </StatusNotice>
               ) : null}
               {saveState === "saved" ? (
-                <StatusNotice className="mt-5" tone="success" title="Call activity sync updated">
+                <StatusNotice className="mt-5" tone="success" title="Call Activity Sync Updated">
                   Future eligible calls will follow the delivery preference shown above.
                 </StatusNotice>
               ) : null}
@@ -263,7 +263,7 @@ export default function SalesforceIntegrationPage() {
                 <StatusNotice
                   className="mt-5"
                   tone="destructive"
-                  title="Call activity sync was not updated"
+                  title="Call Activity Sync Was Not Updated"
                 >
                   {saveError}
                 </StatusNotice>
@@ -272,7 +272,7 @@ export default function SalesforceIntegrationPage() {
                 <StatusNotice
                   className="mt-5"
                   tone="warning"
-                  title="Connect Salesforce to control delivery"
+                  title="Connect Salesforce to Control Delivery"
                 >
                   Complete OAuth from Connections before BotBound can create or pause Salesforce
                   call activities.
@@ -285,7 +285,7 @@ export default function SalesforceIntegrationPage() {
                 <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                   <FileText size={18} />
                 </span>
-                <h2 className="font-semibold text-foreground">Task fields</h2>
+                <h2 className="font-semibold text-foreground">Task Fields</h2>
               </div>
               <dl className="divide-y divide-border text-sm">
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">

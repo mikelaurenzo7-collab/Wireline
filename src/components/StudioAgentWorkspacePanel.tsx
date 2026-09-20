@@ -293,7 +293,7 @@ export default function StudioAgentWorkspacePanel({
                 : "wl-preserve-case text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Tone & knowledge
+            Tone & Knowledge
           </h2>
           {snapshot.dirty ? (
             <p className="mt-1 text-xs text-muted-foreground" role="status">
@@ -311,7 +311,7 @@ export default function StudioAgentWorkspacePanel({
           ) : setupLoadError ? (
             <StatusNotice
               tone="destructive"
-              title="Setup unavailable"
+              title="Setup Unavailable"
               action={
                 <Button
                   type="button"
@@ -454,7 +454,7 @@ export default function StudioAgentWorkspacePanel({
                 </StatusNotice>
               ) : null}
               {setupError ? (
-                <StatusNotice tone="destructive" title="Needs attention">
+                <StatusNotice tone="destructive" title="Needs Attention">
                   {setupError}
                 </StatusNotice>
               ) : null}
@@ -481,7 +481,7 @@ export default function StudioAgentWorkspacePanel({
             id="voice-heading"
             className={`${compact ? "mb-2 text-base" : "mb-3 text-lg"} font-semibold tracking-tight text-foreground`}
           >
-            Phone voice
+            Phone Voice
           </h3>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} />
         </section>

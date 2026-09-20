@@ -9,7 +9,7 @@ export default function AuthPortal() {
     location.pathname === "/signup" ||
     location.pathname.startsWith("/signup/") ||
     location.pathname === "/get-started";
-  const title = isSignupRoute ? "Create your account" : "Sign in";
+  const title = isSignupRoute ? "Create Your Account" : "Sign In";
   const description = isSignupRoute
     ? "Create your BotBound account and build your first Bot."
     : "Sign in to BotBound.";

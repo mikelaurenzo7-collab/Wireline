@@ -91,7 +91,7 @@ export default function ComplianceChecklist() {
         <div>
           <p className="app-section-title flex items-center gap-2 mb-1">
             <ShieldCheck className="w-3.5 h-3.5 text-brand" />
-            Compliance checklist
+            Compliance Checklist
           </p>
           <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
             Account Holder-facing controls for regulated buyers. {doneCount}/{items.length} complete

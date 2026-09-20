@@ -40,7 +40,7 @@ function EmptyKnowledge() {
       withHalo={false}
       className="wl-paper wl-paper-elevated mx-auto w-full max-w-[620px] px-8 py-12 text-center sm:px-10"
       icon={<BookOpen size={30} strokeWidth={1.7} />}
-      title="Knowledge starts with a Bot"
+      title="Knowledge Starts with a Bot"
       description="Create the Bot first, then add the facts, policies, and answers it may use with customers."
       actions={[
         { label: "Create Bot", to: "/studio?create=1", primary: true },

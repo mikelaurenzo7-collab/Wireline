@@ -77,8 +77,8 @@ describe("Stripe Checkout modernization contract", () => {
     expect(fulfillment).toContain("has no BotBound workspace");
     expect(checkoutReturn).toContain('params.get("balance") === "success"');
     expect(checkoutReturn).toContain('params.get("live_video") === "success"');
-    expect(billingPage).toContain("Payment processing");
-    expect(billingPage).toContain("Runtime Balance added");
+    expect(billingPage).toContain("Payment Processing");
+    expect(billingPage).toContain("Runtime Balance Added");
   });
 
   it("keeps the integration identifier stable across atomic idempotency retries", () => {

@@ -207,19 +207,17 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await openPublicRoute(page, "/");
 
   await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
-  await expect(page.locator(".landing-prestige__steps h2")).toHaveText([
-    "Build",
-    "Train",
-    "Launch",
-  ]);
-  await expect(page.getByRole("heading", { name: "PUT YOUR BOT ON THE LINE" })).toBeVisible();
-  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  await expect(directions.getByText("FIND. CALL. BOOK.", { exact: true })).toBeVisible();
-  await expect(directions.getByText("ANSWER. QUALIFY. ROUTE.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "PICK THE WORK. PUT A BOT ON IT." }),
+    page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
+  ).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Put Your Bot on the Line" })).toBeVisible();
+  const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
+  await expect(directions.getByText("Find. Call. Book.", { exact: true })).toBeVisible();
+  await expect(directions.getByText("Answer. Qualify. Route.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Pick the Work. Put a Bot on It" }),
   ).toBeAttached();
 
   const metrics = await publicMetrics(page);
@@ -249,14 +247,12 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await openPublicRoute(page, "/");
 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
-  await expect(page.locator(".landing-prestige__steps h2")).toHaveText([
-    "Build",
-    "Train",
-    "Launch",
-  ]);
+  await expect(
+    page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
+  ).toHaveCount(0);
   await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(
     page
       .getByRole("group", { name: "Account access mode" })
@@ -328,7 +324,7 @@ test("showcase redirects into free account creation without horizontal escape", 
   await page.setViewportSize({ width: 320, height: 800 });
   await openPublicRoute(page, "/showcase");
   await expect(page).toHaveURL(/\/signup\?plan=free$/);
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   await expect(page.locator("#showcase-preview")).toHaveCount(0);
   const metrics = await publicMetrics(page);
   expectDocumentInsideViewport(metrics, "showcase redirect");

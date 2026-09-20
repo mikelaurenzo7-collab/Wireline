@@ -2,7 +2,7 @@
 
 BotBound is the operating layer for **your Bot across calls, texts, and email**. Start with one trained Bot or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-The public setup journey is **Build -> Train -> Launch**. After create, the setup guide is **Train -> Test -> Launch**. Product architecture supports that journey through Create, Training, and Wire:
+Public marketing leads with capabilities, outcomes, and a clear signup action. Operational guidance stays inside the product: after create, the setup guide is **Train -> Test -> Launch**. Product architecture supports this work through Create, Training, and Wire:
 
 1. **Create / Build** a focused Bot quickly.
 2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.

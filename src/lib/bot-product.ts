@@ -5,7 +5,7 @@ export type BotProductTypeKey = "voice" | "conversation" | "human";
 
 export const BOT_BRAND = {
   name: "BotBound",
-  slogan: "PUT YOUR BOT ON THE LINE",
+  slogan: "Put Your Bot on the Line",
   supportingLine: "CALL · TEXT · EMAIL",
   promise: "Your Bot for calls, texts, and email.",
 } as const;
@@ -203,7 +203,7 @@ export const BOT_MARKETING_VOICE = {
 } as const;
 
 export const BOT_WORKSPACE_PROMISE = {
-  title: "YOUR BOT. ALREADY MOVING.",
+  title: "Your Bot. Already Moving",
   description:
     "Calls come in. Follow-ups go out. Context carries forward. You step in when you want to.",
 } as const;

@@ -30,13 +30,9 @@ export default function AppearanceSettings() {
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <p className="wl-eyebrow wl-eyebrow--muted">Theme</p>
       <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-        Workspace theme
+        Workspace Theme
       </h2>
-      <div
-        className="mt-5 grid gap-2 sm:grid-cols-3"
-        role="group"
-        aria-label="Workspace theme"
-      >
+      <div className="mt-5 grid gap-2 sm:grid-cols-3" role="group" aria-label="Workspace theme">
         {OPTIONS.map(({ id, label, detail, icon: Icon }) => {
           const selected = theme === id;
           return (

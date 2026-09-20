@@ -512,7 +512,7 @@ export default function AuthAccessPanel({
     }
   };
 
-  const title = isReset ? "Reset password" : isSignUp ? "Create account" : "Sign in";
+  const title = isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In";
   const disabled = loading || Boolean(oauthPending);
   const termsId = embedded ? "landing-auth-terms" : "auth-terms";
   const termsLabelId = `${termsId}-label`;
@@ -564,7 +564,7 @@ export default function AuthAccessPanel({
           {embedded ? <h2>{title}</h2> : <h1>{title}</h1>}
           {embedded && isSignUp ? (
             <div className="wl-access-panel__welcome">
-              <p>Your first Bot starts here.</p>
+              <p>Your First Bot Starts Here</p>
               <span>Build and test privately before you activate.</span>
             </div>
           ) : null}

@@ -16,14 +16,14 @@ not unlock a different product.
 
 ## Positioning rules
 
-| Context | Preferred language |
-| --- | --- |
-| Broad public marketing | Bot or Phone Bot |
-| Workspace | Bot, Bots, workspace |
-| Role proof | Front Desk, Sales Rep, Support, Scheduler, Personal Assistant |
-| Multi-role growth | Additional Bots, specialized roles, coordinated Bots |
-| CTA | Build Your Bot |
-| Technical code and contracts | agent and stable legacy identifiers |
+| Context                      | Preferred language                                            |
+| ---------------------------- | ------------------------------------------------------------- |
+| Broad public marketing       | Bot or Phone Bot                                              |
+| Workspace                    | Bot, Bots, workspace                                          |
+| Role proof                   | Front Desk, Sales Rep, Support, Scheduler, Personal Assistant |
+| Multi-role growth            | Additional Bots, specialized roles, coordinated Bots          |
+| CTA                          | Build Your Bot                                                |
+| Technical code and contracts | agent and stable legacy identifiers                           |
 
 ## Launch copy
 
@@ -45,11 +45,9 @@ Avoid:
 
 ## Product doctrine
 
-1. Build a focused Bot from a role starter or blank canvas.
-2. Configure knowledge, tone, rules, channels, tools, approvals, and handoffs.
-3. Test privately, then launch on an eligible paid-plan number.
+Public marketing describes capabilities and outcomes with a clear signup action. It does not prescribe a setup sequence.
 
-Logged conversations, outcomes, and follow-up remain available for review. Owners can refine the Bot when useful; setup ends at launch.
+Bots use the owner's knowledge, tone, rules, tools, approvals, and handoffs. Private testing and channel activation remain operational guidance inside the product, subject to account capacity. Logged conversations, outcomes, and follow-up remain available for review.
 
 ## Success metric
 

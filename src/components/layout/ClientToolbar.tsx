@@ -77,7 +77,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
           aria-label="Page actions"
           overlayClassName="bg-[var(--wireline-color-overlay-scrim)]"
         >
-          <DialogTitle className="sr-only">Page actions</DialogTitle>
+          <DialogTitle className="sr-only">Page Actions</DialogTitle>
           <DialogDescription className="sr-only">
             Actions available for the current page.
           </DialogDescription>

@@ -43,7 +43,7 @@ function Section({
 }) {
   return (
     <section id={id}>
-      <h2 className="text-base font-semibold uppercase tracking-[0.04em] text-foreground mb-3 border-b border-white/8 pb-2">
+      <h2 className="text-base font-semibold tracking-[0.01em] text-foreground mb-3 border-b border-white/8 pb-2">
         {title}
       </h2>
       <div className="space-y-3 text-sm">{children}</div>
@@ -123,7 +123,7 @@ export default function PrivacyPolicyPage() {
             <div className="min-w-0 flex-1 space-y-3">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">
-                  Advertising measurement choice
+                  Advertising Measurement Choice
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-foreground/75">
                   Plausible product analytics remains separate and does not use advertising cookies.

@@ -84,27 +84,27 @@ export const WIRELINE_PLANS = [
 
 export const WIRELINE_FEATURES = [
   {
-    title: "Inbound support",
+    title: "Inbound Support",
     blurb:
       "Configured Bots answer inbound calls, handle approved questions, route requests, schedule appointments, and capture intent.",
   },
   {
-    title: "Outbound sales",
+    title: "Outbound Sales",
     blurb:
       "Marketing campaigns stay blocked until required consent rules and federal DNC screening are ready. Lead Hunt surfaces prospects through connected sources, or you import a list. Review the queue, then your Sales Bot calls, qualifies, books, and records the outcome.",
   },
   {
-    title: "Email workflows",
+    title: "Email Workflows",
     blurb:
       "Bots triage your inbox, reply on-brand, follow up, and escalate the threads you need to see personally.",
   },
   {
-    title: "Two-way texting",
+    title: "Two-Way Texting",
     blurb:
       "Bots text customers and reply in-thread when customers text back, with STOP and UNSUBSCRIBE handling in place.",
   },
   {
-    title: "Recaps and oversight",
+    title: "Recaps and Oversight",
     blurb: "Unified recaps keep calls, texts, follow-up, and operating visibility in one place.",
   },
 ] as const;

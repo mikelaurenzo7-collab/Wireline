@@ -61,7 +61,7 @@ export interface VerticalConfig {
 export const WEDGES: Record<VerticalKey, VerticalConfig> = {
   "home-services": {
     slug: "home-services",
-    metaTitle: "BOTBOUND FOR HOME SERVICES | PHONE BOTS FOR CALLS AND FOLLOW-UP",
+    metaTitle: "BotBound for Home Services | Phone Bots for Calls and Follow-Up",
     metaDescription:
       "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, continue by text and email, and follow up from one workspace.",
     eyebrow: "For Home Services Pros",
@@ -118,7 +118,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   medical: {
     slug: "medical",
-    metaTitle: "BOTBOUND FOR MEDICAL PRACTICES | PHONE BOTS FOR INTAKE AND SCHEDULING",
+    metaTitle: "BotBound for Medical Practices | Phone Bots for Intake and Scheduling",
     metaDescription:
       "A voice-first Bot for dental, med spa, chiropractic, and primary care practices. Handle approved intake, book appointments, continue by text and email, and route exceptions.",
     eyebrow: "For Medical Practices",
@@ -175,7 +175,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   legal: {
     slug: "legal",
-    metaTitle: "BOTBOUND FOR LAW FIRMS | PHONE BOTS FOR INTAKE AND CONSULT ROUTING",
+    metaTitle: "BotBound for Law Firms | Phone Bots for Intake and Consult Routing",
     metaDescription:
       "A voice-first Bot for law firms. Capture new matters, qualify urgency, schedule consults, continue by text and email, and route conflict checks for staff review.",
     eyebrow: "For Law Firms",
@@ -232,7 +232,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   "real-estate": {
     slug: "real-estate",
-    metaTitle: "BOTBOUND FOR REAL ESTATE | PHONE BOTS FOR LISTING CALLS AND FOLLOW-UP",
+    metaTitle: "BotBound for Real Estate | Phone Bots for Listing Calls and Follow-Up",
     metaDescription:
       "A voice-first Bot for real estate teams. Qualify buyers, book showings, revive approved leads, continue by text and email, and sync CRM notes.",
     eyebrow: "For Real Estate",
@@ -289,7 +289,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   personal: {
     slug: "personal",
-    metaTitle: "BOTBOUND FOR EVERYONE | A PHONE BOT FOR CALLS YOU AVOID",
+    metaTitle: "BotBound for Everyone | A Phone Bot for Calls You Avoid",
     metaDescription:
       "A Phone Bot for calls you avoid: appointments, customer service, billing disputes, returns, and follow-up. Start at $19/month and manage everything from one BotBound workspace.",
     eyebrow: "For Everyone Who Hates the Phone",
@@ -351,7 +351,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   insurance: {
     slug: "insurance",
-    metaTitle: "BOTBOUND FOR INSURANCE AGENCIES | PHONE BOTS FOR QUOTE INTAKE AND RENEWALS",
+    metaTitle: "BotBound for Insurance Agencies | Phone Bots for Quote Intake and Renewals",
     metaDescription:
       "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, renewal follow-up, text and email context, and producer-ready notes.",
     eyebrow: "For Insurance Agencies",
@@ -408,7 +408,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   restaurants: {
     slug: "restaurants",
-    metaTitle: "BOTBOUND FOR RESTAURANTS | PHONE BOTS FOR RESERVATIONS AND TAKEOUT",
+    metaTitle: "BotBound for Restaurants | Phone Bots for Reservations and Takeout",
     metaDescription:
       "A voice-first Bot for restaurants. Take reservations, capture takeout requests, handle event inquiries, continue by text and email, and route exceptions to staff.",
     eyebrow: "For Restaurants",
@@ -465,7 +465,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
 
   sales: {
     slug: "sales",
-    metaTitle: "BOTBOUND FOR SALES TEAMS | PHONE BOTS FOR LEAD FOLLOW-UP",
+    metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up",
     metaDescription:
       "A voice-first Sales Bot for speed-to-lead, quote follow-up, warm reactivation, governed outbound queues, text and email continuation, and approved CRM actions.",
     eyebrow: "For Sales Teams",
@@ -489,7 +489,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Shield",
         title: "Outbound Compliance Controls",
-        body: "The ledger records configured disclosures, opt-outs, suppression decisions, calling windows, and attempt caps. Federal DNC credential coverage is surfaced as an advisory when deferred rather than silently blocking every local workflow; your organization remains responsible for lawful outreach.",
+        body: "The ledger records disclosures, opt-outs, suppression decisions, calling windows, and attempt caps. Outbound marketing requires configured Do Not Call screening before calls can run; your organization remains responsible for lawful outreach.",
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week. Got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,

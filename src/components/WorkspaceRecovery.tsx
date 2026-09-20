@@ -15,7 +15,7 @@ import { StatusNotice } from "./molecules";
 export default function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) {
   return (
     <section className="wl-paper wl-paper-elevated p-6 sm:p-8" aria-label="Workspace recovery">
-      <StatusNotice tone="warning" title="Your workspace is reconnecting">
+      <StatusNotice tone="warning" title="Your Workspace Is Reconnecting">
         We could not load your agent roster. Your agents and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>

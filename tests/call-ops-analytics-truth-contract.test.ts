@@ -64,7 +64,7 @@ describe("Call Ops analytics truth", () => {
     expect(analytics).not.toContain("setAnalytics(null)");
     expect(analytics).toContain('aria-label="Retry call analytics"');
     expect(analytics).toContain("onClick={() => void loadAnalytics()}");
-    expect(analytics).toContain('title="Analytics may be out of date"');
+    expect(analytics).toContain('title="Analytics May Be Out of Date"');
     expect(analytics).toContain("Your last loaded metrics remain available below.");
     expect(analytics.indexOf("{staleDataNotice}")).toBeLessThan(
       analytics.indexOf('className="grid grid-cols-2 gap-3 sm:grid-cols-4"'),

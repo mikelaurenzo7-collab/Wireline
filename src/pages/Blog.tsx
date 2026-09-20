@@ -69,7 +69,7 @@ export default function Blog() {
   return (
     <MarketingPageFrame longform stickyCta>
       <PageMeta
-        title="BOTBOUND NOTES | BOT GUIDES FOR SMALL BUSINESS"
+        title="BotBound Notes | Bot Guides for Small Business"
         description="Practical guides for Bots: calling, appointment booking, live conversations, text and email follow-up, support queues, handoff boundaries, and getting routine communication work off your plate."
         path="/blog"
         structuredData={structuredData}
@@ -79,7 +79,7 @@ export default function Blog() {
         <div className="mx-auto max-w-6xl">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Notes</p>
           <h1 className="marketing-hero-title mx-auto mt-4 text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
-            PRACTICAL NOTES FOR GETTING TIME BACK
+            Practical Notes for Getting Time Back
           </h1>
         </div>
         <div className="mx-auto mt-10 grid max-w-6xl gap-px overflow-hidden border border-border bg-border md:grid-cols-3">
@@ -102,7 +102,7 @@ export default function Blog() {
         <div className="wl-stitch-card wl-stitch-card-brand p-7 sm:p-10">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
-              TEACH A BOT THE CONVERSATION YOU KEEP PUTTING OFF
+              Teach a Bot the Conversation You Keep Putting Off
             </h2>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link

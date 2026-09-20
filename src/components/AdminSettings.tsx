@@ -372,7 +372,7 @@ export default function AdminSettings() {
   const deletePhoneNumber = (id: number | string) => {
     setConfirmState({
       open: true,
-      title: "Permanently release number",
+      title: "Permanently Release Number",
       message:
         "This permanently releases the number from BotBound and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone.",
       confirmLabel: "Release number",
@@ -426,7 +426,7 @@ export default function AdminSettings() {
   return (
     <>
       <AdminHubViewport scroll>
-        <h1 className="sr-only">Admin workspace</h1>
+        <h1 className="sr-only">Admin Workspace</h1>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-3">
           <div>
             {/* A heading element, not a <p>: the workspace title-tier rule

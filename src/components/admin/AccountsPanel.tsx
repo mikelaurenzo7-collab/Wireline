@@ -98,7 +98,7 @@ export function AccountsPanel() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5 sm:space-y-6">
       <header className="max-w-2xl">
-        <h2 className="text-base font-semibold tracking-tight text-foreground">Your workspaces</h2>
+        <h2 className="text-base font-semibold tracking-tight text-foreground">Your Workspaces</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Switch creation defaults without changing the product. Bots, training, settings, and
           billing currently remain account-wide.
@@ -118,7 +118,7 @@ export function AccountsPanel() {
 
       {nextAccountType && (
         <section className="rounded-2xl border border-border bg-card/60 p-4 sm:p-5">
-          <p className="text-sm font-semibold text-foreground">Add another workspace</p>
+          <h3 className="text-sm font-semibold text-foreground">Add Another Workspace</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Add another profile when you want different creation defaults. Existing Bots and billing
             stay account-wide.

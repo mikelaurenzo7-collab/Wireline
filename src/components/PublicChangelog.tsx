@@ -50,103 +50,103 @@ const ENTRIES: ChangelogEntry[] = [
   {
     date: "Aug 17, 2026",
     tag: "infra",
-    title: "Production phone calls use a dedicated carrier-grade path",
+    title: "Production Phone Calls Use a Dedicated Carrier-Grade Path",
     body: "Live inbound and outbound calls run through BotBound's managed calling stack. Marketing answering machines hang up without a message, unreachable campaign dials retry until the attempt budget, and a spoken stop-calling request ends the call immediately. Rollback paths remain isolated from customer traffic.",
   },
   {
     date: "Aug 11, 2026",
     tag: "launch",
-    title: "Deeper release checks before anything ships",
+    title: "Deeper Release Checks Before Anything Ships",
     body: "Every release now clears a wider battery of automated checks: code quality, dependency advisories, the non-E2E test suite, and database safety. Post-promotion health checks verify the live service, and demo or test activity stays strictly separate from real customer evidence.",
   },
   {
     date: "Jul 25, 2026",
     tag: "infra",
-    title: "One managed reasoning policy across demos and Studio",
+    title: "One Managed Reasoning Policy Across Demos and Studio",
     body: "Structured reasoning and every live-voice demo surface (Studio, private simulation, guest previews) now run on a single managed policy with governed continuity layers behind it, so behavior is consistent everywhere you try a Bot. Production phone calling keeps its own dedicated, carrier-grade runtime. Demo surfaces never take over customer calls.",
   },
   {
     date: "Jul 13, 2026",
     tag: "feature",
-    title: "Fast Start turns a blank workspace into a first working Bot",
+    title: "Fast Start Turns a Blank Workspace into a First Working Bot",
     body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, BotBound guides the owner through review, number connection, and one real test call instead of dropping them into an empty workspace.",
   },
   {
     date: "Jul 13, 2026",
     tag: "security",
-    title: "Launch-integrity pass across exports, messaging, and voice",
+    title: "Launch-Integrity Pass Across Exports, Messaging, and Voice",
     body: "Account exports now include tenant-scoped historical training records without exposing them to browser roles. Inbound text retries are idempotent, internal database helpers are no longer public RPCs, and voice previews use the exact supported voice with clear recovery when a sample is unavailable.",
   },
   {
     date: "Jun 4, 2026",
     tag: "security",
-    title: "OAuth sign-in store sealed off from the data API",
+    title: "OAuth Sign-In Store Sealed Off from the Data API",
     body: "A security review closed direct data-API access to the short-lived OAuth bridge used during sign-in. Row-level security, explicit grants, and related tenant-policy checks now keep that flow inside the server-owned callback path.",
   },
   {
     date: "Jun 4, 2026",
     tag: "polish",
-    title: "Every console page fills the screen, top to bottom",
+    title: "Every Console Page Fills the Screen, Top to Bottom",
     body: "On larger monitors several authenticated pages (Activity, Calls, and others) left content stranded in the upper half with dead space below. The page shell now stretches content to the full viewport height: empty states center, dashboards fill, and chat anchors its composer to the bottom. No more “cut off in the middle” on big screens.",
   },
   {
     date: "Jun 4, 2026",
     tag: "polish",
-    title: "Sidebar spacing is even at every screen size",
+    title: "Sidebar Spacing Is Even at Every Screen Size",
     body: "On tall desktop monitors the left navigation rail floated its items in the vertical middle, leaving an awkward gap under Search. Items now anchor directly beneath Search with a consistent rhythm and clean group separators, scaling identically from a 13-inch laptop to a 27-inch display.",
   },
   {
     date: "Jun 4, 2026",
     tag: "polish",
-    title: "Shared actions now follow one interaction system",
+    title: "Shared Actions Now Follow One Interaction System",
     body: "Primary shared actions now use the canonical Button patterns for focus rings, touch targets, and press feedback. Automated checks protect the common components while the remaining specialized controls keep their purpose-built shapes.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
-    title: "Warm-transfer escalation",
+    title: "Warm-Transfer Escalation",
     body: "Every Bot can now warm-transfer a live caller to a human mid-call when it escalates. Configure immediate-escalation triggers in Bot Studio. The Bot speaks a brief handoff line, then transfers the call to the configured phone. Off by default. Explicit opt-in.",
   },
   {
     date: "Jan 28, 2026",
     tag: "feature",
-    title: "Per-agent escalation routing",
+    title: "Per-Agent Escalation Routing",
     body: "Sales Bots can now route their escalations to the sales lead; support Bots to the support lead. Bot-level escalation phone and email settings override the workspace default when set. Email alerts are opt-in and BotBound branded.",
   },
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "BotBound runtime monitoring",
+    title: "BotBound Runtime Monitoring",
     body: "BotBound now monitors calling and reasoning readiness behind the scenes with small, bounded checks. Customer-impacting issues surface through BotBound product messaging and support.",
   },
   {
     date: "Jan 27, 2026",
     tag: "polish",
-    title: "Marketing surface + mobile-first public pages",
+    title: "Marketing Surface + Mobile-First Public Pages",
     body: "Unified navigation, typography, and conversion rails across landing, pricing, demos, and trust pages. The live Bot directory supports tap-to-dial rows on mobile. Pricing tools remain on /pricing only.",
   },
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Visual QA coverage",
+    title: "Visual QA Coverage",
     body: "Added automated screenshot capture and responsive-layout auditing for critical routes and viewports so visual QA can be run before release.",
   },
   {
     date: "Jan 27, 2026",
     tag: "polish",
-    title: "Sidebar rail: desktop chrome rebuild",
+    title: "Sidebar Rail: Desktop Chrome Rebuild",
     body: "The horizontal top bar gave way to a resizable desktop rail with a compact mode, clear grouping, and an anchored account control. Mobile keeps a focused bottom dock for Studio, Inbox, Calls, and More.",
   },
   {
     date: "Jan 27, 2026",
     tag: "infra",
-    title: "Voice runtime rebalanced for reliability",
+    title: "Voice Runtime Rebalanced for Reliability",
     body: "Structured reasoning now runs a managed primary policy with ordered continuity behind it, so a runtime issue degrades gracefully instead of failing a conversation. Authenticated Studio and ChatGPT rehearsals share the managed live-voice path, while production phone calls keep their dedicated calling runtime.",
   },
   {
     date: "May 19, 2026",
     tag: "feature",
-    title: "Per-Bot Workspace: a private DM with each Bot",
+    title: "Per-Bot Workspace: A Private DM with Each Bot",
     body: 'Every Bot now has its own persistent chat thread. Coach your Bot in plain English ("be warmer on price objections"), ask how this week\'s calls went, or add context. Memory includes the thread and the last five call summaries with every reply.',
   },
 ];
@@ -172,7 +172,7 @@ export default function PublicChangelog() {
             className="mb-10"
           >
             <h1 className="marketing-hero-title text-3xl sm:text-4xl">
-              Every change we've shipped
+              Every Change We've Shipped
             </h1>
           </motion.div>
 

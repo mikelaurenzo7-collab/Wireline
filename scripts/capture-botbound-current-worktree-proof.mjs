@@ -59,7 +59,7 @@ const captures = [
     route: "/features",
     width: 1600,
     height: 1000,
-    expectedText: "BOTS THAT CALL, TEXT & EMAIL",
+    expectedText: "INBOUND & OUTBOUND BOTS",
   },
   {
     name: "04-features-mobile-430x932",
@@ -67,14 +67,14 @@ const captures = [
     width: 430,
     height: 932,
     mobile: true,
-    expectedText: "BOTS THAT CALL, TEXT & EMAIL",
+    expectedText: "INBOUND & OUTBOUND BOTS",
   },
   {
     name: "05-pricing-desktop-1600x1000",
     route: "/pricing",
     width: 1600,
     height: 1000,
-    expectedText: "BUILD FREE. PLANS FROM $19.",
+    expectedText: "BUILD FREE. PLANS FROM $19",
   },
   {
     name: "06-pricing-mobile-430x932",
@@ -82,7 +82,7 @@ const captures = [
     width: 430,
     height: 932,
     mobile: true,
-    expectedText: "BUILD FREE. PLANS FROM $19.",
+    expectedText: "BUILD FREE. PLANS FROM $19",
   },
   {
     name: "07-signin-desktop-1600x1000",

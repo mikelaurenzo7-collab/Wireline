@@ -245,7 +245,7 @@ export default function AgentToolPermissions({
           ) : loadError ? (
             <StatusNotice
               tone="destructive"
-              title="Actions unavailable"
+              title="Actions Unavailable"
               action={
                 <Button
                   type="button"
@@ -332,12 +332,12 @@ export default function AgentToolPermissions({
               </fieldset>
 
               {notice ? (
-                <StatusNotice tone="success" title="Actions saved">
+                <StatusNotice tone="success" title="Actions Saved">
                   {notice}
                 </StatusNotice>
               ) : null}
               {saveError ? (
-                <StatusNotice tone="destructive" title="Actions need attention">
+                <StatusNotice tone="destructive" title="Actions Need Attention">
                   {saveError}
                 </StatusNotice>
               ) : null}

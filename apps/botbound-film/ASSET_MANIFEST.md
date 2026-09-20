@@ -16,11 +16,13 @@ SHA-256 values below identify the exact local inputs used by every composition.
 
 ## Accessibility sidecars
 
+The 30-second sidecars below match the September 20, 2026 source revision: **Your Bots. Your Rules.** replaces the process-step diagram. These hashes identify caption inputs, not an approved delivery render. Publication remains on hold until the revised film is rendered and reviewed as described in `PRODUCTION_NOTES.md`.
+
 | File | SHA-256 |
 | --- | --- |
-| `public/captions/botbound-second-ring-30s.json` | `caa326eb48d14ed8a74754dabef2687a680482ca983124249fa367fc5dfca630` |
-| `public/captions/botbound-second-ring-30s.srt` | `99a780422e19c5bc2891adad5ef96cdb8cc91dc6ac9b631a26d22d3bdb6394e6` |
-| `public/captions/botbound-second-ring-30s.vtt` | `5901f49007da9db81a3da2af85581ef20ae5e33d196b93e2e2d1e96be77ce6ad` |
+| `public/captions/botbound-second-ring-30s.json` | `321434c5df6e4f656754faac7c775d20c45f2b99c89c9b88233d28d57a69bb6a` |
+| `public/captions/botbound-second-ring-30s.srt` | `2a3b974b130e5c33b0e99573bbe55ccee2eff6c509dc985af137d17fa42e6c11` |
+| `public/captions/botbound-second-ring-30s.vtt` | `d1b98fc8e64ee463e581c2983ae45777a2c906440b49ac84a63a6160d364cd98` |
 | `public/captions/botbound-second-ring-15s.json` | `2c2708116beddbca05b4fac44f872b5830699a4afa4599c2d2c2e234c5a930e0` |
 | `public/captions/botbound-second-ring-15s.srt` | `d95d1d2c3ebc783d67c9c4a4aa3ca351e031713f56793bbf6358dd33962fafa6` |
 | `public/captions/botbound-second-ring-15s.vtt` | `adf194c1fcf35b8084e03f990a15fa0557a2d5e18a1043e2782780229ed71393` |

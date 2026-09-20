@@ -16,7 +16,7 @@ That call may be ordinary. Its timing is not.
 
 We built BotBound for the second ring.
 
-Build a Bot. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
+Bots for calls, texts, and email. Your knowledge. Your rules.
 
 One Bot can carry the conversation across calls, texts, and email under one identity and one operating context. Users can choose from ten built-in OpenAI Realtime voices, and the selected voice stays consistent through the active conversation.
 
@@ -46,7 +46,7 @@ Both hands occupied. One customer waiting. The phone developing a sudden and pas
 
 The work does not need to stop at the second ring.
 
-Build your Bot. Train it. Launch it when you're ready.
+Your calls and follow-up, handled by Bots you control.
 
 Put your Bot on the line.
 
@@ -171,7 +171,7 @@ Build your Bot at BotBound.me.
 
 We are building BotBound around a simple operating problem: customer demand arrives on its own schedule, while the people who can answer it are usually doing the work.
 
-BotBound gives owners trained Bots for calls, texts, and email. Setup is simple: Build. Train. Launch.
+BotBound gives owners trained Bots for calls, texts, and email, with the rules and handoffs they choose.
 
 We are opening conversations with investors and early design partners who understand owner-led and service businesses where missed calls, delayed follow-up, and disconnected tools create avoidable friction.
 
@@ -189,9 +189,7 @@ We built BotBound for the second ring. 🧵
 
 ### Post 2
 
-Build a Bot. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
-
-Build -> Train -> Launch.
+Bots for calls, texts, and email. Your knowledge. Your rules.
 
 ### Post 3
 
@@ -230,7 +228,7 @@ The phone rarely waits for an empty calendar and two free hands.
 
 BotBound gives the second ring somewhere useful to go.
 
-Build a Bot around the job you need done. Train it on your knowledge and rules. Test privately, then launch on the channels you enable.
+Bots for the work you need done, with your knowledge and rules across calls, texts, and email.
 
 One Bot can carry a conversation across calls, texts, and email. Choose from ten built-in OpenAI Realtime voices; the selected voice stays consistent through the active conversation.
 

@@ -17,23 +17,16 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 ## One buyer story
 
 **Headline:** Put Your Bot on the Line.
-**Setup journey:** **Build -> Train -> Launch**
 **Primary CTA:** Build Your Bot
 **Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  
 **Product model:** One BotBound workspace for every role and use case.
 
-The public story has three setup steps and ends at Launch. Conversation review and later refinements are available controls, not a fourth requirement. Keep technical navigation separate from this customer-facing journey.
+Public marketing leads with capabilities, outcomes, and a clear signup action. The headline and product evidence should tell the story with minimal copy. Do not add a public setup sequence or repeat process slogans. Operational instructions and activation states belong inside the product.
 
 ### Product language versus technical architecture
 
 The repository can keep technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio. `Wire` remains a useful internal verb for integrations, numbers, routing, approvals, and launch controls. Those implementation nouns do **not** create a second public launch narrative.
-
-Publicly:
-
-1. **Build** the Bot and give it a job.
-2. **Train** it on facts, rules, voice, and behavior.
-3. **Launch** it on the channels the user enables.
 
 Private testing belongs before launch. Logged conversations, outcomes, approvals, and handoffs remain available afterward so the owner can review or adjust the Bot when useful.
 
@@ -133,13 +126,12 @@ No persistent subtitles over product UI.
 
 ### 2. Product Proof — 20-30 seconds
 
-Goal: show the operating loop with almost no explanation.
+Goal: show useful work with almost no explanation.
 
 Structure:
 
-- Build
-- Train
-- Launch
+- A Bot handling a clearly labeled test call
+- The configured follow-up and logged result
 - CTA
 
 Favor motion that proves a state change: configured agent, connected channel, live action, logged result. A logged result proves completed work; it is not an additional setup step.
@@ -185,7 +177,6 @@ The immediate GTM objective is not to imply scale. It is to create enough credib
 
 Launch-clean means the repository, runtime, website, and creative all tell the same truth:
 
-**Build. Train. Launch.**
 **Your Bot for calls, texts, and email.**
 **Build free. Plans from $19/mo. Live activation subject to availability.**
 

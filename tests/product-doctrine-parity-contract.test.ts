@@ -4,10 +4,8 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-const PUBLIC_LOOP = "Build -> Train -> Launch";
-
 describe("product doctrine parity", () => {
-  it("keeps one public operating loop across active source-of-truth documents", () => {
+  it("keeps public setup sequences out of active source-of-truth documents", () => {
     const activeDocs = [
       "README.md",
       "docs/README.md",
@@ -23,10 +21,9 @@ describe("product doctrine parity", () => {
 
     for (const path of activeDocs) {
       const source = read(path);
-      expect(source, path).toContain(PUBLIC_LOOP);
-      expect(source, path).not.toMatch(
-        /Build\s*(?:->|→|\.|,)\s*Train\s*(?:->|→|\.|,)\s*Launch\s*(?:->|→|\.|,)\s*Improve/,
-      );
+      expect(source, path).not.toMatch(/Build\s*(?:->|→|\.|,)\s*Train\s*(?:->|→|\.|,)\s*Launch/);
+      expect(source, path).not.toMatch(/Build\s*(?:->|→|\.|,)\s*Train\s*(?:->|→|\.|,)\s*Employ/);
+      expect(source, path).not.toMatch(/(?:Customize|Train)\s*(?:->|→|\.|,)\s*Employ/);
     }
 
     const root = read("README.md");

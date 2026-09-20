@@ -10,8 +10,6 @@ export const BRAND_SYSTEM = {
   buyingNoun: "Bot",
   defaultRole: "Your Bot",
   productTypes: BOT_PRODUCT_TYPES,
-  brandSpine: ["Build", "Train", "Launch"],
-  proofLoop: ["Build", "Train", "Launch"],
   toneRules: [
     "Lead with the job, leverage, or outcome before AI mechanics.",
     "Use Phone Bot as the public acquisition wedge; Call, Text, and Email are the compact channel proof.",
@@ -28,14 +26,16 @@ export const BRAND_SYSTEM = {
     "Never present Personal or Business as a customer-facing product, workspace, signup, or pricing classification.",
     "Public headlines must create desire, tension, leverage, or curiosity before they explain architecture.",
     "Leave room for curiosity; do not explain every capability before account entry.",
-    "Render slogans, heroes, titles, headers, tabs, buttons, navigation, and compact labels in uppercase when the design system calls for cased controls.",
+    "Author every product title and heading in Title Case, including heroes, page titles, section titles, cards, dialogs, and empty-state titles. Never uppercase headings with CSS.",
+    "Keep deliberate uppercase styling limited to compact overlines, operational labels, buttons, tabs, and navigation; a control style must not change a title.",
     "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
     "Never use Wire as a customer-facing setup step, nav label, or CTA. After create, the guide is Train, Test, Launch.",
-    "Keep subheads, body copy, empty states, and anything the customer authored in sentence case.",
-    "Never end a cased title with a period. A period closes a sentence; a cased title is a label.",
+    "Keep explanatory body copy, supporting descriptions, and status messages in sentence case. Preserve customer-authored text exactly, including its casing.",
+    "Preserve proper names and acronyms in titles. Keep short articles, conjunctions, and prepositions lowercase unless they begin or end a title.",
+    "Do not end a title with a period; retain a question mark when the title is a question.",
     "Prefer short sentences, concrete verbs, and specific outcomes.",
-    "The public setup journey ends at Launch. Present conversation review and later refinements as optional controls, never a fourth setup step.",
+    "Public marketing leads with capabilities, outcomes, and a clear signup action. Do not add a public setup sequence or repeat process slogans. Keep operational setup guidance inside the product.",
     "Avoid em dashes, inflated AI language, repetitive descriptor copy, and stacked claims on public buying surfaces.",
   ],
 } as const;
@@ -55,7 +55,7 @@ const BOT_LANGUAGE = {
   createCta: "Create Bot",
   createCtaShort: "Create Bot",
   setupLabel: "Set Up Your Bot",
-  setupPrompt: "What should your Bot do?",
+  setupPrompt: "What Should Your Bot Do?",
   setupDescription: "Start with a role or your own idea. Refine it anytime.",
   nameLabel: "Bot Name",
 } as const;
@@ -140,8 +140,6 @@ export const MARKETING_VOICE = {
   primaryCta: "Start Free",
   subline: BOT_BRAND.promise,
   channelProof: ["Call", "Text", "Email"],
-  spine: BRAND_SYSTEM.brandSpine,
-  proof: BRAND_SYSTEM.proofLoop,
   extensionLead:
     "Send this page into Studio. Your Bot can prepare a call, draft a text, or follow up without leaving the tab.",
   differentiator: OUTBOUND_WEDGE.differentiator,
@@ -149,8 +147,7 @@ export const MARKETING_VOICE = {
 } as const;
 
 export const CLIENT_SURFACE_POSTURE = {
-  summary:
-    "Build, train, and launch on the web. Optional companion apps keep your Bot close at hand.",
+  summary: "Your Bots work from the web. Optional companion apps keep them close at hand.",
   browser: { status: "Early access", action: "Install Guide" },
   chatgpt: { status: "Early access", action: "Open Guide" },
   claude: { status: "Early access", action: "Add Connector" },
@@ -186,7 +183,7 @@ export const PRODUCT_VERSATILITY = {
     "Start with a Phone Bot, Conversation Bot, Human Bot, or role template. Add another only when a separate role or more capacity helps.",
   short:
     "Bots for calling, texting, email, sales, marketing, appointment setting, lead revival, support, scheduling, follow-up, inbound conversion, recovery, and personal admin.",
-  hero: "Give the work a Bot. Step in only when you want to.",
+  hero: "Give the Work a Bot. Step In Only When You Want To",
 } as const;
 
 /** Legacy keys remain, but both render the same unified Bot posture. */

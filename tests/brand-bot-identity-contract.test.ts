@@ -44,7 +44,7 @@ describe("BotBound brand migration", () => {
       shortcuts: Array<{ name: string; url: string }>;
     };
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "PUT YOUR BOT ON THE LINE"');
+    expect(product).toContain('slogan: "Put Your Bot on the Line"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toContain('promise: "Your Bot for calls, texts, and email."');
     expect(manifest.name).toContain("BotBound");

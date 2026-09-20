@@ -8,16 +8,16 @@ Paid activation begins only after the product, proof, rights, compliance, landin
 
 ## Status by creative family
 
-| Creative | Production status | Release posture |
-| --- | --- | --- |
-| Hands Full | Finished static master using campaign source art | Organic candidate; paid hold pending rights, claims, destination, and founder dogfood review |
-| Impeccably Bad Timing | Finished feed and story masters using generated editorial art | Organic candidate; paid hold pending generated-art rights/legal review and final owner approval |
-| The Signal | Finished 3840 × 2160 OOH concept using generated editorial art | Pitch/mockup only until site mechanics, rights, legibility, and spend approval pass |
-| Ten Voices | Finished five-slide product-education carousel | Organic/sales candidate; confirm roster and runtime behavior immediately before publication |
-| Ring to Next Action | Finished configured-example graphic | Keep example label and configuration disclaimer; never convert into claimed customer proof |
-| The Call Sheet | Finished organic square | Organic candidate; paid hold pending the same campaign gates |
-| Motion/reels | Governed by the motion release record | Concept review unless exact-production product proof, actual Bot audio, captions, and final frame QA are certified |
-| Product screenshots | No certified current set in this package at authoring time | Do not use stale Drive or localhost captures as current proof |
+| Creative              | Production status                                              | Release posture                                                                                                    |
+| --------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Hands Full            | Finished static master using campaign source art               | Organic candidate; paid hold pending rights, claims, destination, and founder dogfood review                       |
+| Impeccably Bad Timing | Finished feed and story masters using generated editorial art  | Organic candidate; paid hold pending generated-art rights/legal review and final owner approval                    |
+| The Signal            | Finished 3840 × 2160 OOH concept using generated editorial art | Pitch/mockup only until site mechanics, rights, legibility, and spend approval pass                                |
+| Ten Voices            | Finished five-slide product-education carousel                 | Organic/sales candidate; confirm roster and runtime behavior immediately before publication                        |
+| Ring to Next Action   | Finished configured-example graphic                            | Keep example label and configuration disclaimer; never convert into claimed customer proof                         |
+| The Call Sheet        | Finished organic square                                        | Organic candidate; paid hold pending the same campaign gates                                                       |
+| Motion/reels          | Governed by the motion release record                          | Concept review unless exact-production product proof, actual Bot audio, captions, and final frame QA are certified |
+| Product screenshots   | No certified current set in this package at authoring time     | Do not use stale Drive or localhost captures as current proof                                                      |
 
 ## Non-negotiable paid-release gate
 
@@ -45,7 +45,6 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 ### Cleared factual territory, subject to final current-state check
 
 - Your Bot for calls, texts, and email.
-- Build -> Train -> Launch.
 - Build free. Plans from $19/month. Activation availability applies.
 - Ten built-in OpenAI Realtime voice choices.
 - One selected voice stays stable through an active runtime session.
@@ -71,17 +70,17 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 
 ## Placement plan
 
-| Channel | Recommended asset | Format | Job | CTA | Gate emphasis |
-| --- | --- | --- | --- | --- | --- |
-| LinkedIn organic | Hands Full | 1200 × 627 | Founder reveal and product thesis | Build Your Bot | Current copy and owner review |
-| Instagram feed | Impeccably Bad Timing | 1080 × 1350 | Problem recognition with humor | Build free | Alt text, crop, owner review |
-| Instagram Stories | Impeccably Bad Timing | 1080 × 1920 | Fast awareness and link tap | Build free | UI safe zones and link sticker |
-| LinkedIn/Instagram carousel | Ten Voices | 5 × 1080 × 1350 | Explain choice plus runtime consistency | Build free | Roster/current-policy recheck |
-| X / organic social | The Call Sheet | 1080 × 1080 | Shareable owner moment | Put your Bot on the line | Current copy and alt text |
-| Sales follow-up | Ring to Next Action | 1200 × 627 | Explain configured workflow possibilities | See the workflow | Example label must remain |
-| Launch email | Email header | 1200 × 400 | Reintroduce the product and offer | Build Your Bot | Deliverability, footer, consent, tracking |
-| OOH / event screen | The Signal | 3840 × 2160 | Fame and memory | BotBound.me | Site-specific mechanics, rights, legal, spend |
-| Paid social | Hands Full / Bad Timing / Voice | Placement derivatives after gate | Structured message test | Build Your Bot | Full paid-release checklist |
+| Channel                     | Recommended asset               | Format                           | Job                                       | CTA                      | Gate emphasis                                 |
+| --------------------------- | ------------------------------- | -------------------------------- | ----------------------------------------- | ------------------------ | --------------------------------------------- |
+| LinkedIn organic            | Hands Full                      | 1200 × 627                       | Founder reveal and product thesis         | Build Your Bot           | Current copy and owner review                 |
+| Instagram feed              | Impeccably Bad Timing           | 1080 × 1350                      | Problem recognition with humor            | Build free               | Alt text, crop, owner review                  |
+| Instagram Stories           | Impeccably Bad Timing           | 1080 × 1920                      | Fast awareness and link tap               | Build free               | UI safe zones and link sticker                |
+| LinkedIn/Instagram carousel | Ten Voices                      | 5 × 1080 × 1350                  | Explain choice plus runtime consistency   | Build free               | Roster/current-policy recheck                 |
+| X / organic social          | The Call Sheet                  | 1080 × 1080                      | Shareable owner moment                    | Put your Bot on the line | Current copy and alt text                     |
+| Sales follow-up             | Ring to Next Action             | 1200 × 627                       | Explain configured workflow possibilities | See the workflow         | Example label must remain                     |
+| Launch email                | Email header                    | 1200 × 400                       | Reintroduce the product and offer         | Build Your Bot           | Deliverability, footer, consent, tracking     |
+| OOH / event screen          | The Signal                      | 3840 × 2160                      | Fame and memory                           | BotBound.me              | Site-specific mechanics, rights, legal, spend |
+| Paid social                 | Hands Full / Bad Timing / Voice | Placement derivatives after gate | Structured message test                   | Build Your Bot           | Full paid-release checklist                   |
 
 ## OOH mechanical review
 

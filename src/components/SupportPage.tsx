@@ -23,11 +23,14 @@ export function SupportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
+  const emailFallbackHref = `mailto:support@botbound.me?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject.trim() || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email.trim()}\n\n${body}`)}`;
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setEmailFallbackAvailable(false);
     let responseStatus: number | null = null;
     try {
       const response = await fetch("/api/support/ticket", {
@@ -52,15 +55,12 @@ export function SupportPage() {
       const message =
         reason instanceof Error ? reason.message : "The ticket service did not respond.";
       const isTransport =
+        responseStatus === null ||
         (responseStatus !== null && responseStatus >= 500) ||
-        /did not respond|failed to fetch|network|503|502|504|was not delivered/i.test(message) ||
-        message.includes("(5");
+        (responseStatus >= 200 && responseStatus < 300);
       if (isTransport) {
-        const fallback = `mailto:support@botbound.me?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email}\n\n${body}`)}`;
-        window.location.href = fallback;
-        setError(
-          "The ticket service did not respond, so your email client has opened with everything filled in.",
-        );
+        setEmailFallbackAvailable(true);
+        setError("Delivery wasn't confirmed. Retry or send by email.");
       } else {
         setError(message);
       }
@@ -101,19 +101,19 @@ export function SupportPage() {
           </Link>
           <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
             <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 text-sm font-semibold text-foreground">Product tour</h2>
+            <h2 className="mt-5 text-sm font-semibold text-foreground">Product Tour</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">See how BotBound works</p>
           </Link>
         </section>
 
         <section className="mt-8 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">
-            Send a request
+            Send a Request
           </h2>
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Request received</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">Request Received</h3>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 We'll follow up at <strong className="text-foreground">{email}</strong>.
               </p>
@@ -180,6 +180,15 @@ export function SupportPage() {
                 <p role="alert" className="text-sm leading-6 text-destructive">
                   {error}
                 </p>
+              )}
+              {emailFallbackAvailable && (
+                <a
+                  href={emailFallbackHref}
+                  className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold"
+                >
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  Send by Email
+                </a>
               )}
               <button
                 type="submit"

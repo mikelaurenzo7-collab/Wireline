@@ -19,7 +19,7 @@ This document preserves the execution companion to the Aurora visual rebrand (vi
 
 The palette change is an opportunity to tighten brand voice consistency, not just hex values.
 
-1. **Current positioning:** _"Your Bot for calls, texts, and email."_ Public surfaces use **Bot** or **Phone Bot** and the **Build -> Train -> Launch** loop. Technical implementation may retain `agent`, `Create`, and `Wire` where contracts require them.
+1. **Current positioning:** _"Your Bot for calls, texts, and email."_ Public surfaces use **Bot** or **Phone Bot**, with capability and outcome copy. Technical implementation may retain `agent`, `Create`, and `Wire` where contracts require them.
 2. **Naming discipline:** keep `Bot`, `Phone Bot`, `Training`, `Wire`, `Studio`, and `Runtime Balance` as the customer-facing product nouns. Concrete roles describe jobs; they do not create separate products or workspaces.
 3. **Visual voice under Aurora:** violet reads as _modern, confident, premium AI_ (aligns with category leaders); silver reads as _precision instrument_, not decoration — reserve it for the wire motif (rules, node dots, focus-adjacent accents), never as a second competing accent color. Write this rule into any future design-system onboarding doc for new contributors.
 4. **Motion signature:** the existing `wl-wire-pulse` traveling-signal animation is a strong, ownable brand motion. Extend it deliberately to the Studio thinking state, call-connecting state, and human-handoff moment—but nowhere else, so it stays special-occasion rather than ambient noise.
@@ -29,7 +29,7 @@ The palette change is an opportunity to tighten brand voice consistency, not jus
 
 1. **Hero and OG assets:** the OG image and hero now carry Aurora — verify Facebook/Twitter/LinkedIn card caches are purged (`https://developers.facebook.com/tools/debug/`, X Card Validator) after merge so shared links stop showing the cached green/copper preview.
 2. **Comparison page (`/compare`):** refresh screenshots/illustrations referencing old chrome; audit for any embedded PNG/JPEG (not live-rendered) marketing assets that still bake in the old palette — those won't be caught by the design contract because it only checks source, not static exported images.
-3. **Positioning matrix:** competitor notes in `WIRELINE_2026_ROADMAP.md` are a dated research snapshot, not current positioning authority. Keep live voice plus the trained-Bot operating loop as the primary wedge. Live talking-head video is retired.
+3. **Positioning matrix:** competitor notes in `WIRELINE_2026_ROADMAP.md` are a dated research snapshot, not current positioning authority. Keep live voice and connected customer conversations as the primary wedge. Live talking-head video is retired.
 4. **Channel strategy:**
    - **SEO/content:** vertical landing pages (`VerticalLanding.tsx`) are proof routes, not the frame for the whole business. Keep the primary site broad, then prioritize deep pages for the use cases with the clearest ROI story: personal call delegation, sales, support, scheduling, call-center overflow, medical/dental front desk, real estate, home services, legal intake, and e-commerce support.
    - **Paid:** the FB Pixel + GTM wiring already exists in `index.html` — confirm conversion events fire on `agent-created`, `first-call-made`, and `upgrade-to-paid` (already named in the roadmap's instrumentation section) so paid spend can optimize on activation, not just signup.

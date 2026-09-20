@@ -63,7 +63,7 @@ export const CAMPAIGN_VO = [
     file: "wireline-founder-60s.mp3",
     targetSeconds: 60,
     speed: 0.8,
-    text: "I built BotBound because calls are where real work happens, and they are too easy to miss. Build a Bot for your business. Train it on your facts and rules. Test it privately. When your account and number are ready, put it on the line. Connect the tools it needs to book, follow up, or hand off. Review the outcomes and improve its playbook. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.",
+    text: "I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.",
   },
 ];
 

@@ -115,7 +115,7 @@ export default function OutboundDialDialog({
       if (!response.ok) {
         toast({
           type: "error",
-          title: "Call not placed",
+          title: "Call Not Placed",
           message: body.error || "Outbound dial was blocked.",
           duration: 10_000,
         });
@@ -123,7 +123,7 @@ export default function OutboundDialDialog({
       }
       toast({
         type: "success",
-        title: "Call started",
+        title: "Call Started",
         message: "Your Bot is dialing now.",
       });
       emitProductEvent({
@@ -135,7 +135,7 @@ export default function OutboundDialDialog({
     } catch {
       toast({
         type: "error",
-        title: "Call not placed",
+        title: "Call Not Placed",
         message: "Something went wrong. Try again in a moment.",
       });
     } finally {
@@ -164,7 +164,7 @@ export default function OutboundDialDialog({
         <DialogHeader className="border-b border-border px-6 py-5">
           <DialogTitle className="flex items-center gap-2 font-[var(--wireline-font-family-display)] text-xl font-normal tracking-[-0.02em]">
             <Phone className="h-4 w-4 text-primary" aria-hidden />
-            New outbound call
+            New Outbound Call
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             Pick a Bot with a live line, enter a number, and classify the call before dialing.

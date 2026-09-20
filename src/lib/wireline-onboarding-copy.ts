@@ -1,19 +1,19 @@
 /**
  * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
- * Public setup journey: Build → Train → Launch.
+ * Public marketing uses capability and outcome copy, without a setup sequence.
  * After create, the setup guide is Train → Test → Launch.
  */
 
 /** Shown after Fast Start — Bot exists but activation (first useful call) pending. */
 export const ACTIVATION_PENDING_COPY = {
   eyebrow: "One step left",
-  title: "Make your first",
-  titleAccent: "real call",
+  title: "Make Your First",
+  titleAccent: "Real Call",
   subtitle: (agentName: string) =>
     `${agentName} has a number. Dial it from your phone. Activation counts when a real conversation completes.`,
   phoneLabel: "Your live number",
   dialCta: "Call now to activate",
-  browserTestTitle: "Browser test (optional)",
+  browserTestTitle: "Browser Test (Optional)",
   browserTestDetail:
     "Preview voice and script in Studio. Simulator calls do not count toward activation.",
   browserTestAction: "Open Studio",
@@ -31,11 +31,11 @@ export const ACTIVATION_NUDGE_COPY = {
 /** Guided steps after create — Train → Test → Launch. */
 export const POST_CREATE_WIZARD_COPY = {
   eyebrow: "Setup",
-  title: "Next up for",
+  title: "Next Up for",
   steps: {
     train: {
       label: "Train",
-      title: "Teach it the job",
+      title: "Teach It the Job",
       detail: "Review its instructions. Add a site, document, or policy when needed.",
       salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
@@ -43,7 +43,7 @@ export const POST_CREATE_WIZARD_COPY = {
     },
     launch: {
       label: "Launch",
-      title: "Put it on the line",
+      title: "Put It on the Line",
       detail: "Every paid plan includes a US number. Callers reach this Bot directly.",
       primary: "Get a number",
       skip: "Launch later",
@@ -54,7 +54,7 @@ export const POST_CREATE_WIZARD_COPY = {
     },
     test: {
       label: "Test",
-      title: "Hear it first",
+      title: "Hear It First",
       detail:
         "Run a private browser test before anyone else hears it. Simulator calls do not count as going live.",
       primary: "Continue to launch",
@@ -62,10 +62,10 @@ export const POST_CREATE_WIZARD_COPY = {
     },
   },
   complete: {
-    liveTitle: "It's on the line",
+    liveTitle: "It's on the Line",
     liveDetail: (agentName: string, phone: string) =>
       `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
-    deferredTitle: "Ready when you are",
+    deferredTitle: "Ready When You Are",
     deferredDetail: (agentName: string) =>
       `${agentName} is saved. Connect a number under Calls when you want it live.`,
     studioCta: "Continue in Studio",

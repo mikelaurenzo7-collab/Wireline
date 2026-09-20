@@ -241,9 +241,9 @@ describe("secure website knowledge ingestion", () => {
     expect(registry).toContain("app.use(websiteKnowledgeRouter)");
     expect(page).toContain("<WebsiteKnowledgeImport");
     expect(page).toContain("setKnowledgeRevision");
-    expect(component).toContain("Paste one public HTTPS page");
-    expect(component).toContain("reads page text only");
-    expect(component).toContain("blocks private networks");
+    expect(component).toContain("Add facts and rules from one public HTTPS page");
+    expect(component).toContain("Website Knowledge");
+    expect(component).toContain('type="url"');
     expect(component).toContain("Import page");
   });
 

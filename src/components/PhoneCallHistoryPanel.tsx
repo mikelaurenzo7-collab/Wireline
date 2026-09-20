@@ -71,7 +71,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="destructive"
-          title="Calls unavailable"
+          title="Calls Unavailable"
           action={
             <Button
               type="button"
@@ -99,7 +99,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Bot status unavailable"
+          title="Bot Status Unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
@@ -117,7 +117,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       <div className="w-full px-4 py-8 sm:px-6">
         <StatusNotice
           tone="warning"
-          title="Line status unavailable"
+          title="Line Status Unavailable"
           action={
             <Button type="button" variant="secondary" size="sm" onClick={refreshAgents}>
               Retry
@@ -143,7 +143,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
       }
     : !livePhone
       ? {
-          title: "Connect a line",
+          title: "Connect a Line",
           description: undefined,
           action: (
             <Button asChild>

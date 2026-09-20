@@ -194,7 +194,7 @@ export default function OutcomeLedger({
     return (
       <StatusNotice
         tone="destructive"
-        title="Customer outcomes unavailable"
+        title="Customer Outcomes Unavailable"
         action={
           <Button type="button" variant="secondary" size="sm" onClick={() => void load()}>
             Try again
@@ -213,7 +213,7 @@ export default function OutcomeLedger({
         titleTone="ui"
         withHalo={false}
         icon={<ClipboardList aria-hidden="true" />}
-        title="No call outcomes yet"
+        title="No Call Outcomes Yet"
         description="Complete a live call to populate the ledger."
         action={
           <Button asChild size="sm">
@@ -235,7 +235,7 @@ export default function OutcomeLedger({
   return (
     <div className={compact ? "grid gap-2" : "grid gap-3"}>
       {enrichmentWarning ? (
-        <StatusNotice tone="warning" title="Follow-up status delayed">
+        <StatusNotice tone="warning" title="Follow-Up Status Delayed">
           {enrichmentWarning} Call outcomes below are still current.
         </StatusNotice>
       ) : null}
@@ -316,7 +316,9 @@ export default function OutcomeLedger({
                   </p>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Transcript unavailable for this call.</p>
+                <p className="text-xs text-muted-foreground">
+                  Transcript unavailable for this call.
+                </p>
               )}
               {row.coaching_note?.trim() ? (
                 <div>

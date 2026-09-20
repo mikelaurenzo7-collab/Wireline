@@ -350,7 +350,7 @@ describe("SMS conversation drafts", () => {
     submit();
     await settle();
     expect(labeled("Text reply").props.value).toBe("Keep this exact reply.");
-    expect(elements(tree).some((element) => element.props.title === "Safe retry pending")).toBe(
+    expect(elements(tree).some((element) => element.props.title === "Safe Retry Pending")).toBe(
       true,
     );
     await backToList();
@@ -395,7 +395,7 @@ describe("SMS conversation drafts", () => {
     await settle();
     expect(sendRequests()).toHaveLength(1);
     expect(
-      elements(tree).some((element) => element.props.title === "Delivery status unknown"),
+      elements(tree).some((element) => element.props.title === "Delivery Status Unknown"),
     ).toBe(true);
   });
 

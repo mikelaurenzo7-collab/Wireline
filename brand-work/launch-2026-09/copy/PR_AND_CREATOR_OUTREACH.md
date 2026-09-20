@@ -34,7 +34,7 @@ support@botbound.me
 
 Hi [Name] — you talk about the part of business software that either helps in the middle of the work or becomes one more thing to manage.
 
-BotBound starts with a blunt problem: the phone rings when both hands are occupied. Build Bots around the work. Train each on your knowledge and rules. Test privately, then launch the channels you want.
+BotBound starts with a blunt problem: the phone rings when both hands are occupied. Its Bots handle calls, texts, and email with the business's knowledge, rules, and handoffs.
 
 If you want to put it through an honest operator test, we would rather give you a real workflow than a scripted testimonial. Interested?
 
@@ -53,7 +53,7 @@ Possible discussion:
 
 ## Launch boilerplate
 
-BotBound is the operating layer for trained Bots across calls, texts, and email. Businesses build Bots around real jobs, train them on the facts and rules that matter, and launch them on enabled channels after private testing. BotBound uses OpenAI Realtime for live conversation and Twilio for phone and SMS transport. Learn more at BotBound.me.
+BotBound is the operating layer for trained Bots across calls, texts, and email. Its Bots handle real jobs using each business's knowledge and rules, with private testing and owner controls. BotBound uses OpenAI Realtime for live conversation and Twilio for phone and SMS transport. Learn more at BotBound.me.
 
 ## Media reply: “Is this one voice for every business?”
 

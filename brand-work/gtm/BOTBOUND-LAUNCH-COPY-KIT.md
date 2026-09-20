@@ -99,12 +99,10 @@ Use the highest layer that fits the audience's awareness. Do not stack every lay
 - Customer-facing noun: **Bot**
 - Acquisition wedge: **Phone Bot**
 - Broader promise: **Your Bot for calls, texts, and email.**
-- Setup journey: **Build. Train. Launch.**
-- Film setup sequence: **Build. Train. Launch.** Existing renders require copy review before reuse.
 - Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
 - Primary proof verbs: answer, qualify, book, confirm, text, email, route, hand off, follow up, log
 
-Use **Build -> Train -> Launch** for the public setup journey. After Bot creation, the setup guide is **Train -> Test -> Launch**. Conversation review and later refinements remain optional controls, not a fourth setup step. Use configure as a natural verb for individual settings, not as a competing lifecycle step.
+Public marketing leads with capabilities, outcomes, and a clear signup action. Do not add public setup-step lists or repeated process slogans. After Bot creation, the internal setup guide remains **Train -> Test -> Launch**. Conversation review and later refinements remain available controls. Existing renders require copy review before reuse.
 
 ## 3. Approved tagline bank
 

@@ -16,23 +16,15 @@
   font-weight: 720;
   line-height: 1;
   letter-spacing: -0.015em;
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
   white-space: normal;
 }
 
-/* Letterpress ranking on marketing surfaces: titles shout, supporting copy
- * stays quieter. Headings join the uppercase title tier; body copy stays
- * sentence case so Trust, Features, Compare, Status, and Developers actually
- * have a hierarchy instead of one stacked-subtitle shout. Copy strings never
- * change — this is presentation only.
- *
- * Buttons, tabs, eyebrows, and nav remain in the control/label tiers.
- * Long-form legal prose (Tailwind .prose), customer-authored words
- * (.wl-preserve-case), and literal values (code, timestamps, data values) are
- * excluded and read exactly as written. */
+/* Public headings render authored Title Case. Weight, size, and spacing create
+ * hierarchy; body copy and customer-authored values keep their natural case. */
 .marketing-surface :is(h1, h2, h3, h4, h5, h6) {
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 /* `.marketing-hero__description` is deliberately absent from this list. Heroes
@@ -141,6 +133,13 @@
   letter-spacing: var(--wireline-typography-overline-letterSpacing);
   line-height: 1.25;
   text-transform: uppercase;
+}
+
+/* A heading remains a title even when it uses a compact label class. Portalled
+ * dialogs carry the same root marker. Preserve authored case rather than using
+ * CSS capitalization, which corrupts acronyms and customer-supplied names. */
+:is(.wl-ui-caps, .wl-cased) :is(h1, h2, h3, h4, h5, h6, [role="heading"], .wl-card-title) {
+  text-transform: none;
 }
 
 .marketing-surface :where(.wl-body-sm, .wl-info-list, .wl-info-list li) {

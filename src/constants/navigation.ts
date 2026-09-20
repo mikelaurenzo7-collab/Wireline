@@ -185,7 +185,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/settings",
-    title: "Account settings",
+    title: "Account Settings",
     label: "Settings",
     eyebrow: "System",
     description: "Manage workspace, billing, team, compliance, and appearance.",
@@ -196,7 +196,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/studio/handoff",
-    title: "Browser handoff",
+    title: "Browser Handoff",
     eyebrow: "Build",
     parentHref: "/studio",
   },
@@ -208,7 +208,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/connections/salesforce",
-    title: "Salesforce connection",
+    title: "Salesforce Connection",
     eyebrow: "System",
     parentHref: "/connections",
   },
@@ -220,37 +220,37 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
   },
   {
     href: "/settings/billing",
-    title: "Billing settings",
+    title: "Billing Settings",
     eyebrow: "System",
     parentHref: "/settings",
   },
   {
     href: "/settings/phone",
-    title: "Call settings",
+    title: "Call Settings",
     eyebrow: "System",
     parentHref: "/settings",
   },
   {
     href: "/settings/team",
-    title: "Team settings",
+    title: "Team Settings",
     eyebrow: "System",
     parentHref: "/settings",
   },
   {
     href: "/settings/compliance",
-    title: "Compliance center",
+    title: "Compliance Center",
     eyebrow: "System",
     parentHref: "/settings",
   },
   {
     href: "/settings/customization",
-    title: "Appearance & brand",
+    title: "Appearance & Brand",
     eyebrow: "System",
     parentHref: "/settings",
   },
   {
     href: "/settings/apps",
-    title: "App settings",
+    title: "App Settings",
     eyebrow: "System",
     parentHref: "/settings",
   },
@@ -454,10 +454,7 @@ export function workspacePageContext(pathname: string) {
 export const APP_KEYBOARD_SHORTCUTS: Record<string, string> = Object.fromEntries(
   WORKSPACE_ROUTES.flatMap((route) => {
     if (!route.shortcut) return [];
-    return [route.shortcut.key, ...(route.shortcut.aliases ?? [])].map((key) => [
-      key,
-      route.href,
-    ]);
+    return [route.shortcut.key, ...(route.shortcut.aliases ?? [])].map((key) => [key, route.href]);
   }),
 );
 

@@ -127,7 +127,7 @@ export default function ResetPassword() {
             <WirelineLockup size="compact" surface="tile" />
             <div>
               <h1 className="font-display text-2xl sm:text-3xl text-foreground leading-tight">
-                Reset password
+                Reset Password
               </h1>
               <p className="text-caption mt-1.5">
                 Secure your <WirelineWordmark inline /> account.
@@ -136,11 +136,11 @@ export default function ResetPassword() {
           </div>
 
           {success ? (
-            <StatusNotice tone="success" title="Password updated">
+            <StatusNotice tone="success" title="Password Updated">
               Signing you in securely…
             </StatusNotice>
           ) : !token ? (
-            <StatusNotice tone="destructive" title="This reset link is incomplete">
+            <StatusNotice tone="destructive" title="This Reset Link Is Incomplete">
               Request a new one from the{" "}
               <Link to="/signin" className="font-medium text-brand underline underline-offset-4">
                 sign-in page
@@ -225,7 +225,7 @@ export default function ResetPassword() {
               </Button>
 
               {error && !invalidField ? (
-                <StatusNotice tone="destructive" title="Password reset was not completed">
+                <StatusNotice tone="destructive" title="Password Reset Was Not Completed">
                   {error}
                 </StatusNotice>
               ) : null}

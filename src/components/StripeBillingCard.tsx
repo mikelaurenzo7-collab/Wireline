@@ -299,7 +299,7 @@ export default function StripeBillingCard({
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 border border-[var(--wireline-color-feedback-error-border)] bg-[color:color-mix(in_srgb,var(--wireline-color-status-error)_14%,transparent)]">
             <AlertTriangle className="w-5 h-5 text-[var(--wireline-color-status-error)]" />
           </div>
-          <h3 className="wl-display-mark text-2xl text-foreground">Billing unavailable</h3>
+          <h3 className="wl-display-mark text-2xl text-foreground">Billing Unavailable</h3>
         </div>
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           {error}
@@ -318,7 +318,7 @@ export default function StripeBillingCard({
           <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 border border-[var(--wireline-color-feedback-warning-border)] bg-[color:color-mix(in_srgb,var(--wireline-color-status-warning)_14%,transparent)]">
             <AlertTriangle className="w-5 h-5 text-[var(--wireline-color-status-warning)]" />
           </div>
-          <h3 className="wl-display-mark text-2xl text-foreground">Billing is unavailable</h3>
+          <h3 className="wl-display-mark text-2xl text-foreground">Billing Is Unavailable</h3>
         </div>
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           Online billing is unavailable right now. Your saved Bots are still here. Please try again
@@ -685,7 +685,7 @@ function GrantedPlanAccessCard({
               </Chip>
             </div>
             <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
-              {sub.plan_name || sub.plan || "Paid plan"}
+              {sub.plan_name || sub.plan || "Paid Plan"}
             </h3>
             <p className="text-sm font-semibold text-foreground">Plan access is active</p>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">

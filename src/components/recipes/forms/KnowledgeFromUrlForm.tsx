@@ -254,7 +254,7 @@ export function KnowledgeFromUrlForm({
           <div className="rounded-md wl-panel border border-white/10 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="wl-label text-brand">
-                Extracted · {selected.size}/{result.entries.length} selected
+                Extracted · {selected.size}/{result.entries.length} Selected
               </h4>
               <ShadButton
                 type="button"

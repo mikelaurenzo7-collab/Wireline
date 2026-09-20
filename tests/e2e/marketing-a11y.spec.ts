@@ -30,7 +30,7 @@ test("homepage mobile product and access path has clear branding and no serious 
 
   await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(page.getByRole("link", { name: "BotBound home" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   const accessMode = page.getByRole("group", { name: "Account access mode" });
   await expect(accessMode.getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   await expect(
@@ -92,7 +92,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
 
   const outbound = page
     .getByRole("navigation", { name: "Choose Bot direction" })
-    .getByRole("link", { name: /OUTBOUND\s+FIND\. CALL\. BOOK\./ });
+    .getByRole("link", { name: /OUTBOUND\s+Find\. Call\. Book\./ });
   await outbound.focus();
   await expect(outbound).toBeFocused();
   const focusStyle = await outbound.evaluate((element) => {
@@ -111,5 +111,5 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
   });
   await createAccountMode.click();
   await expect(createAccountMode).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeAttached();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeAttached();
 });

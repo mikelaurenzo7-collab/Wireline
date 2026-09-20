@@ -76,7 +76,7 @@ test("settings sign-out followed by direct personal signup always enters Fast St
 
   await page.goto("/signup");
   await expect(page).toHaveURL(/\/signup$/);
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
   expect(await page.evaluate((key) => localStorage.getItem(key), AUTH_REDIRECT_KEY)).toBeNull();
 
   await page.getByLabel("Email", { exact: true }).fill("fresh@example.test");

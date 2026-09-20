@@ -72,7 +72,7 @@ export default function AgentStudioHome() {
       if (!response.ok || !body?.context) {
         toast({
           type: "warning",
-          title: "Handoff expired",
+          title: "Handoff Expired",
           message: body?.error || "Open BotBound Command and capture the page again.",
           duration: 10_000,
         });
@@ -88,7 +88,7 @@ export default function AgentStudioHome() {
       if (cancelled) return;
       toast({
         type: "warning",
-        title: "Handoff unavailable",
+        title: "Handoff Unavailable",
         message:
           "The captured page could not be retrieved. Capture it again from BotBound Command.",
         duration: 10_000,
@@ -106,7 +106,7 @@ export default function AgentStudioHome() {
     if (warning) {
       toast({
         type: "warning",
-        title: "Bot created",
+        title: "Bot Created",
         message: warning,
         duration: 12_000,
       });

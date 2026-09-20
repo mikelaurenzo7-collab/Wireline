@@ -13,9 +13,7 @@ Only the canonical `revaluate/botbound` project may own the GitHub integration, 
 
 The next release target is a controlled design-partner pilot. This runbook is not launch approval: admission remains closed until the exact release, funded providers, persistent voice worker and founder workflow proof pass the gates below. Paid media, broad invitations, cold outbound, and regulated-data onboarding remain closed until one real checkout lifecycle, one consented non-demo inbound call, support handling, repeat usage, and contribution margin are verified.
 
-The customer operating loop is:
-
-> **Build → Train → Launch**
+Public marketing describes capabilities and outcomes. Operational setup and release instructions belong in the product and this runbook.
 
 A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid web account can prepare the Bot's managed number and mailbox automatically within plan capacity. That background setup is not proof that its knowledge or customer workflow is ready.
 

@@ -6,16 +6,16 @@ Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
 ## One-Page Truth
 
-| Area | Current Direction |
-| --- | --- |
-| Product | Your Bot for calls, texts, and email |
-| Core loop | Build -> Train -> Launch |
-| Public hero | Put Your Bot on the Line. |
-| CTA | Build Your Bot |
-| Price line | Build free. Plans from $19/mo. Live activation subject to availability. |
-| GTM posture | First 3–5 founder-led design partners before scaled acquisition |
-| Proof | Real product, exact-production capture, real workflow outcomes |
-| WhatsApp | Outside the public launch posture |
+| Area           | Current Direction                                                       |
+| -------------- | ----------------------------------------------------------------------- |
+| Product        | Your Bot for calls, texts, and email                                    |
+| Public message | Capabilities, outcomes, and a clear signup action                       |
+| Public hero    | Put Your Bot on the Line.                                               |
+| CTA            | Build Your Bot                                                          |
+| Price line     | Build free. Plans from $19/mo. Live activation subject to availability. |
+| GTM posture    | First 3–5 founder-led design partners before scaled acquisition         |
+| Proof          | Real product, exact-production capture, real workflow outcomes          |
+| WhatsApp       | Outside the public launch posture                                       |
 
 ## Launch Killers To Clear First
 
@@ -42,18 +42,18 @@ The next milestone is one proven pilot workflow. Paying an invoice, passing loca
 
 The founder's September 19 plan is to pay verified invoices and fund required accounts after salary the following week. Recheck amounts at payment time; this is a sequence, not authorization for a particular charge.
 
-| Account | What to verify | Completion evidence |
-| --- | --- | --- |
-| Vercel | Canonical project's account restriction, invoice total and billing status | Restriction cleared; exact reviewed preview can build; production subsequently reaches READY with the expected source SHA |
-| Twilio | Spendable balance, pending usage, payment history and auto-recharge; cost and purpose of retained numbers | Successful funding receipt plus refreshed balance and carrier controls for the intended workflow |
-| OpenAI API | Correct organization/project, remaining credit, usage limits and payment method; ChatGPT subscription is separate | API billing and project capacity verified, then private rehearsal and consented call proof |
-| Persistent voice host | Always-on instance cost, TLS, restart policy and 65-minute drain or safe pre-drain support | Reviewed image deployed, worker readiness and configuration agreement verified, long-call and drain tests passed |
-| Supabase | Project availability, plan invoice and database health/schema | Read-only health and exact journal/schema checks pass; no blind migration replay |
-| Upstash | Production database, quota, usage and billing method | Authenticated rate-limit dependency check succeeds with usable capacity |
-| Resend / AgentMail | Correct sending/mailbox domains, plan limits, invoices and delivery status | Approved transactional delivery, inbound/support reply and webhook handling verified |
-| GitHub | Automation billing/usage and review availability | Required jobs run or remain explicitly unpassed; exact-head release/review gates still enforced |
-| Domain registrar | Ownership, expiry, renewal and canonical DNS | Domain remains controlled and required DNS resolves correctly |
-| Stripe | Account restrictions, negative balance or failed debits, live prices/portal/webhooks | One controlled checkout-to-entitlement, portal/cancellation and reversal lifecycle reconciles |
+| Account               | What to verify                                                                                                    | Completion evidence                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Vercel                | Canonical project's account restriction, invoice total and billing status                                         | Restriction cleared; exact reviewed preview can build; production subsequently reaches READY with the expected source SHA |
+| Twilio                | Spendable balance, pending usage, payment history and auto-recharge; cost and purpose of retained numbers         | Successful funding receipt plus refreshed balance and carrier controls for the intended workflow                          |
+| OpenAI API            | Correct organization/project, remaining credit, usage limits and payment method; ChatGPT subscription is separate | API billing and project capacity verified, then private rehearsal and consented call proof                                |
+| Persistent voice host | Always-on instance cost, TLS, restart policy and 65-minute drain or safe pre-drain support                        | Reviewed image deployed, worker readiness and configuration agreement verified, long-call and drain tests passed          |
+| Supabase              | Project availability, plan invoice and database health/schema                                                     | Read-only health and exact journal/schema checks pass; no blind migration replay                                          |
+| Upstash               | Production database, quota, usage and billing method                                                              | Authenticated rate-limit dependency check succeeds with usable capacity                                                   |
+| Resend / AgentMail    | Correct sending/mailbox domains, plan limits, invoices and delivery status                                        | Approved transactional delivery, inbound/support reply and webhook handling verified                                      |
+| GitHub                | Automation billing/usage and review availability                                                                  | Required jobs run or remain explicitly unpassed; exact-head release/review gates still enforced                           |
+| Domain registrar      | Ownership, expiry, renewal and canonical DNS                                                                      | Domain remains controlled and required DNS resolves correctly                                                             |
+| Stripe                | Account restrictions, negative balance or failed debits, live prices/portal/webhooks                              | One controlled checkout-to-entitlement, portal/cancellation and reversal lifecycle reconciles                             |
 
 Stripe is not a prepaid runtime account. A zero nonnegative Stripe balance alone does not require a top-up. Do not pay every vendor merely because it appears in this list; pay verified obligations and fund the services required for the approved cohort. Size provider credit against observed call duration, concurrency and usage, with a deliberate budget limit.
 
@@ -65,15 +65,15 @@ The worker and web application must agree on the reviewed revision and `OPENAI_S
 
 Use this acceptance record for the first clean account:
 
-| Step | Pass condition |
-| --- | --- |
-| Build and train | A new user creates a focused Bot, saves knowledge and sees a useful empty state |
-| Private test | Saved voice, business facts, boundaries and handoff instructions work |
-| Activate | Intended price/interval survives signup; signed payment event posts the right entitlement; owned line becomes active |
-| Call | One consented non-demo inbound call lasts beyond five minutes and completes its approved task |
-| Continue | Configured text/email/booking or human handoff succeeds with relevant permissions |
-| Review | Transcript, outcome, elapsed duration and usage agree; demo activity is labeled |
-| Recover | Retry, unavailable provider, worker drain, support contact and cancellation/refund behavior are understood and verified |
+| Step            | Pass condition                                                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Build and train | A new user creates a focused Bot, saves knowledge and sees a useful empty state                                         |
+| Private test    | Saved voice, business facts, boundaries and handoff instructions work                                                   |
+| Activate        | Intended price/interval survives signup; signed payment event posts the right entitlement; owned line becomes active    |
+| Call            | One consented non-demo inbound call lasts beyond five minutes and completes its approved task                           |
+| Continue        | Configured text/email/booking or human handoff succeeds with relevant permissions                                       |
+| Review          | Transcript, outcome, elapsed duration and usage agree; demo activity is labeled                                         |
+| Recover         | Retry, unavailable provider, worker drain, support contact and cancellation/refund behavior are understood and verified |
 
 Record actual results and unresolved failures. A simulated checkout, mocked provider or seeded Bot can test behavior but does not satisfy live lifecycle proof.
 
@@ -124,7 +124,7 @@ Choose owner-operated or small-team businesses with a visible missed-call, inbou
 
 For each partner, prove one workflow end to end within seven days:
 
-**Build -> Train -> Launch**
+**A useful call, a configured follow-up, and a logged outcome.**
 
 Cold marketing outbound is **not** a prerequisite. Federal marketing DNC remains fail-closed until the external credential is configured; start with inbound and consented/non-marketing workflows that can be proven now.
 
@@ -202,14 +202,14 @@ After launch, review outcomes for product evidence and support. Owners can adjus
 
 ## Messaging Tests
 
-| Angle | Hook | CTA |
-| --- | --- | --- |
-| Missed call | When you cannot pick up, give the next caller a useful first response. | Build Your Bot |
-| Everyday delegation | Delegate the call and keep control of the outcome. | Build Your Bot |
-| Front desk | Give the next important call a trained first response and visible follow-up. | Build Your Bot |
-| Expansion | Start with one useful Bot. Add more when real work proves the need. | Build Your Bot |
+| Angle               | Hook                                                                         | CTA            |
+| ------------------- | ---------------------------------------------------------------------------- | -------------- |
+| Missed call         | When you cannot pick up, give the next caller a useful first response.       | Build Your Bot |
+| Everyday delegation | Delegate the call and keep control of the outcome.                           | Build Your Bot |
+| Front desk          | Give the next important call a trained first response and visible follow-up. | Build Your Bot |
+| Expansion           | Start with one useful Bot. Add more when real work proves the need.          | Build Your Bot |
 
-All active creative must resolve to **Build -> Train -> Launch** rather than introducing a separate workflow slogan.
+Keep active creative focused on capabilities and outcomes, without setup-step lists or repeated process slogans.
 
 ## Daily Founder Review
 

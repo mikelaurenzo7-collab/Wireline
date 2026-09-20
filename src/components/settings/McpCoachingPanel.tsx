@@ -111,7 +111,9 @@ export default function McpCoachingPanel() {
       }
       setConnections([]);
       setConfirmDisconnect(false);
-      setNotice("Cursor, ChatGPT, and Claude can no longer use this account until you connect again.");
+      setNotice(
+        "Cursor, ChatGPT, and Claude can no longer use this account until you connect again.",
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't disconnect connected apps.");
     } finally {
@@ -123,10 +125,15 @@ export default function McpCoachingPanel() {
     <div className="mt-5 space-y-4">
       <div className="flex items-start justify-between gap-4 rounded-[var(--radius-md)] border border-border bg-muted/20 p-4">
         <label htmlFor="mcp-coaching-writes" className="min-w-0">
-          <span className="block font-medium text-foreground">Allow connected apps to save Training</span>
-          <span id="mcp-coaching-writes-help" className="mt-1 block text-sm leading-6 text-muted-foreground">
-            Off by default. When on, a confirmed fact or rule from Cursor, ChatGPT, or Claude lands in
-            Training. It never places a live call or launches the agent.
+          <span className="block font-medium text-foreground">
+            Allow connected apps to save Training
+          </span>
+          <span
+            id="mcp-coaching-writes-help"
+            className="mt-1 block text-sm leading-6 text-muted-foreground"
+          >
+            Off by default. When on, a confirmed fact or rule from Cursor, ChatGPT, or Claude lands
+            in Training. It never places a live call or launches the agent.
           </span>
         </label>
         <Switch
@@ -157,7 +164,8 @@ export default function McpCoachingPanel() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground">{connection.client}</p>
                 <p className="text-xs text-muted-foreground">
-                  Connected {formatWhen(connection.created_at)} · expires {formatWhen(connection.expires_at)}
+                  Connected {formatWhen(connection.created_at)} · expires{" "}
+                  {formatWhen(connection.expires_at)}
                 </p>
               </div>
               <Badge variant="outline">{connection.scope}</Badge>
@@ -183,12 +191,12 @@ export default function McpCoachingPanel() {
       ) : null}
 
       {notice ? (
-        <StatusNotice tone="success" title="Connected apps updated">
+        <StatusNotice tone="success" title="Connected Apps Updated">
           {notice}
         </StatusNotice>
       ) : null}
       {error ? (
-        <StatusNotice tone="destructive" title="Connected apps">
+        <StatusNotice tone="destructive" title="Connected Apps">
           {error}
         </StatusNotice>
       ) : null}

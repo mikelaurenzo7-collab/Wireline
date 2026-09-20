@@ -5,8 +5,8 @@ describe("workspacePageTitle", () => {
   it("uses the most specific workspace route label", () => {
     expect(workspacePageTitle("/studio")).toBe("Bot Studio");
     expect(workspacePageTitle("/studio/agent/123")).toBe("Bot Studio");
-    expect(workspacePageTitle("/settings/compliance")).toBe("Compliance center");
-    expect(workspacePageTitle("/connections/salesforce/")).toBe("Salesforce connection");
+    expect(workspacePageTitle("/settings/compliance")).toBe("Compliance Center");
+    expect(workspacePageTitle("/connections/salesforce/")).toBe("Salesforce Connection");
   });
 
   it("falls back honestly for an unknown authenticated route", () => {

@@ -271,7 +271,7 @@ export default function SmsOutcomePanel({
         <ConversationActivity
           className="mt-3"
           state="active"
-          title="Human follow-up is active"
+          title="Human Follow-Up Is Active"
           detail="This conversation remains owned in Approvals until completed or dismissed."
         />
       ) : null}

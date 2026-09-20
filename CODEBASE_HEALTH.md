@@ -4,7 +4,7 @@ This file is BotBound's durable repository-health contract. It defines what belo
 
 ## Current north star
 
-BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. The public operating loop is **Build -> Train -> Launch -> Improve**. Internally the same loop is **Create -> Train -> Wire -> Run**.
+BotBound is the operating layer for your Bot across calls, texts, follow-up, browser context, email, and integrations. Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list. The internal technical operating loop is **Create -> Train -> Wire -> Run**. Conversation review and later refinements remain optional controls, not additional setup steps.
 
 - **Create** is short intake: name, role, voice, personality, and starting brief.
 - **Training** owns documents, sources, behavior, voice, policies, evaluation, memory, and escalation rules.
@@ -17,22 +17,22 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 
 ## Active product boundary
 
-| Surface | Active source |
-| --- | --- |
-| Routing | `src/App.tsx`, `src/routes/AppRoutes.tsx` |
-| Home / Studio | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` both resolve to `/studio` |
-| Create | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx` |
-| Training | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/` |
-| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx` |
-| Run / Studio | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx` |
-| Shell | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx` |
-| Design | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
-| Billing | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, `docs/business-usage-pricing-decision.md` |
-| Voice | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md` |
-| Video presenter | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts` |
-| Browser extension | `apps/browser-extension/` |
-| Native clients | `ios/`, `android/` |
-| ChatGPT App | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md` |
+| Surface              | Active source                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Routing              | `src/App.tsx`, `src/routes/AppRoutes.tsx`                                                                                                  |
+| Home / Studio        | `src/pages/AgentStudioHome.tsx`, `src/components/StudioWorkspaceV2.tsx`; `/` and retired `/overview` both resolve to `/studio`             |
+| Create               | `src/pages/AgentStudioHome.tsx`, `src/components/CreateAgentDialog.tsx`                                                                    |
+| Training             | `src/pages/KnowledgePage.tsx`, `src/components/KnowledgeBaseClaude.tsx`, `src/components/training/`                                        |
+| Launch / Connections | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                                                                 |
+| Run / Studio         | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                                                                |
+| Shell                | `src/components/WorkspaceShell.tsx`, `src/components/layout/AppShell.tsx`                                                                  |
+| Design               | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts` |
+| Billing              | `src/lib/plan-catalog.ts`, `src/lib/conversation-balance.ts`, `docs/business-usage-pricing-decision.md`                                    |
+| Voice                | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md`                                             |
+| Video presenter      | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`                                |
+| Browser extension    | `apps/browser-extension/`                                                                                                                  |
+| Native clients       | `ios/`, `android/`                                                                                                                         |
+| ChatGPT App          | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`                                                   |
 
 ## Source-control rules
 
@@ -72,19 +72,19 @@ BotBound Letterpress on the Aurora palette is the only active design system. Tec
 - Broad public language: `Bot` or `Phone Bot` in one product and workspace model. Never split signup, setup, pricing, or navigation into Personal and Business lanes. Technical compatibility identifiers remain stable.
 - Context-specific examples use the actual job (`Personal Assistant`, `Sales Rep`, `Front Desk`) without creating audience lanes.
 - Technical contracts: `agent`.
-- Product nouns: `Training`, `Connections`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`. Public setup is Train, Test, Launch. Never use Wire as a customer-facing step.
+- Product nouns: `Training`, `Connections`, `Studio`, `calls`, `texts`, `follow-up`, `Runtime Balance`, and `included number`. After creation, the setup guide is Train, Test, Launch. Never use Wire as a customer-facing step.
 - Avoid generic `assistant`, `dashboard`, `operator`, `manager`, `control center`, and customer-facing vendor names unless the external API name is the subject.
 
 ## Documentation taxonomy
 
-| Document | Role |
-| --- | --- |
-| `README.md` | Repository entry point, product map, setup, and verification. |
-| `CONTRIBUTING.md` | Branch, review, migration, validation, and release workflow. |
-| `CODEBASE_HEALTH.md` | Cleanup rules, source-control boundaries, and deletion policy. |
-| `ARCHITECTURE.md` | Runtime architecture, data-flow boundaries, and security invariants. |
-| `docs/README.md` | Canonical product/system docs, runbooks, and active plans. |
-| `docs/AUDIT_INDEX.md` | Dated audit evidence and superseded decision records. |
+| Document              | Role                                                                 |
+| --------------------- | -------------------------------------------------------------------- |
+| `README.md`           | Repository entry point, product map, setup, and verification.        |
+| `CONTRIBUTING.md`     | Branch, review, migration, validation, and release workflow.         |
+| `CODEBASE_HEALTH.md`  | Cleanup rules, source-control boundaries, and deletion policy.       |
+| `ARCHITECTURE.md`     | Runtime architecture, data-flow boundaries, and security invariants. |
+| `docs/README.md`      | Canonical product/system docs, runbooks, and active plans.           |
+| `docs/AUDIT_INDEX.md` | Dated audit evidence and superseded decision records.                |
 
 Every durable Markdown file under `docs/` must be linked from exactly one documentation index. Dated evidence does not become canonical policy by default. Durable conclusions must be promoted into code or the appropriate canonical document.
 

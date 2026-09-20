@@ -205,7 +205,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         {loadMoreError ? (
           <StatusNotice
             tone="warning"
-            title="More calls unavailable"
+            title="More Calls Unavailable"
             action={
               <Button type="button" variant="secondary" size="sm" onClick={loadMore}>
                 Try again
@@ -314,7 +314,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   );
 
   const reportBody = !selected ? (
-    <EmptyState title="Select a call" density="compact" titleTone="ui" withHalo={false} />
+    <EmptyState title="Select a Call" density="compact" titleTone="ui" withHalo={false} />
   ) : (
     <div className="mx-auto w-full max-w-3xl p-4 sm:p-6">
       <button
@@ -329,7 +329,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       <header className="border-b border-border pb-4">
         <p className="text-xs font-semibold text-primary">Call report</p>
         <h3 className="mt-1 font-mono text-xl font-semibold text-foreground">
-          {formatPhone(selected.customer_number, "Unknown caller")}
+          {formatPhone(selected.customer_number, "Unknown Caller")}
         </h3>
         <p className="wl-preserve-case mt-1 text-xs text-muted-foreground">
           {[
@@ -344,9 +344,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
       <div className="space-y-5 py-5">
         <section>
-          <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Summary
-          </h4>
+          <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">Summary</h4>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
             {selected.summary || "No summary is available for this call yet."}
           </p>
@@ -378,8 +376,8 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
 
         {selected.coaching_note ? (
           <section>
-            <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              Follow-up
+            <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">
+              Follow-Up
             </h4>
             <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
               {selected.coaching_note}
@@ -450,7 +448,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       </div>
 
       {error ? (
-        <StatusNotice tone="destructive" title="Call history unavailable" className="m-3 sm:m-4">
+        <StatusNotice tone="destructive" title="Call History Unavailable" className="m-3 sm:m-4">
           {error}
         </StatusNotice>
       ) : null}

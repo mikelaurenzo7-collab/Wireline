@@ -74,12 +74,12 @@ for (const failure of ["unavailable", "malformed"] as const) {
     );
 
     await page.goto("/phone?tab=setup");
-    await expect(page.getByText("Lines need attention", { exact: true })).toBeVisible();
-    await expect(page.getByText("No line yet", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Lines Need Attention", { exact: true })).toBeVisible();
+    await expect(page.getByText("No Line Yet", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Add line", exact: true })).toHaveCount(0);
     recovered = true;
     await page.getByRole("button", { name: "Retry", exact: true }).click();
-    await expect(page.getByText("No line yet", { exact: true })).toBeVisible();
+    await expect(page.getByText("No Line Yet", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Add line", exact: true })).toBeEnabled();
   });
 }
@@ -94,7 +94,7 @@ test("changing a role starter preserves a supplied customer brief", async ({ pag
   await mockWorkspace(page);
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";
   await page.goto(`/studio?create=1&brief=${encodeURIComponent(brief)}`);
-  const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
+  const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
   const description = dialog.getByRole("textbox", { name: "Describe the Job" });
   await expect(description).toHaveValue(brief);
   await dialog
@@ -137,7 +137,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
       sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
     });
     await page.goto("/studio?agent=bot-front-desk");
-    const guide = page.getByRole("dialog", { name: "Next up for Front Desk" });
+    const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
     // Disabled also describes the initial request. Observe the actual failure
     // before allowing the mock to recover, or a pending mount lookup can win.
     await expect(

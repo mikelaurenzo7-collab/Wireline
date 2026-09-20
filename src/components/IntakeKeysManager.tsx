@@ -159,7 +159,7 @@ export default function IntakeKeysManager() {
           </div>
           <div>
             <h4 className="text-base font-semibold text-foreground leading-tight">
-              Lead intake keys
+              Lead Intake Keys
             </h4>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function IntakeKeysManager() {
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="app-section-title flex items-center gap-2 text-brand">
-                <Check className="w-3.5 h-3.5" /> Save this key now. It will not be shown again
+                <Check className="w-3.5 h-3.5" /> Save This Key Now. It Will Not Be Shown Again
               </div>
               <ShadButton
                 type="button"

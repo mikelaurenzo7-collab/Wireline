@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -66,30 +66,44 @@ const MCP_CLIENTS = [
 ] as const;
 
 export default function Developers() {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "error">("idle");
+  const copyTimer = useRef<number | null>(null);
+  const mounted = useRef(true);
 
   const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.me";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = `${appOrigin}/mcp`;
 
-  const handleCopy = useCallback(() => {
-    void navigator.clipboard.writeText(mcpEndpoint);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+  const handleCopy = useCallback(async () => {
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    setCopyState("copying");
+    try {
+      await navigator.clipboard.writeText(mcpEndpoint);
+      if (!mounted.current) return;
+      setCopyState("copied");
+      copyTimer.current = window.setTimeout(() => setCopyState("idle"), 2000);
+    } catch {
+      if (mounted.current) setCopyState("error");
+    }
   }, [mcpEndpoint]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.location.hash !== "#mcp-endpoint") return;
-    const node = document.getElementById("mcp-endpoint");
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
-    handleCopy();
-  }, [handleCopy]);
+    mounted.current = true;
+    if (window.location.hash === "#mcp-endpoint") {
+      document
+        .getElementById("mcp-endpoint")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return () => {
+      mounted.current = false;
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    };
+  }, []);
 
   return (
     <MarketingPageFrame>
       <PageMeta
-        title="DEVELOPER PORTAL | BOTBOUND"
+        title="Developer Portal | BotBound"
         description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />
@@ -152,23 +166,35 @@ export default function Developers() {
             className="mx-auto max-w-3xl scroll-mt-28 rounded-xl border border-border bg-background p-4 text-left"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <code className="min-w-0 overflow-x-auto font-mono text-sm text-foreground">
+              <code className="min-w-0 select-text overflow-x-auto font-mono text-sm text-foreground">
                 {mcpEndpoint}
               </code>
-              <Button variant="outline" size="sm" onClick={handleCopy}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                disabled={copyState === "copying"}
+              >
                 <Copy className="mr-1 h-3.5 w-3.5" />
-                {copied ? "Copied" : "Copy Endpoint"}
+                {copyState === "copied"
+                  ? "Copied"
+                  : copyState === "copying"
+                    ? "Copying…"
+                    : "Copy Endpoint"}
               </Button>
             </div>
+            <p role="status" aria-live="polite" className="mt-2 text-sm text-muted-foreground">
+              {copyState === "error"
+                ? "Couldn't copy. Select the endpoint to copy it manually."
+                : copyState === "copied"
+                  ? "Endpoint copied."
+                  : ""}
+            </p>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               Connected apps help new users create a BotBound account and build their first Phone
               Bot. This connector cannot place calls, send messages, provision numbers, or launch a
               live Bot. Training writes land only after you enable them in Apps and confirm each
               change. There is no public API-key product and no repo voice SDK.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              BotBound calls the customer-facing product a Bot. MCP and API function names and agent
-              records remain stable only where the existing integration contract requires it.
             </p>
           </div>
 

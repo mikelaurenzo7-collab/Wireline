@@ -9,7 +9,7 @@ Repository base at generation: `13fd4807f43a352d1d7a11da7c03f50460b0caee`
 Release commit: not assigned at authoring time
 Primary renderer: `scripts/render-botbound-launch-perfection-assets.mjs`
 
-Copy revision, September 20: current setup language is **Build -> Train -> Launch**. The factual source map below reflects that revision; the original generation dates and export evidence remain historical. The local investor PDF was regenerated using the repository's ReportLab renderer and its one-page layout was visually reviewed through a PDFium PNG at 150 DPI. Text extraction confirmed three setup steps and the September 20 copy-review date. Older Home/Features captures require regeneration after their source changes. Other rendered assets and remote copies need copy review before reuse; source edits alone do not update or recertify them.
+Copy revision, September 20: public copy describes capabilities and outcomes without a setup-step list. The factual source map below reflects that revision; the original generation dates and export evidence remain historical. The local investor PDF was regenerated using the repository's ReportLab renderer and its one-page layout was visually reviewed through a PDFium PNG at 150 DPI. Text extraction confirmed the absence of public setup-step copy and the September 20 copy-review date. Older Home/Features captures require regeneration after their source changes. Other rendered assets and remote copies need copy review before reuse; source edits alone do not update or recertify them.
 
 ## Newly generated editorial source art
 
@@ -132,7 +132,6 @@ Caption timing and copy are owned by `apps/botbound-film/src/captions.ts` and `a
 | Claim                                                             | Repository authority                                                     |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | One Bot across calls, texts, and email                            | `../../README.md`, `../../src/pages/Pricing.tsx`                         |
-| Build -> Train -> Launch                               | `../../docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`                        |
 | Build free; plans from $19/month; activation availability applies | `../../src/lib/plan-catalog.ts`, `../../src/pages/Pricing.tsx`           |
 | Ten built-in OpenAI Realtime voices                               | `../../src/lib/voice-catalog.ts`, `../../docs/OPENAI_REALTIME_VOICE.md`  |
 | Selected voice fixed for active session                           | `../../docs/OPENAI_REALTIME_VOICE.md`                                    |

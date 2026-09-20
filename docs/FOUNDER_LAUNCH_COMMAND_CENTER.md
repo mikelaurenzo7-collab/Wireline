@@ -31,7 +31,7 @@ branch.
 
 Do not use `AI employee` as the launch noun. Do not pair `AI` with `agent` in customer-facing copy.
 
-The public operating loop is **Build -> Train -> Launch**.
+Public marketing leads with capabilities, outcomes, and a clear signup action, without a setup-step list.
 
 ## Runtime decision
 

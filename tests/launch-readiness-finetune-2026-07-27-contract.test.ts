@@ -91,7 +91,7 @@ describe("launch readiness fine-tune 2026-07-27", () => {
 
     const analytics = read("src/components/CallOpsAnalytics.tsx");
     expect(analytics).toContain('setError("Could not load call analytics.")');
-    expect(analytics).toContain("Analytics unavailable");
+    expect(analytics).toContain("Analytics Unavailable");
   });
 
   it("returns 200 { user: null } for anonymous session probes", () => {

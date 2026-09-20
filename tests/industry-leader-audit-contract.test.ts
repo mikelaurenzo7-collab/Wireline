@@ -124,8 +124,8 @@ describe("industry-leader audit hardening contracts", () => {
     const changelog = read("src/components/PublicChangelog.tsx");
     expect(changelog).not.toContain("Claude Sonnet 4.6");
     expect(changelog).not.toContain("Claude Opus 4.7");
-    expect(changelog).toContain("One managed reasoning policy across demos and Studio");
-    expect(changelog).toContain("Voice runtime rebalanced for reliability");
+    expect(changelog).toContain("One Managed Reasoning Policy Across Demos and Studio");
+    expect(changelog).toContain("Voice Runtime Rebalanced for Reliability");
     expect(changelog).not.toContain("OpenAI GPT-5.6 Terra");
     expect(changelog).not.toContain("Twilio + Vapi");
     expect(changelog).not.toContain("Grok 4.5 primary");

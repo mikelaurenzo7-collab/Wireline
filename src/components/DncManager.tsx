@@ -146,7 +146,7 @@ export default function DncManager() {
       const phone = removed?.phone_raw || removed?.phone;
       toast({
         type: "success",
-        title: "Entry removed",
+        title: "Entry Removed",
         message: "Number has been removed from the DNC list.",
         duration: 6000,
         action: phone
@@ -352,7 +352,7 @@ export default function DncManager() {
                   <Shield className="h-3.5 w-3.5 text-brand" />
                 </div>
                 <h3 className="font-display text-base leading-tight text-foreground">
-                  Blocked numbers
+                  Blocked Numbers
                 </h3>
                 <span className="text-eyebrow ml-1 opacity-80">{filtered.length} entries</span>
               </div>
@@ -378,7 +378,7 @@ export default function DncManager() {
               ) : loadErr ? (
                 <EmptyState
                   icon={Shield}
-                  title="Couldn't load the suppression list"
+                  title="Couldn't Load the Suppression List"
                   description={loadErr}
                   actions={[{ label: "Retry", onClick: refresh, primary: true }]}
                   density="compact"

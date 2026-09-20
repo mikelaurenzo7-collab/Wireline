@@ -19,8 +19,8 @@ export default function ConnectionsPage() {
 
         <Accordion type="single" collapsible>
           <AccordionItem value="apps" className="rounded-xl border border-border bg-card">
-            <AccordionTrigger className="min-h-14 px-4 py-0 text-sm font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
-              Business tools
+            <AccordionTrigger className="wl-preserve-case min-h-14 px-4 py-0 text-sm font-semibold text-foreground hover:no-underline data-[state=open]:border-b data-[state=open]:border-border">
+              Business Tools
             </AccordionTrigger>
             <AccordionContent className="px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
               <CrmConnectionCard />

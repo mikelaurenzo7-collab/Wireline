@@ -41,7 +41,7 @@ describe("marketing metadata contract", () => {
     const sitemap = read("public/sitemap.xml");
 
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
-    expect(security).toContain("How BotBound earns live calls");
+    expect(security).toContain("How BotBound Earns Live Calls");
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
     expect(sitemap).toContain("<loc>https://botbound.me/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);

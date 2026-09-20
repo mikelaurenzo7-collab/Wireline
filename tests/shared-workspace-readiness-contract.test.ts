@@ -31,7 +31,7 @@ describe("shared workspace readiness posture", () => {
 
   it("enforces certification inside generic authentication and session rotation", () => {
     const middleware = read("src/middleware/auth.ts");
-    expect(middleware).toContain('if (!sharedWorkspacesEnabled())');
+    expect(middleware).toContain("if (!sharedWorkspacesEnabled())");
     expect(middleware).toContain(
       '"Ignoring shared tenant selection before data-plane certification"',
     );
@@ -47,7 +47,7 @@ describe("shared workspace readiness posture", () => {
     const page = read("src/pages/TeamSettings.tsx");
     expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
     expect(page).toContain('setTeamAccess("certifying")');
-    expect(page).toContain('title="Invites unavailable"');
+    expect(page).toContain('title="Invites Unavailable"');
     expect(page).toContain("shared-workspace security certification");
     expect(page).toContain('teamAccess === "ok"');
     expect(page).toContain("data-wireline-preserve-case");
@@ -55,8 +55,6 @@ describe("shared workspace readiness posture", () => {
 
   it("surfaces canonical API errors from invitation attempts", () => {
     const page = read("src/pages/TeamSettings.tsx");
-    expect(page).toContain(
-      'payload?.error || payload?.message || "Invite could not be sent."',
-    );
+    expect(page).toContain('payload?.error || payload?.message || "Invite could not be sent."');
   });
 });

@@ -127,12 +127,12 @@ export default function StudioAgentReviewPanel({
                 : "text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
-            Setup summary
+            Setup Summary
           </h2>
         </header>
 
         {error ? (
-          <StatusNotice tone="warning" title="Summary unavailable">
+          <StatusNotice tone="warning" title="Summary Unavailable">
             {error} Your saved setup is unchanged.
           </StatusNotice>
         ) : null}

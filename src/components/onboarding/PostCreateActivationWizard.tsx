@@ -314,7 +314,7 @@ export default function PostCreateActivationWizard({
     }
     if (hasLine) {
       return {
-        title: "Your number is reserved",
+        title: "Your Number Is Reserved",
         detail: "Calling is not confirmed yet. Open Phone setup to finish connecting this number.",
       };
     }

@@ -39,7 +39,7 @@ export default function WorkspaceBrandEditor({
       <div className="mb-5">
         <p className="wl-eyebrow wl-eyebrow--muted">Workspace brand</p>
         <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-          Name, logo, and color
+          Name, Logo, and Color
         </h2>
       </div>
 

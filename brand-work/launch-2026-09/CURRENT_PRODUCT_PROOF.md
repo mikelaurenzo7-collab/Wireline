@@ -88,11 +88,7 @@ The populated Google Drive release may carry the accepted contact sheet and its 
 
 BotBound launch proof should show an observable product state change, not a generic dashboard:
 
-1. **Build:** create a focused Bot from a blank or clearly labeled demo account.
-2. **Train:** add or verify facts, sources, rules, voice, behavior, and workflow boundaries.
-3. **Launch:** show the enabled channel, assigned production number, routing, and relevant account state.
-
-Then show the completed work: a real, explicitly labeled test conversation and its transcript, outcome, note, next action, approval, or handoff. This verifies the result, not a fourth setup step.
+Show a configured Bot completing useful work: a real, explicitly labeled test conversation and its transcript, outcome, note, next action, approval, or handoff. The capture must establish the relevant account, channel, knowledge, and rule configuration. Keep setup-step labels out of public creative.
 
 The strongest proof chain is a clearly labeled test call, a real configured follow-up text or email, and the corresponding outcome/log appearing in BotBound. Dogfood evidence is not customer evidence.
 

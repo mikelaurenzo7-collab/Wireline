@@ -157,7 +157,7 @@ export default function TeamSettings() {
         <WorkspacePageIntro title="Team" titleHidden />
 
         {teamAccess === "restricted" ? (
-          <StatusNotice tone="info" title="Solo workspace">
+          <StatusNotice tone="info" title="Solo Workspace">
             Team invites are available on Starter Plus and Pro plans.{" "}
             <Link
               to="/settings/billing"
@@ -170,19 +170,19 @@ export default function TeamSettings() {
         ) : null}
 
         {teamAccess === "certifying" ? (
-          <StatusNotice tone="info" title="Invites unavailable">
+          <StatusNotice tone="info" title="Invites Unavailable">
             Invites open after shared-workspace security certification.
           </StatusNotice>
         ) : null}
 
         {teamAccess === "error" ? (
-          <StatusNotice tone="destructive" title="Team settings could not be loaded">
+          <StatusNotice tone="destructive" title="Team Settings Could Not Be Loaded">
             Your workspace is unaffected. Refresh this page to retry the team status check.
           </StatusNotice>
         ) : null}
 
         {inviteSuccess ? (
-          <StatusNotice tone="success" title="Invite sent">
+          <StatusNotice tone="success" title="Invite Sent">
             {inviteSuccess}
           </StatusNotice>
         ) : null}
@@ -251,7 +251,7 @@ export default function TeamSettings() {
           ) : (
             <EmptyState
               icon={Users}
-              title="No teammates yet"
+              title="No Teammates Yet"
               description="Invite collaborators to share numbers, approvals, and call outcomes."
               titleTone="ui"
               density="compact"
@@ -292,7 +292,7 @@ export default function TeamSettings() {
                 id="team-invite-title"
                 className="font-[var(--wireline-font-family-display)] text-2xl font-normal tracking-[-.025em] text-foreground"
               >
-                Invite teammate
+                Invite Teammate
               </h2>
               <Button
                 type="button"
@@ -331,7 +331,7 @@ export default function TeamSettings() {
                 </FormField>
               </div>
               {inviteError ? (
-                <StatusNotice tone="destructive" className="mt-4" title="Invite failed">
+                <StatusNotice tone="destructive" className="mt-4" title="Invite Failed">
                   {inviteError}
                 </StatusNotice>
               ) : null}

@@ -46,18 +46,18 @@ export const OPS_PULSE_METRICS = {
 export const OPS_COPY = {
   floorQuiet: "No live calls. Active conversations appear here.",
   floorLoading: "Loading Active calls",
-  floorTitle: (n: number) => (n === 0 ? "Active calls" : `${n} live caller${n === 1 ? "" : "s"}`),
+  floorTitle: (n: number) => (n === 0 ? "Active Calls" : `${n} Live Caller${n === 1 ? "" : "s"}`),
   intelHub: "Action queue",
   intelEmpty: "All clear. No approvals waiting.",
-  telemetryTitle: "Agent activity",
+  telemetryTitle: "Agent Activity",
   telemetryActive: "Streaming",
-  growthTitle: "Autonomous outreach",
+  growthTitle: "Autonomous Outreach",
   growthBody: "Queue an outreach run when your agent is deployed.",
   growthCta: "Queue outreach",
   growthCtaBusy: "Queuing…",
   growthDeployFirst: "Deploy an agent first",
   analyticsSection: "Agent analytics",
-  sentimentEmptyTitle: "No conversations yet",
+  sentimentEmptyTitle: "No Conversations Yet",
   sentimentEmptyHint: "Run a test call to populate sentiment.",
   roiLabel: "Agent efficiency",
   setupEyebrow: "Agent setup",
@@ -71,124 +71,124 @@ export const OPS_COPY = {
 /** Channel & ops empty states – one copy source for route-level CTAs */
 export const OPS_CHANNEL_EMPTY = {
   floor: {
-    title: "No active callers",
+    title: "No Active Callers",
     actions: [
       { label: "View call history", to: "/phone?tab=logs" },
       { label: "Open Studio", to: "/studio", primary: true },
     ],
   },
   fleetRail: {
-    title: "No Bots yet",
+    title: "No Bots Yet",
     actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   fleetAgents: {
-    title: "No roster yet",
+    title: "No Roster Yet",
   },
   agentRecall: {
-    title: "No calls yet",
+    title: "No Calls Yet",
   },
   agentDockCalls: {
-    title: "No calls yet",
+    title: "No Calls Yet",
   },
   phone: {
-    title: "No calls yet",
+    title: "No Calls Yet",
     actions: [
       { label: "Configure a number", to: "/phone?tab=setup", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
   phoneNoMatch: {
-    title: "No matching calls",
+    title: "No Matching Calls",
   },
   sms: {
-    title: "No SMS yet",
+    title: "No SMS Yet",
     actions: [
       { label: "Configure SMS sender", to: "/phone?tab=setup", primary: true },
       { label: "Start outbound", to: "/phone?tab=outbound" },
     ],
   },
   email: {
-    title: "No threads yet",
+    title: "No Threads Yet",
     actions: [
       { label: "Connect email", to: "/connections", primary: true },
       { label: "Open Studio", to: "/studio" },
     ],
   },
   inboxDetail: {
-    title: "Select a thread",
+    title: "Select a Thread",
   },
   pipeline: {
-    title: "No leads in the pipeline",
+    title: "No Leads in the Pipeline",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Open Connections", to: "/connections" },
     ],
   },
   training: {
-    title: "No Bots to train yet",
+    title: "No Bots to Train Yet",
     actions: [{ label: "Open Studio", to: "/studio", primary: true }],
   },
   integrations: {
-    title: "No carriers linked",
+    title: "No Carriers Linked",
   },
   audit: {
-    title: "Audit trail is quiet",
+    title: "Audit Trail Is Quiet",
     actions: [
       { label: "Deploy a Bot", to: "/studio?create=1", primary: true },
       { label: "Open Activity", to: "/insights" },
     ],
   },
   auditNoMatch: {
-    title: "No matches",
+    title: "No Matches",
   },
   intel: {
-    title: "All clear",
+    title: "All Clear",
     actions: [
       { label: "Open Activity", to: "/insights", primary: true },
       { label: "Open Studio", to: "/studio" },
     ],
   },
   sentiment: {
-    title: "No conversations yet",
+    title: "No Conversations Yet",
     actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
   },
   campaigns: {
-    title: "No campaigns yet",
+    title: "No Campaigns Yet",
     actions: [
       { label: "Create campaign", to: "/phone?tab=outbound&view=campaigns", primary: true },
     ],
   },
   outboundQueue: {
-    title: "Queue is idle",
+    title: "Queue Is Idle",
   },
   campaignLeads: {
-    title: "No leads in campaign",
+    title: "No Leads in Campaign",
   },
   callbacks: {
-    title: "No scheduled callbacks",
+    title: "No Scheduled Callbacks",
     actions: [
       { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch", primary: true },
       { label: "View call history", to: "/phone?tab=logs" },
     ],
   },
   cadences: {
-    title: "No sequences yet",
+    title: "No Sequences Yet",
     actions: [
       { label: "Create sequence", to: "/phone?tab=outbound&view=sequences", primary: true },
     ],
   },
   appointmentsUpcoming: {
-    title: "No active commitments",
+    title: "No Active Commitments",
   },
   appointmentsHistory: {
-    title: "No completed appointments yet",
+    title: "No Completed Appointments Yet",
   },
   contactNotFound: {
-    title: "Contact not found",
+    title: "Contact Not Found",
     actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
   },
   contactTimeline: {
-    title: "No interactions yet",
+    title: "No Interactions Yet",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "View call history", to: "/phone?tab=logs" },
@@ -202,7 +202,7 @@ export const OPS_TRAINING_PANEL = {
   directives: "No directives. Add below.",
   facts: "No facts. Add below.",
   knowledge: {
-    title: "No entries yet",
+    title: "No Entries Yet",
   },
 } as const;
 
@@ -218,25 +218,25 @@ export const OPS_TRIAGE_ACCENTS = {
 /** Triage panel empty states – Recaps `?tab=triage` widget columns */
 export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
-    title: "No hot leads yet",
+    title: "No Hot Leads Yet",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Call activity", to: "/phone?tab=logs" },
     ],
   },
   compliance: {
-    title: "All clear",
+    title: "All Clear",
   },
   openTasks: {
-    title: "Inbox zero",
+    title: "Inbox Zero",
     actions: [{ label: "View action queue", to: "/approvals" }],
   },
   knowledgeGaps: {
-    title: "Coverage looks solid",
+    title: "Coverage Looks Solid",
     actions: [{ label: "Open training", to: "/studio" }],
   },
   escalations: {
-    title: "No escalations",
+    title: "No Escalations",
     actions: [{ label: "Active calls", to: "/phone" }],
   },
 } as const;
@@ -244,7 +244,7 @@ export const OPS_TRIAGE_EMPTY = {
 /** Triage page-level copy – toolbar + all-clear banner */
 export const OPS_TRIAGE_COPY = {
   allClearStat: "All clear",
-  allClearBannerTitle: "All clear",
+  allClearBannerTitle: "All Clear",
   allClearBannerCta: "Active calls",
   /** Slim hot-lead signal strip – replaces the old full-height Hot Leads panel. */
   hotStripLabel: (n: number) => `${n} hot lead${n === 1 ? "" : "s"}`,
@@ -343,7 +343,7 @@ export function directorPromptHref(prompt: string): string {
 
 /** In-app help route – quick paths + page chrome */
 export const OPS_HELP = {
-  title: "Help and demos",
+  title: "Help and Demos",
   subtitle: "Team lines, demos, and shortcuts back into BotBound.",
   stat: (live: number, demos: number) =>
     `${live} live line${live === 1 ? "" : "s"} -+ ${demos} demo${demos === 1 ? "" : "s"}`,
@@ -575,10 +575,10 @@ export const OPS_INSIGHTS_GROUPS = [
 /** Compliance & settings empty states */
 export const OPS_SUPPORT_EMPTY = {
   dnc: {
-    title: "No numbers blocked",
+    title: "No Numbers Blocked",
   },
   dncNoMatch: {
-    title: "No matches",
+    title: "No Matches",
   },
 } as const;
 
@@ -593,70 +593,70 @@ export const OPS_AUDIT_SEVERITY = {
 /** Insights tab empty states — title + CTA only; no coaching copy. */
 export const OPS_INSIGHTS_EMPTY = {
   funnel: {
-    title: "No funnel data",
+    title: "No Funnel Data",
     actions: [
       { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
   leaderboard: {
-    title: "No ranked Bots",
+    title: "No Ranked Bots",
     actions: [
       { label: "Create Bot", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   latency: {
-    title: "No latency samples",
+    title: "No Latency Samples",
     actions: [
       { label: "Bot Studio", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   reliability: {
-    title: "No reliability samples",
+    title: "No Reliability Samples",
     actions: [
       { label: "Bot Studio", to: "/studio", primary: true },
       { label: "Call history", to: "/phone?tab=logs" },
     ],
   },
   spend: {
-    title: "No AI usage",
+    title: "No AI Usage",
     actions: [
       { label: "Studio", to: "/studio", primary: true },
       { label: "Calls", to: "/phone" },
     ],
   },
   attribution: {
-    title: "No tagged calls",
+    title: "No Tagged Calls",
     actions: [
       { label: "Call setup", to: "/phone?tab=setup", primary: true },
       { label: "Outbound", to: "/phone?tab=outbound" },
     ],
   },
   quality: {
-    title: "No QA scores",
+    title: "No QA Scores",
     actions: [
       { label: "Call history", to: "/phone?tab=logs" },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
   heatmap: {
-    title: "No call activity",
+    title: "No Call Activity",
     actions: [
       { label: "Call history", to: "/phone?tab=logs", primary: true },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
   topics: {
-    title: "Not enough calls",
+    title: "Not Enough Calls",
     actions: [
       { label: "Call history", to: "/phone?tab=logs", primary: true },
       { label: "Studio", to: "/studio" },
     ],
   },
   failureModesOk: {
-    title: "No failure clusters",
+    title: "No Failure Clusters",
     actions: [{ label: "Calls", to: "/phone?tab=logs", primary: true }],
   },
 } as const;

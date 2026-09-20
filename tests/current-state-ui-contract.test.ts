@@ -43,8 +43,8 @@ describe("current-state UI contract", () => {
     const security = read("src/components/Security.tsx");
     const commandBar = read("src/components/CommandBar.tsx");
 
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Launch on the web");
-    expect(CLIENT_SURFACE_POSTURE.summary).toContain("None are required for the core product");
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Your Bots work from the web");
+    expect(CLIENT_SURFACE_POSTURE.summary).toContain("Optional companion apps");
     expect(CLIENT_SURFACE_POSTURE.browser.status).toBe("Early access");
     expect(CLIENT_SURFACE_POSTURE.android.status).toBe("Internal beta");
     expect(CLIENT_SURFACE_POSTURE.ios.status).toBe("Planned");

@@ -72,7 +72,7 @@ export default function WirelineLiveVoiceProfile({ agentId }: { agentId: string 
         <div>
           <p className="wl-stitch-label">BotBound voice</p>
           <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
-            Pick the live voice character
+            Pick the Live Voice Character
           </h3>
           <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
             Role-tuned profiles create distinctive, context-aware voices for live browser and mobile

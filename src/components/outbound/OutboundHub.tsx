@@ -73,7 +73,7 @@ export default function OutboundHub({
             <div className="flex flex-1 flex-col justify-center px-3 py-6 sm:px-6">
               <EmptyState
                 icon={Zap}
-                title="No dispatch queue"
+                title="No Dispatch Queue"
                 density="compact"
                 fill
                 titleTone="ui"

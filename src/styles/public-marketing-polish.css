@@ -201,7 +201,7 @@
    * class stays purely about family, weight, casing, and rhythm. */
   letter-spacing: -0.015em;
   line-height: 1.05;
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
   color: var(--wireline-color-text-primary);
 }

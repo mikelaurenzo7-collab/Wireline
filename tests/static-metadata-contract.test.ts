@@ -77,8 +77,9 @@ describe("BotBound static marketing metadata", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("FIND. CALL. BOOK.");
-    expect(ogImage).toContain("Outbound sales. Inbound calls. One Bot.");
+    expect(ogImage).toContain("Find. Call. Book");
+    expect(ogImage).toContain("Outbound sales. Inbound calls.");
+    expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).toContain("GET YOUR SALES BOT");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).toContain("#8B5CF6");

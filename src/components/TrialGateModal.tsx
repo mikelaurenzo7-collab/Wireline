@@ -95,17 +95,17 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   switch (detail.code) {
     case "ACTIVATION_REQUIRED":
       return {
-        title: "Activate live work",
+        title: "Activate Live Work",
         body: "Create and train stay free. Choose a live plan when your Bot is ready for a live number and customer conversations.",
       };
     case "EMAIL_UNVERIFIED":
       return {
-        title: "Verify your email first",
+        title: "Verify Your Email First",
         body: "We sent you a link from BotBound. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder, or resend the link below.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
-        title: "Trial limit reached",
+        title: "Trial Limit Reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
             ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Choose a live plan to keep going. Your data and agent stay exactly as they are.`
@@ -113,16 +113,16 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
       };
     case "TRIAL_EXPIRED":
       return {
-        title: "Your legacy trial ended",
+        title: "Your Legacy Trial Ended",
         body: "Choose a live plan to restore your agent. Your settings and call history stay exactly as you left them.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
-        title: "Subscription paused",
+        title: "Subscription Paused",
         body: "Your subscription is past due. Open BotBound Billing to update your payment method and restore live work.",
       };
     default:
-      return { title: "Capacity required", body: detail.error };
+      return { title: "Capacity Required", body: detail.error };
   }
 }
 

@@ -188,7 +188,7 @@ export default function QualityView({ days }: { days: number }) {
 
         <div className="rounded-md wl-panel p-5">
           <h4 className="font-mono wl-label-muted mb-2 flex items-center gap-1.5">
-            <Star className="w-3 h-3" /> Dimension Averages (% of max)
+            <Star className="w-3 h-3" /> Dimension Averages (% of Max)
           </h4>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">

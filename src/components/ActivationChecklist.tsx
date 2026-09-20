@@ -146,7 +146,7 @@ export default function ActivationChecklist({ className }: { className?: string 
             </span>
             <div>
               <h2 className="text-base font-semibold text-foreground sm:text-lg">
-                Ready for customers
+                Ready for Customers
               </h2>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function ActivationChecklist({ className }: { className?: string 
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <h2 className="text-base font-semibold text-foreground">
-          {completed} of {steps.length} ready
+          {completed} of {steps.length} Ready
         </h2>
         <button
           type="button"

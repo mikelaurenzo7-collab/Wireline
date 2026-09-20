@@ -70,7 +70,7 @@ export default function CallOpsAnalytics() {
     return (
       <div role="alert">
         <EmptyState
-          title="Analytics unavailable"
+          title="Analytics Unavailable"
           description={error || "Could not load call analytics."}
           density="compact"
           titleTone="ui"
@@ -84,7 +84,7 @@ export default function CallOpsAnalytics() {
   const staleDataNotice = error ? (
     <StatusNotice
       tone="warning"
-      title="Analytics may be out of date"
+      title="Analytics May Be Out of Date"
       action={retryAction}
       aria-live="polite"
     >
@@ -97,7 +97,7 @@ export default function CallOpsAnalytics() {
       <div className="space-y-3">
         {staleDataNotice}
         <EmptyState
-          title="No call history yet"
+          title="No Call History Yet"
           description="Metrics will appear when calls are logged."
           density="compact"
           titleTone="ui"

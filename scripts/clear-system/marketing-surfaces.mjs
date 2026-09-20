@@ -77,7 +77,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "root landing must embed concise account creation",
     ],
     [
-      /<span>PUT YOUR BOT<\/span>[\s\S]*<span>ON THE LINE<\/span>/,
+      /<span>Put Your Bot<\/span>[\s\S]*<span>on the Line<\/span>/,
       "root landing must use BotBound hero",
     ],
     [
@@ -85,8 +85,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "root landing must source the concise activation promise",
     ],
     [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
-    [/FIND\. CALL\. BOOK\./, "hero must retain the outbound activation path"],
-    [/ANSWER\. QUALIFY\. ROUTE\./, "hero must retain the inbound activation path"],
+    [/Find\. Call\. Book\./, "hero must retain the outbound activation path"],
+    [/Answer\. Qualify\. Route\./, "hero must retain the inbound activation path"],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],

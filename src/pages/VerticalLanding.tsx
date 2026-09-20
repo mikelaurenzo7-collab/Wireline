@@ -56,10 +56,10 @@ function CtaLink({
 }
 
 const EVERYDAY_PAIN_TITLES: Record<string, string> = {
-  "Debt negotiation calls": "Debt negotiation",
+  "Debt negotiation calls": "Debt Negotiation",
   "Appointment booking you keep putting off": "Appointments",
-  "Returns, billing disputes, customer service": "Billing disputes",
-  "Phone anxiety, social avoidance, neurodivergence": "Phone anxiety",
+  "Returns, billing disputes, customer service": "Billing Disputes",
+  "Phone anxiety, social avoidance, neurodivergence": "Phone Anxiety",
 };
 
 const EVERYDAY_FAQ_TITLES: Record<string, string> = {
@@ -175,8 +175,8 @@ export default function VerticalLanding({
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="wl-stitch-display text-balance">
               {isEverydayCalls
-                ? "You shape the voice and the handoff."
-                : "Your process, handled consistently."}
+                ? "You Shape the Voice and the Handoff"
+                : "Your Process, Handled Consistently"}
             </h2>
           </div>
           <div className="wl-stitch-card marketing-script-card border-t-4 border-t-primary p-6 text-center sm:p-8">
@@ -194,8 +194,8 @@ export default function VerticalLanding({
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="wl-stitch-display text-balance">
             {isEverydayCalls
-              ? "Questions before you hand off a call."
-              : "Questions before you go live."}
+              ? "Questions Before You Hand Off a Call"
+              : "Questions Before You Go Live"}
           </h2>
         </div>
         <div className="mt-8 space-y-3">
@@ -228,8 +228,8 @@ export default function VerticalLanding({
               <div className="max-w-2xl">
                 <h2 className="text-balance text-3xl font-semibold tracking-[-.045em] sm:text-4xl">
                   {isEverydayCalls
-                    ? "Start with the call you keep putting off."
-                    : "Start with the workflow your team needs covered."}
+                    ? "Start with the Call You Keep Putting Off"
+                    : "Start with the Workflow Your Team Needs Covered"}
                 </h2>
               </div>
               <CtaLink

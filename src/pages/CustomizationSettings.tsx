@@ -9,7 +9,7 @@ export default function CustomizationSettings() {
     <WorkspaceShell contentClassName="pt-1 pb-5">
       <WorkspacePageFrame mode="narrow">
         <SettingsTabs />
-        <WorkspacePageIntro title="Appearance & brand" titleHidden />
+        <WorkspacePageIntro title="Appearance & Brand" titleHidden />
         <AppearanceSettings />
         <WorkspaceBrandingSettings />
       </WorkspacePageFrame>

@@ -42,8 +42,8 @@ for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
     await mockWorkspace(page);
     await page.goto("/studio?create=1");
-    const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
-    await expect(dialog.getByRole("heading", { name: "What should your Bot do?" })).toBeFocused();
+    const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
+    await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
     const role = dialog.getByRole("combobox", { name: "Bot role starters" });
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
     await role.selectOption("front-desk");
@@ -151,7 +151,7 @@ for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_
       } else await route.fallback();
     });
     await page.goto("/studio?create=1");
-    const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
+    const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
     await brief.fill("Book repair appointments.");
     await dialog.getByRole("button", { name: "Create Bot", exact: true }).click();

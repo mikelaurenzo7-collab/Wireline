@@ -10,7 +10,7 @@ test("signup exposes the account creation entry", async ({ page }) => {
   const response = await page.goto("/signup", { waitUntil: "domcontentloaded", timeout: 45_000 });
   expect(response, "signup response").toBeTruthy();
   expect(response!.status()).toBeLessThan(500);
-  await expect(page.getByRole("heading", { name: "Create account", exact: true })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible({
     timeout: 15_000,
   });
   await expect(

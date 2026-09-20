@@ -73,11 +73,7 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("groups the More sheet by task instead of exposing a flat admin list", () => {
-    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual([
-      "Build",
-      "Operate",
-      "System",
-    ]);
+    expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
       ["/knowledge"],
       ["/approvals"],
@@ -88,11 +84,9 @@ describe("BotBound workspace information architecture", () => {
   it("keeps deep page titles and intuitive keyboard ownership", () => {
     expect(PAGE_TITLES["/overview"]).toBe("Bot Studio");
     expect(PAGE_TITLES["/agents"]).toBe("Bot Studio");
-    expect(workspacePageTitle("/studio/handoff/session-1")).toBe("Browser handoff");
-    expect(workspacePageTitle("/settings/billing/invoices")).toBe("Billing settings");
-    expect(workspacePageTitle("/connections/salesforce/setup")).toBe(
-      "Salesforce connection",
-    );
+    expect(workspacePageTitle("/studio/handoff/session-1")).toBe("Browser Handoff");
+    expect(workspacePageTitle("/settings/billing/invoices")).toBe("Billing Settings");
+    expect(workspacePageTitle("/connections/salesforce/setup")).toBe("Salesforce Connection");
 
     expect(APP_KEYBOARD_SHORTCUTS).toMatchObject({
       S: "/studio",

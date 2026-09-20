@@ -1,6 +1,8 @@
-# “The Second Ring / Hands Full” production notes
+# “The Second Ring / Hands Full” Production Notes
 
-## Thirty-second spine
+The original 30-second source and caption sidecars were revised on September 20, 2026 to replace the process-step diagram with **Your Bots. Your Rules.** Scene durations and audio are unchanged. Hold publication of this cut until a fresh render from the revised source passes visual, audio, and caption review and receives delivery checksums. Earlier renders and Drive copies do not establish approval for the revised film.
+
+## Thirty-Second Film
 
 | Time | Beat | On-screen idea |
 | ---: | --- | --- |
@@ -9,7 +11,7 @@
 | 0:05.2–0:09 | Live answer | The call is answered on-brand, with a visible live transcript. |
 | 0:09–0:15 | Real conversation | The customer gets a useful answer and a specific pickup time. |
 | 0:15–0:22 | Outcome | Appointment booked, confirmation sent, owner updated. |
-| 0:22–0:26 | Improvement loop | Build → Train → Launch → Improve. |
+| 0:22–0:26 | Brand promise | Your Bots. Your Rules. One Bot visual; no process-step diagram. |
 | 0:26–0:30 | Brand close | Complete BotBound wordmark, promise, and `botbound.me`. |
 
 ## Audio direction

@@ -12,10 +12,10 @@ describe("live voice trust surface", () => {
 
     expect(voice).toContain('export { default } from "./OpenAILiveVoiceSandbox"');
     expect(openai).toContain("function voiceActivity(state: VoiceState)");
-    expect(openai).toContain("Connecting live voice");
-    expect(openai).toContain("Checking approved knowledge");
-    expect(openai).toContain("Bot speaking");
-    expect(openai).toContain("Live voice needs attention");
+    expect(openai).toContain("Connecting Live Voice");
+    expect(openai).toContain("Checking Approved Knowledge");
+    expect(openai).toContain("Bot Speaking");
+    expect(openai).toContain("Live Voice Needs Attention");
     expect(openai).toContain("<ConversationActivity");
   });
 
@@ -32,7 +32,7 @@ describe("live voice trust surface", () => {
     const openai = source("src/components/OpenAILiveVoiceSandbox.tsx");
 
     expect(openai).toContain("cannot perform external actions");
-    expect(openai).toContain("Live voice interrupted");
+    expect(openai).toContain("Live Voice Interrupted");
     expect(openai).toContain("Reset live voice");
     expect(openai).toContain("<StatusNotice");
     expect(openai).toContain('aria-label="Reset live voice"');

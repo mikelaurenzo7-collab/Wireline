@@ -56,7 +56,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
         >
           <p className="wl-eyebrow">Error 404</p>
           <h1 className="wl-display-mark text-2xl md:text-3xl text-foreground leading-tight">
-            Page not found
+            Page Not Found
           </h1>
           <p className="text-caption leading-relaxed max-w-md">
             {location.pathname && location.pathname !== "/" && (

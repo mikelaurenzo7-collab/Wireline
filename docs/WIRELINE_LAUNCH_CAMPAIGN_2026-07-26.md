@@ -14,13 +14,7 @@ This document owns launch copy, voiceover masters, campaign language, and cut br
 
 BotBound helps people and teams build Bots around useful work.
 
-The public operating loop is **Build -> Train -> Launch**:
-
-1. **Build** one Bot around a clear job.
-2. **Train** it on facts, rules, voice, and behavior.
-3. **Launch** it on the calls and follow-up channels the user enables.
-
-Conversations and outcomes stay available for review after launch. Optional refinements are controls, not another setup step.
+Public marketing leads with capabilities, outcomes, and a clear signup action, without a setup-step list. Conversations and outcomes stay available for review.
 
 Start with one useful workflow. Add Bots or workflow breadth only when real use proves the need.
 
@@ -52,7 +46,6 @@ Founder time and cash go to onboarding, call quality, support, and direct custom
 | North star   | Your Bot for calls, texts, and email.                               |
 | Compact line | Start with one useful Bot. Add more when real work proves the need. |
 | Outcome line | Capture the call, send the follow-up, log the outcome.              |
-| Product loop | Build -> Train -> Launch                                 |
 | CTA          | Build Your Bot                                                      |
 | Price        | Build free. Plans from $19/mo. Live setup depends on availability.  |
 
@@ -74,7 +67,7 @@ Avoid:
 - customer counts, testimonials, ROI claims, or implied adoption before real customer evidence supports them;
 - public WhatsApp claims while it remains outside the launch posture;
 - presenting retired Live Video as an active feature, add-on, or proof surface;
-- any workflow spine other than **Build -> Train -> Launch**.
+- public setup-step lists or repeated process slogans.
 
 ## Primary Hook
 
@@ -109,7 +102,7 @@ This narration enters late. The missed-call moment, real captured Bot audio, fin
 
 File: `wireline-founder-60s.mp3`
 
-> I built BotBound because calls are where real work happens, and they are too easy to miss. Build a Bot for your business. Train it on your facts and rules. Test it privately. When your account and number are ready, put it on the line. Connect the tools it needs to book, follow up, or hand off. Review the outcomes and improve its playbook. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.
+> I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.
 
 ### Retired Live Video proof — do not publish
 
@@ -126,7 +119,7 @@ retired; identity badges remain. See `docs/PRODUCT_SHOWCASE_MATRIX.md`.
 
 I built BotBound because calls are still where real work shows up, and they are still too easy to miss.
 
-Build a Bot around one useful job. Train it on your facts and rules, test it privately, then launch it when your account and number are ready. Review the call, follow-up, and outcome in one operating loop.
+Bots for calls, texts, and email, with your knowledge and rules. Calls, follow-up, and outcomes stay together for review.
 
 Build free at botbound.me. Plans from $19/mo. Live setup depends on availability.
 
@@ -134,7 +127,7 @@ Build free at botbound.me. Plans from $19/mo. Live setup depends on availability
 
 You cannot answer every call. Your Bot can.
 
-Build it. Train it. Launch it.
+Calls, texts, and email. Your rules.
 
 Build free. Plans from $19/mo. Live setup depends on availability.
 
@@ -157,7 +150,7 @@ Do not spend against these concepts until the advertised workflow has passed fou
 
 - Primary text: “Call delegation, front-desk coverage, support triage, lead response, and appointment follow-up, trained privately before live use.”
 - Headline: **One BotBound Product**
-- Description: **Build -> Train -> Launch**
+- Description: **Calls, texts, and email.**
 - CTA: **Start free**
 
 ## Video / Reel Doctrine
@@ -188,7 +181,7 @@ Primary proof cut. Use real captured Bot audio as the center. Silence may carry 
 
 ### 3. Founder / Product Proof — 45–60s
 
-Explain **Build -> Train -> Launch** through one working customer job, not a sped-up tour of every feature.
+Show one useful customer conversation and its completed follow-up or logged outcome. Keep the product readable without setup-step labels.
 
 ### Two Rings — 6s bumper
 

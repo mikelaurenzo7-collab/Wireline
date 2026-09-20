@@ -16,7 +16,7 @@ describe("product organization truth contracts", () => {
     const mailboxes = source("src/components/MailboxConnectionCard.tsx");
     expect(mailboxes).toContain("statusUnavailable");
     expect(mailboxes).toContain("setStatusUnavailable(true)");
-    expect(mailboxes).toContain("Inbox connection status unavailable");
+    expect(mailboxes).toContain("Inbox Connection Status Unavailable");
     expect(mailboxes).toContain("No connection state was changed.");
     expect(mailboxes).toContain("statusUnavailable ? (");
   });
@@ -24,8 +24,8 @@ describe("product organization truth contracts", () => {
   it("distinguishes an unavailable inbox from a healthy empty inbox", () => {
     const inbox = source("src/components/EmailInbox.tsx");
     expect(inbox).toContain("error && !threads.length");
-    expect(inbox).toContain('title="Inbox unavailable"');
-    expect(inbox).toContain('title={agentId ? "No email for this Bot" : "No email yet"}');
+    expect(inbox).toContain('title="Inbox Unavailable"');
+    expect(inbox).toContain('title={agentId ? "No Email for This Bot" : "No Email Yet"}');
     expect(inbox).toContain("onClick={() => void loadThreads()}");
     expect(inbox).not.toContain('title="Connect your inbox"');
     expect(inbox).toContain("/api/emails/accounts");

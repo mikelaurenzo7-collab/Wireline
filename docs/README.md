@@ -1,6 +1,6 @@
 # BotBound Documentation
 
-BotBound's public operating loop is **Build -> Train -> Launch**. After create, the setup guide is **Train -> Test -> Launch**. The repository still uses technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio; those describe implementation ownership, not a competing customer-facing brand spine. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
+BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, the post-create guide remains **Train -> Test -> Launch**. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
 Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job rather than choosing Personal or Business, and every role starter enters the same workspace model. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Every active paid Bot has an included number. Outbound, inbound, and hybrid modes are first-class.
 
@@ -36,34 +36,34 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Canonical repository and system documents
 
-| Document                                                                                         | Role                                                                                                            |
-| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.                                           |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                                                    |
-| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.                                      |
-| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.                                       |
-| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                                              |
-| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                                                   |
-| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.                                  |
-| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.                                         |
-| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.                                   |
-| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                                                 |
-| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Canonical billing model and Runtime Balance posture.                                                            |
-| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.                                         |
-| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | Whole-product feature and commercial-status matrix.                                                             |
-| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                                                           |
-| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                                                      |
-| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.                                          |
-| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                                                            |
-| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary.                               |
-| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.                                             |
-| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                                                      |
-| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                                               |
-| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                                                           |
-| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                                                     |
-| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                                                |
-| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                                                |
-| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                                                      |
+| Document                                                                                         | Role                                                                              |
+| ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [README.md](../README.md)                                                                        | Repository entry point, current product map, setup, and verification.             |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                                                            | Branch, review, migration, validation, and release workflow.                      |
+| [CODEBASE_HEALTH.md](../CODEBASE_HEALTH.md)                                                      | Source-control boundaries, deletion policy, and maintainability standards.        |
+| [ARCHITECTURE.md](../ARCHITECTURE.md)                                                            | Runtime boundaries, data flow, provider posture, and security invariants.         |
+| [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                |
+| [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                     |
+| [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.    |
+| [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.           |
+| [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.     |
+| [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                   |
+| [business-usage-pricing-decision.md](./business-usage-pricing-decision.md)                       | Canonical billing model and Runtime Balance posture.                              |
+| [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)                                                       | Checkout, entitlement, webhook, cancellation, and reconciliation proof.           |
+| [PRODUCT_SHOWCASE_MATRIX.md](./PRODUCT_SHOWCASE_MATRIX.md)                                       | Whole-product feature and commercial-status matrix.                               |
+| [TRUST_CONVERSION_PACK.md](./TRUST_CONVERSION_PACK.md)                                           | Customer-facing trust, compliance, and proof posture.                             |
+| [LAUNCH_READINESS_AND_MARGIN.md](./LAUNCH_READINESS_AND_MARGIN.md)                               | Launch readiness and account-level margin operating model.                        |
+| [RECAP_AND_PROPOSAL_ARTIFACTS.md](./RECAP_AND_PROPOSAL_ARTIFACTS.md)                             | Shareable recap/proposal artifact contract and entitlement boundaries.            |
+| [COMPANY_IDENTITY_PACK.md](./COMPANY_IDENTITY_PACK.md)                                           | Number, calling, SMS, and email identity boundaries.                              |
+| [PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md](./PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md) | Production PSTN, realtime demo, presenter, and marketing-audio provider boundary. |
+| [OPENAI_REALTIME_VOICE.md](./OPENAI_REALTIME_VOICE.md)                                           | Canonical OpenAI Realtime browser and Twilio PSTN/SIP architecture.               |
+| [VENDOR_LAUNCH_MAP.md](./VENDOR_LAUNCH_MAP.md)                                                   | Vendor and surface status: live, beta, planned, or retire.                        |
+| [ACCESSIBILITY.md](./ACCESSIBILITY.md)                                                           | Product accessibility commitment.                                                 |
+| [design-system-responsive-roadmap.md](./design-system-responsive-roadmap.md)                     | Responsive, spacing, and component-containment rules.                             |
+| [AGENT_CUSTOMIZATION_ARCHITECTURE.md](./AGENT_CUSTOMIZATION_ARCHITECTURE.md)                     | Agent customization client/domain boundary.                                       |
+| [security/auth-password-controls.md](./security/auth-password-controls.md)                       | Custom scrypt and HIBP password-control posture.                                  |
+| [soc2-policies.md](./soc2-policies.md)                                                           | SOC 2 control-policy map and evidence ownership.                                  |
+| [AUTHZ_MATRIX.md](./AUTHZ_MATRIX.md)                                                             | Generated authorization-coverage artifact.                                        |
 
 ## Operating and release runbooks
 
@@ -97,37 +97,37 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 
 ## Brand, campaign, and launch-film delivery
 
-| Document                                                                  | Role                                                                                                 |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| [BotBound brand workspace](../brand-work/README.md)                       | Brand-delivery entry point, Drive library, source/master split, and integrity workflow.              |
-| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)               | Canonical identity, campaign and GTM inventory, with creative candidates and release evidence. |
-| [BotBound brand guide](../brand-work/BOTBOUND-BRAND-GUIDE.md)             | Identity, wordmark, typography, palette, spacing, and usage rules.                                   |
-| [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)             | Campaign platform, story system, claims, channel behavior, and commercial direction.                 |
-| [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)          | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                              |
-| [GTM workspace](../brand-work/gtm/README.md)                              | Founder deck, copy-kit, and review-artifact handoff.                                                 |
-| [Brand font sources](../brand-work/fonts/README.md)                       | Licensed local font inventory and source notes for reproducible campaign rendering.                  |
-| [September launch workspace](../brand-work/launch-2026-09/README.md)      | Original inbound-led launch campaign, production map, and delivery guidance.                         |
-| [September release pointer](../brand-work/launch-2026-09/CURRENT-RELEASE-POINTER.md) | Current release pointer for the original September launch library.                         |
-| [September product proof](../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md) | Current-product proof and freshness contract for the original launch library.                   |
-| [September launch provenance](../brand-work/launch-2026-09/PROVENANCE.md) | Source, generation, and review provenance for the original launch library.                           |
-| [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md) | Placement, channel, and media-buying guidance.                              |
-| [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md) | Press and creator outreach copy for the original launch.                                    |
-| [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md) | Social copy and channel adaptations for the original launch.                                      |
-| [September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                             |
-| [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)           | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.           |
-| [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md) | Outbound-first production library, delivery map, render commands, and release links.                |
-| [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md) | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
-| [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md) | Website message hierarchy that preserves inbound coverage while leading with outbound.       |
-| [Outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md) | Investor narrative for the outbound wedge and expansion path.                               |
-| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md) | Candidate asset-to-channel mapping and placement guidance; publication remains gated.           |
-| [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md) | Alt text, motion, contrast, and accessible publishing notes.                         |
-| [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md) | Source, model, render, QA, and checksum provenance for the outbound library.                    |
-| [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md) | Approved atmospheric source provenance and usage constraints.                              |
-| [Launch-film workspace](../apps/botbound-film/README.md)                  | Remotion composition, render, caption, and review entry point.                                       |
-| [Launch-film production notes](../apps/botbound-film/PRODUCTION_NOTES.md) | Timing, sound, scene, safe-area, and export direction.                                               |
-| [Launch-film asset manifest](../apps/botbound-film/ASSET_MANIFEST.md)     | Repository media inputs, provenance, and integrity hashes.                                           |
-| [Launch-film verification](../apps/botbound-film/VERIFICATION.md)         | Composition, caption, render, and visual-review evidence.                                            |
-| [Brand implementation QA](../design-qa.md)                                | Responsive visual comparison, interaction, accessibility, and browser-proof record.                  |
+| Document                                                                                             | Role                                                                                           |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [BotBound brand workspace](../brand-work/README.md)                                                  | Brand-delivery entry point, Drive library, source/master split, and integrity workflow.        |
+| [Current asset index](../brand-work/CURRENT-ASSET-INDEX.md)                                          | Canonical identity, campaign and GTM inventory, with creative candidates and release evidence. |
+| [BotBound brand guide](../brand-work/BOTBOUND-BRAND-GUIDE.md)                                        | Identity, wordmark, typography, palette, spacing, and usage rules.                             |
+| [Second Ring campaign](../brand-work/SECOND-RING-CAMPAIGN.md)                                        | Campaign platform, story system, claims, channel behavior, and commercial direction.           |
+| [Launch copy kit](../brand-work/gtm/BOTBOUND-LAUNCH-COPY-KIT.md)                                     | Press, founder, social, email, OOH, CTA, UTM, and launch-sequence copy.                        |
+| [GTM workspace](../brand-work/gtm/README.md)                                                         | Founder deck, copy-kit, and review-artifact handoff.                                           |
+| [Brand font sources](../brand-work/fonts/README.md)                                                  | Licensed local font inventory and source notes for reproducible campaign rendering.            |
+| [September launch workspace](../brand-work/launch-2026-09/README.md)                                 | Original inbound-led launch campaign, production map, and delivery guidance.                   |
+| [September release pointer](../brand-work/launch-2026-09/CURRENT-RELEASE-POINTER.md)                 | Current release pointer for the original September launch library.                             |
+| [September product proof](../brand-work/launch-2026-09/CURRENT_PRODUCT_PROOF.md)                     | Current-product proof and freshness contract for the original launch library.                  |
+| [September launch provenance](../brand-work/launch-2026-09/PROVENANCE.md)                            | Source, generation, and review provenance for the original launch library.                     |
+| [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md)    | Placement, channel, and media-buying guidance.                                                 |
+| [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md)                | Press and creator outreach copy for the original launch.                                       |
+| [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md)                          | Social copy and channel adaptations for the original launch.                                   |
+| [September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                                                     |
+| [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)                                      | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.     |
+| [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md)                         | Outbound-first production library, delivery map, render commands, and release links.           |
+| [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md)                     | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
+| [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md)             | Website message hierarchy that preserves inbound coverage while leading with outbound.         |
+| [Outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md)               | Investor narrative for the outbound wedge and expansion path.                                  |
+| [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md)               | Candidate asset-to-channel mapping and placement guidance; publication remains gated.          |
+| [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md)   | Alt text, motion, contrast, and accessible publishing notes.                                   |
+| [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md)                   | Source, model, render, QA, and checksum provenance for the outbound library.                   |
+| [Outbound visual sources](../brand-work/launch-2026-09-outbound/sources/RUNWAY-SOURCES.md)           | Approved atmospheric source provenance and usage constraints.                                  |
+| [Launch-film workspace](../apps/botbound-film/README.md)                                             | Remotion composition, render, caption, and review entry point.                                 |
+| [Launch-film production notes](../apps/botbound-film/PRODUCTION_NOTES.md)                            | Timing, sound, scene, safe-area, and export direction.                                         |
+| [Launch-film asset manifest](../apps/botbound-film/ASSET_MANIFEST.md)                                | Repository media inputs, provenance, and integrity hashes.                                     |
+| [Launch-film verification](../apps/botbound-film/VERIFICATION.md)                                    | Composition, caption, render, and visual-review evidence.                                      |
+| [Brand implementation QA](../design-qa.md)                                                           | Responsive visual comparison, interaction, accessibility, and browser-proof record.            |
 
 ## Active strategy and planned work
 

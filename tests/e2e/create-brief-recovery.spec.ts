@@ -66,10 +66,10 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     });
 
     await page.goto("/studio?create=1");
-    const create = page.getByRole("dialog", { name: "What should your Bot do?" });
+    const create = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     await create.getByRole("textbox", { name: "Describe the Job" }).fill(brief);
     await create.getByRole("button", { name: "Create Bot", exact: true }).click();
-    const guide = page.getByRole("dialog", { name: /Next up for/ });
+    const guide = page.getByRole("dialog", { name: /Next Up for/ });
     await guide.getByRole("button", { name: "Close setup guide" }).click();
     const knowledge = page.locator("#setup-knowledge");
     await expect(knowledge).toHaveValue(brief);

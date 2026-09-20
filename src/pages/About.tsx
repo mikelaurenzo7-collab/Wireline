@@ -37,7 +37,7 @@ export default function About() {
   return (
     <MarketingPageFrame className="wl-about-page">
       <PageMeta
-        title="ABOUT BOTBOUND | BOTS FOR CALLS AND FOLLOW-THROUGH"
+        title="About BotBound | Bots for Calls and Follow-Through"
         description="BotBound is an independent platform for Bots that call, text, and email. Set your knowledge and rules, review outcomes, and reach the founder directly for support."
         path="/about"
       />
@@ -47,7 +47,7 @@ export default function About() {
           <div>
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">ABOUT</p>
             <h1 className="marketing-hero-title mt-4 max-w-[16ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
-              BUILT BY THE FOUNDER WHO SUPPORTS YOU
+              Built by the Founder Who Supports You
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a

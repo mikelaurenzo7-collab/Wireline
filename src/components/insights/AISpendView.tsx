@@ -198,7 +198,7 @@ function SpendBudgetCard() {
               ${safeFixed(used, 2)}{" "}
               <span className="text-foreground/70 text-xl">/ ${safeFixed(limit, 2)}</span>
             </div>
-            <div className="app-section-title">{safeFixed(pct, 1)}% used</div>
+            <div className="app-section-title">{safeFixed(pct, 1)}% Used</div>
           </div>
           <div className="relative h-3 rounded-full bg-black/10 overflow-hidden">
             <div
@@ -226,7 +226,7 @@ function SpendBudgetCard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
         <label className="space-y-1.5">
-          <span className="app-section-title">Monthly safety limit (USD)</span>
+          <span className="app-section-title">Monthly Safety Limit (USD)</span>
           <Input
             type="number"
             min="0.01"
@@ -241,7 +241,7 @@ function SpendBudgetCard() {
           <span className="block text-[11px] leading-5 text-muted-foreground">{maximumHelper}</span>
         </label>
         <label className="space-y-1.5">
-          <span className="app-section-title">Warn at (% of limit)</span>
+          <span className="app-section-title">Warn at (% of Limit)</span>
           <Input
             type="number"
             inputMode="numeric"
@@ -488,7 +488,7 @@ export default function AISpendView({ days }: { days: number }) {
                 ))}
               </div>
               <div className="pt-3 border-t border-border">
-                <div className="app-section-title mb-1">Tokens (window)</div>
+                <div className="app-section-title mb-1">Tokens (Window)</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                   <div>
                     Input{" "}

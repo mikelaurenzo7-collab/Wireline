@@ -146,7 +146,7 @@ export function ColdEmailForm({
             </ResultCard>
           )}
           {email.suggested_followup_date && (
-            <ResultCard title="Suggested Follow-up">
+            <ResultCard title="Suggested Follow-Up">
               <p>{email.suggested_followup_date}</p>
             </ResultCard>
           )}

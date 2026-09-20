@@ -129,7 +129,7 @@ describe("setup guide requires confirmed calling", () => {
       button("Retry connection")?.props.onClick?.();
       await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
       button("Continue")?.props.onClick?.();
-      expect(text(render())).toContain("It's on the line");
+      expect(text(render())).toContain("It's on the Line");
       expect(h.fetch.mock.calls.map(([url]) => url)).toEqual([
         "/api/phone-numbers",
         "/api/phone-numbers",
@@ -175,7 +175,7 @@ describe("setup guide requires confirmed calling", () => {
     await vi.waitFor(() => expect(button("Retry connection")?.props.disabled).toBe(false));
     expect(button("Get a number")).toBeUndefined();
     expect(text(render())).toContain("Number reserved");
-    expect(text(render())).not.toContain("It's on the line");
+    expect(text(render())).not.toContain("It's on the Line");
     expect(h.event.mock.calls.some(([event]) => event.event === "phone_channel_wired")).toBe(false);
     expect(
       h.fetch.mock.calls.filter(([url]) => url === "/api/phone-numbers/provision"),

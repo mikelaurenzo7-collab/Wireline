@@ -456,7 +456,7 @@ export default function CrmConnectionCard() {
     return (
       <StatusNotice
         tone="destructive"
-        title="Integration connections unavailable"
+        title="Integration Connections Unavailable"
         action={
           <ShadButton type="button" variant="outline" size="sm" disableAnimations onClick={retry}>
             Retry
@@ -477,7 +477,7 @@ export default function CrmConnectionCard() {
       {error ? (
         <StatusNotice
           tone="destructive"
-          title="Integration connections unavailable"
+          title="Integration Connections Unavailable"
           action={
             <ShadButton type="button" variant="outline" size="sm" disableAnimations onClick={retry}>
               Retry

@@ -263,7 +263,7 @@ export default function Cadences() {
         <EmptyState
           icon={Repeat}
           eyebrow="Sequences unavailable"
-          title="Couldn't load cadences"
+          title="Couldn't Load Cadences"
           description={loadErr}
           actions={[{ label: "Retry", onClick: load, primary: true }]}
           density="compact"
@@ -451,7 +451,7 @@ export default function Cadences() {
             className="rounded-md wl-panel-elevated border border-brand/40 p-5"
           >
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-display text-lg text-foreground">Build a sequence</h4>
+              <h4 className="font-display text-lg text-foreground">Build a Sequence</h4>
               <ShadButton
                 type="button"
                 variant="ghost"

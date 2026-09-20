@@ -106,35 +106,9 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   text-wrap: balance;
 }
 
-.wl-features-intro__next {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem 2rem;
-  margin-top: 1.5rem;
-}
-
 .marketing-surface.wl-features-page .wl-features-intro .marketing-hero__actions {
-  margin: 0;
+  margin: 1.5rem 0 0;
   justify-content: flex-start;
-}
-
-.wl-features-intro__steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 1.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wl-features-intro__steps li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: var(--wireline-font-family-mono);
-  font-size: 0.75rem;
 }
 
 .marketing-surface.wl-features-page .wl-features-controls {
