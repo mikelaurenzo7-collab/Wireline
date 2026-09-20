@@ -266,11 +266,27 @@ describe("workspace invitation recovery", () => {
     );
     button("Sign in with another email")!.props.onClick!();
     expect(h.signOut).toHaveBeenCalledOnce();
+    expect(h.signOut).toHaveBeenCalledWith({ requireServerConfirmation: true });
     expect(h.navigate).not.toHaveBeenCalled();
     finish();
     await settle();
     expect(h.navigate).toHaveBeenCalledWith("/signin?redirect=%2Faccept-invite");
     expect(stored.get(pendingKey)).toBe("invite-secret");
+  });
+
+  it("keeps the invitation and stays on the recovery screen when confirmed sign-out fails", async () => {
+    fetchMock.mockResolvedValueOnce(response(400, { error: "Use the invited email address." }));
+    mount();
+    await settle();
+    h.signOut.mockRejectedValueOnce(new Error("Sign-out could not be confirmed."));
+
+    button("Sign in with another email")!.props.onClick!();
+    await settle();
+
+    expect(h.navigate).not.toHaveBeenCalled();
+    expect(stored.get(pendingKey)).toBe("invite-secret");
+    expect(text(render())).toContain("Sign-out could not finish. Try again.");
+    expect(button("Sign in with another email")?.props.disabled).toBe(false);
   });
 
   it("scrubs legacy query tokens before the unauthenticated signup handoff", () => {

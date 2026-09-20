@@ -117,7 +117,7 @@ export default function AcceptInvite() {
     started.current = true;
     setSwitchingAccount(true);
     try {
-      if (user) await signOut();
+      if (user) await signOut({ requireServerConfirmation: true });
       navigate(SIGN_IN_RETURN);
     } catch {
       setMessage("Sign-out could not finish. Try again.");

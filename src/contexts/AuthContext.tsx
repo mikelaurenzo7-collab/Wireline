@@ -32,11 +32,15 @@ export interface Session {
   access_token?: string;
 }
 
+export interface SignOutOptions {
+  requireServerConfirmation?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: (options?: SignOutOptions) => Promise<void>;
   signIn: (session: Session) => void;
 }
 
@@ -227,13 +231,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newSession.user);
   }, []);
 
-  const signOut = useCallback(async () => {
-    authRevisionRef.current += 1;
-    setCreateBriefRecoveryOwner(null);
+  const signOut = useCallback(async (options: SignOutOptions = {}) => {
+    const requireServerConfirmation = options.requireServerConfirmation === true;
+    if (!requireServerConfirmation) {
+      authRevisionRef.current += 1;
+      setCreateBriefRecoveryOwner(null);
+    }
+    const controller = requireServerConfirmation ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), SESSION_PROBE_MS) : null;
     try {
-      await fetch("/api/auth/signout", { method: "POST", credentials: "include" });
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
+        credentials: "include",
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+      if (requireServerConfirmation) {
+        const payload = (await response.json().catch(() => null)) as { success?: unknown } | null;
+        if (!response.ok || payload?.success !== true) {
+          throw new Error("Sign-out could not be confirmed. Try again.");
+        }
+      }
     } catch {
-      /* still clear local state */
+      if (requireServerConfirmation) {
+        throw new Error("Sign-out could not be confirmed. Try again.");
+      }
+      /* Ordinary sign-out still clears local state when the server is unavailable. */
+    } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    }
+    if (requireServerConfirmation) {
+      // Account switching must not clear the local session or private drafts
+      // until the server confirms that the existing cookie has been cleared.
+      authRevisionRef.current += 1;
+      setCreateBriefRecoveryOwner(null);
     }
     localStorage.removeItem(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
