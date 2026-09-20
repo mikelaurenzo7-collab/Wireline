@@ -84,10 +84,10 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     bot_width = pdfmetrics.stringWidth("Bot", "InterTight-ExtraBold", 19)
     text(c, "Bound", 76 + bot_width, height - 61, "InterTight-ExtraBold", 19, VIOLET_LIGHT)
 
-    text(c, "INVESTOR BRIEF / OUTBOUND WEDGE", 38, height - 112, "IBMPlexMono-Bold", 7.6, VIOLET_LIGHT)
-    text(c, "FIND. CALL.", 36, height - 163, "InterTight-ExtraBold", 38, PLATINUM)
-    prefix_width = pdfmetrics.stringWidth("FIND. CALL.", "InterTight-ExtraBold", 38)
-    text(c, " BOOK.", 36 + prefix_width, height - 163, "InterTight-ExtraBold", 38, VIOLET_LIGHT)
+    text(c, "Investor Brief / Outbound Wedge", 38, height - 112, "IBMPlexMono-Bold", 7.6, VIOLET_LIGHT)
+    text(c, "Find. Call.", 36, height - 163, "InterTight-ExtraBold", 38, PLATINUM)
+    prefix_width = pdfmetrics.stringWidth("Find. Call.", "InterTight-ExtraBold", 38)
+    text(c, " Book.", 36 + prefix_width, height - 163, "InterTight-ExtraBold", 38, VIOLET_LIGHT)
     text(
         c,
         "Bots work approved markets and lists, make calls, and drive clear outcomes.",
@@ -99,9 +99,9 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     )
 
     body_top = height - header_h
-    text(c, "THE WEDGE", 38, body_top - 40, "IBMPlexMono-Bold", 7.4, INK)
-    text(c, "OUTBOUND IS STILL A STACK.", 37, body_top - 76, "InterTight-ExtraBold", 22, INK)
-    text(c, "BOTBOUND MAKES IT A BOT.", 37, body_top - 102, "InterTight-ExtraBold", 22, VIOLET)
+    text(c, "The Wedge", 38, body_top - 40, "IBMPlexMono-Bold", 7.4, INK)
+    text(c, "Outbound Is Still a Stack.", 37, body_top - 76, "InterTight-ExtraBold", 22, INK)
+    text(c, "BotBound Makes It a Bot.", 37, body_top - 102, "InterTight-ExtraBold", 22, VIOLET)
     text(
         c,
         "Lead discovery, lists, scripts, calls, calendars, follow-up, and review",
@@ -116,21 +116,21 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     panel_x, panel_y, panel_w, panel_h = 38, body_top - 272, width - 76, 94
     c.setFillColor(INK)
     c.roundRect(panel_x, panel_y, panel_w, panel_h, 14, fill=1, stroke=0)
-    text(c, "THE OPERATING PATH", panel_x + 18, panel_y + 70, "IBMPlexMono-Bold", 7.1, VIOLET_LIGHT)
-    text(c, "TARGET / FIND / REVIEW / QUEUE", panel_x + 18, panel_y + 43, "InterTight-ExtraBold", 16.8, PLATINUM)
-    text(c, "CALL / QUALIFY / BOOK / REPORT", panel_x + 18, panel_y + 22, "InterTight-ExtraBold", 16.8, PLATINUM)
-    text(c, "Connected source or approved list. Intentional handoff. Clear outcome.", panel_x + 18, panel_y + 7, "Inter-SemiBold", 7.5, MIST)
+    text(c, "Owner Control", panel_x + 18, panel_y + 70, "IBMPlexMono-Bold", 7.1, VIOLET_LIGHT)
+    text(c, "Your Bots. Your Rules.", panel_x + 18, panel_y + 43, "InterTight-ExtraBold", 16.8, PLATINUM)
+    text(c, "Calls. Follow-Up. Owner Control.", panel_x + 18, panel_y + 22, "InterTight-ExtraBold", 16.8, PLATINUM)
+    text(c, "Configured sources, tools, permissions, approvals, and handoffs.", panel_x + 18, panel_y + 7, "Inter-SemiBold", 7.5, MIST)
 
     why_y = panel_y - 39
-    text(c, "WHY BOTBOUND", 38, why_y, "IBMPlexMono-Bold", 7.4, INK)
+    text(c, "Why BotBound", 38, why_y, "IBMPlexMono-Bold", 7.4, INK)
 
     rows = [
-        ("JOB-SPECIFIC BOTS", "Sales / Recruiting / Appointments / Reactivation / Intake"),
+        ("Job-Specific Bots", "Sales / Recruiting / Appointments / Reactivation / Intake"),
         (
-            "ONE WORKSPACE. EVERY OUTBOUND JOB.",
+            "Room for Your Next Bot.",
             "Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.",
         ),
-        ("BUILD FREE. PLANS FROM $19/MO.", "Starter: 1 live Bot and 50 voice minutes/month. Activation availability applies."),
+        ("Rehearse Free. Plans from $19/mo.", "Free Builder is private. Starter: 1 live Bot, 50 voice minutes/month; availability applies."),
     ]
     row_y = why_y - 39
     for title, detail in rows:
@@ -142,7 +142,7 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     c.setLineWidth(0.7)
     c.line(38, 35, width - 38, 35)
     text(c, "BOTBOUND.ME", 38, 17, "IBMPlexMono-Bold", 7.1, INK)
-    close = "PUT YOUR BOT ON THE LINE"
+    close = "Put Your Bot on the Line"
     c.setFont("Inter-Bold", 8)
     c.setFillColor(VIOLET)
     c.drawRightString(width - 38, 17, close)

@@ -1,12 +1,12 @@
 # The First Move - Outbound Copy Kit
 
-## Release control
+## Release Control
 
 This copy kit is creative source, not permission to publish. Schedule or spend only after the current launch registry approves the exact copy-and-asset pair, the production SHA passes the full release ladder, and `outbound_campaign_ready` is true.
 
-Source review: **2026-09-17**. The catalog price is not a promise that paid activation is open. Use the preparation copy below only after its destination works; keep outbound launch copy held until the release rule above passes. Text edits do not update existing image, PDF, motion, or caption exports.
+Source review: **2026-09-20**. Audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`. The catalog price is not a promise that paid activation is open. Use the preparation copy below only after its destination works; keep outbound launch copy held until the release rule above passes. Text edits do not update existing image, PDF, motion, or caption exports.
 
-## Founder preparation post
+## Founder Preparation Post
 
 I’m building BotBound for the calls and follow-up that are hard to keep up with when you run the business yourself.
 
@@ -18,21 +18,23 @@ Build your Bot: `https://botbound.me/signup?plan=free&utm_source=linkedin&utm_me
 
 This is preparation copy, not an announcement that outbound campaigns are live. If signup or private rehearsal cannot be verified, keep it as a draft.
 
-## Master campaign
+## Master Campaign
 
-**THE FIRST MOVE**
+**The First Move**
 
-**FINDS THE LEAD. MAKES THE CALL. BOOKS THE NEXT STEP.**
+**Finds the Lead. Makes the Call. Books the Next Step.**
 
-Compact: **FIND. CALL. BOOK.**
+This names configured capabilities, not promised results. Booking requires the relevant connected tool, permissions, and available time; keep that context in the caption and destination.
 
-CTA: **GET YOUR SALES BOT**
+Compact: **Find. Call. Book.**
+
+CTA: **Get Your Sales Bot**
 
 Offer: **Build free. Plans from $19/mo. Activation availability applies.**
 
-Brand close: **PUT YOUR BOT ON THE LINE**
+Brand close: **Put Your Bot on the Line**
 
-## Short hooks
+## Short Hooks
 
 - Point it at an approved market. Review the list. Put the queue in motion.
 - The list won't call itself.
@@ -44,47 +46,51 @@ Brand close: **PUT YOUR BOT ON THE LINE**
 - The application is in. Make the first call.
 - A cancellation is an opening. Fill it.
 
-## Role ads
+## Role Ads
 
 ### Sales Bot
 
-**FINDS LEADS. BOOKS MEETINGS.**
+**Calls That Fit the Job.**
 
-CTA: **GET YOUR SALES BOT**
+CTA: **Get Your Sales Bot**
 
 ### Recruiting Bot
 
-**WORKS THE LIST. BOOKS INTERVIEWS.**
+**Keep the Conversation Moving.**
 
-CTA: **GET YOUR RECRUITING BOT**
+CTA: **Get Your Recruiting Bot**
 
 ### Appointment Bot
 
-**CALLS THE WAITLIST. BOOKS THE OPENING.**
+**Give Openings a Next Step.**
 
-CTA: **GET YOUR APPOINTMENT BOT**
+CTA: **Get Your Appointment Bot**
 
 ### Reactivation Bot
 
-**OLD LEAD. NEW CONVERSATION.**
+**Old Lead. New Conversation.**
 
-CTA: **GET YOUR WIN-BACK BOT**
+CTA: **Get Your Win-Back Bot**
 
 ### Debt-Resolution Intake Bot
 
-**WORKS THE LIST. BOOKS CONSULTATIONS.**
+**A Clearer First Conversation.**
 
-CTA: **GET YOUR INTAKE BOT**
+CTA: **Get Your Intake Bot**
 
-## Lead Hunt carousel
+## Capability Carousel
 
-1. **FIND. CALL. BOOK.**
-2. **DEFINE THE TARGET.**
-3. **LEAD HUNT FINDS THE PROSPECTS.**
-4. **REVIEW. THEN QUEUE.**
-5. **YOUR BOT CALLS. YOU TAKE MEETINGS.**
+These are independent capability themes, not a public setup sequence. Do not add step numbers or a progress connector.
 
-## Founder launch post
+| Card | Title | Support |
+| --- | --- | --- |
+| Cover | Your Next Conversation Starts Here. | Bots for approved outreach and follow-up. |
+| Calls | Calls That Fit the Job. | Your playbook. Your approved contacts. |
+| Follow-up | Follow-Up That Carries Context. | Connected calls, texts, and email. |
+| Control | Your Bots. Your Rules. | Approvals and handoffs you define. |
+| Close | Make the First Move. | Private testing free. Live use paid. |
+
+## Founder Launch Post
 
 A list is not a pipeline.
 
@@ -92,37 +98,37 @@ BotBound can find leads through connected sources, prepare an approved queue, ma
 
 Already have a list? Give it the approved list and the job.
 
-**FIND. CALL. BOOK.**
+**Find. Call. Book.**
 
 Get your Sales Bot at BotBound.me.
 
-## Paid social
+## Paid Social
 
 ### Acquisition
 
-**Primary:** Find the lead. Review the queue. Make the call. Book the next step.
+**Primary:** Bots for approved outreach and follow-up, built around your business.
 
-**Headline:** FIND. CALL. BOOK.
+**Headline:** Find. Call. Book.
 
 **Description:** Build free. Plans from $19/mo. Activation availability applies.
 
 **CTA:** Get Your Sales Bot
 
-### List-led fallback
+### List-Led Fallback
 
 **Primary:** Already have an approved list? Give your Bot the list and the job.
 
-**Headline:** THE LIST WON'T CALL ITSELF.
+**Headline:** The List Won’t Call Itself.
 
-**Description:** Calls. Qualifies. Books.
+**Description:** Calls and follow-up, with your rules.
 
 **CTA:** Build Your Bot
 
-## Launch email
+## Launch Email
 
-**Subject:** Your Bot makes the first move
+**Subject:** Your Bot Makes the First Move
 
-**Preheader:** Find leads. Review the queue. Make calls. Book the next step.
+**Preheader:** Calls and follow-up, built around your business.
 
 **Body:**
 
@@ -132,14 +138,14 @@ Connect a supported lead source or supply an approved list. Review the contacts 
 
 Start with Sales, Recruiting, Appointments, Reactivation, or Intake.
 
-**FIND. CALL. BOOK.**
+**Find. Call. Book.**
 
-**[GET YOUR SALES BOT]**
+**[Get Your Sales Bot]**
 
 Build free. Plans from $19/mo. Activation availability applies.
 
-## Placement fine print
+## Placement Fine Print
 
 Outbound use is subject to applicable consent, disclosure, opt-out, calling-hour, suppression, recording, retention, employment, debt-collection, and state-specific requirements. Connected lead sources, booking, messaging, CRM, and other actions require supported, enabled services.
 
-An approved or imported list is not by itself permission to call or message its contacts. Preserve the review and runtime eligibility checks in the copy and destination. Use **GET YOUR SALES BOT** for role-led Free Builder signup, not as a promise of an immediate purchase or live outbound call.
+An approved or imported list is not by itself permission to call or message its contacts. Preserve the review and runtime eligibility checks in the copy and destination. Use **Get Your Sales Bot** for role-led Free Builder signup, not as a promise of an immediate purchase or live outbound call.

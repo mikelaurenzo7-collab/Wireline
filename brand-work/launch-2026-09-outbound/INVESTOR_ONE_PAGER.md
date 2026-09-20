@@ -1,24 +1,20 @@
 # BotBound Investor Brief - Outbound Wedge
 
-## FIND. CALL. BOOK.
+## Find. Call. Book.
 
 **Bots work approved markets and lists, make calls, and drive clear outcomes.**
 
-## The wedge
+## The Wedge
 
 Outbound calling is still assembled from lists, enrichment, dialers, scripts, calendars, CRM workflows, follow-up tools, and manual review. BotBound turns that stack into a Bot people can buy by job.
 
-Start with Sales, Recruiting, Appointment Setting, Reactivation, or Debt-Resolution Intake. Train privately. Connect the right sources and tools. Put the Bot on the line.
+Sales, Recruiting, Appointment Setting, Reactivation, and Intake share one workspace, with private rehearsal and owner controls.
 
-## The operating path
+## Your Bots. Your Rules.
 
-**TARGET / FIND / REVIEW / QUEUE / CALL / QUALIFY / BOOK / REPORT**
+**Calls. Follow-Up. Owner Control.**
 
-- Define the market, job, playbook, rules, and next step.
-- Find and enrich prospects through connected sources, or import an approved list.
-- Review selected contacts and hand them to an approved calling queue.
-- Hold the call, qualify against the playbook, and offer the next action.
-- Book, follow up by text or email, sync supported systems, and preserve the outcome.
+Bots can use connected sources or supplied contacts, hold an approved conversation, and preserve the outcome. Text, email, booking, and other actions depend on the configured tools, permissions, and handoffs. Reviewed lists still require runtime eligibility checks.
 
 ## Why BotBound
 
@@ -33,14 +29,14 @@ Start with Sales, Recruiting, Appointment Setting, Reactivation, or Debt-Resolut
 
 Land with one outbound role. Expand to more jobs, more live Bots, higher voice capacity, connected actions, and richer operating loops.
 
-## Evidence posture
+## Evidence Posture
 
 Launch with real product proof, not manufactured traction. Customer logos, testimonials, ROI, conversion rates, revenue, and performance metrics enter the story only when documented and permissioned.
 
-## Product truth boundary
+## Product Truth Boundary
 
 Lead discovery requires a connected source or an approved supplied list. Calling, booking, messaging, CRM, and other actions require the relevant enabled services and customer configuration. Discovery, review, queue approval, calling, and outcome reporting are distinct controls. This brief describes the product and catalog; it does not certify public outbound availability or guarantee bookings, revenue, or universal compliance.
 
-**PUT YOUR BOT ON THE LINE**
+**Put Your Bot on the Line**
 
 BotBound.me | support@botbound.me

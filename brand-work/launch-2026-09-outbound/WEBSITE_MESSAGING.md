@@ -4,49 +4,49 @@ The website showcases outbound and inbound. This campaign asset release remains 
 
 ## Hero
 
-**PUT YOUR BOT ON THE LINE**
+**Put Your Bot on the Line**
 
 Find leads. Make calls. Answer demand. Book the next step.
 
-Proof rail: **MAKES CALLS / TAKES CALLS / TEXTS / EMAILS / REPORTS BACK**
+Channel line: **Calls / Texts / Email**
 
-Primary CTA: **BUILD YOUR BOT**
+Primary CTA: **Start Free**
 
-Secondary CTA: **EXPLORE BOTS**
+Secondary CTA: **Explore Bots**
 
 Offer: **Build free. Every active paid Bot gets its own number and email.**
 
 Pricing support: **Paid plans from $19/month. Live activation depends on current availability.** The public pricing page reads `/api/billing/plans`; catalog prices alone must not produce an immediate-purchase promise.
 
-Conversion note: **Create a free account to build, train, and hear your Bot privately before it goes live.**
+Conversion note: **Private testing free. Live use paid.** Activation depends on availability and account eligibility.
 
-## Direction split
+## Direction Split
 
-### OUTBOUND
+### Outbound
 
-**MAKE THE FIRST MOVE**
+**Make the First Move**
 
 Find. Call. Qualify. Book.
 
-CTA: **GET YOUR SALES BOT**
+CTA: **Get Your Sales Bot**
 
-### INBOUND
+### Inbound
 
-**BE THERE WHEN THEY CALL**
+**Be There When They Call**
 
 Answer. Qualify. Book. Route.
 
-CTA: **EXPLORE INBOUND**
+CTA: **Explore Inbound**
 
-## Features hero
+## Features Hero
 
-**IT CALLS OUT. IT ANSWERS IN.**
+**Inbound & Outbound Bots**
 
-## Role showcase
+## Role Showcase
 
 Lead with the outbound Sales Bot story. Keep the inbound Front Desk story beside it with equal visual treatment. Hearing or testing a Bot begins after account creation; there is no public call or public audio demo.
 
-## Role order
+## Role Order
 
 1. Sales Rep
 2. Front Desk

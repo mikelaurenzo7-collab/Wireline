@@ -20,6 +20,7 @@ import {
   captureOutboundSourceContext,
 } from "../apps/botbound-film/scripts/lib/motion-release.mjs";
 
+const staticOnly = process.argv.includes("--static-only");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const campaignRoot = resolve(root, "brand-work/launch-2026-09-outbound");
 const outputRoot = resolve(campaignRoot, "exports");
@@ -27,8 +28,8 @@ const sourceRoot = resolve(campaignRoot, "sources");
 const websiteRoot = resolve(outputRoot, "website");
 const motionRoot = resolve(outputRoot, "motion");
 const filmRoot = resolve(root, "apps/botbound-film");
-const manifestPath = resolve(campaignRoot, "manifest.json");
-const checksumPath = resolve(campaignRoot, "SHA256SUMS.txt");
+const manifestPath = resolve(campaignRoot, staticOnly ? "static-manifest.json" : "manifest.json");
+const checksumPath = resolve(campaignRoot, staticOnly ? "STATIC-SHA256SUMS.txt" : "SHA256SUMS.txt");
 const investorPdfPath = resolve(
   outputRoot,
   "investor/botbound-outbound-investor-one-pager-2026-09.pdf",
@@ -324,11 +325,17 @@ function atmosphericBackground(width, height, sourceData, { vertical = false, sh
 }
 
 const generated = [];
-// Invalidate the prior approval pair before deleting or replacing any release
-// asset. A failed render must leave no stale manifest claiming success.
-rmSync(manifestPath, { force: true });
-rmSync(checksumPath, { force: true });
-assertApprovedOutboundMotion();
+// Both modes replace shared static assets. Invalidate both prior approval pairs
+// before mutation so a failed render cannot leave either receipt claiming success.
+for (const receipt of [
+  "manifest.json",
+  "SHA256SUMS.txt",
+  "static-manifest.json",
+  "STATIC-SHA256SUMS.txt",
+]) {
+  rmSync(resolve(campaignRoot, receipt), { force: true });
+}
+if (!staticOnly) assertApprovedOutboundMotion();
 const rendererOwnedDirectories = [
   "hero",
   "social",
@@ -347,7 +354,7 @@ for (const directory of rendererOwnedDirectories) {
       `Refusing to clean an output path outside the campaign export root: ${directory}`,
     );
   }
-  rmSync(directory, { recursive: true, force: true });
+  if (!staticOnly) rmSync(directory, { recursive: true, force: true });
 }
 
 const render = (path, options, width) => {
@@ -359,16 +366,16 @@ render(
   {
     width: 3840,
     height: 2160,
-    title: "Finds the lead. Makes the call. Books the next step.",
+    title: "Finds the Lead. Makes the Call. Books the Next Step.",
     description: "BotBound outbound launch master for The First Move campaign.",
     content: `${atmosphericBackground(3840, 2160, wideData)}
       ${brandLockup(210, 160, 148, iconData)}
-      ${eyebrow("THE FIRST MOVE", 210, 610, 52)}
-      <text x="190" y="910" fill="${palette.platinum}" font-family="Inter Tight" font-size="252" font-weight="800" letter-spacing="-13">
-        <tspan x="190">FINDS THE LEAD.</tspan><tspan x="190" dy="250">MAKES THE CALL.</tspan><tspan x="190" dy="250" fill="${palette.violet}">BOOKS THE NEXT STEP.</tspan>
+      ${eyebrow("The First Move", 210, 610, 52)}
+      <text x="190" y="910" fill="${palette.platinum}" font-family="Inter Tight" font-size="252" font-weight="800" letter-spacing="-5.98">
+        <tspan x="190">Finds the Lead.</tspan><tspan x="190" dy="250">Makes the Call.</tspan><tspan x="190" dy="250" fill="${palette.violet}">Books the Next Step.</tspan>
       </text>
       <text x="210" y="1870" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="58" font-weight="700" letter-spacing="9">BOTBOUND.ME</text>
-      <text x="210" y="1990" fill="${palette.mist}" font-family="Inter" font-size="52" font-weight="600">GET YOUR SALES BOT</text>
+      <text x="210" y="1990" fill="${palette.mist}" font-family="Inter" font-size="52" font-weight="600">Get Your Sales Bot</text>
       <rect x="210" y="2050" width="3300" height="8" rx="4" fill="${palette.violet}" opacity=".86"/>`,
   },
   3840,
@@ -386,11 +393,11 @@ render(
       <circle cx="1510" cy="570" r="480" fill="${palette.violet}" opacity=".09" filter="url(#glow)"/>
       <image href="${operatorData}" x="1080" y="130" width="820" height="820" preserveAspectRatio="xMidYMid meet"/>
       ${brandLockup(88, 68, 84, iconData)}
-      ${eyebrow("OUTBOUND HAS A BOT", 90, 286, 20)}
-      <text x="82" y="448" fill="${palette.platinum}" font-family="Inter Tight" font-size="142" font-weight="800" letter-spacing="-7.4">
-        <tspan x="82">FIND.</tspan><tspan x="82" dy="138">CALL.</tspan><tspan x="82" dy="138" fill="${palette.violet}">BOOK.</tspan>
+      ${eyebrow("Outbound Has a Bot", 90, 286, 20)}
+      <text x="82" y="448" fill="${palette.platinum}" font-family="Inter Tight" font-size="142" font-weight="800" letter-spacing="-3.4">
+        <tspan x="82">Find.</tspan><tspan x="82" dy="138">Call.</tspan><tspan x="82" dy="138" fill="${palette.violet}">Book.</tspan>
       </text>
-      ${ctaPill("GET YOUR SALES BOT", 90, 894, 360, 74, 20)}
+      ${ctaPill("Get Your Sales Bot", 90, 894, 360, 74, 20)}
       <text x="90" y="1020" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.6">BOTBOUND.ME</text>`,
   },
   1920,
@@ -405,11 +412,11 @@ render(
     description: "LinkedIn launch ad for BotBound outbound Bots.",
     content: `${atmosphericBackground(1200, 627, wideData)}
       ${wordmark(58, 66, 42)}
-      ${eyebrow("THE FIRST MOVE", 60, 145, 15)}
-      <text x="56" y="259" fill="${palette.platinum}" font-family="Inter Tight" font-size="86" font-weight="800" letter-spacing="-4.6">
-        <tspan x="56">FIND.</tspan><tspan x="56" dy="86">CALL.</tspan><tspan x="56" dy="86" fill="${palette.violet}">BOOK.</tspan>
+      ${eyebrow("The First Move", 60, 145, 15)}
+      <text x="56" y="259" fill="${palette.platinum}" font-family="Inter Tight" font-size="86" font-weight="800" letter-spacing="-2.12">
+        <tspan x="56">Find.</tspan><tspan x="56" dy="86">Call.</tspan><tspan x="56" dy="86" fill="${palette.violet}">Book.</tspan>
       </text>
-      ${ctaPill("GET YOUR SALES BOT", 60, 518, 292, 58, 17)}
+      ${ctaPill("Get Your Sales Bot", 60, 518, 292, 58, 17)}
       <text x="1138" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
   },
   1200,
@@ -420,16 +427,16 @@ render(
   {
     width: 1080,
     height: 1080,
-    title: "The list will not call itself.",
+    title: "The List Will Not Call Itself.",
     description: "Square BotBound outbound campaign ad.",
     content: `${atmosphericBackground(1080, 1080, portraitData, { vertical: true })}
       ${brandLockup(62, 54, 68, iconData)}
-      ${eyebrow("OUTBOUND HAS A BOT", 62, 240, 19)}
-      <text x="54" y="386" fill="${palette.platinum}" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-6">
-        <tspan x="54">THE LIST</tspan><tspan x="54" dy="110">WON'T CALL</tspan><tspan x="54" dy="110" fill="${palette.violet}">ITSELF.</tspan>
+      ${eyebrow("Outbound Has a Bot", 62, 240, 19)}
+      <text x="54" y="386" fill="${palette.platinum}" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-2.76">
+        <tspan x="54">The List</tspan><tspan x="54" dy="110">Won't Call</tspan><tspan x="54" dy="110" fill="${palette.violet}">Itself.</tspan>
       </text>
-      <text x="62" y="868" fill="${palette.platinum}" font-family="Inter Tight" font-size="42" font-weight="800">YOUR BOT CAN.</text>
-      ${ctaPill("GET YOUR SALES BOT", 62, 924, 344, 70, 20)}
+      <text x="62" y="868" fill="${palette.platinum}" font-family="Inter Tight" font-size="42" font-weight="800">Your Bot Can.</text>
+      ${ctaPill("Get Your Sales Bot", 62, 924, 344, 70, 20)}
       <text x="1016" y="982" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
   },
   1080,
@@ -444,13 +451,14 @@ render(
     description: "Vertical BotBound outbound story master.",
     content: `${atmosphericBackground(1080, 1920, portraitData, { vertical: true })}
       ${brandLockup(96, 236, 76, iconData)}
-      ${eyebrow("THE FIRST MOVE", 96, 400, 20)}
-      <text x="90" y="584" fill="${palette.platinum}" font-family="Inter Tight" font-size="160" font-weight="800" letter-spacing="-8">
-        <tspan x="90">FIND.</tspan><tspan x="90" dy="158">CALL.</tspan><tspan x="90" dy="158" fill="${palette.violet}">BOOK.</tspan>
+      ${eyebrow("The First Move", 96, 400, 20)}
+      <text x="90" y="584" fill="${palette.platinum}" font-family="Inter Tight" font-size="160" font-weight="800" letter-spacing="-3.68">
+        <tspan x="90">Find.</tspan><tspan x="90" dy="158">Call.</tspan><tspan x="90" dy="158" fill="${palette.violet}">Book.</tspan>
       </text>
       <rect x="96" y="1306" width="840" height="3" fill="${palette.violet}" opacity=".72"/>
-      <text x="96" y="1392" fill="${palette.platinum}" font-family="Inter Tight" font-size="58" font-weight="800"><tspan x="96">YOUR BOT MAKES</tspan><tspan x="96" dy="64">THE FIRST MOVE.</tspan></text>
-      ${ctaPill("BUILD FREE", 96, 1490, 300, 74, 23)}
+      <text x="96" y="1392" fill="${palette.platinum}" font-family="Inter Tight" font-size="58" font-weight="800"><tspan x="96">Your Bot Makes</tspan><tspan x="96" dy="64">the First Move.</tspan></text>
+      ${ctaPill("Start Free", 96, 1490, 300, 74, 23)}
+      <text x="96" y="1604" fill="${palette.mist}" font-family="Inter" font-size="21">Private rehearsal. Paid live activation.</text>
       <text x="936" y="1540" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="19" font-weight="700" letter-spacing="2.8">BOTBOUND.ME</text>`,
   },
   1080,
@@ -465,13 +473,13 @@ render(
     description: "BotBound operator social ad for outbound Sales Bots.",
     content: `${atmosphericBackground(1080, 1350, portraitData, { vertical: true })}
       ${brandLockup(62, 54, 66, iconData)}
-      ${eyebrow("THE FIRST MOVE", 62, 252, 19)}
-      <text x="54" y="400" fill="${palette.platinum}" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-6">
-        <tspan x="54">FIND.</tspan><tspan x="54" dy="108">CALL.</tspan><tspan x="54" dy="108" fill="${palette.violet}">BOOK.</tspan>
+      ${eyebrow("The First Move", 62, 252, 19)}
+      <text x="54" y="400" fill="${palette.platinum}" font-family="Inter Tight" font-size="112" font-weight="800" letter-spacing="-2.76">
+        <tspan x="54">Find.</tspan><tspan x="54" dy="108">Call.</tspan><tspan x="54" dy="108" fill="${palette.violet}">Book.</tspan>
       </text>
       <circle cx="782" cy="900" r="318" fill="${palette.violet}" opacity=".11" filter="url(#glow)"/>
       <image href="${operatorData}" x="430" y="570" width="660" height="660" preserveAspectRatio="xMidYMid meet"/>
-      ${ctaPill("GET YOUR SALES BOT", 62, 1192, 354, 72, 19)}
+      ${ctaPill("Get Your Sales Bot", 62, 1192, 354, 72, 19)}
       <text x="1018" y="1249" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
   },
   1080,
@@ -482,7 +490,7 @@ render(
   {
     width: 1080,
     height: 1350,
-    title: "Point it at a market. It finds. Calls. Books.",
+    title: "Point It at a Market. It Finds. Calls. Books.",
     description:
       "BotBound outbound Sales Bot launch ad showing a configured target moving toward a booked meeting.",
     defs: `<linearGradient id="launchBand" x1="0" y1="0" x2="1" y2="0">
@@ -498,10 +506,10 @@ render(
       <rect width="1080" height="1350" fill="#050508" opacity=".54"/>
       <rect width="1080" height="1350" fill="url(#verticalShade)" opacity=".84"/>
       ${brandLockup(62, 54, 66, iconData)}
-      <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">LAUNCH MASTER / 01</text>
-      ${eyebrow("APPROVED OUTBOUND", 62, 246, 19)}
-      <text x="54" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-6.2">
-        <tspan x="54">POINT IT</tspan><tspan x="54" dy="112" fill="${palette.violet}">AT A MARKET.</tspan>
+      <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">Illustrative Example</text>
+      ${eyebrow("Approved Outbound", 62, 246, 19)}
+      <text x="54" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-2.85">
+        <tspan x="54">Point It</tspan><tspan x="54" dy="112" fill="${palette.violet}">at a Market.</tspan>
       </text>
 
       <circle cx="790" cy="784" r="338" fill="${palette.violet}" opacity=".12" filter="url(#glow)"/>
@@ -512,24 +520,24 @@ render(
       <g transform="translate(62 638)" filter="url(#cardShadow)">
         <rect width="390" height="150" rx="28" fill="url(#glass)" stroke="${palette.violetLight}" stroke-opacity=".28" stroke-width="2"/>
         <circle cx="36" cy="38" r="8" fill="${palette.violet}" filter="url(#softGlow)"/>
-        <text x="58" y="45" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="15" font-weight="700" letter-spacing="2.1">TARGET</text>
-        <text x="30" y="105" fill="${palette.platinum}" font-family="Inter Tight" font-size="39" font-weight="800">YOUR MARKET</text>
-        <text x="30" y="132" fill="${palette.mist}" font-family="Inter" font-size="15" font-weight="600">ROLE · REGION · COMPANY</text>
+        <text x="58" y="45" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="15" font-weight="700" letter-spacing="2.1">Target</text>
+        <text x="30" y="105" fill="${palette.platinum}" font-family="Inter Tight" font-size="39" font-weight="800">Your Market</text>
+        <text x="30" y="132" fill="${palette.mist}" font-family="Inter" font-size="15" font-weight="600">Role · Region · Company</text>
       </g>
       <path d="M452 713C532 713 536 860 594 860" fill="none" stroke="${palette.violet}" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 16" opacity=".9" filter="url(#softGlow)"/>
       <circle cx="594" cy="860" r="9" fill="${palette.platinum}" filter="url(#softGlow)"/>
       <g transform="translate(570 900)" filter="url(#cardShadow)">
         <rect width="448" height="154" rx="28" fill="url(#glass)" stroke="${palette.violet}" stroke-opacity=".62" stroke-width="2"/>
         <rect x="24" y="24" width="104" height="30" rx="15" fill="${palette.green}" fill-opacity=".13"/>
-        <text x="76" y="45" text-anchor="middle" fill="${palette.green}" font-family="IBM Plex Mono" font-size="12" font-weight="700" letter-spacing="1.4">BOOKED</text>
-        <text x="24" y="101" fill="${palette.platinum}" font-family="Inter Tight" font-size="39" font-weight="800">NEXT STEP</text>
-        <text x="24" y="130" fill="${palette.mist}" font-family="Inter" font-size="15" font-weight="600">CALENDAR · CRM · HANDOFF</text>
+        <text x="76" y="45" text-anchor="middle" fill="${palette.green}" font-family="IBM Plex Mono" font-size="12" font-weight="700" letter-spacing="1.4">Booked</text>
+        <text x="24" y="101" fill="${palette.platinum}" font-family="Inter Tight" font-size="39" font-weight="800">Next Step</text>
+        <text x="24" y="130" fill="${palette.mist}" font-family="Inter" font-size="15" font-weight="600">Calendar · CRM · Handoff</text>
       </g>
 
       <rect x="0" y="1086" width="1080" height="264" fill="${palette.ink}" opacity=".96"/>
       <rect x="0" y="1086" width="1080" height="8" fill="url(#launchBand)"/>
-      <text x="62" y="1168" fill="${palette.platinum}" font-family="Inter Tight" font-size="53" font-weight="800" letter-spacing="-2.2">IT FINDS. CALLS. <tspan fill="${palette.violet}">BOOKS.</tspan></text>
-      ${ctaPill("GET YOUR SALES BOT", 62, 1214, 354, 72, 19)}
+      <text x="62" y="1168" fill="${palette.platinum}" font-family="Inter Tight" font-size="53" font-weight="800" letter-spacing="-1.01">Find. Call. <tspan fill="${palette.violet}">Book.</tspan></text>
+      ${ctaPill("Get Your Sales Bot", 62, 1214, 354, 72, 19)}
       <text x="1018" y="1262" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
   },
   1080,
@@ -538,37 +546,37 @@ render(
 const roles = [
   {
     slug: "sales",
-    label: "SALES BOT",
-    lines: ["FINDS LEADS.", "BOOKS MEETINGS."],
-    cta: "GET YOUR SALES BOT",
+    label: "Sales Bot",
+    lines: ["Calls That", "Fit the Job."],
+    cta: "Get Your Sales Bot",
     code: "01",
   },
   {
     slug: "recruiting",
-    label: "RECRUITING BOT",
-    lines: ["WORKS THE LIST.", "BOOKS INTERVIEWS."],
-    cta: "GET YOUR RECRUITING BOT",
+    label: "Recruiting Bot",
+    lines: ["Keep the", "Conversation Moving."],
+    cta: "Get Your Recruiting Bot",
     code: "02",
   },
   {
     slug: "appointments",
-    label: "APPOINTMENT BOT",
-    lines: ["CALLS THE WAITLIST.", "BOOKS THE OPENING."],
-    cta: "GET YOUR APPOINTMENT BOT",
+    label: "Appointment Bot",
+    lines: ["Give Openings", "a Next Step."],
+    cta: "Get Your Appointment Bot",
     code: "03",
   },
   {
     slug: "reactivation",
-    label: "WIN-BACK BOT",
-    lines: ["OLD LEAD.", "NEW CONVERSATION."],
-    cta: "GET YOUR WIN-BACK BOT",
+    label: "Win-Back Bot",
+    lines: ["Old Lead.", "New Conversation."],
+    cta: "Get Your Win-Back Bot",
     code: "04",
   },
   {
     slug: "debt-resolution-intake",
-    label: "INTAKE BOT",
-    lines: ["WORKS THE LIST.", "BOOKS CONSULTATIONS."],
-    cta: "GET YOUR INTAKE BOT",
+    label: "Intake Bot",
+    lines: ["A Clearer", "First Conversation."],
+    cta: "Get Your Intake Bot",
     code: "05",
   },
 ];
@@ -577,7 +585,7 @@ function roleOutcomeScene(index) {
   const panel = `<rect x="0" y="0" width="880" height="300" rx="34" fill="#0E0D14" fill-opacity=".86" stroke="#C4B5FD" stroke-opacity=".2" stroke-width="2"/>
     <rect x="26" y="26" width="828" height="248" rx="24" fill="#14121B" fill-opacity=".72"/>
     <circle cx="58" cy="58" r="7" fill="${palette.violet}" filter="url(#softGlow)"/>
-    <text x="82" y="65" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="15" font-weight="700" letter-spacing="2.4">OUTBOUND SIGNAL</text>`;
+    <text x="82" y="65" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="15" font-weight="700" letter-spacing="2.4">Illustrative Example</text>`;
 
   if (index === 0) {
     return `<g transform="translate(100 742)">${panel}
@@ -588,8 +596,8 @@ function roleOutcomeScene(index) {
       <path d="M328 144H414" stroke="${palette.violet}" stroke-width="4"/>
       <path d="M398 132L414 144L398 156" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="454" y="100" width="336" height="110" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
-      <text x="486" y="142" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">NEXT STEP</text>
-      <text x="486" y="183" fill="${palette.platinum}" font-family="Inter Tight" font-size="31" font-weight="800">MEETING BOOKED</text>
+      <text x="486" y="142" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">Next Step</text>
+      <text x="486" y="183" fill="${palette.platinum}" font-family="Inter Tight" font-size="31" font-weight="800">Meeting Booked</text>
     </g>`;
   }
 
@@ -598,8 +606,8 @@ function roleOutcomeScene(index) {
       ${[0, 1, 2].map((row) => `<circle cx="88" cy="${126 + row * 55}" r="17" fill="${row === 1 ? palette.violet : "#292633"}"/><rect x="124" y="${113 + row * 55}" width="250" height="10" rx="5" fill="${row === 1 ? palette.violetLight : "#575161"}" opacity="${row === 1 ? ".88" : ".55"}"/><rect x="124" y="${132 + row * 55}" width="166" height="7" rx="3.5" fill="#575161" opacity=".36"/>`).join("")}
       <path d="M406 164H478" stroke="${palette.violet}" stroke-width="4"/><path d="M462 152L478 164L462 176" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="516" y="105" width="286" height="118" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
-      <text x="548" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">INTERVIEW</text>
-      <text x="548" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="34" font-weight="800">BOOKED</text>
+      <text x="548" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">Interview</text>
+      <text x="548" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="34" font-weight="800">Booked</text>
     </g>`;
   }
 
@@ -612,8 +620,8 @@ function roleOutcomeScene(index) {
     }).join("");
     return `<g transform="translate(100 742)">${panel}${cells}
       <rect x="586" y="105" width="214" height="118" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
-      <text x="618" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">OPENING</text>
-      <text x="618" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="34" font-weight="800">BOOKED</text>
+      <text x="618" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">Opening</text>
+      <text x="618" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="34" font-weight="800">Booked</text>
     </g>`;
   }
 
@@ -626,8 +634,8 @@ function roleOutcomeScene(index) {
     return `<g transform="translate(100 742)">${panel}${dormant}
       <path d="M548 164H610" stroke="${palette.violet}" stroke-width="4"/><path d="M594 152L610 164L594 176" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
       <rect x="646" y="105" width="156" height="118" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
-      <text x="678" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">LEAD</text>
-      <text x="678" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="28" font-weight="800">ACTIVE</text>
+      <text x="678" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">Lead</text>
+      <text x="678" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="28" font-weight="800">Active</text>
     </g>`;
   }
 
@@ -635,8 +643,8 @@ function roleOutcomeScene(index) {
     ${[0, 1, 2].map((row) => `<rect x="78" y="${112 + row * 58}" width="34" height="34" rx="9" fill="${row === 2 ? palette.violet : "#292633"}"/><path d="M87 ${127 + row * 58}l7 7 13-16" fill="none" stroke="${row === 2 ? palette.ink : palette.violetLight}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect x="138" y="${122 + row * 58}" width="250" height="10" rx="5" fill="#575161" opacity="${row === 2 ? ".8" : ".46"}"/>`).join("")}
     <path d="M426 164H496" stroke="${palette.violet}" stroke-width="4"/><path d="M480 152L496 164L480 176" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
     <rect x="532" y="105" width="270" height="118" rx="22" fill="#201A31" stroke="${palette.violet}" stroke-opacity=".6"/>
-    <text x="564" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">CONSULTATION</text>
-    <text x="564" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="32" font-weight="800">BOOKED</text>
+    <text x="564" y="147" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="14" font-weight="700" letter-spacing="1.8">Consultation</text>
+    <text x="564" y="190" fill="${palette.platinum}" font-family="Inter Tight" font-size="32" font-weight="800">Booked</text>
   </g>`;
 }
 
@@ -653,7 +661,7 @@ for (const [index, role] of roles.entries()) {
         ${brandLockup(62, 54, 66, iconData)}
         <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">${role.code} / 05</text>
         ${eyebrow(role.label, 62, 284, 20)}
-        <text x="54" y="450" fill="${palette.platinum}" font-family="Inter Tight" font-size="${roleFontSize}" font-weight="800" letter-spacing="${-roleFontSize * 0.052}">
+        <text x="54" y="450" fill="${palette.platinum}" font-family="Inter Tight" font-size="${roleFontSize}" font-weight="800" letter-spacing="${-roleFontSize * 0.024}">
           <tspan x="54">${esc(role.lines[0])}</tspan><tspan x="54" dy="${roleFontSize + 10}" fill="${palette.violet}">${esc(role.lines[1])}</tspan>
         </text>
         ${roleOutcomeScene(index)}
@@ -667,36 +675,37 @@ for (const [index, role] of roles.entries()) {
 
 const carousel = [
   {
-    title: ["FIND.", "CALL.", "BOOK."],
-    label: "THE FIRST MOVE",
-    note: "LEAD HUNT + OUTBOUND BOT",
+    title: ["Your Next", "Conversation", "Starts Here."],
+    label: "The First Move",
+    note: "Bots for Calls, Texts, and Email",
     accent: 2,
+    fontSize: 104,
   },
   {
-    title: ["DEFINE", "THE TARGET."],
-    label: "01 / TARGET",
-    note: "ROLE · REGION · COMPANY SIZE",
+    title: ["Calls That", "Fit the Job."],
+    label: "Calls",
+    note: "Connected Sources · Approved Contacts",
     accent: 1,
   },
   {
-    title: ["LEAD HUNT FINDS", "THE PROSPECTS."],
-    label: "02 / FIND",
-    note: "CONNECTED PROSPECT INTELLIGENCE",
-    accent: 1,
-  },
-  {
-    title: ["REVIEW.", "THEN QUEUE."],
-    label: "03 / APPROVE",
-    note: "SELECTED CONTACTS · APPROVED CAMPAIGN",
-    accent: 1,
-  },
-  {
-    title: ["YOUR BOT CALLS.", "YOU TAKE MEETINGS."],
-    label: "04 / CALL + BOOK",
-    note: "YOUR PLAYBOOK · CALENDAR · OUTCOME",
+    title: ["Follow-Up That", "Carries Context."],
+    label: "Texts & Email",
+    note: "Your Connected Channels · Your Knowledge",
     accent: 1,
     fontSize: 94,
-    lineHeight: 100,
+  },
+  {
+    title: ["Your Bots.", "Your Rules."],
+    label: "Owner Control",
+    note: "Permissions · Approvals · Handoffs",
+    accent: 1,
+  },
+  {
+    title: ["Make the", "First Move."],
+    label: "Start Free",
+    note: "Private Rehearsal · Live Activation Requires a Paid Plan",
+    accent: 1,
+    fontSize: 112,
   },
 ];
 
@@ -715,14 +724,14 @@ for (const [index, slide] of carousel.entries()) {
       width: 1080,
       height: 1350,
       title: slide.title.join(" "),
-      description: `Slide ${index + 1} of BotBound's Lead Hunt carousel.`,
+      description: `Slide ${index + 1} of BotBound's capability carousel.`,
       content: `<rect width="1080" height="1350" fill="url(#canvas)"/><rect width="1080" height="1350" fill="url(#aura)"/><rect width="1080" height="1350" fill="url(#grid)"/>
         ${brandLockup(62, 54, 66, iconData)}
         <text x="1018" y="94" text-anchor="end" fill="${palette.muted}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">${String(index + 1).padStart(2, "0")} / 05</text>
         ${eyebrow(slide.label, 62, 300, 20)}
-        <text x="54" y="474" fill="${palette.platinum}" font-family="Inter Tight" font-size="${titleFontSize}" font-weight="800" letter-spacing="${slide.fontSize ? -5.1 : -6}">${titleLines}</text>
+        <text x="54" y="474" fill="${palette.platinum}" font-family="Inter Tight" font-size="${titleFontSize}" font-weight="800" letter-spacing="${slide.fontSize ? -2.35 : -2.76}">${titleLines}</text>
         <g transform="translate(330 760)">${seededNodes(700, 340, 58, 77 + index * 19)}${signalPath(700, 340)}</g>
-        <text x="62" y="1220" fill="${palette.mist}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">${esc(slide.note)}</text>
+        <text x="62" y="1220" fill="${palette.mist}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="0.5">${esc(slide.note)}</text>
         <rect x="62" y="1260" width="956" height="4" fill="${palette.violet}" opacity=".72"/>
         <text x="62" y="1308" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>`,
     },
@@ -730,21 +739,18 @@ for (const [index, slide] of carousel.entries()) {
   );
 }
 
-const workflowPhases = [
-  ["TARGET", "FIND"],
-  ["REVIEW", "QUEUE"],
-  ["CALL", "QUALIFY"],
-  ["BOOK", "REPORT"],
+const capabilityCards = [
+  ["Calls", "Inbound & approved outbound"],
+  ["Follow-Up", "Connected texts & email"],
+  ["Owner Controls", "Rules, approvals & handoffs"],
 ];
-const workflowNodes = workflowPhases
-  .map(([first, second], index) => {
-    const x = 60 + index * 282;
-    const active = index === workflowPhases.length - 1;
-    return `${index > 0 ? `<path d="M${x - 34} 365H${x - 10}" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" opacity=".8"/><path d="M${x - 20} 356L${x - 8} 365L${x - 20} 374" fill="none" stroke="${palette.violet}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
-      <rect x="${x}" y="292" width="248" height="148" rx="24" fill="${active ? "#201A31" : "#111017"}" stroke="${active ? palette.violet : palette.violetLight}" stroke-opacity="${active ? ".9" : ".3"}" stroke-width="2"/>
-      <text x="${x + 24}" y="330" fill="${active ? palette.violetLight : palette.muted}" font-family="IBM Plex Mono" font-size="13" font-weight="700" letter-spacing="1.8">0${index + 1}</text>
-      <text x="${x + 24}" y="374" fill="${palette.platinum}" font-family="Inter Tight" font-size="25" font-weight="800">${first}</text>
-      <text x="${x + 24}" y="410" fill="${active ? palette.violetLight : palette.platinum}" font-family="Inter Tight" font-size="25" font-weight="800">${second}</text>`;
+const workflowNodes = capabilityCards
+  .map(([title, detail], index) => {
+    const x = 60 + index * 376;
+    return `<rect x="${x}" y="292" width="328" height="172" rx="24" fill="#111017" stroke="${palette.violetLight}" stroke-opacity=".3" stroke-width="2"/>
+    <circle cx="${x + 28}" cy="324" r="6" fill="${palette.violet}"/>
+    <text x="${x + 24}" y="379" fill="${palette.platinum}" font-family="Inter Tight" font-size="32" font-weight="800">${esc(title)}</text>
+    <text x="${x + 24}" y="424" fill="${palette.mist}" font-family="Inter" font-size="16" font-weight="600">${esc(detail)}</text>`;
   })
   .join("");
 
@@ -753,25 +759,25 @@ render(
   {
     width: 1200,
     height: 627,
-    title: "Target, find, review, queue, call, qualify, book, report.",
-    description: "Configured example of the BotBound outbound operating path.",
+    title: "Your Bots. Your Rules.",
+    description: "BotBound capabilities and owner controls across calls, texts, and email.",
     content: `<rect width="1200" height="627" fill="url(#canvas)"/><rect width="1200" height="627" fill="url(#aura)"/><rect width="1200" height="627" fill="url(#grid)"/>
       ${wordmark(58, 64, 42)}
-      ${eyebrow("CONFIGURED EXAMPLE", 60, 136, 14)}
-      <text x="58" y="228" fill="${palette.platinum}" font-family="Inter Tight" font-size="62" font-weight="800" letter-spacing="-3">FROM TARGET TO <tspan fill="${palette.violet}">OUTCOME.</tspan></text>
+      ${eyebrow("Configured Example", 60, 136, 14)}
+      <text x="58" y="228" fill="${palette.platinum}" font-family="Inter Tight" font-size="62" font-weight="800" letter-spacing="-1.38">Your Bots. <tspan fill="${palette.violet}">Your Rules.</tspan></text>
       ${workflowNodes}
-      <text x="60" y="556" fill="${palette.mist}" font-family="Inter" font-size="17" font-weight="600">Connected source. Selected contacts. Approved queue. Recorded outcome.</text>
+      <text x="60" y="556" fill="${palette.mist}" font-family="Inter" font-size="17" font-weight="600">Free private rehearsal. Paid live activation and connected tools required.</text>
       <text x="1140" y="556" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2">BOTBOUND.ME</text>`,
   },
   1200,
 );
 
 const outcomeRows = [
-  ["09:03", "CALLING LIST", "APPROVED"],
-  ["09:06", "PROSPECT", "CALLED"],
-  ["09:10", "FIT", "QUALIFIED"],
-  ["09:14", "NEXT STEP", "BOOKED"],
-  ["09:16", "OUTCOME", "REPORTED"],
+  ["09:03", "Calling List", "Approved"],
+  ["09:06", "Prospect", "Called"],
+  ["09:10", "Fit", "Qualified"],
+  ["09:14", "Next Step", "Booked"],
+  ["09:16", "Outcome", "Reported"],
 ];
 const rows = outcomeRows
   .map(([time, item, result], index) => {
@@ -788,12 +794,12 @@ render(
   {
     width: 1080,
     height: 1080,
-    title: "The queue moved.",
+    title: "The Queue Moved.",
     description: "Outbound outcome sheet for a BotBound campaign example.",
     content: `<rect width="1080" height="1080" fill="url(#canvas)"/><rect width="1080" height="1080" fill="url(#aura)"/><rect width="1080" height="1080" fill="url(#grid)"/>
       ${brandLockup(62, 54, 68, iconData)}
-      ${eyebrow("THE OUTBOUND CALL SHEET", 62, 236, 18)}
-      <text x="56" y="334" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-4.2">THE QUEUE <tspan fill="${palette.violet}">MOVED.</tspan></text>
+      ${eyebrow("Illustrative Call Sheet", 62, 236, 18)}
+      <text x="56" y="334" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-1.93">The Queue <tspan fill="${palette.violet}">Moved.</tspan></text>
       ${rows}
       <text x="62" y="1018" fill="${palette.mist}" font-family="Inter" font-size="16" font-weight="600">Illustrative workflow. Outcomes depend on configuration and the conversation.</text>
       <text x="1018" y="1018" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>`,
@@ -810,9 +816,9 @@ render(
     description: "BotBound outbound launch email header.",
     content: `${atmosphericBackground(1200, 400, wideData)}
       ${wordmark(56, 70, 42)}
-      ${eyebrow("THE FIRST MOVE", 58, 145, 14)}
-      <text x="54" y="262" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-4.6">FIND. CALL. <tspan fill="${palette.violet}">BOOK.</tspan></text>
-      <text x="58" y="334" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">GET YOUR SALES BOT · BOTBOUND.ME</text>`,
+      ${eyebrow("The First Move", 58, 145, 14)}
+      <text x="54" y="262" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-2.12">Find. Call. <tspan fill="${palette.violet}">Book.</tspan></text>
+      <text x="58" y="334" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Get Your Sales Bot · BOTBOUND.ME</text>`,
   },
   1200,
 );
@@ -822,38 +828,38 @@ render(
   {
     width: 1600,
     height: 2071,
-    title: "BotBound outbound investor brief.",
+    title: "BotBound Outbound Investor Brief.",
     description: "One-page investor brief for BotBound's outbound wedge.",
     content: `<rect width="1600" height="2071" fill="#F6F3EC"/>
       <rect x="0" y="0" width="1600" height="520" fill="${palette.ink}"/>
       <rect x="0" y="0" width="1600" height="520" fill="url(#aura)"/>
       ${brandLockup(92, 72, 86, iconData)}
-      ${eyebrow("INVESTOR BRIEF · OUTBOUND WEDGE", 94, 250, 20)}
-      <text x="86" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="126" font-weight="800" letter-spacing="-6.8">FIND. CALL. <tspan fill="${palette.violet}">BOOK.</tspan></text>
+      ${eyebrow("Investor Brief · Outbound Wedge", 94, 250, 20)}
+      <text x="86" y="390" fill="${palette.platinum}" font-family="Inter Tight" font-size="126" font-weight="800" letter-spacing="-3.13">Find. Call. <tspan fill="${palette.violet}">Book.</tspan></text>
       <text x="92" y="474" fill="${palette.mist}" font-family="Inter" font-size="31" font-weight="600">Bots work approved markets and lists, make calls, and drive clear outcomes.</text>
 
-      <text x="92" y="644" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">THE WEDGE</text>
-      <text x="88" y="734" fill="${palette.ink}" font-family="Inter Tight" font-size="58" font-weight="800" letter-spacing="-2.8"><tspan x="88">OUTBOUND IS STILL A STACK.</tspan><tspan x="88" dy="66" fill="#6D52B5">BOTBOUND MAKES IT A BOT.</tspan></text>
+      <text x="92" y="644" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">The Wedge</text>
+      <text x="88" y="734" fill="${palette.ink}" font-family="Inter Tight" font-size="58" font-weight="800" letter-spacing="-1.29"><tspan x="88">Outbound Is Still a Stack.</tspan><tspan x="88" dy="66" fill="#6D52B5">BotBound Makes It a Bot.</tspan></text>
       <text x="92" y="904" fill="#36323E" font-family="Inter" font-size="27" font-weight="600">
         <tspan x="92">Lead discovery, lists, scripts, calls, calendars, CRM updates,</tspan><tspan x="92" dy="42">follow-up, and review become one job-specific operating loop.</tspan>
       </text>
 
       <rect x="92" y="1030" width="1416" height="300" rx="36" fill="${palette.ink}"/>
-      <text x="138" y="1102" fill="${palette.violetLight}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="3">THE OPERATING PATH</text>
-      <text x="138" y="1188" fill="${palette.platinum}" font-family="Inter Tight" font-size="45" font-weight="800"><tspan x="138">TARGET / FIND / REVIEW / QUEUE</tspan><tspan x="138" dy="54">CALL / QUALIFY / BOOK / REPORT</tspan></text>
-      <text x="138" y="1296" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Connected source or approved list. Intentional handoff. Clear outcome.</text>
+      <text x="138" y="1102" fill="${palette.violetLight}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="3">Owner Control</text>
+      <text x="138" y="1188" fill="${palette.platinum}" font-family="Inter Tight" font-size="45" font-weight="800"><tspan x="138">Your Bots. Your Rules.</tspan><tspan x="138" dy="54">Calls. Follow-Up. Owner Control.</tspan></text>
+      <text x="138" y="1296" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Configured sources, tools, permissions, approvals, and handoffs.</text>
 
-      <text x="92" y="1450" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">WHY BOTBOUND</text>
-      <text x="92" y="1534" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">JOB-SPECIFIC BOTS</text>
+      <text x="92" y="1450" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="20" font-weight="700" letter-spacing="3">Why BotBound</text>
+      <text x="92" y="1534" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">Job-Specific Bots</text>
       <text x="92" y="1582" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Sales · Recruiting · Appointments · Reactivation · Intake</text>
-      <text x="92" y="1688" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">ONE WORKSPACE. EVERY OUTBOUND JOB.</text>
+      <text x="92" y="1688" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">Room for Your Next Bot.</text>
       <text x="92" y="1736" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Land with Sales. Expand into Recruiting, Appointments, Reactivation, and Intake.</text>
-      <text x="92" y="1842" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">BUILD FREE. PLANS FROM $19/MO.</text>
-      <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Starter: 1 live Bot and 50 voice minutes/month. Activation availability applies.</text>
+      <text x="92" y="1842" fill="${palette.ink}" font-family="Inter Tight" font-size="38" font-weight="800">Rehearse Free. Plans from $19/mo.</text>
+      <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Free Builder is private. Starter: 1 live Bot, 50 voice minutes/month; availability applies.</text>
 
       <rect x="92" y="1972" width="1416" height="2" fill="#C9C3B7"/>
       <text x="92" y="2028" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>
-      <text x="1508" y="2028" text-anchor="end" fill="#6D52B5" font-family="Inter" font-size="21" font-weight="800">PUT YOUR BOT ON THE LINE</text>`,
+      <text x="1508" y="2028" text-anchor="end" fill="#6D52B5" font-family="Inter" font-size="21" font-weight="800">Put Your Bot on the Line</text>`,
   },
   1600,
 );
@@ -889,11 +895,11 @@ const websiteOgMarkup = svgFrame({
     <circle cx="960" cy="330" r="300" fill="${palette.violet}" opacity=".08" filter="url(#glow)"/>
     <image href="${operatorData}" x="720" y="84" width="474" height="474" preserveAspectRatio="xMidYMid meet"/>
     ${brandLockup(56, 42, 58, iconData)}
-    ${eyebrow("THE FIRST MOVE", 58, 164, 15)}
-    <text x="52" y="282" fill="${palette.platinum}" font-family="Inter Tight" font-size="92" font-weight="800" letter-spacing="-5">
-      <tspan x="52">FIND.</tspan><tspan x="52" dy="86">CALL.</tspan><tspan x="52" dy="86" fill="${palette.violet}">BOOK.</tspan>
+    ${eyebrow("The First Move", 58, 164, 15)}
+    <text x="52" y="282" fill="${palette.platinum}" font-family="Inter Tight" font-size="92" font-weight="800" letter-spacing="-2.3">
+      <tspan x="52">Find.</tspan><tspan x="52" dy="86">Call.</tspan><tspan x="52" dy="86" fill="${palette.violet}">Book.</tspan>
     </text>
-    ${ctaPill("GET YOUR SALES BOT", 58, 530, 292, 58, 17)}
+    ${ctaPill("Get Your Sales Bot", 58, 530, 292, 58, 17)}
     <text x="1142" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
 });
 writeFileSync(websiteOgSvg, websiteOgMarkup);
@@ -927,18 +933,18 @@ const contactSheet = writePng(
   svgFrame({
     width: sheetWidth,
     height: sheetHeight,
-    title: "BotBound outbound launch contact sheet.",
+    title: "BotBound Outbound Launch Contact Sheet.",
     description: "Complete review sheet for The First Move outbound campaign.",
     content: `<rect width="${sheetWidth}" height="${sheetHeight}" fill="${palette.ink}"/><rect width="${sheetWidth}" height="${sheetHeight}" fill="url(#grid)"/>
       ${brandLockup(88, 56, 72, iconData)}
-      ${eyebrow("THE FIRST MOVE · COMPLETE STATIC ASSET REVIEW", 88, 190, 20)}
+      ${eyebrow("The First Move · Static Review · September 20", 88, 190, 20)}
       ${tiles}`,
   }),
   sheetWidth,
 );
 generated.push(contactSheet);
 
-const releaseRoots = [
+const sourceReleaseRoots = [
   resolve(campaignRoot, "README.md"),
   resolve(campaignRoot, "CAMPAIGN_COPY.md"),
   resolve(campaignRoot, "WEBSITE_MESSAGING.md"),
@@ -947,16 +953,25 @@ const releaseRoots = [
   resolve(campaignRoot, "PLACEMENT_MATRIX.md"),
   resolve(campaignRoot, "PROVENANCE.md"),
   sourceRoot,
-  resolve(outputRoot, "hero"),
-  resolve(outputRoot, "social"),
-  resolve(outputRoot, "roles"),
-  resolve(outputRoot, "carousel"),
-  resolve(outputRoot, "workflow"),
-  resolve(outputRoot, "email"),
-  resolve(outputRoot, "investor"),
-  resolve(outputRoot, "motion"),
-  websiteRoot,
-  resolve(outputRoot, "contact-sheet"),
+];
+// A static-only receipt must cover outputs from this run, not preserved previews
+// or historical files that happen to remain beside the current exports.
+const releaseRoots = [
+  ...sourceReleaseRoots,
+  ...(staticOnly
+    ? [...generated, investorPdfPath, websiteOgSvg]
+    : [
+        resolve(outputRoot, "hero"),
+        resolve(outputRoot, "social"),
+        resolve(outputRoot, "roles"),
+        resolve(outputRoot, "carousel"),
+        resolve(outputRoot, "workflow"),
+        resolve(outputRoot, "email"),
+        resolve(outputRoot, "investor"),
+        resolve(outputRoot, "motion"),
+        websiteRoot,
+        resolve(outputRoot, "contact-sheet"),
+      ]),
 ];
 const manifestFiles = releaseRoots
   .flatMap((releaseRoot) => {
@@ -988,7 +1003,9 @@ try {
     `${JSON.stringify(
       {
         campaign: "The First Move",
-        scope: "outbound campaign review candidate",
+        scope: staticOnly
+          ? "outbound static campaign review candidate; motion excluded"
+          : "outbound campaign review candidate",
         publicationStatus:
           "held pending current production, destination, and campaign readiness checks",
         generatedAt: new Date().toISOString(),
@@ -1003,7 +1020,7 @@ try {
   const checksumFiles = [
     ...manifestFiles,
     {
-      path: "manifest.json",
+      path: staticOnly ? "static-manifest.json" : "manifest.json",
       bytes: statSync(stagedManifestPath).size,
       sha256: createHash("sha256").update(readFileSync(stagedManifestPath)).digest("hex"),
     },

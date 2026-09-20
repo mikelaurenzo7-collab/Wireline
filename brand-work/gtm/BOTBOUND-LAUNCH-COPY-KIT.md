@@ -1,750 +1,164 @@
 # BotBound Launch Copy Kit
 
-- Status: working copy reviewed 2026-09-19; publication pending current production and destination checks
-- Campaign: The Second Ring
-- Brand line: Put Your Bot on the Line.
-- Primary destination: `https://botbound.me`
+Source review: September 20, 2026. Product baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c` (merged PR #1225). This describes source capabilities, not deployed availability. Vercel recovery and deployment remain launch blockers at this review.
 
-## Publication gate
+The [September Refresh](../launch-2026-09-refresh/README.md) reconciles this kit with the September 15–19 Drive sales campaign and pilot notes. Sales remains a creative variant alongside the general product story and the incoming-call pilot focus.
 
-This kit is intentionally free of invented customers, performance metrics, certifications, awards, market leadership claims, and unsupported availability language. Before publishing:
+## Message Hierarchy
 
-1. Replace every bracketed placeholder.
-2. Confirm the live product, billing availability, authenticated private rehearsal, support inbox, and destination URL. Public call and audio demos are retired; `/showcase` is role exploration.
-3. Recheck plan names and prices against `src/lib/plan-catalog.ts` and `/pricing`.
-4. Confirm rights for every image, voice, score, font, and person in the final media.
-5. Run final legal review on disclosure, consent, privacy, call recording, and channel-specific claims.
+| Purpose | Copy |
+| --- | --- |
+| Brand | Put Your Bot on the Line. |
+| Category | Inbound & Outbound Bots |
+| Channels | Bots for calls, texts, and email. |
+| Current flagship | Stay in the Work. |
+| Broad team variant | Small Team. Bigger Reach. |
+| Second Ring variant | Hands Full? Bot on the Line. |
+| Control | Your Bots. Your Rules. |
+| Primary CTA | Start Free |
+| Offer disclosure | Private testing free. Live use paid. |
 
-## First design-partner kit
+Lead with a recognizable business moment, then explain what a Bot can handle. Use one headline, one short support line when needed, and one CTA. Author titles and headlines in Title Case; body copy uses sentence case. Keep setup instructions inside the product and partner support notes.
 
-Start with **one inbound Front Desk Bot and one configured, permitted follow-up**. Outbound acquisition is a separate release: The First Move assets stay held until `outbound_campaign_ready` and the exact destination, audience, copy, and asset pass review.
+## Product Descriptions
 
-Use five pieces:
+**Micro:** Bots for calls, texts, and email.
 
-| Piece                  | Existing source                                                                  | Release boundary                                                                                 |
-| ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Founder post           | Section 6 below                                                                  | Replace placeholders; link to working Free Builder                                               |
-| One campaign still     | `../launch-2026-09/exports/social/botbound-hands-full-linkedin-1200x627.png`     | Campaign illustration; review the final crop and paired copy                                     |
-| One product cut        | A newly captured, labeled test call → permitted follow-up → logged outcome       | Pending exact deployed-source evidence; historical films and cinematic art do not fill this slot |
-| One-pager              | `../launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md` and its reviewed PDF | Explain the workflow; verify contact details and current plan availability                       |
-| Setup and support note | Template below                                                                   | Confirm live readiness before inviting real calls                                                |
+**Short:** Bots for calls and follow-up, built around your business.
 
-### Partner setup and support note
+**Extended:** BotBound brings calls, texts, and email into one workspace. Each Bot works from your business knowledge and rules, with configured actions, approvals, and handoffs. Free Builder supports one private draft Bot and bounded rehearsal. Paid plans add live Bot capacity, a dedicated number and managed email identity for each active Bot, and included usage. Activation depends on availability and account eligibility.
 
-**Subject:** Set up your first Front Desk Bot
+## Preserved Sales Campaign
+
+The September Drive campaign **Your Next Sales Hire**, with its **Give Sales a Hand** extension, remains an audience-specific variant. “Sales hire” is a metaphor for software, not a staffing or human-equivalence claim.
+
+| Purpose | Copy |
+| --- | --- |
+| Category | AI Sales Bots |
+| Invitation | Meet Your Next Sales Hire. |
+| Owner story | Give Sales a Hand. |
+| Control | Your Offer. Your Voice. Your Rules. |
+| Capability | Answer questions, qualify interest, and help book the next step. |
+| CTA | Start Free |
+| Disclosure | Private testing free. Live use paid. |
+
+Do not present “Every Lead. A Next Step.” as an outcome guarantee. Deal memory, adaptive plans, quote assistance, daily decision briefs, and complete sales-cycle autonomy remain proposed concepts until their exact behavior is shipped and verified. Outbound-specific distribution still requires readiness approval.
+
+## First Design-Partner Kit
+
+Start the pilot with incoming calls and one configured, permitted follow-up. A narrow pilot scope is not a product-wide limit on Bots.
+
+| Piece | Source | Purpose |
+| --- | --- | --- |
+| Hero still | Current reviewed refresh or Hands Full export | Recognizable owner problem |
+| Founder post | [Refresh copy](../launch-2026-09-refresh/COPY-KIT.md) | Explain the product and invite interest |
+| Product evidence | Exact deployed-source labeled test call and outcome | Show the real workflow once verified |
+| One-pager | [Investor source](../launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) and reviewed PDF | Explain model and pilot posture |
+| Setup/support note | Template below | Agree the job, handoff, and support path |
+
+### Partner Setup and Support Note
+
+**Subject:** Your Front Desk Bot
 
 Hi [first name],
 
-Let's start with one job: answering [business]'s incoming calls and handling [one agreed next step].
+Let's start with [business]'s incoming calls and [one agreed next step].
 
-1. Build free at `https://botbound.me/signup?plan=free`.
-2. Add your hours, services, common questions, and when the Bot should hand off to you.
-3. Rehearse privately. We'll check the answers and agree which follow-ups it may send.
-4. Before real calls, confirm activation is available, the number and routing are ready, and a labeled test call produces the expected follow-up and Inbox record.
+Build free at `https://botbound.me/signup?plan=free`. Add your hours, services, common questions, and when the Bot should hand off. We'll rehearse privately before directing customer calls to it.
 
-Free setup can continue while live activation is unavailable. I'll confirm the live test result before we direct customer calls to the Bot.
+I'll confirm activation, routing, and a labeled test call with the expected follow-up and Inbox record before live use. Free setup can continue while activation is unavailable.
 
-For help, reply or email `support@botbound.me` with the Bot name, what you expected, and the time of the issue. Do not send passwords, payment details, or private customer conversations. If a live answer or follow-up fails, keep using your existing contact path while we investigate.
+For help, reply or email `support@botbound.me` with the Bot name, what you expected, and the issue time. Do not send passwords, payment details, or private customer conversations. Keep your existing contact path available during the pilot.
 
 [Founder name]
 
-This is a draft to send after personal review, not a promise that onboarding, routing, or support has already been completed. Confirm the support inbox works before using the note.
+Internal note: confirm signup and support work before sending. This is a draft, not evidence that onboarding or routing is complete.
 
-## 1. Launch thesis
+## Founder Post
 
-### The human tension
+Stay in the work.
 
-The phone does not ring when the work is convenient. It rings when the baker's hands are in dough, the mechanic is under the hood, the florist is holding a finished arrangement, or the owner is already helping someone else.
+The phone rings while you're with a customer, making the product, or finishing the job.
 
-The first ring asks a person to stop the work. The second ring is where BotBound steps in.
+I built BotBound for that moment: Bots for calls, texts, and email, shaped around your business and your rules.
 
-### The product truth
+Start free: `https://botbound.me/signup?plan=free`
 
-BotBound gives a business a Bot for calls, texts, and email. One Bot can answer or make calls, continue the conversation by text or email, work from the business's knowledge and rules, take approved actions, hand off exceptions, and preserve the outcome.
+Private testing free. Live use paid. Activation subject to availability.
 
-### The launch argument
+## Launch Email
 
-Do not lead with artificial intelligence. Lead with the moment a customer needs an answer and the business owner cannot reach the phone. Then make the product feel inevitable:
+**Subject:** Give the Phone a Bot
 
-> You can't answer every call. Your Bot can.
+**Preheader:** Calls and follow-up, built around your business.
 
-The creative should earn the brand line, not merely display it:
+The phone rarely waits for a good moment.
 
-> Put Your Bot on the Line.
+BotBound gives you Bots for calls, texts, and email, with your knowledge, your rules, and a clear way to hand things back to you.
 
-### The strategic wedge
+**Start Free:** `https://botbound.me/signup?plan=free`
 
-Acquire through the Phone Bot. Expand the story through shared context across calls, texts, and email. Prove value through finished work: an answer, a booking, a confirmation, a clean handoff, a follow-up, or a logged next action.
+Private testing free. Live use paid. Activation subject to availability.
 
-### What makes the story ownable
+## Press and Partner Description
 
-The approved BotBound operator is not a generic chatbot mascot. It is a friendly white and platinum robot, black visor, smiling violet eyes, and one visible white hand gripping a classic violet receiver to its left ear. The hand, phone, and second-ring signal turn a broad AI category into a specific BotBound memory.
+BotBound gives owner-led businesses configurable Bots for calls, texts, and email. Each Bot works from the business's knowledge and rules, with owner controls, configured actions, and a shared outcome record. The company is preparing a controlled design-partner pilot. Free Builder supports private setup and rehearsal; paid plans add live capacity when activation is available.
 
-## 2. Messaging hierarchy
+Keep this as preparation copy while the destination or production gates remain blocked. [PR and Creator Outreach](../launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md) contains drafts only.
 
-Use the highest layer that fits the audience's awareness. Do not stack every layer into one placement.
+## Film and Product Captions
 
-| Layer     | Job                   | Approved message                                           | Where it belongs                        |
-| --------- | --------------------- | ---------------------------------------------------------- | --------------------------------------- |
-| Brand     | Create memory         | **Put Your Bot on the Line.**                              | End frames, homepage hero, lockups, OOH |
-| Category  | Explain the product   | **Your Bot for calls, texts, and email.**                  | Homepage, press, deck, profiles         |
-| Campaign  | Create tension        | **You can't answer every call. Your Bot can.**             | Hero film, paid social, OOH             |
-| Situation | Make it personal      | **Busy doing the work? Your Bot can answer.**              | Vertical creative, role ads, email      |
-| Proof     | Show the finished job | **Answers the call. Books the work. Sends the follow-up.** | Product cutdowns, retargeting, demo     |
-| Control   | Reduce risk           | **Your line. Your rules.**                                 | Pricing, trust, onboarding              |
-| Action    | Convert intent        | **Build free. Put it on a number when it is ready.**       | Homepage, signup, launch email          |
+Use **Hands Full? Bot on the Line.** or **Put Your Bot on the Line.** as publishing copy. Any film with retired copy, public setup steps, or stale UI must be updated and reviewed before reuse. New captions do not repair old pixels.
 
-### Product language spine
+Accessibility captions must describe the actual audio and meaningful sounds. Do not add invented Bot/customer dialogue to a music-only film. The Second Ring original has score, ring, and chime without spoken voice. Selling voice quality requires an actual, labeled Bot-audio demonstration.
 
-- Customer-facing noun: **Bot**
-- Acquisition wedge: **Phone Bot**
-- Broader promise: **Your Bot for calls, texts, and email.**
-- Role starters: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, and Create Your Own
-- Primary proof verbs: answer, qualify, book, confirm, text, email, route, hand off, follow up, log
+A claimed booking, reply, or other result needs a verified labeled test record or a visibly labeled configured example. No general “Answered. Booked. Confirmed.” proof rail without that context.
 
-Public marketing leads with capabilities, outcomes, and a clear signup action. Do not add public setup-step lists or repeated process slogans. After Bot creation, the internal setup guide remains **Train -> Test -> Launch**. Conversation review and later refinements remain available controls. Existing renders require copy review before reuse.
+## CTA and Destination
 
-## 3. Approved tagline bank
+| Intent | CTA | Destination | Boundary |
+| --- | --- | --- | --- |
+| Free start | Start Free | `/signup?plan=free` | Private draft and rehearsal; no live number |
+| Role discovery | Explore Bots | `/showcase` | No public audio demo |
+| Product explanation | See Features | `/features` | Capabilities and owner controls |
+| Pricing | See Pricing | `/pricing` | Catalog price is not activation evidence |
+| Role signup | Start Free | `/signup?plan=free&template=[verified-template-key]` | Verify the supported key before publishing |
+| Partner discussion | Get in Touch | `/contact` | Confirm the contact path works |
 
-### Tier 1: brand and campaign lines
+Use **Build and Test Free** only with an account-required private rehearsal destination. Do not use **Book a Demo** for self-serve signup. Purchase CTAs require current `/api/billing/plans` evidence for the selected plan and interval.
 
-Campaign promises still require the current availability and context checks above. They are not guarantees that every call will be answered.
+## Tracking
 
-- Put Your Bot on the Line.
-- Your Bot for calls, texts, and email.
-- You can't answer every call. Your Bot can.
-- Give the call a next step.
-- Your line. Your rules.
+New September refresh: `utm_campaign=bb_launch_refresh_202609`.
 
-### Tier 2: proof-led
+Use lowercase platform names for `utm_source`; `organic_social`, `paid_social`, `email`, or `partner` for `utm_medium`. Add a descriptive `utm_content` without personal data. Preserve historical campaign names on historical links.
 
-Use these lines only beside a demonstrated, labeled test result or a clearly labeled configured example. Booking and follow-up are capabilities under the Bot's permissions and available tools, not guaranteed outcomes.
+Example: `https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed`
 
-- Answers the call. Books the work. Sends the follow-up.
-- Your Bot. One conversation across calls, texts, and email.
-- The customer gets an answer. You stay in the work.
-- Give the work a Bot. Step in when you want to.
-- Built around the job. Guided by your rules.
-- It answers. It acts. It logs what happened.
-- From first ring to next action.
+Current signup intent retains source, medium, and campaign, not `utm_content`. Do not report creative-level signup attribution from that field. Use separately named campaigns for separately measured tests.
 
-### Tier 3: role and retargeting
+## Product and Claim Boundaries
 
-- Busy doing the work? Your Bot can answer.
-- Put a Bot on the work that keeps interrupting yours.
-- A Front Desk that does not need a desk.
-- New lead. Live answer. Clear next step.
-- The follow-up is part of the conversation.
-- When your hands are full, the line is not.
-- Keep doing what only you can do.
+- Free Builder includes one private draft Bot and bounded simulation. It does not include a production number or customer conversations.
+- Source catalog: Starter $19/month or $190/year, 50 voice minutes; Starter Plus $39/month or $390/year, 100 minutes; Pro $79/month or $790/year, 190 minutes. Recheck live catalog and activation state before publication.
+- Every active paid Bot gets its own number and managed email identity within plan capacity; unused capacity does not pre-provision numbers.
+- Actions depend on configured tools, permissions, approvals, and handoffs. An imported or reviewed list does not itself authorize outreach.
+- Outbound campaign promotion remains held until `outbound_campaign_ready` and the exact audience, destination, copy, and asset are approved.
+- No guaranteed bookings, revenue, availability, every-call coverage, invented results, or unsupported customer counts and testimonials.
+- Generated scenes are illustration. Historical screenshots and local synthetic-data previews are not current deployed product proof.
+- No public setup-step lists or competing process slogans. No “One Bot” headline suggesting a product-wide limit.
 
-### Do not use
+## Publication Check
 
-- Never miss another call.
-- Guaranteed to book more customers.
-- Human replacement.
-- Fully autonomous.
-- Set it and forget it.
-- The world's best Bot.
-- Any savings, revenue, conversion, answer-rate, or response-time claim without current evidence.
+Review the final asset and caption together: current copy, Title Case, readable crop, correct CTA, working destination, accurate offer, required example labels, and recorded provenance. Product proof must match the exact deployed source. Record the final file hash and placement. Paid distribution additionally requires the explicit media budget and operational gates in [Paid Media and Placement Notes](../launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md).
 
-## 4. Core launch copy
+## Source Map
 
-### One-line pitch
-
-BotBound gives your business a Bot for calls, texts, and email, built around your knowledge, rules, tools, and handoffs.
-
-### Two-line pitch
-
-BotBound answers the phone when your hands are full, then keeps the conversation moving by text or email. Build one Bot around a real job, set the rules, and put it on a number when it is ready.
-
-### Spoken founder pitch
-
-BotBound is for the calls and follow-up that arrive while you are already doing the work. You build one Bot around a real role, give it the right knowledge and rules, and let it answer, book, confirm, follow up, hand off, and log the outcome across calls, texts, and email. You stay in control, and you step in when you want to.
-
-### Homepage hero option
-
-Eyebrow:
-
-> CALL · TEXT · EMAIL
-
-Headline:
-
-> PUT YOUR BOT<br>
-> ON THE LINE
-
-Support:
-
-> Your Bot for calls, texts, and email.
-
-Footnote:
-
-> Build free. Put it on a number when it is ready.
-
-### Product-proof block
-
-Headline:
-
-> THE CALL WAS ONLY THE BEGINNING
-
-Body:
-
-> Your Bot can answer, qualify, book, confirm, continue by text or email, route the exception, and log the next action under one set of rules.
-
-Proof rail:
-
-> ANSWERED · BOOKED · CONFIRMED · LOGGED
-
-CTA:
-
-> BUILD AND TEST FREE
-
-Destination: `/signup?plan=free`. Supporting line: Create a free account, then hear your Bot in a private rehearsal. No public audio or live customer call is implied.
-
-## 5. Press release draft
-
-### Publication note
-
-Publish only after the launch gate is signed off. Replace all bracketed fields and confirm the final product status line with counsel and operations.
-
-### Headline
-
-**BotBound Puts Your Bot on the Line for Calls, Texts, and Email**
-
-### Subheadline
-
-**Build Bots around real jobs. Set their knowledge and rules. Activate dedicated numbers within your paid plan's capacity.**
-
-### Release
-
-**[CITY, STATE], [MONTH DAY, YEAR]**: BotBound today introduced a web platform for building Bots that handle calls, texts, and email under one identity, shared context, and clear business rules.
-
-BotBound starts with a familiar problem. A customer calls while the person who can help is already doing the work. Instead of forcing the owner to stop or sending the caller into a dead end, a BotBound Phone Bot can answer, understand the request, book or route the next step, continue by text or email when useful, and preserve the outcome for review.
-
-Businesses can begin with one private draft Bot in Free Builder. They can choose a role starter such as Front Desk, Sales Rep, Appointment Setter, Customer Support, or Property Manager, or define a custom job. Paid plans add live Bot capacity, included voice minutes, and a dedicated production number for each active paid Bot within the plan's capacity.
-
-"People do not need another AI dashboard that only produces more work to review. They need the phone answered and the next step handled under rules they control," said [FOUNDER NAME], [TITLE] at BotBound. "BotBound is built around that second ring, the moment the customer still needs an answer and the owner needs to stay in the work."
-
-BotBound keeps calls, texts, and email connected through the same Bot identity, business knowledge, playbook, approval posture, and outcome record. Businesses can configure what the Bot may do, where a person must approve or take over, and what should be logged after the conversation.
-
-The launch campaign, **The Second Ring**, follows people whose hands are occupied by real work. A classic phone rings just out of reach. On the second ring, a violet signal resolves into the BotBound operator: a friendly white and platinum robot holding a violet phone receiver to its ear. The campaign closes with the line, **You can't answer every call. Your Bot can.**
-
-[APPROVED AVAILABILITY LINE: BotBound is available to build at BotBound.me. Free Builder supports private creation and simulation; paid plans activate live capacity and production numbers.]
-
-### About BotBound
-
-BotBound is the platform for building Bots that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Start with one Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
-
-### Media contact
-
-- [NAME]
-- [TITLE]
-- [EMAIL]
-- [PHONE, IF APPROVED]
-
-## 6. Founder LinkedIn post
-
-The phone always rings when your hands are full.
-
-You are with a customer. Under the hood. Finishing the order. Solving the problem only you can solve.
-
-But the person calling does not know that. They just need an answer.
-
-That is the moment we built BotBound for.
-
-BotBound gives your business a Bot for calls, texts, and email. You build one Bot around a real job, give it the right knowledge and rules, and decide where it can act or should hand off.
-
-It can answer the call, understand what the customer needs, book or route the next step, continue by text or email, and log what happened.
-
-The launch idea is called **The Second Ring**.
-
-The first ring interrupts the work. The second ring becomes the BotBound signal.
-
-You keep doing what only you can do. Your Bot takes the line.
-
-**Put Your Bot on the Line.**
-
-Build free at `BotBound.me`.
-
-#BotBound #SmallBusiness #CustomerExperience #VoiceAI
-
-## 7. X launch thread
-
-**1/8**
-
-The phone always rings when your hands are full. The customer still needs an answer. You still need to finish the work. We built BotBound for that second ring. 🧵
-
-**2/8**
-
-BotBound gives your business a Bot for calls, texts, and email. Start with one Bot. Build it around a real job. Give it your knowledge, rules, tools, approvals, and handoffs.
-
-**3/8**
-
-The Phone Bot is the starting point. It can answer or make calls, qualify the request, book the next step, transfer when needed, and recap what happened.
-
-**4/8**
-
-The conversation does not have to stop when the call ends. The same Bot can continue by text or email with shared context and one outcome record.
-
-**5/8**
-
-Start with a role: Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, or your own job.
-
-**6/8**
-
-Free Builder lets you create, configure, and privately simulate one draft Bot. Put it on a number when it is ready with a paid plan.
-
-**7/8**
-
-Our launch film is called The Second Ring. The first ring interrupts the work. The second ring becomes the BotBound signal.
-
-**8/8**
-
-You can't answer every call. Your Bot can.<br>
-Put Your Bot on the Line.<br>
-`BotBound.me`
-
-## 8. Launch email
-
-### Subject line options
-
-1. Put Your Bot on the Line.
-2. The phone rang. Your Bot answered.
-3. Meet BotBound, your Bot for the line
-4. Your hands are full. Give the call a next step.
-5. The Second Ring is here.
-
-### Preheader options
-
-- Your Bot for calls, texts, and email.
-- Build one Bot around a real job. Put it on a number when it is ready.
-- Answer the call, handle the next step, and keep the outcome.
-
-### Email body
-
-**PUT YOUR BOT ON THE LINE**
-
-The phone does not wait until the work is convenient.
-
-BotBound gives your business a Bot for calls, texts, and email, so the customer can get an answer while you stay in the work.
-
-Build one Bot around a real job. Give it your knowledge, rules, tools, approvals, and handoff path. It can answer, qualify, book, confirm, follow up, and log what happened.
-
-Start with Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, or create your own role.
-
-**[BUILD YOUR BOT]**
-
-Build free. Put it on a number when it is ready.
-
-P.S. Watch **The Second Ring**, our launch film about the moment a customer still needs an answer and your hands are already full. **[WATCH THE FILM]**
-
-### Plain-text version
-
-The phone does not wait until the work is convenient.
-
-BotBound gives your business a Bot for calls, texts, and email. Build one Bot around a real job, give it your knowledge and rules, and decide where it can act or should hand off.
-
-Build free at https://botbound.me
-
-Put Your Bot on the Line.
-
-## 9. Product descriptions
-
-### Micro, up to 55 characters
-
-Your Bot for calls, texts, and email.
-
-### Short, up to 90 characters
-
-Build a Bot for calls, texts, email, and the work that follows.
-
-### Medium, up to 180 characters
-
-BotBound lets you build one Bot around a real job, configure its knowledge and rules, and keep conversations moving across calls, texts, and email.
-
-### Long
-
-BotBound is the platform for building Bots that handle calls, texts, and email under one identity and set of business rules. Start with a Phone Bot or role template, add the knowledge and playbook it needs, connect approved tools and handoffs, and privately simulate the experience. When it is ready, a paid plan can put the Bot on a dedicated production number. The Bot can answer or make calls, qualify needs, book or route the next step, continue by text or email, and preserve the outcome for review.
-
-### App or directory listing
-
-BotBound helps a business build one Bot around a real customer-facing job. Configure its role, tone, knowledge, channels, tools, approvals, and handoffs. The same Bot can handle calls, continue by text or email, and keep a shared outcome record. Free Builder supports one private draft Bot and simulation. Paid plans add live capacity and production numbers.
-
-### Boilerplate, 32 words
-
-BotBound is the platform for building Bots that handle calls, texts, and email with shared knowledge, rules, approvals, tools, handoffs, and outcome records. Put Your Bot on the Line at BotBound.me.
-
-## 10. Media captions by cut
-
-These are publishing captions, not subtitle files. Accessibility subtitle delivery should separately include the audible dialogue and meaningful sound cues.
-
-### 30-second hero film
-
-**Primary caption**
-
-Your best work should not stop every time the phone rings.
-
-BotBound gives your business a Bot for calls, texts, and email, so the customer gets an answer while you stay in the work.
-
-You can't answer every call. Your Bot can.
-
-Put Your Bot on the Line at `BotBound.me`.
-
-**Short caption**
-
-The first ring interrupts the work. The second ring becomes the BotBound signal. Put Your Bot on the Line at `BotBound.me`.
-
-**Suggested accessibility cues**
-
-- `[Phone rings]`
-- `[Two-note chime]`
-- `Bot: Good morning. How can I help?`
-- `Customer: Can I pick up twelve croissants at eight?`
-- `Bot: Absolutely. I have you down for eight.`
-- `[Confirmation tones]`
-
-### 15-second horizontal
-
-**Primary caption**
-
-Hands full? The call can still get answered. BotBound answers, books, follows up, and logs the outcome across calls, texts, and email. Build free at `BotBound.me`.
-
-**Short caption**
-
-Answered. Booked. Texted. Logged. Put Your Bot on the Line.
-
-### 15-second vertical
-
-**Primary caption**
-
-Give the call a next step. Your Bot can take the line, handle the next step, and keep the outcome. Build free at `BotBound.me`.
-
-**Story overlay sequence**
-
-1. THE CALL STILL GETS ANSWERED.
-2. ANSWERED · BOOKED · CONFIRMED · LOGGED
-3. PUT YOUR BOT ON THE LINE.
-4. BUILD FREE AT BOTBOUND.ME
-
-### 6-second bumper
-
-**Primary caption**
-
-You can't answer every call. Your Bot can. `BotBound.me`
-
-**Alternate caption**
-
-Ring. Answer. Next step. Put Your Bot on the Line.
-
-## 11. Social channel variants
-
-### LinkedIn brand post
-
-Every missed call is someone deciding whether to try the next name on the list.
-
-BotBound gives your business a Bot for calls, texts, and email. Build one Bot around the job, configure the rules, and put it on a number when it is ready.
-
-Watch **The Second Ring**.
-
-**You can't answer every call. Your Bot can.**
-
-`BotBound.me`
-
-### Instagram feed
-
-Hands in the work. Customer on the line. Your Bot takes the second ring.
-
-Your Bot for calls, texts, and email.
-
-Put Your Bot on the Line.<br>
-`BotBound.me`
-
-#BotBound #SmallBusiness #PhoneBot #CustomerExperience
-
-### Instagram Reel
-
-POV: the phone rings at the exact moment you cannot reach it.
-
-Give the call a next step.
-
-Build free at `BotBound.me`.
-
-### X single post
-
-The phone rings. Your hands are full. The customer still needs an answer.
-
-You can't answer every call. Your Bot can.
-
-Put Your Bot on the Line. `BotBound.me`
-
-### YouTube title options
-
-- The Second Ring | BotBound Launch Film
-- You Can't Answer Every Call. Your Bot Can. | BotBound
-- Put Your Bot on the Line. | BotBound
-
-### YouTube description
-
-The phone always rings when your hands are full. BotBound gives your business a Bot for calls, texts, and email, so the customer can get an answer while you stay in the work.
-
-Build one Bot around a real job. Configure its knowledge and rules. Put it on a number when it is ready.
-
-Build free: `https://botbound.me`
-
-### Partner or community post
-
-Meet BotBound, a platform for building Bots that handle calls, texts, and email under one shared set of knowledge and rules. Start with one private Bot, configure it around a real job, and put it on a number when it is ready. Learn more at `BotBound.me`.
-
-### Product screenshot post
-
-The proof is not that a Bot talked. The proof is what happened next.
-
-Answered. Qualified. Booked. Confirmed. Logged.
-
-Build your Bot at `BotBound.me`.
-
-## 12. OOH copy variants
-
-Keep OOH to one thought, one robot, one complete `BotBound` wordmark, and one destination. Use an Obsidian field, Platinum White type, Aurora Violet signal, and the approved robot holding the receiver. Never break or crop either B.
-
-### Flagship
-
-> YOU CAN'T ANSWER<br>
-> EVERY CALL.<br>
-> YOUR BOT CAN.
-
-Lockup: BotBound<br>
-Footer: BOTBOUND.ME
-
-### Hands-full placement
-
-> YOUR HANDS ARE FULL.<br>
-> THE LINE ISN'T.
-
-Lockup: BotBound<br>
-Footer: PUT YOUR BOT ON THE LINE.
-
-### Product-forward
-
-> YOUR BOT.<br>
-> EVERY CHANNEL.
-
-Support: CALL · TEXT · EMAIL<br>
-Footer: BOTBOUND.ME
-
-### Second Ring
-
-> THE SECOND RING<br>
-> BELONGS TO YOUR BOT.
-
-Lockup: BotBound<br>
-Footer: BOTBOUND.ME
-
-### Booking proof
-
-Only pair this with a real labeled test booking or a visibly labeled configured example; it is not a general campaign promise.
-
-> THE CALL CAME IN.<br>
-> THE JOB GOT BOOKED.
-
-Lockup: BotBound<br>
-Footer: PUT YOUR BOT ON THE LINE.
-
-### Ultra-short transit
-
-> HANDS FULL?<br>
-> BOT ON.
-
-Lockup: BotBound<br>
-Footer: BOTBOUND.ME
-
-## 13. CTA matrix
-
-| Intent              | CTA                       | Destination                                 | Use                                      | Supporting line                                                     |
-| ------------------- | ------------------------- | ------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------- |
-| Awareness           | **WATCH THE SECOND RING** | Approved film page or hosted video          | Launch day hero, press, YouTube          | See what happens on the second ring.                                |
-| Curiosity           | **EXPLORE BOTS**          | `/showcase`                                 | Homepage, product education, retargeting | Find a role, then build and hear your own Bot privately.            |
-| Private rehearsal   | **BUILD AND TEST FREE**   | `/signup?plan=free`                         | Voice education, trust, product proof    | Create a free account to hear your Bot privately.                   |
-| Exploration         | **SEE WHAT A BOT CAN DO** | `/features`                                 | Press, deck, organic social              | Calls, texts, email, tools, and outcomes.                           |
-| High intent         | **BUILD YOUR BOT**        | `/signup?plan=free`                         | Homepage, film end card, email           | Build free. Put it on a number when it is ready.                    |
-| Low-friction start  | **START FREE**            | `/signup?plan=free`                         | Paid social, mobile, pricing             | One private draft Bot and simulation.                               |
-| Role-led            | **BUILD THIS ROLE**       | `/signup?plan=free&template=[template-key]` | Role cards, vertical campaigns           | Start with the job. Rewrite every rule.                             |
-| Pricing             | **SEE PRICING**           | `/pricing`                                  | Email footer, comparison, FAQ            | Free Builder, then live paid plans.                                 |
-| Starter intent      | **SET UP STARTER**        | `/signup?plan=starter`                      | Pricing while activation is unavailable  | Free setup; Starter is $19/month when activation is available.      |
-| Starter Plus intent | **SET UP STARTER PLUS**   | `/signup?plan=starter-plus`                 | Pricing while activation is unavailable  | Free setup; Starter Plus is $39/month when activation is available. |
-| Pro intent          | **SET UP PRO**            | `/signup?plan=pro`                          | Pricing while activation is unavailable  | Free setup; Pro is $79/month when activation is available.          |
-| Trust               | **SEE HOW CONTROL WORKS** | `/security`                                 | Pricing, sales follow-up                 | Your line. Your rules.                                              |
-| Founder contact     | **TALK THROUGH THE JOB**  | `/contact`                                  | High-consideration or complex use case   | Bring one workflow worth fixing.                                    |
-
-### CTA rules
-
-- Use one primary CTA per placement.
-- Use **Build Your Bot** when the audience understands the product.
-- Use **Build and Test Free** for private voice rehearsal, or **Explore Bots** for role discovery. Never promise public audio at `/showcase`.
-- Use **Start Free** when space is limited and the destination is Free Builder.
-- Keep pricing out of broad awareness creative unless the live catalog is rechecked on publish day. Purchase language such as **Start for $19** also requires `/api/billing/plans` to confirm Stripe and that plan's selected billing interval are available; a catalog price alone is not activation evidence.
-- Do not use **Book a demo** when the destination is self-serve signup.
-
-## 14. UTM naming convention
-
-### Canonical launch campaign
-
-`utm_campaign=bb_launch_second_ring_202608`
-
-### Required parameters
-
-| Parameter      | Format                              | Examples                                                                  |
-| -------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| `utm_source`   | lowercase platform or partner       | `linkedin`, `instagram`, `x`, `youtube`, `email`, `partner_name`, `ooh`   |
-| `utm_medium`   | channel type                        | `organic_social`, `paid_social`, `video`, `email`, `partner`, `ooh`, `pr` |
-| `utm_campaign` | brand + initiative + concept + date | `bb_launch_second_ring_202608`                                            |
-| `utm_content`  | format + length + concept + variant | `video_30s_hands_full_v1`, `still_square_auto_v1`, `email_founder_v1`     |
-| `utm_term`     | optional audience or paid keyword   | `small_business_owner`, `front_desk`, `appointment_setter`                |
-
-### Naming rules
-
-- Lowercase only.
-- Use underscores, never spaces.
-- Keep `utm_campaign` stable for the full launch flight.
-- Change `utm_content` for every meaningful creative, cut, ratio, or copy variant.
-- Use a plain-language channel name for `utm_source`, not an ad account ID.
-- Never place customer names, email addresses, phone numbers, or other personal data in a UTM.
-- Preserve the base destination path. Do not send every audience to the homepage if `/showcase`, `/features`, or a role-led signup is the stronger next step.
-
-### Examples
-
-30-second LinkedIn launch film:
-
-`https://botbound.me/?utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_second_ring_202608&utm_content=video_30s_hands_full_v1`
-
-15-second florist Reel:
-
-`https://botbound.me/signup?plan=free&utm_source=instagram&utm_medium=paid_social&utm_campaign=bb_launch_second_ring_202608&utm_content=video_15s_vertical_florist_v1`
-
-Founder launch email:
-
-`https://botbound.me/signup?plan=free&utm_source=email&utm_medium=email&utm_campaign=bb_launch_second_ring_202608&utm_content=email_founder_v1`
-
-Product-proof retargeting:
-
-`https://botbound.me/showcase?utm_source=youtube&utm_medium=video&utm_campaign=bb_launch_second_ring_202608&utm_content=video_06s_answered_booked_v1`
-
-## 15. Seven-day launch sequence
-
-The sequence moves from tension to character, then from character to product proof. Each day has one job.
-
-### Day 1: The first ring
-
-- **Goal:** create recognition before explanation.
-- **Hero asset:** extreme hands-full crop with no robot.
-- **Copy:** `THE PHONE ALWAYS RINGS WHEN YOUR HANDS ARE FULL.`
-- **CTA:** none or `TOMORROW.`
-- **Channels:** Instagram Story, LinkedIn image, X, email teaser.
-- **Measure:** qualified site visits and video reminder actions, without setting a numeric promise.
-
-### Day 2: The operator reveal
-
-- **Goal:** introduce the ownable robot and phone silhouette.
-- **Hero asset:** approved operator on Obsidian, visible hand on violet receiver.
-- **Copy:** `THE SECOND RING BELONGS TO YOUR BOT.`
-- **Support:** `Your Bot for calls, texts, and email.`
-- **CTA:** `MEET BOTBOUND.`
-- **Channels:** social reveal, homepage takeover, founder profile assets.
-
-### Day 3: Launch day
-
-- **Goal:** make the full emotional and product argument.
-- **Hero asset:** 30-second The Second Ring film and bakery still.
-- **Copy:** `YOU CAN'T ANSWER EVERY CALL. YOUR BOT CAN.`
-- **CTA:** `BUILD YOUR BOT.`
-- **Channels:** homepage, YouTube, LinkedIn founder post, launch email, press outreach.
-- **Support action:** publish the press release and pin the film.
-
-### Day 4: What happened next
-
-- **Goal:** turn attention into proof.
-- **Hero asset:** 15-second horizontal cut and product outcome frames.
-- **Copy:** `ANSWERED · BOOKED · CONFIRMED · LOGGED`
-- **CTA:** `BUILD AND TEST FREE.`
-- **Channels:** LinkedIn carousel or still sequence, X thread, retargeting, sales follow-up.
-- **Product destination:** `/signup?plan=free`, with account creation before private rehearsal.
-
-### Day 5: Pick the work
-
-- **Goal:** help prospects recognize their first use case.
-- **Hero asset:** role cards or three vertical edits.
-- **Copy:** `PICK THE WORK. PUT A BOT ON IT.`
-- **Roles:** Front Desk, Sales Rep, Appointment Setter, Customer Support, Property Manager, Create Your Own.
-- **CTA:** `BUILD THIS ROLE.`
-- **Destination:** role-led Free Builder signup.
-
-### Day 6: Your line. Your rules.
-
-- **Goal:** answer the control objection.
-- **Hero asset:** product still showing knowledge, rules, approval, handoff, and outcome record without fabricated data.
-- **Copy:** `BUILT AROUND THE JOB. GUIDED BY YOUR RULES.`
-- **CTA:** `SEE HOW CONTROL WORKS.`
-- **Channels:** founder post, FAQ email, trust retargeting.
-- **Destination:** `/security` or `/features`.
-
-### Day 7: Put it on the line
-
-- **Goal:** convert remembered interest into action.
-- **Hero asset:** 6-second bumper, operator close-up, end frame.
-- **Copy:** `PUT YOUR BOT ON THE LINE.`
-- **Support:** `Build free. Put it on a number when it is ready.`
-- **CTA:** `START FREE.`
-- **Channels:** all social, email follow-up to engaged recipients, video retargeting.
-- **Destination:** `/signup?plan=free`.
-
-## 16. Channel and creative guardrails
-
-### Identity
-
-- Always use the complete `BotBound` wordmark. Never break, notch, crop, stencil, or replace either B.
-- Use title case `BotBound` in product and brand lockups. Reserve `BOTBOUND` for URLs, small mono utility copy, and short campaign labels.
-- Use the approved robot only: white and platinum shell, black visor, smiling violet eyes, antenna, classic violet receiver, and visible gripping hand.
-- Keep the receiver on the robot's left side, pressed to the ear.
-
-### Color
-
-- Obsidian `#0A0A0E` is the primary field.
-- Platinum White `#F5F4F8` is the primary type on dark.
-- Aurora Violet `#A78BFA` marks the answer, connection, active state, or conversion.
-- Receiver Violet `#8B5CF6` belongs to the phone and high-energy signal moments.
-- Violet is a signal, not decoration.
-
-### Voice
-
-- Lead with the job, interruption, or outcome before the AI mechanism.
-- Prefer one clear sentence to a stack of capability claims.
-- Use concrete verbs and visible outcomes.
-- Do not call the product a chatbot, virtual receptionist platform, or generic automation suite.
-- Do not imply that every conversation completes without exceptions or human handoff.
-- Do not use fake interface screens, fake transcripts, fake customers, or fake results.
-
-## 17. Source notes and claim map
-
-These repository sources are the basis for the facts in this kit. If a source changes, recertify the corresponding copy.
-
-| Fact used in this kit                                                                                                   | Current repository source                       |
-| ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Brand name, line, product promise, customer-facing Bot noun, and channel labels                                         | `src/lib/bot-product.ts`                        |
-| Product voice, proof loop, role framing, shared context, and trust language                                             | `src/lib/product-copy.ts`                       |
-| Current homepage hero, Free Builder action, role cards, pricing summaries, and trust close                              | `src/components/marketing/WireAgentLanding.tsx` |
-| Current page metadata and production origin                                                                             | `src/pages/LandingPage.tsx`, `src/lib/brand.ts` |
-| Role exploration and account-required private rehearsal boundary                                                        | `src/pages/Showcase.tsx`, `README.md`           |
-| Feature claims for shared memory, scheduling, handoff, approvals, training, and outcome records                         | `src/pages/Features.tsx`                        |
-| Free Builder, paid plan capacities, included minutes and numbers, annual prices, and prepaid usage controls             | `src/lib/plan-catalog.ts`                       |
-| Public pricing presentation, current CTA paths, channel explanations, FAQ language, and `$19/month` Starter entry point | `src/pages/Pricing.tsx`                         |
-| Approved robot, hand, receiver, wordmark, typography, palette, photography, motion, and identity governance             | `brand-work/BOTBOUND-BRAND-GUIDE.md`            |
-| The Second Ring premise, film script, cutdowns, approved campaign lines, and delivery standard                          | `brand-work/SECOND-RING-CAMPAIGN.md`            |
-| Current identity, campaign stills, placements, Remotion outputs, and regeneration paths                                 | `brand-work/README.md`                          |
-
-### Pricing facts used sparingly
-
-This kit uses **Build free** and **Build for Starter** while paid activation is unavailable. The active repository catalog defines Free Builder at $0 and Starter at $19 monthly or $190 annually. The public pricing page checks live availability before displaying a purchase CTA. Do not carry catalog figures into evergreen image pixels, press syndication, or OOH without a publish-day catalog and activation check.
-
-### Availability posture
-
-This kit describes capabilities and catalog structure visible in the current repository. It does not independently certify production availability, uptime, carrier coverage, or launch readiness. The bracketed availability line in the press release must remain blocked until the release owner confirms the live product and operational gates.
+- Product and surface availability: `../../README.md`
+- Catalog and usage: `../../src/lib/plan-catalog.ts`
+- Signup attribution: `../../src/lib/signup-intent.ts`
+- Voice roster: `../../src/lib/voice-catalog.ts`
+- Positioning authority: `../../docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
+- Identity and typography: `../BOTBOUND-BRAND-GUIDE.md`
+- Current asset selection: `../CURRENT-ASSET-INDEX.md`
+- Operational launch status: `../../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`

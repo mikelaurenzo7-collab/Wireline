@@ -1,18 +1,20 @@
 # BotBound Launch Release — September 2026
 
-## The campaign in one sentence
+## The Campaign in One Sentence
 
 The phone has impeccable timing. BotBound gives the second ring somewhere useful to go.
 
 - **Campaign platform:** The Second Ring
-- **Master promise:** You can't answer every call. Your Bot can.
-- **Campaign close:** Put your Bot on the line.
-- **Product line:** Your Bot for calls, texts, and email.
+- **Master promise:** Hands Full? Bot on the Line.
+- **Campaign close:** Put Your Bot on the Line.
+- **Product line:** Bots for calls, texts, and email.
 - **Offer:** Build free. Plans from $19/mo. Activation availability applies.
 
-This is a launch-release creative system, not a folder of disconnected posts. Each asset moves from a familiar owner/operator problem — the call that arrives while the work is happening — to the same clear product idea: one trained Bot can carry a business conversation across calls, texts, and email under one identity, rule set, approval posture, and outcome record.
+The campaign begins with a familiar owner problem: the call that arrives while the work is happening. Bots can carry conversations across calls, texts, and email with the business's knowledge, rules, handoffs, and outcome records.
 
-### Copy revision — September 20
+### Copy Revision — September 20
+
+The current refresh uses **Hands Full? Bot on the Line.**, authored Title Case, concise channel copy, and no public setup list. [September Refresh](../launch-2026-09-refresh/README.md) adds the broader **Stay in the Work.** campaign and preserves the Drive sales variants. Audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`. New source copy is not evidence of motion, remote-file, or deployment updates.
 
 Public marketing now leads with capabilities, outcomes, and a clear signup action, without a setup-step list. Current text sources and the investor PDF renderer reflect this change.
 
@@ -20,9 +22,9 @@ The local investor PDF at `exports/investor/botbound-investor-one-pager-2026-09.
 
 Recapture Home and Features product images after the current layout and copy changes. Review earlier film renders and any Drive copies for the retired setup-step language before distribution. Local source and PDF changes do not update historical images, videos, or remote copies.
 
-## Product truth carried by the work
+## Product Truth Carried by the Work
 
-- BotBound supports one Bot across calls, texts, and email.
+- BotBound supports Bots across calls, texts, and email.
 - Free Builder creates and privately simulates one draft Bot; it does not include a live production number.
 - Paid live plans begin with Starter at $19/month.
 - Every active paid Bot receives a dedicated BotBound production number within plan capacity.
@@ -33,11 +35,11 @@ Recapture Home and Features product images after the current layout and copy cha
 - Available actions depend on the Bot's configured tools, permissions, approvals, and handoffs.
 - No asset in this release claims customers, revenue, ROI, bookings, adoption, or guaranteed outcomes.
 
-## Creative system
+## Creative System
 
 ### 1. Hands Full
 
-The human stays in the work. The call still gets answered.
+Hands Full? Bot on the Line.
 
 - `exports/social/botbound-hands-full-linkedin-1200x627.png`
 - Best use: founder launch post, LinkedIn organic, sales follow-up, editorial header.
@@ -68,22 +70,22 @@ Choice at setup; consistency in the conversation.
 - `exports/voice-carousel/botbound-openai-voices-05-1080x1350.png`
 - Best use: LinkedIn/Instagram carousel, product education, sales enablement.
 
-### 5. Ring to Next Action
+### 5. Inbound & Outbound Bots
 
-A clearly labeled configured example of the operating chain: answered, booked, confirmed, logged.
+Parallel Calls, Texts, and Email capability cards. This is a product overview, not a public setup sequence or a record of a completed customer workflow.
 
 - `exports/social/botbound-ring-to-next-action-1200x627.png`
 - Best use: product education and sales conversations.
-- Required context: keep the configured-example label and the tools/approvals disclaimer visible.
+- Required context: keep the private-rehearsal and paid-live-activation boundary visible. Channel availability and actions depend on configuration and permissions.
 
 ### 6. The Call Sheet
 
-A dry, graphic take on the owner's evening: hands full, with a customer, under the hood — and then the Bot answers.
+A dry, graphic take on inconvenient call timing, visibly labeled as an illustrative call sheet. Its times and outcomes are campaign art, not customer evidence.
 
 - `exports/social/botbound-call-sheet-1080-square.png`
 - Best use: organic social, founder commentary, carousel opener.
 
-### 7. Release brand kit
+### 7. Release Brand Kit
 
 Brand derivatives for candidate use are collected under `exports/brand/`:
 
@@ -96,7 +98,7 @@ Brand derivatives for candidate use are collected under `exports/brand/`:
 
 Use the polished operator for hero and campaign applications. Use the lockup variant whose contrast matches the destination; do not improvise a new mark from type and icon fragments.
 
-### 8. Motion release
+### 8. Motion Release
 
 Three H.264/AAC campaign cuts are rendered at 30 fps with JSON, SRT, and VTT captions, recorded duration/codec metadata, SHA-256 delivery hashes, and opening/middle/end-frame QA:
 
@@ -107,7 +109,7 @@ Three H.264/AAC campaign cuts are rendered at 30 fps with JSON, SRT, and VTT cap
 
 These are cinematic campaign concepts, not documentary customer footage or deployed-product proof. Their technical and visual QA does not remove the rights, claims, channel, paid-media, or final owner-approval gates.
 
-### 9. Investor one-pager
+### 9. Investor One-Pager
 
 - Source copy: `investor/BOTBOUND-INVESTOR-ONE-PAGER.md`
 - Rendered and visually QA'd PDF: `exports/investor/botbound-investor-one-pager-2026-09.pdf`
@@ -115,7 +117,7 @@ These are cinematic campaign concepts, not documentary customer footage or deplo
 
 The one-pager contains no invented traction, customer, revenue, TAM, ROI, or fundraising claims. Confirm the final contact and fundraising posture before external distribution.
 
-### 10. Product-preview and launch support
+### 10. Product Preview and Launch Support
 
 - `exports/email/botbound-launch-email-header-1200x400.png`
 - `exports/contact-sheet/botbound-launch-campaign-contact-sheet-1920x1400.png`
@@ -130,7 +132,7 @@ The one-pager contains no invented traction, customer, revenue, TAM, ROI, or fun
 
 The September 1 product contact sheet is historical. A fresh local capture is current only when its JSON matches the intended commit, source fingerprint, accepted frames, and contact-sheet hashes. That workflow uses simulated auth and paused billing responses; it is **not deployed production proof**. See `CURRENT_PRODUCT_PROOF.md` for the commands and evidence boundary.
 
-## Release status
+## Release Status
 
 The static compositions are production-quality creative masters. That describes their craft and technical readiness; it is not blanket authorization to buy media or imply product proof.
 
@@ -138,7 +140,7 @@ The static compositions are production-quality creative masters. That describes 
 | ---------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Campaign illustrations and graphic posts | Master complete                                                                        | Internal, investor, sales, and organic candidate use after final owner review       | Brand/legal/rights review before broad paid placement                                                                                              |
 | Voice carousel                           | Master complete; product facts source-checked                                          | Organic and sales candidate use after final owner review                            | Recheck roster and runtime policy immediately before publication                                                                                   |
-| Ring to Next Action                      | Master complete; configured example labeled                                            | Sales and product-education candidate use                                           | Never strip the example label or capability disclaimer                                                                                             |
+| Inbound & Outbound Bots                 | Current channel graphic; historical filename retained                                | Product-education candidate                                                       | Keep private/paid and configured-channel boundaries visible                                                                                       |
 | Billboard                                | OOH master concept complete                                                            | Pitch, event screen, mockup, and media-planning use                                 | Media-owner mechanical specs, rights review, location context, and explicit spend approval                                                         |
 | Brand export kit                         | Current icon, operator, lockups, and OG image collected                                | Current release design, sales, and investor use after destination QA                | Final owner review and destination-specific contrast/crop check                                                                                    |
 | Motion/reels                             | Three cuts rendered; duration/codec, captions, hashes, and sampled-frame QA complete   | Cinematic campaign review and organic candidate use after final owner/rights review | Not product proof; paid placement still requires claims, rights, channel, and explicit spend approval                                              |
@@ -146,7 +148,7 @@ The static compositions are production-quality creative masters. That describes 
 | Exact-worktree screenshots               | September 1 set is historical; use only a fresh matching capture for current UI review | Internal UI review with explicitly simulated auth and billing                       | Seven current accepted frames, contact-sheet hashes, source fingerprint, and human visual review; deployed and authenticated proof remain separate |
 | Deployed product proof                   | Not yet certified                                                                      | None as public production proof                                                     | Commit, deploy, exact-SHA health match, authenticated capture, frame review, and recorded release provenance                                       |
 
-## Rules that keep the campaign honest
+## Rules That Keep the Campaign Honest
 
 1. Never describe generated scenes as BotBound UI, customer footage, or documentary customer evidence.
 2. Never convert a configured example into a claimed customer result.
@@ -156,7 +158,7 @@ The static compositions are production-quality creative masters. That describes 
 6. If the public roster, price catalog, channel availability, or production runtime changes, recertify the affected creative before republishing it.
 7. Paid acquisition and OOH spend require an explicit release decision. Finished creative is not a media authorization.
 
-## Recommended launch sequence
+## Recommended Launch Sequence
 
 1. **First pilot package:** select one Front Desk workflow, Hands Full, the founder LinkedIn post, the one-pager, and the setup/support note in `../gtm/BOTBOUND-LAUNCH-COPY-KIT.md`. Publish only after the destination and current launch gates pass.
 2. **Problem recognition:** follow with Impeccably Bad Timing and The Call Sheet.
@@ -166,7 +168,7 @@ The static compositions are production-quality creative masters. That describes 
 6. **Paid test:** activate one restrained, measurable campaign only after founder dogfood, claims, rights, landing page, tracking, billing, phone, and compliance gates pass.
 7. **OOH:** use The Signal only after an explicit media buy and site-specific legibility review.
 
-## Folder map
+## Folder Map
 
 ```text
 launch-2026-09/
@@ -187,7 +189,7 @@ launch-2026-09/
 └── PROVENANCE.md
 ```
 
-## Canonical destination
+## Canonical Destination
 
 The canonical cloud release is populated in the versioned Google Drive folder [07 Launch Release — 2026-09-01](https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO) under the existing BotBound Brand & Launch estate. `CURRENT-RELEASE-POINTER.md` records the same destination and release boundary.
 

@@ -2,19 +2,21 @@
 
 Production identity approved 2026-08-20.
 
-## The idea
+## The Idea
 
-BotBound is the Bot that answers while the customer is doing the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
+BotBound gives businesses Bots for calls, texts, and email while their people stay with the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
 
 The brand line is:
 
-> PUT YOUR BOT ON THE LINE.
+> Put Your Bot on the Line.
 
 The product promise is:
 
-> Your Bot for calls, texts, and email.
+> Bots for calls, texts, and email.
 
-## Primary identity
+The general product category is **Inbound & Outbound Bots**. The current refresh leads with **Stay in the Work.** and **Small Team. Bigger Reach.** The September Drive **Your Next Sales Hire** and **Give Sales a Hand** campaigns remain sales variants; “sales hire” describes software, not an employment service. See [the current copy kit](gtm/BOTBOUND-LAUNCH-COPY-KIT.md).
+
+## Primary Identity
 
 - Use the approved white and platinum robot with the violet receiver.
 - Keep the receiver on the robot's left side, pressed to the ear, with the white hand visibly wrapped around it.
@@ -23,7 +25,7 @@ The product promise is:
 - Set the wordmark in Inter Tight ExtraBold, weight 800, with optical tracking near `-0.047em`.
 - Set `Bot` in platinum or obsidian and `Bound` in Aurora violet. Do not gradient-fill the wordmark.
 
-### Master files
+### Master Files
 
 - `../public/brand/botbound-app-icon.png`: full-bleed app, avatar, favicon, native, billing, and browser master.
 - `../public/brand/botbound-operator-polished.png`: dimensional hero operator for web, film end cards, campaign composition, and oversized display use.
@@ -32,7 +34,7 @@ The product promise is:
 - `exports/identity/botbound-lockup-platinum-1600x480.png`: approved light-surface horizontal lockup.
 - `exports/identity/botbound-lockup-transparent-1600x480.png`: transparent presentation lockup.
 
-## Clear space and minimum size
+## Clear Space and Minimum Size
 
 - Clear space around the app icon: at least one antenna-ball diameter on every side.
 - Clear space around the horizontal lockup: at least the height of the lowercase `o` on every side.
@@ -62,9 +64,9 @@ Violet is a signal, not decoration. Use it to show an answer, connection, active
 - Product body: Inter, 400 to 700.
 - Operational labels and campaign eyebrows: IBM Plex Mono, 700, uppercase, wide tracking.
 - Hero headlines are compact, direct, and left aligned. Favor 0.82 to 0.95 line-height.
-- Sentence case is the product default. Uppercase belongs to brand lines, campaign headlines, status signals, and short CTAs.
+- Author all titles, headlines, and brand lines in Title Case. Body copy uses sentence case. Uppercase is reserved for compact operational labels and status signals; do not use CSS to recase names or customer text.
 
-## Photography and image direction
+## Photography and Image Direction
 
 Show competent people in the middle of real work: hands occupied, attention committed, environment specific. Light scenes like prestige craft advertising, not generic software stock.
 
@@ -73,7 +75,7 @@ Show competent people in the middle of real work: hands occupied, attention comm
 - The robot may enter the world as a believable premium character, but must retain the approved white/platinum shell, black visor, friendly violet eyes, antenna, visible gripping hand, and classic violet receiver. Use the dimensional polished operator for hero placements and the flat operator only when the layout needs graphic simplicity.
 - Avoid humanoid faces, metallic menace, headset silhouettes, floating chat bubbles, neon overload, fake interface screens, and text generated inside source photography.
 
-## Motion and sound
+## Motion and Sound
 
 The signature motion is the second ring: the first ring belongs to the missed call, and the second ring becomes the violet BotBound signal. Signal rings should expand from the receiver with soft decay, never pulse continuously like an alarm.
 
@@ -82,7 +84,7 @@ The signature motion is the second ring: the first ring belongs to the missed ca
 - Use the two-note transfer chime as the sonic seed: D5 to A5, clean and warm.
 - The phone answer moment should reduce the score and let human voice carry the proof.
 
-## Product application
+## Product Application
 
 - Public navigation uses the standard lockup with a 42 px mark and 18.9 px wordmark.
 - Hero lockups use the display size with an 84 px mark and 38.7 px wordmark.
@@ -90,7 +92,7 @@ The signature motion is the second ring: the first ring belongs to the missed ca
 - All web, Stripe, browser extension, iOS, and Android outputs derive from the one app-icon master.
 - Use raster masters in production. SVG files in legacy paths are compatibility wrappers only, not alternate drawings.
 
-## Do not
+## Do Not
 
 - Do not break either B.
 - Do not redraw the robot.

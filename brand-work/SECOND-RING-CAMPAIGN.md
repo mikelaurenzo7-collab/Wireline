@@ -1,8 +1,10 @@
-# The Second Ring
+# The Second Ring Film Brief
 
-BotBound launch campaign platform.
+Historical film direction, retained for production provenance. The current creative source is [September Refresh](launch-2026-09-refresh/README.md), and current Second Ring publishing copy is [Social Posts](launch-2026-09/copy/SOCIAL_POSTS.md).
 
-## Creative premise
+**September 20 hold:** the old every-call promise, all-caps titles, and outcome chains below are historical script content, not current approved advertising copy. The refreshed static campaign uses **Hands Full? Bot on the Line.** and **Keep Your Hands on the Work.** Do not publish old films until the actual picture, audio, captions, claims, and end cards are reviewed together. No film has been rerendered by this document update.
+
+## Historical Creative Premise
 
 Every missed call is someone trying the next name on the list.
 
@@ -14,7 +16,7 @@ Campaign close:
 
 > PUT YOUR BOT ON THE LINE.
 
-## 30-second hero film: Hands Full
+## Historical 30-Second Hero Film: Hands Full
 
 **Publication hold:** the original 30-second source and caption sidecars now replace the process-step diagram with **Your Bots. Your Rules.** Publish only after a fresh render of that source passes visual, audio, and caption review and receives delivery checksums. Existing renders and Drive copies are not approved evidence for this revision. The dialogue and voiceover below describe creative direction; the current original film communicates dialogue visually over music, rings, and the chime.
 
@@ -30,35 +32,35 @@ Campaign close:
 
 ## Cutdowns
 
-### 15-second horizontal
+### 15-Second Horizontal
 
 - 0:00-0:03: Hands full, phone rings.
 - 0:03-0:07: Second ring becomes the BotBound operator.
 - 0:07-0:11: Booked, texted, logged.
 - 0:11-0:15: `PUT YOUR BOT ON THE LINE.` and `BOTBOUND.ME`.
 
-### 6-second bumper
+### 6-Second Bumper
 
 - Ring.
 - Robot answers.
 - `YOU CAN'T ANSWER EVERY CALL. YOUR BOT CAN.`
 - BotBound end frame.
 
-### 15-second vertical
+### 15-Second Vertical
 
 - Use the florist frame and keep text inside the central 900 px safe width.
 - Open on `THE CALL STILL GETS ANSWERED.`
 - Cut to the robot and result stack.
 - Close on `BUILD FREE AT BOTBOUND.ME`.
 
-## Launch stills
+## Historical Launch Stills
 
 - Bakery 16:9: flagship horizontal, PR, YouTube, LinkedIn, display, and OOH.
 - Auto shop square: Instagram feed, paid social, partner posts.
 - Florist 9:16: Reels, Stories, Shorts, and vertical cutdown.
 - Product end frame: commercial close, event screen, thumbnail, and display retargeting.
 
-## Copy bank
+## Historical Copy Bank
 
 Primary:
 
@@ -81,7 +83,7 @@ PR descriptor:
 
 > BotBound is the platform for building Bots that handle calls, texts, and email, with the knowledge, tools, approvals, and follow-through required to do real work.
 
-## Launch sequencing
+## Historical Launch Sequencing
 
 1. Tease the first ring with detail crops and no product explanation.
 2. Reveal the robot on the second ring.
@@ -89,7 +91,7 @@ PR descriptor:
 4. Follow with product-proof cutdowns showing booked, texted, and logged outcomes.
 5. Retarget with the 6-second bumper and direct CTA.
 
-## Delivery standard
+## Delivery Standard
 
 - Hero master: 3840x2160, 30 fps, H.264 review and ProRes master.
 - Social: 1920x1080, 1080x1920, and 1080x1080.

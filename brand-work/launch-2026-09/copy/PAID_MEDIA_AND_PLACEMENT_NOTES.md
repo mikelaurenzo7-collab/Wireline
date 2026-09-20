@@ -1,12 +1,12 @@
 # Paid Media and Placement Notes
 
-## Executive release decision
+## Executive Release Decision
 
 The September 2026 static campaign is creatively complete and suitable for owner review, investor/sales support, organic planning, and media mockups. **It is not a blanket paid-media release.** No ad buy, OOH placement, broad commercial distribution, or claim expansion is authorized by the existence of these files.
 
 Paid activation begins only after the product, proof, rights, compliance, landing-page, tracking, and account gates below pass for the exact asset and destination being used.
 
-## Status by creative family
+## Status by Creative Family
 
 | Creative              | Production status                                              | Release posture                                                                                                    |
 | --------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -14,12 +14,12 @@ Paid activation begins only after the product, proof, rights, compliance, landin
 | Impeccably Bad Timing | Finished feed and story masters using generated editorial art  | Organic candidate; paid hold pending generated-art rights/legal review and final owner approval                    |
 | The Signal            | Finished 3840 × 2160 OOH concept using generated editorial art | Pitch/mockup only until site mechanics, rights, legibility, and spend approval pass                                |
 | Ten Voices            | Finished five-slide product-education carousel                 | Organic/sales candidate; confirm roster and runtime behavior immediately before publication                        |
-| Ring to Next Action   | Finished configured-example graphic                            | Keep example label and configuration disclaimer; never convert into claimed customer proof                         |
+| Inbound & Outbound Bots | Channel capability graphic; historical filename retained      | Keep private/paid and configuration qualifier; never present as customer proof                                      |
 | The Call Sheet        | Finished organic square                                        | Organic candidate; paid hold pending the same campaign gates                                                       |
 | Motion/reels          | Governed by the motion release record                          | Concept review unless exact-production product proof, actual Bot audio, captions, and final frame QA are certified |
 | Product screenshots   | No certified current set in this package at authoring time     | Do not use stale Drive or localhost captures as current proof                                                      |
 
-## Non-negotiable paid-release gate
+## Non-negotiable Paid-release Gate
 
 Before a single paid impression is purchased, record and approve all of the following:
 
@@ -40,24 +40,24 @@ Before a single paid impression is purchased, record and approve all of the foll
 
 If any box fails, the asset returns to **creative complete / paid hold**. Do not “soft launch” around a failed gate.
 
-## Claim architecture
+## Claim Architecture
 
-### Cleared factual territory, subject to final current-state check
+### Cleared Factual Territory, Subject to Final Current-state Check
 
-- Your Bot for calls, texts, and email.
+- Bots for calls, texts, and email.
 - Build free. Plans from $19/month. Activation availability applies.
 - Ten built-in OpenAI Realtime voice choices.
 - One selected voice stays stable through an active runtime session.
 - Every active paid Bot receives a dedicated BotBound production number within plan capacity.
 - Available actions depend on configured tools, permissions, approvals, and handoffs.
 
-### Campaign language that requires context
+### Campaign Language That Requires Context
 
-- **“You can't answer every call. Your Bot can.”** This is the approved campaign promise, not a guarantee of universal availability or completion. Do not pair it with uptime, all-call, or always-on absolutes.
-- **“The call still gets answered.”** Use as a cinematic campaign line. Do not use it to override account state, capacity, carrier, compliance, billing, routing, or service-availability boundaries.
+- **“Hands Full? Bot on the Line.”** This is the approved campaign promise, not a guarantee of universal availability or completion. Do not pair it with uptime, all-call, or always-on absolutes.
+- **“Keep your hands on the work.”** Use as a cinematic campaign line. Do not use it to override account state, capacity, carrier, compliance, billing, routing, or service-availability boundaries.
 - **Answered / Booked / Confirmed / Logged.** Keep **Configured example** visible. A booking is not promised unless the relevant calendar/tool path is connected, allowed, and working.
 
-### Prohibited without new evidence and approval
+### Prohibited Without New Evidence and Approval
 
 - “Never miss a call.”
 - “Answers every call.”
@@ -68,7 +68,7 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 - Claims that ElevenLabs or any retired alternate voice provider powers the product.
 - Public WhatsApp, video-avatar, live-talking-head, or other availability claims outside the current launch posture.
 
-## Placement plan
+## Placement Plan
 
 | Channel                     | Recommended asset               | Format                           | Job                                       | CTA                      | Gate emphasis                                 |
 | --------------------------- | ------------------------------- | -------------------------------- | ----------------------------------------- | ------------------------ | --------------------------------------------- |
@@ -77,12 +77,12 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 | Instagram Stories           | Impeccably Bad Timing           | 1080 × 1920                      | Fast awareness and link tap               | Build free               | UI safe zones and link sticker                |
 | LinkedIn/Instagram carousel | Ten Voices                      | 5 × 1080 × 1350                  | Explain choice plus runtime consistency   | Build free               | Roster/current-policy recheck                 |
 | X / organic social          | The Call Sheet                  | 1080 × 1080                      | Shareable owner moment                    | Put your Bot on the line | Current copy and alt text                     |
-| Sales follow-up             | Ring to Next Action             | 1200 × 627                       | Explain configured workflow possibilities | See the workflow         | Example label must remain                     |
+| Product education           | Inbound & Outbound Bots          | 1200 × 627                       | Explain channel capabilities              | See Features             | Private/paid and configuration qualifier       |
 | Launch email                | Email header                    | 1200 × 400                       | Reintroduce the product and offer         | Build Your Bot           | Deliverability, footer, consent, tracking     |
 | OOH / event screen          | The Signal                      | 3840 × 2160                      | Fame and memory                           | BotBound.me              | Site-specific mechanics, rights, legal, spend |
 | Paid social                 | Hands Full / Bad Timing / Voice | Placement derivatives after gate | Structured message test                   | Build Your Bot           | Full paid-release checklist                   |
 
-## OOH mechanical review
+## OOH Mechanical Review
 
 The 3840 × 2160 file is a campaign master, not a universal billboard specification. Before trafficking it:
 
@@ -93,35 +93,35 @@ The 3840 × 2160 file is a campaign master, not a universal billboard specificat
 5. Check all rights, generated-art disclosure requirements, and local advertising rules.
 6. Require explicit approval for the location, term, and spend.
 
-## Paid-social experiment design
+## Paid-social Experiment Design
 
 When the release gate passes, begin with a small, bounded learning plan — not a scale claim.
 
-### Message cells
+### Message Cells
 
 - **Problem:** Impeccably Bad Timing / “Of course it rang now.”
-- **Promise:** Hands Full / “You can't answer every call. Your Bot can.”
-- **Product:** Ten Voices / “Choice at setup. Consistency at runtime.”
+- **Promise:** Hands Full / “Hands Full? Bot on the Line.”
+- **Product:** Ten Voices / “Your Bot. Your Tone.”
 
-### What to vary
+### What to Vary
 
 - One visual family at a time.
 - One headline at a time.
 - One destination and one offer per experiment.
 - Organic learnings may inform paid selection, but they are not proof of paid performance.
 
-### What not to do
+### What Not to Do
 
 - Do not fabricate benchmark expectations.
 - Do not call early click data product-market fit.
 - Do not optimize around signups if phone, billing, or live activation is not ready to serve them.
 - Do not broaden targeting or budget automatically without an explicit owner decision.
 
-### Stop conditions
+### Stop Conditions
 
 Pause the campaign immediately for broken signup/checkout, mismatched pricing, dead links, degraded phone/text/email flows, missing consent, material complaint patterns, misleading placement, budget anomaly, or a claim that no longer matches production.
 
-## Motion and reel placement
+## Motion and Reel Placement
 
 Conceptual cinema may create the problem hook. Product proof must remain authentic.
 
@@ -132,13 +132,13 @@ Conceptual cinema may create the problem hook. Product proof must remain authent
 - Preserve a deliberate, readable end card with BotBound.me.
 - Never certify a reel without recording the exact source commit for any product footage.
 
-## Organic, investor, and sales usage
+## Organic, Investor, and Sales Usage
 
 Organic, investor, and sales use still requires factual accuracy. These uses are permitted candidates because they do not automatically purchase distribution; they are not exempt from rights, privacy, or claim review.
 
-Use the investor one-pager to open conversations, not to imply a financing round, customer pipeline, or traction that has not been documented. Use the configured-example graphic to explain how the product can operate, not as a case study.
+Use the investor one-pager to open conversations without implying an undocumented financing round, customer pipeline, or traction. The channel graphic explains capabilities; the illustrative Call Sheet is not a case study.
 
-## Required trafficking record
+## Required Trafficking Record
 
 For every released placement, retain:
 

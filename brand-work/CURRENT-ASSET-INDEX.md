@@ -1,10 +1,12 @@
 # BotBound Brand and Launch Asset Index
 
-Status: revision 4 creative release candidate, 2026-09-01. The creative package is complete for owner review; it is not a deployment record or blanket paid-media authorization.
+Current private delivery: [September 20 Creative Refresh](https://drive.google.com/drive/folders/1z0fhFkPl9WW937wsSNQcBKm1j4qVI_bV), with new artwork, a customer one-pager, and reconciled guides. Prepared creative is not a deployment record or paid-media authorization. The revision 4 September 1 package below remains historical.
 
-Source review: **2026-09-19**. This index covers both campaign families below. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+Source review: **2026-09-20**. Current refresh: [September 20 Creative Refresh](launch-2026-09-refresh/README.md), including reconciled local and Drive positioning. Product audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`. This index preserves the original campaign families below alongside the current refresh and September Drive sales variants. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
 
-## Choose the current source
+## Choose the Current Source
+
+Start with [the September Refresh](launch-2026-09-refresh/README.md). Its flagship is **Stay in the Work.**, with **Small Team. Bigger Reach.** as the broad companion. The current category is **Inbound & Outbound Bots**. The September Drive **Your Next Sales Hire** and **Give Sales a Hand** campaigns remain sales variants; old films and decks keep their own review holds.
 
 | Need                                         | Working source                                      | Release boundary                                                                                         |
 | -------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -19,7 +21,7 @@ The promotional inventory classifies local file roles and review candidates usin
 
 The production identity is the friendly white/platinum robot visibly gripping a violet phone receiver, paired with a complete Inter Tight ExtraBold `BotBound` wordmark. Both B glyphs are complete and unbroken.
 
-## Source of truth
+## Source of Truth
 
 - Launch library: https://drive.google.com/drive/folders/1IuBVwWQIFQZbBCeSW5DKLxeBOmSygTuF
 - Recorded September 1 creative delivery: https://drive.google.com/drive/folders/1XCI8bsrd2Dr3MDKp4ulXQkstzLK_kGHO
@@ -40,9 +42,9 @@ The production identity is the friendly white/platinum robot visibly gripping a 
 - `exports/identity/botbound-lockup-platinum-1600x480.png`
 - `exports/identity/botbound-lockup-transparent-1600x480.png`
 
-## Campaign and finished placements
+## Campaign and Finished Placements
 
-### Revision 4 — The Second Ring, 2026-09-01
+### Revision 4 — the Second Ring, 2026-09-01
 
 The paths below describe the generated local layout. The September 1 Drive
 snapshot has not been recertified against subsequent local edits or renders. A fresh checkout recreates the delivery files from the committed
@@ -59,7 +61,7 @@ source package; it does not treat PNG, PDF, MP4, or QA output as application sou
 
 Revision 4 deepens the approved **The Second Ring** platform. It adds the current ten-voice OpenAI story, distinguishes voice choice from runtime consistency, removes ElevenLabs from public positioning, and keeps Twilio as the phone/SMS carrier layer. Generated scenes remain campaign art, not customer or product-screen evidence.
 
-### Revision 3 archive — 2026-08-20
+### Revision 3 Archive — 2026-08-20
 
 - Repository editorial inputs:
   - `commercial/hands-full-opening-2560x1440.jpg`
@@ -74,7 +76,7 @@ Revision 4 deepens the approved **The Second Ring** platform. It adds the curren
 - `exports/email/botbound-launch-email-header-1200x400.png`
 - `exports/commercial/botbound-commercial-endframe-4k.png`
 
-## Archived revision 3 product proof — not current release evidence
+## Archived Revision 3 Product Proof — Not Current Release Evidence
 
 These captures preserve the 2026-08-20 revision 3 snapshot. They predate the current launch copy, identity, and UI changes. Do not publish or cite them as evidence for the current release; current browser proof remains pending a fresh production-build capture, visual review, and checksum.
 
@@ -92,7 +94,7 @@ These captures preserve the 2026-08-20 revision 3 snapshot. They predate the cur
 - `gtm/BOTBOUND-LAUNCH-DECK-2026-08-20-contact-sheet.png`
 - `gtm/BOTBOUND-LAUNCH-COPY-KIT.md`
 
-## Motion package
+## Motion Package
 
 - Source, production notes, render commands, and composition registry: `../apps/botbound-film/`
 - Registered outputs: 30-second, 15-second, and 6-second horizontal; 15-second and 6-second vertical; 10-second square.
@@ -103,7 +105,7 @@ These captures preserve the 2026-08-20 revision 3 snapshot. They predate the cur
 
 Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-delivery masters should be rendered from the registered 4K compositions, reviewed in their delivery context, and checksummed before release.
 
-## Integrity and regeneration
+## Integrity and Regeneration
 
 - `DELIVERY-SHA256SUMS-R3.txt` covers the 62-file certified Drive delivery snapshot.
 - `SOURCE-SHA256SUMS.txt` covers the compact repository source package and preserves the archived revision 3 browser proof.

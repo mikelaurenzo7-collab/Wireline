@@ -129,6 +129,21 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [Launch-film verification](../apps/botbound-film/VERIFICATION.md)                                    | Composition, caption, render, and visual-review evidence.                                      |
 | [Brand implementation QA](../design-qa.md)                                                           | Responsive visual comparison, interaction, accessibility, and browser-proof record.            |
 
+## Current Creative Refresh
+
+| Document | Role |
+| --- | --- |
+| [Creative Refresh](../brand-work/launch-2026-09-refresh/README.md) | Current creative selection and release boundary. |
+| [Campaign Copy](../brand-work/launch-2026-09-refresh/COPY-KIT.md) | Short audience, founder, and channel drafts. |
+| [Founder Guide](../brand-work/launch-2026-09-refresh/FOUNDER-LAUNCH-GUIDE.md) | Asset selection and launch handoff. |
+| [Source Record](../brand-work/launch-2026-09-refresh/SOURCE-RECORD.md) | Art provenance, prompt, and reproduction. |
+| [Creative QA](../brand-work/launch-2026-09-refresh/QA-AND-DELIVERY.md) | Scope and limits of the current review. |
+| [Drive Brand Guide](../brand-work/launch-2026-09-refresh/DRIVE-BRAND-GUIDE.md) | Source for the current remote brand document. |
+| [Drive Copy Kit](../brand-work/launch-2026-09-refresh/DRIVE-COPY-KIT.md) | Reconciled remote campaign copy. |
+| [Drive Founder Guide](../brand-work/launch-2026-09-refresh/DRIVE-FOUNDER-GUIDE.md) | Founder guide with cloud destinations. |
+| [Drive Start Here](../brand-work/launch-2026-09-refresh/DRIVE-START-HERE.md) | Current library navigation and historical holds. |
+| [Drive Release Pointer](../brand-work/launch-2026-09-refresh/DRIVE-RELEASE-POINTER.md) | Current private creative delivery pointer. |
+
 ## Active strategy and planned work
 
 | Document                                                                                     | Role                                                                     |

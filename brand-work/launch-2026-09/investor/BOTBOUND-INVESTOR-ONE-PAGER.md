@@ -49,7 +49,7 @@ The immediate objective is credible product proof with a small group of design p
 
 We are opening conversations with investors and design partners who understand owner-led and service businesses where call timing, follow-up, and disconnected tools create persistent operational friction.
 
-**You can't answer every call. Your Bot can.**
+**Hands Full? Bot on the Line.**
 
 BotBound.me
 support@botbound.me

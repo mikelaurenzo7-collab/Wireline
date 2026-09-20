@@ -1,315 +1,138 @@
-# The Second Ring — Launch Copy Pack
+# The Second Ring Launch Copy
 
-Every post in this file is written for the September 2026 BotBound campaign. The copy stays inside the current product truth: Bots across calls, texts, and email; Free Builder; paid live plans from $19/month; OpenAI Realtime voices; Twilio carrier and SMS; configured tools and approvals determine available actions.
+Source review: September 20, 2026. These captions belong with refreshed, individually reviewed assets. Do not pair them with historical images or films that still show retired copy. Current broad creative and the preserved sales variants are in [September Refresh](../../launch-2026-09-refresh/README.md).
 
-Use `Bot` with a capital B when referring to a customer's BotBound Bot. Use `BotBound` exactly as styled. Do not substitute “AI employee,” “fully autonomous,” “never miss a call,” or invented customer proof.
+Use one clear idea, Title Case headlines, and one CTA. Do not add public setup steps, an every-call guarantee, or a “One Bot” product-wide limitation. Keep free testing and paid live use distinct.
 
-## Launch day — founder LinkedIn
-
-### Long version
+## Founder Post
 
 The phone has impeccable timing.
 
-It rings when the dough is on your hands. When a customer is standing in front of you. When you're under the hood, on the ladder, in the appointment, or finally driving home.
+It rings when the dough is on your hands, a customer is in front of you, or you're under the hood.
 
-That call may be ordinary. Its timing is not.
+I built BotBound for that moment: Bots for calls, texts, and email, with your knowledge and your rules.
 
-We built BotBound for the second ring.
+Hands full? Bot on the line.
 
-Bots for calls, texts, and email. Your knowledge. Your rules.
+Start free: https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=hands_full
 
-One Bot can carry the conversation across calls, texts, and email under one identity and one operating context. Users can choose from ten built-in OpenAI Realtime voices, and the selected voice stays consistent through the active conversation.
+Private testing free. Live use paid. Activation subject to availability.
 
-You can't answer every call. Your Bot can.
-
-Build free. Plans from $19/month. Activation availability applies.
-
-Put your Bot on the line: https://botbound.me/?utm_source=linkedin&utm_medium=organic&utm_campaign=second_ring_launch_202609
-
-#BotBound #SmallBusiness #CustomerExperience #VoiceAI
-
-### Short version
-
-Your best work should not stop every time the phone rings.
-
-Bots for calls, texts, and email. Built around your facts, rules, voice, and approvals.
-
-You can't answer every call. Your Bot can.
-
-Build free at https://botbound.me/?utm_source=linkedin&utm_medium=organic&utm_campaign=second_ring_launch_202609
-
-## Instagram feed — Impeccably Bad Timing
+## Impeccably Bad Timing
 
 Of course it rang now.
 
-Both hands occupied. One customer waiting. The phone developing a sudden and passionate interest in your attention.
+Both hands occupied. A customer waiting. The phone asking for your attention.
 
-The work does not need to stop at the second ring.
+Give calls and follow-up a Bot. Keep your hands on the work.
 
-Your calls and follow-up, handled by Bots you control.
+Start free at BotBound.me. Private testing free. Live use paid.
 
-Put your Bot on the line.
+## Story Copy
 
-Build free at BotBound.me.
+**Headline:** Of Course It Rang Now.
 
-#BotBound #BusinessOwners #CustomerCalls #SmallBusinessTools
+**Close:** Keep Your Hands on the Work.
 
-## Instagram Story sequence
+**CTA:** Start Free
 
-### Frame 1
+**Disclosure:** Private testing free. Live use paid.
 
-OF COURSE IT RANG NOW.
+Use the dedicated story composition. Place the link sticker within the platform-safe area without covering the headline or disclosure. Link to the verified free signup route.
 
-### Frame 2
+## Film Caption Candidate
 
-YOU KEEP BOTH HANDS ON THE WORK.
+Hands full? Bot on the line.
 
-### Frame 3
+Bots for calls, texts, and email, built around your business and your rules.
 
-THE CALL STILL GETS ANSWERED.
+Start free at BotBound.me. Private testing free. Live use paid.
 
-### Frame 4
+This is publishing copy, not a claim that existing films have been rerendered. Review the actual picture, audio, and captions before reuse. Music-only films must not receive invented dialogue captions. Keep meaningful ring and chime cues in accessible caption delivery.
 
-PUT YOUR BOT ON THE LINE.
+## The Call Sheet
 
-### Link sticker
+With a customer. Under the hood. Both hands full.
 
-Build free
+An illustrated look at the moments the phone interrupts.
 
-### Destination
+Put Your Bot on the Line.
 
-`https://botbound.me/?utm_source=instagram&utm_medium=organic_story&utm_campaign=second_ring_launch_202609`
+Internal note: the graphic's times and outcomes are illustrative. Keep that label visible; do not present them as a real customer's call log.
 
-## Reel caption — The Second Ring
+## Voice Carousel
 
-First ring: you're busy.
+Your Bot should sound like it belongs with your business.
 
-Second ring: your Bot is ready.
+Choose from ten built-in voices. Rehearse privately and hear what fits. Your selected voice stays the same during the conversation.
 
-BotBound brings calls, texts, email, follow-up, and logged outcomes into one operating context. Available actions depend on the tools, permissions, approvals, and handoffs you configure.
+Start free at BotBound.me. Private testing free. Live use paid.
 
-You can't answer every call. Your Bot can.
+Internal source: `src/lib/voice-catalog.ts`. The current roster is Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, and Cedar. Keep the full vendor roster in product education or the FAQ, not every awareness caption.
 
-Build free at BotBound.me.
+## Inbound & Outbound Bots
 
-#BotBound #PhoneBot #BusinessAutomation #CustomerExperience
+Calls. Texts. Email.
 
-## Reel on-screen copy — 15 seconds
+Bots that work from your business knowledge and rules, with actions and handoffs you define.
 
-| Time      | Copy                                    | Direction                                                 |
-| --------- | --------------------------------------- | --------------------------------------------------------- |
-| 0:00-0:02 | OF COURSE IT RANG NOW.                  | Let the human problem land before the logo.               |
-| 0:02-0:05 | FIRST RING: YOU'RE WORKING.             | Sparse type; preserve the cinematic scene.                |
-| 0:05-0:08 | SECOND RING: YOUR BOT.                  | Violet signal transition.                                 |
-| 0:08-0:11 | CALLS. TEXTS. EMAIL.                    | Show only authentic product proof if UI appears.          |
-| 0:11-0:13 | THE CALL STILL GETS ANSWERED.           | Do not imply guaranteed completion of configured actions. |
-| 0:13-0:15 | PUT YOUR BOT ON THE LINE. / BOTBOUND.ME | Hold for readability.                                     |
+Start free at BotBound.me. Private testing free. Live use paid.
 
-## Six-second bumper
+Internal note: this is a capability graphic, not a workflow, setup sequence, or result record. Live channels and actions depend on eligibility, configuration, permissions, and availability. Outbound promotion retains its existing readiness gate.
 
-### Picture copy
+## Investor and Design-Partner Post
 
-1. RING.
-2. YOUR BOT ANSWERS.
-3. PUT YOUR BOT ON THE LINE.
-4. BOTBOUND.ME
+Customer demand arrives on its own schedule. Owners are often already doing the work.
 
-### Caption
+BotBound gives businesses configurable Bots for calls, texts, and email, with the rules and handoffs they choose.
 
-The phone does not wait for a convenient moment. Your work should not have to stop for it. Build free at BotBound.me.
+I'm preparing a small incoming-call pilot and would value conversations with owners who live this problem.
 
-## The Call Sheet — organic post
+Get in touch: support@botbound.me
 
-Tonight's schedule:
+Confirm that the support destination works before publishing. Do not imply current customers, traction, or live pilot completion.
 
-8:03 — hands full
-8:06 — with a customer
-8:10 — under the hood
-8:12 — your Bot answered
+## Paid Candidates
 
-The phone does not wait. Your Bot does not need you to abandon the work just to start the conversation.
+| Variant | Headline | Primary Text |
+| --- | --- | --- |
+| Problem | Hands Full? Bot on the Line. | Calls and follow-up, built around your business. |
+| Control | Your Bots. Your Rules. | Answers, actions, and handoffs you define. |
+| Voice | Your Bot. Your Tone. | Choose a voice and hear your Bot in a private rehearsal. |
 
-Put your Bot on the line at BotBound.me.
+Each uses **Start Free** and **Private testing free. Live use paid.** These are copy candidates only. Existing destination, rights, operational, and budget gates apply before distribution.
 
-## OpenAI voice carousel
+## Accessibility Copy
 
-### Carousel caption
+Use only after confirming the described final asset. Alt text must match the image being published; it does not update an old render.
 
-Your business can be warm, direct, bright, measured, grounded, energetic — sometimes all before lunch.
+| Asset | Alt Text |
+| --- | --- |
+| Hands Full | A baker at work under warm light beside the headline “Hands Full? Bot on the Line.” and the BotBound operator holding a violet receiver. |
+| Impeccably Bad Timing | A florist carries flowers while a phone rings out of reach. “Of Course It Rang Now.” leads to “Keep Your Hands on the Work.” |
+| The Signal | A violet telephone receiver and signal rings above a rainy city, with “The Second Ring Belongs to Your Bot.” |
+| The Call Sheet | An illustrative schedule of calls arriving while an owner is occupied. It is campaign art, not a real customer call record. |
+| Channel Graphic | “Inbound & Outbound Bots” above separate Calls, Texts, and Email capability cards. |
+| Voice Carousel | Five BotBound cards about voice choice, private rehearsal, and keeping a selected voice through the conversation. |
 
-Your Bot should not be trapped in one generic voice.
+## Reply Bank
 
-BotBound currently supports ten built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, and Cedar.
+### Can I Try It Free?
 
-Choose the voice that fits the job. The selected voice stays stable through the active runtime session. Change it before the next session when the role needs a different tone.
+Yes. Free Builder includes one private draft Bot and bounded rehearsal. Live numbers and customer conversations require paid activation when available.
 
-Choice for the customer. Consistency in the conversation.
+### Can I Have More Bots?
 
-Build free at BotBound.me.
+Paid plans support different Bot capacities, with additional Bot options. Each active paid Bot receives its own number and managed email identity within account capacity. See the current pricing page for availability.
 
-#BotBound #OpenAI #VoiceAI #CustomerExperience
+### Can I Choose the Voice?
 
-### Slide-by-slide social text
+Yes. Choose from ten built-in voices and hear your Bot privately. The selected voice stays fixed for the active conversation and can be changed before a later one.
 
-1. **Your Bot should sound like your business.** Choice for the customer. Consistency at runtime.
-2. **10 built-in OpenAI voices.** Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, Cedar.
-3. **Choose the voice.** Preview. Compare. Pick what fits the job.
-4. **One selected voice through the conversation.** The selection stays stable for that active runtime session.
-5. **Put your Bot on the line.** Build free.
+### Will It Book Every Call?
 
-## Ring to Next Action — configured example
+No. A Bot can take configured actions when the required tools, permissions, approvals, and handoffs are available. Booking is a capability, not a guaranteed result.
 
-A call can be the beginning of the work, not the end of it.
+### Does This Replace My Carrier?
 
-In a configured BotBound workflow, the Bot can answer, capture the next step, continue by text or email, and leave an outcome ready for review.
-
-The exact actions depend on the tools, permissions, approvals, and handoffs you configure. This is a product example, not a customer result.
-
-Build your Bot at BotBound.me.
-
-## Investor and design-partner post
-
-We are building BotBound around a simple operating problem: customer demand arrives on its own schedule, while the people who can answer it are usually doing the work.
-
-BotBound gives owners trained Bots for calls, texts, and email, with the rules and handoffs they choose.
-
-We are opening conversations with investors and early design partners who understand owner-led and service businesses where missed calls, delayed follow-up, and disconnected tools create avoidable friction.
-
-No inflated adoption story. No imaginary customer logos. We would rather show the product, run the workflow, and learn from the people who live the problem.
-
-If that is your world, let's talk: support@botbound.me
-
-## X launch thread
-
-### Post 1
-
-The phone has impeccable timing. It rings when both hands are occupied and the work is already happening.
-
-We built BotBound for the second ring. 🧵
-
-### Post 2
-
-Bots for calls, texts, and email. Your knowledge. Your rules.
-
-### Post 3
-
-One Bot can carry the conversation across calls, texts, and email under one identity, memory, rule set, approval posture, and outcome record.
-
-### Post 4
-
-Choose from ten built-in OpenAI Realtime voices. The selected voice stays consistent through the active runtime session.
-
-Choice at setup. Consistency in the conversation.
-
-### Post 5
-
-You can't answer every call. Your Bot can.
-
-Build free. Plans from $19/month. Activation availability applies.
-
-https://botbound.me/?utm_source=x&utm_medium=organic&utm_campaign=second_ring_launch_202609
-
-## Launch email
-
-### Subject line candidates
-
-- The second ring belongs to your Bot
-- Of course the phone rang now
-- Put your Bot on the line
-- Your work should not stop for every call
-
-### Preview text
-
-Build Bots for calls, texts, and email. Start free. Plans from $19/month. Activation availability applies.
-
-### Body
-
-The phone rarely waits for an empty calendar and two free hands.
-
-BotBound gives the second ring somewhere useful to go.
-
-Bots for the work you need done, with your knowledge and rules across calls, texts, and email.
-
-One Bot can carry a conversation across calls, texts, and email. Choose from ten built-in OpenAI Realtime voices; the selected voice stays consistent through the active conversation.
-
-You can't answer every call. Your Bot can.
-
-**Build free. Plans from $19/month. Activation availability applies.**
-
-[Build your Bot](https://botbound.me/?utm_source=email&utm_medium=launch&utm_campaign=second_ring_launch_202609)
-
-BotBound
-support@botbound.me
-
-## Paid-candidate copy — hold until the paid-media gate passes
-
-These are copy candidates, not authorization to spend or publish.
-
-### Variant A — problem recognition
-
-**Primary text:** Of course it rang now. Keep both hands on the work while your Bot starts the conversation across calls, texts, and email.
-**Headline:** You can't answer every call. Your Bot can.
-**Description:** Build free. Plans from $19/month. Activation availability applies.
-**CTA:** Build Your Bot
-
-### Variant B — product clarity
-
-**Primary text:** Your Bots. Your facts, rules, voice, and approvals. Calls, texts, email, follow-up, and outcomes with shared context.
-**Headline:** Put Your Bot on the Line.
-**Description:** Start with Free Builder.
-**CTA:** Learn More
-
-### Variant C — voice choice
-
-**Primary text:** Choose from ten built-in OpenAI Realtime voices. Keep the selected voice consistent through the active conversation.
-**Headline:** Your Bot. Your Tone.
-**Description:** Choice at setup. Consistency at runtime.
-**CTA:** Build Your Bot
-
-## Accessibility text
-
-### Hands Full
-
-A cinematic bakery scene under warm light. A baker is working while large white and violet type reads, “You can't answer every call. Your Bot can.” BotBound and “Build free at BotBound.me” appear at left.
-
-### Impeccably Bad Timing — feed
-
-A florist carries an enormous bouquet with both hands while a black rotary telephone rings out of reach. Text reads, “Of course it rang now. The call still gets answered. Put your Bot on the line.”
-
-### Impeccably Bad Timing — story
-
-A vertical nighttime florist-shop image with a florist's hands occupied by flowers and a ringing phone on the counter. Text reads, “Of course it rang now. The call still gets answered.”
-
-### The Signal billboard
-
-A luminous translucent violet telephone receiver floats over a rainy midnight city with concentric signal rings. Large copy reads, “The Second Ring belongs to your Bot.”
-
-### The Call Sheet
-
-A black and violet graphic schedule lists several inconvenient call times, ending with “8:12 PM — Your Bot — Answered.” The closing copy reads, “The phone doesn't wait.”
-
-### Ring to Next Action
-
-A dark violet product-concept card labeled “Configured example” shows four possible workflow stages: answered, booked, confirmed, and logged. A disclaimer notes that actions depend on configured tools, approvals, and handoffs.
-
-### OpenAI voice carousel
-
-Five dark obsidian and violet slides explain BotBound's ten built-in OpenAI Realtime voice choices, show a Coral selection concept, state that one selected voice stays stable through an active runtime session, and close with “Put your Bot on the line.”
-
-## Comment and reply bank
-
-### “Does this replace my phone carrier?”
-
-No. Twilio remains the carrier layer for numbers, PSTN/SIP, and SMS. BotBound uses OpenAI Realtime for the live conversation runtime and keeps business rules, tools, approvals, and outcomes in BotBound.
-
-### “Can I choose the voice?”
-
-Yes. BotBound currently exposes ten built-in OpenAI Realtime voices. The voice you select stays fixed through the active session; you can change it before a later session.
-
-### “Can I try it without paying?”
-
-Yes. Free Builder lets you create, train, and privately simulate one draft Bot. A paid live plan is required for a production number and customer conversations; Starter begins at $19/month.
-
-### “Will it book every call?”
-
-No blanket promise. A Bot can take configured actions only when the required tool, permission, approval, and handoff path is available. We show configured examples clearly and never present them as guaranteed results.
+BotBound provides the Bot and its controls. Twilio supplies numbers, phone transport, and SMS; OpenAI Realtime supplies the conversation runtime. Existing business routing still needs to be configured.

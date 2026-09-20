@@ -1,72 +1,62 @@
 # BotBound PR and Creator Outreach
 
-These are ready-to-personalize outreach drafts for the September 2026 **The Second Ring** launch. Replace bracketed fields with verified details before sending. Do not add customer, traction, revenue, fundraising, or performance claims without evidence and permission.
+September 20 source refresh. These are drafts only. Personalize bracketed details and verify the destination and advertised workflow before sending. No outreach has been sent by preparing this file.
 
-## The story in one breath
+## The Story
 
-BotBound gives owner-led businesses trained Bots for calls, texts, and email. The launch centers on an ordinary but expensive moment: the phone rings while both hands are already doing the work. Customers can choose from ten built-in OpenAI Realtime voices; the selected voice remains consistent through the active conversation. Twilio stays the phone and SMS carrier. Build free; paid live plans begin at $19/month.
+BotBound gives owner-led businesses configurable Bots for calls, texts, and email. It starts with a familiar moment: a customer calls while the owner is already helping someone or doing the work. Bots use the business's knowledge and rules, with configured actions, handoffs, and a shared record of what happened.
 
-## Subject lines
+Current status: preparing a controlled design-partner pilot. Do not announce a public launch while hosting or the advertised workflow remains blocked.
 
-- The phone has impeccable timing. BotBound was built for the second ring.
-- Launch: Bots for calls, texts, and email
-- A voice-AI launch without fake customer logos or fake traction
-- Story idea: what happens after the missed call?
-- Put your Bot on the line
+## Subject Lines
 
-## Founder-to-journalist pitch
+- Calls While You’re Doing the Work
+- BotBound: Give the Phone a Bot
+- A Front Desk Built Around the Business
+- Stay in the Work
 
-Hi [Name] —
+## Founder-to-Journalist Draft
 
-The phone still carries high-intent demand for service and owner-led businesses, but it usually rings while the person who knows what to do is already doing the work.
+Hi [name],
 
-We built BotBound for that second ring: trained Bots that can carry conversations across calls, texts, and email under the business's facts, rules, tools, approvals, and handoffs.
+The phone often rings while a business owner is already serving a customer or finishing a job.
 
-The product uses OpenAI Realtime for live conversation and Twilio for phone/SMS transport. Users can choose from ten built-in OpenAI voices while keeping the selected voice consistent through an active session.
+I built BotBound around that interruption: Bots for calls, texts, and email, with the business's knowledge, rules, and handoffs.
 
-We are launching with a founder-led, product-proof posture—no invented customer logos, adoption claims, or promised outcomes. I can share the product, the launch film, and the operating decisions behind it if the story fits [publication/show].
+I'm preparing a small design-partner pilot focused on incoming calls and a useful follow-up. I'd be glad to share the product and what we learn if it fits [specific coverage].
 
-[Founder name]
+Michael
 BotBound.me
 support@botbound.me
 
-## Creator / operator pitch
+## Creator or Operator Draft
 
-Hi [Name] — you talk about the part of business software that either helps in the middle of the work or becomes one more thing to manage.
+Hi [name],
 
-BotBound starts with a blunt problem: the phone rings when both hands are occupied. Its Bots handle calls, texts, and email with the business's knowledge, rules, and handoffs.
+You talk about [specific relevant workflow]. BotBound is for the calls and follow-up that arrive while the owner is already doing that work.
 
-If you want to put it through an honest operator test, we would rather give you a real workflow than a scripted testimonial. Interested?
+I'd value your perspective on a private rehearsal around [specific job]. If it is useful, we can discuss a small pilot once the live route is verified.
 
-## Podcast / interview angle
+Michael
 
-**Working title:** The second ring: building an AI operator without pretending the carrier, model, and business are the same thing
+## Interview Angle
 
-Possible discussion:
+**Working Title:** The Calls That Arrive While You’re Doing the Work
 
-- Why calls, texts, and email are one conversation problem.
-- Why OpenAI handles intelligence while Twilio remains the phone/SMS carrier.
-- Why voice choice and runtime consistency can coexist.
-- Why a free private builder is different from a live production Bot.
-- Why configured tools, approvals, and handoffs matter more than “fully autonomous” slogans.
-- How to market an early product without inventing traction.
+Discuss the interruption, how the business defines useful answers and handoffs, and what a real pilot needs to prove. Technical vendor detail belongs in a specific follow-up, not the opening story.
 
-## Launch boilerplate
+## Boilerplate
 
-BotBound is the operating layer for trained Bots across calls, texts, and email. Its Bots handle real jobs using each business's knowledge and rules, with private testing and owner controls. BotBound uses OpenAI Realtime for live conversation and Twilio for phone and SMS transport. Learn more at BotBound.me.
+BotBound gives businesses configurable Bots for calls, texts, and email. Each Bot works from the business's knowledge and rules, with private rehearsal, owner controls, and a shared outcome record. Learn more at BotBound.me.
 
-## Media reply: “Is this one voice for every business?”
+## Technical Replies
 
-No. BotBound currently exposes ten built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, and Cedar. A user chooses the voice that fits the role. That selection stays stable through the active runtime session and can be changed before a later one.
+**Voice choice:** The source catalog supports ten built-in OpenAI Realtime voices: Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, and Cedar. A selected voice stays fixed through an active session and may be changed before a later one.
 
-## Media reply: “Does OpenAI send the texts?”
+**Phone and messaging:** OpenAI supplies the live conversation runtime. Twilio supplies phone numbers, PSTN/SIP transport, and SMS. BotBound owns business rules, permissions, approvals, and the outcome record. This explains architecture, not current provider funding or availability.
 
-OpenAI supplies conversation intelligence. Twilio remains the phone-number, voice-transport, and SMS carrier layer. BotBound owns the rules, permissions, approvals, actions, and outcome record between them.
+**Offer:** Private testing is free. Live activation and usage are paid. The source catalog starts at $19/month; verify the live catalog and activation state before quoting prices externally.
 
-## Required send check
+## Send Check
 
-- Personalize the recipient and explain why the story fits them.
-- Confirm the public product, price, voice roster, landing page, and contact details immediately before sending.
-- Link only released assets; do not link stale product proof or legacy Wireline creative.
-- Treat generated campaign scenes as illustration, not customer footage.
-- Keep attachments lightweight: investor one-pager plus one hero still, then offer the complete Drive folder on request.
+Personalize the recipient, confirm contact and product destinations, and use the exact reviewed asset/copy pair. Product proof must show current verified behavior; generated scenes remain campaign illustration. No invented customers, metrics, adoption, fundraising, or guaranteed outcomes. Keep attachments to one current still or one-pager and link the rest of the reviewed package.
