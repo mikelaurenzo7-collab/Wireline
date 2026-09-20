@@ -103,9 +103,10 @@ describe("omnichannel outcome loop", () => {
       'authFetch("/api/Assistants/tasks?status=active", { signal: controller.signal })',
     );
     expect(approvals).toContain('rawTaskType(task) === "human_handoff"');
-    expect(approvals).toContain('{manualHandoff ? "Complete" : "Approve"}');
+    expect(approvals).toContain("manualHandoff || isManualOperatorTask(rawTaskType(task))");
+    expect(approvals).toContain('{manualTask ? "Complete" : "Approve"}');
     expect(approvals).toContain('{manualHandoff ? "Dismiss" : "Reject"}');
-    expect(approvals).toContain("if (!manualHandoff) {");
+    expect(approvals).toContain("if (!manualTask) {");
   });
 
   it("keeps actionable work usable when triage enrichment is degraded", () => {
@@ -123,7 +124,10 @@ describe("omnichannel outcome loop", () => {
     expect(approvals).toContain("loadAbortRef.current = null");
     expect(approvals).toContain("!controller.signal.aborted");
     expect(approvals).toContain("setTriageUnavailable(!triageReady)");
-    expect(approvals).toContain("Active operator work is still current.");
+    expect(approvals).toContain(
+      'title={tasksUnavailable ? "Actions Unavailable" : "Triage Unavailable"}',
+    );
+    expect(approvals).toContain("Other queues are still available.");
   });
 
   it("registers shadow routes before their broader legacy owners", () => {

@@ -225,9 +225,9 @@ describe("approval count availability", () => {
 
 describe("approval message edits", () => {
   it.each([
-    ["send_email", "Message that will execute on approval"],
-    ["send_text_message", "Message that will execute on approval"],
-    ["send_email", "Email or CRM subject"],
+    ["send_email", "Write a message…"],
+    ["send_text_message", "Write a message…"],
+    ["send_email", "Subject"],
   ])(
     "does not send old %s content when the edited %s is cleared",
     async (taskType, placeholder) => {
@@ -266,6 +266,90 @@ describe("approval message edits", () => {
       await flush();
       expect(h.fetch).not.toHaveBeenCalled();
       expect(textOf(renderCard())).toContain("before approving");
+    },
+  );
+});
+
+async function approvalCard(payload: Record<string, unknown>, taskType = "send_email") {
+  const task = { id: "task", task_type: taskType, status: "pending", payload };
+  h.fetch.mockImplementation((url: string) =>
+    Promise.resolve(json(url === "/api/triage" ? triage : { tasks: [task] })),
+  );
+  render(() => ApprovalInbox({}));
+  h.effects[0]();
+  await flush();
+  const card = elements(render(() => ApprovalInbox({}))).find(
+    (node) => node.props.task?.id === "task",
+  )!;
+  h.states = [];
+  h.refs = [];
+  h.fetch.mockClear();
+  const draw = () => render(() => (card.type as (props: Props) => ReactNode)(card.props));
+  return {
+    draw,
+    click(label: string) {
+      elements(draw()).find(
+        (node) => node.type === "button" && textOf(node.props.children).trim() === label,
+      )!.props.onClick!();
+    },
+    change(placeholder: string, value: string) {
+      elements(draw()).find((node) => node.props.placeholder === placeholder)!.props.onChange!({
+        target: { value },
+      });
+    },
+  };
+}
+
+describe("approval preview integrity", () => {
+  it("shows the subject and the complete message before approval", async () => {
+    const body = `${"Long message. ".repeat(60)}Final terms must be reviewed.`;
+    const card = await approvalCard({ subject: "Exact subject", to: "person@example.test", body });
+    expect(textOf(card.draw())).toContain("Exact subject");
+    expect(textOf(card.draw())).toContain(body);
+    expect(textOf(card.draw())).toContain("person@example.test");
+  });
+
+  it("does not offer an unused subject for a text message", async () => {
+    const card = await approvalCard({ to: "+13125550100", body: "Hello" }, "send_text_message");
+    card.click("Edit");
+    expect(elements(card.draw()).some((node) => node.props.placeholder === "Subject")).toBe(false);
+  });
+
+  it("discards unsaved changes on Cancel", async () => {
+    const card = await approvalCard({ subject: "Original", body: "Saved message" });
+    card.click("Edit");
+    card.change("Write a message…", "Unsaved change");
+    card.click("Cancel");
+    card.click("Edit");
+    const message = elements(card.draw()).find(
+      (node) => node.props.placeholder === "Write a message…",
+    )!;
+    expect((message.props as { value?: string }).value).toBe("Saved message");
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])(
+    "keeps the preview aligned with the saved draft after a block (saved: %s)",
+    async (saved) => {
+      const card = await approvalCard({ subject: "Original", body: "Original message" });
+      h.fetch.mockImplementation((_url: string, init: RequestInit) =>
+        Promise.resolve(
+          init.method === "PATCH" && saved
+            ? json({ success: true })
+            : new Response(JSON.stringify({ error: saved ? "Review required" : "Save failed" }), {
+                status: 422,
+              }),
+        ),
+      );
+      card.click("Edit");
+      card.change("Subject", "Revised subject");
+      card.change("Write a message…", "Revised message");
+      card.click("Approve");
+      await flush();
+      card.click("Cancel");
+      expect(textOf(card.draw())).toContain(saved ? "Revised subject" : "Original");
+      expect(textOf(card.draw())).toContain(saved ? "Revised message" : "Original message");
+      expect(h.fetch).toHaveBeenCalledTimes(saved ? 2 : 1);
     },
   );
 });

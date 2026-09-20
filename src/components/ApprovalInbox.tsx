@@ -9,7 +9,6 @@ import {
   Shield,
   Sparkles,
   UserRoundCheck,
-  X,
 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
@@ -22,7 +21,6 @@ import {
 import { emitProductEventOnce } from "../lib/product-event-client";
 import { formatPhone } from "../lib/safe-number";
 import { isManualOperatorTask } from "../lib/operator-work-status";
-import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
 import { StatusNotice } from "./molecules";
@@ -101,13 +99,18 @@ function isHumanHandoff(task: FollowUpTaskRow): boolean {
   return rawTaskType(task) === "human_handoff";
 }
 
-function evidenceSnippet(task: FollowUpTaskRow, omitEditableFields = false): string {
+function evidenceSnippet(
+  task: FollowUpTaskRow,
+  omitEditableFields = false,
+  omitRecipient = false,
+): string {
   const payload = (task.payload || task.customer_info || task.customerInfo || {}) as Record<
     string,
     unknown
   >;
   const parts: string[] = [];
   if (typeof payload.body === "string") parts.push(payload.body);
+  if (typeof payload.description === "string") parts.push(payload.description);
   if (typeof payload.summary === "string") parts.push(payload.summary);
   if (typeof payload.reasoning === "string") parts.push(payload.reasoning);
   if (task.description) parts.push(task.description);
@@ -124,14 +127,11 @@ function evidenceSnippet(task: FollowUpTaskRow, omitEditableFields = false): str
       parts.map((part) => part.trim()).filter((part) => part && !editableParts?.has(part)),
     ),
   ];
-  if (typeof payload.to === "string") {
+  if (!omitRecipient && typeof payload.to === "string") {
     const recipient = `To: ${payload.to}`;
     if (!uniqueParts.includes(recipient)) uniqueParts.unshift(recipient);
   }
-  return (
-    uniqueParts.join("\n\n").slice(0, 600) ||
-    (omitEditableFields ? "" : "No evidence snippet attached.")
-  );
+  return uniqueParts.join("\n\n");
 }
 
 function actionIcon(task: FollowUpTaskRow) {
@@ -150,17 +150,13 @@ function actionIcon(task: FollowUpTaskRow) {
 
 function ApprovalEmptyCard({ title, description }: { title: string; description: string }) {
   return (
-    <EmptyState
-      framed
-      density="compact"
-      titleTone="ui"
-      withHalo={false}
-      className="mx-auto w-full max-w-4xl"
-      icon={<Check className="size-5" aria-hidden="true" />}
-      title={title}
-      description={description}
-      actions={[{ label: "Open Studio", to: "/studio", primary: true }]}
-    />
+    <div className="flex items-start gap-3 rounded-xl border border-border px-5 py-6">
+      <Check className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <div>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -178,6 +174,9 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
 }
 
 function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
+  // Edits are saved before approval. If execution is blocked, keep the preview
+  // aligned with that saved draft rather than showing the original task again.
+  const [savedTask, setSavedTask] = useState(task);
   const manualHandoff = isHumanHandoff(task);
   const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
   const [busy, setBusy] = useState(false);
@@ -196,7 +195,26 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
     const payload = editablePayloadFields(task);
     return typeof payload.subject === "string" ? payload.subject : "";
   });
-  const evidence = evidenceSnippet(task, editing && !manualTask);
+  const savedPayload = editablePayloadFields(savedTask);
+  const subject = typeof savedPayload.subject === "string" ? savedPayload.subject.trim() : "";
+  const recipient = typeof savedPayload.to === "string" ? savedPayload.to.trim() : "";
+  const hasSubject = rawTaskType(task).includes("email") || "subject" in savedPayload;
+  const evidence = evidenceSnippet(savedTask, editing && !manualTask, true);
+
+  function toggleEditing() {
+    if (editing) {
+      setEditSubject(subject);
+      setEditBody(
+        typeof savedPayload.body === "string"
+          ? savedPayload.body
+          : typeof savedPayload.description === "string"
+            ? savedPayload.description
+            : "",
+      );
+      setEditNotes(savedTask.description || "");
+    }
+    setEditing((value) => !value);
+  }
 
   async function approve() {
     setBusy(true);
@@ -210,7 +228,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
         if (type === "send_email" && !editSubject.trim()) {
           throw new Error("Add a subject before approving.");
         }
-        const basePayload = editablePayloadFields(task);
+        const basePayload = editablePayloadFields(savedTask);
         const nextPayload: Record<string, unknown> = { ...basePayload };
         if (editSubject.trim()) nextPayload.subject = editSubject.trim();
         if (editBody.trim()) {
@@ -226,11 +244,12 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             nextPayload.body = editBody.trim();
           }
         }
+        const nextDescription = editNotes.trim();
         const patch = await authFetch(`/api/Assistants/tasks/${task.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            description: editNotes.trim() || task.description,
+            description: nextDescription,
             payload: nextPayload,
           }),
         });
@@ -238,6 +257,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           const failure = await patch.json().catch(() => ({}));
           throw new Error(failure?.error || "Could not save edits before approval.");
         }
+        setSavedTask({ ...savedTask, description: nextDescription, payload: nextPayload });
       }
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
@@ -306,104 +326,117 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
 
   return (
     <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 hidden size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary sm:grid">
-          {actionIcon(task)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">{taskTypeLabel(task)}</h3>
-            {task.priority ? (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {task.priority}
-              </span>
-            ) : null}
-            {task.status ? (
-              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {task.status.replace(/_/g, " ")}
-              </span>
-            ) : null}
-            {task.agent?.name ? (
-              <span className="text-xs text-muted-foreground">{task.agent.name}</span>
-            ) : null}
-          </div>
-          {evidence ? (
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {evidence}
-            </p>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="shrink-0 text-muted-foreground">{actionIcon(task)}</span>
+          <h3 className="wl-preserve-case break-words text-sm font-semibold text-foreground">
+            {subject && !editing ? subject : taskTypeLabel(task)}
+          </h3>
+          {task.priority ? (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {task.priority}
+            </span>
           ) : null}
-          {!manualTask && editing ? (
-            <div className="mt-3 grid gap-3">
+          {task.status && task.status !== "pending" ? (
+            <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {task.status.replace(/_/g, " ")}
+            </span>
+          ) : null}
+          {task.agent?.name ? (
+            <span className="text-xs text-muted-foreground">{task.agent.name}</span>
+          ) : null}
+        </div>
+        {recipient ? (
+          <p className="mt-1 break-words text-xs text-muted-foreground">
+            {subject && !editing ? `${taskTypeLabel(task)} · ` : ""}To: {recipient}
+          </p>
+        ) : null}
+        {evidence ? (
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">
+            {evidence}
+          </p>
+        ) : null}
+        {!manualTask && editing ? (
+          <div className="mt-3 grid gap-3">
+            {hasSubject ? (
               <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
                 Subject
                 <input
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   value={editSubject}
-                  onChange={(event) => setEditSubject(event.target.value)}
-                  placeholder="Email or CRM subject"
+                  onChange={(event) => {
+                    setEditSubject(event.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Subject"
                 />
               </label>
-              <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
-                Message
-                <textarea
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                  rows={3}
-                  value={editBody}
-                  onChange={(event) => setEditBody(event.target.value)}
-                  placeholder="Message that will execute on approval"
-                />
-              </label>
-              <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
-                Internal Notes
+            ) : null}
+            <label className="wl-preserve-case grid gap-1.5 text-sm font-medium text-muted-foreground">
+              Message
+              <textarea
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                rows={3}
+                value={editBody}
+                onChange={(event) => {
+                  setEditBody(event.target.value);
+                  setError(null);
+                }}
+                placeholder="Write a message…"
+              />
+            </label>
+            <details className="text-sm text-muted-foreground">
+              <summary className="cursor-pointer py-1 text-xs font-medium">Internal Notes</summary>
+              <label className="wl-preserve-case mt-2 grid gap-1.5 text-sm font-medium text-muted-foreground">
+                <span className="sr-only">Internal Notes</span>
                 <textarea
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   rows={2}
                   value={editNotes}
                   onChange={(event) => setEditNotes(event.target.value)}
-                  placeholder="Context for this approval card"
+                  placeholder="Add context…"
                 />
               </label>
-            </div>
-          ) : null}
-          {error ? (
-            <p role="alert" className="mt-2 flex items-center gap-1.5 text-xs text-destructive">
-              <AlertTriangle size={12} aria-hidden="true" />
-              {error}
-            </p>
-          ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
-              {busy ? (
-                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-              ) : manualHandoff ? (
-                <UserRoundCheck className="size-3.5" aria-hidden="true" />
-              ) : (
-                <Check className="size-3.5" aria-hidden="true" />
-              )}
-              {manualTask ? "Complete" : "Approve"}
-            </ShadButton>
-            {!manualTask ? (
-              <ShadButton
-                type="button"
-                size="sm"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => setEditing((value) => !value)}
-              >
-                {editing ? "Cancel Edit" : "Edit"}
-              </ShadButton>
-            ) : null}
+            </details>
+          </div>
+        ) : null}
+        {error ? (
+          <p role="alert" className="mt-3 flex items-start gap-1.5 text-xs text-destructive">
+            <AlertTriangle className="mt-0.5 shrink-0" size={12} aria-hidden="true" />
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <ShadButton type="button" size="sm" disabled={busy} onClick={() => void approve()}>
+            {busy ? (
+              <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+            ) : manualHandoff ? (
+              <UserRoundCheck className="size-3.5" aria-hidden="true" />
+            ) : (
+              <Check className="size-3.5" aria-hidden="true" />
+            )}
+            {manualTask ? "Complete" : "Approve"}
+          </ShadButton>
+          {!manualTask ? (
             <ShadButton
               type="button"
               size="sm"
-              variant="ghost"
+              variant="secondary"
               disabled={busy}
-              onClick={() => void reject()}
+              onClick={toggleEditing}
             >
-              <X className="size-3.5" aria-hidden="true" />
-              {manualHandoff ? "Dismiss" : "Reject"}
+              {editing ? "Cancel" : "Edit"}
             </ShadButton>
-          </div>
+          ) : null}
+          <ShadButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => void reject()}
+          >
+            {manualHandoff ? "Dismiss" : "Reject"}
+          </ShadButton>
         </div>
       </div>
     </article>
@@ -604,8 +637,8 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
             title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}
             description={
               bucket === "compliance"
-                ? "Compliance-sensitive follow-ups will appear here before anything executes."
-                : "Follow-ups and human handoffs that need you will appear here with their evidence."
+                ? "Reviews that need you will appear here."
+                : "Nothing needs your approval."
             }
           />
         ) : (
@@ -632,8 +665,8 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         )
       ) : bucketItems.length === 0 ? (
         <ApprovalEmptyCard
-          title={`${BUCKET_SHORT_LABELS[bucket]} Clear`}
-          description="Evidence-backed items will appear here automatically."
+          title={`${BUCKET_LABELS[bucket]} Clear`}
+          description="Nothing needs your attention."
         />
       ) : (
         <div className="grid gap-3">
