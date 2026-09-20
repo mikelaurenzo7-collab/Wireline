@@ -265,7 +265,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authRevisionRef.current += 1;
       setCreateBriefRecoveryOwner(null);
     }
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    try {
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch {
+      // Browser storage restrictions must not retain in-memory authentication.
+    }
     clearStudioLastAgentId();
     setSession(null);
     setUser(null);

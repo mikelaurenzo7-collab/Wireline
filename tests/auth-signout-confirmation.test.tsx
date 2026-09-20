@@ -166,6 +166,27 @@ describe("confirmed account-switch sign-out", () => {
 });
 
 describe("ordinary sign-out compatibility", () => {
+  it.each([true, false])(
+    "clears in-memory auth when storage is blocked (strict=%s)",
+    async (strict) => {
+      h.fetch.mockResolvedValueOnce(new Response('{"success":true}', { status: 200 }));
+      vi.stubGlobal("localStorage", {
+        removeItem: () => {
+          throw new Error("Storage blocked");
+        },
+      });
+
+      await expect(
+        render().signOut({ requireServerConfirmation: strict }),
+      ).resolves.toBeUndefined();
+
+      expect(render().user).toBeNull();
+      expect(render().session).toBeNull();
+      expect(h.setRecoveryOwner).toHaveBeenCalledWith(null);
+      expect(h.clearLastAgent).toHaveBeenCalledOnce();
+    },
+  );
+
   it.each(["network", "server", "unconfirmed"])(
     "still clears local state after %s failure without requiring confirmation",
     async (failure) => {

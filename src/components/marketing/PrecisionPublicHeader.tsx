@@ -1,13 +1,13 @@
 import { Menu } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
+import { Button } from "../atoms/Button";
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../atoms";
+} from "../atoms/DropdownMenu";
 import { BotBoundLockup } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { signupHrefForPlan } from "../../lib/signup-intent";
