@@ -313,7 +313,7 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     expect(resolved?.id).toBe("business");
   });
 
-  it("resolves late disputes through stable customer ownership and historical plan truth", () => {
+  it("resolves late disputes through stable ownership and the original posted grant", () => {
     const subscriptionLookup = middleware.indexOf(
       "schema.subscriptions.stripeSubscriptionId, subscriptionId",
     );
@@ -322,10 +322,14 @@ describe("Stripe Runtime Balance movements fail closed", () => {
     );
     expect(subscriptionLookup).toBeGreaterThan(-1);
     expect(customerFallback).toBeGreaterThan(subscriptionLookup);
-    expect(middleware).toContain("basePlanFromStripeSubscription(subscription)");
-    expect(middleware).toContain("planId: disputedPlan.id");
+    expect(middleware).toContain("runtimeAllowanceReferencesForInvoice(invoice, subscriptionId)");
+    expect(middleware).toContain(
+      'eq(schema.creditLedger.refType, "subscription_runtime_allowance")',
+    );
+    expect(middleware).toContain("planId: metadata.plan_id");
     expect(middleware).not.toContain("planId: row.plan");
-    expect(middleware).toContain("historical plan is not mapped");
+    expect(middleware).not.toContain("stripe.subscriptions.retrieve(subscriptionId)");
+    expect(middleware).toContain("grantAmountUsd");
   });
 
   it("fails closed when a subscription-funded charge has no resolvable BotBound owner", () => {

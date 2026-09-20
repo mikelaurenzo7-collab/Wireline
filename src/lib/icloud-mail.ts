@@ -108,7 +108,12 @@ export async function fetchIcloudInbox(
     }
   } catch (err) {
     log.warn("iCloud inbox fetch failed", { email, error: getErrorMessage(err) });
-    return [];
+    // Preserve the distinction between an empty inbox and an unreachable one.
+    // IntegrationService records this failure and the sync route exposes the
+    // reconnect action instead of claiming there are no new messages.
+    throw new Error("iCloud inbox could not be refreshed. Reconnect iCloud and try again.", {
+      cause: err,
+    });
   } finally {
     await client.logout().catch(() => undefined);
   }

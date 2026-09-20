@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   fetch: vi.fn(),
   setRecoveryOwner: vi.fn(),
   clearLastAgent: vi.fn(),
+  effects: [] as Array<() => void | (() => void)>,
 }));
 
 // Exercise the real AuthProvider signOut callback and session state. Background
@@ -30,7 +31,7 @@ vi.mock("react", async (importOriginal) => ({
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
   useCallback: (callback: unknown) => callback,
   useMemo: (factory: () => unknown) => factory(),
-  useEffect: () => {},
+  useEffect: (effect: () => void | (() => void)) => h.effects.push(effect),
 }));
 vi.mock("react-router", () => ({ useLocation: () => ({ pathname: "/accept-invite" }) }));
 vi.mock("../src/lib/api", () => ({
@@ -77,6 +78,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   h.states = [];
   h.refs = [];
+  h.effects = [];
   h.fetch.mockReset();
   h.setRecoveryOwner.mockReset();
   h.clearLastAgent.mockReset();
@@ -207,4 +209,72 @@ describe("ordinary sign-out compatibility", () => {
       expect(vi.getTimerCount()).toBe(0);
     },
   );
+});
+
+describe("cookie authentication with restricted browser storage", () => {
+  function blockStorage(mode: "methods" | "property") {
+    const denied = () => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    };
+    if (mode === "property") {
+      Object.defineProperty(globalThis, "localStorage", { configurable: true, get: denied });
+    } else {
+      vi.stubGlobal("localStorage", { getItem: denied, removeItem: denied });
+    }
+  }
+
+  it.each(["methods", "property"] as const)(
+    "accepts a confirmed sign-in when storage %s are denied",
+    (mode) => {
+      blockStorage(mode);
+      const nextUser: User = { id: "owner-2", email: "next@example.com" };
+
+      expect(() => render().signIn({ user: nextUser })).not.toThrow();
+
+      expect(render().user).toEqual(nextUser);
+      expect(render().session).toEqual({ user: nextUser });
+    },
+  );
+
+  it.each(["methods", "property"] as const)(
+    "hydrates the cookie session when storage %s are denied",
+    async (mode) => {
+      h.states = [];
+      h.refs = [];
+      h.effects = [];
+      blockStorage(mode);
+      h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ user: owner }), { status: 200 }));
+      render();
+
+      h.effects[0]();
+      await vi.waitFor(() => expect(render().user).toEqual(owner));
+
+      expect(h.fetch).toHaveBeenCalledWith(
+        "/api/auth/session",
+        expect.objectContaining({ credentials: "include" }),
+      );
+      expect(render().loading).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    },
+  );
+
+  it("clears expired in-memory authentication when storage is denied", () => {
+    const listeners = new Map<string, (event: Event) => void>();
+    vi.stubGlobal("window", {
+      addEventListener: (name: string, listener: (event: Event) => void) =>
+        listeners.set(name, listener),
+      removeEventListener: vi.fn(),
+    });
+    h.effects = [];
+    render();
+    h.effects[1]();
+    blockStorage("methods");
+
+    expect(() => listeners.get("session-expired")?.(new Event("session-expired"))).not.toThrow();
+
+    expect(render().user).toBeNull();
+    expect(render().session).toBeNull();
+    expect(h.setRecoveryOwner).toHaveBeenCalledWith(null);
+    expect(h.clearLastAgent).toHaveBeenCalledOnce();
+  });
 });

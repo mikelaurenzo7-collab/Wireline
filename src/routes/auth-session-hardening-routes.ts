@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
-import { drizzle, tenantStore } from "../lib/server-context";
+import { drizzle, log, tenantStore } from "../lib/server-context";
 import { verifyInternalJwt, type JwtPayload } from "../lib/auth-utils";
 import { isSessionGenerationActive } from "../lib/session-generation";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
@@ -135,7 +135,8 @@ router.post(
   "/api/auth/migrate-session",
   migrateSessionRateLimiter,
   async (req: Request, res: Response) => {
-    const authHeader = typeof req.headers.authorization === "string" ? req.headers.authorization : "";
+    const authHeader =
+      typeof req.headers.authorization === "string" ? req.headers.authorization : "";
     const legacyToken = authHeader.toLowerCase().startsWith("bearer ")
       ? authHeader.slice(7).trim()
       : "";
@@ -177,8 +178,10 @@ router.post(
 
 router.post("/api/auth/signout", async (req: Request, res: Response) => {
   const token = getSessionTokenFromRequest(req);
-  clearSessionCookie(res);
-  if (!token) return res.json({ success: true });
+  if (!token) {
+    clearSessionCookie(res);
+    return res.json({ success: true });
+  }
 
   try {
     const payload = await verifyInternalJwt(token, requireInternalJwtSecret());
@@ -196,9 +199,20 @@ router.post("/api/auth/signout", async (req: Request, res: Response) => {
         });
       }
     }
-  } catch {
-    // A malformed or expired token still gets its cookie cleared.
+  } catch (error) {
+    // Preserve the cookie so a failed revocation can be retried. Reporting
+    // success here lets strict account switching proceed with an active token.
+    log.error("Sign-out session revocation failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(503).json({
+      success: false,
+      code: "SIGNOUT_UNAVAILABLE",
+      error: "Sign-out could not be confirmed. Please try again.",
+    });
   }
+  // Invalid/expired/already-revoked sessions are safe to clear as well.
+  clearSessionCookie(res);
   return res.json({ success: true });
 });
 

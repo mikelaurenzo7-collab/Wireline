@@ -6,6 +6,10 @@ const mockGetMailboxLock = vi.fn().mockResolvedValue({ release: vi.fn() });
 const mockSearch = vi.fn();
 const mockFetch = vi.fn();
 
+vi.mock("./server-context", () => ({
+  log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 vi.mock("imapflow", () => ({
   ImapFlow: class MockImapFlow {
     connect = mockConnect;
@@ -107,6 +111,39 @@ describe("icloud-mail", () => {
         headers: unsubscribeHeaders,
       }),
     );
+  });
+
+  it("reports an unreachable inbox while closing the IMAP session", async () => {
+    mockConnect.mockRejectedValueOnce(new Error("Authentication failed"));
+
+    await expect(fetchIcloudInbox("you@icloud.com", "app-pass", { limit: 5 })).rejects.toThrow(
+      "iCloud inbox could not be refreshed",
+    );
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+    expect(mockSearch).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed message fetch and releases its mailbox lock", async () => {
+    const release = vi.fn();
+    mockGetMailboxLock.mockResolvedValueOnce({ release });
+    mockFetch.mockImplementationOnce(async function* () {
+      yield { uid: 102 };
+      throw new Error("Connection lost");
+    });
+
+    await expect(fetchIcloudInbox("you@icloud.com", "app-pass", { limit: 5 })).rejects.toThrow(
+      "iCloud inbox could not be refreshed",
+    );
+    expect(release).toHaveBeenCalledTimes(1);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it("still returns an empty list after a successful empty inbox search", async () => {
+    mockSearch.mockResolvedValueOnce([]);
+
+    await expect(fetchIcloudInbox("you@icloud.com", "app-pass", { limit: 5 })).resolves.toEqual([]);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("sends mail over SMTP", async () => {

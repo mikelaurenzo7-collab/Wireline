@@ -99,6 +99,20 @@ type LegacyInvoiceCharge = Stripe.Charge & {
   invoice?: string | Stripe.Invoice | null;
 };
 
+/** Resolve the subscription pointer from current invoices and historical payloads. */
+export function stripeSubscriptionIdForInvoice(invoice: Stripe.Invoice): string | null {
+  // Basil moved this pointer under parent. Reading only invoice.subscription
+  // silently skips Runtime Allowance reversals on the pinned API version.
+  const current =
+    invoice.parent?.type === "subscription_details"
+      ? invoice.parent.subscription_details?.subscription
+      : null;
+  const legacy = (invoice as Stripe.Invoice & { subscription?: string | { id: string } | null })
+    .subscription;
+  const subscription = current ?? legacy;
+  return typeof subscription === "string" ? subscription : (subscription?.id ?? null);
+}
+
 /**
  * Resolve the invoice funded by a Charge across Stripe API generations.
  *
@@ -257,6 +271,25 @@ function basePlanFromInvoiceLine(line: Stripe.InvoiceLineItem): StripePlan | nul
   return typeof candidate === "string"
     ? basePlanByStripePriceId(candidate)
     : basePlanByStripePrice(candidate);
+}
+
+/** Period receipts funded by full base-plan lines, never add-ons or prorations. */
+export function runtimeAllowanceReferencesForInvoice(
+  invoice: Stripe.Invoice,
+  subscriptionId: string,
+): string[] {
+  const references = new Set<string>();
+  for (const line of invoice.lines?.data ?? []) {
+    if (!(line.amount > 0) || !basePlanFromInvoiceLine(line)) continue;
+    const legacy = line as Stripe.InvoiceLineItem & { proration?: boolean };
+    if (line.parent?.subscription_item_details?.proration || legacy.proration) continue;
+    const periodStart = line.period?.start;
+    if (!Number.isInteger(periodStart) || !(periodStart > 0)) {
+      throw new Error(`Stripe invoice ${invoice.id} has no base-plan billing period.`);
+    }
+    references.add(`${subscriptionId}:${periodStart}`);
+  }
+  return [...references];
 }
 
 /**

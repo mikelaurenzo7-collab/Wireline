@@ -11,7 +11,7 @@ import {
 import { drizzle, log, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
 import { sessionUsers } from "../db/security-schema";
-import { and, eq, gte, isNull, sql } from "drizzle-orm";
+import { and, eq, getTableColumns, gte, isNull, sql } from "drizzle-orm";
 import { requireInternalJwtSecret } from "./internal-jwt-secret";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { assertPasswordIsSafe, type PasswordBreachCheckContext } from "./breached-passwords";
@@ -231,8 +231,11 @@ export const authService = {
       );
     }
 
+    // Read the credential and its session generation in one database snapshot.
+    // A reset/sign-out during the async KDF must invalidate this attempt, rather
+    // than letting the old password acquire the newly rotated generation.
     const [user] = await drizzle
-      .select()
+      .select({ ...getTableColumns(schema.users), sessionVersion: sessionUsers.sessionVersion })
       .from(schema.users)
       .where(eq(schema.users.email, email))
       .limit(1);
@@ -244,6 +247,7 @@ export const authService = {
       log.warn("Auth: Invalid password", { email });
       return null;
     }
+    let sessionVersion = user.sessionVersion;
 
     // Opportunistically upgrade legacy default-cost scrypt hashes to the strong
     // cost on a successful login. The write is best-effort: a failure here must
@@ -251,10 +255,20 @@ export const authService = {
     if (isLegacyPasswordHash(user.passwordHash)) {
       try {
         const upgraded = await hashPasswordForRequest(password);
-        await drizzle
+        const [upgradedSession] = await drizzle
           .update(schema.users)
           .set({ passwordHash: upgraded })
-          .where(eq(schema.users.id, user.id));
+          .where(
+            and(
+              eq(schema.users.id, user.id),
+              eq(schema.users.passwordHash, user.passwordHash),
+              eq(sessionUsers.sessionVersion, user.sessionVersion),
+            ),
+          )
+          .returning({ sessionVersion: sessionUsers.sessionVersion });
+        // The password-change trigger advances the generation on a rehash too.
+        // Only adopt the generation returned by our successful conditional write.
+        if (upgradedSession) sessionVersion = upgradedSession.sessionVersion;
       } catch (err) {
         log.warn("Auth: legacy password rehash skipped", {
           email,
@@ -263,19 +277,11 @@ export const authService = {
       }
     }
 
-    const [[session], [sub]] = await Promise.all([
-      drizzle
-        .select({ sessionVersion: sessionUsers.sessionVersion })
-        .from(sessionUsers)
-        .where(eq(sessionUsers.id, user.id))
-        .limit(1),
-      drizzle
-        .select({ plan: schema.subscriptions.plan })
-        .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.userId, user.id))
-        .limit(1),
-    ]);
-    if (!session) throw new Error("Authenticated user session state is unavailable");
+    const [sub] = await drizzle
+      .select({ plan: schema.subscriptions.plan })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, user.id))
+      .limit(1);
 
     const { resolveAccountType } = await import("./account-type");
     const { ensureDefaultAccount } = await import("./account-service");
@@ -292,7 +298,7 @@ export const authService = {
       token: generateToken({
         id: user.id,
         email: user.email,
-        sessionVersion: session.sessionVersion,
+        sessionVersion,
       }),
     };
   },
@@ -504,26 +510,14 @@ export const authService = {
         .where(eq(sessionUsers.id, changed.id))
         .returning({ sessionVersion: sessionUsers.sessionVersion });
       if (!session) throw new Error("Reset user session state is unavailable");
+      // Connector grants outlive browser sessions. Revoke them in the same
+      // transaction, under the account-row lock already held by the password
+      // update, so a failed sweep cannot leave reset credentials active.
+      const { revokeAllMcpGrantsForUser } = await import("./mcp-oauth-security");
+      await revokeAllMcpGrantsForUser(changed.id, tx);
       return { userId: changed.id, sessionVersion: session.sessionVersion };
     });
     if (!reset) return null;
-
-    // Third-party MCP grants are credentials too, and they outlive the session
-    // fence entirely — chatgpt-mcp-account-routes authorizes a bearer purely on
-    // the access-token row's expires_at, with no reference to sessionVersion.
-    // A reset that leaves them standing hands the attacker a connector with the
-    // account's full tool surface for the rest of the token's life. Best-effort:
-    // the password change itself has already committed and must be reported as
-    // done even if this sweep fails.
-    try {
-      const { revokeAllMcpGrantsForUser } = await import("./mcp-oauth-security");
-      await revokeAllMcpGrantsForUser(reset.userId);
-    } catch (error) {
-      log.error("Password reset could not revoke MCP grants", {
-        user_id: reset.userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
 
     const [user] = await drizzle
       .select()

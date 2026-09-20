@@ -7,6 +7,35 @@ import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 import { rateLimit } from "./rate-limit";
 import { drizzle } from "./server-context";
 
+export type McpGrantExecutor = Pick<typeof drizzle, "execute">;
+type McpGrantTable = "wireline_mcp_oauth_codes" | "wireline_mcp_refresh_tokens";
+
+/** Serialize issuance and revocation on the existing account row. */
+export async function lockMcpGrantUser(executor: McpGrantExecutor, userId: string): Promise<void> {
+  await executor.execute(sql`SELECT id FROM wireline_users WHERE id = ${userId}::uuid FOR UPDATE`);
+}
+
+/** Keep a one-time grant claim and all replacement credentials in one commit. */
+export async function exchangeMcpGrant<T>(
+  table: McpGrantTable,
+  hash: string,
+  exchange: (tx: McpGrantExecutor) => Promise<T | null>,
+): Promise<T | null> {
+  return drizzle.transaction(async (tx) => {
+    // Lock the account before touching the grant row, matching password reset
+    // and explicit disconnect. Re-read/claim the grant only after this lock:
+    // revocation may have deleted it while the account lock was pending.
+    const hashColumn = table === "wireline_mcp_oauth_codes" ? "code_hash" : "token_hash";
+    const locked = (await tx.execute(sql`
+      SELECT id FROM wireline_users
+      WHERE id = (SELECT user_id FROM ${sql.raw(table)} WHERE ${sql.raw(hashColumn)} = ${hash})
+      FOR UPDATE
+    `)) as unknown as { rows?: Array<{ id: string }> };
+    if (!locked.rows?.length) return null;
+    return exchange(tx);
+  });
+}
+
 export function mcpIssuer(_req?: Request): string {
   const canonical = resolveCanonicalAppUrl();
   if ("url" in canonical) return canonical.url;
@@ -36,19 +65,26 @@ export function isMcpResourceBound(resource: string | null | undefined, req?: Re
 export async function revokeMcpAccessTokensForClient(
   userId: string,
   clientId: string,
+  executor: McpGrantExecutor = drizzle,
 ): Promise<void> {
-  await drizzle.execute(sql`
+  await executor.execute(sql`
     DELETE FROM wireline_mcp_access_tokens
     WHERE user_id = ${userId}::uuid AND client_id = ${clientId}
   `);
 }
 
-export async function revokeAllMcpGrantsForUser(userId: string): Promise<void> {
-  await Promise.all([
-    drizzle.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE user_id = ${userId}::uuid`),
-    drizzle.execute(sql`DELETE FROM wireline_mcp_refresh_tokens WHERE user_id = ${userId}::uuid`),
-    drizzle.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE user_id = ${userId}::uuid`),
-  ]);
+export async function revokeAllMcpGrantsForUser(
+  userId: string,
+  executor?: McpGrantExecutor,
+): Promise<void> {
+  const revoke = async (tx: McpGrantExecutor) => {
+    await lockMcpGrantUser(tx, userId);
+    await tx.execute(sql`DELETE FROM wireline_mcp_access_tokens WHERE user_id = ${userId}::uuid`);
+    await tx.execute(sql`DELETE FROM wireline_mcp_refresh_tokens WHERE user_id = ${userId}::uuid`);
+    await tx.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE user_id = ${userId}::uuid`);
+  };
+  if (executor) return revoke(executor);
+  return drizzle.transaction(revoke);
 }
 
 export async function pruneExpiredMcpOAuthRows(): Promise<void> {

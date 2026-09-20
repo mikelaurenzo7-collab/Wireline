@@ -81,20 +81,25 @@ async function fetchSessionUser(): Promise<User | null | undefined> {
 
 const STALE_BROWSER_TOKEN_KEYS = ["wireline_token"];
 
+function removeStoredToken(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Legacy browser storage is optional; cookie authentication must continue.
+  }
+}
+
 function clearStaleBrowserTokens(): void {
-  for (const key of STALE_BROWSER_TOKEN_KEYS) localStorage.removeItem(key);
+  for (const key of STALE_BROWSER_TOKEN_KEYS) removeStoredToken(key);
 }
 
 async function migrateLegacyLocalStorage(): Promise<void> {
   clearStaleBrowserTokens();
-  const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
-  if (!stored) return;
   try {
+    const stored = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!stored) return;
     const parsed = JSON.parse(stored) as { access_token?: string };
-    if (!parsed.access_token) {
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
-      return;
-    }
+    if (!parsed.access_token) return;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), SESSION_PROBE_MS);
     try {
@@ -111,9 +116,9 @@ async function migrateLegacyLocalStorage(): Promise<void> {
       clearTimeout(timeoutId);
     }
   } catch {
-    /* ignore — session hydrate will fail cleanly */
+    // A missing or blocked legacy store must not prevent the cookie session probe.
   } finally {
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    removeStoredToken(LEGACY_STORAGE_KEY);
     clearStaleBrowserTokens();
   }
 }
@@ -193,7 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const onSessionExpired = (_event: Event) => {
       authRevisionRef.current += 1;
       setCreateBriefRecoveryOwner(null);
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      removeStoredToken(LEGACY_STORAGE_KEY);
       clearStudioLastAgentId();
       setSession(null);
       setUser(null);
@@ -226,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = useCallback((newSession: Session) => {
     authRevisionRef.current += 1;
     setCreateBriefRecoveryOwner(newSession.user.id);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
+    removeStoredToken(LEGACY_STORAGE_KEY);
     setSession({ user: newSession.user });
     setUser(newSession.user);
   }, []);
@@ -265,11 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authRevisionRef.current += 1;
       setCreateBriefRecoveryOwner(null);
     }
-    try {
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
-    } catch {
-      // Browser storage restrictions must not retain in-memory authentication.
-    }
+    removeStoredToken(LEGACY_STORAGE_KEY);
     clearStudioLastAgentId();
     setSession(null);
     setUser(null);

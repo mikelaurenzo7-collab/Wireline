@@ -218,6 +218,7 @@ describe("password reset rotates every credential the account holds", () => {
       reset.indexOf("if (!reset) return null;"),
     );
     expect(txn).toContain("sessionUsers.sessionVersion} + 1");
+    expect(txn).toContain("await revokeAllMcpGrantsForUser(changed.id, tx)");
   });
 
   it("revokes MCP grants, which the session fence cannot reach", () => {

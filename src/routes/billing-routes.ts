@@ -10,12 +10,9 @@ import { getErrorMessage } from "../lib/server-utils";
 import {
   stripe,
   stripeAvailable,
-  subscriptionBillingInterval,
   syncSubscriptionFromStripe,
-  basePlanInvoiceShare,
   stripeCheckoutIntegrationIdentifier,
   stripeCheckoutTaxConfig,
-  stripeInvoiceIdForCharge,
   isMissingStripeResource,
 } from "../lib/stripe-helpers";
 import { sendPaymentFailedEmail } from "../lib/email-service";
@@ -23,7 +20,10 @@ import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-c
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { reverseCredit } from "../lib/credit-wallet";
-import { reverseSubscriptionRuntimeAllowance } from "../lib/subscription-welcome-credit";
+import {
+  listSucceededRefunds,
+  reverseSubscriptionRuntimeAllowanceForChargeStrict,
+} from "../middleware/stripe-runtime-allowance-retry";
 import Stripe from "stripe";
 import type { AuthenticatedRequest } from "../types/auth";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
@@ -159,97 +159,6 @@ function creditPortionUsd(grossCents: number, pi: Stripe.PaymentIntent): number 
   if (!Number.isFinite(creditUsd) || creditUsd <= 0 || chargedUsd <= 0) return grossUsd;
   if (creditUsd >= chargedUsd) return grossUsd;
   return Math.min(creditUsd, Math.floor(grossUsd * (creditUsd / chargedUsd) * 100) / 100);
-}
-
-/**
- * Reverse the Runtime Allowance funded by a refunded/disputed SUBSCRIPTION
- * charge. Top-ups are handled separately (they carry purpose=credit_topup);
- * a subscription invoice PaymentIntent carries no such marker, which is why
- * these charges previously fell straight through and left the allowance
- * spendable after the money went back.
- *
- * Resolves charge -> invoice -> subscription so the plan and billing interval
- * match what was actually granted, then reverses under the refund/dispute id.
- */
-async function reverseRuntimeAllowanceForCharge(
-  charge: Stripe.Charge,
-  reason: "refund" | "dispute",
-  explicitReference?: string,
-): Promise<void> {
-  try {
-    const invoiceId = await stripeInvoiceIdForCharge(charge);
-    if (!invoiceId) return;
-
-    const invoice = await stripe.invoices.retrieve(invoiceId);
-    const subField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
-      .subscription;
-    const subscriptionId = typeof subField === "string" ? subField : subField?.id;
-    if (!subscriptionId) return;
-
-    const [row] = await drizzle
-      .select({ userId: schema.subscriptions.userId, plan: schema.subscriptions.plan })
-      .from(schema.subscriptions)
-      .where(eq(schema.subscriptions.stripeSubscriptionId, subscriptionId))
-      .limit(1);
-    if (!row?.userId) return;
-
-    const sub = await stripe.subscriptions.retrieve(subscriptionId);
-    // Resolve the interval the SAME way the grant did (any yearly item ⇒
-    // yearly), not off items.data[0] — a yearly plan carrying a monthly
-    // extra-agent item at index 0 was reversing a month's allowance against a
-    // year's grant.
-    const interval = subscriptionBillingInterval(sub);
-
-    // Scale by the share of the invoice that funded the base plan: refunding
-    // or disputing a separate add-on invoice (e.g. a monthly extra-agent
-    // charge on an annual plan) must not claw back allowance that charge
-    // never funded. A null share means this charge funded no allowance.
-    const allowanceShare = basePlanInvoiceShare(invoice);
-    if (allowanceShare === null) return;
-
-    // Stripe orders refunds newest-first, so find() returns the refund that
-    // triggered THIS event; its id is unique per event, so redelivery is
-    // idempotent through the (user, ref) ledger index.
-    const succeededRefund = charge.refunds?.data?.find(
-      (r) => !r.status || r.status === "succeeded",
-    );
-    const reference = explicitReference ?? succeededRefund?.id ?? charge.id;
-
-    // Reverse only the portion of the charge actually refunded. A dispute
-    // holds the entire charge; a refund reverses its own share. Without this,
-    // each of two partial refunds clawed back the FULL allowance (each under
-    // its own reference, so idempotency did not stop it), driving a paying
-    // customer's wallet negative and hard-blocking their live voice.
-    const chargeCents = charge.amount || 0;
-    const refundedCents =
-      reason === "dispute"
-        ? chargeCents
-        : (succeededRefund?.amount ?? charge.amount_refunded ?? chargeCents);
-    const portion =
-      (chargeCents > 0 ? Math.min(1, refundedCents / chargeCents) : 1) * allowanceShare;
-
-    await tenantStore.run(row.userId, async () => {
-      await reverseSubscriptionRuntimeAllowance(
-        row.userId as string,
-        reference,
-        row.plan,
-        interval,
-        reason,
-        portion,
-      );
-    });
-  } catch (error) {
-    // The reversal is a required financial side effect. A transient Stripe,
-    // database, tenant-context, or ledger failure must escape to the outer
-    // webhook handler so it releases the idempotency claim and returns a
-    // retryable 5xx. Ledger reference keys make the retry idempotent.
-    log.error("subscription runtime allowance reversal failed", {
-      chargeId: charge.id,
-      reason,
-      error: getErrorMessage(error),
-    });
-    throw error;
-  }
 }
 
 // ─── Stripe Webhook ──────────────────────────────────────────────────────────
@@ -637,17 +546,13 @@ async function reverseSettledRefundsForCharge(
   event: Stripe.Event,
   /*
    * Whether this event may also reverse a SUBSCRIPTION charge's Runtime
-   * Allowance through the legacy reverser below.
+   * Allowance through the shared strict resolver.
    *
    * Only `charge.refunded` may, and only as a fallback: the strict preflight
    * (stripe-runtime-allowance-retry.ts) owns non-top-up refunds and consumes
    * those events before this router sees them, keying every reversal on
-   * refund.id. The legacy reverser falls back to charge.id whenever the Charge
-   * arrives without an expanded refunds list — the default under the pinned
-   * API version — and that key is disjoint from refund.id, so the
-   * (user, ref_type, ref_id) unique index cannot dedupe the pair. Letting
-   * `refund.updated` reach it would debit a paying customer twice for
-   * one refund and could drive the wallet negative into a hard 402.
+   * refund.id. The fallback uses that same posted-grant and refund-id logic,
+   * so even an alternate mount cannot debit from a mutable subscription.
    */
   allowSubscriptionFallback = true,
 ): Promise<void> {
@@ -662,95 +567,43 @@ async function reverseSettledRefundsForCharge(
   const pi = await stripe.paymentIntents.retrieve(piId);
   if (pi.metadata?.purpose === "credit_topup") {
     const userId = pi.metadata.wireline_user_id;
-    // Reverse each refund keyed on its OWN id. charge.amount_refunded is
-    // Stripe's cumulative total, so keying the ledger entry on charge.id
-    // would let the (user, ref) unique index drop every refund after the
-    // first — leaving later partial/full refunds spendable as balance.
-    const refunds = charge.refunds?.data ?? [];
-    const reversible = refunds.filter(
-      (r) => (!r.status || r.status === "succeeded") && (r.amount ?? 0) > 0,
-    );
-    if (userId && reversible.length) {
-      await tenantStore.run(userId, async () => {
-        for (const refund of reversible) {
-          await reverseCredit(
-            userId,
-            creditPortionUsd(refund.amount ?? 0, pi),
-            "web_topup_refund",
-            {
-              type: "stripe_refund",
-              id: refund.id,
-              entryKind: "refund",
-              source: "stripe",
-              provider: "stripe",
-              providerEventId: event.id,
-              providerObjectId: refund.id,
-              customerReason: "Runtime Balance refund",
-              metadata: { payment_intent_id: piId, charge_id: charge.id },
-            },
-          );
-        }
-      });
-    } else if (userId && (charge.amount_refunded ?? 0) > 0) {
-      // The event omitted the inline refunds list (the pinned API version
-      // no longer expands charge.refunds by default). Fetch them so each
-      // partial refund is reversed once, keyed on its OWN id — reversing
-      // the cumulative amount_refunded under charge.id would collide on
-      // the (user, ref) unique index and silently drop every partial
-      // refund after the first, leaving refunded money spendable.
-      // A transient list failure must THROW (the handler releases the
-      // stripe_events claim and 500s, so Stripe redelivers cleanly) —
-      // degrading to the cumulative charge.id reversal here would stack
-      // on top of any per-refund.id rows already written by earlier
-      // events and over-debit the tenant (different ref keys defeat the
-      // (user, ref) dedupe).
-      const listed = await stripe.refunds
-        .list({ charge: charge.id, limit: 100 })
-        .then((r) =>
-          r.data.filter((x) => (!x.status || x.status === "succeeded") && (x.amount ?? 0) > 0),
-        );
-      // The comment above is the whole rule, so honour it here too. The
-      // filter drops pending/failed refunds, so an empty list is the
-      // ordinary outcome for a refund Stripe has accepted but not yet
-      // settled — and the cumulative charge.id fallback that used to sit
-      // here fired on exactly that case. When the refund later settles,
-      // `charge.refunded` redelivers, the per-refund.id reversal runs,
-      // and because the two ref keys are disjoint under the (user, ref)
-      // unique index nothing dedupes them: the tenant is debited twice
-      // and the wallet can go negative into a hard 402. Throwing releases
-      // the claim and lets Stripe redeliver once the refund is real.
-      if (!listed.length) {
-        throw new Error(
-          `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
-        );
-      }
-      await tenantStore.run(userId, async () => {
-        for (const refund of listed) {
-          await reverseCredit(
-            userId,
-            creditPortionUsd(refund.amount ?? 0, pi),
-            "web_topup_refund",
-            {
-              type: "stripe_refund",
-              id: refund.id,
-              entryKind: "refund",
-              source: "stripe",
-              provider: "stripe",
-              providerEventId: event.id,
-              providerObjectId: refund.id,
-              customerReason: "Runtime Balance refund",
-              metadata: { payment_intent_id: piId, charge_id: charge.id },
-            },
-          );
-        }
-      });
+    if (!userId || !(charge.amount_refunded > 0)) return;
+    // Inline Charge refunds may be omitted or truncated. Exhaust the same
+    // authoritative inventory used for subscription refunds before posting
+    // any movements; a later-page outage must leave the event retryable.
+    const refunds = await listSucceededRefunds(charge.id);
+    if (!refunds.length) {
+      throw new Error(
+        `Stripe charge ${charge.id} reports refunded funds but no succeeded refund objects.`,
+      );
     }
+    await tenantStore.run(userId, async () => {
+      for (const refund of refunds) {
+        await reverseCredit(userId, creditPortionUsd(refund.amount, pi), "web_topup_refund", {
+          type: "stripe_refund",
+          id: refund.id,
+          entryKind: "refund",
+          source: "stripe",
+          provider: "stripe",
+          providerEventId: event.id,
+          providerObjectId: refund.id,
+          customerReason: "Runtime Balance refund",
+          metadata: { payment_intent_id: piId, charge_id: charge.id },
+        });
+      }
+    });
   } else {
     // Not a top-up — but a subscription invoice charge funds the Runtime
     // Allowance, which was granted on subscription sync and never came
     // back on a refund. Reverse it under the refund's own id.
     if (!allowSubscriptionFallback) return;
-    await reverseRuntimeAllowanceForCharge(charge, "refund");
+    await reverseSubscriptionRuntimeAllowanceForChargeStrict(
+      charge,
+      "refund",
+      undefined,
+      undefined,
+      event.id,
+    );
   }
 }
 

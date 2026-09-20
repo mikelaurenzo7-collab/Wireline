@@ -26,10 +26,12 @@ export async function syncGoogleCalendar(userId: string) {
   }
 
   let totalSynced = 0;
+  let syncedAccounts = 0;
+  let failedAccounts = 0;
 
   for (const account of accounts) {
-    if (!account.accessToken) continue;
     try {
+      if (!account.accessToken) throw new Error("Google calendar access token is missing.");
       const google = await googleApis();
       const oauth2Client = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
@@ -42,22 +44,33 @@ export async function syncGoogleCalendar(userId: string) {
         expiry_date: account.expiresAt ? Number(account.expiresAt) : null,
       });
 
-      // Handle token refresh automatically if expired
-      oauth2Client.on("tokens", async (tokens: any) => {
+      // OAuth2Client emits synchronously and does not await listener promises.
+      // Observe and serialize credential writes, then settle them with this sync.
+      let tokenPersistence = Promise.resolve();
+      let tokenPersistenceError: Error | null = null;
+      oauth2Client.on("tokens", (tokens: any) => {
         if (!tokens.access_token) return;
-        const update: any = {
-          accessToken: encryptSecret(tokens.access_token),
-          expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
-          updatedAt: new Date(),
-        };
-        if (tokens.refresh_token) {
-          update.refreshToken = encryptSecret(tokens.refresh_token);
-        }
+        tokenPersistence = tokenPersistence
+          .then(async () => {
+            const update: any = {
+              accessToken: encryptSecret(tokens.access_token),
+              expiresAt: tokens.expiry_date ? BigInt(tokens.expiry_date) : null,
+              updatedAt: new Date(),
+            };
+            if (tokens.refresh_token) {
+              update.refreshToken = encryptSecret(tokens.refresh_token);
+            }
 
-        await drizzle
-          .update(schema.calendarAccounts)
-          .set(update)
-          .where(eq(schema.calendarAccounts.id, account.id));
+            await drizzle
+              .update(schema.calendarAccounts)
+              .set(update)
+              .where(eq(schema.calendarAccounts.id, account.id));
+          })
+          .catch((error: unknown) => {
+            tokenPersistenceError = new Error("Google calendar credentials could not be saved.", {
+              cause: error,
+            });
+          });
       });
 
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -66,14 +79,19 @@ export async function syncGoogleCalendar(userId: string) {
       const timeMin = new Date().toISOString();
       const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      const response = await calendar.events.list({
-        calendarId: "primary",
-        timeMin: timeMin,
-        timeMax: timeMax,
-        maxResults: 100,
-        singleEvents: true,
-        orderBy: "startTime",
-      });
+      const response = await calendar.events
+        .list({
+          calendarId: "primary",
+          timeMin: timeMin,
+          timeMax: timeMax,
+          maxResults: 100,
+          singleEvents: true,
+          orderBy: "startTime",
+        })
+        .finally(async () => {
+          await tokenPersistence;
+        });
+      if (tokenPersistenceError) throw tokenPersistenceError;
 
       const events = response.data.items || [];
 
@@ -106,10 +124,23 @@ export async function syncGoogleCalendar(userId: string) {
 
         totalSynced++;
       }
+      syncedAccounts++;
     } catch (err: any) {
+      failedAccounts++;
       log.error(`Failed to sync calendar for account ${account.id}:`, { error: err.message });
     }
   }
 
+  if (failedAccounts > 0) {
+    const partial = syncedAccounts > 0 || totalSynced > 0;
+    return {
+      status: partial ? "partial" : "error",
+      syncedCount: totalSynced,
+      failedAccounts,
+      error: partial
+        ? "Some Google calendars could not be refreshed. Try again or reconnect Google."
+        : "Google calendars could not be refreshed. Try again or reconnect Google.",
+    };
+  }
   return { status: "success", syncedCount: totalSynced };
 }

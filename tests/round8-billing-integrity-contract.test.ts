@@ -106,8 +106,7 @@ describe("round-9 subscription allowance reversal", () => {
     // went back — e.g. a refunded annual Business kept $120 of Runtime Balance.
     const billing = read("src/routes/billing-routes.ts");
     const strictPreflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
-    expect(billing).toContain("async function reverseRuntimeAllowanceForCharge");
-    expect(billing).toContain('reverseRuntimeAllowanceForCharge(charge, "refund")');
+    expect(billing).toContain("reverseSubscriptionRuntimeAllowanceForChargeStrict");
     expect(strictPreflight).toContain(
       "export async function reverseSubscriptionRuntimeAllowanceForChargeStrict",
     );
@@ -117,18 +116,12 @@ describe("round-9 subscription allowance reversal", () => {
     );
   });
 
-  it("resolves plan and interval from the subscription behind the charge", () => {
-    const billing = read("src/routes/billing-routes.ts");
-    const fn = billing.slice(
-      billing.indexOf("async function reverseRuntimeAllowanceForCharge"),
-      billing.indexOf("// ─── Stripe Webhook"),
-    );
+  it("resolves plan and interval from the posted allowance behind the charge", () => {
+    const fn = read("src/middleware/stripe-runtime-allowance-retry.ts");
     expect(fn).toContain("stripe.invoices.retrieve(invoiceId)");
     expect(fn).toContain("schema.subscriptions.stripeSubscriptionId, subscriptionId");
-    // Interval is resolved the same way the grant did (any yearly item ⇒
-    // yearly), via the shared helper rather than an index-0 read.
-    expect(fn).toContain("subscriptionBillingInterval(sub)");
-    expect(fn).toContain("tenantStore.run(row.userId");
+    expect(fn).toContain("interval: metadata.billing_interval");
+    expect(fn).toContain("tenantStore.run(owner.userId");
   });
 
   it("keys the reversal on the refund/dispute id so redelivery is idempotent", () => {

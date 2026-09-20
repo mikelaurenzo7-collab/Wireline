@@ -260,6 +260,9 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+      // Settlement refs are shared by the hook. A cancelled turn must never
+      // consume a newer turn's reply or invoke its current callbacks.
+      const isCurrentStream = () => mountedRef.current && abortRef.current === controller;
       let timedOut = false;
       let handshakeTimedOut = false;
       let prepareTimedOut = false;
@@ -308,15 +311,8 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         sources: [],
       });
 
-      const sessionFresh = await refreshSessionIfNeeded();
-      if (!sessionFresh) {
-        const msg = AUTH_SESSION_EXPIRED_MESSAGE;
-        setState({ ...INITIAL_STATE, phase: "error", error: msg });
-        finalizeError(msg);
-        return;
-      }
-
       const finishWithPartialReply = (): boolean => {
+        if (!isCurrentStream()) return false;
         if (completionRef.current || !latestReplyRef.current) return false;
         const payload = latestReplyRef.current;
         if (!terminalReplyRef.current && !isTerminalStreamPayload(payload)) return false;
@@ -327,6 +323,15 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
       };
 
       try {
+        const sessionFresh = await refreshSessionIfNeeded();
+        if (!isCurrentStream()) return;
+        if (!sessionFresh) {
+          const msg = AUTH_SESSION_EXPIRED_MESSAGE;
+          setState({ ...INITIAL_STATE, phase: "error", error: msg });
+          finalizeError(msg);
+          return;
+        }
+
         const res = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -336,9 +341,11 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
           body: JSON.stringify(body),
           signal: controller.signal,
         });
+        if (!isCurrentStream()) return;
 
         if (!res.ok) {
           const errText = await res.text().catch(() => "Stream failed");
+          if (!isCurrentStream()) return;
           const parsed = parseApiErrorFromText(errText, res.status);
           const msg = isAuthHttpStatus(res.status)
             ? AUTH_SESSION_EXPIRED_MESSAGE
@@ -361,6 +368,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         const parserState: SseParserState = { dataLines: [] };
 
         const handleEvent = (event: string, data: Record<string, unknown>) => {
+          if (!isCurrentStream()) return;
           bumpIdleTimeout();
           switch (event) {
             case "meta": {
@@ -498,6 +506,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
 
         while (true) {
           const { done, value } = await reader.read();
+          if (!isCurrentStream()) return;
           if (done) break;
           if (controller.signal.aborted) break;
 
@@ -528,6 +537,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         setState({ ...INITIAL_STATE, phase: "error", error: msg });
         finalizeError(msg);
       } catch (e: unknown) {
+        if (!isCurrentStream()) return;
         if ((e as Error)?.name === "AbortError") {
           if (finishWithPartialReply()) return;
           if (handshakeTimedOut) {
@@ -561,6 +571,7 @@ export function useStreamingChat(endpoint: string, options?: UseStreamingChatOpt
         window.clearTimeout(timeoutId);
         window.clearTimeout(handshakeTimeoutId);
         clearPrepareTimeout();
+        if (abortRef.current === controller) abortRef.current = null;
       }
     },
     [endpoint, finalizeComplete, finalizeError],

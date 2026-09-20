@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useLayoutEffect, useRef, useState } from "react";
 import { Globe2, Loader2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../../lib/api";
@@ -24,6 +24,20 @@ export default function WebsiteKnowledgeImport({
   const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const importScopeRef = useRef(0);
+
+  useLayoutEffect(() => {
+    importScopeRef.current += 1;
+    setUrl("");
+    setImporting(false);
+    setNotice(null);
+    setError(null);
+    return () => {
+      // The submitted import still belongs to its original Bot. Its eventual
+      // result must not alter a different Bot's form or refresh its knowledge.
+      importScopeRef.current += 1;
+    };
+  }, [agentId]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +70,8 @@ export default function WebsiteKnowledgeImport({
     setImporting(true);
     setError(null);
     setNotice(null);
+    const importScope = importScopeRef.current;
+    const isCurrentImport = () => importScopeRef.current === importScope;
     try {
       const response = await authFetch(`/api/agent-config/${encodeURIComponent(agentId)}/website`, {
         method: "POST",
@@ -63,6 +79,7 @@ export default function WebsiteKnowledgeImport({
         body: JSON.stringify({ url: parsed.toString() }),
       });
       const body = (await safeJson(response)) as ImportResponse | null;
+      if (!isCurrentImport()) return;
       if (!response.ok) {
         throw new Error(body?.error || "That website page could not be imported.");
       }
@@ -79,11 +96,12 @@ export default function WebsiteKnowledgeImport({
       });
       onImported();
     } catch (reason) {
+      if (!isCurrentImport()) return;
       setError(
         reason instanceof Error ? reason.message : "That website page could not be imported.",
       );
     } finally {
-      setImporting(false);
+      if (isCurrentImport()) setImporting(false);
     }
   }
 

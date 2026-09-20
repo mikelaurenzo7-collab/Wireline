@@ -71,11 +71,12 @@ export async function reverseSubscriptionRuntimeAllowance(
     providerEventId?: string;
     providerObjectId?: string;
   },
+  originalGrant?: { amountUsd: number; reference: string },
 ): Promise<void> {
   if (!userId || !reversalReference) return;
   const clampedPortion = clampUnitInterval(portion, 1);
   const amountUsd = runtimeAllowanceMovementUsd(
-    runtimeAllowanceUsdForPlan(planId, interval),
+    originalGrant?.amountUsd ?? runtimeAllowanceUsdForPlan(planId, interval),
     clampedPortion,
   );
   if (!(amountUsd > 0)) return;
@@ -103,6 +104,7 @@ export async function reverseSubscriptionRuntimeAllowance(
         runtime_allowance_usd: amountUsd,
         reversal_portion: clampedPortion,
         reversal_reason: reason,
+        ...(originalGrant ? { grant_reference: originalGrant.reference } : {}),
       },
     },
   );

@@ -6,18 +6,17 @@ import { addCredit, reverseCredit } from "../lib/credit-wallet";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, tenantStore } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   stripe,
   stripeAvailable,
-  subscriptionBillingInterval,
   basePlanInvoiceShare,
   stripeInvoiceIdForCharge,
+  stripeSubscriptionIdForInvoice,
+  runtimeAllowanceReferencesForInvoice,
 } from "../lib/stripe-helpers";
-import { basePlanFromStripeSubscription } from "../lib/stripe-base-plan";
 import {
   reverseSubscriptionRuntimeAllowance,
-  runtimeAllowanceUsdForPlan,
   type SubscriptionBillingInterval,
 } from "../lib/subscription-welcome-credit";
 import {
@@ -39,7 +38,7 @@ import {
  * reversed under its own stable id. Replaying the event is safe because the
  * credit ledger is idempotent on `(user, ref_type, ref_id)`.
  */
-async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> {
+export async function listSucceededRefunds(chargeId: string): Promise<Stripe.Refund[]> {
   const refunds: Stripe.Refund[] = [];
   let startingAfter: string | undefined;
   let hasMore = true;
@@ -71,6 +70,8 @@ type SubscriptionAllowanceContext = {
   interval: SubscriptionBillingInterval;
   allowanceShare: number;
   chargeCents: number;
+  grantAmountUsd: number;
+  grantReference: string;
 };
 
 /**
@@ -79,9 +80,10 @@ type SubscriptionAllowanceContext = {
  *
  * A dispute can arrive months after cancellation and resubscription, so the
  * tenant's current subscription row may hold a different subscription id and
- * plan. Prefer the exact historical subscription id, fall back to the stable
- * Stripe customer id for tenant ownership, and always derive the allowance plan
- * and interval from the disputed subscription itself.
+ * plan. Prefer the exact subscription id, fall back to the stable customer
+ * for ownership, then join the invoice's full base-plan period to the posted
+ * ledger grant. Stripe subscriptions can change price and interval in place;
+ * only the original grant proves the dollars that may be reversed.
  */
 async function resolveSubscriptionAllowanceContext(
   charge: Stripe.Charge,
@@ -97,10 +99,7 @@ async function resolveSubscriptionAllowanceContext(
   }
 
   const invoice = await stripe.invoices.retrieve(invoiceId);
-  const subscriptionField = (invoice as Stripe.Invoice & { subscription?: string | { id: string } })
-    .subscription;
-  const subscriptionId =
-    typeof subscriptionField === "string" ? subscriptionField : subscriptionField?.id;
+  const subscriptionId = stripeSubscriptionIdForInvoice(invoice);
   if (!subscriptionId) {
     log.info("subscription allowance operation skipped: invoice has no subscription", {
       chargeId: charge.id,
@@ -110,6 +109,13 @@ async function resolveSubscriptionAllowanceContext(
     return null;
   }
 
+  if (invoice.lines?.has_more) {
+    const lines: Stripe.InvoiceLineItem[] = [];
+    for await (const line of stripe.invoices.listLineItems(invoice.id, { limit: 100 })) {
+      lines.push(line);
+    }
+    invoice.lines = { ...invoice.lines, data: lines, has_more: false };
+  }
   const allowanceShare = basePlanInvoiceShare(invoice);
   if (allowanceShare === null) {
     log.info("subscription allowance operation skipped: invoice funded no base plan", {
@@ -121,12 +127,11 @@ async function resolveSubscriptionAllowanceContext(
     return null;
   }
 
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const disputedPlan = basePlanFromStripeSubscription(subscription);
-  if (!disputedPlan) {
-    throw new Error(
-      `Stripe subscription ${subscriptionId} funded Runtime Allowance but its historical plan is not mapped.`,
-    );
+  const grantReferences = runtimeAllowanceReferencesForInvoice(invoice, subscriptionId);
+  // A proration adjusts plan price without issuing another period grant.
+  if (grantReferences.length === 0) return null;
+  if (grantReferences.length !== 1) {
+    throw new Error(`Stripe invoice ${invoiceId} funds multiple Runtime Allowance periods.`);
   }
 
   const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
@@ -150,12 +155,50 @@ async function resolveSubscriptionAllowanceContext(
     );
   }
 
+  const grants = await tenantStore.run(owner.userId, () =>
+    drizzle
+      .select({
+        reference: schema.creditLedger.refId,
+        amountUsd: schema.creditLedger.deltaUsd,
+        metadata: schema.creditLedger.metadata,
+      })
+      .from(schema.creditLedger)
+      .where(
+        and(
+          eq(schema.creditLedger.userId, owner.userId),
+          eq(schema.creditLedger.refType, "subscription_runtime_allowance"),
+          inArray(schema.creditLedger.refId, grantReferences),
+        ),
+      )
+      .limit(2),
+  );
+  if (grants.length !== 1) {
+    throw new Error(
+      `Stripe invoice ${invoiceId} has no unambiguous posted Runtime Allowance grant.`,
+    );
+  }
+  const grant = grants[0];
+  const grantAmountUsd = Number(grant.amountUsd);
+  const metadata = grant.metadata as { plan_id?: unknown; billing_interval?: unknown } | null;
+  if (
+    !Number.isFinite(grantAmountUsd) ||
+    !(grantAmountUsd > 0) ||
+    !grant.reference ||
+    typeof metadata?.plan_id !== "string" ||
+    !metadata.plan_id ||
+    (metadata.billing_interval !== "month" && metadata.billing_interval !== "year")
+  ) {
+    throw new Error(`Stripe invoice ${invoiceId} has an invalid posted Runtime Allowance grant.`);
+  }
+
   return {
     userId: owner.userId,
-    planId: disputedPlan.id,
-    interval: subscriptionBillingInterval(subscription),
+    planId: metadata.plan_id,
+    interval: metadata.billing_interval,
     allowanceShare,
     chargeCents: charge.amount || 0,
+    grantAmountUsd,
+    grantReference: grant.reference,
   };
 }
 
@@ -242,6 +285,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
         "dispute",
         portion,
         { providerEventId, providerObjectId: reference },
+        { amountUsd: context.grantAmountUsd, reference: context.grantReference },
       ),
     );
     return true;
@@ -270,6 +314,7 @@ export async function reverseSubscriptionRuntimeAllowanceForChargeStrict(
         "refund",
         portion,
         { providerEventId, providerObjectId: refund.id },
+        { amountUsd: context.grantAmountUsd, reference: context.grantReference },
       );
     }
   });
@@ -330,10 +375,7 @@ async function restoreSubscriptionRuntimeAllowanceForDisputeStrict(
     context.chargeCents,
     context.allowanceShare,
   );
-  const calculatedAmountUsd = runtimeAllowanceMovementUsd(
-    runtimeAllowanceUsdForPlan(context.planId, context.interval),
-    portion,
-  );
+  const calculatedAmountUsd = runtimeAllowanceMovementUsd(context.grantAmountUsd, portion);
   if (!(calculatedAmountUsd > 0)) return false;
 
   await tenantStore.run(context.userId, async () => {
@@ -481,12 +523,9 @@ export async function stripeRuntimeAllowanceRetryPreflight(
      * test cards state that a pending card refund transitions to succeeded and
      * "sends a `refund.updated` event". Subscribing the wrong one would have
      * left the dead-end this exists to close wide open while looking fixed.
-     * It MUST be owned here, not downstream: the legacy reverser in billing-routes falls back to keying on
-     * charge.id when a Charge arrives without an expanded refunds list — which
-     * is the default under the pinned API version — and that key is disjoint
-     * from the refund.id key this path writes, so the (user, ref) unique index
-     * would not dedupe them and the tenant would be debited twice for one
-     * refund. Same claim, same strict per-refund.id reversal, both events.
+     * This preflight owns both events under the same claim and strict
+     * per-refund.id reversal. The billing router's fallback also delegates
+     * here so no alternate mount can reintroduce charge-id accounting.
      */
     if (event.type === "charge.refunded" || event.type === "refund.updated") {
       let charge: Stripe.Charge;

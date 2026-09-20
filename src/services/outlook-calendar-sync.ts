@@ -25,10 +25,12 @@ export async function syncOutlookCalendar(userId: string) {
   }
 
   let totalSynced = 0;
+  let syncedAccounts = 0;
+  let failedAccounts = 0;
 
   for (const account of accounts) {
-    if (!account.accessToken) continue;
     try {
+      if (!account.accessToken) throw new Error("Microsoft calendar access token is missing.");
       let accessToken = decryptSecret(account.accessToken);
 
       // Check if token needs refresh
@@ -48,11 +50,7 @@ export async function syncOutlookCalendar(userId: string) {
 
         const d = (await r.json()) as any;
         if (!r.ok || !d.access_token) {
-          log.error("Microsoft token refresh failed for account", {
-            accountId: account.id,
-            error: d,
-          });
-          continue;
+          throw new Error(`Microsoft token refresh failed: ${r.status}`);
         }
 
         accessToken = d.access_token;
@@ -60,6 +58,9 @@ export async function syncOutlookCalendar(userId: string) {
           .update(schema.calendarAccounts)
           .set({
             accessToken: encryptSecret(accessToken),
+            ...(typeof d.refresh_token === "string" && d.refresh_token
+              ? { refreshToken: encryptSecret(d.refresh_token) }
+              : {}),
             expiresAt: BigInt(Date.now() + (d.expires_in || 3600) * 1000),
           })
           .where(eq(schema.calendarAccounts.id, account.id));
@@ -111,12 +112,25 @@ export async function syncOutlookCalendar(userId: string) {
 
         totalSynced++;
       }
+      syncedAccounts++;
     } catch (err: any) {
+      failedAccounts++;
       log.error(`Failed to sync Outlook calendar for account ${account.id}:`, {
         error: err.message,
       });
     }
   }
 
+  if (failedAccounts > 0) {
+    const partial = syncedAccounts > 0 || totalSynced > 0;
+    return {
+      status: partial ? "partial" : "error",
+      syncedCount: totalSynced,
+      failedAccounts,
+      error: partial
+        ? "Some Outlook calendars could not be refreshed. Try again or reconnect Microsoft."
+        : "Outlook calendars could not be refreshed. Try again or reconnect Microsoft.",
+    };
+  }
   return { status: "success", syncedCount: totalSynced };
 }

@@ -22,17 +22,19 @@ import {
   assertMcpTokenEndpointRateLimit,
   backfillMcpOAuthResourceBindings,
   hashMcpOAuthToken,
+  exchangeMcpGrant,
+  lockMcpGrantUser,
   mcpIssuer,
   mcpResourceUrl,
   pruneExpiredMcpOAuthRows,
   revokeMcpAccessTokensForClient,
+  type McpGrantExecutor,
 } from "../lib/mcp-oauth-security";
 import { rateLimit } from "../lib/rate-limit";
 import { drizzle, fetchWithTimeout, log, tenantStore } from "../lib/server-context";
 import { getSessionTokenFromRequest } from "../lib/session-cookie";
 import { isSessionGenerationActive } from "../lib/session-generation";
 import { sessionUsers } from "../db/security-schema";
-import * as schema from "../db/schema";
 
 const router = express.Router();
 const ACCESS_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -346,7 +348,10 @@ async function ensureMcpSchema(): Promise<void> {
   await schemaReady;
 }
 
-async function sessionPrincipal(req: Request): Promise<{ userId: string; email: string } | null> {
+async function sessionPrincipal(
+  req: Request,
+  executor: Pick<typeof drizzle, "select"> = drizzle,
+): Promise<{ userId: string; email: string } | null> {
   const token = getSessionTokenFromRequest(req);
   if (!token) return null;
   const payload = await verifyInternalJwt(token, requireInternalJwtSecret());
@@ -359,7 +364,7 @@ async function sessionPrincipal(req: Request): Promise<{ userId: string; email: 
   // defeating sign-out/password-reset as remediation. Apply the same canonical
   // fence loadActiveSessionUser and resolveUserIdFromOAuthSession use.
   const active = await tenantStore.run(payload.sub, async () => {
-    const [user] = await drizzle
+    const [user] = await executor
       .select({
         sessionRevokedBefore: sessionUsers.sessionRevokedBefore,
         sessionVersion: sessionUsers.sessionVersion,
@@ -374,34 +379,27 @@ async function sessionPrincipal(req: Request): Promise<{ userId: string; email: 
   return { userId: payload.sub, email: payload.email };
 }
 
-async function issueTokens(input: {
-  userId: string;
-  email: string;
-  clientId: string;
-  scopes: McpScope[];
-  resource: string;
-}) {
-  await ensureMcpSchema();
-  await revokeMcpAccessTokensForClient(input.userId, input.clientId);
-  // Awaited so the serverless invocation cannot freeze before the deletes
-  // land; failures only warn because issuance must not depend on cleanup.
-  await pruneExpiredMcpOAuthRows().catch((error) => {
-    log.warn("MCP OAuth expired-row prune failed", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  });
+async function issueTokens(
+  input: {
+    userId: string;
+    email: string;
+    clientId: string;
+    scopes: McpScope[];
+    resource: string;
+  },
+  tx: McpGrantExecutor,
+) {
+  await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
   const refreshExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
-  await drizzle.transaction(async (tx) => {
-    await tx.execute(
-      sql`INSERT INTO wireline_mcp_access_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(accessToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${accessExpiresAt})`,
-    );
-    await tx.execute(
-      sql`INSERT INTO wireline_mcp_refresh_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(refreshToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${refreshExpiresAt})`,
-    );
-  });
+  await tx.execute(
+    sql`INSERT INTO wireline_mcp_access_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(accessToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${accessExpiresAt})`,
+  );
+  await tx.execute(
+    sql`INSERT INTO wireline_mcp_refresh_tokens (token_hash, user_id, email, client_id, scope, resource, expires_at) VALUES (${tokenHash(refreshToken)}, ${input.userId}::uuid, ${input.email}, ${input.clientId}, ${input.scopes.join(" ")}, ${input.resource}, ${refreshExpiresAt})`,
+  );
   return {
     access_token: accessToken,
     token_type: "Bearer",
@@ -410,6 +408,16 @@ async function issueTokens(input: {
     scope: input.scopes.join(" "),
     resource: input.resource,
   };
+}
+
+async function pruneExpiredGrantsAfterExchange(): Promise<void> {
+  // Cleanup happens after commit so it never extends an account lock or turns
+  // malformed public token requests into a platform-wide credential sweep.
+  await pruneExpiredMcpOAuthRows().catch((error) => {
+    log.warn("MCP OAuth expired-row prune failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
 }
 
 router.get(
@@ -514,9 +522,15 @@ router.post(
       if (!principal) return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
       await ensureMcpSchema();
       const code = publicId();
-      await drizzle.execute(
-        sql`INSERT INTO wireline_mcp_oauth_codes (code_hash, user_id, client_id, redirect_uri, scope, code_challenge, resource, expires_at) VALUES (${tokenHash(code)}, ${principal.userId}::uuid, ${request.clientId}, ${request.redirectUri}, ${request.scopes.join(" ")}, ${request.codeChallenge}, ${request.resource}, ${new Date(Date.now() + AUTHORIZATION_CODE_TTL_MS)})`,
-      );
+      const issued = await drizzle.transaction(async (tx) => {
+        await lockMcpGrantUser(tx, principal.userId);
+        if (!(await sessionPrincipal(req, tx))) return false;
+        await tx.execute(
+          sql`INSERT INTO wireline_mcp_oauth_codes (code_hash, user_id, client_id, redirect_uri, scope, code_challenge, resource, expires_at) VALUES (${tokenHash(code)}, ${principal.userId}::uuid, ${request.clientId}, ${request.redirectUri}, ${request.scopes.join(" ")}, ${request.codeChallenge}, ${request.resource}, ${new Date(Date.now() + AUTHORIZATION_CODE_TTL_MS)})`,
+        );
+        return true;
+      });
+      if (!issued) return res.redirect(mcpAccountConnectPath(req.originalUrl || req.url));
       const destination = new URL(request.redirectUri);
       destination.searchParams.set("code", code);
       if (request.state) destination.searchParams.set("state", request.state);
@@ -542,81 +556,100 @@ router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (
       const verifier = text(req.body?.code_verifier, 1024);
       if (!code || !redirectUri || !verifier)
         return res.status(400).json({ error: "invalid_request", code: "INVALID_REQUEST" });
-      const deleted = (await drizzle.execute(
-        sql`DELETE FROM wireline_mcp_oauth_codes WHERE code_hash = ${tokenHash(code)} RETURNING user_id, client_id, redirect_uri, scope, code_challenge, resource, expires_at`,
-      )) as unknown as {
-        rows?: Array<{
-          user_id: string;
-          client_id: string;
-          redirect_uri: string;
-          scope: string;
-          code_challenge: string;
-          resource: string | null;
-          expires_at: Date | string;
-        }>;
-      };
-      const record = deleted.rows?.[0];
-      if (
-        !record ||
-        new Date(record.expires_at).getTime() <= Date.now() ||
-        record.client_id !== clientId ||
-        record.redirect_uri !== redirectUri ||
-        record.resource !== resource
-      )
-        return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
-      const actual = Buffer.from(createHash("sha256").update(verifier, "utf8").digest("base64url"));
-      const expected = Buffer.from(record.code_challenge);
-      if (actual.length !== expected.length || !timingSafeEqual(actual, expected))
-        return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
-      const user = await drizzle
-        .select({ email: schema.users.email })
-        .from(schema.users)
-        .where(eq(schema.users.id, record.user_id))
-        .limit(1);
-      if (!user[0]) return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
-      return res.json(
-        await issueTokens({
-          userId: record.user_id,
-          email: user[0].email,
-          clientId,
-          scopes: parseScopes(record.scope),
-          resource,
-        }),
+      const tokens = await exchangeMcpGrant(
+        "wireline_mcp_oauth_codes",
+        tokenHash(code),
+        async (tx) => {
+          const deleted = (await tx.execute(
+            sql`DELETE FROM wireline_mcp_oauth_codes WHERE code_hash = ${tokenHash(code)} RETURNING user_id, client_id, redirect_uri, scope, code_challenge, resource, expires_at`,
+          )) as unknown as {
+            rows?: Array<{
+              user_id: string;
+              client_id: string;
+              redirect_uri: string;
+              scope: string;
+              code_challenge: string;
+              resource: string | null;
+              expires_at: Date | string;
+            }>;
+          };
+          const record = deleted.rows?.[0];
+          if (
+            !record ||
+            new Date(record.expires_at).getTime() <= Date.now() ||
+            record.client_id !== clientId ||
+            record.redirect_uri !== redirectUri ||
+            record.resource !== resource
+          )
+            return null;
+          const actual = Buffer.from(
+            createHash("sha256").update(verifier, "utf8").digest("base64url"),
+          );
+          const expected = Buffer.from(record.code_challenge);
+          if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+          const user = (await tx.execute(
+            sql`SELECT email FROM wireline_users WHERE id = ${record.user_id}::uuid`,
+          )) as unknown as { rows?: Array<{ email: string }> };
+          if (!user.rows?.[0]) return null;
+          return issueTokens(
+            {
+              userId: record.user_id,
+              email: user.rows[0].email,
+              clientId,
+              scopes: parseScopes(record.scope),
+              resource,
+            },
+            tx,
+          );
+        },
       );
+      if (!tokens) return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
+      await pruneExpiredGrantsAfterExchange();
+      return res.json(tokens);
     }
     if (grantType === "refresh_token") {
       const refreshToken = text(req.body?.refresh_token, 1024);
       if (!refreshToken)
         return res.status(400).json({ error: "invalid_request", code: "INVALID_REQUEST" });
-      const deleted = (await drizzle.execute(
-        sql`DELETE FROM wireline_mcp_refresh_tokens WHERE token_hash = ${tokenHash(refreshToken)} RETURNING user_id, email, client_id, scope, resource, expires_at`,
-      )) as unknown as {
-        rows?: Array<{
-          user_id: string;
-          email: string;
-          client_id: string;
-          scope: string;
-          resource: string | null;
-          expires_at: Date | string;
-        }>;
-      };
-      const record = deleted.rows?.[0];
-      if (
-        !record ||
-        record.client_id !== clientId ||
-        record.resource !== resource ||
-        new Date(record.expires_at).getTime() <= Date.now()
-      )
-        return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
-      return res.json(
-        await issueTokens({
-          userId: record.user_id,
-          email: record.email,
-          clientId,
-          scopes: parseScopes(record.scope),
-          resource,
-        }),
+      const tokens = await exchangeMcpGrant(
+        "wireline_mcp_refresh_tokens",
+        tokenHash(refreshToken),
+        async (tx) => {
+          const deleted = (await tx.execute(
+            sql`DELETE FROM wireline_mcp_refresh_tokens WHERE token_hash = ${tokenHash(refreshToken)} RETURNING user_id, email, client_id, scope, resource, expires_at`,
+          )) as unknown as {
+            rows?: Array<{
+              user_id: string;
+              email: string;
+              client_id: string;
+              scope: string;
+              resource: string | null;
+              expires_at: Date | string;
+            }>;
+          };
+          const record = deleted.rows?.[0];
+          if (
+            !record ||
+            record.client_id !== clientId ||
+            record.resource !== resource ||
+            new Date(record.expires_at).getTime() <= Date.now()
+          )
+            return null;
+          return issueTokens(
+            {
+              userId: record.user_id,
+              email: record.email,
+              clientId,
+              scopes: parseScopes(record.scope),
+              resource,
+            },
+            tx,
+          );
+        },
       );
+      if (!tokens) return res.status(400).json({ error: "invalid_grant", code: "INVALID_GRANT" });
+      await pruneExpiredGrantsAfterExchange();
+      return res.json(tokens);
     }
     return res
       .status(400)

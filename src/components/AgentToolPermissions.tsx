@@ -72,6 +72,7 @@ export default function AgentToolPermissions({
     if (loadedAgentRef.current === agentId) return;
 
     let cancelled = false;
+    loadedAgentRef.current = null;
     setLoading(true);
     setLoadError(null);
     setSaveError(null);
@@ -96,7 +97,6 @@ export default function AgentToolPermissions({
          * silent capability wipe.
          */
         setEnabled(resolveAgentTools(undefined, config.enabledTools));
-        loadedAgentRef.current = agentId;
 
         // Connection posture is presentation only; a failure must not block editing.
         const [crm, health, email] = await Promise.all([
@@ -109,17 +109,18 @@ export default function AgentToolPermissions({
           string,
           { connected?: boolean; configured?: boolean } | undefined
         > | null;
-        if (crmBody) setOauthStatus(crmBody);
         const healthBody = (await readJson(health)) as Record<string, unknown> | null;
+        const emailBody = (await readJson(email)) as {
+          accounts?: Array<{ provider?: string }>;
+        } | null;
+        if (cancelled) return;
+        if (crmBody) setOauthStatus(crmBody);
         if (healthBody) {
           setCalendarReconnect({
             google: Boolean(healthBody.reconnect_google_calendar),
             microsoft: Boolean(healthBody.reconnect_microsoft_calendar),
           });
         }
-        const emailBody = (await readJson(email)) as {
-          accounts?: Array<{ provider?: string }>;
-        } | null;
         if (emailBody) {
           setEmailProviders(
             (emailBody.accounts ?? [])
@@ -127,6 +128,9 @@ export default function AgentToolPermissions({
               .filter((provider): provider is string => Boolean(provider)),
           );
         }
+        // Cache only a finished load. Collapsing while connection status is
+        // pending cancels this effect; reopening must be able to finish loading.
+        loadedAgentRef.current = agentId;
       } catch (reason) {
         if (!cancelled) {
           setLoadError(
