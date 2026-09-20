@@ -528,7 +528,7 @@ export default function CreateAgentDialog({
                   seed={`new:${templateKey}`}
                   name={name.trim() || defaultName(templateKey)}
                   markKey={markKey}
-                  size={32}
+                  size={28}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">

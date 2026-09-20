@@ -44,7 +44,7 @@ export function BotRoster({
                 seed={bot.id}
                 name={bot.name}
                 markKey={bot.mark_key}
-                size={32}
+                size={24}
                 title={`${bot.name} mark`}
                 className="shrink-0"
               />

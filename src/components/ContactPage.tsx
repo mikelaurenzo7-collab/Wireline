@@ -1,17 +1,7 @@
 import React, { useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  LayoutTemplate,
-  Loader2,
-  Mail,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { planById } from "../lib/plan-catalog";
 import MarketingPageFrame from "./layout/MarketingPageFrame";
 import { Input } from "./ui/shadcn/Input";
 
@@ -21,9 +11,6 @@ const INQUIRY_TYPES = [
   { value: "partnership", label: "Partnership" },
   { value: "general", label: "General" },
 ] as const;
-
-const STARTER_PRICE = planById("starter")?.price_usd_monthly ?? 19;
-const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 39;
 
 export function ContactPage() {
   const [searchParams] = useSearchParams();
@@ -52,6 +39,7 @@ export function ContactPage() {
   const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
   const [invalidField, setInvalidField] = useState<"email" | "subject" | "body" | null>(null);
   const errorId = useId();
+  const inquiryLabelId = useId();
   const emailRef = useRef<HTMLInputElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -181,36 +169,32 @@ export function ContactPage() {
           </h1>
         </div>
 
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
+        <nav
+          aria-label="Contact Options"
+          className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"
+        >
           <a
             href="mailto:support@botbound.me"
-            className="wl-stitch-card wl-stitch-card-hover p-5 text-center"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center gap-2 rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            <Mail className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">Email Us</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">support@botbound.me</p>
+            <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Email Us
           </a>
-          <Link to="/features" className="wl-stitch-card wl-stitch-card-hover p-5 text-center">
-            <LayoutTemplate className="mx-auto h-5 w-5 text-primary" />
-            <h2 className="mt-5 font-semibold text-foreground">See How It Works</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Calls, follow-up, outcomes
-            </p>
+          <Link
+            to="/features"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
+          >
+            How It Works
           </Link>
           <Link
             to="/pricing"
-            className="wl-stitch-card wl-stitch-card-brand wl-stitch-card-hover p-5 text-center"
+            className="wl-focus-ring-halo inline-flex min-h-11 items-center rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
-            <Sparkles className="mx-auto h-5 w-5" />
-            <h2 className="mt-5 font-semibold">See Plans</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--wireline-color-text-secondary)]">
-              Create and train free. Starter launches at ${STARTER_PRICE}/mo; Starter Plus at $
-              {STARTER_PLUS_PRICE}/mo.
-            </p>
+            See Plans
           </Link>
-        </section>
+        </nav>
 
-        <section className="mt-8 wl-stitch-card p-6 sm:p-8">
+        <section className="mt-5 wl-stitch-card p-6 sm:p-8">
           <h2 className="text-2xl font-semibold tracking-[-.035em] text-foreground">Send a Note</h2>
           {submitted ? (
             <div className="py-10 text-center">
@@ -221,8 +205,24 @@ export function ContactPage() {
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">
               <fieldset>
-                <legend className="mb-2 block wl-stitch-label">What can we help with?</legend>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <legend id={inquiryLabelId} className="mb-2 block wl-stitch-label">
+                  What can we help with?
+                </legend>
+                <select
+                  aria-labelledby={inquiryLabelId}
+                  value={inquiryType}
+                  onChange={(event) =>
+                    setInquiryType(event.target.value as (typeof INQUIRY_TYPES)[number]["value"])
+                  }
+                  className="wl-focus-ring-halo block min-h-11 w-full min-w-0 rounded border border-border bg-card px-3 py-2 text-base text-foreground sm:hidden"
+                >
+                  {INQUIRY_TYPES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="hidden gap-2 sm:grid sm:grid-cols-4">
                   {INQUIRY_TYPES.map((item) => (
                     <button
                       type="button"

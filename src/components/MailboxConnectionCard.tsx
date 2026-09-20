@@ -20,17 +20,17 @@ const PROVIDERS: Array<{
   detail: string;
   logo: string;
 }> = [
-  { id: "google", label: "Gmail", detail: "Optional Mail + Calendar", logo: "gmail" },
+  { id: "google", label: "Gmail", detail: "Mail + calendar", logo: "gmail" },
   {
     id: "microsoft",
     label: "Outlook",
-    detail: "Optional Mail + Calendar",
+    detail: "Mail + calendar",
     logo: "microsoft_outlook",
   },
   {
     id: "icloud",
     label: "iCloud Mail",
-    detail: "Optional app-specific password",
+    detail: "App-specific password required",
     logo: "icloud",
   },
 ];
@@ -176,21 +176,17 @@ export default function MailboxConnectionCard() {
   const customerAccounts = accounts.filter((account) => account.provider !== "agentmail");
 
   return (
-    <section
-      className="wl-paper wl-paper-elevated p-5 sm:p-6"
-      aria-labelledby="mailbox-connections-title"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <section aria-labelledby="mailbox-connections-title">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
             Email Connections
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Connect another inbox if your Bot needs its messages. Its BotBound email is managed for
-            you.
+            Connect an existing inbox. Your BotBound email is managed for you.
           </p>
         </div>
-        <Mail className="size-5 text-primary" aria-hidden="true" />
+        <Mail className="size-5 shrink-0 text-primary" aria-hidden="true" />
       </div>
 
       {loading ? (
@@ -240,7 +236,7 @@ export default function MailboxConnectionCard() {
               return (
                 <article
                   key={provider.id}
-                  className="flex h-full flex-col rounded-xl border border-border bg-card px-4 py-4"
+                  className="flex flex-col rounded-xl border border-border bg-card p-4"
                 >
                   <div className="flex items-start gap-3">
                     <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-background p-1.5">
@@ -262,11 +258,11 @@ export default function MailboxConnectionCard() {
                   </div>
 
                   {providerAccounts.length ? (
-                    <ul className="mt-4 grid gap-2">
+                    <ul className="mt-3 divide-y divide-border">
                       {providerAccounts.map((account) => (
                         <li
                           key={account.id}
-                          className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2"
+                          className="flex min-h-11 min-w-0 items-center gap-2 py-1"
                         >
                           <span className="min-w-0 flex-1 truncate text-xs text-foreground">
                             {account.emailAddress}
@@ -336,10 +332,11 @@ export default function MailboxConnectionCard() {
                       </div>
                     </form>
                   ) : (
-                    <div className="mt-auto pt-4">
+                    <div className="mt-auto pt-3">
                       <Button
                         type="button"
                         size="sm"
+                        variant={providerAccounts.length ? "secondary" : "primary"}
                         className="w-full"
                         disabled={isBusy}
                         onClick={() => void connect(provider.id)}

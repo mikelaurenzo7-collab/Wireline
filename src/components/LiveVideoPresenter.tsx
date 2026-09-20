@@ -26,19 +26,13 @@ export default function LiveVideoPresenter({
   className,
   layout = "stage",
 }: Props) {
-  const size = layout === "stage" ? 96 : 64;
+  const size = layout === "stage" ? 28 : 24;
   return (
     <div
-      className={`grid place-items-center rounded-[var(--wireline-radius-xl)] border border-border bg-card p-4 ${className ?? ""}`.trim()}
+      className={`inline-flex items-center ${className ?? ""}`.trim()}
       data-retired-live-video="true"
     >
-      <BotMark
-        seed={seed || "bot"}
-        name="Bot"
-        active={speaking}
-        size={size}
-        title="Bot mark"
-      />
+      <BotMark seed={seed || "bot"} name="Bot" active={speaking} size={size} title="Bot mark" />
     </div>
   );
 }

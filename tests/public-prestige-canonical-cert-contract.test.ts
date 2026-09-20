@@ -10,7 +10,6 @@ describe("canonical BotBound public prestige certification", () => {
     const product = read("src/lib/bot-product.ts");
     const designVision = read("src/lib/wireline-design-vision.ts");
     const botMark = read("src/components/BotMark.tsx");
-    const botMarkCss = read("src/styles/bot-mark.css");
     const landingCss = read("src/styles/landing-prestige.css");
 
     expect(product).toContain('name: "BotBound"');
@@ -26,8 +25,6 @@ describe("canonical BotBound public prestige certification", () => {
 
     expect(botMark).not.toContain("monogram");
     expect(botMark).toContain("MOTIF_ICONS");
-    expect(botMarkCss).toContain("wl-bot-mark-breathe");
-    expect(botMarkCss).toContain("prefers-reduced-motion: reduce");
 
     expect(landingCss).toMatch(
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,

@@ -103,6 +103,7 @@ type Props = {
   action?: ReactNode;
   title?: string;
   disabled?: boolean;
+  showBalance?: boolean;
   onClick?: () => unknown;
 };
 type Element = ReactElement<Props>;
@@ -280,6 +281,9 @@ describe("Billing Settings shared recovery", () => {
     await settle();
     expect(hasText("All Bot slots in use.")).toBe(true);
     expect(hasText("Near capacity.")).toBe(false);
+    expect(tree.find((element) => element.type === "usage-meter")?.props.showBalance).toBe(false);
+    expect(hasText("$24.50")).toBe(true);
+    expect(button("$10").props.disabled).toBe(false);
   });
 
   it("recovers the page status and Runtime Balance when the plan-card Retry succeeds", async () => {

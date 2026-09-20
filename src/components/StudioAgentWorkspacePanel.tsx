@@ -334,7 +334,7 @@ export default function StudioAgentWorkspacePanel({
                       seed={agentId}
                       name={agentName}
                       markKey={setupMarkKey}
-                      size={32}
+                      size={24}
                       title={`${agentName} identity mark`}
                     />
                     <span className="min-w-0">

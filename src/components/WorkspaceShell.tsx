@@ -236,7 +236,7 @@ function DesktopRail({
             seed={agent.id}
             name={agent.name}
             markKey={agent.mark_key}
-            size={24}
+            size={20}
             title={`${agent.name} Bot mark`}
           />
           {!collapsed ? (

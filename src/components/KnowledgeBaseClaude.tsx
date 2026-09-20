@@ -18,14 +18,14 @@ import {
   knowledgeAssetTooLargeMessage,
 } from "../lib/knowledge-asset-limits";
 import { emitProductEvent } from "../lib/product-event-client";
-import { Button, MetricTile } from "./atoms";
+import { Button } from "./atoms";
 
 /**
  * KnowledgeBaseClaude — Claude Design Knowledge surface for the Training tab.
  *
  * Wireline tailoring: the prototype's Documents / FAQs / Scripts hero maps to
  * Wireline's real content types — Knowledge facts (uploads), Rules
- * (directives), and Tone (personality). The 3-stat row, document list, and
+ * (directives), and Tone (personality). The summary, document list, and
  * drop zone all bind to /api/agent-config and the asset ingestion endpoint.
  */
 
@@ -508,35 +508,29 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const knowledge = config?.knowledge ?? [];
   const directives = config?.directives ?? [];
   const hasPersonality = !!(config?.personality && config.personality.trim());
-  const compactUpload = knowledge.length === 0 && directives.length > 0;
+  const compactUpload = knowledge.length > 0 || directives.length > 0;
   const showStats = loading || knowledge.length > 0 || directives.length > 0 || hasPersonality;
 
-  const stats: Array<{ value: number; label: string }> = [
+  const stats: Array<{ value: number | string; label: string }> = [
     // "Entries", not "Knowledge" — the page title directly above already says
     // KNOWLEDGE, and this counts entries in the base.
     { value: knowledge.length, label: "Entries" },
     { value: directives.length, label: "Rules" },
-    { value: hasPersonality ? 1 : 0, label: "Tone" },
+    { value: hasPersonality ? "Set" : "Not set", label: "Tone" },
   ];
 
   const activeRulesPanel =
     directives.length > 0 ? (
-      <section className="wl-paper wl-paper-elevated p-5">
+      <section className="border-t border-border pt-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold leading-6 text-foreground">Active Rules</h2>
-          <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
-            {directives.length} total
-          </span>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="divide-y divide-border">
           {directives.slice(0, 5).map((directive, index) => {
             const headline = ruleHeadline(directive.content);
             const body = ruleBody(directive.content, headline);
             return (
-              <div
-                key={directive.id ?? `d-${index}`}
-                className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
-              >
+              <div key={directive.id ?? `d-${index}`} className="py-3 first:pt-0 last:pb-0">
                 <p className="break-words text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
                     className="mr-1.5 inline size-3.5 text-[var(--wireline-color-action-primary-default)]"
@@ -594,20 +588,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       />
 
       {showStats ? (
-        <section
-          className="wl-knowledge-stats grid grid-cols-3 gap-2 sm:gap-3.5"
-          aria-label="Knowledge stats"
-        >
-          {stats.map((stat, index) => (
-            <MetricTile
-              key={stat.label}
-              label={stat.label}
-              value={loading ? "N/A" : stat.value}
-              reveal={((index % 5) + 1) as 1 | 2 | 3 | 4 | 5}
-              className="wl-metric-tile--compact min-w-0 items-center text-center"
-            />
+        <dl className="flex flex-wrap gap-x-5 gap-y-2 text-xs" aria-label="Knowledge summary">
+          {stats.map((stat) => (
+            <div key={stat.label} className="flex items-baseline gap-1.5">
+              <dt className="text-muted-foreground">{stat.label}</dt>
+              <dd className="font-semibold text-foreground">{loading ? "Loading…" : stat.value}</dd>
+            </div>
           ))}
-        </section>
+        </dl>
       ) : null}
 
       {error ? (
@@ -645,9 +633,6 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
               <h2 className="text-base font-semibold leading-6 text-foreground">
                 Ingested Knowledge
               </h2>
-              <span className="text-[11px] font-medium text-[var(--wireline-color-action-primary-default)]">
-                {knowledge.length} total
-              </span>
             </div>
             {(showAllKnowledge ? knowledge : knowledge.slice(0, KNOWLEDGE_VISIBLE_CAP)).map(
               (entry, index) => {

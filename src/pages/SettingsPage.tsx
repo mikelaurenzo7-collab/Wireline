@@ -226,8 +226,8 @@ function ProfileRow({
   wrapValue?: boolean;
 }) {
   return (
-    <div className="wl-data-row wl-data-row--framed">
-      <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+    <div className="wl-data-row wl-data-row--divided">
+      <span className="wl-data-row__leading" aria-hidden="true">
         <Icon size={15} />
       </span>
       <span className="wl-data-row__main">
@@ -294,7 +294,7 @@ export default function SettingsPage() {
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <h2 className="text-base font-semibold leading-6 text-foreground">Profile</h2>
-          <div className="mt-5 grid gap-3">
+          <div className="mt-3 grid">
             <ProfileRow icon={UserRound} label="Name" value={displayName} />
             <ProfileRow icon={Mail} label="Email" value={email || "N/A"} wrapValue />
           </div>
@@ -302,15 +302,15 @@ export default function SettingsPage() {
 
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <h2 className="text-base font-semibold leading-6 text-foreground">Security</h2>
-          <div className="mt-5 grid gap-3">
-            <div className="wl-data-row wl-data-row--framed">
-              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+          <div className="mt-3 grid">
+            <div className="wl-data-row wl-data-row--divided">
+              <span className="wl-data-row__leading" aria-hidden="true">
                 <KeyRound size={15} />
               </span>
               <span className="wl-data-row__main">
                 <span className="wl-data-row__title">Password</span>
                 <span className="wl-data-row__detail">
-                  {resetState === "sent" ? "Reset email sent" : "Send a secure reset email"}
+                  {resetState === "sent" ? "Reset email sent" : "Email a reset link"}
                 </span>
               </span>
               <span className="wl-data-row__trailing">
@@ -325,13 +325,12 @@ export default function SettingsPage() {
                 </Button>
               </span>
             </div>
-            <div className="wl-data-row wl-data-row--framed">
-              <span className="wl-data-row__leading rounded-lg bg-muted p-2" aria-hidden="true">
+            <div className="wl-data-row wl-data-row--divided">
+              <span className="wl-data-row__leading" aria-hidden="true">
                 <LogOut size={15} />
               </span>
               <span className="wl-data-row__main">
                 <span className="wl-data-row__title">Session</span>
-                <span className="wl-data-row__detail">Leave this workspace on this device</span>
               </span>
               <span className="wl-data-row__trailing">
                 <Button

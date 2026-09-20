@@ -53,6 +53,7 @@ vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }
 type Props = {
   children?: ReactNode;
   disabled?: boolean;
+  showBalance?: boolean;
   onClick?: () => unknown;
   to?: string;
   open?: boolean;
@@ -366,6 +367,9 @@ it("keeps existing subscription management available while new purchases are pau
   };
   await mount("card");
   const portal = button("card", "Manage Subscription");
+  expect(render("card").find((element) => element.type === "usage-meter")?.props.showBalance).toBe(
+    true,
+  );
   expect(portal.props.disabled).toBe(false);
   await portal.props.onClick?.();
   expect(h.fetch).toHaveBeenCalledWith("/api/billing/portal", { method: "POST" });

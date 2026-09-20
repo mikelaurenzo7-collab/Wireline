@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, Check, ExternalLink } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import { signupHrefForPlan } from "../lib/signup-intent";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -110,7 +110,7 @@ export default function Compare() {
         path="/compare"
       />
 
-      <section className="marketing-section marketing-section--screen">
+      <section className="marketing-section">
         <div className="mx-auto mb-8 max-w-6xl text-center">
           <p className="wl-eyebrow wl-eyebrow--wired text-primary">Compare</p>
           <h1 className="marketing-hero-title mx-auto mt-4 max-w-[22ch] text-[clamp(1.9rem,3.4vw,2.9rem)]">
@@ -131,23 +131,8 @@ export default function Compare() {
             </Link>
           </div>
         </div>
-        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-[1.05rem] border border-border bg-border md:grid-cols-3">
-          {DIFFERENCES.map(({ title, copy }) => (
-            <article className="bg-card px-5 py-6 text-center sm:px-6" key={title}>
-              <h2 className="wl-card-title">{title}</h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                {copy}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="marketing-section">
         <div className="mx-auto w-full min-w-0 max-w-6xl">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="wl-stitch-display text-balance">Compare Pricing Models</h2>
-          </div>
+          <h2 className="sr-only">Compare Pricing Models</h2>
 
           <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:hidden">
             {MARKET_OPTIONS.map((option) => (
@@ -231,19 +216,20 @@ export default function Compare() {
                     <td className="px-5 py-5 align-top text-sm">
                       {option.internal ? (
                         <Link
-                          className="inline-flex items-center gap-1.5 font-medium text-primary"
+                          className="wl-focus-ring-halo -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 font-medium text-primary"
                           to={option.href}
                         >
-                          {option.source} <ArrowRight className="h-3.5 w-3.5" />
+                          {option.source} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                         </Link>
                       ) : (
                         <a
-                          className="inline-flex items-center gap-1.5 font-medium text-primary"
+                          className="wl-focus-ring-halo -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 font-medium text-primary"
                           href={option.href}
                           rel="noreferrer"
                           target="_blank"
                         >
-                          {option.source} <ExternalLink className="h-3.5 w-3.5" />
+                          {option.source}{" "}
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                         </a>
                       )}
                     </td>
@@ -259,6 +245,23 @@ export default function Compare() {
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.
           </p>
+          <details className="group mt-8 border-t border-border">
+            <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+              Why BotBound
+              <ChevronDown
+                className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"
+                aria-hidden="true"
+              />
+            </summary>
+            <div className="grid gap-6 pb-2 pt-4 sm:grid-cols-2 lg:grid-cols-3">
+              {DIFFERENCES.map(({ title, copy }) => (
+                <article key={title}>
+                  <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{copy}</p>
+                </article>
+              ))}
+            </div>
+          </details>
         </div>
       </section>
 

@@ -1,7 +1,8 @@
-import { ArrowLeft, Download, MonitorDown } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Download } from "lucide-react";
 import { Link } from "react-router";
 
-import { Button } from "../components/atoms";
+import { Badge, Button } from "../components/atoms";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import WorkspaceShell from "../components/WorkspaceShell";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -10,13 +11,13 @@ import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 const DOWNLOADS = [
   {
     id: "chromium",
-    title: "Chromium (Chrome, Edge, Opera)",
+    title: "Chrome, Edge & Opera",
     href: "/downloads/botbound-command-chromium.zip",
     steps: [
-      "Unzip the package on your computer.",
+      "Download and unzip the package.",
       "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
-      "Click Load unpacked and select the unzipped folder (the one that contains manifest.json).",
-      "Pin BotBound Command, then use the toolbar action, side panel, or Ctrl/Cmd+Shift+Y on any page.",
+      "Choose Load unpacked, then the folder containing manifest.json.",
+      "Pin BotBound Command. Open it from the toolbar, side panel, or Ctrl/Cmd+Shift+Y.",
     ],
   },
   {
@@ -24,78 +25,82 @@ const DOWNLOADS = [
     title: "Firefox",
     href: "/downloads/botbound-command-firefox.zip",
     steps: [
-      "Unzip the package on your computer.",
+      "Download and unzip the package.",
       "Open about:debugging#/runtime/this-firefox.",
-      "Click Load Temporary Add-on… and select manifest.json in the unzipped folder.",
-      "Note: temporary add-ons are removed when Firefox restarts. Use Chromium for day-to-day use.",
+      "Choose Load Temporary Add-on… and select manifest.json in the unzipped folder.",
     ],
   },
 ] as const;
 
 export default function BrowserCommandInstallPage() {
+  const [browser, setBrowser] = useState<"chromium" | "firefox">("chromium");
+  const pack = DOWNLOADS.find((item) => item.id === browser)!;
+
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
-      <WorkspacePageFrame mode="narrow">
+      <WorkspacePageFrame>
         <SettingsTabs />
-        <div className="mb-4">
-          <Button asChild variant="link" className="px-0 text-sm text-muted-foreground">
-            <Link to="/settings/apps">
-              <ArrowLeft size={14} className="mr-1" /> Back to Apps
-            </Link>
-          </Button>
-        </div>
+        <Button asChild variant="link" className="w-fit px-0 text-sm text-muted-foreground">
+          <Link to="/settings/apps">
+            <ArrowLeft size={14} />
+            Back to Apps
+          </Link>
+        </Button>
         <WorkspacePageIntro
           title="Install BotBound Command"
-          description={`${CLIENT_SURFACE_POSTURE.browser.status}. Send a page to Studio without leaving your browser.`}
+          description="Send page details, selected text, and phone links to Studio."
+          action={<Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>}
         />
 
-        <section className="mt-2 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <article className="wl-paper wl-paper-elevated p-6">
-            <div className="flex items-start gap-3">
-              <span className="grid size-10 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-                <MonitorDown size={17} aria-hidden="true" />
-              </span>
-              <div>
-                <h2 className="font-[var(--wireline-font-family-display)] text-[22px] font-normal tracking-[-0.02em]">
-                  What You Get
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Send page details, selected text, and phone links to your Bot. Sign in to BotBound
-                  to continue in Studio.
-                </p>
-              </div>
-            </div>
-          </article>
-
-          <article className="wl-paper border border-border/80 bg-muted/20 p-6">
-            <h2 className="text-lg font-semibold text-foreground">Privacy</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              The extension reads a page only when you ask. It cannot browse in the background,
-              store account tokens, or place calls. Shared content is treated as reference material.
-            </p>
-          </article>
-        </section>
-
-        <section className="mt-6 grid gap-4 md:grid-cols-2" aria-label="Download packages">
-          {DOWNLOADS.map((pack) => (
-            <article key={pack.id} className="wl-paper wl-paper-elevated flex flex-col p-6">
-              <h2 className="text-lg font-semibold tracking-[-0.02em] text-foreground">
-                {pack.title}
-              </h2>
-              <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
-                {pack.steps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-              <Button asChild variant="editorial" size="sm" className="mt-auto w-fit pt-6">
-                <a href={pack.href} download>
-                  <Download size={14} className="mr-1.5" />
-                  Download {pack.id === "chromium" ? "Chromium" : "Firefox"} zip
-                </a>
+        <section className="space-y-5" aria-label="Download packages">
+          <div role="group" aria-label="Browser" className="flex flex-wrap gap-2">
+            {DOWNLOADS.map((item) => (
+              <Button
+                key={item.id}
+                type="button"
+                variant={browser === item.id ? "secondary" : "ghost"}
+                aria-pressed={browser === item.id}
+                onClick={() => setBrowser(item.id)}
+              >
+                {item.title}
               </Button>
-            </article>
-          ))}
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+            <h2 className="text-lg font-semibold text-foreground">Install in {pack.title}</h2>
+            <Button asChild variant="editorial" size="sm">
+              <a href={pack.href} download>
+                <Download size={14} />
+                Download {pack.id === "chromium" ? "Chromium" : "Firefox"} ZIP
+              </a>
+            </Button>
+          </div>
+          {browser === "firefox" ? (
+            <p role="note" className="text-sm text-muted-foreground">
+              Temporary install: Firefox removes it on restart. Use Chromium for daily use.
+            </p>
+          ) : null}
+          <ol className="list-decimal space-y-4 pl-5 text-sm leading-relaxed text-foreground marker:text-muted-foreground">
+            {pack.steps.map((step) => (
+              <li key={step} className="pl-2">
+                {step}
+              </li>
+            ))}
+          </ol>
+          <p className="text-sm text-muted-foreground">
+            Sign in to BotBound to continue in Studio.
+          </p>
         </section>
+
+        <details className="border-t border-border/60 py-3">
+          <summary className="cursor-pointer py-2 text-sm font-semibold text-foreground wl-focus-ring-halo">
+            Privacy
+          </summary>
+          <p className="max-w-prose py-3 text-sm leading-relaxed text-muted-foreground">
+            Reads pages only when you ask. No background browsing, account-token storage, or live
+            calls. Shared content is treated as reference material.
+          </p>
+        </details>
       </WorkspacePageFrame>
     </WorkspaceShell>
   );

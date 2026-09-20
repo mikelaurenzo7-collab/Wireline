@@ -20,7 +20,6 @@ describe("bot visual identity", () => {
     expect(mark).toContain("data-mark-key={mark.key}");
     expect(mark).toContain("imageUrl");
     expect(mark).toContain('data-active={active ? "true" : "false"}');
-    expect(mark).toContain("wl-bot-mark__pulse");
     expect(mark).not.toContain("monogram");
     expect(mark).not.toContain("mark.initial");
 
@@ -57,10 +56,6 @@ describe("bot visual identity", () => {
     expect(policy).not.toContain("status-error");
 
     expect(optics).toContain(".wl-bot-mark__glyph");
-    expect(optics).toContain(".wl-bot-mark__rim");
-    expect(optics).toContain("@keyframes wl-bot-mark-breathe");
-    expect(optics).toContain("@keyframes wl-bot-mark-signal");
-    expect(optics).toContain("prefers-reduced-motion: reduce");
     expect(optics).toContain("forced-colors: active");
     expect(optics).not.toContain("wl-bot-mark__monogram");
     expect(optics).not.toContain("--wireline-color-status-success");

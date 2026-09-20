@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { KeyboardEvent } from "react";
 
 import BotMark from "./BotMark";
 import {
@@ -103,7 +103,7 @@ export default function BotMarkPicker({
   return (
     <div className="space-y-3.5" data-bot-mark-picker>
       <fieldset>
-        <legend className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        <legend className="wl-preserve-case mb-2 text-xs font-medium text-muted-foreground">
           Symbol
         </legend>
         <div
@@ -131,20 +131,20 @@ export default function BotMarkPicker({
                     availableForMotif(BOT_MARK_MOTIFS[nextIndex].key),
                   )
                 }
-                className={`flex min-h-[62px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border px-1.5 py-2 transition-colors wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35 ${
+                className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-1.5 py-1.5 transition-colors wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35 ${
                   selectedMotif
-                    ? "border-primary bg-[var(--wireline-color-action-primary-containerStrong)] text-foreground"
-                    : "border-border bg-card text-muted-foreground hover:border-primary/35 hover:bg-muted/35 hover:text-foreground"
+                    ? "border-primary/60 bg-muted/60 text-foreground"
+                    : "border-transparent text-muted-foreground hover:bg-muted/35 hover:text-foreground"
                 }`}
               >
                 <BotMark
                   seed={seed}
                   name={name}
                   markKey={nextKey || choiceFor(motif.key, selected.paletteKey)}
-                  size={compact ? 32 : 36}
+                  size={compact ? 24 : 28}
                   title={`${motif.label} mark preview`}
                 />
-                <span className="max-w-full truncate font-mono text-[9px] font-semibold uppercase tracking-[0.07em]">
+                <span className="wl-preserve-case max-w-full truncate text-[11px] font-medium">
                   {motif.label}
                 </span>
               </button>
@@ -154,7 +154,7 @@ export default function BotMarkPicker({
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        <legend className="wl-preserve-case mb-2 text-xs font-medium text-muted-foreground">
           Color
         </legend>
         <div
@@ -166,10 +166,6 @@ export default function BotMarkPicker({
             const nextKey = availableForPalette(palette.key);
             const selectedPalette = selected.paletteKey === palette.key;
             const unavailable = !nextKey;
-            const swatchStyle = {
-              "--bot-mark-swatch-from": palette.colors.surfaceFrom,
-              "--bot-mark-swatch-to": palette.colors.surfaceTo,
-            } as CSSProperties;
             return (
               <button
                 key={palette.key}
@@ -190,15 +186,15 @@ export default function BotMarkPicker({
                     availableForPalette(BOT_MARK_PALETTES[nextIndex].key),
                   )
                 }
-                className={`grid aspect-square min-h-11 place-items-center rounded-xl border bg-card transition-colors wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-30 ${
+                className={`grid min-h-11 place-items-center rounded-lg border transition-colors wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-30 ${
                   selectedPalette
-                    ? "border-primary ring-2 ring-primary/20"
-                    : "border-border hover:border-primary/40"
+                    ? "border-primary/60 bg-muted/60"
+                    : "border-transparent hover:bg-muted/35"
                 }`}
               >
                 <span
-                  className="size-4 rounded-full border border-white/35 bg-[linear-gradient(145deg,var(--bot-mark-swatch-from),var(--bot-mark-swatch-to))] shadow-sm"
-                  style={swatchStyle}
+                  className="size-4 rounded-full"
+                  style={{ backgroundColor: palette.colors.surfaceFrom }}
                   aria-hidden="true"
                 />
               </button>

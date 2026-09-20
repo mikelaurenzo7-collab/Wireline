@@ -360,6 +360,7 @@ export default function BillingSettings() {
 
         <StripeBillingCard
           showBalanceTopUp={false}
+          showUsageBalance={false}
           showTrustFooter={false}
           billingReady={billingReady}
           refreshKey={refreshKey}
@@ -376,13 +377,13 @@ export default function BillingSettings() {
 
         <section className="mt-6">
           <article className="wl-paper wl-paper-elevated p-5 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
                 <h2 className="text-base font-semibold leading-6 text-foreground">
                   {CONVERSATION_BALANCE_COPY.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Prepaid coverage for live voice, SMS, and enrichment beyond included plan usage.
+                  Prepaid voice, SMS, and enrichment beyond your plan.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />

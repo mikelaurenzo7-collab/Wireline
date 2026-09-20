@@ -12,7 +12,7 @@ export default function AgentFace({
   seed,
   faceId,
   markKey,
-  size = 40,
+  size = 24,
   speaking = false,
   className,
   title,

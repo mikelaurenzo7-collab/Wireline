@@ -63,6 +63,8 @@ type StripeBillingCardProps = {
    * balance + top-up surface when it already has the balance ledger loaded.
    */
   showBalanceTopUp?: boolean;
+  /** Billing Settings shows the canonical balance beside its own top-up actions. */
+  showUsageBalance?: boolean;
   /**
    * The Stripe/PCI trust row reads as a page footer. Pages that render more
    * cards after this component suppress it here and place their own footer at
@@ -84,6 +86,7 @@ type StripeBillingCardProps = {
 
 export default function StripeBillingCard({
   showBalanceTopUp = true,
+  showUsageBalance = true,
   showTrustFooter = true,
   billingReady = true,
   onCheckoutAvailabilityChange,
@@ -359,7 +362,7 @@ export default function StripeBillingCard({
     (sub.status === "active" || sub.status === "trialing");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {!selfServeBillingReleased ? (
         <div
           role="status"
@@ -382,8 +385,10 @@ export default function StripeBillingCard({
       ) : hasGrantedPlanAccess ? (
         <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
       ) : null}
-      {hasActiveSubscription ? <UsageMeter onUpgrade={openPortal} /> : null}
-      {hasGrantedPlanAccess ? <UsageMeter /> : null}
+      {hasActiveSubscription ? (
+        <UsageMeter onUpgrade={openPortal} showBalance={showUsageBalance} />
+      ) : null}
+      {hasGrantedPlanAccess ? <UsageMeter showBalance={showUsageBalance} /> : null}
       {showBalanceTopUp ? (
         <>{canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}</>
       ) : null}
@@ -804,11 +809,7 @@ function ActiveSubCard({
   onPortal: () => void;
 }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
-  const Icon = PLAN_ICONS[sub.plan || ""] || CreditCard;
   const renews = safeDate(sub.current_period_end);
-  const daysLeft = renews
-    ? Math.max(0, Math.ceil((renews.getTime() - Date.now()) / 86_400_000))
-    : null;
   const statusBadge =
     sub.status === "active"
       ? { label: "Active", tone: "success" as const }
@@ -821,35 +822,30 @@ function ActiveSubCard({
             : { label: (sub.status || "Unknown").toLowerCase(), tone: "neutral" as const };
   return (
     <div
-      className="rounded-md wl-panel border border-border p-5 sm:p-8 md:p-10 relative overflow-hidden"
+      className="rounded-md wl-panel border border-border p-5 sm:p-6 relative overflow-hidden"
       data-accent={accent}
     >
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
-        <div className="flex min-w-0 flex-1 basis-96 items-start gap-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
-            <Icon className="w-8 h-8 wl-accent-text" />
-          </div>
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-5">
+        <div className="min-w-0 flex-1 basis-96">
           <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="wl-label-muted opacity-70">Current plan</span>
+              <span className="wl-label-muted opacity-70">Current Plan</span>
               <Chip tone={statusBadge.tone} dot>
                 {statusBadge.label}
               </Chip>
               {sub.cancel_at_period_end && <Chip tone="warning">Cancels at period end</Chip>}
             </div>
-            <h3 className="wl-display-mark break-words text-3xl md:text-4xl text-foreground">
+            <h3 className="wl-display-mark break-words text-2xl sm:text-3xl text-foreground">
               {sub.plan_name || sub.plan || "N/A"}
             </h3>
-            <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
+            <p className="text-sm tabular-nums text-muted-foreground">
               {sub.max_agents ? (
                 <span
                   className={
-                    agentCount >= sub.max_agents
+                    agentCount >= sub.max_agents - 1
                       ? "text-[var(--wireline-color-status-warning)]"
-                      : agentCount >= sub.max_agents - 1
-                        ? "text-[var(--wireline-color-status-warning)]"
-                        : ""
+                      : ""
                   }
                 >
                   {agentCount} / {sub.max_agents} {sub.max_agents === 1 ? "Bot" : "Bots"} in use
@@ -857,19 +853,18 @@ function ActiveSubCard({
               ) : (
                 ""
               )}
-              {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
-                <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
-                  {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Add a
-                  Bot from Manage subscription or upgrade your plan.
-                </span>
-              ) : null}
               {renews && (
                 <>
-                  {sub.max_agents ? " · " : ""}renews {formatDate(renews)}
-                  {daysLeft !== null ? ` · ${daysLeft}d` : ""}
+                  {sub.max_agents ? " · " : ""}Renews {formatDate(renews)}
                 </>
               )}
             </p>
+            {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
+              <p className="text-sm text-[var(--wireline-color-status-warning)]">
+                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Add Bots
+                or upgrade in Manage Subscription.
+              </p>
+            ) : null}
           </div>
         </div>
         <ShadButton

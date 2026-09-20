@@ -33,6 +33,31 @@ beforeEach(() => {
 });
 
 describe("voice allowance boundary copy", () => {
+  it("keeps the balance visible by default on standalone usage surfaces", () => {
+    expect(text(UsageMeter({}))).toContain("$24.50");
+  });
+
+  it("can omit a repeated balance while retaining extra-usage payment terms", () => {
+    h.snapshot.voice_minutes_used = 142;
+    h.snapshot.overage_minutes = 42;
+    const content = text(UsageMeter({ showBalance: false }));
+    expect(content).not.toContain("$24.50");
+    expect(content).toContain("42 extra minutes");
+    expect(content).toContain("covered by Runtime Balance at $0.22/min");
+    expect(content).toContain("No automatic invoice overage.");
+  });
+
+  it("keeps call-pause and restoration constraints when the containing page owns the balance", () => {
+    h.snapshot.credit_balance_usd = -3.5;
+    h.snapshot.completion_grace_due_usd = 3.5;
+    h.snapshot.live_voice_blocked = true;
+    const content = text(UsageMeter({ showBalance: false }));
+    expect(content).toContain("New calls paused");
+    expect(content).toContain("used $3.50 of completion grace");
+    expect(content).toContain("Restore Runtime Balance before starting another live call.");
+    expect(content).toContain("BotBound never cuts off an active call");
+  });
+
   it("describes the allowance as approaching while minutes remain", () => {
     expect(text(UsageMeter({}))).toContain("Approaching your 100 included minutes. After that");
   });

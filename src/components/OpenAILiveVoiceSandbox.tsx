@@ -416,17 +416,14 @@ export default function OpenAILiveVoiceSandbox({
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="wl-presence__frame wl-presence--inline shrink-0">
-            <div className="wl-presence__face">
-              <AgentFace
-                seed={agentName}
-                markKey={markKey}
-                size={44}
-                speaking={state === "speaking"}
-                title={`${agentName} face`}
-              />
-            </div>
-          </div>
+          <AgentFace
+            seed={agentName}
+            markKey={markKey}
+            size={24}
+            speaking={state === "speaking"}
+            title={`${agentName} face`}
+            className="mt-1 shrink-0"
+          />
           <div className="min-w-0">
             <p className="wl-stitch-label">Live voice</p>
             <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">

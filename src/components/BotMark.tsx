@@ -21,12 +21,7 @@ import {
 import { botMarkFor, type BotMarkKey, type BotMarkMotif } from "../lib/bot-mark";
 
 type BotMarkStyle = CSSProperties & {
-  "--wl-bot-mark-surface-from": string;
-  "--wl-bot-mark-surface-to": string;
-  "--wl-bot-mark-wire": string;
-  "--wl-bot-mark-accent": string;
-  "--wl-bot-mark-halo": string;
-  "--wl-bot-mark-phase": string;
+  "--wl-bot-mark-tint": string;
 };
 
 const MOTIF_ICONS: Record<BotMarkMotif, LucideIcon> = {
@@ -51,7 +46,7 @@ export default function BotMark({
   seed,
   name,
   markKey,
-  size = 32,
+  size = 24,
   imageUrl,
   active = false,
   className = "",
@@ -72,12 +67,7 @@ export default function BotMark({
   const style: BotMarkStyle = {
     width: size,
     height: size,
-    "--wl-bot-mark-surface-from": mark.palette.surfaceFrom,
-    "--wl-bot-mark-surface-to": mark.palette.surfaceTo,
-    "--wl-bot-mark-wire": mark.palette.wire,
-    "--wl-bot-mark-accent": mark.palette.accent,
-    "--wl-bot-mark-halo": mark.palette.halo,
-    "--wl-bot-mark-phase": `${mark.phaseMs}ms`,
+    "--wl-bot-mark-tint": mark.palette.surfaceFrom,
   };
 
   return (
@@ -95,11 +85,9 @@ export default function BotMark({
         {imageUrl ? (
           <img src={imageUrl} alt="" className="wl-bot-mark__image" />
         ) : (
-          <MarkIcon className="wl-bot-mark__glyph" strokeWidth={2.15} aria-hidden="true" />
+          <MarkIcon className="wl-bot-mark__glyph" strokeWidth={1.75} aria-hidden="true" />
         )}
       </span>
-      <span className="wl-bot-mark__rim" aria-hidden="true" />
-      {active ? <span className="wl-bot-mark__pulse" aria-hidden="true" /> : null}
     </span>
   );
 }
