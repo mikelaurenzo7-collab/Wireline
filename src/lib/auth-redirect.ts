@@ -13,6 +13,26 @@ export type WorkspaceMode = "personal" | "business";
 export const WORKSPACE_MODE_KEY = "wireline.mode";
 export const AUTH_REDIRECT_KEY = "wireline.auth.redirect";
 
+function readStoredValue(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    // Account access must still work when the browser blocks optional storage.
+    return null;
+  }
+}
+
+function writeStoredValue(key: string, value: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  } catch {
+    // URL intent remains usable even when it cannot be saved across navigation.
+  }
+}
+
 export function workspaceFromIntent(intent: SignupIntent | null | undefined): WorkspaceMode {
   const plan = intent ? recommendedPlanFromIntent(intent) : null;
   if (plan && plan !== "personal") return "business";
@@ -21,14 +41,12 @@ export function workspaceFromIntent(intent: SignupIntent | null | undefined): Wo
 }
 
 export function readStoredWorkspaceMode(): WorkspaceMode {
-  if (typeof window === "undefined") return "personal";
-  const stored = window.localStorage.getItem(WORKSPACE_MODE_KEY);
+  const stored = readStoredValue(WORKSPACE_MODE_KEY);
   return stored === "personal" || stored === "business" ? stored : "personal";
 }
 
 export function persistWorkspaceMode(mode: WorkspaceMode) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(WORKSPACE_MODE_KEY, mode);
+  writeStoredValue(WORKSPACE_MODE_KEY, mode);
 }
 
 function isSafeInternalPath(value: string | null): value is string {
@@ -68,9 +86,7 @@ function isFreshSignupPreservedRedirect(value: string | null): value is string {
 }
 
 export function persistAuthRedirect(value: string | null) {
-  if (typeof window === "undefined") return;
-  if (isSafeInternalPath(value)) window.localStorage.setItem(AUTH_REDIRECT_KEY, value);
-  else window.localStorage.removeItem(AUTH_REDIRECT_KEY);
+  writeStoredValue(AUTH_REDIRECT_KEY, isSafeInternalPath(value) ? value : null);
 }
 
 function returningPaidIntentDestination(search: string): string | null {
@@ -113,8 +129,7 @@ export function resolvePostAuthDestination(
   }
 
   if (freshSignup) {
-    const storedMcpRedirect =
-      typeof window !== "undefined" ? window.localStorage.getItem(AUTH_REDIRECT_KEY) : null;
+    const storedMcpRedirect = readStoredValue(AUTH_REDIRECT_KEY);
     if (isFreshSignupPreservedRedirect(storedMcpRedirect)) {
       persistAuthRedirect(null);
       clearFreshSignupSession();
@@ -133,12 +148,10 @@ export function resolvePostAuthDestination(
     return "/studio?create=1";
   }
 
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem(AUTH_REDIRECT_KEY);
-    if (isSafeInternalPath(stored)) {
-      window.localStorage.removeItem(AUTH_REDIRECT_KEY);
-      return stored;
-    }
+  const stored = readStoredValue(AUTH_REDIRECT_KEY);
+  if (isSafeInternalPath(stored)) {
+    persistAuthRedirect(null);
+    return stored;
   }
 
   return "/studio";

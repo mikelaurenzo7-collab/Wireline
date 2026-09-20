@@ -97,15 +97,22 @@ export default function ResetPassword() {
         throw new Error(message);
       }
 
-      setSuccess(true);
-      if (data.user) {
-        signIn({ user: data.user });
-        const destination = resolvePostAuthDestination(
-          readStoredWorkspaceMode() || "personal",
-          window.location.search,
-        );
-        window.setTimeout(() => navigate(destination, { replace: true }), 900);
+      if (
+        typeof data?.user?.id !== "string" ||
+        !data.user.id.trim() ||
+        typeof data.user.email !== "string" ||
+        !data.user.email.trim()
+      ) {
+        throw new Error("Password update wasn't confirmed. Try again or return to sign in.");
       }
+
+      signIn({ user: data.user });
+      const destination = resolvePostAuthDestination(
+        readStoredWorkspaceMode() || "personal",
+        window.location.search,
+      );
+      setSuccess(true);
+      window.setTimeout(() => navigate(destination, { replace: true }), 900);
     } catch (caughtError: any) {
       setError(caughtError.message || "Reset failed");
     } finally {

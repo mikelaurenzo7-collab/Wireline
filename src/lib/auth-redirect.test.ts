@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTH_REDIRECT_KEY,
+  WORKSPACE_MODE_KEY,
+  persistAuthRedirect,
+  persistOAuthReturnFromSearch,
+  persistWorkspaceMode,
   readRedirectFromSearch,
+  readStoredWorkspaceMode,
   resolvePostAuthDestination,
 } from "./auth-redirect";
 import { FRESH_SIGNUP_SESSION_KEY } from "./post-signup-onboarding";
@@ -84,5 +89,71 @@ describe("auth-redirect", () => {
     expect(resolvePostAuthDestination("personal", "")).toBe("/accept-invite");
     expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
     expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+  });
+
+  describe.each(["getter", "methods"] as const)("when storage %s are blocked", (blocked) => {
+    beforeEach(() => {
+      const denied = () => {
+        throw new DOMException("Storage is unavailable", "SecurityError");
+      };
+      vi.stubGlobal(
+        "window",
+        blocked === "getter"
+          ? Object.defineProperty({}, "localStorage", { get: denied })
+          : { localStorage: { getItem: denied, setItem: denied, removeItem: denied } },
+      );
+    });
+
+    it("keeps account access usable without optional workspace or redirect persistence", () => {
+      expect(readStoredWorkspaceMode()).toBe("personal");
+      expect(() => persistWorkspaceMode("business")).not.toThrow();
+      expect(() => persistAuthRedirect("/accept-invite")).not.toThrow();
+      expect(() => persistAuthRedirect(null)).not.toThrow();
+      expect(() => persistOAuthReturnFromSearch("?plan=starter&interval=year")).not.toThrow();
+      expect(resolvePostAuthDestination("business", "")).toBe("/studio");
+    });
+
+    it("honors current safe return paths and paid plan choices", () => {
+      expect(resolvePostAuthDestination("personal", "?redirect=%2Faccept-invite")).toBe(
+        "/accept-invite",
+      );
+      expect(
+        resolvePostAuthDestination(
+          "personal",
+          "?redirect=%2Fmcp%2Foauth%2Fauthorize%3Fclient_id%3Dcurrent-client",
+        ),
+      ).toBe("/mcp/oauth/authorize?client_id=current-client");
+      expect(resolvePostAuthDestination("personal", "?plan=starter&interval=year")).toBe(
+        "/settings/billing?plan=starter&interval=year",
+      );
+      expect(resolvePostAuthDestination("personal", "?redirect=https%3A%2F%2Fevil.example")).toBe(
+        "/studio",
+      );
+    });
+
+    it("opens the current signup template and consumes the fresh signup marker", () => {
+      sessionStorage.setItem(FRESH_SIGNUP_SESSION_KEY, "1");
+      expect(resolvePostAuthDestination("personal", "?template=front-desk")).toBe(
+        "/studio?create=1&template=front-desk",
+      );
+      expect(sessionStorage.getItem(FRESH_SIGNUP_SESSION_KEY)).toBeNull();
+      expect(resolvePostAuthDestination("personal", "")).toBe("/studio");
+    });
+  });
+
+  it("preserves a readable current return path if storage cleanup fails", () => {
+    localStorage.setItem(AUTH_REDIRECT_KEY, "/settings/phone");
+    localStorage.setItem(WORKSPACE_MODE_KEY, "business");
+    vi.stubGlobal("window", {
+      localStorage: {
+        ...localStorage,
+        removeItem: () => {
+          throw new DOMException("Storage is unavailable", "SecurityError");
+        },
+      },
+    });
+
+    expect(readStoredWorkspaceMode()).toBe("business");
+    expect(resolvePostAuthDestination("business", "")).toBe("/settings/phone");
   });
 });

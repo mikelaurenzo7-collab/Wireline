@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import { WL_APP_CLASSES } from "../lib/wireline-design-system";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   KeyRound,
@@ -16,7 +16,7 @@ import {
   PhoneOutgoing,
   Zap,
 } from "lucide-react";
-import { authFetch } from "../lib/api";
+import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { formatDateTime } from "../lib/safe-date";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
@@ -50,6 +50,9 @@ export default function IntakeKeysManager() {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<{ id: string; message: string } | null>(null);
+  const mutationPending = useRef(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -65,14 +68,13 @@ export default function IntakeKeysManager() {
       }
       const keysJson = await keysRes.json();
       const agentsJson = agentsRes.ok ? await agentsRes.json() : null;
-      setKeys(keysJson?.keys || []);
+      if (!Array.isArray(keysJson?.keys)) throw new Error("Couldn't load intake keys.");
+      setKeys(keysJson.keys);
       setAgents(Array.isArray(agentsJson?.agents) ? agentsJson.agents : []);
       if (!agentsRes.ok) {
         setLoadError("Intake keys loaded, but agents could not be refreshed.");
       }
     } catch (e) {
-      setKeys([]);
-      setAgents([]);
       setLoadError(e instanceof Error ? e.message : "Couldn't load intake keys.");
     } finally {
       setLoading(false);
@@ -113,30 +115,48 @@ export default function IntakeKeysManager() {
     }
   };
 
-  const toggleActive = async (k: IntakeKey) => {
-    await authFetch(`/api/intake/keys/${k.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !k.active }),
-    });
-    refresh();
-  };
-
-  const toggleAutoDial = async (k: IntakeKey) => {
-    if (!k.default_agent_id) return; // can't auto-dial without an agent
-    await authFetch(`/api/intake/keys/${k.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ auto_dial: !k.auto_dial }),
-    });
-    refresh();
-  };
-
-  const remove = async (id: string) => {
-    await authFetch(`/api/intake/keys/${id}`, { method: "DELETE" });
-    setConfirmDelete(null);
-    if (justCreated?.id === id) setJustCreated(null);
-    refresh();
+  const updateKey = async (id: string, patch?: { active?: boolean; auto_dial?: boolean }) => {
+    if (mutationPending.current || loading || creating) return;
+    mutationPending.current = true;
+    setPendingKey(id);
+    setActionError(null);
+    try {
+      const response = await authFetch(`/api/intake/keys/${id}`, {
+        method: patch ? "PATCH" : "DELETE",
+        ...(patch && {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(patch),
+        }),
+      });
+      const result = await readApiJson<{ key?: IntakeKey; success?: boolean }>(response);
+      if (!result.ok) throw new Error(result.error);
+      if (patch) {
+        const updated = result.data?.key;
+        if (
+          updated?.id !== id ||
+          typeof updated.active !== "boolean" ||
+          typeof updated.auto_dial !== "boolean"
+        ) {
+          throw new Error("Couldn't confirm the change. Try again.");
+        }
+        setKeys((current) => current.map((key) => (key.id === id ? updated : key)));
+      } else {
+        if (result.data?.success !== true) {
+          throw new Error("Couldn't confirm deletion. Try again.");
+        }
+        setKeys((current) => current.filter((key) => key.id !== id));
+        setConfirmDelete(null);
+        if (justCreated?.id === id) setJustCreated(null);
+      }
+    } catch (error) {
+      setActionError({
+        id,
+        message: error instanceof Error ? error.message : "Couldn't update this key. Try again.",
+      });
+    } finally {
+      mutationPending.current = false;
+      setPendingKey(null);
+    }
   };
 
   const copyKey = async () => {
@@ -168,6 +188,7 @@ export default function IntakeKeysManager() {
           variant={showForm ? "outline" : "editorial"}
           size="sm"
           disableAnimations
+          disabled={pendingKey !== null || creating}
           onClick={() => {
             setShowForm(!showForm);
             setCreateError(null);
@@ -185,6 +206,7 @@ export default function IntakeKeysManager() {
           <button
             type="button"
             className="underline underline-offset-2"
+            disabled={loading || pendingKey !== null || creating}
             onClick={() => void refresh()}
           >
             Retry
@@ -340,7 +362,7 @@ export default function IntakeKeysManager() {
                   variant="default"
                   disableAnimations
                   onClick={create}
-                  disabled={creating || !name.trim()}
+                  disabled={creating || pendingKey !== null || !name.trim()}
                   className="touch-press h-11 px-5 rounded-md text-xs uppercase tracking-[0.25em] font-medium bg-gradient-to-r from-brand to-brand-deep text-on-brand hover:opacity-90"
                 >
                   {creating ? (
@@ -363,12 +385,11 @@ export default function IntakeKeysManager() {
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
           </div>
         )}
-        {!loading && keys.length === 0 && (
+        {!loading && !loadError && keys.length === 0 && (
           <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
-            <p className="text-sm font-medium text-foreground">No intake keys yet</p>
+            <p className="text-sm font-medium text-foreground">No Intake Keys Yet</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Create a key when a website form, partner, or internal tool should send leads into
-              BotBound. Auto-dial stays off until an agent is explicitly assigned.
+              Receive leads from forms and tools. Auto-dial stays off until you assign a Bot.
             </p>
           </div>
         )}
@@ -377,6 +398,7 @@ export default function IntakeKeysManager() {
           return (
             <div
               key={k.id}
+              aria-busy={pendingKey === k.id}
               className={cn(
                 WL_APP_CLASSES.settingsRow,
                 "flex items-center justify-between gap-4 flex-wrap",
@@ -419,8 +441,9 @@ export default function IntakeKeysManager() {
                   variant="outline"
                   size="sm"
                   disableAnimations
-                  onClick={() => toggleAutoDial(k)}
-                  disabled={!k.default_agent_id}
+                  onClick={() => k.default_agent_id && updateKey(k.id, { auto_dial: !k.auto_dial })}
+                  disabled={!k.default_agent_id || pendingKey !== null || loading || creating}
+                  aria-pressed={k.auto_dial && !!k.default_agent_id}
                   title={
                     k.default_agent_id
                       ? "Toggle auto-dial"
@@ -443,7 +466,8 @@ export default function IntakeKeysManager() {
                   variant="outline"
                   size="sm"
                   disableAnimations
-                  onClick={() => toggleActive(k)}
+                  onClick={() => updateKey(k.id, { active: !k.active })}
+                  disabled={pendingKey !== null || loading || creating}
                   className="h-9 px-3 wl-micro-meta hover:text-foreground border-border hover:border-border/60"
                 >
                   {k.active ? "Pause" : "Resume"}
@@ -455,7 +479,8 @@ export default function IntakeKeysManager() {
                       variant="destructive"
                       size="sm"
                       disableAnimations
-                      onClick={() => remove(k.id)}
+                      onClick={() => updateKey(k.id)}
+                      disabled={pendingKey !== null || loading || creating}
                       className="h-9 px-3 wl-label"
                     >
                       <Trash2 className="w-3.5 h-3.5" /> Confirm
@@ -466,6 +491,7 @@ export default function IntakeKeysManager() {
                       size="sm"
                       disableAnimations
                       onClick={() => setConfirmDelete(null)}
+                      disabled={pendingKey !== null || loading || creating}
                       className="h-9 px-3 wl-micro-meta border-border"
                     >
                       Cancel
@@ -478,12 +504,18 @@ export default function IntakeKeysManager() {
                     size="sm"
                     disableAnimations
                     onClick={() => setConfirmDelete(k.id)}
+                    disabled={pendingKey !== null || loading || creating}
                     className="h-9 px-3 wl-micro-meta hover:text-rose-600 hover:border-rose-500/40"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete
                   </ShadButton>
                 )}
               </div>
+              {actionError?.id === k.id && (
+                <p className="w-full text-sm text-destructive" role="alert">
+                  {actionError.message}
+                </p>
+              )}
             </div>
           );
         })}
@@ -497,7 +529,7 @@ export default function IntakeKeysManager() {
         )}
       >
         <summary className="cursor-pointer list-none font-sans text-xs font-semibold text-foreground marker:hidden [&::-webkit-details-marker]:hidden">
-          Developer quick start
+          Developer Quick Start
         </summary>
         <div className="mt-3 font-mono">
           <div className="wl-label text-brand-2 mb-2">Quick start · curl</div>
