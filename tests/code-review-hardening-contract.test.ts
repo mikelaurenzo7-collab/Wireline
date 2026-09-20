@@ -319,7 +319,9 @@ describe("code review hardening contracts", () => {
     expect(authAccess).toContain('const termsId = embedded ? "landing-auth-terms" : "auth-terms";');
     expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");
     expect(authAccess).toContain("aria-labelledby={termsLabelId}");
-    expect(authAccess).toContain("<span id={termsLabelId}>");
+    expect(authAccess).toContain(
+      '<label id={termsLabelId} htmlFor={termsId} className="cursor-pointer">',
+    );
     expect(authAccess).toContain("if (isSignUp && !agreedToTerms)");
     expect(authAccess).toContain("TERMS_CONSENT_ERROR");
     expect(auth).toContain("min-h-full");

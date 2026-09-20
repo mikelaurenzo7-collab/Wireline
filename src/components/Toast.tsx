@@ -23,7 +23,7 @@ const META = {
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
-  const { dismiss } = useToast();
+  const { dismiss, pause, resume } = useToast();
   const m = META[toast.type];
   const Icon = m.icon;
   const reduceMotion = useReducedMotion();
@@ -34,6 +34,14 @@ function ToastItem({ toast }: { toast: Toast }) {
       role={toast.type === "error" ? "alert" : "status"}
       aria-live={toast.type === "error" ? "assertive" : "polite"}
       aria-atomic="true"
+      onMouseEnter={() => pause(toast.id, "pointer")}
+      onMouseLeave={() => resume(toast.id, "pointer")}
+      onFocusCapture={() => pause(toast.id, "focus")}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          resume(toast.id, "focus");
+        }
+      }}
       initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={
@@ -59,11 +67,13 @@ function ToastItem({ toast }: { toast: Toast }) {
           <Icon aria-hidden="true" className="w-3.5 h-3.5 wl-toast-icon" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0 pr-2">
-          <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground leading-snug truncate">
+          <p className="text-sm font-semibold text-foreground leading-snug break-words [overflow-wrap:anywhere]">
             {toast.title}
           </p>
           {toast.message && (
-            <p className="text-caption leading-snug mt-0.5 line-clamp-2">{toast.message}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed mt-1 break-words [overflow-wrap:anywhere]">
+              {toast.message}
+            </p>
           )}
           {toast.action && (
             <ShadButton
@@ -88,7 +98,7 @@ function ToastItem({ toast }: { toast: Toast }) {
           onClick={() => dismiss(toast.id)}
           aria-label="Dismiss notification"
           disableAnimations
-          className="shrink-0 w-9 h-9 sm:w-6 sm:h-6 -m-1.5 sm:m-0 sm:mt-0.5 text-muted hover:text-foreground"
+          className="shrink-0 h-11 w-11 min-h-11 min-w-11 -mr-2 -mt-1 text-muted-foreground hover:text-foreground"
         >
           <X aria-hidden="true" className="w-3.5 h-3.5 sm:w-3 sm:h-3" />
         </ShadButton>
@@ -119,13 +129,13 @@ export default function ToastStack() {
       aria-atomic="false"
       aria-relevant="additions text"
       aria-label="Notifications"
-      className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex flex-col gap-2 items-stretch md:items-end pointer-events-none"
+      className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex max-h-[calc(100dvh-var(--toast-mobile-bottom)-1rem)] flex-col gap-2 items-stretch overflow-y-auto overscroll-contain md:max-h-[calc(100dvh-2.5rem)] md:items-end pointer-events-none"
       style={{ "--toast-mobile-bottom": mobileBottom } as ToastStackStyle}
       data-marketing-sticky={marketingSticky ? "true" : undefined}
     >
       <AnimatePresence initial={false} mode="sync">
         {toasts.map((t) => (
-          <div key={t.id} className="pointer-events-auto">
+          <div key={t.id} className="shrink-0 pointer-events-auto">
             <ToastItem toast={t} />
           </div>
         ))}

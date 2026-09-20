@@ -7,10 +7,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { Check, Loader2, WandSparkles, X, Zap } from "lucide-react";
+import { ChevronDown, Loader2, WandSparkles, X, Zap } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { Button, Input, Textarea } from "./atoms";
+import { Button, Input, NativeSelect, Textarea } from "./atoms";
+import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
@@ -65,11 +66,6 @@ const TECHNICAL_ROLE_BY_TEMPLATE: Record<TemplateKey, TechnicalRole> = {
   "family-concierge": "personal_assistant",
   custom: "custom",
 };
-
-const SELECTED =
-  "border-primary bg-[var(--wireline-color-action-primary-containerStrong)] text-[var(--wireline-color-text-primary)]";
-const IDLE =
-  "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground";
 
 function templateForKey(value: string | null | undefined) {
   return (
@@ -159,7 +155,9 @@ export default function CreateAgentDialog({
   const markWasChosenRef = useRef(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
-  const briefRef = useRef<HTMLTextAreaElement>(null);
+  const [customizing, setCustomizing] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLFormElement>(null);
   const language = customerAgentLanguage();
 
@@ -189,7 +187,9 @@ export default function CreateAgentDialog({
     setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary));
     briefIsTemplateTextRef.current = !initialBrief.trim();
     setError("");
-    const frame = requestAnimationFrame(() => briefRef.current?.focus());
+    setCustomizing(false);
+    // Keep the whole form in view without opening the mobile keyboard.
+    const frame = requestAnimationFrame(() => headingRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [initialBrief, initialTemplateKey, open]);
 
@@ -277,8 +277,15 @@ export default function CreateAgentDialog({
       } | null;
       if (!isCreateBriefRecoveryOwner(creationUserId) || controller.signal.aborted) return;
       if (!response.ok || !body?.id) {
-        if (isCurrentAccount())
+        if (isCurrentAccount()) {
           setError(safeCreateAgentError(response.status, body?.code, body?.error));
+          if (response.status === 409 || body?.code === "bot_mark_conflict") {
+            setCustomizing(true);
+            if (body?.code !== "bot_mark_conflict") {
+              requestAnimationFrame(() => nameRef.current?.focus());
+            }
+          }
+        }
         return;
       }
 
@@ -401,7 +408,7 @@ export default function CreateAgentDialog({
         data-visual-qa-state="create-dialog"
         onSubmit={create}
         onKeyDown={onKeyDown}
-        className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden p-0 shadow-2xl"
+        className="wl-paper wl-paper-elevated my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden p-0 shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-busy={creating}
@@ -416,6 +423,8 @@ export default function CreateAgentDialog({
               </span>
               <div className="min-w-0">
                 <h2
+                  ref={headingRef}
+                  tabIndex={-1}
                   id="create-agent-title"
                   data-slot="dialog-title"
                   className="wl-preserve-case font-[var(--wireline-font-family-display)] text-2xl font-normal leading-tight tracking-[-.025em] text-foreground"
@@ -445,139 +454,120 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
-          <section aria-labelledby="role-starters-heading">
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h3 id="role-starters-heading" className="text-sm font-semibold text-foreground">
-                  Start With a Role
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Proven roles and Create Your Own all lead to the same configurable Bot.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1.5" aria-label="Available Bot channels">
-                {BOT_CHANNELS.map((channel) => (
-                  <span
-                    key={channel.key}
-                    className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
-                  >
-                    {channel.label}
-                  </span>
+          <div className="grid gap-5">
+            <div>
+              <label
+                htmlFor="create-bot-role"
+                className="mb-2 block text-sm font-semibold text-foreground"
+              >
+                Start with a role
+              </label>
+              <NativeSelect
+                id="create-bot-role"
+                aria-label="Bot role starters"
+                value={templateKey}
+                disabled={creating}
+                onChange={(event) => {
+                  const template = templateForKey(event.target.value);
+                  setTemplateKey(template.key);
+                  if (!markWasChosenRef.current) {
+                    setMarkKey(
+                      firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
+                        defaultBotMarkKey(template.key),
+                    );
+                  }
+                  if (briefIsTemplateTextRef.current || !brief.trim()) {
+                    briefIsTemplateTextRef.current = true;
+                    setBrief(template.key === "custom" ? "" : template.summary);
+                  }
+                }}
+              >
+                {BOT_ROLE_TEMPLATES.map((template) => (
+                  <option key={template.key} value={template.key}>
+                    {template.name}
+                  </option>
                 ))}
+              </NativeSelect>
+            </div>
+
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-foreground">
+                Describe the Job
+              </span>
+              <Textarea
+                disabled={creating}
+                maxLength={CREATE_BRIEF_MAX_CHARS}
+                value={brief}
+                onChange={(event) => {
+                  briefIsTemplateTextRef.current = false;
+                  setBrief(event.target.value);
+                }}
+                placeholder="Answer calls for my business, book appointments, and send confirmations."
+                className="min-h-[136px] text-base"
+                resize="vertical"
+              />
+            </label>
+
+            <div className="rounded-xl border border-border">
+              <button
+                type="button"
+                aria-expanded={customizing}
+                aria-controls="create-bot-identity"
+                disabled={creating}
+                onClick={() => setCustomizing((current) => !current)}
+                className="flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-3 text-left wl-focus-ring-halo"
+              >
+                <BotMark
+                  seed={`new:${templateKey}`}
+                  name={name.trim() || defaultName(templateKey)}
+                  markKey={markKey}
+                  size={32}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
+                    {name.trim() || defaultName(templateKey)}
+                  </span>
+                  <span className="block text-xs text-muted-foreground">Name & appearance</span>
+                </span>
+                <ChevronDown
+                  className={`size-4 shrink-0 text-muted-foreground transition-transform ${customizing ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                />
+              </button>
+              <div
+                id="create-bot-identity"
+                hidden={!customizing}
+                className="space-y-5 border-t border-border p-4"
+              >
+                <label className="grid gap-2">
+                  <span className="text-sm font-semibold text-foreground">
+                    {language.nameLabel}{" "}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </span>
+                  <Input
+                    ref={nameRef}
+                    disabled={creating}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder={defaultName(templateKey)}
+                    autoComplete="off"
+                  />
+                </label>
+                <BotMarkPicker
+                  value={markKey}
+                  onChange={(nextMarkKey) => {
+                    markWasChosenRef.current = true;
+                    setMarkKey(nextMarkKey);
+                  }}
+                  seed={`new:${templateKey}`}
+                  name={name.trim() || defaultName(templateKey)}
+                  compact
+                  disabled={creating || markCapacityReached}
+                  unavailableKeys={unavailableMarkKeys}
+                />
               </div>
             </div>
-
-            <div
-              className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3"
-              role="group"
-              aria-label="Bot role starters"
-            >
-              {BOT_ROLE_TEMPLATES.map((template) => {
-                const selected = templateKey === template.key;
-                return (
-                  <button
-                    key={template.key}
-                    type="button"
-                    disabled={creating}
-                    onClick={() => {
-                      setTemplateKey(template.key);
-                      if (!markWasChosenRef.current) {
-                        setMarkKey(
-                          firstAvailableBotMarkKey(template.key, unavailableMarkKeys) ??
-                            defaultBotMarkKey(template.key),
-                        );
-                      }
-                      if (briefIsTemplateTextRef.current || !brief.trim()) {
-                        briefIsTemplateTextRef.current = true;
-                        setBrief(template.key === "custom" ? "" : template.summary);
-                      }
-                    }}
-                    className={`rounded-[12px] border px-4 py-3 text-left transition-colors ${selected ? SELECTED : IDLE}`}
-                    aria-pressed={selected}
-                  >
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-foreground">{template.name}</span>
-                      <span
-                        className={`grid size-5 place-items-center rounded-full border text-[10px] ${
-                          selected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border text-transparent"
-                        }`}
-                      >
-                        <Check size={12} aria-hidden="true" />
-                      </span>
-                    </span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
-                      {template.direction}
-                    </span>
-                    <span className="mt-1.5 block text-xs leading-5 text-muted-foreground">
-                      {template.summary}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="mt-6" aria-labelledby="bot-mark-heading">
-            <div className="mb-3">
-              <h3 id="bot-mark-heading" className="text-sm font-semibold text-foreground">
-                Choose a Mark
-              </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                This symbol identifies your Bot everywhere in BotBound.
-              </p>
-            </div>
-            <BotMarkPicker
-              value={markKey}
-              onChange={(nextMarkKey) => {
-                markWasChosenRef.current = true;
-                setMarkKey(nextMarkKey);
-              }}
-              seed={`new:${templateKey}`}
-              name={name.trim() || defaultName(templateKey)}
-              disabled={creating || markCapacityReached}
-              unavailableKeys={unavailableMarkKeys}
-            />
-          </section>
-
-          <label className="mt-6 block">
-            <span className="mb-2 block text-xs font-semibold text-foreground">
-              Describe the Job
-            </span>
-            <Textarea
-              ref={briefRef}
-              disabled={creating}
-              maxLength={CREATE_BRIEF_MAX_CHARS}
-              value={brief}
-              onChange={(event) => {
-                briefIsTemplateTextRef.current = false;
-                setBrief(event.target.value);
-              }}
-              placeholder="Answer calls, qualify requests, book appointments, text confirmations, and email follow-ups"
-              className="min-h-[120px] text-[15px]"
-              resize="none"
-            />
-          </label>
-
-          <label className="mt-5 grid gap-1.5">
-            <span className="text-xs font-semibold text-foreground">
-              {language.nameLabel}{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
-            </span>
-            <Input
-              disabled={creating}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={defaultName(templateKey)}
-              autoComplete="off"
-            />
-          </label>
-
-          <p className="mt-4 text-xs leading-5 text-muted-foreground">
-            After creation, configure the playbook, phone voice, channels, knowledge, tools,
-            guardrails, approvals, and handoffs in Studio.
-          </p>
+          </div>
 
           {error ? (
             <StatusNotice tone="destructive" title="Could Not Create Bot" className="mt-5">
@@ -587,19 +577,19 @@ export default function CreateAgentDialog({
         </div>
 
         <div className="shrink-0 border-t border-border px-5 py-4 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={close}
               disabled={creating}
-              className="text-left text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50"
+              className="min-h-11 rounded-lg px-2 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50 wl-focus-ring-halo"
             >
               Not Now
             </button>
             <Button
               type="submit"
               disabled={creating || markCapacityReached}
-              className="gap-2 sm:shrink-0"
+              className="min-h-11 gap-2 px-5"
             >
               {creating ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />

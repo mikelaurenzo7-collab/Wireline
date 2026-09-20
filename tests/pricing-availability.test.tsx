@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Pricing from "../src/pages/Pricing";
+import { activationBillingHref, captureSignupIntentFromLocation } from "../src/lib/signup-intent";
 
 const harness = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -73,7 +74,16 @@ beforeEach(() => {
   harness.index = 0;
   harness.effects = [];
   cleanups = [];
-  vi.stubGlobal("window", { setTimeout, clearTimeout });
+  const stored = new Map<string, string>();
+  vi.stubGlobal("window", {
+    setTimeout,
+    clearTimeout,
+    location: { search: "" },
+    localStorage: {
+      getItem: (key: string) => stored.get(key) ?? null,
+      setItem: (key: string, value: string) => stored.set(key, value),
+    },
+  });
 });
 
 afterEach(() => {
@@ -108,7 +118,7 @@ describe("public pricing activation availability", () => {
       signal: expect.any(AbortSignal),
       cache: "no-store",
     });
-    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter");
+    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter&interval=month");
   });
 
   it.each([
@@ -124,7 +134,7 @@ describe("public pricing activation availability", () => {
   ])("keeps a free setup CTA when %s", async (_reason, flags) => {
     await load(response({ plans: [{ id: "starter", ...flags }] }));
     expect(text(planLink("starter"))).toBe("Set up Starter ");
-    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter");
+    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter&interval=month");
     expect(text(render())).toContain("Build free. Paid activation is currently unavailable.");
   });
 
@@ -160,6 +170,39 @@ describe("public pricing activation availability", () => {
       .find((element) => element.type === "button" && text(element) === "Annual")
       ?.props.onClick?.();
     expect(text(planLink("starter"))).toBe("Start for $190/yr ");
+  });
+
+  it.each([
+    ["starter", "starter"],
+    ["starter-plus", "team"],
+    ["pro", "business"],
+  ])("replaces an earlier annual choice with the visible monthly %s plan", (slug, planId) => {
+    const chooseInterval = (label: string) => {
+      const button = elements(render()).find(
+        (element) => element.type === "button" && text(element) === label,
+      );
+      if (!button?.props.onClick) throw new Error(`Missing ${label} interval control.`);
+      button.props.onClick();
+    };
+    const followPlanLink = () => {
+      const href = planLink(slug)?.props.to;
+      if (!href) throw new Error(`Missing ${slug} plan link.`);
+      window.location.search = new URL(href, "https://botbound.me").search;
+      return captureSignupIntentFromLocation();
+    };
+
+    chooseInterval("Annual");
+    expect(followPlanLink()?.preferredBillingInterval).toBe("year");
+
+    chooseInterval("Monthly");
+    const monthlyIntent = followPlanLink();
+    expect(monthlyIntent).toMatchObject({
+      preferredPlanId: planId,
+      preferredBillingInterval: "month",
+    });
+    expect(activationBillingHref(monthlyIntent)).toBe(
+      `/settings/billing?plan=${planId}&interval=month`,
+    );
   });
 
   it.each(["network", "http", "malformed"])("fails closed after a %s error", async (failure) => {

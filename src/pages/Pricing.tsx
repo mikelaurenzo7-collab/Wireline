@@ -338,7 +338,7 @@ export default function Pricing() {
                 const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
                 const priceSuffix = showAnnual ? "/year" : "/month";
                 const savings = annualSavingsLabel(plan.price_usd_monthly, plan.price_usd_annual);
-                const path = showAnnual ? `${ctaPath}&interval=year` : ctaPath;
+                const path = `${ctaPath}&interval=${showAnnual ? "year" : "month"}`;
                 const activationAvailable = canActivate(plan.id);
                 return (
                   <article

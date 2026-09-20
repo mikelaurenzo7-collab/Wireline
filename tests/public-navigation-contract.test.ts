@@ -6,7 +6,7 @@ const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("public navigation contract", () => {
-  it("keeps the public header focused on brand and account actions", () => {
+  it("keeps the public header focused on product, pricing, and account entry", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
     expect(header).toContain('aria-label="BotBound home"');
@@ -21,7 +21,7 @@ describe("public navigation contract", () => {
     expect(header).toContain("marketing-btn-primary");
   });
 
-  it("does not revive brochure tabs or a mobile menu", () => {
+  it("limits the compact navigation to the two buying questions and account entry", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
     expect(header).not.toContain("DialogContent");
@@ -29,8 +29,13 @@ describe("public navigation contract", () => {
     expect(header).not.toContain("SITE_NAV");
     expect(header).not.toContain('aria-label="Site"');
     expect(header).not.toContain('label: "Solutions"');
-    expect(header).not.toContain('label: "Features"');
-    expect(header).not.toContain('label: "Pricing"');
+    expect(header).toContain('label: "Features"');
+    expect(header).toContain('label: "Pricing"');
+    expect(header).toContain('aria-label="Open navigation"');
+    const destinations = new Set(
+      Array.from(header.matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g), (match) => match[1]),
+    );
+    expect(destinations).toEqual(new Set(["/", "/features", "/pricing", "/signin"]));
     expect(header).not.toContain('label: "Demos"');
     expect(header).not.toContain('label: "Trust"');
   });

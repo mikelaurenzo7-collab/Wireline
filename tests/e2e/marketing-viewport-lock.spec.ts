@@ -145,28 +145,29 @@ for (const { path, name } of PUBLIC_ROUTES) {
   });
 }
 
-test("supporting public headers keep both account actions inside a phone viewport", async ({
+test("supporting public headers keep signup and sign-in navigation reachable on phones", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-
   for (const path of ["/features", "/solutions/support"] as const) {
     await openPublicRoute(page, path);
-    await expect(page.locator('.wl-public-header nav[aria-label="Account"] a')).toHaveCount(2);
-    const bounds = await page.evaluate(() => {
-      const links = Array.from(
-        document.querySelectorAll<HTMLElement>('.wl-public-header nav[aria-label="Account"] a'),
-      ).map((link) => {
-        const rect = link.getBoundingClientRect();
-        return { left: rect.left, right: rect.right };
-      });
-      return { links, width: window.innerWidth };
-    });
-    expect(bounds.links).toHaveLength(2);
-    for (const link of bounds.links) {
-      expect(link.left, `${path} account link left`).toBeGreaterThanOrEqual(-1);
-      expect(link.right, `${path} account link right`).toBeLessThanOrEqual(bounds.width + 1);
+    const header = page.locator(".wl-public-header");
+    const signup = header.getByRole("link", { name: "Start Free", exact: true });
+    const menu = header.getByRole("button", { name: "Open navigation" });
+    for (const target of [signup, menu]) {
+      await expect(target).toBeVisible();
+      const box = await target.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
     }
+    await menu.click();
+    const signin = page.getByRole("menuitem", { name: "Sign In", exact: true });
+    await expect(signin).toBeInViewport();
+    await expect(signin).toHaveAttribute("href", "/signin");
+    await signin.press("Escape");
+    await expect(menu).toBeFocused();
   }
 });
 

@@ -173,9 +173,9 @@ if (!landingFooter.includes("<MarketingChromeBar />")) {
 }
 
 const header = executable(read("src/components/marketing/PrecisionPublicHeader.tsx"));
-if (/Dialog|Menu|SITE_NAV|aria-label="Site"/.test(header)) {
+if (/Dialog|SITE_NAV|aria-label="Site"/.test(header)) {
   failures.push(
-    "src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain brochure navigation",
+    "src/components/marketing/PrecisionPublicHeader.tsx: public header must not contain a full-site navigation overlay",
   );
 }
 if (!header.includes('aria-label="Account"')) {

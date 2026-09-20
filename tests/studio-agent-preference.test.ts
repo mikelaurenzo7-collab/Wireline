@@ -79,4 +79,34 @@ describe("studio-agent-preference", () => {
     clearStudioLastAgentId();
     expect(readStudioLastAgentId()).toBeNull();
   });
+
+  it("still resolves a Bot when the storage getter is denied", () => {
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      get() {
+        throw new Error("Storage access denied");
+      },
+    });
+
+    expect(readStudioLastAgentId()).toBeNull();
+    expect(resolveStudioActiveAgentId(null, ["agent-a", "agent-b"])).toBe("agent-a");
+    expect(resolveStudioActiveAgentId("agent-b", ["agent-a", "agent-b"])).toBe("agent-b");
+    expect(() => writeStudioLastAgentId("agent-b")).not.toThrow();
+    expect(() => clearStudioLastAgentId()).not.toThrow();
+  });
+
+  it("keeps preference read, write, and logout failures non-blocking", () => {
+    const denied = () => {
+      throw new Error("Storage operation denied");
+    };
+    Object.defineProperty(globalThis, "localStorage", {
+      configurable: true,
+      value: { getItem: denied, setItem: denied, removeItem: denied },
+    });
+
+    expect(readStudioLastAgentId()).toBeNull();
+    expect(() => writeStudioLastAgentId("agent-b")).not.toThrow();
+    expect(() => clearStudioLastAgentId()).not.toThrow();
+    expect(resolveStudioActiveAgentId("stale", ["agent-a"])).toBe("agent-a");
+  });
 });

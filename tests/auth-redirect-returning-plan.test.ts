@@ -160,23 +160,37 @@ describe("post-auth destination", () => {
     );
   });
 
-  it("preserves a paid plan intent for returning users", () => {
-    expect(resolvePostAuthDestination("business", "?plan=starter&interval=year")).toBe(
-      "/settings/billing?plan=starter&interval=year",
-    );
-  });
+  it.each(["month", "year"])(
+    "preserves an explicit %s choice for returning paid users",
+    (interval) => {
+      localStorage.setItem(
+        SIGNUP_INTENT_STORAGE_KEY,
+        JSON.stringify({
+          preferredPlanId: "starter",
+          preferredBillingInterval: "year",
+          capturedAt: "2026-09-19T00:00:00Z",
+        }),
+      );
+      expect(resolvePostAuthDestination("business", `?plan=starter&interval=${interval}`)).toBe(
+        `/settings/billing?plan=starter&interval=${interval}`,
+      );
+    },
+  );
 
-  it("carries the current paid CTA through a returning-user OAuth round trip once", () => {
-    persistOAuthReturnFromSearch("?plan=starter&interval=year");
+  it.each(["month", "year"])(
+    "carries the current %s paid CTA through a returning-user OAuth round trip once",
+    (interval) => {
+      persistOAuthReturnFromSearch(`?plan=starter&interval=${interval}`);
 
-    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBe(
-      "/settings/billing?plan=starter&interval=year",
-    );
-    expect(resolvePostAuthDestination("business", "")).toBe(
-      "/settings/billing?plan=starter&interval=year",
-    );
-    expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
-  });
+      expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBe(
+        `/settings/billing?plan=starter&interval=${interval}`,
+      );
+      expect(resolvePostAuthDestination("business", "")).toBe(
+        `/settings/billing?plan=starter&interval=${interval}`,
+      );
+      expect(localStorage.getItem(AUTH_REDIRECT_KEY)).toBeNull();
+    },
+  );
 
   it("keeps fresh OAuth signups in Studio even when they selected a paid plan", () => {
     persistOAuthReturnFromSearch("?plan=team&interval=year");

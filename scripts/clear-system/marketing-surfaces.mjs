@@ -1,5 +1,5 @@
 /** Public marketing hierarchy contract. */
-export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
+export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failures }) {
   const executable = (source) =>
     source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
   const claritySystemCss = read("src/styles/clarity-system.css");
@@ -54,9 +54,16 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude }) {
   mustExclude(
     "src/components/marketing/PrecisionPublicHeader.tsx",
     executable(publicHeader),
-    /Dialog|Menu|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Features"|label:\s*"Pricing"|label:\s*"Demos"|label:\s*"Trust"/,
-    "public header must not revive brochure navigation",
+    /Dialog|SITE_NAV|aria-label="Site"|label:\s*"Solutions"|label:\s*"Demos"|label:\s*"Trust"/,
+    "supporting public headers keep navigation limited to product, pricing, and account entry",
   );
+  for (const destination of executable(publicHeader).matchAll(/\bto(?:=|:\s*)["']([^"']+)["']/g)) {
+    if (!["/", "/features", "/pricing", "/signin"].includes(destination[1])) {
+      failures.push(
+        `src/components/marketing/PrecisionPublicHeader.tsx: unexpected header destination ${destination[1]}`,
+      );
+    }
+  }
   mustInclude(
     "src/components/marketing/MarketingHero.tsx",
     marketingHero,

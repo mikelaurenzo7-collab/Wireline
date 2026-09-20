@@ -79,7 +79,7 @@ function returningPaidIntentDestination(search: string): string | null {
   if (!plan || plan === "personal") return null;
 
   const params = new URLSearchParams({ plan });
-  if (intent.preferredBillingInterval === "year") params.set("interval", "year");
+  if (intent.preferredBillingInterval) params.set("interval", intent.preferredBillingInterval);
   return `/settings/billing?${params.toString()}`;
 }
 

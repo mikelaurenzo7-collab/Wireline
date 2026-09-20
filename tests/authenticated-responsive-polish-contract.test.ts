@@ -51,7 +51,8 @@ describe("authenticated responsive polish contract", () => {
     expect(inbox).toContain('<WorkspacePageIntro title="Inbox" titleHidden />');
     expect(inbox).toContain("<WorkspaceControlBand");
     expect(inbox).toContain("secondary={scopeControls}");
-    expect(inbox).not.toContain("action={");
+    const inboxIntro = inbox.match(/<WorkspacePageIntro\b[\s\S]*?\/>/)?.[0];
+    expect(inboxIntro).not.toContain("action={");
     expect(inbox).not.toContain("sm:flex-row sm:items-end sm:justify-between");
   });
 
@@ -80,9 +81,7 @@ describe("authenticated responsive polish contract", () => {
     const settingsBlock = shell.slice(settingsStart - 160, settingsStart + 1_200);
 
     expect(settingsBlock).toContain('className="wl-shell-account-zone"');
-    expect(settingsBlock).toContain(
-      'className="wl-shell-account min-h-[44px] wl-focus-ring-halo"',
-    );
+    expect(settingsBlock).toContain('className="wl-shell-account min-h-[44px] wl-focus-ring-halo"');
     expect(settingsBlock).not.toContain("wl-rail-link");
     expect(settingsBlock).not.toContain("border-t border-border/70");
   });

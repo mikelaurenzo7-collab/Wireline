@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
+import { createToastTimers, type ToastPauseReason } from "../lib/toast-timers";
 
 export type ToastType = "success" | "error" | "warning" | "info";
 
@@ -61,6 +62,8 @@ interface ToastContextValue {
   toasts: Toast[];
   toast: (opts: Omit<Toast, "id">) => string;
   dismiss: (id: string) => void;
+  pause: (id: string, reason: ToastPauseReason) => void;
+  resume: (id: string, reason: ToastPauseReason) => void;
   success: (title: string, message?: string) => string;
   error: (title: string, message?: string) => string;
   warning: (title: string, message?: string) => string;
@@ -71,19 +74,11 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   // Mirror of `toasts` kept in sync so `toast`/`dismiss` can read the current
   // queue synchronously without running side effects inside a state updater.
   const toastsRef = useRef<Toast[]>([]);
   const dismissRef = useRef<(id: string) => void>(() => {});
-
-  const clearTimer = useCallback((id: string) => {
-    const t = timers.current.get(id);
-    if (t) {
-      clearTimeout(t);
-      timers.current.delete(id);
-    }
-  }, []);
+  const [timers] = useState(() => createToastTimers((id) => dismissRef.current(id)));
 
   const commitToasts = useCallback((next: Toast[]) => {
     toastsRef.current = next;
@@ -92,15 +87,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const dismiss = useCallback(
     (id: string) => {
-      clearTimer(id);
+      timers.clear(id);
       commitToasts(toastsRef.current.filter((t) => t.id !== id));
     },
-    [clearTimer, commitToasts],
+    [timers, commitToasts],
   );
 
   useEffect(() => {
     dismissRef.current = dismiss;
   }, [dismiss]);
+
+  useEffect(() => () => timers.clearAll(), [timers]);
 
   const toast = useCallback(
     (opts: Omit<Toast, "id">): string => {
@@ -116,24 +113,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       });
 
       for (const evictedId of evictedIds) {
-        clearTimer(evictedId);
+        timers.clear(evictedId);
       }
 
       const resolvedId = duplicateId ?? id;
-      if (duration > 0) {
-        clearTimer(resolvedId);
-        timers.current.set(
-          resolvedId,
-          setTimeout(() => dismissRef.current(resolvedId), duration),
-        );
-      } else {
-        clearTimer(resolvedId);
-      }
+      timers.schedule(resolvedId, duration);
 
       commitToasts(queue);
       return resolvedId;
     },
-    [clearTimer, commitToasts],
+    [timers, commitToasts],
   );
 
   const success = useCallback(
@@ -154,8 +143,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ toasts, toast, dismiss, success, error, warning, info }),
-    [toasts, toast, dismiss, success, error, warning, info],
+    () => ({
+      toasts,
+      toast,
+      dismiss,
+      pause: timers.pause,
+      resume: timers.resume,
+      success,
+      error,
+      warning,
+      info,
+    }),
+    [toasts, toast, dismiss, timers, success, error, warning, info],
   );
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;

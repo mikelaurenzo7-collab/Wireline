@@ -55,8 +55,7 @@ const BOT_LANGUAGE = {
   createCtaShort: "Create Bot",
   setupLabel: "Set Up Your Bot",
   setupPrompt: "What should your Bot do?",
-  setupDescription:
-    "Choose a role starter or describe any workflow. You can change every capability later.",
+  setupDescription: "Start with a role or your own idea. Refine it anytime.",
   nameLabel: "Bot Name",
 } as const;
 

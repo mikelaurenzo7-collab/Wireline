@@ -66,6 +66,7 @@ vi.mock("../src/lib/post-signup-onboarding", () => ({ setPostSignupFlowActive: v
 vi.mock("../src/components/atoms", () => ({
   Button: "button",
   Input: "input",
+  NativeSelect: "select",
   Textarea: "textarea",
 }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "aside" }));

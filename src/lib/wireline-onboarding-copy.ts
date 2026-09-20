@@ -36,21 +36,18 @@ export const POST_CREATE_WIZARD_COPY = {
     train: {
       label: "Train",
       title: "Teach it the job",
-      detail:
-        "Greeting and description are saved. Add a site, document, or policy if the first call needs it.",
-      salesHint:
-        "Train what matters on day one, hear it privately, then put it on a live number.",
+      detail: "Review its instructions. Add a site, document, or policy when needed.",
+      salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
       secondary: "Continue to test",
     },
     launch: {
       label: "Launch",
       title: "Put it on the line",
-      detail:
-        "Every paid plan includes a US number. Callers reach this Bot directly.",
+      detail: "Every paid plan includes a US number. Callers reach this Bot directly.",
       primary: "Get a number",
       skip: "Launch later",
-      activationRequired: "Your Bot is trained. A live number needs a plan.",
+      activationRequired: "Your Bot is created. A live number needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
         `Every paid plan includes a dedicated number and live call minutes. Starter begins at $${starterPriceUsd}/mo.`,
       activationCta: "Choose your plan",
@@ -70,7 +67,7 @@ export const POST_CREATE_WIZARD_COPY = {
       `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
     deferredTitle: "Ready when you are",
     deferredDetail: (agentName: string) =>
-      `${agentName} is trained and waiting. Connect a number under Calls when you want it live.`,
+      `${agentName} is saved. Connect a number under Calls when you want it live.`,
     studioCta: "Continue in Studio",
     phoneCta: "Get a number",
   },

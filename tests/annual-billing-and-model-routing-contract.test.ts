@@ -13,7 +13,7 @@ describe("annual billing purchase path", () => {
     const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
 
     expect(pricing).toContain('billingInterval === "year"');
-    expect(pricing).toContain("&interval=year");
+    expect(pricing).toContain('`${ctaPath}&interval=${showAnnual ? "year" : "month"}`');
     expect(billingCard).toContain("interval },");
     expect(billingCard).toContain('billingInterval === "year"');
     expect(launchCheckout).toContain('req.body?.interval === "year"');

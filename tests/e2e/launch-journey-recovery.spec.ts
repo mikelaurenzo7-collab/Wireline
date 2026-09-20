@@ -97,7 +97,9 @@ test("changing a role starter preserves a supplied customer brief", async ({ pag
   const dialog = page.getByRole("dialog", { name: "What should your Bot do?" });
   const description = dialog.getByRole("textbox", { name: "Describe the Job" });
   await expect(description).toHaveValue(brief);
-  await dialog.getByRole("button", { name: /^Appointment Setter/ }).click();
+  await dialog
+    .getByRole("combobox", { name: "Bot role starters" })
+    .selectOption("appointment-setter");
   await expect(description).toHaveValue(brief);
 });
 

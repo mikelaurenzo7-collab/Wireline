@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router";
 
+import { Button } from "../components/atoms";
 import EmailInbox from "../components/EmailInbox";
+import { StatusNotice } from "../components/molecules";
 import SmsThreads from "../components/SmsThreads";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
@@ -30,27 +33,37 @@ const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
  */
 export default function EmailPage() {
   const [params, setParams] = useSearchParams();
-  const { agents } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const [mailboxes, setMailboxes] = useState<MailboxAccount[]>([]);
+  const [mailboxStatus, setMailboxStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [mailboxAttempt, setMailboxAttempt] = useState(0);
 
   const requestedTab = params.get("tab") as InboxTabId | null;
   const activeTab: InboxTabId = inboxTabs.some((tab) => tab.id === requestedTab)
     ? (requestedTab as InboxTabId)
     : "email";
   const requestedAgentId = params.get("agent")?.trim() || "";
-  const activeAgentId = agents.some((agent) => agent.id === requestedAgentId)
-    ? requestedAgentId
-    : "";
+  // A deep link is an explicit scope. Never substitute an all-Bot/all-mailbox
+  // request while its metadata is loading, unavailable, or no longer valid.
+  const activeAgentId = requestedAgentId;
+  const hasRequestedAgent = agents.some((agent) => agent.id === requestedAgentId);
 
   useEffect(() => {
     let cancelled = false;
+    setMailboxStatus("loading");
     authFetch("/api/emails/accounts")
       .then(async (response) => {
-        if (!response.ok) return null;
+        if (!response.ok) throw new Error("Mailbox lookup unavailable");
         return response.json();
       })
       .then((body) => {
-        if (cancelled || !Array.isArray(body?.accounts)) return;
+        if (cancelled) return;
+        if (!Array.isArray(body?.accounts)) throw new Error("Mailbox lookup unavailable");
         setMailboxes(
           body.accounts.filter(
             (account: unknown): account is MailboxAccount =>
@@ -60,12 +73,15 @@ export default function EmailPage() {
               typeof (account as MailboxAccount).emailAddress === "string",
           ),
         );
+        setMailboxStatus("ready");
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (!cancelled) setMailboxStatus("error");
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [mailboxAttempt]);
 
   const availableMailboxes = useMemo(
     () =>
@@ -73,9 +89,31 @@ export default function EmailPage() {
     [activeAgentId, mailboxes],
   );
   const requestedAccountId = params.get("account")?.trim() || "";
-  const activeAccountId = availableMailboxes.some((mailbox) => mailbox.id === requestedAccountId)
-    ? requestedAccountId
-    : "";
+  const activeAccountId = activeTab === "email" ? requestedAccountId : "";
+  const hasRequestedAccount = availableMailboxes.some((mailbox) => mailbox.id === activeAccountId);
+  const scopeLoading = Boolean(
+    (activeAgentId && agentsLoading) || (activeAccountId && mailboxStatus === "loading"),
+  );
+  const scopeError =
+    activeAgentId && !agentsLoading && !hasRequestedAgent
+      ? agentsDegraded
+        ? "We couldn't verify this Bot. Retry to load its conversations."
+        : "This Bot is no longer available. Choose another Bot or clear the filters."
+      : activeAccountId && mailboxStatus !== "loading" && !hasRequestedAccount
+        ? mailboxStatus === "error"
+          ? "We couldn't verify this mailbox. Retry to load its conversations."
+          : "This mailbox is no longer available in this view. Choose another mailbox or clear the filters."
+        : activeAccountId && mailboxStatus === "error"
+          ? "We couldn't verify this mailbox. Retry to load its conversations."
+          : null;
+
+  function retryScope() {
+    if (activeAgentId) refreshAgents();
+    if (activeTab === "email") {
+      setMailboxStatus("loading");
+      setMailboxAttempt((attempt) => attempt + 1);
+    }
+  }
 
   function updateParams(mutator: (current: URLSearchParams) => void) {
     setParams(
@@ -110,6 +148,13 @@ export default function EmailPage() {
     });
   }
 
+  function clearScope() {
+    updateParams((updated) => {
+      updated.delete("agent");
+      updated.delete("account");
+    });
+  }
+
   const showBotFilter = agents.length > 1 || Boolean(activeAgentId);
   const showMailboxFilter =
     activeTab === "email" && (availableMailboxes.length > 1 || Boolean(activeAccountId));
@@ -124,6 +169,11 @@ export default function EmailPage() {
             className="min-h-[44px] min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All Bots</option>
+            {activeAgentId && !hasRequestedAgent ? (
+              <option value={activeAgentId} disabled>
+                {agentsLoading ? "Loading Bot…" : "Selected Bot unavailable"}
+              </option>
+            ) : null}
             {agents.map((agent) => (
               <option key={agent.id} value={agent.id}>
                 {agent.name}
@@ -139,6 +189,11 @@ export default function EmailPage() {
             className="min-h-[44px] min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All mailboxes</option>
+            {activeAccountId && !hasRequestedAccount ? (
+              <option value={activeAccountId} disabled>
+                {mailboxStatus === "loading" ? "Loading mailbox…" : "Selected mailbox unavailable"}
+              </option>
+            ) : null}
             {availableMailboxes.map((mailbox) => (
               <option key={mailbox.id} value={mailbox.id}>
                 {mailbox.emailAddress}
@@ -157,8 +212,8 @@ export default function EmailPage() {
           ariaLabel="Inbox controls"
           primary={
             <WorkspaceTabStrip
-              ariaLabel="Inbox channels"
-              tabs={inboxTabs}
+              ariaLabel="Inbox sections"
+              tabs={[...inboxTabs, { id: "approvals", label: "Approvals", href: "/approvals" }]}
               activeId={activeTab}
               onSelect={(id) => setActiveTab(id as InboxTabId)}
               align="start"
@@ -168,8 +223,42 @@ export default function EmailPage() {
           }
           secondary={scopeControls}
         />
+        {mailboxStatus === "error" && activeTab === "email" && !activeAccountId && !scopeError ? (
+          <StatusNotice
+            tone="warning"
+            title="Mailbox filters unavailable"
+            className="mb-3"
+            action={
+              <Button variant="secondary" size="sm" onClick={retryScope}>
+                Retry
+              </Button>
+            }
+          >
+            Conversations remain available. Retry to restore mailbox filters.
+          </StatusNotice>
+        ) : null}
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
-          {activeTab === "email" ? (
+          {scopeLoading ? (
+            <div
+              role="status"
+              className="flex items-center justify-center gap-2 px-4 py-12 text-sm text-muted-foreground"
+            >
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              Loading selected inbox…
+            </div>
+          ) : scopeError ? (
+            <StatusNotice tone="warning" title="Selected inbox unavailable" className="my-3">
+              <p>{scopeError}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={retryScope}>
+                  Retry
+                </Button>
+                <Button variant="ghost" size="sm" onClick={clearScope}>
+                  Clear filters
+                </Button>
+              </div>
+            </StatusNotice>
+          ) : activeTab === "email" ? (
             <EmailInbox
               embedded
               agentId={activeAgentId || null}

@@ -296,7 +296,10 @@ describe("Studio only clears the essentials box when something was stored", () =
   it("keeps the Account Holder's typing when nothing was captured", () => {
     const apply = source.slice(source.indexOf("async function applySetup"));
     const guard = apply.slice(apply.indexOf("knowledgeCaptured = await"));
-    expect(guard).toContain('if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("")');
+    expect(guard).toContain("if (knowledgeCaptured && isCreateBriefRecoveryOwner(setupUserId))");
+    expect(guard).toContain(
+      'setupDrafts.confirm(setupAgentId, { knowledge: setupKnowledge }, { knowledge: "" })',
+    );
     expect(apply).toContain("if (!knowledgeCaptured)");
   });
 

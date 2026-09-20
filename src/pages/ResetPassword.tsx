@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { useLayoutEffect, useRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import { useAuth } from "../contexts/AuthContext";
@@ -34,6 +35,10 @@ export default function ResetPassword() {
   const [token] = useState<string | null>(() => resetTokenRef.current || null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [invalidField, setInvalidField] = useState<"password" | "confirm" | null>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -45,7 +50,9 @@ export default function ResetPassword() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (loading) return;
     setError(null);
+    setInvalidField(null);
 
     if (!token) {
       setError("This reset link is missing its token. Request a new one from the sign-in page.");
@@ -55,11 +62,15 @@ export default function ResetPassword() {
     const passwordPolicyError = getPasswordPolicyError(password);
     if (passwordPolicyError) {
       setError(passwordPolicyError);
+      setInvalidField("password");
+      passwordRef.current?.focus();
       return;
     }
 
     if (password !== confirm) {
       setError("Passwords don't match.");
+      setInvalidField("confirm");
+      confirmRef.current?.focus();
       return;
     }
 
@@ -143,35 +154,77 @@ export default function ResetPassword() {
                 Use at least 8 characters with uppercase, lowercase, and a number.
               </p>
 
-              <FormField label="New password" htmlFor="reset-password" required>
+              <FormField
+                label="New password"
+                htmlFor="reset-password"
+                required
+                error={invalidField === "password" ? error : undefined}
+              >
                 <Input
+                  ref={passwordRef}
                   id="reset-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  disabled={loading}
                   required
                   minLength={8}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="auth-input tracking-[0.32em]"
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (invalidField) {
+                      setInvalidField(null);
+                      setError(null);
+                    }
+                  }}
+                  className={`auth-input ${showPassword ? "" : "tracking-[0.32em]"}`}
                   placeholder="••••••••••••"
                   autoComplete="new-password"
                 />
               </FormField>
 
-              <FormField label="Confirm new password" htmlFor="reset-password-confirm" required>
+              <FormField
+                label="Confirm new password"
+                htmlFor="reset-password-confirm"
+                required
+                error={invalidField === "confirm" ? error : undefined}
+              >
                 <Input
+                  ref={confirmRef}
                   id="reset-password-confirm"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  disabled={loading}
                   required
                   minLength={8}
                   value={confirm}
-                  onChange={(event) => setConfirm(event.target.value)}
-                  className="auth-input tracking-[0.32em]"
+                  onChange={(event) => {
+                    setConfirm(event.target.value);
+                    if (invalidField === "confirm") {
+                      setInvalidField(null);
+                      setError(null);
+                    }
+                  }}
+                  className={`auth-input ${showPassword ? "" : "tracking-[0.32em]"}`}
                   placeholder="••••••••••••"
                   autoComplete="new-password"
                 />
               </FormField>
 
-              {error ? (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={loading}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((current) => !current)}
+                className="min-h-11 gap-2 text-sm text-muted-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff size={16} aria-hidden="true" />
+                ) : (
+                  <Eye size={16} aria-hidden="true" />
+                )}
+                {showPassword ? "Hide passwords" : "Show passwords"}
+              </Button>
+
+              {error && !invalidField ? (
                 <StatusNotice tone="destructive" title="Password reset was not completed">
                   {error}
                 </StatusNotice>

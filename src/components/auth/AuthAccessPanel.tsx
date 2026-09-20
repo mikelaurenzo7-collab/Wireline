@@ -612,7 +612,7 @@ export default function AuthAccessPanel({
                 if (event.target.checked && error === TERMS_CONSENT_ERROR) setError(null);
               }}
             />
-            <span id={termsLabelId}>
+            <label id={termsLabelId} htmlFor={termsId} className="cursor-pointer">
               I agree to the{" "}
               <Link to="/terms" target="_blank" rel="noopener">
                 Terms
@@ -622,7 +622,7 @@ export default function AuthAccessPanel({
                 Privacy Policy
               </Link>
               .
-            </span>
+            </label>
           </div>
         ) : null}
 

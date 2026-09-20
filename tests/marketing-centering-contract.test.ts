@@ -22,7 +22,7 @@ describe("marketing centering contract", () => {
     const stickyCta = read("src/components/marketing/MarketingStickyCta.tsx");
 
     expect(header).toContain(
-      'className="ml-auto flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-3"',
+      'className="ml-auto flex min-w-0 shrink-0 items-center gap-1 md:ml-0 md:gap-3"',
     );
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');

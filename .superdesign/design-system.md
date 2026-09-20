@@ -1,12 +1,12 @@
-# Wireline Design System
+# BotBound Design System
 
 ## Product and audience
 
-Wireline is an operating system for small and midsize service businesses that need dependable AI voice agents for sales, front-desk, support, booking, follow-up, and CRM work. The public experience must establish trust quickly, make the agent concrete through a live demo, explain the operating loop, and move a qualified visitor into a free draft or a paid plan without overstating capabilities.
+BotBound is an operating system for small and midsize service businesses that need dependable AI voice agents for sales, front-desk, support, booking, follow-up, and CRM work. The public experience must establish trust quickly, make the Bot concrete through truthful product previews, explain the operating loop, and move a qualified visitor into a free draft or a paid plan without overstating capabilities.
 
 Core jobs:
 
-- Hear a real agent before committing.
+- Understand the Bot before committing; test privately after account setup.
 - Understand what the agent does before, during, and after a conversation.
 - Compare plans, limits, included channels, and pricing without ambiguity.
 - Start a private draft, then activate live channels only after a paid plan and required configuration.
@@ -53,7 +53,7 @@ Keep line lengths deliberate: large headlines roughly 12–18 characters per lin
 - Authenticated content: 1152px maximum.
 - Public section spacing: 48–76px depending on viewport; use consistent vertical cadence.
 - Spacing scale: 2, 4, 6, 8, 10, 12, 16, 24, 32, 40, 48, 64px.
-- Touch targets: 40px minimum, 44px comfortable, 48px primary.
+- Touch targets: 44px minimum for mobile controls, 48px for primary conversion actions.
 - Use a clear editorial hierarchy, strong alignment, and quiet dividing rules instead of floating-card overload.
 - Mobile layouts must remain a single readable column with full-width primary actions and no horizontal overflow.
 
@@ -67,22 +67,23 @@ Keep line lengths deliberate: large headlines roughly 12–18 characters per lin
 
 ## Public landing-page contract
 
-The home page uses the real Wireline header and footer around a vertical story:
+The home page uses the shared BotBound header and footer around a vertical story:
 
-1. Hero: truthful outcome-led headline, short proof copy, free-start primary CTA, live-demo secondary CTA, and an embedded live voice demo.
-2. Live video spotlight: optional presenter capability presented as a paid add-on, never as simulated proof.
-3. Four-step operating loop: Build, Train, Launch, Improve.
-4. Work-lane selector: Outbound, Inbound, Hybrid with keyboard-accessible tabs and one contextual CTA.
-5. Pricing preview: Free Builder, Starter, Starter Plus, Pro with explicit limits and no hidden activation promises.
-6. Trust signals and a focused closing CTA.
+1. Hero: a short outcome-led headline, concise supporting copy, and a free-start primary action.
+2. Product preview: clearly illustrated examples of calls, text, and email. Examples are never presented as real customer activity.
+3. Operating loop: Build, Train, Launch, Improve.
+4. Roles: useful starting points for one configurable Bot.
+5. Pricing: Free Builder, Starter, Starter Plus, and Pro with explicit limits and billing periods.
+6. A focused closing action.
 
-The live-demo surface must always be truthful. When browser voice is configured it may say “Start the live demo.” When it is unavailable, the fallback must identify itself as a phone call and emit the same funnel intent event with a distinct mode.
+Public routes do not offer anonymous live calling. Private tests and live calling require the relevant account, plan, and provider configuration. LiveAvatar and live talking-head video are retired; do not promote them as an add-on or launch dependency.
 
 ## Components and interaction rules
 
 - Primary CTA: solid lavender action, dark text, minimum 48px target for hero and conversion moments.
 - Secondary CTA: silver/dark outlined treatment with equal target size.
 - Navigation must preserve clear active/hover/focus states and collapse cleanly on mobile.
+- Supporting public pages expose only Features, Pricing, and account entry in their header. Use a compact menu on phones; the homepage retains its dedicated product entrance.
 - Tabs use semantic `tablist`, `tab`, and `tabpanel` roles with arrow, Home, and End keyboard support.
 - Inputs expose labels, errors, requirements, and focus states without relying on color alone.
 - Pricing switches update amounts, periods, savings language, and destination URLs together.
@@ -93,7 +94,7 @@ The live-demo surface must always be truthful. When browser voice is configured 
 
 - Lead with completed work and business outcomes, not model names.
 - Be explicit about limits, add-ons, required setup, and what activates only after payment.
-- Prefer “voice agent,” “live voice demo,” “book the meeting,” and “log the outcome” over vague AI language.
+- Use Bot as the product noun. Prefer concrete outcomes such as “book the meeting” and “log the outcome.”
 - Avoid unsupported superlatives, fabricated customer evidence, fake activity, fake urgency, and claims that imply legal, tax, or compliance guarantees.
 - Use realistic operational language and keep one primary action per section.
 
@@ -103,3 +104,7 @@ The live-demo surface must always be truthful. When browser voice is configured 
 - Preserve visible focus, keyboard navigation, reduced motion, semantic headings, accessible labels, and minimum target sizes.
 - Verify at mobile, tablet, and desktop widths. No clipped text, overflow, misplaced fixed layers, or obstructed CTAs.
 - Every public flow must remain honest when third-party keys, microphone access, or network services are unavailable.
+- Creation asks for a role and a brief. Name and appearance are optional disclosures; deeper configuration belongs in Studio.
+- Preserve unsaved Studio setup edits while switching panels, Bots, or responsive layouts. Keep drafts scoped to the current account and clear them after confirmed saves.
+- An explicit Inbox filter must never silently become an unfiltered request during loading or failure.
+- Use the shared atoms and canonical tokens in `design-tokens/wireline.tokens.json`; do not add a competing CSS theme.

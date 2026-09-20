@@ -13,7 +13,7 @@ describe("Fast Start role-first flow contract", () => {
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("BOT_CHANNELS.map");
     expect(create).toContain('aria-label="Bot role starters"');
-    expect(create).toContain('aria-label="Available Bot channels"');
+    expect(create).toContain("aria-expanded={customizing}");
     expect(create).toContain("Describe the Job");
     expect(create).toContain("language.createCta");
     expect(create).toContain("Not Now");
@@ -24,7 +24,9 @@ describe("Fast Start role-first flow contract", () => {
 
   it("starts custom creation empty while preserving explicit template intent", () => {
     expect(create).toContain('BOT_ROLE_TEMPLATES.find((template) => template.key === "custom")');
-    expect(create).toContain('setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))');
+    expect(create).toContain(
+      'setBrief(initialBrief || (nextTemplate.key === "custom" ? "" : nextTemplate.summary))',
+    );
     expect(create).toContain("briefIsTemplateTextRef.current");
     expect(create).toContain('template.key === "custom" ? "" : template.summary');
     expect(create).toContain("const finalBrief = brief.trim() || selectedTemplate.summary");

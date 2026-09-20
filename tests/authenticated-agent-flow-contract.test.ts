@@ -169,9 +169,8 @@ describe("authenticated Bot flow", () => {
     expect(botProduct).not.toContain('name: "Collections"');
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain("BOT_CHANNELS.map");
-    expect(createDialog).toContain(
-      "Proven roles and Create Your Own all lead to the same configurable Bot",
-    );
+    expect(createDialog).toContain('aria-label="Bot role starters"');
+    expect(createDialog).toContain("<option key={template.key} value={template.key}>");
     expect(createDialog).not.toContain("Choose one personal job");
   });
 

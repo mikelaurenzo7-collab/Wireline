@@ -20,6 +20,7 @@ import {
   rememberCreateBrief,
 } from "../lib/create-brief-recovery";
 import { extractionPersistedSomething } from "../lib/training-extraction-result";
+import { createStudioSetupDrafts, type StudioSetupDrafts } from "../lib/studio-setup-drafts";
 import { Button } from "./atoms";
 import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
@@ -36,6 +37,7 @@ type StudioAgentWorkspacePanelProps = {
   onTestVoiceInChat: () => void;
   className?: string;
   compact?: boolean;
+  drafts?: StudioSetupDrafts;
 };
 
 type AgentSetupResponse = {
@@ -64,6 +66,7 @@ export default function StudioAgentWorkspacePanel({
   onTestVoiceInChat,
   className = "",
   compact = false,
+  drafts,
 }: StudioAgentWorkspacePanelProps) {
   const defaultGreeting = useMemo(
     () => `Hi, this is ${agentName || "your Bot"}. How can I help?`,
@@ -71,6 +74,26 @@ export default function StudioAgentWorkspacePanel({
   );
   const { agents } = useAgents();
   const { user } = useAuth();
+  const fallbackDraftsRef = useRef<StudioSetupDrafts | null>(null);
+  if (!fallbackDraftsRef.current || fallbackDraftsRef.current.ownerId !== (user?.id ?? null)) {
+    fallbackDraftsRef.current = createStudioSetupDrafts(user?.id ?? null);
+  }
+  const setupDrafts =
+    drafts && drafts.ownerId === (user?.id ?? null) ? drafts : fallbackDraftsRef.current;
+  const [, refreshDraft] = useState(0);
+  const snapshot = setupDrafts.read(agentId);
+  const {
+    tone: setupPersonality,
+    markKey: setupMarkKey,
+    loadedPersonality,
+    greeting: setupGreeting,
+    knowledge: setupKnowledge,
+  } = snapshot.values;
+  const applyingSetup = snapshot.saving;
+  useEffect(
+    () => setupDrafts.subscribe(agentId, () => refreshDraft((current) => current + 1)),
+    [agentId, setupDrafts],
+  );
   const activeUserIdRef = useRef(user?.id ?? null);
   const unavailableMarkKeys = useMemo(
     () =>
@@ -82,14 +105,8 @@ export default function StudioAgentWorkspacePanel({
       ),
     [agentId, agents],
   );
-  const [setupPersonality, setSetupPersonality] = useState("Clear");
-  const [setupMarkKey, setSetupMarkKey] = useState<BotMarkKey>(defaultBotMarkKey(agentId));
-  const [loadedPersonality, setLoadedPersonality] = useState<string | null>(null);
-  const [setupGreeting, setSetupGreeting] = useState("");
-  const [setupKnowledge, setSetupKnowledge] = useState("");
   const [recoveringBrief, setRecoveringBrief] = useState(false);
   const [loadingSetup, setLoadingSetup] = useState(true);
-  const [applyingSetup, setApplyingSetup] = useState(false);
   const [setupLoadError, setSetupLoadError] = useState<string | null>(null);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupNotice, setSetupNotice] = useState<string | null>(null);
@@ -110,17 +127,13 @@ export default function StudioAgentWorkspacePanel({
     if (!agentId) return;
     let cancelled = false;
     setLoadingSetup(true);
-    setApplyingSetup(false);
     setSetupLoadError(null);
     setSetupError(null);
     setSetupNotice(null);
-    setSetupPersonality("Clear");
-    setSetupMarkKey(defaultBotMarkKey(agentId));
-    setSetupGreeting("");
     const recovered = user?.id ? readCreateBrief(user.id, agentId) : "";
-    setSetupKnowledge(recovered);
+    setupDrafts.seedKnowledge(agentId, recovered);
     setRecoveringBrief(Boolean(recovered));
-    setLoadedPersonality(null);
+    const startedRevision = setupDrafts.revision();
     authFetch(`/api/agent-config/${encodeURIComponent(agentId)}`)
       .then(async (response) => {
         if (!response.ok) throw new Error("Current setup could not be loaded.");
@@ -129,10 +142,17 @@ export default function StudioAgentWorkspacePanel({
       .then((data) => {
         if (cancelled) return;
         const personality = typeof data.personality === "string" ? data.personality : "";
-        setSetupMarkKey(isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId));
-        setLoadedPersonality(personality || null);
-        setSetupPersonality(inferPersonality(personality));
-        setSetupGreeting(existingGreeting(data.directives));
+        setupDrafts.load(
+          agentId,
+          {
+            markKey: isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId),
+            loadedPersonality: personality || null,
+            tone: inferPersonality(personality),
+            greeting: existingGreeting(data.directives),
+            knowledge: "",
+          },
+          startedRevision,
+        );
       })
       .catch((reason) => {
         if (!cancelled) {
@@ -147,7 +167,7 @@ export default function StudioAgentWorkspacePanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId, reloadKey, user?.id]);
+  }, [agentId, reloadKey, user?.id, setupDrafts]);
 
   async function saveManual(
     type: "personality" | "directive",
@@ -165,14 +185,13 @@ export default function StudioAgentWorkspacePanel({
   }
 
   async function applySetup() {
-    if (!agentId || !user?.id) return;
+    if (!agentId || !user?.id || !setupDrafts.beginSave(agentId)) return;
     const setupAgentId = agentId;
     const setupUserId = user.id;
     const isCurrentAgent = () =>
       activeAgentIdRef.current === setupAgentId &&
       activeUserIdRef.current === setupUserId &&
       isCreateBriefRecoveryOwner(setupUserId);
-    setApplyingSetup(true);
     setSetupError(null);
     setSetupNotice(null);
     try {
@@ -196,16 +215,25 @@ export default function StudioAgentWorkspacePanel({
             : "Bot mark could not be saved.",
         );
       }
+      setupDrafts.confirm(setupAgentId, { markKey: setupMarkKey }, { markKey: setupMarkKey });
       if (!isCurrentAgent()) return;
       window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       await saveManual("personality", personalityText);
+      setupDrafts.confirm(
+        setupAgentId,
+        { tone: setupPersonality },
+        {
+          tone: setupPersonality,
+          loadedPersonality: personalityText,
+        },
+      );
       if (!isCurrentAgent()) return;
-      if (isCurrentAgent()) setLoadedPersonality(personalityText);
       await saveManual(
         "directive",
         greetingTrimmed ? `${GREETING_PREFIX} ${greetingTrimmed}` : "",
         GREETING_PREFIX,
       );
+      setupDrafts.confirm(setupAgentId, { greeting: setupGreeting }, { greeting: greetingTrimmed });
       let knowledgeCaptured = true;
       if (!isCurrentAgent()) return;
       if (knowledgeTrimmed) {
@@ -218,10 +246,10 @@ export default function StudioAgentWorkspacePanel({
           throw new Error("Knowledge and rules could not be saved.");
         }
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
-        if (knowledgeCaptured && isCurrentAgent()) setSetupKnowledge("");
-        if (knowledgeCaptured && isCurrentAgent()) {
+        if (knowledgeCaptured && isCreateBriefRecoveryOwner(setupUserId)) {
+          setupDrafts.confirm(setupAgentId, { knowledge: setupKnowledge }, { knowledge: "" });
           clearCreateBrief(setupUserId, setupAgentId, knowledgeTrimmed);
-          setRecoveringBrief(false);
+          if (isCurrentAgent()) setRecoveringBrief(false);
         }
       }
 
@@ -240,7 +268,7 @@ export default function StudioAgentWorkspacePanel({
         setSetupError(reason instanceof Error ? reason.message : "Setup could not be saved.");
       }
     } finally {
-      if (isCurrentAgent()) setApplyingSetup(false);
+      setupDrafts.endSave(setupAgentId);
     }
   }
 
@@ -267,6 +295,11 @@ export default function StudioAgentWorkspacePanel({
           >
             Tone & knowledge
           </h2>
+          {snapshot.dirty ? (
+            <p className="mt-1 text-xs text-muted-foreground" role="status">
+              Unsaved changes
+            </p>
+          ) : null}
         </header>
 
         <section className={sectionClass} aria-label="Tone and knowledge">
@@ -324,7 +357,7 @@ export default function StudioAgentWorkspacePanel({
                 <div className="border-t border-border p-3 sm:p-4">
                   <BotMarkPicker
                     value={setupMarkKey}
-                    onChange={setSetupMarkKey}
+                    onChange={(value) => setupDrafts.edit(agentId, "markKey", value)}
                     seed={agentId}
                     name={agentName}
                     compact
@@ -345,7 +378,7 @@ export default function StudioAgentWorkspacePanel({
                         type="button"
                         disabled={applyingSetup}
                         aria-pressed={selected}
-                        onClick={() => setSetupPersonality(option)}
+                        onClick={() => setupDrafts.edit(agentId, "tone", option)}
                         className={`min-h-11 rounded-xl border px-3 py-2.5 text-left transition-colors wl-focus-ring-halo ${
                           selected
                             ? "border-primary/40 bg-primary/5"
@@ -370,7 +403,7 @@ export default function StudioAgentWorkspacePanel({
                   id="setup-greeting"
                   disabled={applyingSetup}
                   value={setupGreeting}
-                  onChange={(event) => setSetupGreeting(event.target.value)}
+                  onChange={(event) => setupDrafts.edit(agentId, "greeting", event.target.value)}
                   placeholder={defaultGreeting}
                   rows={2}
                   className="min-h-11 w-full resize-y rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary/50"
@@ -400,7 +433,7 @@ export default function StudioAgentWorkspacePanel({
                   value={setupKnowledge}
                   onChange={(event) => {
                     const next = event.target.value;
-                    setSetupKnowledge(next);
+                    setupDrafts.edit(agentId, "knowledge", next);
                     if (recoveringBrief && user?.id) {
                       if (next.trim()) rememberCreateBrief(user.id, agentId, next);
                       else {

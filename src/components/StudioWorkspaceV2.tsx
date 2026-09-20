@@ -1,6 +1,6 @@
 import { Plus, Sparkles, Users, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
@@ -8,6 +8,8 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { BotBoundLockup } from "./brand/BotBoundBrand";
 import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
+import { useAuth } from "../contexts/AuthContext";
+import { createStudioSetupDrafts } from "../lib/studio-setup-drafts";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
@@ -106,6 +108,8 @@ function StudioEmptyState() {
 
 export default function StudioWorkspaceV2() {
   const { loading, degraded, refresh } = useAgents();
+  const { user } = useAuth();
+  const setupDrafts = useMemo(() => createStudioSetupDrafts(user?.id ?? null), [user?.id]);
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
@@ -117,6 +121,7 @@ export default function StudioWorkspaceV2() {
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
 
   const sectionParam = params.get("section");
+  const creatingRequested = params.get("create") === "1";
   const workroomParam = params.get("workroom");
   const commandParam = params.get("command");
   const commandNonceParam = params.get("commandNonce");
@@ -174,7 +179,15 @@ export default function StudioWorkspaceV2() {
   ]);
 
   useEffect(() => {
-    if (loading || agents.length === 0 || !resolvedAgentId || resolvedAgentId === requestedId)
+    // Creation owns the next destination. A roster refresh must not write the
+    // old ?create=1 URL over its handoff to the new Bot's setup panel.
+    if (
+      creatingRequested ||
+      loading ||
+      agents.length === 0 ||
+      !resolvedAgentId ||
+      resolvedAgentId === requestedId
+    )
       return;
     setParams(
       (current) => {
@@ -191,7 +204,7 @@ export default function StudioWorkspaceV2() {
       },
       { replace: true },
     );
-  }, [agents, loading, requestedId, resolvedAgentId, setParams]);
+  }, [agents, creatingRequested, loading, requestedId, resolvedAgentId, setParams]);
 
   useEffect(() => {
     if (active?.id) writeStudioLastAgentId(active.id);
@@ -262,6 +275,7 @@ export default function StudioWorkspaceV2() {
       agentName={active.name}
       isBusinessAgent={Boolean(active.is_business_agent)}
       onTestVoiceInChat={startCustomerTest}
+      drafts={setupDrafts}
       className="h-full border-t-0"
       compact={splitWorkspace}
     />
