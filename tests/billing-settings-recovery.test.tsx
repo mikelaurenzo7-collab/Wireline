@@ -286,6 +286,30 @@ describe("Billing Settings shared recovery", () => {
     expect(button("$10").props.disabled).toBe(false);
   });
 
+  it.each([
+    ["active", false, "Renews"],
+    ["active", true, "Ends"],
+    ["trialing", false, "Trial Ends"],
+    ["past_due", false, "Renews"],
+    ["paused", false, "Period End"],
+    ["canceled", false, null],
+    ["canceled", true, null],
+    ["incomplete_expired", false, null],
+  ])("billing period labels for %s (scheduled cancel: %s)", async (status, scheduled, label) => {
+    statusFails = false;
+    balanceFails = false;
+    subscription = { ...subscription, status, cancel_at_period_end: scheduled };
+    await settle();
+    const date = new Date("2026-10-20T12:00:00Z").toLocaleDateString();
+    if (label) expect(hasText(`${label} ${date}`)).toBe(true);
+    else {
+      expect(hasText(date)).toBe(false);
+      expect(hasText("Cancels at period end")).toBe(false);
+    }
+    if (label !== "Renews") expect(hasText("Renews")).toBe(false);
+    expect(button("Manage Subscription").props.disabled).toBe(false);
+  });
+
   it("recovers the page status and Runtime Balance when the plan-card Retry succeeds", async () => {
     await settle();
     expect(hasText("Subscription status is temporarily unavailable.")).toBe(true);

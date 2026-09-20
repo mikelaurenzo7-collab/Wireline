@@ -293,7 +293,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   return (
     <article className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <span className="mt-0.5 hidden size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary sm:grid">
           {actionIcon(task)}
         </span>
         <div className="min-w-0 flex-1">

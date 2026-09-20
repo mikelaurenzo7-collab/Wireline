@@ -18,8 +18,9 @@ const FOCUSABLE_SELECTOR = [
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
-  "[contenteditable=\"true\"]",
-  "[tabindex]:not([tabindex=\"-1\"])",
+  "details > summary:first-of-type",
+  '[contenteditable="true"]',
+  '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
 const activeFocusTraps: ActiveFocusTrap[] = [];
@@ -34,6 +35,7 @@ function getFocusable(container: HTMLElement) {
       const style = window.getComputedStyle(element);
       return (
         !element.matches(":disabled") &&
+        (!element.hasAttribute("tabindex") || element.tabIndex >= 0) &&
         !element.closest('[aria-hidden="true"], [inert]') &&
         style.display !== "none" &&
         style.visibility !== "hidden" &&
@@ -115,12 +117,22 @@ export function useModalFocusTrap(
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const activeElement = document.activeElement;
+      const programmaticFocus =
+        activeElement instanceof HTMLElement && !focusable.includes(activeElement);
+      // A heading or status can receive focus without joining the Tab order.
+      // Wrap only beyond its boundaries; let the browser handle interior order.
+      const beforeFirst =
+        programmaticFocus &&
+        Boolean(activeElement.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const afterLast =
+        programmaticFocus &&
+        Boolean(last.compareDocumentPosition(activeElement) & Node.DOCUMENT_POSITION_FOLLOWING);
       if (event.shiftKey) {
-        if (activeElement === first || !container.contains(activeElement)) {
+        if (activeElement === first || beforeFirst || !container.contains(activeElement)) {
           event.preventDefault();
           last.focus();
         }
-      } else if (activeElement === last || !container.contains(activeElement)) {
+      } else if (activeElement === last || afterLast || !container.contains(activeElement)) {
         event.preventDefault();
         first.focus();
       }

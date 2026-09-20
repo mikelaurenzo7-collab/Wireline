@@ -809,7 +809,17 @@ function ActiveSubCard({
   onPortal: () => void;
 }) {
   const accent = PLAN_ACCENTS[sub.plan || ""] || BRAND.colors.primary;
-  const renews = safeDate(sub.current_period_end);
+  const periodEnd = safeDate(sub.current_period_end);
+  const subscriptionEnded = sub.status === "canceled" || sub.status === "incomplete_expired";
+  const periodEndLabel = subscriptionEnded
+    ? null
+    : sub.cancel_at_period_end
+      ? "Ends"
+      : sub.status === "trialing"
+        ? "Trial Ends"
+        : sub.status === "active" || sub.status === "past_due"
+          ? "Renews"
+          : "Period End";
   const statusBadge =
     sub.status === "active"
       ? { label: "Active", tone: "success" as const }
@@ -834,7 +844,9 @@ function ActiveSubCard({
               <Chip tone={statusBadge.tone} dot>
                 {statusBadge.label}
               </Chip>
-              {sub.cancel_at_period_end && <Chip tone="warning">Cancels at period end</Chip>}
+              {sub.cancel_at_period_end && !subscriptionEnded && (
+                <Chip tone="warning">Cancels at period end</Chip>
+              )}
             </div>
             <h3 className="wl-display-mark break-words text-2xl sm:text-3xl text-foreground">
               {sub.plan_name || sub.plan || "N/A"}
@@ -853,9 +865,10 @@ function ActiveSubCard({
               ) : (
                 ""
               )}
-              {renews && (
+              {periodEnd && periodEndLabel && (
                 <>
-                  {sub.max_agents ? " · " : ""}Renews {formatDate(renews)}
+                  {sub.max_agents ? " · " : ""}
+                  {periodEndLabel} {formatDate(periodEnd)}
                 </>
               )}
             </p>

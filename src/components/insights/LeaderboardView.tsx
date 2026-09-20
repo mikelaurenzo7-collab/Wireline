@@ -15,6 +15,14 @@ function RolePill({ role }: { role?: string }) {
   return <span className="text-xs text-muted-foreground">{meta.label}</span>;
 }
 
+function costLabel(value: unknown): string {
+  return typeof value === "number" && Number.isFinite(value) ? `$${value}` : "N/A";
+}
+
+function unitCostLabel(value: unknown, denominator: number): string {
+  return Number.isFinite(denominator) && denominator > 0 ? costLabel(value) : "N/A";
+}
+
 export default function LeaderboardView({ days }: { days: number }) {
   const [data, setData] = useState<InsightsLeaderboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,9 +63,12 @@ export default function LeaderboardView({ days }: { days: number }) {
           { label: "Avg Score", value: a.avg_lead_score },
           { label: "Bookings", value: a.bookings },
           { label: "Minutes", value: a.minutes },
-          { label: "$/Qual", value: a.cost_per_qualified ? `$${a.cost_per_qualified}` : "N/A" },
-          { label: "$/Outcome", value: a.cost_per_outcome ? `$${a.cost_per_outcome}` : "N/A" },
-          { label: "Total Cost", value: a.total_cost ? `$${a.total_cost}` : "N/A" },
+          { label: "$/Qual", value: unitCostLabel(a.cost_per_qualified, a.qualified) },
+          {
+            label: "$/Outcome",
+            value: unitCostLabel(a.cost_per_outcome, a.qualified + a.bookings),
+          },
+          { label: "Total Cost", value: costLabel(a.total_cost) },
         ];
         return (
           <motion.div

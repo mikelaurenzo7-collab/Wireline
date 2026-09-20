@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Loader2, Volume2 } from "lucide-react";
 
 import { authFetch } from "../../lib/api";
+import type { BotMarkKey } from "../../lib/bot-mark";
 import { OPENAI_REALTIME_VOICES, type VoiceOption } from "../../lib/voice-catalog";
 import OpenAILiveVoiceSandbox from "../OpenAILiveVoiceSandbox";
 import { StatusNotice } from "../molecules";
@@ -9,6 +10,7 @@ import { StatusNotice } from "../molecules";
 type SimpleVoicePickerProps = {
   agentId: string;
   agentName: string;
+  markKey?: BotMarkKey | null;
 };
 
 type AgentVoiceResponse = {
@@ -20,7 +22,7 @@ type AgentVoiceResponse = {
   };
 };
 
-export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePickerProps) {
+export default function SimpleVoicePicker({ agentId, agentName, markKey }: SimpleVoicePickerProps) {
   const includedVoices = useMemo(() => {
     return [...OPENAI_REALTIME_VOICES];
   }, []);
@@ -276,6 +278,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
           key={`${selectedProvider}:${selectedVoiceId}`}
           agentId={agentId}
           agentName={agentName}
+          markKey={markKey}
         />
       ) : null}
     </div>

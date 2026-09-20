@@ -47,7 +47,7 @@ vi.mock("react", async (original) => ({
 vi.mock("react-router", () => ({ Link: "a" }));
 vi.mock("../src/contexts/AuthContext", () => ({ useAuth: () => ({ user: { id: h.userId } }) }));
 vi.mock("../src/contexts/AgentsContext", () => ({
-  useAgents: () => ({ agents: [] }),
+  useAgents: () => ({ agents: [{ id: h.botId, mark_key: h.config.mark_key }] }),
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: (...args: unknown[]) => h.fetch(...args) }));
@@ -63,6 +63,7 @@ type Props = {
   value?: string;
   children?: ReactNode;
   disabled?: boolean;
+  markKey?: string;
   onChange?: (event: { target: { value: string } }) => void;
   onClick?: () => unknown;
   "aria-pressed"?: boolean;
@@ -163,6 +164,19 @@ afterEach(() => {
 });
 
 describe("Studio inspector draft lifecycle", () => {
+  it("keeps voice preview on the saved Bot identity until a mark draft is confirmed", async () => {
+    await mount();
+    const preview = () => elements(render()).find((element) => element.type === "voice-picker")!;
+    expect(preview().props.markKey).toBe("spark-rose");
+    const nextMark = defaultBotMarkKey("different-mark");
+    const picker = elements(render()).find((element) => element.type === "mark-picker")!;
+    (picker.props.onChange as unknown as (value: string) => void)(nextMark);
+    expect(drafts.read(h.botId).values.markKey).toBe(nextMark);
+    expect(preview().props.markKey).toBe("spark-rose");
+    await save();
+    expect(preview().props.markKey).toBe(nextMark);
+  });
+
   it("retains every edited setup field through close, review, layout remounts and Bot changes", async () => {
     await mount();
     change("setup-greeting", "Welcome to our repair shop.");

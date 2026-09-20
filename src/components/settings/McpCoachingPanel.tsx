@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, Switch } from "../atoms";
 import { StatusNotice } from "../molecules";
@@ -32,26 +32,32 @@ export default function McpCoachingPanel() {
   const [connections, setConnections] = useState<McpConnection[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setError(null);
-    const response = await authFetch("/api/mcp/connections");
-    const data = (await response.json().catch(() => null)) as McpConnectionsResponse | null;
-    if (!response.ok) {
-      throw new Error(data?.error || "Couldn't load connected apps.");
-    }
-    setEnabled(data?.coaching_writes_enabled === true);
-    setConnections(Array.isArray(data?.connections) ? data.connections : []);
-  }, []);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadVersion, setLoadVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setLoadError(null);
     void (async () => {
       try {
-        await load();
+        const response = await authFetch("/api/mcp/connections");
+        const data = (await response.json().catch(() => null)) as McpConnectionsResponse | null;
+        if (!active) return;
+        if (!response.ok) {
+          throw new Error(data?.error || "Couldn't load connected apps.");
+        }
+        if (
+          typeof data?.coaching_writes_enabled !== "boolean" ||
+          !Array.isArray(data.connections)
+        ) {
+          throw new Error("Couldn't load connected apps.");
+        }
+        setEnabled(data.coaching_writes_enabled);
+        setConnections(data.connections);
       } catch (err) {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Couldn't load connected apps.");
+        setLoadError(err instanceof Error ? err.message : "Couldn't load connected apps.");
       } finally {
         if (active) setLoading(false);
       }
@@ -59,10 +65,18 @@ export default function McpCoachingPanel() {
     return () => {
       active = false;
     };
-  }, [load]);
+  }, [loadVersion]);
+
+  function retryLoad() {
+    if (loading) return;
+    setLoading(true);
+    setLoadError(null);
+    setError(null);
+    setLoadVersion((value) => value + 1);
+  }
 
   async function updateWrites(next: boolean) {
-    if (saving) return;
+    if (loading || loadError || saving) return;
     setSaving(true);
     setError(null);
     setNotice(null);
@@ -92,7 +106,7 @@ export default function McpCoachingPanel() {
   }
 
   async function disconnectAll() {
-    if (disconnecting) return;
+    if (loading || loadError || disconnecting) return;
     if (!confirmDisconnect) {
       setConfirmDisconnect(true);
       return;
@@ -141,7 +155,7 @@ export default function McpCoachingPanel() {
           className="shrink-0"
           checked={enabled}
           onCheckedChange={(checked) => void updateWrites(checked)}
-          disabled={loading || saving}
+          disabled={loading || Boolean(loadError) || saving}
           aria-describedby="mcp-coaching-writes-help"
           aria-label="Allow connected apps to save Training"
         />
@@ -149,6 +163,13 @@ export default function McpCoachingPanel() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading connected apps…</p>
+      ) : loadError ? (
+        <StatusNotice tone="destructive" title="App Access Unavailable">
+          <p>{loadError}</p>
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={retryLoad}>
+            Retry
+          </Button>
+        </StatusNotice>
       ) : connections.length === 0 ? (
         <p className="text-sm leading-6 text-muted-foreground">No connected apps.</p>
       ) : (
@@ -191,7 +212,7 @@ export default function McpCoachingPanel() {
           type="button"
           variant={confirmDisconnect ? "destructive" : "outline"}
           size="sm"
-          disabled={disconnecting}
+          disabled={loading || Boolean(loadError) || disconnecting}
           onClick={() => void disconnectAll()}
         >
           {disconnecting
