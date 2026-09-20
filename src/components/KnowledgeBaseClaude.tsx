@@ -73,13 +73,22 @@ function fileBadge(content: string | undefined): string {
   return "DOC";
 }
 
+function boundedPreview(text: string, limit: number): { prefix: string; label: string } {
+  if (text.length <= limit) return { prefix: text, label: text };
+  const candidate = text.slice(0, limit);
+  const lastWord = candidate.search(/\s+\S*$/);
+  const prefix =
+    /\s/.test(text[limit]) || lastWord < 0 ? candidate.trimEnd() : candidate.slice(0, lastWord);
+  return { prefix, label: `${prefix}${/[.!?…]$/.test(prefix) ? "" : "…"}` };
+}
+
 function entryHeadline(content: string | undefined, source: string | undefined): string {
   const fromSource = (source || "").trim();
-  if (fromSource) return fromSource;
+  if (fromSource) return boundedPreview(fromSource, 64).label;
   const text = (content || "").trim();
-  if (!text) return "Untitled entry";
-  const firstLine = text.split(/\r?\n/)[0]?.trim() || text;
-  return firstLine.length > 64 ? `${firstLine.slice(0, 61)}…` : firstLine;
+  if (!text) return "Untitled Entry";
+  const firstLine = (text.split(/\r?\n/)[0]?.trim() || text).replace(/\s+/g, " ");
+  return boundedPreview(firstLine, 64).label;
 }
 
 function ruleHeadline(content: string | undefined): string {
@@ -88,36 +97,34 @@ function ruleHeadline(content: string | undefined): string {
   const colon = text.indexOf(":");
   if (colon > 0 && colon < 56) return text.slice(0, colon);
   const firstLine = text.split(/\r?\n/)[0]?.trim() || text;
-  return firstLine.length > 56 ? `${firstLine.slice(0, 53)}…` : firstLine;
+  // Free-text rules have no separate title. Keep their words intact instead of
+  // treating a character-limit remainder as a second paragraph.
+  return firstLine;
 }
 
 function ruleBody(content: string | undefined, headline: string): string | null {
   const text = (content || "").trim();
   if (!text) return null;
-  // A truncated headline ends in an ellipsis and never prefix-matches the raw
-  // text, which used to reprint the same truncated sentence as its own body.
-  const headlinePrefix = headline.endsWith("…") ? headline.slice(0, -1) : headline;
-  if (text.startsWith(headlinePrefix)) {
-    const rest = text.slice(headlinePrefix.length).replace(/^:\s*/, "").trim();
+  if (text.startsWith(headline)) {
+    const rest = text.slice(headline.length).replace(/^:\s*/, "").trim();
     return rest || null;
   }
   return text;
 }
 
-function entrySubtitle(content: string | undefined, headline: string): string {
+function entrySubtitle(content: string | undefined, source: string | undefined): string {
   const raw = (content || "").trim();
   if (!raw) return "Empty entry";
   const compact = raw.replace(/\s+/g, " ");
-  // Continue where the headline left off instead of restating it; when the
-  // headline already covers the whole entry, fall back to a size note.
-  const headlinePrefix = headline.endsWith("…") ? headline.slice(0, -1) : headline;
-  const remainder = compact.startsWith(headlinePrefix)
-    ? compact.slice(headlinePrefix.length).trim()
-    : compact;
-  if (remainder && remainder !== compact) {
-    return remainder.length > 87 ? `…${remainder.slice(0, 84)}…` : `…${remainder}`;
+  if (source?.trim()) return boundedPreview(compact, 90).label;
+  // Track the actual consumed prefix rather than stripping an ellipsis that
+  // might belong to the original text. Never continue part-way through a word.
+  const firstLine = (raw.split(/\r?\n/)[0]?.trim() || raw).replace(/\s+/g, " ");
+  const { prefix } = boundedPreview(firstLine, 64);
+  const remainder = compact.slice(prefix.length);
+  if (/^\s/.test(remainder) && remainder.trim()) {
+    return boundedPreview(remainder.trim(), 90).label;
   }
-  if (remainder && compact.length > 90) return `${compact.slice(0, 87)}…`;
   const length = compact.length;
   return `${length} char${length === 1 ? "" : "s"}`;
 }
@@ -530,7 +537,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                 key={directive.id ?? `d-${index}`}
                 className="rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-soft)] px-3.5 py-2.5"
               >
-                <p className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                <p className="break-words text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                   <FileText
                     className="mr-1.5 inline size-3.5 text-[var(--wireline-color-action-primary-default)]"
                     aria-hidden="true"
@@ -713,7 +720,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                         {headline}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                        {entrySubtitle(entry.content, headline)}
+                        {entrySubtitle(entry.content, entry.source)}
                       </div>
                     </div>
                     {rowId ? (

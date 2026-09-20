@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus,
@@ -110,6 +110,7 @@ function stepBadgeClass(_t: StepType) {
 }
 
 export default function Cadences() {
+  const builderId = useId();
   const { success: toastSuccess } = useToast();
   const { handleApiError, handleCatchError } = useApiError();
   const [cadences, setCadences] = useState<Cadence[]>([]);
@@ -275,7 +276,7 @@ export default function Cadences() {
   }
 
   return (
-    <div className="h-full space-y-4 overflow-y-auto px-4 pb-4 pt-4 sm:px-6">
+    <div className="h-full space-y-4 overflow-y-auto px-2 pb-4 pt-4 sm:px-6">
       {runsWarning ? (
         <p className="text-sm text-[var(--wireline-color-status-warning)]" role="status">
           {runsWarning}
@@ -448,7 +449,7 @@ export default function Cadences() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="rounded-md wl-panel-elevated border border-brand/40 p-5"
+            className="rounded-md wl-panel-elevated border border-brand/40 p-3 sm:p-5"
           >
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-display text-lg text-foreground">Build a Sequence</h4>
@@ -467,8 +468,11 @@ export default function Cadences() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="wl-label-muted/80 mb-1.5 block">Name</label>
+                <label htmlFor={`${builderId}-name`} className="wl-label-muted/80 mb-1.5 block">
+                  Name
+                </label>
                 <Input
+                  id={`${builderId}-name`}
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
@@ -476,8 +480,14 @@ export default function Cadences() {
                 />
               </div>
               <div>
-                <label className="wl-label-muted/80 mb-1.5 block">Description (optional)</label>
+                <label
+                  htmlFor={`${builderId}-description`}
+                  className="wl-label-muted/80 mb-1.5 block"
+                >
+                  Description (optional)
+                </label>
                 <Input
+                  id={`${builderId}-description`}
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
@@ -490,7 +500,7 @@ export default function Cadences() {
               {draftSteps.map((s, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 rounded-md bg-muted/20 border border-border p-3"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-md bg-muted/20 border border-border p-2.5 sm:flex sm:p-3"
                 >
                   <span
                     className={cn(
@@ -500,14 +510,14 @@ export default function Cadences() {
                   >
                     {i + 1}
                   </span>
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="col-span-2 row-start-2 min-w-0 flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                     <div className="relative">
                       <Select
                         value={s.type}
                         onValueChange={(v) => updateStep(i, { type: v as StepType })}
                       >
                         <SelectTrigger
-                          aria-label="Step type"
+                          aria-label={`Step ${i + 1} Type`}
                           className="w-full pl-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)] h-auto"
                         >
                           <SelectValue />
@@ -519,20 +529,25 @@ export default function Cadences() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-foreground/55" />
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <Clock className="w-3 h-3 shrink-0 text-foreground/55" />
                       <Input
+                        id={`${builderId}-step-${i}-delay`}
+                        aria-label={`Step ${i + 1} Delay (Hours)`}
                         type="number"
                         inputMode="numeric"
                         min={0}
                         value={s.delayHours}
                         onChange={(e) => updateStep(i, { delayHours: Number(e.target.value) || 0 })}
-                        className="w-20 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)]"
+                        className="w-16 shrink-0 px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)] sm:w-20"
                       />
-                      <span className="wl-micro-meta">hours delay</span>
+                      <label htmlFor={`${builderId}-step-${i}-delay`} className="wl-micro-meta">
+                        hours delay
+                      </label>
                     </div>
                     {s.type !== "call" && (
                       <Input
+                        aria-label={`Step ${i + 1} ${s.type === "sms" ? "Text Message" : "Email Message"}`}
                         value={s.template || ""}
                         onChange={(e) => updateStep(i, { template: e.target.value })}
                         placeholder={
@@ -552,7 +567,7 @@ export default function Cadences() {
                     onClick={() => removeStep(i)}
                     title="Remove step"
                     aria-label="Remove step"
-                    className="w-8 h-8 text-muted hover:text-rose-500 hover:bg-rose-500/10"
+                    className="col-start-2 row-start-1 w-8 h-8 shrink-0 text-muted hover:text-rose-500 hover:bg-rose-500/10"
                   >
                     <X className="w-3.5 h-3.5" />
                   </ShadButton>
@@ -571,7 +586,7 @@ export default function Cadences() {
               </ShadButton>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+            <div className="flex flex-col items-stretch justify-end gap-2 pt-2 border-t border-border sm:flex-row sm:items-center">
               <ShadButton
                 type="button"
                 variant="ghost"

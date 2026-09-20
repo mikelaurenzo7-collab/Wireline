@@ -21,14 +21,23 @@ import {
   ServerCog,
   Database,
   BugPlay,
+  type LucideIcon,
 } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
 import MarketingChrome from "./marketing/MarketingChrome";
 
-const SECTIONS = [
+type SecurityTopic = {
+  icon: LucideIcon;
+  title: string;
+  items: string[];
+  technical?: boolean;
+};
+
+const SECTIONS: SecurityTopic[] = [
   {
     icon: Lock,
     title: "Encryption Everywhere",
+    technical: true,
     items: [
       "HTTPS is enforced on public endpoints. HSTS is configured with includeSubDomains and preload.",
       "Passwords are hashed with Node.js scrypt and a random per-user salt. They are never stored in plaintext.",
@@ -39,6 +48,7 @@ const SECTIONS = [
   {
     icon: ShieldCheck,
     title: "Strict Browser Security Headers",
+    technical: true,
     items: [
       "Content-Security-Policy: explicit allowlist; no unsafe-eval. Blocks classic XSS at the browser layer.",
       "Cross-Origin-Opener-Policy: same-origin-allow-popups. Restricts opener relationships while preserving user-initiated OAuth connections.",
@@ -49,6 +59,7 @@ const SECTIONS = [
   {
     icon: KeyRound,
     title: "Webhook Signature Verification",
+    technical: true,
     items: [
       "Inbound webhook paths use provider-appropriate signatures or timing-safe shared-secret verification.",
       "Invalid signatures are rejected; timestamped HMAC paths enforce a five-minute replay window.",
@@ -94,6 +105,7 @@ const SECTIONS = [
   {
     icon: ServerCog,
     title: "Operational Security",
+    technical: true,
     items: [
       "High-risk authentication and public API paths use rate limiting; signed webhook paths fail closed when verification is unavailable.",
       "Database migrations are versioned, reviewed, and applied through the deployment pipeline.",
@@ -104,6 +116,7 @@ const SECTIONS = [
   {
     icon: Database,
     title: "Database Posture",
+    technical: true,
     items: [
       "Postgres on Supabase (US-East). Tenant isolation uses SET LOCAL ROLE wireline_server with per-request app.current_user_id RLS policies on tenant tables.",
       "Foreign-key and server-owned deletion paths remove user-owned downstream data.",
@@ -113,6 +126,7 @@ const SECTIONS = [
   {
     icon: BugPlay,
     title: "Responsible Disclosure",
+    technical: true,
     items: [
       "Found a vulnerability? Email security@botbound.me with details.",
       "BotBound does not currently run a paid bug bounty. Credit or compensation is never promised before written terms.",
@@ -121,7 +135,7 @@ const SECTIONS = [
   },
 ];
 
-const TRUST_PACK_SECTIONS = [
+const TRUST_PACK_SECTIONS: SecurityTopic[] = [
   {
     icon: ShieldCheck,
     title: "Tenant Isolation",
@@ -134,6 +148,7 @@ const TRUST_PACK_SECTIONS = [
   {
     icon: Globe2,
     title: "BotBound Command (Browser Extension)",
+    technical: true,
     items: [
       "Early access handoff only. Install from Apps in Studio; store listings are not GA.",
       "Page context is sent only when you explicitly click Send to Studio. No background harvesting.",
@@ -143,6 +158,7 @@ const TRUST_PACK_SECTIONS = [
   {
     icon: ServerCog,
     title: "Native Mobile Clients",
+    technical: true,
     items: [
       "Optional companions. Android is internal beta; iPhone is planned. The web app is the GA product.",
       "When available, natives use short-lived Bearer sessions against the same API; prompts, billing, and compliance stay server-owned.",
@@ -192,6 +208,34 @@ const TRUST_PACK_SECTIONS = [
 export default function Security() {
   const location = useLocation();
   const isTrustHub = location.pathname === "/trust";
+  const sections = isTrustHub ? [...SECTIONS, ...TRUST_PACK_SECTIONS] : SECTIONS;
+  const overviewSections = sections.filter((section) => !section.technical);
+  const technicalSections = sections.filter((section) => section.technical);
+  const renderSection = ({ icon: Icon, title, items }: SecurityTopic, index: number) => (
+    <motion.section
+      key={title}
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.4, delay: Math.min(index * 0.04, 0.4) }}
+    >
+      <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
+        <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
+        <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
+      </div>
+      <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
+        {items.map((line, index) => (
+          <li key={index} className="pl-5 relative">
+            <span
+              aria-hidden="true"
+              className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
+            />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </motion.section>
+  );
 
   return (
     <>
@@ -225,35 +269,45 @@ export default function Security() {
             </p>
           </motion.div>
 
-          <div className="space-y-7">
-            {(isTrustHub ? [...TRUST_PACK_SECTIONS, ...SECTIONS] : SECTIONS).map(
-              ({ icon: Icon, title, items }, idx) => (
-                <motion.section
-                  key={title}
-                  initial={{ opacity: 0, y: 8 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.4, delay: Math.min(idx * 0.04, 0.4) }}
+          <section className="mb-10" aria-labelledby="trust-packs-heading">
+            <h2 id="trust-packs-heading" className="mb-3 text-center text-sm font-semibold">
+              Trust Packs
+            </h2>
+            <nav
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+              aria-label="Industry trust packs"
+            >
+              {[
+                ["medical", "Healthcare"],
+                ["legal", "Legal"],
+                ["insurance", "Insurance"],
+                ["enterprise", "Enterprise"],
+              ].map(([path, label]) => (
+                <Link
+                  key={path}
+                  to={`/trust/${path}`}
+                  className="wl-focus-ring-halo inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
-                  <div className="mb-4 flex flex-col items-center gap-2.5 text-center">
-                    <Icon className="h-4 w-4 text-brand" strokeWidth={1.8} />
-                    <h2 className="font-display text-lg leading-tight text-foreground">{title}</h2>
-                  </div>
-                  <ul className="mx-auto max-w-2xl space-y-1.5 text-left marketing-body">
-                    {items.map((line, i) => (
-                      <li key={i} className="pl-5 relative">
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-0 top-2 w-1.5 h-1.5 rounded-full bg-brand/55"
-                        />
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </motion.section>
-              ),
-            )}
-          </div>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </section>
+
+          <div className="space-y-7">{overviewSections.map(renderSection)}</div>
+
+          <details className="group mt-10 border-y border-border py-2">
+            <summary className="wl-focus-ring-halo flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 rounded-md px-2 text-base font-semibold marker:hidden">
+              <span>Technical Details</span>
+              <span
+                aria-hidden="true"
+                className="text-xl text-muted-foreground group-open:rotate-45"
+              >
+                +
+              </span>
+            </summary>
+            <div className="space-y-7 py-6">{technicalSections.map(renderSection)}</div>
+          </details>
 
           <div className="mt-12 border-t border-border pt-6 text-center">
             <p className="text-eyebrow mb-2">Under active evaluation</p>
@@ -270,24 +324,6 @@ export default function Security() {
               Evaluation is not a delivery commitment. Contractual requirements apply only when
               BotBound confirms them in writing.
             </p>
-          </div>
-
-          <div className="mt-10 border-t border-border pt-6 text-center">
-            <p className="text-eyebrow mb-3">Vertical trust packs</p>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 marketing-body">
-              <Link to="/trust/medical" className="text-brand hover:underline">
-                Healthcare
-              </Link>
-              <Link to="/trust/legal" className="text-brand hover:underline">
-                Legal
-              </Link>
-              <Link to="/trust/insurance" className="text-brand hover:underline">
-                Insurance
-              </Link>
-              <Link to="/trust/enterprise" className="text-brand hover:underline">
-                Enterprise
-              </Link>
-            </div>
           </div>
 
           <div className="mt-10 text-caption text-center space-y-2">

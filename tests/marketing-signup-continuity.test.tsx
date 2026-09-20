@@ -4,6 +4,7 @@ import MarketingPageFrame from "../src/components/layout/MarketingPageFrame";
 import MarketingStickyCta from "../src/components/marketing/MarketingStickyCta";
 import VerticalLanding from "../src/pages/VerticalLanding";
 import SolutionsPage from "../src/pages/SolutionsPage";
+import Blog from "../src/pages/Blog";
 import { WEDGES, type VerticalKey } from "../src/data/vertical-wedges";
 
 const harness = vi.hoisted(() => ({ wedge: "sales" }));
@@ -47,13 +48,13 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("marketing signup continuity", () => {
   it.each(Object.keys(WEDGES) as VerticalKey[])(
-    "preserves the %s industry choice from the hero to the sticky signup action",
+    "preserves the %s industry while the sticky Start Free action selects Free Builder",
     (slug) => {
       const page = VerticalLanding({ slug });
       if (!page) throw new Error("Expected the industry landing page.");
-      const expected = WEDGES[slug].primaryCta.href;
-      expect(new URL(expected, "https://botbound.me").searchParams.get("wedge")).toBe(slug);
-      expect(stickyDestination(page)).toBe(expected);
+      const destination = new URL(stickyDestination(page)!, "https://botbound.me");
+      expect(destination.searchParams.get("wedge")).toBe(slug);
+      expect(destination.searchParams.get("plan")).toBe("free");
     },
   );
 
@@ -69,6 +70,18 @@ describe("marketing signup continuity", () => {
 
   it("keeps the generic free signup destination for pages without a role choice", () => {
     const page = <MarketingPageFrame stickyCta>Public content</MarketingPageFrame>;
+    expect(stickyDestination(page)).toBe("/signup?plan=free");
+  });
+
+  it("targets Free Builder explicitly from both Blog signup actions", () => {
+    const page = Blog();
+    const signupLinks = elements(page).filter(
+      (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
+    );
+    expect(signupLinks).toHaveLength(1);
+    expect(new URL(signupLinks[0].props.to!, "https://botbound.me").searchParams.get("plan")).toBe(
+      "free",
+    );
     expect(stickyDestination(page)).toBe("/signup?plan=free");
   });
 });

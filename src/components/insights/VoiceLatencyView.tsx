@@ -50,6 +50,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
   const voiceTrends = voiceData?.trends ?? [];
   const latestTrend = voiceTrends[voiceTrends.length - 1];
   const hasVoiceMetrics = voiceTrends.length > 0 && latestTrend?.avgTtftMs != null;
+  const maxAverageTtftMs = Math.max(1, ...voiceTrends.map((trend) => trend.avgTtftMs ?? 0));
 
   const ttftHealthy = latestTrend?.p95TtftMs == null || latestTrend.p95TtftMs <= 1200;
   const errorRateHealthy = latestTrend == null || latestTrend.errorRate <= 5;
@@ -58,11 +59,21 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     return <InsightEmpty configKey="latency" icon={Gauge} />;
   }
 
+  const maxCallSeconds = voiceData?.max_call_seconds;
+  const maxCallLength =
+    typeof maxCallSeconds === "number" && Number.isFinite(maxCallSeconds) && maxCallSeconds > 0
+      ? [
+          Math.floor(maxCallSeconds / 60) ? `${Math.floor(maxCallSeconds / 60)} min` : "",
+          maxCallSeconds % 60 ? `${maxCallSeconds % 60}s` : "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : null;
   const guards = [
-    { label: "Tool confirmation timeout", value: "20s" },
-    { label: "PSTN call ceiling", value: "5m" },
-    { label: "TTFT target", value: "<900ms", healthy: true },
-    { label: "TTFT alert", value: ">1.2s", healthy: false },
+    { label: "Tool Confirmation Timeout", value: "20s" },
+    ...(maxCallLength ? [{ label: "Max Call Length", value: maxCallLength }] : []),
+    { label: "TTFT Target", value: "<900ms", healthy: true },
+    { label: "TTFT Alert", value: ">1.2s", healthy: false },
   ];
 
   return (
@@ -78,19 +89,19 @@ export default function VoiceLatencyView({ days }: { days: number }) {
             {[
               {
                 icon: Gauge,
-                label: "TTFT p50",
-                value: latestTrend?.avgTtftMs ? `${latestTrend.avgTtftMs}ms` : "N/A",
+                label: "Average TTFT",
+                value: latestTrend?.avgTtftMs != null ? `${latestTrend.avgTtftMs}ms` : "N/A",
                 healthy: ttftHealthy,
               },
               {
                 icon: Gauge,
                 label: "TTFT p95",
-                value: latestTrend?.p95TtftMs ? `${latestTrend.p95TtftMs}ms` : "N/A",
+                value: latestTrend?.p95TtftMs != null ? `${latestTrend.p95TtftMs}ms` : "N/A",
                 healthy: ttftHealthy,
               },
               {
                 icon: Activity,
-                label: "Pipeline errors",
+                label: "Pipeline Errors",
                 value:
                   latestTrend?.errorRate != null ? `${latestTrend.errorRate.toFixed(1)}%` : "N/A",
                 healthy: errorRateHealthy,
@@ -125,22 +136,32 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
           {voiceTrends.length > 1 && (
             <div className="mt-4">
-              <p className="wl-insight-label mb-3">{days}-day TTFT trend</p>
-              <div className="flex items-end gap-1 h-20">
-                {voiceTrends.map((t) => {
-                  const height = t.avgTtftMs
-                    ? Math.min(100, Math.max(10, (t.avgTtftMs / 1500) * 100))
-                    : 10;
-                  const isAlert = t.p95TtftMs != null && t.p95TtftMs > 1200;
-                  return (
-                    <div
-                      key={t.date}
-                      className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
-                      style={{ height: `${height}%` }}
-                      title={`${t.date}: avg ${t.avgTtftMs ?? "N/A"}ms, p95 ${t.p95TtftMs ?? "N/A"}ms`}
-                    />
-                  );
-                })}
+              <p className="wl-insight-label mb-1">{days}-Day TTFT Trend</p>
+              <p className="mb-3 text-xs text-muted">Average TTFT · Milliseconds</p>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-2">
+                <div className="flex h-20 flex-col justify-between text-right text-xs tabular-nums text-muted">
+                  <span>{maxAverageTtftMs}ms</span>
+                  <span>0</span>
+                </div>
+                <div className="flex items-end gap-1 h-20">
+                  {voiceTrends.map((t) => {
+                    const height = (Math.max(0, t.avgTtftMs ?? 0) / maxAverageTtftMs) * 100;
+                    const isAlert = t.p95TtftMs != null && t.p95TtftMs > 1200;
+                    return (
+                      <div
+                        key={t.date}
+                        className={cn("flex-1 rounded-t", isAlert ? "bg-amber-400" : "bg-brand/60")}
+                        style={{ height: `${height}%` }}
+                        title={`${t.date}: avg ${t.avgTtftMs ?? "N/A"}ms, p95 ${t.p95TtftMs ?? "N/A"}ms`}
+                      />
+                    );
+                  })}
+                </div>
+                <span />
+                <div className="flex justify-between gap-3 text-xs tabular-nums text-muted">
+                  <time dateTime={voiceTrends[0].date}>{voiceTrends[0].date}</time>
+                  <time dateTime={latestTrend.date}>{latestTrend.date}</time>
+                </div>
               </div>
             </div>
           )}
@@ -158,10 +179,10 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { label: "p50 latency", value: `${latency.p50_ms}ms` },
-          { label: "p95 latency", value: `${latency.p95_ms}ms` },
+          { label: "p50 Latency", value: `${latency.p50_ms}ms` },
+          { label: "p95 Latency", value: `${latency.p95_ms}ms` },
           {
-            label: "Avg latency",
+            label: "Average Latency",
             value: `${actionData?.totals?.avg_latency ?? 0}ms`,
           },
         ].map((tile) => (
@@ -171,7 +192,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
           >
             <p className="wl-insight-label mb-2">{tile.label}</p>
             <p className="metric-value font-display text-3xl text-foreground">{tile.value}</p>
-            {tile.label === "Avg latency" && (
+            {tile.label === "Average Latency" && (
               <p className="wl-insight-label mt-2 tabular-nums">{latency.sample_count} samples</p>
             )}
           </div>
@@ -180,9 +201,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel border border-border p-5">
-          <p className="wl-insight-label text-brand/70 mb-4">
-            Live-call guards (BotBound defaults)
-          </p>
+          <p className="wl-insight-label text-brand/70 mb-4">Live Call Limits</p>
           <ul className="space-y-3">
             {guards.map((g) => (
               <li key={g.label} className="flex items-center justify-between gap-3 text-sm">
@@ -201,7 +220,7 @@ export default function VoiceLatencyView({ days }: { days: number }) {
         </div>
 
         <div className="rounded-md wl-panel border border-border p-5">
-          <p className="wl-insight-label text-brand/70 mb-4">Slowest actions</p>
+          <p className="wl-insight-label text-brand/70 mb-4">Slowest Actions</p>
           <div className="space-y-2">
             {slowest.length === 0 ? (
               <p className="text-sm text-muted">N/A</p>

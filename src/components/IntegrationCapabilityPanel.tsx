@@ -71,7 +71,7 @@ export default function IntegrationCapabilityPanel({
                 <p
                   className={cn(
                     "text-foreground font-medium leading-snug text-pretty",
-                    compact ? "wl-micro-badge" : "text-eyebrow",
+                    compact ? "text-sm" : "text-eyebrow",
                   )}
                 >
                   {task.callerMoment}
@@ -79,7 +79,12 @@ export default function IntegrationCapabilityPanel({
               </div>
               <div className="flex items-start gap-2 mb-2">
                 <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" aria-hidden />
-                <p className={cn("text-muted/80 leading-relaxed text-pretty", "wl-micro-meta")}>
+                <p
+                  className={cn(
+                    "leading-relaxed text-pretty",
+                    compact ? "text-sm text-muted-foreground" : "wl-micro-meta text-muted/80",
+                  )}
+                >
                   {task.agentAction}
                 </p>
               </div>
@@ -91,7 +96,8 @@ export default function IntegrationCapabilityPanel({
                     <span
                       key={toolName}
                       className={cn(
-                        "inline-flex px-1.5 py-0.5 rounded wl-micro-badge font-mono uppercase tracking-wide border",
+                        "inline-flex px-1.5 py-0.5 rounded border",
+                        compact ? "text-xs" : "wl-micro-badge font-mono uppercase tracking-wide",
                         /*
                          * Hub cards are account level — one CRM connection can
                          * back several agents with different tool sets, so there

@@ -4,6 +4,7 @@ import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
+import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -23,6 +24,38 @@ type ComplianceCenterSummary = {
   audit_export_path: string;
   trust_pack_path: string;
 };
+
+const CONSENT_EVENT_LABELS: Record<ConsentLedgerEvent, string> = {
+  disclosure_played: "Recording Disclosure Played",
+  disclosure_not_detected: "Recording Disclosure Not Detected",
+  disclosure_unverifiable: "Recording Disclosure Unverifiable",
+  ai_disclosure_played: "AI Disclosure Played",
+  ai_disclosure_not_detected: "AI Disclosure Not Detected",
+  ai_disclosure_unverifiable: "AI Disclosure Unverifiable",
+  consent_granted: "Consent Granted",
+  consent_revoked: "Consent Revoked",
+  opt_out_requested: "Opt-Out Requested",
+  recording_started: "Recording Started",
+  recording_stopped: "Recording Stopped",
+};
+
+function consentEventLabel(event: string): string {
+  const key = event.trim().toLowerCase();
+  if (Object.hasOwn(CONSENT_EVENT_LABELS, key)) {
+    return CONSENT_EVENT_LABELS[key as ConsentLedgerEvent];
+  }
+  return (
+    key
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((word) =>
+        ["ai", "sms", "tcpa", "dnc", "api"].includes(word)
+          ? word.toUpperCase()
+          : word.charAt(0).toUpperCase() + word.slice(1),
+      )
+      .join(" ") || "Consent Event"
+  );
+}
 
 export default function ComplianceCenter() {
   const [summary, setSummary] = useState<ComplianceCenterSummary | null>(null);
@@ -103,42 +136,45 @@ export default function ComplianceCenter() {
         ) : error ? (
           <StatusNotice tone="destructive" className="mt-3" title={error} />
         ) : summary ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-3.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Federal DNC
-              </p>
-              <p className="mt-1 text-sm font-medium text-foreground">
-                {summary.federal_dnc_configured
-                  ? "Platform federal scrub active"
-                  : "Marketing outbound blocked"}
-              </p>
-              {!summary.federal_dnc_configured ? (
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  Marketing dials stay blocked until BotBound completes federal DNC setup. Studio
-                  non-marketing dials still use your workspace DNC list and TCPA consent.{" "}
-                  <Link to="/security" className="text-primary underline underline-offset-2">
-                    Open Trust / Security
-                  </Link>
+          <div className="mt-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-border bg-card p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Federal DNC
                 </p>
-              ) : null}
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {summary.federal_dnc_configured
+                    ? "Platform federal scrub active"
+                    : "Marketing outbound blocked"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Workspace DNC
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {summary.dnc_entry_count} suppressed{" "}
+                  {summary.dnc_entry_count === 1 ? "number" : "numbers"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-3.5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Consent Events
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {summary.consent_event_count} logged
+                </p>
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-3.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Workspace DNC
-              </p>
-              <p className="mt-1 text-sm font-medium text-foreground">
-                {summary.dnc_entry_count} suppressed numbers
-              </p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-3.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Consent events
-              </p>
-              <p className="mt-1 text-sm font-medium text-foreground">
-                {summary.consent_event_count} logged
-              </p>
-            </div>
+            {!summary.federal_dnc_configured ? (
+              <StatusNotice tone="warning" title="Federal DNC Setup Pending">
+                Marketing dials stay blocked until BotBound completes federal DNC setup. Studio
+                non-marketing dials still use your workspace DNC list and TCPA consent.{" "}
+                <Link to="/security" className="text-primary underline underline-offset-2">
+                  Open Trust / Security
+                </Link>
+              </StatusNotice>
+            ) : null}
           </div>
         ) : null}
 
@@ -204,7 +240,9 @@ export default function ComplianceCenter() {
                     className="rounded-lg border border-border px-3 py-2 text-sm text-foreground"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium">{entry.event}</span>
+                      <span className="font-medium" title={entry.event}>
+                        {consentEventLabel(entry.event)}
+                      </span>
                       <span className="text-xs text-muted-foreground">
                         {entry.created_at ? new Date(entry.created_at).toLocaleString() : ""}
                       </span>

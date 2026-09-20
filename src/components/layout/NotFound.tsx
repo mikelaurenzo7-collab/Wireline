@@ -86,7 +86,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.55 }}
           className={`grid grid-cols-1 gap-3 w-full max-w-3xl ${
-            isPublic ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4"
+            isPublic ? "sm:grid-cols-3" : "sm:grid-cols-2"
           }`}
         >
           {isPublic ? (

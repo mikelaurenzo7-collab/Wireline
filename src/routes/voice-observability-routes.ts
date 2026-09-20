@@ -15,6 +15,7 @@ import { insightsRateLimit } from "../middleware/api-rate-limits";
 import { validateQuery } from "../lib/api-validation";
 import { getLatencyTrends } from "../lib/voice-observability";
 import { getVoiceReliabilityPayload } from "../lib/voice-reliability";
+import { resolveOpenAISipSessionMaxSeconds } from "../lib/voice/openai-sip-config";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = express.Router();
@@ -61,6 +62,7 @@ router.get(
       res.json({
         days,
         trends,
+        max_call_seconds: resolveOpenAISipSessionMaxSeconds(),
         generated_at: new Date().toISOString(),
       });
     } catch (err) {

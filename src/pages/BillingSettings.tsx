@@ -75,6 +75,7 @@ export default function BillingSettings() {
   );
   const [statusUnavailable, setStatusUnavailable] = useState(false);
   const [checkoutAvailability, setCheckoutAvailability] = useState<CheckoutAvailability>("loading");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [billingReady, setBillingReady] = useState(() =>
     typeof window === "undefined" ? true : !hasCheckoutReturnToVerify(window.location.search),
   );
@@ -226,6 +227,7 @@ export default function BillingSettings() {
 
         if (statusRes.ok) {
           const data = (await statusRes.json().catch(() => null)) as BillingStatusResponse | null;
+          if (cancelled) return;
           if (data) {
             setSubscription(data.subscription ?? null);
             setStatusUnavailable(false);
@@ -241,6 +243,7 @@ export default function BillingSettings() {
         const balanceData = balanceRes.ok
           ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
           : null;
+        if (cancelled) return;
         if (balanceData) {
           setBalanceUsd(Number(balanceData.balance_usd ?? 0));
         } else if (statusRes.ok) {
@@ -259,7 +262,16 @@ export default function BillingSettings() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshKey]);
+
+  function retryBilling() {
+    // Keep the card mounted so plan/interval choices survive. Both surfaces
+    // refresh together, after any retained Checkout proof is reconciled again.
+    setLoading(true);
+    setCheckoutAvailability("loading");
+    setBillingReady(!hasCheckoutReturnToVerify(window.location.search));
+    setRefreshKey((current) => current + 1);
+  }
 
   const plan = useMemo(
     () => STRIPE_PLANS.find((item) => item.id === subscription?.plan_id) ?? null,
@@ -324,7 +336,24 @@ export default function BillingSettings() {
         ) : null}
 
         {loadError ? (
-          <StatusNotice tone="destructive" title="Billing Details Need Attention" className="mb-6">
+          <StatusNotice
+            tone="destructive"
+            title="Billing Details Need Attention"
+            className="mb-6"
+            action={
+              checkoutAvailability !== "unavailable" ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={loading}
+                  onClick={retryBilling}
+                >
+                  Retry
+                </Button>
+              ) : undefined
+            }
+          >
             {loadError}
           </StatusNotice>
         ) : null}
@@ -333,6 +362,8 @@ export default function BillingSettings() {
           showBalanceTopUp={false}
           showTrustFooter={false}
           billingReady={billingReady}
+          refreshKey={refreshKey}
+          onRetry={retryBilling}
           onCheckoutAvailabilityChange={setCheckoutAvailability}
         />
 

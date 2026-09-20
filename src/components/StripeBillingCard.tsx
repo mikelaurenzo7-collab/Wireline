@@ -77,6 +77,9 @@ type StripeBillingCardProps = {
   billingReady?: boolean;
   /** Share the verified checkout gate with the page's canonical balance controls. */
   onCheckoutAvailabilityChange?: (availability: CheckoutAvailability) => void;
+  /** Coordinate recovery with a page that also owns billing status/balance. */
+  refreshKey?: number;
+  onRetry?: () => void;
 };
 
 export default function StripeBillingCard({
@@ -84,6 +87,8 @@ export default function StripeBillingCard({
   showTrustFooter = true,
   billingReady = true,
   onCheckoutAvailabilityChange,
+  refreshKey = 0,
+  onRetry,
 }: StripeBillingCardProps = {}) {
   const [plans, setPlans] = useState<ClientPlan[]>([]);
   const [sub, setSub] = useState<BillingSubscriptionState | null>(null);
@@ -169,7 +174,7 @@ export default function StripeBillingCard({
     return () => {
       refreshGeneration.current += 1;
     };
-  }, [billingReady, refresh, onCheckoutAvailabilityChange]);
+  }, [billingReady, refresh, onCheckoutAvailabilityChange, refreshKey]);
 
   const startCheckout = async (planId: string, interval: "month" | "year" = billingInterval) => {
     const hasActive =
@@ -305,7 +310,12 @@ export default function StripeBillingCard({
         <p className="max-w-2xl text-[length:var(--wireline-typography-caption-size)] text-foreground/75 leading-relaxed">
           {error}
         </p>
-        <ShadButton type="button" variant="outline" size="sm" onClick={() => void refresh()}>
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => (onRetry ? onRetry() : void refresh())}
+        >
           Retry
         </ShadButton>
       </div>
@@ -386,6 +396,14 @@ export default function StripeBillingCard({
           <p className="text-[length:var(--wireline-typography-overline-size)] text-[var(--wireline-color-status-error)]">
             {error}
           </p>
+          <ShadButton
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => (onRetry ? onRetry() : void refresh())}
+          >
+            Retry
+          </ShadButton>
         </div>
       )}
       {!hasPlanAccess ? (
@@ -803,16 +821,16 @@ function ActiveSubCard({
             : { label: (sub.status || "Unknown").toLowerCase(), tone: "neutral" as const };
   return (
     <div
-      className="rounded-md wl-panel border border-border p-8 md:p-10 relative overflow-hidden"
+      className="rounded-md wl-panel border border-border p-5 sm:p-8 md:p-10 relative overflow-hidden"
       data-accent={accent}
     >
       <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-15 blur-3xl pointer-events-none wl-accent-halo" />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+        <div className="flex min-w-0 flex-1 basis-96 items-start gap-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md flex items-center justify-center shrink-0 wl-accent-surface">
             <Icon className="w-8 h-8 wl-accent-text" />
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="wl-label-muted opacity-70">Current plan</span>
               <Chip tone={statusBadge.tone} dot>
@@ -820,7 +838,7 @@ function ActiveSubCard({
               </Chip>
               {sub.cancel_at_period_end && <Chip tone="warning">Cancels at period end</Chip>}
             </div>
-            <h3 className="wl-display-mark text-3xl md:text-4xl text-foreground">
+            <h3 className="wl-display-mark break-words text-3xl md:text-4xl text-foreground">
               {sub.plan_name || sub.plan || "N/A"}
             </h3>
             <p className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
@@ -841,7 +859,8 @@ function ActiveSubCard({
               )}
               {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
                 <span className="block mt-1 normal-case tracking-normal text-[var(--wireline-color-status-warning)]">
-                  Near capacity. Add a Bot from Manage subscription or upgrade your plan.
+                  {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Add a
+                  Bot from Manage subscription or upgrade your plan.
                 </span>
               ) : null}
               {renews && (
@@ -859,14 +878,14 @@ function ActiveSubCard({
           variant="outline"
           onClick={onPortal}
           disabled={busy}
-          className="inline-flex gap-2.5 px-6 py-3.5 rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] hover-premium-glow shadow-premium-button border wl-accent-cta"
+          className="inline-flex h-auto min-h-11 w-full shrink-0 gap-2.5 whitespace-normal rounded-md border px-4 py-3 text-sm font-semibold tracking-normal hover-premium-glow shadow-premium-button wl-accent-cta sm:w-auto"
         >
           {busy ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <ExternalLink className="w-4 h-4" />
           )}
-          Manage subscription
+          Manage Subscription
         </ShadButton>
       </div>
     </div>

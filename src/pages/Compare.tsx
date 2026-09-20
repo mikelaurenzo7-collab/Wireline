@@ -149,7 +149,40 @@ export default function Compare() {
             <h2 className="wl-stitch-display text-balance">Compare Pricing Models</h2>
           </div>
 
-          <div className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card">
+          <div className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:hidden">
+            {MARKET_OPTIONS.map((option) => (
+              <article
+                key={option.name}
+                className={`p-5 ${option.internal ? "bg-primary/[0.06]" : ""}`}
+              >
+                <h3 className="wl-preserve-case text-base font-semibold text-foreground">
+                  {option.name}
+                </h3>
+                <p className="mt-1 text-base font-semibold text-foreground">{option.price}</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">{option.usage}</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">{option.fit}</p>
+                {option.internal ? (
+                  <Link
+                    className="wl-focus-ring-halo -ml-2 mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-primary"
+                    to={option.href}
+                  >
+                    {option.source} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                ) : (
+                  <a
+                    className="wl-focus-ring-halo -ml-2 mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-primary"
+                    href={option.href}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {option.source} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-8 hidden w-full max-w-full overflow-x-auto border border-border bg-card lg:block">
             <table className="w-full min-w-[900px] border-collapse text-left">
               <caption className="sr-only">
                 Public launch pricing and buying-model comparison for BotBound and selected

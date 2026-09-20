@@ -650,7 +650,7 @@ export default function CrmConnectionCard() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 h-full flex flex-col",
+                  "rounded-md wl-panel border max-sm:p-2.5 p-3 sm:p-4 flex flex-col",
                   isConnected ? styles.card : "border-border",
                 )}
               >
@@ -774,15 +774,20 @@ export default function CrmConnectionCard() {
                     const toolInt = toolIntegrationForProvider(key);
                     if (!toolInt) return null;
                     return (
-                      <div className="mt-3 pt-3 border-t border-border hidden sm:block">
-                        <IntegrationCapabilityPanel
-                          integration={toolInt}
-                          accentColor={PROVIDER_ACCENT[key] ?? BRAND.colors.primary}
-                          connected
-                          enabledTools={[]}
-                          compact
-                        />
-                      </div>
+                      <details className="mt-3 border-t border-border">
+                        <summary className="min-h-11 cursor-pointer rounded-md py-3 text-sm font-medium text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          Available Actions
+                        </summary>
+                        <div className="pt-1">
+                          <IntegrationCapabilityPanel
+                            integration={toolInt}
+                            accentColor={PROVIDER_ACCENT[key] ?? BRAND.colors.primary}
+                            connected
+                            enabledTools={[]}
+                            compact
+                          />
+                        </div>
+                      </details>
                     );
                   })()}
 

@@ -31,10 +31,7 @@ export const MAX_GOAL_LABEL_LENGTH = 80;
 const DAY_MS = 86_400_000;
 
 export type GoalMetric =
-  | "calls_handled"
-  | "appointments_booked"
-  | "qualified_leads"
-  | "voice_minutes";
+  "calls_handled" | "appointments_booked" | "qualified_leads" | "voice_minutes";
 
 export interface GoalMetricDef {
   id: GoalMetric;
@@ -56,28 +53,28 @@ export interface GoalMetricDef {
 export const GOAL_METRICS: readonly GoalMetricDef[] = [
   {
     id: "calls_handled",
-    label: "Calls handled",
+    label: "Calls Handled",
     unit: "calls",
     description: "Total inbound and outbound calls your Bots complete this month.",
     accent: BRAND.colors.primary,
   },
   {
     id: "appointments_booked",
-    label: "Appointments booked",
+    label: "Appointments Booked",
     unit: "appointments",
     description: "Appointments your agents schedule this month.",
     accent: BRAND.colors.primary,
   },
   {
     id: "qualified_leads",
-    label: "Qualified leads",
+    label: "Qualified Leads",
     unit: "leads",
     description: `Calls that scored ${QUALIFIED_LEAD_SCORE} or higher on lead intent this month.`,
     accent: BRAND.colors.primary,
   },
   {
     id: "voice_minutes",
-    label: "Voice minutes",
+    label: "Voice Minutes",
     unit: "minutes",
     description: "Total connected talk time across your Bots this month.",
     accent: BRAND.colors.onSurfaceMuted,

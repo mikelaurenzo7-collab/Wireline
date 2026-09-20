@@ -4,6 +4,8 @@ import { authFetch } from "../../lib/api";
 import { EmptyState } from "../ui/EmptyState";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
 import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
+import { formatDateTime } from "../../lib/safe-date";
+import { formatPhone } from "../../lib/safe-number";
 
 type Callback = {
   id: string;
@@ -70,20 +72,42 @@ export default function CallbacksPanel() {
   }
 
   return (
-    <ul className="divide-y divide-border">
+    <ul className="space-y-3 p-4">
       {callbacks.map((cb) => (
-        <li
-          key={cb.id}
-          className="px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4"
-        >
-          <span className="font-mono text-sm">{cb.customer_number || "Unknown"}</span>
-          <span className="text-sm text-muted-foreground">
-            {cb.scheduled_at ? new Date(cb.scheduled_at).toLocaleString() : "N/A"}
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-muted w-fit">
-            {cb.status || "pending"}
-          </span>
-          {cb.agent_name && <span className="text-sm">{cb.agent_name}</span>}
+        <li key={cb.id} className="rounded-xl border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="break-words text-sm font-semibold tabular-nums text-foreground">
+              {formatPhone(cb.customer_number, "Unknown Caller")}
+            </p>
+            <span className="w-fit rounded-full bg-muted px-2 py-0.5 text-xs capitalize">
+              <span className="sr-only">Status: </span>
+              {cb.status === "Callback-Scheduled" ? "Scheduled" : cb.status || "Pending"}
+            </span>
+          </div>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+            <div className="min-w-0">
+              <dt className="text-xs text-muted-foreground">Scheduled</dt>
+              <dd className="mt-1 break-words text-foreground">
+                {formatDateTime(
+                  cb.scheduled_at,
+                  { dateStyle: "medium", timeStyle: "short" },
+                  "N/A",
+                )}
+              </dd>
+            </div>
+            {cb.agent_name && (
+              <div className="min-w-0">
+                <dt className="text-xs text-muted-foreground">Bot</dt>
+                <dd className="mt-1 break-words text-foreground">{cb.agent_name}</dd>
+              </div>
+            )}
+            {cb.notes && (
+              <div className="min-w-0 sm:col-span-2">
+                <dt className="text-xs text-muted-foreground">Last Conversation</dt>
+                <dd className="mt-1 break-words text-muted-foreground">{cb.notes}</dd>
+              </div>
+            )}
+          </dl>
         </li>
       ))}
     </ul>

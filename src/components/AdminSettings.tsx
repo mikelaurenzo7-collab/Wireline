@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
 import React, { Suspense, lazy, useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { Settings } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import ConfirmModal from "./ConfirmModal";
@@ -23,7 +23,6 @@ import { AccountsPanel } from "./admin/AccountsPanel";
 import { BrandingPanel } from "./admin/BrandingPanel";
 import { CarrierPanel } from "./admin/CarrierPanel";
 import { SubscriptionPanel } from "./admin/SubscriptionPanel";
-import { TeamPanel } from "./admin/TeamPanel";
 import { GrowthPanel } from "./admin/GrowthPanel";
 import ComplianceChecklist from "./admin/ComplianceChecklist";
 import { PanelSkeleton } from "./atoms/skeleton-presets";
@@ -83,6 +82,14 @@ interface AdminSettingsState {
 }
 
 export default function AdminSettings() {
+  const location = useLocation();
+  if (new URLSearchParams(location.search).get("tab") === "team") {
+    return <Navigate to="/settings/team" replace />;
+  }
+  return <AdminSettingsContent />;
+}
+
+function AdminSettingsContent() {
   const { success: toastSuccess, error: toastError } = useToast();
   const { signOut } = useAuth();
   const { updateBranding } = useBranding();
@@ -108,7 +115,6 @@ export default function AdminSettings() {
     brand_logo_url: "",
     primary_color: BRAND.colors.primary,
   });
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [agents, setAgents] = useState<any[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,31 +180,8 @@ export default function AdminSettings() {
   useEffect(() => {
     fetchData();
     fetchIntegrationHealth();
-    fetchTeam();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time data load on mount
   }, []);
-
-  const fetchTeam = async () => {
-    try {
-      const r = await authFetch("/api/team");
-      if (!r.ok) {
-        // Shared workspaces are gated behind tenant data-plane certification —
-        // that deliberate 503 is not a failure, so the roster renders its
-        // empty state instead of an alarmed toast (same truth as TeamSettings).
-        const payload = await r.json().catch(() => null);
-        if (r.status === 503 && payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
-          setTeamMembers([]);
-          return;
-        }
-        toastError("Team unavailable", "Could not load team members. Please refresh.");
-        return;
-      }
-      const d = await r.json();
-      setTeamMembers(d.members || []);
-    } catch {
-      toastError("Team unavailable", "Could not load team members. Please refresh.");
-    }
-  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -251,13 +234,6 @@ export default function AdminSettings() {
       setAgents(agentsJson?.agents || []);
       if (numbersRes.ok && !numbersJson?.degraded && Array.isArray(numbersJson?.numbers)) {
         setPhoneNumbers(numbersJson.numbers);
-      }
-
-      // Fetch team members
-      const teamRes = await authFetch("/api/team");
-      if (teamRes.ok) {
-        const teamData = await teamRes.json();
-        setTeamMembers(teamData.members || []);
       }
     } catch (e) {
       clientLog.error("admin-settings:load", e);
@@ -313,32 +289,6 @@ export default function AdminSettings() {
       toastError("Save failed", e.message);
     }
     setIsSaving(false);
-  };
-
-  const inviteTeamMember = async (email: string, role: string) => {
-    try {
-      const res = await authFetch("/api/team/invite", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, role }),
-      });
-      if (!res.ok) throw new Error("Invite failed");
-      toastSuccess("Invitation sent", `An invite has been sent to ${email}`);
-      fetchData();
-    } catch (e: any) {
-      toastError("Invite failed", e.message);
-    }
-  };
-
-  const removeTeamMember = async (id: string) => {
-    try {
-      const res = await authFetch(`/api/team/members/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Removal failed");
-      toastSuccess("Member removed", "Team access revoked.");
-      fetchData();
-    } catch (e: any) {
-      toastError("Removal failed", e.message);
-    }
   };
 
   const addPhoneNumber = async (phone_number: string) => {
@@ -446,7 +396,7 @@ export default function AdminSettings() {
         <WorkspaceTabStrip
           ariaLabel="Admin sections"
           activeId={activeTab}
-          onSelect={(id) => navigate(`/admin?tab=${id}`)}
+          onSelect={(id) => navigate(id === "team" ? "/settings/team" : `/admin?tab=${id}`)}
           density="compact"
           wrap="always"
           className="mb-3 border-b border-border/70 pb-3"
@@ -551,24 +501,6 @@ export default function AdminSettings() {
                       className="h-full"
                     >
                       <SubscriptionPanel onDeleteAccount={deleteAccount} />
-                    </motion.div>
-                  )}
-
-                  {activeTab === "team" && (
-                    <motion.div
-                      key="team"
-                      role="tabpanel"
-                      id="admin-panel-team"
-                      data-visual-qa-state="panel-team"
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="h-full"
-                    >
-                      <TeamPanel
-                        members={teamMembers}
-                        onInvite={inviteTeamMember}
-                        onRemove={removeTeamMember}
-                      />
                     </motion.div>
                   )}
 

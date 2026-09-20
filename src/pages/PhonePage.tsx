@@ -1,4 +1,7 @@
 import { useSearchParams } from "react-router";
+import { Loader2 } from "lucide-react";
+import { Button } from "../components/atoms";
+import { StatusNotice } from "../components/molecules";
 import WorkspaceShell from "../components/WorkspaceShell";
 import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
@@ -30,7 +33,12 @@ const PHONE_TABS = [
 
 export default function PhonePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { agents } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const tabParam = searchParams.get("tab");
   const legacyOutboundView = OUTBOUND_VIEW_TABS.some((tab) => tab.id === tabParam)
     ? tabParam
@@ -50,9 +58,15 @@ export default function PhonePage() {
     searchParams.get("view") || legacyOutboundView,
   ) as (typeof OUTBOUND_VIEW_TABS)[number]["id"];
   const requestedAgentId = searchParams.get("agent")?.trim() || "";
-  const activeAgentId = agents.some((agent) => agent.id === requestedAgentId)
-    ? requestedAgentId
-    : "";
+  // An explicit Bot is a scope, not a preference to replace with all calls.
+  const activeAgentId = requestedAgentId;
+  const hasRequestedAgent = agents.some((agent) => agent.id === activeAgentId);
+  const usesAgentScope = primaryTab === "logs" || primaryTab === "setup";
+  const scopeLoading = Boolean(usesAgentScope && activeAgentId && agentsLoading);
+  const scopeUnavailable = Boolean(
+    usesAgentScope && activeAgentId && !agentsLoading && !hasRequestedAgent,
+  );
+  const scopeBlocked = scopeLoading || scopeUnavailable;
 
   function setPrimaryTab(id: string) {
     setSearchParams(
@@ -89,15 +103,21 @@ export default function PhonePage() {
     );
   }
 
-  const showAgentScope = primaryTab === "logs" && (agents.length > 1 || activeAgentId);
+  const showAgentScope =
+    (primaryTab === "logs" && (agents.length > 1 || activeAgentId)) || scopeBlocked;
   const agentScope = showAgentScope ? (
     <select
       value={activeAgentId}
       onChange={(event) => setAgentScope(event.target.value)}
-      aria-label="Filter call history by Bot"
+      aria-label={primaryTab === "setup" ? "Choose Bot for Lines" : "Filter call history by Bot"}
       className="min-h-[44px] max-w-full shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:max-w-[10rem] sm:px-2 sm:text-xs wl-focus-ring-halo"
     >
       <option value="">All Bots</option>
+      {activeAgentId && !hasRequestedAgent ? (
+        <option value={activeAgentId} disabled>
+          {agentsLoading ? "Loading Bot…" : "Selected Bot unavailable"}
+        </option>
+      ) : null}
       {agents.map((agent) => (
         <option key={agent.id} value={agent.id}>
           {agent.name}
@@ -136,7 +156,32 @@ export default function PhonePage() {
           }
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
-          {primaryTab === "logs" && (
+          {scopeLoading ? (
+            <div
+              role="status"
+              className="flex items-center justify-center gap-2 px-4 py-10 text-sm text-muted-foreground"
+            >
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              Loading selected Bot…
+            </div>
+          ) : scopeUnavailable ? (
+            <StatusNotice tone="warning" title="Selected Bot Unavailable" className="m-3 sm:m-6">
+              <p>
+                {agentsDegraded
+                  ? "We couldn't verify this Bot. Retry or choose another."
+                  : "This Bot is no longer available. Choose another or view all Bots."}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="secondary" size="sm" onClick={refreshAgents}>
+                  Retry
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setAgentScope("")}>
+                  All Bots
+                </Button>
+              </div>
+            </StatusNotice>
+          ) : null}
+          {primaryTab === "logs" && !scopeBlocked && (
             <div className="contents" data-visual-qa-state="primary-logs">
               <PhoneCallHistoryPanel agentId={activeAgentId || null} />
             </div>
@@ -158,7 +203,7 @@ export default function PhonePage() {
               <AppointmentsPanel />
             </div>
           )}
-          {primaryTab === "setup" && (
+          {primaryTab === "setup" && !scopeBlocked && (
             <div
               className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
               data-visual-qa-state="primary-setup"

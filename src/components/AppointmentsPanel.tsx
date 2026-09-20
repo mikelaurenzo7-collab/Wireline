@@ -3,6 +3,7 @@ import { CalendarDays, Clock3 } from "lucide-react";
 import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
+import { formatPhone } from "../lib/safe-number";
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -18,7 +19,30 @@ type Appointment = {
 };
 
 function scheduleLabel(appointment: Appointment): string {
-  const parts = [appointment.date, appointment.time].filter(Boolean);
+  let date = appointment.date;
+  let time = appointment.time;
+  // These are local calendar/clock strings, not instants. UTC formatting keeps
+  // their stored values intact regardless of the viewer's timezone.
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date) {
+      date = parsed.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+    }
+  }
+  if (time && /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time)) {
+    const [hours, minutes] = time.split(":").map(Number);
+    time = new Date(Date.UTC(2000, 0, 1, hours, minutes)).toLocaleTimeString(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "UTC",
+    });
+  }
+  const parts = [date, time].filter(Boolean);
   return parts.length ? parts.join(" · ") : "Time to be confirmed";
 }
 
@@ -33,22 +57,32 @@ function appointmentTimestamp(appointment: Appointment): number | null {
 
 function AppointmentRow({ appointment }: { appointment: Appointment }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
+    <li className="flex items-start gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
         <CalendarDays className="size-4" aria-hidden="true" />
       </span>
-      <span className="min-w-0 flex-1">
-        <strong className="block truncate text-sm font-semibold text-foreground">
-          {appointment.customer_name || "Customer"}
-        </strong>
-        <span className="mt-1 inline-flex max-w-full items-center gap-1.5 truncate text-xs text-muted-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+          <strong className="min-w-0 break-words text-sm font-semibold text-foreground">
+            {appointment.customer_name || "Customer"}
+          </strong>
+          <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
+            {appointment.status || "Scheduled"}
+          </Badge>
+        </div>
+        {appointment.service_type ? (
+          <p className="mt-1 break-words text-sm text-foreground">{appointment.service_type}</p>
+        ) : null}
+        {appointment.phone_number ? (
+          <p className="mt-1 break-words text-xs text-muted-foreground">
+            {formatPhone(appointment.phone_number)}
+          </p>
+        ) : null}
+        <span className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
           <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
-          {scheduleLabel(appointment)}
+          <span>{scheduleLabel(appointment)}</span>
         </span>
-      </span>
-      <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
-        {appointment.status || "Scheduled"}
-      </Badge>
+      </div>
     </li>
   );
 }

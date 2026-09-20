@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
+import { signupHrefForPlan } from "../lib/signup-intent";
 
 const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 
@@ -106,7 +107,7 @@ export default function Blog() {
             </h2>
             <div className="wl-marketing-actions mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                to="/signup"
+                to={signupHrefForPlan("personal")}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
                 START FREE
