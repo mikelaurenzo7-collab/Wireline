@@ -180,3 +180,70 @@ describe("mail-provider account-environment boundaries", () => {
     expectNoIcloudCredentialWork();
   });
 });
+
+describe("mailbox sync reachability", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.guard.mockResolvedValue(undefined);
+    mocks.select.mockReturnValue({
+      from: () => ({ where: () => ({ limit: async () => [{ id: "mailbox" }] }) }),
+    });
+    mocks.persistMailboxInboxMessages.mockResolvedValue({ threadsUpserted: 0, messagesSaved: 0 });
+  });
+
+  it("reports partial refresh when a healthy empty mailbox and an unreachable mailbox coexist", async () => {
+    mocks.fetchInboxMessages.mockResolvedValue({
+      messages: [],
+      failures: [{ provider: "microsoft", error: "unavailable" }],
+      successfulAccounts: 1,
+    });
+    const res = response();
+    await sync({ user: { id: "owner" }, body: {} }, res);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(mocks.persistMailboxInboxMessages).toHaveBeenCalledWith("owner", []);
+    expect(mocks.responseJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: true,
+        fetched: 0,
+        failed_providers: ["microsoft"],
+        message: "Inbox partially refreshed. Reconnect your mailbox in BotBound to sync the rest.",
+      }),
+    );
+  });
+
+  it("reports an outage only when no mailbox was reached", async () => {
+    mocks.fetchInboxMessages.mockResolvedValue({
+      messages: [],
+      failures: [{ provider: "microsoft", error: "unavailable" }],
+      successfulAccounts: 0,
+    });
+    const res = response();
+    await sync({ user: { id: "owner" }, body: {} }, res);
+    expect(res.status).toHaveBeenCalledWith(502);
+    expect(mocks.persistMailboxInboxMessages).not.toHaveBeenCalled();
+    expect(mocks.responseJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        code: "EMAIL_MAILBOX_UNREACHABLE",
+      }),
+    );
+  });
+
+  it("reports a healthy empty inbox when every mailbox succeeds", async () => {
+    mocks.fetchInboxMessages.mockResolvedValue({
+      messages: [],
+      failures: [],
+      successfulAccounts: 2,
+    });
+    const res = response();
+    await sync({ user: { id: "owner" }, body: {} }, res);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(mocks.responseJson).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: true,
+        message: "No new inbox messages found.",
+      }),
+    );
+    expect(mocks.responseJson.mock.calls[0][0]).not.toHaveProperty("failed_providers");
+  });
+});

@@ -114,7 +114,9 @@ describe("inbox refresh honesty", () => {
     expect(integrations).toContain("export type InboxFetchResult");
     expect(integrations).toContain("failures: InboxFetchFailure[]");
     expect(integrations).toContain("failures.push({ provider:");
-    expect(sync).toContain("const { messages, failures } = await service.fetchInboxMessages(");
+    expect(sync).toContain(
+      "const { messages, failures, successfulAccounts } = await service.fetchInboxMessages(",
+    );
     expect(sync).toContain('code: "EMAIL_MAILBOX_UNREACHABLE"');
     expect(sync).toContain("failed_providers");
     // Partial reach is named too — a silent partial sync reads as a full one.

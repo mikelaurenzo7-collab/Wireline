@@ -43,6 +43,7 @@ describe("Microsoft mailbox refresh outcomes", () => {
     h.fetch.mockResolvedValue({ ok: false, status });
     const result = await new IntegrationService("test-user").fetchInboxMessages();
     expect(result.messages).toEqual([]);
+    expect(result.successfulAccounts).toBe(0);
     expect(result.failures).toEqual([{ provider: "microsoft", error: expect.any(String) }]);
     expect(h.fetch).toHaveBeenCalledOnce();
   });
@@ -52,6 +53,7 @@ describe("Microsoft mailbox refresh outcomes", () => {
     await expect(new IntegrationService("test-user").fetchInboxMessages()).resolves.toEqual({
       messages: [],
       failures: [],
+      successfulAccounts: 1,
     });
   });
 
@@ -76,5 +78,41 @@ describe("Microsoft mailbox refresh outcomes", () => {
       messageId: "message-1",
     });
     expect(result.failures).toEqual([{ provider: "microsoft", error: expect.any(String) }]);
+    expect(result.successfulAccounts).toBe(1);
+  });
+
+  it("counts a successful empty mailbox even when another account fails", async () => {
+    h.accounts.push({ ...h.accounts[0], id: "healthy-empty-inbox" });
+    h.fetch.mockResolvedValueOnce({ ok: false, status: 503 }).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ value: [] }),
+    });
+    const result = await new IntegrationService("test-user").fetchInboxMessages();
+    expect(result.messages).toEqual([]);
+    expect(result.successfulAccounts).toBe(1);
+    expect(result.failures).toHaveLength(1);
+  });
+
+  it.each(["yahoo", "unknown"])(
+    "does not count the unsupported %s provider as reached",
+    async (provider) => {
+      h.accounts.push({ ...h.accounts[0], id: "unsupported-inbox", provider });
+      h.fetch.mockResolvedValue({ ok: false, status: 503 });
+      const result = await new IntegrationService("test-user").fetchInboxMessages();
+      expect(result.messages).toEqual([]);
+      expect(result.successfulAccounts).toBe(0);
+      expect(result.failures).toHaveLength(2);
+      expect(h.fetch).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("reports no successful fetch when no mailbox is connected", async () => {
+    h.accounts = [];
+    await expect(new IntegrationService("test-user").fetchInboxMessages()).resolves.toEqual({
+      messages: [],
+      failures: [],
+      successfulAccounts: 0,
+    });
+    expect(h.fetch).not.toHaveBeenCalled();
   });
 });

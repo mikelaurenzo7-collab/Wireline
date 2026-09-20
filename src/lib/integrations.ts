@@ -32,13 +32,13 @@ export type InboxMessagePreview = {
 export type InboxFetchFailure = { provider: string; error: string };
 
 /**
- * Inbox fetch result. `failures` is what makes an empty `messages` readable:
- * empty + no failures means the mailbox really is up to date, empty + failures
- * means we could not reach it and must say so rather than report success.
+ * Account reachability is independent of message count: a successful mailbox
+ * may be empty even when another connected mailbox fails.
  */
 export type InboxFetchResult = {
   messages: InboxMessagePreview[];
   failures: InboxFetchFailure[];
+  successfulAccounts: number;
 };
 
 type ConnectedMailboxSendParams = {
@@ -274,11 +274,8 @@ export class IntegrationService {
    * and the manual "Sync inbox" button. Returns a unified shape
    * regardless of provider so callers don't branch.
    *
-   * Yahoo is intentionally a no-op for now, Yahoo killed their
-   * REST mail API and the modern path is XOAUTH2 over IMAP, which
-   * is touchier and lands in a follow-up phase. The connection
-   * token is already stored from the Yahoo mailbox-connect OAuth
-   * flow, so phase 2 just adds the IMAP client.
+   * Yahoo inbox retrieval is not implemented; report that account as
+   * unavailable rather than treating an unattempted fetch as a healthy inbox.
    */
   async fetchInboxMessages(
     opts: {
@@ -294,7 +291,7 @@ export class IntegrationService {
       // and Microsoft callbacks upsert both calendar and mailbox rows; falling
       // back to calendar rows lost the mailbox identity needed for safe dedupe.
       const mailAccounts = await this.getAccounts("mail");
-      if (mailAccounts.length === 0) return { messages: [], failures };
+      if (mailAccounts.length === 0) return { messages: [], failures, successfulAccounts: 0 };
 
       // Fan out across every connected mail account the tenant has.
       // Most tenants have 1 mailbox; some have one per channel.
@@ -321,12 +318,16 @@ export class IntegrationService {
       // Merge + sort newest-first, then cap to the caller's limit.
       const merged = perAccount.flat();
       merged.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
-      return { messages: merged.slice(0, limit), failures };
+      return {
+        messages: merged.slice(0, limit),
+        failures,
+        successfulAccounts: mailAccounts.length - failures.length,
+      };
     } catch (err) {
       const error = getErrorMessage(err);
       log.error("fetchInboxMessages failed", { userId: this.userId, error });
       failures.push({ provider: "unknown", error });
-      return { messages: [], failures };
+      return { messages: [], failures, successfulAccounts: 0 };
     }
   }
 
@@ -341,12 +342,7 @@ export class IntegrationService {
       return this.fetchMicrosoftInbox(account, opts);
     }
     if (account.provider === "yahoo") {
-      // Phase 2, XOAUTH2 over IMAP. For now, log so the Account Holder can
-      // see we received the call and know it's not silently broken.
-      log.info("Yahoo inbox fetch skipped, XOAUTH2 IMAP not yet wired", {
-        accountId: account.id,
-      });
-      return [];
+      throw new Error("Yahoo inbox refresh is not available yet.");
     }
     if (account.provider === "icloud") {
       return this.fetchIcloudInbox(account, opts);
@@ -354,7 +350,7 @@ export class IntegrationService {
     if (account.provider === "agentmail") {
       return this.fetchAgentMailInbox(account, opts);
     }
-    return [];
+    throw new Error("Inbox refresh is not available for this mailbox provider.");
   }
 
   private async fetchIcloudInbox(account: any, opts: { limit: number; sinceIso?: string }) {
