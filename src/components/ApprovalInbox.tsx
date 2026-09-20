@@ -225,7 +225,10 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             payload: nextPayload,
           }),
         });
-        if (!patch.ok) throw new Error("Could not save edits before approval.");
+        if (!patch.ok) {
+          const failure = await patch.json().catch(() => ({}));
+          throw new Error(failure?.error || "Could not save edits before approval.");
+        }
       }
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
@@ -272,8 +275,10 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             }),
           });
       if (!response.ok) {
+        const failure = await response.json().catch(() => ({}));
         throw new Error(
-          manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action.",
+          failure?.error ||
+            (manualHandoff ? "Could not dismiss this handoff." : "Could not reject this action."),
         );
       }
       onResolved();

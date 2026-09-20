@@ -20,7 +20,7 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, getTableColumns, inArray } from "drizzle-orm";
+import { eq, and, desc, getTableColumns, inArray, or, sql } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { validateBody, createCadenceSchema, updateCadenceSchema } from "../lib/api-validation";
@@ -142,12 +142,37 @@ router.patch(
     }
     if (!Object.keys(patch).length) throw AppError.badRequest("No changes supplied.");
     await assertCadenceAgentsOwned(req.user.id, patch.agentId, patch.steps);
-    const [row] = (await drizzle
-      .update(schema.cadences)
-      .set(patch)
-      .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
-      .returning()) as any[];
-    if (!row) throw AppError.fromHttpStatus(404, "Cadence not found");
+    const row = await drizzle.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(schema.cadences)
+        .set(patch)
+        .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
+        .returning();
+      if (!updated) throw AppError.fromHttpStatus(404, "Cadence not found");
+      if (patch.active === true) {
+        // Recover only the legacy parent-pause bug on an explicit resume.
+        // A newer enrollment (including completed work) supersedes the old run.
+        // Enrollment holds this same parent row lock to avoid a unique-index race.
+        await tx
+          .update(schema.cadenceRuns)
+          .set({
+            status: "active",
+            lastResult: "resumed after sequence pause",
+            updatedAt: new Date(),
+            nextDueAt: sql`coalesce(${schema.cadenceRuns.nextDueAt}, now())`,
+          })
+          .where(
+            and(
+              eq(schema.cadenceRuns.userId, req.user.id),
+              eq(schema.cadenceRuns.cadenceId, req.params.id),
+              eq(schema.cadenceRuns.status, "paused"),
+              eq(schema.cadenceRuns.lastResult, "cadence inactive or deleted"),
+              sql`not exists (select 1 from ${schema.cadenceRuns} as newer where newer.user_id = ${schema.cadenceRuns.userId} and newer.cadence_id = ${schema.cadenceRuns.cadenceId} and newer.lead_id = ${schema.cadenceRuns.leadId} and newer.id <> ${schema.cadenceRuns.id} and (newer.status = 'active' or (coalesce(newer.created_at, 'epoch'::timestamptz), newer.id) > (coalesce(${schema.cadenceRuns.createdAt}, 'epoch'::timestamptz), ${schema.cadenceRuns.id})))`,
+            ),
+          );
+      }
+      return updated;
+    });
     res.json({ cadence: row });
   },
 );
@@ -190,55 +215,59 @@ router.post(
       throw AppError.fromHttpStatus(400, "leadId must be a numeric id");
     }
 
-    const [cadence] = await drizzle
-      .select()
-      .from(schema.cadences)
-      .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
-      .limit(1);
-    if (!cadence) throw AppError.fromHttpStatus(404, "Cadence not found");
-    if (cadence.active === false) {
-      throw AppError.fromHttpStatus(400, "Cadence is inactive, re-enable before enrolling.");
-    }
-
-    // CRITICAL: verify the lead belongs to the requesting tenant. Without this,
-    // an attacker could enroll any tenant's lead in their own cadence —
-    // cross-tenant data linkage + workflow manipulation.
-    const [lead] = await drizzle
-      .select({ id: schema.outboundLeads.id })
-      .from(schema.outboundLeads)
-      .where(
-        and(eq(schema.outboundLeads.id, leadIdBig), eq(schema.outboundLeads.userId, req.user.id)),
-      )
-      .limit(1);
-    if (!lead) {
-      // Generic 404 so attackers can't enumerate other tenants' lead ids.
-      throw AppError.fromHttpStatus(404, "Lead not found");
-    }
-
-    const steps = cadence.steps as CadenceStep[];
-    const firstDelay = steps[0]?.delayHours ?? 0;
-    const nextDueAt = new Date(Date.now() + firstDelay * 3_600_000);
-
-    try {
-      const [run] = (await drizzle
-        .insert(schema.cadenceRuns)
-        .values({
-          userId: req.user.id,
-          cadenceId: cadence.id,
-          leadId: leadIdBig,
-          currentStep: 0,
-          nextDueAt,
-          status: "active",
-        })
-        .returning()) as any[];
-      return res.json({ run });
-    } catch (e: any) {
-      if (e?.code === "23505" || /duplicate key/i.test(e?.message || "")) {
-        throw AppError.fromHttpStatus(409, "Lead is already enrolled in this cadence.");
+    const enrolled = await drizzle.transaction(async (tx) => {
+      const [cadence] = await tx
+        .select()
+        .from(schema.cadences)
+        .where(and(eq(schema.cadences.id, req.params.id), eq(schema.cadences.userId, req.user.id)))
+        .limit(1)
+        .for("update");
+      if (!cadence) throw AppError.fromHttpStatus(404, "Cadence not found");
+      if (cadence.active === false) {
+        throw AppError.fromHttpStatus(400, "Cadence is inactive, re-enable before enrolling.");
       }
-      log.error("Cadence enroll failed", { error: e?.message });
-      throw AppError.fromHttpStatus(500, "Enroll failed");
-    }
+
+      // CRITICAL: verify the lead belongs to the requesting tenant. Without this,
+      // an attacker could enroll any tenant's lead in their own cadence —
+      // cross-tenant data linkage + workflow manipulation.
+      const [lead] = await tx
+        .select({ id: schema.outboundLeads.id })
+        .from(schema.outboundLeads)
+        .where(
+          and(eq(schema.outboundLeads.id, leadIdBig), eq(schema.outboundLeads.userId, req.user.id)),
+        )
+        .limit(1);
+      if (!lead) {
+        // Generic 404 so attackers can't enumerate other tenants' lead ids.
+        throw AppError.fromHttpStatus(404, "Lead not found");
+      }
+
+      const steps = cadence.steps as CadenceStep[];
+      const firstDelay = steps[0]?.delayHours ?? 0;
+      const nextDueAt = new Date(Date.now() + firstDelay * 3_600_000);
+
+      try {
+        const [run] = (await tx
+          .insert(schema.cadenceRuns)
+          .values({
+            userId: req.user.id,
+            cadenceId: cadence.id,
+            leadId: leadIdBig,
+            currentStep: 0,
+            nextDueAt,
+            status: "active",
+          })
+          .returning()) as any[];
+        return run;
+      } catch (e: any) {
+        if (e?.code === "23505" || /duplicate key/i.test(e?.message || "")) {
+          throw AppError.fromHttpStatus(409, "Lead is already enrolled in this cadence.");
+        }
+        log.error("Cadence enroll failed", { error: e?.message });
+        throw AppError.fromHttpStatus(500, "Enroll failed");
+      }
+    });
+    res.json({ run: enrolled });
   },
 );
 
@@ -249,7 +278,7 @@ router.post(
     if (!req.user?.id) throw AppError.fromHttpStatus(401, "Unauthorized");
     const [row] = (await drizzle
       .update(schema.cadenceRuns)
-      .set({ status: "paused", updatedAt: new Date() })
+      .set({ status: "paused", updatedAt: new Date(), lastResult: "paused by account holder" })
       .where(
         and(eq(schema.cadenceRuns.id, req.params.id), eq(schema.cadenceRuns.userId, req.user.id)),
       )
@@ -279,9 +308,24 @@ router.get(
           eq(schema.outboundLeads.userId, schema.cadenceRuns.userId),
         ),
       )
-      .where(eq(schema.cadenceRuns.userId, req.user.id))
-      .orderBy(desc(schema.cadenceRuns.createdAt))
-      .limit(200);
+      .where(
+        and(
+          eq(schema.cadenceRuns.userId, req.user.id),
+          or(
+            inArray(schema.cadenceRuns.status, ["active", "paused", "failed"]),
+            inArray(
+              schema.cadenceRuns.id,
+              drizzle
+                .select({ id: schema.cadenceRuns.id })
+                .from(schema.cadenceRuns)
+                .where(eq(schema.cadenceRuns.userId, req.user.id))
+                .orderBy(desc(schema.cadenceRuns.createdAt))
+                .limit(200),
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(schema.cadenceRuns.createdAt));
     res.json({ runs: rows });
   },
 );

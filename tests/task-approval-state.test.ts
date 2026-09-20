@@ -139,6 +139,12 @@ describe("approval lifecycle boundaries", () => {
     Object.assign(h.task, { status, taskType: "send_email" });
     await invoke("action");
     expect(h.executeAction).toHaveBeenCalledTimes(1);
+    expect(h.executeAction).toHaveBeenCalledWith(
+      "tenant",
+      expect.anything(),
+      expect.objectContaining({ approvalTaskId: "task" }),
+      "auto",
+    );
   });
 
   it.each(["approve", "dismiss"] as const)(

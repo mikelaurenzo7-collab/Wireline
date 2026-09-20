@@ -30,4 +30,5 @@ export interface ActionResult {
   queued?: boolean;
   actionId?: string;
   error?: string;
+  errorCode?: string;
 }

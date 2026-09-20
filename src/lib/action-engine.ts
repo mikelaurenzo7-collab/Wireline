@@ -228,7 +228,7 @@ async function resolveActionPolicy(
 export async function executeAction(
   userId: string,
   action: ActionItem,
-  context: { sourceId: string; sourceType: string },
+  context: { sourceId: string; sourceType: string; approvalTaskId?: string },
   autonomyOverride?: "auto" | "draft",
 ): Promise<ActionResult> {
   try {
@@ -249,6 +249,7 @@ export async function executeAction(
       sourceId: context.sourceId,
       sourceType: context.sourceType,
       phase: policy.autonomy,
+      approvalTask: context.approvalTaskId ? { id: context.approvalTaskId, action } : undefined,
       execute: () =>
         policy.autonomy === "auto"
           ? executeAutonomousAction(userId, policy.action, context, policy.agentTimeZone)

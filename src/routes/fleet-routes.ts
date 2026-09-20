@@ -15,6 +15,7 @@ import { ACTIVE_OPERATOR_TASK_STATUSES } from "../lib/operator-work-status";
 import { parseFormData, FollowUpTaskCreateSchema } from "../lib/form-validators";
 import { compileActivityFeed } from "../lib/fleet-activity";
 import { executeAction } from "../lib/action-engine";
+import { assertTaskCanBeEdited } from "../lib/action-execution-idempotency";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import type { ActionItem } from "../lib/action-types";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -301,16 +302,19 @@ router.patch(
       // was not. A task deleted in another tab reads back as saved and then
       // reverts on refresh. The sibling approve route below already answers 404
       // for the same case.
-      const updated = (await drizzle
-        .update(schema.followUpTasks)
-        .set(updateData)
-        .where(
-          and(
-            eq(schema.followUpTasks.id, req.params.id),
-            eq(schema.followUpTasks.userId, req.user.id),
-          ),
-        )
-        .returning()) as unknown[];
+      const updated = await drizzle.transaction(async (tx) => {
+        await assertTaskCanBeEdited(tx, req.user.id, req.params.id);
+        return tx
+          .update(schema.followUpTasks)
+          .set(updateData)
+          .where(
+            and(
+              eq(schema.followUpTasks.id, req.params.id),
+              eq(schema.followUpTasks.userId, req.user.id),
+            ),
+          )
+          .returning();
+      });
 
       if (!updated.length) {
         return res.status(404).json({ code: "NOT_FOUND", error: "Task not found" });
@@ -371,6 +375,7 @@ router.post(
         {
           sourceId: task.sourceId || taskId,
           sourceType: task.sourceType || "manual_approval",
+          approvalTaskId: taskId,
         },
         "auto",
       );
@@ -379,7 +384,7 @@ router.post(
         await drizzle
           .update(schema.followUpTasks)
           .set({ status: "completed", resolutionNotes: "Approved and executed by Account Holder" })
-          .where(eq(schema.followUpTasks.id, taskId));
+          .where(and(eq(schema.followUpTasks.id, taskId), eq(schema.followUpTasks.userId, userId)));
         touchNavCounts(userId);
 
         emitServerProductEventOnce({
@@ -408,8 +413,8 @@ router.post(
 
         res.json({ success: true });
       } else {
-        res.status(500).json({
-          code: "INTERNAL_ERROR",
+        res.status(result.errorCode === "TASK_CHANGED" ? 409 : 500).json({
+          code: result.errorCode || "INTERNAL_ERROR",
           error: result.error || "Action execution failed",
         });
       }
