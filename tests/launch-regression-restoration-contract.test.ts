@@ -209,7 +209,10 @@ describe("restored launch regression guards", () => {
       expect(source).toContain("if (isTransport)");
       expect(source).toContain("} else {\n        setError(message);");
     }
-    expect(read("src/components/AdminSettings.tsx")).toContain('toastError("Team unavailable"');
+    expect(read("src/components/AdminSettings.tsx")).toContain(
+      '<Navigate to="/settings/team" replace />',
+    );
+    expect(read("src/pages/TeamSettings.tsx")).toContain('setTeamAccess("error")');
   });
 
   it("keeps high-value letterpress accessibility and brand guards outside Overview markup", () => {

@@ -90,7 +90,7 @@ export default function OutboundHub({
             <div className="px-3 pb-4 sm:px-6">
               <details className="group rounded-xl border border-border bg-card">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
-                  Lead intake
+                  Lead Intake
                   <ChevronDown
                     className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
                     aria-hidden="true"

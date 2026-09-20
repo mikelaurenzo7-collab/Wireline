@@ -166,7 +166,7 @@ export default function EmailPage() {
             value={activeAgentId}
             onChange={(event) => setAgentScope(event.target.value)}
             aria-label="Filter Inbox by Bot"
-            className="min-h-[44px] min-w-0 max-w-[10rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
+            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:w-auto sm:max-w-[10rem] sm:flex-none sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All Bots</option>
             {activeAgentId && !hasRequestedAgent ? (
@@ -186,7 +186,7 @@ export default function EmailPage() {
             value={activeAccountId}
             onChange={(event) => setMailboxScope(event.target.value)}
             aria-label="Filter email by mailbox"
-            className="min-h-[44px] min-w-0 max-w-[13rem] shrink-0 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:px-2 sm:text-xs wl-focus-ring-halo"
+            className="min-h-[44px] w-0 min-w-0 flex-1 rounded-lg border border-border bg-card px-3 text-base font-semibold text-foreground sm:min-h-9 sm:w-auto sm:max-w-[13rem] sm:flex-none sm:px-2 sm:text-xs wl-focus-ring-halo"
           >
             <option value="">All mailboxes</option>
             {activeAccountId && !hasRequestedAccount ? (

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Megaphone, Pause, Play, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { authFetch } from "../../lib/api";
 import { logFetchError } from "../../lib/utils";
@@ -50,10 +50,28 @@ export default function CampaignsPanel() {
   const [showCreate, setShowCreate] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [goal, setGoal] = useState("");
   const [playbookId, setPlaybookId] = useState<SalesPlaybookId>("speed-to-lead");
   const [agentId, setAgentId] = useState("");
   const [creating, setCreating] = useState(false);
+  const campaignNameRef = useRef<HTMLInputElement>(null);
+  const createTriggerRef = useRef<HTMLButtonElement>(null);
+  const restoreCreateFocus = useRef(false);
+
+  useEffect(() => {
+    if (loading) return;
+    if (showCreate) {
+      campaignNameRef.current?.focus({ preventScroll: true });
+      campaignNameRef.current?.scrollIntoView({ block: "center", inline: "nearest" });
+    } else if (restoreCreateFocus.current) {
+      restoreCreateFocus.current = false;
+      createTriggerRef.current?.focus();
+    }
+  }, [showCreate, loading]);
+
+  function closeCreate() {
+    restoreCreateFocus.current = true;
+    setShowCreate(false);
+  }
 
   const load = useCallback(async (withLoadingState = true) => {
     if (withLoadingState) setLoading(true);
@@ -101,9 +119,8 @@ export default function CampaignsPanel() {
         throw new Error(body.error || "Failed to create campaign");
       }
       toast.success("Campaign created");
-      setShowCreate(false);
+      closeCreate();
       setName("");
-      setGoal("");
       setPlaybookId("speed-to-lead");
       setAgentId("");
       await load();
@@ -208,6 +225,7 @@ export default function CampaignsPanel() {
           </ShadButton>
           {!showCreate ? (
             <ShadButton
+              ref={createTriggerRef}
               type="button"
               size="sm"
               className="justify-center"
@@ -235,15 +253,12 @@ export default function CampaignsPanel() {
         <div className="mx-4 mt-4 rounded-md border border-border bg-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Create Campaign</h3>
-            <button
-              type="button"
-              onClick={() => setShowCreate(false)}
-              aria-label="Close campaign form"
-            >
+            <button type="button" onClick={closeCreate} aria-label="Close campaign form">
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           <Input
+            ref={campaignNameRef}
             aria-label="Campaign name"
             placeholder="Campaign name"
             value={name}
@@ -267,12 +282,6 @@ export default function CampaignsPanel() {
           <p className="text-xs text-muted-foreground">
             {SALES_PLAYBOOKS.find((playbook) => playbook.id === playbookId)?.objective}
           </p>
-          <Input
-            aria-label="Campaign notes"
-            placeholder="Notes (optional)"
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-          />
           <Select
             value={agentId || "__none__"}
             onValueChange={(v) => setAgentId(v === "__none__" ? "" : v)}

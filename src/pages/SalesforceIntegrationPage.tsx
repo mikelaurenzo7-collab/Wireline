@@ -78,8 +78,8 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
 
       <dl className="mt-6 divide-y divide-border border-y border-border text-sm">
         <div className="flex items-center justify-between gap-4 py-3">
-          <dt className="text-muted-foreground">Organization</dt>
-          <dd className="max-w-[13rem] truncate text-right font-medium text-foreground">
+          <dt className="shrink-0 text-muted-foreground">Organization</dt>
+          <dd className="min-w-0 max-w-[13rem] truncate text-right font-medium text-foreground">
             {connection.instance_url || "Awaiting OAuth connection"}
           </dd>
         </div>

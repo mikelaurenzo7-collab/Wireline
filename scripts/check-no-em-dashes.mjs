@@ -18,7 +18,7 @@
  * stays honest instead of being switched off.
  */
 import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -65,7 +65,7 @@ function stripComments(src) {
   return out;
 }
 
-const files = execSync(`git ls-files ${GLOBS.map((glob) => `'${glob}'`).join(" ")}`, {
+const files = execFileSync("git", ["ls-files", ...GLOBS], {
   cwd: root,
   encoding: "utf8",
 })

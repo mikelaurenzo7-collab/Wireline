@@ -42,19 +42,19 @@ type ResponsePayload = {
 const FORMATS: Array<{ value: ArtifactFormat; label: string; detail: string }> = [
   {
     value: "pdf",
-    label: "PDF report",
-    detail: "Polished, fixed-layout client or operating report",
+    label: "PDF Report",
+    detail: "Fixed layout for sharing.",
   },
-  { value: "docx", label: "Word document", detail: "Editable proposal, recap, or report" },
+  { value: "docx", label: "Word Document", detail: "Editable proposals and recaps." },
   {
     value: "xlsx",
-    label: "Excel workbook",
-    detail: "Structured analysis, call data, and action plan",
+    label: "Excel Workbook",
+    detail: "Call data in a spreadsheet.",
   },
   {
     value: "pptx",
-    label: "PowerPoint presentation",
-    detail: "Branded executive or client-facing deck",
+    label: "PowerPoint Presentation",
+    detail: "Slides for presenting results.",
   },
 ];
 
@@ -220,26 +220,14 @@ export default function ReportingPreferences() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5">
-      <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-        <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-muted p-2.5 text-foreground" aria-hidden="true">
-            <ShieldCheck size={20} />
-          </span>
-          <div>
-            <h2 className="wl-card-title">Normal Post-Call Process</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              Always on. Every completed call receives an outcome, structured note, next action,
-              lead or CRM update, quality review, and audit trail. Special files below are optional
-              and never replace this operating record.
-            </p>
-          </div>
-        </div>
-      </section>
+      <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+        <ShieldCheck size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
+        Call records stay in BotBound. File exports are optional.
+      </p>
 
       {noStorageConnected ? (
         <StatusNotice tone="warning" title="Connect a Report Destination">
-          Connect Google or Microsoft before enabling native files. BotBound writes the finished
-          file to your workspace and keeps only the job metadata and external link.{" "}
+          Connect Google Drive or OneDrive to save report files.{" "}
           <Link to="/connections" className="font-semibold underline underline-offset-4">
             Open Connections
           </Link>
@@ -249,11 +237,9 @@ export default function ReportingPreferences() {
       <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="wl-eyebrow wl-eyebrow--muted">On request</p>
-            <h2 className="mt-2 wl-card-title">Special Call Files</h2>
+            <h2 className="wl-card-title">Call Files</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Choose the default file your team can request from an individual call. Nothing is
-              generated or sent automatically.
+              Files are created only when you request them.
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm font-semibold">
@@ -263,7 +249,7 @@ export default function ReportingPreferences() {
                 patch({ artifact_mode: event.target.checked ? "manual" : "off" })
               }
             />
-            Allow special files
+            Enable call files
           </label>
         </div>
 
@@ -301,27 +287,30 @@ export default function ReportingPreferences() {
           </label>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {FORMATS.map((format) => (
-            <div key={format.value} className="wl-data-row wl-data-row--framed">
-              <span className="wl-data-row__leading rounded-lg bg-muted p-2">
-                <FormatIcon format={format.value} />
-              </span>
-              <span className="wl-data-row__main">
-                <span className="wl-data-row__title">{format.label}</span>
-                <span className="wl-data-row__detail">{format.detail}</span>
-              </span>
-            </div>
-          ))}
-        </div>
+        <details className="mt-4 text-sm">
+          <summary className="w-fit cursor-pointer rounded font-semibold text-muted-foreground wl-focus-ring">
+            Format Guide
+          </summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {FORMATS.map((format) => (
+              <div key={format.value} className="wl-data-row wl-data-row--framed">
+                <span className="wl-data-row__leading rounded-lg bg-muted p-2">
+                  <FormatIcon format={format.value} />
+                </span>
+                <span className="wl-data-row__main">
+                  <span className="wl-data-row__title">{format.label}</span>
+                  <span className="wl-data-row__detail">{format.detail}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
       </section>
 
       <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
-        <p className="wl-eyebrow wl-eyebrow--muted">Opt in</p>
-        <h2 className="mt-2 wl-card-title">Automatic Operating Report</h2>
+        <h2 className="wl-card-title">Scheduled Reports</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-          Receive a polished daily or weekly performance report covering calls, outcomes,
-          appointments, quality, open follow-ups, and the highest-value next actions.
+          Optional daily or weekly summaries of calls, outcomes, and follow-ups.
         </p>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -383,7 +372,7 @@ export default function ReportingPreferences() {
               className="wl-stitch-input h-11 w-full"
             />
             <span className="block text-xs font-normal text-muted-foreground">
-              Your device time; BotBound converts it to UTC when saved.
+              Shown in your device’s time zone.
             </span>
           </label>
           {preferences.scheduled_report_frequency === "weekly" ? (

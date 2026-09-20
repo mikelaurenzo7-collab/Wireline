@@ -236,48 +236,21 @@ export function ContactPage() {
                   ))}
                 </div>
               </fieldset>
-              <div className="grid items-end gap-4 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  Email
-                  <Input
-                    ref={emailRef}
-                    required
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    aria-invalid={invalidField === "email"}
-                    aria-describedby={invalidField === "email" ? errorId : undefined}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      clearFieldError("email");
-                    }}
-                    placeholder="you@example.com"
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-semibold text-foreground">
-                  <span>
-                    Company or organization{" "}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </span>
-                  <Input
-                    autoComplete="organization"
-                    value={company}
-                    onChange={(event) => setCompany(event.target.value)}
-                    placeholder="Optional"
-                  />
-                </label>
-              </div>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
-                <span>
-                  Callback number{" "}
-                  <span className="font-normal text-muted-foreground">(optional)</span>
-                </span>
+                Email
                 <Input
-                  type="tel"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  placeholder="Best number for a fit call or rollout question"
+                  ref={emailRef}
+                  required
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  aria-invalid={invalidField === "email"}
+                  aria-describedby={invalidField === "email" ? errorId : undefined}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    clearFieldError("email");
+                  }}
+                  placeholder="you@example.com"
                 />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
@@ -316,6 +289,44 @@ export function ContactPage() {
                   }
                 />
               </label>
+              <details className="group border-y border-border">
+                <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded px-1 text-sm font-semibold text-foreground marker:hidden">
+                  <span>Company &amp; Callback (Optional)</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-xl text-muted-foreground group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="grid gap-4 pb-4 pt-2 sm:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-semibold text-foreground">
+                    <span>
+                      Company or organization{" "}
+                      <span className="font-normal text-muted-foreground">(optional)</span>
+                    </span>
+                    <Input
+                      autoComplete="organization"
+                      value={company}
+                      onChange={(event) => setCompany(event.target.value)}
+                      placeholder="Optional"
+                    />
+                  </label>
+                  <label className="grid gap-2 text-sm font-semibold text-foreground">
+                    <span>
+                      Callback number{" "}
+                      <span className="font-normal text-muted-foreground">(optional)</span>
+                    </span>
+                    <Input
+                      type="tel"
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      placeholder="Best number for a fit call or rollout question"
+                    />
+                  </label>
+                </div>
+              </details>
               {error && (
                 <p id={errorId} role="alert" className="text-sm text-destructive">
                   {error}

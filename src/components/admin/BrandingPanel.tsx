@@ -127,6 +127,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
 
         {onSave && (
           <AdminSaveBar
+            className="mt-6"
             onClick={onSave}
             isSaving={!!isSaving}
             label={OPS_ADMIN.saveLabels.branding}

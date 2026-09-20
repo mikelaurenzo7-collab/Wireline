@@ -297,23 +297,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     pains: [
       {
         icon: "Clock",
-        title: "Authorized Billing and Collections Calls",
-        body: "Tell your Bot the amount, the offer you can afford, and your approved script. It dials, stays within those bounds, asks for terms in writing, and reports back without promising a specific outcome.",
+        title: "Billing Calls",
+        body: "Your Bot follows your approved offer, requests written terms, and reports back. Outcomes are not guaranteed.",
       },
       {
         icon: "Calendar",
-        title: "Appointment Booking You Keep Putting Off",
-        body: "Doctor, dentist, salon, auto shop, veterinarian, or restaurant. Tell your Bot the window that works and the office to call. It handles the back-and-forth and texts you the confirmation.",
+        title: "Appointments",
+        body: "Choose the office and a time window. Your Bot asks for availability and confirms the outcome.",
       },
       {
         icon: "DollarSign",
-        title: "Returns, Billing Disputes, and Customer Service",
-        body: "Your Bot can wait on hold, follow your approved request, escalate politely, and log whatever resolution the provider offers.",
+        title: "Returns & Disputes",
+        body: "Your Bot waits on hold, follows your approved request, and records the response or escalation.",
       },
       {
         icon: "Shield",
-        title: "Phone Anxiety and Accessibility Support",
-        body: "Calls can be especially difficult for autistic and ADHD adults, people with social anxiety, and people with hearing disabilities. BotBound can handle an authorized call and return a readable summary; it is not an emergency or certified accessibility service.",
+        title: "Phone Support",
+        body: "Hand off authorized calls and receive a readable summary. Not an emergency or certified accessibility service.",
       },
     ],
     scriptPreview:
@@ -327,23 +327,23 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Your Bot follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",
     faqs: [
       {
-        q: "Is it actually legal for an AI to make calls on my behalf?",
+        q: "Can AI Call for Me?",
         a: "BotBound is a tool you authorize to place calls with your script and limits. Rules vary by call type, state, and account, so do not treat this as legal advice; configure calls using your own guidance. Your Bot identifies that it is calling on your behalf and records what happened.",
       },
       {
-        q: "Can it really negotiate debt? Won't the collector just hang up on a robot?",
+        q: "Can It Negotiate Debt?",
         a: "Your Bot calls with your authorized offer, asks whether the collector can review it, and requests written terms when available. If a caller refuses to engage, it logs that and follows your escalation instructions. Outcomes are not guaranteed, and this is not legal or financial advice.",
       },
       {
-        q: "What about voicemail / hold music / phone trees? Doesn't that break it?",
+        q: "Can It Handle Phone Menus and Hold Time?",
         a: "Your Bot can navigate common IVR menus, wait on hold within configured call limits, leave an approved voicemail, and retry when your workflow allows. Some providers require identity checks or block automated callers, so outcomes vary.",
       },
       {
-        q: "How is this different from just having a friend or family member call for me?",
+        q: "Why Not Ask a Friend?",
         a: "Your Bot is ready when you choose to launch it, follows the same brief consistently, and returns a written outcome. Recording is optional and should be enabled only where lawful.",
       },
       {
-        q: "What can't it do?",
+        q: "What Can't It Do?",
         a: "Calls requiring identity verification beyond what you authorize, anything illegal or fraudulent, emergency-service calls, or work that legally requires appearing in person. Your Bot will tell you when a request is outside the supported scope.",
       },
     ],

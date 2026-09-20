@@ -115,7 +115,7 @@ export default function CallOpsAnalytics() {
   const weekdayTrend = DAY_LABELS.map((label, index) => ({
     label,
     count: weekdayCounts[index],
-    pct: Math.round((weekdayCounts[index] / maxWeekday) * 100),
+    pct: (weekdayCounts[index] / maxWeekday) * 100,
   }));
   const metrics = [
     { label: "Total calls", value: analytics.totalCalls },
@@ -159,20 +159,21 @@ export default function CallOpsAnalytics() {
           {weekdayTrend.map((day) => (
             <div
               key={day.label}
-              className="flex h-full flex-1 flex-col items-center justify-end gap-1.5"
+              className="grid h-full min-w-0 flex-1 grid-rows-[1rem_minmax(0,1fr)_1rem] justify-items-center gap-1.5"
             >
               <span className="font-[var(--wireline-font-mono)] text-[10px] text-[var(--wireline-color-text-tertiary)]">
                 {day.count}
               </span>
-              <div
-                className="w-full rounded-sm"
-                style={{
-                  height: `${Math.max(day.pct, 4)}%`,
-                  minHeight: 4,
-                  background: "var(--wireline-color-action-primary-default)",
-                  opacity: day.pct > 0 ? 0.85 : 0.15,
-                }}
-              />
+              <div className="flex h-full w-full items-end">
+                <div
+                  className="w-full rounded-sm"
+                  style={{
+                    height: `${day.pct}%`,
+                    background: "var(--wireline-color-action-primary-default)",
+                    opacity: 0.85,
+                  }}
+                />
+              </div>
               <span className="text-[10px] text-[var(--wireline-color-text-tertiary)]">
                 {day.label}
               </span>

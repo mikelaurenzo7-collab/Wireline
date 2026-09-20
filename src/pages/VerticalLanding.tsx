@@ -16,6 +16,7 @@ import { PageMeta } from "../lib/page-meta";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
+import { signupHrefForWedge } from "../lib/signup-intent";
 
 const PAIN_ICONS: Record<PainIconName, LucideIcon> = {
   Calendar,
@@ -54,24 +55,6 @@ function CtaLink({
     </Link>
   );
 }
-
-const EVERYDAY_PAIN_TITLES: Record<string, string> = {
-  "Debt negotiation calls": "Debt Negotiation",
-  "Appointment booking you keep putting off": "Appointments",
-  "Returns, billing disputes, customer service": "Billing Disputes",
-  "Phone anxiety, social avoidance, neurodivergence": "Phone Anxiety",
-};
-
-const EVERYDAY_FAQ_TITLES: Record<string, string> = {
-  "Is it actually legal for an AI to make calls on my behalf?": "Can AI call for me?",
-  "Can it really negotiate debt? Won't the collector just hang up on a robot?":
-    "Can it negotiate debt?",
-  "What about voicemail / hold music / phone trees? Doesn't that break it?":
-    "Phone trees, voicemail, hold music?",
-  "How is this different from just having a friend or family member call for me?":
-    "Why not ask a friend?",
-  "What can't it do?": "What can't it do?",
-};
 
 export default function VerticalLanding({
   slug,
@@ -116,7 +99,7 @@ export default function VerticalLanding({
   };
 
   return (
-    <MarketingPageFrame stickyCta stickyCtaHref={cfg.primaryCta.href}>
+    <MarketingPageFrame stickyCta stickyCtaHref={signupHrefForWedge(slug, "personal")}>
       <PageMeta
         title={cfg.metaTitle}
         description={cfg.metaDescription}
@@ -147,9 +130,6 @@ export default function VerticalLanding({
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {
             const Icon = PAIN_ICONS[pain.icon];
-            const title = isEverydayCalls
-              ? EVERYDAY_PAIN_TITLES[pain.title] || pain.title
-              : pain.title;
             return (
               <article
                 key={pain.title}
@@ -160,7 +140,7 @@ export default function VerticalLanding({
                 </span>
                 <div className="min-w-0">
                   <h2 className="text-lg font-semibold tracking-[-.025em] text-foreground">
-                    {title}
+                    {pain.title}
                   </h2>
                   <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{pain.body}</p>
                 </div>
@@ -199,25 +179,22 @@ export default function VerticalLanding({
           </h2>
         </div>
         <div className="mt-8 space-y-3">
-          {cfg.faqs.map((faq) => {
-            const question = isEverydayCalls ? EVERYDAY_FAQ_TITLES[faq.q] || faq.q : faq.q;
-            return (
-              <details key={faq.q} className="group wl-stitch-card overflow-hidden">
-                <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
-                  <span>{question}</span>
-                  <span
-                    aria-hidden="true"
-                    className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </summary>
-                <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
-                  {faq.a}
-                </p>
-              </details>
-            );
-          })}
+          {cfg.faqs.map((faq) => (
+            <details key={faq.q} className="group wl-stitch-card overflow-hidden">
+              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-5 px-5 py-4 text-sm font-semibold text-foreground">
+                <span>{faq.q}</span>
+                <span
+                  aria-hidden="true"
+                  className="text-lg text-muted-foreground transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="border-t border-border px-5 py-4 text-sm leading-6 text-muted-foreground">
+                {faq.a}
+              </p>
+            </details>
+          ))}
         </div>
       </section>
 

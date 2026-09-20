@@ -473,7 +473,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
         }
       >
         <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
-          Caller identity
+          Caller Identity
         </summary>
         <div className="border-t border-border p-4">
           <CompanyIdentityPack />

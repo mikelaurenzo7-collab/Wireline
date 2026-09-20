@@ -243,15 +243,13 @@ export default function RecentCallArtifactRequests() {
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="wl-eyebrow wl-eyebrow--muted">Create on demand</p>
-          <h2 className="mt-2 wl-card-title">Recent Call Files</h2>
+          <h2 className="wl-card-title">Recent Calls</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Request the default {formatLabel} file for an individual completed call. BotBound saves
-            it to your configured destination and keeps only the job metadata and link.
+            Create a {formatLabel} from a call and save it to your selected destination.
           </p>
         </div>
         <Button asChild variant="secondary" size="sm">
-          <Link to="/phone?tab=logs">Open full call history</Link>
+          <Link to="/phone?tab=logs">Call History</Link>
         </Button>
       </div>
 
@@ -266,15 +264,14 @@ export default function RecentCallArtifactRequests() {
       {!enabled ? (
         <div className="mt-4">
           <StatusNotice tone="warning" title="Choose Defaults First">
-            Enable special files and select a connected destination above, then save your report
-            preferences.
+            Enable call files, choose a destination, and save your settings above.
           </StatusNotice>
         </div>
       ) : null}
 
       {!error && visibleCalls.length === 0 ? (
         <p className="mt-5 text-sm text-muted-foreground">
-          Completed calls will appear here when they have a saved operating record.
+          Completed calls appear here once their records are saved.
         </p>
       ) : null}
 

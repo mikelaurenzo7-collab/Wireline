@@ -219,6 +219,8 @@ export interface VoiceLatencyTrendPoint {
 export interface VoiceLatencyInsightsResponse {
   days: number;
   trends: VoiceLatencyTrendPoint[];
+  /** Resolved deployment policy; optional for older API responses. */
+  max_call_seconds?: number;
   generated_at: string;
 }
 

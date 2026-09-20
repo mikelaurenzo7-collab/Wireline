@@ -422,7 +422,7 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
           <div className="space-y-4">
             <div className="p-5 rounded-md wl-panel border border-input bg-brand/5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="wl-label font-black text-brand">ICP Efficiency</span>
+                <span className="wl-label font-black text-brand">ICP Completeness</span>
                 <Sparkles className="w-4 h-4 text-brand animate-pulse" />
               </div>
               <div className="flex items-baseline gap-2">
@@ -437,8 +437,15 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
                 {settings.prospecting_enabled ? "Lead Hunt" : "saved targeting"},{" "}
                 {icp.industryLabel}.
               </p>
-              <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
-                <div className="h-full bg-brand" data-pct={`${icp.completeness}%`} />
+              <div
+                className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden"
+                role="progressbar"
+                aria-label="ICP completeness"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={icp.completeness}
+              >
+                <div className="h-full bg-brand" style={{ width: `${icp.completeness}%` }} />
               </div>
             </div>
 

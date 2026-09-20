@@ -280,7 +280,7 @@ async function mount(surface: Surface) {
           (text(element).includes("Subscribe") ||
             text(element).includes("Checkout paused") ||
             text(element).includes("Pick Starter") ||
-            text(element).includes("Manage subscription")),
+            text(element).includes("Manage Subscription")),
       ),
     ).toBe(true);
     expect(
@@ -365,7 +365,7 @@ it("keeps existing subscription management available while new purchases are pau
     cancel_at_period_end: false,
   };
   await mount("card");
-  const portal = button("card", "Manage subscription");
+  const portal = button("card", "Manage Subscription");
   expect(portal.props.disabled).toBe(false);
   await portal.props.onClick?.();
   expect(h.fetch).toHaveBeenCalledWith("/api/billing/portal", { method: "POST" });

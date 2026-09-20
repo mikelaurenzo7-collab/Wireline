@@ -20,6 +20,7 @@ import {
   type TriageBucket,
 } from "../lib/approval-inbox-response";
 import { emitProductEventOnce } from "../lib/product-event-client";
+import { formatPhone } from "../lib/safe-number";
 import { EmptyState } from "./ui/EmptyState";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { WorkspaceTabStrip } from "./layout/WorkspaceTabStrip";
@@ -28,11 +29,11 @@ import { StatusNotice } from "./molecules";
 type ApprovalBucket = "pending" | "compliance" | "hot_leads" | "escalations" | "knowledge_gaps";
 
 const BUCKET_LABELS: Record<ApprovalBucket, string> = {
-  pending: "Pending actions",
+  pending: "Pending Actions",
   compliance: "Compliance",
-  hot_leads: "Hot leads",
+  hot_leads: "Hot Leads",
   escalations: "Escalations",
-  knowledge_gaps: "Knowledge gaps",
+  knowledge_gaps: "Knowledge Gaps",
 };
 
 // Short labels stay the same word as the full label, just clipped to the head
@@ -55,6 +56,46 @@ function taskType(task: FollowUpTaskRow): string {
   return rawTaskType(task).replace(/_/g, " ");
 }
 
+const TASK_TYPE_LABELS: Record<string, string> = {
+  email: "Email",
+  sms: "SMS",
+  crm: "CRM",
+  human_handoff: "Human Handoff",
+  send_email: "Send Email",
+  send_text_message: "Send Text Message",
+  schedule_calendar: "Schedule Calendar",
+  update_crm_lead: "Update CRM Lead",
+  internal_task: "Internal Task",
+  compliance_review: "Compliance Review",
+  hot_lead_review: "Hot Lead Review",
+  escalation_review: "Escalation Review",
+  knowledge_gap: "Knowledge Gap",
+  messenger_inbound: "Messenger Inbound",
+  review_escalation: "Review Escalation",
+  callback: "Callback",
+  follow_up: "Follow-Up",
+  ticket: "Ticket",
+  customer_profile_captured: "Customer Profile Captured",
+  human_escalation: "Human Escalation",
+  post_call_note: "Post-Call Note",
+};
+
+function taskTypeLabel(task: FollowUpTaskRow): string {
+  const key = rawTaskType(task).trim().toLowerCase();
+  if (Object.hasOwn(TASK_TYPE_LABELS, key)) return TASK_TYPE_LABELS[key];
+  return (
+    key
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((word) =>
+        ["sms", "crm", "api"].includes(word)
+          ? word.toUpperCase()
+          : word.charAt(0).toUpperCase() + word.slice(1),
+      )
+      .join(" ") || "Action"
+  );
+}
+
 function isHumanHandoff(task: FollowUpTaskRow): boolean {
   return rawTaskType(task) === "human_handoff";
 }
@@ -70,7 +111,8 @@ function evidenceSnippet(task: FollowUpTaskRow): string {
   if (typeof payload.reasoning === "string") parts.push(payload.reasoning);
   if (task.description) parts.push(task.description);
   if (typeof payload.to === "string") parts.unshift(`To: ${payload.to}`);
-  return parts.filter(Boolean).join("\n\n").slice(0, 600) || "No evidence snippet attached.";
+  const uniqueParts = [...new Set(parts.map((part) => part.trim()).filter(Boolean))];
+  return uniqueParts.join("\n\n").slice(0, 600) || "No evidence snippet attached.";
 }
 
 function actionIcon(task: FollowUpTaskRow) {
@@ -237,7 +279,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold capitalize text-foreground">{taskType(task)}</h3>
+            <h3 className="text-sm font-semibold text-foreground">{taskTypeLabel(task)}</h3>
             {task.priority ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {task.priority}
@@ -576,12 +618,21 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
         />
       ) : (
         <div className="grid gap-3">
-          {bucketItems.slice(0, visibleCount).map((item) => (
-            <article key={item.id} className="rounded-xl border border-border bg-card p-4">
-              <p className="text-sm font-semibold capitalize">{taskType(item)}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{evidenceSnippet(item)}</p>
-            </article>
-          ))}
+          {bucketItems.slice(0, visibleCount).map((item) => {
+            const caller =
+              typeof item.payload?.customer_number === "string"
+                ? formatPhone(item.payload.customer_number)
+                : "";
+            return (
+              <article key={item.id} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <h3 className="text-sm font-semibold">{taskTypeLabel(item)}</h3>
+                  {caller ? <p className="text-xs text-muted-foreground">{caller}</p> : null}
+                </div>
+                <p className="mt-2 text-sm text-muted-foreground">{evidenceSnippet(item)}</p>
+              </article>
+            );
+          })}
           {bucketItems.length > visibleCount ? (
             <ShadButton
               type="button"

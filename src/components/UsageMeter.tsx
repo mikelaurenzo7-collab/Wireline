@@ -86,6 +86,7 @@ export default function UsageMeter({
   const included = snap.voice_minutes_included;
   const pct = included > 0 ? Math.min(100, Math.round((used / included) * 100)) : 0;
   const hasExtraUsage = snap.overage_minutes > 0;
+  const includedExhausted = included > 0 && used >= included;
   const isWarn = !hasExtraUsage && pct >= 80;
   const credit = snap.credit_balance_usd ?? 0;
   const completionDue = snap.completion_grace_due_usd ?? Math.max(0, -credit);
@@ -208,7 +209,9 @@ export default function UsageMeter({
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[length:var(--wireline-typography-overline-size)] text-amber-500 font-medium">
           <TrendingUp className="w-3.5 h-3.5" />
           <span>
-            Approaching your {included.toLocaleString()} included minutes. After that, new calls use{" "}
+            {includedExhausted
+              ? `Your ${included.toLocaleString()} included minutes are used. New calls use `
+              : `Approaching your ${included.toLocaleString()} included minutes. After that, new calls use `}
             {BALANCE_TITLE} at ${snap.overage_per_min_usd.toFixed(2)}/min. Never an automatic
             overage invoice.
           </span>

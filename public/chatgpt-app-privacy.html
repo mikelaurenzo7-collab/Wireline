@@ -17,22 +17,22 @@
       <strong>Account-bound product:</strong> the BotBound ChatGPT App requires a BotBound account. New users create that account during OAuth so they can build their first Bot in ChatGPT. It creates and refines private, unlaunched Bot drafts in the connected workspace, can run a short private voice simulation or text rehearsal of those Bots, can return a privacy-minimized aggregate workspace summary and per-Bot next-step status, and can return owner-authored Training facts and rules. Confirmed Training writes land in BotBound only after the account holder enables that permission in Apps. It does not place live calls, send messages, purchase or connect phone numbers, access call recordings or transcripts, or launch a Bot from ChatGPT.
     </section>
 
-    <h2>Information used to create an agent</h2>
+    <h2>Information Used to Create an Agent</h2>
     <p>When a connected user creates or updates an agent draft, BotBound processes the agent name, business or brand, intended role, goal, voice and tone preferences, operating rules, knowledge summary, intended actions, prohibited topics, and escalation preferences supplied in the ChatGPT conversation. This information becomes part of the user’s private BotBound workspace draft and may be edited or deleted in BotBound.</p>
 
-    <h2>Information returned to ChatGPT</h2>
+    <h2>Information Returned to ChatGPT</h2>
     <p>To fulfill a user’s request, BotBound may return the connected user’s agent draft identifier, agent name, role, business name, primary goal, tone, operating rules, prohibited topics, allowed actions, escalation policy, knowledge summary, draft lifecycle, and a link to open the draft in BotBound. Agent-list results may include agent identifiers, names, roles, and channels. Agent-status results may include whether the agent is on the phone network, a next-step sentence, and BotBound links. They do not include the phone number itself. A coaching brief may include owner-authored Training facts and operating rules, never customer communications. An aggregate workspace summary may include counts of agents and assigned numbers, recent call/text/email thread counts, unread counts, channel connection state, activation state, subscription status, last-activity time, and a BotBound link. The summary does not include customer identities, phone numbers, email addresses, message bodies, transcripts, recordings, provider credentials, or secrets. For private voice, the widget sends a WebRTC connection offer to BotBound and receives a session-bound connection answer in protected metadata. The answer is not included in the model-visible conversation, and no OpenAI credential is returned to the widget. A private text rehearsal returns the agent’s rehearsal reply and an explicit live-call-false flag.</p>
 
-    <h2>Private voice simulation</h2>
+    <h2>Private Voice Simulation</h2>
     <p>If a connected user selects <strong>Try private voice</strong>, the app requests microphone access through the ChatGPT widget surface and creates a short-lived, tool-free realtime simulation for that saved draft. The simulation cannot access business systems or complete an external action. Audio processing for this optional feature is performed through OpenAI services. Do not use the simulation to provide sensitive personal information, payment-card data, health information, or confidential customer records.</p>
 
-    <h2>Account connection and permissions</h2>
+    <h2>Account Connection and Permissions</h2>
     <p>BotBound uses OAuth to connect the user’s ChatGPT session to their private BotBound account. BotBound uses the connection only for the scopes shown during consent. OAuth authorization codes and bearer credentials are stored only as cryptographic hashes, are time-limited, and are bound to the BotBound MCP resource.</p>
 
-    <h2>How data is used</h2>
+    <h2>How Data Is Used</h2>
     <p>We use app data to provide requested first-agent drafting, private simulation, owner-authored Training reads and confirmed Training writes, aggregate workspace visibility, account-linking, security, and abuse prevention. We do not sell or share personal information for cross-context behavioral advertising. We do not use account-bound agent-draft inputs or private simulation audio to train BotBound models.</p>
 
-    <h2>Retention and controls</h2>
+    <h2>Retention and Controls</h2>
     <p>Agent drafts become part of the connected BotBound account and may be edited or deleted in BotBound. Aggregate workspace summaries are generated from current account state when requested and are not stored as a separate ChatGPT App record by BotBound. The general retention, access, deletion, and regional privacy-rights processes are described in the <a href="/privacy">BotBound Privacy Policy</a>.</p>
 
     <h2>Contact</h2>

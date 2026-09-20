@@ -316,7 +316,6 @@ export default function DeployAgentModal({
                   disableAnimations
                   onClick={() => !deploying && onClose()}
                   disabled={deploying}
-                  className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em]"
                 >
                   Cancel
                 </ShadButton>
@@ -326,17 +325,23 @@ export default function DeployAgentModal({
                   disableAnimations
                   onClick={handleSubmit}
                   disabled={!canSubmit}
-                  className="rounded-md text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.32em] disabled:opacity-50"
+                  aria-label={
+                    deploying ? "Creating Bot" : `Create Bot: ${trimmedName || template.name}`
+                  }
+                  className="rounded-md disabled:opacity-50"
                 >
                   {deploying ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Deploying…
+                      <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" />
+                      Creating…
                     </>
                   ) : (
                     <>
-                      Deploy {trimmedName || "Bot"}
-                      <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                      Create Bot
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5"
+                      />
                     </>
                   )}
                 </ShadButton>

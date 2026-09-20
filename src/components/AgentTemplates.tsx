@@ -268,8 +268,7 @@ export const AGENT_TEMPLATES = [
     id: "personal-screener",
     category: "Everyday & Lifestyle",
     name: "Call Screener",
-    description:
-      "Picks up unknown numbers, screens spam and sales calls, takes messages from legitimate callers, and never bothers you for nothing.",
+    description: "Screens unknown callers and takes messages on your behalf.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: PhoneIncoming,
@@ -378,7 +377,6 @@ function TemplateCard({
   deploying: boolean;
   deployedCount: number;
 }) {
-  const [previewOpen, setPreviewOpen] = useState(false);
   const Icon = template.icon;
   const alreadyDeployed = deployedCount > 0;
   const selfServeRestriction = getTemplateSelfServeRestriction(template);
@@ -391,16 +389,9 @@ function TemplateCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={selfServeAvailable ? { y: -2 } : undefined}
-      className={cn(
-        "relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium",
-        previewOpen ? "border-primary/20 shadow-md shadow-primary/8" : "shadow-sm",
-      )}
+      className="relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium shadow-sm"
       data-accent={template.accent}
       aria-label={`${template.name} template${selfServeAvailable ? "" : ", self-serve deployment unavailable"}`}
-      onMouseEnter={() => setPreviewOpen(true)}
-      onMouseLeave={() => setPreviewOpen(false)}
-      onFocus={() => setPreviewOpen(true)}
-      onBlur={() => setPreviewOpen(false)}
     >
       <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-30 transition-opacity pointer-events-none hidden md:block" />
 
@@ -462,22 +453,15 @@ function TemplateCard({
           ) : null}
         </div>
 
-        <AnimatePresence>
-          {previewOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              className="rounded-md p-3 border text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)]/80 leading-relaxed italic relative bg-[var(--wireline-color-surface-subtle)]"
-            >
-              <MessageCircle
-                aria-hidden="true"
-                className="absolute -top-2 -left-1.5 w-4 h-4 text-[var(--wireline-color-action-primary-default)]"
-              />
-              <span className="pl-2">&ldquo;{template.firstMessage}&rdquo;</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <details className="rounded-md border border-border bg-[var(--wireline-color-surface-subtle)]">
+          <summary className="min-h-11 cursor-pointer rounded-md px-3 py-3 text-xs font-medium text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Sample Greeting
+          </summary>
+          <div className="flex gap-2 px-3 pb-3 text-xs leading-relaxed text-muted-foreground">
+            <MessageCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>&ldquo;{template.firstMessage}&rdquo;</p>
+          </div>
+        </details>
       </div>
 
       <div className="relative z-10 px-4 pb-4">
