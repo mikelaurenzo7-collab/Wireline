@@ -1,8 +1,10 @@
-# Wireline Theme and Design Tokens
+# BotBound Theme and Design Tokens
+
+This initialization snapshot provides source context. Current decisions belong in `.superdesign/design-system.md` and `src/lib/wireline-design-vision.ts`; generated token values belong in `design-tokens/wireline.tokens.json`.
 
 ## Compact token summary
 
-- Identity: Aurora Letterpress — near-black violet canvases, layered charcoal-violet surfaces, electric lavender actions, silver secondary controls, and restrained semantic status colors.
+- Identity: BotBound Design System — near-black violet canvases, layered charcoal-violet surfaces, electric lavender actions, silver secondary controls, and restrained semantic status colors.
 - Dark canvas: default #0A0A0E, deeper #050508, warmer #101018.
 - Dark surfaces: subtle #100F15, default #141319, container #18161E, raised #201E29, strong #262330.
 - Dark text: primary #F5F4F8, secondary #B6B1C6, tertiary #8B87A0.
@@ -12,7 +14,7 @@
 - Type: Inter for body, Inter Tight for display, IBM Plex Mono for operational data. Display 56/60 at 720; H1 40/46 at 700; H2 30/36 at 680; H3 22/30 at 650; body 16/26; caption 13/19; overline 11/16 with 0.09em tracking.
 - Spacing: 2, 4, 6, 8, 10, 12, 16, 24, 32, 40, 48, 64px. Standard section gap 48px.
 - Radius: 6, 8, 10, 12, 20, 28px and pill. Product surfaces favor restrained 10–12px radii.
-- Layout: authenticated content max 1152px; marketing rail 1088px; touch targets 40px minimum, 44px comfortable, 48px primary.
+- Layout: authenticated content max 1152px; marketing rail 1088px; mobile touch targets 44px minimum, 48px primary.
 - Motion: 60, 120, 200, 300, and 440ms with the Wireline emphasized curve cubic-bezier(0.22, 1, 0.36, 1). Reduced motion is honored by the component layers.
 - Elevation: minimal 1–2px definition plus low-opacity long shadows; violet and silver focus/identity rings are semantic tokens.
 - Breakpoints: Tailwind CSS 4 defaults are used; project responsive terminal layers concentrate on 767px mobile and standard tablet/desktop utility breakpoints.

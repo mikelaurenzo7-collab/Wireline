@@ -163,7 +163,7 @@ export default function PhonePage() {
               className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
               data-visual-qa-state="primary-setup"
             >
-              <PhoneSetupPanel />
+              <PhoneSetupPanel initialAgentId={activeAgentId} />
             </div>
           )}
         </div>

@@ -13,7 +13,7 @@ BotBound is the operating layer for your Bot across calls, texts, follow-up, bro
 - **Video presenter** is retired from the launch product. Compatibility code and provider references stay internal until they are safely removed.
 - **Customer voice choice** is the complete 10-voice built-in OpenAI Realtime catalog. A Bot keeps its saved voice for each entire session and may use a different saved voice on a later session. No external voice-cloning provider, catalog, upload, or runtime remains.
 
-Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light themes must express one BotBound Letterpress system rather than separate products.
+Historic dashboard, manager, command-center, chat, operations, and temporary Studio paths must redirect into the active product model or be explicitly retired. Dark and light appearances must express one BotBound Design System rather than separate products.
 
 ## Active product boundary
 
@@ -57,7 +57,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 
 ## Design-system discipline
 
-BotBound Letterpress on the Aurora palette is the only active design system. Technical token and file identifiers retain the `wireline` namespace for compatibility.
+The BotBound Design System is the only active design system. Use semantic surface, action, text, and status tokens; do not introduce palette codenames or competing themes. Technical token and file identifiers retain the `wireline` namespace for compatibility.
 
 - Electric violet is action; ink is structure; silver is the restrained wire accent.
 - Dark mode uses a cool obsidian canvas. Light mode uses a cool near-white canvas with the same hierarchy and tokens.

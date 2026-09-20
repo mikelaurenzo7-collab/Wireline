@@ -50,7 +50,14 @@ vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() })
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
 vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
 
-type Props = { children?: ReactNode; disabled?: boolean; onClick?: () => unknown };
+type Props = {
+  children?: ReactNode;
+  disabled?: boolean;
+  onClick?: () => unknown;
+  to?: string;
+  open?: boolean;
+  "aria-label"?: string;
+};
 type Element = ReactElement<Props>;
 type Surface = "card" | "modal";
 function descendants(node: ReactNode): Element[] {
@@ -94,6 +101,11 @@ function paidPlan(overrides: Record<string, unknown> = {}) {
     annual_configured: true,
     contact_sales: false,
     max_agents: 1,
+    included_phone_numbers: 1,
+    voice_minutes_monthly: 50,
+    runtime_allowance_usd_monthly: 1,
+    ai_spend_allowance_usd_monthly: 1.5,
+    overage_per_min_usd: 0.2,
     is_free: false,
     public: true,
     features: ["Voice"],
@@ -125,6 +137,128 @@ beforeEach(() => {
       h.listener = listener;
     },
     removeEventListener: vi.fn(),
+  });
+});
+
+describe("billing plan decisions", () => {
+  it("shows authoritative usage and allowances before optional full plan details", async () => {
+    const originalFeatures = [
+      "Voice, text, and email under your Bot's identity",
+      "Connected calendar and CRM workflows",
+      "Automatic post-call summary and next action",
+      "No automatic overages",
+    ];
+    h.catalog.plans = [
+      paidPlan({
+        included_phone_numbers: 3,
+        voice_minutes_monthly: 225,
+        runtime_allowance_usd_monthly: 2.75,
+        ai_spend_allowance_usd_monthly: 4.5,
+        overage_per_min_usd: 0.31,
+        features: originalFeatures,
+      }),
+    ];
+    await mount("card");
+    const elements = render("card");
+    const summary = elements.find(
+      (element) => element.type === "ul" && !element.props["aria-label"],
+    );
+    expect(text(summary)).toContain("3 phone numbers included");
+    expect(text(summary)).toContain("225 voice minutes each month");
+    expect(text(summary)).toContain("$2.75 Runtime + $4.50 managed AI each month");
+    expect(text(summary)).toContain("$0.31/min prepaid after included minutes");
+    expect(text(summary)).toContain("No automatic overages");
+    expect(text(summary)).not.toContain("Connected calendar");
+    const details = elements.find((element) => element.type === "details");
+    expect(details?.props.open).toBeUndefined();
+    for (const feature of originalFeatures) expect(text(details)).toContain(feature);
+    expect(
+      elements.findIndex(
+        (element) => element.type === "button" && text(element).includes("Subscribe"),
+      ),
+    ).toBeLessThan(elements.indexOf(details!));
+  });
+
+  it("preserves allowance disclosures from older payloads without numeric allowances", async () => {
+    h.catalog.plans = [
+      paidPlan({
+        runtime_allowance_usd_monthly: undefined,
+        ai_spend_allowance_usd_monthly: undefined,
+        features: ["$7 monthly Runtime Allowance + $9 managed AI allowance"],
+      }),
+    ];
+    await mount("card");
+    const summary = render("card").find(
+      (element) => element.type === "ul" && !element.props["aria-label"],
+    );
+    expect(text(summary)).toContain("$7 monthly Runtime Allowance + $9 managed AI allowance");
+  });
+
+  it("offers a usable billing contact link for an unavailable individual plan", async () => {
+    h.catalog.plans = [
+      paidPlan(),
+      paidPlan({ id: "team", name: "Starter Plus", configured: false, annual_configured: false }),
+    ];
+    await mount("card");
+    const contact = render("card").find(
+      (element) => element.type === "a" && text(element).includes("Contact Sales"),
+    );
+    expect(contact?.props.to).toBe("/contact?topic=billing");
+    expect(contact?.props.disabled).not.toBe(true);
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+  });
+
+  it("retains a free path while the global checkout gate is paused", async () => {
+    h.catalog.checkout_available = false;
+    h.catalog.plans = [
+      paidPlan({
+        id: "personal",
+        name: "Free Builder",
+        price_usd_monthly: 0,
+        price_usd_annual: 0,
+        is_free: true,
+        features: ["Private simulation"],
+      }),
+      paidPlan(),
+    ];
+    await mount("card");
+    const elements = render("card");
+    expect(
+      elements.find(
+        (element) => element.type === "a" && text(element).includes("Open Free Builder"),
+      )?.props.to,
+    ).toBe("/studio");
+    expect(
+      elements.some((element) => element.type === "a" && text(element).includes("Contact Sales")),
+    ).toBe(false);
+    expect(button("card", "Checkout paused").props.disabled).toBe(true);
+    expect(
+      elements.some((element) => text(element).includes("No live number until activation")),
+    ).toBe(true);
+  });
+
+  it("uses the selected annual price and submits the annual checkout interval", async () => {
+    await mount("card");
+    button("card", "Annual").props.onClick?.();
+    expect(render("card").some((element) => text(element).includes("$190/yr"))).toBe(true);
+    await button("card", "Subscribe annually").props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({ body: JSON.stringify({ plan_id: "starter", interval: "year" }) }),
+    );
+  });
+
+  it("offers contact for an unavailable annual price without disabling its monthly option", async () => {
+    h.catalog.plans = [paidPlan({ annual_configured: false })];
+    await mount("card");
+    button("card", "Annual").props.onClick?.();
+    expect(
+      render("card").find(
+        (element) => element.type === "a" && text(element).includes("Contact Sales"),
+      )?.props.to,
+    ).toBe("/contact?topic=billing");
+    button("card", "Monthly").props.onClick?.();
+    expect(button("card", "Subscribe").props.disabled).toBe(false);
   });
 });
 afterEach(() => vi.unstubAllGlobals());

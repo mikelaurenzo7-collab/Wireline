@@ -118,35 +118,35 @@ const CHANNEL_RULES = [
 
 const FAQ = [
   [
-    "Can your Bot handle voice, text, and email?",
+    "Can Your Bot Handle Voice, Text, and Email?",
     "Yes. A single BotBound Bot can call, hold natural conversations, text, and email under one identity, memory, rule set, approval posture, and outcome record. Additional Bots add concurrency or specialized roles, not basic channels.",
   ],
   [
-    "Does every paid Bot get a phone number?",
+    "Does Every Paid Bot Get a Phone Number?",
     "Yes. Each active paid Bot includes a dedicated number at no extra line fee, within plan capacity. Free Builder and unused Bot slots do not receive live numbers.",
   ],
   [
-    "Why are there two Starter plans?",
+    "Why Are There Two Starter Plans?",
     "Starter is the lowest-risk way to put one Phone Bot live. Starter Plus adds a second live Bot, a second phone number, more voice minutes, and fuller Lead Hunt and enrichment in the same workspace.",
   ],
   [
-    "What happens when included voice minutes run out?",
+    "What Happens When Included Voice Minutes Run Out?",
     `New live work draws prepaid Runtime Balance at ${TOPUP_RATE}, never a surprise postpaid bill. Add balance, wait for renewal, or upgrade. Balance depletion does not cut off an active call; the session duration limit still applies. New live actions pause when coverage is exhausted.`,
   ],
   [
-    "How long can a call last?",
+    "How Long Can a Call Last?",
     "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser tests and message-taking flows have a 5-minute maximum. Reaching a session limit ends the call; running out of balance during a live call does not.",
   ],
   [
-    "Why keep live usage prepaid?",
+    "Why Keep Live Usage Prepaid?",
     "Calls and messages carry real operating costs. One subscription unlocks every channel, included capacity gets you live, and extra usage stays prepaid and visible.",
   ],
   [
-    "Can I cancel or get a refund?",
+    "Can I Cancel or Get a Refund?",
     "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@botbound.me within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
   ],
   [
-    "What is the Scale plan?",
+    "What Is the Scale Plan?",
     "Scale is a custom committed-usage agreement for organizations needing 25 or more Bots, negotiated channel economics, SSO, custom integrations, security review, retention controls, implementation support, or SLAs. See the Scale card above.",
   ],
 ] as const;
@@ -430,7 +430,7 @@ export default function Pricing() {
 
           <details className="pricing-more group mx-auto mt-2 w-full max-w-5xl text-left">
             <summary className="pricing-more__summary wl-focus-ring-halo mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg text-center text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground marker:hidden">
-              Usage details &amp; FAQs
+              Usage Details &amp; FAQs
               <ChevronDown
                 className="h-4 w-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
                 aria-hidden="true"
@@ -446,9 +446,7 @@ export default function Pricing() {
                 <span className="font-semibold text-foreground">On every paid plan:</span>{" "}
                 {SHARED_PAID_FEATURES.join(". ")}
               </p>
-              <h2 className="wl-public-section-heading mx-auto text-center">
-                Your Bot. No Seat Tax. Clear Costs.
-              </h2>
+              <h2 className="wl-public-section-heading mx-auto text-center">Clear Costs</h2>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {CHANNEL_RULES.map(({ title, body }) => (
                   <article

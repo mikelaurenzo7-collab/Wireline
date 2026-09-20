@@ -57,6 +57,8 @@ export interface ClientPlan {
   price_usd_annual: number;
   max_agents: number;
   voice_minutes_monthly: number;
+  runtime_allowance_usd_monthly?: number;
+  ai_spend_allowance_usd_monthly?: number;
   overage_per_min_usd: number;
   included_phone_numbers: number;
   extra_agent_price_usd: number | null;

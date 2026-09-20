@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   ArrowLeft,
@@ -28,16 +28,21 @@ const STARTER_PLUS_PRICE = planById("team")?.price_usd_monthly ?? 39;
 export function ContactPage() {
   const [searchParams] = useSearchParams();
   const initialIntent = searchParams.get("intent") ?? searchParams.get("topic");
+  const startsAsBilling = initialIntent?.toLowerCase() === "billing";
   const startsAsSales = ["sales", "business", "enterprise"].includes(
     initialIntent?.toLowerCase() ?? "",
   );
   const [inquiryType, setInquiryType] = useState<(typeof INQUIRY_TYPES)[number]["value"]>(
-    startsAsSales ? "sales" : "personal",
+    startsAsBilling ? "general" : startsAsSales ? "sales" : "personal",
   );
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
   const [subject, setSubject] = useState(
-    initialIntent?.toLowerCase() === "enterprise" ? "Enterprise rollout" : "",
+    startsAsBilling
+      ? "Billing Help"
+      : initialIntent?.toLowerCase() === "enterprise"
+        ? "Enterprise rollout"
+        : "",
   );
   const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");
@@ -45,6 +50,17 @@ export function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
+  const [invalidField, setInvalidField] = useState<"email" | "subject" | "body" | null>(null);
+  const errorId = useId();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  const clearFieldError = (field: typeof invalidField) => {
+    if (invalidField !== field) return;
+    setInvalidField(null);
+    setError(null);
+  };
 
   const normalizedEmail = email.trim();
   const normalizedSubject = subject.trim();
@@ -61,18 +77,32 @@ export function ContactPage() {
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setInvalidField(null);
     setEmailFallbackAvailable(false);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
       setError("Enter a valid email address.");
+      setInvalidField("email");
+      emailRef.current?.focus();
+      emailRef.current?.scrollIntoView({ behavior: "instant", block: "center", inline: "nearest" });
       return;
     }
     if (normalizedSubject.length < 3) {
       setError("Add a short subject so we can route your note.");
+      setInvalidField("subject");
+      subjectRef.current?.focus();
+      subjectRef.current?.scrollIntoView({
+        behavior: "instant",
+        block: "center",
+        inline: "nearest",
+      });
       return;
     }
     if (normalizedBody.length < 10) {
       setError("Add a little more detail so we can help.");
+      setInvalidField("body");
+      bodyRef.current?.focus();
+      bodyRef.current?.scrollIntoView({ behavior: "instant", block: "center", inline: "nearest" });
       return;
     }
 
@@ -210,11 +240,17 @@ export function ContactPage() {
                 <label className="grid gap-2 text-sm font-semibold text-foreground">
                   Email
                   <Input
+                    ref={emailRef}
                     required
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    aria-invalid={invalidField === "email"}
+                    aria-describedby={invalidField === "email" ? errorId : undefined}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      clearFieldError("email");
+                    }}
                     placeholder="you@example.com"
                   />
                 </label>
@@ -247,18 +283,30 @@ export function ContactPage() {
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Subject
                 <Input
+                  ref={subjectRef}
                   required
                   value={subject}
-                  onChange={(event) => setSubject(event.target.value)}
+                  aria-invalid={invalidField === "subject"}
+                  aria-describedby={invalidField === "subject" ? errorId : undefined}
+                  onChange={(event) => {
+                    setSubject(event.target.value);
+                    clearFieldError("subject");
+                  }}
                   placeholder="What can we help with?"
                 />
               </label>
               <label className="grid gap-2 text-sm font-semibold text-foreground">
                 Message
                 <textarea
+                  ref={bodyRef}
                   required
                   value={body}
-                  onChange={(event) => setBody(event.target.value)}
+                  aria-invalid={invalidField === "body"}
+                  aria-describedby={invalidField === "body" ? errorId : undefined}
+                  onChange={(event) => {
+                    setBody(event.target.value);
+                    clearFieldError("body");
+                  }}
                   rows={6}
                   className="w-full rounded border border-border bg-card px-3 py-3 text-sm leading-6 text-foreground outline-none focus:border-primary"
                   placeholder={
@@ -269,7 +317,7 @@ export function ContactPage() {
                 />
               </label>
               {error && (
-                <p role="alert" className="text-sm text-destructive">
+                <p id={errorId} role="alert" className="text-sm text-destructive">
                   {error}
                 </p>
               )}

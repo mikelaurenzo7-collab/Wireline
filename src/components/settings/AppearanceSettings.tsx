@@ -5,13 +5,13 @@ import { useTheme, type Theme } from "../../contexts/ThemeContext";
 const OPTIONS: Array<{ id: Theme; label: string; detail: string; icon: typeof Sun }> = [
   {
     id: "dark",
-    label: "Ink",
-    detail: "Letterpress default",
+    label: "Dark",
+    detail: "Default appearance",
     icon: Moon,
   },
   {
     id: "light",
-    label: "Paper",
+    label: "Light",
     detail: "Bright environments",
     icon: Sun,
   },

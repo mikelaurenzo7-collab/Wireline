@@ -6,6 +6,7 @@ import {
   CreditCard,
   Loader2,
   Check,
+  ChevronDown,
   Shield,
   ArrowRight,
   AlertTriangle,
@@ -469,6 +470,41 @@ function CreditTopUpCard({
   );
 }
 
+function planSummary(plan: ClientPlan): string[] {
+  const usd = (value: number) => `$${value.toFixed(2).replace(/\.00$/, "")}`;
+  const allowance = plan.ai_spend_allowance_usd_monthly;
+  if (plan.is_free) {
+    return [
+      "Private setup and simulation",
+      ...(typeof allowance === "number" && Number.isFinite(allowance)
+        ? [`${usd(allowance)} of private AI simulation each month`]
+        : plan.features.filter((feature) => /simulation.*month/i.test(feature))),
+      "No live number until activation",
+    ];
+  }
+  const runtime = plan.runtime_allowance_usd_monthly;
+  return [
+    ...(Number.isFinite(plan.included_phone_numbers)
+      ? [
+          `${plan.included_phone_numbers} phone number${plan.included_phone_numbers === 1 ? "" : "s"} included`,
+        ]
+      : []),
+    ...(Number.isFinite(plan.voice_minutes_monthly)
+      ? [`${plan.voice_minutes_monthly.toLocaleString()} voice minutes each month`]
+      : []),
+    ...(typeof runtime === "number" &&
+    Number.isFinite(runtime) &&
+    typeof allowance === "number" &&
+    Number.isFinite(allowance)
+      ? [`${usd(runtime)} Runtime + ${usd(allowance)} managed AI each month`]
+      : plan.features.filter((feature) => /allowance/i.test(feature))),
+    ...(Number.isFinite(plan.overage_per_min_usd)
+      ? [`$${plan.overage_per_min_usd.toFixed(2)}/min prepaid after included minutes`]
+      : []),
+    ...plan.features.filter((feature) => /no automatic overages/i.test(feature)),
+  ];
+}
+
 function PlanPicker({
   plans,
   signupPlanInterest,
@@ -487,8 +523,8 @@ function PlanPicker({
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
   return (
-    <div className="rounded-md wl-panel border border-border p-6 sm:p-8 space-y-8">
-      <div className="border-b border-border pb-6">
+    <div className="rounded-md wl-panel border border-border p-4 sm:p-6 space-y-5">
+      <div className="border-b border-border pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Plans</h3>
           <div
@@ -541,7 +577,7 @@ function PlanPicker({
               !isFree &&
               (showAnnual ? plan.annual_configured === true : plan.configured === true);
             const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
-            const priceSuffix = showAnnual ? "/yr" : "/mo";
+            const priceSuffix = isFree ? "forever" : showAnnual ? "/yr" : "/mo";
             const monthsSaved =
               annual && plan.price_usd_monthly > 0
                 ? Math.max(0, Math.round(12 - plan.price_usd_annual / plan.price_usd_monthly))
@@ -552,7 +588,7 @@ function PlanPicker({
                 whileHover={{ y: -4 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "relative rounded-md wl-panel border p-6 flex flex-col gap-5 transition-all group overflow-hidden",
+                  "relative rounded-md wl-panel border p-4 sm:p-5 flex flex-col gap-4 transition-all group overflow-hidden",
                   isSignupMatch
                     ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
                     : "border-border hover:border-[color:var(--wireline-color-border-strong)]",
@@ -560,8 +596,8 @@ function PlanPicker({
                 data-accent={accent}
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 rounded-md flex items-center justify-center wl-accent-surface">
-                    <Icon className="w-6 h-6 wl-accent-text" />
+                  <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
+                    <Icon className="w-5 h-5 wl-accent-text" />
                   </div>
                   <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
                     {plan.max_agents} {plan.max_agents === 1 ? "Bot" : "Bots"}
@@ -583,7 +619,7 @@ function PlanPicker({
                     <p className="mt-1 text-xs text-muted-foreground">
                       Save {monthsSaved} month{monthsSaved === 1 ? "" : "s"} vs monthly
                     </p>
-                  ) : billingInterval === "year" && !annual ? (
+                  ) : !isFree && billingInterval === "year" && !annual ? (
                     <p className="mt-1 text-xs text-muted-foreground">Billed monthly</p>
                   ) : annual ? (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -595,7 +631,7 @@ function PlanPicker({
                   ) : null}
                 </div>
                 <ul className="space-y-2 flex-1">
-                  {plan.features.map((f: string, i: number) => (
+                  {planSummary(plan).map((f: string, i: number) => (
                     <li key={i} className="flex items-start gap-2 text-caption">
                       <Check
                         className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
@@ -616,6 +652,17 @@ function PlanPicker({
                       Open Free Builder <ArrowRight className="w-3 h-3" />
                     </Link>
                   </ShadButton>
+                ) : checkoutReleased && !canSubscribe ? (
+                  <ShadButton
+                    asChild
+                    disableAnimations
+                    variant="outline"
+                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground wl-label"
+                  >
+                    <Link to="/contact?topic=billing">
+                      Contact Sales <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </ShadButton>
                 ) : (
                   <ShadButton
                     type="button"
@@ -634,8 +681,6 @@ function PlanPicker({
                       <>
                         Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
                       </>
-                    ) : checkoutReleased ? (
-                      "Contact sales"
                     ) : (
                       "Checkout paused"
                     )}
@@ -648,6 +693,31 @@ function PlanPicker({
                       : "Online checkout is temporarily unavailable"}
                   </p>
                 )}
+                {plan.features.length > 0 ? (
+                  <details className="group/details border-t border-border pt-1">
+                    <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground marker:hidden">
+                      Plan Details
+                      <ChevronDown
+                        className="size-4 shrink-0 transition-transform group-open/details:rotate-180 motion-reduce:transition-none"
+                        aria-hidden="true"
+                      />
+                    </summary>
+                    <ul className="space-y-2 pb-2 pt-1" aria-label={`${plan.name} full details`}>
+                      {plan.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-2 text-caption text-muted-foreground"
+                        >
+                          <Check
+                            className="mt-0.5 size-3.5 shrink-0 wl-accent-text"
+                            aria-hidden="true"
+                          />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
                 <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
               </motion.div>
             );

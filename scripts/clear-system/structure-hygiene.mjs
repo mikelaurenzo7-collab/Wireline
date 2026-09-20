@@ -95,9 +95,27 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
     "theme architecture must preserve Dark, Light, and System appearances",
   );
   mustInclude(
+    "src/lib/wireline-design-vision.ts",
+    designVisionSource,
+    /appearance:\s*\{\s*default:\s*"dark"/,
+    "the canonical design manifest must retain the dark first-visit default",
+  );
+  mustInclude(
     "src/contexts/ThemeContext.tsx",
     themeContext,
-    /return "dark"/,
+    /import\s*\{\s*WIRELINE_DESIGN_VISION\s*\}\s*from\s*"\.\.\/lib\/wireline-design-vision"/,
+    "theme runtime must use the canonical design manifest",
+  );
+  mustInclude(
+    "src/contexts/ThemeContext.tsx",
+    themeContext,
+    /const DEFAULT_THEME = WIRELINE_DESIGN_VISION\.appearance\.default;/,
+    "theme runtime must derive its first-visit default from the design manifest",
+  );
+  mustInclude(
+    "src/contexts/ThemeContext.tsx",
+    themeContext,
+    /function readStoredTheme\(\): Theme \{[\s\S]*?return DEFAULT_THEME;\s*\}\s*function systemPrefersDark/,
     "first-visit appearance must remain dark unless the customer explicitly chose otherwise",
   );
   mustInclude(

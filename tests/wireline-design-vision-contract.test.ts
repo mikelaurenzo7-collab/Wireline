@@ -30,16 +30,14 @@ describe("BotBound design vision", () => {
     expect(WIRELINE_DESIGN_VISION.system).toBe("BotBound Design System");
     expect(WIRELINE_DESIGN_VISION.naming).toEqual({
       designSystem: "BotBound Design System",
-      rule:
-        "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
+      rule: "BotBound Design System is the only customer-facing system name. Describe visual decisions by function: light, dark, canvas, surface, raised, recessed, ink, violet, wire, signal, and status. Do not create named sub-systems, material themes, or palette codenames.",
     });
     expect(WIRELINE_DESIGN_VISION.appearance).toEqual({
-      default: "light",
+      default: "dark",
       modes: ["light", "dark", "system"],
       lightCanvas: "#F6F5FA",
       darkCanvas: "#0A0A0E",
-      rule:
-        "Light is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
+      rule: "Dark is the first-visit appearance. Saved customer preference always wins. Light and dark are appearances of the same BotBound Design System, never separate visual systems.",
     });
     expect(WIRELINE_DESIGN_VISION.shell).toEqual({
       componentOwner: "src/components/WorkspaceShell.tsx",
@@ -52,10 +50,12 @@ describe("BotBound design vision", () => {
         "wl-shell-dock",
         "wl-shell-more-link",
       ],
-      rule:
-        "Mounted authenticated chrome uses only canonical wl-shell-* hooks. wl-rail-* aliases are migration-only and may not be composed into WorkspaceShell.",
+      rule: "Mounted authenticated chrome uses only canonical wl-shell-* hooks. wl-rail-* aliases are migration-only and may not be composed into WorkspaceShell.",
     });
     expect(WIRELINE_DESIGN_VISION.tokens.action).toBe("#A78BFA");
+    expect(WIRELINE_DESIGN_VISION.principles).toContain(
+      "Near-black dark canvas is the first-visit default; off-white light remains a first-class appearance.",
+    );
     expect(WIRELINE_DESIGN_VISION.principles).toContain(
       "There is one BotBound visual language across public, authenticated, extension, MCP, and native surfaces.",
     );
@@ -97,7 +97,9 @@ describe("BotBound design vision", () => {
     expect(read("src/lib/surface-contract.ts")).not.toMatch(
       /system:\s*"(?:WIRELINE|BotBound) (?:Letterpress|Obsidian|Aurora|Paper)"/,
     );
-    expect(read("src/constants/brand-colors.ts")).not.toMatch(/Wireline Letterpress|obsidian material|Paper appearance/i);
+    expect(read("src/constants/brand-colors.ts")).not.toMatch(
+      /Wireline Letterpress|obsidian material|Paper appearance/i,
+    );
   });
 
   it("defines shared primitives across the canonical system stylesheets", () => {
@@ -155,9 +157,7 @@ describe("BotBound design vision", () => {
     for (const hook of WIRELINE_DESIGN_VISION.shell.hooks) {
       expect(shellComponent + shellStyles).toContain(hook);
     }
-    expect(shellStyles).toContain(
-      '.wl-shell-bot-context[data-wireline-bot-selected="true"]',
-    );
+    expect(shellStyles).toContain('.wl-shell-bot-context[data-wireline-bot-selected="true"]');
   });
 
   it("maps tertiary text to the generated token in foundation runtime", () => {

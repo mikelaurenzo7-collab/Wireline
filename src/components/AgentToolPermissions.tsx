@@ -219,7 +219,7 @@ export default function AgentToolPermissions({
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-controls="agent-actions-body"
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="flex min-h-11 w-full items-center justify-between gap-3 text-left wl-focus-ring-halo"
       >
         <span className="flex items-center gap-2">
           <Wrench className="size-4 text-muted-foreground" aria-hidden="true" />

@@ -376,6 +376,15 @@ const StudioWorkroom = forwardRef<
           ? "Replying"
           : "Working";
 
+  const modeTabId = (option: WorkroomMode) => `studio-workroom-${agentId}-tab-${option}`;
+  const modePanelId = `studio-workroom-${agentId}-panel`;
+  const selectMode = (option: WorkroomMode) => {
+    onModeChange?.(option);
+    // The workspace remounts the conversation when its mode changes.
+    // Restore focus to the new tab instead of leaving keyboard users at the page root.
+    requestAnimationFrame(() => document.getElementById(modeTabId(option))?.focus());
+  };
+
   const modeToggle = onModeChange ? (
     <div
       className="inline-flex items-center rounded-lg bg-muted/45 p-0.5"
@@ -385,11 +394,29 @@ const StudioWorkroom = forwardRef<
       {(["configure", "test"] as const).map((option) => (
         <button
           key={option}
+          id={modeTabId(option)}
           type="button"
           role="tab"
           aria-selected={mode === option}
-          onClick={() => onModeChange(option)}
-          className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors wl-focus-ring-halo ${
+          aria-controls={modePanelId}
+          tabIndex={mode === option ? 0 : -1}
+          onClick={() => selectMode(option)}
+          onKeyDown={(event) => {
+            const nextMode =
+              event.key === "Home"
+                ? "configure"
+                : event.key === "End"
+                  ? "test"
+                  : event.key === "ArrowLeft" || event.key === "ArrowRight"
+                    ? option === "configure"
+                      ? "test"
+                      : "configure"
+                    : null;
+            if (!nextMode) return;
+            event.preventDefault();
+            selectMode(nextMode);
+          }}
+          className={`min-h-11 min-w-11 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors wl-focus-ring-halo ${
             mode === option
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -406,7 +433,7 @@ const StudioWorkroom = forwardRef<
       type="button"
       disabled={!messages.length || clearing || sending || loading}
       onClick={() => void clearConversation()}
-      className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+      className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35"
       aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
       title={mode === "test" ? "Reset test" : "Clear conversation"}
     >
@@ -477,135 +504,150 @@ const StudioWorkroom = forwardRef<
         </div>
       </header>
 
-      {error ? (
-        <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
-          <StatusNotice tone="destructive" title="Conversation Issue">
-            {error}
-          </StatusNotice>
-        </div>
-      ) : null}
-
-      <section
-        ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
-        role="log"
-        aria-label="Conversation"
-        aria-live="polite"
-        aria-relevant="additions text"
-        tabIndex={0}
+      <div
+        id={onModeChange ? modePanelId : undefined}
+        role={onModeChange ? "tabpanel" : undefined}
+        aria-labelledby={onModeChange ? modeTabId(mode) : undefined}
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <div className="mx-auto h-full w-full max-w-3xl">
-          {loading ? (
-            <MessageSkeletons />
-          ) : messages.length ? (
-            <div className="flex flex-col gap-5">
-              {messages.map((message, index) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  agentName={agentName}
-                  markKey={markKey}
-                  mode={mode}
-                  speaking={
-                    sending &&
-                    streamState.phase === "replying" &&
-                    message.role === "agent" &&
-                    index === messages.length - 1
-                  }
-                />
-              ))}
-              {sending ? (
-                <div className="flex max-w-[92%] items-start gap-3">
-                  <AgentAvatar
+        {error ? (
+          <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
+            <StatusNotice tone="destructive" title="Conversation Issue">
+              {error}
+            </StatusNotice>
+          </div>
+        ) : null}
+
+        <section
+          ref={scrollRef}
+          className="min-h-0 flex-1 overflow-y-auto px-4 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:px-6"
+          role="log"
+          aria-label="Conversation"
+          aria-live="polite"
+          aria-relevant="additions text"
+          tabIndex={0}
+        >
+          <div className="mx-auto h-full w-full max-w-3xl">
+            {loading ? (
+              <MessageSkeletons />
+            ) : messages.length ? (
+              <div className="flex flex-col gap-5">
+                {messages.map((message, index) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
                     agentName={agentName}
                     markKey={markKey}
-                    speaking={streamState.phase === "replying"}
+                    mode={mode}
+                    speaking={
+                      sending &&
+                      streamState.phase === "replying" &&
+                      message.role === "agent" &&
+                      index === messages.length - 1
+                    }
                   />
-                  <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
-                    {workingLabel}…
+                ))}
+                {sending ? (
+                  <div className="flex max-w-[92%] items-start gap-3">
+                    <AgentAvatar
+                      agentName={agentName}
+                      markKey={markKey}
+                      speaking={streamState.phase === "replying"}
+                    />
+                    <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+                      {workingLabel}…
+                    </div>
                   </div>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
-              <AgentFace seed={agentName} markKey={markKey} size={48} title={`${agentName} mark`} />
-              <h3 className="mt-4 text-lg font-semibold text-foreground">
-                {mode === "test"
-                  ? "Start with a Real Customer Question"
-                  : "Describe What Should Change"}
-              </h3>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
-        <div className="mx-auto max-w-3xl">
-          {showStarterPrompts ? (
-            <div className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5" aria-label="Starter prompts">
-              {quickPrompts.slice(0, 3).map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  onClick={() => {
-                    setDraft(prompt);
-                    requestAnimationFrame(() => inputRef.current?.focus());
-                  }}
-                  className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0`}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <div className={WL_COMPOSER_CLASSES.composerDock}>
-            <label className="sr-only" htmlFor="studio-workroom-message">
-              {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
-            </label>
-            <textarea
-              id="studio-workroom-message"
-              ref={inputRef}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (
-                  event.nativeEvent.isComposing ||
-                  event.key !== "Enter" ||
-                  event.shiftKey ||
-                  sending
-                )
-                  return;
-                const finePointer = window.matchMedia("(pointer: fine)").matches;
-                if (!finePointer && !event.metaKey && !event.ctrlKey) return;
-                event.preventDefault();
-                submit();
-              }}
-              rows={1}
-              disabled={sending}
-              placeholder={mode === "test" ? "Ask as a customer…" : "Describe a change…"}
-              className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
-            />
-            <div className="wl-composer-dock__toolbar">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  {mode === "test" ? "Test" : "Build"}
-                </span>
+                ) : null}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!draft.trim() || sending || loading || clearing}
-                  onClick={submit}
-                  className="min-w-9"
-                  aria-busy={sending}
-                  aria-label={sending ? "Sending" : "Send"}
-                >
-                  {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-                  <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
-                </Button>
+            ) : (
+              <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
+                <AgentFace
+                  seed={agentName}
+                  markKey={markKey}
+                  size={48}
+                  title={`${agentName} mark`}
+                />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  {mode === "test"
+                    ? "Start with a Real Customer Question"
+                    : "Describe What Should Change"}
+                </h3>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+          <div className="mx-auto max-w-3xl">
+            {showStarterPrompts ? (
+              <div
+                className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5"
+                aria-label="Starter prompts"
+              >
+                {quickPrompts.slice(0, 3).map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => {
+                      setDraft(prompt);
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                    className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0`}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className={WL_COMPOSER_CLASSES.composerDock}>
+              <label className="sr-only" htmlFor="studio-workroom-message">
+                {mode === "test" ? `Customer message for ${agentName}` : `Message ${agentName}`}
+              </label>
+              <textarea
+                id="studio-workroom-message"
+                ref={inputRef}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (
+                    event.nativeEvent.isComposing ||
+                    event.key !== "Enter" ||
+                    event.shiftKey ||
+                    sending
+                  )
+                    return;
+                  const finePointer = window.matchMedia("(pointer: fine)").matches;
+                  if (!finePointer && !event.metaKey && !event.ctrlKey) return;
+                  event.preventDefault();
+                  submit();
+                }}
+                rows={1}
+                disabled={sending}
+                placeholder={mode === "test" ? "Ask as a customer…" : "Describe a change…"}
+                className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
+              />
+              <div className="wl-composer-dock__toolbar">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    {mode === "test" ? "Test" : "Build"}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!draft.trim() || sending || loading || clearing}
+                    onClick={submit}
+                    className="min-w-9"
+                    aria-busy={sending}
+                    aria-label={sending ? "Sending" : "Send"}
+                  >
+                    {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
+                    <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

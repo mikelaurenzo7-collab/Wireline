@@ -42,7 +42,7 @@ function formatProvisionedDate(value?: string | null) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function PhoneSetupPanel() {
+export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentId?: string }) {
   const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
@@ -58,6 +58,11 @@ export default function PhoneSetupPanel() {
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
+  const previousPreferredAgentRef = useRef("");
+  const appliedLinePreferenceRef = useRef("");
+  const preferredAgentId = agents.some((agent) => agent.id === initialAgentId)
+    ? initialAgentId
+    : "";
 
   const activeNumber =
     numbers.find((number) => number.id === selectedNumberId) || numbers[0] || null;
@@ -79,11 +84,34 @@ export default function PhoneSetupPanel() {
 
   useEffect(() => {
     // The new-line form is independent of the line currently being inspected.
-    // Reapplying activeNumber.agent_id here would undo the customer's selection.
+    // Apply new Studio context once, without undoing edits on a roster refresh.
+    const preferenceChanged = previousPreferredAgentRef.current !== preferredAgentId;
+    previousPreferredAgentRef.current = preferredAgentId;
     setSelectedAgentId((current) =>
-      agents.some((agent) => agent.id === current) ? current : agents[0]?.id || "",
+      preferenceChanged && preferredAgentId
+        ? preferredAgentId
+        : agents.some((agent) => agent.id === current)
+          ? current
+          : preferredAgentId || agents[0]?.id || "",
     );
-  }, [agents]);
+  }, [agents, preferredAgentId]);
+
+  useEffect(() => {
+    if (!preferredAgentId) {
+      appliedLinePreferenceRef.current = "";
+      return;
+    }
+    if (loading || inventoryUnavailable || appliedLinePreferenceRef.current === preferredAgentId)
+      return;
+    appliedLinePreferenceRef.current = preferredAgentId;
+    const preferred = numbers.find((number) => number.agent_id === preferredAgentId);
+    if (preferred) {
+      setSelectedNumberId(preferred.id);
+      setAddingLine(false);
+    } else {
+      setAddingLine(true);
+    }
+  }, [preferredAgentId, numbers, loading, inventoryUnavailable]);
 
   async function loadNumbers(preferredAgentId?: string) {
     setLoading(true);
@@ -305,7 +333,7 @@ export default function PhoneSetupPanel() {
               )}
             </label>
             <label className="grid gap-1.5">
-              <span className="text-xs font-semibold text-foreground">Area code</span>
+              <span className="text-xs font-semibold text-foreground">Area Code (Optional)</span>
               <span className="relative block">
                 <MapPin
                   className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -335,19 +363,17 @@ export default function PhoneSetupPanel() {
                 working || loading || inventoryUnavailable || agentsLoading || !selectedAgentId
               }
             >
-              {working ? "Activating…" : "Activate"}
+              {working ? "Activating…" : "Activate Line"}
             </Button>
-            {numbers.length ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setAddingLine(false)}
-                disabled={working}
-              >
-                Cancel
-              </Button>
-            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setAddingLine(false)}
+              disabled={working}
+            >
+              Cancel
+            </Button>
           </div>
         </section>
       ) : null}

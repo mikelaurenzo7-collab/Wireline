@@ -32,7 +32,7 @@ Historic workspace URLs should redirect into the active Bot workflow rather than
 | Bot roster/state     | `src/contexts/AgentsContext.tsx`                                                                                                                                                      |
 | Shared visual system | `design-tokens/wireline.tokens.json`, `src/constants/brand-colors.ts`, `src/styles/design-system.css`, `src/lib/wireline-design-vision.ts`                                            |
 
-The visual layer is intentionally restrained: BotBound Letterpress (Aurora palette), dark/ink surfaces, a cool obsidian canvas, electric-violet action, a platinum-silver wire accent, accessible focus states, and no parallel palettes.
+The visual layer is intentionally restrained: the BotBound Design System uses dark/ink surfaces, a near-black canvas, electric-violet action, a platinum-silver wire accent, and accessible focus states. Dark is the first-visit appearance; saved light, dark, or system preferences take precedence. Both appearances share one component and interaction system.
 
 ## Core API flow
 

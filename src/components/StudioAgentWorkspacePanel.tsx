@@ -273,10 +273,10 @@ export default function StudioAgentWorkspacePanel({
   }
 
   const contentClass = compact
-    ? "mx-auto w-full max-w-none space-y-3 px-3 py-3"
+    ? "mx-auto w-full max-w-none space-y-3 px-2 py-3 sm:px-3"
     : "mx-auto w-full max-w-3xl space-y-4 px-4 py-5 sm:px-6 sm:py-7";
   const sectionClass = compact
-    ? "rounded-xl border border-border bg-card p-4"
+    ? "rounded-xl border border-border bg-card p-3 sm:p-4"
     : "rounded-2xl border border-border bg-card p-5 sm:p-6";
 
   return (
@@ -328,8 +328,8 @@ export default function StudioAgentWorkspacePanel({
           ) : (
             <div className={compact ? "space-y-4" : "space-y-5"}>
               <details className="group rounded-xl border border-border bg-background">
-                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2 wl-focus-ring-halo">
-                  <span className="flex min-w-0 items-center gap-3">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-2 wl-focus-ring-halo sm:px-3">
+                  <span className="flex min-w-0 flex-1 items-center gap-2">
                     <BotMark
                       seed={agentId}
                       name={agentName}
@@ -338,23 +338,23 @@ export default function StudioAgentWorkspacePanel({
                       title={`${agentName} identity mark`}
                     />
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-foreground">
-                        Identity mark
+                      <span className="block break-words text-sm font-semibold text-foreground">
+                        Identity Mark
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="block break-words text-xs text-muted-foreground">
                         {selectedMarkLabel}
                       </span>
                     </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-                    Change
+                    <span className="hidden sm:inline">Change</span>
                     <ChevronDown
                       className="size-4 transition-transform group-open:rotate-180"
                       aria-hidden="true"
                     />
                   </span>
                 </summary>
-                <div className="border-t border-border p-3 sm:p-4">
+                <div className="border-t border-border p-2 sm:p-4">
                   <BotMarkPicker
                     value={setupMarkKey}
                     onChange={(value) => setupDrafts.edit(agentId, "markKey", value)}
@@ -486,24 +486,10 @@ export default function StudioAgentWorkspacePanel({
           <SimpleVoicePicker agentId={agentId} agentName={agentName} />
         </section>
 
-        <details
-          className={`${compact ? "rounded-xl" : "rounded-2xl"} group border border-border bg-card`}
-        >
-          <summary
-            className={`flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl text-sm font-semibold text-foreground wl-focus-ring-halo ${
-              compact ? "min-h-12 px-4" : "min-h-14 px-5 sm:px-6"
-            }`}
-          >
-            Tools
-            <ChevronDown
-              className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
-              aria-hidden="true"
-            />
-          </summary>
-          <div className="border-t border-border p-3 sm:p-4">
-            <AgentToolPermissions agentId={agentId} />
-          </div>
-        </details>
+        <AgentToolPermissions
+          agentId={agentId}
+          className={compact ? "rounded-xl p-3 sm:p-4" : undefined}
+        />
 
         <div
           className={`flex gap-2 ${compact ? "flex-wrap" : "flex-col sm:flex-row sm:justify-end"}`}

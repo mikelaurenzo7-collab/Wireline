@@ -152,7 +152,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
     return (
       <div
         key={`${voice.provider}:${voice.id}`}
-        className={`flex min-h-16 items-center gap-2 rounded-xl border px-3 py-2.5 transition-colors ${
+        className={`flex min-h-16 min-w-0 items-center gap-2 rounded-xl border px-2.5 py-2.5 transition-colors sm:px-3 ${
           selected ? "border-primary/40 bg-primary/5" : "border-border bg-background"
         }`}
       >
@@ -161,7 +161,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
           onClick={() => void selectVoice(voice)}
           disabled={Boolean(savingVoiceId)}
           aria-pressed={selected}
-          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg text-left wl-focus-ring-halo disabled:cursor-wait disabled:opacity-70"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-lg text-left wl-focus-ring-halo disabled:cursor-wait disabled:opacity-70"
         >
           <span
             className={`grid size-9 shrink-0 place-items-center rounded-full ${
@@ -177,10 +177,10 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
             )}
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold text-foreground">
+            <span className="block break-words text-sm font-semibold text-foreground">
               {voice.name.split("·")[0].trim()}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            <span className="mt-0.5 block break-words text-xs text-muted-foreground">
               {selected ? "Selected" : voice.name.split("·").slice(1).join("·").trim() || "Choose"}
             </span>
           </span>
@@ -199,7 +199,7 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
   }, [loading, selectedIsAvailable]);
 
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       {notice ? <StatusNotice tone="success">{notice}</StatusNotice> : null}
       {error ? (
         <StatusNotice tone="destructive" title="Voice Unavailable">
@@ -218,9 +218,9 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
           open={choicesOpen}
           onToggle={(event) => setChoicesOpen(event.currentTarget.open)}
         >
-          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-3 wl-focus-ring-halo">
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-foreground">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-2.5 py-3 wl-focus-ring-halo sm:px-3">
+            <span className="min-w-0 flex-1">
+              <span className="block break-words text-sm font-semibold text-foreground">
                 {selectedVoice
                   ? selectedVoice.name.split("·")[0].trim()
                   : selectedVoiceId
@@ -228,25 +228,27 @@ export default function SimpleVoicePicker({ agentId, agentName }: SimpleVoicePic
                     : "Choose a voice"}
               </span>
               {selectedVoice ? (
-                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                <span className="mt-0.5 block break-words text-xs text-muted-foreground">
                   {selectedVoice.name.split("·").slice(1).join("·").trim()}
                 </span>
               ) : null}
             </span>
             <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-              Change voice
+              <span className="hidden sm:inline">Change Voice</span>
               <ChevronDown
                 className="size-4 transition-transform group-open:rotate-180"
                 aria-hidden="true"
               />
             </span>
           </summary>
-          <div className="space-y-3 border-t border-border p-3">
+          <div className="min-w-0 space-y-3 border-t border-border p-2 sm:p-3">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>{includedVoices.length} built-in voices</span>
               <span>Saves automatically</span>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">{includedVoices.map(renderVoice)}</div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-2">
+              {includedVoices.map(renderVoice)}
+            </div>
           </div>
         </details>
       )}

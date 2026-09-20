@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- API response shapes vary by endpoint and aren't shared as client types yet. */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { motion } from "motion/react";
 import {
   Shield,
@@ -78,6 +78,10 @@ export default function DncManager() {
   const [addPhone, setAddPhone] = useState("");
   const [addReason, setAddReason] = useState("opt-out");
   const [adding, setAdding] = useState(false);
+  const addPhoneId = useId();
+  const addReasonId = useId();
+  const toolbarTriggerRef = useRef<HTMLButtonElement>(null);
+  const addTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   // CSV import
   const fileRef = useRef<HTMLInputElement>(null);
@@ -262,8 +266,16 @@ export default function DncManager() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 bg-background text-foreground">
+      <Input
+        ref={fileRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
+      />
       <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
         <ClientToolbar
+          actionTriggerRef={toolbarTriggerRef}
           left={
             <span className="app-toolbar-stat">
               {loading
@@ -273,13 +285,6 @@ export default function DncManager() {
           }
           actions={
             <>
-              <Input
-                ref={fileRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleCsvImport(e.target.files[0])}
-              />
               <Button
                 type="button"
                 variant="secondary"
@@ -314,7 +319,11 @@ export default function DncManager() {
                 // should not out-shout the app's genuinely destructive actions.
                 variant="default"
                 size="sm"
-                onClick={() => setShowAdd(true)}
+                data-toolbar-dialog-action
+                onClick={(event) => {
+                  addTriggerRef.current = event.currentTarget;
+                  setShowAdd(true);
+                }}
               >
                 <Plus className="w-3.5 h-3.5" />
                 {OPS_CHANNEL_TOOLBAR.dnc.add}
@@ -504,6 +513,14 @@ export default function DncManager() {
         <DialogContent
           showClose={!adding}
           aria-busy={adding}
+          onCloseAutoFocus={(event) => {
+            // A mobile toolbar action disappears when its drawer hands off.
+            // Return to the persistent Page Actions trigger in that case.
+            if (!addTriggerRef.current || addTriggerRef.current.isConnected) return;
+            event.preventDefault();
+            toolbarTriggerRef.current?.focus();
+            addTriggerRef.current = null;
+          }}
           onEscapeKeyDown={(event) => {
             if (adding) event.preventDefault();
           }}
@@ -528,10 +545,13 @@ export default function DncManager() {
 
           <div className="space-y-4 py-4">
             <div>
-              <label className="mb-2 block wl-label-muted">Phone Number</label>
+              <label htmlFor={addPhoneId} className="mb-2 block wl-label-muted">
+                Phone Number
+              </label>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
                 <Input
+                  id={addPhoneId}
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
@@ -546,11 +566,13 @@ export default function DncManager() {
             </div>
 
             <div>
-              <label className="mb-2 block wl-label-muted">Reason</label>
+              <label htmlFor={addReasonId} className="mb-2 block wl-label-muted">
+                Reason
+              </label>
               <div className="relative">
                 <Select value={addReason} onValueChange={setAddReason} disabled={adding}>
                   <SelectTrigger
-                    aria-label="Reason"
+                    id={addReasonId}
                     className="h-9 w-full rounded-md border border-input bg-transparent pl-3 text-sm text-foreground"
                   >
                     <SelectValue />

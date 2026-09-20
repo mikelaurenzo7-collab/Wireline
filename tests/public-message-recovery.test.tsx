@@ -3,12 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ContactPage } from "../src/components/ContactPage";
 import { SupportPage } from "../src/components/SupportPage";
 
-const hooks = vi.hoisted(() => ({ values: [] as unknown[], cursor: 0 }));
+const hooks = vi.hoisted(() => ({
+  values: [] as unknown[],
+  refs: [] as Array<{ current: unknown }>,
+  cursor: 0,
+  refCursor: 0,
+  search: "",
+}));
 
 // Exercise the actual form handlers and rendered controls with the repository's
 // lightweight, persistent-state UI harness; no browser or live messages needed.
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
+  useId: () => "contact-error",
+  useRef: (initial: unknown) => (hooks.refs[hooks.refCursor++] ??= { current: initial }),
   useState(initial: unknown) {
     const index = hooks.cursor++;
     if (!(index in hooks.values)) {
@@ -24,7 +32,7 @@ vi.mock("react", async (importOriginal) => ({
 }));
 vi.mock("react-router", () => ({
   Link: "a",
-  useSearchParams: () => [new URLSearchParams()],
+  useSearchParams: () => [new URLSearchParams(hooks.search)],
 }));
 vi.mock("../src/components/layout/MarketingPageFrame", () => ({ default: "marketing-frame" }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
@@ -35,6 +43,11 @@ type Props = {
   value?: string;
   href?: string;
   role?: string;
+  id?: string;
+  ref?: { current: { focus: () => void; scrollIntoView: () => void } | null };
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string;
+  "aria-pressed"?: boolean;
   onClick?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
   onSubmit?: (event: { preventDefault: () => void }) => Promise<void>;
@@ -59,7 +72,10 @@ const response = (payload: Record<string, unknown>, status = 200) =>
 
 beforeEach(() => {
   hooks.values = [];
+  hooks.refs = [];
   hooks.cursor = 0;
+  hooks.refCursor = 0;
+  hooks.search = "";
   fetchMock.mockReset();
   navigate.mockReset();
   const location = {};
@@ -71,6 +87,15 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
 });
 afterEach(() => vi.unstubAllGlobals());
+
+it("preserves the billing inquiry when Contact opens from an unavailable plan", () => {
+  hooks.search = "topic=billing";
+  const tree = ContactPage();
+  const general = elements(tree).find((node) => node.type === "button" && text(node) === "General");
+  const subject = elements(tree).find((node) => node.type === "label" && text(node) === "Subject");
+  expect(general?.props["aria-pressed"]).toBe(true);
+  expect(elements(subject).find((node) => node.type === "input")?.props.value).toBe("Billing Help");
+});
 
 describe.each([
   {
@@ -91,6 +116,7 @@ describe.each([
   let tree: ReactNode;
   const render = () => {
     hooks.cursor = 0;
+    hooks.refCursor = 0;
     tree = component();
   };
   const control = (label: string) => {
@@ -208,4 +234,41 @@ describe.each([
       expect(navigate).not.toHaveBeenCalled();
     },
   );
+
+  if (name === "Contact") {
+    it.each([
+      ["Email", "not-an-email", "Enter a valid email address."],
+      ["Subject", "  ", "Add a short subject so we can route your note."],
+      ["Message", "short", "Add a little more detail so we can help."],
+    ])(
+      "focuses and identifies an invalid %s, then clears its error during correction",
+      async (label, invalid, message) => {
+        change(label, invalid);
+        const focus = vi.fn();
+        const scrollIntoView = vi.fn();
+        control(label).props.ref!.current = { focus, scrollIntoView };
+
+        await submit();
+        render();
+
+        expect(focus).toHaveBeenCalledOnce();
+        expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith({
+          behavior: "instant",
+          block: "center",
+          inline: "nearest",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+        const field = control(label);
+        const alert = elements(tree).find((node) => node.props.role === "alert");
+        expect(field.props["aria-invalid"]).toBe(true);
+        expect(field.props["aria-describedby"]).toBe(alert?.props.id);
+        expect(text(alert)).toBe(message);
+
+        change(label, "Corrected value");
+        expect(control(label).props["aria-invalid"]).toBe(false);
+        expect(control(label).props["aria-describedby"]).toBeUndefined();
+        expect(elements(tree).some((node) => node.props.role === "alert")).toBe(false);
+      },
+    );
+  }
 });

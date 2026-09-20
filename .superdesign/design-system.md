@@ -14,7 +14,7 @@ Core jobs:
 
 ## Visual identity
 
-The canonical identity is **Aurora Letterpress**: a near-black violet canvas, layered charcoal-violet surfaces, precise silver rules, electric lavender primary actions, and restrained semantic status colors. It should feel calm, exact, substantial, and quietly advanced. Avoid generic SaaS gradients, glass-heavy decoration, neon cyberpunk styling, playful illustration, excessive pills, and ornamental motion.
+The canonical identity is the **BotBound Design System**: a near-black violet canvas, layered charcoal-violet surfaces, precise silver rules, electric lavender primary actions, and restrained semantic status colors. It should feel calm, exact, substantial, and quietly advanced. Avoid generic SaaS gradients, glass-heavy decoration, neon cyberpunk styling, playful illustration, excessive pills, and ornamental motion. Use semantic names for surfaces and colors; do not introduce separate named themes.
 
 Use only these type families:
 
@@ -32,7 +32,7 @@ Use only these core dark-mode colors:
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
 - Status: success `#4ADE9A`; warning `#E8B85C`; error `#EF7B92`; info `#93A0C7`
 
-Light mode is optional and only activated by `html.light`: canvas `#F6F5FA`, surface `#FFFFFF`, text `#171426`, primary `#6D28D9`.
+Dark is the first-visit appearance. A saved light, dark, or system preference always wins. Light mode uses `html.light`: canvas `#F6F5FA`, surface `#FFFFFF`, text `#171426`, primary `#6D28D9`. Both appearances use the same component and interaction system. The executable manifest is `src/lib/wireline-design-vision.ts`; `ThemeContext` applies the preference.
 
 ## Typography
 

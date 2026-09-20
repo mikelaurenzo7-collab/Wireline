@@ -182,7 +182,9 @@ export default function StudioAgentReviewPanel({
               size={compact ? "sm" : undefined}
               className="w-full justify-center sm:w-auto sm:self-start"
             >
-              <Link to={hasPhone ? "/phone?tab=logs" : "/phone?tab=setup"}>
+              <Link
+                to={`/phone?tab=${hasPhone ? "logs" : "setup"}&agent=${encodeURIComponent(agentId)}`}
+              >
                 {hasPhone ? (
                   <CheckCircle2 className="size-4" aria-hidden="true" />
                 ) : (
@@ -224,7 +226,7 @@ export default function StudioAgentReviewPanel({
             </summary>
             <div className="grid text-sm">
               <Link
-                to="/phone?tab=setup#company-identity"
+                to={`/phone?tab=setup&agent=${encodeURIComponent(agentId)}#company-identity`}
                 className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
               >
                 Caller identity

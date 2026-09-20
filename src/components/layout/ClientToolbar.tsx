@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { useState } from "react";
+import type { ReactNode, Ref } from "react";
+import { useRef, useState } from "react";
 import { MoreHorizontal, X } from "lucide-react";
 
 import { cn } from "../../lib/utils";
@@ -17,14 +17,22 @@ type ClientToolbarProps = {
   left?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  /** Restore focus here after a terminal action opens a separate dialog. */
+  actionTriggerRef?: Ref<HTMLButtonElement>;
 };
 
 /**
  * Compact action row when the route chrome owns page context.
  * Desktop exposes actions inline; mobile progressively discloses them in the canonical Dialog drawer.
  */
-export default function ClientToolbar({ left, actions, className }: ClientToolbarProps) {
+export default function ClientToolbar({
+  left,
+  actions,
+  className,
+  actionTriggerRef,
+}: ClientToolbarProps) {
   const [open, setOpen] = useState(false);
+  const handingOffFocus = useRef(false);
 
   if (!left && !actions) return null;
 
@@ -55,6 +63,7 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
             </div>
             <DialogTrigger asChild>
               <Button
+                ref={actionTriggerRef}
                 type="button"
                 variant="outline"
                 size="icon"
@@ -76,6 +85,13 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
           showClose={false}
           aria-label="Page actions"
           overlayClassName="bg-[var(--wireline-color-overlay-scrim)]"
+          onCloseAutoFocus={(event) => {
+            if (!handingOffFocus.current) return;
+            // The destination dialog now owns focus. Returning to the drawer
+            // trigger here would interrupt its initial field focus.
+            event.preventDefault();
+            handingOffFocus.current = false;
+          }}
         >
           <DialogTitle className="sr-only">Page Actions</DialogTitle>
           <DialogDescription className="sr-only">
@@ -92,7 +108,21 @@ export default function ClientToolbar({ left, actions, className }: ClientToolba
                 </Button>
               </DialogClose>
             </div>
-            <div className="flex flex-col gap-2">{actions}</div>
+            <div
+              className="flex flex-col gap-2"
+              onClick={(event) => {
+                if (event.defaultPrevented || !(event.target instanceof Element)) return;
+                const action = event.target.closest("[data-toolbar-dialog-action]");
+                if (!action || !event.currentTarget.contains(action)) return;
+                if (action.matches(':disabled, [aria-disabled="true"]')) return;
+                // Only actions opening another dialog opt in. Filters and
+                // multi-select controls remain available for repeated choices.
+                handingOffFocus.current = true;
+                setOpen(false);
+              }}
+            >
+              {actions}
+            </div>
           </div>
         </DialogContent>
       ) : null}

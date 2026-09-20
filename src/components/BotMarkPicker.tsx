@@ -107,7 +107,7 @@ export default function BotMarkPicker({
           Symbol
         </legend>
         <div
-          className="grid grid-cols-3 gap-2 sm:grid-cols-5"
+          className="grid grid-cols-[repeat(auto-fit,minmax(3.75rem,1fr))] gap-2"
           role="radiogroup"
           aria-label="Bot identity symbol"
         >
@@ -144,7 +144,7 @@ export default function BotMarkPicker({
                   size={compact ? 32 : 36}
                   title={`${motif.label} mark preview`}
                 />
-                <span className="truncate font-mono text-[9px] font-semibold uppercase tracking-[0.07em]">
+                <span className="max-w-full truncate font-mono text-[9px] font-semibold uppercase tracking-[0.07em]">
                   {motif.label}
                 </span>
               </button>
@@ -158,7 +158,7 @@ export default function BotMarkPicker({
           Color
         </legend>
         <div
-          className="grid grid-cols-4 gap-2 sm:grid-cols-8"
+          className="grid grid-cols-[repeat(auto-fit,minmax(2.75rem,1fr))] gap-2"
           role="radiogroup"
           aria-label="Bot identity color"
         >

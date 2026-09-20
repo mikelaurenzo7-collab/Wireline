@@ -13,6 +13,7 @@ import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
 import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
+import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 
 type KnowledgeTabId = "knowledge" | "reports";
 
@@ -55,7 +56,8 @@ export default function KnowledgePage() {
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
-  const agentId = params.get("agent") || agents[0]?.id || "";
+  const { requestedId, resolvedId } = useStudioActiveAgentId();
+  const agentId = resolvedId || "";
   const rawRequestedTab = params.get("tab");
   const requestedTab = rawRequestedTab as KnowledgeTabId | null;
   const activeTab = knowledgeTabs.some((tab) => tab.id === requestedTab)
@@ -66,10 +68,13 @@ export default function KnowledgePage() {
   useEffect(() => {
     if (!rawRequestedTab || !["voice", "flows", "simulator"].includes(rawRequestedTab)) return;
     const studioParams = new URLSearchParams();
-    if (agentId) studioParams.set("agent", agentId);
+    // Studio validates this request against its roster. Preserve it while the
+    // shared roster is loading or unavailable instead of silently changing Bots.
+    const studioAgentId = requestedId?.trim() || agentId;
+    if (studioAgentId) studioParams.set("agent", studioAgentId);
     studioParams.set("section", rawRequestedTab === "simulator" ? "test" : "setup");
     navigate(`/studio?${studioParams.toString()}`, { replace: true });
-  }, [agentId, navigate, rawRequestedTab]);
+  }, [agentId, navigate, rawRequestedTab, requestedId]);
 
   function setActiveTab(tab: KnowledgeTabId) {
     setParams(

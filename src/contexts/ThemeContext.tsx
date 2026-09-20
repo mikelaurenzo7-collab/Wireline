@@ -1,8 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { WIRELINE_DESIGN_VISION } from "../lib/wireline-design-vision";
 
 export type Theme = "light" | "dark" | "system";
 
 const STORAGE_KEY = "wireline-theme";
+const DEFAULT_THEME = WIRELINE_DESIGN_VISION.appearance.default;
 const THEME_COLORS = {
   dark: "#0A0A0E",
   light: "#F6F5FA",
@@ -17,16 +19,16 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-/** Dark is the WIRELINE first-visit appearance; an explicit stored choice wins. */
+/** The design system owns the first-visit appearance; a stored choice wins. */
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return DEFAULT_THEME;
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system") return stored;
   } catch {
     /* ignore */
   }
-  return "dark";
+  return DEFAULT_THEME;
 }
 
 function systemPrefersDark(): boolean {
@@ -101,8 +103,8 @@ export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
   return (
     context ?? {
-      theme: "dark",
-      resolvedTheme: "dark",
+      theme: DEFAULT_THEME,
+      resolvedTheme: DEFAULT_THEME,
       setTheme: () => {},
       toggleTheme: () => {},
     }
