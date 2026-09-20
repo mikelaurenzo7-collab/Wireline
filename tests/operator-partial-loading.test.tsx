@@ -284,9 +284,14 @@ async function approvalCard(payload: Record<string, unknown>, taskType = "send_e
   h.states = [];
   h.refs = [];
   h.fetch.mockClear();
-  const draw = () => render(() => (card.type as (props: Props) => ReactNode)(card.props));
+  let currentTask = task;
+  const draw = () =>
+    render(() => (card.type as (props: Props) => ReactNode)({ ...card.props, task: currentTask }));
   return {
     draw,
+    refresh(payload: Record<string, unknown>) {
+      currentTask = { ...task, payload };
+    },
     click(label: string) {
       elements(draw()).find(
         (node) => node.type === "button" && textOf(node.props.children).trim() === label,
@@ -301,6 +306,51 @@ async function approvalCard(payload: Record<string, unknown>, taskType = "send_e
 }
 
 describe("approval preview integrity", () => {
+  it.each([false, true])(
+    "uses a refreshed server message in the preview and editor (local save: %s)",
+    async (locallySaved) => {
+      const card = await approvalCard({ subject: "Original", body: "Original message" });
+      if (locallySaved) {
+        h.fetch.mockImplementation((_url: string, init: RequestInit) =>
+          Promise.resolve(
+            init.method === "PATCH"
+              ? json({ success: true })
+              : new Response(JSON.stringify({ error: "Review required" }), { status: 422 }),
+          ),
+        );
+        card.click("Edit");
+        card.change("Write a message…", "Locally saved message");
+        card.click("Approve");
+        await flush();
+        card.click("Cancel");
+        expect(textOf(card.draw())).toContain("Locally saved message");
+      }
+      card.refresh({ subject: "Updated elsewhere", body: "Current server message" });
+      expect(textOf(card.draw())).toContain("Updated elsewhere");
+      expect(textOf(card.draw())).toContain("Current server message");
+      expect(textOf(card.draw())).not.toContain("Locally saved message");
+      card.click("Edit");
+      const message = elements(card.draw()).find(
+        (node) => node.props.placeholder === "Write a message…",
+      )!;
+      expect((message.props as { value?: string }).value).toBe("Current server message");
+    },
+  );
+
+  it("preserves an open edit during refresh and cancels to the latest server draft", async () => {
+    const card = await approvalCard({ subject: "Original", body: "Original message" });
+    card.click("Edit");
+    card.change("Write a message…", "Unsaved message");
+    card.refresh({ subject: "Updated elsewhere", body: "Current server message" });
+    const message = elements(card.draw()).find(
+      (node) => node.props.placeholder === "Write a message…",
+    )!;
+    expect((message.props as { value?: string }).value).toBe("Unsaved message");
+    card.click("Cancel");
+    expect(textOf(card.draw())).toContain("Current server message");
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+
   it("shows the subject and the complete message before approval", async () => {
     const body = `${"Long message. ".repeat(60)}Final terms must be reviewed.`;
     const card = await approvalCard({ subject: "Exact subject", to: "person@example.test", body });

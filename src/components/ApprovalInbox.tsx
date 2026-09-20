@@ -174,9 +174,13 @@ function editablePayloadFields(task: FollowUpTaskRow): Record<string, unknown> {
 }
 
 function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
-  // Edits are saved before approval. If execution is blocked, keep the preview
-  // aligned with that saved draft rather than showing the original task again.
-  const [savedTask, setSavedTask] = useState(task);
+  // Keep successful local edits visible after blocked approval, until a fresh
+  // server snapshot arrives. A refetched task must replace the local snapshot.
+  const [savedEdit, setSavedEdit] = useState<{
+    source: FollowUpTaskRow;
+    value: FollowUpTaskRow;
+  } | null>(null);
+  const savedTask = savedEdit?.source === task ? savedEdit.value : task;
   const manualHandoff = isHumanHandoff(task);
   const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
   const [busy, setBusy] = useState(false);
@@ -202,17 +206,15 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   const evidence = evidenceSnippet(savedTask, editing && !manualTask, true);
 
   function toggleEditing() {
-    if (editing) {
-      setEditSubject(subject);
-      setEditBody(
-        typeof savedPayload.body === "string"
-          ? savedPayload.body
-          : typeof savedPayload.description === "string"
-            ? savedPayload.description
-            : "",
-      );
-      setEditNotes(savedTask.description || "");
-    }
+    setEditSubject(subject);
+    setEditBody(
+      typeof savedPayload.body === "string"
+        ? savedPayload.body
+        : typeof savedPayload.description === "string"
+          ? savedPayload.description
+          : "",
+    );
+    setEditNotes(savedTask.description || "");
     setEditing((value) => !value);
   }
 
@@ -257,7 +259,10 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           const failure = await patch.json().catch(() => ({}));
           throw new Error(failure?.error || "Could not save edits before approval.");
         }
-        setSavedTask({ ...savedTask, description: nextDescription, payload: nextPayload });
+        setSavedEdit({
+          source: task,
+          value: { ...savedTask, description: nextDescription, payload: nextPayload },
+        });
       }
       const response = await authFetch(`/api/Assistants/tasks/${task.id}/approve`, {
         method: "POST",
