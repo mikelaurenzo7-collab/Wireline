@@ -234,7 +234,7 @@ export default function EmailPage() {
               </Button>
             }
           >
-            Conversations remain available. Retry to restore mailbox filters.
+            Retry to restore mailbox filters.
           </StatusNotice>
         ) : null}
         <div className="wl-inbox-route flex min-h-0 flex-1 flex-col">
