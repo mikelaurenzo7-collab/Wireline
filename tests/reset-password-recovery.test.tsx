@@ -51,6 +51,7 @@ type Props = {
   children?: ReactNode;
   id?: string;
   title?: string;
+  to?: string;
   value?: string;
   disabled?: boolean;
   type?: string;
@@ -111,27 +112,40 @@ describe("password reset response recovery", () => {
     ["missing user", JSON.stringify({ ok: true })],
     ["incomplete user", JSON.stringify({ user: { id: "user-1" } })],
     ["blank identity", JSON.stringify({ user: { id: " ", email: "owner@example.com" } })],
-  ])("preserves a usable form after an unconfirmed %s", async (_name, body) => {
-    h.fetch.mockResolvedValueOnce(new Response(body, { status: 200 }));
+  ])(
+    "offers sign-in recovery without reusing the token after an unconfirmed %s",
+    async (_name, body) => {
+      const staleSubmit = elements(tree).find((node) => node.type === "form")!.props.onSubmit!;
+      h.fetch.mockResolvedValueOnce(new Response(body, { status: 200 }));
+      await submit();
+      render();
+
+      expect(success()).toBeUndefined();
+      expect(h.signIn).not.toHaveBeenCalled();
+      expect(h.schedule).not.toHaveBeenCalled();
+      expect(elements(tree).some((node) => node.type === "form")).toBe(false);
+      expect(
+        elements(tree).find((node) => node.props.title === "Sign In to Continue"),
+      ).toBeDefined();
+      expect(elements(tree).find((node) => node.type === "a")?.props.to).toBe("/signin");
+      await staleSubmit({ preventDefault() {} });
+      expect(h.fetch).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("preserves the form after an HTTP failure and can complete a confirmed retry", async () => {
+    h.fetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: "Try again shortly." }), { status: 503 }),
+    );
     await submit();
     render();
-
-    expect(success()).toBeUndefined();
-    expect(h.signIn).not.toHaveBeenCalled();
-    expect(h.schedule).not.toHaveBeenCalled();
     expect(control("reset-password").props.value).toBe("NewPassword123");
     expect(control("reset-password-confirm").props.value).toBe("NewPassword123");
     expect(control("reset-password").props.disabled).toBe(false);
     expect(
       elements(tree).find((node) => node.props.title === "Password Reset Was Not Completed")?.props
         .children,
-    ).toBe("Password update wasn't confirmed. Try again or return to sign in.");
-  });
-
-  it("can retry the preserved form and finish confirmed account recovery", async () => {
-    h.fetch.mockResolvedValueOnce(new Response("", { status: 200 }));
-    await submit();
-    render();
+    ).toBe("Try again shortly.");
     const user = { id: "user-1", email: "owner@example.com" };
     h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ user }), { status: 200 }));
     await submit();
@@ -143,5 +157,19 @@ describe("password reset response recovery", () => {
     expect(h.schedule).toHaveBeenCalledWith(expect.any(Function), 900);
     h.schedule.mock.calls[0][0]();
     expect(h.navigate).toHaveBeenCalledExactlyOnceWith("/studio", { replace: true });
+  });
+
+  it("finishes a normally confirmed reset without offering recovery", async () => {
+    const user = { id: "user-1", email: "owner@example.com" };
+    h.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ user }), { status: 200 }));
+    await submit();
+    render();
+
+    expect(success()).toBeDefined();
+    expect(h.signIn).toHaveBeenCalledExactlyOnceWith({ user });
+    expect(
+      elements(tree).find((node) => node.props.title === "Sign In to Continue"),
+    ).toBeUndefined();
+    expect(h.schedule).toHaveBeenCalledWith(expect.any(Function), 900);
   });
 });

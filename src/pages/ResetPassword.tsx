@@ -42,6 +42,8 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [signInRecovery, setSignInRecovery] = useState(false);
+  const resetAttemptClosed = useRef(false);
 
   useLayoutEffect(() => {
     if (!window.location.search && !window.location.hash) return;
@@ -50,7 +52,7 @@ export default function ResetPassword() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (loading) return;
+    if (loading || resetAttemptClosed.current) return;
     setError(null);
     setInvalidField(null);
 
@@ -97,13 +99,17 @@ export default function ResetPassword() {
         throw new Error(message);
       }
 
+      // A successful HTTP response may already have consumed this single-use
+      // token, even when its body cannot confirm the new session.
+      resetAttemptClosed.current = true;
       if (
         typeof data?.user?.id !== "string" ||
         !data.user.id.trim() ||
         typeof data.user.email !== "string" ||
         !data.user.email.trim()
       ) {
-        throw new Error("Password update wasn't confirmed. Try again or return to sign in.");
+        setSignInRecovery(true);
+        return;
       }
 
       signIn({ user: data.user });
@@ -114,7 +120,8 @@ export default function ResetPassword() {
       setSuccess(true);
       window.setTimeout(() => navigate(destination, { replace: true }), 900);
     } catch (caughtError: any) {
-      setError(caughtError.message || "Reset failed");
+      if (resetAttemptClosed.current) setSignInRecovery(true);
+      else setError(caughtError.message || "Reset failed");
     } finally {
       setLoading(false);
     }
@@ -145,6 +152,19 @@ export default function ResetPassword() {
           {success ? (
             <StatusNotice tone="success" title="Password Updated">
               Signing you in securely…
+            </StatusNotice>
+          ) : signInRecovery ? (
+            <StatusNotice tone="warning" title="Sign In to Continue">
+              <p>
+                The response was incomplete. Try your new password at sign-in, or request a new
+                reset link there.
+              </p>
+              <Link
+                to="/signin"
+                className="marketing-btn-secondary mt-4 inline-flex min-h-11 items-center justify-center px-4"
+              >
+                Sign In
+              </Link>
             </StatusNotice>
           ) : !token ? (
             <StatusNotice tone="destructive" title="This Reset Link Is Incomplete">

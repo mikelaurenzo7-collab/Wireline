@@ -367,6 +367,8 @@ export default function CrmConnectionCard() {
     channelSavePending.current = true;
     setSavingChannel(provider);
     setChannelSaveError(null);
+    let confirming = false;
+    const confirmationError = `Could not confirm the ${label} channel. Refresh to check its status.`;
     try {
       const response = await authFetch(
         provider === "slack"
@@ -386,25 +388,32 @@ export default function CrmConnectionCard() {
             : `Could not save the ${label} channel. Try again.`,
         );
       }
-      // Keep the last confirmed destination visible until the write succeeds.
-      setState((current) =>
-        current
-          ? {
-              ...current,
-              [provider]: {
-                ...current[provider],
-                ...(target || { default_channel_id: value }),
-              },
-            }
-          : current,
-      );
+      // A disconnected grant can make the write a no-op while still returning
+      // ok:true. Only a fresh status read can confirm the saved destination.
+      confirming = true;
+      const statusResponse = await authFetch("/api/oauth/crm/status");
+      const confirmed = (await statusResponse.json().catch(() => null)) as IntegrationState | null;
+      const saved = confirmed?.[provider];
+      if (!statusResponse.ok || typeof saved?.connected !== "boolean") {
+        throw new Error(confirmationError);
+      }
+      setState(confirmed);
+      if (!resolveIntegrationAvailability(saved).connected) {
+        throw new Error(`${label} connection is unavailable. Refresh or reconnect.`);
+      }
+      const matches = target
+        ? saved.team_id === target.team_id && saved.channel_id === target.channel_id
+        : saved.default_channel_id === value;
+      if (!matches) throw new Error(confirmationError);
     } catch (reason) {
       setChannelSaveError({
         provider,
         message:
           reason instanceof Error && !(reason instanceof TypeError)
             ? reason.message
-            : `Could not save the ${label} channel. Try again.`,
+            : confirming
+              ? confirmationError
+              : `Could not save the ${label} channel. Try again.`,
       });
     } finally {
       channelSavePending.current = false;
@@ -515,6 +524,7 @@ export default function CrmConnectionCard() {
   const retry = () => {
     if (channelSavePending.current) return;
     setLoading(true);
+    setChannelSaveError(null);
     setSlackChannelsRetry((attempt) => attempt + 1);
     setTeamsTargetsRetry((attempt) => attempt + 1);
     void fetchStatus();
@@ -942,6 +952,11 @@ export default function CrmConnectionCard() {
                     )}
                   </div>
                 )}
+                {!isConnected && channelSaveError?.provider === key ? (
+                  <p role="alert" className="mt-3 wl-micro-meta text-destructive">
+                    {channelSaveError.message}
+                  </p>
+                ) : null}
               </motion.div>
             );
           })}

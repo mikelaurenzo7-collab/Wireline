@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import CrmConnectionCard from "../src/components/CrmConnectionCard";
+import CrmConnectionCard, { type IntegrationStatus } from "../src/components/CrmConnectionCard";
 
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -134,6 +134,7 @@ const teamsTarget = {
 const providers = [
   {
     name: "Slack",
+    key: "slack" as const,
     label: "Default Slack channel",
     load: "/api/oauth/slack/channels",
     save: "/api/oauth/slack/default-channel",
@@ -142,6 +143,7 @@ const providers = [
   },
   {
     name: "Teams",
+    key: "microsoft_teams" as const,
     label: "Default Teams team and channel",
     load: "/api/oauth/microsoft_teams/channels",
     save: "/api/oauth/microsoft_teams/notify-target",
@@ -158,8 +160,9 @@ const status = {
     channel_id: "19:old@thread.tacv2",
   },
 };
-function defaultFetch(url: string) {
-  if (url === "/api/oauth/crm/status") return Promise.resolve(response(status));
+let serverStatus: Record<"slack" | "microsoft_teams", IntegrationStatus>;
+function defaultFetch(url: string, options?: RequestInit) {
+  if (url === "/api/oauth/crm/status") return Promise.resolve(response(serverStatus));
   if (url === providers[0].load)
     return Promise.resolve(
       response({
@@ -170,6 +173,16 @@ function defaultFetch(url: string) {
       }),
     );
   if (url === providers[1].load) return Promise.resolve(response({ channels: [teamsTarget] }));
+  if (url === providers[0].save) {
+    const body = JSON.parse(String(options?.body));
+    serverStatus.slack = { ...serverStatus.slack, default_channel_id: body.channel_id };
+  }
+  if (url === providers[1].save) {
+    serverStatus.microsoft_teams = {
+      ...serverStatus.microsoft_teams,
+      ...JSON.parse(String(options?.body)),
+    };
+  }
   return Promise.resolve(response({ ok: true }));
 }
 async function mount() {
@@ -183,6 +196,7 @@ beforeEach(() => {
   h.effects = [];
   h.pendingEffects = [];
   h.dirty = false;
+  serverStatus = structuredClone(status);
   h.fetch.mockReset().mockImplementation(defaultFetch);
   vi.stubGlobal("window", {
     location: { origin: "https://botbound.me" },
@@ -220,6 +234,7 @@ describe("notification channel recovery", () => {
     expect(select(providers[0].label).props.disabled).toBe(true);
     await select(providers[1].label).props.onValueChange!(providers[1].next);
     expect(h.fetch.mock.calls.filter(([url]) => url === providers[1].save)).toHaveLength(0);
+    serverStatus.slack.default_channel_id = providers[0].next;
     finish(response({ ok: true }));
     await pending;
     expect(select(providers[0].label).props.value).toBe(providers[0].next);
@@ -227,6 +242,39 @@ describe("notification channel recovery", () => {
   });
 
   for (const provider of providers) {
+    it(`shows ${provider.name} as disconnected when a successful write was a no-op`, async () => {
+      await mount();
+      h.fetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (url === provider.save) {
+          serverStatus[provider.key] = { connected: false, configured: true };
+          return Promise.resolve(response({ ok: true }));
+        }
+        return defaultFetch(url, options);
+      });
+      await select(provider.label).props.onValueChange!(provider.next);
+      expect(() => select(provider.label)).toThrow(`Missing ${provider.label}`);
+      expect(text(render())).toContain(
+        `${provider.name} connection is unavailable. Refresh or reconnect.`,
+      );
+      expect(
+        button(`Connect ${provider.name === "Teams" ? "Microsoft Teams" : provider.name}`),
+      ).toBeDefined();
+    });
+
+    it(`retains the authoritative ${provider.name} channel when the write does not change it`, async () => {
+      await mount();
+      h.fetch.mockImplementation((url: string, options?: RequestInit) =>
+        url === provider.save
+          ? Promise.resolve(response({ ok: true }))
+          : defaultFetch(url, options),
+      );
+      await select(provider.label).props.onValueChange!(provider.next);
+      expect(select(provider.label).props.value).toBe(provider.old);
+      expect(text(render())).toContain(
+        `Could not confirm the ${provider.name} channel. Refresh to check its status.`,
+      );
+    });
+
     it.each(["HTTP", "network"])(
       `preserves the confirmed ${provider.name} channel after a %s save failure and permits retry`,
       async (failure) => {
@@ -278,6 +326,51 @@ describe("notification channel recovery", () => {
     await select(providers[0].label).props.onValueChange!(providers[0].next);
     expect(select(providers[0].label).props.value).toBe(providers[0].old);
     expect(text(render())).toContain("Could not save the Slack channel. Try again.");
+  });
+
+  it.each(["HTTP", "network", "missing provider"])(
+    "retains the confirmed channel when the post-save status check has a %s failure",
+    async (failure) => {
+      await mount();
+      h.fetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (url === "/api/oauth/crm/status") {
+          if (failure === "network") return Promise.reject(new TypeError("Failed to fetch"));
+          return Promise.resolve(response({}, failure === "HTTP" ? 503 : 200));
+        }
+        return defaultFetch(url, options);
+      });
+      await select(providers[0].label).props.onValueChange!(providers[0].next);
+      expect(select(providers[0].label).props.value).toBe(providers[0].old);
+      expect(select(providers[0].label).props.disabled).toBe(false);
+      expect(text(render())).toContain(
+        "Could not confirm the Slack channel. Refresh to check its status.",
+      );
+      h.fetch.mockImplementation(defaultFetch);
+      button("Refresh integration status").props.onClick!();
+      await settle();
+      expect(select(providers[0].label).props.value).toBe(providers[0].next);
+      expect(text(render())).not.toContain("Could not confirm the Slack channel.");
+    },
+  );
+
+  it("keeps the prior channel visible and controls busy until the status read confirms the write", async () => {
+    await mount();
+    let finish!: (value: Response) => void;
+    h.fetch.mockImplementation((url: string, options?: RequestInit) =>
+      url === "/api/oauth/crm/status"
+        ? new Promise<Response>((resolve) => {
+            finish = resolve;
+          })
+        : defaultFetch(url, options),
+    );
+    const pending = select(providers[0].label).props.onValueChange!(providers[0].next);
+    await settle();
+    expect(select(providers[0].label).props.value).toBe(providers[0].old);
+    expect(select(providers[0].label).props.disabled).toBe(true);
+    finish(response(serverStatus));
+    await pending;
+    expect(select(providers[0].label).props.value).toBe(providers[0].next);
+    expect(select(providers[0].label).props.disabled).toBe(false);
   });
 
   it("refreshes channel lists even when both connection statuses remain connected", async () => {
