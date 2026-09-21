@@ -4,12 +4,10 @@ import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Mail, RefreshCw } from "
 
 import { authFetch } from "../lib/api";
 import {
-  getPendingEmailOutcomes,
-  saveEmailOutcome,
-  subscribeEmailOutcomes,
-  type EmailOutcomeResult,
-  type EmailOutcomeStatus as OutcomeStatus,
-} from "../lib/email-outcome-operations";
+  emailOutcomeOperations,
+  type ConversationOutcomeResult,
+} from "../lib/conversation-outcome-operations";
+import type { ConversationOutcomeStatus as OutcomeStatus } from "../lib/conversation-outcome";
 import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 
@@ -158,7 +156,7 @@ export default function EmailInbox({
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [pendingOutcomes, setPendingOutcomes] = useState(getPendingEmailOutcomes);
+  const [pendingOutcomes, setPendingOutcomes] = useState(emailOutcomeOperations.getPending);
   const outcomeBusy = selectedId ? (pendingOutcomes.get(selectedId) ?? null) : null;
   const [error, setError] = useState<InboxError | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -168,7 +166,7 @@ export default function EmailInbox({
   const [query, setQuery] = useState("");
   const [mailboxConnected, setMailboxConnected] = useState<boolean | null>(null);
   const selectedIdRef = useRef<string | null>(null);
-  const completedOutcomesRef = useRef<ReadonlyMap<string, EmailOutcomeResult>>(new Map());
+  const completedOutcomesRef = useRef<ReadonlyMap<string, ConversationOutcomeResult>>(new Map());
   const outcomeOperationRef = useRef(0);
   const threadListOperationRef = useRef(0);
   const threadListAbortRef = useRef<AbortController | null>(null);
@@ -363,9 +361,9 @@ export default function EmailInbox({
   );
 
   useLayoutEffect(() => {
-    setPendingOutcomes(getPendingEmailOutcomes());
-    const unsubscribe = subscribeEmailOutcomes((event) => {
-      setPendingOutcomes(getPendingEmailOutcomes());
+    setPendingOutcomes(emailOutcomeOperations.getPending());
+    const unsubscribe = emailOutcomeOperations.subscribe((event) => {
+      setPendingOutcomes(emailOutcomeOperations.getPending());
       if (event.kind === "failed") {
         if (selectedIdRef.current === event.threadId) setDetailError(event.message);
         return;
@@ -490,14 +488,19 @@ export default function EmailInbox({
   };
 
   const updateOutcome = async (status: OutcomeStatus) => {
-    if (!selectedId || getPendingEmailOutcomes().has(selectedId) || syncing || detailLoading)
+    if (
+      !selectedId ||
+      emailOutcomeOperations.getPending().has(selectedId) ||
+      syncing ||
+      detailLoading
+    )
       return;
     const threadId = selectedId;
     outcomeOperationRef.current += 1;
     setDetailError(null);
     setNotice(null);
     try {
-      await saveEmailOutcome(threadId, status);
+      await emailOutcomeOperations.save(threadId, status);
     } catch (cause) {
       if (selectedIdRef.current === threadId) {
         setDetailError(
@@ -508,14 +511,23 @@ export default function EmailInbox({
   };
 
   const requestHandoff = async () => {
-    if (!selectedId || getPendingEmailOutcomes().has(selectedId) || syncing || detailLoading)
+    if (
+      !selectedId ||
+      emailOutcomeOperations.getPending().has(selectedId) ||
+      syncing ||
+      detailLoading
+    )
       return;
     const threadId = selectedId;
     const operation = ++outcomeOperationRef.current;
     setDetailError(null);
     setNotice(null);
     try {
-      const { handoff: handoffTask } = await saveEmailOutcome(threadId, "escalated", true);
+      const { handoff: handoffTask } = await emailOutcomeOperations.save(
+        threadId,
+        "escalated",
+        true,
+      );
       if (!handoffTask) throw new Error("Could not confirm the handoff task.");
       if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
         setNotice("A human follow-up is now in Approvals.");

@@ -3,15 +3,13 @@ import { CheckCircle2, Clock3, Loader2, Route, UserRoundCheck } from "lucide-rea
 
 import { authFetch } from "../lib/api";
 import type { ConversationOutcomeStatus } from "../lib/conversation-outcome";
+import { smsOutcomeOperations } from "../lib/conversation-outcome-operations";
 import { Badge, Button, type BadgeProps } from "./atoms";
 import { ConversationActivity, StatusNotice } from "./molecules";
-
-type OutcomeBusy = ConversationOutcomeStatus | "handoff" | null;
 
 type OutcomeResponse = {
   thread?: { status?: string };
   handoff?: { id: string; status: string } | null;
-  handoff_task_id?: string | null;
   error?: string;
 };
 
@@ -47,13 +45,14 @@ export default function SmsOutcomePanel({
   const [routingConflict, setRoutingConflict] = useState(initialStatus === "routing_conflict");
   const [handoff, setHandoff] = useState<{ id: string; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<OutcomeBusy>(null);
+  const [pendingOutcomes, setPendingOutcomes] = useState(smsOutcomeOperations.getPending);
+  const busy = pendingOutcomes.get(threadId) ?? null;
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const onStatusChangeRef = useRef(onStatusChange);
-  const threadIdRef = useRef(threadId);
-  const outcomeOperationRef = useRef(0);
-  const outcomeAbortRef = useRef<AbortController | null>(null);
+  const threadIdRef = useRef<string | null>(threadId);
+  const detailAbortRef = useRef<AbortController | null>(null);
+  const loadedThreadRef = useRef<string | null>(null);
 
   useEffect(() => {
     onStatusChangeRef.current = onStatusChange;
@@ -61,17 +60,49 @@ export default function SmsOutcomePanel({
 
   useLayoutEffect(() => {
     threadIdRef.current = threadId;
-    outcomeOperationRef.current += 1;
-    outcomeAbortRef.current?.abort();
-    setBusy(null);
-    return () => outcomeAbortRef.current?.abort();
+    detailAbortRef.current?.abort();
+    return () => {
+      threadIdRef.current = null;
+      detailAbortRef.current?.abort();
+    };
   }, [threadId]);
+
+  useLayoutEffect(() => {
+    setPendingOutcomes(smsOutcomeOperations.getPending());
+    return smsOutcomeOperations.subscribe((event) => {
+      setPendingOutcomes(smsOutcomeOperations.getPending());
+      if (event.threadId !== threadIdRef.current) return;
+      if (event.kind === "failed") {
+        setError(event.message);
+        return;
+      }
+      if (event.kind !== "saved") return;
+      // A read already in flight cannot undo the confirmed write. Keep its
+      // result visible even if a later refresh fails.
+      detailAbortRef.current?.abort();
+      const updatedStatus = normalizeStatus(event.result.thread.status);
+      setStatus(updatedStatus);
+      setRoutingConflict(false);
+      setHandoff(event.result.handoff);
+      setLoading(false);
+      setError(null);
+      onStatusChangeRef.current?.(updatedStatus);
+      setNotice(
+        event.result.handoff
+          ? "A human follow-up is now in Approvals."
+          : `Conversation marked ${OUTCOME_META[updatedStatus].label.toLowerCase()}.`,
+      );
+    });
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
+    detailAbortRef.current = controller;
+    const newThread = loadedThreadRef.current !== threadId;
+    loadedThreadRef.current = threadId;
     setStatus(normalizeStatus(initialStatus));
     setRoutingConflict(initialStatus === "routing_conflict");
-    setHandoff(null);
+    setHandoff((current) => (newThread || initialStatus !== "escalated" ? null : current));
     setLoading(true);
     setError(null);
     setNotice(null);
@@ -107,51 +138,13 @@ export default function SmsOutcomePanel({
   }, [initialStatus, threadId]);
 
   async function setOutcome(nextStatus: ConversationOutcomeStatus, createHandoff = false) {
-    outcomeAbortRef.current?.abort();
-    const controller = new AbortController();
-    outcomeAbortRef.current = controller;
-    const requestedThreadId = threadId;
-    const operation = ++outcomeOperationRef.current;
-    const isCurrentRequest = () =>
-      !controller.signal.aborted &&
-      outcomeOperationRef.current === operation &&
-      threadIdRef.current === requestedThreadId;
-    setBusy(createHandoff ? "handoff" : nextStatus);
+    if (loading || routingConflict || smsOutcomeOperations.getPending().has(threadId)) return;
     setError(null);
     setNotice(null);
     try {
-      const response = await authFetch(`/api/sms/threads/${threadId}/outcome`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus, handoff: createHandoff }),
-        signal: controller.signal,
-      });
-      const body = (await response.json().catch(() => null)) as OutcomeResponse | null;
-      if (!response.ok || !body?.thread) {
-        throw new Error(body?.error || "Could not update the conversation outcome.");
-      }
-      if (!isCurrentRequest()) return;
-      const updatedStatus = normalizeStatus(body.thread.status);
-      setStatus(updatedStatus);
-      onStatusChangeRef.current?.(updatedStatus);
-      if (body.handoff_task_id) {
-        setHandoff({ id: body.handoff_task_id, status: "pending" });
-      } else if (updatedStatus !== "escalated") {
-        setHandoff(null);
-      }
-      setNotice(
-        createHandoff
-          ? "A human follow-up is now in Approvals."
-          : `Conversation marked ${OUTCOME_META[updatedStatus].label.toLowerCase()}.`,
-      );
-    } catch (cause) {
-      if (!isCurrentRequest()) return;
-      setError(
-        cause instanceof Error ? cause.message : "Could not update the conversation outcome.",
-      );
-    } finally {
-      if (isCurrentRequest()) setBusy(null);
-      if (outcomeAbortRef.current === controller) outcomeAbortRef.current = null;
+      await smsOutcomeOperations.save(threadId, nextStatus, createHandoff);
+    } catch {
+      // The subscriber shows the error only if this conversation is still open.
     }
   }
 

@@ -44,10 +44,10 @@ describe("omnichannel outcome loop", () => {
       "handoffAdvisoryLockKey(req.user.id, EMAIL_HANDOFF_SOURCE_TYPE, thread.id)",
     );
     expect(emailRoute).toContain("touchNavCounts(req.user.id)");
-    expect(emailInbox).toContain(
-      "const persistOutcome = async (status: OutcomeStatus, createHandoff = false)",
+    expect(emailInbox).toContain("await emailOutcomeOperations.save(threadId, status)");
+    expect(emailInbox).toMatch(
+      /await emailOutcomeOperations\.save\(\s*threadId,\s*"escalated",\s*true,?\s*\)/,
     );
-    expect(emailInbox).toContain('await persistOutcome("escalated", true)');
     expect(emailInbox).not.toContain("/api/emails/threads/${selectedId}/handoff");
     expect(emailInbox).toContain("detail?.handoff");
     expect(emailInbox).toContain('title="Handoff"');
@@ -78,8 +78,8 @@ describe("omnichannel outcome loop", () => {
     expect(smsPanel).not.toContain("[initialStatus, onStatusChange, threadId]");
     expect(smsThreads).toContain("onStatusChange={handleOutcomeStatusChange}");
     expect(smsThreads).toContain("return changed ? next : current");
-    expect(smsPanel).toContain("outcomeOperationRef.current === operation");
-    expect(smsPanel).toContain("threadIdRef.current === requestedThreadId");
+    expect(smsPanel).toContain("event.threadId !== threadIdRef.current");
+    expect(smsPanel).toContain("smsOutcomeOperations.getPending().has(threadId)");
     expect(smsPanel).toContain("signal: controller.signal");
   });
 

@@ -13,6 +13,10 @@ import {
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
+import {
+  smsOutcomeOperations,
+  type ConversationOutcomeResult,
+} from "../lib/conversation-outcome-operations";
 import { useToast } from "../contexts/ToastContext";
 import { Button, EmptyState, Input, Skeleton } from "./atoms";
 import { ConversationMessage, SearchField, StatusNotice } from "./molecules";
@@ -173,6 +177,26 @@ export default function SmsThreads({
   const pendingSendsRef = useRef<Record<string, PendingSmsSend>>({});
   const activeAgentIdRef = useRef<string | null>(agentId || null);
   const activeIdRef = useRef<string | null>(null);
+  const completedOutcomesRef = useRef<ReadonlyMap<string, ConversationOutcomeResult>>(new Map());
+
+  useLayoutEffect(
+    () =>
+      smsOutcomeOperations.subscribe((event) => {
+        if (event.kind !== "saved") return;
+        completedOutcomesRef.current = new Map(completedOutcomesRef.current).set(
+          event.threadId,
+          event.result,
+        );
+        setThreads((current) =>
+          current.map((thread) =>
+            thread.id === event.threadId
+              ? { ...thread, status: apiStr(event.result.thread, "status", thread.status) }
+              : thread,
+          ),
+        );
+      }),
+    [],
+  );
 
   const reply = activeId ? replyDrafts[activeId]?.body || "" : "";
   const draftNotice = activeId ? replyDrafts[activeId]?.notice || null : null;
@@ -228,6 +252,7 @@ export default function SmsThreads({
     threadListFetchRef.current = controller;
     const requestedAgentId = agentId || null;
     const operation = ++threadListOperationRef.current;
+    const outcomeSnapshot = completedOutcomesRef.current;
     const isCurrentRequest = () =>
       !controller.signal.aborted &&
       activeAgentIdRef.current === requestedAgentId &&
@@ -243,14 +268,20 @@ export default function SmsThreads({
       if (!response.ok) throw new Error(body.error || "Could not load texts.");
       if (!isCurrentRequest()) return;
       const rows = (body.threads || []) as Record<string, unknown>[];
-      const next = rows.map((row) => ({
-        id: String(apiField(row, "id") ?? ""),
-        customer_number: apiStr(row, "customer_number", "Unknown number"),
-        destination_number: apiStr(row, "destination_number") || null,
-        status: apiStr(row, "status", "open"),
-        unread_count: apiNum(row, "unread_count"),
-        last_message_at: String(apiField(row, "last_message_at") ?? ""),
-      }));
+      const next = rows.map((row) => {
+        const id = String(apiField(row, "id") ?? "");
+        const committed = completedOutcomesRef.current.get(id);
+        // Keep newer message metadata while retaining any outcome saved during this read.
+        const outcome = committed && committed !== outcomeSnapshot.get(id) ? committed.thread : row;
+        return {
+          id,
+          customer_number: apiStr(row, "customer_number", "Unknown number"),
+          destination_number: apiStr(row, "destination_number") || null,
+          status: apiStr(outcome, "status", "open"),
+          unread_count: apiNum(row, "unread_count"),
+          last_message_at: String(apiField(row, "last_message_at") ?? ""),
+        };
+      });
       setThreads(next);
       setPendingSends((current) => {
         const hydrated = { ...current };

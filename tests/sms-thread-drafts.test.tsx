@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SmsThreads from "../src/components/SmsThreads";
+import { smsOutcomeOperations } from "../src/lib/conversation-outcome-operations";
 
 const harness = vi.hoisted(() => ({
   slots: [] as Array<{
@@ -252,6 +253,72 @@ afterEach(() => {
 });
 
 describe("SMS conversation drafts", () => {
+  it.each([
+    ["resolved", true],
+    ["resolved", false],
+    ["escalated", true],
+    ["escalated", false],
+  ] as const)(
+    "keeps saved %s and newer list metadata after Back and scope change (list first: %s)",
+    async (status, listFirst) => {
+      const pending = deferredResponse();
+      const list = deferredResponse();
+      const originalFetch = harness.authFetch.getMockImplementation()!;
+      let broaderScope = false;
+      harness.authFetch.mockImplementation((url: string, options?: RequestInit) => {
+        if (options?.method === "PATCH" && url.endsWith("/outcome")) return pending.promise;
+        if (url === "/api/sms/threads" && broaderScope) return list.promise;
+        return originalFetch(url, options);
+      });
+      agentId = "bot-a";
+      await settle();
+      await selectThread(0);
+      const save = smsOutcomeOperations.save("thread-a", status, status === "escalated");
+      await settle();
+      await backToList();
+      broaderScope = true;
+      agentId = null;
+      await settle();
+      const latest = { ...threads[0], last_message_at: "2026-09-21T11:30:00Z", unread_count: 7 };
+      if (listFirst) {
+        list.resolve(response({ threads: [latest, threads[1]] }));
+        await settle();
+      }
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status },
+          handoff_task_id: status === "escalated" ? "saved-handoff" : null,
+        }),
+      );
+      await save;
+      await settle();
+      if (!listFirst) {
+        list.resolve(response({ threads: [latest, threads[1]] }));
+        await settle();
+      }
+      const row = find(
+        (node) => node.type === "button" && content(node).includes(threads[0].customer_number),
+      );
+      expect(content(row)).toContain(status);
+      expect(content(row)).toContain(
+        new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date(latest.last_message_at)),
+      );
+      expect(content(row)).toContain("7");
+      expect(
+        content(
+          find(
+            (node) => node.type === "button" && content(node).includes(threads[1].customer_number),
+          ),
+        ),
+      ).toContain("open");
+    },
+  );
+
   it("keeps manual replies when returning to the list and isolates different conversations", async () => {
     await settle();
     await selectThread(0);
