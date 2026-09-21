@@ -3,10 +3,15 @@ import { Link } from "react-router";
 import { ArrowLeft, CheckCircle2, ChevronDown, Loader2, Mail, RefreshCw } from "lucide-react";
 
 import { authFetch } from "../lib/api";
+import {
+  getPendingEmailOutcomes,
+  saveEmailOutcome,
+  subscribeEmailOutcomes,
+  type EmailOutcomeResult,
+  type EmailOutcomeStatus as OutcomeStatus,
+} from "../lib/email-outcome-operations";
 import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
-
-type OutcomeStatus = "open" | "waiting" | "escalated" | "booked" | "resolved";
 
 type EmailThread = {
   id: string;
@@ -153,7 +158,8 @@ export default function EmailInbox({
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [outcomeBusy, setOutcomeBusy] = useState<OutcomeStatus | "handoff" | null>(null);
+  const [pendingOutcomes, setPendingOutcomes] = useState(getPendingEmailOutcomes);
+  const outcomeBusy = selectedId ? (pendingOutcomes.get(selectedId) ?? null) : null;
   const [error, setError] = useState<InboxError | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [readStateError, setReadStateError] = useState(false);
@@ -162,6 +168,7 @@ export default function EmailInbox({
   const [query, setQuery] = useState("");
   const [mailboxConnected, setMailboxConnected] = useState<boolean | null>(null);
   const selectedIdRef = useRef<string | null>(null);
+  const completedOutcomesRef = useRef<ReadonlyMap<string, EmailOutcomeResult>>(new Map());
   const outcomeOperationRef = useRef(0);
   const threadListOperationRef = useRef(0);
   const threadListAbortRef = useRef<AbortController | null>(null);
@@ -187,7 +194,6 @@ export default function EmailInbox({
     setReadStateError(false);
     setReadStateBusy(false);
     setNotice(null);
-    setOutcomeBusy(null);
     setLoading(true);
     setLoadingMore(false);
     setHasMore(false);
@@ -208,6 +214,7 @@ export default function EmailInbox({
       const controller = new AbortController();
       threadListAbortRef.current = controller;
       const operation = ++threadListOperationRef.current;
+      const outcomeSnapshot = completedOutcomesRef.current;
       const isCurrentRequest = () =>
         !controller.signal.aborted &&
         threadListOperationRef.current === operation &&
@@ -231,7 +238,18 @@ export default function EmailInbox({
         const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
         if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
         if (!isCurrentRequest()) return false;
-        const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
+        const nextThreads = Array.isArray(body?.threads)
+          ? body.threads.map((row) => {
+              const committed = completedOutcomesRef.current.get(text(row.id));
+              // Preserve the saved outcome without replacing newer message
+              // fields returned by a read that overlaps the save.
+              return normalizeThread(
+                committed && committed !== outcomeSnapshot.get(text(row.id))
+                  ? { ...row, status: committed.thread.status }
+                  : row,
+              );
+            })
+          : [];
         const pageCursor =
           typeof body?.nextCursor === "string" && body.nextCursor.length > 0
             ? body.nextCursor
@@ -319,8 +337,10 @@ export default function EmailInbox({
         if (!response.ok || !body?.thread)
           throw new Error(body?.error || "Could not load this conversation.");
         if (!isCurrentRequest()) return false;
+        const thread = normalizeThread(body.thread);
+        setThreads((current) => current.map((row) => (row.id === thread.id ? thread : row)));
         setDetail({
-          thread: normalizeThread(body.thread),
+          thread,
           messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
           handoff: body.handoff || null,
         });
@@ -341,6 +361,45 @@ export default function EmailInbox({
     },
     [markThreadRead],
   );
+
+  useLayoutEffect(() => {
+    setPendingOutcomes(getPendingEmailOutcomes());
+    const unsubscribe = subscribeEmailOutcomes((event) => {
+      setPendingOutcomes(getPendingEmailOutcomes());
+      if (event.kind === "failed") {
+        if (selectedIdRef.current === event.threadId) setDetailError(event.message);
+        return;
+      }
+      if (event.kind !== "saved") return;
+      const updated = normalizeThread(event.result.thread);
+      completedOutcomesRef.current = new Map(completedOutcomesRef.current).set(
+        event.threadId,
+        event.result,
+      );
+      // Replacing an existing ID is safe across Bot/mailbox filter changes;
+      // it cannot introduce a conversation from a different scope.
+      setThreads((current) =>
+        current.map((row) => (row.id === updated.id ? { ...row, status: updated.status } : row)),
+      );
+      if (selectedIdRef.current !== event.threadId) return;
+      // Keep the confirmed PATCH result even if the follow-up read fails.
+      setDetail((current) =>
+        current?.thread.id === updated.id
+          ? {
+              ...current,
+              thread: { ...current.thread, status: updated.status },
+              handoff: event.result.handoff ?? null,
+            }
+          : current,
+      );
+      void loadThreadDetail(event.threadId);
+    });
+    return () => {
+      unsubscribe();
+      selectedIdRef.current = null;
+      outcomeOperationRef.current += 1;
+    };
+  }, [loadThreadDetail]);
 
   useEffect(() => {
     setSelectedId(null);
@@ -375,7 +434,6 @@ export default function EmailInbox({
   useEffect(() => {
     setReadStateError(false);
     setReadStateBusy(false);
-    setOutcomeBusy(null);
     outcomeOperationRef.current += 1;
     if (!selectedId) {
       detailAbortRef.current?.abort();
@@ -431,78 +489,40 @@ export default function EmailInbox({
     }
   };
 
-  const persistOutcome = async (status: OutcomeStatus, createHandoff = false) => {
-    if (!selectedId) return;
-    const threadId = selectedId;
-    const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, handoff: createHandoff }),
-    });
-    const body = (await response.json().catch(() => null)) as {
-      thread?: Record<string, unknown>;
-      handoff?: { id: string; status: string } | null;
-      handoff_task_id?: string | null;
-      error?: string;
-    } | null;
-    if (!response.ok || !body?.thread)
-      throw new Error(body?.error || "Could not update this conversation.");
-    const updated = normalizeThread(body.thread);
-    setThreads((current) => current.map((thread) => (thread.id === updated.id ? updated : thread)));
-    setDetail((current) =>
-      current?.thread.id === updated.id
-        ? {
-            ...current,
-            thread: updated,
-            handoff: body.handoff ? body.handoff : status === "escalated" ? current.handoff : null,
-          }
-        : current,
-    );
-    return body.handoff ?? null;
-  };
-
   const updateOutcome = async (status: OutcomeStatus) => {
-    if (!selectedId || outcomeBusy || syncing || detailLoading) return;
+    if (!selectedId || getPendingEmailOutcomes().has(selectedId) || syncing || detailLoading)
+      return;
     const threadId = selectedId;
-    const operation = ++outcomeOperationRef.current;
-    setOutcomeBusy(status);
+    outcomeOperationRef.current += 1;
     setDetailError(null);
     setNotice(null);
     try {
-      await persistOutcome(status);
+      await saveEmailOutcome(threadId, status);
     } catch (cause) {
-      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+      if (selectedIdRef.current === threadId) {
         setDetailError(
           cause instanceof Error ? cause.message : "Could not update this conversation.",
         );
-      }
-    } finally {
-      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
-        setOutcomeBusy(null);
       }
     }
   };
 
   const requestHandoff = async () => {
-    if (!selectedId || outcomeBusy || syncing || detailLoading) return;
+    if (!selectedId || getPendingEmailOutcomes().has(selectedId) || syncing || detailLoading)
+      return;
     const threadId = selectedId;
     const operation = ++outcomeOperationRef.current;
-    setOutcomeBusy("handoff");
     setDetailError(null);
     setNotice(null);
     try {
-      const handoffTask = await persistOutcome("escalated", true);
+      const { handoff: handoffTask } = await saveEmailOutcome(threadId, "escalated", true);
       if (!handoffTask) throw new Error("Could not confirm the handoff task.");
       if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
         setNotice("A human follow-up is now in Approvals.");
       }
     } catch (cause) {
-      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
+      if (selectedIdRef.current === threadId) {
         setDetailError(cause instanceof Error ? cause.message : "Could not request a handoff.");
-      }
-    } finally {
-      if (selectedIdRef.current === threadId && outcomeOperationRef.current === operation) {
-        setOutcomeBusy(null);
       }
     }
   };

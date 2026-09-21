@@ -108,6 +108,7 @@ let syncResponses: Array<() => Promise<Response>>;
 let detailResponses: Array<() => Promise<Response>>;
 let readResponses: Array<() => Promise<Response>>;
 let threads: Array<Record<string, unknown>>;
+let savedHandoffs: Map<string, unknown>;
 const response = (body: Record<string, unknown>, status = 200) =>
   ({ ok: status < 400, status, json: async () => body }) as Response;
 function deferred() {
@@ -175,11 +176,12 @@ beforeEach(() => {
   agentId = null;
   accountId = null;
   threads = [];
+  savedHandoffs = new Map();
   listResponses = [];
   syncResponses = [];
   detailResponses = [];
   readResponses = [];
-  h.fetch.mockImplementation(async (url: string) => {
+  h.fetch.mockImplementation(async (url: string, options?: RequestInit) => {
     if (url === "/api/emails/accounts") return response({ accounts: [{ id: "mailbox" }] });
     if (url === "/api/emails/sync") {
       const next = syncResponses.shift();
@@ -188,8 +190,25 @@ beforeEach(() => {
     }
     if (url === "/api/emails/threads/read-state")
       return readResponses.shift()?.() ?? response({ success: true });
-    if (/\/api\/emails\/threads\/[^/]+\/outcome$/.test(url))
-      return detailResponses.shift()?.() ?? response({ thread: threads[0], messages: [] });
+    if (/\/api\/emails\/threads\/[^/]+\/outcome$/.test(url)) {
+      const threadId = url.split("/")[4];
+      const result = await (detailResponses.shift()?.() ??
+        response({
+          thread: threads.find((thread) => thread.id === threadId) ?? threads[0],
+          messages: [],
+          handoff: savedHandoffs.get(threadId) ?? null,
+        }));
+      if (options?.method === "PATCH" && result.ok) {
+        const body = await result.json();
+        if (body.thread) {
+          savedHandoffs.set(body.thread.id, body.handoff ?? null);
+          threads = threads.map((thread) =>
+            thread.id === body.thread.id ? { ...thread, ...body.thread } : thread,
+          );
+        }
+      }
+      return result;
+    }
     if (url.startsWith("/api/emails/threads"))
       return listResponses.shift()?.() ?? response({ threads });
     throw new Error(`Unexpected endpoint ${url}`);
@@ -463,6 +482,385 @@ describe("email inbox operation recovery", () => {
       expect(button("Handoff").props.disabled).toBe(false);
       expect(button("Refresh email").props.disabled).toBe(false);
       expect(successes()).toHaveLength(0);
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "keeps same-thread saves serialized when reopening a conversation during %s",
+    async (action) => {
+      const pending = deferred();
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () =>
+          Promise.resolve(
+            response({
+              thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+              messages: [],
+              handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+            }),
+          ),
+        () => Promise.resolve(response({ thread: { ...threads[0], status: "booked" } })),
+      ];
+      const openThread = () =>
+        elements(tree)
+          .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+          ?.props.onClick?.();
+      await settle();
+      openThread();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      elements(tree)
+        .find((node) => node.props.onBack)
+        ?.props.onBack?.();
+      await settle();
+      openThread();
+      await settle();
+      expect(button("Booked").props.disabled).toBe(true);
+      button("Booked").props.onClick?.();
+      await settle();
+      expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "PATCH")).toHaveLength(
+        1,
+      );
+
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "old-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+
+      expect(button("Booked").props.disabled).toBe(false);
+      expect(button(action).props.disabled).toBe(true);
+      expect(successes()).toHaveLength(0);
+      button("Booked").props.onClick?.();
+      await settle();
+
+      expect(button("Booked").props.disabled).toBe(true);
+      expect(button("Resolved").props.disabled).toBe(false);
+      expect(button("Handoff").props.disabled).toBe(false);
+      expect(successes()).toHaveLength(0);
+      const currentRow = elements(tree).find(
+        (node) => node.type === "button" && node.props["aria-pressed"] === true,
+      );
+      expect(text(currentRow)).toContain("Booked");
+      expect(text(currentRow)).not.toContain(action);
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "updates the list when %s finishes after returning from a conversation",
+    async (action) => {
+      const pending = deferred();
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+      ];
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+        ?.props.onClick?.();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      elements(tree)
+        .find((node) => node.props.onBack)
+        ?.props.onBack?.();
+      await settle();
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+
+      const row = elements(tree).find(
+        (node) => node.type === "button" && node.props["aria-pressed"] === false,
+      );
+      expect(text(row)).toContain(action);
+      expect(text(row)).not.toContain("Needs review");
+      expect(successes()).toHaveLength(0);
+      expect(button("Refresh email").props.disabled).toBe(false);
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "shows a failed pending %s after reopening and permits a new save",
+    async (action) => {
+      const pending = deferred();
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => Promise.resolve(response({ thread: { ...threads[0], status: "booked" } })),
+      ];
+      const openThread = () =>
+        elements(tree)
+          .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+          ?.props.onClick?.();
+      await settle();
+      openThread();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      elements(tree)
+        .find((node) => node.props.onBack)
+        ?.props.onBack?.();
+      await settle();
+      openThread();
+      await settle();
+      expect(button("Booked").props.disabled).toBe(true);
+
+      pending.resolve(response({ error: "Outcome could not be saved." }, 503));
+      await settle();
+      expect(text(tree)).toContain("Outcome could not be saved.");
+      expect(button("Booked").props.disabled).toBe(false);
+      button("Booked").props.onClick?.();
+      await settle();
+      expect(button("Booked").props.disabled).toBe(true);
+      expect(text(tree)).not.toContain("Outcome could not be saved.");
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "keeps the committed %s visible if reconciliation fails after reopening",
+    async (action) => {
+      const pending = deferred();
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () =>
+          Promise.resolve(response({ error: "Could not refresh the saved conversation." }, 503)),
+      ];
+      const openThread = () =>
+        elements(tree)
+          .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+          ?.props.onClick?.();
+      await settle();
+      openThread();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      elements(tree)
+        .find((node) => node.props.onBack)
+        ?.props.onBack?.();
+      await settle();
+      openThread();
+      await settle();
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+      expect(button(action).props.disabled).toBe(true);
+      expect(text(tree)).toContain("Could not refresh the saved conversation.");
+      expect(button("Booked").props.disabled).toBe(false);
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "keeps a pending %s save owned across an Inbox unmount and remount",
+    async (action) => {
+      const pending = deferred();
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+      ];
+      const openThread = () =>
+        elements(tree)
+          .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+          ?.props.onClick?.();
+      await settle();
+      openThread();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      h.slots.forEach((slot) => slot.cleanup?.());
+      h.slots = [];
+      await settle();
+      openThread();
+      await settle();
+      const bookedDisabled = button("Booked").props.disabled;
+      button("Booked").props.onClick?.();
+      await settle();
+      const patchCount = h.fetch.mock.calls.filter(
+        ([, options]) => options?.method === "PATCH",
+      ).length;
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+      expect(bookedDisabled).toBe(true);
+      expect(patchCount).toBe(1);
+      expect(button(action).props.disabled).toBe(true);
+      expect(button("Booked").props.disabled).toBe(false);
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "updates a matching row in a broader scope after a pending %s save",
+    async (action) => {
+      const pending = deferred();
+      agentId = "agent-1";
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+      ];
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+        ?.props.onClick?.();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      agentId = null;
+      await settle();
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+      const row = elements(tree).find(
+        (node) => node.type === "button" && node.props["aria-pressed"] === false,
+      );
+      expect(text(row)).toContain(action);
+      expect(text(row)).not.toContain("Needs review");
+    },
+  );
+
+  it.each(["Resolved", "Handoff"])(
+    "does not let a broader-scope read replace a %s committed while it was loading",
+    async (action) => {
+      const pending = deferred();
+      const broaderList = deferred();
+      agentId = "agent-1";
+      threads = [{ id: "thread-1", subject: "Appointment", status: "open" }];
+      const oldThreads = threads.map((thread) => ({ ...thread }));
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+      ];
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+        ?.props.onClick?.();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      listResponses = [() => broaderList.promise];
+      agentId = null;
+      await settle();
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+      broaderList.resolve(response({ threads: oldThreads }));
+      await settle();
+      const row = elements(tree).find(
+        (node) => node.type === "button" && node.props["aria-pressed"] === false,
+      );
+      expect(text(row)).toContain(action);
+      expect(text(row)).not.toContain("Needs review");
+    },
+  );
+
+  it.each([
+    ["Resolved", true],
+    ["Resolved", false],
+    ["Handoff", true],
+    ["Handoff", false],
+  ] as const)(
+    "preserves newer message fields when %s finishes (list arrives first: %s)",
+    async (action, listArrivesFirst) => {
+      const pending = deferred();
+      const broaderList = deferred();
+      agentId = "agent-1";
+      const original = {
+        id: "thread-1",
+        subject: "Original appointment",
+        customer_email: "original@example.test",
+        summary: "Original preview",
+        last_message_at: "2026-09-20T10:00:00Z",
+        status: "open",
+      };
+      const latest = {
+        ...original,
+        subject: "Updated appointment",
+        customer_email: "latest@example.test",
+        summary: "Latest customer reply",
+        last_message_at: "2026-09-21T11:30:00Z",
+      };
+      threads = [original];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: original, messages: [] })),
+        () => pending.promise,
+      ];
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+        ?.props.onClick?.();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      listResponses = [() => broaderList.promise];
+      agentId = null;
+      await settle();
+      if (listArrivesFirst) {
+        broaderList.resolve(response({ threads: [latest] }));
+        await settle();
+      }
+      pending.resolve(
+        response({
+          thread: { ...original, status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "saved-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+      if (!listArrivesFirst) {
+        broaderList.resolve(response({ threads: [latest] }));
+        await settle();
+      }
+      const row = elements(tree).find(
+        (node) => node.type === "button" && node.props["aria-pressed"] === false,
+      );
+      expect(text(row)).toContain(action);
+      expect(text(row)).toContain(latest.subject);
+      expect(text(row)).toContain(latest.customer_email);
+      expect(text(row)).toContain(
+        new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date(latest.last_message_at)),
+      );
+      elements(tree)
+        .find((node) => node.type === "search-field")
+        ?.props.onChange?.({ target: { value: latest.summary } });
+      await settle();
+      expect(text(tree)).toContain(latest.subject);
     },
   );
 
