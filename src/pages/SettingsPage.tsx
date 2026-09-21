@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
+import { ChevronDown, KeyRound, LogOut, Mail, Trash2, UserRound } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { Button } from "../components/atoms";
@@ -12,6 +12,7 @@ import { workspaceSidebarLabel } from "../lib/user-display";
 import { authFetch } from "../lib/api";
 
 function DangerZone() {
+  const [expanded, setExpanded] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -41,11 +42,13 @@ function DangerZone() {
           ? new Date(data.scheduled_purge_at).toLocaleDateString()
           : "the end of the grace period";
         setDeletionScheduled(true);
+        setExpanded(true);
         setMessage(
           `Deletion is scheduled for ${when}. Use Keep my account below to reverse it before the grace period ends. Review Billing if an upcoming renewal still appears.`,
         );
       } catch (err) {
         if (!active) return;
+        setExpanded(true);
         setError(
           err instanceof Error
             ? err.message
@@ -104,6 +107,7 @@ function DangerZone() {
       );
     } finally {
       setWorking(false);
+      setExpanded(true);
     }
   }
 
@@ -132,84 +136,100 @@ function DangerZone() {
       );
     } finally {
       setCancelWorking(false);
+      setExpanded(true);
     }
   }
 
   return (
     <section className="wl-paper wl-paper-elevated border-[var(--wireline-color-feedback-error-border)] p-5 sm:p-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold leading-6 text-[var(--wireline-color-status-error)]">
-            Delete Account
+      <details
+        open={expanded}
+        onToggle={(event) => setExpanded(event.currentTarget.open)}
+        className="group"
+      >
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-[var(--wireline-color-status-error)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+          <h2 className="text-base font-semibold leading-6">
+            {deletionScheduled && !expanded
+              ? "Deletion Scheduled"
+              : working
+                ? "Scheduling Deletion…"
+                : "Delete Account"}
           </h2>
-          <p className="mt-2 max-w-[48ch] text-sm leading-6 text-muted-foreground">
-            Stops future subscription renewal and schedules permanent deletion after a 30-day grace
-            period. Paid access may remain through the current billing period. Type DELETE to
-            confirm.
-          </p>
-        </div>
-        <Trash2 className="hidden size-5 shrink-0 text-[var(--wireline-color-status-error)] sm:block" />
-      </div>
-      {deletionStatusLoading ? (
-        <p className="mt-5 text-sm text-muted-foreground" role="status">
-          Checking deletion status…
-        </p>
-      ) : !deletionScheduled ? (
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
-            aria-label="Type DELETE to confirm"
-            value={confirmation}
-            onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
-            placeholder="DELETE"
-            className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+          <ChevronDown
+            className="size-4 shrink-0 transition-transform group-open:rotate-180"
+            aria-hidden="true"
           />
+        </summary>
+        {!deletionScheduled && !message ? (
+          <p className="mt-3 max-w-[48ch] text-sm leading-6 text-muted-foreground">
+            Stops subscription renewal. Permanent deletion follows a 30-day grace period. Paid
+            access may continue until your billing period ends.
+          </p>
+        ) : null}
+        {deletionStatusLoading ? (
+          <p className="mt-5 text-sm text-muted-foreground" role="status">
+            Checking deletion status…
+          </p>
+        ) : !deletionScheduled ? (
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="grid gap-2 text-sm text-muted-foreground">
+              Type DELETE to Confirm
+              <input
+                aria-label="Type DELETE to confirm"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value.toUpperCase())}
+                placeholder="DELETE"
+                className="h-11 rounded-xl border border-border bg-background px-4 text-sm font-medium tracking-[0.18em] text-foreground outline-none focus:border-[var(--wireline-color-status-error)] sm:w-44"
+              />
+            </label>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={confirmation !== "DELETE" || working}
+              onClick={requestDeletion}
+              className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+            >
+              <Trash2 size={14} aria-hidden="true" />
+              {working ? "Scheduling…" : "Delete account"}
+            </Button>
+          </div>
+        ) : null}
+        {message ? (
+          <StatusNotice
+            tone={renewalStopNeedsAttention ? "warning" : "success"}
+            className="mt-4"
+            title={
+              renewalStopNeedsAttention
+                ? deletionScheduled
+                  ? "Deletion Scheduled: Billing Action Needed"
+                  : "Deletion Canceled: Billing Review Needed"
+                : deletionScheduled
+                  ? "Deletion Scheduled"
+                  : "Deletion Canceled"
+            }
+          >
+            {message}
+          </StatusNotice>
+        ) : null}
+        {deletionScheduled ? (
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            disabled={confirmation !== "DELETE" || working}
-            onClick={requestDeletion}
-            className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
+            disabled={cancelWorking}
+            onClick={cancelDeletion}
+            className="mt-3"
           >
-            <Trash2 size={14} aria-hidden="true" />
-            {working ? "Scheduling…" : "Delete account"}
+            {cancelWorking ? "Keeping account…" : "Keep my account"}
           </Button>
-        </div>
-      ) : null}
-      {message ? (
-        <StatusNotice
-          tone={renewalStopNeedsAttention ? "warning" : "success"}
-          className="mt-4"
-          title={
-            renewalStopNeedsAttention
-              ? deletionScheduled
-                ? "Deletion Scheduled: Billing Action Needed"
-                : "Deletion Canceled: Billing Review Needed"
-              : deletionScheduled
-                ? "Deletion Scheduled"
-                : "Deletion Canceled"
-          }
-        >
-          {message}
-        </StatusNotice>
-      ) : null}
-      {deletionScheduled ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={cancelWorking}
-          onClick={cancelDeletion}
-          className="mt-3"
-        >
-          {cancelWorking ? "Keeping account…" : "Keep my account"}
-        </Button>
-      ) : null}
-      {error ? (
-        <StatusNotice tone="destructive" className="mt-4" title="Deletion Unavailable">
-          {error}
-        </StatusNotice>
-      ) : null}
+        ) : null}
+        {error ? (
+          <StatusNotice tone="destructive" className="mt-4" title="Deletion Unavailable">
+            {error}
+          </StatusNotice>
+        ) : null}
+      </details>
     </section>
   );
 }

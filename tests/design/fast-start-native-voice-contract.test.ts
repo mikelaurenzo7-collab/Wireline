@@ -15,7 +15,7 @@ describe("Fast Start native voice contract", () => {
     expect(createDialog).not.toMatch(/authFetch\("\/api\/voices"\)/);
     expect(createDialog).not.toMatch(/playVoicePreview|ElevenLabs|xAI/);
     expect(createDialog).not.toMatch(/VoicePickerField|VoiceGallery/);
-    expect(createDialog).toContain("Not Now");
+    expect(createDialog).toContain("Cancel");
   });
 
   it("resolves every new Bot to one of the managed OpenAI phone voices", () => {

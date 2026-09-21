@@ -49,7 +49,7 @@ describe("agent template launch truth", () => {
     const restriction = getTemplateSelfServeRestriction(collections);
 
     expect(visibleCopy).toContain("FDCPA-aware");
-    expect(visibleCopy).toContain("legal review");
+    expect(visibleCopy).toMatch(/legal review/i);
     expect(visibleCopy).not.toMatch(/FDCPA compliant|compliant with FDCPA/i);
     expect(collections.firstMessage).not.toMatch(/protect your credit/i);
     expect(isTemplateSelfServeAvailable(reminders)).toBe(false);

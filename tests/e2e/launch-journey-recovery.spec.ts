@@ -95,6 +95,7 @@ test("changing a role starter preserves a supplied customer brief", async ({ pag
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";
   await page.goto(`/studio?create=1&brief=${encodeURIComponent(brief)}`);
   const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
+  await dialog.getByText("Use a Role Starter", { exact: true }).click();
   const description = dialog.getByRole("textbox", { name: "Describe the Job" });
   await expect(description).toHaveValue(brief);
   await dialog

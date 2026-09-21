@@ -99,15 +99,15 @@ describe("authenticated Bot navigation contract", () => {
     expect(voice).not.toContain("Speech-to-Speech");
     expect(voice).not.toContain("live PSTN");
     expect(studioPanel).toContain("<SimpleVoicePicker");
-    expect(studioPanel).toContain("Phone voice");
+    expect(studioPanel).toContain("Phone Voice");
     expect(studioPanel).not.toMatch(/VoiceGallery|AgentPresenceLivePreview/);
     expect(studioReview).toContain("Phone voice");
     expect(studioReview).toContain("No phone connected");
   });
 
-  it("makes Fast Start role-first, posture-neutral, and free of provider complexity", () => {
+  it("makes Fast Start brief-first, posture-neutral, and free of provider complexity", () => {
     expect(create).toContain("language.setupPrompt");
-    expect(create).toContain("language.setupDescription");
+    expect(create).toContain("Use a Role Starter");
     expect(create).toContain("language.createCta");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("BOT_CHANNELS.map");

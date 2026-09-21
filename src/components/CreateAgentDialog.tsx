@@ -420,7 +420,6 @@ export default function CreateAgentDialog({
         aria-modal="true"
         aria-busy={creating}
         aria-labelledby="create-agent-title"
-        aria-describedby="create-agent-description"
       >
         <div className="shrink-0 border-b border-border px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
@@ -438,12 +437,6 @@ export default function CreateAgentDialog({
                 >
                   {language.setupPrompt}
                 </h2>
-                <p
-                  id="create-agent-description"
-                  className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground"
-                >
-                  {language.setupDescription}
-                </p>
               </div>
             </div>
             <Button
@@ -462,13 +455,26 @@ export default function CreateAgentDialog({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
           <div className="grid gap-5">
-            <div>
-              <label
-                htmlFor="create-bot-role"
-                className="mb-2 block text-sm font-semibold text-foreground"
-              >
-                Start with a role
-              </label>
+            <label className="block">
+              <span className="sr-only">Describe the Job</span>
+              <Textarea
+                disabled={creating}
+                maxLength={CREATE_BRIEF_MAX_CHARS}
+                value={brief}
+                onChange={(event) => {
+                  briefIsTemplateTextRef.current = false;
+                  setBrief(event.target.value);
+                }}
+                placeholder="Answer calls and book appointments."
+                className="min-h-[136px] text-base"
+                resize="vertical"
+              />
+            </label>
+
+            <details open={initialTemplate.key !== "custom"}>
+              <summary className="min-h-11 cursor-pointer rounded-md py-3 text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Use a Role Starter
+              </summary>
               <NativeSelect
                 id="create-bot-role"
                 aria-label="Bot role starters"
@@ -495,25 +501,7 @@ export default function CreateAgentDialog({
                   </option>
                 ))}
               </NativeSelect>
-            </div>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-foreground">
-                Describe the Job
-              </span>
-              <Textarea
-                disabled={creating}
-                maxLength={CREATE_BRIEF_MAX_CHARS}
-                value={brief}
-                onChange={(event) => {
-                  briefIsTemplateTextRef.current = false;
-                  setBrief(event.target.value);
-                }}
-                placeholder="Answer calls for my business, book appointments, and send confirmations."
-                className="min-h-[136px] text-base"
-                resize="vertical"
-              />
-            </label>
+            </details>
 
             <div className="rounded-xl border border-border">
               <button
@@ -591,7 +579,7 @@ export default function CreateAgentDialog({
               disabled={creating}
               className="min-h-11 rounded-lg px-2 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline disabled:opacity-50 wl-focus-ring-halo"
             >
-              Not Now
+              Cancel
             </button>
             <Button
               type="submit"

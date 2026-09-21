@@ -153,7 +153,6 @@ export default function DeployAgentModal({
             <div className="relative rounded-t-md sm:rounded-md overflow-hidden wl-panel-elevated border border-border shadow-2xl">
               <div className="relative z-10 flex items-start justify-between gap-4 px-7 pt-6 pb-3 border-b border-border">
                 <div className="space-y-1.5 min-w-0">
-                  <p className="wl-micro-meta">Deploy · {template.category}</p>
                   <h2
                     data-slot="dialog-title"
 
@@ -201,11 +200,8 @@ export default function DeployAgentModal({
                     }}
                     maxLength={80}
                     placeholder="e.g. Sarah, Front Desk, Closer #2"
-                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[length:var(--wireline-typography-body-size)] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 focus:bg-white/40 transition-colors"
+                    className="w-full bg-muted/20 border border-border rounded-md px-4 py-3 text-[length:var(--wireline-typography-body-size)] text-foreground placeholder:text-foreground/55 outline-none focus:border-brand/50 transition-colors"
                   />
-                  <p className="wl-micro-meta">
-                    What callers and your team will see. You can change this any time in Studio.
-                  </p>
                 </div>
 
                 {/* Voice (voice channel only) */}
@@ -220,7 +216,7 @@ export default function DeployAgentModal({
                         onClick={() => setShowVoiceList((v) => !v)}
                         className="h-auto p-0 wl-label-muted hover:text-brand"
                       >
-                        {showVoiceList ? "Hide options" : "Pick a specific voice"}
+                        {showVoiceList ? "Fewer Voices" : "More Voices"}
                       </ShadButton>
                     </div>
 
@@ -260,7 +256,6 @@ export default function DeployAgentModal({
                           transition={{ duration: 0.25 }}
                           className="space-y-1.5 overflow-hidden"
                         >
-                          <p className="wl-micro-meta pt-1">Specific OpenAI voice</p>
                           {allVoices.map((v) => {
                             const isSelected = v.id === voiceId;
                             return (
@@ -294,18 +289,10 @@ export default function DeployAgentModal({
                         <p className="wl-micro-meta">
                           Picked: <span className="text-foreground/75">{selectedVoice.name}</span>
                         </p>
-                        <p className="wl-micro-meta">
-                          Used by OpenAI Realtime in Studio tests and on your phone line.
-                        </p>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="rounded-md border border-border bg-muted/20 px-4 py-3 text-[length:var(--wireline-typography-caption-size)] text-foreground/65">
-                    Email Bot - no voice picker. Set its writing tone in{" "}
-                    <span className="text-foreground/80">Studio</span> after deployment.
-                  </div>
-                )}
+                ) : null}
               </div>
 
               {/* Footer */}

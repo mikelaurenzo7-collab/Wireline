@@ -77,7 +77,7 @@ describe("authenticated mobile cleanup", () => {
     expect(shell).not.toContain("orderedAgents");
     expect(chrome).toContain('aria-label="Switch Bot"');
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
-    expect(create).toContain("Not Now");
+    expect(create).toContain("Cancel");
   });
 
   it("keeps guidance next to decisions and removes provider/runtime narration", () => {

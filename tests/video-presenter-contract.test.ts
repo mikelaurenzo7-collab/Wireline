@@ -106,7 +106,7 @@ describe("bot visual identity", () => {
 
   it("keeps Fast Start and the tracked client tree free of avatar selection UI", () => {
     const dialog = source("src/components/CreateAgentDialog.tsx");
-    expect(dialog).toContain("Not Now");
+    expect(dialog).toContain("Cancel");
     expect(dialog).not.toMatch(/CreateAgentCatalogFacePicker|AgentPresenceAvatarPicker|avatar/i);
     expect(existsSync(resolve(root, "src/components/AgentPresenceAvatarPicker.tsx"))).toBe(false);
   });

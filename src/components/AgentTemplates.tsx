@@ -32,6 +32,7 @@ import { isBusinessTemplateCategory } from "../lib/agent-create-defaults";
 import { useToast } from "../contexts/ToastContext";
 import { EmptyState } from "./ui/EmptyState";
 import { Input } from "./ui/shadcn/Input";
+import { NativeSelect } from "./atoms";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { Skeleton } from "./ui/shadcn/Skeleton";
 import { stashPostCreateWizard } from "../lib/wireline-create-flow";
@@ -48,8 +49,7 @@ export const AGENT_TEMPLATES = [
     id: "sales-sdr",
     category: "Sales & Revenue",
     name: "SDR: Outbound Prospecting",
-    description:
-      "Works your outbound queue with BANT qualification, books demos, handles objections, and passes hot leads to your CRM.",
+    description: "Qualifies prospects, books demos, and updates your CRM.",
     role: "sales",
     channel: "voice" as const,
     icon: Target,
@@ -62,8 +62,7 @@ export const AGENT_TEMPLATES = [
     id: "sales-closer",
     category: "Sales & Revenue",
     name: "Closer: Late Stage Deals",
-    description:
-      "Handles warm follow-ups, pricing discussions, and closing calls with empathy and authority.",
+    description: "Follows up with warm leads and answers pricing questions.",
     role: "sales",
     channel: "voice" as const,
     icon: Zap,
@@ -76,8 +75,7 @@ export const AGENT_TEMPLATES = [
     id: "lead-qualifier-inbound",
     category: "Sales & Revenue",
     name: "Inbound Lead Qualifier",
-    description:
-      "Screens inbound calls with BANT questions, scores leads, and routes hot leads to sales immediately.",
+    description: "Screens callers and routes qualified leads to sales.",
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Filter,
@@ -91,8 +89,7 @@ export const AGENT_TEMPLATES = [
     id: "support-tier1",
     category: "Customer Support",
     name: "Tier 1: General Support",
-    description:
-      "Handles FAQs, account questions, and basic troubleshooting. Escalates to a human when needed.",
+    description: "Answers common questions and hands off when needed.",
     role: "customer_service",
     channel: "voice" as const,
     icon: Headphones,
@@ -104,8 +101,7 @@ export const AGENT_TEMPLATES = [
     id: "support-email",
     category: "Customer Support",
     name: "Email Support Bot",
-    description:
-      "Responds to customer emails with empathy and precision. Handles complaints, refunds, and status updates.",
+    description: "Replies to customer questions, complaints, and status requests.",
     role: "customer_service",
     channel: "email" as const,
     icon: Mail,
@@ -134,8 +130,7 @@ export const AGENT_TEMPLATES = [
     id: "scheduler-salon",
     category: "Scheduling",
     name: "Salon & Spa Receptionist",
-    description:
-      "Books beauty appointments, recommends services, upsells treatments, and reduces no-shows.",
+    description: "Books appointments and answers service questions.",
     role: "receptionist",
     channel: "voice" as const,
     icon: Sparkles,
@@ -148,8 +143,7 @@ export const AGENT_TEMPLATES = [
     id: "scheduler-realestate",
     category: "Scheduling",
     name: "Real Estate Tour Booker",
-    description:
-      "Qualifies buyers, books property tours, follows up on listings, and nurtures long-cycle leads.",
+    description: "Qualifies buyers, books tours, and follows up on listings.",
     role: "lead_qualifier",
     channel: "voice" as const,
     icon: Building2,
@@ -163,8 +157,7 @@ export const AGENT_TEMPLATES = [
     id: "collections-soft",
     category: "Collections & Finance",
     name: "Soft Collections: Payment Reminders",
-    description:
-      "Payment-reminder workflows with empathy-first guardrails. Requires legal review before deployment.",
+    description: "Reminds customers about outstanding payments.",
     role: "collections",
     channel: "voice" as const,
     icon: DollarSign,
@@ -179,8 +172,7 @@ export const AGENT_TEMPLATES = [
     id: "collections-hard",
     category: "Collections & Finance",
     name: "Hard Collections: Recovery",
-    description:
-      "Direct payment recovery workflows with FDCPA-aware guardrails. Requires legal review before deployment.",
+    description: "Payment recovery with FDCPA-aware guardrails.",
     role: "collections",
     channel: "voice" as const,
     icon: Shield,
@@ -196,8 +188,7 @@ export const AGENT_TEMPLATES = [
     id: "marketing-reengagement",
     category: "Marketing",
     name: "Re-Engagement Campaigner",
-    description:
-      "Reaches out to dormant customers with personalized offers. Reactivates churned accounts and upsells.",
+    description: "Follows up with past customers about relevant offers.",
     role: "marketing",
     channel: "voice" as const,
     icon: RefreshCw,
@@ -210,8 +201,7 @@ export const AGENT_TEMPLATES = [
     id: "marketing-survey",
     category: "Marketing",
     name: "NPS & Feedback Collector",
-    description:
-      "Runs quick post-interaction surveys. Captures satisfaction scores, verbatim feedback, and follow-up sentiment.",
+    description: "Collects satisfaction scores and customer feedback.",
     role: "marketing",
     channel: "voice" as const,
     icon: BarChart3,
@@ -255,8 +245,7 @@ export const AGENT_TEMPLATES = [
     id: "personal-concierge",
     category: "Everyday & Lifestyle",
     name: "Personal Concierge",
-    description:
-      "Books appointments, handles follow-ups, screens calls, and takes messages on your behalf.",
+    description: "Handles appointments, follow-ups, and messages for you.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: User,
@@ -280,8 +269,7 @@ export const AGENT_TEMPLATES = [
     id: "personal-errand",
     category: "Everyday & Lifestyle",
     name: "Errand Caller",
-    description:
-      "Calls dentists, plumbers, hairdressers, restaurants, and offices to book, confirm, or reschedule on your behalf.",
+    description: "Calls businesses to book, confirm, or reschedule for you.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: ClipboardList,
@@ -294,8 +282,7 @@ export const AGENT_TEMPLATES = [
     id: "personal-negotiator",
     category: "Everyday & Lifestyle",
     name: "Bill Negotiator",
-    description:
-      "Calls your cable, internet, insurance, or wireless carrier to renegotiate rates, dispute charges, or cancel cleanly. Polite but firm.",
+    description: "Calls providers about rates, disputed charges, or cancellations.",
     role: "personal_assistant",
     channel: "voice" as const,
     icon: Receipt,
@@ -389,7 +376,7 @@ function TemplateCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       whileHover={selfServeAvailable ? { y: -2 } : undefined}
-      className="relative studio-card rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium shadow-sm"
+      className="relative studio-card !p-0 rounded-md border border-border bg-card transition-all duration-300 flex flex-col group overflow-hidden card-interactive-premium shadow-sm"
       data-accent={template.accent}
       aria-label={`${template.name} template${selfServeAvailable ? "" : ", self-serve deployment unavailable"}`}
     >
@@ -397,11 +384,8 @@ function TemplateCard({
 
       <div className="relative z-10 p-4 flex flex-col gap-3 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 bg-[var(--wireline-color-feedback-success-surface)]">
-            <Icon
-              aria-hidden="true"
-              className="w-5 h-5 text-[var(--wireline-color-action-primary-default)]"
-            />
+          <div className="flex size-5 items-center justify-center shrink-0">
+            <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
@@ -453,8 +437,8 @@ function TemplateCard({
           ) : null}
         </div>
 
-        <details className="rounded-md border border-border bg-[var(--wireline-color-surface-subtle)]">
-          <summary className="min-h-11 cursor-pointer rounded-md px-3 py-3 text-xs font-medium text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <details>
+          <summary className="min-h-11 cursor-pointer rounded-md py-3 text-xs font-medium text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Sample Greeting
           </summary>
           <div className="flex gap-2 px-3 pb-3 text-xs leading-relaxed text-muted-foreground">
@@ -468,7 +452,7 @@ function TemplateCard({
         <ShadButton
           type="button"
           disableAnimations
-          variant="default"
+          variant="secondary"
           onClick={() => onDeploy(template)}
           disabled={deploying || !selfServeAvailable}
           className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-normal flex items-center justify-center gap-2 shadow-sm"
@@ -487,37 +471,6 @@ function TemplateCard({
         </ShadButton>
       </div>
     </motion.article>
-  );
-}
-
-function CustomAgentCard({ onCreate }: { onCreate: () => void }) {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="studio-card rounded-md border border-primary/25 border-dashed flex flex-col items-center justify-center gap-3 p-6 text-center min-h-[240px]"
-    >
-      <div className="w-12 h-12 rounded-md border border-border bg-card flex items-center justify-center">
-        <Sparkles aria-hidden="true" className="w-5 h-5 text-primary" />
-      </div>
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold text-foreground tracking-[-0.01em]">Custom Bot</h3>
-        <p className="text-[length:var(--wireline-typography-caption-size)] text-foreground/70 leading-relaxed max-w-[12.5rem]">
-          Start from a blank Bot in Studio and set the job, greeting, and voice yourself.
-        </p>
-      </div>
-      <ShadButton
-        type="button"
-        disableAnimations
-        variant="ghost"
-        onClick={onCreate}
-        className="rounded-full wl-label-muted hover:text-brand h-auto px-3 py-1.5"
-      >
-        <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-        Create in Studio
-      </ShadButton>
-    </motion.div>
   );
 }
 
@@ -635,7 +588,7 @@ export default function AgentTemplates() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      <div className="px-4 py-3 border-b border-border flex flex-col gap-3 shrink-0">
+      <div className="py-3 border-b border-border flex flex-col gap-3 shrink-0">
         <div className="relative">
           <Search
             aria-hidden="true"
@@ -644,7 +597,7 @@ export default function AgentTemplates() {
           <Input
             type="search"
             aria-label="Search templates"
-            placeholder="Search templates, roles, channels…"
+            placeholder="Search templates"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-md border border-border bg-muted/20 py-2 pl-9 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50"
@@ -653,32 +606,23 @@ export default function AgentTemplates() {
 
         <div className="flex items-center justify-between gap-3">
           <div
-            className="flex gap-1.5 flex-wrap"
+            className="min-w-0 flex-1 sm:max-w-xs"
             role="group"
             aria-label="Template category filter"
           >
-            {CATEGORIES.map((cat) => {
-              const selected = activeCategory === cat;
-              return (
-                <ShadButton
-                  key={cat}
-                  type="button"
-                  disableAnimations
-                  variant={selected ? "secondary" : "outline"}
-                  size="sm"
-                  onClick={() => setActiveCategory(cat)}
-                  aria-pressed={selected}
-                  className={cn(
-                    "rounded-full wl-label",
-                    selected
-                      ? "bg-primary/15 border-primary/40 text-primary"
-                      : "text-muted hover:text-foreground hover:border-primary/25",
-                  )}
-                >
-                  {cat}
-                </ShadButton>
-              );
-            })}
+            <NativeSelect
+              aria-label="Template category"
+              value={activeCategory}
+              onChange={(event) =>
+                setActiveCategory(event.target.value as (typeof CATEGORIES)[number])
+              }
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === "All" ? "All Categories" : cat}
+                </option>
+              ))}
+            </NativeSelect>
           </div>
           <span className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
             {resultLabel}
@@ -686,7 +630,7 @@ export default function AgentTemplates() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 scroll-viewport px-4 py-4" aria-live="polite">
+      <div className="flex-1 min-h-0 scroll-viewport py-4" aria-live="polite">
         {initialLoading ? (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -750,8 +694,6 @@ export default function AgentTemplates() {
                   />
                 ))}
               </AnimatePresence>
-
-              <CustomAgentCard onCreate={() => navigate("/studio?create=1")} />
             </div>
           </>
         )}

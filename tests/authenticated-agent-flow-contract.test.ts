@@ -123,7 +123,7 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).toContain("{language.setupPrompt}");
     expect(createDialog).toContain("BOT_ROLE_TEMPLATES.map");
     expect(createDialog).toContain("BOT_CHANNELS.map");
-    expect(createDialog).toContain("Not Now");
+    expect(createDialog).toContain("Cancel");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
     expect(productCopy).toContain('createHeadline: "Build Your Bot"');
@@ -178,10 +178,11 @@ describe("authenticated Bot flow", () => {
     const templates = read("src/components/AgentTemplates.tsx");
     expect(templates).toContain("searchableTemplateText");
     expect(templates).toContain("template.firstMessage");
-    expect(templates).toContain("Search templates, roles, channels…");
+    expect(templates).toContain('placeholder="Search templates"');
     expect(templates).toContain('role="group"');
     expect(templates).toContain('aria-label="Template category filter"');
-    expect(templates).toContain("aria-pressed={selected}");
+    expect(templates).toContain('aria-label="Template category"');
+    expect(templates).toContain("value={activeCategory}");
     expect(templates).toContain("Clear search");
     expect(templates).not.toContain("hidden hidden");
   });

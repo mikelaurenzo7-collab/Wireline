@@ -4,19 +4,20 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
-describe("Fast Start role-first flow contract", () => {
+describe("Fast Start brief-first flow contract", () => {
   const create = read("src/components/CreateAgentDialog.tsx");
 
-  it("keeps creation on one role-first screen", () => {
+  it("keeps creation on one brief-first screen with optional role starters", () => {
     expect(create).toContain("{language.setupPrompt}");
-    expect(create).toContain("{language.setupDescription}");
+    expect(create).toContain("Use a Role Starter");
+    expect(create).not.toContain("{language.setupDescription}");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("BOT_CHANNELS.map");
     expect(create).toContain('aria-label="Bot role starters"');
     expect(create).toContain("aria-expanded={customizing}");
     expect(create).toContain("Describe the Job");
     expect(create).toContain("language.createCta");
-    expect(create).toContain("Not Now");
+    expect(create).toContain("Cancel");
     expect(create).not.toContain("useState<1 | 2>(1)");
     expect(create).not.toMatch(/Step [12] ·/);
     expect(create).not.toContain("continueToVoice");

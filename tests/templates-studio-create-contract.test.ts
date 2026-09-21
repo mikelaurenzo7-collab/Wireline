@@ -10,8 +10,9 @@ describe("templates custom-agent CTA", () => {
   it("routes custom creates through Studio Fast Start, not retired /api/claude forge", () => {
     const templates = read("src/components/AgentTemplates.tsx");
 
-    expect(templates).toContain('navigate("/studio?create=1")');
-    expect(templates).toContain("Create in Studio");
+    const page = read("src/pages/TemplatesPage.tsx");
+    expect(page).toContain('to="/studio?create=1"');
+    expect(page).toContain("Create Bot");
     expect(templates).not.toContain("ClaudeRecipeButton");
     expect(templates).not.toContain("/api/claude/forge");
     expect(templates).not.toContain('recipe="agent-wire"');
@@ -28,7 +29,9 @@ describe("templates custom-agent CTA", () => {
     const brains = read("src/lib/ai-brains.ts");
     expect(brains).toContain("class KnowledgeIngestionUnavailableError");
     expect(jobs).toContain("KnowledgeIngestionUnavailableError");
-    expect(jobs).toContain('throw AppError.fromHttpStatus(503, new KnowledgeIngestionUnavailableError().message)');
+    expect(jobs).toContain(
+      "throw AppError.fromHttpStatus(503, new KnowledgeIngestionUnavailableError().message)",
+    );
     expect(jobs).not.toContain('type: "knowledge_from_url"');
   });
 });
