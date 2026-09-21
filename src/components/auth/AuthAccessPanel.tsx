@@ -521,6 +521,7 @@ export default function AuthAccessPanel({
   const passwordErrorId = embedded ? "landing-auth-password-error" : "auth-password-error";
   const emailInputId = embedded ? "landing-auth-email" : "auth-email";
   const passwordInputId = embedded ? "landing-auth-password" : "auth-password";
+  const passwordRulesId = `${passwordInputId}-rules`;
   const errorId =
     error === TERMS_CONSENT_ERROR
       ? termsErrorId
@@ -612,7 +613,7 @@ export default function AuthAccessPanel({
                 if (event.target.checked && error === TERMS_CONSENT_ERROR) setError(null);
               }}
             />
-            <label id={termsLabelId} htmlFor={termsId} className="cursor-pointer">
+            <label id={termsLabelId} htmlFor={termsId} className="wl-preserve-case cursor-pointer">
               I agree to the{" "}
               <Link to="/terms" target="_blank" rel="noopener">
                 Terms
@@ -632,6 +633,7 @@ export default function AuthAccessPanel({
               <button
                 key={provider.id}
                 type="button"
+                className="wl-preserve-case"
                 disabled={disabled}
                 onClick={() => startOAuth(provider.id)}
                 aria-label={`Continue with ${provider.label}`}
@@ -697,7 +699,14 @@ export default function AuthAccessPanel({
                   minLength={isSignUp ? 8 : undefined}
                   disabled={disabled}
                   aria-invalid={invalidField === "password"}
-                  aria-describedby={invalidField === "password" ? passwordErrorId : undefined}
+                  aria-describedby={
+                    [
+                      isSignUp && password ? passwordRulesId : null,
+                      invalidField === "password" ? passwordErrorId : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || undefined
+                  }
                   value={password}
                   onChange={(event) => {
                     setPassword(event.target.value);
@@ -729,7 +738,11 @@ export default function AuthAccessPanel({
                 </button>
               ) : null}
               {isSignUp && password ? (
-                <ul className="wl-access-panel__password-rules" aria-label="Password requirements">
+                <ul
+                  id={passwordRulesId}
+                  className="wl-access-panel__password-rules"
+                  aria-label="Password requirements"
+                >
                   {PASSWORD_RULES.map((rule) => {
                     const met = rule.test(password);
                     return (

@@ -220,7 +220,12 @@ describe("E2E design and BotBound brand polish", () => {
     expect(prestige).not.toMatch(
       /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
     );
-    expect(auth).toContain("grid-template-columns: repeat(3");
+    const providerGrid = auth.match(/\.wl-access-panel__oauth\s*\{([^}]+)\}/)?.[1];
+    // Provider choices must reflow when the container or enlarged labels need
+    // more room; a fixed three-column row collapsed Microsoft's mark at 320px.
+    expect(providerGrid).toMatch(
+      /grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*[\d.]+rem\),\s*1fr\)\)/,
+    );
   });
 
   it("keeps the shell scroll-container rule from swallowing sr-only live regions", () => {

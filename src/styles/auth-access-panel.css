@@ -20,6 +20,12 @@
   text-decoration: none;
 }
 
+/* Keep the brand lockup within a narrow screen when text is enlarged. */
+.wl-access-panel__brand .bb-lockup[data-size="large"] {
+  --bb-lockup-mark: min(3.75rem, 18vw);
+  --bb-lockup-wordmark-size: min(1.68rem, 8vw);
+}
+
 .wl-access-panel__card {
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid
@@ -103,8 +109,11 @@
   line-height: 1.5;
 }
 
-.wl-access-panel__heading:has(.wl-access-panel__welcome) {
+.wl-access-panel__heading:has(.wl-access-panel__welcome, .wl-access-panel__intent) {
   margin-bottom: 1rem;
+}
+
+.wl-access-panel__heading:has(.wl-access-panel__welcome) {
   text-align: left;
 }
 
@@ -124,7 +133,7 @@
 
 .wl-access-panel__tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
   gap: 0.35rem;
   margin-top: 1.25rem;
   padding: 0.25rem;
@@ -151,7 +160,7 @@
   color: var(--wireline-color-text-secondary);
   font-size: 0.84rem;
   font-weight: 650;
-  white-space: nowrap;
+  white-space: normal;
   cursor: pointer;
 }
 
@@ -188,7 +197,7 @@
 
 .wl-access-panel__oauth {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 4.25rem), 1fr));
   gap: 0.5rem;
   margin-top: 1rem;
 }
@@ -226,6 +235,10 @@
   transform: translateY(-1px);
 }
 
+.wl-access-panel__oauth button > svg {
+  flex-shrink: 0;
+}
+
 .wl-access-panel__divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -245,11 +258,21 @@
 
 .wl-access-panel__form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.9rem;
+}
+
+/* OAuth's divider already separates its form. Email-only and reset forms need
+ * the same breathing room below consent, account modes, or the reset heading. */
+.wl-access-panel__card
+  > :is(.wl-access-panel__heading, .wl-access-panel__tabs, .wl-access-panel__terms)
+  + .wl-access-panel__form {
+  margin-top: 1rem;
 }
 
 .wl-access-panel__field-group {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.42rem;
 }
 
@@ -315,6 +338,7 @@
 .wl-access-panel__field > svg {
   width: 0.95rem;
   height: 0.95rem;
+  flex-shrink: 0;
   margin-left: 0.9rem;
   color: var(--wireline-color-text-tertiary);
 }
@@ -482,7 +506,7 @@
   }
 
   .wl-access-panel__card {
-    padding: 1.1rem;
+    padding: min(1.1rem, 5vw);
     border-radius: 1rem;
     box-shadow: none;
   }
@@ -497,6 +521,9 @@
 
   .wl-access-panel__oauth button {
     min-height: 2.75rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.6rem 0.25rem;
   }
 }
 
