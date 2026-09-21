@@ -14,6 +14,7 @@ const BALANCE_TITLE = CONVERSATION_BALANCE_COPY.title;
 export default function UsageMeter({
   compact = false,
   onUpgrade,
+  upgradePending = false,
   showBalance = true,
 }: {
   compact?: boolean;
@@ -21,6 +22,8 @@ export default function UsageMeter({
   showBalance?: boolean;
   /** When provided, approaching/extra-usage states surface a one-click upgrade CTA. */
   onUpgrade?: () => void;
+  /** Share the parent portal request state across every billing entry point. */
+  upgradePending?: boolean;
 }) {
   const [snap, setSnap] = useState<WorkspaceUsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -227,9 +230,15 @@ export default function UsageMeter({
           variant="ghost"
           disableAnimations
           onClick={onUpgrade}
+          disabled={upgradePending}
+          aria-busy={upgradePending}
           className="w-full h-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md wl-label font-semibold bg-brand/10 border border-brand/30 text-brand hover:bg-brand/15 transition-colors"
         >
-          <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+          {upgradePending ? (
+            <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" aria-hidden="true" />
+          ) : (
+            <TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          )}
           Upgrade Plan
         </Button>
       )}

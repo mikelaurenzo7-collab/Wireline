@@ -112,6 +112,7 @@ export default function StripeBillingCard({
     return "month";
   });
 
+  const portalPendingRef = useRef(false);
   const refreshGeneration = useRef(0);
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
@@ -277,6 +278,9 @@ export default function StripeBillingCard({
   };
 
   const openPortal = async () => {
+    // Both portal entry points share ownership, including clicks before rerender.
+    if (portalPendingRef.current) return;
+    portalPendingRef.current = true;
     setBusy("portal");
     setError(null);
     try {
@@ -285,6 +289,7 @@ export default function StripeBillingCard({
       if (!r.ok || !d.url) throw new Error(d.error || "Portal failed");
       window.location.href = d.url;
     } catch (e: any) {
+      portalPendingRef.current = false;
       setError(e?.message || "Portal failed");
       setBusy(null);
     }
@@ -386,7 +391,11 @@ export default function StripeBillingCard({
         <GrantedPlanAccessCard sub={sub} agentCount={agentCount} />
       ) : null}
       {hasActiveSubscription ? (
-        <UsageMeter onUpgrade={openPortal} showBalance={showUsageBalance} />
+        <UsageMeter
+          onUpgrade={openPortal}
+          upgradePending={busy === "portal"}
+          showBalance={showUsageBalance}
+        />
       ) : null}
       {hasGrantedPlanAccess ? <UsageMeter showBalance={showUsageBalance} /> : null}
       {showBalanceTopUp ? (

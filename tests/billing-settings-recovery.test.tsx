@@ -104,6 +104,8 @@ type Props = {
   title?: string;
   disabled?: boolean;
   showBalance?: boolean;
+  upgradePending?: boolean;
+  onUpgrade?: () => unknown;
   onClick?: () => unknown;
 };
 type Element = ReactElement<Props>;
@@ -243,6 +245,46 @@ afterEach(() => {
 });
 
 describe("Billing Settings shared recovery", () => {
+  it("shares one pending portal request across both billing entry points and permits retry", async () => {
+    statusFails = false;
+    balanceFails = false;
+    let finish!: (value: Response) => void;
+    const pending = new Promise<Response>((resolve) => {
+      finish = resolve;
+    });
+    const usualFetch = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation((path: string) =>
+      path === "/api/billing/portal" ? pending : usualFetch(path),
+    );
+    await settle();
+    const upgrade = () => tree.find((element) => element.type === "usage-meter")!;
+    const opening = button("Manage Subscription").props.onClick?.();
+    // A second entry point can be clicked before React commits the busy state.
+    upgrade().props.onUpgrade?.();
+    await settle();
+    expect(requests("/api/billing/portal")).toHaveLength(1);
+    expect(button("Manage Subscription").props.disabled).toBe(true);
+    expect(upgrade().props.upgradePending).toBe(true);
+
+    finish(response({ error: "Billing portal unavailable. Try again." }, 503));
+    await opening;
+    await settle();
+    expect(hasText("Billing portal unavailable. Try again.")).toBe(true);
+    expect(button("Manage Subscription").props.disabled).toBe(false);
+    expect(upgrade().props.upgradePending).toBe(false);
+
+    h.fetch.mockImplementation((path: string) =>
+      path === "/api/billing/portal"
+        ? Promise.resolve(response({ url: "https://billing.example.test/session" }))
+        : usualFetch(path),
+    );
+    await upgrade().props.onUpgrade?.();
+    await settle();
+    expect(requests("/api/billing/portal")).toHaveLength(2);
+    expect(window.location.href).toBe("https://billing.example.test/session");
+    expect(upgrade().props.upgradePending).toBe(true);
+  });
+
   it.each(["status", "balance"])(
     "ignores a retired page %s body that finishes after a successful retry",
     async (stage) => {

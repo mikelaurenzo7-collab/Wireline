@@ -17,6 +17,12 @@ function text(node: ReactNode): string {
   if (isValidElement<{ children?: ReactNode }>(node)) return text(node.props.children);
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
+
+function findButton(node: ReactNode): ReactNode {
+  if (Array.isArray(node)) return node.map(findButton).find(Boolean);
+  if (!isValidElement<{ children?: ReactNode }>(node)) return null;
+  return node.type === "button" ? node : findButton(node.props.children);
+}
 beforeEach(() => {
   h.cursor = 0;
   h.snapshot = {
@@ -33,6 +39,15 @@ beforeEach(() => {
 });
 
 describe("voice allowance boundary copy", () => {
+  it("disables and marks the upgrade action busy while its portal request is pending", () => {
+    const action = findButton(UsageMeter({ onUpgrade: vi.fn(), upgradePending: true }));
+    expect(isValidElement(action)).toBe(true);
+    if (!isValidElement<{ disabled: boolean; "aria-busy": boolean }>(action)) return;
+    expect(action.props.disabled).toBe(true);
+    expect(action.props["aria-busy"]).toBe(true);
+    expect(text(action)).toBe("Upgrade Plan");
+  });
+
   it("keeps the balance visible by default on standalone usage surfaces", () => {
     expect(text(UsageMeter({}))).toContain("$24.50");
   });
