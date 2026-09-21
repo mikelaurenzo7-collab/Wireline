@@ -97,6 +97,13 @@ router.get(
         typeof req.query.agent_id === "string" ? req.query.agent_id.trim() : "";
       const requestedAccountId =
         typeof req.query.account_id === "string" ? req.query.account_id.trim() : "";
+      const limitRaw = Number.parseInt(String(req.query.limit ?? ""), 10);
+      const offsetRaw = Number.parseInt(String(req.query.offset ?? ""), 10);
+      const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 100));
+      const offset = Number.isSafeInteger(offsetRaw)
+        ? Math.min(2_147_483_647, Math.max(0, offsetRaw))
+        : 0;
+      const emptyPage = { threads: [], hasMore: false, nextOffset: offset };
       let accountIds: string[] | null = null;
 
       if (requestedAccountId) {
@@ -110,9 +117,9 @@ router.get(
             ),
           )
           .limit(1);
-        if (!account) return res.json({ threads: [] });
+        if (!account) return res.json(emptyPage);
         if (requestedAgentId && account.agentId !== requestedAgentId) {
-          return res.json({ threads: [] });
+          return res.json(emptyPage);
         }
         accountIds = [account.id];
       } else if (requestedAgentId) {
@@ -126,7 +133,7 @@ router.get(
             ),
           );
         accountIds = accounts.map((account) => account.id);
-        if (!accountIds.length) return res.json({ threads: [] });
+        if (!accountIds.length) return res.json(emptyPage);
       }
 
       const where = accountIds
@@ -140,10 +147,16 @@ router.get(
         .select()
         .from(schema.emailThreads)
         .where(where)
-        .orderBy(desc(schema.emailThreads.lastMessageAt))
-        .limit(100);
+        .orderBy(desc(schema.emailThreads.lastMessageAt), desc(schema.emailThreads.id))
+        .limit(limit + 1)
+        .offset(offset);
 
-      res.json({ threads: mapObjectToSnake(threads || []) });
+      const page = (threads || []).slice(0, limit);
+      res.json({
+        threads: mapObjectToSnake(page),
+        hasMore: threads.length > limit,
+        nextOffset: offset + page.length,
+      });
     } catch (e: any) {
       log.error("Failed to load email threads", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load email threads");

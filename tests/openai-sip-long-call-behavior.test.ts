@@ -18,6 +18,11 @@ const h = vi.hoisted(() => ({
   presenceUser: "tenant",
   presenceScopes: [] as unknown[],
   transactionTail: Promise.resolve() as Promise<unknown>,
+  respondToPing: true,
+  pingFails: false,
+  callUser: "tenant",
+  callPhase: "terminal",
+  callReason: "provider-heartbeat-timeout",
 }));
 vi.mock("ws", async () => {
   const { EventEmitter } = await import("node:events");
@@ -37,7 +42,8 @@ vi.mock("ws", async () => {
       h.sent.push(JSON.parse(raw));
     }
     ping() {
-      queueMicrotask(() => this.emit("pong"));
+      if (h.pingFails) throw new Error("transport is unavailable");
+      if (h.respondToPing) queueMicrotask(() => this.emit("pong"));
     }
     close() {
       if (this.readyState === 3) return;
@@ -106,6 +112,21 @@ vi.mock("../src/lib/server-context", () => {
       then: (resolve: (rows: unknown[]) => void, reject?: (error: unknown) => void) =>
         Promise.resolve()
           .then(() => {
+            if (target === "calls") {
+              const user = requestedUser(where);
+              if (user !== undefined && user !== h.callUser) return [];
+              if (values?.openaiSipPhase) h.callPhase = String(values.openaiSipPhase);
+              if (values?.endedReason) h.callReason = String(values.endedReason);
+              return [
+                {
+                  id: 1n,
+                  status: "connected",
+                  providerCallId: "openai:rtc_test",
+                  phase: h.callPhase,
+                  endedReason: h.callReason,
+                },
+              ];
+            }
             if (target !== "presence") return [{ id: 1n, status: "connected" }];
             const user = requestedUser(where);
             if (user !== undefined && user !== h.presenceUser) return [];
@@ -179,7 +200,10 @@ vi.mock("../src/lib/voice/ai-disclosure-evidence", () => ({
   firstAgentTranscript: vi.fn(),
 }));
 
-import { runOpenAISipCallSession } from "../src/lib/voice/openai-sip-session";
+import {
+  replayOpenAISipPostCallFinalization,
+  runOpenAISipCallSession,
+} from "../src/lib/voice/openai-sip-session";
 
 const call = {
   callId: "rtc_test",
@@ -218,6 +242,11 @@ beforeEach(() => {
   h.presenceUser = "tenant";
   h.presenceScopes = [];
   h.transactionTail = Promise.resolve();
+  h.respondToPing = true;
+  h.pingFails = false;
+  h.callUser = "tenant";
+  h.callPhase = "terminal";
+  h.callReason = "provider-heartbeat-timeout";
 });
 afterEach(() => {
   vi.clearAllTimers();
@@ -226,6 +255,94 @@ afterEach(() => {
 });
 
 describe("long business-call lifecycle", () => {
+  it.each(["provider5xx", "timeout"] as const)(
+    "durably retains unconfirmed hangup after %s until replay succeeds",
+    async (failure) => {
+      if (failure === "provider5xx") h.provider.mockResolvedValue({ ok: false, status: 503 });
+      else h.provider.mockRejectedValue(new Error("provider request timed out"));
+      h.respondToPing = false;
+      const session = start();
+      await vi.advanceTimersByTimeAsync(75_000);
+      await session;
+      const recorded = h.digest.mock.calls.at(-1)![0];
+      expect(recorded).toMatchObject({
+        endedReason: "provider-heartbeat-timeout",
+        finalization: { providerHangupRequired: true, terminalStateReady: true },
+      });
+      const writesBeforeReplay = h.usage.mock.calls.length;
+      await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow();
+      expect(h.usage).toHaveBeenCalledTimes(writesBeforeReplay);
+      h.provider.mockResolvedValue({ ok: true, status: 200 });
+      await expect(replayOpenAISipPostCallFinalization(recorded)).resolves.toBeUndefined();
+      expect(h.usage).toHaveBeenCalledTimes(writesBeforeReplay + 1);
+      expect(h.provider.mock.calls.every(([url]) => url.includes("/hangup"))).toBe(true);
+    },
+  );
+
+  it.each(["transferred", "wrong tenant", "running"] as const)(
+    "does not hang up a %s call during queued recovery",
+    async (state) => {
+      h.callReason = state === "transferred" ? "transferred" : "provider-heartbeat-timeout";
+      h.callPhase = state === "running" ? "running" : "terminal";
+      const replay = replayOpenAISipPostCallFinalization({
+        userId: state === "wrong tenant" ? "other-tenant" : "tenant",
+        callLogId: 1n,
+        agentId: "bot",
+        finalization: {
+          provider: "openai_sip",
+          callId: "rtc_test",
+          openingPlaybackConfirmed: false,
+          terminalStateReady: true,
+          providerHangupRequired: true,
+        },
+      });
+      if (state === "transferred") await expect(replay).resolves.toBeUndefined();
+      else await expect(replay).rejects.toThrow();
+      expect(h.provider).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["missed heartbeat", "ping exception", "abnormal close"] as const)(
+    "ends the provider call when its sideband suffers a %s",
+    async (failure) => {
+      const session = start();
+      await vi.advanceTimersByTimeAsync(1_000);
+      if (failure === "abnormal close") {
+        h.sockets[0].readyState = 3;
+        h.sockets[0].emit("close", 1006, Buffer.from("transport lost"));
+      } else {
+        h.respondToPing = false;
+        h.pingFails = failure === "ping exception";
+        await vi.advanceTimersByTimeAsync(75_000);
+      }
+      await session;
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+      expect(h.usage).toHaveBeenCalledOnce();
+      expect(h.digest).toHaveBeenCalledOnce();
+      await vi.advanceTimersByTimeAsync(3_600_000);
+      expect(h.provider).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each([200, 404, 409])(
+    "confirms provider termination after a clean sideband close without inventing a call failure (HTTP %s)",
+    async (status) => {
+      const session = start();
+      await vi.advanceTimersByTimeAsync(1_000);
+      h.provider.mockResolvedValueOnce({ ok: status === 200, status });
+      h.sockets[0].close();
+      await session;
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toContain("/hangup");
+      expect(h.digest).toHaveBeenCalledWith(
+        expect.objectContaining({ endedReason: "provider-disconnected" }),
+        expect.anything(),
+        expect.anything(),
+      );
+    },
+  );
+
   it("keeps tools, transcript, ownership leases and rolling spend alive for a full hour, then finalizes once", async () => {
     const session = start();
     await vi.advanceTimersByTimeAsync(0);
@@ -383,7 +500,7 @@ describe("cross-process SIP transfers", () => {
     expect(h.provider).toHaveBeenCalledOnce();
   });
 
-  it.each(["deadline", "runtime error"] as const)(
+  it.each(["deadline", "runtime error", "missed heartbeat", "abnormal close"] as const)(
     "does not hang up a transfer whose success arrives while the %s waits",
     async (boundary) => {
       const remote = await remoteCallControl();
@@ -396,6 +513,12 @@ describe("cross-process SIP transfers", () => {
       expect(h.provider).toHaveBeenCalledOnce();
       if (boundary === "runtime error") {
         h.sockets[0].emit("error", new Error("sideband disconnected during handoff"));
+      } else if (boundary === "missed heartbeat") {
+        h.respondToPing = false;
+        await vi.advanceTimersByTimeAsync(75_000);
+      } else if (boundary === "abnormal close") {
+        h.sockets[0].readyState = 3;
+        h.sockets[0].emit("close", 1006, Buffer.from("sideband lost during handoff"));
       }
       await vi.advanceTimersByTimeAsync(1_000);
       provider.resolve({ ok: true, status: 200 });

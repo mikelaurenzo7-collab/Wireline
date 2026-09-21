@@ -32,8 +32,12 @@ type ThreadDetail = {
 
 type ThreadsResponse = {
   threads?: Array<Record<string, unknown>>;
+  hasMore?: boolean;
+  nextOffset?: number;
   error?: string;
 };
+
+const EMAIL_PAGE_SIZE = 100;
 
 type InboxError = { source: "threads" | "sync"; message: string };
 
@@ -143,11 +147,17 @@ export default function EmailInbox({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ThreadDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextOffset, setNextOffset] = useState(0);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [outcomeBusy, setOutcomeBusy] = useState<OutcomeStatus | "handoff" | null>(null);
   const [error, setError] = useState<InboxError | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [readStateError, setReadStateError] = useState(false);
+  const [readStateBusy, setReadStateBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [mailboxConnected, setMailboxConnected] = useState<boolean | null>(null);
@@ -174,9 +184,15 @@ export default function EmailInbox({
     setDetail(null);
     setError(null);
     setDetailError(null);
+    setReadStateError(false);
+    setReadStateBusy(false);
     setNotice(null);
     setOutcomeBusy(null);
     setLoading(true);
+    setLoadingMore(false);
+    setHasMore(false);
+    setNextOffset(0);
+    setLoadMoreError(null);
     setDetailLoading(false);
     setSyncing(false);
   }, [filterKey]);
@@ -185,84 +201,143 @@ export default function EmailInbox({
     selectedIdRef.current = selectedId;
   }, [selectedId]);
 
-  const loadThreads = useCallback(async () => {
-    if (filterKeyRef.current !== filterKey) return false;
-    threadListAbortRef.current?.abort();
-    const controller = new AbortController();
-    threadListAbortRef.current = controller;
-    const operation = ++threadListOperationRef.current;
-    const isCurrentRequest = () =>
-      !controller.signal.aborted &&
-      threadListOperationRef.current === operation &&
-      filterKeyRef.current === filterKey;
-    setLoading(true);
-    setError(null);
-    try {
-      const queryParams = new URLSearchParams();
-      if (agentId) queryParams.set("agent_id", agentId);
-      if (accountId) queryParams.set("account_id", accountId);
-      const suffix = queryParams.toString();
-      const response = await authFetch(`/api/emails/threads${suffix ? `?${suffix}` : ""}`, {
-        signal: controller.signal,
-      });
-      const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
-      if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
-      if (!isCurrentRequest()) return false;
-      const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
-      setThreads(nextThreads);
-      setSelectedId((current) =>
-        current && nextThreads.some((thread) => thread.id === current) ? current : null,
-      );
-      return true;
-    } catch (cause) {
-      if (!isCurrentRequest()) return false;
-      setError({
-        source: "threads",
-        message: cause instanceof Error ? cause.message : "Could not load email conversations.",
-      });
-      return false;
-    } finally {
-      if (isCurrentRequest()) setLoading(false);
-    }
-  }, [accountId, agentId, filterKey]);
+  const loadThreads = useCallback(
+    async (offset = 0) => {
+      if (filterKeyRef.current !== filterKey) return false;
+      threadListAbortRef.current?.abort();
+      const controller = new AbortController();
+      threadListAbortRef.current = controller;
+      const operation = ++threadListOperationRef.current;
+      const isCurrentRequest = () =>
+        !controller.signal.aborted &&
+        threadListOperationRef.current === operation &&
+        filterKeyRef.current === filterKey;
+      const append = offset > 0;
+      setLoading(!append);
+      setLoadingMore(append);
+      if (!append) setError(null);
+      setLoadMoreError(null);
+      try {
+        const queryParams = new URLSearchParams({
+          limit: String(EMAIL_PAGE_SIZE),
+          offset: String(offset),
+        });
+        if (agentId) queryParams.set("agent_id", agentId);
+        if (accountId) queryParams.set("account_id", accountId);
+        const suffix = queryParams.toString();
+        const response = await authFetch(`/api/emails/threads${suffix ? `?${suffix}` : ""}`, {
+          signal: controller.signal,
+        });
+        const body = (await response.json().catch(() => null)) as ThreadsResponse | null;
+        if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
+        if (!isCurrentRequest()) return false;
+        const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
+        setThreads((current) => {
+          if (!append) return nextThreads;
+          const existing = new Set(current.map((thread) => thread.id));
+          return [...current, ...nextThreads.filter((thread) => !existing.has(thread.id))];
+        });
+        setHasMore(body?.hasMore === true && nextThreads.length > 0);
+        setNextOffset(
+          typeof body?.nextOffset === "number" &&
+            Number.isSafeInteger(body.nextOffset) &&
+            body.nextOffset > offset
+            ? body.nextOffset
+            : offset + nextThreads.length,
+        );
+        if (!append) {
+          setSelectedId((current) =>
+            current && nextThreads.some((thread) => thread.id === current) ? current : null,
+          );
+        }
+        return true;
+      } catch (cause) {
+        if (!isCurrentRequest()) return false;
+        const message =
+          cause instanceof Error ? cause.message : "Could not load email conversations.";
+        if (append) setLoadMoreError(message);
+        else setError({ source: "threads", message });
+        return false;
+      } finally {
+        if (isCurrentRequest()) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [accountId, agentId, filterKey],
+  );
 
-  const loadThreadDetail = useCallback(async (threadId: string) => {
-    detailAbortRef.current?.abort();
-    const controller = new AbortController();
-    detailAbortRef.current = controller;
-    const operation = ++detailOperationRef.current;
-    const isCurrentRequest = () =>
-      !controller.signal.aborted &&
-      detailOperationRef.current === operation &&
-      selectedIdRef.current === threadId;
-    setDetailLoading(true);
-    setDetailError(null);
-    try {
-      const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
-        signal: controller.signal,
-      });
-      const body = (await response.json().catch(() => null)) as {
-        thread?: Record<string, unknown>;
-        messages?: Array<Record<string, unknown>>;
-        handoff?: { id: string; status: string } | null;
-        error?: string;
-      } | null;
-      if (!response.ok || !body?.thread)
-        throw new Error(body?.error || "Could not load this conversation.");
+  const markThreadRead = useCallback(
+    async (threadId: string, operation: number, signal?: AbortSignal) => {
+      const isCurrentRequest = () =>
+        !signal?.aborted &&
+        detailOperationRef.current === operation &&
+        selectedIdRef.current === threadId;
       if (!isCurrentRequest()) return;
-      setDetail({
-        thread: normalizeThread(body.thread),
-        messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
-        handoff: body.handoff || null,
-      });
-    } catch (cause) {
-      if (!isCurrentRequest()) return;
-      setDetailError(cause instanceof Error ? cause.message : "Could not load this conversation.");
-    } finally {
-      if (isCurrentRequest()) setDetailLoading(false);
-      if (detailAbortRef.current === controller) detailAbortRef.current = null;
-    }
-  }, []);
+      setReadStateBusy(true);
+      try {
+        const response = await authFetch("/api/emails/threads/read-state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: [threadId], read: true }),
+          signal,
+        });
+        if (isCurrentRequest()) setReadStateError(!response.ok);
+      } catch {
+        if (isCurrentRequest()) setReadStateError(true);
+      } finally {
+        if (isCurrentRequest()) setReadStateBusy(false);
+      }
+    },
+    [],
+  );
+
+  const loadThreadDetail = useCallback(
+    async (threadId: string) => {
+      detailAbortRef.current?.abort();
+      const controller = new AbortController();
+      detailAbortRef.current = controller;
+      const operation = ++detailOperationRef.current;
+      const isCurrentRequest = () =>
+        !controller.signal.aborted &&
+        detailOperationRef.current === operation &&
+        selectedIdRef.current === threadId;
+      setDetailLoading(true);
+      setDetailError(null);
+      try {
+        const response = await authFetch(`/api/emails/threads/${threadId}/outcome`, {
+          signal: controller.signal,
+        });
+        const body = (await response.json().catch(() => null)) as {
+          thread?: Record<string, unknown>;
+          messages?: Array<Record<string, unknown>>;
+          handoff?: { id: string; status: string } | null;
+          error?: string;
+        } | null;
+        if (!response.ok || !body?.thread)
+          throw new Error(body?.error || "Could not load this conversation.");
+        if (!isCurrentRequest()) return;
+        setDetail({
+          thread: normalizeThread(body.thread),
+          messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
+          handoff: body.handoff || null,
+        });
+        // A fetched but superseded conversation was never shown to the user.
+        // Only the accepted detail clears its badge, without holding up the body.
+        void markThreadRead(threadId, operation, controller.signal);
+      } catch (cause) {
+        if (!isCurrentRequest()) return;
+        setDetailError(
+          cause instanceof Error ? cause.message : "Could not load this conversation.",
+        );
+      } finally {
+        if (isCurrentRequest()) setDetailLoading(false);
+        if (detailAbortRef.current === controller) detailAbortRef.current = null;
+      }
+    },
+    [markThreadRead],
+  );
 
   useEffect(() => {
     setSelectedId(null);
@@ -295,6 +370,8 @@ export default function EmailInbox({
   }, []);
 
   useEffect(() => {
+    setReadStateError(false);
+    setReadStateBusy(false);
     if (!selectedId) {
       detailAbortRef.current?.abort();
       detailOperationRef.current += 1;
@@ -503,6 +580,28 @@ export default function EmailInbox({
     </Button>
   ) : undefined;
 
+  const paginationControl =
+    hasMore || loadMoreError ? (
+      <div className="border-t border-border p-3">
+        {loadMoreError ? (
+          <StatusNotice tone="warning" title="Older Email Unavailable">
+            {loadMoreError}
+          </StatusNotice>
+        ) : null}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="mt-1 w-full justify-center"
+          disabled={loading || loadingMore || syncing}
+          onClick={() => void loadThreads(nextOffset)}
+        >
+          {loadingMore ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
+          {loadingMore ? "Loading More…" : loadMoreError ? "Retry Older Email" : "Load More Email"}
+        </Button>
+      </div>
+    ) : null;
+
   return (
     <section className={frameClass} aria-label="Email inbox">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
@@ -519,7 +618,7 @@ export default function EmailInbox({
           variant="secondary"
           size="sm"
           onClick={() => void syncInbox()}
-          disabled={syncing}
+          disabled={syncing || loading || loadingMore}
           aria-label="Refresh email"
         >
           {syncing ? (
@@ -567,8 +666,12 @@ export default function EmailInbox({
           ) : hasSearch && !visibleThreads.length ? (
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
-              title="No Matching Email"
-              description="Try a different sender, subject, status, or keyword."
+              title={`No Matches in ${threads.length} Loaded ${threads.length === 1 ? "Email" : "Emails"}`}
+              description={
+                hasMore
+                  ? "Load older email or try another search."
+                  : "Try another sender, subject, status, or keyword."
+              }
               density="compact"
               titleTone="ui"
               withHalo={false}
@@ -602,6 +705,7 @@ export default function EmailInbox({
                     <button
                       type="button"
                       onClick={() => {
+                        if (selectedId === thread.id) return;
                         setDetail(null);
                         setDetailError(null);
                         setNotice(null);
@@ -636,6 +740,7 @@ export default function EmailInbox({
               })}
             </ul>
           )}
+          {paginationControl}
         </div>
 
         <div
@@ -712,6 +817,27 @@ export default function EmailInbox({
                   className="m-3 sm:m-4"
                 >
                   {detailError}
+                </StatusNotice>
+              ) : null}
+
+              {readStateError ? (
+                <StatusNotice
+                  tone="warning"
+                  title="Unread Status Unavailable"
+                  className="m-3 sm:m-4"
+                  action={
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={readStateBusy}
+                      onClick={() => void markThreadRead(selectedId, detailOperationRef.current)}
+                    >
+                      {readStateBusy ? "Retrying…" : "Retry Unread Status"}
+                    </Button>
+                  }
+                >
+                  This email is open, but its unread status could not be updated.
                 </StatusNotice>
               ) : null}
 

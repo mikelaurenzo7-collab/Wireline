@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ChevronsLeft,
@@ -97,8 +97,11 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const [query, setQuery] = useState("");
   const desktop = useMediaQuery("(min-width: 1024px)");
+  const requestState = useRef({ generation: 0, pageInFlight: false });
 
   const loadCalls = useCallback(async () => {
+    if (requestState.current.pageInFlight) return;
+    const generation = ++requestState.current.generation;
     setLoading(true);
     setError(null);
     try {
@@ -109,6 +112,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       const response = await authFetch(endpoint);
       if (!response.ok) throw new Error("Could not load calls.");
       const body = (await response.json()) as CallsResponse;
+      if (generation !== requestState.current.generation) return;
       const nextCalls = Array.isArray(body.calls) ? body.calls : [];
       const nextTotal =
         typeof body.total === "number" && Number.isFinite(body.total)
@@ -122,24 +126,33 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         current && nextCalls.some((call) => call.id === current) ? current : null,
       );
     } catch (reason) {
+      if (generation !== requestState.current.generation) return;
       setError(reason instanceof Error ? reason.message : "Could not load calls.");
     } finally {
-      setLoading(false);
+      if (generation === requestState.current.generation) setLoading(false);
     }
   }, [agentId]);
 
   useEffect(() => {
+    const requests = requestState.current;
     setCalls([]);
     setTotal(0);
     setHasMore(false);
+    setLoadingMore(false);
     setLoadMoreError(null);
     setSelectedId(null);
     setQuery("");
     void loadCalls();
+    return () => {
+      requests.generation++;
+      requests.pageInFlight = false;
+    };
   }, [loadCalls]);
 
   const loadMore = useCallback(async () => {
-    if (loading || loadingMore || !hasMore) return;
+    if (loading || loadingMore || requestState.current.pageInFlight || !hasMore) return;
+    const generation = requestState.current.generation;
+    requestState.current.pageInFlight = true;
     setLoadingMore(true);
     setLoadMoreError(null);
     try {
@@ -153,6 +166,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       const response = await authFetch(endpoint);
       if (!response.ok) throw new Error("Could not load more calls.");
       const body = (await response.json()) as CallsResponse;
+      if (generation !== requestState.current.generation) return;
       const page = Array.isArray(body.calls) ? body.calls : [];
       const nextTotal =
         typeof body.total === "number" && Number.isFinite(body.total)
@@ -165,9 +179,13 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       setTotal(nextTotal);
       setHasMore(body.hasMore === true || calls.length + page.length < nextTotal);
     } catch (reason) {
+      if (generation !== requestState.current.generation) return;
       setLoadMoreError(reason instanceof Error ? reason.message : "Could not load more calls.");
     } finally {
-      setLoadingMore(false);
+      if (generation === requestState.current.generation) {
+        requestState.current.pageInFlight = false;
+        setLoadingMore(false);
+      }
     }
   }, [agentId, calls.length, hasMore, loading, loadingMore, total]);
 
@@ -271,7 +289,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               const active = call.id === selectedId;
               const meta = [call.agent_name, formatDuration(call.duration_seconds)]
                 .filter(Boolean)
-                .join(" · ");
+                .join(" Â· ");
               return (
                 <li key={call.id}>
                   <button
@@ -338,7 +356,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             formatDuration(selected.duration_seconds),
           ]
             .filter(Boolean)
-            .join(" · ")}
+            .join(" Â· ")}
         </p>
       </header>
 
@@ -412,7 +430,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-5">
         <span className="text-xs font-medium text-muted-foreground">
           {query.trim()
-            ? `${visibleCalls.length} matches in ${calls.length} loaded`
+            ? `${visibleCalls.length} ${visibleCalls.length === 1 ? "match" : "matches"} in ${calls.length} loaded`
             : total > calls.length
               ? `${calls.length} of ${total} calls`
               : agentId
@@ -425,7 +443,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             variant="ghost"
             size="sm"
             onClick={() => void loadCalls()}
-            disabled={loading}
+            disabled={loading || loadingMore}
             aria-label="Refresh calls"
           >
             <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />

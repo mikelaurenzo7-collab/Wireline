@@ -156,6 +156,8 @@ export type OpenAISipFinalizationContext = {
   leadId?: string | null;
   openingPlaybackConfirmed: boolean;
   terminalStateReady: boolean;
+  /** Sideband ended, but provider termination still needs durable confirmation. */
+  providerHangupRequired?: boolean;
 };
 
 type JsonCallContext = Pick<
@@ -313,6 +315,7 @@ function jsonCallContext(ctx: CallContext): JsonCallContext {
           leadId: ctx.finalization.leadId ? String(ctx.finalization.leadId) : null,
           openingPlaybackConfirmed: Boolean(ctx.finalization.openingPlaybackConfirmed),
           terminalStateReady: Boolean(ctx.finalization.terminalStateReady),
+          ...(ctx.finalization.providerHangupRequired ? { providerHangupRequired: true } : {}),
         }
       : undefined;
   return {
@@ -336,6 +339,8 @@ function openAISipFinalizationFromJob(job: JobRow): OpenAISipFinalizationContext
     !finalization.callId.trim() ||
     typeof finalization.openingPlaybackConfirmed !== "boolean" ||
     typeof finalization.terminalStateReady !== "boolean" ||
+    (finalization.providerHangupRequired != null &&
+      typeof finalization.providerHangupRequired !== "boolean") ||
     (finalization.leadId != null && !/^\d+$/.test(String(finalization.leadId)))
   ) {
     throw new Error("Post-call digest job contains invalid OpenAI SIP finalization metadata.");
@@ -346,6 +351,7 @@ function openAISipFinalizationFromJob(job: JobRow): OpenAISipFinalizationContext
     leadId: finalization.leadId == null ? null : String(finalization.leadId),
     openingPlaybackConfirmed: finalization.openingPlaybackConfirmed,
     terminalStateReady: finalization.terminalStateReady,
+    ...(finalization.providerHangupRequired ? { providerHangupRequired: true } : {}),
   };
 }
 

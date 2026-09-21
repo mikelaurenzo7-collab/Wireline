@@ -63,7 +63,10 @@ export interface MaybePublishWeeklyRecapInput {
   weekLabel: string;
   periodStart: Date;
   periodEnd: Date;
-  callTimestamps: readonly Date[];
+  /** Full-period SQL buckets avoid loading one timestamp per call. */
+  volumeByDay?: WeeklyRecapVolumePoint[];
+  /** Retained for callers that already provide the complete timestamp set. */
+  callTimestamps?: readonly Date[];
   totals: {
     calls: number;
     voiceMinutes: number;
@@ -95,7 +98,9 @@ export async function maybePublishWeeklyRecap(
         label: input.weekLabel,
       },
       totals: input.totals,
-      volumeByDay: bucketVolume(input.callTimestamps, input.periodStart, input.periodEnd),
+      volumeByDay:
+        input.volumeByDay ??
+        bucketVolume(input.callTimestamps ?? [], input.periodStart, input.periodEnd),
       outcomeMix: input.outcomeMix,
       averageQaScore: input.averageQaScore,
       topMoments: input.topMoments,

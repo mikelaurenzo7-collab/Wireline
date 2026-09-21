@@ -134,6 +134,7 @@ type RealtimeSessionOutcome = {
   escalationSucceeded: boolean;
   openingPlaybackConfirmed: boolean;
   actualOpeningTranscript: string;
+  providerHangupRequired?: boolean;
 };
 
 export type OpenAITranscriptLine = {
@@ -1158,6 +1159,7 @@ async function persistFinishedCall(input: {
   escalationSucceeded: boolean;
   openingPlaybackConfirmed: boolean;
   actualOpeningTranscript: string;
+  providerHangupRequired?: boolean;
   claim?: OpenAISipCallClaim;
 }) {
   const durationSeconds = input.connectedAt
@@ -1242,6 +1244,9 @@ async function persistFinishedCall(input: {
           leadId: input.call.leadId ? String(input.call.leadId) : null,
           openingPlaybackConfirmed: input.openingPlaybackConfirmed,
           terminalStateReady: true,
+          ...(input.providerHangupRequired && endedReason !== "transferred"
+            ? { providerHangupRequired: true }
+            : {}),
         },
       },
       tx,
@@ -1347,6 +1352,40 @@ export async function recoverStaleOpenAISipCall(input: {
   return true;
 }
 
+/** Shared by queued recovery and deletion's drain before erasing its evidence. */
+export async function confirmOpenAISipHangupRecovery(input: {
+  userId: string;
+  callLogId: bigint | number | string;
+  callId: string;
+}): Promise<void> {
+  const providerId = providerCallId(input.callId);
+  // The terminal row and obligation were committed by the owning session
+  // under the same lock as REFER. Re-read scope and terminal state under that
+  // lock before a retry may touch the provider. Errors remain retryable.
+  await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+    const [current] = await tx
+      .select({
+        providerCallId: schema.callLogs.vapiCallId,
+        phase: schema.callLogs.openaiSipPhase,
+        endedReason: schema.callLogs.endedReason,
+      })
+      .from(schema.callLogs)
+      .where(
+        and(
+          eq(schema.callLogs.id, BigInt(String(input.callLogId))),
+          eq(schema.callLogs.userId, input.userId),
+        ),
+      )
+      .limit(1)
+      .for("update");
+    if (!current || current.providerCallId !== providerId || current.phase !== "terminal") {
+      throw new Error("OpenAI SIP hangup recovery no longer owns a terminal call.");
+    }
+    if (current.endedReason === "transferred") return;
+    await hangupOpenAISipCall(input.callId);
+  });
+}
+
 /** Queue replay for the critical, provider-idempotent end-of-call effects. */
 export async function replayOpenAISipPostCallFinalization(input: {
   userId: string;
@@ -1378,6 +1417,16 @@ export async function replayOpenAISipPostCallFinalization(input: {
   }
   if (!input.agentId) {
     throw new Error("OpenAI SIP finalization is missing the authoritative Bot identity.");
+  }
+
+  if (input.finalization.providerHangupRequired) {
+    // Do not checkpoint finalization until termination is confirmed. The
+    // existing five-attempt queue owns retry after a transient failure.
+    await confirmOpenAISipHangupRecovery({
+      userId: input.userId,
+      callLogId: input.callLogId,
+      callId: input.finalization.callId,
+    });
   }
 
   const call: OpenAISipIncomingCall = {
@@ -1467,6 +1516,7 @@ async function runRealtimeSession(
   let accountingWork = Promise.resolve();
   let heartbeat: ReturnType<typeof setInterval> | null = null;
   let missedPongs = 0;
+  let providerHangupRequired = false;
 
   const ws = new WebSocket(buildOpenAISipRealtimeUrl(input.callId), {
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -1505,6 +1555,22 @@ async function runRealtimeSession(
       ws.close(1000, "BotBound transferred");
     }
   };
+  const confirmOwnedProviderHangup = async () => {
+    if (!ownsSession() || endedReason === "transferred" || endedReason === "caller-dnc") return;
+    providerHangupRequired = true;
+    await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
+      if (!ownsSession()) return;
+      if ((await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred") {
+        notifyTransferred();
+        providerHangupRequired = false;
+        return;
+      }
+      if (ownsSession()) {
+        await hangupOpenAISipCall(input.callId);
+        providerHangupRequired = false;
+      }
+    });
+  };
   const sessionHandle = { notifyTransferred };
   liveSipSessions.set(input.callId, sessionHandle);
 
@@ -1523,11 +1589,16 @@ async function runRealtimeSession(
     if (!hangupAfterOpening || ws.readyState !== WebSocket.OPEN) return true;
     hangupAfterOpening = false;
     endedReason = "line-suspended";
-    void hangupOpenAISipCall(input.callId).catch(() => {
-      log.warn("Native suspended-line hangup could not be confirmed", {
-        callId: providerCallId(input.callId),
+    providerHangupRequired = true;
+    void hangupOpenAISipCall(input.callId)
+      .then(() => {
+        providerHangupRequired = false;
+      })
+      .catch(() => {
+        log.warn("Native suspended-line hangup could not be confirmed", {
+          callId: providerCallId(input.callId),
+        });
       });
-    });
     ws.close(1000, "BotBound line suspended");
     return true;
   };
@@ -1558,7 +1629,9 @@ async function runRealtimeSession(
       matchedPattern,
     });
     try {
+      providerHangupRequired = true;
       await hangupOpenAISipCall(input.callId);
+      providerHangupRequired = false;
     } catch {
       log.warn("Native caller-DNC hangup could not be confirmed", {
         callId: providerCallId(input.callId),
@@ -1938,7 +2011,9 @@ async function runRealtimeSession(
             }
             if (!ownsSession() || endedAt !== null || ws.readyState !== WebSocket.OPEN) return;
             endedReason = "botbound-max-duration";
+            providerHangupRequired = true;
             await hangupOpenAISipCall(input.callId);
+            providerHangupRequired = false;
           })
             .catch(() => {
               log.warn("OpenAI max-duration hangup could not be confirmed", {
@@ -1975,6 +2050,10 @@ async function runRealtimeSession(
           if (missedPongs > MAX_MISSED_PONGS) {
             pipelineError = "heartbeat";
             endedReason = "provider-heartbeat-timeout";
+            // This socket is a control sideband; terminating it does not end
+            // the SIP leg. Reject before close can resolve so the owned,
+            // transfer-aware failure cleanup also hangs up the provider call.
+            rejectOnce(new Error("OPENAI_SIP_HEARTBEAT_TIMEOUT"));
             ws.terminate();
             return;
           }
@@ -1983,6 +2062,7 @@ async function runRealtimeSession(
           } catch {
             pipelineError = "heartbeat";
             endedReason = "provider-heartbeat-error";
+            rejectOnce(new Error("OPENAI_SIP_HEARTBEAT_ERROR"));
             ws.terminate();
           }
         }, HEARTBEAT_INTERVAL_MS);
@@ -2015,13 +2095,26 @@ async function runRealtimeSession(
           code,
           reasonLength: reason.length,
         });
-        void eventChain.then(resolveOnce).catch(rejectOnce);
+        void eventChain
+          .then(async () => {
+            if (code !== 1000 && ownsSession()) {
+              if (!pipelineError) pipelineError = "connection";
+              rejectOnce(new Error("OPENAI_SIP_SIDEBAND_CLOSED"));
+              return;
+            }
+            // A clean sideband close is not a separate SIP termination signal.
+            // Confirm the desired provider state before retiring our timers;
+            // an already-ended call's 404/409 is an idempotent success. The
+            // control lock lets a concurrent successful REFER win first.
+            if (endedReason === "provider-disconnected") await confirmOwnedProviderHangup();
+            resolveOnce();
+          })
+          .catch(rejectOnce);
       });
     });
   } catch (error) {
     if (!pipelineError) pipelineError = "connection";
-    endedReason =
-      endedReason === "transferred" || endedReason === "caller-dnc" ? endedReason : "runtime-error";
+    if (endedReason === "provider-disconnected") endedReason = "runtime-error";
     log.error("OpenAI SIP session failed", {
       userId: input.userId,
       agentId: input.agentId,
@@ -2030,20 +2123,12 @@ async function runRealtimeSession(
       errorClass: error instanceof Error ? error.name : typeof error,
     });
     try {
-      if (ownsSession() && endedReason !== "transferred" && endedReason !== "caller-dnc") {
-        await withOpenAISipControlLock(input.userId, input.callId, async (tx) => {
-          if (!ownsSession()) return;
-          if (
-            (await readOpenAISipTransferStatus(tx, input.userId, input.callId)) === "transferred"
-          ) {
-            notifyTransferred();
-            return;
-          }
-          if (ownsSession()) await hangupOpenAISipCall(input.callId);
-        });
-      }
+      await confirmOwnedProviderHangup();
     } catch {
-      // The provider may already have ended the call.
+      log.error("OpenAI SIP provider hangup requires durable recovery", {
+        userId: input.userId,
+        callId: providerCallId(input.callId),
+      });
     }
   } finally {
     endedAt ??= Date.now();
@@ -2076,6 +2161,7 @@ async function runRealtimeSession(
     escalationSucceeded,
     openingPlaybackConfirmed,
     actualOpeningTranscript: actualOpeningTranscript.trim(),
+    providerHangupRequired,
   };
 }
 
@@ -2244,7 +2330,11 @@ export async function runOpenAISipCallSession(
         errorClass: error instanceof Error ? error.name : typeof error,
       });
       try {
-        if (!ownerFence.signal.aborted) await hangupOpenAISipCall(input.callId);
+        outcome.providerHangupRequired = true;
+        if (!ownerFence.signal.aborted) {
+          await hangupOpenAISipCall(input.callId);
+          outcome.providerHangupRequired = false;
+        }
       } catch {
         // The call may not yet be addressable or may already be over.
       }
@@ -2272,6 +2362,7 @@ export async function runOpenAISipCallSession(
           escalationSucceeded: outcome.escalationSucceeded,
           openingPlaybackConfirmed: outcome.openingPlaybackConfirmed,
           actualOpeningTranscript: outcome.actualOpeningTranscript,
+          providerHangupRequired: outcome.providerHangupRequired || ownerFence.signal.aborted,
           claim,
         });
         terminalPersistedByOwner = true;

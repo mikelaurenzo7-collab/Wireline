@@ -13,7 +13,7 @@ import {
 import { drizzle } from "./server-context";
 import { redactSensitiveText } from "./shareable-artifact/redact";
 import { maybePublishWeeklyRecap } from "./shareable-artifact/publish-weekly-recap";
-import type { WeeklyRecapOutcomeSlice } from "./shareable-artifact/types";
+import type { WeeklyRecapOutcomeSlice, WeeklyRecapVolumePoint } from "./shareable-artifact/types";
 
 export interface ScheduledReportJobPayload extends Record<string, unknown> {
   userId: string;
@@ -132,6 +132,15 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
   const end = new Date(payload.scheduledFor);
   const safeEnd = Number.isNaN(end.getTime()) ? new Date() : end;
   const start = periodStart(payload.frequency, safeEnd);
+  const callsInPeriod = and(
+    eq(schema.callLogs.userId, payload.userId),
+    gte(schema.callLogs.createdAt, start),
+    lt(schema.callLogs.createdAt, safeEnd),
+  );
+  const pendingTasks = and(
+    eq(schema.followUpTasks.userId, payload.userId),
+    eq(schema.followUpTasks.status, "pending"),
+  );
 
   // Schedule the next occurrence before doing external work. A transient OpenAI
   // or connector outage can fail this report without silently stopping all future reports.
@@ -157,19 +166,30 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
       qaScore: schema.callLogs.qaScore,
     })
     .from(schema.callLogs)
-    .where(
-      and(
-        eq(schema.callLogs.userId, payload.userId),
-        gte(schema.callLogs.createdAt, start),
-        lt(schema.callLogs.createdAt, safeEnd),
-      ),
-    )
+    .where(callsInPeriod)
     .orderBy(desc(schema.callLogs.createdAt))
     .limit(250);
 
-  const [appointments, openTasks] = await Promise.all([
+  // Detailed rows are a bounded sample for narrative examples. Aggregate the
+  // whole reporting window separately so busy workspaces do not lose earlier
+  // calls, minutes, outcomes or scored calls from their reported totals.
+  // Buckets start at the schedule's UTC time, matching the report period.
+  const dayIndex = sql<number>`floor(extract(epoch from (${schema.callLogs.createdAt} - ${start.toISOString()}::timestamptz)) / 86400)::integer`;
+  const [callGroups, [appointmentTotals], openTasks, [taskTotals]] = await Promise.all([
     drizzle
-      .select({ id: schema.appointments.id, status: schema.appointments.status })
+      .select({
+        dayIndex: dayIndex.as("report_day_index"),
+        outcomeTag: schema.callLogs.outcomeTag,
+        callCount: sql<number>`count(*)`,
+        durationSeconds: sql<number>`coalesce(sum(${schema.callLogs.durationSeconds}), 0)`,
+        qaScoreTotal: sql<number>`coalesce(sum(${schema.callLogs.qaScore}), 0)`,
+        qaScoreCount: sql<number>`count(${schema.callLogs.qaScore})`,
+      })
+      .from(schema.callLogs)
+      .where(callsInPeriod)
+      .groupBy((fields) => [fields.dayIndex, fields.outcomeTag]),
+    drizzle
+      .select({ count: sql<number>`count(*)` })
       .from(schema.appointments)
       .where(
         and(
@@ -185,31 +205,42 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
         dueDate: schema.followUpTasks.dueDate,
       })
       .from(schema.followUpTasks)
-      .where(
-        and(
-          eq(schema.followUpTasks.userId, payload.userId),
-          eq(schema.followUpTasks.status, "pending"),
-        ),
-      )
+      .where(pendingTasks)
       .orderBy(desc(schema.followUpTasks.createdAt))
       .limit(30),
+    drizzle
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.followUpTasks)
+      .where(pendingTasks),
   ]);
 
-  const minutes = Math.round(
-    calls.reduce((sum, call) => sum + (call.durationSeconds || 0), 0) / 60,
-  );
-  const outcomes = calls.reduce<Record<string, number>>((acc, call) => {
-    const key = call.outcomeTag || "unclassified";
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {});
+  const dayCount = payload.frequency === "daily" ? 1 : 7;
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const volumeByDay: WeeklyRecapVolumePoint[] = Array.from({ length: dayCount }, (_, index) => ({
+    label: dayLabels[new Date(start.getTime() + index * 86_400_000).getUTCDay()],
+    count: 0,
+  }));
+  let callCount = 0;
+  let durationSeconds = 0;
+  let qaScoreTotal = 0;
+  let qaScoreCount = 0;
+  const outcomes: Record<string, number> = {};
+  for (const group of callGroups) {
+    // Postgres count/sum may arrive as strings even with a typed SQL expression.
+    const count = Number(group.callCount);
+    callCount += count;
+    durationSeconds += Number(group.durationSeconds);
+    qaScoreTotal += Number(group.qaScoreTotal);
+    qaScoreCount += Number(group.qaScoreCount);
+    const key = group.outcomeTag || "unclassified";
+    outcomes[key] = (outcomes[key] || 0) + count;
+    const bucket = volumeByDay[Number(group.dayIndex)];
+    if (bucket) bucket.count += count;
+  }
+  const minutes = Math.round(durationSeconds / 60);
   const qualified = (outcomes.qualified || 0) + (outcomes.booked || 0);
-  const qaScores = calls
-    .map((call) => call.qaScore)
-    .filter((value): value is number => value != null);
-  const averageQa = qaScores.length
-    ? Math.round(qaScores.reduce((sum, value) => sum + value, 0) / qaScores.length)
-    : null;
+  const averageQa = qaScoreCount ? Math.round(qaScoreTotal / qaScoreCount) : null;
+  const openTaskCount = Number(taskTotals?.count ?? 0);
   const periodLabel = `${start.toISOString().slice(0, 10)} through ${safeEnd
     .toISOString()
     .slice(0, 10)}`;
@@ -217,15 +248,15 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
   const summary = JSON.stringify(
     {
       period: periodLabel,
-      calls: calls.length,
+      calls: callCount,
       voice_minutes: minutes,
       outcomes,
       booked_or_qualified: qualified,
-      appointments_created: appointments.length,
-      open_follow_up_tasks: openTasks.length,
+      appointments_created: Number(appointmentTotals?.count ?? 0),
+      open_follow_up_tasks: openTaskCount,
       average_qa_score: averageQa,
       instruction:
-        "Explain what happened, what moved revenue or service outcomes, what needs attention, and the three highest-value next actions.",
+        "Use these full-period totals. Supporting call and task details are recent samples, not the complete history. Explain what happened, what needs attention, and the three highest-value next actions; do not present sample-only patterns as period-wide facts.",
     },
     null,
     2,
@@ -234,6 +265,13 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     {
       calls: calls.slice(0, 100),
       open_tasks: openTasks,
+      sampling: {
+        calls_included: Math.min(calls.length, 100),
+        calls_total: callCount,
+        open_tasks_included: openTasks.length,
+        open_tasks_total: openTaskCount,
+        selection: "Most recent records; summary metrics cover the full reporting period.",
+      },
     },
     null,
     2,
@@ -259,11 +297,9 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
           weekLabel: periodLabel,
           periodStart: start,
           periodEnd: safeEnd,
-          callTimestamps: calls
-            .map((call) => call.createdAt)
-            .filter((value): value is Date => value instanceof Date),
+          volumeByDay,
           totals: {
-            calls: calls.length,
+            calls: callCount,
             voiceMinutes: minutes,
             booked: outcomes.booked || 0,
             qualified: outcomes.qualified || 0,
@@ -307,7 +343,7 @@ export async function generateScheduledOperatingReport(payload: ScheduledReportJ
     skipped: false,
     title,
     period: periodLabel,
-    calls: calls.length,
+    calls: callCount,
     externalUrl: artifact.externalUrl,
     fileName: artifact.fileName,
     destination: artifact.provider,

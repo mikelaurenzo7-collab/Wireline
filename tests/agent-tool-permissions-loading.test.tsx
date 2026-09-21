@@ -37,6 +37,11 @@ type NodeProps = {
   onClick?: () => void;
   onChange?: () => void;
   checked?: boolean;
+  disabled?: boolean;
+  "aria-label"?: string;
+  enabledTools?: string[];
+  onToggleTool?: (tool: string) => void;
+  onToggleIntegrationGroup?: (integration: string, enable: boolean) => void;
   "aria-expanded"?: boolean;
 };
 function elements(node: ReactNode): Array<ReactElement<NodeProps>> {
@@ -77,6 +82,58 @@ beforeEach(() => {
 });
 
 describe("agent action editor loading", () => {
+  it("locks the submitted permissions until Save settles and retains edits after failure", async () => {
+    let settle!: (response: Response) => void;
+    h.fetch.mockImplementation((url: string, options?: RequestInit) => {
+      if (options?.method === "POST")
+        return new Promise<Response>((resolve) => {
+          settle = resolve;
+        });
+      return Promise.resolve(
+        json(url.startsWith("/api/agent-config/") ? { enabledTools: [] } : { accounts: [] }),
+      );
+    });
+    render();
+    toggle();
+    await flush();
+    const firstAction = () => elements(render()).find((node) => node.type === "input")!;
+    firstAction().props.onChange!();
+    const editor = elements(render());
+    const save = editor.find(
+      (node) => node.type === "button" && textOf(node).includes("Save actions"),
+    )!;
+    const panel = editor.find((node) => node.type === "integration-panel")!;
+    const submitted = [...panel.props.enabledTools!];
+    save.props.onClick!();
+    save.props.onClick!(); // Same-render duplicate activation must not submit twice.
+    firstAction().props.onChange!();
+    panel.props.onToggleTool!(submitted[0]);
+    panel.props.onToggleIntegrationGroup!("google_calendar", true);
+    expect(
+      elements(render()).find((node) => node.props["aria-label"] === "Bot action permissions")
+        ?.props.disabled,
+    ).toBe(true);
+    expect(
+      elements(render()).find((node) => node.type === "integration-panel")?.props.enabledTools,
+    ).toEqual(submitted);
+    expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
+    settle(new Response("unavailable", { status: 503 }));
+    await flush();
+    expect(textOf(render())).toContain("Actions could not be saved");
+    expect(firstAction().props.checked).toBe(true);
+    expect(
+      elements(render()).find((node) => node.props["aria-label"] === "Bot action permissions")
+        ?.props.disabled,
+    ).toBe(false);
+    elements(render()).find(
+      (node) => node.type === "button" && textOf(node).includes("Save actions"),
+    )!.props.onClick!();
+    settle(json({ enabledTools: submitted }));
+    await flush();
+    expect(textOf(render())).toContain("Run a test before the next live call");
+    expect(firstAction().props.checked).toBe(true);
+  });
+
   it("recovers when collapsed after config but before optional connections load", async () => {
     let releaseConnections!: () => void;
     const delayed = new Promise<void>((resolve) => {

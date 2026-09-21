@@ -336,6 +336,7 @@ export interface ExternalReleaseSummary {
   realtimeCallsHungUp: number;
   twilioCallsHungUp: number;
   openaiSipCallsHungUp: number;
+  openaiSipHangupObligationsReconciled: number;
   nativePurchaseClaimsReconciled: number;
   numbersReleased: number;
   /** Non-fatal number-release failures (carrier orphans, retried out-of-band). */
@@ -407,6 +408,7 @@ async function releaseExternalResourcesOutsideTenantContext(
   let realtimeCallsHungUp = 0;
   let twilioCallsHungUp = 0;
   let openaiSipCallsHungUp = 0;
+  let openaiSipHangupObligationsReconciled = 0;
   let nativePurchaseClaimsReconciled = 0;
   let numbersReleased = 0;
   let oauthRevoked = 0;
@@ -543,6 +545,48 @@ async function releaseExternalResourcesOutsideTenantContext(
           typeof payload.keyFingerprint === "string" ? payload.keyFingerprint : undefined,
       });
       realtimeCallsHungUp++;
+    }
+  }
+
+  // A failed SIP hangup is retained on its terminal digest after presence has
+  // been removed. The digest's deletion fence can finish that job without
+  // replaying it once purge is due, so include done jobs here as well. Never
+  // erase this last provider pointer before termination is confirmed.
+  const sipHangupObligations = await db
+    .select({ id: schema.jobs.id, payload: schema.jobs.payload })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.userId, userId),
+        eq(schema.jobs.type, "post_call_digest"),
+        sql`${schema.jobs.payload}->'finalization' ? 'providerHangupRequired'`,
+        sql`${schema.jobs.result}->'finalization'->>'state' IS DISTINCT FROM 'completed'`,
+      ),
+    );
+  if (sipHangupObligations.length) {
+    const { confirmOpenAISipHangupRecovery } = await import("./voice/openai-sip-session");
+    for (const job of sipHangupObligations) {
+      const payload = job.payload as Record<string, unknown> | null;
+      const finalization = payload?.finalization as Record<string, unknown> | null;
+      if (finalization?.providerHangupRequired === false) continue;
+      const callId = typeof finalization?.callId === "string" ? finalization.callId.trim() : "";
+      const callLogId = typeof payload?.callLogId === "string" ? payload.callLogId : "";
+      if (
+        payload?.userId !== userId ||
+        finalization?.provider !== "openai_sip" ||
+        finalization.providerHangupRequired !== true ||
+        finalization.terminalStateReady !== true ||
+        !callId ||
+        !/^[1-9]\d*$/.test(callLogId)
+      ) {
+        throw new Error(
+          `OpenAI SIP hangup obligation ${job.id} is invalid; deferring account purge.`,
+        );
+      }
+      // This helper rechecks the owned terminal call under the REFER lock and
+      // skips confirmed transfers. Provider errors deliberately defer erasure.
+      await confirmOpenAISipHangupRecovery({ userId, callLogId, callId });
+      openaiSipHangupObligationsReconciled++;
     }
   }
 
@@ -770,6 +814,7 @@ async function releaseExternalResourcesOutsideTenantContext(
     realtimeCallsHungUp,
     twilioCallsHungUp,
     openaiSipCallsHungUp,
+    openaiSipHangupObligationsReconciled,
     nativePurchaseClaimsReconciled,
     numbersReleased,
     numberErrors,

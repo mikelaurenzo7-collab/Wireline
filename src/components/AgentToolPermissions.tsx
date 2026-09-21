@@ -60,6 +60,7 @@ export default function AgentToolPermissions({
   const [reloadKey, setReloadKey] = useState(0);
   /** Which agent the editor currently holds a loaded selection for. */
   const loadedAgentRef = useRef<string | null>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!open || !agentId) return;
@@ -151,6 +152,7 @@ export default function AgentToolPermissions({
   const enabledSet = new Set(enabled ?? []);
 
   const toggleTool = (tool: AgentToolName) => {
+    if (savingRef.current) return;
     setNotice(null);
     setEnabled((current) => {
       const list = current ?? [];
@@ -159,6 +161,7 @@ export default function AgentToolPermissions({
   };
 
   const toggleGroup = (integration: string, enable: boolean) => {
+    if (savingRef.current) return;
     setNotice(null);
     const names = AGENT_TOOL_CATALOG.filter((tool) => tool.integration === integration).map(
       (tool) => tool.name,
@@ -171,7 +174,7 @@ export default function AgentToolPermissions({
   };
 
   async function save() {
-    if (saving || !enabled) return;
+    if (savingRef.current || !enabled) return;
     // The component survives agent switches in place, so a save started for
     // one agent can resolve after another is active. Applying that response
     // would overwrite the new agent's loaded selection with the old agent's
@@ -179,6 +182,7 @@ export default function AgentToolPermissions({
     // tracks the active agent in loadedAgentRef; a response only applies while
     // the agent it was saved for is still the one on screen.
     const savedFor = agentId;
+    savingRef.current = true;
     setSaving(true);
     setSaveError(null);
     setNotice(null);
@@ -198,6 +202,7 @@ export default function AgentToolPermissions({
       if (loadedAgentRef.current !== savedFor) return;
       setSaveError(reason instanceof Error ? reason.message : "Actions could not be saved.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -267,7 +272,12 @@ export default function AgentToolPermissions({
               {loadError} Nothing was changed.
             </StatusNotice>
           ) : (
-            <div className="space-y-5">
+            <fieldset
+              disabled={saving}
+              aria-busy={saving}
+              aria-label="Bot action permissions"
+              className="min-w-0 space-y-5"
+            >
               <div className="space-y-4">
                 {getAllIntegrationPlaybooks().map((playbook) => {
                   const configured =
@@ -354,7 +364,7 @@ export default function AgentToolPermissions({
                 )}
                 {saving ? "Saving…" : "Save actions"}
               </Button>
-            </div>
+            </fieldset>
           )}
         </div>
       ) : null}

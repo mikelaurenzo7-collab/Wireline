@@ -92,13 +92,17 @@ type Props = {
   description?: string;
   tone?: string;
   "aria-label"?: string;
+  "aria-pressed"?: boolean;
   onClick?: () => void;
+  onChange?: (event: { target: { value: string } }) => void;
 };
 type Element = ReactElement<Props>;
 let tree: ReactNode;
 let agentId: string | null;
 let listResponses: Array<() => Promise<Response>>;
 let syncResponses: Array<() => Promise<Response>>;
+let detailResponses: Array<() => Promise<Response>>;
+let readResponses: Array<() => Promise<Response>>;
 let threads: Array<Record<string, unknown>>;
 const response = (body: Record<string, unknown>, status = 200) =>
   ({ ok: status < 400, status, json: async () => body }) as Response;
@@ -168,6 +172,8 @@ beforeEach(() => {
   threads = [];
   listResponses = [];
   syncResponses = [];
+  detailResponses = [];
+  readResponses = [];
   h.fetch.mockImplementation(async (url: string) => {
     if (url === "/api/emails/accounts") return response({ accounts: [{ id: "mailbox" }] });
     if (url === "/api/emails/sync") {
@@ -175,6 +181,10 @@ beforeEach(() => {
       if (!next) throw new Error("Unexpected mailbox sync");
       return next();
     }
+    if (url === "/api/emails/threads/read-state")
+      return readResponses.shift()?.() ?? response({ success: true });
+    if (/\/api\/emails\/threads\/[^/]+\/outcome$/.test(url))
+      return detailResponses.shift()?.() ?? response({ thread: threads[0], messages: [] });
     if (url.startsWith("/api/emails/threads"))
       return listResponses.shift()?.() ?? response({ threads });
     throw new Error(`Unexpected endpoint ${url}`);
@@ -260,7 +270,9 @@ describe("email inbox operation recovery", () => {
     await settle();
     expect(errors()).toHaveLength(0);
     expect(successes()).toHaveLength(0);
-    expect(requests("/api/emails/threads").at(-1)?.[0]).toBe("/api/emails/threads?agent_id=bot-b");
+    const latest = new URL(String(requests("/api/emails/threads").at(-1)?.[0]), "http://local");
+    expect(latest.searchParams.get("agent_id")).toBe("bot-b");
+    expect(latest.searchParams.get("offset")).toBe("0");
   });
 
   it("does not announce refresh success when the refreshed conversation list fails to load", async () => {
@@ -275,5 +287,181 @@ describe("email inbox operation recovery", () => {
     await settle();
     expect(requests("/api/emails/sync")).toHaveLength(1);
     expect(errors()).toHaveLength(0);
+  });
+
+  it("keeps the message body and handoff when the active conversation is clicked again", async () => {
+    threads = [{ id: "thread-1", subject: "Appointment", customer_email: "customer@example.test" }];
+    detailResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            thread: threads[0],
+            messages: [{ id: "message-1", content: "Please keep this visible." }],
+            handoff: { id: "handoff-1", status: "pending" },
+          }),
+        ),
+    ];
+    await settle();
+    const row = () =>
+      elements(tree).find(
+        (node) => node.type === "button" && typeof node.props["aria-pressed"] === "boolean",
+      )!;
+    row().props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Please keep this visible.");
+    row().props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Please keep this visible.");
+    expect(requests("/api/emails/threads/thread-1/outcome")).toHaveLength(1);
+  });
+
+  it("loads older conversations and scopes search to the emails loaded so far", async () => {
+    listResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            threads: [{ id: "first", subject: "Latest" }],
+            hasMore: true,
+            nextOffset: 100,
+          }),
+        ),
+      () =>
+        Promise.resolve(
+          response({
+            threads: [{ id: "older", subject: "Old appointment" }],
+            hasMore: false,
+            nextOffset: 101,
+          }),
+        ),
+    ];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onChange?.({ target: { value: "Old appointment" } });
+    await settle();
+    expect(elements(tree).some((node) => node.props.title === "No Matches in 1 Loaded Email")).toBe(
+      true,
+    );
+    button("Load More Email").props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Old appointment");
+    const latest = new URL(String(requests("/api/emails/threads").at(-1)?.[0]), "http://local");
+    expect(latest.searchParams.get("offset")).toBe("100");
+    expect(
+      elements(tree).some((node) => node.type === "button" && text(node) === "Load More Email"),
+    ).toBe(false);
+  });
+
+  it("preserves loaded conversations and retries the failed older page", async () => {
+    listResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            threads: [{ id: "first", subject: "Latest" }],
+            hasMore: true,
+            nextOffset: 100,
+          }),
+        ),
+      () => Promise.resolve(response({ error: "Older mail unavailable" }, 503)),
+      () =>
+        Promise.resolve(
+          response({
+            threads: [{ id: "older", subject: "Older" }],
+            hasMore: false,
+            nextOffset: 101,
+          }),
+        ),
+    ];
+    await settle();
+    button("Load More Email").props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Latest");
+    button("Retry Older Email").props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Older");
+    expect(requests("/api/emails/sync")).toHaveLength(0);
+  });
+
+  it("discards an older page when the Bot filter changes", async () => {
+    const pending = deferred();
+    agentId = "bot-a";
+    listResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            threads: [{ id: "first", subject: "Bot A" }],
+            hasMore: true,
+            nextOffset: 100,
+          }),
+        ),
+      () => pending.promise,
+      () =>
+        Promise.resolve(response({ threads: [{ id: "new", subject: "Bot B" }], hasMore: false })),
+    ];
+    await settle();
+    button("Load More Email").props.onClick?.();
+    await settle();
+    agentId = "bot-b";
+    await settle();
+    pending.resolve(
+      response({ threads: [{ id: "old", subject: "Stale older email" }], hasMore: false }),
+    );
+    await settle();
+    expect(text(tree)).toContain("Bot B");
+    expect(text(tree)).not.toContain("Stale older email");
+  });
+
+  it("marks only the accepted conversation read without delaying its body", async () => {
+    const oldDetail = deferred();
+    const read = deferred();
+    threads = [
+      { id: "a", subject: "First" },
+      { id: "b", subject: "Second" },
+    ];
+    detailResponses = [
+      () => oldDetail.promise,
+      () =>
+        Promise.resolve(
+          response({ thread: threads[1], messages: [{ id: "body-b", content: "Current body" }] }),
+        ),
+    ];
+    readResponses = [() => read.promise];
+    await settle();
+    const rows = () =>
+      elements(tree).filter(
+        (node) => node.type === "button" && typeof node.props["aria-pressed"] === "boolean",
+      );
+    rows()[0].props.onClick?.();
+    await settle();
+    rows()[1].props.onClick?.();
+    await settle();
+    oldDetail.resolve(
+      response({ thread: threads[0], messages: [{ id: "body-a", content: "Stale body" }] }),
+    );
+    await settle();
+    expect(text(tree)).toContain("Current body");
+    expect(text(tree)).not.toContain("Stale body");
+    const reads = requests("/api/emails/threads/read-state");
+    expect(reads).toHaveLength(1);
+    expect(JSON.parse(reads[0][1].body)).toEqual({ ids: ["b"], read: true });
+    read.resolve(response({ error: "Unread status unavailable" }, 503));
+    await settle();
+    expect(text(tree)).toContain("Current body");
+    expect(elements(tree).some((node) => node.props.title === "Unread Status Unavailable")).toBe(
+      true,
+    );
+    const detailRequestCount = requests("/api/emails/threads/b/outcome").length;
+    button("Retry Unread Status").props.onClick?.();
+    await settle();
+    expect(requests("/api/emails/threads/read-state")).toHaveLength(2);
+    expect(JSON.parse(requests("/api/emails/threads/read-state")[1][1].body)).toEqual({
+      ids: ["b"],
+      read: true,
+    });
+    expect(requests("/api/emails/threads/b/outcome")).toHaveLength(detailRequestCount);
+    expect(text(tree)).toContain("Current body");
+    expect(elements(tree).some((node) => node.props.title === "Unread Status Unavailable")).toBe(
+      false,
+    );
   });
 });

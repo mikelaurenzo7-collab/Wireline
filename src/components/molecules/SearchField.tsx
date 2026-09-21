@@ -20,7 +20,16 @@ const SearchField = React.forwardRef<HTMLInputElement, SearchFieldProps>(
           aria-hidden="true"
           className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
         />
-        <Input ref={ref} type="search" value={value} className="pl-9 pr-9" {...props} />
+        <Input
+          ref={ref}
+          type="search"
+          value={value}
+          className={cn(
+            "pl-9 pr-9",
+            onClear && "[&::-webkit-search-cancel-button]:appearance-none",
+          )}
+          {...props}
+        />
         {hasValue && onClear && (
           <Button
             type="button"

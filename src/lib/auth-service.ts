@@ -441,45 +441,81 @@ export const authService = {
   },
 
   async createPasswordResetToken(email: string, requestedIp?: string) {
-    const [user] = await drizzle
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.email, email))
-      .limit(1);
-    if (!user) return null;
+    return drizzle.transaction(async (tx) => {
+      // Use the same account lock as completion so an in-flight reset cannot
+      // miss an older link inserted between sibling invalidation and commit.
+      const [user] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1)
+        .for("update");
+      if (!user) return null;
 
-    const plaintext = randomBytes(32).toString("base64url");
-    const tokenHash = createHash("sha256").update(plaintext).digest("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60_000);
-    await drizzle.insert(schema.passwordResetTokens).values({
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-      requestedIp: requestedIp || null,
+      const plaintext = randomBytes(32).toString("base64url");
+      const tokenHash = createHash("sha256").update(plaintext).digest("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60_000);
+      await tx.insert(schema.passwordResetTokens).values({
+        userId: user.id,
+        tokenHash,
+        expiresAt,
+        requestedIp: requestedIp || null,
+      });
+      return { token: plaintext, userId: user.id, expiresAt };
     });
-    return { token: plaintext, userId: user.id, expiresAt };
   },
 
   async completePasswordReset(token: string, newPassword: string) {
     if (!token || !newPassword || newPassword.length < 8) return null;
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const now = new Date();
     await requirePasswordSafety(newPassword, "reset");
     const newHash = await hashPasswordForRequest(newPassword);
 
     const reset = await drizzle.transaction(async (tx) => {
+      const [candidate] = await tx
+        .select({ userId: schema.passwordResetTokens.userId })
+        .from(schema.passwordResetTokens)
+        .where(eq(schema.passwordResetTokens.tokenHash, tokenHash))
+        .limit(1);
+      if (!candidate) return null;
+
+      // Lock the account before any token row. Two different reset links must
+      // not both rotate its password, or deadlock while consuming each other.
+      const [account] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, candidate.userId))
+        .limit(1)
+        .for("update");
+      if (!account) return null;
+
+      // Recheck expiry after the KDF and any wait for another reset to finish.
+      const now = new Date();
       const [claimed] = await tx
         .update(schema.passwordResetTokens)
         .set({ usedAt: now })
         .where(
           and(
             eq(schema.passwordResetTokens.tokenHash, tokenHash),
+            eq(schema.passwordResetTokens.userId, account.id),
             gte(schema.passwordResetTokens.expiresAt, now),
             isNull(schema.passwordResetTokens.usedAt),
           ),
         )
         .returning({ userId: schema.passwordResetTokens.userId });
       if (!claimed) return null;
+
+      // A successful recovery also closes every other outstanding reset link.
+      // Otherwise an older email can immediately overwrite the new password.
+      await tx
+        .update(schema.passwordResetTokens)
+        .set({ usedAt: now })
+        .where(
+          and(
+            eq(schema.passwordResetTokens.userId, account.id),
+            isNull(schema.passwordResetTokens.usedAt),
+          ),
+        );
 
       const [changed] = await tx
         .update(schema.users)
