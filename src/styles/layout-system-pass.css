@@ -14,8 +14,10 @@
   background: transparent;
 }
 
-.wl-workspace-content {
-  scrollbar-gutter: stable;
+@media (min-width: 1024px) {
+  .wl-workspace-content {
+    scrollbar-gutter: stable;
+  }
 }
 
 .wl-workspace-content-inner {

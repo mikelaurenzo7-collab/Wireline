@@ -1,6 +1,8 @@
 import { OAUTH_SIGNUP_CONSENT_REQUIRED } from "./legal-consent";
 
 export const DEFAULT_OAUTH_SIGNIN_ERROR = "We couldn't complete sign-in. Please try again.";
+export const OAUTH_UNVERIFIED_ACCOUNT_COLLISION =
+  "An unverified account already uses this email. Use its original sign-in method or contact support.";
 
 const SAFE_OAUTH_SIGNIN_ERRORS = new Set([
   "Invalid or expired sign-in state.",
@@ -13,6 +15,7 @@ const SAFE_OAUTH_SIGNIN_ERRORS = new Set([
   "Sign-in session expired. Please try again.",
   "Failed to start session. Please try again.",
   OAUTH_SIGNUP_CONSENT_REQUIRED,
+  OAUTH_UNVERIFIED_ACCOUNT_COLLISION,
 ]);
 
 /**

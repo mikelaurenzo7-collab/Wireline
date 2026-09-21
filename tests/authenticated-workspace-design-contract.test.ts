@@ -47,7 +47,10 @@ describe("authenticated workspace design architecture", () => {
       expect(source).toContain("wl-channel-inbox-grid");
       expect(source).toContain('data-empty={listOwnsOnlyState ? "true" : undefined}');
     }
-    expect(email).toContain('title="No Matching Email"');
+    expect(email).toContain(
+      'title={`No Matches in ${threads.length} Loaded ${threads.length === 1 ? "Email" : "Emails"}`}',
+    );
+    expect(email).toMatch(/hasMore\s*\? "Load older email or try another search\."/);
     expect(email).toContain("setDetail(null);");
     expect(email).toContain("setDetailError(null);");
     expect(email).toContain("detailError && !detail");
@@ -209,7 +212,7 @@ describe("authenticated workspace design architecture", () => {
     expect(hub).toContain('title="No Dispatch Queue"');
     expect(hub).toContain('label: "Lead Hunt"');
     expect(hub).toContain('onViewChange("campaigns")');
-    expect(hub).toContain("Lead intake");
+    expect(hub).toContain("Lead Intake");
   });
 
   it("keeps Lead Hunt as the empty campaign canvas and reveals past appointments", () => {

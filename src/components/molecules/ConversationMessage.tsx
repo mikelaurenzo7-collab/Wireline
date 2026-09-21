@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 export const conversationMessageVariants = cva(
-  "max-w-[92%] rounded-[var(--radius-lg)] border p-3.5 text-sm leading-6",
+  "min-w-0 max-w-full rounded-[var(--radius-lg)] border p-3 text-sm leading-6 sm:max-w-[92%] sm:p-3.5",
   {
     variants: {
       author: {
@@ -53,14 +53,22 @@ const ConversationMessage = React.forwardRef<HTMLElement, ConversationMessagePro
         className={cn(conversationMessageVariants({ author: resolvedAuthor }), className)}
         {...props}
       >
-        <div className="mb-2 flex items-center gap-1.5 text-[length:var(--wireline-typography-overline-size)] font-semibold uppercase tracking-[.08em] text-muted-foreground">
-          <span className="inline-flex size-4 items-center justify-center" aria-hidden="true">
+        <div className="mb-1.5 flex min-w-0 items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <span
+            className="inline-flex size-4 shrink-0 items-center justify-center"
+            aria-hidden="true"
+          >
             {defaultIcon(resolvedAuthor)}
           </span>
-          <span>{label ?? defaultLabel[resolvedAuthor]}</span>
-          {channel ? <span className="text-muted-foreground">. {channel}</span> : null}
+          <span
+            className="wl-preserve-case min-w-0 truncate normal-case tracking-normal"
+            title={typeof label === "string" ? label : undefined}
+          >
+            {label ?? defaultLabel[resolvedAuthor]}
+          </span>
+          {channel ? <span className="sr-only">{channel} message</span> : null}
         </div>
-        <div data-wireline-preserve-case className="whitespace-pre-wrap">
+        <div data-wireline-preserve-case className="whitespace-pre-wrap [overflow-wrap:anywhere]">
           {children}
         </div>
         {timestamp ? (

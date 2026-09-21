@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
 import { Link } from "react-router";
 
@@ -91,38 +91,89 @@ export default function AppointmentsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [calendarConnected, setCalendarConnected] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [moreError, setMoreError] = useState<{ message: string; expired: boolean } | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
+
+  const loadAppointments = useCallback(async (cursor: string | null = null) => {
+    if (requestRef.current) return;
+    const controller = new AbortController();
+    requestRef.current = controller;
+    const isCurrent = () => !controller.signal.aborted && requestRef.current === controller;
+    setLoading(!cursor);
+    setLoadingMore(Boolean(cursor));
+    setMoreError(null);
+    if (!cursor) setError(null);
+    try {
+      const params = new URLSearchParams({ limit: "100" });
+      if (cursor) params.set("cursor", cursor);
+      const response = await authFetch(`/api/appointments?${params}`, {
+        signal: controller.signal,
+      });
+      const data = (await response.json().catch(() => null)) as {
+        appointments?: Appointment[];
+        hasMore?: boolean;
+        nextCursor?: string | null;
+        error?: string;
+        code?: string;
+      } | null;
+      if (!isCurrent()) return;
+      if (!response.ok) {
+        const message = data?.error || "Could not load appointments.";
+        if (cursor) setMoreError({ message, expired: data?.code === "APPOINTMENT_CURSOR_EXPIRED" });
+        else setError(message);
+        return;
+      }
+      if (!Array.isArray(data?.appointments) || (data.hasMore && !data.nextCursor))
+        throw new Error("Could not load appointment history. Try again.");
+      const page = data.appointments;
+      setAppointments((current) => {
+        if (!cursor) return page;
+        const known = new Set(current.map((appointment) => appointment.id));
+        return [...current, ...page.filter((appointment) => !known.has(appointment.id))];
+      });
+      setHasMore(data.hasMore === true);
+      setNextCursor(data.nextCursor || null);
+    } catch (cause) {
+      if (!isCurrent()) return;
+      const message = cause instanceof Error ? cause.message : "Could not load appointments.";
+      if (cursor) setMoreError({ message, expired: false });
+      else setError(message);
+    } finally {
+      if (isCurrent()) {
+        requestRef.current = null;
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAppointments();
+    return () => {
+      requestRef.current?.abort();
+      requestRef.current = null;
+    };
+  }, [loadAppointments]);
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
+    async function loadCalendar() {
       try {
-        const [apptRes, calendarRes] = await Promise.all([
-          authFetch("/api/appointments?limit=100"),
-          authFetch("/api/calendar/accounts"),
-        ]);
+        const calendarRes = await authFetch("/api/calendar/accounts");
+        const calData = calendarRes.ok
+          ? ((await calendarRes.json().catch(() => null)) as { accounts?: unknown[] } | null)
+          : null;
         if (cancelled) return;
-        if (!apptRes.ok) {
-          setError("Could not load appointments.");
-          return;
-        }
-        const apptData = (await apptRes.json()) as { appointments?: Appointment[] };
-        setAppointments(Array.isArray(apptData.appointments) ? apptData.appointments : []);
-        if (calendarRes.ok) {
-          const calData = (await calendarRes.json().catch(() => null)) as {
-            accounts?: unknown[];
-          } | null;
-          setCalendarConnected(Array.isArray(calData?.accounts) && calData.accounts.length > 0);
-        }
+        setCalendarConnected(Array.isArray(calData?.accounts) ? calData.accounts.length > 0 : null);
       } catch {
-        if (!cancelled) setError("Could not load appointments.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setCalendarConnected(null);
       }
     }
-    void load();
+    void loadCalendar();
     return () => {
       cancelled = true;
     };
@@ -160,7 +211,21 @@ export default function AppointmentsPanel() {
   if (error) {
     return (
       <div className="flex w-full justify-center px-4 py-8 sm:px-6">
-        <StatusNotice tone="warning" title="Appointments Unavailable" className="w-full max-w-lg">
+        <StatusNotice
+          tone="warning"
+          title="Appointments Unavailable"
+          className="w-full max-w-lg"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void loadAppointments()}
+            >
+              Retry
+            </Button>
+          }
+        >
           {error}
         </StatusNotice>
       </div>
@@ -177,11 +242,13 @@ export default function AppointmentsPanel() {
           withHalo={false}
           className="w-full max-w-lg"
           icon={<CalendarDays className="size-5" aria-hidden="true" />}
-          title={calendarConnected ? "No appointments yet" : "Connect a calendar"}
+          title={calendarConnected === false ? "Connect a Calendar" : "No Appointments Yet"}
           action={
-            <Button asChild>
-              <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
-            </Button>
+            calendarConnected !== null ? (
+              <Button asChild>
+                <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
+              </Button>
+            ) : undefined
           }
         />
       </div>
@@ -205,10 +272,35 @@ export default function AppointmentsPanel() {
           </ul>
         ) : (
           <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            No upcoming appointments
+            {hasMore ? "No upcoming appointments in loaded history" : "No upcoming appointments"}
           </div>
         )}
       </section>
+
+      {hasMore || moreError ? (
+        <div className="space-y-2">
+          {moreError ? (
+            <StatusNotice tone="warning" title="More Appointments Unavailable">
+              {moreError.message}
+            </StatusNotice>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full justify-center"
+            disabled={loading || loadingMore}
+            onClick={() => void loadAppointments(moreError?.expired ? null : nextCursor)}
+          >
+            {loadingMore
+              ? "Loading…"
+              : moreError?.expired
+                ? "Refresh Appointments"
+                : moreError
+                  ? "Retry More Appointments"
+                  : "Load More Appointments"}
+          </Button>
+        </div>
+      ) : null}
 
       {past.length ? (
         <details

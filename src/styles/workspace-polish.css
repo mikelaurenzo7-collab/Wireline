@@ -3,10 +3,6 @@
   max-width: min(1520px, calc(100vw - clamp(1rem, 3vw, 5rem)));
 }
 
-.wl-workspace-main {
-  scrollbar-gutter: stable;
-}
-
 .wl-workspace-page {
   container-type: inline-size;
 }

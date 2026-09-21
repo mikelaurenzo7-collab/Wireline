@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileChartColumn, FileText, Presentation, Sheet, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 
@@ -117,9 +117,13 @@ export default function ReportingPreferences() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(null);
     void (async () => {
       try {
         const response = await authFetch("/api/post-call-output-preferences");
@@ -145,7 +149,7 @@ export default function ReportingPreferences() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadAttempt]);
 
   const connectedDestinations = useMemo(() => {
     const values: Destination[] = [];
@@ -155,12 +159,22 @@ export default function ReportingPreferences() {
   }, [connections]);
 
   function patch(next: Partial<Preferences>) {
+    if (savingRef.current) return;
     setPreferences((current) => (current ? { ...current, ...next } : current));
     setMessage(null);
   }
 
   async function save() {
-    if (!preferences || saving) return;
+    if (!preferences || savingRef.current) return;
+    if (
+      preferences.scheduled_report_frequency !== "off" &&
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(localTime)
+    ) {
+      setError("Choose a delivery time.");
+      setMessage(null);
+      return;
+    }
+    savingRef.current = true;
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -186,6 +200,12 @@ export default function ReportingPreferences() {
       setPreferences(data.preferences);
       setConnections(data.connections);
       setNextReportAt(data.next_scheduled_report_at || null);
+      const local = utcScheduleToLocal(
+        data.preferences.scheduled_report_send_at_utc,
+        data.preferences.scheduled_report_weekday,
+      );
+      setLocalTime(local.time);
+      setLocalWeekday(local.weekday);
       setMessage("Report preferences saved.");
       // Notify the sibling artifact-requests panel immediately instead of
       // relying on a background poll.
@@ -195,6 +215,7 @@ export default function ReportingPreferences() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not save report settings.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -210,8 +231,21 @@ export default function ReportingPreferences() {
 
   if (!preferences || !connections) {
     return (
-      <StatusNotice tone="destructive" title="Report Settings Unavailable">
-        {error || "Reload the page and try again."}
+      <StatusNotice
+        tone="destructive"
+        title="Report Settings Unavailable"
+        action={
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            Retry
+          </Button>
+        }
+      >
+        {error || "Could not load report settings."}
       </StatusNotice>
     );
   }
@@ -219,7 +253,12 @@ export default function ReportingPreferences() {
   const noStorageConnected = connectedDestinations.length === 0;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <fieldset
+      disabled={saving}
+      aria-busy={saving}
+      aria-label="Report settings"
+      className="mx-auto min-w-0 max-w-5xl space-y-5"
+    >
       <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
         <ShieldCheck size={17} className="mt-0.5 shrink-0" aria-hidden="true" />
         Call records stay in BotBound. File exports are optional.
@@ -368,7 +407,11 @@ export default function ReportingPreferences() {
               type="time"
               value={localTime}
               disabled={preferences.scheduled_report_frequency === "off"}
-              onChange={(event) => setLocalTime(event.target.value)}
+              onChange={(event) => {
+                if (savingRef.current) return;
+                setLocalTime(event.target.value);
+                setMessage(null);
+              }}
               className="wl-stitch-input h-11 w-full"
             />
             <span className="block text-xs font-normal text-muted-foreground">
@@ -380,7 +423,11 @@ export default function ReportingPreferences() {
               Delivery day
               <NativeSelect
                 value={String(localWeekday)}
-                onChange={(event) => setLocalWeekday(Number(event.target.value))}
+                onChange={(event) => {
+                  if (savingRef.current) return;
+                  setLocalWeekday(Number(event.target.value));
+                  setMessage(null);
+                }}
               >
                 {WEEKDAYS.map((day, index) => (
                   <option key={day} value={index}>
@@ -415,6 +462,6 @@ export default function ReportingPreferences() {
           {saving ? "Saving…" : "Save report settings"}
         </Button>
       </div>
-    </div>
+    </fieldset>
   );
 }

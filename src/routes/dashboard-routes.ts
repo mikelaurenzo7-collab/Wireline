@@ -356,9 +356,38 @@ router.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const limitRaw = parseInt(req.query.limit as string);
-      const offsetRaw = parseInt(req.query.offset as string);
       const limit = Math.min(Math.max(1, isNaN(limitRaw) ? 200 : limitRaw), 1000);
-      const offset = isNaN(offsetRaw) ? 0 : Math.max(0, offsetRaw);
+      const cursor = typeof req.query.cursor === "string" ? req.query.cursor.trim() : "";
+      if (
+        req.query.cursor !== undefined &&
+        !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(cursor)
+      ) {
+        throw AppError.badRequest("Invalid appointment cursor. Refresh appointments.");
+      }
+      if (req.query.offset !== undefined && String(req.query.offset) !== "0") {
+        throw AppError.badRequest("Use the returned cursor to load more appointments.");
+      }
+      let anchor: { createdAt: string; id: string } | undefined;
+      if (cursor) {
+        // Resolve the owned immutable key in SQL to retain Postgres microseconds.
+        // Activity/status updates and newer bookings cannot shift later pages.
+        [anchor] = await drizzle
+          .select({
+            id: schema.appointments.id,
+            createdAt: sql<string>`to_char(coalesce(${schema.appointments.createdAt}, 'epoch'::timestamptz) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+          })
+          .from(schema.appointments)
+          .where(
+            and(eq(schema.appointments.userId, req.user.id), eq(schema.appointments.id, cursor)),
+          )
+          .limit(1);
+        if (!anchor)
+          throw new AppError(
+            404,
+            "APPOINTMENT_CURSOR_EXPIRED",
+            "Appointment history changed. Refresh to continue.",
+          );
+      }
 
       const [countResult] = await drizzle
         .select({ count: sql`count(*)` })
@@ -370,17 +399,30 @@ router.get(
       const appointments = await drizzle
         .select()
         .from(schema.appointments)
-        .where(eq(schema.appointments.userId, req.user.id))
-        .orderBy(desc(schema.appointments.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .where(
+          and(
+            eq(schema.appointments.userId, req.user.id),
+            anchor
+              ? sql`(coalesce(${schema.appointments.createdAt}, 'epoch'::timestamptz), ${schema.appointments.id}) < (${anchor.createdAt}::timestamptz, ${anchor.id}::uuid)`
+              : undefined,
+          ),
+        )
+        .orderBy(
+          desc(sql`coalesce(${schema.appointments.createdAt}, 'epoch'::timestamptz)`),
+          desc(schema.appointments.id),
+        )
+        .limit(limit + 1);
 
+      const page = appointments.slice(0, limit);
+      const hasMore = appointments.length > limit;
       res.json({
-        appointments: mapObjectToSnake(appointments || []),
+        appointments: mapObjectToSnake(page),
         total: count || 0,
-        hasMore: offset + limit < count,
+        hasMore,
+        nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
       });
     } catch (error: any) {
+      if (error instanceof AppError) throw error;
       log.error("Failed to fetch appointments", { error: getErrorMessage(error) });
       throw AppError.fromHttpStatus(500, "Failed to fetch appointments");
     }

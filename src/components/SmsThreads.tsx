@@ -660,7 +660,7 @@ export default function SmsThreads({
 
   return (
     <section className={frameClass} aria-label="Text inbox">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 sm:px-4">
+      <div className="flex items-center gap-2 border-b border-border py-2.5 sm:px-4">
         <SearchField
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -827,7 +827,7 @@ export default function SmsThreads({
                 </StatusNotice>
               ) : null}
 
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5">
                 {messagesLoading ? (
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -843,7 +843,7 @@ export default function SmsThreads({
                             ? message.agent_id
                               ? "Bot"
                               : "You"
-                            : activeThread.customer_number
+                            : "Customer"
                         }
                         channel="text"
                         timestamp={formatSmsTime(message.created_at)}

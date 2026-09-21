@@ -833,6 +833,8 @@ export function settleOpenAISipPreSessionFailure(input: {
   return tenantStore.run(input.call.userId, () =>
     drizzle.transaction(async (tx) => {
       const now = new Date();
+      const providerHangupRequired =
+        input.reason === "spend_commit_failed" || input.reason === "session_start_failed";
       const [settledCall] = await tx
         .update(schema.callLogs)
         .set({
@@ -849,31 +851,65 @@ export function settleOpenAISipPreSessionFailure(input: {
           and(
             eq(schema.callLogs.id, input.claim.callLogId),
             eq(schema.callLogs.userId, input.call.userId),
-            eq(schema.callLogs.openaiSipPhase, "claimed"),
+            // The startup gate is closed before session_start_failed reaches
+            // here. Its running transition may have committed before the DB
+            // response was lost; only this same owner may retire that row.
+            input.reason === "session_start_failed"
+              ? inArray(schema.callLogs.openaiSipPhase, ["claimed", "running"])
+              : eq(schema.callLogs.openaiSipPhase, "claimed"),
             eq(schema.callLogs.openaiSipOwnerToken, input.claim.ownerToken),
           ),
         )
         .returning({ id: schema.callLogs.id });
       if (!settledCall) return false;
-      const [settledRecovery] = await tx
-        .update(schema.jobs)
-        .set({
-          status: "done",
-          result: { skipped: true, reason: input.reason },
-          completedAt: now,
-          finishedAt: now,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(schema.jobs.id, input.claim.recoveryJobId),
-            eq(schema.jobs.userId, input.call.userId),
-            eq(schema.jobs.type, "post_call_digest"),
-          ),
-        )
-        .returning({ id: schema.jobs.id });
-      if (!settledRecovery) {
-        throw new Error("OpenAI SIP pre-session claim could not be settled atomically.");
+      if (providerHangupRequired) {
+        // Acceptance already succeeded. Keep the termination obligation in
+        // the existing job before the route attempts best-effort cleanup, so
+        // a timeout/5xx or process loss cannot leave a silent accepted call.
+        await enqueuePostCallDigest(
+          {
+            userId: input.call.userId,
+            callLogId: input.claim.callLogId,
+            agentId: input.call.agentId,
+            dialedNumber: input.call.calledNumber,
+            customerNumber: input.call.callerNumber,
+            direction: callDirection(input.call),
+            endedReason: "pre-session-rejected",
+            pipelineError: input.reason,
+            vapiCallId: providerCallId(input.call.callId),
+            finalization: {
+              provider: "openai_sip",
+              callId: input.call.callId,
+              leadId: input.call.leadId ? String(input.call.leadId) : null,
+              openingPlaybackConfirmed: false,
+              terminalStateReady: true,
+              providerHangupRequired: true,
+            },
+          },
+          tx,
+          { runAt: now, refreshPending: true },
+        );
+      } else {
+        const [settledRecovery] = await tx
+          .update(schema.jobs)
+          .set({
+            status: "done",
+            result: { skipped: true, reason: input.reason },
+            completedAt: now,
+            finishedAt: now,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(schema.jobs.id, input.claim.recoveryJobId),
+              eq(schema.jobs.userId, input.call.userId),
+              eq(schema.jobs.type, "post_call_digest"),
+            ),
+          )
+          .returning({ id: schema.jobs.id });
+        if (!settledRecovery) {
+          throw new Error("OpenAI SIP pre-session claim could not be settled atomically.");
+        }
       }
       await settleOutboundLeadInTransaction(tx, {
         call: input.call,
@@ -1403,7 +1439,10 @@ export async function replayOpenAISipPostCallFinalization(input: {
 }): Promise<void> {
   const providerId = providerCallId(input.finalization.callId);
   const [authoritative] = await drizzle
-    .select({ providerCallId: schema.callLogs.vapiCallId })
+    .select({
+      providerCallId: schema.callLogs.vapiCallId,
+      endedReason: schema.callLogs.endedReason,
+    })
     .from(schema.callLogs)
     .where(
       and(
@@ -1415,10 +1454,6 @@ export async function replayOpenAISipPostCallFinalization(input: {
   if (!authoritative || authoritative.providerCallId !== providerId) {
     throw new Error("OpenAI SIP finalization metadata does not match the authoritative call row.");
   }
-  if (!input.agentId) {
-    throw new Error("OpenAI SIP finalization is missing the authoritative Bot identity.");
-  }
-
   if (input.finalization.providerHangupRequired) {
     // Do not checkpoint finalization until termination is confirmed. The
     // existing five-attempt queue owns retry after a transient failure.
@@ -1427,6 +1462,14 @@ export async function replayOpenAISipPostCallFinalization(input: {
       callLogId: input.callLogId,
       callId: input.finalization.callId,
     });
+  }
+
+  // An accepted call whose startup failed has no conversation to finalize.
+  // Its queued obligation is termination only, with no usage or disclosure
+  // invented for a session that never started.
+  if (authoritative.endedReason === "pre-session-rejected") return;
+  if (!input.agentId) {
+    throw new Error("OpenAI SIP finalization is missing the authoritative Bot identity.");
   }
 
   const call: OpenAISipIncomingCall = {

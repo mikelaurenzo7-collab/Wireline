@@ -21,6 +21,7 @@ const h = vi.hoisted(() => ({
   respondToPing: true,
   pingFails: false,
   callUser: "tenant",
+  callOwner: "owner",
   callPhase: "terminal",
   callReason: "provider-heartbeat-timeout",
 }));
@@ -72,6 +73,7 @@ vi.mock("../src/db/schema", () => {
     outboundLeads: table("leads"),
     consentLog: table("consent"),
     outboundPlacements: table("placements"),
+    jobs: table("jobs"),
   };
 });
 vi.mock("../src/lib/server-context", () => {
@@ -83,6 +85,11 @@ vi.mock("../src/lib/server-context", () => {
       if (!Array.isArray(node)) return undefined;
       if (node[0] === "userId") return String(node[1]);
       return node.map(requestedUser).find((value) => value !== undefined);
+    };
+    const requestedValue = (node: unknown, key: string): unknown => {
+      if (!Array.isArray(node)) return undefined;
+      if (node[0] === key) return node[1];
+      return node.map((part) => requestedValue(part, key)).find((value) => value !== undefined);
     };
     const chain: any = {
       from: (source: { __name: string }) => {
@@ -115,6 +122,14 @@ vi.mock("../src/lib/server-context", () => {
             if (target === "calls") {
               const user = requestedUser(where);
               if (user !== undefined && user !== h.callUser) return [];
+              if (values?.endedReason === "pre-session-rejected") {
+                const owner = requestedValue(where, "openaiSipOwnerToken");
+                const phase = requestedValue(where, "openaiSipPhase");
+                if (owner !== h.callOwner) return [];
+                if (Array.isArray(phase) ? !phase.includes(h.callPhase) : phase !== h.callPhase) {
+                  return [];
+                }
+              }
               if (values?.openaiSipPhase) h.callPhase = String(values.openaiSipPhase);
               if (values?.endedReason) h.callReason = String(values.endedReason);
               return [
@@ -203,6 +218,7 @@ vi.mock("../src/lib/voice/ai-disclosure-evidence", () => ({
 import {
   replayOpenAISipPostCallFinalization,
   runOpenAISipCallSession,
+  settleOpenAISipPreSessionFailure,
 } from "../src/lib/voice/openai-sip-session";
 
 const call = {
@@ -245,8 +261,91 @@ beforeEach(() => {
   h.respondToPing = true;
   h.pingFails = false;
   h.callUser = "tenant";
+  h.callOwner = "owner";
   h.callPhase = "terminal";
   h.callReason = "provider-heartbeat-timeout";
+});
+
+describe("accepted SIP startup cleanup", () => {
+  it.each(["spend_commit_failed", "session_start_failed"] as const)(
+    "keeps %s cleanup retryable until provider hangup is confirmed",
+    async (reason) => {
+      h.callPhase = "claimed";
+      await expect(settleOpenAISipPreSessionFailure({ call, claim, reason })).resolves.toBe(true);
+      expect(h.writes.some((value) => value.status === "done")).toBe(false);
+      expect(h.digest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          endedReason: "pre-session-rejected",
+          pipelineError: reason,
+          finalization: {
+            provider: "openai_sip",
+            callId: call.callId,
+            leadId: null,
+            openingPlaybackConfirmed: false,
+            terminalStateReady: true,
+            providerHangupRequired: true,
+          },
+        }),
+        expect.anything(),
+        { runAt: expect.any(Date), refreshPending: true },
+      );
+      const recorded = h.digest.mock.calls.at(-1)![0];
+      h.provider.mockResolvedValueOnce({ ok: false, status: 503 });
+      await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow("503");
+      expect(h.usage).not.toHaveBeenCalled();
+      await expect(replayOpenAISipPostCallFinalization(recorded)).resolves.toBeUndefined();
+      expect(h.provider).toHaveBeenCalledTimes(2);
+      expect(h.provider.mock.calls.every(([url]) => url.includes("/hangup"))).toBe(true);
+      expect(h.usage).not.toHaveBeenCalled();
+      expect(h.account).not.toHaveBeenCalled();
+    },
+  );
+
+  it("recovers a startup transition committed before its database response was lost", async () => {
+    h.callPhase = "running";
+    await expect(
+      settleOpenAISipPreSessionFailure({ call, claim, reason: "session_start_failed" }),
+    ).resolves.toBe(true);
+    expect(h.callPhase).toBe("terminal");
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finalization: expect.objectContaining({ providerHangupRequired: true }),
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it("does not settle or queue hangup after a new owner takes over", async () => {
+    h.callPhase = "running";
+    h.callOwner = "replacement-owner";
+    await expect(
+      settleOpenAISipPreSessionFailure({ call, claim, reason: "session_start_failed" }),
+    ).resolves.toBe(false);
+    expect(h.callPhase).toBe("running");
+    expect(h.digest).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(h.writes.some((value) => value.status === "done")).toBe(false);
+  });
+
+  it("does not settle a running session from an earlier admission failure", async () => {
+    h.callPhase = "running";
+    await expect(
+      settleOpenAISipPreSessionFailure({ call, claim, reason: "spend_reservation_failed" }),
+    ).resolves.toBe(false);
+    expect(h.digest).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
+
+  it("keeps a definite pre-accept rejection terminal without post-call delivery", async () => {
+    h.callPhase = "claimed";
+    await expect(
+      settleOpenAISipPreSessionFailure({ call, claim, reason: "spend_reservation_failed" }),
+    ).resolves.toBe(true);
+    expect(h.writes).toContainEqual(expect.objectContaining({ status: "done" }));
+    expect(h.digest).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+  });
 });
 afterEach(() => {
   vi.clearAllTimers();

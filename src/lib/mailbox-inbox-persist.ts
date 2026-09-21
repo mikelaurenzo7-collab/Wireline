@@ -190,7 +190,23 @@ export async function persistMailboxInboxMessages(
       .onConflictDoNothing({
         target: [schema.emailMessages.userId, schema.emailMessages.googleMessageId],
       })
-      .returning({ id: schema.emailMessages.id });
+      .returning({ id: schema.emailMessages.id, threadId: schema.emailMessages.threadId });
+    // Only genuinely inserted mail restores unread state. Replayed provider
+    // deliveries and manual syncs must leave already-read conversations alone.
+    const unreadThreadIds = Array.from(
+      new Set(saved.flatMap((row) => (row.threadId ? [row.threadId] : []))),
+    );
+    if (unreadThreadIds.length > 0) {
+      await tx
+        .update(schema.emailThreads)
+        .set({ read: false })
+        .where(
+          and(
+            eq(schema.emailThreads.userId, userId),
+            inArray(schema.emailThreads.id, unreadThreadIds),
+          ),
+        );
+    }
     return saved.length;
   });
 

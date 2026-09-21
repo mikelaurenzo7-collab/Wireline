@@ -110,6 +110,14 @@
   .wl-workspace-shell .wl-workspace-content {
     padding-bottom: 5.25rem;
   }
+
+  /* Inbox is a contained conversation surface. The scrollport above already
+   * reserves the dock, so inner page spacing must not charge it again. */
+  [data-wireline-route="/inbox"],
+  [data-wireline-route="/inbox"] .wl-workspace-content-inner,
+  [data-wireline-route="/inbox"] .wl-workspace-page {
+    padding-bottom: 0;
+  }
 }
 
 /* Loading, OAuth-complete, and degraded-state transitions can be the first

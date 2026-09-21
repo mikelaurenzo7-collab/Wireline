@@ -371,6 +371,15 @@
   white-space: nowrap;
 }
 
+@media (max-width: 359px) {
+  /* Keep full destination names at 320px without reducing the 48px targets
+   * or the shared 12px text size. Only decorative tracking/insets give way. */
+  .wl-workspace-shell .wl-shell-dock-item {
+    padding-inline: 0;
+    letter-spacing: 0;
+  }
+}
+
 .wl-workspace-shell .wl-shell-dock-item[data-wireline-nav-active="true"] {
   border-color: color-mix(in srgb, var(--wireline-color-action-primary-default) 18%, transparent);
   background: color-mix(in srgb, var(--wireline-color-action-primary-container) 58%, transparent);

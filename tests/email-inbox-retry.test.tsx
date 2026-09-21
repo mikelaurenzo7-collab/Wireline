@@ -91,10 +91,12 @@ type Props = {
   title?: string;
   description?: string;
   tone?: string;
+  disabled?: boolean;
   "aria-label"?: string;
   "aria-pressed"?: boolean;
   "data-empty"?: string;
   onClick?: () => void;
+  onBack?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
 };
 type Element = ReactElement<Props>;
@@ -196,6 +198,32 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
+  it("releases refresh when returning to the list during a pending detail load", async () => {
+    const pending = deferred();
+    threads = [{ id: "thread-1", subject: "Appointment" }];
+    detailResponses = [() => pending.promise];
+    syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+      ?.props.onClick?.();
+    await settle();
+    elements(tree)
+      .find((node) => node.props.onBack)
+      ?.props.onBack?.();
+    await settle();
+    expect(button("Refresh email").props.disabled).toBe(false);
+    button("Refresh email").props.onClick?.();
+    await settle();
+    expect(requests("/api/emails/sync")).toHaveLength(1);
+    pending.resolve(
+      response({ thread: threads[0], messages: [{ id: "late", content: "Superseded body" }] }),
+    );
+    await settle();
+    expect(text(tree)).not.toContain("Superseded body");
+    expect(button("Refresh email").props.disabled).toBe(false);
+  });
+
   it("retries provider synchronization rather than hiding its failure with a thread-list read", async () => {
     syncResponses = [
       () => Promise.resolve(response({ error: "Mailbox unreachable" }, 502)),
@@ -319,6 +347,156 @@ describe("email inbox operation recovery", () => {
     expect(requests("/api/emails/threads/thread-1/outcome")).toHaveLength(1);
   });
 
+  it("refreshes the open conversation after sync while keeping its current body visible", async () => {
+    const pending = deferred();
+    threads = [{ id: "thread-1", subject: "Appointment" }];
+    detailResponses = [
+      () =>
+        Promise.resolve(
+          response({ thread: threads[0], messages: [{ id: "old", content: "Original message" }] }),
+        ),
+      () => pending.promise,
+    ];
+    syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+      ?.props.onClick?.();
+    await settle();
+    button("Refresh email").props.onClick?.();
+    await settle();
+    expect(requests("/api/emails/threads/thread-1/outcome")).toHaveLength(2);
+    expect(text(tree)).toContain("Original message");
+    expect(successes()).toHaveLength(0);
+    expect(button("Resolved").props.disabled).toBe(true);
+    button("Resolved").props.onClick?.();
+    await settle();
+    expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "PATCH")).toHaveLength(0);
+    pending.resolve(
+      response({
+        thread: threads[0],
+        messages: [{ id: "new", content: "New reply just received" }],
+      }),
+    );
+    await settle();
+    expect(text(tree)).toContain("New reply just received");
+    expect(successes()).toHaveLength(1);
+  });
+
+  it("does not start a refresh while saving the conversation outcome", async () => {
+    const pending = deferred();
+    threads = [{ id: "thread-1", subject: "Appointment" }];
+    detailResponses = [
+      () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+      () => pending.promise,
+    ];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+      ?.props.onClick?.();
+    await settle();
+    button("Resolved").props.onClick?.();
+    await settle();
+    expect(button("Refresh email").props.disabled).toBe(true);
+    button("Refresh email").props.onClick?.();
+    await settle();
+    expect(requests("/api/emails/sync")).toHaveLength(0);
+    pending.resolve(response({ thread: { ...threads[0], status: "resolved" } }));
+    await settle();
+    expect(button("Refresh email").props.disabled).toBe(false);
+  });
+
+  it.each(["Resolved", "Handoff"])(
+    "releases refresh when returning to the list during a pending outcome: %s",
+    async (action) => {
+      const pending = deferred();
+      threads = [
+        { id: "thread-1", subject: "First Appointment" },
+        { id: "thread-2", subject: "Second Appointment" },
+      ];
+      detailResponses = [
+        () => Promise.resolve(response({ thread: threads[0], messages: [] })),
+        () => pending.promise,
+        () =>
+          Promise.resolve(
+            response({
+              thread: threads[1],
+              messages: [{ id: "second-message", content: "Second conversation body" }],
+            }),
+          ),
+      ];
+      syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
+      await settle();
+      const row = (subject: string) =>
+        elements(tree).find(
+          (node) =>
+            node.type === "button" &&
+            typeof node.props["aria-pressed"] === "boolean" &&
+            text(node).includes(subject),
+        )!;
+      row("First Appointment").props.onClick?.();
+      await settle();
+      button(action).props.onClick?.();
+      await settle();
+      expect(button("Refresh email").props.disabled).toBe(true);
+      elements(tree)
+        .find((node) => node.props.onBack)
+        ?.props.onBack?.();
+      await settle();
+
+      expect(button("Refresh email").props.disabled).toBe(false);
+      button("Refresh email").props.onClick?.();
+      await settle();
+      expect(requests("/api/emails/sync")).toHaveLength(1);
+      row("Second Appointment").props.onClick?.();
+      await settle();
+      pending.resolve(
+        response({
+          thread: { ...threads[0], status: action === "Handoff" ? "escalated" : "resolved" },
+          handoff: action === "Handoff" ? { id: "old-handoff", status: "pending" } : null,
+        }),
+      );
+      await settle();
+
+      expect(text(tree)).toContain("Second conversation body");
+      expect(button("Resolved").props.disabled).toBe(false);
+      expect(button("Handoff").props.disabled).toBe(false);
+      expect(button("Refresh email").props.disabled).toBe(false);
+      expect(successes()).toHaveLength(0);
+    },
+  );
+
+  it("preserves the open body and retries only its failed refresh without claiming success", async () => {
+    threads = [{ id: "thread-1", subject: "Appointment" }];
+    detailResponses = [
+      () =>
+        Promise.resolve(
+          response({ thread: threads[0], messages: [{ id: "old", content: "Original message" }] }),
+        ),
+      () => Promise.resolve(response({ error: "Conversation temporarily unavailable" }, 503)),
+      () =>
+        Promise.resolve(
+          response({ thread: threads[0], messages: [{ id: "new", content: "Recovered reply" }] }),
+        ),
+    ];
+    syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+      ?.props.onClick?.();
+    await settle();
+    button("Refresh email").props.onClick?.();
+    await settle();
+    expect(successes()).toHaveLength(0);
+    expect(text(tree)).toContain("Original message");
+    expect(text(tree)).toContain("Conversation temporarily unavailable");
+    button("Retry Conversation").props.onClick?.();
+    await settle();
+    expect(text(tree)).toContain("Recovered reply");
+    expect(text(tree)).not.toContain("Conversation temporarily unavailable");
+    expect(requests("/api/emails/sync")).toHaveLength(1);
+  });
+
   it("loads older conversations and scopes search to the emails loaded so far", async () => {
     listResponses = [
       () =>
@@ -390,6 +568,7 @@ describe("email inbox operation recovery", () => {
             }),
           ),
       ];
+      detailResponses.push(detailResponses[0]);
       syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
       await settle();
       button("Load More Email").props.onClick?.();
@@ -407,7 +586,7 @@ describe("email inbox operation recovery", () => {
       expect(text(tree)).toContain("Keep this older conversation open.");
       expect(elements(tree).some((node) => node.props.title === "Handoff")).toBe(true);
       expect(elements(tree).some((node) => node.props["data-empty"] === "true")).toBe(false);
-      expect(requests("/api/emails/threads/older/outcome")).toHaveLength(1);
+      expect(requests("/api/emails/threads/older/outcome")).toHaveLength(2);
       const latest = new URL(String(requests("/api/emails/threads?").at(-1)?.[0]), "http://local");
       expect(latest.searchParams.has("cursor")).toBe(false);
     },

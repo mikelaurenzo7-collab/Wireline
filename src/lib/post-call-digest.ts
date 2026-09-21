@@ -156,7 +156,7 @@ export type OpenAISipFinalizationContext = {
   leadId?: string | null;
   openingPlaybackConfirmed: boolean;
   terminalStateReady: boolean;
-  /** Sideband ended, but provider termination still needs durable confirmation. */
+  /** Provider termination still needs durable confirmation. */
   providerHangupRequired?: boolean;
 };
 
@@ -1308,6 +1308,9 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
       finalization: { state: "completed" },
     });
   }
+  // Pre-session failures can retain a hangup obligation after acceptance,
+  // but never became a conversation eligible for a digest or notifications.
+  if (finalization && ctx.endedReason === "pre-session-rejected") return;
   let core = progress.core?.result || null;
   if (!core) {
     core = await withPostCallExternalFence(ctx, () => runPostCallDigest(ctx));

@@ -226,14 +226,19 @@ export async function expireOpenCheckoutSessionsForDeletion(userId: string): Pro
 }
 
 export async function listCustomerSubscriptionsForDeletion(
-  snapshot: SubscriptionSnapshot,
+  snapshot: SubscriptionSnapshot | null,
   stripeClient: Pick<Stripe, "subscriptions"> = stripe,
+  verifiedCustomerIds: readonly string[] = [],
 ): Promise<Stripe.Subscription[]> {
   const byId = new Map<string, Stripe.Subscription>();
-  const customerId = snapshot.stripeCustomerId?.trim();
-  const primaryId = snapshot.stripeSubscriptionId?.trim();
+  const customerIds = new Set(
+    [snapshot?.stripeCustomerId, ...verifiedCustomerIds]
+      .map((id) => id?.trim())
+      .filter((id): id is string => Boolean(id)),
+  );
+  const primaryId = snapshot?.stripeSubscriptionId?.trim();
 
-  if (customerId) {
+  for (const customerId of customerIds) {
     try {
       // Auto-pagination matters for customers with separate add-on subscriptions.
       for await (const subscription of stripeClient.subscriptions.list({
@@ -298,7 +303,11 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
       error: getErrorMessage(error),
     });
   }
-  if (!snapshot?.stripeCustomerId && !snapshot?.stripeSubscriptionId) {
+  if (
+    !snapshot?.stripeCustomerId &&
+    !snapshot?.stripeSubscriptionId &&
+    checkoutClosure.customerIds.length === 0
+  ) {
     return {
       changed: false,
       confirmed: checkoutClosure.confirmed,
@@ -316,14 +325,21 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
     return {
       changed: false,
       confirmed: false,
-      billingPeriodEnd: snapshot.currentPeriodEnd,
+      billingPeriodEnd: snapshot?.currentPeriodEnd ?? null,
       checkoutSessionsExpired: checkoutClosure.expired,
     };
   }
 
   let subscriptions: Stripe.Subscription[];
   try {
-    subscriptions = await listCustomerSubscriptionsForDeletion(snapshot);
+    // Checkout closure verifies ownership of every recovered customer, including
+    // remote-only creations and a primary subscription's corrected customer.
+    // Use that inventory before claiming that all renewal relationships stopped.
+    subscriptions = await listCustomerSubscriptionsForDeletion(
+      snapshot,
+      stripe,
+      checkoutClosure.customerIds,
+    );
   } catch (error) {
     log.error("account deletion could not list every Stripe subscription", {
       userId,
@@ -332,7 +348,7 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
     return {
       changed: false,
       confirmed: false,
-      billingPeriodEnd: snapshot.currentPeriodEnd,
+      billingPeriodEnd: snapshot?.currentPeriodEnd ?? null,
       checkoutSessionsExpired: checkoutClosure.expired,
     };
   }
@@ -350,7 +366,7 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
       });
       changed = true;
       confirmed = confirmed && (updated.cancel_at_period_end || updated.status === "canceled");
-      await syncPrimarySubscription(userId, snapshot, updated);
+      if (snapshot) await syncPrimarySubscription(userId, snapshot, updated);
     } catch (error) {
       if (isMissingStripeResource(error)) continue;
       confirmed = false;
@@ -365,7 +381,7 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
   return {
     changed,
     confirmed,
-    billingPeriodEnd: snapshot.currentPeriodEnd,
+    billingPeriodEnd: snapshot?.currentPeriodEnd ?? null,
     checkoutSessionsExpired: checkoutClosure.expired,
   };
 }

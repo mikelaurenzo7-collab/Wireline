@@ -51,7 +51,10 @@ import {
   clearOAuthBridgeStateCookie,
 } from "../lib/oauth-bridge-cookie";
 import { oauthRateLimiter } from "../middleware/rate-limit-middleware";
-import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
+import {
+  OAUTH_UNVERIFIED_ACCOUNT_COLLISION,
+  sanitizeOAuthSignInError,
+} from "../lib/oauth-public-error";
 import { emailMaskForLog } from "../lib/twilio-webhook-privacy";
 import { createOAuthBridgeCode, isNewUserOAuthBridgeCode } from "../lib/oauth-bridge-code";
 import {
@@ -148,7 +151,7 @@ function legalConsentEvidenceFromState(
  * surfacing a unique-constraint error or leaving a new user without activation
  * settings and its default AI hard cap.
  */
-async function findOrCreateUserByEmail(
+export async function findOrCreateUserByEmail(
   email: string,
   fullName: string | null,
   legalConsentEvidence?: AccountLegalConsentEvidence,
@@ -208,12 +211,16 @@ async function findOrCreateUserByEmail(
       })
       .from(schema.users)
       .where(eq(schema.users.email, normalized))
-      .limit(1);
+      .limit(1)
+      .for("update");
     if (!existing) throw new Error("OAuth user conflict could not be resolved.");
+    // Mailbox ownership does not establish who configured an unverified account.
+    // Do not link it while earlier credentials or integrations may retain access.
+    if (!existing.emailVerifiedAt) throw new Error(OAUTH_UNVERIFIED_ACCOUNT_COLLISION);
 
-    const verifiedAt = existing.emailVerifiedAt ?? new Date();
+    const verifiedAt = existing.emailVerifiedAt;
     const resolvedName = existing.fullName || fullName || null;
-    if (!existing.emailVerifiedAt || (!existing.fullName && fullName)) {
+    if (!existing.fullName && fullName) {
       await tx
         .update(schema.users)
         .set({

@@ -8,6 +8,8 @@ vi.mock("react", async (original) => ({
   useState: () => [h.states[h.cursor++], vi.fn()],
   useEffect: vi.fn(),
   useMemo: (run: () => unknown) => run(),
+  useCallback: (callback: unknown) => callback,
+  useRef: (current: unknown) => ({ current }),
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: vi.fn() }));
 vi.mock("../src/components/atoms", () => ({

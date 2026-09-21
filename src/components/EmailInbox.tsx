@@ -318,7 +318,7 @@ export default function EmailInbox({
         } | null;
         if (!response.ok || !body?.thread)
           throw new Error(body?.error || "Could not load this conversation.");
-        if (!isCurrentRequest()) return;
+        if (!isCurrentRequest()) return false;
         setDetail({
           thread: normalizeThread(body.thread),
           messages: Array.isArray(body.messages) ? body.messages.map(normalizeMessage) : [],
@@ -327,11 +327,13 @@ export default function EmailInbox({
         // A fetched but superseded conversation was never shown to the user.
         // Only the accepted detail clears its badge, without holding up the body.
         void markThreadRead(threadId, operation, controller.signal);
+        return true;
       } catch (cause) {
-        if (!isCurrentRequest()) return;
+        if (!isCurrentRequest()) return false;
         setDetailError(
           cause instanceof Error ? cause.message : "Could not load this conversation.",
         );
+        return false;
       } finally {
         if (isCurrentRequest()) setDetailLoading(false);
         if (detailAbortRef.current === controller) detailAbortRef.current = null;
@@ -373,9 +375,12 @@ export default function EmailInbox({
   useEffect(() => {
     setReadStateError(false);
     setReadStateBusy(false);
+    setOutcomeBusy(null);
+    outcomeOperationRef.current += 1;
     if (!selectedId) {
       detailAbortRef.current?.abort();
       detailOperationRef.current += 1;
+      setDetailLoading(false);
       setDetail(null);
       setDetailError(null);
       setNotice(null);
@@ -387,13 +392,12 @@ export default function EmailInbox({
     setDetail(null);
     setDetailError(null);
     setNotice(null);
-    setOutcomeBusy(null);
-    outcomeOperationRef.current += 1;
     void loadThreadDetail(selectedId);
     return () => detailAbortRef.current?.abort();
   }, [loadThreadDetail, selectedId]);
 
   const syncInbox = async () => {
+    if (outcomeBusy || syncing || detailLoading) return;
     const requestedFilter = filterKey;
     const operation = ++syncOperationRef.current;
     const isCurrentRequest = () =>
@@ -412,6 +416,9 @@ export default function EmailInbox({
       if (!isCurrentRequest()) return;
       const loaded = await loadThreads();
       if (!isCurrentRequest() || !loaded) return;
+      const openThreadId = selectedIdRef.current;
+      if (openThreadId && !(await loadThreadDetail(openThreadId))) return;
+      if (!isCurrentRequest()) return;
       setNotice(body?.message || "Inbox refreshed.");
     } catch (cause) {
       if (!isCurrentRequest()) return;
@@ -455,7 +462,7 @@ export default function EmailInbox({
   };
 
   const updateOutcome = async (status: OutcomeStatus) => {
-    if (!selectedId || outcomeBusy) return;
+    if (!selectedId || outcomeBusy || syncing || detailLoading) return;
     const threadId = selectedId;
     const operation = ++outcomeOperationRef.current;
     setOutcomeBusy(status);
@@ -477,7 +484,7 @@ export default function EmailInbox({
   };
 
   const requestHandoff = async () => {
-    if (!selectedId || outcomeBusy) return;
+    if (!selectedId || outcomeBusy || syncing || detailLoading) return;
     const threadId = selectedId;
     const operation = ++outcomeOperationRef.current;
     setOutcomeBusy("handoff");
@@ -542,7 +549,9 @@ export default function EmailInbox({
             type="button"
             size="sm"
             variant="secondary"
-            disabled={Boolean(outcomeBusy) || selected.status === status}
+            disabled={
+              Boolean(outcomeBusy) || syncing || detailLoading || selected.status === status
+            }
             onClick={() => void updateOutcome(status)}
           >
             {outcomeBusy === status ? (
@@ -557,7 +566,7 @@ export default function EmailInbox({
           type="button"
           size="sm"
           variant="secondary"
-          disabled={Boolean(outcomeBusy) || Boolean(detail?.handoff)}
+          disabled={Boolean(outcomeBusy) || syncing || detailLoading || Boolean(detail?.handoff)}
           onClick={() => void requestHandoff()}
         >
           {outcomeBusy === "handoff" ? <Loader2 className="size-3.5 animate-spin" /> : null}
@@ -574,7 +583,7 @@ export default function EmailInbox({
       type="button"
       variant="secondary"
       size="sm"
-      disabled={loading || syncing}
+      disabled={loading || syncing || Boolean(outcomeBusy)}
       onClick={() => void (error.source === "sync" ? syncInbox() : loadThreads())}
     >
       Retry
@@ -605,7 +614,7 @@ export default function EmailInbox({
 
   return (
     <section className={frameClass} aria-label="Email inbox">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2.5 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2.5 sm:px-4">
         <SearchField
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -619,7 +628,7 @@ export default function EmailInbox({
           variant="secondary"
           size="sm"
           onClick={() => void syncInbox()}
-          disabled={syncing || loading || loadingMore}
+          disabled={syncing || loading || loadingMore || detailLoading || Boolean(outcomeBusy)}
           aria-label="Refresh email"
         >
           {syncing ? (
@@ -755,7 +764,7 @@ export default function EmailInbox({
               titleTone="ui"
               withHalo={false}
             />
-          ) : detailLoading ? (
+          ) : detailLoading && !detail ? (
             <div className="flex h-full min-h-0 flex-col">
               <div className="mx-4 mt-3">
                 <EmailBackButton onBack={() => setSelectedId(null)} />
@@ -796,16 +805,17 @@ export default function EmailInbox({
                 <div className="mb-2 lg:hidden">
                   <EmailBackButton onBack={() => setSelectedId(null)} />
                 </div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="wl-preserve-case truncate text-base font-semibold text-foreground">
-                      {selected.subject}
-                    </h2>
-                    <p className="wl-preserve-case mt-1 truncate text-xs text-muted-foreground">
-                      {selected.sender}
-                    </p>
-                  </div>
-                  <Badge variant={OUTCOME_META[selected.status].variant}>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1">
+                  <h2 className="wl-preserve-case col-span-2 min-w-0 text-base font-semibold text-foreground [overflow-wrap:anywhere] sm:col-span-1">
+                    {selected.subject}
+                  </h2>
+                  <p className="wl-preserve-case row-start-2 min-w-0 truncate text-xs text-muted-foreground">
+                    {selected.sender}
+                  </p>
+                  <Badge
+                    variant={OUTCOME_META[selected.status].variant}
+                    className="col-start-2 row-start-2 sm:row-span-2 sm:row-start-1"
+                  >
                     {OUTCOME_META[selected.status].label}
                   </Badge>
                 </div>
@@ -816,6 +826,17 @@ export default function EmailInbox({
                   tone="destructive"
                   title="Conversation Needs Attention"
                   className="m-3 sm:m-4"
+                  action={
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={detailLoading}
+                      onClick={() => void loadThreadDetail(selectedId)}
+                    >
+                      Retry Conversation
+                    </Button>
+                  }
                 >
                   {detailError}
                 </StatusNotice>
@@ -842,7 +863,7 @@ export default function EmailInbox({
                 </StatusNotice>
               ) : null}
 
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5">
                 {detail?.messages.length ? (
                   <div className="space-y-3">
                     {detail.messages.map((message) => {
@@ -851,7 +872,7 @@ export default function EmailInbox({
                         <ConversationMessage
                           key={message.id}
                           author={assistant ? "assistant" : "customer"}
-                          label={assistant ? "Bot" : selected.sender}
+                          label={assistant ? "Bot" : "Customer"}
                           timestamp={formatTimestamp(message.createdAt)}
                           channel="email"
                         >
