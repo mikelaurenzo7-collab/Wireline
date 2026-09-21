@@ -289,7 +289,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
               const active = call.id === selectedId;
               const meta = [call.agent_name, formatDuration(call.duration_seconds)]
                 .filter(Boolean)
-                .join(" Â· ");
+                .join(" · ");
               return (
                 <li key={call.id}>
                   <button
@@ -356,7 +356,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             formatDuration(selected.duration_seconds),
           ]
             .filter(Boolean)
-            .join(" Â· ")}
+            .join(" · ")}
         </p>
       </header>
 

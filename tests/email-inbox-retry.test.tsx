@@ -93,12 +93,14 @@ type Props = {
   tone?: string;
   "aria-label"?: string;
   "aria-pressed"?: boolean;
+  "data-empty"?: string;
   onClick?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
 };
 type Element = ReactElement<Props>;
 let tree: ReactNode;
 let agentId: string | null;
+let accountId: string | null;
 let listResponses: Array<() => Promise<Response>>;
 let syncResponses: Array<() => Promise<Response>>;
 let detailResponses: Array<() => Promise<Response>>;
@@ -121,7 +123,7 @@ function render() {
     h.cursor = 0;
     h.effects = [];
     h.layoutEffects = [];
-    tree = EmailInbox({ embedded: true, agentId });
+    tree = EmailInbox({ embedded: true, agentId, accountId });
     h.layoutEffects.forEach((run) => run());
     h.effects.forEach((run) => run());
   } while (h.dirty);
@@ -169,6 +171,7 @@ beforeEach(() => {
   h.dirty = false;
   h.fetch.mockReset();
   agentId = null;
+  accountId = null;
   threads = [];
   listResponses = [];
   syncResponses = [];
@@ -272,7 +275,8 @@ describe("email inbox operation recovery", () => {
     expect(successes()).toHaveLength(0);
     const latest = new URL(String(requests("/api/emails/threads").at(-1)?.[0]), "http://local");
     expect(latest.searchParams.get("agent_id")).toBe("bot-b");
-    expect(latest.searchParams.get("offset")).toBe("0");
+    expect(latest.searchParams.has("cursor")).toBe(false);
+    expect(latest.searchParams.has("offset")).toBe(false);
   });
 
   it("does not announce refresh success when the refreshed conversation list fails to load", async () => {
@@ -322,7 +326,7 @@ describe("email inbox operation recovery", () => {
           response({
             threads: [{ id: "first", subject: "Latest" }],
             hasMore: true,
-            nextOffset: 100,
+            nextCursor: "older-page",
           }),
         ),
       () =>
@@ -330,7 +334,7 @@ describe("email inbox operation recovery", () => {
           response({
             threads: [{ id: "older", subject: "Old appointment" }],
             hasMore: false,
-            nextOffset: 101,
+            nextCursor: null,
           }),
         ),
     ];
@@ -346,11 +350,103 @@ describe("email inbox operation recovery", () => {
     await settle();
     expect(text(tree)).toContain("Old appointment");
     const latest = new URL(String(requests("/api/emails/threads").at(-1)?.[0]), "http://local");
-    expect(latest.searchParams.get("offset")).toBe("100");
+    expect(latest.searchParams.get("cursor")).toBe("older-page");
+    expect(latest.searchParams.has("offset")).toBe(false);
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Load More Email"),
     ).toBe(false);
   });
+
+  it.each([false, true])(
+    "keeps the selected older conversation through a first-page refresh (empty page: %s)",
+    async (emptyPage) => {
+      const older = { id: "older", subject: "Older appointment" };
+      listResponses = [
+        () =>
+          Promise.resolve(
+            response({
+              threads: [{ id: "first", subject: "Latest" }],
+              hasMore: true,
+              nextCursor: "older-page",
+            }),
+          ),
+        () => Promise.resolve(response({ threads: [older], hasMore: false })),
+        () =>
+          Promise.resolve(
+            response({
+              threads: emptyPage ? [] : [{ id: "new", subject: "New arrival" }],
+              hasMore: !emptyPage,
+              nextCursor: emptyPage ? null : "refreshed-page",
+            }),
+          ),
+      ];
+      detailResponses = [
+        () =>
+          Promise.resolve(
+            response({
+              thread: older,
+              messages: [{ id: "message-older", content: "Keep this older conversation open." }],
+              handoff: { id: "handoff-older", status: "pending" },
+            }),
+          ),
+      ];
+      syncResponses = [() => Promise.resolve(response({ message: "Inbox refreshed." }))];
+      await settle();
+      button("Load More Email").props.onClick?.();
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && text(node).includes("Older appointment"))
+        ?.props.onClick?.();
+      await settle();
+      expect(text(tree)).toContain("Keep this older conversation open.");
+
+      button("Refresh email").props.onClick?.();
+      await settle();
+
+      expect(text(tree)).toContain("Older appointment");
+      expect(text(tree)).toContain("Keep this older conversation open.");
+      expect(elements(tree).some((node) => node.props.title === "Handoff")).toBe(true);
+      expect(elements(tree).some((node) => node.props["data-empty"] === "true")).toBe(false);
+      expect(requests("/api/emails/threads/older/outcome")).toHaveLength(1);
+      const latest = new URL(String(requests("/api/emails/threads?").at(-1)?.[0]), "http://local");
+      expect(latest.searchParams.has("cursor")).toBe(false);
+    },
+  );
+
+  it.each(["Bot", "mailbox"])(
+    "clears selected details when the %s scope changes",
+    async (scope) => {
+      agentId = "bot-a";
+      accountId = "mailbox-a";
+      threads = [{ id: "old", subject: "Previous scope" }];
+      detailResponses = [
+        () =>
+          Promise.resolve(
+            response({
+              thread: threads[0],
+              messages: [{ id: "old-message", content: "Previous scope body" }],
+            }),
+          ),
+      ];
+      await settle();
+      elements(tree)
+        .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+        ?.props.onClick?.();
+      await settle();
+      expect(text(tree)).toContain("Previous scope body");
+      threads = [{ id: "new", subject: "Current scope" }];
+      if (scope === "Bot") agentId = "bot-b";
+      else accountId = "mailbox-b";
+
+      await settle();
+
+      expect(text(tree)).not.toContain("Previous scope body");
+      expect(text(tree)).toContain("Current scope");
+      expect(elements(tree).some((node) => node.props.title === "Select a Conversation")).toBe(
+        true,
+      );
+    },
+  );
 
   it("preserves loaded conversations and retries the failed older page", async () => {
     listResponses = [
@@ -359,7 +455,7 @@ describe("email inbox operation recovery", () => {
           response({
             threads: [{ id: "first", subject: "Latest" }],
             hasMore: true,
-            nextOffset: 100,
+            nextCursor: "older-page",
           }),
         ),
       () => Promise.resolve(response({ error: "Older mail unavailable" }, 503)),
@@ -368,7 +464,7 @@ describe("email inbox operation recovery", () => {
           response({
             threads: [{ id: "older", subject: "Older" }],
             hasMore: false,
-            nextOffset: 101,
+            nextCursor: null,
           }),
         ),
     ];
@@ -380,6 +476,11 @@ describe("email inbox operation recovery", () => {
     await settle();
     expect(text(tree)).toContain("Older");
     expect(requests("/api/emails/sync")).toHaveLength(0);
+    const pageRequests = requests("/api/emails/threads?").slice(1);
+    expect(pageRequests).toHaveLength(2);
+    expect(
+      pageRequests.map(([url]) => new URL(String(url), "http://local").searchParams.get("cursor")),
+    ).toEqual(["older-page", "older-page"]);
   });
 
   it("discards an older page when the Bot filter changes", async () => {
@@ -391,7 +492,7 @@ describe("email inbox operation recovery", () => {
           response({
             threads: [{ id: "first", subject: "Bot A" }],
             hasMore: true,
-            nextOffset: 100,
+            nextCursor: "older-page",
           }),
         ),
       () => pending.promise,
@@ -410,6 +511,37 @@ describe("email inbox operation recovery", () => {
     expect(text(tree)).toContain("Bot B");
     expect(text(tree)).not.toContain("Stale older email");
   });
+
+  it.each([null, "older-page"])(
+    "preserves the current page when the older response cannot advance its cursor (%s)",
+    async (nextCursor) => {
+      listResponses = [
+        () =>
+          Promise.resolve(
+            response({
+              threads: [{ id: "first", subject: "Latest" }],
+              hasMore: true,
+              nextCursor: "older-page",
+            }),
+          ),
+        () =>
+          Promise.resolve(
+            response({
+              threads: [{ id: "invalid", subject: "Unconfirmed page" }],
+              hasMore: true,
+              nextCursor,
+            }),
+          ),
+      ];
+      await settle();
+      button("Load More Email").props.onClick?.();
+      await settle();
+
+      expect(text(tree)).toContain("Latest");
+      expect(text(tree)).not.toContain("Unconfirmed page");
+      expect(button("Retry Older Email")).toBeDefined();
+    },
+  );
 
   it("marks only the accepted conversation read without delaying its body", async () => {
     const oldDetail = deferred();

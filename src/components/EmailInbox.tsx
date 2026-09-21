@@ -33,7 +33,7 @@ type ThreadDetail = {
 type ThreadsResponse = {
   threads?: Array<Record<string, unknown>>;
   hasMore?: boolean;
-  nextOffset?: number;
+  nextCursor?: string | null;
   error?: string;
 };
 
@@ -149,7 +149,7 @@ export default function EmailInbox({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [nextOffset, setNextOffset] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -191,7 +191,7 @@ export default function EmailInbox({
     setLoading(true);
     setLoadingMore(false);
     setHasMore(false);
-    setNextOffset(0);
+    setNextCursor(null);
     setLoadMoreError(null);
     setDetailLoading(false);
     setSyncing(false);
@@ -202,7 +202,7 @@ export default function EmailInbox({
   }, [selectedId]);
 
   const loadThreads = useCallback(
-    async (offset = 0) => {
+    async (cursor: string | null = null) => {
       if (filterKeyRef.current !== filterKey) return false;
       threadListAbortRef.current?.abort();
       const controller = new AbortController();
@@ -212,7 +212,7 @@ export default function EmailInbox({
         !controller.signal.aborted &&
         threadListOperationRef.current === operation &&
         filterKeyRef.current === filterKey;
-      const append = offset > 0;
+      const append = cursor !== null;
       setLoading(!append);
       setLoadingMore(append);
       if (!append) setError(null);
@@ -220,8 +220,8 @@ export default function EmailInbox({
       try {
         const queryParams = new URLSearchParams({
           limit: String(EMAIL_PAGE_SIZE),
-          offset: String(offset),
         });
+        if (cursor) queryParams.set("cursor", cursor);
         if (agentId) queryParams.set("agent_id", agentId);
         if (accountId) queryParams.set("account_id", accountId);
         const suffix = queryParams.toString();
@@ -232,24 +232,25 @@ export default function EmailInbox({
         if (!response.ok) throw new Error(body?.error || "Could not load email conversations.");
         if (!isCurrentRequest()) return false;
         const nextThreads = Array.isArray(body?.threads) ? body.threads.map(normalizeThread) : [];
+        const pageCursor =
+          typeof body?.nextCursor === "string" && body.nextCursor.length > 0
+            ? body.nextCursor
+            : null;
+        if (
+          body?.hasMore === true &&
+          (!pageCursor || pageCursor === cursor || !nextThreads.length)
+        ) {
+          throw new Error("Could not load email conversations.");
+        }
+        // Refresh replaces only the list page. A selected conversation may be
+        // older than that page; scope changes clear it in the layout effect.
         setThreads((current) => {
           if (!append) return nextThreads;
           const existing = new Set(current.map((thread) => thread.id));
           return [...current, ...nextThreads.filter((thread) => !existing.has(thread.id))];
         });
-        setHasMore(body?.hasMore === true && nextThreads.length > 0);
-        setNextOffset(
-          typeof body?.nextOffset === "number" &&
-            Number.isSafeInteger(body.nextOffset) &&
-            body.nextOffset > offset
-            ? body.nextOffset
-            : offset + nextThreads.length,
-        );
-        if (!append) {
-          setSelectedId((current) =>
-            current && nextThreads.some((thread) => thread.id === current) ? current : null,
-          );
-        }
+        setHasMore(body?.hasMore === true);
+        setNextCursor(body?.hasMore === true ? pageCursor : null);
         return true;
       } catch (cause) {
         if (!isCurrentRequest()) return false;
@@ -512,7 +513,7 @@ export default function EmailInbox({
 
   const selected = detail?.thread ?? threads.find((thread) => thread.id === selectedId) ?? null;
   const hasSearch = query.trim().length > 0;
-  const listOwnsOnlyState = visibleThreads.length === 0;
+  const listOwnsOnlyState = visibleThreads.length === 0 && !selectedId;
   const frameClass = embedded
     ? "flex min-h-0 flex-1 flex-col overflow-hidden"
     : "wl-paper flex min-h-[620px] flex-1 flex-col overflow-hidden";
@@ -594,7 +595,7 @@ export default function EmailInbox({
           size="sm"
           className="mt-1 w-full justify-center"
           disabled={loading || loadingMore || syncing}
-          onClick={() => void loadThreads(nextOffset)}
+          onClick={() => void loadThreads(nextCursor)}
         >
           {loadingMore ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
           {loadingMore ? "Loading More…" : loadMoreError ? "Retry Older Email" : "Load More Email"}

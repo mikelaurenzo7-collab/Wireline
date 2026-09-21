@@ -3,7 +3,7 @@ import { Router, Response } from "express";
 import { AppError, rethrowIfAppError } from "../lib/api-error";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, sql, getTableColumns } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { validateBody, emailThreadsReadStateSchema } from "../lib/api-validation";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
@@ -12,6 +12,60 @@ import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 
 const router = Router();
+
+type EmailHistoryCursor = {
+  v: 1;
+  userId: string;
+  agentId: string;
+  accountId: string;
+  asOf: string;
+  maxMessageId: string;
+  lastActivity: string;
+  lastId: string;
+};
+const HISTORY_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+const HISTORY_UUID = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
+
+function validHistoryTimestamp(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    HISTORY_TIMESTAMP.test(value) &&
+    !value.startsWith("0000-") &&
+    Number.isFinite(Date.parse(value)) &&
+    new Date(value).toISOString() === `${value.slice(0, 23)}Z`
+  );
+}
+
+function readEmailHistoryCursor(
+  value: unknown,
+  scope: Pick<EmailHistoryCursor, "userId" | "agentId" | "accountId">,
+): EmailHistoryCursor | null {
+  if (value === undefined) return null;
+  try {
+    if (typeof value !== "string" || value.length > 1_024 || !/^[A-Za-z0-9_-]+$/.test(value))
+      throw new Error();
+    const cursor = JSON.parse(
+      Buffer.from(value, "base64url").toString("utf8"),
+    ) as EmailHistoryCursor;
+    if (
+      cursor.v !== 1 ||
+      cursor.userId !== scope.userId ||
+      cursor.agentId !== scope.agentId ||
+      cursor.accountId !== scope.accountId ||
+      !validHistoryTimestamp(cursor.asOf) ||
+      !validHistoryTimestamp(cursor.lastActivity) ||
+      typeof cursor.lastId !== "string" ||
+      !HISTORY_UUID.test(cursor.lastId) ||
+      typeof cursor.maxMessageId !== "string" ||
+      !/^\d{1,19}$/.test(cursor.maxMessageId) ||
+      BigInt(cursor.maxMessageId) > 9_223_372_036_854_775_807n
+    )
+      throw new Error();
+    return cursor;
+  } catch {
+    throw AppError.fromHttpStatus(400, "Email history cursor is invalid. Refresh the inbox.");
+  }
+}
 
 const emailAccountRateLimiter = createIpRateLimiter({
   bucket: "api:email-accounts",
@@ -98,12 +152,14 @@ router.get(
       const requestedAccountId =
         typeof req.query.account_id === "string" ? req.query.account_id.trim() : "";
       const limitRaw = Number.parseInt(String(req.query.limit ?? ""), 10);
-      const offsetRaw = Number.parseInt(String(req.query.offset ?? ""), 10);
       const limit = Math.min(100, Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 100));
-      const offset = Number.isSafeInteger(offsetRaw)
-        ? Math.min(2_147_483_647, Math.max(0, offsetRaw))
-        : 0;
-      const emptyPage = { threads: [], hasMore: false, nextOffset: offset };
+      const scope = {
+        userId: req.user.id,
+        agentId: requestedAgentId,
+        accountId: requestedAccountId,
+      };
+      const cursor = readEmailHistoryCursor(req.query.cursor, scope);
+      const emptyPage = { threads: [], hasMore: false, nextCursor: null };
       let accountIds: string[] | null = null;
 
       if (requestedAccountId) {
@@ -143,21 +199,73 @@ router.get(
           )
         : eq(schema.emailThreads.userId, req.user.id);
 
+      // Freeze the message population as well as its event-time cutoff: mailbox
+      // sync can insert old provider timestamps after this history traversal starts.
+      // The watermark excludes those imports and new messages from page ordering.
+      // This is a bounded event view, not an exported MVCC snapshot: a transaction
+      // that allocated a lower message ID but commits later can still become visible.
+      const snapshot =
+        cursor ??
+        (
+          await drizzle
+            .select({
+              asOf: sql<string>`to_char(statement_timestamp() at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+              maxMessageId: sql<string>`coalesce(max(${schema.emailMessages.id}), 0)::text`,
+            })
+            .from(schema.emailMessages)
+            .where(eq(schema.emailMessages.userId, req.user.id))
+        )[0];
+      if (!snapshot) throw new Error("Email history snapshot unavailable");
+      const activity = sql`coalesce((
+        select max(${schema.emailMessages.createdAt}) from ${schema.emailMessages}
+        where ${schema.emailMessages.userId} = ${req.user.id}
+          and ${schema.emailMessages.threadId} = ${schema.emailThreads.id}
+          and ${schema.emailMessages.id} <= ${snapshot.maxMessageId}::bigint
+          and ${schema.emailMessages.createdAt} <= ${snapshot.asOf}::timestamptz
+      ), ${schema.emailThreads.createdAt}, 'epoch'::timestamptz)`;
       const threads = await drizzle
-        .select()
+        .select({
+          ...getTableColumns(schema.emailThreads),
+          snapshotActivity: sql<string>`to_char((${activity}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+        })
         .from(schema.emailThreads)
-        .where(where)
-        .orderBy(desc(schema.emailThreads.lastMessageAt), desc(schema.emailThreads.id))
-        .limit(limit + 1)
-        .offset(offset);
+        .where(
+          and(
+            where,
+            sql`coalesce(${schema.emailThreads.createdAt}, 'epoch'::timestamptz) <= ${snapshot.asOf}::timestamptz`,
+            cursor
+              ? sql`(${activity}, ${schema.emailThreads.id}) < (${cursor.lastActivity}::timestamptz, ${cursor.lastId}::uuid)`
+              : undefined,
+          ),
+        )
+        .orderBy(desc(activity), desc(schema.emailThreads.id))
+        .limit(limit + 1);
 
       const page = (threads || []).slice(0, limit);
+      const hasMore = threads.length > limit;
+      const last = page.at(-1);
+      const nextCursor =
+        hasMore && last
+          ? Buffer.from(
+              JSON.stringify({
+                v: 1,
+                ...scope,
+                asOf: snapshot.asOf,
+                maxMessageId: snapshot.maxMessageId,
+                lastActivity: last.snapshotActivity,
+                lastId: last.id,
+              } satisfies EmailHistoryCursor),
+            ).toString("base64url")
+          : null;
       res.json({
-        threads: mapObjectToSnake(page),
-        hasMore: threads.length > limit,
-        nextOffset: offset + page.length,
+        threads: mapObjectToSnake(
+          page.map(({ snapshotActivity: _snapshotActivity, ...thread }) => thread),
+        ),
+        hasMore,
+        nextCursor,
       });
     } catch (e: any) {
+      rethrowIfAppError(e);
       log.error("Failed to load email threads", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load email threads");
     }
