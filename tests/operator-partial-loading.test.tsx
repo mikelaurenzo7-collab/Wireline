@@ -306,6 +306,28 @@ async function approvalCard(payload: Record<string, unknown>, taskType = "send_e
 }
 
 describe("approval preview integrity", () => {
+  it("locks the visible draft until the approval request finishes", async () => {
+    const card = await approvalCard({ subject: "Original", body: "Original message" });
+    let finish!: (response: Response) => void;
+    h.fetch.mockImplementation((_url: string, init: RequestInit) =>
+      init.method === "PATCH"
+        ? Promise.resolve(json({ success: true }))
+        : new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+    );
+    card.click("Edit");
+    card.click("Approve");
+    await flush();
+    const fields = () =>
+      elements(card.draw()).filter((node) => node.type === "input" || node.type === "textarea");
+    expect(fields()).toHaveLength(3);
+    expect(fields().every((node) => (node.props as { disabled?: boolean }).disabled)).toBe(true);
+    finish(new Response(JSON.stringify({ error: "Review required" }), { status: 422 }));
+    await flush();
+    expect(fields().every((node) => !(node.props as { disabled?: boolean }).disabled)).toBe(true);
+  });
+
   it.each([false, true])(
     "uses a refreshed server message in the preview and editor (local save: %s)",
     async (locallySaved) => {

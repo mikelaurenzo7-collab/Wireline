@@ -369,6 +369,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                 <input
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   value={editSubject}
+                  disabled={busy}
                   onChange={(event) => {
                     setEditSubject(event.target.value);
                     setError(null);
@@ -383,6 +384,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                 rows={3}
                 value={editBody}
+                disabled={busy}
                 onChange={(event) => {
                   setEditBody(event.target.value);
                   setError(null);
@@ -398,6 +400,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
                   rows={2}
                   value={editNotes}
+                  disabled={busy}
                   onChange={(event) => setEditNotes(event.target.value)}
                   placeholder="Add context…"
                 />
