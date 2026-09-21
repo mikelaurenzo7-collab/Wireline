@@ -21,6 +21,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useApiError } from "../hooks/useApiError";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
+import { Textarea } from "./atoms/Textarea";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { EmptyState } from "./ui/EmptyState";
 import ClientRouteLoading from "./layout/ClientRouteLoading";
@@ -174,7 +175,12 @@ export default function Cadences() {
   const updateStep = (i: number, patch: Partial<Step>) =>
     setDraftSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
 
+  const closeBuilder = () => {
+    if (!saving) setShowBuilder(false);
+  };
+
   const save = async () => {
+    if (saving) return;
     if (!draftName.trim()) {
       handleCatchError(new Error("Give your sequence a name first."), "Name required");
       return;
@@ -505,7 +511,8 @@ export default function Cadences() {
                 variant="ghost"
                 size="icon"
                 disableAnimations
-                onClick={() => setShowBuilder(false)}
+                onClick={closeBuilder}
+                disabled={saving}
                 aria-label="Close cadence builder"
                 className="w-8 h-8 rounded-md text-muted"
               >
@@ -520,6 +527,8 @@ export default function Cadences() {
                 </label>
                 <Input
                   id={`${builderId}-name`}
+                  autoFocus
+                  disabled={saving}
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   placeholder="e.g. Standard 3-touch"
@@ -535,6 +544,7 @@ export default function Cadences() {
                 </label>
                 <Input
                   id={`${builderId}-description`}
+                  disabled={saving}
                   value={draftDescription}
                   onChange={(e) => setDraftDescription(e.target.value)}
                   placeholder="One-line summary"
@@ -557,10 +567,11 @@ export default function Cadences() {
                   >
                     {i + 1}
                   </span>
-                  <div className="col-span-2 row-start-2 min-w-0 flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div className="col-span-2 row-start-2 min-w-0 flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div className="relative">
                       <Select
                         value={s.type}
+                        disabled={saving}
                         onValueChange={(v) => updateStep(i, { type: v as StepType })}
                       >
                         <SelectTrigger
@@ -582,6 +593,7 @@ export default function Cadences() {
                         id={`${builderId}-step-${i}-delay`}
                         aria-label={`Step ${i + 1} Delay (Hours)`}
                         type="number"
+                        disabled={saving}
                         inputMode="numeric"
                         min={0}
                         value={s.delayHours}
@@ -593,16 +605,18 @@ export default function Cadences() {
                       </label>
                     </div>
                     {s.type !== "call" && (
-                      <Input
+                      <Textarea
                         aria-label={`Step ${i + 1} ${s.type === "sms" ? "Text Message" : "Email Message"}`}
+                        disabled={saving}
+                        rows={s.type === "email" ? 4 : 3}
                         value={s.template || ""}
                         onChange={(e) => updateStep(i, { template: e.target.value })}
                         placeholder={
                           s.type === "sms"
                             ? "Hi {{name}}, ..."
-                            : "Subject + body, vars: {{name}}, {{email}}"
+                            : "Email message. Use {{name}} or {{email}}."
                         }
-                        className="px-2 py-1.5 rounded-md bg-black/[0.03] border border-input text-foreground text-[length:var(--wireline-typography-overline-size)]"
+                        className="col-span-full rounded-md bg-black/[0.03] border-input leading-relaxed"
                       />
                     )}
                   </div>
@@ -612,6 +626,7 @@ export default function Cadences() {
                     size="icon"
                     disableAnimations
                     onClick={() => removeStep(i)}
+                    disabled={saving}
                     title="Remove step"
                     aria-label="Remove step"
                     className="col-start-2 row-start-1 w-8 h-8 shrink-0 text-muted hover:text-rose-500 hover:bg-rose-500/10"
@@ -626,6 +641,7 @@ export default function Cadences() {
                 size="sm"
                 disableAnimations
                 onClick={addStep}
+                disabled={saving}
                 className="h-auto px-0 wl-label text-muted hover:text-brand"
               >
                 <Plus className="w-3 h-3" />
@@ -639,7 +655,8 @@ export default function Cadences() {
                 variant="ghost"
                 size="sm"
                 disableAnimations
-                onClick={() => setShowBuilder(false)}
+                onClick={closeBuilder}
+                disabled={saving}
                 className="text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.28em] text-muted"
               >
                 Cancel
@@ -657,7 +674,7 @@ export default function Cadences() {
                 ) : (
                   <Zap className="w-3.5 h-3.5" />
                 )}
-                Save sequence
+                {saving ? "Saving…" : "Save Sequence"}
               </ShadButton>
             </div>
           </motion.div>

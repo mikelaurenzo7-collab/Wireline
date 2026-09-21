@@ -48,6 +48,11 @@ type Props = {
   onClick?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
   placeholder?: string;
+  id?: string;
+  disabled?: boolean;
+  value?: string;
+  "aria-label"?: string;
+  onValueChange?: (value: string) => void;
   task?: { id: string };
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
@@ -193,6 +198,71 @@ describe("sequence load integrity", () => {
     await flush();
     expect(textOf(render())).toContain("Current Sequence");
     expect(textOf(render())).not.toContain("Old Sequence");
+  });
+});
+
+describe("sequence draft continuity", () => {
+  it("preserves the submitted draft through a failed save and allows a successful retry", async () => {
+    let finishSave!: (response: Response) => void;
+    const pendingSave = new Promise<Response>((resolve) => {
+      finishSave = resolve;
+    });
+    let attempts = 0;
+    h.fetch.mockImplementation((url: string, init?: RequestInit) => {
+      if (init?.method === "POST") {
+        attempts++;
+        return attempts === 1 ? pendingSave : Promise.resolve(json({ cadence: sequence() }));
+      }
+      return Promise.resolve(
+        json(url === "/api/cadences" ? { cadences: [sequence()] } : { runs: [] }),
+      );
+    });
+    const button = (label: string) =>
+      elements(render()).find(
+        (node) => node.type === "button" && textOf(node.props.children).trim() === label,
+      )!;
+    render();
+    h.effects[0]();
+    await flush();
+    button("Create sequence").props.onClick!();
+    elements(render()).find((node) => node.props.id === "builder-name")!.props.onChange!({
+      target: { value: "Consultation Follow-Up" },
+    });
+    elements(render()).find((node) => node.props.onValueChange)!.props.onValueChange!("email");
+    const message = "Hi {{name}},\n\nThanks for your time.\nWhen would you like to meet?";
+    const messageField = () =>
+      elements(render()).find((node) => node.props["aria-label"] === "Step 1 Email Message")!;
+    messageField().props.onChange!({ target: { value: message } });
+
+    button("Save Sequence").props.onClick!();
+    expect(messageField().props.disabled).toBe(true);
+    expect(button("Cancel").props.disabled).toBe(true);
+    // Close and repeated save actions cannot discard or duplicate the draft
+    // while its first request is unresolved.
+    button("Cancel").props.onClick!();
+    elements(render()).find((node) => node.props["aria-label"] === "Close cadence builder")!.props
+      .onClick!();
+    button("Saving…").props.onClick!();
+    expect(attempts).toBe(1);
+    expect(messageField().props.value).toBe(message);
+
+    finishSave(new Response(JSON.stringify({ error: "Try again" }), { status: 503 }));
+    await flush();
+    expect(messageField().props.disabled).toBe(false);
+    expect(messageField().props.value).toBe(message);
+    expect(elements(render()).find((node) => node.props.id === "builder-name")!.props.value).toBe(
+      "Consultation Follow-Up",
+    );
+    button("Save Sequence").props.onClick!();
+    await flush();
+    const posts = h.fetch.mock.calls.filter(([, init]) => init?.method === "POST");
+    expect(posts).toHaveLength(2);
+    for (const [, init] of posts) {
+      expect(JSON.parse(init.body).steps).toEqual([
+        { type: "email", delayHours: 0, template: message },
+      ]);
+    }
+    expect(elements(render()).some((node) => node.props.id === "builder-name")).toBe(false);
   });
 });
 

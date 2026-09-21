@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus, Users, X } from "lucide-react";
 import { Link } from "react-router";
 
-import { Badge, Button, Input, NativeSelect } from "../components/atoms";
+import { Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
 import { WorkspacePageFrame, WorkspacePageIntro } from "../components/layout/WorkspacePageFrame";
 import SettingsTabs from "../components/settings/SettingsTabs";
@@ -222,7 +222,10 @@ export default function TeamSettings() {
                   className="flex w-full min-w-0 max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-border bg-background px-4 py-4"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-xs font-semibold text-foreground"
+                    >
                       {memberInitial(member.email)}
                     </span>
                     <div className="min-w-0 flex-1 overflow-hidden">
@@ -233,18 +236,11 @@ export default function TeamSettings() {
                         {member.email || "Pending invite"}
                       </p>
                       <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
-                        {member.email === user?.email ? "You" : "Workspace member"}
+                        {formatRole(member.role)}
+                        {member.email === user?.email ? " · You" : ""}
                       </p>
                     </div>
                   </div>
-                  <Badge
-                    className="shrink-0"
-                    // A role is identity, not a state — green is reserved for
-                    // success/live signals.
-                    variant={member.role === "owner" ? "default" : "outline"}
-                  >
-                    {formatRole(member.role)}
-                  </Badge>
                 </div>
               ))}
             </div>
@@ -311,6 +307,7 @@ export default function TeamSettings() {
                   <Input
                     type="email"
                     autoFocus
+                    disabled={inviting}
                     required
                     placeholder="colleague@company.com"
                     value={inviteEmail}
@@ -320,6 +317,7 @@ export default function TeamSettings() {
                 <FormField label="Access level">
                   <NativeSelect
                     value={inviteRole}
+                    disabled={inviting}
                     onChange={(event) => setInviteRole(event.target.value as InviteRole)}
                   >
                     {inviteRoleOptions.map((role) => (

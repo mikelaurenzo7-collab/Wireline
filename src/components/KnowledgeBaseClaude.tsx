@@ -654,6 +654,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       </label>
                       <textarea
                         id={`knowledge-entry-${rowId}`}
+                        autoFocus
                         value={knowledgeDraft}
                         onChange={(event) => setKnowledgeDraft(event.target.value)}
                         maxLength={10_000}
