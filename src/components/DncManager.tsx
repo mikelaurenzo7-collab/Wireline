@@ -11,7 +11,6 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
-  FileText,
   X,
   Phone,
 } from "lucide-react";
@@ -337,25 +336,19 @@ export default function DncManager() {
           }
         />
         {/* Stat bar */}
-        <div className="grid shrink-0 grid-cols-2 gap-2">
+        <dl className="grid shrink-0 grid-cols-2 gap-x-5 gap-y-3 py-2 lg:grid-cols-4">
           {[
-            { label: "Total Blocked", value: stats.total, icon: Shield },
-            { label: "Manual Entries", value: stats.manual, icon: Plus },
-            { label: "CSV Imported", value: stats.csv, icon: FileText },
-            { label: "Opt-Out", value: stats.optOut, icon: CheckCircle2 },
-          ].map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="relative overflow-hidden rounded-md border border-border wl-panel p-3"
-            >
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <p className="wl-label-muted min-w-0 whitespace-nowrap text-[10px]">{label}</p>
-                <Icon className="h-3.5 w-3.5 text-brand" />
-              </div>
-              <p className="font-display text-2xl leading-none text-foreground">{value}</p>
+            { label: "Total Blocked", value: stats.total },
+            { label: "Manual Entries", value: stats.manual },
+            { label: "CSV Imported", value: stats.csv },
+            { label: "Opt-Out", value: stats.optOut },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex items-baseline justify-between gap-2">
+              <dt className="text-xs text-muted-foreground">{label}</dt>
+              <dd className="text-sm font-semibold tabular-nums text-foreground">{value}</dd>
             </div>
           ))}
-        </div>
+        </dl>
 
         {/* Main list */}
         <div className="min-h-0 flex-1">

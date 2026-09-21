@@ -112,7 +112,7 @@ function ruleBody(content: string | undefined, headline: string): string | null 
   return text;
 }
 
-function entrySubtitle(content: string | undefined, source: string | undefined): string {
+function entrySubtitle(content: string | undefined, source: string | undefined): string | null {
   const raw = (content || "").trim();
   if (!raw) return "Empty entry";
   const compact = raw.replace(/\s+/g, " ");
@@ -125,8 +125,7 @@ function entrySubtitle(content: string | undefined, source: string | undefined):
   if (/^\s/.test(remainder) && remainder.trim()) {
     return boundedPreview(remainder.trim(), 90).label;
   }
-  const length = compact.length;
-  return `${length} char${length === 1 ? "" : "s"}`;
+  return null;
 }
 
 function knowledgeRowId(entry: ConfigKnowledgeRow): string | null {
@@ -617,7 +616,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
       <section
         className="flex flex-col gap-2"
-        aria-label="Ingested knowledge"
+        aria-label="Saved knowledge"
         aria-busy={loading ? "true" : undefined}
       >
         {loading ? (
@@ -630,15 +629,14 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
           <>
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-base font-semibold leading-6 text-foreground">
-                Ingested Knowledge
-              </h2>
+              <h2 className="text-base font-semibold leading-6 text-foreground">Saved Knowledge</h2>
             </div>
             {(showAllKnowledge ? knowledge : knowledge.slice(0, KNOWLEDGE_VISIBLE_CAP)).map(
               (entry, index) => {
                 const badge = fileBadge(entry.source);
                 const rowId = knowledgeRowId(entry);
                 const headline = entryHeadline(entry.content, entry.source);
+                const subtitle = entrySubtitle(entry.content, entry.source);
                 const busy = rowId !== null && knowledgeBusyId === rowId;
                 if (rowId && editingKnowledgeId === rowId) {
                   return (
@@ -705,9 +703,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       <div className="truncate text-sm font-semibold text-[var(--wireline-color-text-primary)]">
                         {headline}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
-                        {entrySubtitle(entry.content, entry.source)}
-                      </div>
+                      {subtitle ? (
+                        <div className="mt-0.5 truncate text-xs text-[var(--wireline-color-text-tertiary)]">
+                          {subtitle}
+                        </div>
+                      ) : null}
                     </div>
                     {rowId ? (
                       confirmDeleteKnowledgeId === rowId ? (

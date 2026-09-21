@@ -71,7 +71,7 @@ describe("authenticated responsive polish contract", () => {
     expect(compliance).toContain('<div className="grid gap-4">');
     expect(compliance).not.toContain("minmax(448px,.9fr)");
     expect(compliance).not.toContain('className="grid gap-4 xl:grid-cols-[');
-    expect(dnc).toContain("grid shrink-0 grid-cols-2 gap-2");
+    expect(dnc).toContain("grid shrink-0 grid-cols-2");
     expect(dnc).not.toContain("sm:grid-cols-4");
   });
 

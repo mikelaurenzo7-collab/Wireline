@@ -875,7 +875,7 @@ function ActiveSubCard({
             {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
               <p className="text-sm text-[var(--wireline-color-status-warning)]">
                 {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Add Bots
-                or upgrade in Manage Subscription.
+                or upgrade.
               </p>
             ) : null}
           </div>

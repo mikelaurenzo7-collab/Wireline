@@ -210,7 +210,7 @@ export default function UsageMeter({
 
       {isWarn && !isBlocked && (
         <div className="flex items-center gap-2 p-2.5 rounded-md bg-amber-500/8 border border-amber-500/20 text-[length:var(--wireline-typography-overline-size)] text-amber-500 font-medium">
-          <TrendingUp className="w-3.5 h-3.5" />
+          <TrendingUp className="w-3.5 h-3.5 shrink-0" />
           <span>
             {includedExhausted
               ? `Your ${included.toLocaleString()} included minutes are used. New calls use `
@@ -229,8 +229,8 @@ export default function UsageMeter({
           onClick={onUpgrade}
           className="w-full h-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md wl-label font-semibold bg-brand/10 border border-brand/30 text-brand hover:bg-brand/15 transition-colors"
         >
-          <TrendingUp className="w-3.5 h-3.5" />
-          Upgrade for more included minutes
+          <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+          Upgrade Plan
         </Button>
       )}
 

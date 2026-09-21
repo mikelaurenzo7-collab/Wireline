@@ -111,15 +111,7 @@ export default function ComplianceCenter() {
     <div className="grid gap-4">
       <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Prove What Happened on Every Call
-            </h2>
-            <p className="mt-1.5 max-w-[68ch] text-sm leading-relaxed text-muted-foreground">
-              BotBound helps you prove who was called, why they were callable, what was disclosed,
-              and what action was taken.
-            </p>
-          </div>
+          <h2 className="text-base font-semibold text-foreground">Call Compliance</h2>
           <Shield className="size-5 shrink-0 text-primary" aria-hidden="true" />
         </div>
 
@@ -137,35 +129,33 @@ export default function ComplianceCenter() {
           <StatusNotice tone="destructive" className="mt-3" title={error} />
         ) : summary ? (
           <div className="mt-4 space-y-3">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-card p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Federal DNC
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">
+            <dl className="grid gap-3 border-y border-border py-4 sm:grid-cols-3 sm:gap-4">
+              <div className="flex items-baseline justify-between gap-4 sm:block">
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
+                <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
                   {summary.federal_dnc_configured
                     ? "Platform federal scrub active"
                     : "Marketing outbound blocked"}
-                </p>
+                </dd>
               </div>
-              <div className="rounded-xl border border-border bg-card p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-4 sm:block">
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
                   Workspace DNC
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">
+                </dt>
+                <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
                   {summary.dnc_entry_count} suppressed{" "}
                   {summary.dnc_entry_count === 1 ? "number" : "numbers"}
-                </p>
+                </dd>
               </div>
-              <div className="rounded-xl border border-border bg-card p-3.5">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-baseline justify-between gap-4 sm:block">
+                <dt className="shrink-0 text-xs font-medium text-muted-foreground">
                   Consent Events
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">
+                </dt>
+                <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
                   {summary.consent_event_count} logged
-                </p>
+                </dd>
               </div>
-            </div>
+            </dl>
             {!summary.federal_dnc_configured ? (
               <StatusNotice tone="warning" title="Federal DNC Setup Pending">
                 Marketing dials stay blocked until BotBound completes federal DNC setup. Studio
