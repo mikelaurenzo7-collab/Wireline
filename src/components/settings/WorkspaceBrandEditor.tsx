@@ -17,6 +17,15 @@ type WorkspaceBrandEditorProps = {
   isSaving?: boolean;
 };
 
+function previewTextColor(hex: string): string {
+  const channels = [1, 3, 5].map((offset) => {
+    const channel = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? "#000000" : "#ffffff";
+}
+
 /**
  * Letterpress owner brand editor — live color preview, no Admin chrome.
  */
@@ -31,15 +40,22 @@ export default function WorkspaceBrandEditor({
   const logoId = `${baseId}-logo`;
   const colorId = `${baseId}-color`;
   const colorTextId = `${baseId}-color-text`;
-  const primary = settings.primary_color || BRAND.colors.primary;
+  const colorErrorId = `${baseId}-color-error`;
+  const colorDraft = settings.primary_color.trim();
+  const expandedColor = /^#[\da-f]{3}$/i.test(colorDraft)
+    ? `#${[...colorDraft.slice(1)].map((channel) => channel + channel).join("")}`
+    : colorDraft;
+  // Keep incomplete input editable while rendering a valid, readable preview.
+  const validColor = /^#[\da-f]{6}$/i.test(expandedColor);
+  const primary = validColor ? expandedColor : BRAND.colors.primary;
+  const onPrimary = previewTextColor(primary);
   const name = settings.brand_name.trim() || "BotBound";
 
   return (
     <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
       <div className="mb-5">
-        <p className="wl-eyebrow wl-eyebrow--muted">Workspace brand</p>
-        <h2 className="mt-2 font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
-          Name, Logo, and Color
+        <h2 className="font-[var(--wireline-font-family-display)] text-xl tracking-[-0.02em] text-foreground">
+          Workspace Brand
         </h2>
       </div>
 
@@ -88,13 +104,20 @@ export default function WorkspaceBrandEditor({
                 id={colorTextId}
                 type="text"
                 aria-label="Primary color hex value"
+                aria-invalid={!validColor}
+                aria-describedby={validColor ? undefined : colorErrorId}
                 className="app-input-soft h-auto flex-1 py-3 font-mono"
-                value={primary}
+                value={settings.primary_color}
                 onChange={(event) => onUpdate({ ...settings, primary_color: event.target.value })}
               />
             </div>
+            {!validColor ? (
+              <p id={colorErrorId} className="mt-2 text-sm text-destructive" role="alert">
+                Use a hex color, like #7C3AED.
+              </p>
+            ) : null}
           </div>
-          <Button type="button" onClick={onSave} disabled={isSaving}>
+          <Button type="button" onClick={onSave} disabled={isSaving || !validColor}>
             {isSaving ? "Saving…" : "Save branding"}
           </Button>
         </div>
@@ -120,8 +143,8 @@ export default function WorkspaceBrandEditor({
                 />
               ) : (
                 <span
-                  className="grid size-8 place-items-center rounded-lg text-sm font-semibold text-primary-foreground"
-                  style={{ background: primary }}
+                  className="grid size-8 place-items-center rounded-lg text-sm font-semibold"
+                  style={{ background: primary, color: onPrimary }}
                   aria-hidden="true"
                 >
                   {name.slice(0, 1).toUpperCase()}
@@ -137,8 +160,8 @@ export default function WorkspaceBrandEditor({
             </div>
             <div className="mt-6 flex justify-end">
               <span
-                className="inline-flex min-h-9 items-center rounded-md px-3.5 text-sm font-semibold text-primary-foreground"
-                style={{ background: primary }}
+                className="inline-flex min-h-9 items-center rounded-md px-3.5 text-sm font-semibold"
+                style={{ background: primary, color: onPrimary }}
               >
                 Action
               </span>

@@ -21,7 +21,8 @@
   margin-bottom: 1rem;
 }
 
-.wl-workspace-page :where(.wl-data-row, .wl-key-value) {
+/* Divided rows need straight separators, not rounded inner-card edges. */
+.wl-workspace-page :where(.wl-data-row:not(.wl-data-row--divided), .wl-key-value) {
   border-radius: var(--wireline-radius-md);
 }
 

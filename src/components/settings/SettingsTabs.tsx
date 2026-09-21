@@ -11,7 +11,7 @@ const settingsTabs = [
     id: "customization",
     href: "/settings/customization",
     label: "Appearance",
-    ariaLabel: "Appearance and brand",
+    ariaLabel: "Appearance & Brand",
   },
   { id: "apps", href: "/settings/apps", label: "Apps" },
   {
