@@ -106,9 +106,13 @@ type Props = {
   value?: string;
   disabled?: boolean;
   title?: string;
+  className?: string;
   "aria-label"?: string;
+  "data-empty"?: string;
   onClick?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
+  onClear?: () => void;
+  onStatusChange?: (status: string) => void;
   onSubmit?: (event: { preventDefault: () => void }) => void;
 };
 type Element = ReactElement<Props>;
@@ -253,6 +257,71 @@ afterEach(() => {
 });
 
 describe("SMS conversation drafts", () => {
+  it("shows matching search results instead of an excluded conversation without losing drafts", async () => {
+    await settle();
+    await selectThread(0);
+    await typeReply("Keep the first customer's draft");
+    labeled("Search text conversations").props.onChange?.({ target: { value: "50102" } });
+    await settle();
+    expect(elements(tree).some((node) => node.props["aria-label"] === "Text reply")).toBe(false);
+    await selectThread(1);
+    expect(labeled("Text reply").props.value).toBe("");
+    labeled("Search text conversations").props.onClear?.();
+    await settle();
+    await backToList();
+    await selectThread(0);
+    expect(labeled("Text reply").props.value).toBe("Keep the first customer's draft");
+    expect(sendRequests()).toHaveLength(0);
+  });
+
+  it("keeps the selected text when the edited search still matches it", async () => {
+    await settle();
+    await selectThread(0);
+    await typeReply("Keep editing here");
+    labeled("Search text conversations").props.onChange?.({ target: { value: " 50101 " } });
+    await settle();
+    expect(labeled("Text reply").props.value).toBe("Keep editing here");
+    labeled("Search text conversations").props.onClear?.();
+    await settle();
+    expect(labeled("Text reply").props.value).toBe("Keep editing here");
+  });
+
+  it("uses the displayed handoff label in both Text search and detail", async () => {
+    const original = harness.authFetch.getMockImplementation()!;
+    harness.authFetch.mockImplementation((url: string) =>
+      url === "/api/sms/threads"
+        ? response({ threads: [{ ...threads[0], status: "escalated" }, threads[1]] })
+        : original(url),
+    );
+    await settle();
+    labeled("Search text conversations").props.onChange?.({ target: { value: "HANDOFF" } });
+    await settle();
+    expect(content(tree)).toContain(threads[0].customer_number);
+    expect(content(tree)).not.toContain(threads[1].customer_number);
+    await selectThread(0);
+    expect(content(find((node) => node.type === "summary"))).toContain("Handoff");
+  });
+
+  it("keeps a selected text and its confirmation visible when an outcome changes its search match", async () => {
+    const original = harness.authFetch.getMockImplementation()!;
+    harness.authFetch.mockImplementation((url: string) =>
+      url === "/api/sms/threads"
+        ? response({ threads: [threads[0], { ...threads[1], status: "resolved" }] })
+        : original(url),
+    );
+    await settle();
+    labeled("Search text conversations").props.onChange?.({ target: { value: "open" } });
+    await settle();
+    await selectThread(0);
+    find((node) => node.type === "sms-outcome").props.onStatusChange?.("resolved");
+    await settle();
+    expect(labeled("Text reply").props.value).toBe("");
+    expect(
+      find((node) => node.props.className?.includes("wl-channel-inbox-grid")).props["data-empty"],
+    ).toBeUndefined();
+    expect(content(find((node) => node.type === "summary"))).toContain("Resolved");
+  });
+
   it.each([
     ["resolved", true],
     ["resolved", false],
@@ -299,7 +368,7 @@ describe("SMS conversation drafts", () => {
       const row = find(
         (node) => node.type === "button" && content(node).includes(threads[0].customer_number),
       );
-      expect(content(row)).toContain(status);
+      expect(content(row)).toContain(status === "escalated" ? "Handoff" : "Resolved");
       expect(content(row)).toContain(
         new Intl.DateTimeFormat("en-US", {
           month: "short",
@@ -315,7 +384,7 @@ describe("SMS conversation drafts", () => {
             (node) => node.type === "button" && content(node).includes(threads[1].customer_number),
           ),
         ),
-      ).toContain("open");
+      ).toContain("Needs review");
     },
   );
 

@@ -167,6 +167,10 @@ function DesktopRail({
   const { user } = useAuth();
   const { agents, resolvedId } = useStudioActiveAgentId();
   const displayName = workspaceSidebarLabel(user?.full_name, user?.email);
+  const searchShortcut =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
+      ? "⌘K"
+      : "Ctrl K";
   const secondaryRouteParent = desktopNavParentHref(pathname);
   const agent = resolvedId ? agents.find((candidate) => candidate.id === resolvedId) : undefined;
   const settingsActive = isNavActive(pathname, "/settings");
@@ -203,7 +207,7 @@ function DesktopRail({
       <button
         type="button"
         aria-label="Open command palette"
-        title={collapsed ? "Search · ⌘K" : undefined}
+        title={collapsed ? `Search · ${searchShortcut}` : undefined}
         className="wl-shell-search wl-focus-ring-halo"
         onClick={() => window.dispatchEvent(new CustomEvent("wireline:open-command-bar"))}
       >
@@ -211,7 +215,7 @@ function DesktopRail({
         {!collapsed ? (
           <>
             <span className="wl-shell-search-label">Search</span>
-            <kbd className="wl-shell-search-key">⌘K</kbd>
+            <kbd className="wl-shell-search-key">{searchShortcut}</kbd>
           </>
         ) : null}
       </button>

@@ -8,7 +8,8 @@ import {
   type ConversationOutcomeResult,
 } from "../lib/conversation-outcome-operations";
 import type { ConversationOutcomeStatus as OutcomeStatus } from "../lib/conversation-outcome";
-import { Badge, Button, EmptyState, Skeleton, type BadgeProps } from "./atoms";
+import { CONVERSATION_OUTCOME_META as OUTCOME_META } from "../lib/conversation-outcome-display";
+import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
 
 type EmailThread = {
@@ -44,16 +45,18 @@ const EMAIL_PAGE_SIZE = 100;
 
 type InboxError = { source: "threads" | "sync"; message: string };
 
-const OUTCOME_META: Record<
-  OutcomeStatus,
-  { label: string; variant: NonNullable<BadgeProps["variant"]> }
-> = {
-  open: { label: "Needs review", variant: "info" },
-  waiting: { label: "Waiting", variant: "default" },
-  escalated: { label: "Handoff", variant: "warning" },
-  booked: { label: "Booked", variant: "success" },
-  resolved: { label: "Resolved", variant: "outline" },
-};
+function matchesSearch(thread: EmailThread, query: string) {
+  return [
+    thread.subject,
+    thread.sender,
+    thread.summary,
+    thread.status,
+    OUTCOME_META[thread.status].label,
+  ]
+    .join(" ")
+    .toLowerCase()
+    .includes(query.trim().toLowerCase());
+}
 
 function text(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
@@ -542,15 +545,16 @@ export default function EmailInbox({
   const visibleThreads = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return threads;
-    return threads.filter((thread) =>
-      [thread.subject, thread.sender, thread.summary, thread.status]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized),
-    );
+    return threads.filter((thread) => matchesSearch(thread, normalized));
   }, [query, threads]);
 
   const selected = detail?.thread ?? threads.find((thread) => thread.id === selectedId) ?? null;
+  const changeSearch = (next: string) => {
+    setQuery(next);
+    // Mobile hides the list while a detail is selected. Reveal the results
+    // when the user searches for something outside the current conversation.
+    if (selected && !matchesSearch(selected, next)) setSelectedId(null);
+  };
   const hasSearch = query.trim().length > 0;
   const listOwnsOnlyState = visibleThreads.length === 0 && !selectedId;
   const frameClass = embedded
@@ -649,8 +653,8 @@ export default function EmailInbox({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2.5 sm:px-4">
         <SearchField
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onClear={() => setQuery("")}
+          onChange={(event) => changeSearch(event.target.value)}
+          onClear={() => changeSearch("")}
           placeholder="Search email"
           aria-label="Search email conversations"
           className="min-w-0 flex-1"
@@ -841,12 +845,12 @@ export default function EmailInbox({
                   <h2 className="wl-preserve-case col-span-2 min-w-0 text-base font-semibold text-foreground [overflow-wrap:anywhere] sm:col-span-1">
                     {selected.subject}
                   </h2>
-                  <p className="wl-preserve-case row-start-2 min-w-0 truncate text-xs text-muted-foreground">
+                  <p className="wl-preserve-case col-span-2 row-start-2 min-w-0 text-xs text-muted-foreground [overflow-wrap:anywhere] sm:col-span-1">
                     {selected.sender}
                   </p>
                   <Badge
                     variant={OUTCOME_META[selected.status].variant}
-                    className="col-start-2 row-start-2 sm:row-span-2 sm:row-start-1"
+                    className="col-start-1 row-start-3 mt-1 justify-self-start sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:mt-0"
                   >
                     {OUTCOME_META[selected.status].label}
                   </Badge>

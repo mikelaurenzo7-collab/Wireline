@@ -4,24 +4,14 @@ import { CheckCircle2, Clock3, Loader2, Route, UserRoundCheck } from "lucide-rea
 import { authFetch } from "../lib/api";
 import type { ConversationOutcomeStatus } from "../lib/conversation-outcome";
 import { smsOutcomeOperations } from "../lib/conversation-outcome-operations";
-import { Badge, Button, type BadgeProps } from "./atoms";
+import { CONVERSATION_OUTCOME_META as OUTCOME_META } from "../lib/conversation-outcome-display";
+import { Badge, Button } from "./atoms";
 import { ConversationActivity, StatusNotice } from "./molecules";
 
 type OutcomeResponse = {
   thread?: { status?: string };
   handoff?: { id: string; status: string } | null;
   error?: string;
-};
-
-const OUTCOME_META: Record<
-  ConversationOutcomeStatus,
-  { label: string; variant: NonNullable<BadgeProps["variant"]> }
-> = {
-  open: { label: "Needs review", variant: "info" },
-  waiting: { label: "Waiting", variant: "default" },
-  escalated: { label: "Handoff", variant: "warning" },
-  booked: { label: "Booked", variant: "success" },
-  resolved: { label: "Resolved", variant: "outline" },
 };
 
 function normalizeStatus(value: unknown): ConversationOutcomeStatus {

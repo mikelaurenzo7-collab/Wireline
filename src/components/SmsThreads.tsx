@@ -13,6 +13,7 @@ import {
 import { authFetch } from "../lib/api";
 import { apiField, apiNum, apiStr } from "../lib/api-row";
 import { formatDate } from "../lib/safe-date";
+import { conversationOutcomeLabel } from "../lib/conversation-outcome-display";
 import {
   smsOutcomeOperations,
   type ConversationOutcomeResult,
@@ -42,6 +43,18 @@ interface SmsMessage {
 interface SmsReplyDraft {
   body: string;
   notice: string | null;
+}
+
+function matchesSearch(thread: SmsThread, query: string) {
+  return [
+    thread.customer_number,
+    thread.destination_number,
+    thread.status,
+    conversationOutcomeLabel(thread.status),
+  ]
+    .join(" ")
+    .toLowerCase()
+    .includes(query.trim().toLowerCase());
 }
 
 type PendingSmsSendState = "sending" | "retryable" | "ambiguous";
@@ -421,14 +434,15 @@ export default function SmsThreads({
   const visibleThreads = useMemo(() => {
     const normalized = search.trim().toLowerCase();
     if (!normalized) return threads;
-    return threads.filter((thread) =>
-      `${thread.customer_number} ${thread.destination_number || ""} ${thread.status}`
-        .toLowerCase()
-        .includes(normalized),
-    );
+    return threads.filter((thread) => matchesSearch(thread, normalized));
   }, [search, threads]);
 
   const activeThread = threads.find((thread) => thread.id === activeId) || null;
+  const changeSearch = (next: string) => {
+    setSearch(next);
+    // Return to matching results without discarding the selected thread's draft.
+    if (activeThread && !matchesSearch(activeThread, next)) setActiveId(null);
+  };
   const handleOutcomeStatusChange = useCallback(
     (status: string) => {
       if (!activeId) return;
@@ -451,7 +465,7 @@ export default function SmsThreads({
   const pendingSendInFlight = activePendingSend?.state === "sending";
   const pendingSendAmbiguous = activePendingSend?.state === "ambiguous";
   const hasSearch = search.trim().length > 0;
-  const listOwnsOnlyState = visibleThreads.length === 0;
+  const listOwnsOnlyState = visibleThreads.length === 0 && !activeId;
 
   async function writeWithBot() {
     if (!activeId || sendingLineUnavailable || activePendingSend || drafting || sending) return;
@@ -694,8 +708,8 @@ export default function SmsThreads({
       <div className="flex items-center gap-2 border-b border-border py-2.5 sm:px-4">
         <SearchField
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          onClear={() => setSearch("")}
+          onChange={(event) => changeSearch(event.target.value)}
+          onClear={() => changeSearch("")}
           placeholder="Search texts"
           aria-label="Search text conversations"
           className="min-w-0 flex-1"
@@ -791,7 +805,7 @@ export default function SmsThreads({
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                      <span>{thread.status || "Open"}</span>
+                      <span>{conversationOutcomeLabel(thread.status)}</span>
                       <span>
                         {thread.destination_number
                           ? `From ${thread.destination_number}`
@@ -892,7 +906,7 @@ export default function SmsThreads({
                   <span>Outcome</span>
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <span className="max-w-28 truncate font-normal capitalize">
-                      {activeThread.status || "open"}
+                      {conversationOutcomeLabel(activeThread.status)}
                     </span>
                     <ChevronDown
                       className="size-3.5 transition-transform group-open:rotate-180"

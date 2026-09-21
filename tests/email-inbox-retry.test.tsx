@@ -98,6 +98,7 @@ type Props = {
   onClick?: () => void;
   onBack?: () => void;
   onChange?: (event: { target: { value: string } }) => void;
+  onClear?: () => void;
 };
 type Element = ReactElement<Props>;
 let tree: ReactNode;
@@ -217,6 +218,76 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
+  it("returns to search results when the selected email no longer matches and ignores its late detail", async () => {
+    threads = [
+      { id: "thread-1", subject: "Appointment", customer_email: "jordan@example.test" },
+      { id: "thread-2", subject: "Proposal", customer_email: "taylor@example.test" },
+    ];
+    const pending = deferred();
+    detailResponses = [() => pending.promise];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && text(node).includes("jordan@example.test"))
+      ?.props.onClick?.();
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onChange?.({ target: { value: "taylor" } });
+    await settle();
+    expect(elements(tree).some((node) => node.props.onBack)).toBe(false);
+    expect(text(tree)).toContain("taylor@example.test");
+    pending.resolve(
+      response({
+        thread: threads[0],
+        messages: [{ id: "late", content: "Old customer's message" }],
+      }),
+    );
+    await settle();
+    expect(text(tree)).not.toContain("Old customer's message");
+    expect(button("Refresh email").props.disabled).toBe(false);
+  });
+
+  it("keeps a matching email selected through edits and clearing the search", async () => {
+    threads = [{ id: "thread-1", subject: "Appointment", customer_email: "jordan@example.test" }];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "button" && node.props["aria-pressed"] === false)
+      ?.props.onClick?.();
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onChange?.({ target: { value: " JORDAN " } });
+    await settle();
+    expect(elements(tree).some((node) => node.props.onBack)).toBe(true);
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onClear?.();
+    await settle();
+    expect(elements(tree).some((node) => node.props.onBack)).toBe(true);
+  });
+
+  it.each([
+    ["open", "Needs Review"],
+    ["escalated", "Handoff"],
+  ])("finds %s emails by the visible %s label", async (status, label) => {
+    threads = [
+      { id: "thread-1", subject: "Appointment", customer_email: "jordan@example.test", status },
+      {
+        id: "thread-2",
+        subject: "Proposal",
+        customer_email: "taylor@example.test",
+        status: "resolved",
+      },
+    ];
+    await settle();
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onChange?.({ target: { value: label } });
+    await settle();
+    expect(text(tree)).toContain("jordan@example.test");
+    expect(text(tree)).not.toContain("taylor@example.test");
+  });
+
   it("releases refresh when returning to the list during a pending detail load", async () => {
     const pending = deferred();
     threads = [{ id: "thread-1", subject: "Appointment" }];
