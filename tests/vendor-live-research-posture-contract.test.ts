@@ -62,11 +62,11 @@ describe("vendor live-research and voice posture", () => {
     // would never render it. The platform-tools list is what puts it on screen.
     expect(capabilities).toContain('group: "core"');
     expect(permissions).toContain("AGENT_TOOL_CATALOG.filter((tool) => !tool.integration)");
-    expect(permissions).toContain("Platform actions");
+    expect(permissions).toContain("Platform Actions");
 
     expect(permissions).toContain("JSON.stringify({ enabled_tools: enabled })");
     expect(agentRoutes).toContain('"/api/agents/:id/tools"');
-    expect(studio).toContain("<AgentToolPermissions agentId={agentId} />");
+    expect(studio).toMatch(/<AgentToolPermissions\s+agentId=\{agentId\}/);
     expect(runtimeTools).toContain("resolveAgentTools(role, enabledTools)");
   });
 

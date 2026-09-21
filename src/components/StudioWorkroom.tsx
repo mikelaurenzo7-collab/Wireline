@@ -312,9 +312,24 @@ const StudioWorkroom = forwardRef<
   useEffect(() => {
     const textarea = inputRef.current;
     if (!textarea) return;
-    textarea.style.minHeight = "52px";
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
+    const resize = () => {
+      textarea.style.minHeight = "52px";
+      textarea.style.height = "0px";
+      textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 160)}px`;
+    };
+    resize();
+    if (typeof ResizeObserver === "undefined") return;
+    let width = textarea.getBoundingClientRect().width;
+    const observer = new ResizeObserver(() => {
+      const nextWidth = textarea.getBoundingClientRect().width;
+      // Sidebar changes and phone rotation can wrap an unchanged draft.
+      // Ignore our own height updates so autosizing cannot loop.
+      if (nextWidth === width) return;
+      width = nextWidth;
+      resize();
+    });
+    observer.observe(textarea);
+    return () => observer.disconnect();
   }, [draft]);
 
   const submit = useCallback(() => {

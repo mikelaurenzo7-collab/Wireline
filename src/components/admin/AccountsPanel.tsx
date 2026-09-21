@@ -68,6 +68,7 @@ export function AccountsPanel() {
   const { activeAccount, accounts, switchAccount, addAccount, loading } = useAccount();
   const navigate = useNavigate();
   const [creating, setCreating] = useState<"personal" | "business" | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const canAddPersonal = !accounts.some((a) => a.type === "personal");
   const canAddBusiness = !accounts.some((a) => a.type === "business");
@@ -80,10 +81,18 @@ export function AccountsPanel() {
 
   const handleAdd = async (type: "personal" | "business") => {
     setCreating(type);
-    const created = await addAccount(type);
-    setCreating(null);
-    if (created) {
-      navigate("/studio", { replace: true });
+    setCreateError(null);
+    try {
+      const created = await addAccount(type);
+      if (created) {
+        navigate("/studio", { replace: true });
+      } else {
+        setCreateError("Couldn't add the workspace. Please try again.");
+      }
+    } catch {
+      setCreateError("Couldn't add the workspace. Please try again.");
+    } finally {
+      setCreating(null);
     }
   };
 
@@ -137,6 +146,11 @@ export function AccountsPanel() {
               Add workspace
             </button>
           </div>
+          {createError ? (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {createError}
+            </p>
+          ) : null}
         </section>
       )}
     </div>

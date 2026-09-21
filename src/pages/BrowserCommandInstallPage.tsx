@@ -49,7 +49,11 @@ export default function BrowserCommandInstallPage() {
         <WorkspacePageIntro
           title="Install BotBound Command"
           description="Send page details, selected text, and phone links to Studio."
-          action={<Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>}
+          action={
+            <div>
+              <Badge variant="info">{CLIENT_SURFACE_POSTURE.browser.status}</Badge>
+            </div>
+          }
         />
 
         <section className="space-y-5" aria-label="Download packages">

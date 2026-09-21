@@ -367,9 +367,10 @@ export default function CampaignsPanel() {
                     size="sm"
                     variant="ghost"
                     disabled={busyId === c.id}
+                    aria-label={`Delete ${c.name}`}
                     onClick={() => void deleteCampaign(c.id)}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </ShadButton>
                 </div>
               </li>

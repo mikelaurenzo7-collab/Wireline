@@ -134,6 +134,7 @@ export function AuditActivityPanel() {
               variant="ghost"
               disableAnimations
               onClick={() => setDays(d)}
+              aria-pressed={days === d}
               className={cn(
                 "h-auto px-3 py-1 rounded-full wl-label",
                 days === d ? "bg-primary/20 text-primary" : "text-muted hover:text-foreground",
@@ -241,7 +242,7 @@ export function AuditActivityPanel() {
                       stroke="var(--wireline-color-border-soft)"
                     />
                     <XAxis
-                      dataKey="date"
+                      dataKey="day"
                       axisLine={false}
                       tickLine={false}
                       tick={{
@@ -252,6 +253,7 @@ export function AuditActivityPanel() {
                         new Date(val).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
+                          timeZone: "UTC",
                         })
                       }
                     />
@@ -303,7 +305,7 @@ export function AuditActivityPanel() {
                 recent.map((entry: any) => (
                   <div
                     key={entry.id}
-                    className="flex items-center gap-4 py-2.5 px-3 hover:bg-muted/50 rounded-md transition-all border-b border-border/50 last:border-0 group"
+                    className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-3 hover:bg-muted/50 rounded-md transition-colors border-b border-border/50 last:border-0 group sm:grid-cols-[1.75rem_minmax(0,1fr)_auto] sm:px-3"
                   >
                     <div
                       className={cn(
@@ -323,7 +325,7 @@ export function AuditActivityPanel() {
                         {entry.metadata?.agent_name || "System"} · {entry.model || entry.model_id}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="col-span-2 flex flex-wrap items-center justify-between gap-2 sm:col-auto sm:flex-col sm:items-end sm:gap-1">
                       {(entry.latencyMs || entry.latency_ms) && (
                         <span className="wl-micro-badge font-mono text-muted/70 tabular-nums flex items-center gap-1">
                           <Clock className="w-2.5 h-2.5" />
@@ -335,7 +337,7 @@ export function AuditActivityPanel() {
                           ? `$${Number(entry.costUsd ?? entry.cost_usd).toFixed(5)}`
                           : "N/A"}
                       </span>
-                      <span className="wl-micro-meta--muted tabular-nums w-24 text-right">
+                      <span className="wl-micro-meta--muted tabular-nums w-full sm:w-24 sm:text-right">
                         {formatDateTime(
                           entry.createdAt ?? entry.created_at,
                           { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },

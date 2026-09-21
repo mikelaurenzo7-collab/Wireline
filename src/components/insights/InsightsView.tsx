@@ -68,7 +68,7 @@ export default function InsightsView() {
 
   const wrap = (label: string, node: React.ReactNode) => (
     <WidgetBoundary label={label}>
-      <div className="flex flex-col flex-1 min-h-0 w-full scroll-viewport scroll-pb-safe pr-1 pb-4">
+      <div className="flex flex-col flex-1 min-h-0 w-full overflow-y-auto overscroll-contain scroll-viewport scroll-pb-safe pr-1 pb-4">
         {/* Only one view renders at a time, so a single boundary here covers
             whichever of them is lazy without each view declaring its own. */}
         <Suspense fallback={<PanelSkeleton rows={6} />}>{node}</Suspense>

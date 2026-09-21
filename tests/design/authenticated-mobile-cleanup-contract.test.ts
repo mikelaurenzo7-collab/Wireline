@@ -26,8 +26,9 @@ describe("authenticated mobile cleanup", () => {
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
     const phone = read("src/pages/PhonePage.tsx");
 
-    expect(knowledge).toContain("grid grid-cols-3 gap-2");
-    expect(knowledge).toContain("wl-metric-tile--compact");
+    expect(knowledge).toMatch(/<dl[^>]+aria-label="Knowledge summary"/);
+    expect(knowledge).toContain("{stat.label}</dt>");
+    expect(knowledge).toContain('{loading ? "Loading…" : stat.value}</dd>');
     expect(knowledge).toContain(
       "const showStats = loading || knowledge.length > 0 || directives.length > 0 || hasPersonality",
     );

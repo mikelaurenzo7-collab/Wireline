@@ -71,8 +71,13 @@ export default function AttributionView({ days }: { days: number }) {
           highlight
         />
       </div>
-      <div className={cn(WL_APP_CLASSES.panelFrame, "overflow-hidden app-table-scroll")}>
-        <table className="w-full text-sm">
+      <div
+        className={cn(WL_APP_CLASSES.panelFrame, "overflow-x-auto overscroll-x-contain")}
+        role="region"
+        aria-label="Campaign attribution table"
+        tabIndex={0}
+      >
+        <table className="w-full min-w-[38rem] text-sm">
           <thead className="bg-black/[0.03] dark:bg-white/[0.02]">
             <tr className="text-left wl-insight-label">
               <th className="px-3 py-2.5 font-medium">Campaign</th>

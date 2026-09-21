@@ -25,6 +25,7 @@ export default function InsightsPage() {
           onSelect={chrome.setActiveId}
           density="compact"
           align="start"
+          mobileSelect
           className="mb-0 border-b-0 pb-0"
         />
       }

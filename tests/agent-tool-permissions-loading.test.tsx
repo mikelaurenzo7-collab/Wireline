@@ -28,7 +28,6 @@ vi.mock("react", async (original) => ({
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/components/atoms", () => ({ Button: "button" }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "aside" }));
-vi.mock("../src/components/IntegrationCapabilityPanel", () => ({ default: "integration-panel" }));
 vi.mock("../src/components/ui/shadcn/Checkbox", () => ({ Checkbox: "input" }));
 vi.mock("react-router", () => ({ Link: "a" }));
 
@@ -39,9 +38,6 @@ type NodeProps = {
   checked?: boolean;
   disabled?: boolean;
   "aria-label"?: string;
-  enabledTools?: string[];
-  onToggleTool?: (tool: string) => void;
-  onToggleIntegrationGroup?: (integration: string, enable: boolean) => void;
   "aria-expanded"?: boolean;
 };
 function elements(node: ReactNode): Array<ReactElement<NodeProps>> {
@@ -102,20 +98,23 @@ describe("agent action editor loading", () => {
     const save = editor.find(
       (node) => node.type === "button" && textOf(node).includes("Save actions"),
     )!;
-    const panel = editor.find((node) => node.type === "integration-panel")!;
-    const submitted = [...panel.props.enabledTools!];
+    const enableGroup = editor.find(
+      (node) => node.props["aria-label"] === "Enable all CRM actions",
+    )!;
     save.props.onClick!();
+    const submitted = JSON.parse(
+      h.fetch.mock.calls.find(([, options]) => options?.method === "POST")![1].body,
+    ).enabled_tools;
     save.props.onClick!(); // Same-render duplicate activation must not submit twice.
     firstAction().props.onChange!();
-    panel.props.onToggleTool!(submitted[0]);
-    panel.props.onToggleIntegrationGroup!("google_calendar", true);
+    enableGroup.props.onClick!();
     expect(
       elements(render()).find((node) => node.props["aria-label"] === "Bot action permissions")
         ?.props.disabled,
     ).toBe(true);
     expect(
-      elements(render()).find((node) => node.type === "integration-panel")?.props.enabledTools,
-    ).toEqual(submitted);
+      elements(render()).filter((node) => node.type === "input" && node.props.checked),
+    ).toHaveLength(submitted.length);
     expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
     settle(new Response("unavailable", { status: 503 }));
     await flush();
@@ -132,6 +131,31 @@ describe("agent action editor loading", () => {
     await flush();
     expect(textOf(render())).toContain("Run a test before the next live call");
     expect(firstAction().props.checked).toBe(true);
+  });
+
+  it("scopes each named action group to its own permissions", async () => {
+    h.fetch.mockImplementation((url: string) =>
+      Promise.resolve(
+        json(url.startsWith("/api/agent-config/") ? { enabledTools: [] } : { accounts: [] }),
+      ),
+    );
+    render();
+    toggle();
+    await flush();
+    const group = (label: string) =>
+      elements(render()).find((node) => node.type === "details" && textOf(node).includes(label))!;
+    const selected = (label: string) =>
+      elements(group(label)).filter((node) => node.type === "input" && node.props.checked);
+    elements(render()).find((node) => node.props["aria-label"] === "Enable all CRM actions")!.props
+      .onClick!();
+    expect(selected("CRM")).toHaveLength(5);
+    expect(selected("Platform Actions")).toHaveLength(0);
+    expect(selected("Slack")).toHaveLength(0);
+    elements(group("Platform Actions")).find((node) => node.type === "input")!.props.onChange!();
+    elements(render()).find((node) => node.props["aria-label"] === "Disable all CRM actions")!.props
+      .onClick!();
+    expect(selected("CRM")).toHaveLength(0);
+    expect(selected("Platform Actions")).toHaveLength(1);
   });
 
   it("recovers when collapsed after config but before optional connections load", async () => {

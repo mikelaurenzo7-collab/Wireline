@@ -110,7 +110,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "settings",
     label: "Settings",
-    keywords: "workspace billing team apps",
+    keywords: "workspace preferences appearance account",
     icon: Settings,
     href: "/settings",
     category: "Workspace",
@@ -125,7 +125,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "billing",
-    label: "Billing and usage",
+    label: "Billing and Usage",
     keywords: "plan runtime balance invoices payment usage",
     icon: CreditCard,
     href: "/settings/billing",
@@ -141,7 +141,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   },
   {
     id: "client-apps",
-    label: "Companion surfaces",
+    label: "Companion Surfaces",
     keywords: "command mcp mobile web waitlist apps",
     icon: MonitorDown,
     href: "/settings/apps",

@@ -425,7 +425,7 @@ export default function CreateAgentDialog({
         <div className="shrink-0 border-b border-border px-5 py-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground">
+              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                 <Zap size={16} aria-hidden="true" />
               </span>
               <div className="min-w-0">

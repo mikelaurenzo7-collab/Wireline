@@ -4,14 +4,6 @@
  * BotBound visual language.
  */
 
-/* The field shell owns the focus treatment. Suppressing the nested native
- * outline avoids a split ring through the leading icon while keeping a clear,
- * high-contrast focus halo on the complete control. */
-.landing-prestige__auth .wl-access-panel__field input:focus-visible {
-  outline: 0;
-  box-shadow: none;
-}
-
 @media (max-width: 820px) {
   .landing-prestige__auth {
     align-items: stretch;

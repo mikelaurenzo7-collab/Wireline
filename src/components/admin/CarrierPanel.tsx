@@ -18,6 +18,7 @@ import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN } from "../../lib/wireline-ops-design";
+import { useToast } from "../../contexts/ToastContext";
 
 const CARRIER_AGENT_UNSET = "__unset__";
 
@@ -141,6 +142,7 @@ export function CarrierPanel({
   onDeleteNumber,
   onUpdateNumberAgent,
 }: CarrierPanelProps) {
+  const { error: toastError } = useToast();
   const voiceAgents = agents.filter(
     (agent) => agent.channel === "voice" || agent.channel === "omnichannel" || !agent.channel,
   );
@@ -151,8 +153,8 @@ export function CarrierPanel({
   const managerAlertsEnabled = Boolean(settings.twilio_manager_alerts_enabled) && managerAlertReady;
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-y-auto pb-4 xl:grid-cols-2">
-      <Panel title="Managed Call Runtime" hint="RELIABLE BY DEFAULT" icon={Cpu} scroll>
+    <div className="grid min-h-0 grid-cols-1 items-start gap-3 pb-4 xl:grid-cols-2">
+      <Panel title="Managed Call Runtime" hint="RELIABLE BY DEFAULT" icon={Cpu} autoHeight>
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
             <p className="text-sm font-semibold text-foreground">
@@ -199,11 +201,11 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      <Panel title="Get a Phone Number" hint="LOCAL CUSTOMER LINE" icon={Phone} scroll>
+      <Panel title="Get a Phone Number" hint="LOCAL CUSTOMER LINE" icon={Phone} autoHeight>
         <PhoneNumberPicker onClaim={onSyncNumbers} />
       </Panel>
 
-      <Panel title="Phone Number Routing" hint="WHO ANSWERS EACH LINE" icon={Phone} scroll>
+      <Panel title="Phone Number Routing" hint="WHO ANSWERS EACH LINE" icon={Phone} autoHeight>
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs leading-5 text-muted-foreground">
@@ -237,8 +239,8 @@ export function CarrierPanel({
             <div className="space-y-2">
               {phoneNumbers.map((number) => (
                 <div key={number.id} className="rounded-xl border border-border bg-background p-3">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-3">
+                    <div className="min-w-0">
                       <p className="truncate text-base font-semibold tabular-nums text-foreground">
                         {number.phone_number}
                       </p>
@@ -250,22 +252,31 @@ export function CarrierPanel({
                       type="text"
                       defaultValue={number.campaign_label || ""}
                       placeholder="Campaign label"
+                      aria-label={`Campaign label for ${number.phone_number}`}
                       onBlur={async (event) => {
-                        const next = event.target.value.trim();
+                        const input = event.currentTarget;
+                        const previous = number.campaign_label || "";
+                        const next = input.value.trim();
                         if (next === (number.campaign_label || "")) return;
+                        input.disabled = true;
                         try {
                           const { authFetch } = await import("../../lib/api");
-                          await authFetch(`/api/phone-numbers/${number.id}`, {
+                          const response = await authFetch(`/api/phone-numbers/${number.id}`, {
                             method: "PATCH",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ campaign_label: next }),
                           });
+                          if (!response.ok) throw new Error("Campaign label save failed");
                           number.campaign_label = next;
+                          input.value = next;
                         } catch {
-                          // The server remains the source of truth; a later sync restores the saved value.
+                          input.value = previous;
+                          toastError("Couldn't save the campaign label. Please try again.");
+                        } finally {
+                          input.disabled = false;
                         }
                       }}
-                      className="h-auto min-w-[180px] rounded-md border border-input bg-muted px-2.5 py-1.5 text-xs"
+                      className="h-auto w-full min-w-0 rounded-md border border-input bg-muted px-2.5 py-1.5 text-xs"
                     />
                     <div className="flex items-center gap-2">
                       <LinkIcon className="size-3 shrink-0 text-primary" aria-hidden="true" />
@@ -277,7 +288,7 @@ export function CarrierPanel({
                       >
                         <SelectTrigger
                           aria-label={`Assign Bot to ${number.phone_number}`}
-                          className="h-auto min-w-[150px] rounded-md border border-input bg-black/5 py-1.5 pl-2.5 text-xs text-foreground"
+                          className="h-auto min-w-0 flex-1 rounded-md border border-input bg-black/5 py-1.5 pl-2.5 text-xs text-foreground"
                         >
                           <SelectValue placeholder="Unassigned" />
                         </SelectTrigger>
@@ -308,7 +319,7 @@ export function CarrierPanel({
         </div>
       </Panel>
 
-      <Panel title="Text Messaging" hint="FOLLOW-UP · ALERTS" icon={MessageSquareText} scroll>
+      <Panel title="Text Messaging" hint="FOLLOW-UP · ALERTS" icon={MessageSquareText} autoHeight>
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-background p-3">
             <div>

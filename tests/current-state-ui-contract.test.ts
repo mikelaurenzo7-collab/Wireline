@@ -52,7 +52,7 @@ describe("current-state UI contract", () => {
     expect(apps).toContain('href: "/settings/apps/command"');
     expect(apps).toContain('id="chatgpt-mcp"');
     expect(apps).not.toContain('status: "Live"');
-    expect(commandBar).toContain('label: "Companion surfaces"');
+    expect(commandBar).toContain('label: "Companion Surfaces"');
     expect(commandBar).toContain("language.navLabel");
     expect(security).toContain("The web app is the GA product");
   });

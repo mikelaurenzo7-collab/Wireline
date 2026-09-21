@@ -98,19 +98,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Uses your configured company identity. Final caller ID display depends on carrier, network, device, and completed identity review.",
     faqs: [
       {
-        q: "Will customers know they are talking to a Bot?",
+        q: "Will Customers Know They Are Talking to a Bot?",
         a: 'BotBound Bots use the company identity, disclosure language, and jurisdiction rules you configure, for example "Sarah from Premier HVAC." Configured disclosure and consent events are logged for review; your team remains responsible for the policy and its legal sufficiency.',
       },
       {
-        q: "What happens if the Bot does not know the answer?",
+        q: "What Happens If the Bot Does Not Know the Answer?",
         a: "The Bot says it does not have that detail handy and offers to follow up by text or email, or transfer to you live. Configure the escalation number per shift in Settings. It is designed to decline uncertain details, follow your escalation rules, and leave a reviewable record.",
       },
       {
-        q: "Can the Bot actually dispatch me on an emergency?",
+        q: "Can the Bot Actually Dispatch Me on an Emergency?",
         a: "Configure on-call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available Google or Outlook calendar windows; emergency dispatch, arrival promises, and direct field-service write-back stay with the tools and people you approve.",
       },
       {
-        q: "How much does it cost compared with an answering service?",
+        q: "How Much Does It Cost Compared with an Answering Service?",
         a: "BotBound plans start at $19/month with included voice minutes and prepaid Runtime Balance for usage beyond the plan allowance. Compare the full workflow, connected tools, text and email follow-up, and logged outcomes, not only the per-minute rate, against any answering service you use today.",
       },
     ],
@@ -155,19 +155,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Uses your configured practice identity, subject to carrier display support. Do not use BotBound for PHI unless a signed BAA and approved configuration are confirmed in writing.",
     faqs: [
       {
-        q: "Is BotBound HIPAA compliant?",
+        q: "Is BotBound HIPAA Compliant?",
         a: "No. BotBound offers healthcare-sensitive guardrails, but does not claim HIPAA compliance or certification. Do not use it for PHI unless BotBound confirms a signed BAA and approved configuration in writing.",
       },
       {
-        q: "Can the Bot actually book to my existing schedule?",
+        q: "Can the Bot Actually Book to My Existing Schedule?",
         a: "Connect Google Calendar or Outlook in Settings. The Bot can read available times, respect configured buffers, book supported events, and send confirmations. Rescheduling behavior depends on the connected calendar and workflow you approve.",
       },
       {
-        q: "What about insurance verification?",
+        q: "What About Insurance Verification?",
         a: "The Bot can capture the insurance fields you approve during intake and route them with the appointment record. It does not verify eligibility today; your staff must validate coverage in the systems you already use.",
       },
       {
-        q: "Will patients accept a Phone Bot?",
+        q: "Will Patients Accept a Phone Bot?",
         a: "The practical win is no hold time: a clear Bot that uses your practice name and resolves routine scheduling quickly can be better than waiting on the line. Disclosure choices and consent language should match your practice policy and applicable rules.",
       },
     ],
@@ -212,19 +212,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Audit logs preserve configured disclosures and opt-outs. BotBound is the intake layer; your attorneys deliver the advice.",
     faqs: [
       {
-        q: "Does the Bot give legal advice?",
+        q: "Does the Bot Give Legal Advice?",
         a: "No. The Bot is an intake specialist: it captures the matter, schedules the consult, and hands off to an attorney. It explicitly tells callers it cannot provide legal advice and that anything substantive needs the attorney. Refusal is enforced in the directive layer.",
       },
       {
-        q: "How does it handle conflict checks?",
+        q: "How Does It Handle Conflict Checks?",
         a: "The Bot captures the prospective client name, opposing party name, and matter type. It can route that record through connected Slack or your approved handoff path. Your firm remains responsible for running and clearing conflicts before engagement or scheduling when required.",
       },
       {
-        q: "What about attorney-client privilege?",
+        q: "What About Attorney-Client Privilege?",
         a: "BotBound cannot determine whether attorney-client privilege applies. Your firm supplies the approved disclaimer, recording policy, retention settings, and staff access rules; configured disclosures are logged for review.",
       },
       {
-        q: "Can it qualify by case type before booking?",
+        q: "Can It Qualify by Case Type Before Booking?",
         a: "Yes. Configure your firm's qualification gates, and the Bot walks through them conversationally. Callers outside the configured fit receive the approved next step instead of occupying a consult slot.",
       },
     ],
@@ -269,19 +269,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Supports connected HubSpot, Salesforce, Google Calendar, and Outlook paths. Buyers hear the brokerage identity you configure, subject to carrier display behavior.",
     faqs: [
       {
-        q: "Will the Bot know my listings?",
+        q: "Will the Bot Know My Listings?",
         a: "Yes. Add listing URLs or details to the Bot's knowledge, and it can answer price, beds, baths, square footage, and neighborhood basics from that source, then pivot to scheduling a showing when the caller shows interest. Direct MLS feed sync remains on the roadmap.",
       },
       {
-        q: "Does it work for a single professional or a full brokerage?",
+        q: "Does It Work for a Single Professional or a Full Brokerage?",
         a: "Both. Solo users can start with one live Bot and the phone capacity included in their plan; larger teams can add Bot capacity and configure brokerage-level routing in the same workspace. Runtime Balance covers supported usage beyond included plan allowances.",
       },
       {
-        q: "How does it qualify the buyer?",
+        q: "How Does It Qualify the Buyer?",
         a: "Configure the qualification fields your firm approves: preapproval status, timeline, price band, and whether the buyer is already represented. Matching callers can receive approved calendar options; text follow-up runs only through the cadence and consent rules you enable.",
       },
       {
-        q: "Can it follow up on older leads I have not reached?",
+        q: "Can It Follow Up on Older Leads I Have Not Reached?",
         a: "Import an approved lead list, choose a cadence, and supply the reengagement script and consent basis. When source fields such as price or neighborhood are present, the Bot can use them as context; results and contactability vary.",
       },
     ],
@@ -388,19 +388,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Callers hear the agency identity you configure, subject to carrier behavior. Transcripts follow tenant retention; recording is optional and off by default.",
     faqs: [
       {
-        q: "Will the Bot actually bind a policy?",
+        q: "Will the Bot Actually Bind a Policy?",
         a: "No. Binding requires a licensed person. BotBound gathers the approved quote-intake fields and routes the record to your producer for review and any coverage decision.",
       },
       {
-        q: "Can it handle commercial lines, not just personal?",
+        q: "Can It Handle Commercial Lines, Not Just Personal?",
         a: "Yes. Configure Bots or role templates by line of business, such as Auto, Home, Commercial Auto, General Liability, Business Owners, or Workers Compensation. Each can use the right intake questions and route to the appropriate producer inside the same workspace.",
       },
       {
-        q: "What about claims?",
+        q: "What About Claims?",
         a: "First-notice-of-loss mode captures the structured fields your carrier workflow needs. Complex losses can transfer to your claims desk; routine ones can route a structured package and send an approved confirmation by text or email.",
       },
       {
-        q: "How does it compare with a 24/7 answering service?",
+        q: "How Does It Compare with a 24/7 Answering Service?",
         a: "Compare BotBound on the complete intake, conversation, follow-up, and logged outcome, not only the per-call price. Paid plans include voice minutes, and prepaid Runtime Balance covers supported usage beyond the plan allowance.",
       },
     ],
@@ -445,19 +445,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Callers hear the restaurant identity and the built-in OpenAI voice you choose; that speaker stays consistent for the full call.",
     faqs: [
       {
-        q: "Will it integrate with Resy, OpenTable, or Tock?",
+        q: "Will It Integrate with Resy, OpenTable, or Tock?",
         a: 'Today the Bot books against your connected Google or Outlook calendar. The caller can hear "I have 7pm or 8:15pm, which works?" from real availability, and the reservation writes back. Direct Resy, OpenTable, and Tock sync remains on the roadmap.',
       },
       {
-        q: "Can it handle dietary restrictions and allergens correctly?",
+        q: "Can It Handle Dietary Restrictions and Allergens Correctly?",
         a: "The workflow can capture allergens as a structured field and flag them for staff confirmation. The Bot should not make medical or ingredient-safety promises; the restaurant remains responsible for review and the final response.",
       },
       {
-        q: "What about private-event inquiries?",
+        q: "What About Private-Event Inquiries?",
         a: "The Bot captures party size, date, food and beverage preferences, budget range, and contact information. When email routing is configured, it can send a structured request and offer approved tasting windows under the threshold rules you set.",
       },
       {
-        q: "How is this different from Yelp or Google booking widgets?",
+        q: "How Is This Different from Yelp or Google Booking Widgets?",
         a: "Booking widgets cover web demand. BotBound adds a configurable Phone Bot for callers, larger-party questions, takeout requests, and private-event inquiries your web form may not resolve.",
       },
     ],
@@ -502,19 +502,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment is available in beta.",
     faqs: [
       {
-        q: "Will prospects know it is AI?",
+        q: "Will Prospects Know It Is AI?",
         a: TRUST_DISCLOSURE_FAQ,
       },
       {
-        q: "How does it handle gatekeepers?",
+        q: "How Does It Handle Gatekeepers?",
         a: "The Bot can ask for the named contact, give the approved reason for calling, request voicemail, and follow the retry limit you configure. If blocked, it logs the outcome for a person to review rather than trying to evade the gatekeeper.",
       },
       {
-        q: "What about CRM logging?",
+        q: "What About CRM Logging?",
         a: "Approved actions sync to your connected CRM: contact, outcome, transcript, recording link, and next step booked. HubSpot and Salesforce are supported today; Apollo enrichment is in beta. Custom CRMs can use webhooks.",
       },
       {
-        q: "How is this different from Apollo or Outreach AI features?",
+        q: "How Is This Different from Apollo or Outreach AI Features?",
         a: "Those products center on sales sequencing and enrichment. BotBound centers on governed voice conversations, call outcomes, and connected text and email follow-up. Use each only where its configured integration and your consent policy support the workflow.",
       },
     ],

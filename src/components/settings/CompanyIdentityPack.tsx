@@ -215,10 +215,10 @@ function ChannelCard({
         selected ? "border-border" : "border-border/70 opacity-80",
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/15 bg-primary/5 text-primary">
-            <Icon size={18} aria-hidden="true" />
+      <div className="flex flex-col items-start gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/5 text-primary">
+            <Icon size={16} aria-hidden="true" />
           </span>
           <h3 className="min-w-0 text-sm font-semibold text-foreground">{config.title}</h3>
         </div>
@@ -388,18 +388,15 @@ export default function CompanyIdentityPack() {
   }
 
   return (
-    <section
-      className="studio-card mt-5 scroll-mt-24 p-5 sm:p-6"
-      aria-labelledby="company-identity-title"
-    >
-      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <h2 id="company-identity-title" className="text-xl font-semibold text-foreground">
+    <section className="min-w-0 scroll-mt-24" aria-labelledby="company-identity-title">
+      <div>
+        <h2 id="company-identity-title" className="sr-only">
           Identity
         </h2>
         {summary && summary.label !== "Review requested" ? (
           <span
             className={cn(
-              "inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold",
+              "mb-4 inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold",
               summary.className,
             )}
           >
@@ -413,7 +410,7 @@ export default function CompanyIdentityPack() {
         <p className="py-8 text-center text-sm text-muted-foreground">Loading company identity…</p>
       ) : identity ? (
         <>
-          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {CHANNELS.map((channel) => (
               <ChannelCard
                 key={channel}
@@ -424,7 +421,7 @@ export default function CompanyIdentityPack() {
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-border bg-background/55 p-4 sm:p-5">
+          <div className="mt-6 border-t border-border pt-5">
             <div className="flex items-start gap-3">
               <ShieldCheck size={18} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
               <div>

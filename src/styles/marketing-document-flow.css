@@ -154,6 +154,15 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   overflow: visible;
 }
 
+@media (max-width: 1023px) {
+  /* The fixed conversion bar must reserve space after the footer, not inside
+   * main, so legal links and the expanded sitemap can scroll above it. Match
+   * its 48px actions, 12px top padding, border, and safe-area bottom padding. */
+  .wl-ui-caps.wl-ui-caps--document .marketing-surface:has(> .marketing-sticky-cta) {
+    padding-bottom: calc(3.75rem + 1px + max(0.75rem, env(safe-area-inset-bottom, 0px)));
+  }
+}
+
 /* Keep the fixed header clear when a document page owns its own sticky section
  * navigation. */
 .wl-ui-caps.wl-ui-caps--document .marketing-flow > .sticky {

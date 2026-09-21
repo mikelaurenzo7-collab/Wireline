@@ -6,6 +6,7 @@ import { authFetch } from "../lib/api";
 import {
   AGENT_TOOL_CATALOG,
   resolveAgentTools,
+  type AgentToolCatalogEntry,
   type AgentToolName,
 } from "../lib/agent-capabilities";
 import { getAllIntegrationPlaybooks } from "../lib/integration-playbooks";
@@ -13,7 +14,6 @@ import { resolveTenantToolIntegrationStatus } from "../lib/tenant-tool-integrati
 import { cn } from "../lib/utils";
 import { Button } from "./atoms";
 import { StatusNotice } from "./molecules";
-import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 
 /**
@@ -214,6 +214,28 @@ export default function AgentToolPermissions({
     emailProviders,
   };
 
+  const toolList = (tools: readonly AgentToolCatalogEntry[]) => (
+    <ul className="divide-y divide-border">
+      {tools.map((tool) => (
+        <li key={tool.name}>
+          <label className="flex cursor-pointer items-start gap-2.5 py-3 hover:bg-muted/40">
+            <Checkbox
+              checked={enabledSet.has(tool.name)}
+              onChange={() => toggleTool(tool.name)}
+              className="mt-0.5"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-foreground">{tool.label}</span>
+              <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                {tool.description}
+              </span>
+            </span>
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <section
       className={cn("rounded-2xl border border-border bg-card p-5 sm:p-6", className)}
@@ -278,31 +300,40 @@ export default function AgentToolPermissions({
               aria-label="Bot action permissions"
               className="min-w-0 space-y-5"
             >
-              <div className="space-y-4">
+              <div className="divide-y divide-border">
                 {getAllIntegrationPlaybooks().map((playbook) => {
+                  const tools = AGENT_TOOL_CATALOG.filter(
+                    (tool) => tool.integration === playbook.integration,
+                  );
+                  if (!tools.length) return null;
+                  const selected = tools.filter((tool) => enabledSet.has(tool.name)).length;
                   const configured =
                     resolveTenantToolIntegrationStatus(playbook.integration, integrationContext) ===
                     "configured";
                   return (
-                    <div key={playbook.integration}>
-                      <IntegrationCapabilityPanel
-                        integration={playbook.integration}
-                        accentColor="brand"
-                        connected={configured}
-                        enabledTools={enabled ?? []}
-                        onToggleTool={toggleTool}
-                        onToggleIntegrationGroup={toggleGroup}
-                      />
-                      {/*
-                       * IntegrationCapabilityPanel only shows its own connect
-                       * prompt in compact mode, which this editor never uses.
-                       * Without this, an unconnected integration looked exactly
-                       * like a connected one: you could switch on "log the call
-                       * in Salesforce" with no Salesforce attached and get no
-                       * hint until a live call quietly failed to do it.
-                       */}
+                    <details key={playbook.integration} className="group/actions py-1">
+                      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden">
+                        <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                          {playbook.label}
+                          {!configured ? (
+                            <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
+                              Not connected
+                            </span>
+                          ) : null}
+                        </span>
+                        <span
+                          className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                          aria-label={`${selected} of ${tools.length} actions selected`}
+                        >
+                          {selected}/{tools.length}
+                        </span>
+                        <ChevronDown
+                          className="size-4 shrink-0 text-muted-foreground transition-transform group-open/actions:rotate-180"
+                          aria-hidden="true"
+                        />
+                      </summary>
                       {!configured ? (
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="my-2 text-xs leading-relaxed text-muted-foreground">
                           Not connected. These stay off in live calls until {playbook.label} is
                           connected.{" "}
                           <Link
@@ -313,37 +344,50 @@ export default function AgentToolPermissions({
                           </Link>
                         </p>
                       ) : null}
-                    </div>
+                      <div className="flex flex-wrap gap-2 pb-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          aria-label={`Enable all ${playbook.label} actions`}
+                          onClick={() => toggleGroup(playbook.integration, true)}
+                        >
+                          All on
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          aria-label={`Disable all ${playbook.label} actions`}
+                          onClick={() => toggleGroup(playbook.integration, false)}
+                        >
+                          All off
+                        </Button>
+                      </div>
+                      {toolList(tools)}
+                    </details>
                   );
                 })}
+                <details className="group/actions py-1">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden">
+                    <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
+                      Platform Actions
+                    </span>
+                    <span
+                      className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                      aria-label={`${PLATFORM_TOOLS.filter((tool) => enabledSet.has(tool.name)).length} of ${PLATFORM_TOOLS.length} actions selected`}
+                    >
+                      {PLATFORM_TOOLS.filter((tool) => enabledSet.has(tool.name)).length}/
+                      {PLATFORM_TOOLS.length}
+                    </span>
+                    <ChevronDown
+                      className="size-4 shrink-0 text-muted-foreground transition-transform group-open/actions:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </summary>
+                  {toolList(PLATFORM_TOOLS)}
+                </details>
               </div>
-
-              <fieldset>
-                <legend className="mb-2 text-sm font-semibold text-foreground">
-                  Platform actions
-                </legend>
-                <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
-                  {PLATFORM_TOOLS.map((tool) => (
-                    <li key={tool.name}>
-                      <label className="flex cursor-pointer items-start gap-2.5 px-3 py-2 hover:bg-muted/40">
-                        <Checkbox
-                          checked={enabledSet.has(tool.name)}
-                          onChange={() => toggleTool(tool.name)}
-                          className="mt-0.5"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-medium text-foreground">
-                            {tool.label}
-                          </span>
-                          <span className="block text-xs leading-snug text-muted-foreground">
-                            {tool.description}
-                          </span>
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </fieldset>
 
               {notice ? (
                 <StatusNotice tone="success" title="Actions Saved">

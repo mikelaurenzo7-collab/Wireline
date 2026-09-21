@@ -336,7 +336,9 @@ export default function WorkspaceShell({
     : "px-3 pt-2 pb-5 sm:px-6 sm:pt-3 lg:px-7 lg:pt-4 lg:pb-6";
   const contentInner = fullBleed
     ? "wl-workspace-content-inner flex h-full min-h-0 w-full max-w-none flex-col"
-    : "wl-workspace-content-inner wl-shell-measure flex min-h-full w-full flex-1 flex-col";
+    : // Document pages must grow with their content so overflow cannot consume
+      // the scrollport's bottom padding and slide actions beneath the mobile dock.
+      "wl-workspace-content-inner wl-shell-measure flex min-h-full w-full grow shrink-0 flex-col";
 
   return (
     <div className="wl-workspace-shell h-[100dvh] min-h-0 overflow-hidden bg-background text-foreground">

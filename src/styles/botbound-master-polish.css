@@ -302,6 +302,26 @@
     var(--bb-polish-shadow);
 }
 
+/* The composer shell owns input focus; toolbar buttons retain their own ring. */
+.wl-workspace-shell .wl-composer-dock .wl-composer-dock__input:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+/* This heading receives initial dialog focus for announcement, not interaction.
+ * Keep the focus trap and keyboard rings on the actual form controls. */
+#create-agent-title[tabindex="-1"]:focus {
+  outline: 0;
+  box-shadow: none;
+}
+
+@media (forced-colors: active) {
+  .wl-workspace-shell .wl-composer-dock:focus-within {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
 .wl-workspace-shell
   .wl-workspace-content
   :where(.wl-workspace-tabs, .wl-segmented, .app-segment-strip) {
@@ -324,6 +344,7 @@
 
 .wl-workspace-shell .wl-workspace-content .wl-empty-state {
   max-width: 40rem;
+  margin-inline: auto;
 }
 
 .wl-workspace-shell .wl-workspace-content .wl-empty-state :where(h2, h3) {

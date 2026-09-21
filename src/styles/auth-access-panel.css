@@ -445,6 +445,19 @@
   outline-offset: 2px;
 }
 
+/* The field shell includes its icon and owns the complete focus treatment. */
+.wl-access-panel .wl-access-panel__field input:focus-visible {
+  outline: 0;
+  box-shadow: none;
+}
+
+@media (forced-colors: active) {
+  .wl-access-panel__field:focus-within {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
 .wl-access-panel.is-embedded {
   width: min(100%, 28rem);
 }

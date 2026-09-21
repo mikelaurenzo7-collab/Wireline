@@ -434,24 +434,24 @@ export default function DncManager() {
                       key={entry.id}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-all touch-press hover:scale-[1.02] hover:bg-black/[0.02] dark:hover:bg-white/3"
+                      className="group flex flex-col gap-3 rounded-md px-2 py-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-brand/20 bg-brand/10">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-brand/20 bg-brand/10">
                           <Phone className="h-3.5 w-3.5 text-rose-500" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-mono text-sm text-foreground">
                             {entry.phone_raw || entry.phone}
                           </p>
-                          <div className="mt-0.5 flex items-center gap-1.5">
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                             <span className="wl-micro-meta">{formatDate(entry.created_at)}</span>
                             <span className="h-1 w-1 rounded-full bg-black/15 dark:bg-white/15" />
                             <span className="wl-micro-meta">{reasonLabel(entry.reason)}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                         <span
                           className={cn(
                             "wl-label rounded-md border px-2 py-0.5",

@@ -87,15 +87,15 @@ export default function ComplianceChecklist() {
 
   return (
     <div className="wl-panel border border-border rounded-md p-4 space-y-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <p className="app-section-title flex items-center gap-2 mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand" />
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-brand" />
             Compliance Checklist
           </p>
           <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
             Account Holder-facing controls for regulated buyers. {doneCount}/{items.length} complete
-            {dncCount != null ? ` · ${dncCount} DNC entries` : ""}.
+            {dncCount != null ? ` · ${dncCount} DNC ${dncCount === 1 ? "entry" : "entries"}` : ""}.
           </p>
         </div>
         <ShadButton
@@ -131,7 +131,9 @@ export default function ComplianceChecklist() {
                 <ExternalLink className="w-3 h-3" />
               </Link>
             ) : (
-              <span className="wl-micro-meta text-muted">{item.done ? "Done" : "Pending"}</span>
+              <span className="wl-micro-meta shrink-0 whitespace-nowrap text-muted">
+                {item.done ? "Done" : "Pending"}
+              </span>
             )}
           </li>
         ))}

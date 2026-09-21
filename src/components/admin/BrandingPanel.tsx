@@ -23,7 +23,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
   return (
     <div className="flex flex-col gap-5">
       <div
-        className={`client-panel rounded-md wl-panel border border-input ${WL_ADMIN_CLASSES.panel}`}
+        className={`client-panel rounded-md wl-panel border border-input p-4 sm:p-5 ${WL_ADMIN_CLASSES.panel}`}
       >
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-md bg-primary/10 border border-primary/20 text-primary shadow-sm shadow-primary/10 flex items-center justify-center shrink-0">

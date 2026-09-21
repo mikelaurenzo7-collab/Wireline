@@ -15,6 +15,7 @@ import { cn } from "../../lib/utils";
 import { Panel } from "../PageShell";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
+import { Switch } from "../atoms/Switch";
 import { AdminSaveBar } from "./AdminSaveBar";
 import { OPS_ADMIN } from "../../lib/wireline-ops-design";
 
@@ -108,51 +109,33 @@ export function GrowthPanel({ settings, setSettings, onSave, isSaving }: GrowthP
         <Panel title="Growth Engine" hint="LEAD DISCOVERY" icon={TrendingUp} scroll>
           <div className="space-y-8">
             {/* Master Control */}
-            <div className="relative group overflow-hidden rounded-md wl-panel border border-brand/30 bg-brand/5 p-6 transition-all hover:bg-brand/10">
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="flex gap-4">
+            <div className="relative group overflow-hidden rounded-md wl-panel border border-brand/30 bg-brand/5 p-4 transition-colors hover:bg-brand/10">
+              <div className="relative z-10 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
                   <div
                     className={cn(
-                      "w-12 h-12 rounded-md flex items-center justify-center shrink-0 transition-all",
+                      "w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors",
                       settings.prospecting_enabled
                         ? "bg-brand/20 text-brand shadow-[var(--wireline-elevation-sm)]"
                         : "bg-black/10 text-muted",
                     )}
                   >
-                    <Zap
-                      className={cn("w-6 h-6", settings.prospecting_enabled && "animate-pulse")}
-                    />
+                    <Zap className="w-4 h-4" />
                   </div>
-                  <div className="space-y-1">
-                    <h4 className="text-base font-bold text-foreground">Lead Hunt</h4>
-                    <p className="text-[length:var(--wireline-typography-caption-size)] text-[var(--wireline-color-text-secondary)] leading-relaxed max-w-sm">
-                      Find phone-ready Apollo leads that match your Ideal Customer Profile, then
-                      review them before they enter a campaign.
-                    </p>
-                  </div>
+                  <h4 className="text-base font-bold text-foreground">Lead Hunt</h4>
                 </div>
-                <ShadButton
-                  type="button"
-                  variant="ghost"
-                  disableAnimations
-                  onClick={() =>
-                    setSettings({ ...settings, prospecting_enabled: !settings.prospecting_enabled })
+                <Switch
+                  checked={settings.prospecting_enabled}
+                  onCheckedChange={(checked) =>
+                    setSettings({ ...settings, prospecting_enabled: checked })
                   }
-                  className={cn(
-                    "w-14 h-7 rounded-full p-0 min-h-0 transition-all relative flex items-center px-1",
-                    settings.prospecting_enabled ? "bg-brand hover:bg-brand" : "bg-black/20",
-                  )}
-                  aria-pressed={settings.prospecting_enabled}
                   aria-label="Toggle Lead Hunt"
-                >
-                  <div
-                    className={cn(
-                      "w-5 h-5 rounded-full bg-card transition-all shadow-lg",
-                      settings.prospecting_enabled ? "translate-x-7" : "translate-x-0",
-                    )}
-                  />
-                </ShadButton>
+                />
               </div>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Find phone-ready Apollo leads that match your target profile. Review them before
+                adding them to a campaign.
+              </p>
             </div>
 
             {/* ICP Configuration */}
