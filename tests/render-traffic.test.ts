@@ -67,6 +67,23 @@ describe("Render deployment traffic gate", () => {
     expect(await response.json()).toEqual({ ip: "203.0.113.4" });
   });
   it.each([
+    ["matching", "b".repeat(40), 200, 1],
+    ["different", "a".repeat(40), 409, 0],
+    ["malformed", "unknown", 409, 0],
+  ])(
+    "checks the %s scheduler revision before executing work",
+    async (_label, revision, status, calls) => {
+      vi.stubEnv("BOTBOUND_TRAFFIC_ENABLED", "true");
+      const response = await fetch(`${url}/api/jobs/sweep`, {
+        headers: { "x-botbound-expected-source-revision": String(revision) },
+      });
+      expect(response.status).toBe(status);
+      expect(downstreamCalls).toBe(calls);
+      if (status === 409)
+        expect(await response.json()).toMatchObject({ code: "DEPLOYMENT_REVISION_MISMATCH" });
+    },
+  );
+  it.each([
     ["IS_PULL_REQUEST", "true"],
     ["RENDER_GIT_BRANCH", "codex/migration"],
     ["RENDER_GIT_COMMIT", "unknown"],

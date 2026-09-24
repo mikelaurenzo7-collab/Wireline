@@ -280,6 +280,7 @@ describe("Render voice admission and process liveness", () => {
       RENDER_SERVICE_ID: "srv-voice-test",
       RENDER_GIT_BRANCH: "main",
       RENDER_GIT_COMMIT: "a".repeat(40),
+      WIRELINE_VOICE_WORKER_SOURCE_REVISION: "a".repeat(40),
       IS_PULL_REQUEST: "false",
       WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
       WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED: "true",
@@ -390,7 +391,13 @@ describe("Render voice admission and process liveness", () => {
     await entered;
     try {
       const drain = await fetch(origin + "/drain", { ...options, method: "POST" });
-      expect(await drain.json()).toEqual({ draining: true, active: 0, pending: 1 });
+      expect(await drain.json()).toEqual({
+        draining: true,
+        active: 0,
+        pending: 1,
+        source_revision: "a".repeat(40),
+        max_call_seconds: 3600,
+      });
       const liveness = await fetch(origin + "/livez");
       expect(liveness.status).toBe(200);
       expect(liveness.headers.get("cache-control")).toBe("no-store");
@@ -413,8 +420,27 @@ describe("Render voice admission and process liveness", () => {
       draining: true,
       active: 0,
       pending: 0,
+      source_revision: "a".repeat(40),
+      max_call_seconds: 3600,
     });
     expect((await fetch(origin + "/livez")).status).toBe(200);
+  });
+
+  it("requires authentication and rejects a mismatched drain target before closing admission", async () => {
+    useRender();
+    const worker = createVoiceWorkerApp(express.Router(), 1, vi.fn());
+    const origin = await listen(worker);
+    expect((await fetch(origin + "/drain")).status).toBe(401);
+    expect((await fetch(origin + "/drain", { method: "POST" })).status).toBe(401);
+    const headers = { [VOICE_WORKER_AUTH_HEADER]: secret };
+    const mismatch = await fetch(origin + "/drain", {
+      method: "POST",
+      headers: { ...headers, "x-botbound-expected-source-revision": "b".repeat(40) },
+    });
+    expect(mismatch.status).toBe(409);
+    const state = await fetch(origin + "/drain", { headers });
+    expect(state.headers.get("cache-control")).toBe("no-store");
+    expect(await state.json()).toMatchObject({ draining: false, source_revision: "a".repeat(40) });
   });
 });
 

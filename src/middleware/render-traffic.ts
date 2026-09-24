@@ -39,5 +39,15 @@ export const requireRenderTraffic: RequestHandler = (req, res, next) => {
     return;
   }
 
+  // Independently deployed schedulers must not invoke a different API release.
+  const expectedRevision = req.get("x-botbound-expected-source-revision");
+  if (expectedRevision && expectedRevision !== deploymentSourceCommit()) {
+    res.status(409).json({
+      error: "The caller and API release revisions do not match.",
+      code: "DEPLOYMENT_REVISION_MISMATCH",
+    });
+    return;
+  }
+
   next();
 };

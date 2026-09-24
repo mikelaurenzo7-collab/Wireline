@@ -5,8 +5,11 @@ import {
   VOICE_WORKER_AUTH_HEADER,
   verifyVoiceWorkerServiceAuth,
 } from "./openai-sip-worker-dispatch";
-import { OPENAI_SIP_WEBHOOK_PATH } from "./openai-sip-config";
-import type { VoiceWorkerReadiness } from "./openai-sip-worker-readiness";
+import { OPENAI_SIP_WEBHOOK_PATH, resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
+import {
+  voiceWorkerSourceRevision,
+  type VoiceWorkerReadiness,
+} from "./openai-sip-worker-readiness";
 import { getDeploymentIdentity } from "../deployment-environment";
 
 export function createVoiceWorkerApp(
@@ -28,6 +31,21 @@ export function createVoiceWorkerApp(
   app.disable("x-powered-by");
   const beginDrain = () => {
     draining = true;
+  };
+  const drainState = () => {
+    let sourceRevision: string | null = null;
+    try {
+      sourceRevision = voiceWorkerSourceRevision();
+    } catch {
+      // Missing identity is explicit; the operator must not certify replacement.
+    }
+    return {
+      draining,
+      active: activeBackgroundWorkCount(),
+      pending: pendingRequests,
+      source_revision: sourceRevision,
+      max_call_seconds: resolveOpenAISipSessionMaxSeconds(),
+    };
   };
 
   // Render must not restart the process merely because it is draining a call.
@@ -65,12 +83,19 @@ export function createVoiceWorkerApp(
   });
   // Operators call this before removing an instance from the load balancer.
   // Existing calls keep their sideband connection while new deliveries retry.
-  app.post("/drain", (_req, res) => {
+  app.post("/drain", (req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    const expected = req.get("x-botbound-expected-source-revision");
+    if (expected && expected !== drainState().source_revision) {
+      res.status(409).json({ error: "Worker revision does not match the selected drain target." });
+      return;
+    }
     beginDrain();
-    res.json({ draining: true, active: activeBackgroundWorkCount(), pending: pendingRequests });
+    res.json(drainState());
   });
   app.get("/drain", (_req, res) => {
-    res.json({ draining, active: activeBackgroundWorkCount(), pending: pendingRequests });
+    res.setHeader("Cache-Control", "no-store");
+    res.json(drainState());
   });
   app.post(OPENAI_SIP_WEBHOOK_PATH, (_req, res, next) => {
     const identity = getDeploymentIdentity();

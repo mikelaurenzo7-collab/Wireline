@@ -5,8 +5,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 process.chdir(root);
 const role = process.argv[2];
-if (role !== "api" && role !== "voice")
-  throw new Error("Usage: node deploy/render/start.mjs api|voice");
+const cronRole = role === "jobs-sweep" || role === "daily-brief";
+if (role !== "api" && role !== "voice" && !cronRole)
+  throw new Error("Usage: node deploy/render/start.mjs api|voice|jobs-sweep|daily-brief");
 if (process.versions.node.split(".")[0] !== "22")
   throw new Error("Render services require Node 22.");
 const release = JSON.parse(readFileSync(resolve(root, "dist/render-release.json"), "utf8"));
@@ -35,11 +36,16 @@ if (role === "voice") {
   process.env.WIRELINE_VOICE_WORKER = "true";
   process.env.WIRELINE_VOICE_WORKER_SOURCE_REVISION = revision;
 } else if (process.env.WIRELINE_VOICE_WORKER === "true") {
-  throw new Error("The API service cannot use the voice-worker runtime role.");
+  throw new Error("Only the voice service may use the voice-worker runtime role.");
 }
 
 // Import in this process so Render SIGTERM reaches the existing shutdown and
 // drain handlers directly. An npm wrapper must not own the application PID.
-await import(
-  pathToFileURL(resolve(root, role === "api" ? "dist/server.cjs" : "dist/voice-worker.cjs")).href
-);
+if (cronRole) {
+  const { runCron } = await import(pathToFileURL(resolve(root, "deploy/render/cron.mjs")).href);
+  await runCron(role);
+} else {
+  await import(
+    pathToFileURL(resolve(root, role === "api" ? "dist/server.cjs" : "dist/voice-worker.cjs")).href
+  );
+}

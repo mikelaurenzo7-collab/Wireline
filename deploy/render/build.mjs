@@ -7,8 +7,9 @@ import { isolateApiPublicOutput } from "./public-output.mjs";
 const root = fileURLToPath(new URL("../../", import.meta.url));
 process.chdir(root);
 const role = process.argv[2];
-if (role !== "api" && role !== "voice")
-  throw new Error("Usage: node deploy/render/build.mjs api|voice");
+const cronRole = role === "jobs-sweep" || role === "daily-brief";
+if (role !== "api" && role !== "voice" && !cronRole)
+  throw new Error("Usage: node deploy/render/build.mjs api|voice|jobs-sweep|daily-brief");
 if (process.versions.node.split(".")[0] !== "22") throw new Error("Render builds require Node 22.");
 const revision = process.env.RENDER_GIT_COMMIT?.trim().toLowerCase() || "";
 if (!/^[a-f0-9]{40}$/.test(revision))
@@ -38,8 +39,16 @@ const run = (args) => {
 
 // Compile only: database migrations, provider probes, and live configuration
 // changes belong to separately approved release operations, never this build.
-run(["ci", "--include=dev", "--ignore-scripts"]);
-run(["run", role === "api" ? "build" : "build:voice-worker"]);
+if (cronRole) {
+  const checked = spawnSync(process.execPath, ["--check", "deploy/render/cron.mjs"], {
+    stdio: "inherit",
+  });
+  if (checked.error) throw checked.error;
+  if (checked.status !== 0) process.exit(checked.status ?? 1);
+} else {
+  run(["ci", "--include=dev", "--ignore-scripts"]);
+  run(["run", role === "api" ? "build" : "build:voice-worker"]);
+}
 if (role === "api") isolateApiPublicOutput(root);
 mkdirSync(resolve(root, "dist"), { recursive: true });
 writeFileSync(resolve(root, "dist/render-release.json"), JSON.stringify({ role, revision }) + "\n");

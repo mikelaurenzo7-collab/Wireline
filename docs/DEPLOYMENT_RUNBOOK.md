@@ -59,7 +59,10 @@ Before public cutover:
 3. Keep the new cron jobs disabled while the legacy scheduler runs. Stop the
    old scheduler and wait for outstanding executions before enabling the new
    sweep and daily-brief schedules independently. A cron HTTP timeout does not
-   cancel backend work.
+   cancel backend work. Deploy each scheduler with its role-specific build/start
+   wrapper at the same SHA as the API. Its release manifest is checked before
+   startup; enabled runs verify API identity and send an expected-revision
+   header that the API checks again before executing the job.
 4. Attach `botbound.me` to the Render web/API service and follow the DNS handoff
    below. Apply Render's required records at the new authoritative DNS provider,
    then verify certificates, canonical origin,
@@ -76,6 +79,10 @@ For every voice deployment **or configuration/Blueprint update that replaces the
 process**, run `node deploy/render/drain-voice.mjs` against the old worker with
 `VOICE_DRAIN_EXPECTED_REVISION` set to its verified SHA. Wait for authenticated
 drain evidence with `active=0` and `pending=0` before starting the replacement.
+If observation is interrupted, rerun the command with the same expected SHA.
+Authenticated `/drain` retains source and duration metadata while `/readyz`
+returns 503; the command resumes observation without reopening admissions.
+Missing or changed identity fails closed and requires operator investigation.
 Render permits at most 300 seconds after SIGTERM by default configuration; that
 does not protect a 60-minute active call. `/livez` remains healthy during drain
 and is the Render health check; `/healthz` continues to describe admission

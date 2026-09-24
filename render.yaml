@@ -724,13 +724,17 @@ projects:
             plan: 0.5c-512mb
             autoDeployTrigger: off
             schedule: "* * * * *"
-            buildCommand: node --check deploy/render/cron.mjs
-            startCommand: node deploy/render/cron.mjs jobs-sweep
+            buildCommand: node deploy/render/build.mjs jobs-sweep
+            startCommand: node deploy/render/start.mjs jobs-sweep
             envVars:
               - key: SKIP_INSTALL_DEPS
                 value: "true"
               - key: NODE_VERSION
                 value: "22"
+              - key: NODE_ENV
+                value: production
+              - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
+                value: production
               - key: RENDER_CRON_ENABLED
                 value: "false"
               - key: BOTBOUND_BACKEND_ORIGIN
@@ -751,13 +755,17 @@ projects:
             plan: 0.5c-512mb
             autoDeployTrigger: off
             schedule: "*/15 * * * *"
-            buildCommand: node --check deploy/render/cron.mjs
-            startCommand: node deploy/render/cron.mjs daily-brief
+            buildCommand: node deploy/render/build.mjs daily-brief
+            startCommand: node deploy/render/start.mjs daily-brief
             envVars:
               - key: SKIP_INSTALL_DEPS
                 value: "true"
               - key: NODE_VERSION
                 value: "22"
+              - key: NODE_ENV
+                value: production
+              - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
+                value: production
               - key: RENDER_CRON_ENABLED
                 value: "false"
               - key: BOTBOUND_BACKEND_ORIGIN
