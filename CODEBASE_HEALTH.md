@@ -42,6 +42,8 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 - Secrets, exported environment mirrors, customer data, transcripts, raw provider payloads, local databases, and personal machine paths.
 - Generated marketing kits, official-asset bundles, archive exports, and provider/catalog mirrors.
 
+The four existing browser-extension ZIP files in `public/downloads/` are an explicit release-asset exception. Keep them synchronized with the canonical extension builder and retain byte-identical legacy aliases; local package output and other archives remain excluded.
+
 ### Must be deleted when found
 
 - Thin `*-v2` wrappers or one-line re-export files that only bridge a completed migration.

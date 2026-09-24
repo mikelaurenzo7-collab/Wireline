@@ -19,6 +19,7 @@ BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, 
 - Keep credentials, tenant data, provider calls, billing decisions, authorization, and webhooks server-owned.
 - Do not bypass a failing check by weakening the contract. Fix the implementation or document a narrow, evidence-backed exception with a retirement condition.
 - Do not commit generated screenshots, review summaries, exported environment files, temporary patches, local tool output, archives, coverage, Playwright output, or build artifacts.
+- The four existing browser-extension ZIP files in `public/downloads/` are shipped release assets: regenerate them with the canonical extension builder when their source changes, and retain byte-identical legacy aliases. This exception does not cover local browser packages or other archives.
 - Do not add `*-v2` wrappers, parallel design systems, duplicate product constants, or one-off markdown files that restate canonical policy.
 
 ## Verification ladder

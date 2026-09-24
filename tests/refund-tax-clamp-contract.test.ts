@@ -34,11 +34,18 @@ describe("refund tax-clamp contract", () => {
   });
 
   it("every refund and dispute reversal flows through the clamp — no raw gross amounts", () => {
-    // Both refund paths use the local clamp. Dispute withdrawal/reinstatement
+    // Both refund events use one shared handler and its local clamp. Dispute withdrawal/reinstatement
     // moved into the strict preflight so provider balance movements cannot be
     // acknowledged without authoritative, idempotent accounting.
     const calls = billing.match(/creditPortionUsd\(/g) || [];
-    expect(calls.length).toBeGreaterThanOrEqual(3); // definition + 2 refund sites
+    expect(calls).toHaveLength(2); // definition + shared settled-refund handler
+    expect(billing).toContain(
+      "await reverseSettledRefundsForCharge(event.data.object as Stripe.Charge, event)",
+    );
+    expect(billing).toContain("await reverseSettledRefundsForCharge(charge, event, false)");
+    expect(billing).toContain(
+      'reverseCredit(userId, creditPortionUsd(refund.amount, pi), "web_topup_refund"',
+    );
     expect(strictPreflight).toContain("proportionalTopUpCreditUsd(");
     expect(strictPreflight).toMatch(
       /proportionalTopUpCreditUsd\(\s*withdrawnCents,\s*paymentIntent\.amount \|\| 0,\s*purchasedCreditUsd/,

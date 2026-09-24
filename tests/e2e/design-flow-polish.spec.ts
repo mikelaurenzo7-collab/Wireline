@@ -103,29 +103,36 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/features");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    const setup = page.getByRole("list", { name: "Get started" });
-    await expect(setup.getByRole("listitem")).toHaveCount(3);
-    await expect(setup).toContainText("Launch");
-    await expect(setup).not.toContainText("Improve");
+    const features = page.getByRole("list", { name: "Built Around Your Business" });
+    await expect(features.getByRole("listitem")).toHaveText([
+      "Shared Context",
+      "Calls and Follow-Ups",
+      "Scheduling and Handoff",
+      "Your Rules and Approvals",
+      "Your Playbook",
+      "Clear Outcomes",
+    ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {
         const title = document.querySelector("h1")!;
         const range = document.createRange();
         range.selectNodeContents(title);
-        const cards = document.querySelector(".wl-stitch-card")!.getBoundingClientRect();
+        const featureHeading = document
+          .getElementById("features-list-title")!
+          .getBoundingClientRect();
         const action = document
           .querySelector(".wl-features-intro .marketing-hero__actions")!
           .getBoundingClientRect();
         return {
           lines: range.getClientRects().length,
           titleLeft: title.getBoundingClientRect().left,
-          cardLeft: cards.left,
+          featureLeft: featureHeading.left,
           actionLeft: action.left,
         };
       });
       expect(geometry.lines).toBe(1);
-      expect(Math.abs(geometry.titleLeft - geometry.cardLeft)).toBeLessThan(2);
-      expect(Math.abs(geometry.actionLeft - geometry.cardLeft)).toBeLessThan(2);
+      expect(Math.abs(geometry.titleLeft - geometry.featureLeft)).toBeLessThan(2);
+      expect(Math.abs(geometry.actionLeft - geometry.featureLeft)).toBeLessThan(2);
     }
     const header = page.locator("header.wl-public-header");
     await expect
@@ -142,6 +149,98 @@ for (const width of [320, 390, 1440]) {
     await expect(page).toHaveURL(/\/signup\?plan=free/);
   });
 }
+
+test("Studio settings and navigation reflow at 320px with enlarged text", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await mockWorkspace(page);
+  await page.goto("/studio?agent=design-bot&section=setup");
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty("font-size", "32px", "important"),
+  );
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).fontSize))
+    .toBe("32px");
+  await expect(page.getByRole("heading", { name: "Tone & Knowledge" })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  const overflows = await page.evaluate(() =>
+    [
+      ...document.querySelectorAll<HTMLElement>(
+        '#workspace-main, #studio-inspector, #studio-inspector header, #studio-inspector section, #studio-inspector fieldset, #studio-inspector [role="tablist"], #studio-inspector button, #studio-inspector a, .wl-studio-context-row, .wl-shell-dock, .wl-shell-dock-item > span',
+      ),
+    ]
+      .filter((element) => element.clientWidth > 0 && element.scrollWidth > element.clientWidth + 1)
+      .map((element) => ({
+        tag: element.tagName,
+        width: element.clientWidth,
+        scroll: element.scrollWidth,
+      })),
+  );
+  expect(overflows).toEqual([]);
+  await page.getByRole("button", { name: "Energetic", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Energetic", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByLabel("Opening greeting").fill("Welcome to the repair desk.");
+  await page.getByRole("tab", { name: "Review", exact: true }).click();
+  await page.getByRole("tab", { name: "Setup", exact: true }).click();
+  await expect(page.getByLabel("Opening greeting")).toHaveValue("Welcome to the repair desk.");
+  await capture(page, info, "studio-320-enlarged-text");
+  await page.getByRole("button", { name: "Close Bot settings", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bot settings", exact: true })).toBeFocused();
+  const workroom = page.getByRole("region", { name: "Front Desk workroom", exact: true });
+  await expect(workroom).toBeVisible();
+  expect(
+    await workroom.evaluate((element) =>
+      [element, ...element.querySelectorAll("header, header > div, header p, header h2")]
+        .filter((item) => item.scrollWidth > item.clientWidth + 1)
+        .map((item) => ({ tag: item.tagName, width: item.clientWidth, scroll: item.scrollWidth })),
+    ),
+  ).toEqual([]);
+  await workroom
+    .getByRole("textbox", { name: "Message Front Desk", exact: true })
+    .fill("Use a warmer greeting.");
+  await workroom.getByRole("button", { name: "Send", exact: true }).click({ trial: true });
+});
+
+test("Bot creation keeps its heading, fields and actions usable at 320px with enlarged text", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await mockWorkspace(page);
+  await page.goto("/studio?create=1");
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty("font-size", "32px", "important"),
+  );
+  const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
+  await expect(dialog).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeInViewport();
+  await expect(dialog.getByRole("button", { name: "Create Bot", exact: true })).toBeInViewport();
+  const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
+  await brief.fill("Answer repair questions and book a visit.");
+  const identity = dialog.getByRole("button", { name: /Name & appearance/ });
+  await identity.click();
+  await dialog.getByRole("textbox", { name: /Bot Name/ }).fill("Repair Desk");
+  await identity.click();
+  await expect(brief).toHaveValue("Answer repair questions and book a visit.");
+  expect(
+    await dialog.evaluate((element) =>
+      [element, ...element.querySelectorAll("div, h2, button, textarea, label")]
+        .filter(
+          (item) =>
+            item.clientWidth > 0 &&
+            item.scrollWidth > item.clientWidth + 1 &&
+            getComputedStyle(item).overflowX === "visible",
+        )
+        .map((item) => ({ tag: item.tagName, width: item.clientWidth, scroll: item.scrollWidth })),
+    ),
+  ).toEqual([]);
+  await dialog.getByRole("button", { name: "Close Bot setup", exact: true }).click();
+  await expect(dialog).toBeHidden();
+});
 
 for (const code of ["NAME_CONFLICT", "name_conflict", "BOT_MARK_CONFLICT", "bot_mark_conflict"]) {
   test(`creation conflict ${code} reveals and focuses the relevant control`, async ({ page }) => {

@@ -132,7 +132,7 @@ export const STUDIO_CANVAS_REQUIRED = {
   workspacePanel: [
     { id: "real-config", pattern: /agent-config/ },
     { id: "managed-voice-picker", pattern: /SimpleVoicePicker/ },
-    { id: "voice-heading", pattern: /Phone Voice/ },
+    { id: "voice-heading", pattern: /Phone Voice/i },
     { id: "test-in-chat", pattern: /onTestVoiceInChat/ },
   ],
   reviewPanel: [

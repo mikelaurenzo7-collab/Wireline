@@ -7,8 +7,11 @@ describe("marketing comparison responsive contract", () => {
   it("contains the wide comparison table inside a viewport-constrained scroller", () => {
     expect(comparePage).toContain('className="mx-auto w-full min-w-0 max-w-6xl"');
     expect(comparePage).toContain(
-      'className="mt-8 w-full max-w-full overflow-x-auto border border-border bg-card"',
+      'className="mt-8 hidden w-full max-w-full overflow-x-auto border border-border bg-card lg:block"',
     );
     expect(comparePage).toContain('className="w-full min-w-[900px] border-collapse text-left"');
+    expect(comparePage).toContain(
+      'className="mt-8 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card lg:hidden"',
+    );
   });
 });

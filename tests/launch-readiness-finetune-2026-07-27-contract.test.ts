@@ -26,7 +26,10 @@ describe("launch readiness fine-tune 2026-07-27", () => {
     expect(ledger).toContain('setEnrichmentWarning("Follow-up status is temporarily incomplete.")');
     expect(ledger).not.toContain("callsRes.ok ? await callsRes.json() : { calls: [] }");
     expect(inbox).toContain("Could not load approval inbox.");
-    expect(inbox).toContain("Could not load active operator work.");
+    expect(inbox).toContain("setTasksUnavailable(!tasksReady)");
+    expect(inbox).toContain(
+      'title={tasksUnavailable ? "Actions Unavailable" : "Triage Unavailable"}',
+    );
     expect(inbox).toContain(
       'authFetch("/api/triage", { signal: controller.signal }).catch(() => null)',
     );
@@ -117,8 +120,8 @@ describe("launch readiness fine-tune 2026-07-27", () => {
 
     expect(email).not.toContain("first AI employee");
     expect(compare).not.toContain("AI call agent");
-    expect(apps).toContain("privately rehearse your Phone Bot");
-    expect(apps).toContain("first Phone Bot");
+    expect(apps).toContain("Build and rehearse privately.");
+    expect(apps).toContain("Build your Bot from your editor.");
     expect(apps).not.toContain("first voice agent");
     expect(privacy).toMatch(/operates a Bot platform for calls,\s+texts, and email/);
     expect(privacy).toContain("primarily through <strong>OpenAI</strong>");

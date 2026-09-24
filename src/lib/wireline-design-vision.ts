@@ -64,7 +64,7 @@ export const WIRELINE_DESIGN_VISION = {
     accent: "#C7CCD6",
     accentHover: "#DEE1E8",
     accentPressed: "#A9AFBC",
-    textTertiary: "#8B87A0",
+    textTertiary: "#908CA5",
   },
   motion: {
     durations: ["instant 60ms", "fast 120ms", "standard 200ms", "slow 300ms", "deliberate 440ms"],

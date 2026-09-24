@@ -41,7 +41,16 @@ describe("round-4 audit fix contracts", () => {
   it("refund list failures throw for a clean Stripe retry instead of double-reversing", () => {
     const billing = read("src/routes/billing-routes.ts");
     expect(billing).not.toContain("catch(() => [] as Stripe.Refund[])");
-    expect(billing).toContain("A transient list failure must THROW");
+    expect(billing).toContain("const refunds = await listSucceededRefunds(charge.id)");
+    const preflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
+    const loaderStart = preflight.indexOf("export async function listSucceededRefunds(");
+    const loaderEnd = preflight.indexOf("type SubscriptionAllowanceContext", loaderStart);
+    expect(loaderStart).toBeGreaterThan(-1);
+    expect(loaderEnd).toBeGreaterThan(loaderStart);
+    const loader = preflight.slice(loaderStart, loaderEnd);
+    expect(loader).toContain("await stripe.refunds.list(");
+    expect(loader).toContain("while (hasMore)");
+    expect(loader).not.toMatch(/\bcatch\b/);
   });
 
   it("purge defers when Stripe is unconfigured but the account holds Stripe ids", () => {

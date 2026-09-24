@@ -407,7 +407,7 @@ export default function CreateAgentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/58 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-[1px]"
+      className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-black/58 px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-[1px] sm:px-4"
       role="presentation"
     >
       <form
@@ -421,10 +421,10 @@ export default function CreateAgentDialog({
         aria-busy={creating}
         aria-labelledby="create-agent-title"
       >
-        <div className="shrink-0 border-b border-border px-5 py-5 sm:px-6">
-          <div className="flex items-start justify-between gap-4">
+        <div className="shrink-0 border-b border-border px-3 py-4 sm:px-6 sm:py-5">
+          <div className="flex items-start justify-between gap-2 sm:gap-4">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <span className="mt-0.5 hidden size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary sm:grid">
                 <Zap size={16} aria-hidden="true" />
               </span>
               <div className="min-w-0">
@@ -446,15 +446,15 @@ export default function CreateAgentDialog({
               onClick={close}
               disabled={creating}
               aria-label="Close Bot setup"
-              className="shrink-0"
+              className="size-[44px] shrink-0"
             >
               <X aria-hidden="true" size={16} />
             </Button>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
-          <div className="grid gap-5">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6 sm:py-6">
+          <div className="grid min-w-0 grid-cols-1 gap-5">
             <label className="block">
               <span className="sr-only">Describe the Job</span>
               <Textarea
@@ -571,8 +571,8 @@ export default function CreateAgentDialog({
           ) : null}
         </div>
 
-        <div className="shrink-0 border-t border-border px-5 py-4 sm:px-6">
-          <div className="flex items-center justify-between gap-3">
+        <div className="shrink-0 border-t border-border px-3 py-3 sm:px-6 sm:py-4">
+          <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <button
               type="button"
               onClick={close}
@@ -584,7 +584,7 @@ export default function CreateAgentDialog({
             <Button
               type="submit"
               disabled={creating || markCapacityReached}
-              className="min-h-11 gap-2 px-5"
+              className="h-auto min-h-11 gap-2 whitespace-normal px-3 py-2 sm:px-5"
             >
               {creating ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />

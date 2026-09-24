@@ -366,9 +366,10 @@
 
 .wl-shell-dock-item > span {
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
 }
 
 @media (max-width: 359px) {

@@ -458,7 +458,7 @@ const StudioWorkroom = forwardRef<
 
   return (
     <section
-      className="flex h-full min-h-0 flex-col bg-background"
+      className="flex h-full min-h-0 flex-col overflow-y-auto bg-background"
       aria-label={mode === "test" ? `${agentName} customer test` : `${agentName} workroom`}
     >
       <header
@@ -483,7 +483,7 @@ const StudioWorkroom = forwardRef<
               </span>
             </div>
           ) : (
-            <div className="min-w-0">
+            <div className="min-w-0 max-w-full">
               <p className="text-eyebrow text-primary">
                 {mode === "test" ? "Browser test" : "Build by conversation"}
               </p>
@@ -500,7 +500,7 @@ const StudioWorkroom = forwardRef<
               </h2>
             </div>
           )}
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex max-w-full shrink-0 flex-wrap items-center gap-1.5">
             {modeToggle}
             {mode === "test" && allowOutbound ? (
               <Button
@@ -523,7 +523,7 @@ const StudioWorkroom = forwardRef<
         id={onModeChange ? modePanelId : undefined}
         role={onModeChange ? "tabpanel" : undefined}
         aria-labelledby={onModeChange ? modeTabId(mode) : undefined}
-        className="flex min-h-0 flex-1 flex-col"
+        className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0"
       >
         {error ? (
           <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">

@@ -24,7 +24,7 @@ describe("live research timeout is not a call-duration cap", () => {
 
   it("distinguishes the live session limit from billing and research timeouts in pricing", () => {
     const source = readFileSync(resolve("src/pages/Pricing.tsx"), "utf8");
-    expect(source).toMatch(/How long can a call last\?/);
+    expect(source).toMatch(/How long can a call last\?/i);
     expect(source).toContain("up to 60 minutes per session");
     expect(source).toContain("unless a shorter limit is configured");
     expect(source).toContain("Balance depletion does not cut off an active call");

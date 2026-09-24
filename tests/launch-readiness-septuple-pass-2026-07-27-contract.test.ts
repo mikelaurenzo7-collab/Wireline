@@ -32,7 +32,9 @@ describe("launch readiness septuple-pass 2026-07-27", () => {
 
   it("marks Cadences load errors when the sequences response is non-OK", () => {
     const cadences = read("src/components/Cadences.tsx");
-    expect(cadences).toContain("if (!cR.ok)");
+    expect(cadences).toContain("cR?.ok ? cR.json().catch(() => null) : null");
+    expect(cadences).toContain("const sequences = parseCadences(cD)");
+    expect(cadences).toMatch(/if \(!sequences\) \{\s*throw new Error\(/);
     expect(cadences).toContain("setCadences([])");
     expect(cadences).toContain("setLoadErr(");
   });

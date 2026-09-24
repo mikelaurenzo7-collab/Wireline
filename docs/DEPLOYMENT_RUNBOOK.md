@@ -223,6 +223,17 @@ WIRELINE_RECONCILE_STRIPE_PORTAL=true \
 
 This command is read-only. It verifies provider readiness, authenticated worker readiness, the managed Stripe Customer Portal, Stripe webhook coverage, and the Resend negative-delivery webhook contract. It must not contain or invoke an `--apply` path. Worker verification expects `WIRELINE_EXPECTED_SOURCE_REVISION`, otherwise `VERCEL_GIT_COMMIT_SHA`, otherwise the local Git HEAD; set the expected exact release explicitly when those environments differ.
 
+For a local Render operator preflight, supply `NODE_ENV=production`, the canonical
+`APP_URL` and current production provider credentials directly, including
+`STRIPE_SECRET_KEY`. Do not copy platform metadata into the local environment or
+manufacture Render/Vercel deployment identity. Stripe webhook verification uses
+the supplied key without contacting Vercel. Local portal verification is read-only;
+explicit portal repair must run in the verified Render production API service
+(including its Render Shell), or in the canonical legacy Vercel project. The
+Render command checks `dist/render-release.json` against the host's `main` branch
+and full `RENDER_GIT_COMMIT`; it does not depend on process-local variables set
+inside the running server.
+
 When provider drift is confirmed, use the owning explicit repair command, inspect the result, rerun the read-only preflight, and preserve redacted evidence. Never embed provider mutation in Vercel build, Preview, or an automatic retry loop.
 
 On a first worker deployment, its readiness check is expected to remain blocked until step 4. Record that blocker explicitly; rerun the complete preflight after worker deployment and before enabling telephone admission.

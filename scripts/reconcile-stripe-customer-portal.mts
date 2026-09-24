@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import Stripe from "stripe";
-import { PROJECT_ID as CANONICAL_VERCEL_PROJECT_ID } from "./lib/vercel-project.mjs";
-import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs";
+import { readFileSync } from "node:fs";
+import { assertStripePortalOperatorEnvironment } from "./lib/stripe-operator-policy.mts";
+import { getDeploymentIdentity } from "../src/lib/deployment-environment";
 
 import {
   FOUNDER_CATALOG_VERSION,
@@ -23,24 +24,17 @@ import { stripePriceMatchesFounderPlan } from "../src/lib/stripe-founder-price-c
 
 const APPLY_FLAG = "--apply";
 const apply = process.argv.includes(APPLY_FLAG);
-const environment = String(process.env.VERCEL_ENV || process.env.NODE_ENV || "").trim();
-const appUrl = String(process.env.APP_URL || "")
-  .trim()
-  .replace(/\/+$/, "");
-const secretKey = String(process.env.STRIPE_SECRET_KEY || "").trim();
-
-if (environment !== "production") {
-  throw new Error("Stripe portal reconciliation is allowed only in Vercel Production.");
-}
-if (process.env.VERCEL_PROJECT_ID !== CANONICAL_VERCEL_PROJECT_ID) {
-  throw new Error("Stripe portal reconciliation is pinned to the canonical BotBound project.");
-}
-if (appUrl !== CANONICAL_PRODUCTION_URL) {
-  throw new Error(`Stripe portal reconciliation requires APP_URL=${CANONICAL_PRODUCTION_URL}.`);
-}
-if (!/^(?:sk|rk)_live_/.test(secretKey)) {
-  throw new Error("Stripe portal reconciliation requires the live Production Stripe key.");
-}
+// A Render Shell is a separate process: it does not inherit values assigned by
+// start.mjs. Verify the same built release manifest directly, without fabricating
+// host metadata or requiring a process-local source variable from the server.
+const renderRelease =
+  getDeploymentIdentity().provider === "render"
+    ? JSON.parse(readFileSync(new URL("../dist/render-release.json", import.meta.url), "utf8"))
+    : undefined;
+const { appUrl, secretKey } = assertStripePortalOperatorEnvironment(process.env, {
+  apply,
+  renderRelease,
+});
 
 const stripe = new Stripe(secretKey, { apiVersion: STRIPE_API_VERSION, typescript: true });
 const publicPlans = new Set(PUBLIC_SELF_SERVE_PLAN_IDS);

@@ -41,8 +41,8 @@ export default function StudioContextChrome() {
       className="shrink-0 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/90"
       aria-label={`${language.singular} context`}
     >
-      <div className="flex min-h-[56px] items-center justify-between gap-2 px-3 sm:px-5">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <div className="wl-studio-context-row flex min-h-[56px] flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-5">
+        <div className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5">
           {activeAgent ? null : (
             <span className="inline-flex shrink-0 font-[var(--wireline-font-mono)] text-[10px] uppercase tracking-[0.16em] text-primary">
               {language.navLabel}
@@ -94,7 +94,7 @@ export default function StudioContextChrome() {
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex max-w-full flex-wrap items-center gap-1">
           {activeAgent ? (
             <Button
               id="studio-settings-toggle"

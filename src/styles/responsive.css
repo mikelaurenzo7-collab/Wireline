@@ -177,7 +177,7 @@
   .marketing-footer-legal {
     margin-top: 1.25rem;
   }
-  .wl-workspace-main {
+  .wl-workspace-main:not([data-wireline-full-bleed="true"]) {
     padding-inline: 1rem;
   }
   .wl-workspace-header {

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import postcss from "postcss";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -137,7 +138,8 @@ describe("authenticated workspace design architecture", () => {
     expect(setup).toContain("Tone & Knowledge");
     expect(review).toContain("Setup Summary");
     expect(setup).not.toContain("one clear job");
-    expect(setup).toContain("wl-preserve-case text-lg font-semibold");
+    const setupHeading = setup.match(/<h2\b[\s\S]*?<\/h2>/)?.[0];
+    expect(setupHeading).toContain("wl-preserve-case break-words text-lg font-semibold");
     expect(review).toContain(
       'data-wireline-studio-review-density={compact ? "inspector" : "page"}',
     );
@@ -171,8 +173,22 @@ describe("authenticated workspace design architecture", () => {
     expect(master).toContain(':not([class*="bg-"])');
     expect(master).not.toContain(".wl-workspace-shell .wl-workspace-rail-panel");
     expect(master).not.toContain('.wl-workspace-shell nav[aria-label="Workspace navigation"]');
-    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:focus-visible/);
-    expect(master).not.toMatch(/wl-workspace-shell[\s\S]{0,180}:active/);
+    const interactionOverrides: string[] = [];
+    postcss.parse(master).walkRules((rule) => {
+      for (const selector of rule.selectors) {
+        if (
+          selector.includes(".wl-workspace-shell") &&
+          /:(focus-visible|active)\b/.test(selector)
+        ) {
+          interactionOverrides.push(selector);
+        }
+      }
+    });
+    // The composer owns its input focus; broad shell overrides would erase
+    // focus/pressed treatment from unrelated controls.
+    expect(interactionOverrides).toEqual([
+      ".wl-workspace-shell .wl-composer-dock .wl-composer-dock__input:focus-visible",
+    ]);
     expect(typeIntegrity).toContain(".wl-shell-dock-item");
     expect(typeIntegrity).toContain(".wl-shell-more-group-label");
   });

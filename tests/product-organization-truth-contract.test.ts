@@ -26,7 +26,9 @@ describe("product organization truth contracts", () => {
     expect(inbox).toContain("error && !threads.length");
     expect(inbox).toContain('title="Inbox Unavailable"');
     expect(inbox).toContain('title={agentId ? "No Email for This Bot" : "No Email Yet"}');
-    expect(inbox).toContain("onClick={() => void loadThreads()}");
+    expect(inbox).toContain(
+      'onClick={() => void (error.source === "sync" ? syncInbox() : loadThreads())}',
+    );
     expect(inbox).not.toContain('title="Connect your inbox"');
     expect(inbox).toContain("/api/emails/accounts");
     expect(inbox).toContain("mailboxConnected === false");
@@ -50,7 +52,7 @@ describe("product organization truth contracts", () => {
     expect(stripeCard).toContain("showBalanceTopUp?: boolean");
     expect(stripeCard).toContain("showBalanceTopUp ? (");
     expect(stripeCard).toContain("{canAddBalance && <CreditTopUpCard");
-    expect(stripeCard).toContain("Manage subscription");
+    expect(stripeCard).toMatch(/Manage Subscription/i);
     expect(stripeCard).not.toContain(">Manage plan<");
     expect(stripeCard).not.toContain("Open billing portal");
   });

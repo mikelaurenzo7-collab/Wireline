@@ -9,12 +9,14 @@
  * secret are untouched; only enabled_events changes).
  *
  * Usage:
- *   VERCEL_TOKEN=... node scripts/align-stripe-webhook-events.mjs           # check
- *   VERCEL_TOKEN=... node scripts/align-stripe-webhook-events.mjs --apply   # fix
+ * Supply STRIPE_SECRET_KEY through the secure operator environment, then run:
+ *   node scripts/align-stripe-webhook-events.mjs           # check
+ *   node scripts/align-stripe-webhook-events.mjs --apply   # fix
+ * VERCEL_TOKEN remains an optional lookup fallback for the legacy deployment.
  */
 
 import Stripe from "stripe";
-import { getVercelEnvValue } from "./lib/vercel-env-values.mjs";
+import { resolveStripeOperatorKey } from "./lib/stripe-operator-key.mjs";
 import { getHandledStripeWebhookEvents } from "./lib/stripe-handled-events.mjs";
 import {
   evaluateStripeWebhookReadiness,
@@ -38,14 +40,7 @@ if (!handledEvents.length) {
   process.exit(1);
 }
 
-const token = process.env.VERCEL_TOKEN?.trim();
-if (!token) {
-  console.error("Set VERCEL_TOKEN so the Stripe key can be read from Vercel.");
-  process.exit(1);
-}
-
-const stripeKey = await getVercelEnvValue(token, "STRIPE_SECRET_KEY");
-if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not found on Vercel project");
+const stripeKey = await resolveStripeOperatorKey();
 
 const stripe = new Stripe(stripeKey, { apiVersion: API_VERSION });
 const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });

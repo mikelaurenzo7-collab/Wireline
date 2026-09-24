@@ -91,7 +91,19 @@
   min-width: 0;
 }
 
+.wl-studio-tone-options {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+}
+
 @media (max-width: 639px) {
+  /* Text may grow without consuming the viewport through nested gutters. */
+  .wl-studio-context-row,
+  #studio-inspector > header,
+  [data-wireline-studio-setup-density] > div,
+  [data-wireline-studio-setup-density] section {
+    padding-inline: min(0.75rem, 12px);
+  }
+
   .wl-studio-operations main,
   .wl-studio-operations :is(header, section, aside, article, div) {
     min-width: 0;

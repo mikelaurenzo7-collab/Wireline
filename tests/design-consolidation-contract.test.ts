@@ -31,7 +31,7 @@ describe("design consolidation contracts", () => {
     expect(presets).toContain('from "./Skeleton"');
   });
 
-  it("migrates hot-path surfaces off studio-card to wl-paper primitives", () => {
+  it("migrates hot-path surfaces off the legacy studio-card theme", () => {
     const migrated = [
       "src/pages/OverviewPage.tsx",
       "src/components/CreateAgentDialog.tsx",
@@ -44,7 +44,15 @@ describe("design consolidation contracts", () => {
     ];
     for (const file of migrated) {
       const source = read(file);
-      expect(source).toContain("wl-paper");
+      if (file.endsWith("ClientAppsPage.tsx")) {
+        expect(source).toContain("<WorkspacePageFrame>");
+        expect(source).toContain("text-foreground");
+      } else if (file.endsWith("KnowledgeBaseClaude.tsx")) {
+        expect(source).toContain("text-foreground");
+        expect(source).toContain("border-border");
+      } else {
+        expect(source).toContain("wl-paper");
+      }
       expect(source).not.toContain("studio-card");
     }
   });

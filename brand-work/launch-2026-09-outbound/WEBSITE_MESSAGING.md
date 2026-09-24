@@ -4,7 +4,7 @@ The website showcases outbound and inbound. This campaign asset release remains 
 
 ## Hero
 
-**Put Your Bot on the Line**
+**Your Next Hire Is a Bot**
 
 Find leads. Make calls. Answer demand. Book the next step.
 

@@ -85,7 +85,7 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/styles/theme-light.css",
     lightTheme,
-    /--wireline-color-text-tertiary:\s*#706b84/i,
+    /--wireline-color-text-tertiary:\s*#625c76/i,
     "Light tertiary text must retain the audited AA-safe value",
   );
   mustInclude(

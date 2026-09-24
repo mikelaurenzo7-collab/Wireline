@@ -55,7 +55,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("tracks only verifiable customer-readiness milestones", () => {
-    expect(activation).toContain("Ready for customers");
+    expect(activation).toMatch(/Ready for Customers/i);
     expect(activation).toContain("Role and greeting set");
     expect(activation).toContain("Define the work, boundaries, and successful outcomes.");
     expect(activation).not.toContain("one clear customer-facing responsibility");

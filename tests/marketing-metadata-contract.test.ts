@@ -116,9 +116,9 @@ describe("marketing metadata contract", () => {
     expect(pricing).toContain("Paid plans start at $19/month");
     expect(pricing).toContain("Check live activation availability.");
     expect(pricing).toContain("plan.price_usd_monthly");
-    expect(contact).toContain('planById("starter")');
-    expect(contact).toContain('planById("team")');
-    expect(contact).toContain("Starter launches at ${STARTER_PRICE}/mo");
+    // Contact is an inquiry form; prices and availability belong to Pricing.
+    expect(contact).not.toContain("Starter launches at");
+    expect(contact).not.toMatch(/\$\d+\/(?:mo|month)/);
     expect(contact).toContain('searchParams.get("intent") ?? searchParams.get("topic")');
     expect(contact).toContain("Preferred callback");
 

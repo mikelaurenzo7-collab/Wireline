@@ -172,10 +172,8 @@ describe("Stripe customer portal reconciliation", () => {
     const launchStatus = read("scripts/generate-launch-status.mjs");
     const webhookSecretSync = read("scripts/sync-stripe-webhook-secret-to-vercel.mjs");
 
-    expect(script).toContain('environment !== "production"');
-    expect(script).toContain("process.env.VERCEL_PROJECT_ID !== CANONICAL_VERCEL_PROJECT_ID");
-    expect(script).toContain("appUrl !== CANONICAL_PRODUCTION_URL");
-    expect(script).toContain("/^(?:sk|rk)_live_/");
+    expect(script).toContain("assertStripePortalOperatorEnvironment(process.env, {");
+    expect(script).toContain('new URL("../dist/render-release.json", import.meta.url)');
     expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");
     expect(script).toContain("FOUNDER_PRODUCTS");
     expect(script).toContain("stripePriceMatchesFounderPlan");

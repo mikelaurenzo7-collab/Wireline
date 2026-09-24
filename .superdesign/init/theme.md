@@ -7,7 +7,7 @@ This initialization snapshot provides source context. Current decisions belong i
 - Identity: BotBound Design System — near-black violet canvases, layered charcoal-violet surfaces, electric lavender actions, silver secondary controls, and restrained semantic status colors.
 - Dark canvas: default #0A0A0E, deeper #050508, warmer #101018.
 - Dark surfaces: subtle #100F15, default #141319, container #18161E, raised #201E29, strong #262330.
-- Dark text: primary #F5F4F8, secondary #B6B1C6, tertiary #8B87A0.
+- Dark text: primary #F5F4F8, secondary #B6B1C6, tertiary #908CA5.
 - Primary action: default #A78BFA, hover #C4B5FD, pressed #8B5CF6, container #1E1730.
 - Status: success #4ADE9A, warning #E8B85C, error #EF7B92, info #93A0C7.
 - Light mode: canvas #F6F5FA, surface #FFFFFF, text #171426, primary #6D28D9. The html.light class is the only override; dark is the default absence of that class.
@@ -77,7 +77,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
   --wireline-color-text-onAction: #0E0B16;
   --wireline-color-text-primary: #F5F4F8;
   --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #8B87A0;
+  --wireline-color-text-tertiary: #908CA5;
   --wireline-elevation-card: 0 8px 24px -16px rgba(0, 0, 0, 0.6);
   --wireline-elevation-inset: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
   --wireline-elevation-insetRaised: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
@@ -200,8 +200,8 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
 
   --wireline-color-text-primary: #171426;
   --wireline-color-text-secondary: #5b5770;
-  /* 4.69:1 on the light canvas and 5.09:1 on white: AA-safe for small metadata. */
-  --wireline-color-text-tertiary: #706b84;
+  /* At least 4.62:1 across the standard surfaces, including surface-strong. */
+  --wireline-color-text-tertiary: #625c76;
   --wireline-color-text-onAction: #ffffff;
 
   --wireline-color-action-primary-default: #6d28d9;
@@ -210,7 +210,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
   --wireline-color-action-primary-container: #ede7fb;
   --wireline-color-action-primary-containerStrong: #dcd0f7;
 
-  --wireline-color-action-secondary-default: #6b7280;
+  --wireline-color-action-secondary-default: #596170;
   --wireline-color-action-secondary-pressed: #4b5563;
   --wireline-color-action-secondary-hover: #808895;
   --wireline-color-action-secondary-container: #eef0f3;
@@ -221,7 +221,7 @@ There is no tailwind.config file. Tailwind CSS 4 is loaded through the Vite plug
   --wireline-color-border-strong: #c9c4d9;
 
   --wireline-color-focus-default: #6d28d9;
-  --wireline-color-focus-wire: #6b7280;
+  --wireline-color-focus-wire: #596170;
 
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
   --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);

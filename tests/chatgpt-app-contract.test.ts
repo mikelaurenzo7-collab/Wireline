@@ -188,7 +188,7 @@ describe("BotBound ChatGPT App production contract", () => {
   });
 
   it("discloses model-visible and widget-only returned data", () => {
-    expect(privacyNotice).toContain("Information returned to ChatGPT");
+    expect(privacyNotice).toMatch(/<h2>Information Returned to ChatGPT<\/h2>/i);
     expect(privacyNotice).toContain("aggregate workspace summary");
     expect(privacyNotice).toContain("protected metadata");
     expect(privacyNotice).toContain("The answer is not included in the model-visible conversation");

@@ -291,8 +291,8 @@ export default function StudioAgentWorkspacePanel({
           <h2
             className={
               compact
-                ? "wl-preserve-case text-lg font-semibold leading-tight tracking-tight text-foreground"
-                : "wl-preserve-case text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
+                ? "wl-preserve-case break-words text-lg font-semibold leading-tight tracking-tight text-foreground"
+                : "wl-preserve-case break-words text-2xl font-semibold tracking-tight text-foreground sm:text-3xl"
             }
           >
             Tone & Knowledge
@@ -371,7 +371,7 @@ export default function StudioAgentWorkspacePanel({
 
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="wl-studio-tone-options grid gap-2">
                   {PERSONALITIES.map((option) => {
                     const selected = setupPersonality === option;
                     return (
@@ -413,7 +413,7 @@ export default function StudioAgentWorkspacePanel({
               </label>
 
               <div className="grid gap-2">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
                   <label
                     className="text-sm font-semibold text-foreground"
                     htmlFor="setup-knowledge"
@@ -464,6 +464,7 @@ export default function StudioAgentWorkspacePanel({
               <Button
                 type="button"
                 size={compact ? "sm" : undefined}
+                className="h-auto whitespace-normal"
                 onClick={() => void applySetup()}
                 disabled={applyingSetup}
               >
@@ -501,7 +502,7 @@ export default function StudioAgentWorkspacePanel({
             size={compact ? "sm" : undefined}
             variant="secondary"
             onClick={onTestVoiceInChat}
-            className="justify-center"
+            className="h-auto justify-center whitespace-normal"
           >
             Test Bot
           </Button>
@@ -509,7 +510,7 @@ export default function StudioAgentWorkspacePanel({
             asChild
             size={compact ? "sm" : undefined}
             variant="secondary"
-            className="justify-center"
+            className="h-auto justify-center whitespace-normal"
           >
             <Link to="/connections">
               <PlugZap className="size-4" aria-hidden="true" />

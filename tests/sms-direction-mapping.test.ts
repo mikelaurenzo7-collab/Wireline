@@ -44,7 +44,8 @@ describe("SmsThreads direction → author mapping", () => {
     expect(labelBlock).toContain("message.agent_id");
     expect(labelBlock).toContain('? "Bot"');
     expect(labelBlock).toContain(': "You"');
-    expect(labelBlock).toContain("activeThread.customer_number");
+    expect(labelBlock).toContain(': "Customer"');
+    expect(source).toContain("{activeThread.customer_number}");
     expect(source).toContain('channel="text"');
     expect(source).toContain('direction: "in" | "out"');
   });

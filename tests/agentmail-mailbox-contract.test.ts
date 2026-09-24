@@ -59,7 +59,7 @@ describe("BotBound managed AgentMail contract", () => {
     expect(mailboxCard).not.toContain("/api/integrations/agentmail/connect");
     expect(mailboxCard).not.toContain("AgentMail API key");
     expect(mailboxCard).not.toContain("@agentmail.to");
-    expect(mailboxCard).toContain("Its BotBound email is managed");
+    expect(mailboxCard).toContain("Your BotBound email is managed for you.");
     expect(mailboxCard).toContain("Email Connections");
     expect(mailboxCard).toContain('id: "google"');
     expect(mailboxCard).toContain('id: "microsoft"');

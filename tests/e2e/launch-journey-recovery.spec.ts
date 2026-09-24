@@ -48,7 +48,10 @@ test("a second Bot keeps its own activation selection and opens its new line", a
   await botSelection.click();
   await page.getByRole("option", { name: "Sales Bot", exact: true }).click();
   await expect(botSelection).toHaveText("Sales Bot");
-  await page.getByRole("button", { name: "Activate", exact: true }).click();
+  await page
+    .getByRole("region", { name: "Add phone line" })
+    .getByRole("button", { name: "Activate Line", exact: true })
+    .click();
 
   await expect.poll(() => provisionedAgent).toBe(agents[1].id);
   await expect(page.getByRole("region", { name: "Selected line" }).getByRole("heading")).toHaveText(

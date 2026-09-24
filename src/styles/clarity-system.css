@@ -140,7 +140,7 @@
   --wireline-color-surface-default: #141319;
   --wireline-color-text-primary: #F5F4F8;
   --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #8B87A0;
+  --wireline-color-text-tertiary: #908CA5;
   --wireline-color-border-default: #262430;
   --wireline-color-action-primary-default: #A78BFA;
   --border: #262430;
@@ -470,7 +470,7 @@
 }
 
 @media (max-width: 639px) {
-  .wl-workspace-main {
+  .wl-workspace-main:not([data-wireline-full-bleed="true"]) {
     padding-inline: 1rem;
   }
 

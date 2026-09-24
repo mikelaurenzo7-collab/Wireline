@@ -88,10 +88,14 @@ describe("round-11 review fixes", () => {
     expect(credit).toContain("runtimeAllowanceMovementUsd(");
     expect(credit).toContain("runtimeAllowanceUsdForPlan(planId, interval)");
     expect(credit).toContain("clampedPortion");
-    const billing = read("src/routes/billing-routes.ts");
-    // Interval resolved the same way the grant did, not off items.data[0].
-    expect(billing).toContain("subscriptionBillingInterval(sub)");
-    expect(billing).toContain("refundedCents / chargeCents");
+    const preflight = read("src/middleware/stripe-runtime-allowance-retry.ts");
+    // Reversal uses the posted grant's historical interval and amount, so a
+    // later subscription change cannot alter the allowance being reversed.
+    expect(preflight).toContain("interval: metadata.billing_interval");
+    expect(preflight).toContain("grantAmountUsd");
+    expect(preflight).toMatch(
+      /subscriptionDisputeAllowancePortion\(\s*refund\.amount,\s*context\.chargeCents,\s*context\.allowanceShare/,
+    );
   });
 
   it("routes the public 404 to useful live pages, not the retired browser demo", () => {

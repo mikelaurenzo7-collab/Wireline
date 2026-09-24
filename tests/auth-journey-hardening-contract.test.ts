@@ -62,9 +62,10 @@ describe("auth journey hardening contract", () => {
 
     expect(panel).toMatch(/ref=\{passwordRef\}[\s\S]*?type=\{showPassword[\s\S]*?required/);
     expect(panel).toContain('aria-invalid={invalidField === "password"}');
-    expect(panel).toContain(
-      'aria-describedby={invalidField === "password" ? passwordErrorId : undefined}',
+    expect(panel).toMatch(
+      /aria-describedby=\{\s*\[\s*isSignUp && password \? passwordRulesId : null,\s*invalidField === "password" \? passwordErrorId : null,?\s*\]\s*\.filter\(Boolean\)\s*\.join\(" "\) \|\| undefined\s*\}/,
     );
+    expect(panel).toContain("id={passwordRulesId}");
     expect(panel).toContain('showPasswordError("Password is required.")');
     expect(panel).toContain("showPasswordError(passwordPolicyError)");
     expect(panel).toContain("passwordRef.current?.focus()");

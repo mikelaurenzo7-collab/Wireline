@@ -22,7 +22,8 @@ describe("product documentation and compatibility contract", () => {
   it("keeps the root README aligned with the current product model", () => {
     const readme = read("README.md");
     expect(readme).toContain("BotBound Command");
-    expect(readme).toContain("BotBound Letterpress design system");
+    expect(readme).toContain("BotBound Design System");
+    expect(readme).toContain("generated from shared semantic tokens");
     expect(readme).toContain(
       "Public marketing leads with capabilities, outcomes, and a clear signup action.",
     );

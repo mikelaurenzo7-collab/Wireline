@@ -25,8 +25,8 @@ describe("authenticated responsive polish contract", () => {
     // be allowed to grow into the row.
     expect(chrome).toContain("min-w-0 flex-1 truncate !whitespace-nowrap");
     expect(chrome).toContain("sm:max-w-[18rem] sm:flex-none");
-    // The breadcrumb group grows so the title has room to expand.
-    expect(chrome).toContain('className="flex min-w-0 flex-1 items-center gap-2.5"');
+    // A content-sized basis lets the controls wrap instead of starving the title.
+    expect(chrome).toContain('className="flex min-w-0 flex-[1_1_10rem] items-center gap-2.5"');
     // The redundant kicker and separator stay for the no-agent state only, so
     // the selected agent name owns the row on every width.
     expect(chrome).toContain("{activeAgent ? null : (");

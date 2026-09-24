@@ -20,8 +20,8 @@
 
   --wireline-color-text-primary: #171426;
   --wireline-color-text-secondary: #5b5770;
-  /* 4.69:1 on the light canvas and 5.09:1 on white: AA-safe for small metadata. */
-  --wireline-color-text-tertiary: #706b84;
+  /* At least 4.62:1 across the standard surfaces, including surface-strong. */
+  --wireline-color-text-tertiary: #625c76;
   --wireline-color-text-onAction: #ffffff;
 
   --wireline-color-action-primary-default: #6d28d9;
@@ -30,7 +30,8 @@
   --wireline-color-action-primary-container: #ede7fb;
   --wireline-color-action-primary-containerStrong: #dcd0f7;
 
-  --wireline-color-action-secondary-default: #6b7280;
+  /* Wire-action labels stay readable on both default and hover containers. */
+  --wireline-color-action-secondary-default: #596170;
   --wireline-color-action-secondary-pressed: #4b5563;
   --wireline-color-action-secondary-hover: #808895;
   --wireline-color-action-secondary-container: #eef0f3;
@@ -41,7 +42,7 @@
   --wireline-color-border-strong: #c9c4d9;
 
   --wireline-color-focus-default: #6d28d9;
-  --wireline-color-focus-wire: #6b7280;
+  --wireline-color-focus-wire: #596170;
 
   --wireline-color-overlay-scrim: rgba(23, 20, 38, 0.42);
   --wireline-color-overlay-vignette: rgba(23, 20, 38, 0.12);

@@ -16,7 +16,9 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('{ id: "setup", label: "Lines" }');
     expect(phonePage).toContain('primaryTab === "setup"');
     expect(phonePage).toContain("<PhoneSetupPanel initialAgentId={activeAgentId} />");
-    expect(phonePage).toContain('aria-label="Filter call history by Bot"');
+    expect(phonePage).toContain(
+      'aria-label={primaryTab === "setup" ? "Choose Bot for Lines" : "Filter call history by Bot"}',
+    );
   });
 
   it("keeps self-service provisioning while presenting it as compact line management", () => {
@@ -43,7 +45,7 @@ describe("self-service calling setup", () => {
     expect(setup).toContain('body.code === "SUBSCRIPTION_REQUIRED"');
     expect(setup).toContain("Open billing");
     expect(setup).toContain("href={`tel:${activeNumber.phone_number}`}");
-    expect(setup).toContain("Caller identity");
+    expect(setup).toMatch(/Caller Identity/i);
     expect(setup).toContain("<details");
   });
 });

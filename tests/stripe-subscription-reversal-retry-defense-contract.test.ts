@@ -11,13 +11,16 @@ describe("Stripe subscription allowance reversal retry defense", () => {
   const claims = read("src/lib/stripe-event-claim.ts");
   const allowance = read("src/lib/subscription-welcome-credit.ts");
 
-  it("propagates any dormant legacy reversal failure to the outer webhook rollback", () => {
-    const helper = billing.slice(
-      billing.indexOf("async function reverseRuntimeAllowanceForCharge"),
-      billing.indexOf("// ─── Stripe Webhook"),
-    );
-    expect(helper).toContain('log.error("subscription runtime allowance reversal failed"');
-    expect(helper).toContain("throw error;");
+  it("propagates shared refund routing failures to the outer webhook rollback", () => {
+    const helperStart = billing.indexOf("async function reverseSettledRefundsForCharge(");
+    const helperEnd = billing.indexOf("async function ", helperStart + 1);
+    expect(helperStart).toBeGreaterThan(-1);
+    expect(helperEnd).toBeGreaterThan(helperStart);
+    const helper = billing.slice(helperStart, helperEnd);
+    expect(billing).not.toContain("async function reverseRuntimeAllowanceForCharge");
+    expect(helper).toContain("await listSucceededRefunds(charge.id)");
+    expect(helper).toContain("await reverseSubscriptionRuntimeAllowanceForChargeStrict(");
+    expect(helper).not.toMatch(/\bcatch\s*\(/);
     expect(helper).not.toContain("Never fail the webhook on this path");
 
     const outerFailure = billing.slice(billing.indexOf('log.error("Stripe webhook handler error"'));

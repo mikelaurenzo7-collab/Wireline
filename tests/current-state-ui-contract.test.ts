@@ -142,16 +142,43 @@ describe("current-state UI contract", () => {
     expect(radixSelect).toContain("min-h-11");
   });
 
-  it("keeps optional Light appearance tertiary copy at WCAG AA contrast", () => {
+  it("keeps tertiary copy readable across every standard surface in both appearances", () => {
+    const dark = JSON.parse(read("design-tokens/wireline.tokens.json")) as {
+      color: {
+        text: { tertiary: { $value: string } };
+        canvas: Record<string, { $value: string }>;
+        surface: Record<string, { $value: string }>;
+      };
+    };
     const lightTheme = read("src/styles/theme-light.css");
-    const tertiary = lightTheme.match(/--wireline-color-text-tertiary:\s*(#[0-9a-f]{6})/i)?.[1];
-    const canvas = lightTheme.match(/--wireline-color-canvas-default:\s*(#[0-9a-f]{6})/i)?.[1];
-    const surface = lightTheme.match(/--wireline-color-surface-default:\s*(#[0-9a-f]{6})/i)?.[1];
-    expect(tertiary).toBeTruthy();
-    expect(canvas).toBeTruthy();
-    expect(surface).toBeTruthy();
-    expect(contrastRatio(tertiary!, canvas!)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(tertiary!, surface!)).toBeGreaterThanOrEqual(4.5);
+    const lightColor = (name: string) => {
+      const color = lightTheme.match(
+        new RegExp(`--wireline-color-${name}:\\s*(#[0-9a-f]{6})`, "i"),
+      )?.[1];
+      expect(color, `Light token ${name}`).toBeTruthy();
+      return color!;
+    };
+    for (const group of ["canvas", "surface"] as const) {
+      for (const [name, background] of Object.entries(dark.color[group])) {
+        expect(
+          contrastRatio(dark.color.text.tertiary.$value, background.$value),
+          `Dark tertiary on ${group}-${name}`,
+        ).toBeGreaterThanOrEqual(4.5);
+        expect(
+          contrastRatio(lightColor("text-tertiary"), lightColor(`${group}-${name}`)),
+          `Light tertiary on ${group}-${name}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    for (const container of ["container", "containerStrong"]) {
+      expect(
+        contrastRatio(
+          lightColor("action-secondary-default"),
+          lightColor(`action-secondary-${container}`),
+        ),
+        `Light wire-action text on ${container}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it("keeps Federal DNC deferral separate from live route safeguards", () => {

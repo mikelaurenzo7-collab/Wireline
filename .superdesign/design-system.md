@@ -26,7 +26,7 @@ Use only these core dark-mode colors:
 
 - Canvas: `#0A0A0E`; deeper `#050508`; warmer `#101018`
 - Surfaces: `#100F15`, `#141319`, `#18161E`, `#201E29`, `#262330`
-- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#8B87A0`
+- Text: primary `#F5F4F8`; secondary `#B6B1C6`; tertiary `#908CA5`
 - Primary action: `#A78BFA`; hover `#C4B5FD`; pressed `#8B5CF6`; container `#1E1730`
 - Secondary action: silver `#C7CCD6`; container `#1C1D22`
 - Borders: soft `#1C1A22`; default `#262430`; strong `#3A3745`
@@ -62,6 +62,7 @@ Use the available layout width for headlines and let them wrap naturally on smal
 ## Shape, elevation, and motion
 
 - Product radii: 6, 8, 10, and 12px. Marketing feature containers may use 16–20px. Reserve pill radius for badges, segmented controls, and compact status chips.
+- Shared text fields and select triggers use the 12px product radius. Tertiary text must reach 4.5:1 on every standard surface, including container and strong surfaces, in both appearances.
 - Elevation is subtle: 1px edge definition and low-opacity long shadows. Avoid heavy blur and exaggerated floating layers.
 - Focus rings use lavender or silver tokens and must remain clearly visible.
 - Motion durations: 60, 120, 200, 300, 440ms. Primary easing: `cubic-bezier(0.22, 1, 0.36, 1)`.

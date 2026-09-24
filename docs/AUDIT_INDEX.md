@@ -52,6 +52,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Scope |
 | --- | --- |
+| [audits/2026-09-24-design-system-audit.md](./audits/2026-09-24-design-system-audit.md) | September 24 design-system inventory, rendered component and responsive review, contrast and field-radius refinements, and prioritized consolidation work. |
 | [EXCLUDED_SURFACES_AUDIT_2026-07-06.md](./EXCLUDED_SURFACES_AUDIT_2026-07-06.md) | Rebuild/delete triage for excluded and unmounted surfaces. |
 | [WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md](./WIRELINE_CEO_LAUNCH_CHECKLIST_2026-07-10.md) | Dated founder checklist and launch snapshot. |
 

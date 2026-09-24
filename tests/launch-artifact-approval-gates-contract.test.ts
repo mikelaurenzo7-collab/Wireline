@@ -46,13 +46,18 @@ describe("launch artifact approval gates", () => {
 
   it("binds the outbound campaign manifest to one exact, currently approved motion set", () => {
     const renderer = read("scripts/render-botbound-outbound-launch-assets.mjs");
-    const invalidate = renderer.indexOf("rmSync(manifestPath, { force: true })");
-    const motionApproval = renderer.indexOf("assertApprovedOutboundMotion()", invalidate);
+    const invalidate = renderer.indexOf("rmSync(resolve(campaignRoot, receipt), { force: true })");
+    const motionApproval = renderer.indexOf(
+      "if (!staticOnly) assertApprovedOutboundMotion()",
+      invalidate,
+    );
     const firstRender = renderer.indexOf("const render =", motionApproval);
     const checksumPublish = renderer.indexOf("renameSync(stagedChecksumPath, checksumPath)");
     const manifestPublish = renderer.indexOf("renameSync(stagedManifestPath, manifestPath)");
 
     expect(invalidate).toBeGreaterThan(-1);
+    expect(renderer.slice(0, invalidate)).toContain('"manifest.json"');
+    expect(renderer.slice(0, invalidate)).toContain('"static-manifest.json"');
     expect(motionApproval).toBeGreaterThan(invalidate);
     expect(firstRender).toBeGreaterThan(motionApproval);
     expect(renderer).toContain("Outbound motion inventory is not the approved 6s/10s/15s set");
@@ -85,11 +90,10 @@ describe("launch artifact approval gates", () => {
   it("keeps website messaging two-directional without a public demo promise", () => {
     const messaging = read("brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md");
 
-    expect(messaging).toContain("### OUTBOUND");
-    expect(messaging).toContain("### INBOUND");
-    expect(messaging).toContain(
-      "Create a free account to build, train, and hear your Bot privately",
-    );
+    expect(messaging).toMatch(/^### Outbound$/im);
+    expect(messaging).toMatch(/^### Inbound$/im);
+    expect(messaging).toContain("Hearing or testing a Bot begins after account creation");
+    expect(messaging).toContain("there is no public call or public audio demo");
     expect(messaging).not.toContain("HEAR A LIVE BOT");
     expect(messaging).not.toContain("Sales Bot demo");
   });

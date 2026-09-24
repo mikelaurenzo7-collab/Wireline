@@ -256,8 +256,8 @@
   /* -----------------------------------------------------------------------
    * Authenticated Studio: directive surfaces should feel calm and operational.
    * --------------------------------------------------------------------- */
-  main:has(#studio-brief),
-  main:has(#studio-workroom-message) {
+  main:has(#studio-brief):not([data-wireline-full-bleed="true"]),
+  main:has(#studio-workroom-message):not([data-wireline-full-bleed="true"]) {
     padding-inline: 1rem;
   }
 
@@ -318,7 +318,7 @@
 
   form[aria-labelledby="create-agent-title"] {
     max-height: calc(100dvh - 2rem);
-    padding: 1rem;
+    padding: 0;
   }
 
   form[aria-labelledby="create-agent-title"] h2 {

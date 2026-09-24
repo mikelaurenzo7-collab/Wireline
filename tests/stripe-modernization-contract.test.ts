@@ -45,7 +45,7 @@ describe("Stripe Checkout modernization contract", () => {
       'payment: { type: "payment_intent", payment_intent: paymentIntentId }',
     );
     expect(helpers).toContain("invoiceIds.size > 1");
-    expect(billing).toContain("await stripeInvoiceIdForCharge(charge)");
+    expect(billing).toContain("await reverseSubscriptionRuntimeAllowanceForChargeStrict(");
     expect(preflight).toContain("await stripeInvoiceIdForCharge(charge)");
     expect(billing).not.toMatch(/\bcharge\.invoice\b/);
     expect(preflight).not.toMatch(/\bcharge\.invoice\b/);

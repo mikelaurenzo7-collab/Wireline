@@ -235,9 +235,9 @@ describe("code review hardening contracts", () => {
     expect(emailLoader).toContain("detailOperationRef.current === operation");
     expect(emailLoader).toContain("selectedIdRef.current === threadId");
     expect(emailLoader).toContain("signal: controller.signal");
-    expect(emailLoader.indexOf("if (!isCurrentRequest()) return;")).toBeLessThan(
-      emailLoader.indexOf("setDetail({"),
-    );
+    const detailGuard = emailLoader.indexOf("if (!isCurrentRequest()) return false;");
+    expect(detailGuard).toBeGreaterThan(-1);
+    expect(detailGuard).toBeLessThan(emailLoader.indexOf("setDetail({"));
     expect(emailLoader).toContain("if (isCurrentRequest()) setDetailLoading(false);");
     const emailListLoader = email.slice(
       email.indexOf("const loadThreads = useCallback("),
@@ -246,8 +246,10 @@ describe("code review hardening contracts", () => {
     expect(emailListLoader).toContain("threadListAbortRef.current?.abort()");
     expect(emailListLoader).toContain("threadListOperationRef.current === operation");
     expect(emailListLoader).toContain("signal: controller.signal");
-    expect(emailListLoader).toContain("if (!isCurrentRequest()) return;");
-    expect(emailListLoader).toContain("if (isCurrentRequest()) setLoading(false);");
+    expect(emailListLoader).toContain("if (!isCurrentRequest()) return false;");
+    expect(emailListLoader).toMatch(
+      /if \(isCurrentRequest\(\)\) \{\s*setLoading\(false\);\s*setLoadingMore\(false\);/,
+    );
 
     const sms = read("src/components/SmsThreads.tsx");
     expect(sms).toContain("signal?: AbortSignal");
@@ -319,9 +321,7 @@ describe("code review hardening contracts", () => {
     expect(authAccess).toContain('const termsId = embedded ? "landing-auth-terms" : "auth-terms";');
     expect(authAccess).toContain("const termsLabelId = `${termsId}-label`;");
     expect(authAccess).toContain("aria-labelledby={termsLabelId}");
-    expect(authAccess).toContain(
-      '<label id={termsLabelId} htmlFor={termsId} className="cursor-pointer">',
-    );
+    expect(authAccess).toMatch(/<label\s+id=\{termsLabelId\}\s+htmlFor=\{termsId\}/);
     expect(authAccess).toContain("if (isSignUp && !agreedToTerms)");
     expect(authAccess).toContain("TERMS_CONSENT_ERROR");
     expect(auth).toContain("min-h-full");

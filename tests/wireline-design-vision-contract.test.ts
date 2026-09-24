@@ -164,7 +164,7 @@ describe("BotBound design vision", () => {
     const foundation = read("src/styles/foundation.css");
     expect(foundation).toContain("--wl-text-tertiary: var(--wireline-color-text-tertiary)");
     expect(read("src/styles/tokens.generated.css")).toContain(
-      "--wireline-color-text-tertiary: #8B87A0",
+      `--wireline-color-text-tertiary: ${WIRELINE_DESIGN_VISION.tokens.textTertiary}`,
     );
   });
 

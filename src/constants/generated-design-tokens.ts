@@ -49,7 +49,7 @@ export const wirelineTokenValues = {
   "color.text.onAction": "#0E0B16",
   "color.text.primary": "#F5F4F8",
   "color.text.secondary": "#B6B1C6",
-  "color.text.tertiary": "#8B87A0",
+  "color.text.tertiary": "#908CA5",
   "elevation.card": "0 8px 24px -16px rgba(0, 0, 0, 0.6)",
   "elevation.inset": "inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -1px 0 rgba(0, 0, 0, 0.4)",
   "elevation.insetRaised": "inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.5)",
