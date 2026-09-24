@@ -1,9 +1,11 @@
 /* BotBound identity layer.
  *
- * Customer-visible identity is BotBound. The in-product mark is the letterpress
- * violet phone glyph. The CSS wordmark keeps both B letters intact: platinum Bot
- * on dark, Aurora Bound. Stable technical `wireline` identifiers can stay below
- * the presentation layer without leaking into the product brand.
+ * Customer-visible identity is BotBound. The in-product mark is the Presenting
+ * robot character with no baked wordmark. The CSS wordmark keeps both B letters
+ * intact: platinum Bot on dark, Aurora Bound. Favicon, PWA, and Stripe tiny
+ * chrome use the letterpress phone glyph. Stable technical `wireline`
+ * identifiers can stay below the presentation layer without leaking into the
+ * product brand.
  */
 :root {
   --wireline-brand-violet: var(--wireline-color-action-primary-default);

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- BotBound Presenting app-tile foreground. Store and launcher icons use
-         the marketing character; in-product chrome uses the letterpress glyph. -->
+         the robot-only marketing character. No baked wordmark. -->
     <item>
         <bitmap
             android:antialias="true"

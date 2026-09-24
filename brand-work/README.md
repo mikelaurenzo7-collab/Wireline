@@ -1,6 +1,6 @@
 # BotBound Brand and Launch Assets
 
-Start with [CURRENT-ASSET-INDEX.md](CURRENT-ASSET-INDEX.md) for campaign sources, recorded Drive deliveries, and evidence boundaries. The product identity is the white/platinum operator holding a violet receiver, with the complete `BotBound` wordmark.
+Start with [CURRENT-ASSET-INDEX.md](CURRENT-ASSET-INDEX.md) for campaign sources, recorded Drive deliveries, and evidence boundaries. The product logo is the robot-only Presenting character (`botbound-app-icon.png`) with no baked wordmark. In-product name is the complete CSS `BotBound` wordmark. Tiny chrome uses the B letterpress glyph.
 
 ## First customer kit
 
@@ -13,7 +13,7 @@ Use [the launch copy kit](gtm/BOTBOUND-LAUNCH-COPY-KIT.md#first-design-partner-k
 
 ## Source and delivery
 
-Identity sources are in `selected/`, `public/brand/` at the repository root, and the release's `exports/brand/`. Use the dimensional operator for hero art; keep both B glyphs complete. Brand rules: [BOTBOUND-BRAND-GUIDE.md](BOTBOUND-BRAND-GUIDE.md).
+Identity sources are in `selected/`, `public/brand/` at the repository root, and the release's `exports/brand/`. Use the robot-only Presenting character for the logo and hero tile; keep both B letters in the CSS wordmark complete. Brand rules: [BOTBOUND-BRAND-GUIDE.md](BOTBOUND-BRAND-GUIDE.md).
 
 `commercial/`, `launch-stills/`, and `exports/` preserve earlier campaign sources and revision 3 placements. The August 20 captures in `exports/product-proof/` and [design-qa.md](../design-qa.md) are historical; do not cite them as current product proof.
 

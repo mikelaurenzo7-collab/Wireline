@@ -59,7 +59,7 @@ apps/browser-extension/dist/chromium/
 apps/browser-extension/dist/firefox/
 ```
 
-The build generates every browser-required PNG size from the canonical production artwork at `public/brand/botbound-app-icon.png` and merges the shared manifest with the target overlay. `assets/icon.svg` remains a browser-readable compatibility wrapper, not a second drawing of the mark.
+The build generates every browser-required PNG size from the letterpress phone glyph at `public/brand/botbound-mark.png` (toolbar chrome; the robot does not read at 16px) and merges the shared manifest with the target overlay. `assets/icon.svg` remains a browser-readable compatibility wrapper, not a second drawing of the glyph.
 
 ## In-product install (preferred)
 

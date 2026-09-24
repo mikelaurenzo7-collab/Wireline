@@ -1,9 +1,10 @@
 // Canonical BotBound identity pipeline.
 // FINAL masters in public/brand/ are authoritative:
-//   A Presenting = marketing lockup, app tile, OG, store icons
-//   B letterpress violet phone glyph = mark, favicon, PWA, Stripe, Studio, extension toolbar
+//   Robot-only Presenting tile (botbound-app-icon.png) = BotBoundMark, marketing tile, store icons, OG
+//   B letterpress violet phone glyph = favicon, PWA, Stripe tiny chrome, extension toolbar
+//   Presenting lockups with baked wordmark are optional marketing only — never the logo
 // This script copies those masters into public/native/extension paths.
-// It does not emit wireline-* brand twins and does not recreate landline/receiver art.
+// It does not emit wireline-* brand twins and does not recreate landline art.
 import { spawnSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -95,18 +96,24 @@ function rasterPngToPng(png, width) {
   return rasterSvgToPng(svg, width);
 }
 
+const glyphRaster = "public/brand/botbound-mark.png";
+if (!existsSync(abs(glyphRaster))) {
+  throw new Error(`Missing tiny-chrome master: ${glyphRaster}`);
+}
+
 const glyphSvg = titledGlyphSvg({
   title: "BotBound",
   description:
-    "BotBound letterpress violet phone glyph used as the in-product mark, favicon, and PWA icon.",
+    "BotBound letterpress violet phone glyph used as the favicon, PWA icon, and Stripe tiny chrome.",
 });
 const extensionGlyphSvg = titledGlyphSvg({
   title: "BotBound",
   description: "BotBound letterpress violet phone glyph for the BotBound Command toolbar icon.",
 });
-const appleTouchSvg = titledGlyphSvg({
+const appleTouchSvg = presentingIconSvg({
   title: "BotBound",
-  description: "BotBound letterpress violet phone glyph for the Apple touch icon.",
+  description: "BotBound Presenting robot-only Apple touch icon. No baked wordmark.",
+  href: "../public/brand/botbound-app-icon.png",
 });
 const iosAppIconSvg = presentingIconSvg({
   title: "BotBound",
@@ -121,8 +128,8 @@ writeOut("apps/browser-extension/assets/icon.svg", extensionGlyphSvg);
 writeOut("scripts/apple-touch-icon.svg", appleTouchSvg);
 writeOut("scripts/ios-app-icon.svg", iosAppIconSvg);
 
-copyOut("public/brand/botbound-mark.png", "public/brand/botbound-operator-primary.png");
-copyOut("public/brand/botbound-mark.png", "public/brand/botbound-operator-polished.png");
+copyOut("public/brand/botbound-app-icon.png", "public/brand/botbound-operator-primary.png");
+copyOut("public/brand/botbound-app-icon.png", "public/brand/botbound-operator-polished.png");
 
 copyOut(
   "public/brand/botbound-app-icon-1024.png",
@@ -142,8 +149,6 @@ copyOut(
   "brand-work/selected/botbound-operator-primary.png",
 );
 
-copyOut("public/brand/apple-touch-icon.png", "public/apple-touch-icon.png");
-copyOut("public/brand/og-image.png", "public/og-image.png");
 copyOut("public/brand/favicon.ico", "public/favicon.ico");
 copyOut("public/brand/botbound-icon-192.png", "public/botbound-icon-192.png");
 copyOut("public/brand/botbound-icon-512.png", "public/botbound-icon-512.png");
@@ -155,10 +160,29 @@ copyOut("public/brand/botbound-stripe-logo.svg", "public/botbound-stripe-logo.sv
 
 writeOut("public/favicon.png", rasterSvgToPng(glyphSvg, 64));
 
+const presentingPng = readBrand("botbound-app-icon.png");
+writeOut("public/brand/apple-touch-icon.png", rasterPngToPng(presentingPng, 180));
+copyOut("public/brand/apple-touch-icon.png", "public/apple-touch-icon.png");
+
+const ogSourceSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
+  <title id="title">BotBound</title>
+  <desc id="description">BotBound robot-only Presenting character with a cell phone on obsidian. Find. Call. Book. OUTBOUND SALES. INBOUND CALLS. Outbound sales. Inbound calls. No baked wordmark; product name stays typographic.</desc>
+  <rect width="1200" height="630" fill="#0A0A0E"/>
+  <image href="data:image/png;base64,${presentingPng.toString("base64")}" x="330" y="45" width="540" height="540"/>
+</svg>
+`;
+const ogPng = new Resvg(ogSourceSvg, {
+  fitTo: { mode: "width", value: 1200 },
+  font: { loadSystemFonts: false },
+}).render().asPng();
+writeOut("public/brand/og-image.png", ogPng);
+writeOut("public/og-image.png", ogPng);
+
 const ogSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">BotBound Presenting lockup. Find. Call. Book. OUTBOUND SALES. INBOUND CALLS. Outbound sales. Inbound calls. Marketing OG uses the Presenting character with a cell phone beside the BotBound wordmark on an obsidian canvas.</desc>
+  <desc id="description">BotBound robot-only Presenting character with a cell phone on obsidian. Find. Call. Book. OUTBOUND SALES. INBOUND CALLS. Outbound sales. Inbound calls. No baked wordmark; product name stays typographic.</desc>
   <rect width="1200" height="630" fill="#0A0A0E"/>
   <image href="/brand/og-image.png" width="1200" height="630"/>
 </svg>
@@ -177,7 +201,6 @@ const androidMipmaps = [
   ["android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png", 192],
   ["android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png", 192],
 ];
-const presentingPng = readBrand("botbound-app-icon.png");
 for (const [out, width] of androidMipmaps) {
   writeOut(out, rasterPngToPng(presentingPng, width));
   const webpTwin = out.replace(/\.png$/, ".webp");

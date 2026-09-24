@@ -4,7 +4,7 @@ SHA-256 values below identify the exact local inputs used by every composition.
 
 | File | SHA-256 |
 | --- | --- |
-| `public/brand/botbound-operator-primary.png` | `c6ca5d17750e07bd90d3ef15f1c0ee7d19c0226cc5c1eafb7ea7e79522a977c3` |
+| `public/brand/botbound-operator-primary.png` | `40f2f58ecaa6624a57a4dffb83fef071007fbb01b72c49ae371ff222ea4a9063` |
 | `public/brand/botbound-app-icon.png` | `40f2f58ecaa6624a57a4dffb83fef071007fbb01b72c49ae371ff222ea4a9063` |
 | `public/brand/hands-full-opening-original.png` | `17b4c007b3ee8f624cdc673c65f895a1eee77bea752255207c68b319bbdc7aaf` |
 | `public/audio/transfer-chime-approved.wav` | `2b976ec7225dfd259b5fadf3907b13afddf2c3a58afc090921601f9952589282` |
@@ -33,6 +33,6 @@ The 30-second sidecars below match the September 20, 2026 source revision: **You
 | `public/captions/botbound-second-ring-6s.srt` | `744621eaa83b755bd58f8561409f253e1b19678b53e40a3dcd6f249f68e8200e` |
 | `public/captions/botbound-second-ring-6s.vtt` | `72f1aeb4906da76f4f8d0fba24f34ee54f056012c1532cccb1913e2d61097579` |
 
-The robot glyph and Presenting app tile are the locked BotBound FINAL identity masters. The opening image is original OpenAI-generated campaign illustration and remains subject to the generated-art, likeness, and commercial-use gate before paid distribution. The transfer chime is copied unchanged from the approved product sound. The score and ring are original deterministic outputs of `scripts/generate-audio.mjs`; the composition uses the repository-safe MP3 derivative of the PCM score.
+The robot-only Presenting character (`botbound-app-icon.png` / `botbound-operator-primary.png`) is the locked BotBound FINAL logo. The B letterpress glyph stays favicon / PWA / Stripe tiny chrome and is not this film mark. The opening image is original OpenAI-generated campaign illustration and remains subject to the generated-art, likeness, and commercial-use gate before paid distribution. The transfer chime is copied unchanged from the approved product sound. The score and ring are original deterministic outputs of `scripts/generate-audio.mjs`; the composition uses the repository-safe MP3 derivative of the PCM score.
 
 Before paid broadcast delivery, confirm the final media-rights record for the approved image-generation sources and attach the delivery-render SHA-256 values to this manifest.

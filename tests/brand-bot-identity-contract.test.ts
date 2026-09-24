@@ -5,16 +5,20 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("BotBound brand migration", () => {
-  it("uses the approved letterpress phone glyph as the canonical visual identity", () => {
+  it("uses the Presenting robot character as the canonical visual identity", () => {
     const component = read("src/components/brand/BotBoundMark.tsx");
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
-    expect(component).toContain('data-botbound-mark="letterpress"');
-    expect(component).toContain('src="/brand/botbound-mark.png"');
-    expect(component).toContain("letterpress violet phone glyph");
+    expect(component).toContain('data-botbound-mark="character"');
+    expect(component).toContain('src="/brand/botbound-app-icon.png"');
+    expect(component).toContain("Presenting robot character");
+    expect(component).toContain("No baked");
     expect(component).not.toContain("receiver");
     expect(component).not.toContain("phone-bot");
+    expect(component).not.toContain("landline");
     expect(component).not.toContain("<svg");
+    expect(component).not.toContain("presenting-lockup");
+    expect(component).not.toContain("botbound-mark.png");
     for (const source of [icon, favicon]) {
       expect(source).toContain("BotBound");
       expect(source).toMatch(/phone|Phone/);

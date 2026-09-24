@@ -19,7 +19,7 @@ The website explains inbound and outbound together. The First Move does not repl
 
 The promotional inventory classifies local file roles and review candidates using paths and supported format signatures. It does not verify publication approval, source/render parity, vendor readiness, or remote delivery. Its JSON and CSV explicitly mark release approval as unassessed. `ASSET-AUDIT-2026-09-01.md` preserves a historical audit, including its former directory-based release labels.
 
-The production identity is hybrid: **A Presenting** for marketing/app tile/OG, **B letterpress** violet phone glyph for in-product mark/favicon/PWA/Stripe/Studio, paired with a complete Inter Tight ExtraBold `BotBound` wordmark. Both B letters are complete and unbroken.
+The production identity is hybrid: **robot-only Presenting tile** for `BotBoundMark` / marketing / store icons, **B letterpress** violet phone glyph for favicon / PWA / Stripe tiny chrome, and a complete Inter Tight ExtraBold CSS `BotBound` wordmark. Both B letters are complete and unbroken. Lockups with baked wordmark are optional marketing, not the logo.
 
 ## Source of Truth
 
@@ -35,9 +35,9 @@ The production identity is hybrid: **A Presenting** for marketing/app tile/OG, *
 
 ## Identity
 
-- `../public/brand/botbound-mark.png` — B letterpress glyph for `BotBoundMark`, favicon, PWA, Stripe, Studio
-- `../public/brand/botbound-app-icon.png` — A Presenting marketing tile (no wordmark)
-- `../public/brand/botbound-operator-primary.png` — B glyph; `botbound-operator-polished.png` is the same file for older renderers
+- `../public/brand/botbound-app-icon.png` — robot-only Presenting tile for `BotBoundMark` (no wordmark)
+- `../public/brand/botbound-mark.png` — B letterpress glyph for favicon, PWA, Stripe tiny chrome
+- `../public/brand/botbound-operator-primary.png` — robot-only alias; `botbound-operator-polished.png` matches
 - `selected/botbound-operator-primary.png`
 - `exports/identity/botbound-lockup-obsidian-1600x480.png`
 - `exports/identity/botbound-lockup-platinum-1600x480.png`

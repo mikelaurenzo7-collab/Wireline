@@ -43,7 +43,7 @@ type BotBoundLockupProps = {
   signal?: boolean;
 };
 
-/** Canonical letterpress phone glyph + BotBound wordmark lockup. */
+/** Canonical robot-character mark plus typographic BotBound wordmark. */
 export function BotBoundLockup({
   size = "standard",
   surface = "bare",

@@ -64,26 +64,34 @@ describe("Atomic Design completion contract", () => {
     expect(code).not.toMatch(arbitraryWithSpace);
   });
 
-  it("ships the letterpress glyph for in-product chrome and Presenting for store tiles", () => {
+  it("ships the robot-only Presenting tile for BotBoundMark and the letterpress glyph for tiny chrome", () => {
     const mark = source("src/components/brand/BotBoundMark.tsx");
     const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
+    const brand = source("src/components/brand/BotBoundBrand.tsx");
 
-    expect(mark).toContain('src="/brand/botbound-mark.png"');
-    expect(mark).toContain('data-botbound-mark="letterpress"');
+    expect(mark).toContain('src="/brand/botbound-app-icon.png"');
+    expect(mark).toContain('data-botbound-mark="character"');
     expect(mark).not.toContain("<svg");
+    expect(mark).not.toContain("presenting-lockup");
+    expect(mark).not.toContain("botbound-mark.png");
+    expect(brand).toContain("BotBoundWordmark");
     expect(legacyMark).toContain('from "./BotBoundMark"');
     expect(renderer).toContain("public/brand/botbound-app-icon.png");
     expect(renderer).toContain("public/brand/botbound-mark.png");
     expect(renderer).not.toContain('out: "public/wireline-icon-512.png"');
 
-    for (const asset of ["public/favicon.svg", "public/botbound-icon.svg", "scripts/apple-touch-icon.svg"]) {
+    for (const asset of ["public/favicon.svg", "public/botbound-icon.svg"]) {
       const svg = source(asset);
       expect(svg, `${asset} must be the letterpress phone glyph`).toContain("#A78BFA");
       expect(svg).toContain("phone glyph");
       expect(svg).not.toContain("botbound-app-icon.png");
       expect(svg).not.toContain("folded violet and platinum W");
     }
+
+    const appleTouch = source("scripts/apple-touch-icon.svg");
+    expect(appleTouch).toContain("botbound-app-icon.png");
+    expect(appleTouch).not.toContain("folded violet and platinum W");
 
     const iosIcon = source("scripts/ios-app-icon.svg");
     expect(iosIcon).toContain("botbound-app-icon.png");

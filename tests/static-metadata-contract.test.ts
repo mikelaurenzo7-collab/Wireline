@@ -73,7 +73,7 @@ describe("BotBound static marketing metadata", () => {
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the locked Presenting marketing lockup", () => {
+  it("keeps the OG image aligned with the robot-only Presenting character", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
@@ -81,7 +81,7 @@ describe("BotBound static marketing metadata", () => {
     expect(ogImage).toContain("Outbound sales. Inbound calls.");
     expect(ogImage).toContain("/brand/og-image.png");
     expect(ogImage).toContain("#0A0A0E");
-    expect(ogImage).toMatch(/phone|Phone/);
+    expect(ogImage).toContain("No baked wordmark");
     expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
     expect(ogImage).not.toContain("folded violet and platinum W");

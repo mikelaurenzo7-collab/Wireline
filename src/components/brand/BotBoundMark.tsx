@@ -6,22 +6,23 @@ type BotBoundMarkProps = {
 };
 
 /**
- * Canonical BotBound mark: the letterpress violet phone glyph.
+ * Canonical BotBound mark: the Presenting robot character only.
  *
- * Studio chrome, favicon, PWA, and Stripe use this flat B glyph. Presenting
- * photoreal artwork stays on marketing tiles, OG, and store icons.
+ * No baked "BotBound" wordmark. Product name is the typographic CSS wordmark
+ * in BotBoundBrand. Favicon, PWA, and Stripe tiny chrome use the letterpress
+ * phone glyph separately because the robot does not read at 16px.
  */
 export default function BotBoundMark({ className = "", label, signal = true }: BotBoundMarkProps) {
   return (
     <img
-      src="/brand/botbound-mark.png"
+      src="/brand/botbound-app-icon.png"
       alt={label ?? ""}
       role={label ? "img" : undefined}
       aria-hidden={label ? undefined : true}
       draggable={false}
       className={`bb-mark-image inline-block shrink-0 ${className}`}
       data-signal={signal ? "true" : "false"}
-      data-botbound-mark="letterpress"
+      data-botbound-mark="character"
     />
   );
 }
