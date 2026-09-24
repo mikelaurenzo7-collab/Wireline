@@ -14,8 +14,8 @@ describe("marketing metadata contract", () => {
     const staticHead = read("index.html");
     const runtimeMeta = read("src/lib/page-meta.tsx");
 
-    expect(staticHead).toContain("BotBound | Put Your Bot on the Line");
-    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
+    expect(staticHead).toContain("BotBound | Your Next Hire Is a Bot");
+    expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Your Next Hire Is a Bot"');
     for (const source of [staticHead, runtimeMeta]) {
       expect(source).toContain("Your Bot for calls, texts, and email.");
       expect(source).not.toContain("WIRE YOUR PHONE BOT");

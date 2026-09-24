@@ -50,7 +50,7 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("Train -> Test -> Launch");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
-    expect(launchTruth).toContain("Put Your Bot on the Line.");
+    expect(launchTruth).toContain("Your Next Hire Is a Bot.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
     expect(readme).toContain("same workspace model");
     expect(readme).toContain("included number");
@@ -119,10 +119,10 @@ describe("product documentation and compatibility contract", () => {
     const head = read("index.html");
     const ogImage = read("public/og-image.svg");
 
-    expect(head).toContain("BotBound | Put Your Bot on the Line");
+    expect(head).toContain("BotBound | Your Next Hire Is a Bot");
     expect(head).toContain("Your Bot for calls, texts, and email.");
     expect(head).toContain('"name":"BotBound"');
-    expect(head).toContain('"slogan":"Put Your Bot on the Line"');
+    expect(head).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(head).not.toContain("WIRE YOUR PHONE BOT");
     expect(head).not.toContain("VOICE-FIRST");
     expect(head).not.toContain("—");

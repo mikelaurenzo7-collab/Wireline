@@ -5,7 +5,7 @@ import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | Put Your Bot on the Line";
+export const HOME_TITLE = "BotBound | Your Next Hire Is a Bot";
 export const HOME_DESCRIPTION = "Your Bot for calls, texts, and email.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';

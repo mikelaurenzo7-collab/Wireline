@@ -18,8 +18,8 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain(
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
-    expect(landing).toContain("Put Your Bot");
-    expect(landing).toContain("on the Line");
+    expect(landing).toContain("Your Next Hire");
+    expect(landing).toContain("Is a Bot");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");
@@ -27,9 +27,7 @@ describe("home landing launch clarity", () => {
 
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(product).toContain(
-      'activationLine: "Find leads. Make calls. Answer demand. Book the next step."',
-    );
+    expect(product).toContain('activationLine: "Answers calls. Follows up. Books the next step."');
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).toContain("Find. Call. Book.");
     expect(landing).toContain("Answer. Qualify. Route.");

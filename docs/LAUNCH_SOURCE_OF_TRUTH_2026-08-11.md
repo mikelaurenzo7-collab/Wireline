@@ -1,6 +1,6 @@
 # BotBound Launch Source of Truth
 
-Established 2026-08-11; source reviewed 2026-09-20.
+Established 2026-08-11; homepage headline revised 2026-09-24.
 
 **Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.
 
@@ -16,7 +16,8 @@ A local source capture is internal UI evidence. A product-proof claim needs the 
 
 ## One buyer story
 
-**Headline:** Put Your Bot on the Line.
+**Headline:** Your Next Hire Is a Bot.
+**Homepage support:** Answers calls. Follows up. Books the next step.
 **Primary CTA:** Build Your Bot
 **Offer:** Build free. Plans from $19/mo. Live activation subject to availability.
 **Channel proof:** Calls, texts, email, follow-up, and logged outcomes.  

@@ -8,7 +8,7 @@ The [September Refresh](../launch-2026-09-refresh/README.md) reconciles this kit
 
 | Purpose | Copy |
 | --- | --- |
-| Brand | Put Your Bot on the Line. |
+| Brand | Your Next Hire Is a Bot. |
 | Category | Inbound & Outbound Bots |
 | Channels | Bots for calls, texts, and email. |
 | Current flagship | Stay in the Work. |
@@ -108,7 +108,7 @@ Keep this as preparation copy while the destination or production gates remain b
 
 ## Film and Product Captions
 
-Use **Hands Full? Bot on the Line.** or **Put Your Bot on the Line.** as publishing copy. Any film with retired copy, public setup steps, or stale UI must be updated and reviewed before reuse. New captions do not repair old pixels.
+Use **Hands Full? Bot on the Line.** or **Your Next Hire Is a Bot.** as publishing copy. Any film with retired copy, public setup steps, or stale UI must be updated and reviewed before reuse. New captions do not repair old pixels.
 
 Accessibility captions must describe the actual audio and meaningful sounds. Do not add invented Bot/customer dialogue to a music-only film. The Second Ring original has score, ring, and chime without spoken voice. Selling voice quality requires an actual, labeled Bot-audio demonstration.
 

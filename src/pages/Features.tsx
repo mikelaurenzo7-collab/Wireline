@@ -1,48 +1,15 @@
-import {
-  BarChart3,
-  CalendarClock,
-  CheckCircle2,
-  ShieldCheck,
-  SlidersHorizontal,
-  Workflow,
-  type LucideIcon,
-} from "lucide-react";
 import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { signupHrefForPlan } from "../lib/signup-intent";
 
 const CORE_FEATURES = [
-  {
-    icon: Workflow,
-    title: "Shared Context",
-    body: "Keep approved knowledge and customer history across calls, texts, and email.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Calls and Follow-Ups",
-    body: "Make calls, answer customers, and follow up by text or email.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Scheduling and Handoff",
-    body: "Check availability, book time, and hand off with context.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Your Rules and Approvals",
-    body: "Set boundaries for sensitive actions and review the activity log.",
-  },
-  {
-    icon: SlidersHorizontal,
-    title: "Your Playbook",
-    body: "Choose a role. Add the knowledge and instructions it needs.",
-  },
-  {
-    icon: BarChart3,
-    title: "Clear Outcomes",
-    body: "See completed work, next steps, and requests that need you.",
-  },
+  "Shared Context",
+  "Calls and Follow-Ups",
+  "Scheduling and Handoff",
+  "Your Rules and Approvals",
+  "Your Playbook",
+  "Clear Outcomes",
 ] as const;
 
 export default function Features() {
@@ -82,36 +49,24 @@ export default function Features() {
             </div>
           </header>
 
-          <h2 className="wl-features-controls wl-eyebrow text-muted-foreground">
+          <h2
+            id="features-list-title"
+            className="wl-features-controls wl-eyebrow text-muted-foreground"
+          >
             Built Around Your Business
           </h2>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {CORE_FEATURES.map(({ icon: Icon, title, body }) => (
-              <FeatureCard key={title} icon={Icon} title={title} body={body} />
+          <ul
+            aria-labelledby="features-list-title"
+            className="mt-3 grid list-disc gap-x-12 gap-y-5 pl-5 text-left text-base font-semibold marker:text-primary sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {CORE_FEATURES.map((feature) => (
+              <li key={feature} className="pl-1">
+                {feature}
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
     </MarketingPageFrame>
-  );
-}
-
-function FeatureCard({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-}) {
-  return (
-    <article className="wl-stitch-card flex flex-col rounded-xl p-5 text-left">
-      <span className="wl-accent-icon-chip mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg">
-        <Icon size={16} aria-hidden="true" />
-      </span>
-      <h3 className="wl-card-title">{title}</h3>
-      <p className="mt-1.5 max-w-[36ch] text-[13px] leading-[1.55] text-muted-foreground">{body}</p>
-    </article>
   );
 }

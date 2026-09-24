@@ -2,13 +2,15 @@
 
 Production identity approved 2026-08-20.
 
+Homepage headline revised September 24, 2026. Existing campaign images, videos and historical proof retain their original copy until separately refreshed; this source update does not recertify those assets.
+
 ## The Idea
 
 BotBound gives businesses Bots for calls, texts, and email while their people stay with the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
 
 The brand line is:
 
-> Put Your Bot on the Line.
+> Your Next Hire Is a Bot.
 
 The product promise is:
 
@@ -65,6 +67,7 @@ Violet is a signal, not decoration. Use it to show an answer, connection, active
 - Operational labels and campaign eyebrows: IBM Plex Mono, 700, uppercase, wide tracking.
 - Hero headlines are compact, direct, and left aligned. Favor 0.82 to 0.95 line-height.
 - Author all titles, headlines, and brand lines in Title Case. Body copy uses sentence case. Uppercase is reserved for compact operational labels and status signals; do not use CSS to recase names or customer text.
+- Prefer short, standalone bullet points for self-explanatory capabilities. Do not add a sentence that repeats the label. Keep supporting detail when it explains a meaningful limit, decision, or next step.
 
 ## Photography and Image Direction
 

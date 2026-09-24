@@ -42,7 +42,7 @@ Extra Bot add-on: $15/mo, +50 live voice minutes, +1 included number. Scale rema
 
 ## Public Copy Checklist
 
-- Homepage hero: Put Your Bot on the Line.
+- Homepage hero: Your Next Hire Is a Bot.
 - Primary CTA: Build Your Bot.
 - Pricing line: Build free. Go live from $19/mo.
 - Number promise: Every active paid Bot gets its own BotBound production number.

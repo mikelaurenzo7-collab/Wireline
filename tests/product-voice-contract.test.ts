@@ -81,7 +81,7 @@ describe("BotBound product voice", () => {
   it("uses BotBound + Bot customer language while retaining agent as the technical domain", () => {
     expect(BOT_BRAND).toMatchObject({
       name: "BotBound",
-      slogan: "Put Your Bot on the Line",
+      slogan: "Your Next Hire Is a Bot",
       supportingLine: "CALL · TEXT · EMAIL",
       promise: "Your Bot for calls, texts, and email.",
     });
@@ -230,8 +230,8 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("Put Your Bot");
-    expect(landing).toContain("on the Line");
+    expect(landing).toContain("Your Next Hire");
+    expect(landing).toContain("Is a Bot");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");

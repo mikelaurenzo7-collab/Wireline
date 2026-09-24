@@ -77,7 +77,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "root landing must embed concise account creation",
     ],
     [
-      /<span>Put Your Bot<\/span>[\s\S]*<span>on the Line<\/span>/,
+      /<span>Your Next Hire<\/span>[\s\S]*<span>Is a Bot<\/span>/,
       "root landing must use BotBound hero",
     ],
     [

@@ -154,12 +154,20 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   overflow: visible;
 }
 
+.wl-ui-caps.wl-ui-caps--document .marketing-chrome-bar :where(a, button) {
+  scroll-margin-block: calc(var(--wl-marketing-chrome-top, 4rem) + 1rem)
+    calc(var(--wl-marketing-sticky-clearance, 0px) + 1rem);
+}
+
 @media (max-width: 1023px) {
   /* The fixed conversion bar must reserve space after the footer, not inside
-   * main, so legal links and the expanded sitemap can scroll above it. Match
-   * its 48px actions, 12px top padding, border, and safe-area bottom padding. */
-  .wl-ui-caps.wl-ui-caps--document .marketing-surface:has(> .marketing-sticky-cta) {
-    padding-bottom: calc(3.75rem + 1px + max(0.75rem, env(safe-area-inset-bottom, 0px)));
+   * main. Reserve it before the bar appears so the first scroll reaches the
+   * footer. Match the actions, padding, border, and safe-area bottom padding. */
+  .wl-ui-caps.wl-ui-caps--document .marketing-surface:has(> .marketing-has-sticky-cta) {
+    --wl-marketing-sticky-clearance: calc(
+      3.75rem + 1px + max(0.75rem, env(safe-area-inset-bottom, 0px))
+    );
+    padding-bottom: var(--wl-marketing-sticky-clearance);
   }
 }
 

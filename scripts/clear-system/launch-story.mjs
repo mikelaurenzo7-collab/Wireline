@@ -22,7 +22,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Put Your Bot on the Line<\/title>/,
+    /<title>BotBound \| Your Next Hire Is a Bot<\/title>/,
     "static metadata must use the BotBound hero",
   );
   mustInclude(
@@ -34,7 +34,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Put Your Bot on the Line"/,
+    /DEFAULT_TITLE = "BotBound \| Your Next Hire Is a Bot"/,
     "runtime metadata must use the BotBound hero",
   );
   mustInclude(
@@ -46,7 +46,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "public/site.webmanifest",
     manifest,
-    /"name"\s*:\s*"BotBound \| Put Your Bot on the Line"/,
+    /"name"\s*:\s*"BotBound \| Your Next Hire Is a Bot"/,
     "install metadata must use BotBound",
   );
   mustExclude(
@@ -65,7 +65,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/bot-product.ts",
     botProduct,
-    /slogan:\s*"Put Your Bot on the Line"/,
+    /slogan:\s*"Your Next Hire Is a Bot"/,
     "shared model must preserve the approved BotBound hero",
   );
   mustInclude(
@@ -122,7 +122,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Put Your Bot<\/span>[\s\S]*<span>on the Line<\/span>/,
+    /<span>Your Next Hire<\/span>[\s\S]*<span>Is a Bot<\/span>/,
     "landing must render the approved two-line hero",
   );
   mustInclude(

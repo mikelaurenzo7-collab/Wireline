@@ -72,7 +72,11 @@ export default function MarketingChromeBar({ className }: { className?: string }
 
   useEffect(() => {
     // The panel precedes the trigger, so Tab would otherwise skip every link.
-    if (open) panelRef.current?.querySelector<HTMLAnchorElement>("a[href]")?.focus();
+    if (!open) return;
+    const firstLink = panelRef.current?.querySelector<HTMLAnchorElement>("a[href]");
+    firstLink?.focus({ preventScroll: true });
+    // Respect the footer controls' scroll margins above fixed mobile chrome.
+    firstLink?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, [open]);
 
   return (

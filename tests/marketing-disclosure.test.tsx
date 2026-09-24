@@ -23,7 +23,7 @@ vi.mock("react", async (importOriginal) => {
     useRef: () => ({
       current: {
         focus: hooks.focus,
-        querySelector: () => ({ focus: hooks.firstLinkFocus }),
+        querySelector: () => ({ focus: hooks.firstLinkFocus, scrollIntoView: vi.fn() }),
       },
     }),
     useEffect: (effect: () => void, dependencies: unknown[]) => {

@@ -13,7 +13,7 @@ interface PageMetaProps {
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
-const DEFAULT_TITLE = "BotBound | Put Your Bot on the Line";
+const DEFAULT_TITLE = "BotBound | Your Next Hire Is a Bot";
 const DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email.";
 
 function brandTitle(value: string): string {

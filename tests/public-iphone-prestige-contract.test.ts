@@ -13,14 +13,14 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
 
     expect(product).toContain('name: "BotBound"');
-    expect(product).toContain('slogan: "Put Your Bot on the Line"');
+    expect(product).toContain('slogan: "Your Next Hire Is a Bot"');
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(product).toMatch(
       /key:\s*"voice"[\s\S]*?label:\s*"Call"[\s\S]*?key:\s*"text"[\s\S]*?label:\s*"Text"[\s\S]*?key:\s*"email"[\s\S]*?label:\s*"Email"/,
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Put Your Bot<\/span>[\s\S]*?<span>on the Line<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>Your Next Hire<\/span>[\s\S]*?<span>Is a Bot<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");

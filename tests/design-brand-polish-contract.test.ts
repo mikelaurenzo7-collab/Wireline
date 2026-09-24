@@ -185,7 +185,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain(
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
-    expect(landing).toMatch(/<span>Put Your Bot<\/span>[\s\S]*<span>on the Line<\/span>/);
+    expect(landing).toMatch(/<span>Your Next Hire<\/span>[\s\S]*<span>Is a Bot<\/span>/);
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("BotBoundLockup");
     expect(landing).toContain('className="landing-prestige__hero-lockup"');

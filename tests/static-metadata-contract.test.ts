@@ -9,10 +9,10 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Put Your Bot on the Line");
+    expect(index).toContain("BotBound | Your Next Hire Is a Bot");
     expect(index).toContain("Your Bot for calls, texts, and email.");
     expect(index).toContain('"name":"BotBound"');
-    expect(index).toContain('"slogan":"Put Your Bot on the Line"');
+    expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(index).toContain('"logo":"https://botbound.me/botbound-icon-512.png"');
     expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
     expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
@@ -61,12 +61,12 @@ describe("BotBound static marketing metadata", () => {
     const landing = read("src/pages/LandingPage.tsx");
     const pageMeta = read("src/lib/page-meta.tsx");
 
-    expect(landing).toContain('title="BotBound | Put Your Bot on the Line"');
+    expect(landing).toContain('title="BotBound | Your Next Hire Is a Bot"');
     expect(landing).toContain("BOT_MARKETING_VOICE.subline");
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Put Your Bot on the Line"');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Your Next Hire Is a Bot"');
     expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email."');
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
@@ -105,7 +105,7 @@ describe("BotBound static marketing metadata", () => {
       shortcuts: Array<{ name: string; description: string; url: string }>;
     };
 
-    expect(manifest.name).toBe("BotBound | Put Your Bot on the Line");
+    expect(manifest.name).toBe("BotBound | Your Next Hire Is a Bot");
     expect(manifest.short_name).toBe("BotBound");
     expect(manifest.description).toBe("Your Bot for calls, texts, and email.");
     expect(manifest.start_url).toBe("/studio");
