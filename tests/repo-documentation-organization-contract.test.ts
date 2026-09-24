@@ -66,14 +66,20 @@ describe("repository and documentation organization", () => {
     expect(exists("DATABASE_SETUP.md")).toBe(true);
     expect(exists("DEPLOY.md")).toBe(true);
     expect(databaseRunbook).toContain("wireline_server");
-    expect(deploymentRunbook).toContain("Only the canonical `revaluate/botbound` project may own");
+    expect(deploymentRunbook).toContain(
+      "`revaluate/botbound` is its only permitted production project",
+    );
+    expect(deploymentRunbook).toContain("### Direct Render migration target");
     expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
     expect(databasePointer).toContain("Never use `db:push`");
     expect(databasePointer).toContain("wireline_server");
     expect(databasePointer).not.toContain("POSTGRES_URL=");
     expect(databasePointer).not.toContain("auth.uid() IS NOT NULL");
     expect(deployPointer).toContain("docs/DEPLOYMENT_RUNBOOK.md");
-    expect(deployPointer).toContain("Only `revaluate/botbound` may be linked");
+    expect(deployPointer).toContain(
+      "`revaluate/botbound` remains the only permitted legacy Vercel project",
+    );
+    expect(deployPointer).toContain("Render Node 22 web/API service");
     expect(deployPointer).not.toContain("OWNER_PHONE");
     expect(deployPointer).not.toContain("VAPI_PRIVATE_KEY");
     expect(exists("android/SETUP_CHECKLIST.md")).toBe(false);
@@ -123,7 +129,8 @@ describe("repository and documentation organization", () => {
     expect(contributing).toContain("Start from the latest `main` commit");
     expect(contributing).toContain("Fast-forward that exact reviewed commit");
     expect(contributing).toContain("Migrations are append-only");
-    expect(contributing).toContain("exact-head Vercel");
+    expect(contributing).toContain("exact-head verification for the deployment target");
+    expect(contributing).toContain("Render web/worker artifact and source parity");
     expect(contributing).toContain("docs/AUDIT_INDEX.md");
   });
 
