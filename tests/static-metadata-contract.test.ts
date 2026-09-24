@@ -73,26 +73,26 @@ describe("BotBound static marketing metadata", () => {
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the outbound-first, inbound-capable story", () => {
+  it("keeps the OG image aligned with the locked Presenting marketing lockup", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
     expect(ogImage).toContain("Find. Call. Book");
     expect(ogImage).toContain("Outbound sales. Inbound calls.");
-    expect(ogImage).not.toContain("ONE BOT");
-    expect(ogImage).toContain("GET YOUR SALES BOT");
+    expect(ogImage).toContain("/brand/og-image.png");
+    expect(ogImage).toContain("#0A0A0E");
     expect(ogImage).toMatch(/phone|Phone/);
-    expect(ogImage).toContain("#8B5CF6");
+    expect(ogImage).not.toContain("ONE BOT");
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
+    expect(ogImage).not.toContain("folded violet and platinum W");
   });
 
-  it("keeps every OG text element legible after preview downscale", () => {
+  it("keeps the OG SVG a titled wrapper around the FINAL Presenting raster", () => {
     const ogImage = read("public/og-image.svg");
-    const sizes = [...ogImage.matchAll(/font-size="([\d.]+)"/g)].map((match) => Number(match[1]));
 
-    expect(sizes.length).toBeGreaterThanOrEqual(3);
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(20);
-    expect(Math.max(...sizes)).toBeGreaterThanOrEqual(80);
+    expect(ogImage).toContain('<title id="title">BotBound</title>');
+    expect(ogImage).toContain('href="/brand/og-image.png"');
+    expect(ogImage).toContain('viewBox="0 0 1200 630"');
   });
 
   it("keeps the installable app Studio-first and BotBound-branded", () => {

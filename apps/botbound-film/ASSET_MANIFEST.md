@@ -4,8 +4,8 @@ SHA-256 values below identify the exact local inputs used by every composition.
 
 | File | SHA-256 |
 | --- | --- |
-| `public/brand/botbound-operator-primary.png` | `fa704d8d6f05a985e4cef3950160de147bee4785c1ba44c359dc8ce2cdf0abe3` |
-| `public/brand/botbound-app-icon.png` | `35ccce8c4509faa70348b5de3be581dc594a66e258fdf6425f7c0461ec806ad1` |
+| `public/brand/botbound-operator-primary.png` | `c6ca5d17750e07bd90d3ef15f1c0ee7d19c0226cc5c1eafb7ea7e79522a977c3` |
+| `public/brand/botbound-app-icon.png` | `40f2f58ecaa6624a57a4dffb83fef071007fbb01b72c49ae371ff222ea4a9063` |
 | `public/brand/hands-full-opening-original.png` | `17b4c007b3ee8f624cdc673c65f895a1eee77bea752255207c68b319bbdc7aaf` |
 | `public/audio/transfer-chime-approved.wav` | `2b976ec7225dfd259b5fadf3907b13afddf2c3a58afc090921601f9952589282` |
 | `public/audio/botbound-score.mp3` | `554d0877dffbe7b6dbbb008c40ff9f66fa35061c07c7c1c17242622f1e8cd290` |
@@ -33,6 +33,6 @@ The 30-second sidecars below match the September 20, 2026 source revision: **You
 | `public/captions/botbound-second-ring-6s.srt` | `744621eaa83b755bd58f8561409f253e1b19678b53e40a3dcd6f249f68e8200e` |
 | `public/captions/botbound-second-ring-6s.vtt` | `72f1aeb4906da76f4f8d0fba24f34ee54f056012c1532cccb1913e2d61097579` |
 
-The robot and app icon are approved BotBound launch assets prepared from the certified full-resolution sources. The opening image is original OpenAI-generated campaign illustration and remains subject to the generated-art, likeness, and commercial-use gate before paid distribution. The transfer chime is copied unchanged from the approved product sound. The score and ring are original deterministic outputs of `scripts/generate-audio.mjs`; the composition uses the repository-safe MP3 derivative of the PCM score.
+The robot glyph and Presenting app tile are the locked BotBound FINAL identity masters. The opening image is original OpenAI-generated campaign illustration and remains subject to the generated-art, likeness, and commercial-use gate before paid distribution. The transfer chime is copied unchanged from the approved product sound. The score and ring are original deterministic outputs of `scripts/generate-audio.mjs`; the composition uses the repository-safe MP3 derivative of the PCM score.
 
 Before paid broadcast delivery, confirm the final media-rights record for the approved image-generation sources and attach the delivery-render SHA-256 values to this manifest.

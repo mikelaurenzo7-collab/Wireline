@@ -106,7 +106,6 @@ visual-qa/
 # Prebuild-generated image assets rendered from source SVG files
 /public/og-image.png
 /public/apple-touch-icon.png
-/public/wireline-icon-192.png
 
 # Generated provider and catalog mirrors
 stripe-env.json

@@ -77,13 +77,13 @@ describe("marketing centering contract", () => {
     expect(hero).toContain("w-full min-w-0 max-w-[70rem]");
   });
 
-  it("keeps the canonical phone Bot mark and legacy import alias aligned", () => {
+  it("keeps the canonical letterpress mark and legacy import alias aligned", () => {
     const mark = read("src/components/brand/BotBoundMark.tsx");
     const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
     expect(mark).toContain("<img");
-    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
-    expect(mark).toContain('data-botbound-mark="phone-bot"');
+    expect(mark).toContain('src="/brand/botbound-mark.png"');
+    expect(mark).toContain('data-botbound-mark="letterpress"');
     expect(mark).not.toContain("<svg");
     expect(mark).not.toContain("viewBox=");
     expect(legacyMark).toContain('export { default } from "./BotBoundMark"');

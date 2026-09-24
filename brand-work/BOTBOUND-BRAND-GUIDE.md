@@ -1,10 +1,10 @@
 # BotBound Brand System
 
-Production identity approved 2026-08-20.
+Production identity locked 2026-09-23 as a hybrid. Do not publish this pack until CoS unlocks it and deploy is healthy.
 
 ## The Idea
 
-BotBound gives businesses Bots for calls, texts, and email while their people stay with the work. The identity makes that promise literal: a calm, friendly robot visibly grips a classic phone receiver to its ear. The hand is essential. It turns a generic support-bot silhouette into a specific, ownable operator.
+BotBound gives businesses Bots for calls, texts, and email while their people stay with the work. Marketing uses **A Presenting** (character + cell phone). In-product chrome, favicon, PWA, and Stripe use **B letterpress**, a flat violet phone glyph that still reads at 16×16.
 
 The brand line is:
 
@@ -18,30 +18,37 @@ The general product category is **Inbound & Outbound Bots**. The current refresh
 
 ## Primary Identity
 
-- Use the approved white and platinum robot with the violet receiver.
-- Keep the receiver on the robot's left side, pressed to the ear, with the white hand visibly wrapped around it.
-- Keep both B glyphs in `BotBound` complete. Never notch, stencil, split, crop, or turn either B into a pictogram.
+- Product name is `BotBound` only. Never use Wireline in filenames, art, or alt text.
+- **A Presenting** is the marketing lockup, app tile, and OG image. Cell phone only. No landline, handset, or coiled cord.
+- **B letterpress** is the in-product mark (`BotBoundMark`), favicon, PWA icons, Apple touch, Stripe icon/logo, and Studio chrome.
+- Keep both B letters in `BotBound` complete. Never notch, stencil, split, crop, or replace either B with a robot head.
 - Use title case `BotBound` in product and brand lockups. `BOTBOUND` is reserved for short campaign labels, URLs, and small mono utility copy.
-- Set the wordmark in Inter Tight ExtraBold, weight 800, with optical tracking near `-0.047em`.
+- Set the wordmark in Inter Tight ExtraBold, weight 800, with optical tracking near `-0.047em`. Product UI uses the CSS wordmark in `BotBoundBrand`, not a raster that swaps letters for a pictogram.
 - Set `Bot` in platinum or obsidian and `Bound` in Aurora violet. Do not gradient-fill the wordmark.
 
 ### Master Files
 
-- `../public/brand/botbound-app-icon.png`: full-bleed app, avatar, favicon, native, billing, and browser master.
-- `../public/brand/botbound-operator-polished.png`: dimensional hero operator for web, film end cards, campaign composition, and oversized display use.
-- `selected/botbound-operator-primary.png`: flat campaign operator for diagrams, compact editorial layouts, and compatibility placements.
-- `exports/identity/botbound-lockup-obsidian-1600x480.png`: approved dark-surface horizontal lockup.
-- `exports/identity/botbound-lockup-platinum-1600x480.png`: approved light-surface horizontal lockup.
-- `exports/identity/botbound-lockup-transparent-1600x480.png`: transparent presentation lockup.
+- `../public/brand/botbound-mark.png` / `.svg`: B letterpress violet phone glyph. Canonical `BotBoundMark` source.
+- `../public/brand/botbound-operator-primary.png`: same B glyph; campaign scripts that still say "operator" consume this file.
+- `../public/brand/botbound-operator-polished.png`: alias of the B glyph so older launch renderers do not 404. Do not treat it as photoreal receiver art.
+- `../public/brand/botbound-app-icon.png` / `botbound-app-icon-1024.png`: A Presenting marketing tile, no wordmark.
+- `../public/brand/presenting-lockup-dark.png`, `presenting-lockup-light.png`, `presenting-transparent.png`: A Presenting lockups.
+- `../public/brand/og-image.png`: 1200×630 Presenting OG master. `npm run assets` copies it to the gitignored `/og-image.png`.
+- `../public/brand/botbound-wordmark-dark.svg` / `botbound-wordmark-light.svg`: typographic wordmark with both B letters intact.
+- `selected/botbound-operator-primary.png`: B glyph copy for campaign selected/.
+- `exports/identity/botbound-lockup-obsidian-1600x480.png`: historical campaign lockup; regenerate from current masters before reuse.
+- `exports/identity/botbound-lockup-platinum-1600x480.png`: historical campaign lockup; regenerate from current masters before reuse.
+- `exports/identity/botbound-lockup-transparent-1600x480.png`: historical campaign lockup; regenerate from current masters before reuse.
 
 ## Clear Space and Minimum Size
 
-- Clear space around the app icon: at least one antenna-ball diameter on every side.
+- Clear space around the Presenting app tile: keep the character inside the maskable safe zone (~80% center) for PWA.
+- Clear space around the letterpress glyph: do not crop the phone body or earpiece bar.
 - Clear space around the horizontal lockup: at least the height of the lowercase `o` on every side.
-- Minimum app icon: 24 px in UI, 32 px preferred, 48 px for marketing navigation.
+- Minimum in-product mark: 16 px (favicon), 24 px in UI, 32 px preferred.
 - Minimum horizontal lockup: 144 px wide on screen.
-- At tiny sizes, use the app icon, not the transparent operator.
-- Do not place the white operator directly on white or uncontrolled photography. Use the full app icon or an obsidian field.
+- At tiny sizes, use the B letterpress glyph, not Presenting photoreal art.
+- Do not place Presenting photography on an uncontrolled light field without an obsidian tile.
 
 ## Color
 
@@ -50,7 +57,7 @@ The general product category is **Inbound & Outbound Bots**. The current refresh
 | Canvas | Obsidian | `#0A0A0E` | Primary field and dark UI |
 | Deep canvas | Black Violet | `#050508` | Vignettes and film transitions |
 | Signal | Aurora Violet | `#A78BFA` | `Bound`, primary actions, signal rings |
-| Signal strong | Receiver Violet | `#8B5CF6` | Receiver, pressed states, high-energy accents |
+| Signal strong | Receiver Violet | `#8B5CF6` | Presenting screen glow, pressed states, high-energy accents |
 | Signal light | Lilac | `#C4B5FD` | Eyebrows, highlights, secondary signal |
 | Primary type | Platinum White | `#F5F4F8` | Headlines and `Bot` on dark |
 | Hardware | Platinum | `#C7CCD6` | Secondary accents and robot material |
@@ -94,13 +101,12 @@ The signature motion is the second ring: the first ring belongs to the missed ca
 
 ## Do Not
 
-- Do not break either B.
-- Do not redraw the robot.
-- Do not remove the hand.
-- Do not add a second ear pad or make the receiver read as a headset.
+- Do not break either B, and do not replace a B with a robot head.
+- Do not put photoreal Presenting art in `BotBoundMark`, favicon, PWA, or Stripe icon slots.
+- Do not put the letterpress glyph on marketing OG or the store app tile.
+- Do not revive landline, handset, or coiled-cord art in FINAL surfaces.
 - Do not gradient-fill `BotBound`.
-- Do not put the transparent operator on a light field without contrast support.
-- Do not recolor the receiver away from the violet family.
+- Do not emit `wireline-*` brand twins under `public/`.
 - Do not pair the mark with the retired Wireline W.
 
 ## Governance

@@ -131,7 +131,7 @@ describe("product documentation and compatibility contract", () => {
     expect(ogImage).toContain("Find. Call. Book");
     expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS.");
     expect(ogImage).not.toContain("ONE BOT.");
-    expect(ogImage).toContain("Find leads. Make calls. Answer inbound.");
+    expect(ogImage).toContain("/brand/og-image.png");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");

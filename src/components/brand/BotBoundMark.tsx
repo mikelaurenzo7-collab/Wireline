@@ -6,23 +6,22 @@ type BotBoundMarkProps = {
 };
 
 /**
- * Canonical BotBound mark: the Bot visibly grips a violet telephone receiver.
+ * Canonical BotBound mark: the letterpress violet phone glyph.
  *
- * The transparent UI artwork keeps the Bot and telephone silhouette legible
- * without trapping the identity inside a generic app tile. Platform app icons
- * retain their own square-safe source and mask treatment.
+ * Studio chrome, favicon, PWA, and Stripe use this flat B glyph. Presenting
+ * photoreal artwork stays on marketing tiles, OG, and store icons.
  */
 export default function BotBoundMark({ className = "", label, signal = true }: BotBoundMarkProps) {
   return (
     <img
-      src="/brand/botbound-operator-polished.png"
+      src="/brand/botbound-mark.png"
       alt={label ?? ""}
       role={label ? "img" : undefined}
       aria-hidden={label ? undefined : true}
       draggable={false}
       className={`bb-mark-image inline-block shrink-0 ${className}`}
       data-signal={signal ? "true" : "false"}
-      data-botbound-mark="phone-bot"
+      data-botbound-mark="letterpress"
     />
   );
 }

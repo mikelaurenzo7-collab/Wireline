@@ -1,6 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" role="img" aria-labelledby="title description">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" role="img" aria-labelledby="title description">
   <title id="title">BotBound</title>
-  <desc id="description">BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.</desc>
-  <metadata>Production raster artwork; Aurora violet #A78BFA; canonical source /brand/botbound-app-icon.png.</metadata>
-  <image href="../../../public/brand/botbound-app-icon.png" width="2048" height="2048"/>
+  <desc id="description">BotBound letterpress violet phone glyph for the BotBound Command toolbar icon.</desc>
+  <rect x="184" y="128" width="656" height="768" rx="96" fill="#14141C"/>
+  <rect x="232" y="176" width="560" height="672" rx="72" fill="#A78BFA"/>
+  <rect x="392" y="208" width="240" height="36" rx="18" fill="#14141C"/>
 </svg>

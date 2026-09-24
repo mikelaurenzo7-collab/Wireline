@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" width="640" height="160" role="img" aria-label="BotBound">
+  <title>BotBound</title>
+  <rect width="640" height="160" fill="#0A0A0E"/>
+  <text x="320" y="104" text-anchor="middle" font-family="Inter Tight, Inter, Liberation Sans, DejaVu Sans, Arial, sans-serif" font-weight="800" font-size="88" letter-spacing="-1.5">
+    <tspan fill="#F5F4F8">Bot</tspan><tspan fill="#A78BFA">Bound</tspan>
+  </text>
+</svg>

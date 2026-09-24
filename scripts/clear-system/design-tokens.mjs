@@ -14,7 +14,6 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
   const legalCss = read("public/static-legal.css");
   const manifest = read("public/site.webmanifest");
   const publicIcon = read("public/botbound-icon.svg");
-  const legacyIcon = read("public/wireline-icon.svg");
   const favicon = read("public/favicon.svg");
   const ogImage = read("public/og-image.svg");
   const extensionIcon = read("apps/browser-extension/assets/icon.svg");
@@ -93,14 +92,8 @@ export function checkDesignTokens({ read, mustInclude, mustExclude }) {
       /#8B5CF6|#A78BFA|#C4B5FD/,
       "brand icon must carry the violet phone signal",
     );
-    mustInclude(file, source, /phone|Phone/, "brand icon must preserve the phone-Bot concept");
+    mustInclude(file, source, /phone|Phone/, "brand icon must preserve the phone glyph");
   }
-  mustInclude(
-    "public/wireline-icon.svg",
-    legacyIcon,
-    /Compatibility asset path rendering the BotBound phone Bot mark/,
-    "legacy icon path must alias BotBound",
-  );
   mustInclude("public/og-image.svg", ogImage, /BotBound/, "OG image must use BotBound");
   mustInclude(
     "public/og-image.svg",

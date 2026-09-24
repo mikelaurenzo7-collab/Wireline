@@ -1,22 +1,26 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("BotBound brand migration", () => {
-  it("uses the approved phone-Bot mark as the canonical visual identity", () => {
+  it("uses the approved letterpress phone glyph as the canonical visual identity", () => {
     const component = read("src/components/brand/BotBoundMark.tsx");
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
-    expect(component).toContain('data-botbound-mark="phone-bot"');
-    expect(component).toContain('src="/brand/botbound-operator-polished.png"');
-    expect(component).toContain("visibly grips a violet telephone receiver");
+    expect(component).toContain('data-botbound-mark="letterpress"');
+    expect(component).toContain('src="/brand/botbound-mark.png"');
+    expect(component).toContain("letterpress violet phone glyph");
+    expect(component).not.toContain("receiver");
+    expect(component).not.toContain("phone-bot");
     expect(component).not.toContain("<svg");
     for (const source of [icon, favicon]) {
       expect(source).toContain("BotBound");
       expect(source).toMatch(/phone|Phone/);
+      expect(source).toContain("#A78BFA");
       expect(source).not.toContain("folded violet and platinum W");
+      expect(source).not.toContain("botbound-app-icon.png");
     }
   });
 
@@ -86,5 +90,25 @@ describe("BotBound brand migration", () => {
     expect(oauth).toContain("APP_URL is required for OAuth redirects in production");
     expect(oauth).toContain("/api/oauth/google/callback");
     expect(oauth).not.toContain("botbound.ai");
+  });
+
+  it("does not keep Wireline-named public brand twins beside the BotBound masters", () => {
+    const renderer = read("scripts/render-image-assets.mjs");
+    expect(renderer).toContain("RETIRED_WIRELINE_TWINS");
+    expect(renderer).not.toContain('out: "public/wireline-stripe-logo.png"');
+    expect(renderer).not.toContain("writeFileSync(resolve(root, \"public/wireline-icon.svg\")");
+    for (const twin of [
+      "public/wireline-icon.svg",
+      "public/wireline-icon-192.png",
+      "public/wireline-icon-512.png",
+      "public/wireline-stripe-icon.jpg",
+      "public/wireline-stripe-icon.png",
+      "public/wireline-stripe-logo.jpg",
+      "public/wireline-stripe-logo.png",
+      "public/wireline-stripe-logo.svg",
+      "public/wireline-chatgpt-app-icon.svg",
+    ]) {
+      expect(existsSync(resolve(process.cwd(), twin)), twin).toBe(false);
+    }
   });
 });

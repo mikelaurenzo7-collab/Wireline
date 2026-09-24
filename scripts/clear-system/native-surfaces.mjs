@@ -48,8 +48,8 @@ export function checkNativeSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "android/app/src/main/res/drawable/ic_launcher_foreground.xml",
     androidLauncherForeground,
-    /BotBound phone-Bot foreground/,
-    "Android adaptive icon must use the phone-Bot identity",
+    /BotBound Presenting app-tile foreground/,
+    "Android adaptive icon must use the Presenting app tile",
   );
   mustExclude(
     "android/app/src/main/res/drawable/ic_launcher_foreground.xml",

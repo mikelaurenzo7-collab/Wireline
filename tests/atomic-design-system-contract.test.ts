@@ -64,30 +64,30 @@ describe("Atomic Design completion contract", () => {
     expect(code).not.toMatch(arbitraryWithSpace);
   });
 
-  it("ships one production phone-Bot artwork source across every brand surface", () => {
+  it("ships the letterpress glyph for in-product chrome and Presenting for store tiles", () => {
     const mark = source("src/components/brand/BotBoundMark.tsx");
     const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
 
-    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
-    expect(mark).toContain('data-botbound-mark="phone-bot"');
+    expect(mark).toContain('src="/brand/botbound-mark.png"');
+    expect(mark).toContain('data-botbound-mark="letterpress"');
     expect(mark).not.toContain("<svg");
     expect(legacyMark).toContain('from "./BotBoundMark"');
     expect(renderer).toContain("public/brand/botbound-app-icon.png");
+    expect(renderer).toContain("public/brand/botbound-mark.png");
+    expect(renderer).not.toContain('out: "public/wireline-icon-512.png"');
 
-    for (const asset of [
-      "public/favicon.svg",
-      "public/wireline-icon.svg",
-      "public/wireline-chatgpt-app-icon.svg",
-      "scripts/apple-touch-icon.svg",
-      "scripts/ios-app-icon.svg",
-    ]) {
+    for (const asset of ["public/favicon.svg", "public/botbound-icon.svg", "scripts/apple-touch-icon.svg"]) {
       const svg = source(asset);
-      expect(svg, `${asset} must wrap the production robot artwork`).toContain(
-        "botbound-app-icon.png",
-      );
+      expect(svg, `${asset} must be the letterpress phone glyph`).toContain("#A78BFA");
+      expect(svg).toContain("phone glyph");
+      expect(svg).not.toContain("botbound-app-icon.png");
       expect(svg).not.toContain("folded violet and platinum W");
     }
+
+    const iosIcon = source("scripts/ios-app-icon.svg");
+    expect(iosIcon).toContain("botbound-app-icon.png");
+    expect(iosIcon).not.toContain("folded violet and platinum W");
 
     const android = source("android/app/src/main/res/drawable/ic_launcher_foreground.xml");
     expect(android).toContain("@drawable/botbound_launcher_foreground");
@@ -104,8 +104,6 @@ describe("Atomic Design completion contract", () => {
       "src/components/brand/BotBoundMark.tsx",
       "public/favicon.svg",
       "public/botbound-icon.svg",
-      "public/wireline-icon.svg",
-      "public/wireline-chatgpt-app-icon.svg",
       "scripts/apple-touch-icon.svg",
       "scripts/ios-app-icon.svg",
     ];
