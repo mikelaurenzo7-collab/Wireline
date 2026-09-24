@@ -16,6 +16,7 @@ import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { parseCookieHeader, SESSION_COOKIE_NAME, isProductionRuntime } from "../lib/session-cookie";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import { renderTrafficEnabled, requiresRenderDeploymentGate } from "../middleware/render-traffic";
 
 /**
  * The supervisor socket is not routed through `authenticateUser`, so it must
@@ -46,13 +47,23 @@ export function initSupervisorWebSocketServer(server: any) {
   const wss = new WebSocketServer({ noServer: true });
 
   server.on("upgrade", (request: IncomingMessage, socket: any, head: any) => {
+    // HTTP upgrade bypasses Express middleware, so enforce the same deployment
+    // gate before the existing session authentication accepts a connection.
+    if (requiresRenderDeploymentGate() && !renderTrafficEnabled()) {
+      socket.write("HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n");
+      socket.destroy();
+      return;
+    }
     const { pathname } = parseUrl(request.url || "");
 
     if (pathname === "/api/supervisor/stream") {
       wss.handleUpgrade(request, socket, head, (ws: any) => {
         wss.emit("connection", ws, request);
       });
+      return;
     }
+    socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
+    socket.destroy();
   });
 
   wss.on("connection", async (ws: WebSocket, request: IncomingMessage) => {

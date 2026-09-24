@@ -7,6 +7,7 @@ import {
 } from "./openai-sip-worker-dispatch";
 import { OPENAI_SIP_WEBHOOK_PATH } from "./openai-sip-config";
 import type { VoiceWorkerReadiness } from "./openai-sip-worker-readiness";
+import { getDeploymentIdentity } from "../deployment-environment";
 
 export function createVoiceWorkerApp(
   router: Router,
@@ -28,6 +29,13 @@ export function createVoiceWorkerApp(
   const beginDrain = () => {
     draining = true;
   };
+
+  // Render must not restart the process merely because it is draining a call.
+  // Admission readiness remains /healthz; process liveness is independent.
+  app.get("/livez", (_req, res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ alive: true });
+  });
 
   app.get("/healthz", (_req, res) => {
     res.setHeader("Cache-Control", "no-store");
@@ -65,7 +73,20 @@ export function createVoiceWorkerApp(
     res.json({ draining, active: activeBackgroundWorkCount(), pending: pendingRequests });
   });
   app.post(OPENAI_SIP_WEBHOOK_PATH, (_req, res, next) => {
-    if (draining || activeBackgroundWorkCount() + pendingRequests >= maxCalls) {
+    const identity = getDeploymentIdentity();
+    const renderAdmissionBlocked =
+      (identity.provider === "render" || identity.provider === "conflict") &&
+      (identity.provider !== "render" ||
+        identity.environment !== "production" ||
+        identity.branch !== "main" ||
+        !identity.sourceCommit ||
+        process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED !== "true");
+    if (
+      renderAdmissionBlocked ||
+      process.env.WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED === "false" ||
+      draining ||
+      activeBackgroundWorkCount() + pendingRequests >= maxCalls
+    ) {
       res.setHeader("Retry-After", "5");
       res.status(503).json({ error: "Voice worker is temporarily unavailable." });
       return;

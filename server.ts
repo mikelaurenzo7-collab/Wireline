@@ -21,37 +21,47 @@ import { authenticateLiveOpsStream } from "./src/middleware/live-ops-stream";
 import { PRERENDERED_MARKETING_ROUTES } from "./src/lib/marketing-route-meta";
 import { registerApiRoutes } from "./src/server/register-api-routes";
 import { registerMcpRoutes } from "./src/server/register-mcp-routes";
+import {
+  productionStaticHeaders,
+  registerProductionStaticAliases,
+  rejectMissingPublicResource,
+  setPublicIsolationHeaders,
+} from "./src/server/register-production-static-aliases";
 import { installStripeCheckoutBrandingInvariant } from "./src/lib/stripe-checkout-branding-invariant";
 import { sseBroadcaster } from "./src/services/sse-broadcaster";
 import { initSupervisorWebSocketServer } from "./src/services/supervisor-websocket-service";
 import { isProductionDeployment } from "./src/lib/deployment-environment";
+import {
+  requireRenderTraffic,
+  requiresRenderDeploymentGate,
+} from "./src/middleware/render-traffic";
+import { closeServerAndDrain, serverShutdownGraceMs } from "./src/lib/server-shutdown";
 
-const SHUTDOWN_GRACE_MS = 30_000;
 let server: Server | null = null;
+let stopping = false;
 
 const requestIdStore = new AsyncLocalStorage<string>();
 bindRequestIdReader(() => requestIdStore.getStore());
 
 function gracefulShutdown(signal: string) {
+  if (stopping) return;
+  stopping = true;
+  const graceMs = serverShutdownGraceMs();
   log.info("Shutdown received", { signal });
-  if (!server) {
-    process.exit(0);
-    return;
-  }
-
-  // Stop accepting new connections immediately.
-  server.close(() => {
-    log.info("Server closed cleanly");
-    process.exit(0);
-  });
-
-  // Force exit after grace period if connections are still open.
-  const force = setTimeout(() => {
-    log.warn("Shutdown force-exit after grace period", { signal, graceMs: SHUTDOWN_GRACE_MS });
-    process.exit(1);
-  }, SHUTDOWN_GRACE_MS);
-  // Let the event loop drain if the close callback fires first.
-  force.unref();
+  void closeServerAndDrain(server, graceMs)
+    .then((outcome) => {
+      if (outcome === "timed_out") {
+        log.warn("Shutdown force-exit after grace period", { signal, graceMs });
+        process.exit(1);
+      } else {
+        log.info("Server and background work drained cleanly");
+        process.exit(0);
+      }
+    })
+    .catch((error: unknown) => {
+      log.error("Server shutdown failed", { signal, error: getErrorMessage(error) });
+      process.exit(1);
+    });
 }
 
 /**
@@ -111,6 +121,10 @@ app.use((req, res, next) => {
   requestIdStore.run(requestId, next);
 });
 
+// Reject pre-cutover Render traffic after request IDs are installed,
+// but before parsing bodies or running session/provider handlers.
+app.use(requireRenderTraffic);
+
 // Must run before global JSON parsing so signed vendor payloads retain raw bytes.
 installWebhookBodyParsers(app);
 // Reject disallowed mutating API requests before reading the general JSON body.
@@ -127,6 +141,7 @@ app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (IS_PROD) setPublicIsolationHeaders(res);
   // Keep these values in lockstep with the static-header policy in vercel.json
   // so API responses carry the same posture as statically served documents.
   res.setHeader(
@@ -234,15 +249,21 @@ async function startServer() {
     return;
   }
 
-  const dist = path.join(process.cwd(), "dist");
+  // Render's release build partitions browser files from server.cjs and its
+  // release manifest. Only that public subtree may be served by Express.
+  const dist = requiresRenderDeploymentGate()
+    ? path.join(process.cwd(), "dist", "client")
+    : path.join(process.cwd(), "dist");
   const indexHtml = path.join(dist, "index.html");
+  registerProductionStaticAliases(app, dist);
   // `redirect: false` matters since the marketing prerender step started writing
   // per-route directories (dist/pricing/index.html, dist/for/<slug>/index.html).
   // express.static answers a directory hit without a trailing slash with a 301
   // to the slash form, so every prerendered route began redirecting — and the
   // Location it sent (/pricing/) disagreed with the canonical tag the same build
   // writes into that page (https://trywireline.com/pricing).
-  app.use(express.static(dist, { redirect: false }));
+  app.use(express.static(dist, { redirect: false, setHeaders: productionStaticHeaders(dist) }));
+  app.use(rejectMissingPublicResource);
 
   // Serve the prerendered shell for the routes the build actually emitted, so
   // this entrypoint hands crawlers the same per-route head Vercel's static layer

@@ -1,15 +1,173 @@
 # BotBound Deployment Runbook
 
 Status: **Canonical production runbook**  
-Last reconciled: **September 19, 2026**
+Last reconciled: **September 23, 2026**
 
-BotBound deploys from GitHub `main` to the canonical Vercel project `revaluate/botbound` and the customer origin `https://botbound.me`. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
+The production baseline before the direct Render cutover is GitHub `main`, Vercel project `revaluate/botbound`, and customer origin `https://botbound.me`. The prepared target is documented below; do not infer a completed cutover from committed configuration. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
-Production telephone calls also require the persistent Node 22 voice worker in `deploy/voice-worker/`. Vercel owns the public application and signed callback entry; the worker owns the call's sideband connection, tools, transcript and settlement. Both services must run the same reviewed release. A healthy website alone does not certify telephone service.
+Production telephone calls also require the persistent Node 22 voice worker in `deploy/voice-worker/`. The web/API service owns the public application and signed callback entry; the worker owns the call's sideband connection, tools, transcript and settlement. Both services must run the same reviewed release. A healthy website alone does not certify telephone service.
 
-Only the canonical `revaluate/botbound` project may own the GitHub integration, production environment, and `botbound.me` alias. Never copy production credentials into a duplicate Vercel project to bypass a failed gate.
+While Vercel remains active or available for rollback, `revaluate/botbound` is its only permitted production project. Never copy production credentials into a duplicate Vercel project to bypass a failed gate. The reviewed cutover transfers the public origin and backend execution directly to Render, with authoritative DNS moved off Vercel and the existing Supabase database retained.
 
 ## Current launch posture
+
+### Direct Render migration target
+
+The prepared migration uses Render for the public HTTPS entry point, existing
+Node 22 web/API and persistent telephone processes. The web/API service serves
+the built React interface directly; the account model and existing Supabase
+database stay intact. This section governs
+the new target; the Vercel sequence below remains the legacy rollback procedure
+until a verified cutover. Preparing this configuration does not certify it live.
+
+`render.yaml` defines two proposed 1 CPU / 2 GB always-on services in Ohio and
+two 0.5 CPU / 512 MB cron services. Creating these resources incurs Render
+charges; review the current plan prices before applying the Blueprint. No
+database is provisioned and no migration runs during build. All auto-deploys are
+off. API traffic, voice admissions, checkout, number provisioning and schedules
+start disabled. Configure the existing credentials in Render's secret store;
+preserve JWT signing, vault encryption, OAuth and MCP secrets. Do not import
+Vercel environment metadata or AI Gateway credentials. Render disables the
+Gateway transport and uses the existing direct OpenAI/Gemini routes.
+
+Attach `botbound.me` directly to the `botbound-api` Render web service. Keep
+customer, provider and database credentials in Render's server-side secret store.
+The two cron callers authenticate to the API with the existing `CRON_SECRET`;
+the voice worker retains its separate service authentication.
+
+Render API requests require an enabled, production, main release with a valid
+Render source SHA. The supervisor WebSocket upgrade applies the same deployment
+gate and retains its session authentication. `/healthz` is a non-probing liveness endpoint that exposes
+release identity and traffic state; it does not establish provider or database
+readiness. Public client files are served from `dist/client`; server bundles and
+release metadata are outside that directory. Build/start wrappers bind the
+artifact role and SHA to Render's actual source revision. Never fake Vercel
+variables to satisfy a release gate.
+
+Before public cutover:
+
+1. Run the existing full local verification and obtain review for the exact
+   candidate. Preserve named CI failures. Use exact-source Render web and worker
+   deployments for this target instead of a Vercel preview.
+2. Follow the environment setup order below. With traffic closed, verify API
+   `/healthz`, authenticated worker `/readyz`, database health and external
+   read-only provider checks. API health, account, callback and streaming tests
+   require a controlled opening of the traffic gate;
+   production call proof also requires the worker admission gate. Record these
+   deliberate verification windows and close the gates again if proof fails.
+   A green liveness response alone is insufficient.
+3. Keep the new cron jobs disabled while the legacy scheduler runs. Stop the
+   old scheduler and wait for outstanding executions before enabling the new
+   sweep and daily-brief schedules independently. A cron HTTP timeout does not
+   cancel backend work.
+4. Attach `botbound.me` to the Render web/API service and follow the DNS handoff
+   below. Apply Render's required records at the new authoritative DNS provider,
+   then verify certificates, canonical origin,
+   OAuth/MCP, health, source identity and runtime errors. Enable
+   `BOTBOUND_TRAFFIC_ENABLED` only for the certified main release; retain existing
+   business launch restrictions until their normal proofs pass.
+5. After authenticated worker readiness and web/worker parity pass, enable
+   `WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=true` for the controlled real call
+   proof. Keep broad call admission closed until that proof passes. Retire the
+   old host and scheduler after verification and draining; retain a deliberate
+   rollback path during the migration window.
+
+For every voice deployment **or configuration/Blueprint update that replaces the
+process**, run `node deploy/render/drain-voice.mjs` against the old worker with
+`VOICE_DRAIN_EXPECTED_REVISION` set to its verified SHA. Wait for authenticated
+drain evidence with `active=0` and `pending=0` before starting the replacement.
+Render permits at most 300 seconds after SIGTERM by default configuration; that
+does not protect a 60-minute active call. `/livez` remains healthy during drain
+and is the Render health check; `/healthz` continues to describe admission
+readiness. This single-worker configuration pauses new admissions during drain.
+Platform maintenance can still interrupt connections; seamless continuity is
+not asserted by this deployment configuration.
+
+On persistent hosts, daily-brief claims are not reclaimed by age while an older
+handler might still be running. An unresolved claim after a crash needs explicit
+operator recovery only after the original process is confirmed stopped and the
+provider outcome inspected. Preserve `dailyBriefLastAttemptAt`; clearing it
+together with the dispatch claim could resend an ambiguously accepted message.
+
+#### Environment import and setup order
+
+`.env.example` is an inventory, not an export of production values. Import from
+the existing approved secret store without printing values or committing an
+environment file. `sync: false` in `render.yaml` requests a value at initial
+creation; later additions require explicit Dashboard configuration. Preserve
+configured optional providers and runtime overrides when they serve an existing
+workflow, but do not populate currently unconfigured integrations just to fill
+every placeholder.
+
+| Group                           | Setup and destination                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing data and identity      | Preserve `POSTGRES_URL`, `DATABASE_POOL_URL`, `INTERNAL_JWT_SECRET`, `WIRELINE_DATA_KEY`, `OAUTH_STATE_SECRET`, `OAUTH_BRIDGE_SECRET` and `MCP_OAUTH_TOKEN_PEPPER` on the API. Copy the current effective JWT signing value, including when the old deployment used the legacy alias. The worker inherits its declared subset through `fromService`. Changing these values can invalidate sessions or make stored OAuth/mailbox credentials unreadable. |
+| Existing service authentication | Preserve `CRON_SECRET`, `HEALTH_MONITOR_TOKEN` when configured, and `WIRELINE_VOICE_WORKER_SECRET`. Only generate a missing independent worker or monitor secret if no deployed peer relies on an existing value; configure both sides before use.                                                                                                                                                                                                      |
+| Provider continuity             | Preserve OpenAI keys/project/webhook secret, Twilio account/API/auth values and SMS sender, Stripe secret/webhook/publishable keys and current price IDs, Upstash URL/token, Resend sending/signing values, AgentMail credential/domain and owner escalation settings. Existing previous-OpenAI-key drain slots must survive until their calls and recovery work settle.                                                                                |
+| Connected optional features     | Import complete configured OAuth credential pairs, APNs/FCM groups, CRM, commerce, calendar, research and messaging integrations. Preserve per-account encrypted tokens in the existing database. Leave Federal DNC unconfigured until registration is complete; marketing/campaign outbound stays closed. Preserve any reviewed model, duration, reserve and concurrency overrides on both API and worker where used.                                  |
+| Metadata and excluded values    | Render supplies `RENDER`, `IS_PULL_REQUEST` and `RENDER_GIT_*`; never manufacture them. The verified start wrapper derives worker/expected revision values. Do not import `VERCEL*`, AI Gateway credentials, preview database values, E2E passwords, or retired LiveAvatar/HeyGen credentials into this target. Reserved `VITE_SUPABASE_*` values are not required by current production code.                                                          |
+
+1. Configure the Render production group and API secrets. Keep
+   `BOTBOUND_TRAFFIC_ENABLED=false`, `WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED=false`,
+   both `RENDER_CRON_ENABLED=false`, `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`,
+   `WIRELINE_LAUNCH_DEMO_MODE=true`, `WIRELINE_AUTO_PROVISION_NUMBERS=false` and
+   `LAUNCH_HARD_GATE=true`. Live credentials belong only to this production
+   environment. These gates are independent; opening API traffic does not
+   authorize checkout, schedules or telephone admission.
+2. Use the assigned HTTPS API `*.onrender.com` origin for `BOTBOUND_BACKEND_ORIGIN`.
+   Keep that Render subdomain enabled while cron callers use it.
+   Set API `WIRELINE_VOICE_WORKER_URL` to the
+   separate HTTPS voice origin. Retain canonical `APP_URL`, `CORS_ORIGINS` and
+   `TWILIO_WEBHOOK_BASE_URL` as `https://botbound.me`. Existing provider webhook
+   URLs and registered OAuth redirects retain that canonical origin.
+3. Verify all `fromService` references, including worker credential parity and
+   each cron's `CRON_SECRET` and API origin. Deploy the matched,
+   reviewed API/worker source. Run provider preflight from a secure operator
+   environment with `WIRELINE_EXPECTED_SOURCE_REVISION` set to that exact SHA
+   and `WIRELINE_RECONCILE_STRIPE_PORTAL=true`; this is a read-only confirmation,
+   not a build-time mutation or a checkout switch. Then perform the controlled
+   proof and scheduler/domain handoff described above. Keep existing billing,
+   tax and outreach launch restrictions until their separate evidence passes.
+
+#### Domain and DNS handoff
+
+The domain currently uses Vercel nameservers. Moving the application does not
+move its DNS zone automatically. Before changing nameserver delegation, inventory
+the complete live zone and prepare matching records at the selected registrar DNS
+or independent authoritative DNS provider. Preserve MX, SPF, DKIM, DMARC, CAA,
+provider-verification records and unrelated subdomains; retain a redacted rollback
+record of the old delegation and web routing. Do not retire Vercel DNS while
+resolvers still depend on it.
+
+1. Add the apex `botbound.me` as a custom domain on `botbound-api` in Render.
+   Review the generated `www` alias/redirect and required DNS values. Use the
+   apex as the canonical application origin.
+2. Stage the new DNS zone with all existing mail and provider records, then the
+   Render web records. Follow Render's instructions for the chosen DNS provider;
+   remove conflicting old web records and `AAAA` records only for hostnames
+   moving to Render. Preserve unrelated records. Check existing CAA policy
+   permits Render's certificate authorities.
+3. Verify the staged zone directly against its assigned nameservers before
+   changing the registrar delegation. Coordinate any existing DNSSEC/DS records
+   with the new DNS provider's migration procedure; an old DS value must not
+   invalidate the new zone. Then replace Vercel nameservers at the registrar with
+   the new provider's exact assigned nameservers.
+4. Verify public delegation and record propagation, then complete domain
+   verification in Render and verify issued TLS, HTTPS redirects, application
+   source SHA, signed webhooks, OAuth/MCP callbacks, email DNS and actual inbound
+   mail delivery. Keep the previous application and DNS available through the
+   propagation/rollback window, with only one active cron scheduler.
+
+Render retains the service's `onrender.com` origin alongside the custom domain.
+The cron configuration uses that origin, so disabling it would stop scheduled
+requests. Follow [Render custom domain setup](https://render.com/docs/custom-domains)
+and its [DNS provider instructions](https://render.com/docs/configure-other-dns)
+for current record and certificate requirements. No DNS or domain change is
+performed by committing this Blueprint.
+
+References: [Render deployment lifecycle](https://render.com/docs/deploys),
+[Render WebSockets](https://render.com/docs/websocket), and
+[Render cron billing and behavior](https://render.com/docs/cronjobs).
 
 The next release target is a controlled design-partner pilot. This runbook is not launch approval: admission remains closed until the exact release, funded providers, persistent voice worker and founder workflow proof pass the gates below. Paid media, broad invitations, cold outbound, and regulated-data onboarding remain closed until one real checkout lifecycle, one consented non-demo inbound call, support handling, repeat usage, and contribution margin are verified.
 
@@ -29,6 +187,10 @@ A Bot must pass a private browser test before directing customer traffic to it. 
 8. Telephone readiness includes the persistent worker, matched duration settings, verified number ownership, and a call lasting beyond five minutes. A Vercel timeout increase cannot replace this proof.
 
 ## Canonical release sequence
+
+The numbered Vercel deployment steps in this section describe the legacy
+production/rollback path. For direct Render, use the target-specific sequence
+above while retaining the same source, review, schema and provider proofs.
 
 ### 1. Anchor and review
 
@@ -170,7 +332,8 @@ Production Stripe, Twilio, OpenAI, Resend, AgentMail, OAuth, and database creden
 `main` must be treated as protected even while repository-level required checks are unavailable. A safe merge requires:
 
 - latest-`main` reconciliation;
-- exact-head Vercel `READY`;
+- exact-head deployment verification for the selected target: Render web/worker
+  artifact and served-source parity, or Vercel `READY` for its legacy path;
 - zero unresolved review threads;
 - appropriate targeted and canonical release checks;
 - immutable expected-head verification at merge;
@@ -228,12 +391,16 @@ Self-serve billing is authorized only when all of these align:
 
 1. `WIRELINE_SELF_SERVE_BILLING_ENABLED=true`;
 2. `WIRELINE_LAUNCH_DEMO_MODE=false`;
-3. `VERCEL_ENV=production`;
-4. `VERCEL_GIT_COMMIT_REF=main`;
+3. Render production identity: explicit `WIRELINE_DEPLOYMENT_ENVIRONMENT=production`, automatic `RENDER=true` and `IS_PULL_REQUEST=false`;
+4. automatic `RENDER_GIT_BRANCH=main` and a valid full `RENDER_GIT_COMMIT` matching the certified artifact;
 5. the exact release passed provider, schema, artifact, and production verification;
 6. the approved cohort and lifecycle evidence are documented.
 
-A boolean alone never authorizes Preview, a feature branch, another Vercel project, or acquisition traffic.
+Legacy Vercel rollback uses `VERCEL_ENV=production` and `VERCEL_GIT_COMMIT_REF=main`
+instead of the Render identity fields. Mixed provider metadata is rejected.
+A boolean alone never authorizes Preview, a feature branch, another host/project,
+or acquisition traffic. Render API traffic additionally requires its own enabled
+production-main traffic gate.
 
 To close paid checkout, set `WIRELINE_SELF_SERVE_BILLING_ENABLED=false`, redeploy Production at the intended source SHA, and verify that paid routes fail closed with the customer-safe `BILLING_LAUNCH_NOT_APPROVED` response.
 

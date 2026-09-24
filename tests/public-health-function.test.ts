@@ -143,6 +143,39 @@ describe("public health Vercel function", () => {
     expect(JSON.parse(res.body)).toEqual(cached);
   });
 
+  it.each(["production", "preview"])(
+    "uses Render's release SHA and an isolated %s cache even with production NODE_ENV",
+    async (environment) => {
+      delete process.env.VERCEL;
+      delete process.env.VERCEL_ENV;
+      delete process.env.VERCEL_GIT_COMMIT_REF;
+      delete process.env.VERCEL_GIT_COMMIT_SHA;
+      Object.assign(process.env, {
+        NODE_ENV: "production",
+        RENDER: "true",
+        IS_PULL_REQUEST: environment === "preview" ? "true" : "false",
+        WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+        RENDER_GIT_COMMIT: "B".repeat(40),
+      });
+      mocks.get.mockResolvedValue({
+        overall: "operational",
+        components: { voice_runtime: "operational", reasoning: "operational" },
+        last_checked: "2026-09-23T00:00:00.000Z",
+      });
+      const handler = await loadHandler();
+      const res = new MockResponse();
+      await handler(request("HEAD"), res as unknown as ServerResponse);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.headers.get("x-wireline-source-commit")).toBe("b".repeat(40));
+      expect(mocks.get).toHaveBeenCalledWith(
+        `wireline:health:public:v6:render:${environment}:${"b".repeat(40)}`,
+      );
+      expect(mocks.openaiProbe).not.toHaveBeenCalled();
+      expect(mocks.realtimeProbe).not.toHaveBeenCalled();
+    },
+  );
+
   it("lets one preview-scoped lock owner probe each owning provider and cache the result", async () => {
     mocks.get.mockResolvedValue(null);
     mocks.set.mockResolvedValueOnce("OK").mockResolvedValueOnce("OK");

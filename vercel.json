@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "git": {
+    "deploymentEnabled": {
+      "codex/render-migration": false
+    }
+  },
   "ignoreCommand": "node scripts/vercel-ignore-build.mjs",
   "buildCommand": "node scripts/vercel-deploy.mjs",
   "regions": ["cle1"],

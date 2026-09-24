@@ -1,4 +1,11 @@
-type RuntimeEnvironment = Readonly<Record<string, string | undefined>>;
+import {
+  getDeploymentIdentity,
+  isPreviewDeployment,
+  isProductionDeployment,
+  type DeploymentEnvironment,
+} from "./deployment-environment";
+
+type RuntimeEnvironment = DeploymentEnvironment;
 
 const PREVIEW_SPEND_AUTHORITY_KEYS = [
   "AGENTMAIL_API_KEY",
@@ -28,7 +35,27 @@ function affirmative(value: string | undefined): boolean {
 }
 
 export function isVercelPreview(env: RuntimeEnvironment = process.env): boolean {
-  return normalized(env.VERCEL_ENV).toLowerCase() === "preview";
+  return getDeploymentIdentity(env).provider === "vercel" && isPreviewDeployment(env);
+}
+
+/** Ambiguous or non-production Render releases must never inherit live authority. */
+export function requiresPreviewProviderIsolation(env: RuntimeEnvironment = process.env): boolean {
+  const identity = getDeploymentIdentity(env);
+  return (
+    isPreviewDeployment(env) ||
+    identity.provider === "conflict" ||
+    (identity.provider === "render" && !isProductionDeployment(env))
+  );
+}
+
+export function liveStripeCredentialBlocked(env: RuntimeEnvironment = process.env): boolean {
+  if (!requiresPreviewProviderIsolation(env)) return false;
+  if (!/^(?:sk|rk)_live_/.test(normalized(env.STRIPE_SECRET_KEY))) return false;
+  // Preserve the legacy Vercel rollback policy. Render has no live-preview bypass.
+  return (
+    getDeploymentIdentity(env).provider !== "vercel" ||
+    env.WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW !== "true"
+  );
 }
 
 /**
@@ -51,7 +78,7 @@ export function isolatedPreviewInMemoryRateLimitAllowed(
   env: RuntimeEnvironment = process.env,
 ): boolean {
   return (
-    isVercelPreview(env) &&
+    isPreviewDeployment(env) &&
     affirmative(env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT) &&
     affirmative(env.WIRELINE_PREVIEW_DATABASE_ISOLATED) &&
     affirmative(env.WIRELINE_LAUNCH_DEMO_MODE) &&
@@ -66,7 +93,10 @@ export function isolatedPreviewInMemoryRateLimitAllowed(
  */
 export function inMemoryRateLimitAllowed(env: RuntimeEnvironment = process.env): boolean {
   if (!affirmative(env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT)) return false;
-  if (isVercelPreview(env)) return isolatedPreviewInMemoryRateLimitAllowed(env);
+  if (isPreviewDeployment(env)) return isolatedPreviewInMemoryRateLimitAllowed(env);
+  const identity = getDeploymentIdentity(env);
+  if (identity.provider === "conflict") return false;
+  if (identity.provider === "render" && !isProductionDeployment(env)) return false;
   if (normalized(env.VERCEL_ENV) || affirmative(env.VERCEL)) return false;
   return true;
 }

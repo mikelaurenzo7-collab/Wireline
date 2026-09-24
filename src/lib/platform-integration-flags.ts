@@ -1,4 +1,5 @@
-/** Platform-level integration env (Vercel) — distinct from per-tenant OAuth rows. */
+/** Platform-level integration env — distinct from per-tenant OAuth rows. */
+import { requiresPreviewProviderIsolation } from "./preview-spend-policy";
 
 export interface PlatformIntegrationFlags {
   apollo: boolean;
@@ -15,7 +16,7 @@ function envPresent(name: string): boolean {
 
 /** Mirrors src/lib/perplexity-platform.ts so tool exposure matches runtime key policy. */
 export function perplexityRuntimeAvailable(): boolean {
-  if (process.env.VERCEL_ENV === "preview") {
+  if (requiresPreviewProviderIsolation()) {
     return envPresent("PERPLEXITY_PREVIEW_API_KEY");
   }
   return envPresent("PERPLEXITY_API_KEY");

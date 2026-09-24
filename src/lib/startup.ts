@@ -2,7 +2,7 @@ import { log, IS_PROD } from "./server-context";
 import { getInternalJwtSecret } from "./internal-jwt-secret";
 import { validateEnv, logEnvValidation, generateSetupChecklist } from "./env-validator";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
-import { isProductionDeployment } from "./deployment-environment";
+import { isPreviewDeployment, isProductionDeployment } from "./deployment-environment";
 import { isolatedPreviewInMemoryRateLimitAllowed } from "./preview-spend-policy";
 
 const isNoDatabaseImportSmoke = () => process.env.WIRELINE_IMPORT_SMOKE_NO_DATABASE === "true";
@@ -26,9 +26,9 @@ export function validateStartupEnv() {
   // Production environment. Keep IS_PROD for runtime security behavior while
   // using VERCEL_ENV-aware policy for startup severity.
   const productionDeployment = isProductionDeployment();
-  const vercelPreview = process.env.VERCEL_ENV?.trim().toLowerCase() === "preview";
+  const previewDeployment = isPreviewDeployment();
   const previewInMemoryRateLimit =
-    vercelPreview && isAffirmative(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT);
+    previewDeployment && isAffirmative(process.env.WIRELINE_ALLOW_INMEMORY_RATE_LIMIT);
   const previewInMemoryRateLimitAllowed = isolatedPreviewInMemoryRateLimitAllowed();
   const distributedRateLimitMissing =
     !process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -58,7 +58,7 @@ export function validateStartupEnv() {
       log.error(
         "UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN not set in production, " +
           "rate limits are per-invocation only and provide no protection in serverless. " +
-          "Set both vars in Vercel project settings before serving real traffic.",
+          "Set both vars in the hosting service settings before serving real traffic.",
       );
     } else if (previewInMemoryRateLimitAllowed) {
       log.info(
@@ -68,7 +68,7 @@ export function validateStartupEnv() {
       log.warn(
         "Preview in-memory rate limiting was requested but refused. The override requires isolated demo data and no live external provider authority; spend-sensitive routes remain fail-closed.",
       );
-    } else if (vercelPreview) {
+    } else if (previewDeployment) {
       log.warn(
         "UPSTASH Redis is not configured for Preview. Authentication and spend-sensitive routes remain fail-closed. Protected isolated QA may use a branch-scoped WIRELINE_ALLOW_INMEMORY_RATE_LIMIT=true override.",
       );
@@ -110,7 +110,7 @@ export function validateStartupEnv() {
 
   if (!importSmokeWithoutDatabase && productionDeployment && !process.env.SENTRY_DSN) {
     log.warn(
-      "SENTRY_DSN not set in production, 5xx and unhandled errors rely on manual log review. Set in Vercel before scaling traffic.",
+      "SENTRY_DSN not set in production, 5xx and unhandled errors rely on manual log review. Set in the hosting service before scaling traffic.",
     );
   }
 

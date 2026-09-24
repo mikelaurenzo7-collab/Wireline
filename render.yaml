@@ -1,0 +1,772 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# PROPOSAL: all four services use paid compute. Obtain plan/region approval
+# before creating this Blueprint. It creates no database or other data store.
+# Existing Supabase remains authoritative; there is no migration command.
+#
+# Release every service from the same reviewed commit. Auto-deploy is OFF.
+# Keep API traffic, voice admission, billing, provisioning and cron switches
+# disabled until the direct Render domain, provider callbacks, revision/config parity,
+# scheduler handoff and release proofs are verified. Enable them deliberately.
+#
+# IMPORT existing signing/encryption/provider values; do not rotate them during
+# hosting migration. sync:false prompts only on first creation; later additions
+# need manual Dashboard configuration. Optional providers may remain unset.
+# No VERCEL*, VERCEL_TOKEN, or AI_GATEWAY_API_KEY values belong in this setup.
+#
+# Voice release: authenticated POST /drain on the OLD worker, then wait until
+# authenticated GET /drain reports active=0 AND pending=0 BEFORE redeploying.
+# node deploy/render/drain-voice.mjs performs that operation when explicitly run.
+# Set VOICE_DRAIN_EXPECTED_REVISION to the old worker revision for that command.
+# /livez stays healthy while draining; readiness/admission is a separate signal.
+# maxShutdownDelaySeconds=300 is Render's maximum, not an hour-call guarantee.
+# Do not use a preDeployCommand or autoscaling as a substitute for pre-drain.
+# This single-voice-service proposal can pause new call admission during drain;
+# seamless admission during release needs a separately verified blue/green pair.
+#
+# After the old cron scheduler is disabled and outstanding executions settle,
+# enable each Render cron's RENDER_CRON_ENABLED separately. Daily-brief claims
+# do not expire on Render: inspect provider outcome and confirm the old process
+# stopped before operator recovery, preserving dailyBriefLastAttemptAt.
+# A cron HTTP timeout does not cancel API work. Never run both schedulers.
+previews:
+  generation: off
+
+projects:
+  - name: BotBound
+    environments:
+      - name: production
+        envVarGroups:
+          - name: botbound-runtime-config
+            envVars:
+              - key: NODE_VERSION
+                value: "22"
+              - key: NODE_ENV
+                value: "production"
+              - key: HUSKY
+                value: "0"
+              # The release wrapper owns the exact npm ci; prevent an earlier
+              # implicit install from changing the clean source lockfile.
+              - key: SKIP_INSTALL_DEPS
+                value: "true"
+              - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
+                value: "production"
+              - key: APP_URL
+                value: "https://botbound.me"
+              - key: CORS_ORIGINS
+                value: "https://botbound.me"
+              - key: TWILIO_WEBHOOK_BASE_URL
+                value: "https://botbound.me"
+              - key: WIRELINE_SELF_SERVE_BILLING_ENABLED
+                value: "false"
+              - key: WIRELINE_LAUNCH_DEMO_MODE
+                value: "true"
+              - key: LAUNCH_HARD_GATE
+                value: "true"
+              - key: WIRELINE_AUTO_PROVISION_NUMBERS
+                value: "false"
+              - key: OPENAI_SIP_MAX_CALL_SECONDS
+                value: "3600"
+              - key: WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD
+                value: "1.00"
+              - key: OPENAI_REALTIME_MODEL
+                value: "gpt-realtime-2.1"
+              - key: OPENAI_REALTIME_VOICE
+                value: "marin"
+              - key: OPENAI_REALTIME_TRANSCRIBER
+                value: "gpt-4o-mini-transcribe"
+              - key: WIRELINE_UNSUBSCRIBE_MAILTO
+                value: "unsubscribe@botbound.me"
+              - key: APNS_ENV
+                value: "production"
+
+        services:
+          - type: web
+            name: botbound-api
+            runtime: node
+            region: ohio
+            # Proposed capacity; confirm pricing and load evidence before provisioning.
+            plan: 1c-2g
+            numInstances: 1
+            autoDeployTrigger: off
+            buildCommand: node deploy/render/build.mjs api
+            startCommand: node deploy/render/start.mjs api
+            healthCheckPath: /healthz
+            maxShutdownDelaySeconds: 300
+            envVars:
+              - fromGroup: botbound-runtime-config
+              - key: BOTBOUND_TRAFFIC_ENABLED
+                value: "false"
+              # Keep secrets server-side; never expose them through VITE_* values.
+              - key: POSTGRES_URL
+                sync: false
+              - key: DATABASE_POOL_URL
+                sync: false
+              - key: INTERNAL_JWT_SECRET
+                sync: false
+              - key: WIRELINE_DATA_KEY
+                sync: false
+              - key: OAUTH_STATE_SECRET
+                sync: false
+              - key: MCP_OAUTH_TOKEN_PEPPER
+                sync: false
+              - key: OAUTH_BRIDGE_SECRET
+                sync: false
+              - key: CRON_SECRET
+                sync: false
+              - key: HEALTH_MONITOR_TOKEN
+                sync: false
+              - key: BOTBOUND_BACKEND_ORIGIN
+                sync: false
+              - key: WIRELINE_VOICE_WORKER_URL
+                sync: false
+              - key: WIRELINE_VOICE_WORKER_SECRET
+                sync: false
+              - key: OPENAI_API_KEY
+                sync: false
+              - key: OPENAI_PROJECT_ID
+                sync: false
+              - key: OPENAI_WEBHOOK_SECRET
+                sync: false
+              - key: OPENAI_API_KEY_CHATKIT
+                sync: false
+              - key: OPENAI_API_KEY_PREVIOUS
+                sync: false
+              - key: OPENAI_API_KEY_CHATKIT_PREVIOUS
+                sync: false
+              - key: GEMINI_API_KEY
+                sync: false
+              - key: PERPLEXITY_API_KEY
+                sync: false
+              - key: TWILIO_ACCOUNT_SID
+                sync: false
+              - key: TWILIO_AUTH_TOKEN
+                sync: false
+              - key: TWILIO_API_KEY
+                sync: false
+              - key: TWILIO_API_SECRET
+                sync: false
+              - key: PLATFORM_SMS_FROM
+                sync: false
+              - key: APNS_KEY_ID
+                sync: false
+              - key: APNS_TEAM_ID
+                sync: false
+              - key: APNS_AUTH_KEY
+                sync: false
+              - key: APNS_BUNDLE_ID
+                sync: false
+              - key: FCM_PROJECT_ID
+                sync: false
+              - key: FCM_CLIENT_EMAIL
+                sync: false
+              - key: FCM_PRIVATE_KEY
+                sync: false
+              - key: OWNER_EMAIL
+                sync: false
+              - key: OPS_ALERT_EMAIL
+                sync: false
+              - key: OWNER_EMAILS
+                sync: false
+              - key: OWNER_PHONE
+                sync: false
+              - key: STRIPE_SECRET_KEY
+                sync: false
+              - key: STRIPE_WEBHOOK_SECRET
+                sync: false
+              # Publishable; required by production preflight, available to Vite.
+              - key: VITE_STRIPE_PUBLIC_KEY
+                sync: false
+              - key: WIRELINE_RECONCILE_STRIPE_PORTAL
+                sync: false
+              - key: STRIPE_AUTOMATIC_TAX_ENABLED
+                sync: false
+              - key: STRIPE_STARTER_9_PRICE_ID
+                sync: false
+              - key: STRIPE_STARTER_PRICE_ID
+                sync: false
+              - key: STRIPE_TEAM_PRICE_ID
+                sync: false
+              - key: STRIPE_BUSINESS_PRICE_ID
+                sync: false
+              - key: STRIPE_STARTER_9_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_STARTER_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_TEAM_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_BUSINESS_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_EXTRA_AGENT_PRICE_ID
+                sync: false
+              - key: STRIPE_LIVE_VIDEO_ADDON_PRICE_ID
+                sync: false
+              - key: STRIPE_LIVE_VIDEO_MONTHLY_PRICE_ID
+                sync: false
+              - key: MCP_OAUTH_ALLOWED_CLIENT_IDS
+                sync: false
+              - key: MCP_OAUTH_ALLOWED_REDIRECT_URIS
+                sync: false
+              - key: UPSTASH_REDIS_REST_URL
+                sync: false
+              - key: UPSTASH_REDIS_REST_TOKEN
+                sync: false
+              - key: RESEND_API_KEY
+                sync: false
+              - key: RESEND_WEBHOOK_SECRET
+                sync: false
+              - key: RESEND_FROM_EMAIL
+                sync: false
+              - key: RESEND_FROM_DOMAIN
+                sync: false
+              - key: WIRELINE_POSTAL_ADDRESS
+                sync: false
+              - key: GOOGLE_CLIENT_ID
+                sync: false
+              - key: GOOGLE_CLIENT_SECRET
+                sync: false
+              - key: MICROSOFT_CLIENT_ID
+                sync: false
+              - key: MICROSOFT_CLIENT_SECRET
+                sync: false
+              - key: YAHOO_CLIENT_ID
+                sync: false
+              - key: YAHOO_CLIENT_SECRET
+                sync: false
+              - key: AGENTMAIL_API_KEY
+                sync: false
+              - key: AGENTMAIL_DEFAULT_DOMAIN
+                sync: false
+              - key: HUBSPOT_CLIENT_ID
+                sync: false
+              - key: HUBSPOT_CLIENT_SECRET
+                sync: false
+              - key: SALESFORCE_CLIENT_ID
+                sync: false
+              - key: SALESFORCE_CLIENT_SECRET
+                sync: false
+              - key: APOLLO_API_KEY
+                sync: false
+              - key: APOLLO_CLIENT_ID
+                sync: false
+              - key: APOLLO_CLIENT_SECRET
+                sync: false
+              - key: SHOPIFY_CLIENT_ID
+                sync: false
+              - key: SHOPIFY_CLIENT_SECRET
+                sync: false
+              - key: SHOPIFY_STOREFRONT_ACCESS_TOKEN
+                sync: false
+              - key: SQUARE_APPLICATION_ID
+                sync: false
+              - key: SQUARE_APPLICATION_SECRET
+                sync: false
+              - key: ZOOM_CLIENT_ID
+                sync: false
+              - key: ZOOM_CLIENT_SECRET
+                sync: false
+              - key: X_CLIENT_ID
+                sync: false
+              - key: X_CLIENT_SECRET
+                sync: false
+              - key: X_API_KEY
+                sync: false
+              - key: X_API_SECRET
+                sync: false
+              - key: X_ADS_ACCOUNT_ID
+                sync: false
+              - key: X_ADS_ACCESS_TOKEN
+                sync: false
+              - key: X_ADS_ACCESS_TOKEN_SECRET
+                sync: false
+              - key: SLACK_MANAGEMENT_WEBHOOK
+                sync: false
+              - key: SLACK_CLIENT_ID
+                sync: false
+              - key: SLACK_CLIENT_SECRET
+                sync: false
+              - key: META_APP_ID
+                sync: false
+              - key: META_APP_SECRET
+                sync: false
+              - key: META_VERIFY_TOKEN
+                sync: false
+              - key: META_PIXEL_ID
+                sync: false
+              - key: META_CAPI_ACCESS_TOKEN
+                sync: false
+              - key: DOCUSIGN_BASE_URI
+                sync: false
+              - key: DOCUSIGN_ACCOUNT_ID
+                sync: false
+              - key: DOCUSIGN_JWT_TOKEN
+                sync: false
+              - key: DOCUSIGN_ACCESS_TOKEN
+                sync: false
+              - key: SENTRY_DSN
+                sync: false
+
+          - type: web
+            name: botbound-voice
+            runtime: node
+            region: ohio
+            plan: 1c-2g
+            numInstances: 1
+            autoDeployTrigger: off
+            buildCommand: node deploy/render/build.mjs voice
+            startCommand: node deploy/render/start.mjs voice
+            healthCheckPath: /livez
+            maxShutdownDelaySeconds: 300
+            envVars:
+              - fromGroup: botbound-runtime-config
+              - key: WIRELINE_VOICE_WORKER
+                value: "true"
+              - key: WIRELINE_VOICE_WORKER_MAX_CALLS
+                value: "10"
+              - key: WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED
+                value: "false"
+              # Copy the current values; generateValue would break stored tokens
+              # or API/worker signature parity during this hosting migration.
+              - key: POSTGRES_URL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: POSTGRES_URL
+              - key: DATABASE_POOL_URL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: DATABASE_POOL_URL
+              - key: INTERNAL_JWT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: INTERNAL_JWT_SECRET
+              - key: WIRELINE_DATA_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: WIRELINE_DATA_KEY
+              - key: OAUTH_STATE_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OAUTH_STATE_SECRET
+              - key: WIRELINE_VOICE_WORKER_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: WIRELINE_VOICE_WORKER_SECRET
+              - key: OPENAI_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_API_KEY
+              - key: OPENAI_PROJECT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_PROJECT_ID
+              - key: OPENAI_WEBHOOK_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_WEBHOOK_SECRET
+              - key: OPENAI_API_KEY_CHATKIT
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_API_KEY_CHATKIT
+              - key: OPENAI_API_KEY_PREVIOUS
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_API_KEY_PREVIOUS
+              - key: OPENAI_API_KEY_CHATKIT_PREVIOUS
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPENAI_API_KEY_CHATKIT_PREVIOUS
+              - key: GEMINI_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: GEMINI_API_KEY
+              - key: PERPLEXITY_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: PERPLEXITY_API_KEY
+              - key: TWILIO_ACCOUNT_SID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: TWILIO_ACCOUNT_SID
+              - key: TWILIO_AUTH_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: TWILIO_AUTH_TOKEN
+              - key: TWILIO_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: TWILIO_API_KEY
+              - key: TWILIO_API_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: TWILIO_API_SECRET
+              - key: PLATFORM_SMS_FROM
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: PLATFORM_SMS_FROM
+              - key: APNS_KEY_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APNS_KEY_ID
+              - key: APNS_TEAM_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APNS_TEAM_ID
+              - key: APNS_AUTH_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APNS_AUTH_KEY
+              - key: APNS_BUNDLE_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APNS_BUNDLE_ID
+              - key: FCM_PROJECT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FCM_PROJECT_ID
+              - key: FCM_CLIENT_EMAIL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FCM_CLIENT_EMAIL
+              - key: FCM_PRIVATE_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: FCM_PRIVATE_KEY
+              - key: OWNER_EMAIL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OWNER_EMAIL
+              - key: OPS_ALERT_EMAIL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OPS_ALERT_EMAIL
+              - key: OWNER_EMAILS
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OWNER_EMAILS
+              - key: OWNER_PHONE
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: OWNER_PHONE
+              - key: UPSTASH_REDIS_REST_URL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: UPSTASH_REDIS_REST_URL
+              - key: UPSTASH_REDIS_REST_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: UPSTASH_REDIS_REST_TOKEN
+              - key: RESEND_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: RESEND_API_KEY
+              - key: RESEND_FROM_EMAIL
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: RESEND_FROM_EMAIL
+              - key: RESEND_FROM_DOMAIN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: RESEND_FROM_DOMAIN
+              - key: WIRELINE_POSTAL_ADDRESS
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: WIRELINE_POSTAL_ADDRESS
+              - key: GOOGLE_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: GOOGLE_CLIENT_ID
+              - key: GOOGLE_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: GOOGLE_CLIENT_SECRET
+              - key: MICROSOFT_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: MICROSOFT_CLIENT_ID
+              - key: MICROSOFT_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: MICROSOFT_CLIENT_SECRET
+              - key: YAHOO_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: YAHOO_CLIENT_ID
+              - key: YAHOO_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: YAHOO_CLIENT_SECRET
+              - key: AGENTMAIL_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: AGENTMAIL_API_KEY
+              - key: AGENTMAIL_DEFAULT_DOMAIN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: AGENTMAIL_DEFAULT_DOMAIN
+              - key: HUBSPOT_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: HUBSPOT_CLIENT_ID
+              - key: HUBSPOT_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: HUBSPOT_CLIENT_SECRET
+              - key: SALESFORCE_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SALESFORCE_CLIENT_ID
+              - key: SALESFORCE_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SALESFORCE_CLIENT_SECRET
+              - key: APOLLO_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APOLLO_API_KEY
+              - key: APOLLO_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APOLLO_CLIENT_ID
+              - key: APOLLO_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: APOLLO_CLIENT_SECRET
+              - key: SHOPIFY_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SHOPIFY_CLIENT_ID
+              - key: SHOPIFY_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SHOPIFY_CLIENT_SECRET
+              - key: SHOPIFY_STOREFRONT_ACCESS_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SHOPIFY_STOREFRONT_ACCESS_TOKEN
+              - key: SQUARE_APPLICATION_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SQUARE_APPLICATION_ID
+              - key: SQUARE_APPLICATION_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SQUARE_APPLICATION_SECRET
+              - key: ZOOM_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: ZOOM_CLIENT_ID
+              - key: ZOOM_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: ZOOM_CLIENT_SECRET
+              - key: X_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_CLIENT_ID
+              - key: X_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_CLIENT_SECRET
+              - key: X_API_KEY
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_API_KEY
+              - key: X_API_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_API_SECRET
+              - key: X_ADS_ACCOUNT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_ADS_ACCOUNT_ID
+              - key: X_ADS_ACCESS_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_ADS_ACCESS_TOKEN
+              - key: X_ADS_ACCESS_TOKEN_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: X_ADS_ACCESS_TOKEN_SECRET
+              - key: SLACK_MANAGEMENT_WEBHOOK
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SLACK_MANAGEMENT_WEBHOOK
+              - key: SLACK_CLIENT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SLACK_CLIENT_ID
+              - key: SLACK_CLIENT_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SLACK_CLIENT_SECRET
+              - key: META_APP_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: META_APP_ID
+              - key: META_APP_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: META_APP_SECRET
+              - key: META_VERIFY_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: META_VERIFY_TOKEN
+              - key: META_PIXEL_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: META_PIXEL_ID
+              - key: META_CAPI_ACCESS_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: META_CAPI_ACCESS_TOKEN
+              - key: DOCUSIGN_BASE_URI
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: DOCUSIGN_BASE_URI
+              - key: DOCUSIGN_ACCOUNT_ID
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: DOCUSIGN_ACCOUNT_ID
+              - key: DOCUSIGN_JWT_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: DOCUSIGN_JWT_TOKEN
+              - key: DOCUSIGN_ACCESS_TOKEN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: DOCUSIGN_ACCESS_TOKEN
+              - key: SENTRY_DSN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: SENTRY_DSN
+
+          - type: cron
+            name: botbound-jobs-sweep
+            runtime: node
+            region: ohio
+            plan: 0.5c-512mb
+            autoDeployTrigger: off
+            schedule: "* * * * *"
+            buildCommand: node --check deploy/render/cron.mjs
+            startCommand: node deploy/render/cron.mjs jobs-sweep
+            envVars:
+              - key: SKIP_INSTALL_DEPS
+                value: "true"
+              - key: NODE_VERSION
+                value: "22"
+              - key: RENDER_CRON_ENABLED
+                value: "false"
+              - key: BOTBOUND_BACKEND_ORIGIN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: BOTBOUND_BACKEND_ORIGIN
+              - key: CRON_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: CRON_SECRET
+
+          - type: cron
+            name: botbound-daily-brief
+            runtime: node
+            region: ohio
+            plan: 0.5c-512mb
+            autoDeployTrigger: off
+            schedule: "*/15 * * * *"
+            buildCommand: node --check deploy/render/cron.mjs
+            startCommand: node deploy/render/cron.mjs daily-brief
+            envVars:
+              - key: SKIP_INSTALL_DEPS
+                value: "true"
+              - key: NODE_VERSION
+                value: "22"
+              - key: RENDER_CRON_ENABLED
+                value: "false"
+              - key: BOTBOUND_BACKEND_ORIGIN
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: BOTBOUND_BACKEND_ORIGIN
+              - key: CRON_SECRET
+                fromService:
+                  name: botbound-api
+                  type: web
+                  envVarKey: CRON_SECRET

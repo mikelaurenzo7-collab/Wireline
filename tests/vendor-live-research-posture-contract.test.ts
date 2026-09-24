@@ -34,9 +34,9 @@ describe("vendor live-research and voice posture", () => {
     expect(boundary).toContain('"PERPLEXITY_API_KEY"');
     expect(boundary).toContain('"PERPLEXITY_PREVIEW_API_KEY"');
     expect(boundary).toContain('"XAI_API_KEY"');
-    expect(perplexity).toContain('process.env.VERCEL_ENV === "preview"');
+    expect(perplexity).toContain("requiresPreviewProviderIsolation()");
     expect(perplexity).toContain("PERPLEXITY_PREVIEW_API_KEY");
-    expect(flags).toContain('process.env.VERCEL_ENV === "preview"');
+    expect(flags).toContain("requiresPreviewProviderIsolation()");
     expect(flags).toContain("PERPLEXITY_PREVIEW_API_KEY");
   });
 

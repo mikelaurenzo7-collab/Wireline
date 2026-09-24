@@ -51,6 +51,12 @@ const ENV_KEYS = [
   "OPENAI_API_KEY_CHATKIT",
   "SENTRY_DSN",
   "WIRELINE_IMPORT_SMOKE_NO_DATABASE",
+  "RENDER",
+  "RENDER_SERVICE_ID",
+  "RENDER_GIT_BRANCH",
+  "RENDER_GIT_COMMIT",
+  "IS_PULL_REQUEST",
+  "WIRELINE_DEPLOYMENT_ENVIRONMENT",
 ] as const;
 
 const originalEnv = Object.fromEntries(ENV_KEYS.map((key) => [key, process.env[key]]));
@@ -144,4 +150,30 @@ describe("startup deployment severity", () => {
       recommended: ["CORS_ORIGINS"],
     });
   });
+
+  it.each([
+    ["false", "production", true],
+    ["true", "production", false],
+    ["false", "preview", false],
+    ["", "production", false],
+  ])(
+    "classifies Render startup with pull request=%s and environment=%s independently of NODE_ENV",
+    (pullRequest, environment, production) => {
+      delete process.env.VERCEL;
+      delete process.env.VERCEL_ENV;
+      process.env.RENDER = "true";
+      process.env.IS_PULL_REQUEST = String(pullRequest);
+      process.env.WIRELINE_DEPLOYMENT_ENVIRONMENT = String(environment);
+
+      validateStartupEnv();
+
+      expect(runtime.logEnvValidation).toHaveBeenCalledWith(production);
+      if (production) {
+        expect(runtime.generateSetupChecklist).toHaveBeenCalledOnce();
+      } else {
+        expect(runtime.log.error).not.toHaveBeenCalled();
+        expect(runtime.generateSetupChecklist).not.toHaveBeenCalled();
+      }
+    },
+  );
 });

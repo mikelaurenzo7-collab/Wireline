@@ -149,8 +149,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustInclude(
     "src/styles/auth-access-panel.css",
     authAccessCss,
-    /\.wl-access-panel__oauth[\s\S]*grid-template-columns:\s*repeat\(3/,
-    "account access must keep OAuth providers compact",
+    /\.wl-access-panel__oauth\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*[\d.]+rem\),\s*1fr\)\)/,
+    "account access must let compact OAuth providers reflow on narrow screens",
   );
   mustInclude(
     "src/index.css",

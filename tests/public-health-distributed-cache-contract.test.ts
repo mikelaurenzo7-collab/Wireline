@@ -29,7 +29,9 @@ describe("distributed public health boundary", () => {
     expect(vercelConfig.buildCommand).toBe("node scripts/vercel-deploy.mjs");
     expect(deployment).toContain('"src/entrypoints/public-health-api.ts"');
     expect(deployment).toContain('"--outfile=dist/public-health-api.cjs"');
-    expect(deployment).toContain('run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);');
+    expect(deployment).toContain(
+      'run(process.execPath, ["scripts/smoke-public-health-bundle.mjs"]);',
+    );
     expect(smoke).toContain('require("../dist/public-health-api.cjs")');
     expect(smoke).toContain('typeof handler !== "function"');
     expect(vercelConfig.rewrites).toContainEqual({
@@ -60,10 +62,10 @@ describe("distributed public health boundary", () => {
   it("isolates production status from previews and other deployments", () => {
     const source = read("src/entrypoints/public-health-api.ts");
 
-    expect(source).toContain("process.env.VERCEL_ENV || process.env.NODE_ENV");
-    expect(source).toContain('if (environment === "production") return "production"');
+    expect(source).toContain("getDeploymentIdentity()");
+    expect(source).toContain('environment === "production" && identity.provider !== "render"');
     expect(source).toContain("process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL");
-    expect(source).toContain("return `${environment}:${deployment}`");
+    expect(source).toContain("return `${providerPrefix}${environment}:${deployment}`");
   });
 
   it("probes each runtime through its owning execution surface", () => {
@@ -80,9 +82,7 @@ describe("distributed public health boundary", () => {
     expect(functionSource).not.toMatch(/VAPI|XAI|GROK/);
 
     // OpenAI Realtime can be verified without generating a call or model output.
-    expect(probeSource).toContain(
-      "https://api.openai.com/v1/models/${encodeURIComponent(model)}",
-    );
+    expect(probeSource).toContain("https://api.openai.com/v1/models/${encodeURIComponent(model)}");
     expect(probeSource).toContain('method: "GET"');
 
     // Reasoning health must exercise the same Responses endpoint customers use,

@@ -15,7 +15,7 @@
  * fire-and-forget behind a hard timeout. Safe to call from any catch block.
  */
 
-import { IS_PROD } from "./server-logger";
+import { getDeploymentIdentity } from "./deployment-environment";
 import { getErrorMessage, sanitizeErrorMessage } from "./server-utils";
 
 export interface ErrorContext {
@@ -244,6 +244,7 @@ export function buildSentryStorePayload(
   // this reporter, not the real throw site, which is worse than none.
   const realStack = error instanceof Error ? error.stack : undefined;
   const extra = realStack ? { ...rest, stack: realStack } : rest;
+  const deployment = getDeploymentIdentity();
 
   const payload = {
     event_id: newEventId(),
@@ -251,8 +252,8 @@ export function buildSentryStorePayload(
     platform: "node",
     level: "error",
     logger: "wireline-server",
-    environment: IS_PROD ? "production" : process.env.NODE_ENV || "development",
-    ...(process.env.VERCEL_GIT_COMMIT_SHA ? { release: process.env.VERCEL_GIT_COMMIT_SHA } : {}),
+    environment: deployment.environment,
+    ...(deployment.sourceCommit ? { release: deployment.sourceCommit } : {}),
     exception: {
       values: [
         {

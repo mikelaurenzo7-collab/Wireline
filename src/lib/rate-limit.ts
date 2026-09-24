@@ -14,7 +14,7 @@
 import { Redis } from "@upstash/redis";
 import { log } from "./server-context";
 import { inMemoryRateLimitAllowed } from "./preview-spend-policy";
-import { isProductionDeployment } from "./deployment-environment";
+import { getDeploymentIdentity, isProductionDeployment } from "./deployment-environment";
 
 let redis: Redis | null = null;
 let warnedNoRedis = false;
@@ -254,8 +254,11 @@ export function distributedLimiterStatus(): DistributedLimiterStatus {
   if (inMemoryRateLimitAllowed()) return { ok: true };
 
   const vercelEnvironment = process.env.VERCEL_ENV?.trim().toLowerCase();
+  const provider = getDeploymentIdentity().provider;
   const distributedRequired =
     isProductionDeployment() ||
+    provider === "render" ||
+    provider === "conflict" ||
     (Boolean(vercelEnvironment) && vercelEnvironment !== "development") ||
     process.env.VERCEL === "1";
   if (distributedRequired) {

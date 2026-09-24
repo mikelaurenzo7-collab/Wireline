@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Redis } from "@upstash/redis";
+import { deploymentSourceCommit, getDeploymentIdentity } from "../lib/deployment-environment";
 
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "../lib/ai-models";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "../lib/voice/openai-realtime-config";
@@ -14,32 +15,38 @@ import {
 } from "../lib/public-health-probe";
 
 function cacheScope(): string {
-  const environment = String(process.env.VERCEL_ENV || process.env.NODE_ENV || "local")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .slice(0, 24) || "local";
-  if (environment === "production") return "production";
+  const identity = getDeploymentIdentity();
+  const environment =
+    String(identity.environment)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .slice(0, 24) || "local";
+  // Keep rollback-host cache compatibility, but never let a Render release
+  // publish to or consume the Vercel production probe cache during migration.
+  if (environment === "production" && identity.provider !== "render") return "production";
 
-  const deployment = String(
-    process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL || "unknown",
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .slice(0, 64) || "unknown";
-  return `${environment}:${deployment}`;
-}
-
-function deployedSourceCommit(): string | null {
-  const commit = String(process.env.VERCEL_GIT_COMMIT_SHA || "")
-    .trim()
-    .toLowerCase();
-  return /^[0-9a-f]{40}$/.test(commit) ? commit : null;
+  const deployment =
+    String(
+      identity.provider === "render"
+        ? identity.sourceCommit || process.env.RENDER_SERVICE_ID || "unknown"
+        : identity.provider === "conflict"
+          ? "unknown"
+          : process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_URL || "unknown",
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, "-")
+      .slice(0, 64) || "unknown";
+  const providerPrefix =
+    identity.provider === "render" || identity.provider === "conflict"
+      ? `${identity.provider}:`
+      : "";
+  return `${providerPrefix}${environment}:${deployment}`;
 }
 
 const CACHE_SCOPE = cacheScope();
-const SOURCE_COMMIT = deployedSourceCommit();
+const SOURCE_COMMIT = deploymentSourceCommit();
 const RESULT_KEY = `wireline:health:public:v6:${CACHE_SCOPE}`;
 const LOCK_KEY = `wireline:health:public:probe-lock:v6:${CACHE_SCOPE}`;
 const RESULT_TTL_SECONDS = 120;

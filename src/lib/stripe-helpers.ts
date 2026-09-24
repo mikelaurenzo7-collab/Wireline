@@ -20,6 +20,7 @@ import {
 } from "./subscription-welcome-credit";
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
+import { liveStripeCredentialBlocked } from "./preview-spend-policy";
 import {
   MAX_EXTRA_AGENT_ADDONS,
   clampAgentCapacity,
@@ -29,15 +30,10 @@ import {
 export { STRIPE_API_VERSION };
 
 const configuredStripeSecret = String(process.env.STRIPE_SECRET_KEY || "").trim();
-const previewAllowsLiveProviders =
-  process.env.WIRELINE_ALLOW_LIVE_PROVIDER_KEYS_IN_PREVIEW === "true";
-const stripeBlockedInPreview =
-  process.env.VERCEL_ENV === "preview" &&
-  /^(?:sk|rk)_live_/.test(configuredStripeSecret) &&
-  !previewAllowsLiveProviders;
+const stripeBlockedInPreview = liveStripeCredentialBlocked();
 
 if (stripeBlockedInPreview) {
-  // Defense in depth: Vercel can inherit production-scoped values into a preview
+  // Defense in depth: hosted services can inherit production values into a preview
   // project configuration. Refuse to expose live billing credentials to preview
   // routes even when the dashboard is mis-scoped.
   delete process.env.STRIPE_SECRET_KEY;

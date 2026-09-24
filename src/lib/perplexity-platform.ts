@@ -2,6 +2,7 @@
 import { fetchWithTimeout, log, tenantStore } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { persistPlatformCostRecord, platformCostReserveUsd } from "../middleware/audit-middleware";
+import { requiresPreviewProviderIsolation } from "./preview-spend-policy";
 
 /**
  * Meter successful Perplexity requests against the calling tenant's AI-spend
@@ -75,13 +76,13 @@ const MAX_QUERY_CHARS = 600;
 const MAX_ANSWER_CHARS = 1_000;
 
 /**
- * Production Perplexity credentials are intentionally inert on Vercel previews.
+ * Production Perplexity credentials are intentionally inert on hosted previews.
  * A preview can use Perplexity only with a dedicated PERPLEXITY_PREVIEW_API_KEY.
- * This lets Vercel project configuration drift remain build-safe without turning
+ * This keeps project configuration drift from turning
  * preview branches into an unbounded path to production vendor spend.
  */
 function apiKey(): string {
-  if (process.env.VERCEL_ENV === "preview") {
+  if (requiresPreviewProviderIsolation()) {
     return process.env.PERPLEXITY_PREVIEW_API_KEY?.trim() || "";
   }
   return process.env.PERPLEXITY_API_KEY?.trim() || "";
@@ -408,6 +409,6 @@ export function getPerplexityCapabilityPosture() {
     agent: key && Boolean(AGENT_URL) && Boolean(AGENT_MODEL),
     embeddings: key && Boolean(EMBEDDINGS_URL) && Boolean(EMBEDDINGS_MODEL),
     productionKeyIgnoredInPreview:
-      process.env.VERCEL_ENV === "preview" && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
+      requiresPreviewProviderIsolation() && Boolean(process.env.PERPLEXITY_API_KEY?.trim()),
   } as const;
 }

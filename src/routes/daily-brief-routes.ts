@@ -14,6 +14,7 @@ import { runWithProviderIdentity } from "../lib/provider-identity-context";
 import { enforceSpendCap } from "../lib/spend-guards";
 import { sendDailyBriefEmail } from "../lib/daily-brief";
 import { getErrorMessage } from "../lib/server-utils";
+import { getDeploymentIdentity } from "../lib/deployment-environment";
 import type { AuthenticatedRequest } from "../types/auth";
 
 const router = Router();
@@ -157,7 +158,7 @@ router.post(
 );
 
 /**
- * Vercel cron: reconcile due daily briefs.
+ * Authenticated cron: reconcile due daily briefs.
  *
  * Vercel Cron invokes configured paths with GET. We keep POST as a
  * backwards-compatible ops hook, but both methods share the same
@@ -165,9 +166,12 @@ router.post(
  *
  * Each enabled tenant gets one durable DB lease before any model/email work.
  * The lease is deliberately separate from dailyBriefLastSentAt so a crashed
- * send cannot be reported as delivered. A lease older than 20 minutes is
- * reclaimable; Vercel's function ceiling is 10 minutes, so a live invocation
- * will never be stolen while still allowed to run.
+ * send cannot be reported as delivered. Only Vercel may reclaim a lease older
+ * than 20 minutes: its function ceiling is 10 minutes. A persistent process
+ * can remain alive across the next scheduled day, after the attempt latch no
+ * longer excludes another run. On those hosts an existing claim never expires
+ * automatically. Crash recovery requires an operator to confirm the old process
+ * has stopped before clearing a claim; a caller timeout is not that evidence.
  */
 const DAILY_BRIEF_LEASE_MS = 20 * 60 * 1000;
 
@@ -218,6 +222,8 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
 
     const now = new Date();
     const staleClaimBefore = new Date(now.getTime() - DAILY_BRIEF_LEASE_MS);
+    const canReclaimExpiredClaim =
+      process.env.VERCEL === "1" && getDeploymentIdentity().provider === "vercel";
     let sent = 0;
     let notDue = 0;
     let alreadySent = 0;
@@ -281,10 +287,12 @@ async function runDailyBriefSchedule(req: Request, res: Response) {
                 isNull(schema.settings.dailyBriefLastAttemptAt),
                 lt(schema.settings.dailyBriefLastAttemptAt, scheduledAt),
               ),
-              or(
-                isNull(schema.settings.dailyBriefDispatchClaimedAt),
-                lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore),
-              ),
+              canReclaimExpiredClaim
+                ? or(
+                    isNull(schema.settings.dailyBriefDispatchClaimedAt),
+                    lt(schema.settings.dailyBriefDispatchClaimedAt, staleClaimBefore),
+                  )
+                : isNull(schema.settings.dailyBriefDispatchClaimedAt),
             ),
           )
           .returning({ userId: schema.settings.userId });

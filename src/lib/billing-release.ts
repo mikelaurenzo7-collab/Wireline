@@ -1,3 +1,5 @@
+import { getDeploymentIdentity, type DeploymentEnvironment } from "./deployment-environment";
+
 const ENABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 
 /**
@@ -22,37 +24,58 @@ export const SELF_SERVE_BILLING_BLOCK = Object.freeze({
   error: "Self-serve billing is temporarily unavailable while launch certification is completed.",
 });
 
-function normalizedEnv(name: string): string {
-  return String(process.env[name] || "").trim().toLowerCase();
+function normalizedEnv(name: string, env: DeploymentEnvironment): string {
+  return String(env[name] || "")
+    .trim()
+    .toLowerCase();
 }
 
 /**
  * Self-serve billing is a production capability, never a preview capability.
  * A Git-backed production deployment must originate from main. Every canonical
- * production artifact is forced through the mandatory production audit before
- * it can become READY, so safe redeploys do not require a human to rotate a
- * release SHA environment variable.
+ * production artifact must pass the mandatory production audit. Render also
+ * requires its host-provided source revision; no Vercel environment variables
+ * are synthesized to admit another provider's release.
  */
-export function selfServeBillingReleaseBlockers(): string[] {
+export function selfServeBillingReleaseBlockers(
+  env: DeploymentEnvironment = process.env,
+): string[] {
   const blockers: string[] = [];
-  if (!ENABLED_VALUES.has(normalizedEnv("WIRELINE_SELF_SERVE_BILLING_ENABLED"))) {
+  if (!ENABLED_VALUES.has(normalizedEnv("WIRELINE_SELF_SERVE_BILLING_ENABLED", env))) {
     blockers.push("WIRELINE_SELF_SERVE_BILLING_ENABLED=true");
   }
-  if (normalizedEnv("WIRELINE_LAUNCH_DEMO_MODE") !== "false") {
+  if (normalizedEnv("WIRELINE_LAUNCH_DEMO_MODE", env) !== "false") {
     blockers.push("WIRELINE_LAUNCH_DEMO_MODE=false");
   }
-  if (normalizedEnv("VERCEL_ENV") !== "production") {
-    blockers.push("VERCEL_ENV=production");
-  }
-  if (normalizedEnv("VERCEL_GIT_COMMIT_REF") !== "main") {
-    blockers.push("VERCEL_GIT_COMMIT_REF=main");
+  const deployment = getDeploymentIdentity(env);
+  if (deployment.provider === "render") {
+    if (deployment.environment !== "production") {
+      blockers.push(
+        "Render production requires WIRELINE_DEPLOYMENT_ENVIRONMENT=production, RENDER=true, and IS_PULL_REQUEST=false",
+      );
+    }
+    if (deployment.branch !== "main") blockers.push("RENDER_GIT_BRANCH=main");
+    if (!deployment.sourceCommit) {
+      blockers.push("RENDER_GIT_COMMIT must be a 40-character git revision");
+    }
+  } else if (deployment.provider === "conflict") {
+    blockers.push("Render and Vercel deployment metadata must not be combined");
+  } else {
+    // Preserve the existing Vercel rollback channel and its diagnostic contract.
+    // NODE_ENV=production alone never authorizes self-serve checkout.
+    if (normalizedEnv("VERCEL_ENV", env) !== "production") {
+      blockers.push("VERCEL_ENV=production");
+    }
+    if (normalizedEnv("VERCEL_GIT_COMMIT_REF", env) !== "main") {
+      blockers.push("VERCEL_GIT_COMMIT_REF=main");
+    }
   }
 
   return blockers;
 }
 
-export function selfServeBillingEnabled(): boolean {
-  return selfServeBillingReleaseBlockers().length === 0;
+export function selfServeBillingEnabled(env: DeploymentEnvironment = process.env): boolean {
+  return selfServeBillingReleaseBlockers(env).length === 0;
 }
 
 /**

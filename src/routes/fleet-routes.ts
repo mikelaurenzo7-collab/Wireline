@@ -6,6 +6,7 @@ import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, like, ne, gte, inArray } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
+import { getDeploymentIdentity } from "../lib/deployment-environment";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
 import { fleetRateLimit } from "../middleware/api-rate-limits";
 import { validateBody, updateFollowUpTaskSchema } from "../lib/api-validation";
@@ -99,9 +100,10 @@ router.get(
       log.error("Failed to push initial snap to presence stream", { error: error.message });
     }
 
-    // Vercel serverless cannot hold long-lived SSE (no LISTEN/NOTIFY + maxDuration).
-    // Send the snapshot and close — Recaps falls back to /api/Assistants/presence polling.
-    if (process.env.VERCEL === "1") {
+    // These deployments do not start the Postgres presence listener. Close the
+    // snapshot so Recaps keeps polling instead of waiting on a silent stream.
+    if (process.env.VERCEL === "1" || getDeploymentIdentity().provider === "render") {
+      presenceStreams.unregister(userId, res);
       res.end();
       return;
     }

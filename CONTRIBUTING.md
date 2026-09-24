@@ -8,7 +8,7 @@ BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, 
 2. Identify the canonical source before editing. Do not create a second source of truth to avoid touching the first.
 3. Make the smallest coherent change that fixes the verified problem.
 4. Add behavioral coverage for defects and durable contract coverage for architectural invariants.
-5. Consolidate the branch into its final reviewed commit, then validate that exact head in Vercel.
+5. Consolidate the branch into its final reviewed commit, then validate that exact head using the target-specific deployment sequence in `docs/DEPLOYMENT_RUNBOOK.md`.
 6. Fast-forward that exact reviewed commit into `main` only after review threads, deployment checks, and production-impact questions are closed. Never create a new merge or squash SHA after exact-head evidence is collected.
 7. Verify the promoted production SHA, database state, health endpoint, and runtime errors when the change can affect them.
 
@@ -23,19 +23,25 @@ BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, 
 
 ## Verification ladder
 
+For the direct Render migration target with the existing Supabase database, use the provider-specific sequence in
+`docs/DEPLOYMENT_RUNBOOK.md`: full local verification, reviewed exact source,
+and Render web/worker artifact and source parity replace the legacy
+Vercel preview requirement for that target. This exception does not waive tests,
+review, database isolation, business launch gates or production verification.
+
 Use the narrowest sufficient checks while developing, then run the full gate for high-risk work.
 
-| Change | Minimum validation |
-| --- | --- |
-| Documentation or repository hygiene | `npm run source-control:check`, `npm run docs:check`, relevant contract tests |
-| Isolated UI or product-copy change | Targeted tests, `npm run verify` |
-| Shared runtime, routes, providers, auth, billing, compliance, CSP, data access, migrations | `npm run verify:full`, exact-head Vercel preview, targeted live/read-only probes |
-| Browser extension | Root checks plus `node apps/browser-extension/scripts/build.mjs --check` |
-| Native clients | Root contract checks plus the platform build and device/simulator acceptance defined in `docs/CLIENT_SURFACES.md` |
-| ChatGPT App | Root checks plus the MCP discovery/OAuth/release checks in `docs/CHATGPT_APP.md` |
-| Cursor Directory | Root checks plus the Open Plugins package and reviewer packet in `docs/CURSOR_PLUGIN.md` |
+| Change                                                                                     | Minimum validation                                                                                                |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Documentation or repository hygiene                                                        | `npm run source-control:check`, `npm run docs:check`, relevant contract tests                                     |
+| Isolated UI or product-copy change                                                         | Targeted tests, `npm run verify`                                                                                  |
+| Shared runtime, routes, providers, auth, billing, compliance, CSP, data access, migrations | `npm run verify:full`, target-specific exact-head deployment verification, targeted live/read-only probes         |
+| Browser extension                                                                          | Root checks plus `node apps/browser-extension/scripts/build.mjs --check`                                          |
+| Native clients                                                                             | Root contract checks plus the platform build and device/simulator acceptance defined in `docs/CLIENT_SURFACES.md` |
+| ChatGPT App                                                                                | Root checks plus the MCP discovery/OAuth/release checks in `docs/CHATGPT_APP.md`                                  |
+| Cursor Directory                                                                           | Root checks plus the Open Plugins package and reviewer packet in `docs/CURSOR_PLUGIN.md`                          |
 
-GitHub Actions may be unavailable because of account billing. That does not lower the release standard: the exact-head Vercel gate, CodeRabbit review, targeted provider checks, and production verification remain required.
+GitHub Actions may be unavailable because of account billing. That does not lower the release standard: exact-head verification for the deployment target, CodeRabbit review, targeted provider checks, and production verification remain required. Keep any named check that ran and found a defect visible until resolved or documented as an independently verified baseline failure.
 
 ## Database migrations
 

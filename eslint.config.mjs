@@ -115,7 +115,12 @@ export default [
   // script fails at the worst moment (mid-release), not in CI type checks,
   // because plain .mjs files are outside every tsconfig.
   {
-    files: ["**/scripts/**/*.mjs", "scripts/lib/**/*.mjs"],
+    files: [
+      "**/scripts/**/*.mjs",
+      "scripts/lib/**/*.mjs",
+      "deploy/render/**/*.mjs",
+      "tests/**/*.test.mjs",
+    ],
     languageOptions: {
       globals: { ...globals.node },
     },

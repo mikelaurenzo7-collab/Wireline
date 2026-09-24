@@ -24,6 +24,19 @@ vi.mock("../src/lib/background-work", () => ({ activeBackgroundWorkCount: () => 
 const secret = "worker-test-authorization-secret-at-least-32-bytes";
 let server: Server | undefined;
 beforeEach(() => {
+  for (const key of [
+    "VERCEL_ENV",
+    "VERCEL_GIT_COMMIT_REF",
+    "VERCEL_GIT_COMMIT_SHA",
+    "RENDER",
+    "RENDER_SERVICE_ID",
+    "RENDER_GIT_BRANCH",
+    "RENDER_GIT_COMMIT",
+    "IS_PULL_REQUEST",
+    "WIRELINE_DEPLOYMENT_ENVIRONMENT",
+    "WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED",
+  ])
+    vi.stubEnv(key, "");
   vi.stubEnv("WIRELINE_VOICE_WORKER", "");
   vi.stubEnv("WIRELINE_VOICE_WORKER_SECRET", secret);
   vi.stubEnv("WIRELINE_VOICE_WORKER_URL", "https://voice.example.com");
@@ -259,6 +272,152 @@ describe("persistent SIP worker dispatch", () => {
     expect(drained).toBe(true);
   });
 });
+describe("Render voice admission and process liveness", () => {
+  function useRender(overrides: Record<string, string> = {}) {
+    for (const [key, value] of Object.entries({
+      VERCEL: "",
+      RENDER: "true",
+      RENDER_SERVICE_ID: "srv-voice-test",
+      RENDER_GIT_BRANCH: "main",
+      RENDER_GIT_COMMIT: "a".repeat(40),
+      IS_PULL_REQUEST: "false",
+      WIRELINE_DEPLOYMENT_ENVIRONMENT: "production",
+      WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED: "true",
+      ...overrides,
+    }))
+      vi.stubEnv(key, value);
+  }
+
+  async function listen(worker: ReturnType<typeof createVoiceWorkerApp>): Promise<string> {
+    server = worker.app.listen(0, "127.0.0.1");
+    await new Promise<void>((resolve) => server!.once("listening", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("missing address");
+    return "http://127.0.0.1:" + address.port;
+  }
+
+  it.each([
+    ["missing activation", { WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED: "" }],
+    ["disabled activation", { WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED: "false" }],
+    ["preview", { IS_PULL_REQUEST: "true" }],
+    ["unknown preview status", { IS_PULL_REQUEST: "" }],
+    ["non-main branch", { RENDER_GIT_BRANCH: "feature/voice" }],
+    ["unknown source", { RENDER_GIT_COMMIT: "invalid" }],
+    ["missing deployment environment", { WIRELINE_DEPLOYMENT_ENVIRONMENT: "" }],
+    ["partial Render metadata", { RENDER: "" }],
+    ["conflicting hosting metadata", { VERCEL: "1" }],
+  ] as const)("rejects %s before body parsing or call work", async (_name, overrides) => {
+    useRender(overrides);
+    const router = express.Router();
+    const accepted = vi.fn((_req: Request, response: Response) => response.status(202).end());
+    router.post(OPENAI_SIP_WEBHOOK_PATH, accepted);
+    const worker = createVoiceWorkerApp(router, 1);
+    const origin = await listen(worker);
+    const response = await fetch(origin + OPENAI_SIP_WEBHOOK_PATH, {
+      method: "POST",
+      headers: { [VOICE_WORKER_AUTH_HEADER]: secret, "Content-Type": "application/json" },
+      body: "malformed JSON",
+    });
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("5");
+    expect(accepted).not.toHaveBeenCalled();
+    await expect(worker.drainAdmissions()).resolves.toBeUndefined();
+  });
+
+  it("allows authenticated call admission only after the Render activation gate opens", async () => {
+    useRender();
+    const router = express.Router();
+    const accepted = vi.fn((_req: Request, response: Response) =>
+      response.status(202).json({ received: true, handled: true }),
+    );
+    router.post(OPENAI_SIP_WEBHOOK_PATH, accepted);
+    const origin = await listen(createVoiceWorkerApp(router, 1));
+    expect((await fetch(origin + OPENAI_SIP_WEBHOOK_PATH, { method: "POST" })).status).toBe(401);
+    expect(accepted).not.toHaveBeenCalled();
+    const response = await fetch(origin + OPENAI_SIP_WEBHOOK_PATH, {
+      method: "POST",
+      headers: { [VOICE_WORKER_AUTH_HEADER]: secret },
+    });
+    expect(response.status).toBe(202);
+    expect(accepted).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps private release proof available before voice admission is activated", async () => {
+    useRender({ WIRELINE_VOICE_WORKER_ADMISSIONS_ENABLED: "false" });
+    const snapshot = await readVoiceWorkerReadiness(async () => undefined, workerReadinessEnv);
+    const read = vi.fn().mockResolvedValue(snapshot);
+    const origin = await listen(createVoiceWorkerApp(express.Router(), 1, read));
+    expect((await fetch(origin + "/readyz")).status).toBe(401);
+    expect(read).not.toHaveBeenCalled();
+    const response = await fetch(origin + "/readyz", {
+      headers: { [VOICE_WORKER_AUTH_HEADER]: secret },
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(snapshot);
+    const liveness = await fetch(origin + "/livez");
+    expect(liveness.status).toBe(200);
+    expect(liveness.headers.get("cache-control")).toBe("no-store");
+    expect(await liveness.json()).toEqual({ alive: true });
+  });
+
+  it("keeps public liveness healthy during drain without admitting or interrupting pending work", async () => {
+    useRender();
+    let release!: () => void;
+    let started!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const router = express.Router();
+    router.post(OPENAI_SIP_WEBHOOK_PATH, async (_request, response) => {
+      response.locals.voiceWorkerHandlerActive = true;
+      try {
+        started();
+        await held;
+        response.status(202).json({ received: true, handled: true });
+      } finally {
+        response.locals.voiceWorkerHandlerActive = false;
+        response.locals.voiceWorkerAdmissionRelease?.();
+      }
+    });
+    const read = vi.fn();
+    const worker = createVoiceWorkerApp(router, 1, read);
+    const origin = await listen(worker);
+    const options = { headers: { [VOICE_WORKER_AUTH_HEADER]: secret } };
+    const pending = fetch(origin + OPENAI_SIP_WEBHOOK_PATH, { ...options, method: "POST" });
+    await entered;
+    try {
+      const drain = await fetch(origin + "/drain", { ...options, method: "POST" });
+      expect(await drain.json()).toEqual({ draining: true, active: 0, pending: 1 });
+      const liveness = await fetch(origin + "/livez");
+      expect(liveness.status).toBe(200);
+      expect(liveness.headers.get("cache-control")).toBe("no-store");
+      expect(await liveness.json()).toEqual({ alive: true });
+      const head = await fetch(origin + "/livez", { method: "HEAD" });
+      expect(head.status).toBe(200);
+      expect(await head.text()).toBe("");
+      expect((await fetch(origin + "/healthz")).status).toBe(503);
+      expect((await fetch(origin + "/readyz", options)).status).toBe(503);
+      expect(read).not.toHaveBeenCalled();
+      expect(
+        (await fetch(origin + OPENAI_SIP_WEBHOOK_PATH, { ...options, method: "POST" })).status,
+      ).toBe(503);
+    } finally {
+      release();
+    }
+    expect((await pending).status).toBe(202);
+    await worker.drainAdmissions();
+    expect(await (await fetch(origin + "/drain", options)).json()).toEqual({
+      draining: true,
+      active: 0,
+      pending: 0,
+    });
+    expect((await fetch(origin + "/livez")).status).toBe(200);
+  });
+});
+
 describe("business SIP duration", () => {
   it.each([undefined, "", "  ", "bad", "0", "-1", "Infinity"])(
     "defaults %s to a full hour",
