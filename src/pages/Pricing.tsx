@@ -247,7 +247,7 @@ export default function Pricing() {
 
       <section id="plans" className="marketing-section marketing-section--screen">
         <div className="wl-public-rail mx-auto max-w-[1500px] text-center">
-          <div className="mx-auto mb-8 max-w-6xl text-center">
+          <div className="wl-pricing-hero mx-auto mb-8 max-w-6xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
             <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
               Build Free. Plans from $19

@@ -20,10 +20,14 @@ describe("BotBound marketing privacy dock and readable labels", () => {
     expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-plan-grid');
     expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-usage-note');
     expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-page #plans {');
-    expect(polish).toContain("display: block;");
+    expect(polish).toContain("display: flex;");
+    expect(polish).toContain(
+      "max-height: calc(100dvh - var(--wl-marketing-chrome-top, 4rem) - var(--wl-privacy-dock-space))",
+    );
     expect(polish).toContain("@media (min-width: 1024px)");
     expect(polish).toContain(".wl-privacy-dock--above-sticky");
     const pricing = read("src/pages/Pricing.tsx");
+    expect(pricing).toContain("wl-pricing-hero");
     expect(pricing).toContain("wl-pricing-plan-grid");
     expect(pricing).toContain("wl-pricing-usage-note");
   });
@@ -63,6 +67,7 @@ describe("BotBound marketing privacy dock and readable labels", () => {
     expect(pricing).toContain("Free Builder");
     expect(pricing).toContain('publicName: "Starter Plus"');
     expect(polish).toContain(".wl-pricing-status");
+    expect(polish).toContain(".wl-pricing-status::before");
     expect(polish).toContain(".wl-pricing-plan-name");
     expect(polish).toContain("white-space: nowrap");
   });

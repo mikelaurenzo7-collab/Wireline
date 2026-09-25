@@ -55,11 +55,9 @@ export default function PrecisionPublicHeader() {
           <Link
             to={signupHrefForPlan("personal")}
             aria-label="Start Free"
-            className="marketing-btn-primary min-h-11 px-4 text-sm font-semibold shrink-0 whitespace-nowrap max-[430px]:px-3"
+            className="marketing-btn-primary min-h-11 px-3 text-sm font-semibold shrink-0 whitespace-nowrap sm:px-4"
           >
-            <span>
-              Start<span className="max-[430px]:hidden"> Free</span>
-            </span>
+            Start Free
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

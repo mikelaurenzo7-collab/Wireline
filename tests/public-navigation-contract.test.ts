@@ -19,6 +19,7 @@ describe("public navigation contract", () => {
     expect(header).toContain("Sign In");
     expect(header).toContain("Start Free");
     expect(header).toContain("marketing-btn-primary");
+    expect(header).not.toContain("max-[430px]:hidden");
   });
 
   it("limits the compact navigation to the two buying questions and account entry", () => {
