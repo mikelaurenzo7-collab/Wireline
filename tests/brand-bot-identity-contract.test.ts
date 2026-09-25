@@ -16,6 +16,8 @@ describe("BotBound brand migration", () => {
     for (const source of [icon, favicon]) {
       expect(source).toContain("BotBound");
       expect(source).toMatch(/phone|Phone/);
+      expect(source).toContain("letterpress violet phone glyph");
+      expect(source).not.toContain("botbound-app-icon.png");
       expect(source).not.toContain("folded violet and platinum W");
     }
   });

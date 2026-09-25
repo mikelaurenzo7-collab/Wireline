@@ -13,6 +13,8 @@ describe("Stripe merchant-brand assets", () => {
     expect(renderer).toContain("BotBound");
     expect(renderer).toMatch(/>Your Bot for Calls, Texts, and Email<\/text>/i);
     expect(renderer).toContain('out: "public/botbound-stripe-logo.png"');
+    expect(renderer).toContain('out: "public/botbound-stripe-icon.png"');
+    expect(renderer).toContain("letterpress violet phone glyph");
     expect(renderer).toContain('out: "public/wireline-stripe-logo.png"');
     expect(renderer).toContain('out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png"');
   });

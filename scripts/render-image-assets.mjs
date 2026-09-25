@@ -29,29 +29,38 @@ function rasterSvg(png, title, description, width = 2048, height = 2048) {
 </svg>\n`;
 }
 
+function titledGlyphSvg(title, description) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">${title}</title>
+  <desc id="description">${description}</desc>
+  <rect x="184" y="128" width="656" height="768" rx="96" fill="#14141C"/>
+  <rect x="232" y="176" width="560" height="672" rx="72" fill="#A78BFA"/>
+  <rect x="392" y="208" width="240" height="36" rx="18" fill="#14141C"/>
+</svg>
+`;
+}
+
 function writeCompatibilitySvgSources() {
-  const current = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" role="img" aria-labelledby="title description">
-  <title id="title">BotBound</title>
-  <desc id="description">BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.</desc>
-  <metadata>Production raster artwork; Aurora violet #A78BFA; canonical source /brand/botbound-app-icon.png.</metadata>
-  <image href="/brand/botbound-app-icon.png" width="2048" height="2048"/>
-</svg>\n`;
-  const legacy = current.replace(
-    "BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.",
-    "Compatibility asset path rendering the BotBound phone Bot mark: a friendly robot visibly gripping a violet receiver.",
+  const glyph = titledGlyphSvg(
+    "BotBound",
+    "BotBound letterpress violet phone glyph used as the favicon, PWA icon, and Stripe tiny chrome.",
   );
-  const favicon = current.replace(
-    "BotBound phone Bot app icon: a friendly robot visibly gripping a violet receiver.",
-    "BotBound phone Bot favicon with a visible hand and violet receiver.",
+  const legacy = titledGlyphSvg(
+    "BotBound",
+    "Compatibility asset path rendering the BotBound phone Bot mark: letterpress violet phone glyph for tiny chrome.",
   );
-  const extension = current.replace(
-    'href="/brand/botbound-app-icon.png"',
-    'href="../../../public/brand/botbound-app-icon.png"',
+  const extension = titledGlyphSvg(
+    "BotBound",
+    "BotBound letterpress violet phone glyph for the BotBound Command toolbar icon.",
   );
-  writeFileSync(resolve(root, "public/botbound-icon.svg"), current, "utf8");
+  writeFileSync(resolve(root, "public/botbound-icon.svg"), glyph, "utf8");
+  writeFileSync(resolve(root, "public/favicon.svg"), glyph, "utf8");
+  writeFileSync(resolve(root, "public/brand/botbound-mark.svg"), glyph, "utf8");
+  writeFileSync(resolve(root, "public/brand/utility-phone-glyph.svg"), glyph, "utf8");
   writeFileSync(resolve(root, "public/wireline-icon.svg"), legacy, "utf8");
-  writeFileSync(resolve(root, "public/favicon.svg"), favicon, "utf8");
   writeFileSync(resolve(root, "apps/browser-extension/assets/icon.svg"), extension, "utf8");
+  return glyph;
 }
 
 function writeStripeLogoSource(appIcon) {
@@ -111,20 +120,23 @@ const appIconSource = rasterSvg(
   "A friendly Bot visibly gripping a violet telephone receiver.",
 );
 
-writeCompatibilitySvgSources();
+const glyphSvg = writeCompatibilitySvgSources();
 const stripeLogoSource = writeStripeLogoSource(appIcon);
 const ogSource = writeOgSource(operator);
 
 const targets = [
-  { source: appIconSource, out: "public/favicon.png", width: 64 },
+  { source: glyphSvg, out: "public/favicon.png", width: 64 },
+  { source: glyphSvg, out: "public/brand/botbound-mark.png", width: 512 },
+  { source: glyphSvg, out: "public/brand/utility-phone-glyph-192.png", width: 192 },
+  { source: glyphSvg, out: "public/brand/utility-phone-glyph-512.png", width: 512 },
   { source: ogSource, out: "public/og-image.png", width: 1200 },
   { source: appIconSource, out: "public/apple-touch-icon.png", width: 180 },
-  { source: appIconSource, out: "public/botbound-icon-192.png", width: 192 },
-  { source: appIconSource, out: "public/botbound-icon-512.png", width: 512 },
-  { source: appIconSource, out: "public/botbound-stripe-icon.png", width: 512 },
-  { source: appIconSource, out: "public/wireline-icon-192.png", width: 192 },
-  { source: appIconSource, out: "public/wireline-icon-512.png", width: 512 },
-  { source: appIconSource, out: "public/wireline-stripe-icon.png", width: 512 },
+  { source: glyphSvg, out: "public/botbound-icon-192.png", width: 192 },
+  { source: glyphSvg, out: "public/botbound-icon-512.png", width: 512 },
+  { source: glyphSvg, out: "public/botbound-stripe-icon.png", width: 512 },
+  { source: glyphSvg, out: "public/wireline-icon-192.png", width: 192 },
+  { source: glyphSvg, out: "public/wireline-icon-512.png", width: 512 },
+  { source: glyphSvg, out: "public/wireline-stripe-icon.png", width: 512 },
   { copy: appIcon, out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png", width: 1024 },
   { source: stripeLogoSource, out: "public/botbound-stripe-logo.png", width: 1200 },
   { source: stripeLogoSource, out: "public/wireline-stripe-logo.png", width: 1200 },

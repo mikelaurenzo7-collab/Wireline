@@ -64,7 +64,7 @@ describe("Atomic Design completion contract", () => {
     expect(code).not.toMatch(arbitraryWithSpace);
   });
 
-  it("ships one production phone-Bot artwork source across every brand surface", () => {
+  it("ships the robot for BotBoundMark and the B glyph for favicon/PWA tiny chrome", () => {
     const mark = source("src/components/brand/BotBoundMark.tsx");
     const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
@@ -74,16 +74,30 @@ describe("Atomic Design completion contract", () => {
     expect(mark).not.toContain("<svg");
     expect(legacyMark).toContain('from "./BotBoundMark"');
     expect(renderer).toContain("public/brand/botbound-app-icon.png");
+    expect(renderer).toContain("letterpress violet phone glyph");
 
     for (const asset of [
-      "public/favicon.svg",
-      "public/wireline-icon.svg",
       "public/wireline-chatgpt-app-icon.svg",
       "scripts/apple-touch-icon.svg",
       "scripts/ios-app-icon.svg",
     ]) {
       const svg = source(asset);
       expect(svg, `${asset} must wrap the production robot artwork`).toContain(
+        "botbound-app-icon.png",
+      );
+      expect(svg).not.toContain("folded violet and platinum W");
+    }
+
+    for (const asset of [
+      "public/favicon.svg",
+      "public/botbound-icon.svg",
+      "public/wireline-icon.svg",
+    ]) {
+      const svg = source(asset);
+      expect(svg, `${asset} must be the letterpress phone glyph`).toContain(
+        "letterpress violet phone glyph",
+      );
+      expect(svg, `${asset} must not bake the robot into tiny chrome`).not.toContain(
         "botbound-app-icon.png",
       );
       expect(svg).not.toContain("folded violet and platinum W");
