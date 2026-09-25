@@ -405,7 +405,7 @@ export default function Pricing() {
             )}
           </div>
 
-          <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
+          <p className="wl-pricing-usage-note mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
             Included usage is shown per month. Extra voice is {TOPUP_RATE}, prepaid. No automatic
             overages. Live phone and email setup depend on account eligibility and availability.
           </p>

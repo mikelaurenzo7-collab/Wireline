@@ -434,7 +434,7 @@ html[data-wl-privacy-dock="open"] .marketing-surface.landing-prestige {
   padding-bottom: calc(var(--wl-privacy-dock-space) + env(safe-area-inset-bottom, 0px));
 }
 
-html[data-wl-privacy-dock="open"] .wl-pricing-plan-grid {
+html[data-wl-privacy-dock="open"] .wl-pricing-usage-note {
   margin-bottom: var(--wl-privacy-dock-space);
 }
 
