@@ -306,7 +306,7 @@ export default function Pricing() {
                   : "Build free. Paid activation is currently unavailable."}
           </p>
 
-          <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="wl-pricing-plan-grid mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
             <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
               <h2 className="wl-card-title wl-pricing-plan-name">Free Builder</h2>
               <div className="mt-3 flex items-end justify-center gap-1.5">

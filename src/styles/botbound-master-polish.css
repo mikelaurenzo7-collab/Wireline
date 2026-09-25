@@ -418,7 +418,7 @@
 /* -------------------------------------------------------------------------- */
 
 html[data-wl-privacy-dock="open"] {
-  --wl-privacy-dock-space: 5.75rem;
+  --wl-privacy-dock-space: 7.25rem;
 }
 
 html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
@@ -432,6 +432,14 @@ html[data-wl-privacy-dock="open"] .marketing-surface {
 html[data-wl-privacy-dock="open"] .marketing-surface.marketing-page-frame,
 html[data-wl-privacy-dock="open"] .marketing-surface.landing-prestige {
   padding-bottom: calc(var(--wl-privacy-dock-space) + env(safe-area-inset-bottom, 0px));
+}
+
+html[data-wl-privacy-dock="open"] .wl-pricing-plan-grid {
+  margin-bottom: var(--wl-privacy-dock-space);
+}
+
+html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
+  scroll-margin-bottom: calc(var(--wl-privacy-dock-space) + 1.25rem);
 }
 
 .wl-privacy-dock {
