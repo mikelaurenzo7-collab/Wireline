@@ -30,6 +30,7 @@ describe("BotBound marketing privacy dock and readable labels", () => {
     expect(polish).toContain(
       "max-height: calc(100dvh - var(--wl-marketing-chrome-top, 4rem) - var(--wl-privacy-dock-space))",
     );
+    expect(polish).toContain("--wl-privacy-dock-space: 7.5rem");
     expect(polish).toContain("@media (min-width: 1024px)");
     expect(polish).toContain('html[data-wl-privacy-dock="open"][data-wl-sticky-cta="open"]');
     expect(polish).toContain(".wl-privacy-dock--above-sticky");
