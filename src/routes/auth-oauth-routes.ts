@@ -43,7 +43,7 @@ import { generateToken, isOwnerEmail } from "../lib/auth-service";
 import { authSuccessBody, setSessionCookie } from "../lib/session-cookie";
 import { scheduleFounderBootstrap } from "../lib/founder-bootstrap";
 import { generateOAuthState, verifyAndClaimOAuthState } from "../lib/oauth-helpers";
-import { getCanonicalAppUrl } from "../lib/app-url";
+import { getPublicRuntimeOrigin } from "../lib/app-url";
 import {
   createOAuthBridgeState,
   readOAuthBridgeStateCookie,
@@ -119,8 +119,8 @@ const GOOGLE_SIGNIN_SCOPES = ["openid", "email", "profile"];
 const MICROSOFT_SIGNIN_SCOPES = ["openid", "email", "profile", "offline_access", "User.Read"];
 const YAHOO_SIGNIN_SCOPES = ["openid", "email", "profile"];
 
-function oauthAppBaseUrl(): string {
-  return getCanonicalAppUrl();
+function oauthAppBaseUrl(req: Request): string {
+  return getPublicRuntimeOrigin(req);
 }
 
 function beginOAuthSignIn(res: Response): void {
@@ -481,7 +481,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, async (req: Request, res: R
       throw AppError.fromHttpStatus(503, "Google sign-in is not configured.");
     }
     beginOAuthSignIn(res);
-    const baseUrl = oauthAppBaseUrl();
+    const baseUrl = oauthAppBaseUrl(req);
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
     const google = await googleApis();
     const client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
@@ -501,7 +501,7 @@ router.get("/api/auth/google/url", oauthRateLimiter, async (req: Request, res: R
 });
 
 router.get("/api/auth/google/callback", async (req: Request, res: Response) => {
-  const baseUrl = oauthAppBaseUrl();
+  const baseUrl = oauthAppBaseUrl(req);
   const { code, state } = req.query;
   const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -571,7 +571,7 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
       throw AppError.fromHttpStatus(503, "Microsoft sign-in is not configured.");
     }
     beginOAuthSignIn(res);
-    const baseUrl = oauthAppBaseUrl();
+    const baseUrl = oauthAppBaseUrl(req);
     const redirectUri = `${baseUrl}/api/auth/microsoft/callback`;
     const params = new URLSearchParams({
       client_id: clientId,
@@ -593,7 +593,7 @@ router.get("/api/auth/microsoft/url", oauthRateLimiter, (req: Request, res: Resp
 });
 
 router.get("/api/auth/microsoft/callback", async (req: Request, res: Response) => {
-  const baseUrl = oauthAppBaseUrl();
+  const baseUrl = oauthAppBaseUrl(req);
   const { code, state, error_description } = req.query;
   const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {
@@ -696,7 +696,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
       throw AppError.fromHttpStatus(503, "Yahoo sign-in is not configured.");
     }
     beginOAuthSignIn(res);
-    const baseUrl = oauthAppBaseUrl();
+    const baseUrl = oauthAppBaseUrl(req);
     const redirectUri = `${baseUrl}/api/auth/yahoo/callback`;
     const params = new URLSearchParams({
       client_id: clientId,
@@ -718,7 +718,7 @@ router.get("/api/auth/yahoo/url", oauthRateLimiter, (req: Request, res: Response
 });
 
 router.get("/api/auth/yahoo/callback", async (req: Request, res: Response) => {
-  const baseUrl = oauthAppBaseUrl();
+  const baseUrl = oauthAppBaseUrl(req);
   const { code, state, error_description } = req.query;
   const vs = await verifyAndClaimOAuthState(state as string | undefined);
   if (!vs.ok) {

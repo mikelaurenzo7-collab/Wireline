@@ -94,10 +94,14 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(index).not.toContain("https://trywireline.com");
   });
 
-  it("keeps customer sign-in callback paths stable while deriving their origin from APP_URL", () => {
+  it("keeps customer sign-in callback paths stable while deriving their origin from env", () => {
     const authOAuth = read("src/routes/auth-oauth-routes.ts");
-    expect(authOAuth).toContain('import { getCanonicalAppUrl } from "../lib/app-url"');
-    expect(authOAuth).toContain("return getCanonicalAppUrl()");
+    const appUrl = read("src/lib/app-url.ts");
+    expect(authOAuth).toContain('import { getPublicRuntimeOrigin } from "../lib/app-url"');
+    expect(authOAuth).toContain("return getPublicRuntimeOrigin(req)");
+    expect(appUrl).toContain("process.env.APP_URL");
+    expect(appUrl).toContain("RENDER_EXTERNAL_URL");
+    expect(appUrl).toContain("getPublicRuntimeOrigin");
     for (const path of SIGN_IN_CALLBACKS) expect(authOAuth, path).toContain(path);
     expect(authOAuth).not.toContain("https://trywireline.com/api/auth/");
     expect(authOAuth).not.toContain("https://botbound.me/api/auth/");

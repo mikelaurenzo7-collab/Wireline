@@ -9,6 +9,7 @@ import * as schema from "../db/schema";
 import { sessionUsers } from "../db/security-schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "./secret-vault";
+import { getPublicRuntimeOrigin } from "./app-url";
 import { getErrorMessage } from "./server-utils";
 import { verifyInternalJwt, type JwtPayload } from "./auth-utils";
 import { isSessionGenerationActive } from "./session-generation";
@@ -29,7 +30,7 @@ export const SCOPES = [
 ];
 
 function getAppOrigin(req: express.Request): string {
-  if (process.env.APP_URL) return new URL(process.env.APP_URL).origin;
+  if (process.env.APP_URL) return getPublicRuntimeOrigin(req);
   if (IS_PROD) throw new Error("APP_URL is required for OAuth redirects in production");
   return `${req.protocol}://${req.get("host")}`;
 }

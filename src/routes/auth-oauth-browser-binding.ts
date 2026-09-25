@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
 
 import { AppError } from "../lib/api-error";
-import { getCanonicalAppUrl } from "../lib/app-url";
+import { getPublicRuntimeOrigin } from "../lib/app-url";
 import {
   OAUTH_BRIDGE_STATE_COOKIE,
   clearOAuthBridgeStateCookie,
@@ -169,10 +169,10 @@ function readBridgeStateFromSetCookie(res: Response): string | undefined {
   return undefined;
 }
 
-function rejectInvalidCallback(res: Response): void {
+function rejectInvalidCallback(req: Request, res: Response): void {
   clearOAuthBridgeStateCookie(res);
   const error = encodeURIComponent(INVALID_STATE_MESSAGE);
-  res.redirect(`${getCanonicalAppUrl()}/auth/oauth-complete#error=${error}`);
+  res.redirect(`${getPublicRuntimeOrigin(req)}/auth/oauth-complete#error=${error}`);
 }
 
 function protectOAuthCompletionRedirect(res: Response): void {
@@ -292,7 +292,7 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   if (isSignInOAuthProvider(callbackProvider)) {
     const bridgeState = readOAuthBridgeStateCookie(req);
     if (!isBoundOAuthSignInState(callbackProvider, req.query.state, bridgeState)) {
-      rejectInvalidCallback(res);
+      rejectInvalidCallback(req, res);
       return;
     }
     protectOAuthCompletionRedirect(res);
