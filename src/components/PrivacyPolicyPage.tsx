@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
     <MarketingChrome stickyCta={false}>
       <PageMeta
         title="Privacy Policy"
-        description="Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated August 31, 2026."
+        description="Privacy for BotBound's Bot platform: account, conversation, voice settings, billing, and measurement data. Last updated September 25, 2026."
         path="/privacy"
       />
 
@@ -214,11 +214,11 @@ export default function PrivacyPolicyPage() {
           <Section title="3. How We Use Data">
             <p>
               We use data to provide and secure BotBound; process managed structured AI requests
-              primarily through <strong>OpenAI</strong>, with Vercel AI Gateway and{" "}
-              <strong>Google Gemini</strong> as governed structured continuity routes; run live
-              phone conversations through OpenAI Realtime over Twilio PSTN and SIP; route calls and
-              messages; execute connected workflows; provide support; prevent fraud and abuse; bill
-              through Stripe; and understand aggregate product performance.
+              primarily through <strong>OpenAI</strong>, with <strong>Google Gemini</strong> and, on
+              legacy deployments, Vercel AI Gateway as governed structured continuity routes; run
+              live phone conversations through OpenAI Realtime over Twilio PSTN and SIP; route calls
+              and messages; execute connected workflows; provide support; prevent fraud and abuse;
+              bill through Stripe; and understand aggregate product performance.
             </p>
             <p>
               Optional Meta measurement is used only after your explicit choice to attribute
@@ -254,7 +254,7 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Vercel AI Gateway</strong>: Governed multi-model continuity, budgets, and
-                inference observability
+                inference observability on legacy deployments
               </li>
               <li>
                 <strong>Stripe</strong>: Payment processing, billing, and tax calculation
@@ -267,7 +267,10 @@ export default function PrivacyPolicyPage() {
                 outbound Bot email
               </li>
               <li>
-                <strong>Vercel</strong>: Hosting, functions, and edge delivery
+                <strong>Render</strong>: Website and API hosting, and the persistent voice runtime
+              </li>
+              <li>
+                <strong>Vercel</strong>: Legacy hosting during migration
               </li>
               <li>
                 <strong>Upstash</strong>: Distributed rate limits and spend controls
@@ -318,8 +321,8 @@ export default function PrivacyPolicyPage() {
               Depending on where you live, you may have rights to access, correct, delete, restrict
               or object to processing, withdraw consent, and receive a portable copy of personal
               data. To exercise a right, use Delete Account in Settings or contact
-              <strong> support@botbound.app</strong>. Where processing relies on consent, withdrawing
-              consent does not affect processing completed before withdrawal.
+              <strong> support@botbound.app</strong>. Where processing relies on consent,
+              withdrawing consent does not affect processing completed before withdrawal.
             </p>
           </Section>
 

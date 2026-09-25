@@ -1,8 +1,8 @@
 export const ACCOUNT_TERMS_VERSION = "botbound-terms-2026-08-31" as const;
-export const ACCOUNT_PRIVACY_VERSION = "botbound-privacy-2026-08-31" as const;
+export const ACCOUNT_PRIVACY_VERSION = "botbound-privacy-2026-09-25" as const;
 
 export const ACCOUNT_TERMS_LAST_UPDATED = "August 31, 2026" as const;
-export const ACCOUNT_PRIVACY_LAST_UPDATED = "August 31, 2026" as const;
+export const ACCOUNT_PRIVACY_LAST_UPDATED = "September 25, 2026" as const;
 
 export const ACCOUNT_TERMS_VERSION_HEADER = "X-BotBound-Terms-Version" as const;
 export const ACCOUNT_PRIVACY_VERSION_HEADER = "X-BotBound-Privacy-Version" as const;
