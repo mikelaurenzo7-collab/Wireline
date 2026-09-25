@@ -19,7 +19,8 @@ describe("BotBound marketing privacy dock and readable labels", () => {
     expect(polish).toContain(".wl-privacy-dock--above-sticky");
     expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-plan-grid');
     expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-usage-note');
-    expect(polish).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(polish).toContain('html[data-wl-privacy-dock="open"] .wl-pricing-page #plans {');
+    expect(polish).toContain("display: block;");
     expect(polish).toContain("--wl-privacy-dock-space: 13.5rem");
     const pricing = read("src/pages/Pricing.tsx");
     expect(pricing).toContain("wl-pricing-plan-grid");

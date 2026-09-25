@@ -441,6 +441,12 @@ html[data-wl-privacy-dock="open"] .wl-features-page .marketing-section--screen {
   padding-bottom: calc(var(--wl-privacy-dock-space) + 1rem);
 }
 
+html[data-wl-privacy-dock="open"] .wl-pricing-page #plans {
+  display: block;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
 html[data-wl-privacy-dock="open"] .wl-pricing-plan-grid {
   margin-bottom: var(--wl-privacy-dock-space);
 }
