@@ -92,6 +92,7 @@ Public routes do not offer anonymous live calling. Private tests and live callin
 - Pricing switches update amounts, periods, savings language, and destination URLs together.
 - Never render a dead control. Provide a truthful fallback or remove the unavailable action.
 - Use Lucide icons already present in the application; do not substitute emoji or handcrafted SVGs.
+- Show saved Bot identity marks in roster and comparison lists, or inside an explicitly opened appearance picker. Use the Bot's name in single-Bot headers, navigation context, conversations, creation summaries, and voice tests. Keep appearance controls secondary to the Bot's working setup.
 
 ## Content principles
 

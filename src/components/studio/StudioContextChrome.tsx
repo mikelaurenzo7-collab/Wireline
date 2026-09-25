@@ -4,7 +4,6 @@ import { Link, useSearchParams } from "react-router";
 
 import { Button } from "../atoms/Button";
 import { useStudioActiveAgentId } from "../../hooks/useStudioActiveAgentId";
-import AgentPresenceSlot from "../AgentPresenceSlot";
 import { buildAgentOptionLabels } from "../../lib/agent-option-labels";
 import { agentLineStatus, agentReadinessLabel } from "../../lib/agent-readiness";
 import { customerAgentLanguage } from "../../lib/product-copy";
@@ -50,16 +49,6 @@ export default function StudioContextChrome() {
           )}
           {activeAgent ? (
             <>
-              <span className="hidden shrink-0 sm:inline-flex">
-                <AgentPresenceSlot
-                  name={activeAgent.name}
-                  agentId={activeAgent.id}
-                  markKey={activeAgent.mark_key}
-                  role={activeAgent.role}
-                  isBusinessAgent={activeAgent.is_business_agent}
-                  variant="badge"
-                />
-              </span>
               {agents.length > 1 ? (
                 <>
                   <h1 className="sr-only">{activeAgent.name}</h1>

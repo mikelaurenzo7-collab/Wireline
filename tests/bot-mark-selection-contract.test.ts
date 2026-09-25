@@ -88,7 +88,7 @@ describe("customer-selectable Bot identity marks", () => {
     expect(nextAvailableRadioIndex("ArrowRight", 0, 2, () => false)).toBeNull();
   });
 
-  it("carries the persisted mark into every post-create live-test face", () => {
+  it("retains the persisted mark in post-create state and voice-preview compatibility", () => {
     const create = read("src/components/CreateAgentDialog.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
@@ -115,7 +115,6 @@ describe("customer-selectable Bot identity marks", () => {
     expect(wizard).toContain("markKey={payload.markKey}");
     expect(roleplay).toContain("markKey={markKey}");
     expect(openai).toContain("markKey?: BotMarkKey | null");
-    expect(openai).toContain("markKey={markKey}");
     expect(liveVoice).toContain('export { default } from "./OpenAILiveVoiceSandbox"');
   });
 
@@ -181,7 +180,6 @@ describe("customer-selectable Bot identity marks", () => {
     }
     const authenticatedVoice = read("src/components/OpenAILiveVoiceSandbox.tsx");
     expect(authenticatedVoice).toContain("markKey?: BotMarkKey | null");
-    expect(authenticatedVoice).toContain("markKey={markKey}");
   });
 
   it("carries unique Bot identities through Insights and the full MCP workspace list", () => {

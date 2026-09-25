@@ -92,3 +92,32 @@ All 14 design-flow browser tests passed with these fixes. Current before/after
 captures are in the local launch-readiness artifact package under
 `2026-09-24/regroup-visual`. They use synthetic accounts and disabled provider
 mutations. Earlier screenshots remain historical evidence, not proof of these fixes.
+
+## Bot identity focus pass
+
+Saved Bot marks now appear in roster/comparison lists and explicitly opened
+appearance pickers. Single-Bot navigation, the Studio selector, creation summary,
+conversation replies, empty states and private voice preview use names without
+repeating the identity symbol. Collapsed navigation retains an accessible current-Bot
+link with a small generic arrow. Appearance moves below tone, greeting and knowledge
+in Setup. Selection, uniqueness, persistence and provider behavior are unchanged.
+
+Fresh before/after captures are in the local design-system artifact package under
+`2026-09-24/bot-mark-focus`. The active Activity leaderboard retains three distinct
+marks; the legacy Overview roster is retained in source but its route redirects to
+Studio, so it is not counted as a tested customer journey. Desktop dark/light,
+390px normal text, and 320px with a 32px root font were inspected. Nested workroom,
+inspector, textarea and appearance-picker widths stay contained.
+
+Manual fixture checks preserved conversation drafts across Bot switches, setup
+drafts across Review/Setup, and name/brief/identity selections after a rejected
+creation request. A rejected setup save remained actionable; voice preview opened
+without starting a session. All 14 existing design-flow browser tests and all 44
+tests in six focused identity, draft, voice-preview, chat and modal suites passed.
+The fixtures cannot authenticate a streaming conversation and disable API writes;
+they do not prove successful AI responses, production saves or live voice calls.
+
+The earlier full gate for `7fa53d23ed70` passed 649 unit files / 4,557 tests,
+static/type/lint/security, coverage, build and server smoke, then failed its browser
+server startup timeout. It is failed release evidence, not an in-progress or passing
+gate. Source promotion still requires current verification and review.

@@ -45,7 +45,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(shell).toContain("md:grid-cols-[minmax(0,1fr)_auto]");
     expect(shell).toContain("items-start text-left");
     expect(shell).not.toContain("wl-centered-header");
-    expect(shell).toContain('import BotMark from "./BotMark"');
+    expect(shell).toContain("aria-label={`Current Bot: ${agent.name}`}");
     expect(shell).toContain('import BotBoundMark from "./brand/BotBoundMark"');
     expect(shell).toContain('import { BotBoundWordmark } from "./brand/BotBoundBrand"');
     expect(shell).toContain('aria-label="BotBound Studio"');

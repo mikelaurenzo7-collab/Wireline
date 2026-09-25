@@ -1,13 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronsLeft, ChevronsRight, Search } from "lucide-react";
+import { ArrowUpRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
 import ActivationNudge from "./ActivationNudge";
 import EmailVerifyBanner from "./layout/EmailVerifyBanner";
 import MobileNavMoreSheet from "./layout/MobileNavMoreSheet";
 import SkipToContentLink from "./layout/SkipToContentLink";
 import WorkspaceResizablePanel from "./layout/WorkspaceResizablePanel";
-import BotMark from "./BotMark";
 import { BotBoundWordmark } from "./brand/BotBoundBrand";
 import BotBoundMark from "./brand/BotBoundMark";
 import { useAuth } from "../contexts/AuthContext";
@@ -236,13 +235,7 @@ function DesktopRail({
           data-wireline-bot-selected="true"
           className="wl-shell-bot-context wl-focus-ring-halo"
         >
-          <BotMark
-            seed={agent.id}
-            name={agent.name}
-            markKey={agent.mark_key}
-            size={20}
-            title={`${agent.name} Bot mark`}
-          />
+          {collapsed ? <ArrowUpRight className="size-4" aria-hidden="true" /> : null}
           {!collapsed ? (
             <span className="wl-shell-bot-copy">
               <span className="wl-shell-bot-name">{agent.name}</span>

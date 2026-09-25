@@ -7,11 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { ChevronDown, Loader2, WandSparkles, X, Zap } from "lucide-react";
+import { ChevronDown, Loader2, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, NativeSelect, Textarea } from "./atoms";
-import BotMark from "./BotMark";
 import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
@@ -424,9 +423,6 @@ export default function CreateAgentDialog({
         <div className="shrink-0 border-b border-border px-3 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-2 sm:gap-4">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="mt-0.5 hidden size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary sm:grid">
-                <Zap size={16} aria-hidden="true" />
-              </span>
               <div className="min-w-0">
                 <h2
                   ref={headingRef}
@@ -512,12 +508,6 @@ export default function CreateAgentDialog({
                 onClick={() => setCustomizing((current) => !current)}
                 className="flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-3 text-left wl-focus-ring-halo"
               >
-                <BotMark
-                  seed={`new:${templateKey}`}
-                  name={name.trim() || defaultName(templateKey)}
-                  markKey={markKey}
-                  size={28}
-                />
                 <span className="min-w-0 flex-1">
                   <span className="wl-preserve-case block truncate text-sm font-semibold text-foreground">
                     {name.trim() || defaultName(templateKey)}

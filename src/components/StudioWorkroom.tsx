@@ -11,7 +11,6 @@ import { Loader2, Phone, Send, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
-import AgentFace from "./AgentFace";
 import OutboundDialDialog from "./OutboundDialDialog";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
@@ -65,39 +64,14 @@ export type StudioWorkroomDraft = {
   commandNonce: string | null;
 };
 
-function AgentAvatar({
-  agentName,
-  markKey,
-  speaking = false,
-}: {
-  agentName: string;
-  markKey?: BotMarkKey | null;
-  speaking?: boolean;
-}) {
-  return (
-    <AgentFace
-      seed={agentName || "agent"}
-      markKey={markKey}
-      size={24}
-      speaking={speaking}
-      title={`${agentName || "Bot"} face`}
-      className="mt-1 shrink-0"
-    />
-  );
-}
-
 function MessageBubble({
   message,
   agentName,
-  markKey,
   mode,
-  speaking = false,
 }: {
   message: StudioMessage;
   agentName: string;
-  markKey?: BotMarkKey | null;
   mode: WorkroomMode;
-  speaking?: boolean;
 }) {
   const isUser = message.role === "Account Holder";
   const suggestions = proposalCount(message);
@@ -116,8 +90,7 @@ function MessageBubble({
   }
 
   return (
-    <article className="flex max-w-[92%] items-start gap-3">
-      <AgentAvatar agentName={agentName} markKey={markKey} speaking={speaking} />
+    <article className="w-fit max-w-[92%]" aria-label={`${agentName} response`}>
       <div className="min-w-0">
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
@@ -151,7 +124,6 @@ const StudioWorkroom = forwardRef<
   {
     agentId,
     agentName,
-    markKey,
     initialCommand,
     commandNonce,
     initialDraft,
@@ -547,28 +519,16 @@ const StudioWorkroom = forwardRef<
               <MessageSkeletons />
             ) : messages.length ? (
               <div className="flex flex-col gap-5">
-                {messages.map((message, index) => (
+                {messages.map((message) => (
                   <MessageBubble
                     key={message.id}
                     message={message}
                     agentName={agentName}
-                    markKey={markKey}
                     mode={mode}
-                    speaking={
-                      sending &&
-                      streamState.phase === "replying" &&
-                      message.role === "agent" &&
-                      index === messages.length - 1
-                    }
                   />
                 ))}
                 {sending ? (
-                  <div className="flex max-w-[92%] items-start gap-3">
-                    <AgentAvatar
-                      agentName={agentName}
-                      markKey={markKey}
-                      speaking={streamState.phase === "replying"}
-                    />
+                  <div className="max-w-[92%]" role="status">
                     <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-[13px] text-sm text-muted-foreground">
                       <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
                       {workingLabel}…
@@ -578,13 +538,7 @@ const StudioWorkroom = forwardRef<
               </div>
             ) : (
               <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
-                <AgentFace
-                  seed={agentName}
-                  markKey={markKey}
-                  size={28}
-                  title={`${agentName} mark`}
-                />
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                <h3 className="text-lg font-semibold text-foreground">
                   {mode === "test"
                     ? "Start with a Real Customer Question"
                     : "Describe What Should Change"}
