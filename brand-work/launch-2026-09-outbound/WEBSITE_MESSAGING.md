@@ -1,4 +1,4 @@
-# BotBound.me Messaging - Both Directions
+# BotBound.app Messaging - Both Directions
 
 The website showcases outbound and inbound. This campaign asset release remains outbound-only.
 

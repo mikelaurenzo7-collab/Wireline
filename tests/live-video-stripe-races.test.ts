@@ -326,6 +326,13 @@ function responseRecorder() {
 }
 
 describe("Live Video Checkout operation durability", () => {
+  let checkoutRoute: Awaited<ReturnType<typeof loadLiveVideoCheckoutRoute>>;
+  // Cold billing-route transforms can exceed the request assertion budget on
+  // Windows. Finish isolated fixture loading before starting either request test.
+  beforeEach(async () => {
+    checkoutRoute = await loadLiveVideoCheckoutRoute();
+  }, 60_000);
+
   const req = {
     user: {
       id: "11111111-1111-4111-8111-111111111111",
@@ -335,7 +342,7 @@ describe("Live Video Checkout operation durability", () => {
   };
 
   it("refuses talking-head checkout after retirement", async () => {
-    const { handler, checkoutCreate, checkoutRetrieve } = await loadLiveVideoCheckoutRoute();
+    const { handler, checkoutCreate, checkoutRetrieve } = checkoutRoute;
 
     const first = responseRecorder();
     await handler(req, first);
@@ -354,7 +361,7 @@ describe("Live Video Checkout operation durability", () => {
   }, 20_000);
 
   it("does not open Stripe sessions for simultaneous retired checkout requests", async () => {
-    const { handler, checkoutCreate } = await loadLiveVideoCheckoutRoute();
+    const { handler, checkoutCreate } = checkoutRoute;
     const first = responseRecorder();
     const second = responseRecorder();
 

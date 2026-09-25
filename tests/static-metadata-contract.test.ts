@@ -13,11 +13,11 @@ describe("BotBound static marketing metadata", () => {
     expect(index).toContain("Your Bot for calls, texts, and email.");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
-    expect(index).toContain('"logo":"https://botbound.me/botbound-icon-512.png"');
-    expect(index).toContain('<link rel="canonical" href="https://botbound.me/" />');
-    expect(index).toContain('<meta property="og:url" content="https://botbound.me/" />');
+    expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
+    expect(index).toContain('<link rel="canonical" href="https://botbound.app/" />');
+    expect(index).toContain('<meta property="og:url" content="https://botbound.app/" />');
     expect(index).toContain(
-      '<meta property="og:image" content="https://botbound.me/og-image.png" />',
+      '<meta property="og:image" content="https://botbound.app/og-image.png" />',
     );
     expect(index).not.toContain("https://trywireline.com");
     expect(index).not.toContain("support@trywireline.com");
@@ -31,10 +31,10 @@ describe("BotBound static marketing metadata", () => {
     const robots = read("public/robots.txt");
     const sitemap = read("public/sitemap.xml");
 
-    expect(robots).toContain("Sitemap: https://botbound.me/sitemap.xml");
+    expect(robots).toContain("Sitemap: https://botbound.app/sitemap.xml");
     expect(robots).not.toContain("trywireline.com");
-    expect(sitemap).toContain("<loc>https://botbound.me/</loc>");
-    expect(sitemap).toContain("<loc>https://botbound.me/pricing</loc>");
+    expect(sitemap).toContain("<loc>https://botbound.app/</loc>");
+    expect(sitemap).toContain("<loc>https://botbound.app/pricing</loc>");
     expect(sitemap).not.toContain("trywireline.com");
     expect(sitemap).not.toMatch(/\bWireline\b/);
   });
@@ -53,8 +53,8 @@ describe("BotBound static marketing metadata", () => {
     );
     expect(index).toContain('<link rel="manifest" href="/site.webmanifest" />');
     expect(index).toContain('"@type":"WebSite"');
-    expect(index).toContain('"@id":"https://botbound.me/#website"');
-    expect(index).toContain('"publisher":{"@id":"https://botbound.me/#organization"}');
+    expect(index).toContain('"@id":"https://botbound.app/#website"');
+    expect(index).toContain('"publisher":{"@id":"https://botbound.app/#organization"}');
   });
 
   it("keeps runtime and hydrated landing metadata pinned to the same BotBound entrance", () => {

@@ -86,7 +86,7 @@ for (const [name, w, h] of [
     const foot = story ? 1538 : 1122;
     content +=
       cta(m, foot) +
-      text("BotBound.me", w - 290, foot + 46, 31, "#F8F7FC", 600) +
+      text("BotBound.app", w - 290, foot + 46, 31, "#F8F7FC", 600) +
       text("Private testing free. Live use paid.", m, foot + 118, 28, "#D3CBDF", 400);
   } else {
     const size = wide ? (name === "email" ? 72 : 106) : 92;
@@ -106,7 +106,7 @@ for (const [name, w, h] of [
         "#D3CBDF",
         400,
       ) +
-      text("BotBound.me", w - 260, h - 40, 27, "#F8F7FC", 600);
+      text("BotBound.app", w - 260, h - 40, 27, "#F8F7FC", 600);
   }
   exportArt(`botbound-stay-in-the-work-${name}`, w, h, "Stay in the Work", content);
 
@@ -129,8 +129,8 @@ for (const [name, w, h] of [
       "#D3CBDF",
       400,
     );
-  if (tall) broad += text("BotBound.me", w - 290, broadFoot + 46, 31, "#F8F7FC", 600);
-  else broad += text("BotBound.me", w - 260, h - 40, 27, "#F8F7FC", 600);
+  if (tall) broad += text("BotBound.app", w - 290, broadFoot + 46, 31, "#F8F7FC", 600);
+  else broad += text("BotBound.app", w - 260, h - 40, 27, "#F8F7FC", 600);
   exportArt(`botbound-small-team-${name}`, w, h, "Small Team. Bigger Reach.", broad);
 }
 mkdirSync(resolve(campaign, "qa"), { recursive: true });

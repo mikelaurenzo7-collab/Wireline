@@ -157,8 +157,25 @@ describe("production visual QA safety gate", () => {
     expect(workflow).toContain("WIRELINE_VISUAL_EXPECTED_EMAIL: wireline.demo@trywireline.com");
     expect(workflow).toContain("WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}");
     expect(workflow).toContain("WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}");
-    expect(workflow).toContain("WIRELINE_VISUAL_EXPECTED_COMMIT: ${{ github.sha }}");
-    expect(workflow).toContain("scripts/lib/production-visual-qa-contract.mjs");
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).not.toMatch(/^ {2}push:/m);
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow).toContain("WIRELINE_VISUAL_EXPECTED_COMMIT: ${{ inputs.release_sha }}");
+    expect(workflow).toContain("env -u GITHUB_SHA node scripts/capture-prod-visual-qa.mjs");
+    expect(workflow).toContain("ref: main");
+    expect(workflow).toContain("fetch-depth: 0");
+    expect(workflow).toContain("persist-credentials: false");
+    expect(workflow).toContain(
+      'git merge-base --is-ancestor "$WIRELINE_VISUAL_EXPECTED_COMMIT" origin/main',
+    );
+    expect(workflow).toContain('git checkout --detach "$WIRELINE_VISUAL_EXPECTED_COMMIT"');
+    expect(workflow.indexOf("git merge-base --is-ancestor")).toBeLessThan(
+      workflow.indexOf("git checkout --detach"),
+    );
+    expect(workflow.indexOf("git checkout --detach")).toBeLessThan(workflow.indexOf("run: npm ci"));
+    expect(workflow.indexOf("- name: Capture production routes")).toBeLessThan(
+      workflow.indexOf("secrets.WIRELINE_VISUAL_PASSWORD"),
+    );
     expect(workflow).toContain(
       "node scripts/check-visual-qa-manifest.mjs --production artifacts/visual-qa-prod/latest-manifest.json",
     );
@@ -229,25 +246,29 @@ describe("production visual QA safety gate", () => {
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/studio",
-        "https://botbound.me/studio",
+        "https://botbound.app/studio",
       ),
     ).toBe(true);
     expect(
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/status",
-        "https://botbound.me/trust",
+        "https://botbound.app/trust",
       ),
     ).toBe(true);
     expect(
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/studio",
-        "https://botbound.me/studio-evil",
+        "https://botbound.app/studio-evil",
       ),
     ).toBe(false);
     expect(
-      routeReachedExactly(CANONICAL_PRODUCTION_VISUAL_BASE_URL, "/", "https://botbound.me/pricing"),
+      routeReachedExactly(
+        CANONICAL_PRODUCTION_VISUAL_BASE_URL,
+        "/",
+        "https://botbound.app/pricing",
+      ),
     ).toBe(false);
     expect(
       routeReachedExactly(
@@ -260,14 +281,14 @@ describe("production visual QA safety gate", () => {
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/phone?tab=logs",
-        "https://botbound.me/phone?tab=outbound",
+        "https://botbound.app/phone?tab=outbound",
       ),
     ).toBe(false);
     expect(
       routeReachedExactly(
         CANONICAL_PRODUCTION_VISUAL_BASE_URL,
         "/settings/phone#company-identity",
-        "https://botbound.me/phone?tab=setup#company-identity",
+        "https://botbound.app/phone?tab=setup#company-identity",
       ),
     ).toBe(true);
   });

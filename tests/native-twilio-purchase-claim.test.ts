@@ -44,7 +44,7 @@ function installCarrierMocks(input: {
     })),
   }));
   vi.doMock("../src/lib/app-url", () => ({
-    getCanonicalAppUrl: () => "https://botbound.me",
+    getCanonicalAppUrl: () => "https://botbound.app",
   }));
   return { ...provider, log };
 }

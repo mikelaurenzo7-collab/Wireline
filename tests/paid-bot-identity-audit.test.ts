@@ -134,7 +134,7 @@ describe("paid identity operator dry-run audit", () => {
   });
   it("does not pass a stored phone row whose configured-account ownership is unverified", async () => {
     h.phones = [{ phone: "+12025550123" }];
-    h.mailboxes = [{ email: "managed@botbound.me", scopes: "managed" }];
+    h.mailboxes = [{ email: "managed@botbound.app", scopes: "managed" }];
     h.ownership.mockRejectedValue(new Error("Phone is not owned by the configured Twilio account"));
     await main();
     expect(JSON.parse(vi.mocked(console.log).mock.calls[0][0])).toMatchObject({
@@ -175,7 +175,7 @@ describe("paid identity operator dry-run audit", () => {
     h.phones = [{ phone: "+12025550123" }];
     h.mailboxes = [
       { email: "ordinary@example.test", scopes: "ordinary" },
-      { email: "managed@botbound.me", scopes: "managed" },
+      { email: "managed@botbound.app", scopes: "managed" },
     ];
     await main();
     expect(JSON.parse(vi.mocked(console.log).mock.calls[0][0])).toMatchObject({

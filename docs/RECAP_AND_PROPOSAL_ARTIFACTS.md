@@ -2,7 +2,7 @@
 
 Status: **Active** — call and weekly recap artifacts are live (this PR); proposals with a real download action follow in a separate PR.
 
-Every entitled BotBound workspace receives a Letterpress-styled shareable URL alongside its post-call digest and weekly review. The URL renders on `botbound.me`, cannot be indexed by search engines, honors the workspace brand within a BotBound-owned structural design, and expires under a per-artifact TTL. This document is the source of truth for the primitive; the code is at `src/lib/shareable-artifact/` and `src/routes/shareable-artifact-routes.ts`.
+Every entitled BotBound workspace receives a Letterpress-styled shareable URL alongside its post-call digest and weekly review. The URL renders on `botbound.app`, cannot be indexed by search engines, honors the workspace brand within a BotBound-owned structural design, and expires under a per-artifact TTL. This document is the source of truth for the primitive; the code is at `src/lib/shareable-artifact/` and `src/routes/shareable-artifact-routes.ts`.
 
 ## What ships in this pass
 
@@ -21,7 +21,7 @@ Entitlement is enforced server-side by `isBrandedArtifactEntitled` (`src/lib/sha
 
 ## URL contract
 
-- Shape: `https://botbound.me/recap/<slug>?t=<token>`
+- Shape: `https://botbound.app/recap/<slug>?t=<token>`
   - `slug` is 16 base62 characters (~95 bits) minted at publish time.
   - `token` is 24 random bytes rendered as URL-safe base64. It is returned to the caller once at publish time and is not persisted.
 - Storage: the server stores `sha256("v1|slug|token")`. Timing-safe comparison on resolve. A database dump cannot forge access to any artifact.

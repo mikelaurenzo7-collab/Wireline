@@ -1,6 +1,6 @@
 const api = globalThis.browser ?? globalThis.chrome;
 
-const BOTBOUND_ORIGIN = "https://botbound.me";
+const BOTBOUND_ORIGIN = "https://botbound.app";
 const STUDIO_HANDOFF_URL = `${BOTBOUND_ORIGIN}/studio/handoff`;
 const ROUTES = new Map([
   ["studio", `${BOTBOUND_ORIGIN}/studio`],

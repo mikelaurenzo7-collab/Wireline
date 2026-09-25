@@ -22,7 +22,7 @@ A placement becomes publishable only when its exact asset-and-copy pair is appro
 | Investor/design partner | PDF in `investor/` | Explain the outbound wedge and job expansion | Contact BotBound | Hold for corrected-copy regeneration |
 | Motion vertical | 15s and 6s vertical MP4s | Story/Reels/TikTok launch and retargeting | Get Your Sales Bot | QA approved; publishing held |
 | Motion square | 10s square MP4 | LinkedIn/Meta feed | Get Your Sales Bot | QA approved; publishing held |
-| OOH or presentation screen | `hero/botbound-first-move-ooh-3840x2160.png` | Campaign recognition | BotBound.me | Design approved; media delivery held |
+| OOH or presentation screen | `hero/botbound-first-move-ooh-3840x2160.png` | Campaign recognition | BotBound.app | Design approved; media delivery held |
 
 ## Recommended Sequence After Release Authorization
 
@@ -35,7 +35,7 @@ A placement becomes publishable only when its exact asset-and-copy pair is appro
 
 ## Tracking Pattern
 
-Use the destination `https://botbound.me/signup?template=sales-rep` with:
+Use the destination `https://botbound.app/signup?template=sales-rep` with:
 
 `utm_source={platform}&utm_medium={paid_social|organic_social|email}&utm_campaign=first_move_launch&utm_content={asset_slug}`
 

@@ -4,16 +4,18 @@
   var CONSENT_STORAGE_KEY = "wireline_marketing_measurement_consent";
   var CONSENT_EVENT = "wireline:marketing-measurement-consent";
   var META_PIXEL_ID = "1683492795830248";
-  var PLAUSIBLE_DOMAIN = "botbound.me";
+  var PLAUSIBLE_DOMAIN = "botbound.app";
   var PLAUSIBLE_SRC = "https://plausible.io/js/script.tagged-events.js";
 
   function noop() {}
 
   function isProductionHost() {
     // Keep the retired hostname only as an explicit measurement bridge while
-    // redirects and older campaign links finish moving to botbound.me. All
+    // redirects and older campaign links finish moving to botbound.app. All
     // events still land in the canonical BotBound Plausible property.
     return (
+      window.location.hostname === "botbound.app" ||
+      window.location.hostname === "www.botbound.app" ||
       window.location.hostname === "botbound.me" ||
       window.location.hostname === "www.botbound.me" ||
       window.location.hostname === "trywireline.com" ||

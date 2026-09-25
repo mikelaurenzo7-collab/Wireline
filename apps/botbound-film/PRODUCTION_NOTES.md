@@ -12,7 +12,7 @@ The original 30-second source and caption sidecars were revised on September 20,
 | 0:09–0:15 | Real conversation | The customer gets a useful answer and a specific pickup time. |
 | 0:15–0:22 | Outcome | Appointment booked, confirmation sent, owner updated. |
 | 0:22–0:26 | Brand promise | Your Bots. Your Rules. One Bot visual; no process-step diagram. |
-| 0:26–0:30 | Brand close | Complete BotBound wordmark, promise, and `botbound.me`. |
+| 0:26–0:30 | Brand close | Complete BotBound wordmark, promise, and `botbound.app`. |
 
 ## Audio direction
 

@@ -21,7 +21,7 @@ import {
   waitForRemoteSourceCommit,
 } from "./lib/release-source-verification.mjs";
 
-const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me").replace(/\/$/, "");
+const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.app").replace(/\/$/, "");
 if (baseUrl !== CANONICAL_PRODUCTION_VISUAL_BASE_URL) {
   throw new Error(
     `Production visual QA must capture ${CANONICAL_PRODUCTION_VISUAL_BASE_URL}; received ${baseUrl}.`,

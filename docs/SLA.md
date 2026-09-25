@@ -22,8 +22,8 @@ These surfaces report observed system state. They are operational evidence, not 
 
 ## Support
 
-- Product and account support: `support@botbound.me`
-- Security reports and security-document requests: `security@botbound.me`
+- Product and account support: `support@botbound.app`
+- Security reports and security-document requests: `security@botbound.app`
 - In-product support and escalation paths may be available by plan and configuration.
 
 BotBound prioritizes widespread voice/runtime outages and security incidents above ordinary product questions. Any response or resolution times stated in an executed Enterprise agreement are contractual only for that customer.

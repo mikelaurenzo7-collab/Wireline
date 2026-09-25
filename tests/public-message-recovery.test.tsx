@@ -163,7 +163,7 @@ describe.each([
       expect(control(bodyLabel).props.value).toBe("Please help with my routing rules.");
       expect(text(tree)).toContain("Delivery wasn't confirmed. Retry or send by email.");
       expect(text(tree)).not.toContain(success);
-      expect(fallback()?.props.href).toMatch(/^mailto:support@botbound\.me\?/);
+      expect(fallback()?.props.href).toMatch(/^mailto:support@botbound\.app\?/);
     },
   );
 
@@ -184,7 +184,7 @@ describe.each([
       change("Callback number", "+1 312 555 0123");
     }
     const mail = new URL(fallback()!.props.href!);
-    expect(mail.pathname).toBe("support@botbound.me");
+    expect(mail.pathname).toBe("support@botbound.app");
     expect(mail.searchParams.get("subject")).toBe(
       `[${name === "Contact" ? "BotBound / general" : "Support / billing"}] Updated & urgent?`,
     );

@@ -49,7 +49,7 @@ export const CAMPAIGN_VO = [
     targetSeconds: 15,
     speed: 1.07,
     maxSeconds: 15,
-    text: "Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.",
+    text: "Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.app.",
   },
   {
     id: "ai-voice-agent-30s",
@@ -63,12 +63,12 @@ export const CAMPAIGN_VO = [
     file: "wireline-founder-60s.mp3",
     targetSeconds: 60,
     speed: 0.8,
-    text: "I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.",
+    text: "I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.app. Plans start at nineteen dollars a month. Live setup depends on availability.",
   },
 ];
 
 export function speakable(text) {
-  return text.replace(/botbound\.me/gi, "bot bound dot me");
+  return text.replace(/botbound\.app/gi, "bot bound dot app");
 }
 
 const RETIRED_PUBLIC_BRAND = /\bWireline\b|trywireline\.com/i;

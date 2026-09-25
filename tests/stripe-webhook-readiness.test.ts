@@ -11,7 +11,7 @@ import { getHandledStripeWebhookEvents } from "../scripts/lib/stripe-handled-eve
 function endpoint(overrides: Record<string, unknown> = {}) {
   return {
     id: "we_fixture",
-    url: "https://botbound.me/api/stripe-webhook",
+    url: "https://botbound.app/api/stripe-webhook",
     status: "enabled",
     livemode: true,
     api_version: STRIPE_API_VERSION,

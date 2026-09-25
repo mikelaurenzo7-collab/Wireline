@@ -51,12 +51,12 @@ describe("launch media source verification", () => {
   });
 
   it("accepts only the exact canonical production origin", () => {
-    expect(normalizeBaseURL("https://botbound.me/")).toBe("https://botbound.me");
+    expect(normalizeBaseURL("https://botbound.app/")).toBe("https://botbound.app");
     for (const target of [
-      "http://botbound.me",
+      "http://botbound.app",
       "https://trywireline.com",
-      "https://preview.botbound.me",
-      "https://user:pass@botbound.me",
+      "https://preview.botbound.app",
+      "https://user:pass@botbound.app",
     ]) {
       expect(() => normalizeBaseURL(target), target).toThrow();
     }
@@ -78,8 +78,8 @@ describe("launch media source verification", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      verifyRemoteSourceCommit(sourceCommit, "https://botbound.me"),
-    ).resolves.toMatchObject({ baseURL: "https://botbound.me", deployedCommit: sourceCommit });
+      verifyRemoteSourceCommit(sourceCommit, "https://botbound.app"),
+    ).resolves.toMatchObject({ baseURL: "https://botbound.app", deployedCommit: sourceCommit });
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
@@ -103,7 +103,7 @@ describe("launch media source verification", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      waitForRemoteSourceCommit(sourceCommit, "https://botbound.me", {
+      waitForRemoteSourceCommit(sourceCommit, "https://botbound.app", {
         timeoutMs: 100,
         pollIntervalMs: 0,
       }),

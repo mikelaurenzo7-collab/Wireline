@@ -6,7 +6,7 @@ Wireline sends platform email through Resend. Delivery feedback closes the loop 
 
 ## Production endpoint
 
-`POST https://botbound.me/api/webhooks/resend`
+`POST https://botbound.app/api/webhooks/resend`
 
 The endpoint accepts `application/json` only and uses the raw request bytes. It verifies Resend / Standard Webhooks headers before parsing JSON or touching the database:
 
@@ -14,7 +14,7 @@ The endpoint accepts `application/json` only and uses the raw request bytes. It 
 - `svix-timestamp`
 - `svix-signature`
 
-The signing secret belongs in `RESEND_WEBHOOK_SECRET`. Never commit it. The production endpoint should be the only target that receives the production signing secret.
+The signing secret belongs in `RESEND_WEBHOOK_SECRET`. Never commit it. Live sending and webhook credentials are production-only; Preview and Development must use dedicated sandboxes or remain unset. The production endpoint should be the only target that receives the production signing secret.
 
 ## Events to subscribe
 
@@ -46,11 +46,11 @@ Commercial lifecycle mail still performs the additional CAN-SPAM / one-click-uns
 
 ## Activation procedure
 
-1. In Resend, create a production webhook targeting `https://botbound.me/api/webhooks/resend`. Keep the legacy endpoint registered during the origin transition until its required traffic is zero.
+1. In Resend, configure the production webhook to target `https://botbound.app/api/webhooks/resend`. Preserve the existing signing secret when updating an existing endpoint. If replacing an endpoint, retain the old endpoint until its required traffic is zero.
 2. Subscribe to the five events listed above.
-3. Copy the generated `whsec_...` signing secret into a secure local environment as `RESEND_WEBHOOK_SECRET`.
-4. Run `node scripts/sync-resend-env-to-vercel.mjs` with an authorized Vercel token. The script syncs the webhook secret to **production only**.
-5. Redeploy production.
+3. Save its current `whsec_...` signing secret as `RESEND_WEBHOOK_SECRET` in the Render production API service's environment. Merge this value into the existing configuration; do not replace the environment or put secrets in source control. A Blueprint `sync: false` declaration does not install the value.
+4. Verify the production API service references the correct endpoint secret. The legacy `sync-resend-env-to-vercel.mjs` command is not a Render configuration step.
+5. Deploy the reviewed Render production API release with the updated environment and verify its source identity. If a shared environment change replaces the voice process, drain that worker first as required by the deployment runbook.
 6. Use Resend's test-event capability or a controlled test address to send a signed event.
 7. Verify:
    - invalid / stale signatures return non-2xx;

@@ -37,7 +37,7 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
         "postgresql://postgres:configured@db.ogenlhodmwvyacvnrsnj.supabase.co:5432/postgres",
       DATABASE_POOL_URL:
         "postgresql://postgres.ogenlhodmwvyacvnrsnj:configured@aws-0-us-east-1.pooler.supabase.com:6543/postgres",
-      CORS_ORIGINS: "https://botbound.me,https://trywireline.com",
+      CORS_ORIGINS: "https://botbound.app",
       INTERNAL_JWT_SECRET: "configured",
       WIRELINE_DATA_KEY: "configured",
       OAUTH_STATE_SECRET: "configured",
@@ -50,14 +50,14 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
       TWILIO_API_KEY: "configured",
       TWILIO_API_SECRET: "configured",
       TWILIO_AUTH_TOKEN: "configured",
-      TWILIO_WEBHOOK_BASE_URL: "https://botbound.me",
+      TWILIO_WEBHOOK_BASE_URL: "https://botbound.app",
       PLATFORM_SMS_FROM: "+13125550100",
       STRIPE_SECRET_KEY: "sk_live_configured",
       STRIPE_WEBHOOK_SECRET: "configured",
       VITE_STRIPE_PUBLIC_KEY: "pk_live_configured",
       RESEND_API_KEY: "configured",
       AGENTMAIL_API_KEY: "configured",
-      AGENTMAIL_DEFAULT_DOMAIN: "mail.botbound.me",
+      AGENTMAIL_DEFAULT_DOMAIN: "mail.botbound.app",
       UPSTASH_REDIS_REST_URL: "https://launch.invalid",
       UPSTASH_REDIS_REST_TOKEN: "configured",
       CRON_SECRET: "configured",
@@ -92,7 +92,7 @@ describe("production environment launch policy", () => {
 
   it("fails production closed if an operator override moves structured primary off OpenAI", () => {
     for (const provider of ["xai", "grok", "gateway", "gemini"]) {
-      const result = runProductionBoundary("https://botbound.me", {
+      const result = runProductionBoundary("https://botbound.app", {
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: provider,
       });
       expect(result.status).toBe(1);
@@ -101,7 +101,7 @@ describe("production environment launch policy", () => {
       );
     }
     expect(
-      runProductionBoundary("https://botbound.me", {
+      runProductionBoundary("https://botbound.app", {
         WIRELINE_STRUCTURED_PRIMARY_PROVIDER: "openai",
       }).status,
     ).toBe(0);
@@ -109,7 +109,7 @@ describe("production environment launch policy", () => {
 
   it("fails production closed when the Realtime admission reserve is below its derived floor", () => {
     for (const reserve of ["0", "0.30", "0.999", "not-money"]) {
-      const result = runProductionBoundary("https://botbound.me", {
+      const result = runProductionBoundary("https://botbound.app", {
         WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: reserve,
       });
       expect(result.status).toBe(1);
@@ -118,7 +118,7 @@ describe("production environment launch policy", () => {
       );
     }
     expect(
-      runProductionBoundary("https://botbound.me", {
+      runProductionBoundary("https://botbound.app", {
         WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD: "1.00",
       }).status,
     ).toBe(0);
@@ -179,13 +179,13 @@ describe("production environment launch policy", () => {
       prodCheck.indexOf("const recommended = ["),
     );
     expect(requiredBlock).toContain('"APP_URL"');
-    expect(prodCheck).toContain('String(value) === "https://botbound.me"');
+    expect(prodCheck).toContain('String(value) === "https://botbound.app"');
     expect(deploymentBoundary).toContain(
-      'const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me"',
+      'const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.app"',
     );
     expect(deploymentBoundary).toContain('canonicalProductionUrl("TWILIO_WEBHOOK_BASE_URL", true)');
 
-    const canonical = runProductionBoundary("https://botbound.me");
+    const canonical = runProductionBoundary("https://botbound.app");
     expect(`${canonical.stdout}${canonical.stderr}`).toContain(
       "Deployment-boundary check passed for production",
     );
@@ -193,14 +193,14 @@ describe("production environment launch policy", () => {
 
     for (const wrongOrigin of [
       "https://trywireline.com",
-      "https://botbound.me/",
-      "https://www.botbound.me",
-      "https://botbound.me.example.com",
+      "https://botbound.app/",
+      "https://www.botbound.app",
+      "https://botbound.app.example.com",
     ]) {
       const result = runProductionBoundary(wrongOrigin);
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toContain(
-        "APP_URL: must be exactly https://botbound.me",
+        "APP_URL: must be exactly https://botbound.app",
       );
     }
   });
@@ -253,7 +253,7 @@ describe("production environment launch policy", () => {
       { POSTGRES_URL: "postgresql://configured@database.example.com/postgres" },
       { DATABASE_POOL_URL: "not-a-postgres-url" },
     ]) {
-      const result = runProductionBoundary("https://botbound.me", override);
+      const result = runProductionBoundary("https://botbound.app", override);
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toMatch(/POSTGRES_URL|DATABASE_POOL_URL/);
     }
@@ -263,21 +263,27 @@ describe("production environment launch policy", () => {
       { PGSSLMODE: "no-verify" },
       { PGSSLMODE: "disable" },
     ]) {
-      const result = runProductionBoundary("https://botbound.me", override);
+      const result = runProductionBoundary("https://botbound.app", override);
       expect(result.status).toBe(1);
       expect(`${result.stdout}${result.stderr}`).toMatch(/NODE_TLS_REJECT_UNAUTHORIZED|PGSSLMODE/);
     }
   }, 30_000);
 
-  it("keeps both BotBound and legacy origins in the production transition allowlist", () => {
-    expect(runProductionBoundary("https://botbound.me").status).toBe(0);
+  it("requires the canonical origin without requiring optional legacy browser access", () => {
+    expect(runProductionBoundary("https://botbound.app").status).toBe(0);
+    expect(
+      runProductionBoundary("https://botbound.app", {
+        CORS_ORIGINS: "https://botbound.app,https://trywireline.com",
+      }).status,
+    ).toBe(0);
     for (const corsOrigins of [
       "",
-      "https://botbound.me",
       "https://trywireline.com",
-      "https://www.botbound.me,https://trywireline.com",
+      "https://botbound.me",
+      "https://botbound.app.attacker.example",
+      "https://www.botbound.app,https://trywireline.com",
     ]) {
-      const result = runProductionBoundary("https://botbound.me", {
+      const result = runProductionBoundary("https://botbound.app", {
         CORS_ORIGINS: corsOrigins,
       });
       expect(result.status).toBe(1);
@@ -346,10 +352,10 @@ describe("production environment launch policy", () => {
       ["VAPI_PRIVATE_KEY", "configured"],
       ["VITE_VAPI_PUBLIC_KEY", "configured"],
       ["APP_URL", "https://trywireline.com"],
-      ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.me"],
+      ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.app"],
       ["WIRELINE_SELF_SERVE_BILLING_ENABLED", "true"],
       ["WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA", "a".repeat(40)],
-      ["AGENTMAIL_DEFAULT_DOMAIN", "mail.botbound.me"],
+      ["AGENTMAIL_DEFAULT_DOMAIN", "mail.botbound.app"],
       ["WIRELINE_RECONCILE_STRIPE_PORTAL", "true"],
     ]) {
       const result = runPreviewBoundary({ [name]: configuredValue });

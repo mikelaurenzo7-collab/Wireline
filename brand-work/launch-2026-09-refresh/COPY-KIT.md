@@ -28,7 +28,7 @@ The phone rings while you're with a customer, making the product, or finishing t
 
 I built BotBound for that moment: Bots for calls, texts, and email, shaped around your business and your rules.
 
-Start free: https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
+Start free: https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
 
 Private testing free. Live use paid. Activation subject to availability.
 
@@ -40,13 +40,13 @@ Your attention belongs with the work in front of you.
 
 Give calls and follow-up a Bot, with the answers, actions, and handoffs you define.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 ### Small Team. Bigger Reach.
 
 Calls. Texts. Email. Bots that work from your business knowledge and rules.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 ### Hands Full
 
@@ -54,7 +54,7 @@ Of course it rang now.
 
 Give your calls and follow-up a Bot. Keep your attention on the work.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 ### Control
 
@@ -62,7 +62,7 @@ Your business has its own way of doing things. Your Bots should, too.
 
 Set the answers, actions, and handoffs. Rehearse privately before live use.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 ## Sales Variant
 
@@ -70,7 +70,7 @@ You built a business worth choosing. You also have a business to run.
 
 Give sales a hand with Bots that work from your offer, voice, and rules. They can answer questions, qualify interest, and help book the next step when the tools and permissions are in place.
 
-Start free at BotBound.me. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
 
 ## Outbound Candidate
 
@@ -78,7 +78,7 @@ The list won’t call itself.
 
 BotBound brings approved outreach and follow-up into the same workspace. Calls, texts, email, and a record of what happened.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 Internal note: hold outbound-specific distribution until the existing readiness checks pass. A reviewed list alone does not establish permission to call or message its contacts.
 

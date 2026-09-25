@@ -196,7 +196,7 @@ Do not promote an internal target to a public performance promise.
 
 ## Funnel
 
-`Founder outreach / content -> botbound.me -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow`
+`Founder outreach / content -> botbound.app -> Build free -> Train + simulate -> Paid live activation -> Launch one workflow`
 
 After launch, review outcomes for product evidence and support. Owners can adjust or expand when useful; neither is another setup requirement.
 

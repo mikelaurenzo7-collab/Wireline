@@ -64,11 +64,11 @@ Hi [first name],
 
 Let's start with [business]'s incoming calls and [one agreed next step].
 
-Build free at `https://botbound.me/signup?plan=free`. Add your hours, services, common questions, and when the Bot should hand off. We'll rehearse privately before directing customer calls to it.
+Build free at `https://botbound.app/signup?plan=free`. Add your hours, services, common questions, and when the Bot should hand off. We'll rehearse privately before directing customer calls to it.
 
 I'll confirm activation, routing, and a labeled test call with the expected follow-up and Inbox record before live use. Free setup can continue while activation is unavailable.
 
-For help, reply or email `support@botbound.me` with the Bot name, what you expected, and the issue time. Do not send passwords, payment details, or private customer conversations. Keep your existing contact path available during the pilot.
+For help, reply or email `support@botbound.app` with the Bot name, what you expected, and the issue time. Do not send passwords, payment details, or private customer conversations. Keep your existing contact path available during the pilot.
 
 [Founder name]
 
@@ -82,7 +82,7 @@ The phone rings while you're with a customer, making the product, or finishing t
 
 I built BotBound for that moment: Bots for calls, texts, and email, shaped around your business and your rules.
 
-Start free: `https://botbound.me/signup?plan=free`
+Start free: `https://botbound.app/signup?plan=free`
 
 Private testing free. Live use paid. Activation subject to availability.
 
@@ -96,7 +96,7 @@ The phone rarely waits for a good moment.
 
 BotBound gives you Bots for calls, texts, and email, with your knowledge, your rules, and a clear way to hand things back to you.
 
-**Start Free:** `https://botbound.me/signup?plan=free`
+**Start Free:** `https://botbound.app/signup?plan=free`
 
 Private testing free. Live use paid. Activation subject to availability.
 
@@ -133,7 +133,7 @@ New September refresh: `utm_campaign=bb_launch_refresh_202609`.
 
 Use lowercase platform names for `utm_source`; `organic_social`, `paid_social`, `email`, or `partner` for `utm_medium`. Add a descriptive `utm_content` without personal data. Preserve historical campaign names on historical links.
 
-Example: `https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed`
+Example: `https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed`
 
 Current signup intent retains source, medium, and campaign, not `utm_content`. Do not report creative-level signup attribution from that field. Use separately named campaigns for separately measured tests.
 

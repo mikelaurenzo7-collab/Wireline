@@ -19,7 +19,7 @@ function deployment(overrides: Record<string, unknown> = {}) {
     target: "production",
     readyState: "READY",
     meta: { githubCommitRef: "main", githubCommitSha: COMMIT_SHA },
-    alias: ["botbound.me"],
+    alias: ["botbound.app"],
     aliasError: null,
     ...overrides,
   };
@@ -74,9 +74,9 @@ describe("Vercel production deployment policy", () => {
     expect(
       assertReadyProductionDeployment(deployment(), {
         ...options,
-        canonicalAlias: "https://botbound.me",
+        canonicalAlias: "https://botbound.app",
       }),
-    ).toMatchObject({ state: "READY", aliasHosts: ["botbound.me"] });
+    ).toMatchObject({ state: "READY", aliasHosts: ["botbound.app"] });
 
     for (const candidate of [
       deployment({ readyState: "BUILDING" }),
@@ -86,7 +86,7 @@ describe("Vercel production deployment policy", () => {
       expect(() =>
         assertReadyProductionDeployment(candidate, {
           ...options,
-          canonicalAlias: "botbound.me",
+          canonicalAlias: "botbound.app",
         }),
       ).toThrow();
     }

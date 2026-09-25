@@ -6,22 +6,22 @@
 - **Tagline:** Build your first Bot (20 / 55)
 - **Slug:** `wireline` (permanent once published)
 - **Categories:** business, productivity
-- **Icon:** `https://botbound.me/botbound-icon-512.png`
-- **Docs:** `https://botbound.me/claude-connector.html`
-- **Privacy:** `https://botbound.me/mcp-privacy.html`
-- **Support:** `support@botbound.me`
-- **Company:** BotBound / `https://botbound.me`
+- **Icon:** `https://botbound.app/botbound-icon-512.png`
+- **Docs:** `https://botbound.app/claude-connector.html`
+- **Privacy:** `https://botbound.app/mcp-privacy.html`
+- **Support:** `support@botbound.app`
+- **Company:** BotBound / `https://botbound.app`
 
 Machine-readable copy lives in `claude-connector-submission.json`.
 
 ## Server
 
-- **URL:** `https://botbound.me/mcp`
+- **URL:** `https://botbound.app/mcp`
 - **Transport:** streamable HTTP
 - **URL mode:** same URL for every user
 - **Auth:** OAuth DCR and CIMD (`oauth_dcr` and `oauth_cimd`)
 - **Lazy auth:** yes. List and initialize are public; tool calls challenge with HTTP 401
-- **Allowed link URIs:** `https://botbound.me` only (owned origin)
+- **Allowed link URIs:** `https://botbound.app` only (owned origin)
 
 ## Portal access
 
@@ -40,14 +40,14 @@ Desktop-extension (MCPB) and plugin forms are the wrong path for this server.
 
 Anthropic requires a fully populated account. Do not invent credentials in git. The founder supplies:
 
-- Sign-in URL `https://botbound.me/signin`
+- Sign-in URL `https://botbound.app/signin`
 - Email and password for a workspace that already has at least one agent draft, an assigned number if available, and connected or disconnected text/email state that makes the workspace summary meaningful
 - No MFA on the reviewer account
 - Confirmation that the account may be used only for directory review
 
 ## MCP App screenshots
 
-Required for MCP Apps: **3-5 PNG images, width at least 1000px**, cropped to the **app response only** (no prompt). Pair each image with the prompt text. Video/GIF is rejected. Do not commit screenshots to the repository; capture them from a Claude conversation after connecting `https://botbound.me/mcp` as a custom connector.
+Required for MCP Apps: **3-5 PNG images, width at least 1000px**, cropped to the **app response only** (no prompt). Pair each image with the prompt text. Video/GIF is rejected. Do not commit screenshots to the repository; capture them from a Claude conversation after connecting `https://botbound.app/mcp` as a custom connector.
 
 Suggested captures, matching `claude-connector-submission.json`:
 

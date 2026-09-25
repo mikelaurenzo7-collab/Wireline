@@ -3,7 +3,7 @@ description: Help a new user create a BotBound account and build their first Bot
 alwaysApply: false
 ---
 
-BotBound MCP lives at `https://botbound.me/mcp`. Authentication is OAuth against a real BotBound account. New users must create that account during Connect. Do not ask for API keys or paste secrets into config.
+BotBound MCP lives at `https://botbound.app/mcp`. Authentication is OAuth against a real BotBound account. New users must create that account during Connect. Do not ask for API keys or paste secrets into config.
 
 This is not a software development kit for embedding BotBound Bots in another repository. The goal is a BotBound account plus a first Bot draft that lives in BotBound.
 

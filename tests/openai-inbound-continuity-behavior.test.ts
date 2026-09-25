@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const HANGUP_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>';
 const CONTINUITY_TWIML =
-  '<?xml version="1.0" encoding="UTF-8"?><Response><Play>https://botbound.me/sounds/wireline-transfer-chime.wav</Play><Dial>+14155550199</Dial></Response>';
+  '<?xml version="1.0" encoding="UTF-8"?><Response><Play>https://botbound.app/sounds/wireline-transfer-chime.wav</Play><Dial>+14155550199</Dial></Response>';
 
 type CapturedResponse = { statusCode: number; body: unknown };
 

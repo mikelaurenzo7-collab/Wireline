@@ -565,7 +565,7 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     requiredInProd: true,
     description: "Canonical public deployment URL",
     validate: (value) => !value || value === BOTBOUND_PRODUCTION_ORIGIN,
-    formatHint: "https://botbound.me (exactly; no path, port, credentials, or trailing slash)",
+    formatHint: "https://botbound.app (exactly; no path, port, credentials, or trailing slash)",
   },
   {
     name: "CORS_ORIGINS",

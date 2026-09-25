@@ -3,7 +3,7 @@
   "name": "BotBound Command",
   "version": "0.1.2",
   "description": "Send the current page into BotBound Studio as reference context for calls, texts, follow-up, and tasks. Explicit action only. No background browsing.",
-  "homepage_url": "https://botbound.me",
+  "homepage_url": "https://botbound.app",
   "action": {
     "default_title": "Open BotBound Command",
     "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }

@@ -40,7 +40,7 @@ beforeEach(() => {
   vi.stubEnv("WIRELINE_VOICE_WORKER", "");
   vi.stubEnv("WIRELINE_VOICE_WORKER_SECRET", secret);
   vi.stubEnv("WIRELINE_VOICE_WORKER_URL", "https://voice.example.com");
-  vi.stubEnv("APP_URL", "https://botbound.me");
+  vi.stubEnv("APP_URL", "https://botbound.app");
   vi.stubEnv("VERCEL", "1");
 });
 afterEach(async () => {
@@ -138,7 +138,7 @@ describe("persistent SIP worker dispatch", () => {
   });
   it.each([
     "http://voice.example.com",
-    "https://botbound.me",
+    "https://botbound.app",
     "https://user:password@voice.example.com",
     "https://voice.example.com/path",
   ])("rejects unsafe/misrouted worker origin %s", (url) => {
@@ -468,7 +468,7 @@ const webReadinessEnv: NodeJS.ProcessEnv = {
   NODE_ENV: "production",
   VERCEL: "1",
   VERCEL_ENV: "production",
-  APP_URL: "https://botbound.me",
+  APP_URL: "https://botbound.app",
   WIRELINE_VOICE_WORKER_URL: "https://voice.example.com",
   WIRELINE_VOICE_WORKER_SECRET: secret,
   WIRELINE_VOICE_WORKER_SOURCE_REVISION: releaseRevision,

@@ -114,7 +114,7 @@ writePng(
       <text x="204" y="720" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="56" font-weight="700" letter-spacing="12">The Second Ring</text>
       <text x="192" y="1000" fill="#F8F7FC" font-family="Inter Tight" font-size="278" font-weight="800" letter-spacing="-6.9"><tspan x="192">Belongs to</tspan><tspan x="192" dy="280" fill="#A78BFA">Your Bot.</tspan></text>
       <text x="210" y="1810" fill="#B6B1C6" font-family="Inter" font-size="66" font-weight="600">Bots for calls, texts, and email.</text>
-      <text x="210" y="1965" fill="#F8F7FC" font-family="IBM Plex Mono" font-size="62" font-weight="700" letter-spacing="10">BOTBOUND.ME</text>
+      <text x="210" y="1965" fill="#F8F7FC" font-family="IBM Plex Mono" font-size="62" font-weight="700" letter-spacing="10">BOTBOUND.APP</text>
       <rect x="210" y="2040" width="3320" height="8" rx="4" fill="#A78BFA" opacity=".75"/>`,
   }),
   3840,
@@ -134,7 +134,7 @@ writePng(
       ${wordmark(62, 70, 42)}
       <text x="62" y="168" fill="#C4B5FD" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="3.4">The Second Ring</text>
       <text x="58" y="262" fill="#F8F7FC" font-family="Inter Tight" font-size="68" font-weight="800" letter-spacing="-1.66"><tspan x="58">Hands Full?</tspan><tspan x="58" dy="84" fill="#A78BFA">Bot on the Line.</tspan></text>
-      <text x="62" y="552" fill="#F8F7FC" font-family="Inter" font-size="23" font-weight="650">Start Free at BotBound.me</text>
+      <text x="62" y="552" fill="#F8F7FC" font-family="Inter" font-size="23" font-weight="650">Start Free at BotBound.app</text>
       <rect x="62" y="572" width="240" height="4" rx="2" fill="#A78BFA"/><text x="62" y="603" fill="#B6B1C6" font-family="Inter" font-size="16">Private rehearsal. Paid live activation.</text>
       ${signalRings(1083, 484, 50, 3)}
       <image href="${operatorData}" x="972" y="382" width="250" height="250"/>`,
@@ -158,7 +158,7 @@ writePng(
       <text x="54" y="382" fill="#F8F7FC" font-family="Inter Tight" font-size="104" font-weight="800" letter-spacing="-2.48"><tspan x="54">Of Course</tspan><tspan x="54" dy="103">It Rang</tspan><tspan x="54" dy="103" fill="#A78BFA">Now.</tspan></text>
       <rect x="58" y="1124" width="964" height="2" fill="#A78BFA" opacity=".58"/>
       <text x="58" y="1206" fill="#F8F7FC" font-family="Inter Tight" font-size="48" font-weight="800">Keep Your Hands on the Work.</text>
-      <text x="60" y="1270" fill="#C7CCD6" font-family="Inter" font-size="27" font-weight="600">Start Free at BotBound.me</text>
+      <text x="60" y="1270" fill="#C7CCD6" font-family="Inter" font-size="27" font-weight="600">Start Free at BotBound.app</text>
       <text x="60" y="1316" fill="#C7CCD6" font-family="Inter" font-size="19">Private rehearsal. Paid live activation.</text>`,
   }),
   1080,
@@ -179,7 +179,7 @@ writePng(
       <text x="90" y="526" fill="#F8F7FC" font-family="Inter Tight" font-size="118" font-weight="800" letter-spacing="-2.76"><tspan x="90">Of Course</tspan><tspan x="90" dy="116">It Rang</tspan><tspan x="90" dy="116" fill="#A78BFA">Now.</tspan></text>
       <rect x="96" y="1328" width="840" height="3" fill="#A78BFA" opacity=".66"/>
       <text x="96" y="1418" fill="#F8F7FC" font-family="Inter Tight" font-size="66" font-weight="800"><tspan x="96">Keep Your Hands</tspan><tspan x="96" dy="70">on the Work.</tspan></text>
-      <text x="96" y="1554" fill="#F8F7FC" font-family="Inter" font-size="31" font-weight="600">Start Free at BotBound.me</text>
+      <text x="96" y="1554" fill="#F8F7FC" font-family="Inter" font-size="31" font-weight="600">Start Free at BotBound.app</text>
       <text x="96" y="1610" fill="#C7CCD6" font-family="Inter" font-size="23">Private rehearsal. Paid live activation.</text>`,
   }),
   1080,
@@ -197,7 +197,7 @@ function carouselBase(slideNumber, content, title, description) {
       ${brandLockup(62, 54, 66, iconData)}
       <text x="1018" y="96" fill="#B6B1C6" font-family="IBM Plex Mono" font-size="18" font-weight="700" text-anchor="end" letter-spacing="3">${String(slideNumber).padStart(2, "0")} / 05</text>
       ${content}
-      <text x="62" y="1284" fill="#B6B1C6" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">BOTBOUND.ME · OpenAI Voice Roster</text>`,
+      <text x="62" y="1284" fill="#B6B1C6" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.8">BOTBOUND.APP · OpenAI Voice Roster</text>`,
   });
 }
 
@@ -364,7 +364,7 @@ writePng(
         <text x="58" y="846" fill="#C4B5FD">8:12 PM</text><text x="230" y="846" fill="#A78BFA">Your Bot</text><text x="1008" y="846" fill="#F8F7FC" text-anchor="end">Answered</text>
       </g>
       <text x="58" y="956" fill="#F8F7FC" font-family="Inter Tight" font-size="43" font-weight="800">The Phone Doesn't Wait.</text>
-      <text x="58" y="1018" fill="#B6B1C6" font-family="Inter" font-size="26" font-weight="600">Start Free at BotBound.me</text>
+      <text x="58" y="1018" fill="#B6B1C6" font-family="Inter" font-size="26" font-weight="600">Start Free at BotBound.app</text>
       <text x="58" y="1052" fill="#B6B1C6" font-family="Inter" font-size="18">Private rehearsal. Paid live activation.</text>`,
   }),
   1080,

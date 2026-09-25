@@ -51,14 +51,14 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("builds the exact launch-safe customer controls", () => {
-    const params = managedPortalConfigurationParams("https://botbound.me", products);
+    const params = managedPortalConfigurationParams("https://botbound.app", products);
 
-    expect(params.default_return_url).toBe("https://botbound.me/settings/billing");
+    expect(params.default_return_url).toBe("https://botbound.app/settings/billing");
     expect(params.business_profile?.headline).toBe(
       "Manage your BotBound billing, invoices, and subscription.",
     );
-    expect(params.business_profile?.privacy_policy_url).toBe("https://botbound.me/privacy");
-    expect(params.business_profile?.terms_of_service_url).toBe("https://botbound.me/terms");
+    expect(params.business_profile?.privacy_policy_url).toBe("https://botbound.app/privacy");
+    expect(params.business_profile?.terms_of_service_url).toBe("https://botbound.app/terms");
     expect(params.features.payment_method_update.enabled).toBe(true);
     expect(params.features.invoice_history.enabled).toBe(true);
     expect(params.features.subscription_cancel).toMatchObject({
@@ -75,7 +75,7 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("detects customer-control and plan-switch drift after write", () => {
-    const params = managedPortalConfigurationParams("https://botbound.me", products);
+    const params = managedPortalConfigurationParams("https://botbound.app", products);
     const configuration = {
       id: "bpc_test",
       object: "billing_portal.configuration",
@@ -93,7 +93,7 @@ describe("Stripe customer portal reconciliation", () => {
     } as never;
 
     expect(
-      managedPortalConfigurationFindings(configuration, "https://botbound.me", products),
+      managedPortalConfigurationFindings(configuration, "https://botbound.app", products),
     ).toEqual([]);
 
     const drifted = {
@@ -112,7 +112,7 @@ describe("Stripe customer portal reconciliation", () => {
         },
       },
     } as never;
-    expect(managedPortalConfigurationFindings(drifted, "https://botbound.me", products)).toEqual(
+    expect(managedPortalConfigurationFindings(drifted, "https://botbound.app", products)).toEqual(
       expect.arrayContaining([
         "legal_urls_mismatch",
         "subscription_cancel_incomplete",
@@ -125,7 +125,7 @@ describe("Stripe customer portal reconciliation", () => {
   });
 
   it("accepts Stripe's omitted product readback only when the exact write is freshly attested", () => {
-    const params = managedPortalConfigurationParams("https://botbound.me", products);
+    const params = managedPortalConfigurationParams("https://botbound.app", products);
     const attestedAt = Number(params.metadata?.wireline_portal_catalog_attested_at);
     const configuration = {
       id: "bpc_live",
@@ -150,12 +150,12 @@ describe("Stripe customer portal reconciliation", () => {
     } as never;
 
     expect(
-      managedPortalConfigurationFindings(configuration, "https://botbound.me", products),
+      managedPortalConfigurationFindings(configuration, "https://botbound.app", products),
     ).toEqual([]);
     expect(
       managedPortalConfigurationFindings(
         { ...configuration, updated: attestedAt + 30 } as never,
-        "https://botbound.me",
+        "https://botbound.app",
         products,
       ),
     ).toContain("plan_switch_catalog_unverifiable");

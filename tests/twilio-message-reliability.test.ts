@@ -13,9 +13,9 @@ const MESSAGE_STATUS_CONNECTION_OVERRIDES = "#ct=2000&rt=5000&tt=15000&rc=2&rp=c
 
 describe("Twilio message reliability", () => {
   it("attaches the canonical signed callback target and a bounded validity period", () => {
-    vi.stubEnv("APP_URL", "https://botbound.me/");
+    vi.stubEnv("APP_URL", "https://botbound.app/");
     expect(twilioMessageStatusCallbackUrl()).toBe(
-      `https://botbound.me/api/twilio-webhook/message-status${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
+      `https://botbound.app/api/twilio-webhook/message-status${MESSAGE_STATUS_CONNECTION_OVERRIDES}`,
     );
     vi.unstubAllEnvs();
 

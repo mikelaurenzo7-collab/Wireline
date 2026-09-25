@@ -2,11 +2,11 @@
 // lookup keys, wireline_* metadata, and environment variable names remain
 // compatibility contracts; hosted merchant presentation is BotBound.
 export const STRIPE_PUBLIC_BRAND = "BotBound";
-export const STRIPE_PUBLIC_HOSTS = new Set(["botbound.me", "www.botbound.me"]);
-export const STRIPE_PUBLIC_SUPPORT_URL = "https://botbound.me/support";
-// Production-domain delivery was proven end to end on 2026-08-29: outbound to
-// Gmail, Gmail reply, and inbound AgentMail receipt all succeeded.
-export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@botbound.me";
+export const STRIPE_PUBLIC_HOSTS = new Set(["botbound.app", "www.botbound.app"]);
+export const STRIPE_PUBLIC_SUPPORT_URL = "https://botbound.app/support";
+// The new support domain requires fresh delivery proof before checkout opens.
+// Historical delivery proof for botbound.me does not certify botbound.app.
+export const STRIPE_PUBLIC_SUPPORT_EMAIL = "support@botbound.app";
 export const STRIPE_STATEMENT_DESCRIPTOR_PREFIX = "BOTBOUND";
 export const STRIPE_BRAND_PRIMARY_COLOR = "#A78BFA";
 export const STRIPE_BRAND_SECONDARY_COLOR = "#141319";

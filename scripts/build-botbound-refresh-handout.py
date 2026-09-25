@@ -43,10 +43,10 @@ for i,(heading,body) in enumerate(items):
 pdf.setStrokeColor(HexColor('#332942'));pdf.line(38,142,574,142)
 pdf.setFillColor(HexColor('#B298FB'));pdf.roundRect(38,75,147,43,8,fill=1,stroke=0)
 line('Start Free',64,90,17,'#100B19','Bold')
-destination='https://botbound.me/signup?plan=free&utm_source=handout&utm_medium=pdf&utm_campaign=bb_launch_refresh_202609'
+destination='https://botbound.app/signup?plan=free&utm_source=handout&utm_medium=pdf&utm_campaign=bb_launch_refresh_202609'
 pdf.linkURL(destination,(38,75,185,118),relative=0,thickness=0)
-line('BotBound.me',441,92,16,'#F8F7FC','Bold')
-pdf.linkURL('https://botbound.me',(435,78,577,115),relative=0,thickness=0)
+line('BotBound.app',441,92,16,'#F8F7FC','Bold')
+pdf.linkURL('https://botbound.app',(435,78,577,115),relative=0,thickness=0)
 line('Private testing free. Live use paid.',38,49,11)
 line('Live channels require eligible setup and availability.',38,31,10,'#B6B1C6')
 pdf.save()

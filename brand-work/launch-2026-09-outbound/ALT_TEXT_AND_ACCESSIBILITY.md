@@ -9,7 +9,7 @@ September 20 refresh: the copy below describes the refreshed static layouts. His
 | `hero/botbound-first-move-ooh-3840x2160.png`                  | BotBound signal path connecting prospect lights beside the words: Finds the lead. Makes the call. Books the next step.            |
 | `hero/botbound-first-move-operator-1920x1080.png`             | BotBound phone operator beside the words: Find. Call. Book.                                                                       |
 | `social/botbound-first-move-linkedin-1200x627.png`            | BotBound outbound Sales Bot campaign: Find. Call. Book.                                                                           |
-| `social/botbound-list-wont-call-itself-1080x1080.png`         | The list will not call itself. Your Bot can. Get your Sales Bot at BotBound.me.                                                   |
+| `social/botbound-list-wont-call-itself-1080x1080.png`         | The list will not call itself. Your Bot can. Get your Sales Bot at BotBound.app.                                                   |
 | `social/botbound-find-call-book-story-1080x1920.png`          | Find. Call. Book. Your Bot makes the first move.                                                                                  |
 | `social/botbound-get-your-sales-bot-1080x1350.png`            | BotBound phone operator: Find. Call. Book. Get your Sales Bot.                                                                    |
 | `social/botbound-point-it-at-a-market-1080x1350.png`          | BotBound Sales Bot between a market target and a booked next step beside the words: Point it at a market. It finds. Calls. Books. |
@@ -42,7 +42,7 @@ All three motion cuts use music and a confirmation chime without spoken dialogue
 2. **MAKES THE CALL.**
 3. **BOOKS THE NEXT STEP.**
 4. **FIND. CALL. BOOK.**
-5. **GET YOUR SALES BOT — BOTBOUND.ME**
+5. **GET YOUR SALES BOT — BOTBOUND.APP**
 
 There is no spoken dialogue or narration. Accessible delivery should still describe meaningful audio cues and provide the campaign message as readable platform text. Do not invent speech captions. A current caption or post does not correct retired words baked into an old film.
 

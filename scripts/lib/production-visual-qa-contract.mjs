@@ -1,4 +1,4 @@
-export const CANONICAL_PRODUCTION_VISUAL_BASE_URL = "https://botbound.me";
+export const CANONICAL_PRODUCTION_VISUAL_BASE_URL = "https://botbound.app";
 
 function visualExpectation(route, page, states = []) {
   return Object.freeze({

@@ -6,9 +6,9 @@ import { errorReportContext } from "../src/lib/error-report-context";
 
 describe("error report route boundary", () => {
   it.each([
-    "https://botbound.me/reset-password?token=fake_secret#fake_fragment",
+    "https://botbound.app/reset-password?token=fake_secret#fake_fragment",
     "/reset-password?token=fake_secret#fake_fragment",
-    "https://fake_user:fake_password@botbound.me/reset-password?code=fake_code",
+    "https://fake_user:fake_password@botbound.app/reset-password?code=fake_code",
   ])("keeps only the route for current and legacy clients: %s", (url) => {
     expect(errorReportRoute(url)).toBe("/reset-password");
   });
@@ -27,8 +27,8 @@ describe("error report route boundary", () => {
   );
 
   it("bounds routes and redacts identifiable path segments", () => {
-    expect(errorReportRoute(`https://botbound.me/${"x".repeat(600)}`)).toHaveLength(500);
-    expect(errorReportRoute(`https://botbound.me/${"x".repeat(9_000)}`)).toBeUndefined();
+    expect(errorReportRoute(`https://botbound.app/${"x".repeat(600)}`)).toHaveLength(500);
+    expect(errorReportRoute(`https://botbound.app/${"x".repeat(9_000)}`)).toBeUndefined();
     expect(errorReportRoute("/agents/123e4567-e89b-42d3-a456-426614174000")).toBe(
       "/agents/[redacted-id]",
     );
@@ -39,7 +39,7 @@ describe("browser error reporting privacy", () => {
   beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubGlobal("navigator", {});
-    vi.stubGlobal("window", { location: { href: "https://botbound.me/" } });
+    vi.stubGlobal("window", { location: { href: "https://botbound.app/" } });
   });
 
   afterEach(() => {
@@ -50,7 +50,7 @@ describe("browser error reporting privacy", () => {
   it("sends route diagnostics without page queries, fragments, or arbitrary context values", () => {
     vi.stubGlobal("window", {
       location: {
-        href: "https://botbound.me/reset-password?token=fake_reset_secret#fake_fragment",
+        href: "https://botbound.app/reset-password?token=fake_reset_secret#fake_fragment",
       },
     });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
@@ -77,7 +77,7 @@ describe("browser error reporting privacy", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);
     const error = new Error("Failed for qa@example.com at /oauth-complete?code=fake_oauth_code");
-    error.stack = "at https://botbound.me/reset-password?token=fake_stack_secret";
+    error.stack = "at https://botbound.app/reset-password?token=fake_stack_secret";
     captureException(error);
     const body = fetchMock.mock.calls[0][1].body;
     for (const secret of ["qa@example.com", "fake_oauth_code", "fake_stack_secret"]) {
@@ -116,7 +116,7 @@ describe("browser error reporting privacy", () => {
     const sendBeacon = vi.fn(() => true);
     vi.stubGlobal("navigator", { sendBeacon });
     vi.stubGlobal("window", {
-      location: { href: "https://botbound.me/inbox?q=fake_private_search" },
+      location: { href: "https://botbound.app/inbox?q=fake_private_search" },
     });
     captureException(new Error("Inbox failed"));
     const [url, blob] = sendBeacon.mock.calls[0] as unknown as [string, Blob];

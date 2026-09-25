@@ -1,23 +1,14 @@
 name: Production visual QA
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - src/**
-      - public/**
-      - index.html
-      - package.json
-      - package-lock.json
-      - vite.config.ts
-      - vercel.json
-      - scripts/capture-prod-visual-qa.mjs
-      - scripts/check-visual-qa-manifest.mjs
-      - scripts/lib/production-visual-qa-contract.mjs
-      - scripts/lib/production-url.mjs
-      - scripts/lib/release-source-verification.mjs
-      - .github/workflows/production-visual-qa.yml
+  # Render auto-deploy is disabled. Dispatch after both services report the
+  # promoted release; a main push alone is not a production deployment.
   workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full 40-character commit deployed on the Render API and voice services
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -25,21 +16,34 @@ permissions:
 jobs:
   capture:
     name: Capture responsive production QA
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Includes dependency/browser setup, up to 10 minutes waiting for the exact
     # production SHA, and 340 sequential semantic captures / 680 screenshots.
     timeout-minutes: 60
     env:
       CI: "true"
-      WIRELINE_VISUAL_BASE_URL: https://botbound.me
+      WIRELINE_VISUAL_BASE_URL: https://botbound.app
       WIRELINE_VISUAL_OUTPUT_DIR: artifacts/visual-qa-prod
       WIRELINE_VISUAL_EXPECTED_EMAIL: wireline.demo@trywireline.com
-      WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}
-      WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}
-      WIRELINE_VISUAL_EXPECTED_COMMIT: ${{ github.sha }}
+      WIRELINE_VISUAL_EXPECTED_COMMIT: ${{ inputs.release_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify promoted source before executing it
+        shell: bash
+        run: |
+          if [[ ! "$WIRELINE_VISUAL_EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "release_sha must be a full lowercase commit SHA."
+            exit 1
+          fi
+          git merge-base --is-ancestor "$WIRELINE_VISUAL_EXPECTED_COMMIT" origin/main
+          git checkout --detach "$WIRELINE_VISUAL_EXPECTED_COMMIT"
 
       - name: Set up Node
         uses: actions/setup-node@v7
@@ -54,7 +58,13 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Capture production routes
-        run: node scripts/capture-prod-visual-qa.mjs
+        env:
+          WIRELINE_VISUAL_EMAIL: ${{ secrets.WIRELINE_VISUAL_EMAIL }}
+          WIRELINE_VISUAL_PASSWORD: ${{ secrets.WIRELINE_VISUAL_PASSWORD }}
+        # GITHUB_SHA identifies the dispatch ref, which can be newer than the
+        # promoted release. The capture checks HEAD against release_sha and the
+        # served source before and after recording its evidence.
+        run: env -u GITHUB_SHA node scripts/capture-prod-visual-qa.mjs
 
       - name: Enforce production visual QA gate
         run: node scripts/check-visual-qa-manifest.mjs --production artifacts/visual-qa-prod/latest-manifest.json

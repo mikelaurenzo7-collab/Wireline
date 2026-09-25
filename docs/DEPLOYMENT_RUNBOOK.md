@@ -1,7 +1,7 @@
 # BotBound Deployment Runbook
 
 Status: **Canonical production runbook**  
-Last reconciled: **September 23, 2026**
+Last reconciled: **September 25, 2026**
 
 The production baseline before the direct Render cutover is GitHub `main`, Vercel project `revaluate/botbound`, and customer origin `https://botbound.me`. The prepared target is documented below; do not infer a completed cutover from committed configuration. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
@@ -20,9 +20,9 @@ database stay intact. This section governs
 the new target; the Vercel sequence below remains the legacy rollback procedure
 until a verified cutover. Preparing this configuration does not certify it live.
 
-`render.yaml` defines two proposed 1 CPU / 2 GB always-on services in Ohio and
+`render.yaml` starts with two 0.5 CPU / 512 MB always-on services in Ohio and
 two 0.5 CPU / 512 MB cron services. Creating these resources incurs Render
-charges; review the current plan prices before applying the Blueprint. No
+charges; the initial web/voice compute is $14/month combined on the free Hobby workspace. Cron services have separate usage charges and a $1/month minimum each; create them only with an approved budget and keep execution disabled until scheduler cutover is verified. Validate memory, CPU and concurrent real calls before expanding traffic. No
 database is provisioned and no migration runs during build. All auto-deploys are
 off. API traffic, voice admissions, checkout, number provisioning and schedules
 start disabled. Configure the existing credentials in Render's secret store;
@@ -30,7 +30,7 @@ preserve JWT signing, vault encryption, OAuth and MCP secrets. Do not import
 Vercel environment metadata or AI Gateway credentials. Render disables the
 Gateway transport and uses the existing direct OpenAI/Gemini routes.
 
-Attach `botbound.me` directly to the `botbound-api` Render web service. Keep
+Attach `botbound.app` directly to the `botbound-api` Render web service. Keep
 customer, provider and database credentials in Render's server-side secret store.
 The two cron callers authenticate to the API with the existing `CRON_SECRET`;
 the voice worker retains its separate service authentication.
@@ -56,6 +56,28 @@ Before public cutover:
    production call proof also requires the worker admission gate. Record these
    deliberate verification windows and close the gates again if proof fails.
    A green liveness response alone is insufficient.
+   Before changing the MCP issuer/resource origin, keep the old API's traffic
+   disabled and inspect authorization codes, access tokens and refresh tokens
+   read-only with complete database visibility. The `.app` cutover requires an
+   empty grant inventory. Record all three counts and the closed-traffic source
+   identity; keep the old release closed until the new origin is deployed.
+   If any grants exist, stop this cutover and review an explicit client/token
+   transition or obtain consent for reconnection. Never silently rewrite token
+   audiences or accept the old resource at the new origin. Null-resource startup
+   backfills do not migrate grants already bound to `https://botbound.me/mcp`.
+   Audit saved founder showcase prompts before opening the new release. The
+   explicit data migration `node scripts/migrations/2026-09-25-showcase-domain.mjs
+   --user-id <audited-founder-uuid>` previews the exact managed handoff-sentence
+   refresh. After full verification, promotion and closed-traffic deployment,
+   rerun with `--apply --expected-source <full-reviewed-sha>`. Run `db:health`
+   first and use the authorized production database connection. The migration
+   verifies the clean reviewed main source and closed Render traffic, locks and
+   compares saved rows, changes only the known sentence, and versions the data
+   refresh. Custom text and other settings remain intact. Any unfamiliar old
+   domain instruction blocks application for manual review. Auth bootstrap
+   continues to leave existing showcase rows unchanged.
+   The same explicit migration refreshes an exact `https://botbound.me` website
+   default on founder-fleet Bots; custom website paths require manual review.
 3. Keep the new cron jobs disabled while the legacy scheduler runs. Stop the
    old scheduler and wait for outstanding executions before enabling the new
    sweep and daily-brief schedules independently. A cron HTTP timeout does not
@@ -63,7 +85,7 @@ Before public cutover:
    wrapper at the same SHA as the API. Its release manifest is checked before
    startup; enabled runs verify API identity and send an expected-revision
    header that the API checks again before executing the job.
-4. Attach `botbound.me` to the Render web/API service and follow the DNS handoff
+4. Attach `botbound.app` to the Render web/API service and follow the DNS handoff
    below. Apply Render's required records at the new authoritative DNS provider,
    then verify certificates, canonical origin,
    OAuth/MCP, health, source identity and runtime errors. Enable
@@ -74,6 +96,12 @@ Before public cutover:
    proof. Keep broad call admission closed until that proof passes. Retire the
    old host and scheduler after verification and draining; retain a deliberate
    rollback path during the migration window.
+6. After the manual Render promotion is live, dispatch the **Production visual
+   QA** GitHub Actions workflow from `main`, supplying the full deployed commit
+   as `release_sha`. It checks out and verifies that exact source against
+   `botbound.app`. A push to `main` does not trigger this capture because Render
+   auto-deploy is disabled. Retain any credential or runner billing blocker as
+   an unresolved verification item; never treat a skipped capture as passing.
 
 For every voice deployment **or configuration/Blueprint update that replaces the
 process**, run `node deploy/render/drain-voice.mjs` against the old worker with
@@ -125,7 +153,7 @@ every placeholder.
    Keep that Render subdomain enabled while cron callers use it.
    Set API `WIRELINE_VOICE_WORKER_URL` to the
    separate HTTPS voice origin. Retain canonical `APP_URL`, `CORS_ORIGINS` and
-   `TWILIO_WEBHOOK_BASE_URL` as `https://botbound.me`. Existing provider webhook
+   `TWILIO_WEBHOOK_BASE_URL` as `https://botbound.app`. Existing provider webhook
    URLs and registered OAuth redirects retain that canonical origin.
 3. Verify all `fromService` references, including worker credential parity and
    each cron's `CRON_SECRET` and API origin. Deploy the matched,
@@ -138,27 +166,34 @@ every placeholder.
 
 #### Domain and DNS handoff
 
-The domain currently uses Vercel nameservers. Moving the application does not
-move its DNS zone automatically. Before changing nameserver delegation, inventory
-the complete live zone and prepare matching records at the selected registrar DNS
+The new `botbound.app` domain uses Porkbun DNS. Keep that delegation and update
+records in its existing zone; hosting the application on Render does not require
+moving its nameservers. The legacy `botbound.me` domain remains a separate Vercel
+DNS recovery task. Its nameserver migration is not required to launch `.app`.
+
+If changing authoritative DNS for the legacy domain later, first inventory the
+complete live zone and prepare matching records at the selected registrar DNS
 or independent authoritative DNS provider. Preserve MX, SPF, DKIM, DMARC, CAA,
 provider-verification records and unrelated subdomains; retain a redacted rollback
 record of the old delegation and web routing. Do not retire Vercel DNS while
 resolvers still depend on it.
 
-1. Add the apex `botbound.me` as a custom domain on `botbound-api` in Render.
+1. Add the apex `botbound.app` as a custom domain on `botbound-api` in Render.
    Review the generated `www` alias/redirect and required DNS values. Use the
    apex as the canonical application origin.
-2. Stage the new DNS zone with all existing mail and provider records, then the
-   Render web records. Follow Render's instructions for the chosen DNS provider;
+2. Add the provider-issued `.app` mail records and Render web records to the
+   existing Porkbun zone. Preserve its existing mail and provider records; do
+   not substitute domain-specific records from `.me`. Follow Render's instructions
+   for the chosen DNS provider;
    remove conflicting old web records and `AAAA` records only for hostnames
    moving to Render. Preserve unrelated records. Check existing CAA policy
    permits Render's certificate authorities.
-3. Verify the staged zone directly against its assigned nameservers before
-   changing the registrar delegation. Coordinate any existing DNSSEC/DS records
-   with the new DNS provider's migration procedure; an old DS value must not
-   invalidate the new zone. Then replace Vercel nameservers at the registrar with
-   the new provider's exact assigned nameservers.
+3. Verify the `.app` records against its assigned Porkbun nameservers. No
+   nameserver replacement is needed for this cutover. For a later authoritative
+   DNS migration of another domain, verify the staged zone before changing the
+   registrar delegation. Coordinate existing DNSSEC/DS records with that DNS
+   provider's migration procedure; an old DS value must not invalidate the new
+   zone. Only then set that domain's new provider-assigned nameservers.
 4. Verify public delegation and record propagation, then complete domain
    verification in Render and verify issued TLS, HTTPS redirects, application
    source SHA, signed webhooks, OAuth/MCP callbacks, email DNS and actual inbound
@@ -277,7 +312,7 @@ Build only from the clean exact release checkout; the revision argument labels t
 1. Fast-forward `main` to the reviewed, certified head without force, preserving the exact SHA verified on the worker. Do not create a merge or squash commit after certification. If `main` advances or integration changes the source SHA, certify that new head and rebuild and verify its worker before promotion.
 2. Follow that same exact `main` SHA into a new **production-target** Vercel deployment.
 3. Do not promote a Preview artifact by changing its alias. Preview and Production have different environment and schema guarantees.
-4. Wait for the exact deployment to reach `READY` and own `botbound.me`.
+4. Wait for the exact deployment to reach `READY` and own `botbound.app`.
 5. Confirm this production deployment uses the verified worker origin, matching service secret and duration setting. Keep the previous worker available until all its calls drain; a web deployment must not interrupt an active call.
 
 For an environment-only redeploy, select the intended source deployment and exact SHA explicitly:
@@ -297,7 +332,7 @@ The redeploy command creates a candidate; it does not declare the candidate live
 Verify all of the following before declaring the release complete:
 
 ```text
-GET https://botbound.me/api/health -> 200 { ok: true }
+GET https://botbound.app/api/health -> 200 { ok: true }
 X-Wireline-Source-Commit -> exact released main SHA
 ```
 
@@ -393,7 +428,7 @@ Live catalog or portal health is not billing proof. The controlled lifecycle mus
 
 ### Resend and AgentMail
 
-`botbound.me` is the canonical transactional and mailbox domain. Production defaults to `BotBound <noreply@botbound.me>`. `trywireline.com` may remain verified only as an explicit rollback asset; it is not the runtime fallback.
+`botbound.app` is the canonical transactional and mailbox domain. Production defaults to `BotBound <noreply@botbound.app>`. `trywireline.com` may remain verified only as an explicit rollback asset; it is not the runtime fallback.
 
 Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMail must retain the intentional support, security, DMARC, and unsubscribe inboxes. Test inbound, support reply, DMARC ingestion, and unsubscribe handling without exposing message contents in logs.
 

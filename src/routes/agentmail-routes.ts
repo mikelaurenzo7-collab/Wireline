@@ -38,6 +38,10 @@ import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 import { runTenantProviderWorkWithDeletionFence } from "../lib/tenant-provider-deletion-fence";
+import {
+  existingManagedEmailDomain,
+  isBotBoundManagedEmailDomain,
+} from "../lib/managed-agentmail-domain";
 
 const router = Router();
 const MANAGED_SCOPE_MARKER = "managed-botbound";
@@ -149,7 +153,7 @@ function managedMailboxDomain(): string | null {
   if (!/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(value) || !value.includes(".")) {
     return null;
   }
-  return value === "botbound.me" || value.endsWith(".botbound.me") ? value : null;
+  return isBotBoundManagedEmailDomain(value) ? value : null;
 }
 
 async function hasManagedMailboxEntitlement(userId: string, agentId: string): Promise<boolean> {
@@ -237,9 +241,10 @@ async function resolveManagedBotInbox(input: {
   apiKey: string;
   agentId: string;
   agentName: string;
+  domain: string;
   reservedEmailAddress?: string;
 }): Promise<{ inboxId: string; email: string; usedCustomDomain: boolean }> {
-  const preferredDomain = managedMailboxDomain();
+  const preferredDomain = input.domain;
   if (!preferredDomain) {
     throw new AgentMailConnectError("BotBound managed email domain is not ready.");
   }
@@ -255,6 +260,11 @@ async function resolveManagedBotInbox(input: {
   const current = existing.find((inbox) => inbox.email === preferredEmail);
   if (current) {
     return { ...current, usedCustomDomain: true };
+  }
+  if (!isBotBoundManagedEmailDomain(preferredDomain)) {
+    throw new AgentMailConnectError(
+      "Existing legacy managed mailbox is missing; restore its identity before reconciliation.",
+    );
   }
 
   try {
@@ -359,11 +369,6 @@ router.post(
         "Activate a paid Bot before provisioning its managed email identity.",
       );
     }
-    const requiredDomain = managedMailboxDomain();
-    if (!requiredDomain) {
-      throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
-    }
-
     const agentMailAccounts = await drizzle
       .select({
         id: schema.emailAccounts.id,
@@ -381,6 +386,12 @@ router.post(
     const existingManaged = agentMailAccounts.find((account) =>
       hasExactAgentMailManagedScope(account.oauthGrantedScopes),
     );
+    const requiredDomain = existingManaged
+      ? existingManagedEmailDomain(existingManaged.emailAddress)
+      : managedMailboxDomain();
+    if (!requiredDomain) {
+      throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
+    }
     const provisioned = await runTenantProviderWorkWithDeletionFence({
       userId,
       operation: "managed_agentmail_mailbox_provision",
@@ -399,7 +410,7 @@ router.post(
             "Activate a paid Bot phone line before setting up its managed email.",
           );
         }
-        await verifyManagedAgentMailDomainIdentity(apiKey);
+        await verifyManagedAgentMailDomainIdentity(apiKey, undefined, requiredDomain);
         if (existingManaged) {
           if (!existingManaged.emailAddress.toLowerCase().endsWith(`@${requiredDomain}`)) {
             throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
@@ -409,6 +420,7 @@ router.post(
               apiKey,
               agentId,
               agentName: agent.name || "Bot",
+              domain: requiredDomain,
               reservedEmailAddress: existingManaged.emailAddress,
             });
             await verifyAgentMailCredentials(inbox.email, apiKey);
@@ -468,6 +480,7 @@ router.post(
             apiKey,
             agentId,
             agentName: agent.name || "Bot",
+            domain: requiredDomain,
             reservedEmailAddress,
           });
           await verifyAgentMailCredentials(inbox.email, apiKey);

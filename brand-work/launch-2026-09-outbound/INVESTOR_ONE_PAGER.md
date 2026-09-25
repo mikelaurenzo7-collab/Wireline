@@ -39,4 +39,4 @@ Lead discovery requires a connected source or an approved supplied list. Calling
 
 **Put Your Bot on the Line**
 
-BotBound.me | support@botbound.me
+BotBound.app | support@botbound.app

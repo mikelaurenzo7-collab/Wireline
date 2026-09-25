@@ -30,13 +30,13 @@ describe("Cursor Directory plugin contract", () => {
 
   it("publishes a closed Open Plugins manifest without secrets", () => {
     expect(plugin.name).toBe("wireline");
-    expect(plugin.homepage).toBe("https://botbound.me/cursor-plugin.html");
+    expect(plugin.homepage).toBe("https://botbound.app/cursor-plugin.html");
     expect(plugin.repository).toBe("https://github.com/mikelaurenzo7-collab/Wireline");
     expect(plugin.author?.name).toBe("BotBound");
-    expect(plugin.author?.url).toBe("https://botbound.me");
+    expect(plugin.author?.url).toBe("https://botbound.app");
     // Directory identity follows the production-domain mailbox after its
     // external round-trip and DNS proof.
-    expect(plugin.author?.email).toBe("support@botbound.me");
+    expect(plugin.author?.email).toBe("support@botbound.app");
     expect(Object.keys(plugin).sort()).toEqual(
       [
         "$schema",
@@ -56,10 +56,10 @@ describe("Cursor Directory plugin contract", () => {
   it("points only at the remote Streamable HTTP server", () => {
     expect(openPlugins.mcpServers.wireline).toEqual({
       type: "streamable-http",
-      url: "https://botbound.me/mcp",
+      url: "https://botbound.app/mcp",
     });
     expect(directoryMcp.mcpServers).toEqual({
-      wireline: { url: "https://botbound.me/mcp" },
+      wireline: { url: "https://botbound.app/mcp" },
     });
     expect(JSON.stringify(directoryMcp)).not.toMatch(
       /sk-|api[_-]?key|client_secret|Authorization/i,
@@ -68,11 +68,11 @@ describe("Cursor Directory plugin contract", () => {
 
   it("publishes a one-click Cursor install link without secrets", () => {
     const install =
-      "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==";
     const encodedConfig = new URL(install).searchParams.get("config");
     expect(encodedConfig).not.toBeNull();
     expect(JSON.parse(Buffer.from(encodedConfig!, "base64").toString("utf8"))).toEqual({
-      url: "https://botbound.me/mcp",
+      url: "https://botbound.app/mcp",
     });
     expect(publicDocs).toContain(install.replace("&", "&amp;"));
     expect(apps).toContain(install);
@@ -106,7 +106,7 @@ describe("Cursor Directory plugin contract", () => {
     expect(registry).toContain("https://www.cursor.com/agents/mcp/oauth/callback");
     expect(registry).toContain("http://localhost:8787/callback");
     expect(packet).toContain("http://localhost:8787/callback");
-    expect(packet).toContain("Do not register `https://botbound.me/...` as Cursor's redirect URI");
+    expect(packet).toContain("Do not register `https://botbound.app/...` as Cursor's redirect URI");
     expect(docs).toContain("Cursor-operated callbacks");
     expect(docs).toContain("http://localhost:8787/callback");
     expect(read("src/routes/chatgpt-mcp-routes.ts")).toContain(

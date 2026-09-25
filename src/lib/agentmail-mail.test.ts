@@ -40,6 +40,7 @@ vi.mock("./server-context", () => ({
 import {
   AGENTMAIL_IMAP_HOST,
   AGENTMAIL_SMTP_HOST,
+  AGENTMAIL_WEBHOOK_EVENT_TYPES,
   AgentMailConnectError,
   agentMailWebhookClientId,
   agentmailLocalPart,
@@ -291,6 +292,92 @@ describe("agentmail-mail", () => {
     await deleteWirelineAgentMailWebhooks("am_test");
     expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_legacy");
     expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+  });
+
+  it("removes old generic hooks while reusing the new account-specific subscription", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    const accountId = "11111111-1111-4111-8111-111111111111";
+    const path = `/api/webhooks/agentmail/${accountId}`;
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "old",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://botbound.me${path}`,
+            },
+            {
+              webhook_id: "new",
+              client_id: agentMailWebhookClientId(accountId),
+              url: `https://botbound.app${path}`,
+              inbox_ids: ["bot@botbound.app"],
+              event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
+            },
+            {
+              webhook_id: "other-account",
+              client_id: "wireline-mailbox-webhook",
+              url: "https://botbound.me/api/webhooks/agentmail/another-account",
+            },
+            {
+              webhook_id: "lookalike",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://botbound.me.attacker.example${path}`,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(204, {}));
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "bot@botbound.app",
+        accountId,
+        hasStoredSecret: true,
+      }),
+    ).resolves.toEqual({ webhookId: "new", secret: null });
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/old");
+    expect(mockFetchWithTimeout.mock.calls[1][1].method).toBe("DELETE");
+    vi.unstubAllEnvs();
+  });
+
+  it("disconnects an exact legacy generic hook without touching another account or host", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    const accountId = "11111111-1111-4111-8111-111111111111";
+    const path = `/api/webhooks/agentmail/${accountId}`;
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "legacy",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://trywireline.com${path}`,
+            },
+            {
+              webhook_id: "wrong-path",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://botbound.me${path}/extra`,
+            },
+            {
+              webhook_id: "insecure",
+              client_id: "wireline-mailbox-webhook",
+              url: `http://botbound.me${path}`,
+            },
+            {
+              webhook_id: "foreign",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://foreign.example${path}`,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(204, {}));
+    await deleteAgentMailWebhooksForAccount({ apiKey: "am_test", accountId });
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/legacy");
+    vi.unstubAllEnvs();
   });
 
   it("verifies credentials via IMAP INBOX lock", async () => {

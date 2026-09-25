@@ -11,7 +11,7 @@ function reelBeatPaths(kit: string): string[] {
   if (start < 0 || end <= start) return [];
   const reels = kit.slice(start, end);
   return [...reels.matchAll(/route:\s*["'`]([^"'`]+)["'`]/g)]
-    .map((match) => new URL(match[1], "https://botbound.me").pathname)
+    .map((match) => new URL(match[1], "https://botbound.app").pathname)
     .filter((path, index, all) => all.indexOf(path) === index)
     .sort();
 }
@@ -110,7 +110,7 @@ describe("launch completeness contracts", () => {
     expect(app).not.toContain('path="/status"');
     expect(marketingMeta).not.toContain('"/status":');
     expect(publicRoutes).not.toContain('"/status"');
-    expect(sitemap).not.toContain("botbound.me/status");
+    expect(sitemap).not.toContain("botbound.app/status");
     expect(vercel.redirects).toContainEqual({
       source: "/status",
       destination: "/trust",

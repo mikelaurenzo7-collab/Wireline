@@ -52,7 +52,7 @@ describe("marketing signup continuity", () => {
     (slug) => {
       const page = VerticalLanding({ slug });
       if (!page) throw new Error("Expected the industry landing page.");
-      const destination = new URL(stickyDestination(page)!, "https://botbound.me");
+      const destination = new URL(stickyDestination(page)!, "https://botbound.app");
       expect(destination.searchParams.get("wedge")).toBe(slug);
       expect(destination.searchParams.get("plan")).toBe("free");
     },
@@ -79,7 +79,7 @@ describe("marketing signup continuity", () => {
       (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
     );
     expect(signupLinks).toHaveLength(1);
-    expect(new URL(signupLinks[0].props.to!, "https://botbound.me").searchParams.get("plan")).toBe(
+    expect(new URL(signupLinks[0].props.to!, "https://botbound.app").searchParams.get("plan")).toBe(
       "free",
     );
     expect(stickyDestination(page)).toBe("/signup?plan=free");

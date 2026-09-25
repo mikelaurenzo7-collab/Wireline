@@ -5,10 +5,10 @@
 - **Display name:** `BotBound`
 - **Subtitle:** `Build your first Bot`
 - **Category:** `BUSINESS`
-- **Website:** `https://botbound.me`
-- **Support:** `support@botbound.me`
-- **Privacy notice:** `https://botbound.me/chatgpt-app-privacy.html`
-- **Hosted logo:** `https://botbound.me/botbound-icon-512.png`
+- **Website:** `https://botbound.app`
+- **Support:** `support@botbound.app`
+- **Privacy notice:** `https://botbound.app/chatgpt-app-privacy.html`
+- **Hosted logo:** `https://botbound.app/botbound-icon-512.png`
 - **Dashboard upload asset:** use `public/botbound-icon-512.png` when the form requires a file upload rather than a URL.
 
 The dedicated BotBound icon is designed to keep the robot-and-phone identity clear at directory and composer avatar sizes.
@@ -18,11 +18,11 @@ The dedicated BotBound icon is designed to keep the robot-and-phone identity cle
 - **Registration method:** Client Identifier Metadata Document (CIMD)
 - **CIMD client metadata URL:** `https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json`
 - **ChatGPT callback URL:** `https://chatgpt.com/connector/oauth/7i4vMCsl-J2L`
-- **Authorization server base:** `https://botbound.me`
-- **Authorization URL:** `https://botbound.me/mcp/oauth/authorize`
-- **Token URL:** `https://botbound.me/mcp/oauth/token`
-- **Resource:** `https://botbound.me/mcp`
-- **MCP server URL:** `https://botbound.me/mcp`
+- **Authorization server base:** `https://botbound.app`
+- **Authorization URL:** `https://botbound.app/mcp/oauth/authorize`
+- **Token URL:** `https://botbound.app/mcp/oauth/token`
+- **Resource:** `https://botbound.app/mcp`
+- **MCP server URL:** `https://botbound.app/mcp`
 
 The CIMD and callback identifiers belong to the approved Developer Mode connection. The authorization server, token endpoint, resource, and MCP URL must move together as one issuer cutover. If OpenAI regenerates the approved app identifier in the dashboard, update this document and `chatgpt-app-submission.json` together before rescanning tools.
 
@@ -45,7 +45,7 @@ These match `MCP_SCOPES` declared by the BotBound MCP server.
 
 | Variable                 | Required | Notes                                                                              |
 | ------------------------ | -------- | ---------------------------------------------------------------------------------- |
-| `APP_URL`                | Yes      | `https://botbound.me`                                                              |
+| `APP_URL`                | Yes      | `https://botbound.app`                                                              |
 | `MCP_OAUTH_TOKEN_PEPPER` | Yes      | Random, at least 32 characters; hashes OAuth credentials.                          |
 | `OPENAI_API_KEY_CHATKIT` | Optional | Isolated key for account-bound private simulation; falls back to `OPENAI_API_KEY`. |
 | `OPENAI_API_KEY`         | Fallback | Existing BotBound OpenAI runtime key.                                              |

@@ -49,7 +49,7 @@ describe("launch readiness cross-surface contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     for (const source of [contact, support]) {
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
-      expect(source).toContain("mailto:support@botbound.me");
+      expect(source).toContain("mailto:support@botbound.app");
       expect(source).not.toContain("support@trywireline.com");
     }
     const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, "");

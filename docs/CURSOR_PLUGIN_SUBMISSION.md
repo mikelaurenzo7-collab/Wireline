@@ -6,29 +6,29 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 
 - **Name:** BotBound
 - **GitHub:** `https://github.com/mikelaurenzo7-collab/Wireline`
-- **MCP URL:** `https://botbound.me/mcp`
-- **Docs:** `https://botbound.me/cursor-plugin.html`
-- **Privacy:** `https://botbound.me/mcp-privacy.html`
-- **Icon:** `https://botbound.me/botbound-icon-512.png`
-- **Support:** `support@botbound.me`
-- **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9`
+- **MCP URL:** `https://botbound.app/mcp`
+- **Docs:** `https://botbound.app/cursor-plugin.html`
+- **Privacy:** `https://botbound.app/mcp-privacy.html`
+- **Icon:** `https://botbound.app/botbound-icon-512.png`
+- **Support:** `support@botbound.app`
+- **One-click install:** `cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==`
 
 ## Directory form copy
 
 Paste these values if the auto-detect form asks for them. Do not invent a second MCP URL or a static OAuth client id.
 
 - **Description:** Connect a BotBound account in Cursor, describe a Bot, create a private unlaunched draft, run a short tool-free simulation, and inspect aggregate workspace status without customer content.
-- **Install docs:** `https://botbound.me/cursor-plugin.html`
-- **Config:** `{ "url": "https://botbound.me/mcp" }` with no `headers` and no `auth` secrets.
+- **Install docs:** `https://botbound.app/cursor-plugin.html`
+- **Config:** `{ "url": "https://botbound.app/mcp" }` with no `headers` and no `auth` secrets.
 
 ## OAuth callbacks (do not swap these)
 
-`botbound.me` is the **authorization server**. Cursor is the **OAuth client**. Do not register `https://botbound.me/...` as Cursor's redirect URI. That would send the authorization code to BotBound instead of Cursor, and Connect would fail.
+`botbound.app` is the **authorization server**. Cursor is the **OAuth client**. Do not register `https://botbound.app/...` as Cursor's redirect URI. That would send the authorization code to BotBound instead of Cursor, and Connect would fail.
 
 | Role                                     | URL                                                | Register?                                                                                       |
 | ---------------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| MCP / OAuth server (what Cursor calls)   | `https://botbound.me/mcp`                          | Yes - this is the Directory MCP URL                                                             |
-| BotBound login/consent return (our page) | `https://botbound.me/mcp/oauth/callback`           | Already owned by BotBound. Not a Cursor client redirect.                                        |
+| MCP / OAuth server (what Cursor calls)   | `https://botbound.app/mcp`                          | Yes - this is the Directory MCP URL                                                             |
+| BotBound login/consent return (our page) | `https://botbound.app/mcp/oauth/callback`           | Already owned by BotBound. Not a Cursor client redirect.                                        |
 | Cursor desktop callback                  | `http://localhost:8787/callback`                   | Yes - keep in DCR allowlist. RFC 8252 loopback. Do not replace with the BotBound server origin. |
 | Cursor web / Agents callback             | `https://www.cursor.com/agents/mcp/oauth/callback` | Yes — keep in DCR allowlist                                                                     |
 | Older Cursor protocol callback           | `cursor://anysphere.cursor-mcp/oauth/callback`     | Yes — keep in DCR allowlist                                                                     |
@@ -41,7 +41,7 @@ The directory clones the repo and auto-reviews plugin components. Keep those fil
 
 ## Reviewer flow
 
-1. Install BotBound from the listing, the one-click Cursor link, or add `https://botbound.me/mcp`.
+1. Install BotBound from the listing, the one-click Cursor link, or add `https://botbound.app/mcp`.
 2. Complete OAuth. Create a BotBound account if needed.
 3. Prompt: create my first after-hours receptionist and confirm.
 4. Prompt: privately rehearse "Do you have Saturday appointments?"

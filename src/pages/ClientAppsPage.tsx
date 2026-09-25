@@ -20,7 +20,7 @@ import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 
 const MCP_SERVER_URL = BOTBOUND_PRODUCTION_ORIGIN + "/mcp";
 const CURSOR_MCP_INSTALL_URL =
-  "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9";
+  "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==";
 
 const clientSurfaces = [
   {

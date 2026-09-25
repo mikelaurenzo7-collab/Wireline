@@ -1,7 +1,7 @@
 /**
  * BotBound marketing asset capture — production demo account.
  *
- *   E2E_BASE_URL=https://botbound.me
+ *   E2E_BASE_URL=https://botbound.app
  *   DEMO_EMAIL=<existing seeded demo account>
  *   DEMO_PASSWORD=...  (docs/DEMO_ACCOUNT.md)
  *   node scripts/marketing-kit.mjs

@@ -6,7 +6,7 @@ import { PROJECT_ID } from "../scripts/lib/vercel-project.mjs";
 const source = "a".repeat(40);
 const operator = {
   NODE_ENV: "production",
-  APP_URL: "https://botbound.me",
+  APP_URL: "https://botbound.app",
   STRIPE_SECRET_KEY: "sk_live_operator_fixture",
 };
 const render = {
@@ -76,7 +76,7 @@ describe("production Stripe operator verification", () => {
     { RENDER_GIT_BRANCH: "feature/unsafe" },
     { RENDER_GIT_COMMIT: "abcdef0" },
     { WIRELINE_SOURCE_REVISION: "b".repeat(40) },
-    { APP_URL: "https://botbound.me.attacker.example" },
+    { APP_URL: "https://botbound.app.attacker.example" },
     { STRIPE_SECRET_KEY: "sk_test_fixture" },
   ])("rejects an ambiguous or mismatched Render target: %j", (overrides) => {
     for (const apply of [false, true]) {

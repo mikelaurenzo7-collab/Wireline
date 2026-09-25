@@ -1,5 +1,7 @@
 # BotBound Launch Creative Media Kit
 
+Domain copy updated September 25, 2026 for `botbound.app`. Previously recorded audio and film must be regenerated and reviewed before publishing; this copy update does not certify old media.
+
 Updated: 2026-08-14  
 Status: **Active delivery and capture kit**  
 Authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`  
@@ -136,11 +138,11 @@ Publishable capture requires a clean checkout of the exact deployed source commi
 git checkout <exact-production-sha>
 DEMO_EMAIL=<demo-account-email> \
 DEMO_PASSWORD=<demo-account-password> \
-E2E_BASE_URL=https://botbound.me \
+E2E_BASE_URL=https://botbound.app \
 npm run marketing:kit
 ```
 
-Publishable capture is restricted to the canonical BotBound production host, `botbound.me`. Embedded URL credentials, preview aliases, the legacy domain, and arbitrary third-party HTTPS hosts are rejected before capture.
+Publishable capture is restricted to the canonical BotBound production host, `botbound.app`. Embedded URL credentials, preview aliases, the legacy domain, and arbitrary third-party HTTPS hosts are rejected before capture.
 
 `E2E_BASE_URL` must be the canonical BotBound production URL. The generator includes canonical public screenshots in the same manifest, and certification fails closed unless every represented origin serves the exact checkout commit.
 
@@ -190,7 +192,7 @@ Before editing:
 
 ### Missed Call — 15s
 
-Follow the campaign pack's exact timing. The contrast may use **You cannot pick up.** then **Your Bot can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `botbound.me`.
+Follow the campaign pack's exact timing. The contrast may use **You cannot pick up.** then **Your Bot can.** Keep the real product and outcome legible. End on **Build free. Go live from $19/mo.** and `botbound.app`.
 
 ### Second Ring — ~30s
 

@@ -51,8 +51,8 @@ We are opening conversations with investors and design partners who understand o
 
 **Hands Full? Bot on the Line.**
 
-BotBound.me
-support@botbound.me
+BotBound.app
+support@botbound.app
 
 ---
 

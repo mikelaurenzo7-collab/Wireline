@@ -12,7 +12,7 @@ function fixture(overrides: Record<string, unknown> = {}) {
   const apiKey = "am_botbound_launch_secret";
   return {
     apiKey,
-    configuredDomain: "bots.botbound.me",
+    configuredDomain: "bots.botbound.app",
     inboxesResponse: ok({ count: 0, inboxes: [] }),
     apiKeysResponse: ok({
       count: 1,
@@ -28,11 +28,11 @@ function fixture(overrides: Record<string, unknown> = {}) {
     }),
     domainsResponse: ok({
       count: 1,
-      domains: [{ domain_id: "domain_1", domain: "bots.botbound.me" }],
+      domains: [{ domain_id: "domain_1", domain: "bots.botbound.app" }],
     }),
     domainDetailResponse: ok({
       domain_id: "domain_1",
-      domain: "bots.botbound.me",
+      domain: "bots.botbound.app",
       status: "VERIFIED",
     }),
     ...overrides,
@@ -74,7 +74,7 @@ describe("AgentMail vendor readiness fixtures", () => {
     ).toMatchObject({ ready: false, keyInventoryReadable: false, activeKeyIdentified: false });
     expect(
       evaluateAgentMailReadiness(
-        fixture({ domainDetailResponse: ok({ domain: "bots.botbound.me" }) }),
+        fixture({ domainDetailResponse: ok({ domain: "bots.botbound.app" }) }),
       ),
     ).toMatchObject({ ready: false, domainVerified: false });
   });
@@ -105,19 +105,19 @@ describe("AgentMail vendor readiness fixtures", () => {
   it("requires an exact listed domain and a matching VERIFIED detail response", () => {
     const list = ok({
       domains: [
-        { domain_id: "domain_1", domain: "bots.botbound.me" },
+        { domain_id: "domain_1", domain: "bots.botbound.app" },
         { domain_id: "domain_2", domain: "other.example" },
       ],
     });
-    expect(agentMailDomainIdFromList(list, "@BOTS.BOTBOUND.ME")).toBe("domain_1");
-    expect(agentMailDomainIdFromList(list, "botbound.me.attacker.example")).toBeNull();
+    expect(agentMailDomainIdFromList(list, "@BOTS.BOTBOUND.APP")).toBe("domain_1");
+    expect(agentMailDomainIdFromList(list, "botbound.app.attacker.example")).toBeNull();
 
     expect(
       evaluateAgentMailReadiness(
         fixture({
           domainDetailResponse: ok({
             domain_id: "domain_1",
-            domain: "bots.botbound.me",
+            domain: "bots.botbound.app",
             status: "PENDING",
           }),
         }),

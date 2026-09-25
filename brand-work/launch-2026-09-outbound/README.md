@@ -41,7 +41,7 @@ launch-2026-09-outbound/
 |   |-- email/           Launch email header
 |   |-- investor/        Selectable-text investor PDF and PNG preview
 |   |-- motion/          Remotion exports and QA frames
-|   |-- website/         BotBound.me social share card
+|   |-- website/         BotBound.app social share card
 |   `-- contact-sheet/   Complete visual review sheet
 |-- CAMPAIGN_COPY.md
 |-- WEBSITE_MESSAGING.md

@@ -6,21 +6,21 @@
     "tagline": "Build your first Bot",
     "description": "BotBound lets a new Claude user create a BotBound account, build their first Bot in that conversation, privately rehearse it, and inspect privacy-minimized workspace status. Phone numbers, live calls, messaging, billing, and launch stay in BotBound.",
     "categories": ["business", "productivity"],
-    "icon_url": "https://botbound.me/botbound-icon-512.png",
-    "website_url": "https://botbound.me",
-    "documentation_url": "https://botbound.me/claude-connector.html",
-    "privacy_policy_url": "https://botbound.me/mcp-privacy.html",
-    "support_email": "support@botbound.me",
+    "icon_url": "https://botbound.app/botbound-icon-512.png",
+    "website_url": "https://botbound.app",
+    "documentation_url": "https://botbound.app/claude-connector.html",
+    "privacy_policy_url": "https://botbound.app/mcp-privacy.html",
+    "support_email": "support@botbound.app",
     "company_name": "BotBound",
-    "company_website": "https://botbound.me"
+    "company_website": "https://botbound.app"
   },
   "server": {
-    "url": "https://botbound.me/mcp",
+    "url": "https://botbound.app/mcp",
     "transport": "streamable-http",
     "url_mode": "same_url_for_all_users",
     "authentication": ["oauth_dcr", "oauth_cimd"],
     "lazy_authentication": true,
-    "allowed_link_uris": ["https://botbound.me"]
+    "allowed_link_uris": ["https://botbound.app"]
   },
   "capabilities": {
     "reads_data": true,

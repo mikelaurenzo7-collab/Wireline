@@ -60,7 +60,7 @@ export function ContactPage() {
   const composedBody = contextLines.length
     ? `${contextLines.join("\n")}\n\n${normalizedBody}`
     : normalizedBody;
-  const emailFallbackHref = `mailto:support@botbound.me?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
+  const emailFallbackHref = `mailto:support@botbound.app?subject=${encodeURIComponent(`[BotBound / ${inquiryType}] ${normalizedSubject}`)}&body=${encodeURIComponent(`From: ${normalizedEmail}\n\n${composedBody}`)}`;
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -174,7 +174,7 @@ export function ContactPage() {
           className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm"
         >
           <a
-            href="mailto:support@botbound.me"
+            href="mailto:support@botbound.app"
             className="wl-focus-ring-halo inline-flex min-h-11 items-center gap-2 rounded-md px-2 font-medium text-muted-foreground hover:text-foreground"
           >
             <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />

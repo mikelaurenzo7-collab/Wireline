@@ -61,7 +61,7 @@ describe("current-state UI contract", () => {
     const developers = read("src/pages/Developers.tsx");
     expect(developers).toContain("Connect Once");
     expect(developers).toContain("View MCP Endpoint");
-    expect(developers).toContain("https://botbound.me");
+    expect(developers).toContain("https://botbound.app");
     expect(developers).toContain("Add to Cursor");
     expect(developers.replace(/\s+/g, " ")).toContain(
       "This connector cannot place calls, send messages, provision numbers, or launch a live Bot",

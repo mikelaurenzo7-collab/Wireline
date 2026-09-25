@@ -1,6 +1,6 @@
 ---
 name: wireline-voice-agent
-description: Help a new user create a BotBound account and build their first Bot through the remote MCP server at https://botbound.me/mcp. Use when the user wants a receptionist, scheduler, sales, or support Bot from Cursor, ChatGPT, or Claude.
+description: Help a new user create a BotBound account and build their first Bot through the remote MCP server at https://botbound.app/mcp. Use when the user wants a receptionist, scheduler, sales, or support Bot from Cursor, ChatGPT, or Claude.
 ---
 
 # BotBound first Bot
@@ -11,7 +11,7 @@ This plugin is not a software development kit for embedding BotBound Bots in ano
 
 ## Connect
 
-1. Enable the BotBound MCP server from this plugin (`https://botbound.me/mcp`).
+1. Enable the BotBound MCP server from this plugin (`https://botbound.app/mcp`).
 2. Complete OAuth. If the user has no account, they create one from the sign-in screen. The `redirect` query returns them to the authorization screen.
 3. After Connect succeeds, call tools. Unauthenticated `tools/call` returns HTTP 401 so the host can show Connect.
 

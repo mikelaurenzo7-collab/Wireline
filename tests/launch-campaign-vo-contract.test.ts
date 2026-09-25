@@ -121,12 +121,12 @@ describe("launch campaign voiceover", () => {
   });
 
   it("follows the delivery guide when speaking the domain and prices", () => {
-    // The guide: speak "botbound.me" as "bot bound dot me", and speak
+    // The guide: speak "botbound.app" as "bot bound dot app", and speak
     // prices as words, never digits.
-    expect(speakable("Build free at botbound.me.")).toBe("Build free at bot bound dot me.");
+    expect(speakable("Build free at botbound.app.")).toBe("Build free at bot bound dot app.");
     for (const track of tracks) {
       const spoken = speakable(track.text);
-      expect(spoken).not.toMatch(/botbound\.me/i);
+      expect(spoken).not.toMatch(/botbound\.app/i);
       expect(spoken).not.toMatch(/trywireline\.com/i);
       expect(spoken, `${track.id} speaks a numeric price`).not.toMatch(/\$\d/);
     }

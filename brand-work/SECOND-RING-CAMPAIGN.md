@@ -37,7 +37,7 @@ Campaign close:
 - 0:00-0:03: Hands full, phone rings.
 - 0:03-0:07: Second ring becomes the BotBound operator.
 - 0:07-0:11: Booked, texted, logged.
-- 0:11-0:15: `PUT YOUR BOT ON THE LINE.` and `BOTBOUND.ME`.
+- 0:11-0:15: `PUT YOUR BOT ON THE LINE.` and `BOTBOUND.APP`.
 
 ### 6-Second Bumper
 
@@ -51,7 +51,7 @@ Campaign close:
 - Use the florist frame and keep text inside the central 900 px safe width.
 - Open on `THE CALL STILL GETS ANSWERED.`
 - Cut to the robot and result stack.
-- Close on `BUILD FREE AT BOTBOUND.ME`.
+- Close on `BUILD FREE AT BOTBOUND.APP`.
 
 ## Historical Launch Stills
 
@@ -77,7 +77,7 @@ Proof:
 
 Social launch caption:
 
-> Your best work should not stop every time the phone rings. BotBound gives you a Bot for calls, texts, and email, so the customer gets an answer while you stay in the work. Put your Bot on the line at BotBound.me.
+> Your best work should not stop every time the phone rings. BotBound gives you a Bot for calls, texts, and email, so the customer gets an answer while you stay in the work. Put your Bot on the line at BotBound.app.
 
 PR descriptor:
 

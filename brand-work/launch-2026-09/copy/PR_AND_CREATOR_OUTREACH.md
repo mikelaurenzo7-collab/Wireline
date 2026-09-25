@@ -26,8 +26,8 @@ I built BotBound around that interruption: Bots for calls, texts, and email, wit
 I'm preparing a small design-partner pilot focused on incoming calls and a useful follow-up. I'd be glad to share the product and what we learn if it fits [specific coverage].
 
 Michael
-BotBound.me
-support@botbound.me
+BotBound.app
+support@botbound.app
 
 ## Creator or Operator Draft
 
@@ -47,7 +47,7 @@ Discuss the interruption, how the business defines useful answers and handoffs, 
 
 ## Boilerplate
 
-BotBound gives businesses configurable Bots for calls, texts, and email. Each Bot works from the business's knowledge and rules, with private rehearsal, owner controls, and a shared outcome record. Learn more at BotBound.me.
+BotBound gives businesses configurable Bots for calls, texts, and email. Each Bot works from the business's knowledge and rules, with private rehearsal, owner controls, and a shared outcome record. Learn more at BotBound.app.
 
 ## Technical Replies
 

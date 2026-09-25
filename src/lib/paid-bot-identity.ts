@@ -30,6 +30,10 @@ import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deleti
 import { getTwilioClient } from "./twilio-service";
 import { enqueue } from "./job-queue";
 import { provisionNativeTenantNumber } from "./voice/native-phone-provisioning";
+import {
+  existingManagedEmailDomain,
+  isBotBoundManagedEmailDomain,
+} from "./managed-agentmail-domain";
 
 // A Stripe trial is not a paid activation. Real carrier numbers and durable
 // AgentMail inboxes are created only after Stripe reports an active paid
@@ -112,8 +116,8 @@ function normalizedManagedDomain(): string | null {
   ) {
     throw new Error("AGENTMAIL_DEFAULT_DOMAIN is invalid.");
   }
-  if (value !== "botbound.me" && !value.endsWith(".botbound.me")) {
-    throw new Error("AGENTMAIL_DEFAULT_DOMAIN must be botbound.me or a BotBound subdomain.");
+  if (!isBotBoundManagedEmailDomain(value)) {
+    throw new Error("AGENTMAIL_DEFAULT_DOMAIN must be botbound.app or a BotBound subdomain.");
   }
   return value;
 }
@@ -232,8 +236,9 @@ async function resolveManagedInbox(input: {
   agentId: string;
   agentName: string;
   emailAddress: string;
+  domain: string;
 }): Promise<{ inboxId: string; email: string; reused: boolean }> {
-  const domain = normalizedManagedDomain();
+  const domain = input.domain;
   if (!domain) {
     throw new Error(
       "AGENTMAIL_DEFAULT_DOMAIN is required before paid Bot managed-email provisioning can run.",
@@ -252,6 +257,11 @@ async function resolveManagedInbox(input: {
     (inbox) => inbox.email.toLowerCase() === desiredEmail,
   );
   if (existing) return { ...existing, reused: true };
+  if (!isBotBoundManagedEmailDomain(domain)) {
+    throw new Error(
+      "Existing legacy managed mailbox is missing from AgentMail; restore its identity before reconciliation.",
+    );
+  }
 
   const inbox = await createAgentMailInbox(input.apiKey, username, input.agentName, {
     domain,
@@ -347,7 +357,12 @@ async function preparePaidBotMailbox(userId: string, agentId: string) {
     throw new Error("Credential vault is not configured for managed email.");
   const apiKey = String(process.env.AGENTMAIL_API_KEY || "").replace(/\s+/g, "");
   if (!apiKey) throw new Error("AGENTMAIL_API_KEY is required for managed Bot email.");
-  const domain = normalizedManagedDomain();
+  const domain = existing
+    ? existingManagedEmailDomain(existing.emailAddress)
+    : normalizedManagedDomain();
+  if (existing && !domain) {
+    throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
+  }
   if (!domain) {
     throw new Error(
       "AGENTMAIL_DEFAULT_DOMAIN is required before paid Bot managed-email provisioning can run.",
@@ -356,14 +371,22 @@ async function preparePaidBotMailbox(userId: string, agentId: string) {
   if (!publicAgentMailWebhookUrl("configuration-check")) {
     throw new Error("AgentMail webhook registration requires a public APP_URL.");
   }
-  if (existing && !existing.emailAddress.toLowerCase().endsWith(`@${domain}`)) {
-    throw new Error("Existing managed mailbox is not on the configured BotBound domain.");
-  }
   // Prove that this credential owns the exact verified BotBound domain before
   // any carrier purchase or mailbox reservation. A valid inbox list alone
   // could belong to a different organization.
-  await verifyManagedAgentMailDomainIdentity(apiKey);
-  await listAgentMailInboxes(apiKey);
+  await verifyManagedAgentMailDomainIdentity(apiKey, undefined, domain);
+  const inboxes = await listAgentMailInboxes(apiKey);
+  if (
+    existing &&
+    !isBotBoundManagedEmailDomain(domain) &&
+    !inboxes.some(
+      (inbox) => inbox.email.toLowerCase() === existing.emailAddress.trim().toLowerCase(),
+    )
+  ) {
+    throw new Error(
+      "Existing legacy managed mailbox is missing from AgentMail; restore its identity before reconciliation.",
+    );
+  }
   return { existing, apiKey, domain };
 }
 
@@ -380,6 +403,7 @@ async function ensurePaidBotMailbox(
       agentId,
       agentName,
       emailAddress: existing.emailAddress,
+      domain,
     });
     await verifyAgentMailCredentials(inbox.email, apiKey);
     await ensureManagedDeliveryWebhook({
@@ -413,6 +437,7 @@ async function ensurePaidBotMailbox(
     agentId,
     agentName,
     emailAddress: reservedEmailAddress,
+    domain,
   });
   await verifyAgentMailCredentials(inbox.email, apiKey);
 

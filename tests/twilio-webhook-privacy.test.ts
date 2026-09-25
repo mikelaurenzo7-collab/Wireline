@@ -40,16 +40,16 @@ describe("Twilio webhook privacy hardening", () => {
     expect(email.text).toContain('Transcript: <img src=x onerror="boom">&\'');
   });
 
-  it("links canonical authenticated BotBound recording routes", () => {
+  it.each(["botbound.app", "botbound.me"])("links authenticated recording routes on %s", (host) => {
     const email = buildFailoverVoicemailEmail({
       from: "",
       to: "",
       durationSeconds: null,
-      recordingUrl: "https://botbound.me/api/calls/123/recording",
+      recordingUrl: `https://${host}/api/calls/123/recording`,
       transcription: "",
     });
 
-    expect(email.html).toContain('href="https://botbound.me/api/calls/123/recording"');
+    expect(email.html).toContain(`href="https://${host}/api/calls/123/recording"`);
   });
 
   it("renders untrusted recording URLs as text instead of clickable links", () => {
@@ -65,17 +65,20 @@ describe("Twilio webhook privacy hardening", () => {
     expect(email.html).toContain("javascript:alert(&quot;x&quot;)");
   });
 
-  it("does not trust arbitrary preview deployments as recording origins", () => {
-    const email = buildFailoverVoicemailEmail({
-      from: "",
-      to: "",
-      durationSeconds: null,
-      recordingUrl: "https://attacker-controlled.vercel.app/api/calls/123/recording",
-      transcription: "",
-    });
+  it.each(["attacker-controlled.vercel.app", "botbound.app.evil.example"])(
+    "does not trust %s as a recording origin",
+    (host) => {
+      const email = buildFailoverVoicemailEmail({
+        from: "",
+        to: "",
+        durationSeconds: null,
+        recordingUrl: `https://${host}/api/calls/123/recording`,
+        transcription: "",
+      });
 
-    expect(email.html).not.toContain('href="https://attacker-controlled.vercel.app');
-  });
+      expect(email.html).not.toContain(`href="https://${host}`);
+    },
+  );
 
   it("keeps sensitive webhook content out of operational logs", () => {
     const route = read("src/routes/twilio-webhook-base.ts");

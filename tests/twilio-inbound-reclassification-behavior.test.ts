@@ -146,7 +146,7 @@ describe("signed Twilio voice reclassification fence", () => {
       resolveTwilioInboundEnvironment: environment,
     }));
     vi.doMock("../src/lib/app-url", () => ({
-      resolveCanonicalAppUrl: vi.fn(() => ({ url: "https://botbound.me" })),
+      resolveCanonicalAppUrl: vi.fn(() => ({ url: "https://botbound.app" })),
     }));
     const module = await import("../src/routes/twilio-webhook-base");
     return { router: module.default, select, environment };

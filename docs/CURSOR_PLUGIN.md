@@ -4,7 +4,7 @@
 
 **Meet the user in Cursor, create a real BotBound account if they are new, then help them build their first Bot.**
 
-Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://botbound.me/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding BotBound Bots in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
+Cursor, ChatGPT, Claude, and Claude Code share one remote MCP server at `https://botbound.app/mcp`. The Cursor Directory package in this repository is discovery and install metadata only. It is not a software development kit for embedding BotBound Bots in another repository. Provider credentials, prompts, tenant enforcement, billing, launch, and live calling stay server-owned.
 
 ```text
 Cursor Agent
@@ -18,7 +18,7 @@ Cursor Agent
 ## What Cursor owns
 
 - Discovering the remote server from `.mcp.json` / `mcp.json`.
-- OAuth against Cursor-operated callbacks already allowlisted in `src/lib/mcp-client-registry.ts`: `cursor://anysphere.cursor-mcp/oauth/callback`, `https://www.cursor.com/agents/mcp/oauth/callback`, and desktop `http://localhost:8787/callback`. `https://botbound.me` is the authorization server, not a Cursor client redirect.
+- OAuth against Cursor-operated callbacks already allowlisted in `src/lib/mcp-client-registry.ts`: `cursor://anysphere.cursor-mcp/oauth/callback`, `https://www.cursor.com/agents/mcp/oauth/callback`, and desktop `http://localhost:8787/callback`. `https://botbound.app` is the authorization server, not a Cursor client redirect.
 - Conversational first-agent drafting, confirmation, and private rehearsal prompts.
 
 ## What BotBound owns
@@ -46,10 +46,10 @@ Submit the public GitHub repository at [cursor.directory/plugins/new](https://cu
 One-click install:
 
 ```text
-cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9
+cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==
 ```
 
-Public documentation: `https://botbound.me/cursor-plugin.html`.
+Public documentation: `https://botbound.app/cursor-plugin.html`.
 
 ## Tool contract
 
@@ -88,9 +88,9 @@ Users without a session are sent to `/signin?redirect=/mcp/oauth/authorize...`. 
 ## Verification
 
 ```bash
-node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 ```
 
-The shared probe checks discovery, the tool inventory, privacy pages, and `https://botbound.me/cursor-plugin.html`. It does not substitute for a real OAuth flow in Cursor.
+The shared probe checks discovery, the tool inventory, privacy pages, and `https://botbound.app/cursor-plugin.html`. It does not substitute for a real OAuth flow in Cursor.
 
 The `wireline` package, server, tool, and file identifiers are stable technical namespaces. `https://trywireline.com/mcp` remains a compatibility endpoint for existing registrations during the issuer migration; do not publish it for new installs.

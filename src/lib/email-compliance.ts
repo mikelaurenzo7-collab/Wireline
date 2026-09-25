@@ -85,7 +85,7 @@ export function unsubscribeUrl(email: string): string {
 }
 
 function unsubscribeMailto(): string {
-  return (process.env.WIRELINE_UNSUBSCRIBE_MAILTO || "unsubscribe@botbound.me").trim();
+  return (process.env.WIRELINE_UNSUBSCRIBE_MAILTO || "unsubscribe@botbound.app").trim();
 }
 
 /**

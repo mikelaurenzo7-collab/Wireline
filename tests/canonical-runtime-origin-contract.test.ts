@@ -71,7 +71,7 @@ describe("canonical BotBound runtime origins", () => {
       read("src/routes/support-routes.ts"),
       read("src/components/SupportPage.tsx"),
     ].join("\n");
-    expect(support).toContain("support@botbound.me");
+    expect(support).toContain("support@botbound.app");
     expect(support).not.toContain("support@trywireline.com");
   });
 });

@@ -44,7 +44,7 @@ to a separate retired Stripe account and are historical.
 - Active founder products + canonical prices must match `scripts/lib/stripe-founder-catalog.mjs`.
 - Vercel Production price-ID env vars must stay in parity with the live catalog.
 - Preview must **not** receive production Stripe secrets (see `scripts/check-deployment-boundaries.mjs`).
-- Webhook `https://botbound.me/api/stripe-webhook` enabled_events must match
+- Webhook `https://botbound.app/api/stripe-webhook` enabled_events must match
   `src/routes/billing-routes.ts` (including `charge.refunded` / `charge.dispute.created`).
 
 Do not delete Stripe products or prices. Archive products and deactivate prices only after dependency checks.
@@ -81,7 +81,7 @@ Then verify in a non-production test workspace:
 
 ## Release-time deployment evidence
 
-- Canonical production target: `main` → `https://botbound.me`. Re-verify READY state, public health,
+- Canonical production target: `main` → `https://botbound.app`. Re-verify READY state, public health,
   and the served source commit after every deploy; do not treat a status copied into this note as
   evergreen evidence.
 - Residual ops (not code-blockable): federal DNC vendor `loginId`, one live $19 checkout proof, GitHub Actions spending restore, rotate any Vercel token pasted into chat.

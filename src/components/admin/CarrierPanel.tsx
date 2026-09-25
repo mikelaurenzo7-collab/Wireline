@@ -430,7 +430,7 @@ export function CarrierPanel({
             <div className="rounded-xl border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-muted-foreground">
               BYOC inbound SMS webhook:{" "}
               <code className="break-all text-foreground">
-                https://botbound.me/api/twilio-webhook/sms
+                https://botbound.app/api/twilio-webhook/sms
               </code>
             </div>
           ) : null}

@@ -10,7 +10,7 @@ const apiSource = read("ios/Wireline/Networking/WirelineAPI.swift");
 describe("iOS networking contract", () => {
   it("ships the canonical BotBound production API origin", () => {
     expect(configSource).toContain(
-      'private static let productionURL = URL(string: "https://botbound.me")!',
+      'private static let productionURL = URL(string: "https://botbound.app")!',
     );
     expect(configSource).not.toContain("trywireline.com");
   });

@@ -17,7 +17,7 @@ struct WalletView: View {
                 }
                 .padding(.vertical, 4)
             } footer: {
-                Text("Credits cover voice-minute overage automatically. Add credits or manage billing at botbound.me.")
+                Text("Credits cover voice-minute overage automatically. Add credits or manage billing at botbound.app.")
             }
 
             if let ledger = wallet?.ledger, !ledger.isEmpty {

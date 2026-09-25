@@ -67,7 +67,7 @@ describe("launch truth contract", () => {
     expect(changelog).not.toContain("committed baselines");
     expect(changelog).toContain('title: "BotBound Runtime Monitoring"');
     expect(changelog).toContain("Customer-impacting issues surface through BotBound");
-    expect(changelog).not.toContain("botbound.me/status");
+    expect(changelog).not.toContain("botbound.app/status");
     expect(changelog).not.toContain("trywireline.com/status");
 
     expect(security).toContain("Last updated · August 17, 2026");

@@ -29,9 +29,9 @@ function canonicalAccount(overrides: Record<string, unknown> = {}) {
   return {
     business_profile: {
       name: "BotBound",
-      url: "https://botbound.me",
-      support_url: "https://botbound.me/support",
-      support_email: "support@botbound.me",
+      url: "https://botbound.app",
+      support_url: "https://botbound.app/support",
+      support_email: "support@botbound.app",
     },
     settings: {
       dashboard: { display_name: "BotBound" },
@@ -119,8 +119,8 @@ describe("Stripe account identity guard", () => {
   it("accepts the www domain and a BotBound-prefixed dynamic descriptor", () => {
     const account = canonicalAccount();
     account.business_profile.name = " botbound ";
-    account.business_profile.url = "https://www.botbound.me/pricing";
-    account.business_profile.support_email = " SUPPORT@botbound.me ";
+    account.business_profile.url = "https://www.botbound.app/pricing";
+    account.business_profile.support_email = " SUPPORT@botbound.app ";
     account.settings.card_payments.statement_descriptor_prefix = "BOTBOUND";
     account.settings.payments.statement_descriptor = "BOTBOUND*RUNTIME";
     account.settings.branding.primary_color = "#a78bfa";
@@ -129,7 +129,7 @@ describe("Stripe account identity guard", () => {
 
   it("rejects insecure canonical-domain URLs and descriptor lookalikes", () => {
     const account = canonicalAccount();
-    account.business_profile.url = "http://botbound.me";
+    account.business_profile.url = "http://botbound.app";
     account.settings.card_payments.statement_descriptor_prefix = "BOTBOUNDFAKE";
     account.settings.payments.statement_descriptor = "BOTBOUNDPAY";
     const findings = stripeAccountIdentityFindings(account);

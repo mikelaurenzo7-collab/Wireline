@@ -29,7 +29,7 @@ sip:<OPENAI_PROJECT_ID>@sip.api.openai.com;transport=tls
 OpenAI sends signed `realtime.call.incoming` events to:
 
 ```text
-https://botbound.me/api/webhooks/openai/realtime
+https://botbound.app/api/webhooks/openai/realtime
 ```
 
 BotBound accepts the call with the tenant-scoped Bot configuration and then
@@ -46,11 +46,11 @@ remain on the server.
 - `OPENAI_REALTIME_TRANSCRIBER=gpt-4o-mini-transcribe`.
 - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` for signed callback validation.
 - A scoped Twilio API key/secret for REST operations when configured.
-- `TWILIO_WEBHOOK_BASE_URL=https://botbound.me` when canonical signature
+- `TWILIO_WEBHOOK_BASE_URL=https://botbound.app` when canonical signature
   reconstruction cannot rely on the incoming host.
 
 Every Twilio voice-capable number must use
-`https://botbound.me/api/twilio-webhook/openai-inbound` as its voice URL and
+`https://botbound.app/api/twilio-webhook/openai-inbound` as its voice URL and
 the signed `/api/twilio-webhook/openai-inbound-fallback` continuity URL. With
 no approved OpenAI-generated outage speech committed, that path plays only the
 existing non-speech transfer chime before a configured human transfer; otherwise
@@ -171,7 +171,7 @@ after a short request deadline is not suitable.
   `WIRELINE_VOICE_WORKER_SECRET` of at least 32 bytes on Vercel. Put the same
   service secret on the worker. Neither value belongs in browser code.
 - The worker needs the reviewed production database connection, tenant JWT/token
-  secrets, OpenAI SIP configuration, canonical `APP_URL=https://botbound.me`,
+  secrets, OpenAI SIP configuration, canonical `APP_URL=https://botbound.app`,
   Twilio credentials, vault key, and credentials required by its approved Bot
   tools. These remain server-side. Do not set `VERCEL=1` on the worker; its
   entrypoint selects the worker role and prevents forwarding loops.

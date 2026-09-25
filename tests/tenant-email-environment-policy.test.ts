@@ -82,13 +82,13 @@ describe("tenant email account-environment policy", () => {
         userId: "demo-user",
         to: "owner@example.com",
         amountDisplay: "$10.00",
-        updateCardUrl: "https://botbound.me/settings/billing",
+        updateCardUrl: "https://botbound.app/settings/billing",
       }),
       sendTrialEndingSoonEmail({
         userId: "demo-user",
         to: "owner@example.com",
         daysLeft: 3,
-        checkoutUrl: "https://botbound.me/pricing",
+        checkoutUrl: "https://botbound.app/pricing",
       }),
     ]);
 

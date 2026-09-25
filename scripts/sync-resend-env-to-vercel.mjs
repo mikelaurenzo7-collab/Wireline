@@ -20,8 +20,8 @@
  *   $env:RESEND_WEBHOOK_SECRET = "whsec_..."   # from the Resend webhook page
  *   # Optional when rotating/configuring the production sender:
  *   $env:RESEND_API_KEY = "re_..."
- *   $env:RESEND_FROM_EMAIL = "BotBound <noreply@botbound.me>"
- *   # or: $env:RESEND_FROM_DOMAIN = "botbound.me"
+ *   $env:RESEND_FROM_EMAIL = "BotBound <noreply@botbound.app>"
+ *   # or: $env:RESEND_FROM_DOMAIN = "botbound.app"
  *   node scripts/sync-resend-env-to-vercel.mjs
  */
 import { TEAM_ID, PROJECT_ID } from "./lib/vercel-project.mjs";
@@ -55,8 +55,8 @@ function assertBotBoundSender(value, key) {
     );
     process.exit(1);
   }
-  if (domain !== "botbound.me" && !domain.endsWith(".botbound.me")) {
-    console.error(`${key} must use botbound.me or a verified BotBound subdomain.`);
+  if (domain !== "botbound.app" && !domain.endsWith(".botbound.app")) {
+    console.error(`${key} must use botbound.app or a verified BotBound subdomain.`);
     process.exit(1);
   }
 }

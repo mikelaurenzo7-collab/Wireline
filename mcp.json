@@ -3,7 +3,7 @@
   "mcpServers": {
     "wireline": {
       "type": "streamable-http",
-      "url": "https://botbound.me/mcp"
+      "url": "https://botbound.app/mcp"
     }
   }
 }

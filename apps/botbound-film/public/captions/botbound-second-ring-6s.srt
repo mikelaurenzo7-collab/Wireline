@@ -17,4 +17,4 @@ BotBound. The call still gets answered.
 
 5
 00:00:04,700 --> 00:00:05,950
-botbound.me
+botbound.app

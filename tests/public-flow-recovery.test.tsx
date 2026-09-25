@@ -126,7 +126,7 @@ beforeEach(() => {
   vi.stubGlobal("navigator", { clipboard: { writeText } });
   vi.stubGlobal("document", { getElementById: () => ({ scrollIntoView }) });
   vi.stubGlobal("window", {
-    location: { origin: "https://botbound.me", hash: "#mcp-endpoint", assign },
+    location: { origin: "https://botbound.app", hash: "#mcp-endpoint", assign },
     history: { state: null, replaceState },
     setTimeout,
     clearTimeout,
@@ -158,7 +158,7 @@ describe("developer endpoint copying", () => {
     );
     mount();
     const copying = button("Copy Endpoint")!.props.onClick!();
-    expect(writeText).toHaveBeenCalledWith("https://botbound.me/mcp");
+    expect(writeText).toHaveBeenCalledWith("https://botbound.app/mcp");
     expect(button("Copying…")?.props.disabled).toBe(true);
     expect(text(render())).not.toContain("Endpoint copied.");
     finish();

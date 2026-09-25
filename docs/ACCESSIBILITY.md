@@ -55,7 +55,7 @@ operator-facing surfaces.
 
 If you encounter an accessibility barrier:
 
-1. **Email:** support@botbound.me (subject: "Accessibility")
+1. **Email:** support@botbound.app (subject: "Accessibility")
 2. **Phone:** Call (630) 642-5661 and tell Sarah about the issue
 3. **In-app:** Help Center → Report Accessibility Issue
 

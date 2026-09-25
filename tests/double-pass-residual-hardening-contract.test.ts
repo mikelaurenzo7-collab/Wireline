@@ -10,7 +10,7 @@ describe("double-pass residual hardening", () => {
       const source = read(path);
       expect(source).toContain("responseStatus = response.status");
       expect(source).toContain("responseStatus !== null && responseStatus >= 500");
-      expect(source).toContain("mailto:support@botbound.me");
+      expect(source).toContain("mailto:support@botbound.app");
       expect(source).not.toContain("support@trywireline.com");
     }
   });
@@ -24,7 +24,7 @@ describe("double-pass residual hardening", () => {
       "src/pages/Pricing.tsx",
     ]) {
       const source = read(path);
-      expect(source).toContain("support@botbound.me");
+      expect(source).toContain("support@botbound.app");
       expect(source).not.toContain("support@trywireline.com");
     }
   });

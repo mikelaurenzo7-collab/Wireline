@@ -39,7 +39,7 @@ describe("Stripe customer-facing product truth", () => {
   // Product statement descriptors are subscription-only in Stripe. Runtime
   // Balance is a one-time payment, so only recurring products are policed here.
   it("fails live audits when product URLs or recurring statement identity drift", () => {
-    expect(audit).toContain('EXPECTED_PRODUCT_URL = "https://botbound.me/pricing"');
+    expect(audit).toContain('EXPECTED_PRODUCT_URL = "https://botbound.app/pricing"');
     expect(audit).toContain('EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "BOTBOUND"');
     expect(audit).not.toContain("https://trywireline.com/pricing");
     expect(audit).not.toContain('EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "WIRELINE"');

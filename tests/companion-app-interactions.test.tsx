@@ -151,14 +151,14 @@ describe("companion app setup interactions", () => {
       nodes.some((node) => node.props.role === "alert" && text(node).includes("manually")),
     ).toBe(true);
     expect(
-      nodes.some((node) => node.type === "code" && text(node) === "https://botbound.me/mcp"),
+      nodes.some((node) => node.type === "code" && text(node) === "https://botbound.app/mcp"),
     ).toBe(true);
     expect(
       nodes.find((node) => node.props.role === "status") &&
         text(nodes.find((node) => node.props.role === "status")),
     ).toBe("");
     nodes = await clickCopy();
-    expect(writeText).toHaveBeenLastCalledWith("https://botbound.me/mcp");
+    expect(writeText).toHaveBeenLastCalledWith("https://botbound.app/mcp");
     expect(nodes.some((node) => node.props.role === "alert")).toBe(false);
     expect(text(nodes.find((node) => node.props.role === "status"))).toBe("MCP URL copied.");
   });

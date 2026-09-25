@@ -4,7 +4,7 @@ This root path is retained for legacy links, development-tool discovery, and dep
 
 ## Required operating posture
 
-- The prepared migration serves `botbound.me` directly from the Render Node 22 web/API service, with a separate Render voice worker and the existing Supabase database. Attach the canonical domain to Render and migrate its authoritative DNS away from Vercel as documented in the runbook. Until cutover is verified, `revaluate/botbound` remains the only permitted legacy Vercel project; do not create a duplicate. `trywireline.com` is a temporary compatibility origin for registered callback drains only.
+- The prepared migration serves `botbound.app` directly from the Render Node 22 web/API service, with a separate Render voice worker and the existing Supabase database. Attach the canonical domain to Render and migrate its authoritative DNS away from Vercel as documented in the runbook. Until cutover is verified, `revaluate/botbound` remains the only permitted legacy Vercel project; do not create a duplicate. `trywireline.com` is a temporary compatibility origin for registered callback drains only.
 - The historical duplicate project produced a red **Vercel – workspace** status; do not copy production secrets into another project to silence it.
 - Production deploys come from the exact reviewed commit fast-forwarded to `main`; verify that same SHA, migrations, aliases, health, and runtime errors.
 - Preview credentials must be sandbox-only or unset, and previews must not migrate the shared production database.

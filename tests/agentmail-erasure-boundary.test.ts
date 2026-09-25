@@ -35,7 +35,7 @@ describe("managed AgentMail lifecycle boundary", () => {
       return {
         status: 200,
         body: {
-          inboxes: [{ inbox_id: `inbox-${page}`, email: `bot-${page}@botbound.me` }],
+          inboxes: [{ inbox_id: `inbox-${page}`, email: `bot-${page}@botbound.app` }],
           ...(page < 11 ? { next_page_token: `p${page + 1}` } : {}),
         },
       };
@@ -44,7 +44,7 @@ describe("managed AgentMail lifecycle boundary", () => {
     const inboxes = await listAgentMailInboxes("credential", request);
 
     expect(inboxes).toHaveLength(12);
-    expect(inboxes.at(-1)).toEqual({ inboxId: "inbox-11", email: "bot-11@botbound.me" });
+    expect(inboxes.at(-1)).toEqual({ inboxId: "inbox-11", email: "bot-11@botbound.app" });
     expect(request).toHaveBeenCalledTimes(12);
   });
 
@@ -78,13 +78,13 @@ describe("managed AgentMail lifecycle boundary", () => {
   });
 
   it("proves the active key owns the exact verified managed domain", async () => {
-    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "@BOTS.BOTBOUND.ME");
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "@BOTS.BOTBOUND.APP");
     const request = vi.fn(async (_credential: string, path: string) => {
       if (path === "/domains?limit=100") {
         return {
           status: 200,
           body: {
-            domains: [{ domain_id: "domain-botbound", domain: "bots.botbound.me" }],
+            domains: [{ domain_id: "domain-botbound", domain: "bots.botbound.app" }],
           },
         };
       }
@@ -93,7 +93,7 @@ describe("managed AgentMail lifecycle boundary", () => {
           status: 200,
           body: {
             domain_id: "domain-botbound",
-            domain: "bots.botbound.me",
+            domain: "bots.botbound.app",
             status: "VERIFIED",
           },
         };
@@ -108,7 +108,7 @@ describe("managed AgentMail lifecycle boundary", () => {
   });
 
   it("rejects an empty or unverified domain inventory from the active key", async () => {
-    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bots.botbound.me");
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bots.botbound.app");
     await expect(
       verifyManagedAgentMailDomainIdentity("credential", async () => ({
         status: 200,
@@ -122,14 +122,14 @@ describe("managed AgentMail lifecycle boundary", () => {
           ? {
               status: 200,
               body: {
-                domains: [{ domain_id: "domain-botbound", domain: "bots.botbound.me" }],
+                domains: [{ domain_id: "domain-botbound", domain: "bots.botbound.app" }],
               },
             }
           : {
               status: 200,
               body: {
                 domain_id: "domain-botbound",
-                domain: "bots.botbound.me",
+                domain: "bots.botbound.app",
                 status: "PENDING",
               },
             },
@@ -137,10 +137,28 @@ describe("managed AgentMail lifecycle boundary", () => {
     ).rejects.toThrow("is not verified under the active organization");
   });
 
+  it("verifies the stored legacy domain rather than substituting the new provisioning domain", async () => {
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bots.botbound.app");
+    const request = vi.fn(async (_credential: string, path: string) => ({
+      status: 200,
+      body: path.startsWith("/domains?")
+        ? { domains: [{ domain_id: "legacy", domain: "bots.botbound.me" }] }
+        : { domain_id: "legacy", domain: "bots.botbound.me", status: "VERIFIED" },
+    }));
+    await expect(
+      verifyManagedAgentMailDomainIdentity("credential", request, "bots.botbound.me"),
+    ).resolves.toBeUndefined();
+    expect(request).toHaveBeenLastCalledWith("credential", "/domains/legacy");
+    await expect(
+      verifyManagedAgentMailDomainIdentity("credential", request, "botbound.me.attacker.example"),
+    ).rejects.toThrow("missing or invalid");
+    expect(request).toHaveBeenCalledTimes(2);
+  });
+
   it("deletes only exact managed inboxes and never touches BYO AgentMail", async () => {
     const deleteInbox = vi.fn(async () => "deleted" as const);
     const listInboxes = vi.fn(async () => [
-      { inboxId: "managed-id", email: "bot@botbound.me" },
+      { inboxId: "managed-id", email: "bot@botbound.app" },
       { inboxId: "byo-id", email: "owner@example.com" },
     ]);
 
@@ -149,7 +167,7 @@ describe("managed AgentMail lifecycle boundary", () => {
         [
           {
             provider: "agentmail",
-            emailAddress: "BOT@BOTBOUND.ME",
+            emailAddress: "BOT@BOTBOUND.APP",
             accessToken: "encrypted-managed",
             oauthGrantedScopes: "imap managed-botbound webhook",
           },
@@ -183,7 +201,7 @@ describe("managed AgentMail lifecycle boundary", () => {
   it("blocks local erasure when managed ownership or provider deletion cannot be proved", async () => {
     const managedAccount = {
       provider: "agentmail",
-      emailAddress: "bot@botbound.me",
+      emailAddress: "bot@botbound.app",
       accessToken: "encrypted-managed",
       oauthGrantedScopes: "managed-botbound",
     };
@@ -199,7 +217,7 @@ describe("managed AgentMail lifecycle boundary", () => {
       eraseManagedAgentMailInboxesForPurge([managedAccount], {
         decryptAccessToken: () => AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
         verifyManagedDomain: async () => undefined,
-        listInboxes: async () => [{ inboxId: "managed-id", email: "bot@botbound.me" }],
+        listInboxes: async () => [{ inboxId: "managed-id", email: "bot@botbound.app" }],
         deleteInbox: async () => {
           throw new Error("provider unavailable");
         },
@@ -214,7 +232,7 @@ describe("managed AgentMail lifecycle boundary", () => {
         [
           {
             provider: "agentmail",
-            emailAddress: "bot@botbound.me",
+            emailAddress: "bot@botbound.app",
             accessToken: "encrypted-managed",
             oauthGrantedScopes: "managed-botbound",
           },
@@ -229,6 +247,47 @@ describe("managed AgentMail lifecycle boundary", () => {
       ),
     ).rejects.toThrow("wrong organization");
     expect(listInboxes).not.toHaveBeenCalled();
+  });
+
+  it("verifies every stored domain before reconciling a mixed-domain purge", async () => {
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bots.botbound.app");
+    const accounts = ["new@bots.botbound.app", "old@botbound.me", "other@botbound.me"].map(
+      (emailAddress) => ({
+        provider: "agentmail",
+        emailAddress,
+        accessToken: "encrypted-managed",
+        oauthGrantedScopes: "managed-botbound",
+      }),
+    );
+    const verifyManagedDomain = vi.fn(async (_credential: string, domain: string) => {
+      if (domain === "botbound.me") throw new AgentMailConnectError("legacy domain unavailable");
+    });
+    const listInboxes = vi.fn(async () => []);
+    const deleteInbox = vi.fn(async () => "deleted" as const);
+    await expect(
+      eraseManagedAgentMailInboxesForPurge(accounts, {
+        decryptAccessToken: () => AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
+        verifyManagedDomain,
+        listInboxes,
+        deleteInbox,
+      }),
+    ).rejects.toThrow("legacy domain unavailable");
+    expect(verifyManagedDomain.mock.calls.map((call) => call[1])).toEqual([
+      "bots.botbound.app",
+      "botbound.me",
+    ]);
+    expect(listInboxes).not.toHaveBeenCalled();
+    expect(deleteInbox).not.toHaveBeenCalled();
+
+    verifyManagedDomain.mockImplementation(async () => undefined);
+    await expect(
+      eraseManagedAgentMailInboxesForPurge(accounts, {
+        decryptAccessToken: () => AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL,
+        verifyManagedDomain,
+        listInboxes,
+        deleteInbox,
+      }),
+    ).resolves.toEqual({ managedAccountsReconciled: 3, inboxesDeleted: 0 });
   });
 
   it("reserves the exact managed address before provider creation and erases it before local purge", () => {

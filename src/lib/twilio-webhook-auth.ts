@@ -54,6 +54,7 @@ function resolveTwilioRequestUrl(req: Request): string | null {
     const canonical = resolveCanonicalAppUrl();
     const allowedOrigins = [
       ...("error" in canonical ? [] : [canonical.url]),
+      "https://botbound.me",
       LEGACY_PRODUCTION_ORIGIN,
     ]
       .map((origin) => normalizedOrigin(origin))

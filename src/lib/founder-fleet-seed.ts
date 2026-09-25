@@ -89,7 +89,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     firstMessage: "Hi, Jordan here with BotBound. What can I help you with today?",
     team: "support",
     personalityVibe: "warm",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-marcus",
@@ -101,7 +101,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
       "Hi, this is Marcus with BotBound. I can get a walkthrough on the calendar. What's your name?",
     team: "front_door",
     personalityVibe: "authoritative",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-diana",
@@ -113,7 +113,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
       "Diana with BotBound. A couple of quick questions so I route you to the right person. May I have your name?",
     team: "revenue",
     personalityVibe: "authoritative",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-aisha",
@@ -125,7 +125,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
       "Hey, Aisha with BotBound partnerships. Are you reselling for clients or running this in your own business?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-elena",
@@ -137,7 +137,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
       "Elena with BotBound account care. I can look at your plan, usage, or renewal. What's going on?",
     team: "retention",
     personalityVibe: "warm",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-jake",
@@ -148,7 +148,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     firstMessage: "Hey, Jake with BotBound. Who am I speaking with?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-billing",
@@ -170,7 +170,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
       "Hi, this is BotBound. You're talking to a voice Bot right now. Got a quick minute?",
     team: "revenue",
     personalityVibe: "playful",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-growth-email",
@@ -183,7 +183,7 @@ export const FOUNDER_FLEET_TEMPLATES: AssistantAgentTemplate[] = [
     personalityVibe: "playful",
     emailAgentTone: "Friendly",
     emailSignature: "The BotBound Team",
-    websiteUrl: "https://botbound.me",
+    websiteUrl: "https://botbound.app",
   },
   {
     id: "founder-tier2",

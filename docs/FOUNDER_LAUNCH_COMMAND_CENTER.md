@@ -72,7 +72,7 @@ These are real external readiness items, not reasons to rewrite working product 
 
 Verify signed delivery feedback through both controls:
 
-1. Resend has a production webhook pointing at `https://botbound.me/api/webhooks/resend`;
+1. Resend has a production webhook pointing at `https://botbound.app/api/webhooks/resend`;
 2. `RESEND_WEBHOOK_SECRET` is set in production Vercel.
 
 The receiver, schema, suppression semantics, and rollback path are already implemented. See `docs/RESEND_DELIVERY_FEEDBACK.md`.
@@ -82,7 +82,7 @@ The receiver, schema, suppression semantics, and rollback path are already imple
 Verify paid Bot mailbox provisioning against all of these controls:
 
 1. an organization-scoped `AGENTMAIL_API_KEY` has the required inbox, message, webhook, and domain-read permissions;
-2. `AGENTMAIL_DEFAULT_DOMAIN` is `botbound.me` or a verified BotBound subdomain;
+2. `AGENTMAIL_DEFAULT_DOMAIN` is `botbound.app` or a verified BotBound subdomain;
 3. `npm run vendor:readiness` reports AgentMail ready; and
 4. a controlled Bot passes outbound send, inbound receive, signed webhook, and reply proof on the
    configured verified BotBound domain.

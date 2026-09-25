@@ -84,7 +84,7 @@ for (const { route, title } of PRERENDERED_HEAD) {
 
     const html = await response.text();
     expect(html).toContain(`<title>${title}</title>`);
-    expect(html).toContain(`<link rel="canonical" href="https://botbound.me${route}" />`);
+    expect(html).toContain(`<link rel="canonical" href="https://botbound.app${route}" />`);
   });
 }
 

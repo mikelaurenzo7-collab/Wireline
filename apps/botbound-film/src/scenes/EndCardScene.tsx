@@ -111,7 +111,7 @@ export const EndCardScene: React.FC<{ bumper?: boolean }> = ({ bumper = false })
             }),
           }}
         >
-          botbound.me
+          botbound.app
         </Interactive.Div>
       </div>
       <div

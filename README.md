@@ -58,7 +58,7 @@ npm run verify
 npm run verify:full
 npm run verify:contracts
 node apps/browser-extension/scripts/build.mjs --check
-node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 ```
 
 Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.

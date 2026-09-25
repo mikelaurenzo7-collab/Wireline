@@ -147,7 +147,7 @@ const required = [
   ],
   [
     "AGENTMAIL_DEFAULT_DOMAIN",
-    "Verified botbound.me domain or subdomain for managed Bot mailboxes",
+    "Verified botbound.app domain or subdomain for managed Bot mailboxes",
     process.env.AGENTMAIL_DEFAULT_DOMAIN,
   ],
   [
@@ -236,14 +236,14 @@ const retiredVoiceEnvKeys = [
 ];
 
 const formatHints = new Map([
-  ["APP_URL", "https://botbound.me (exactly; no path, port, credentials, or trailing slash)"],
-  ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.me (exactly)"],
+  ["APP_URL", "https://botbound.app (exactly; no path, port, credentials, or trailing slash)"],
+  ["TWILIO_WEBHOOK_BASE_URL", "https://botbound.app (exactly)"],
   ["POSTGRES_URL", "postgresql://user:pass@host:port/db (host must be dotted, localhost, or IP)"],
   ["DATABASE_POOL_URL", "postgresql://user:pass@pooler-host:6543/db"],
   ["TWILIO_ACCOUNT_SID", "AC followed by 32 hexadecimal characters"],
   ["TWILIO_API_KEY", "SK followed by 32 hexadecimal characters"],
   ["FEDERAL_DNC_API_URL", "https://vendor.example/api/dnc-check"],
-  ["AGENTMAIL_DEFAULT_DOMAIN", "botbound.me or a subdomain such as mail.botbound.me"],
+  ["AGENTMAIL_DEFAULT_DOMAIN", "botbound.app or a subdomain such as mail.botbound.app"],
 ]);
 
 function configuredValue([key, _description, value]) {
@@ -253,7 +253,7 @@ function configuredValue([key, _description, value]) {
 function isValidEnvValue(key, value) {
   if (!value) return true;
   if (key === "APP_URL" || key === "TWILIO_WEBHOOK_BASE_URL") {
-    return String(value) === "https://botbound.me";
+    return String(value) === "https://botbound.app";
   }
   if (key === "POSTGRES_URL" || key === "DATABASE_POOL_URL") {
     return isPostgresConnectionString(value);
@@ -280,7 +280,7 @@ function isValidEnvValue(key, value) {
   if (key === "VITE_STRIPE_PUBLIC_KEY") return /^pk_live_/.test(String(value).trim());
   if (key === "AGENTMAIL_DEFAULT_DOMAIN") {
     const domain = String(value).trim().toLowerCase().replace(/^@/, "");
-    return domain === "botbound.me" || domain.endsWith(".botbound.me");
+    return domain === "botbound.app" || domain.endsWith(".botbound.app");
   }
   if (key === "WIRELINE_RECONCILE_STRIPE_PORTAL") {
     return String(value).trim().toLowerCase() === "true";

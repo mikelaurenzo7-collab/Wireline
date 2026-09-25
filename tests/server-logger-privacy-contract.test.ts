@@ -13,7 +13,7 @@ describe("production logger privacy", () => {
     const safe = sanitizeLogFieldsForProduction({
       route: "/reset-password?token=fake_reset_secret&source=email",
       nested: [
-        { stackTop: "at https://botbound.me/oauth-complete?code=fake_oauth_code:1:2" },
+        { stackTop: "at https://botbound.app/oauth-complete?code=fake_oauth_code:1:2" },
         { detail: "Basic ZmFrZTpmYWtl" },
       ],
     });

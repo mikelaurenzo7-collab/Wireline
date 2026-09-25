@@ -5,6 +5,15 @@ const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   agent: true,
   phone: "+12025550123" as string | null,
+  accounts: [] as Array<{
+    id: string;
+    emailAddress: string;
+    oauthGrantedScopes: string;
+    refreshToken: string | null;
+  }>,
+  inboxes: vi.fn(),
+  verifyCredentials: vi.fn(),
+  ensureWebhook: vi.fn(),
   beforeFence: undefined as (() => void) | undefined,
   ensure: vi.fn(),
   eligible: vi.fn(),
@@ -61,7 +70,7 @@ vi.mock("../src/lib/server-context", () => ({
                 ? h.phone
                   ? [{ phoneNumber: h.phone }]
                   : []
-                : [],
+                : h.accounts,
           ).then(resolve),
       };
       return query;
@@ -77,17 +86,17 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   AGENTMAIL_API_BASE: "https://api.example.test",
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
   AgentMailConnectError: class extends Error {},
-  agentmailLocalPart: h.mutate,
+  agentmailLocalPart: (email: string) => email.split("@")[0],
   agentmailGrantedScopes: h.mutate,
   deleteAgentMailWebhook: h.mutate,
   deleteAgentMailWebhooksForAccount: h.mutate,
-  ensureAgentMailWebhook: h.mutate,
-  hasExactAgentMailManagedScope: () => false,
-  listAgentMailInboxes: h.mutate,
+  ensureAgentMailWebhook: h.ensureWebhook,
+  hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
+  listAgentMailInboxes: h.inboxes,
   listAgentMailWebhooks: h.mutate,
   normalizeAgentMailInbox: h.mutate,
   resolveAgentMailInbox: h.mutate,
-  verifyAgentMailCredentials: h.mutate,
+  verifyAgentMailCredentials: h.verifyCredentials,
   verifyManagedAgentMailDomainIdentity: h.domain,
 }));
 vi.mock("../src/lib/owned-email-account", () => ({
@@ -135,6 +144,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.agent = true;
   h.phone = "+12025550123";
+  h.accounts = [];
   h.beforeFence = undefined;
   h.eligible.mockResolvedValue(["bot"]);
   h.phoneOwned.mockResolvedValue(undefined);
@@ -142,15 +152,18 @@ beforeEach(() => {
   h.ensure.mockResolvedValue({
     eligible: true,
     phone: "+12025550123",
-    email: "bot@botbound.me",
+    email: "bot@botbound.app",
     phoneReused: true,
     emailReused: true,
   });
   h.mutate.mockImplementation(() => {
     throw new Error("Unexpected provider mutation");
   });
+  h.inboxes.mockResolvedValue([]);
+  h.verifyCredentials.mockResolvedValue(undefined);
+  h.ensureWebhook.mockResolvedValue({ webhookId: "existing-hook", secret: null });
   vi.stubEnv("AGENTMAIL_API_KEY", "test-only-key");
-  vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.me");
+  vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.app");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -163,7 +176,11 @@ describe("shared web identity reconciliation", () => {
       ["agent.user", "tenant"],
     ]);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ ok: true, email: "bot@botbound.me", phone_number: "+12025550123" }),
+      expect.objectContaining({
+        ok: true,
+        email: "bot@botbound.app",
+        phone_number: "+12025550123",
+      }),
     );
     expect(h.mutate).not.toHaveBeenCalled();
   });
@@ -186,6 +203,55 @@ describe("shared web identity reconciliation", () => {
 });
 
 describe("compatibility mailbox admission", () => {
+  it.each(["bots.botbound.app", "bots.botbound.me"])(
+    "reconciles a legacy mailbox while provisioning uses %s",
+    async (configuredDomain) => {
+      vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", configuredDomain);
+      h.accounts = [
+        {
+          id: "mailbox",
+          emailAddress: "existing@bots.botbound.me",
+          oauthGrantedScopes: "managed",
+          refreshToken: "stored-secret",
+        },
+      ];
+      h.inboxes.mockResolvedValue([
+        { inboxId: "legacy-inbox", email: "existing@bots.botbound.me" },
+      ]);
+      const res = await invoke("managed-mailbox");
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ email: "existing@bots.botbound.me", reused: true }),
+      );
+      expect(h.domain).toHaveBeenCalledWith("test-only-key", undefined, "bots.botbound.me");
+      expect(h.ensureWebhook).toHaveBeenCalledWith(
+        expect.objectContaining({ inboxId: "legacy-inbox", hasStoredSecret: true }),
+      );
+      expect(h.mutate).not.toHaveBeenCalled();
+    },
+  );
+  it("does not recreate a missing legacy mailbox", async () => {
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "existing@bots.botbound.me",
+        oauthGrantedScopes: "managed",
+        refreshToken: "stored-secret",
+      },
+    ];
+    await expect(invoke("managed-mailbox")).rejects.toMatchObject({ status: 503 });
+    expect(h.mutate).not.toHaveBeenCalled();
+    expect(h.ensureWebhook).not.toHaveBeenCalled();
+  });
+  it.each(["bots.botbound.me", "notbotbound.app", "bad..botbound.app"])(
+    "blocks new provisioning on %s",
+    async (domain) => {
+      vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", domain);
+      await expect(invoke("managed-mailbox")).rejects.toMatchObject({ status: 503 });
+      expect(h.domain).not.toHaveBeenCalled();
+      expect(h.mutate).not.toHaveBeenCalled();
+    },
+  );
   it("rejects trialing, private, or excess-capacity Bots excluded by the shared roster", async () => {
     h.eligible.mockResolvedValue([]);
     await expect(invoke("managed-mailbox")).rejects.toMatchObject({ code: "ACTIVATION_REQUIRED" });

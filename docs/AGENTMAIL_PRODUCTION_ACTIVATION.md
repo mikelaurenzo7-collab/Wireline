@@ -1,28 +1,24 @@
 # AgentMail Production Activation
 
-Status: **Active and verified**  
-Last reconciled: **August 31, 2026**
+Status: **botbound.app cutover in progress**
+Last reconciled: **September 25, 2026**
 
-This runbook covers BotBound-managed AgentMail inboxes for paid Bots. Transactional product email is sent through Resend and follows the same `botbound.me` identity, but it is a separate provider plane.
+AgentMail hosts BotBound-managed inboxes. Resend sends transactional product email. Google Workspace is not required and is not part of this deployment.
 
-## Verified production state
+## Domain transition
 
-- `botbound.me` and `bots.botbound.me` are verified BotBound domains.
-- The intentional shared mailboxes are `support@botbound.me`, `security@botbound.me`, `dmarc@botbound.me`, and `unsubscribe@botbound.me`.
-- Gmail-to-support inbound delivery works.
-- Support reply delivery works in the same AgentMail thread.
-- Google DMARC aggregate reports reach the dedicated DMARC inbox.
-- The placeholder AgentMail inbox has been removed.
-- Resend has a verified `botbound.me` sending domain and an enabled negative-delivery webhook.
-- Production transactional fallback is `BotBound <noreply@botbound.me>`.
-- `trywireline.com` may remain verified only as a deliberate rollback asset. It is not the runtime fallback and must not be used for new paid Bot identities.
+The new target is `botbound.app` with `bots.botbound.app` for paid Bot identities. Configure and verify the new DNS records before changing `AGENTMAIL_DEFAULT_DOMAIN` on Render. The intended shared addresses are `support@botbound.app`, `security@botbound.app`, `dmarc@botbound.app` and `unsubscribe@botbound.app`.
+
+Historical delivery proof from August 31, 2026 applies to `botbound.me` and `bots.botbound.me`: support inbound and replies, DMARC reports, and Resend sending were verified then. That evidence does not establish delivery on the new domain. Preserve existing inboxes and messages; inspect stored account identities before any mailbox migration. Existing webhook URLs require individual reconciliation with the new public origin and their stored signing secrets.
+
+Require fresh domain verification, inbound support delivery, a same-thread reply, transactional delivery and unsubscribe handling on `botbound.app` before opening paid email provisioning or checkout. Neither `botbound.me` nor `trywireline.com` is a fallback for new paid Bot identities.
 
 ## Production boundary
 
 BotBound provisions each eligible paid Bot a managed AgentMail inbox. Production requires:
 
 - `AGENTMAIL_API_KEY`: server-only and organization-scoped;
-- `AGENTMAIL_DEFAULT_DOMAIN`: exactly `botbound.me` or a verified BotBound subdomain such as `bots.botbound.me`;
+- `AGENTMAIL_DEFAULT_DOMAIN`: exactly `botbound.app` or a verified BotBound subdomain such as `bots.botbound.app`;
 - no shared `AGENTMAIL_WEBHOOK_SECRET`: BotBound creates a webhook per mailbox account and stores its AgentMail/Svix signing secret encrypted on that account row.
 
 Keep AgentMail credentials Production-only. Preview and development must not receive the live key. New managed mailboxes fail closed when the key, required permissions, or verified BotBound domain is unavailable. They never fall back to `@agentmail.to`.
@@ -43,7 +39,7 @@ Require AgentMail status `ready`. The probe must confirm:
 - required inbox, message, webhook, and domain permissions exist;
 - the configured default domain belongs to the organization;
 - the domain status is `VERIFIED`;
-- the default domain is under `botbound.me`.
+- the default domain is under `botbound.app`.
 
 The release-wide read-only provider gate is:
 
@@ -52,7 +48,7 @@ WIRELINE_RECONCILE_STRIPE_PORTAL=true \
   node scripts/run-release-provider-preflight.mjs
 ```
 
-Do not place inbox creation, message sending, or webhook mutation inside a Vercel build.
+Do not place inbox creation, message sending, or webhook mutation inside a deployment build.
 
 ## Paid Bot identity reconciliation
 
@@ -82,7 +78,7 @@ Use `--apply` only when all of the following are true:
 Re-run the dry run afterward and require zero missing identities. For each active mailbox, verify the stored webhook targets:
 
 ```text
-https://botbound.me/api/webhooks/agentmail/:accountId
+https://botbound.app/api/webhooks/agentmail/:accountId
 ```
 
 Then prove signed inbound delivery using a controlled non-sensitive message.
@@ -119,8 +115,8 @@ Never request a customer's production API key through ordinary email or chat.
 
 Daily or alert-driven operations should include:
 
-- triage `support@botbound.me` and preserve response ownership;
-- review `security@botbound.me` without forwarding sensitive material into unsecured channels;
+- triage `support@botbound.app` and preserve response ownership;
+- review `security@botbound.app` without forwarding sensitive material into unsecured channels;
 - process DMARC reports and investigate authentication regressions;
 - process unsubscribe requests promptly and verify suppression state;
 - monitor AgentMail capacity and failed identity jobs;

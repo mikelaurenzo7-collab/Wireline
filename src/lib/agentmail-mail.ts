@@ -5,6 +5,10 @@ import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
 import { decryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
+import {
+  existingManagedEmailDomain,
+  isBotBoundManagedEmailDomain,
+} from "./managed-agentmail-domain";
 
 export const AGENTMAIL_API_BASE = "https://api.agentmail.to/v0";
 export const AGENTMAIL_IMAP_HOST = "imap.agentmail.to";
@@ -236,20 +240,20 @@ export async function deleteAgentMailInbox(
 
 type ManagedAgentMailErasureDeps = {
   decryptAccessToken: (encrypted: string) => string;
-  verifyManagedDomain: (credential: string) => Promise<void>;
+  verifyManagedDomain: (credential: string, domain: string) => Promise<void>;
   listInboxes: (credential: string) => Promise<AgentMailInbox[]>;
   deleteInbox: (credential: string, inboxId: string) => Promise<"deleted" | "already_absent">;
 };
 
-function configuredManagedAgentMailDomain(): string {
-  const domain = String(process.env.AGENTMAIL_DEFAULT_DOMAIN || "")
+function configuredManagedAgentMailDomain(domainOverride?: string): string {
+  const domain = String(domainOverride ?? process.env.AGENTMAIL_DEFAULT_DOMAIN ?? "")
     .trim()
     .toLowerCase()
     .replace(/^@/, "");
   const syntacticallyValid =
     domain.includes(".") &&
     /^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/.test(domain) &&
-    (domain === "botbound.me" || domain.endsWith(".botbound.me"));
+    isBotBoundManagedEmailDomain(domain, true);
   if (!syntacticallyValid) {
     throw new AgentMailConnectError(
       "The BotBound managed AgentMail domain is missing or invalid; mailbox cleanup was deferred.",
@@ -267,8 +271,9 @@ function configuredManagedAgentMailDomain(): string {
 export async function verifyManagedAgentMailDomainIdentity(
   credential: string,
   request: AgentMailJsonRequester = agentMailJson,
+  domainOverride?: string,
 ): Promise<void> {
-  const configuredDomain = configuredManagedAgentMailDomain();
+  const configuredDomain = configuredManagedAgentMailDomain(domainOverride);
   const seenPageTokens = new Set<string>();
   let pageToken: string | undefined;
   let matchedDomainId: string | null = null;
@@ -365,10 +370,14 @@ export async function eraseManagedAgentMailInboxesForPurge(
   }
 
   const decryptAccessToken = overrides.decryptAccessToken ?? decryptSecret;
-  const verifyManagedDomain = overrides.verifyManagedDomain ?? verifyManagedAgentMailDomainIdentity;
+  const verifyManagedDomain =
+    overrides.verifyManagedDomain ??
+    ((credential: string, domain: string) =>
+      verifyManagedAgentMailDomainIdentity(credential, undefined, domain));
   const listInboxes = overrides.listInboxes ?? listAgentMailInboxes;
   const deleteInbox = overrides.deleteInbox ?? deleteAgentMailInbox;
   const wantedAddresses: string[] = [];
+  const wantedDomains = new Set<string>();
 
   // Validate every local ownership pointer before touching the provider. A
   // marker/sentinel contradiction is configuration corruption, not a BYO
@@ -393,17 +402,21 @@ export async function eraseManagedAgentMailInboxesForPurge(
       );
     }
     const address = account.emailAddress.trim().toLowerCase();
-    if (!address) {
+    const domain = existingManagedEmailDomain(address);
+    if (!domain) {
       throw new AgentMailConnectError(
-        "A managed AgentMail inbox is missing its email address; mailbox cleanup was deferred.",
+        "A managed AgentMail inbox has a missing or invalid email domain; mailbox cleanup was deferred.",
       );
     }
     wantedAddresses.push(address);
+    wantedDomains.add(domain);
   }
 
   // Prove the active key still belongs to the exact organization/domain before
   // treating even a valid empty inbox inventory as authoritative.
-  await verifyManagedDomain(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL);
+  for (const domain of wantedDomains) {
+    await verifyManagedDomain(AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL, domain);
+  }
 
   // One complete, identity-proven organization inventory is authoritative for
   // every managed pointer. listAgentMailInboxes follows all pages and fails
@@ -605,7 +618,22 @@ function webhookOwnedByAccount(
 ): boolean {
   if (url && webhook.url === url) return true;
   if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
-  return webhook.clientId === AGENTMAIL_WEBHOOK_CLIENT_ID && Boolean(url) && webhook.url === url;
+  if (webhook.clientId !== AGENTMAIL_WEBHOOK_CLIENT_ID) return false;
+  try {
+    const legacyUrl = new URL(webhook.url);
+    return (
+      ["https://botbound.me", "https://www.botbound.me", "https://trywireline.com"].includes(
+        legacyUrl.origin,
+      ) &&
+      !legacyUrl.username &&
+      !legacyUrl.password &&
+      !legacyUrl.search &&
+      !legacyUrl.hash &&
+      legacyUrl.pathname === `/api/webhooks/agentmail/${accountId}`
+    );
+  } catch {
+    return false;
+  }
 }
 
 export async function listAgentMailWebhooks(credential: string): Promise<AgentMailWebhook[]> {
@@ -656,17 +684,20 @@ export async function ensureAgentMailWebhook(input: {
     });
     return null;
   }
-  const existing = (await listAgentMailWebhooks(input.apiKey)).find((webhook) =>
+  const owned = (await listAgentMailWebhooks(input.apiKey)).filter((webhook) =>
     webhookOwnedByAccount(webhook, input.accountId, url),
   );
-  const canReuse =
-    existing &&
-    existing.url === url &&
-    input.hasStoredSecret &&
-    existing.inboxIds.includes(input.inboxId) &&
-    AGENTMAIL_WEBHOOK_EVENT_TYPES.every((eventType) => existing.eventTypes.includes(eventType));
-  if (canReuse && existing) return { webhookId: existing.webhookId, secret: null };
-  if (existing) await deleteAgentMailWebhook(input.apiKey, existing.webhookId);
+  const reusable = owned.find(
+    (webhook) =>
+      webhook.url === url &&
+      input.hasStoredSecret &&
+      webhook.inboxIds.includes(input.inboxId) &&
+      AGENTMAIL_WEBHOOK_EVENT_TYPES.every((eventType) => webhook.eventTypes.includes(eventType)),
+  );
+  for (const webhook of owned) {
+    if (webhook !== reusable) await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
+  }
+  if (reusable) return { webhookId: reusable.webhookId, secret: null };
 
   const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
     method: "POST",

@@ -51,11 +51,11 @@ projects:
               - key: WIRELINE_DEPLOYMENT_ENVIRONMENT
                 value: "production"
               - key: APP_URL
-                value: "https://botbound.me"
+                value: "https://botbound.app"
               - key: CORS_ORIGINS
-                value: "https://botbound.me"
+                value: "https://botbound.app"
               - key: TWILIO_WEBHOOK_BASE_URL
-                value: "https://botbound.me"
+                value: "https://botbound.app"
               - key: WIRELINE_SELF_SERVE_BILLING_ENABLED
                 value: "false"
               - key: WIRELINE_LAUNCH_DEMO_MODE
@@ -75,7 +75,7 @@ projects:
               - key: OPENAI_REALTIME_TRANSCRIBER
                 value: "gpt-4o-mini-transcribe"
               - key: WIRELINE_UNSUBSCRIBE_MAILTO
-                value: "unsubscribe@botbound.me"
+                value: "unsubscribe@botbound.app"
               - key: APNS_ENV
                 value: "production"
 
@@ -84,8 +84,8 @@ projects:
             name: botbound-api
             runtime: node
             region: ohio
-            # Proposed capacity; confirm pricing and load evidence before provisioning.
-            plan: 1c-2g
+            # Initial capacity: $7/month per service; validate call load before scaling.
+            plan: 0.5c-512mb
             numInstances: 1
             autoDeployTrigger: off
             buildCommand: node deploy/render/build.mjs api
@@ -309,7 +309,7 @@ projects:
             name: botbound-voice
             runtime: node
             region: ohio
-            plan: 1c-2g
+            plan: 0.5c-512mb
             numInstances: 1
             autoDeployTrigger: off
             buildCommand: node deploy/render/build.mjs voice

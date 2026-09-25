@@ -36,15 +36,15 @@ ChatGPT conversation
 
 | Endpoint | Purpose |
 | --- | --- |
-| `https://botbound.me/mcp` | Streamable HTTP MCP endpoint |
-| `https://botbound.me/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
-| `https://botbound.me/.well-known/oauth-authorization-server` | BotBound authorization-server metadata |
-| `https://botbound.me/mcp/oauth/authorize` | OAuth authorization and consent screen |
-| `https://botbound.me/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
-| `https://botbound.me/chatgpt-app-privacy.html` | App-specific public privacy notice |
-| `https://botbound.me/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
-| `https://botbound.me/claude-connector.html` | Claude Connector public documentation |
-| `https://botbound.me/cursor-plugin.html` | Cursor plugin public documentation |
+| `https://botbound.app/mcp` | Streamable HTTP MCP endpoint |
+| `https://botbound.app/.well-known/oauth-protected-resource` | OAuth protected-resource metadata |
+| `https://botbound.app/.well-known/oauth-authorization-server` | BotBound authorization-server metadata |
+| `https://botbound.app/mcp/oauth/authorize` | OAuth authorization and consent screen |
+| `https://botbound.app/mcp/oauth/token` | OAuth authorization-code and refresh-token exchange |
+| `https://botbound.app/chatgpt-app-privacy.html` | App-specific public privacy notice |
+| `https://botbound.app/mcp-privacy.html` | Shared MCP connector privacy notice (Claude, ChatGPT, Cursor) |
+| `https://botbound.app/claude-connector.html` | Claude Connector public documentation |
+| `https://botbound.app/cursor-plugin.html` | Cursor plugin public documentation |
 
 ## Customization profile
 
@@ -88,7 +88,7 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 ## Required Vercel environment variables
 
 ```bash
-APP_URL=https://botbound.me
+APP_URL=https://botbound.app
 MCP_OAUTH_TOKEN_PEPPER=
 OPENAI_API_KEY_CHATKIT=
 OPENAI_API_KEY=
@@ -105,7 +105,7 @@ Use Client Identifier Metadata Document registration for ChatGPT. The shared `/m
 Run the public, unauthenticated protocol probe against the deployed environment:
 
 ```bash
-node scripts/check-chatgpt-app-release.mjs --url https://botbound.me
+node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 ```
 
 The probe verifies protected-resource discovery, authorization-server discovery, PKCE S256 and CIMD support, MCP initialization identity `wireline`, the tool inventory, prompts, the account-bound widget resource, Claude host domain metadata, privacy pages, Cursor plugin docs, and the widget's explicit realtime CSP domain. It does not substitute for a real OAuth reviewer flow.

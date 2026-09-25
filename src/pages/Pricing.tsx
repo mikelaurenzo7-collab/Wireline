@@ -143,7 +143,7 @@ const FAQ = [
   ],
   [
     "Can I Cancel or Get a Refund?",
-    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@botbound.me within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
+    "Yes. Paid plans are month to month by default, with no long-term contract. Cancel from BotBound Billing anytime; access continues through the current billing period. Submit a request to support@botbound.app within 30 days of your first paid invoice. We verify the account and transaction before confirming a first-invoice subscription refund.",
   ],
   [
     "What Is the Scale Plan?",
@@ -157,7 +157,7 @@ const pricingJsonLd = {
     {
       "@type": "OfferCatalog",
       name: "BotBound pricing",
-      url: "https://botbound.me/pricing",
+      url: "https://botbound.app/pricing",
       itemListElement: [
         {
           "@type": "Offer",

@@ -69,7 +69,7 @@ describe("page metadata across client navigation", () => {
     PageMeta({ title: "BotBound | Your Next Hire Is a Bot", path: "/" });
     expect(content("robots")).toBe("index, follow, max-image-preview:large, max-snippet:-1");
     expect(content("googlebot")).toBe("index, follow, max-image-preview:large");
-    expect(select('link[rel="canonical"]')?.attributes.get("href")).toBe("https://botbound.me/");
+    expect(select('link[rel="canonical"]')?.attributes.get("href")).toBe("https://botbound.app/");
   });
 
   it("replaces a prerendered Googlebot noindex directive rather than adding a duplicate", () => {
@@ -98,7 +98,7 @@ describe("page metadata across client navigation", () => {
     expect(elements).toHaveLength(count);
     expect(document.title).toBe("Support | BotBound");
     expect(content("description")).toBe("Contact BotBound support.");
-    expect(select('meta[property="og:url"]')?.attributes.get("content")).toBe("https://botbound.me/support");
+    expect(select('meta[property="og:url"]')?.attributes.get("content")).toBe("https://botbound.app/support");
   });
 
   it("clears route-owned structured data when the next page does not supply it", () => {

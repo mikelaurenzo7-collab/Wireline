@@ -50,7 +50,7 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("createAgentMailInbox");
     expect(identity).toContain("domain,");
     expect(identity).toContain('platform: "BotBound"');
-    expect(identity).toContain("must be botbound.me or a BotBound subdomain");
+    expect(identity).toContain("must be botbound.app or a BotBound subdomain");
     expect(identity).toContain("Existing managed mailbox is not on the configured BotBound domain");
     expect(identity).toContain("AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL");
     expect(mail).toContain(

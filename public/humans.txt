@@ -2,7 +2,7 @@
 
 /* TEAM */
   Team: BotBound
-  Site: https://botbound.me
+  Site: https://botbound.app
 
 /* THANKS */
   Every early customer who picked up the phone and trusted an AI

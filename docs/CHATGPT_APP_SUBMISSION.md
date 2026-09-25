@@ -5,11 +5,11 @@
 - **Name:** BotBound
 - **Subtitle:** Build your first Bot
 - **Category:** Business productivity / customer communications
-- **Hosted logo:** `https://botbound.me/botbound-icon-512.png`
-- **Public MCP endpoint:** `https://botbound.me/mcp`
-- **Privacy notice:** `https://botbound.me/chatgpt-app-privacy.html`
-- **General privacy policy:** `https://botbound.me/privacy`
-- **Support:** `support@botbound.me`
+- **Hosted logo:** `https://botbound.app/botbound-icon-512.png`
+- **Public MCP endpoint:** `https://botbound.app/mcp`
+- **Privacy notice:** `https://botbound.app/chatgpt-app-privacy.html`
+- **General privacy policy:** `https://botbound.app/privacy`
+- **Support:** `support@botbound.app`
 
 The dashboard upload version is `public/botbound-icon-512.png`. The BotBound robot-and-phone mark is designed to remain legible at small directory and composer avatar sizes.
 
@@ -18,9 +18,9 @@ The dashboard upload version is `public/botbound-icon-512.png`. The BotBound rob
 - **Registration method:** Client Identifier Metadata Document (CIMD)
 - **CIMD client metadata URL:** `https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json`
 - **ChatGPT callback URL:** `https://chatgpt.com/connector/oauth/7i4vMCsl-J2L`
-- **Authorization URL:** `https://botbound.me/mcp/oauth/authorize`
-- **Token URL:** `https://botbound.me/mcp/oauth/token`
-- **Resource:** `https://botbound.me/mcp`
+- **Authorization URL:** `https://botbound.app/mcp/oauth/authorize`
+- **Token URL:** `https://botbound.app/mcp/oauth/token`
+- **Resource:** `https://botbound.app/mcp`
 - **Scopes:** `agents.read agents.write demo.voice`
 
 Use the identifiers from the already-approved Developer Mode app when creating the production submission. Do not substitute a generic client URL or create a separate registration unless OpenAI explicitly regenerates the app identifier.
@@ -80,7 +80,7 @@ The simulation tool is intentionally declared `readOnlyHint: false` because it c
 
 ### Account-bound creation path
 
-1. Use the approved BotBound app in the ChatGPT review environment with MCP endpoint `https://botbound.me/mcp`.
+1. Use the approved BotBound app in the ChatGPT review environment with MCP endpoint `https://botbound.app/mcp`.
 2. Run: **"Use BotBound to create a sales and support Bot. It should qualify new callers, answer approved FAQs, route urgent issues, and never promise pricing or availability."**
 3. Confirm ChatGPT requests a BotBound account connection.
 4. New users create a BotBound account on the signup screen and return to consent. Reviewers may sign in to the supplied reviewer account instead, then approve the requested permissions.
@@ -159,7 +159,7 @@ Capture these artifacts in the actual ChatGPT review environment before submissi
 ## Production release gate
 
 - `npm run verify:full`
-- `node scripts/check-chatgpt-app-release.mjs --url https://botbound.me`
+- `node scripts/check-chatgpt-app-release.mjs --url https://botbound.app`
 - Hosted icon returns `200` as `image/svg+xml` and the dashboard uses the matching square PNG.
 - Production `/mcp` responds to `initialize`, `tools/list`, `resources/list`, and `resources/read`.
 - The production tool list contains exactly the ten documented tools, each with an `outputSchema`, OAuth security scheme, and three explicit boolean annotations.

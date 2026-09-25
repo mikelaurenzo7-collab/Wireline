@@ -147,7 +147,7 @@ describe("Apollo Lead Hunt targeting", () => {
     }));
 
     const { getApolloAuthUrl } = await import("../src/lib/apollo-service");
-    const url = getApolloAuthUrl("https://botbound.me/api/oauth/apollo/callback", "state-1");
+    const url = getApolloAuthUrl("https://botbound.app/api/oauth/apollo/callback", "state-1");
 
     expect(url).toContain("https://app.apollo.io/#/oauth/authorize?");
     expect(url).toContain("mixed_people_api_search");

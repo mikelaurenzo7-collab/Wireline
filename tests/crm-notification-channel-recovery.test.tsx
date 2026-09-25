@@ -199,7 +199,7 @@ beforeEach(() => {
   serverStatus = structuredClone(status);
   h.fetch.mockReset().mockImplementation(defaultFetch);
   vi.stubGlobal("window", {
-    location: { origin: "https://botbound.me" },
+    location: { origin: "https://botbound.app" },
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     clearInterval: vi.fn(),

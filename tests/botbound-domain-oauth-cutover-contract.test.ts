@@ -63,7 +63,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(brand).toContain('name: "BotBound"');
     expect(brand).toContain('technicalNamespace: "wireline"');
     expect(brand).toContain('legacyName: "Wireline"');
-    expect(brand).toContain('canonicalProductionOrigin: "https://botbound.me"');
+    expect(brand).toContain('canonicalProductionOrigin: "https://botbound.app"');
     expect(brand).toContain('legacyProductionOrigin: "https://trywireline.com"');
     expect(brand).toContain('customerFacing: "BotBound"');
     expect(brand).toContain("canonicalOrigin: BOTBOUND_PRODUCTION_ORIGIN");
@@ -90,7 +90,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(marketingMeta).not.toContain("process.env.APP_URL");
     expect(prerender).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(prerender).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(index).toContain('href="https://botbound.me/"');
+    expect(index).toContain('href="https://botbound.app/"');
     expect(index).not.toContain("https://trywireline.com");
   });
 
@@ -100,7 +100,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(authOAuth).toContain("return getCanonicalAppUrl()");
     for (const path of SIGN_IN_CALLBACKS) expect(authOAuth, path).toContain(path);
     expect(authOAuth).not.toContain("https://trywireline.com/api/auth/");
-    expect(authOAuth).not.toContain("https://botbound.me/api/auth/");
+    expect(authOAuth).not.toContain("https://botbound.app/api/auth/");
   });
 
   it("keeps every active integration callback hostname-neutral and represented in the operator inventory", () => {
@@ -115,7 +115,7 @@ describe("BotBound domain and OAuth cutover boundary", () => {
       expect(
         source,
         `${file} must not pin the canonical BotBound hostname into route source`,
-      ).not.toMatch(/https:\/\/[^\s"'`]*botbound\.me[^\s"'`]*/i);
+      ).not.toMatch(/https:\/\/[^\s"'`]*botbound\.app[^\s"'`]*/i);
       expect(inventory, `operator OAuth inventory is missing ${callback}`).toContain(callback);
     }
 

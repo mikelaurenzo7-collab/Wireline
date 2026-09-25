@@ -30,7 +30,7 @@ Meet your new Front Desk.
 
 Bots that can answer common questions, capture what callers need, and route the next step using your business rules.
 
-Start free at BotBound.me. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
 
 ### Partner Setup Note
 
@@ -48,7 +48,7 @@ The phone rings while you're with a customer, making the product, or finishing t
 
 I built BotBound for that moment: Bots for calls, texts, and email, shaped around your business and your rules.
 
-Start free: https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
+Start free: https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
 
 Private testing free. Live use paid. Activation subject to availability.
 
@@ -76,7 +76,7 @@ The September **Your Next Sales Hire** and **Give Sales a Hand** campaigns remai
 
 You built a business worth choosing. You also have a business to run. Give the next conversation a Bot that works from your offer and rules.
 
-Start free at BotBound.me. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
 
 ### Outbound Candidate
 

@@ -62,9 +62,9 @@ describe("BotBound release provenance", () => {
   });
 
   it("uses the verified BotBound sender throughout the runtime and sync tooling", () => {
-    expect(read("src/lib/resend-config.ts")).toContain('const DEFAULT_DOMAIN = "botbound.me"');
+    expect(read("src/lib/resend-config.ts")).toContain('const DEFAULT_DOMAIN = "botbound.app"');
     const sync = read("scripts/sync-resend-env-to-vercel.mjs");
-    expect(sync).toContain('RESEND_FROM_EMAIL = "BotBound <noreply@botbound.me>"');
+    expect(sync).toContain('RESEND_FROM_EMAIL = "BotBound <noreply@botbound.app>"');
     expect(sync).toContain('const RETIRED_SENDER_DOMAIN = "trywireline.com"');
     expect(sync).toContain("Refusing ${key}");
     expect(sync).not.toContain("noreply@trywireline.com");

@@ -51,11 +51,11 @@ export default function About() {
             </h1>
             <WireSignalArt className="mt-8 h-12 max-w-sm" />
             <a
-              href="mailto:support@botbound.me"
+              href="mailto:support@botbound.app"
               className="mt-8 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
               <Mail className="h-4 w-4" aria-hidden="true" />
-              <span className="wl-preserve-case">support@botbound.me</span>
+              <span className="wl-preserve-case">support@botbound.app</span>
             </a>
           </div>
 

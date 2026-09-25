@@ -137,7 +137,7 @@ describe("double-pass launch honesty", () => {
     const billing = read("src/routes/billing-routes.ts");
     const app = read("src/App.tsx");
     expect(tools).toContain("`${resolveAppUrl(deps.appUrl)}/pricing${planParam}`");
-    expect(tools).toContain("botbound.me/pricing");
+    expect(tools).toContain("botbound.app/pricing");
     expect(tools).not.toContain("/billing${planParam}");
     expect(billing).toContain("updateCardUrl: `${appUrl.url}/settings/billing`");
     expect(app).toContain('path="/billing"');
@@ -193,7 +193,7 @@ describe("double-pass launch honesty", () => {
     expect(emailService).toContain("Commercial email disabled: WIRELINE_POSTAL_ADDRESS is missing");
     expect(emailCompliance).toContain("isEmailSuppressed check failed, treating as suppressed");
     expect(emailCompliance).toMatch(/isEmailSuppressed[\s\S]*catch \(err\)[\s\S]*return true;/);
-    expect(emailCompliance).toContain("unsubscribe@botbound.me");
+    expect(emailCompliance).toContain("unsubscribe@botbound.app");
     expect(emailCompliance).not.toContain("unsubscribe@trywireline.com");
   });
 

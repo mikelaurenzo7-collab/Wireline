@@ -146,7 +146,7 @@ describe("WIRELINE design-system double-pass contract", () => {
     expect(androidStrings).toContain('<string name="app_name">BotBound</string>');
 
     // The brand law does not mutate technical identifiers into cosmetic casing.
-    expect(extensionManifest).toContain('"homepage_url": "https://botbound.me"');
+    expect(extensionManifest).toContain('"homepage_url": "https://botbound.app"');
     expect(iosInfo).toContain("<string>wireline</string>");
   });
 });

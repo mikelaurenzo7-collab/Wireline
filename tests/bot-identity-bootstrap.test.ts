@@ -11,7 +11,7 @@ describe("web managed identity setup", () => {
     h.request.mockResolvedValue(
       Response.json({
         ok: true,
-        email: "bot@botbound.me",
+        email: "bot@botbound.app",
         phone_number: "+12025550123",
         custom_domain: true,
       }),
@@ -22,7 +22,7 @@ describe("web managed identity setup", () => {
     });
     expect(result.mailbox).toMatchObject({
       provisioned: true,
-      emailAddress: "bot@botbound.me",
+      emailAddress: "bot@botbound.app",
       customDomain: true,
     });
     expect(result.phone).toMatchObject({ provisioned: true, phoneNumber: "+12025550123" });
@@ -38,7 +38,7 @@ describe("web managed identity setup", () => {
     expect(result.mailbox.provisioned).toBe(false);
     expect(h.request).toHaveBeenCalledTimes(1);
   });
-  it.each([{ ok: true }, { ok: false, email: "bot@botbound.me", phone_number: "+12025550123" }])(
+  it.each([{ ok: true }, { ok: false, email: "bot@botbound.app", phone_number: "+12025550123" }])(
     "does not report unconfirmed resources as provisioned",
     async (body) => {
       h.request.mockResolvedValue(Response.json(body));

@@ -1,5 +1,5 @@
 /** Public launch origin. Release certification must always probe this host. */
-export const CANONICAL_PRODUCTION_URL = "https://botbound.me";
+export const CANONICAL_PRODUCTION_URL = "https://botbound.app";
 
 /**
  * Transition-only compatibility origin for already-registered callbacks and

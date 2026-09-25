@@ -8,10 +8,10 @@ export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "BotBound";
 export const MCP_SERVER_VERSION = "2.4.0";
 
-export const MCP_DOCUMENTATION_URL = "https://botbound.me/claude-connector.html";
-export const MCP_PRIVACY_URL = "https://botbound.me/mcp-privacy.html";
-export const MCP_ICON_URL = "https://botbound.me/botbound-icon-512.png";
-export const MCP_SUPPORT_EMAIL = "support@botbound.me";
+export const MCP_DOCUMENTATION_URL = "https://botbound.app/claude-connector.html";
+export const MCP_PRIVACY_URL = "https://botbound.app/mcp-privacy.html";
+export const MCP_ICON_URL = "https://botbound.app/botbound-icon-512.png";
+export const MCP_SUPPORT_EMAIL = "support@botbound.app";
 
 export function claudeMcpAppDomain(resourceUrl: string): string {
   return `${createHash("sha256").update(resourceUrl).digest("hex").slice(0, 32)}.claudemcpcontent.com`;
@@ -35,7 +35,7 @@ export function mcpUiResourceMeta(resourceUrl: string) {
     "openai/widgetCSP": {
       connect_domains: [],
       resource_domains: [],
-      redirect_domains: ["https://botbound.me"],
+      redirect_domains: ["https://botbound.app"],
     },
   };
 }

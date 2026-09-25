@@ -169,7 +169,7 @@ const PACKS: Record<string, TrustPack> = {
       {
         title: "Security Review Channel",
         detail:
-          "Buyers can send scoped architecture, privacy, and operational questions to security@botbound.me.",
+          "Buyers can send scoped architecture, privacy, and operational questions to security@botbound.app.",
       },
     ],
     boundary:

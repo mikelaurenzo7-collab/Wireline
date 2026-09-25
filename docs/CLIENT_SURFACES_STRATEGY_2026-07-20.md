@@ -32,7 +32,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 1. **Page-native context** — title, URL, meta description, user selection, `tel:` links from the tab the founder is already looking at (CRM, inbox, Google result, lead page).
 2. **Zero copy/paste friction** — one gesture → Studio brief with “reference only” framing.
-3. **Always-available command palette** — side panel / context menu / `Ctrl+Shift+Y` without opening botbound.me first.
+3. **Always-available command palette** — side panel / context menu / `Ctrl+Shift+Y` without opening botbound.app first.
 
 ### What it deliberately does *not* offer
 
@@ -55,7 +55,7 @@ Ownership contract: `docs/CLIENT_SURFACES.md`.
 
 ```text
                     ┌─────────────────────────────┐
-                    │    https://botbound.me/mcp   │
+                    │    https://botbound.app/mcp   │
                     │  OAuth PKCE + account tools  │
                     └──────────────┬──────────────┘
            ┌───────────────────────┼───────────────────────┐
@@ -99,7 +99,7 @@ Do **not** sell iOS as live while `CLIENT_SURFACE_POSTURE.ios = Planned`. Align 
 
 **GO: promote and sell the web app without store-ready natives or extension.**
 
-Companions are optional early access. The same BotBound product and workspace are complete on `botbound.me`; technical surfaces retain Create -> Train -> Wire -> Run. Waiting on App Store / Play / Chrome Web Store is not a product dependency.
+Companions are optional early access. The same BotBound product and workspace are complete on `botbound.app`; technical surfaces retain Create -> Train -> Wire -> Run. Waiting on App Store / Play / Chrome Web Store is not a product dependency.
 
 Real gates before inviting paid strangers (ops, not companions): Federal DNCScrub for marketing dials, live billing/voice/SMS/email E2E proof, Stripe buffer, Twilio top-up, rotate leaked tokens. See `docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md`.
 

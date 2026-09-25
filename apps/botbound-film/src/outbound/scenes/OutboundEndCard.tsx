@@ -120,7 +120,7 @@ export const OutboundEndCard: React.FC<{ fast?: boolean }> = ({ fast = false }) 
             }),
           }}
         >
-          BOTBOUND.ME
+          BOTBOUND.APP
         </div>
       </div>
     </OutboundBackdrop>

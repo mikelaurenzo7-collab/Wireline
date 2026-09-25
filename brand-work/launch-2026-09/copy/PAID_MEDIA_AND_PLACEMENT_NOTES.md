@@ -79,7 +79,7 @@ If any box fails, the asset returns to **creative complete / paid hold**. Do not
 | X / organic social          | The Call Sheet                  | 1080 × 1080                      | Shareable owner moment                    | Put your Bot on the line | Current copy and alt text                     |
 | Product education           | Inbound & Outbound Bots          | 1200 × 627                       | Explain channel capabilities              | See Features             | Private/paid and configuration qualifier       |
 | Launch email                | Email header                    | 1200 × 400                       | Reintroduce the product and offer         | Build Your Bot           | Deliverability, footer, consent, tracking     |
-| OOH / event screen          | The Signal                      | 3840 × 2160                      | Fame and memory                           | BotBound.me              | Site-specific mechanics, rights, legal, spend |
+| OOH / event screen          | The Signal                      | 3840 × 2160                      | Fame and memory                           | BotBound.app              | Site-specific mechanics, rights, legal, spend |
 | Paid social                 | Hands Full / Bad Timing / Voice | Placement derivatives after gate | Structured message test                   | Build Your Bot           | Full paid-release checklist                   |
 
 ## OOH Mechanical Review
@@ -88,7 +88,7 @@ The 3840 × 2160 file is a campaign master, not a universal billboard specificat
 
 1. Obtain the media owner's exact pixel dimensions, color space, file format, maximum file size, frame rate if digital, safe area, and proofing instructions.
 2. Confirm the buying context. Avoid a placement whose environment turns the floating phone image into an unintended emergency-services, carrier, or device advertisement.
-3. Run a distance test at the expected dwell time. The hierarchy should resolve in this order: **The Second Ring -> Belongs to Your Bot -> BotBound.me.**
+3. Run a distance test at the expected dwell time. The hierarchy should resolve in this order: **The Second Ring -> Belongs to Your Bot -> BotBound.app.**
 4. Remove or enlarge secondary support text if the board is high-speed rather than pedestrian.
 5. Check all rights, generated-art disclosure requirements, and local advertising rules.
 6. Require explicit approval for the location, term, and spend.
@@ -129,7 +129,7 @@ Conceptual cinema may create the problem hook. Product proof must remain authent
 - If the cut sells voice quality, let the actual Bot voice play clearly for a meaningful stretch.
 - Use selectable platform captions for accessibility; use burned-in text only where the creative intentionally calls for sparse copy.
 - Reject sign-in walls, 404s, loading holds, dead routes, stale UI, or fabricated dashboards.
-- Preserve a deliberate, readable end card with BotBound.me.
+- Preserve a deliberate, readable end card with BotBound.app.
 - Never certify a reel without recording the exact source commit for any product footage.
 
 ## Organic, Investor, and Sales Usage

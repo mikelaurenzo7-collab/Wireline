@@ -5,10 +5,10 @@
   "description": "Create a BotBound account from Cursor and build your first Bot. Privately rehearse it, then continue in BotBound. Not a repo voice SDK. Live calls, numbers, and launch stay in BotBound.",
   "author": {
     "name": "BotBound",
-    "email": "support@botbound.me",
-    "url": "https://botbound.me"
+    "email": "support@botbound.app",
+    "url": "https://botbound.app"
   },
-  "homepage": "https://botbound.me/cursor-plugin.html",
+  "homepage": "https://botbound.app/cursor-plugin.html",
   "repository": "https://github.com/mikelaurenzo7-collab/Wireline",
   "license": "UNLICENSED",
   "keywords": ["mcp", "voice", "oauth", "wireline", "cursor"]

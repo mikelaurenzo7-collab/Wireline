@@ -10,7 +10,7 @@ const isProduction = environment === "production";
 const isPreview = environment === "preview";
 const failures = [];
 const notices = [];
-const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.me";
+const CANONICAL_PRODUCTION_ORIGIN = "https://botbound.app";
 const CANONICAL_PRODUCTION_SUPABASE_PROJECT_REF = "ogenlhodmwvyacvnrsnj";
 
 const value = (name) => String(process.env[name] || "").trim();
@@ -102,17 +102,17 @@ function requireProductionCorsOrigins() {
       .map((origin) => origin.trim())
       .filter(Boolean),
   );
-  for (const requiredOrigin of [CANONICAL_PRODUCTION_ORIGIN, "https://trywireline.com"]) {
-    if (!configured.has(requiredOrigin)) {
-      failures.push(`CORS_ORIGINS: must include ${requiredOrigin}`);
-    }
+  // Legacy browser origins are optional and require operator ownership/routing
+  // verification. Signed provider callback compatibility does not require CORS.
+  if (!configured.has(CANONICAL_PRODUCTION_ORIGIN)) {
+    failures.push(`CORS_ORIGINS: must include ${CANONICAL_PRODUCTION_ORIGIN}`);
   }
 }
 
 if (isProduction) {
   requireValue("POSTGRES_URL", "production API database connection is missing");
   requireValue("DATABASE_POOL_URL", "the serverless transaction pool is missing");
-  requireValue("CORS_ORIGINS", "production browser-origin transition allowlist is missing");
+  requireValue("CORS_ORIGINS", "production browser-origin allowlist is missing");
   requireValue("INTERNAL_JWT_SECRET", "production session signing is missing");
   requireValue("WIRELINE_DATA_KEY", "encrypted tenant credentials cannot be stored safely");
   requireValue("OAUTH_STATE_SECRET", "OAuth state signing is missing");
@@ -152,11 +152,11 @@ if (isProduction) {
   const managedEmailDomain = value("AGENTMAIL_DEFAULT_DOMAIN").toLowerCase().replace(/^@/, "");
   if (
     managedEmailDomain &&
-    managedEmailDomain !== "botbound.me" &&
-    !managedEmailDomain.endsWith(".botbound.me")
+    managedEmailDomain !== "botbound.app" &&
+    !managedEmailDomain.endsWith(".botbound.app")
   ) {
     failures.push(
-      "AGENTMAIL_DEFAULT_DOMAIN: production managed mailboxes must use botbound.me or a BotBound subdomain",
+      "AGENTMAIL_DEFAULT_DOMAIN: production managed mailboxes must use botbound.app or a BotBound subdomain",
     );
   }
   if (value("WIRELINE_OPENAI_REALTIME_SESSION_RESERVE_USD")) {

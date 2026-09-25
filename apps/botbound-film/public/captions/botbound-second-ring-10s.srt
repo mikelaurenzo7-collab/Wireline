@@ -32,4 +32,4 @@ BotBound. You can't answer every call. Your Bot can.
 
 9
 00:00:08,800 --> 00:00:09,950
-botbound.me
+botbound.app

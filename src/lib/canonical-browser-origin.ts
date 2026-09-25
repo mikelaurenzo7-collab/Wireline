@@ -8,6 +8,7 @@ export type BrowserLocationLike = {
 };
 
 const HOST_BOUND_COMPLETION_PATHS = new Set(["/auth/oauth-complete", "/oauth-complete"]);
+const LEGACY_BROWSER_ORIGINS = new Set([LEGACY_PRODUCTION_ORIGIN, "https://botbound.me"]);
 
 /**
  * Move legacy-host browser pages to BotBound before application hydration.
@@ -15,7 +16,7 @@ const HOST_BOUND_COMPLETION_PATHS = new Set(["/auth/oauth-complete", "/oauth-com
  * their original host because their cookies are intentionally host-only.
  */
 export function canonicalLegacyBrowserHandoff(location: BrowserLocationLike): string | null {
-  if (location.origin !== LEGACY_PRODUCTION_ORIGIN) return null;
+  if (!LEGACY_BROWSER_ORIGINS.has(location.origin)) return null;
   const pathname = location.pathname.startsWith("/") ? location.pathname : "/";
   const routePath = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (

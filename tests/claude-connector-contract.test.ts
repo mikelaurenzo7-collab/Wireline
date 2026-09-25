@@ -103,13 +103,16 @@ describe("Claude Connector Directory contract", () => {
     expect(widget).not.toContain("xai-client-secret.");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain("claudemcpcontent.com");
     expect(read("src/lib/mcp-app-metadata.ts")).toContain(
-      'redirect_domains: ["https://botbound.me"]',
+      'redirect_domains: ["https://botbound.app"]',
     );
     expect(read("src/lib/mcp-app-metadata.ts")).not.toContain('"openai/widgetDomain": domain');
+    expect(claudeMcpAppDomain("https://botbound.app/mcp")).toBe(
+      "6f18e2d78f6e1613c5adbd0b87927938.claudemcpcontent.com",
+    );
+    // Preserve deterministic metadata for already-registered legacy clients.
     expect(claudeMcpAppDomain("https://botbound.me/mcp")).toBe(
       "da53efc016f4d0335534b0ce0c3d3cc4.claudemcpcontent.com",
     );
-    // Preserve deterministic metadata for already-registered legacy clients.
     expect(claudeMcpAppDomain("https://trywireline.com/mcp")).toBe(
       "9d4498d241a92d33aafe51697b0ba2b9.claudemcpcontent.com",
     );
@@ -122,15 +125,15 @@ describe("Claude Connector Directory contract", () => {
     expect(listing.listing.tagline.length).toBeLessThanOrEqual(55);
     expect(listing.listing.description.length).toBeLessThanOrEqual(2000);
     expect(listing.listing.slug).toBe("wireline");
-    expect(listing.listing.icon_url).toBe("https://botbound.me/botbound-icon-512.png");
+    expect(listing.listing.icon_url).toBe("https://botbound.app/botbound-icon-512.png");
     expect(mcpServerCard().icons[0]?.mimeType).toBe("image/png");
-    expect(listing.listing.website_url).toBe("https://botbound.me");
-    expect(listing.listing.documentation_url).toBe("https://botbound.me/claude-connector.html");
-    expect(listing.listing.privacy_policy_url).toBe("https://botbound.me/mcp-privacy.html");
-    expect(listing.listing.company_website).toBe("https://botbound.me");
-    expect(listing.server.url).toBe("https://botbound.me/mcp");
-    expect(listing.server.allowed_link_uris).toEqual(["https://botbound.me"]);
-    expect(listing.listing.support_email).toBe("support@botbound.me");
+    expect(listing.listing.website_url).toBe("https://botbound.app");
+    expect(listing.listing.documentation_url).toBe("https://botbound.app/claude-connector.html");
+    expect(listing.listing.privacy_policy_url).toBe("https://botbound.app/mcp-privacy.html");
+    expect(listing.listing.company_website).toBe("https://botbound.app");
+    expect(listing.server.url).toBe("https://botbound.app/mcp");
+    expect(listing.server.allowed_link_uris).toEqual(["https://botbound.app"]);
+    expect(listing.listing.support_email).toBe("support@botbound.app");
     expect(listing.server.authentication).toEqual(["oauth_dcr", "oauth_cimd"]);
     expect(listing.listing.tagline).toBe("Build your first Bot");
     expect(packet).toContain("Build your first Bot");
@@ -141,7 +144,7 @@ describe("Claude Connector Directory contract", () => {
   });
 
   it("publishes public docs and privacy pages required by the portal", () => {
-    expect(publicDocs).toContain("https://botbound.me/mcp");
+    expect(publicDocs).toContain("https://botbound.app/mcp");
     expect(publicDocs).toContain("build their first Bot in Claude");
     expect(publicDocs).not.toMatch(/\bvoice agents?\b/i);
     expect(publicDocs).not.toContain("https://trywireline.com/mcp");
@@ -155,7 +158,7 @@ describe("Claude Connector Directory contract", () => {
     expect(docs).toContain("401");
     expect(packet).toContain("https://claude.ai/admin-settings/directory/submissions/new");
     expect(packet).toContain("Team or Enterprise");
-    expect(packet).toContain("https://botbound.me/mcp");
+    expect(packet).toContain("https://botbound.app/mcp");
     expect(packet).not.toContain("https://trywireline.com/mcp");
   });
 });

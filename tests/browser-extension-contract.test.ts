@@ -30,7 +30,7 @@ describe("BotBound Command extension contract", () => {
     expect(baseManifest.permissions).not.toEqual(expect.arrayContaining(["<all_urls>"]));
     expect(JSON.stringify(baseManifest)).not.toContain("<all_urls>");
     expect(JSON.stringify(baseManifest)).not.toContain("fonts.googleapis.com");
-    expect(baseManifest.homepage_url).toBe("https://botbound.me");
+    expect(baseManifest.homepage_url).toBe("https://botbound.app");
   });
 
   it("fails closed when browser capture timestamps are missing", () => {
@@ -99,8 +99,8 @@ describe("BotBound Command extension contract", () => {
     expect(panelJs).toContain('route: "training"');
     expect(panelJs).toContain('route: "studio"');
     expect(panelJs).toContain("BotBound Bot");
-    expect(panel).toContain('href="https://botbound.me/privacy"');
-    expect(worker).toContain('const BOTBOUND_ORIGIN = "https://botbound.me"');
+    expect(panel).toContain('href="https://botbound.app/privacy"');
+    expect(worker).toContain('const BOTBOUND_ORIGIN = "https://botbound.app"');
     expect(worker).toContain('["phone", `${BOTBOUND_ORIGIN}/phone`]');
     expect(worker).toContain('["inbox", `${BOTBOUND_ORIGIN}/inbox`]');
     expect(`${JSON.stringify(baseManifest)}\n${panel}\n${worker}`).not.toContain(

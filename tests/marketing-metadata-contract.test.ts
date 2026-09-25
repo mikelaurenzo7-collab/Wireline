@@ -43,7 +43,7 @@ describe("marketing metadata contract", () => {
     expect(security).toContain('path={isTrustHub ? "/trust" : "/security"}');
     expect(security).toContain("How BotBound Earns Live Calls");
     expect(security).not.toContain("Trust Center — how Wireline earns live calls.");
-    expect(sitemap).toContain("<loc>https://botbound.me/trust</loc>");
+    expect(sitemap).toContain("<loc>https://botbound.app/trust</loc>");
     expect(marketingChrome.match(/<main\b/g)).toHaveLength(1);
     expect(trustPack).not.toMatch(/<main\b/);
     expect(trustPack).not.toContain("</main>");
@@ -53,9 +53,9 @@ describe("marketing metadata contract", () => {
     const security = read("public/.well-known/security.txt");
 
     expect(security).toContain("# BotBound security disclosure policy");
-    expect(security).toContain("Contact: https://botbound.me/contact");
-    expect(security).toContain("Canonical: https://botbound.me/.well-known/security.txt");
-    expect(security).toContain("Policy: https://botbound.me/security");
+    expect(security).toContain("Contact: https://botbound.app/contact");
+    expect(security).toContain("Canonical: https://botbound.app/.well-known/security.txt");
+    expect(security).toContain("Policy: https://botbound.app/security");
     expect(security).not.toMatch(/Wireline|trywireline\.com|trywireline@yahoo\.com/);
   });
 

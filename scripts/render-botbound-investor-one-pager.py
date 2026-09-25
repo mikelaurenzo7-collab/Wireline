@@ -131,7 +131,7 @@ def render():
         WHITE,
         3,
     )
-    text(c, "BOTBOUND.ME", 33, 558, "PlexBold", 7.4, WHITE)
+    text(c, "BOTBOUND.APP", 33, 558, "PlexBold", 7.4, WHITE)
 
     # Thesis strip.
     strip_y = 506
@@ -248,7 +248,7 @@ def render():
     c.roundRect(28, 49, 556, 37, 9, fill=1, stroke=0)
     text(c, "SEEKING", 42, 64, "PlexBold", 6.8, BLACK_VIOLET)
     text(c, "Investor and design-partner conversations for a controlled launch.", 102, 62, "InterBold", 9.2, BLACK_VIOLET)
-    right_text(c, "support@botbound.me", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
+    right_text(c, "support@botbound.app", 572, 63, "InterSemi", 7.6, BLACK_VIOLET)
 
     text(c, "Copy review: 2026-09-20. Controlled launch. No customer, traction, or performance claims.", 29, 27, "Inter", 5.7, SMOKE)
     right_text(c, "Put Your Bot on the Line", 583, 27, "PlexBold", 5.8, LILAC)

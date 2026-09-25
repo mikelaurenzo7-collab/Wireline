@@ -16,22 +16,22 @@ SHA-256 values below identify the exact local inputs used by every composition.
 
 ## Accessibility sidecars
 
-The 30-second sidecars below match the September 20, 2026 source revision: **Your Bots. Your Rules.** replaces the process-step diagram. These hashes identify caption inputs, not an approved delivery render. Publication remains on hold until the revised film is rendered and reviewed as described in `PRODUCTION_NOTES.md`.
+The caption sources and sidecars include the September 25, 2026 domain cutover to **botbound.app**. These hashes identify current caption inputs, not an approved delivery render. Publication remains on hold until the revised film is rendered and reviewed as described in `PRODUCTION_NOTES.md`.
 
 | File | SHA-256 |
 | --- | --- |
-| `public/captions/botbound-second-ring-30s.json` | `321434c5df6e4f656754faac7c775d20c45f2b99c89c9b88233d28d57a69bb6a` |
-| `public/captions/botbound-second-ring-30s.srt` | `2a3b974b130e5c33b0e99573bbe55ccee2eff6c509dc985af137d17fa42e6c11` |
-| `public/captions/botbound-second-ring-30s.vtt` | `d1b98fc8e64ee463e581c2983ae45777a2c906440b49ac84a63a6160d364cd98` |
-| `public/captions/botbound-second-ring-15s.json` | `2c2708116beddbca05b4fac44f872b5830699a4afa4599c2d2c2e234c5a930e0` |
-| `public/captions/botbound-second-ring-15s.srt` | `d95d1d2c3ebc783d67c9c4a4aa3ca351e031713f56793bbf6358dd33962fafa6` |
-| `public/captions/botbound-second-ring-15s.vtt` | `adf194c1fcf35b8084e03f990a15fa0557a2d5e18a1043e2782780229ed71393` |
-| `public/captions/botbound-second-ring-10s.json` | `9bfdb2e79ed322ab07b6ec25fa7ad7717515085534aa74f7d4506ab453ded87e` |
-| `public/captions/botbound-second-ring-10s.srt` | `130426e59877117b15cc8f535d84701b979f87a2e5ea1fd2aed023e0525f79f6` |
-| `public/captions/botbound-second-ring-10s.vtt` | `4e85d3f6e777f6de52c654a5c405ee1cb6d07124e730d58db315fc19591451a7` |
-| `public/captions/botbound-second-ring-6s.json` | `63ae2b9e80320d85909e472e76b4e16b7c1d5460fd11b14716184ca86a60cafe` |
-| `public/captions/botbound-second-ring-6s.srt` | `744621eaa83b755bd58f8561409f253e1b19678b53e40a3dcd6f249f68e8200e` |
-| `public/captions/botbound-second-ring-6s.vtt` | `72f1aeb4906da76f4f8d0fba24f34ee54f056012c1532cccb1913e2d61097579` |
+| `public/captions/botbound-second-ring-30s.json` | `72278d634c17c194313e932457ec08ad366c87834f6244bbb810fa86adf90196` |
+| `public/captions/botbound-second-ring-30s.srt` | `a3a9a4a270a4f5dc6cf451882ca5d67cc8a6782952a31e2fb9258ad2b93702ce` |
+| `public/captions/botbound-second-ring-30s.vtt` | `c5b3a2bf68dccc4cdde50c03a56e128a56c62618d29cf19087f372f8a6ff9d57` |
+| `public/captions/botbound-second-ring-15s.json` | `453712a19cd0b89dc14972ccc91c4052e23f91dcaf91b94ebc67f9be29bafcbc` |
+| `public/captions/botbound-second-ring-15s.srt` | `f7905a96609a71094fcc25a79d7af46b99d10ea34b3bb37ea71ec7cc6fe4ad3d` |
+| `public/captions/botbound-second-ring-15s.vtt` | `ad094a4615ca375a51536c10e83689636945ecc6332f4e8fea95cf9dba1bce89` |
+| `public/captions/botbound-second-ring-10s.json` | `7058f54a2a476d074e412ef089d512346092f30512dedccee356fb4a5a17051f` |
+| `public/captions/botbound-second-ring-10s.srt` | `3e0387dcf08ca737aaf26404cd4bcc398f2028265a7c2da2b9df58bf414e2bd8` |
+| `public/captions/botbound-second-ring-10s.vtt` | `7b85b1a97dc276ed08346183a045bebc138b4612d8a49664a5da707b0068f044` |
+| `public/captions/botbound-second-ring-6s.json` | `305bd12f6ffeada1c598bf5f5933a3270cd0329bea4277885f12a5fbe217e4e5` |
+| `public/captions/botbound-second-ring-6s.srt` | `82dcb4353949a1eab16176fa1f5789862a4ef092ac2c9c9ea08726e450cee354` |
+| `public/captions/botbound-second-ring-6s.vtt` | `c9d505897d1ba12ca5c31137538e0dd4d97222e07449aa45249f3bdf4e8f5c1b` |
 
 The robot and app icon are approved BotBound launch assets prepared from the certified full-resolution sources. The opening image is original OpenAI-generated campaign illustration and remains subject to the generated-art, likeness, and commercial-use gate before paid distribution. The transfer chime is copied unchanged from the approved product sound. The score and ring are original deterministic outputs of `scripts/generate-audio.mjs`; the composition uses the repository-safe MP3 derivative of the PCM score.
 

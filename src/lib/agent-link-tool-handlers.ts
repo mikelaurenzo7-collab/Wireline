@@ -1,6 +1,6 @@
 /** Provider-neutral, dependency-injected link-delivery tool logic. */
 
-const APP_URL_DEFAULT = "https://botbound.me";
+const APP_URL_DEFAULT = "https://botbound.app";
 
 function isEmailConfirmed(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
@@ -74,7 +74,7 @@ export async function handleSendPaymentLink(
       error: error instanceof Error ? error.message : String(error),
     });
     return {
-      result: "I wasn't able to send that link right now. Let the caller know they can visit botbound.me/pricing to get started.",
+      result: "I wasn't able to send that link right now. Let the caller know they can visit botbound.app/pricing to get started.",
     };
   }
 }
@@ -134,7 +134,7 @@ export async function handleSendSignupLink(
       error: error instanceof Error ? error.message : String(error),
     });
     return {
-      result: "I wasn't able to send that right now. Let the caller know they can sign up at botbound.me/signup, or call us back anytime.",
+      result: "I wasn't able to send that right now. Let the caller know they can sign up at botbound.app/signup, or call us back anytime.",
     };
   }
 }

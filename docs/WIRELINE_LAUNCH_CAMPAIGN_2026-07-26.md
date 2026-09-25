@@ -1,5 +1,7 @@
 # BotBound Launch Campaign
 
+Domain copy updated September 25, 2026 for `botbound.app`. Previously recorded audio and film must be regenerated and reviewed before publishing; this copy update does not certify old media.
+
 Updated: 2026-09-19
 
 Status: **Founder launch preparation**
@@ -88,7 +90,7 @@ previous exports are not current narration.
 
 File: `wireline-missed-call-15s.mp3`
 
-> Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.me.
+> Six forty-seven. The phone rings, and you cannot pick up. Your BotBound Bot can. It answers, books the next step, texts the confirmation, and logs the outcome. Build free at botbound.app.
 
 ### The Second Ring — 30s tail
 
@@ -102,7 +104,7 @@ This narration enters late. The missed-call moment, real captured Bot audio, fin
 
 File: `wireline-founder-60s.mp3`
 
-> I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.me. Plans start at nineteen dollars a month. Live setup depends on availability.
+> I built BotBound because calls are where real work happens, and they are too easy to miss. Your Bots can handle calls, texts, and email with your knowledge and rules. Configured tools keep bookings, follow-up, and handoffs moving, with outcomes you can review. Front desk, sales, support, or a role you define. Build free at botbound.app. Plans start at nineteen dollars a month. Live setup depends on availability.
 
 ### Retired Live Video proof — do not publish
 
@@ -121,7 +123,7 @@ I built BotBound because calls are still where real work shows up, and they are 
 
 Bots for calls, texts, and email, with your knowledge and rules. Calls, follow-up, and outcomes stay together for review.
 
-Build free at botbound.me. Plans from $19/mo. Live setup depends on availability.
+Build free at botbound.app. Plans from $19/mo. Live setup depends on availability.
 
 ### Short post
 
@@ -198,7 +200,7 @@ Historical masters containing authenticated 404s, mock product, stale pricing, o
 ## Delivery Guide
 
 - Voice: direct, founder-like, unhurried; not announcer-style.
-- Speak `botbound.me` as “bot bound dot me.”
+- Speak `botbound.app` as “bot bound dot app.”
 - Speak prices as words in narration.
 - Preserve room for real Bot audio and silence.
 - Regenerate audio whenever canonical copy changes, then re-measure duration.

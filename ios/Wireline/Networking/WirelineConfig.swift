@@ -2,7 +2,7 @@ import Foundation
 
 /// Single source of truth for the Wireline backend origin and endpoint URLs.
 enum WirelineConfig {
-    private static let productionURL = URL(string: "https://botbound.me")!
+    private static let productionURL = URL(string: "https://botbound.app")!
     private static let previewURL = URL(string: "https://wireline-chi.vercel.app")!
     private static let localURL = URL(string: "http://localhost:3000")!
 

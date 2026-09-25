@@ -11,7 +11,7 @@
  * Provider registrations change hostname when APP_URL changes; stable path
  * contracts stay compatible with existing sessions, routes, and integration code.
  */
-const CANONICAL_ORIGIN = "https://botbound.me";
+const CANONICAL_ORIGIN = "https://botbound.app";
 const LEGACY_ORIGIN = "https://trywireline.com";
 const raw = process.env.APP_URL || process.argv[2] || CANONICAL_ORIGIN;
 let url;
@@ -19,7 +19,7 @@ try {
   url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
 } catch {
   console.error(
-    "Invalid URL. Pass a full origin, e.g. http://localhost:3000 or https://botbound.me",
+    "Invalid URL. Pass a full origin, e.g. http://localhost:3000 or https://botbound.app",
   );
   process.exit(1);
 }
@@ -66,7 +66,7 @@ console.log(`
  Legacy transition origin: ${LEGACY_ORIGIN}
 ══════════════════════════════════════════════════════════════════
 
-Set APP_URL="${origin}" in the target Vercel environment before validating OAuth.
+Set APP_URL="${origin}" on both Render services before validating OAuth.
 The server derives redirect_uri from that canonical origin. Do not rename the
 existing /api/auth/* or provider callback paths during the brand/domain cutover.
 `);
@@ -79,14 +79,14 @@ console.log(
 
 console.log(`
 CUTOVER ORDER
-  1. Add and verify botbound.me in the existing Vercel project.
-  2. Add every applicable botbound.me callback in provider consoles while retaining trywireline.com callbacks.
+  1. Add and verify botbound.app on the existing Render web/API service.
+  2. Add every applicable botbound.app callback in provider consoles; retain old registrations until each flow is reconciled.
   3. Set APP_URL=${CANONICAL_ORIGIN} in the target production environment.
-  4. Set CORS_ORIGINS to include ${CANONICAL_ORIGIN} and ${LEGACY_ORIGIN} during the transition.
-  5. Redeploy and complete sign-in + integration connect/disconnect smoke tests on botbound.me.
+  4. Set CORS_ORIGINS=${CANONICAL_ORIGIN}; add a legacy browser origin only after verifying that it is controlled and still needed.
+  5. Redeploy and complete sign-in + integration connect/disconnect smoke tests on botbound.app.
   6. Update external webhooks, email sender domains, public app URLs, privacy/terms URLs, and crawler properties.
-  7. Keep trywireline.com live until all old-host callbacks/webhooks have zero required traffic.
-  8. Only then redirect the retired public host and remove retired provider callback registrations.
+  7. Reconcile existing callbacks from botbound.me and trywireline.com individually. Vercel account recovery is pending; do not assume either old host is reachable.
+  8. Redirect a retired public host only after control is recovered and all signed callbacks have migrated.
 
 Provider credentials remain the existing environment variables. This script
 prints callback contracts only and never reads or displays client secrets.
@@ -96,6 +96,6 @@ if (isLocal) {
   console.log(`LOCAL NOTE
   Providers that allow multiple callbacks can retain localhost and the legacy
   production origin during validation, then remove the retired host only after
-  botbound.me cutover proof.
+  botbound.app cutover proof.
 `);
 }

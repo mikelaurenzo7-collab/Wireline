@@ -187,7 +187,7 @@ describe("public pricing activation availability", () => {
     const followPlanLink = () => {
       const href = planLink(slug)?.props.to;
       if (!href) throw new Error(`Missing ${slug} plan link.`);
-      window.location.search = new URL(href, "https://botbound.me").search;
+      window.location.search = new URL(href, "https://botbound.app").search;
       return captureSignupIntentFromLocation();
     };
 

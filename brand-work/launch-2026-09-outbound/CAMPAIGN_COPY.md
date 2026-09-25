@@ -14,7 +14,7 @@ Start with one job: qualify an inquiry, follow up on an approved lead, or help s
 
 Free Builder is for setup and practice. Live calling requires an available paid plan, connected tools, and the right permissions.
 
-Build your Bot: `https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=first_move_prep_202609&utm_content=founder_private_rehearsal`
+Build your Bot: `https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=first_move_prep_202609&utm_content=founder_private_rehearsal`
 
 This is preparation copy, not an announcement that outbound campaigns are live. If signup or private rehearsal cannot be verified, keep it as a draft.
 
@@ -100,7 +100,7 @@ Already have a list? Give it the approved list and the job.
 
 **Find. Call. Book.**
 
-Get your Sales Bot at BotBound.me.
+Get your Sales Bot at BotBound.app.
 
 ## Paid Social
 

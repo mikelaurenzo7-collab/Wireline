@@ -135,7 +135,7 @@ assert(
 assert(
   typeof cursorDocs.body === "string" &&
     cursorDocs.body.includes(
-      "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&amp;config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
+      "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&amp;config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==",
     ),
   "Cursor plugin documentation must publish the one-click install deeplink.",
 );

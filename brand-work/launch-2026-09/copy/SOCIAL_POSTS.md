@@ -14,7 +14,7 @@ I built BotBound for that moment: Bots for calls, texts, and email, with your kn
 
 Hands full? Bot on the line.
 
-Start free: https://botbound.me/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=hands_full
+Start free: https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=hands_full
 
 Private testing free. Live use paid. Activation subject to availability.
 
@@ -26,7 +26,7 @@ Both hands occupied. A customer waiting. The phone asking for your attention.
 
 Give calls and follow-up a Bot. Keep your hands on the work.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 ## Story Copy
 
@@ -46,7 +46,7 @@ Hands full? Bot on the line.
 
 Bots for calls, texts, and email, built around your business and your rules.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 This is publishing copy, not a claim that existing films have been rerendered. Review the actual picture, audio, and captions before reuse. Music-only films must not receive invented dialogue captions. Keep meaningful ring and chime cues in accessible caption delivery.
 
@@ -66,7 +66,7 @@ Your Bot should sound like it belongs with your business.
 
 Choose from ten built-in voices. Rehearse privately and hear what fits. Your selected voice stays the same during the conversation.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 Internal source: `src/lib/voice-catalog.ts`. The current roster is Alloy, Ash, Ballad, Coral, Echo, Sage, Shimmer, Verse, Marin, and Cedar. Keep the full vendor roster in product education or the FAQ, not every awareness caption.
 
@@ -76,7 +76,7 @@ Calls. Texts. Email.
 
 Bots that work from your business knowledge and rules, with actions and handoffs you define.
 
-Start free at BotBound.me. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live use paid.
 
 Internal note: this is a capability graphic, not a workflow, setup sequence, or result record. Live channels and actions depend on eligibility, configuration, permissions, and availability. Outbound promotion retains its existing readiness gate.
 
@@ -88,7 +88,7 @@ BotBound gives businesses configurable Bots for calls, texts, and email, with th
 
 I'm preparing a small incoming-call pilot and would value conversations with owners who live this problem.
 
-Get in touch: support@botbound.me
+Get in touch: support@botbound.app
 
 Confirm that the support destination works before publishing. Do not imply current customers, traction, or live pilot completion.
 

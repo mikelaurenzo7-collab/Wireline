@@ -141,7 +141,7 @@ def build(output: Path = DEFAULT_OUTPUT) -> None:
     c.setStrokeColor(RULE)
     c.setLineWidth(0.7)
     c.line(38, 35, width - 38, 35)
-    text(c, "BOTBOUND.ME", 38, 17, "IBMPlexMono-Bold", 7.1, INK)
+    text(c, "BOTBOUND.APP", 38, 17, "IBMPlexMono-Bold", 7.1, INK)
     close = "Put Your Bot on the Line"
     c.setFont("Inter-Bold", 8)
     c.setFillColor(VIOLET)

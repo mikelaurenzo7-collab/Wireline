@@ -12,7 +12,7 @@ if (!shell.includes(`<title>${HOME_TITLE}</title>`)) {
   process.exit(1);
 }
 
-// Public crawl/social metadata always stays canonical to botbound.me. APP_URL
+// Public crawl/social metadata always stays canonical to botbound.app. APP_URL
 // remains independently configurable for provider callback continuity.
 writeFileSync(shellPath, shell);
 

@@ -60,7 +60,7 @@ const MCP_CLIENTS = [
     description:
       "Install the Cursor Directory plugin or add the BotBound MCP endpoint. New users create a BotBound account, then build their first Phone Bot.",
     action: "Add to Cursor",
-    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLm1lL21jcCJ9",
+    href: "cursor://anysphere.cursor-deeplink/mcp/install?name=botbound&config=eyJ1cmwiOiJodHRwczovL2JvdGJvdW5kLmFwcC9tY3AifQ==",
     icon: Terminal,
   },
 ] as const;
@@ -70,7 +70,7 @@ export default function Developers() {
   const copyTimer = useRef<number | null>(null);
   const mounted = useRef(true);
 
-  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.me";
+  const appOrigin = typeof window !== "undefined" ? window.location.origin : "https://botbound.app";
   const openApiUrl = `${appOrigin}/api/openapi.json`;
   const mcpEndpoint = `${appOrigin}/mcp`;
 

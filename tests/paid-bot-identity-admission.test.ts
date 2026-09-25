@@ -20,6 +20,7 @@ const h = vi.hoisted(() => ({
   beforePerform: undefined as undefined | (() => void),
   enqueue: vi.fn(),
   provider: vi.fn(),
+  createInbox: vi.fn(),
   phoneProvision: vi.fn(),
   phoneRelease: vi.fn(),
   ownedNumbers: vi.fn(),
@@ -149,7 +150,7 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
   AGENTMAIL_MANAGED_SCOPE_MARKER: "managed",
   agentmailGrantedScopes: h.provider,
-  createAgentMailInbox: h.provider,
+  createAgentMailInbox: h.createInbox,
   deleteAgentMailWebhook: h.provider,
   ensureAgentMailWebhook: h.provider,
   hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
@@ -181,18 +182,70 @@ beforeEach(() => {
     throw new Error("Provider work must not run");
   });
   h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
+  h.createInbox.mockImplementation((...args: unknown[]) => h.provider(...args));
   h.phoneRelease.mockResolvedValue({ ok: true });
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
   h.vaultConfigured.mockReturnValue(true);
   h.inboxesRead.mockResolvedValue([]);
   h.domainIdentity.mockResolvedValue(undefined);
-  h.webhookUrl.mockReturnValue("https://botbound.me/api/webhooks/agentmail/configuration-check");
+  h.webhookUrl.mockReturnValue("https://botbound.app/api/webhooks/agentmail/configuration-check");
   vi.stubEnv("AGENTMAIL_API_KEY", "test-only-agentmail-key");
-  vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.me");
+  vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.app");
 });
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it.each(["bots.botbound.me", "bots.botbound.app"])(
+    "retains an existing %s mailbox after the configured domain changes",
+    async (domain) => {
+      h.target = "oldest";
+      const email = `existing@${domain}`;
+      h.accounts = [
+        {
+          id: "mailbox",
+          emailAddress: email,
+          oauthGrantedScopes: "managed",
+          refreshToken: "stored-secret",
+        },
+      ];
+      h.inboxesRead.mockResolvedValue([{ inboxId: "existing-inbox", email }]);
+      h.phoneProvision.mockResolvedValue({ ok: true, phoneNumber: "+12025550123", reused: true });
+      h.provider.mockReturnValue({ webhookId: "existing-webhook", secret: null });
+
+      await expect(
+        ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+      ).resolves.toMatchObject({ email, emailReused: true });
+      expect(h.domainIdentity).toHaveBeenCalledWith("test-only-agentmail-key", undefined, domain);
+      expect(h.createInbox).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not recreate a missing legacy mailbox or buy a line for it", async () => {
+    h.target = "oldest";
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "existing@bots.botbound.me",
+        oauthGrantedScopes: "managed",
+        refreshToken: "stored-secret",
+      },
+    ];
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "legacy managed mailbox is missing",
+    );
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
+  it("does not provision a new identity on the retired domain", async () => {
+    h.target = "oldest";
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bots.botbound.me");
+    await expect(ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" })).rejects.toThrow(
+      "must be botbound.app",
+    );
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
   it.each([false, true])(
     "preserves a persisted line on transient carrier verification failure (reused=%s)",
     async (reused) => {
@@ -258,7 +311,7 @@ describe("paid identity admission at queue and provider boundaries", () => {
     },
     {
       name: "malformed managed domain",
-      setup: () => vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bad..botbound.me"),
+      setup: () => vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "bad..botbound.app"),
       error: "AGENTMAIL_DEFAULT_DOMAIN",
     },
     {

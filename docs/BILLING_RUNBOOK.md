@@ -78,7 +78,7 @@ If a claimed event fails after side effects begin, the handler releases the clai
 
 Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require:
 
-1. **Account identity:** customer-facing public name/domain/descriptors are BotBound-aligned. The canonical website is `https://botbound.me`; a historical dashboard label is not the customer-facing identity gate.
+1. **Account identity:** customer-facing public name/domain/descriptors are BotBound-aligned. The canonical website is `https://botbound.app`; a historical dashboard label is not the customer-facing identity gate.
 2. **Product copy:** active canonical products match `scripts/lib/stripe-founder-catalog.mjs`, including catalog metadata.
 3. **Catalog topology:** active products/prices, amounts, intervals, product ownership, subscriptions, payment links, and open Checkout sessions use canonical objects.
 

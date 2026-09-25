@@ -1,4 +1,4 @@
-export const EXPECTED_PRODUCT_URL = "https://botbound.me/pricing";
+export const EXPECTED_PRODUCT_URL = "https://botbound.app/pricing";
 export const EXPECTED_SUBSCRIPTION_STATEMENT_DESCRIPTOR = "BOTBOUND";
 
 function normalizeCopy(value) {

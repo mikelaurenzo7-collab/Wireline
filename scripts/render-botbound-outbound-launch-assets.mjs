@@ -374,7 +374,7 @@ render(
       <text x="190" y="910" fill="${palette.platinum}" font-family="Inter Tight" font-size="252" font-weight="800" letter-spacing="-5.98">
         <tspan x="190">Finds the Lead.</tspan><tspan x="190" dy="250">Makes the Call.</tspan><tspan x="190" dy="250" fill="${palette.violet}">Books the Next Step.</tspan>
       </text>
-      <text x="210" y="1870" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="58" font-weight="700" letter-spacing="9">BOTBOUND.ME</text>
+      <text x="210" y="1870" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="58" font-weight="700" letter-spacing="9">BOTBOUND.APP</text>
       <text x="210" y="1990" fill="${palette.mist}" font-family="Inter" font-size="52" font-weight="600">Get Your Sales Bot</text>
       <rect x="210" y="2050" width="3300" height="8" rx="4" fill="${palette.violet}" opacity=".86"/>`,
   },
@@ -398,7 +398,7 @@ render(
         <tspan x="82">Find.</tspan><tspan x="82" dy="138">Call.</tspan><tspan x="82" dy="138" fill="${palette.violet}">Book.</tspan>
       </text>
       ${ctaPill("Get Your Sales Bot", 90, 894, 360, 74, 20)}
-      <text x="90" y="1020" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.6">BOTBOUND.ME</text>`,
+      <text x="90" y="1020" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.6">BOTBOUND.APP</text>`,
   },
   1920,
 );
@@ -417,7 +417,7 @@ render(
         <tspan x="56">Find.</tspan><tspan x="56" dy="86">Call.</tspan><tspan x="56" dy="86" fill="${palette.violet}">Book.</tspan>
       </text>
       ${ctaPill("Get Your Sales Bot", 60, 518, 292, 58, 17)}
-      <text x="1138" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+      <text x="1138" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
   },
   1200,
 );
@@ -437,7 +437,7 @@ render(
       </text>
       <text x="62" y="868" fill="${palette.platinum}" font-family="Inter Tight" font-size="42" font-weight="800">Your Bot Can.</text>
       ${ctaPill("Get Your Sales Bot", 62, 924, 344, 70, 20)}
-      <text x="1016" y="982" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+      <text x="1016" y="982" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
   },
   1080,
 );
@@ -459,7 +459,7 @@ render(
       <text x="96" y="1392" fill="${palette.platinum}" font-family="Inter Tight" font-size="58" font-weight="800"><tspan x="96">Your Bot Makes</tspan><tspan x="96" dy="64">the First Move.</tspan></text>
       ${ctaPill("Start Free", 96, 1490, 300, 74, 23)}
       <text x="96" y="1604" fill="${palette.mist}" font-family="Inter" font-size="21">Private rehearsal. Paid live activation.</text>
-      <text x="936" y="1540" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="19" font-weight="700" letter-spacing="2.8">BOTBOUND.ME</text>`,
+      <text x="936" y="1540" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="19" font-weight="700" letter-spacing="2.8">BOTBOUND.APP</text>`,
   },
   1080,
 );
@@ -480,7 +480,7 @@ render(
       <circle cx="782" cy="900" r="318" fill="${palette.violet}" opacity=".11" filter="url(#glow)"/>
       <image href="${operatorData}" x="430" y="570" width="660" height="660" preserveAspectRatio="xMidYMid meet"/>
       ${ctaPill("Get Your Sales Bot", 62, 1192, 354, 72, 19)}
-      <text x="1018" y="1249" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+      <text x="1018" y="1249" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
   },
   1080,
 );
@@ -538,7 +538,7 @@ render(
       <rect x="0" y="1086" width="1080" height="8" fill="url(#launchBand)"/>
       <text x="62" y="1168" fill="${palette.platinum}" font-family="Inter Tight" font-size="53" font-weight="800" letter-spacing="-1.01">Find. Call. <tspan fill="${palette.violet}">Book.</tspan></text>
       ${ctaPill("Get Your Sales Bot", 62, 1214, 354, 72, 19)}
-      <text x="1018" y="1262" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+      <text x="1018" y="1262" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
   },
   1080,
 );
@@ -667,7 +667,7 @@ for (const [index, role] of roles.entries()) {
         ${roleOutcomeScene(index)}
         <rect x="62" y="1120" width="956" height="2" fill="${palette.violet}" opacity=".54"/>
         ${ctaPill(role.cta, 62, 1172, role.cta.length > 22 ? 420 : 360, 72, 19)}
-        <text x="1018" y="1230" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+        <text x="1018" y="1230" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
     },
     1080,
   );
@@ -733,7 +733,7 @@ for (const [index, slide] of carousel.entries()) {
         <g transform="translate(330 760)">${seededNodes(700, 340, 58, 77 + index * 19)}${signalPath(700, 340)}</g>
         <text x="62" y="1220" fill="${palette.mist}" font-family="IBM Plex Mono" font-size="17" font-weight="700" letter-spacing="0.5">${esc(slide.note)}</text>
         <rect x="62" y="1260" width="956" height="4" fill="${palette.violet}" opacity=".72"/>
-        <text x="62" y="1308" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>`,
+        <text x="62" y="1308" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.APP</text>`,
     },
     1080,
   );
@@ -767,7 +767,7 @@ render(
       <text x="58" y="228" fill="${palette.platinum}" font-family="Inter Tight" font-size="62" font-weight="800" letter-spacing="-1.38">Your Bots. <tspan fill="${palette.violet}">Your Rules.</tspan></text>
       ${workflowNodes}
       <text x="60" y="556" fill="${palette.mist}" font-family="Inter" font-size="17" font-weight="600">Free private rehearsal. Paid live activation and connected tools required.</text>
-      <text x="1140" y="556" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2">BOTBOUND.ME</text>`,
+      <text x="1140" y="556" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2">BOTBOUND.APP</text>`,
   },
   1200,
 );
@@ -802,7 +802,7 @@ render(
       <text x="56" y="334" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-1.93">The Queue <tspan fill="${palette.violet}">Moved.</tspan></text>
       ${rows}
       <text x="62" y="1018" fill="${palette.mist}" font-family="Inter" font-size="16" font-weight="600">Illustrative workflow. Outcomes depend on configuration and the conversation.</text>
-      <text x="1018" y="1018" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>`,
+      <text x="1018" y="1018" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="16" font-weight="700" letter-spacing="2.2">BOTBOUND.APP</text>`,
   },
   1080,
 );
@@ -818,7 +818,7 @@ render(
       ${wordmark(56, 70, 42)}
       ${eyebrow("The First Move", 58, 145, 14)}
       <text x="54" y="262" fill="${palette.platinum}" font-family="Inter Tight" font-size="82" font-weight="800" letter-spacing="-2.12">Find. Call. <tspan fill="${palette.violet}">Book.</tspan></text>
-      <text x="58" y="334" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Get Your Sales Bot · BOTBOUND.ME</text>`,
+      <text x="58" y="334" fill="${palette.mist}" font-family="Inter" font-size="24" font-weight="600">Get Your Sales Bot · BOTBOUND.APP</text>`,
   },
   1200,
 );
@@ -858,7 +858,7 @@ render(
       <text x="92" y="1890" fill="#514C59" font-family="Inter" font-size="23" font-weight="600">Free Builder is private. Starter: 1 live Bot, 50 voice minutes/month; availability applies.</text>
 
       <rect x="92" y="1972" width="1416" height="2" fill="#C9C3B7"/>
-      <text x="92" y="2028" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.2">BOTBOUND.ME</text>
+      <text x="92" y="2028" fill="${palette.ink}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.2">BOTBOUND.APP</text>
       <text x="1508" y="2028" text-anchor="end" fill="#6D52B5" font-family="Inter" font-size="21" font-weight="800">Put Your Bot on the Line</text>`,
   },
   1600,
@@ -900,7 +900,7 @@ const websiteOgMarkup = svgFrame({
       <tspan x="52">Find.</tspan><tspan x="52" dy="86">Call.</tspan><tspan x="52" dy="86" fill="${palette.violet}">Book.</tspan>
     </text>
     ${ctaPill("Get Your Sales Bot", 58, 530, 292, 58, 17)}
-    <text x="1142" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.ME</text>`,
+    <text x="1142" y="572" text-anchor="end" fill="${palette.platinum}" font-family="IBM Plex Mono" font-size="18" font-weight="700" letter-spacing="2.4">BOTBOUND.APP</text>`,
 });
 writeFileSync(websiteOgSvg, websiteOgMarkup);
 console.log(

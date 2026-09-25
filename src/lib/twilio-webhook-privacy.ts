@@ -47,6 +47,8 @@ function trustedBotBoundRecordingUrl(value: string): string | null {
   try {
     const url = new URL(value);
     const isBotBoundHost =
+      url.hostname === "botbound.app" ||
+      url.hostname === "www.botbound.app" ||
       url.hostname === "botbound.me" ||
       url.hostname === "www.botbound.me" ||
       url.hostname === "trywireline.com" ||

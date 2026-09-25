@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("production dogfood and QA canonical origin", () => {
-  it("hard-locks every credential-bearing capture and reset path to botbound.me", () => {
+  it("hard-locks every credential-bearing capture and reset path to botbound.app", () => {
     const authority = read("scripts/dogfood-credentials.mjs");
     expect(authority).toContain(
       'import { CANONICAL_PRODUCTION_URL } from "./lib/production-url.mjs"',
@@ -24,7 +24,7 @@ describe("production dogfood and QA canonical origin", () => {
     }
   });
 
-  it("defaults public launch and non-credentialed production QA to botbound.me", () => {
+  it("defaults public launch and non-credentialed production QA to botbound.app", () => {
     const publicDogfood = read("scripts/dogfood-marketing.mjs");
     const productionVisualQa = read("scripts/capture-prod-visual-qa.mjs");
     const appReleaseQa = read("scripts/check-chatgpt-app-release.mjs");
@@ -33,12 +33,12 @@ describe("production dogfood and QA canonical origin", () => {
 
     expect(publicDogfood).toContain("process.env.APP_URL || CANONICAL_PRODUCTION_URL");
     expect(productionVisualQa).toContain(
-      'process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.me"',
+      'process.env.WIRELINE_VISUAL_BASE_URL || "https://botbound.app"',
     );
     expect(appReleaseQa).toContain(
       "explicitUrl || process.env.APP_URL || CANONICAL_PRODUCTION_URL",
     );
-    expect(campaignVo).toContain("Build free at botbound.me.");
+    expect(campaignVo).toContain("Build free at botbound.app.");
     expect(officialAssets).toContain("Start free at ${baseUrl.hostname}.");
   });
 
@@ -53,7 +53,7 @@ describe("production dogfood and QA canonical origin", () => {
     );
     expect(appReleaseQa).toContain("const legacyMcpEndpoint = `${LEGACY_COMPATIBILITY_URL}/mcp`");
     expect(measurementQa).toContain('window.location.hostname === "trywireline.com"');
-    expect(stripeIdentity).toContain('"support@botbound.me"');
+    expect(stripeIdentity).toContain('"support@botbound.app"');
     expect(stripeIdentity).not.toContain('"support@trywireline.com"');
   });
 });

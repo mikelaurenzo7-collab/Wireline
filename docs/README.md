@@ -19,7 +19,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
 | Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                |
 | ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                      |
-| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.me/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                 |
+| Claude Connector | `docs/CLAUDE_CONNECTOR.md`, `https://botbound.app/mcp`                                               | **Early access** directory submission of the same remote MCP server.                                 |
 | Cursor plugin    | `docs/CURSOR_PLUGIN.md`, `.mcp.json`, `plugin.json`, `mcp.json`                                     | **Early access** Cursor Directory package so a new user can create a BotBound account and first Bot. |
 | Video presenters | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`                                 | **Retired live talking-head.** Identity badges only.                                                 |
 

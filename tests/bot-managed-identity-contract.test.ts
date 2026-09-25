@@ -34,7 +34,7 @@ describe("BotBound managed Bot identity", () => {
   it("uses the configured custom domain as a launch invariant and fails closed when it is not ready", () => {
     const routes = read("src/routes/agentmail-routes.ts");
     expect(routes).toContain("managedMailboxDomain()");
-    expect(routes).toContain('value === "botbound.me" || value.endsWith(".botbound.me")');
+    expect(routes).toContain("isBotBoundManagedEmailDomain(value)");
     expect(routes).not.toContain("AGENTMAIL_FREE_DOMAIN");
     expect(routes).toContain("Managed AgentMail custom-domain provisioning failed closed");
     expect(routes).toContain("throw error");

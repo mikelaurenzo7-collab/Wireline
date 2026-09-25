@@ -47,10 +47,10 @@ describe("third-party marketing scripts never block the app", () => {
     expect(measurement).toContain("function loadPrivacyAnalytics()");
     expect(measurement).toContain("https://plausible.io/js/script.tagged-events.js");
     expect(measurement).toContain('script.setAttribute("data-domain"');
-    expect(measurement).toContain('var PLAUSIBLE_DOMAIN = "botbound.me";');
+    expect(measurement).toContain('var PLAUSIBLE_DOMAIN = "botbound.app";');
     expect(measurement).toContain("if (isLocalHost()) return;");
     expect(measurement).toContain("if (!isProductionHost()) return;");
-    expect(measurement).toContain('window.location.hostname === "botbound.me"');
+    expect(measurement).toContain('window.location.hostname === "botbound.app"');
     expect(measurement).toContain('window.location.hostname === "trywireline.com"');
     expect(measurement).not.toContain('var PLAUSIBLE_DOMAIN = "trywireline.com";');
     // Guard against a double-injection regression on consent re-entry.

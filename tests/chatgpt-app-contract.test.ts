@@ -142,16 +142,16 @@ describe("BotBound ChatGPT App production contract", () => {
 
   it("keeps submission identity and OAuth metadata aligned with production", () => {
     expect(submission.app_info.display_name).toBe("BotBound");
-    expect(submission.app_info.logo_url).toBe("https://botbound.me/botbound-icon-512.png");
-    expect(submission.app_info.website_url).toBe("https://botbound.me");
+    expect(submission.app_info.logo_url).toBe("https://botbound.app/botbound-icon-512.png");
+    expect(submission.app_info.website_url).toBe("https://botbound.app");
     expect(submission.app_info.privacy_policy_url).toBe(
-      "https://botbound.me/chatgpt-app-privacy.html",
+      "https://botbound.app/chatgpt-app-privacy.html",
     );
-    expect(submission.app_info.contact_email).toBe("support@botbound.me");
+    expect(submission.app_info.contact_email).toBe("support@botbound.app");
     expect(submission.oauth.client_url).toBe("https://chatgpt.com/oauth/7i4vMCsl-J2L/client.json");
-    expect(submission.oauth.authorization_url).toBe("https://botbound.me/mcp/oauth/authorize");
-    expect(submission.oauth.token_url).toBe("https://botbound.me/mcp/oauth/token");
-    expect(submissionPacket).toContain("https://botbound.me/mcp");
+    expect(submission.oauth.authorization_url).toBe("https://botbound.app/mcp/oauth/authorize");
+    expect(submission.oauth.token_url).toBe("https://botbound.app/mcp/oauth/token");
+    expect(submissionPacket).toContain("https://botbound.app/mcp");
     expect(submissionPacket).not.toContain("https://trywireline.com/mcp");
     expect(read("public/botbound-icon.svg")).toContain('<title id="title">BotBound</title>');
   });

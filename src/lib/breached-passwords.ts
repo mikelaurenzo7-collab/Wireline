@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 const PWNED_PASSWORDS_RANGE_URL = "https://api.pwnedpasswords.com/range";
 const DEFAULT_TIMEOUT_MS = 2500;
-const PASSWORD_CHECK_USER_AGENT = "BotBound-password-security/1.0 (+https://botbound.me)";
+const PASSWORD_CHECK_USER_AGENT = "BotBound-password-security/1.0 (+https://botbound.app)";
 
 export type PasswordBreachCheckMode = "enforce" | "warn" | "off";
 export type PasswordBreachCheckContext = "signup" | "reset";
