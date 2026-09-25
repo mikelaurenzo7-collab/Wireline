@@ -35,6 +35,12 @@ function noticeAcknowledged(): boolean {
   }
 }
 
+function privacyDockRoot(): HTMLElement | null {
+  const root = typeof document === "undefined" ? null : document.documentElement;
+  if (!root || !("dataset" in root) || !root.dataset) return null;
+  return root;
+}
+
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
   const [explicitlyOpened, setExplicitlyOpened] = useState(false);
@@ -149,39 +155,52 @@ export default function CookieConsent() {
   const createFlowOpen =
     new URLSearchParams(location.search).get("create") === "1" ||
     new URLSearchParams(location.search).get("create") === "true";
-  if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
-
+  const hideForAuth = isAuthPortalPath(location.pathname) || createFlowOpen;
   const onPublicSurface = isMarketingPublicPath(location.pathname);
+  const suppressDock = hideForAuth || (!onPublicSurface && !explicitlyOpened);
+
+  useEffect(() => {
+    const root = privacyDockRoot();
+    if (!root) return;
+    const open = visible && !suppressDock;
+    if (open) {
+      root.dataset.wlPrivacyDock = "open";
+      if (clearMarketingSticky) root.dataset.wlPrivacySticky = "1";
+      else delete root.dataset.wlPrivacySticky;
+    } else {
+      delete root.dataset.wlPrivacyDock;
+      delete root.dataset.wlPrivacySticky;
+    }
+    return () => {
+      delete root.dataset.wlPrivacyDock;
+      delete root.dataset.wlPrivacySticky;
+    };
+  }, [clearMarketingSticky, suppressDock, visible]);
+
+  if (isAuthPortalPath(location.pathname) || createFlowOpen) return null;
   if (!onPublicSurface && !explicitlyOpened) return null;
 
   return createPortal(
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ y: 24, opacity: 0 }}
+          initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 24, opacity: 0 }}
+          exit={{ y: 16, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className={cn(
-            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)]",
-            clearMarketingSticky
-              ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
-              : hasSession
-                ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
-                : "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))]",
+            "wl-privacy-dock",
+            clearMarketingSticky && "wl-privacy-dock--above-sticky",
+            hasSession && "wl-privacy-dock--session",
           )}
+          data-above-sticky={clearMarketingSticky ? "true" : "false"}
           role="region"
           aria-label="Privacy choices"
           tabIndex={-1}
           ref={privacyPanelRef}
         >
-          <div
-            className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
-              hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
-            )}
-          >
-            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
+          <div className="wl-privacy-dock__bar">
+            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
@@ -246,7 +265,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Keep advertising measurement off and dismiss"
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
+              className="shrink-0 w-9 h-9 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <X className="w-4 h-4" />
             </ShadButton>

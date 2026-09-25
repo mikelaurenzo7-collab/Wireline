@@ -55,12 +55,9 @@ export default function Features() {
           >
             Built Around Your Business
           </h2>
-          <ul
-            aria-labelledby="features-list-title"
-            className="mt-3 grid list-disc gap-x-12 gap-y-5 pl-5 text-left text-base font-semibold marker:text-primary sm:grid-cols-2 lg:grid-cols-3"
-          >
+          <ul aria-labelledby="features-list-title" className="wl-features-grid">
             {CORE_FEATURES.map((feature) => (
-              <li key={feature} className="pl-1">
+              <li key={feature} className="wl-features-grid__item">
                 {feature}
               </li>
             ))}

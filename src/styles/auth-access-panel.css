@@ -332,7 +332,9 @@
 
 .wl-access-panel__field:focus-within {
   border-color: var(--wireline-color-focus-default);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wireline-color-focus-default) 16%, transparent);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--wireline-color-focus-default) 22%, transparent),
+    0 0 0 1px var(--wireline-color-focus-default);
 }
 
 .wl-access-panel__field > svg {

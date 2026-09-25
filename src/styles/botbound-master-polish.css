@@ -10,6 +10,9 @@
 :root {
   --bb-polish-reading-max: 66ch;
   --bb-polish-radius: var(--wireline-radius-lg);
+  --bb-control-radius: 0.85rem;
+  --bb-card-radius: 1.1rem;
+  --wl-privacy-dock-space: 0px;
   --bb-polish-rule: color-mix(in srgb, var(--wireline-color-border-default) 82%, transparent);
   --bb-polish-rule-strong: color-mix(in srgb, var(--wireline-color-border-strong) 74%, transparent);
   --bb-polish-surface: color-mix(
@@ -408,6 +411,158 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Privacy dock: bottom chrome, never a card overlay                          */
+/* -------------------------------------------------------------------------- */
+
+html[data-wl-privacy-dock="open"] {
+  --wl-privacy-dock-space: 5.75rem;
+}
+
+html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
+  --wl-privacy-dock-space: 11.25rem;
+}
+
+html[data-wl-privacy-dock="open"] .marketing-surface {
+  --wl-marketing-chrome-bottom: calc(2.1rem + var(--wl-privacy-dock-space));
+}
+
+html[data-wl-privacy-dock="open"] .marketing-surface.marketing-page-frame,
+html[data-wl-privacy-dock="open"] .marketing-surface.landing-prestige {
+  padding-bottom: calc(var(--wl-privacy-dock-space) + env(safe-area-inset-bottom, 0px));
+}
+
+.wl-privacy-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 42;
+  padding-inline: max(0.75rem, env(safe-area-inset-left), env(safe-area-inset-right));
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.wl-privacy-dock--above-sticky {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 0.75rem;
+}
+
+.wl-privacy-dock__bar {
+  pointer-events: auto;
+  display: flex;
+  width: min(100%, 72rem);
+  max-width: 72rem;
+  margin-inline: auto;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-border-strong) 55%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--bb-card-radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 4%, transparent), transparent 42%),
+    color-mix(
+      in srgb,
+      var(--wireline-color-surface-default) 92%,
+      var(--wireline-color-canvas-default)
+    );
+  box-shadow:
+    0 1.1rem 2.8rem color-mix(in srgb, #000 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+@media (min-width: 640px) {
+  .wl-privacy-dock__bar {
+    align-items: center;
+  }
+}
+
+.wl-privacy-dock :where(a, button):focus-visible {
+  outline: 2px solid var(--wireline-color-focus-default);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Marketing + auth: one control/card rhythm                                  */
+/* -------------------------------------------------------------------------- */
+
+.marketing-btn-primary,
+.marketing-btn-secondary,
+.marketing-surface .marketing-hero__actions > a,
+.wl-access-panel__submit,
+.wl-access-panel__oauth button,
+.wl-access-panel__tabs button,
+.wl-access-panel__field {
+  border-radius: var(--bb-control-radius);
+}
+
+.wl-pricing-page #plans article,
+.wl-access-panel__card,
+.landing-prestige__direction {
+  border-radius: var(--bb-card-radius);
+}
+
+.wl-pricing-page #plans article {
+  box-shadow: var(--wireline-elevation-sm);
+}
+
+.wl-pricing-page #plans article:has(.marketing-btn-primary) {
+  box-shadow: var(--wireline-elevation-wirelineRing);
+}
+
+.wl-pricing-plan-name {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.wl-pricing-status {
+  width: fit-content;
+  max-width: min(100%, 42rem);
+  margin-inline: auto;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 38%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--wireline-radius-pill);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 8%,
+    var(--wireline-color-surface-default)
+  );
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.wl-pricing-status[data-paid-activation="paused"],
+.wl-pricing-status[data-availability="unavailable"] {
+  color: var(--wireline-color-text-primary);
+}
+
+.marketing-surface.wl-features-page .marketing-flow {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid,
+.marketing-surface.wl-features-page .wl-features-grid__item,
+.marketing-surface.wl-pricing-page #plans .wl-card-title {
+  overflow: visible;
+  text-overflow: clip;
 }
 
 @media (prefers-reduced-motion: reduce) {

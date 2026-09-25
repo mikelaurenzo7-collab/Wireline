@@ -25,6 +25,10 @@ beforeEach(async () => {
   writeFileSync(join(fixture, "fonts", "brand.woff2"), "font bytes");
   writeFileSync(join(fixture, "fonts.css"), "font styles");
   writeFileSync(
+    join(fixture, "site.webmanifest"),
+    JSON.stringify({ name: "BotBound", short_name: "BotBound" }),
+  );
+  writeFileSync(
     join(fixture, "legal", "data-deletion.html"),
     "<!doctype html><title>Deletion confirmation</title>",
   );
@@ -94,6 +98,14 @@ describe("production public route compatibility", () => {
       source: "/legal/data-deletion",
       destination: "/legal/data-deletion.html",
     });
+    expect(config.rewrites).toContainEqual({
+      source: "/manifest.json",
+      destination: "/site.webmanifest",
+    });
+    expect(config.rewrites).toContainEqual({
+      source: "/manifest.webmanifest",
+      destination: "/site.webmanifest",
+    });
     const source = readFileSync(resolve("server.ts"), "utf8");
     expect(source.indexOf("registerProductionStaticAliases(app, dist)")).toBeLessThan(
       source.indexOf("app.use(express.static(dist"),
@@ -120,6 +132,15 @@ describe("production public route compatibility", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(response.headers.get("content-type")).toContain("text/plain");
     expect(await response.text()).toBe("Not found.");
+  });
+
+  it("serves BotBound web manifest aliases with the install MIME type", async () => {
+    for (const path of ["/manifest.json", "/manifest.webmanifest", "/site.webmanifest"]) {
+      const response = await fetch(`${origin}${path}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("application/manifest+json");
+      expect(await response.json()).toEqual({ name: "BotBound", short_name: "BotBound" });
+    }
   });
 
   it("keeps existing assets and dotted SPA route segments reachable", async () => {

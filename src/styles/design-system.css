@@ -2,7 +2,16 @@
 
 /* BotBound Design System.
  * Inter Tight for display. Inter for body. IBM Plex Mono for system labels.
- * Electric violet is action. Near-black canvas is calm. Platinum is the wire. */
+ * Electric violet is action. Near-black canvas is calm. Platinum is the wire.
+ *
+ * Shared visual rhythm used by marketing, auth, and product chrome:
+ *   space: --wireline-space-*
+ *   type: --wireline-typography-*
+ *   color: --wireline-color-canvas-default (#0A0A0E) + --wireline-color-action-primary-default (#A78BFA)
+ *   radius: --wireline-radius-lg (controls) / --wireline-radius-xl (cards)
+ *   focus: --wireline-color-focus-default with --wireline-interaction-focus-*
+ *   motion: --wireline-motion-duration-fast / --wireline-motion-easing-standard
+ */
 
 :root {
   --wireline-page: var(--wireline-color-canvas-default);

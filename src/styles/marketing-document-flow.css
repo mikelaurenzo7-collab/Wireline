@@ -118,6 +118,43 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   text-align: left;
 }
 
+.marketing-surface.wl-features-page .wl-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem 1.75rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.7rem;
+  overflow: visible;
+  color: var(--wireline-color-text-primary);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  white-space: normal;
+  text-overflow: clip;
+  text-wrap: pretty;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.5em;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--wireline-color-action-primary-default);
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 16%, transparent);
+}
+
 .wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--tight {
   padding-block: clamp(2.25rem, 4vw, 4rem);
 }
