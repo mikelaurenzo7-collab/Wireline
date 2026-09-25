@@ -422,7 +422,8 @@ html[data-wl-privacy-dock="open"] {
   scroll-padding-bottom: calc(var(--wl-privacy-dock-space) + 1rem);
 }
 
-html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
+html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"],
+html[data-wl-privacy-dock="open"][data-wl-sticky-cta="open"] {
   --wl-privacy-dock-space: 11rem;
 }
 
@@ -476,6 +477,11 @@ html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
   padding-bottom: 0.75rem;
 }
 
+html:not([data-wl-sticky-cta="open"]) .wl-privacy-dock--above-sticky {
+  bottom: 0;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
 .wl-privacy-dock__bar {
   pointer-events: auto;
   display: flex;
@@ -513,7 +519,8 @@ html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
 
 @media (min-width: 1024px) {
   html[data-wl-privacy-dock="open"],
-  html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
+  html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"],
+  html[data-wl-privacy-dock="open"][data-wl-sticky-cta="open"] {
     --wl-privacy-dock-space: 5.25rem;
   }
 
@@ -553,7 +560,8 @@ html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
     --wl-privacy-dock-space: 7.75rem;
   }
 
-  html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
+  html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"],
+  html[data-wl-privacy-dock="open"][data-wl-sticky-cta="open"] {
     --wl-privacy-dock-space: 12.75rem;
   }
 
@@ -673,6 +681,13 @@ html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
     --bb-lockup-mark: 2rem;
     --bb-lockup-wordmark-size: 1.02rem;
     --bb-lockup-gap: 0.1rem;
+  }
+
+  /* Founder rule: never clip header CTAs. Shrink the lockup, not "Start Free". */
+  .wl-public-header .marketing-btn-primary {
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
   }
 }
 

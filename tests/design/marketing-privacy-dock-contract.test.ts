@@ -8,10 +8,16 @@ describe("BotBound marketing privacy dock and readable labels", () => {
   it("docks cookie consent without covering pricing or feature copy", () => {
     const consent = read("src/components/CookieConsent.tsx");
     const polish = read("src/styles/botbound-master-polish.css");
+    const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
 
     expect(consent).toContain("wl-privacy-dock");
     expect(consent).toContain("wl-privacy-dock--above-sticky");
     expect(consent).toContain('root.dataset.wlPrivacyDock = "open"');
+    expect(consent).toContain('doc.querySelector(".marketing-sticky-cta")');
+    expect(sticky).toContain('window.matchMedia("(min-width: 1024px)")');
+    expect(polish).toContain(
+      'html:not([data-wl-sticky-cta="open"]) .wl-privacy-dock--above-sticky',
+    );
     expect(consent).not.toContain("sm:w-[720px]");
     expect(consent).not.toContain("z-[9999]");
     expect(polish).toContain(".wl-privacy-dock {");
@@ -25,7 +31,10 @@ describe("BotBound marketing privacy dock and readable labels", () => {
       "max-height: calc(100dvh - var(--wl-marketing-chrome-top, 4rem) - var(--wl-privacy-dock-space))",
     );
     expect(polish).toContain("@media (min-width: 1024px)");
+    expect(polish).toContain('html[data-wl-privacy-dock="open"][data-wl-sticky-cta="open"]');
     expect(polish).toContain(".wl-privacy-dock--above-sticky");
+    expect(polish).toContain(".wl-public-header .marketing-btn-primary");
+    expect(polish).toContain("overflow: visible");
     const pricing = read("src/pages/Pricing.tsx");
     expect(pricing).toContain("wl-pricing-hero");
     expect(pricing).toContain("wl-pricing-plan-grid");

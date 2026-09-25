@@ -46,6 +46,7 @@ export default function CookieConsent() {
   const [explicitlyOpened, setExplicitlyOpened] = useState(false);
   const location = useLocation();
   const [hasSession, setHasSession] = useState(false);
+  const [stickyCtaMounted, setStickyCtaMounted] = useState(false);
   const privacySignalEnabled = globalPrivacyControlEnabled();
   const privacyPanelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -101,7 +102,25 @@ export default function CookieConsent() {
     return () => window.removeEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
   }, []);
 
+  useEffect(() => {
+    try {
+      const doc = typeof document === "undefined" ? null : document;
+      if (!doc?.querySelector || !doc.body) return;
+      const syncStickyCta = () => {
+        setStickyCtaMounted(Boolean(doc.querySelector(".marketing-sticky-cta")));
+      };
+      syncStickyCta();
+      if (typeof MutationObserver !== "function") return;
+      const observer = new MutationObserver(syncStickyCta);
+      observer.observe(doc.body, { childList: true, subtree: true });
+      return () => observer.disconnect();
+    } catch {
+      return;
+    }
+  }, [location.pathname]);
+
   const clearMarketingSticky =
+    stickyCtaMounted &&
     !hasSession &&
     isMarketingStickyCtaRoute(location.pathname) &&
     !isAuthPortalPath(location.pathname);

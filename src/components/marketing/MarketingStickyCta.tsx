@@ -40,6 +40,36 @@ export default function MarketingStickyCta({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    try {
+      const root = typeof document === "undefined" ? null : document.documentElement;
+      if (!root?.dataset) return;
+
+      const media =
+        typeof window !== "undefined" && typeof window.matchMedia === "function"
+          ? window.matchMedia("(min-width: 1024px)")
+          : null;
+
+      const sync = () => {
+        const desktopHidden = Boolean(media?.matches);
+        if (!visible || desktopHidden) {
+          delete root.dataset.wlStickyCta;
+          return;
+        }
+        root.dataset.wlStickyCta = "open";
+      };
+
+      sync();
+      media?.addEventListener?.("change", sync);
+      return () => {
+        media?.removeEventListener?.("change", sync);
+        delete root.dataset.wlStickyCta;
+      };
+    } catch {
+      return;
+    }
+  }, [visible]);
+
   if (!visible) return null;
 
   return (
