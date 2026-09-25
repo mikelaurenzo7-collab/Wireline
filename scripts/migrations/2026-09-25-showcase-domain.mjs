@@ -70,8 +70,8 @@ try {
   for (const { row, plan } of plans) {
     if (!apply || plan.status !== "refresh") continue;
     const updated = await db.query(
-      `UPDATE wireline_agents SET system_prompt_override = $1, business_variables = $2::jsonb, website_url = $7,
-        updated_at = now() WHERE id = $3 AND user_id = $4 AND system_prompt_override IS NOT DISTINCT FROM $5
+      `UPDATE wireline_agents SET system_prompt_override = $1, business_variables = $2::jsonb, website_url = $7
+        WHERE id = $3 AND user_id = $4 AND system_prompt_override IS NOT DISTINCT FROM $5
         AND business_variables = $6::jsonb AND website_url IS NOT DISTINCT FROM $8`,
       [
         plan.systemPromptOverride ?? row.systemPromptOverride,

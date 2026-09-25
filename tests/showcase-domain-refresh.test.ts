@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { getTableColumns } from "drizzle-orm";
+import { agents } from "../src/db/schema";
 // @ts-expect-error -- operator helper shared by the explicit data migration.
 import {
   planFounderDomainRefresh,
@@ -22,6 +25,19 @@ const row = {
 };
 
 describe("explicit showcase domain refresh", () => {
+  it("writes only columns defined by the canonical agent schema", () => {
+    const migration = readFileSync(
+      new URL("../scripts/migrations/2026-09-25-showcase-domain.mjs", import.meta.url),
+      "utf8",
+    );
+    const update = migration.match(/UPDATE\s+wireline_agents\s+SET\s+([\s\S]*?)\s+WHERE\b/i);
+    expect(update).not.toBeNull();
+    const columns = [...update![1].matchAll(/\b([a-z_]+)\s*=/g)].map((match) => match[1]);
+    expect(columns.length).toBeGreaterThan(0);
+    const schemaColumns = new Set(Object.values(getTableColumns(agents)).map((column) => column.name));
+    expect(columns.filter((column) => !schemaColumns.has(column))).toEqual([]);
+  });
+
   it("changes only the exact managed handoff while retaining saved custom text and metadata", () => {
     const plan = planShowcaseDomainRefresh(row);
     expect(plan.status).toBe("refresh");
