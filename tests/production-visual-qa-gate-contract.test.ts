@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   CANONICAL_PRODUCTION_VISUAL_BASE_URL,
   optionalProductionVisualArtifactNames,
+  productionVisualRouteExpectation,
   productionVisualSemanticKey,
   PRODUCTION_VISUAL_AUTHENTICATED_ROUTES,
   PRODUCTION_VISUAL_COMPATIBILITY_ROUTES,
@@ -118,6 +119,17 @@ describe("production visual QA safety gate", () => {
     expect(productionVisualSemanticKey("public", "/features")).not.toBe(
       productionVisualSemanticKey("public", "/pricing"),
     );
+    expect(productionVisualSemanticKey("public", "/get-started")).toBe(
+      productionVisualSemanticKey("public", "/signup"),
+    );
+    expect(productionVisualSemanticKey("public", "/signin")).not.toBe(
+      productionVisualSemanticKey("public", "/signup"),
+    );
+    // Aliased pixels still require proof that each requested route mounted.
+    expect(productionVisualRouteExpectation("public", "/get-started")?.states).toEqual([
+      "get-started",
+    ]);
+    expect(productionVisualRouteExpectation("public", "/signup")?.states).toEqual(["signup"]);
   });
 
   it("budgets the workflow beyond source wait plus a conservative capture allowance", () => {

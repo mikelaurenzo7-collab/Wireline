@@ -165,7 +165,11 @@ export function productionVisualRouteExpectation(mode, route) {
 }
 
 export function productionVisualSemanticKey(mode, route) {
-  const expectation = productionVisualRouteExpectation(mode, route);
+  // AuthPortal deliberately renders the same signup form for these two URLs.
+  // Keep their route-specific marker assertions distinct; only their expected
+  // screenshot identity is shared.
+  const captureRoute = mode === "public" && route === "/get-started" ? "/signup" : route;
+  const expectation = productionVisualRouteExpectation(mode, captureRoute);
   return expectation ? `${expectation.page}\u0000${expectation.states.join("\u0000")}` : null;
 }
 

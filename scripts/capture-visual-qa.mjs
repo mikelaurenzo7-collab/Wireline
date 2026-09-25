@@ -8,6 +8,7 @@ import {
   productionVisualSemanticKey,
 } from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
+import { isIntentionalCaptureAbort } from "./lib/visual-capture-diagnostics.mjs";
 
 const baseUrl = (process.env.WIRELINE_VISUAL_BASE_URL || "http://localhost:3000").replace(
   /\/$/,
@@ -109,6 +110,7 @@ const ignoredRequestHosts = new Set([
   "www.facebook.com",
   ...parseList(process.env.WIRELINE_VISUAL_IGNORED_REQUEST_HOSTS),
 ]);
+const intentionallyAbortedRequestUrls = new WeakMap();
 
 const LEGACY_ROUTE_PREFIXES = new Set([
   "/agents",
@@ -477,6 +479,15 @@ function attachPageDiagnostics(page, viewportName, issues) {
   page.setDefaultNavigationTimeout(45_000);
   page.on("console", (message) => {
     if (message.type() === "error") {
+      if (
+        isIntentionalCaptureAbort(
+          message.text(),
+          message.location().url,
+          intentionallyAbortedRequestUrls.get(page),
+        )
+      ) {
+        return;
+      }
       pushIssue(issues, {
         viewport: viewportName,
         route: page.url(),
@@ -521,6 +532,8 @@ async function withTimeout(work, timeoutMs, message) {
  * same pixels, same layout, no dependency on someone else's uptime.
  */
 async function blockThirdPartyBeacons(page) {
+  const abortedUrls = new Set();
+  intentionallyAbortedRequestUrls.set(page, abortedUrls);
   await page.route("**/*", (route) => {
     let host = "";
     try {
@@ -528,7 +541,11 @@ async function blockThirdPartyBeacons(page) {
     } catch {
       return route.continue();
     }
-    return ignoredRequestHosts.has(host) ? route.abort() : route.continue();
+    if (ignoredRequestHosts.has(host)) {
+      abortedUrls.add(route.request().url());
+      return route.abort();
+    }
+    return route.continue();
   });
 }
 

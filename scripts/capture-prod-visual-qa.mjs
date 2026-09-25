@@ -14,6 +14,7 @@ import {
   visualQaFileStem,
 } from "./lib/production-visual-qa-contract.mjs";
 import { chromiumLaunchOptions } from "./lib/resolve-preinstalled-chromium.mjs";
+import { isIntentionalCaptureAbort } from "./lib/visual-capture-diagnostics.mjs";
 import {
   assertCleanCheckout,
   resolveSourceCommit,
@@ -76,6 +77,7 @@ const ignoredRequestHosts = new Set([
   "connect.facebook.net",
   "www.facebook.com",
 ]);
+const intentionallyAbortedRequestUrls = new WeakMap();
 
 function isBenignExternal(value) {
   try {
@@ -106,9 +108,15 @@ async function settle(page) {
 }
 
 async function blockThirdPartyBeacons(page) {
+  const abortedUrls = new Set();
+  intentionallyAbortedRequestUrls.set(page, abortedUrls);
   await page.route("**/*", (route) => {
     const url = route.request().url();
-    return isBenignExternal(url) ? route.abort() : route.continue();
+    if (isBenignExternal(url)) {
+      abortedUrls.add(url);
+      return route.abort();
+    }
+    return route.continue();
   });
 }
 
@@ -162,6 +170,15 @@ async function auditResponsiveLayout(page, viewportName, route, issues) {
 function attachDiagnostics(page, viewportName, mode, issues) {
   page.on("console", (message) => {
     if (message.type() === "error" && !isBenignExternal(message.text())) {
+      if (
+        isIntentionalCaptureAbort(
+          message.text(),
+          message.location().url,
+          intentionallyAbortedRequestUrls.get(page),
+        )
+      ) {
+        return;
+      }
       pushIssue(issues, {
         viewport: viewportName,
         route: page.url(),
