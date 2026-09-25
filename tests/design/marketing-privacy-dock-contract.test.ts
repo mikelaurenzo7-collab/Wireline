@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -107,5 +107,7 @@ describe("BotBound marketing privacy dock and readable labels", () => {
       source: "/manifest.webmanifest",
       destination: "/site.webmanifest",
     });
+    expect(existsSync(resolve(process.cwd(), "public/brand/botbound-mark.png"))).toBe(true);
+    expect(existsSync(resolve(process.cwd(), "public/brand/botbound-mark.svg"))).toBe(true);
   });
 });
