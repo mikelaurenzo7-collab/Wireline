@@ -126,7 +126,11 @@ every placeholder.
    Set API `WIRELINE_VOICE_WORKER_URL` to the
    separate HTTPS voice origin. Retain canonical `APP_URL`, `CORS_ORIGINS` and
    `TWILIO_WEBHOOK_BASE_URL` as `https://botbound.me`. Existing provider webhook
-   URLs and registered OAuth redirects retain that canonical origin.
+   URLs retain that canonical origin. Browser OAuth `redirect_uri` on a Render
+   `*.onrender.com` dogfood host comes from `PUBLIC_URL` or `RENDER_EXTERNAL_URL`,
+   not from `APP_URL` and not from the request Host header. Set
+   `PUBLIC_URL=https://botbound.me` only after that host is the live application
+   origin. Production Vercel ignores Render URL metadata and keeps `APP_URL`.
 3. Verify all `fromService` references, including worker credential parity and
    each cron's `CRON_SECRET` and API origin. Deploy the matched,
    reviewed API/worker source. Run provider preflight from a secure operator

@@ -1,5 +1,5 @@
 import { BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
-import { isProductionDeployment } from "./deployment-environment";
+import { getDeploymentIdentity, isProductionDeployment } from "./deployment-environment";
 import { isProductionRuntime } from "./session-cookie";
 
 const DEV_DEFAULT = "http://localhost:3000";
@@ -27,32 +27,57 @@ function configuredAppUrl(): string {
     .replace(/\/+$/, "");
 }
 
-function requestHostname(req?: RequestHostLike): string {
-  const forwarded = String(req?.get?.("x-forwarded-host") || "")
-    .split(",")[0]
-    .trim();
-  const host = forwarded || String(req?.get?.("host") || req?.hostname || "").trim();
-  return host.replace(/:\d+$/, "").toLowerCase();
-}
-
-function renderExternalOrigin(): string {
-  if (
-    String(process.env.RENDER || "")
-      .trim()
-      .toLowerCase() !== "true"
-  )
-    return "";
-  const raw = String(process.env.RENDER_EXTERNAL_URL || "")
+/** Accept an explicit origin env. Never treat Host / X-Forwarded-Host as input. */
+export function parsePublicOrigin(raw: string | undefined, allowHttpLocal = false): string {
+  const trimmed = String(raw || "")
     .trim()
     .replace(/\/+$/, "");
-  if (!raw) return "";
+  if (!trimmed) return "";
   try {
-    const url = new URL(raw.includes("://") ? raw : `https://${raw}`);
-    if (url.protocol !== "https:" || !url.hostname) return "";
+    const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+    if (url.username || url.password) return "";
+    if (url.pathname && url.pathname !== "/") return "";
+    if (url.search || url.hash) return "";
+    if (!url.hostname) return "";
+    const localHttp =
+      allowHttpLocal &&
+      url.protocol === "http:" &&
+      /^(localhost|127\.0\.0\.1)$/i.test(url.hostname);
+    if (url.protocol !== "https:" && !localHttp) return "";
     return url.origin;
   } catch {
     return "";
   }
+}
+
+function isRenderWebService(): boolean {
+  return (
+    getDeploymentIdentity().provider === "render" &&
+    String(process.env.RENDER || "")
+      .trim()
+      .toLowerCase() === "true"
+  );
+}
+
+/**
+ * Env-only browser/OAuth origin. Empty when the caller should use APP_URL.
+ * Request Host is never consulted — adjacent or spoofed hosts must not mint
+ * a different callback origin.
+ */
+export function envPublicRuntimeOrigin(): string {
+  const identity = getDeploymentIdentity();
+  const publicUrl = parsePublicOrigin(process.env.PUBLIC_URL, true);
+
+  if (identity.provider === "vercel" || identity.provider === "conflict") {
+    return "";
+  }
+
+  if (isRenderWebService()) {
+    if (publicUrl) return publicUrl;
+    return parsePublicOrigin(process.env.RENDER_EXTERNAL_URL);
+  }
+
+  return publicUrl;
 }
 
 /**
@@ -89,21 +114,21 @@ export function resolveCanonicalAppUrl():
 
 /**
  * Browser-facing origin for OAuth redirects and Studio handoff.
+ *
  * Marketing canonical/OG stay BOTBOUND_PRODUCTION_ORIGIN. Production APP_URL
- * stays https://botbound.me. Render dogfood uses RENDER_EXTERNAL_URL only
- * when the request is actually on that host, so onrender can sign in without
- * a DNS cutover or rewriting production APP_URL.
+ * stays https://botbound.me and is never rewritten from Render metadata.
+ *
+ * Origin is env-driven only:
+ *   PUBLIC_URL → Render RENDER_EXTERNAL_URL → APP_URL
+ * Vercel (and Vercel+Render conflict) always use APP_URL / preview URL so a
+ * leaked RENDER_EXTERNAL_URL cannot mint onrender callbacks on botbound.me.
+ * Render dogfood therefore keeps OAuth on *.onrender.com even when APP_URL is
+ * the canonical production origin, without consulting Host / X-Forwarded-Host.
+ *
+ * `req` is accepted for call-site compatibility and is not an origin source.
  */
-export function getPublicRuntimeOrigin(req?: RequestHostLike): string {
-  const renderOrigin = renderExternalOrigin();
-  if (renderOrigin) {
-    let renderHost = "";
-    try {
-      renderHost = new URL(renderOrigin).hostname.toLowerCase();
-    } catch {
-      renderHost = "";
-    }
-    if (renderHost && requestHostname(req) === renderHost) return renderOrigin;
-  }
+export function getPublicRuntimeOrigin(_req?: RequestHostLike): string {
+  const fromEnv = envPublicRuntimeOrigin();
+  if (fromEnv) return fromEnv;
   return getCanonicalAppUrl();
 }

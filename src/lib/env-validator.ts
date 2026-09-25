@@ -568,6 +568,31 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     formatHint: "https://botbound.me (exactly; no path, port, credentials, or trailing slash)",
   },
   {
+    name: "PUBLIC_URL",
+    group: "operational",
+    required: false,
+    description: "Optional browser-facing origin for OAuth and runtime redirects",
+    validate: (value) => {
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        const localHttp =
+          url.protocol === "http:" && /^(localhost|127\.0\.0\.1)$/i.test(url.hostname);
+        return (
+          (url.protocol === "https:" || localHttp) &&
+          !url.username &&
+          !url.password &&
+          (!url.pathname || url.pathname === "/") &&
+          !url.search &&
+          !url.hash
+        );
+      } catch {
+        return false;
+      }
+    },
+    formatHint: "https origin with no path (Render dogfood uses RENDER_EXTERNAL_URL when unset)",
+  },
+  {
     name: "CORS_ORIGINS",
     group: "operational",
     required: false,

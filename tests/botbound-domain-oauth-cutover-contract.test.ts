@@ -100,8 +100,11 @@ describe("BotBound domain and OAuth cutover boundary", () => {
     expect(authOAuth).toContain('import { getPublicRuntimeOrigin } from "../lib/app-url"');
     expect(authOAuth).toContain("return getPublicRuntimeOrigin(req)");
     expect(appUrl).toContain("process.env.APP_URL");
+    expect(appUrl).toContain("process.env.PUBLIC_URL");
     expect(appUrl).toContain("RENDER_EXTERNAL_URL");
     expect(appUrl).toContain("getPublicRuntimeOrigin");
+    expect(appUrl).toContain("envPublicRuntimeOrigin");
+    expect(appUrl).not.toContain("x-forwarded-host");
     for (const path of SIGN_IN_CALLBACKS) expect(authOAuth, path).toContain(path);
     expect(authOAuth).not.toContain("https://trywireline.com/api/auth/");
     expect(authOAuth).not.toContain("https://botbound.me/api/auth/");

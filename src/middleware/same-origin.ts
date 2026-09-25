@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { envPublicRuntimeOrigin } from "../lib/app-url";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -28,6 +29,8 @@ function collectAllowedOrigins(): Set<string> {
   const allowed = new Set<string>();
   const appUrl = (process.env.APP_URL || "").trim().replace(/\/+$/, "");
   if (appUrl) allowed.add(appUrl);
+  const runtimeOrigin = envPublicRuntimeOrigin();
+  if (runtimeOrigin) allowed.add(runtimeOrigin);
   for (const entry of (process.env.CORS_ORIGINS || "").split(",")) {
     const origin = entry.trim().replace(/\/+$/, "");
     if (origin) allowed.add(origin);
