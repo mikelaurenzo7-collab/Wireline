@@ -509,6 +509,18 @@ html[data-wl-privacy-dock="open"] .wl-pricing-page #scale {
   }
 }
 
+@media (min-width: 1024px) {
+  html[data-wl-privacy-dock="open"],
+  html[data-wl-privacy-dock="open"][data-wl-privacy-sticky="1"] {
+    --wl-privacy-dock-space: 7.5rem;
+  }
+
+  .wl-privacy-dock--above-sticky {
+    bottom: 0;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+}
+
 @media (max-width: 639px) {
   html[data-wl-privacy-dock="open"] {
     --wl-privacy-dock-space: 13.5rem;
