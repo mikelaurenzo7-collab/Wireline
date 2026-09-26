@@ -167,6 +167,37 @@ describe("provider spend launch kill switch", () => {
     expect(routes).toContain("PROVIDER_SPEND_PAUSED_CODE");
   });
 
+  it("retains a claimable identity follow-up when number selection overlaps the final attempt", async () => {
+    // Selection's enqueue can see this job as running and reuse it. Completing
+    // it here would lose that follow-up, even though the number now exists.
+    const job = { id: "identity-job", attempts: 4, maxAttempts: 4 };
+    const pause = new ProviderSpendPausedError(
+      "paid_bot_identity_reconcile",
+      "Choose a number in Phone setup before managed email setup can continue.",
+    );
+    let appliedPatch: Record<string, unknown> | undefined;
+    const db = {
+      transaction: async (run: (tx: unknown) => Promise<unknown>) =>
+        run({
+          update: () => ({
+            set: (patch: Record<string, unknown>) => {
+              appliedPatch = patch;
+              return { where: () => ({ returning: async () => [{ id: job.id }] }) };
+            },
+          }),
+        }),
+    };
+    await expect(settleClaimedJobError(db as never, job, pause)).resolves.toBe("deferred");
+    expect(appliedPatch).toMatchObject({
+      status: "pending",
+      attempts: 3,
+      finishedAt: null,
+      error: pause.message,
+    });
+    expect((appliedPatch?.runAt as Date).getTime()).toBeGreaterThan(Date.now());
+    expect(pause.message).not.toContain("Launch hard gate");
+  });
+
   it("uses one Runtime Balance reservation identity for every job retry", () => {
     const first = runtimeReservationReferenceForJob({
       id: "artifact-job-1",

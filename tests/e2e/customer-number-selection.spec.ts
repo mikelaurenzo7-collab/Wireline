@@ -144,6 +144,61 @@ for (const kind of ["unavailable", "malformed", "null", "wrong-area"] as const) 
   });
 }
 
+test("a full plan offers billing recovery instead of blaming the area code", async ({ page }) => {
+  await workspace(page);
+  await page.route("**/api/phone-numbers/available", (route) =>
+    route.fulfill({
+      status: 403,
+      json: {
+        code: "PHONE_CAPACITY_REACHED",
+        error: "Your plan includes 1 dedicated line; upgrade or add an Extra Agent for more.",
+      },
+    }),
+  );
+  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await expect(
+    page.getByText("Your plan includes 1 dedicated line", { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open billing", exact: true })).toHaveAttribute(
+    "href",
+    "/settings/billing",
+  );
+  await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeDisabled();
+  await expect(page.getByText("Try another nearby area code", { exact: false })).toHaveCount(0);
+});
+
+test("a reserved line only reports connected after routing is confirmed", async ({ page }) => {
+  await workspace(page);
+  let confirmed = false;
+  let purchases = 0;
+  await page.route("**/api/phone-numbers", (route) =>
+    route.fulfill({
+      json: {
+        numbers: [
+          {
+            id: "reserved-line",
+            agent_id: "local-bot",
+            phone_number: "+15615550102",
+            native_voice_status: confirmed ? "active" : "degraded",
+          },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/phone-numbers/provision", (route) => {
+    purchases += 1;
+    return route.fulfill({ json: { ok: false } });
+  });
+  await page.reload();
+  const line = page.getByRole("region", { name: "Selected line" });
+  await expect(line.getByText("Connection not confirmed", { exact: true })).toBeVisible();
+  await expect(line.getByText("Connected", { exact: true })).toHaveCount(0);
+  confirmed = true;
+  await line.getByRole("button", { name: "Retry connection", exact: true }).click();
+  await expect(line.getByText("Connected", { exact: true })).toBeVisible();
+  expect(purchases).toBe(0);
+});
+
 test("the number choices and activation reflow at 320px with enlarged text", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await workspace(page);

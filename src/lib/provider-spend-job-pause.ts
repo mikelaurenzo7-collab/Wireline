@@ -35,8 +35,8 @@ export class ProviderSpendPausedError extends Error {
   readonly code = PROVIDER_SPEND_PAUSED_CODE;
   readonly jobType: string;
 
-  constructor(jobType: string) {
-    super(`Launch hard gate is on; provider-spend job ${jobType} is paused.`);
+  constructor(jobType: string, reason?: string) {
+    super(reason || `Launch hard gate is on; provider-spend job ${jobType} is paused.`);
     this.name = "ProviderSpendPausedError";
     this.jobType = jobType;
   }

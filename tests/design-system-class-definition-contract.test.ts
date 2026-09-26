@@ -76,7 +76,8 @@ describe("design system class definition contract", () => {
         const name = match[1];
         const at = match.index ?? 0;
         const isCssCustomProperty = text.slice(Math.max(0, at - 2), at) === "--";
-        if (isCssCustomProperty || isFragmentOrKnownVariableFamily(name) || isDeclared(name)) continue;
+        if (isCssCustomProperty || isFragmentOrKnownVariableFamily(name) || isDeclared(name))
+          continue;
         const seen = orphans.get(name) ?? [];
         if (!seen.includes(file)) seen.push(file);
         orphans.set(name, seen);
@@ -101,10 +102,10 @@ describe("design system class definition contract", () => {
     }
 
     expect(caps).toMatch(
-      /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?letter-spacing: var\(--wl-caps-label-tracking\);/,
+      /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?letter-spacing: normal;/,
     );
     expect(caps).toMatch(
-      /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?text-transform: uppercase;/,
+      /\.wl-label,\s*\.wl-label-muted,\s*\.wl-micro-badge,\s*\.wl-insight-label\s*\{[^}]*?text-transform: none;/,
     );
 
     const layerBody = caps.match(/@layer components\s*\{([\s\S]*)\}/)?.[1] ?? "";

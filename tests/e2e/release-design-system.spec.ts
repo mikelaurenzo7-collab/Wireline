@@ -68,6 +68,39 @@ async function expectContentFits(locator: Locator) {
     .toEqual([]);
 }
 
+test("workspace actions share readable typography in both themes", async ({ page }) => {
+  await mockWorkspace(page);
+  await page.goto("/settings/billing");
+  const builder = page.getByRole("link", { name: "Open Free Builder", exact: true });
+  await expect(builder).toBeVisible();
+  for (const light of [false, true]) {
+    await page.evaluate(async (light) => {
+      document.documentElement.classList.toggle("light", light);
+      await document.fonts.ready;
+    }, light);
+    for (const action of [builder, page.getByRole("button", { name: "Annual", exact: true })]) {
+      const type = await action.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          family: style.fontFamily,
+          size: parseFloat(style.fontSize),
+          weight: Number(style.fontWeight),
+          transform: style.textTransform,
+        };
+      });
+      expect(type.family).toContain("Inter");
+      expect(type.family).not.toMatch(/Mono|monospace/);
+      expect(type.size).toBeGreaterThanOrEqual(14);
+      expect(type.weight).toBeGreaterThanOrEqual(600);
+      expect(type.transform).toBe("none");
+    }
+    await expectContentFits(page.locator(".wl-billing-plans, .wl-billing-plans *"));
+  }
+  await builder.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/studio/);
+});
+
 test("pricing keeps its header, annual prices, and both mobile actions readable at 320px and 200% text", async ({
   page,
 }) => {

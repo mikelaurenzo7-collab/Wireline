@@ -20,6 +20,7 @@ type PhoneNumberRecord = {
   agent_id?: string | null;
   campaign_label?: string | null;
   created_at?: string | null;
+  native_voice_status?: string | null;
 };
 
 type ProvisionResponse = {
@@ -47,9 +48,9 @@ function formatPhone(value?: string | null) {
 }
 
 function formatProvisionedDate(value?: string | null) {
-  if (!value) return "Active";
+  if (!value) return null;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Active";
+  if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
@@ -195,7 +196,9 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   async function handlePhoneFailure(body: ProvisionResponse, fallback: string) {
     const nextRecoveryPath =
       body.recovery_path ||
-      (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+      (body.code === "ACTIVATION_REQUIRED" ||
+      body.code === "SUBSCRIPTION_REQUIRED" ||
+      body.code === "PHONE_CAPACITY_REACHED"
         ? "/settings/billing"
         : null);
     setRecoveryPath(nextRecoveryPath);
@@ -340,9 +343,24 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body?.error || "Could not update this line.");
+      if (
+        body?.success !== true ||
+        String(body?.number?.id) !== String(activeNumber.id) ||
+        (body?.number?.agentId ?? null) !== agentId
+      )
+        throw new Error(
+          "The line update could not be confirmed. Refresh your lines before trying again.",
+        );
       setNumbers((current) =>
         current.map((number) =>
-          number.id === activeNumber.id ? { ...number, agent_id: agentId } : number,
+          number.id === activeNumber.id
+            ? {
+                ...number,
+                agent_id: agentId,
+                native_voice_status:
+                  typeof body.native_voice_status === "string" ? body.native_voice_status : null,
+              }
+            : number,
         ),
       );
       setMessage(agentId ? "Bot assigned." : "Line unassigned.");
@@ -374,7 +392,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
               ? "Checking lines…"
               : inventoryUnavailable
                 ? "Lines unavailable"
-                : `${numbers.length} active`}
+                : `${numbers.length} line${numbers.length === 1 ? "" : "s"}`}
           </p>
         </div>
         {numbers.length > 0 ? (
@@ -642,7 +660,14 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                     {formatPhone(activeNumber.phone_number)}
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Active · {formatProvisionedDate(activeNumber.created_at)}
+                    {activeNumber.native_voice_status === "active"
+                      ? "Connected"
+                      : !activeNumber.agent_id
+                        ? "Unassigned"
+                        : "Connection not confirmed"}
+                    {formatProvisionedDate(activeNumber.created_at)
+                      ? ` · ${formatProvisionedDate(activeNumber.created_at)}`
+                      : ""}
                   </p>
                 </div>
                 <Button asChild size="sm" variant="secondary">
@@ -653,6 +678,19 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                 </Button>
               </div>
 
+              {activeNumber.agent_id && activeNumber.native_voice_status !== "active" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="mt-3"
+                  disabled={loading || working || attaching}
+                  onClick={() => void loadNumbers(activeNumber.agent_id || undefined)}
+                >
+                  {loading ? "Checking connection…" : "Retry connection"}
+                </Button>
+              ) : null}
+
               <label className="mt-5 grid gap-1.5">
                 <span className="text-xs font-semibold text-foreground">Assigned Bot</span>
                 <Select
@@ -662,7 +700,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                   }
                   disabled={attaching || agentsLoading || loading || working}
                 >
-                  <SelectTrigger className="h-10" aria-label="Assigned Bot">
+                  <SelectTrigger
+                    className="h-auto min-h-10 whitespace-normal [&>span]:line-clamp-none [&>span]:min-w-0 [&>span]:break-words"
+                    aria-label="Assigned Bot"
+                  >
                     <SelectValue placeholder="Assign Bot" />
                   </SelectTrigger>
                   <SelectContent>

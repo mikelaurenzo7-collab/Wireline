@@ -49,13 +49,34 @@ function statusForProvisionFailure(code?: string, activationPending?: boolean): 
   return 503;
 }
 
-async function capacityAvailable(userId: string): Promise<boolean> {
+async function assertNumberCapacity(userId: string): Promise<void> {
   const slots = await getIncludedPhoneLineSlots(userId);
   const [{ held }] = await drizzle
     .select({ held: sql<number>`count(*)` })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, userId));
-  return Number(held || 0) < slots;
+  if (Number(held || 0) >= slots) {
+    throw new AppError(
+      403,
+      "PHONE_CAPACITY_REACHED",
+      `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+    );
+  }
+}
+
+async function queueManagedIdentity(userId: string, agentId: string): Promise<void> {
+  try {
+    await enqueuePaidBotIdentityReconciliation(userId);
+  } catch (error) {
+    log.error("Paid Bot mailbox reconciliation could not be queued after phone selection", {
+      userId,
+      agentId,
+      error: error instanceof Error ? error.message : "Unknown queue failure",
+    });
+    throw AppError.serviceUnavailable(
+      "The phone change is saved, but email setup could not start. Retry this action to finish setup.",
+    );
+  }
 }
 
 router.get(
@@ -141,10 +162,7 @@ router.get(
   }),
   phoneNumberRateLimiter,
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    if (!(await capacityAvailable(req.user.id))) {
-      res.json({ available: [] });
-      return;
-    }
+    await assertNumberCapacity(req.user.id);
     const rows = await listNativeAvailableLocalNumbers(req.user.id, undefined, 8);
     res.setHeader("Cache-Control", "private, no-store");
     res.json({
@@ -168,14 +186,7 @@ router.post(
     if (!/^\d{3}$/.test(areaCode)) {
       throw AppError.badRequest("area_code must be a 3-digit US code.");
     }
-    if (!(await capacityAvailable(req.user.id))) {
-      const slots = await getIncludedPhoneLineSlots(req.user.id);
-      throw new AppError(
-        403,
-        "PHONE_CAPACITY_REACHED",
-        `Your plan includes ${slots} dedicated line${slots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
-      );
-    }
+    await assertNumberCapacity(req.user.id);
 
     const rows = await listNativeAvailableLocalNumbers(req.user.id, areaCode, 8);
     if (!rows.length) {
@@ -226,17 +237,7 @@ async function respondWithProvision(
     return;
   }
   if (input.agentId) {
-    try {
-      await enqueuePaidBotIdentityReconciliation(req.user.id);
-    } catch (error) {
-      // The line is already owned. Retrying this idempotent endpoint or the
-      // periodic identity reconciler can repair mail setup without a new line.
-      log.error("Paid Bot mailbox reconciliation could not be queued after phone selection", {
-        userId: req.user.id,
-        agentId: input.agentId,
-        error: error instanceof Error ? error.message : "Unknown queue failure",
-      });
-    }
+    await queueManagedIdentity(req.user.id, input.agentId);
   }
   res.status(result.reused ? 200 : 201).json({
     ok: true,
@@ -293,6 +294,7 @@ router.patch(
         ? { campaignLabel: String(req.body.campaign_label) }
         : {}),
     });
+    if (result.line.agentId) await queueManagedIdentity(req.user.id, result.line.agentId);
     res.json({
       success: true,
       number: result.line,

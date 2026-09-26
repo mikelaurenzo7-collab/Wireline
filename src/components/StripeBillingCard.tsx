@@ -598,7 +598,7 @@ function PlanPicker({
                   <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
                     <Icon className="w-5 h-5 wl-accent-text" />
                   </div>
-                  <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
+                  <span className="text-xs font-medium text-muted-foreground">
                     {plan.max_agents} {plan.max_agents === 1 ? "Bot" : "Bots"}
                   </span>
                 </div>
@@ -610,9 +610,7 @@ function PlanPicker({
                     <span className="font-semibold tracking-[-.02em] text-4xl text-foreground tabular-nums">
                       ${price.toLocaleString()}
                     </span>
-                    <span className="text-[length:var(--wireline-typography-overline-size)] font-mono uppercase tracking-[.05em] text-muted-foreground">
-                      {priceSuffix}
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">{priceSuffix}</span>
                   </div>
                   {showAnnual && monthsSaved > 0 ? (
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -641,23 +639,13 @@ function PlanPicker({
                   ))}
                 </ul>
                 {isFree ? (
-                  <ShadButton
-                    asChild
-                    disableAnimations
-                    variant="outline"
-                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground hover:border-[color:var(--wireline-color-border-strong)] hover:bg-muted wl-label wl-accent-subscribe"
-                  >
+                  <ShadButton asChild disableAnimations variant="outline" className="w-full py-3">
                     <Link to="/studio">
                       Open Free Builder <ArrowRight className="w-3 h-3" />
                     </Link>
                   </ShadButton>
                 ) : checkoutReleased && !canSubscribe ? (
-                  <ShadButton
-                    asChild
-                    disableAnimations
-                    variant="outline"
-                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground wl-label"
-                  >
+                  <ShadButton asChild disableAnimations variant="outline" className="w-full py-3">
                     <Link to="/contact?topic=billing">
                       Contact Sales <ArrowRight className="w-3 h-3" />
                     </Link>
@@ -669,10 +657,7 @@ function PlanPicker({
                     variant="outline"
                     onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
                     disabled={isBusy || !canSubscribe}
-                    className={cn(
-                      "w-full py-3 rounded-md wl-label font-medium border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted",
-                      !isBusy && canSubscribe && "wl-accent-subscribe",
-                    )}
+                    className="w-full py-3"
                   >
                     {isBusy ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

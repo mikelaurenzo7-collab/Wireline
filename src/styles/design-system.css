@@ -1,7 +1,8 @@
 @import "./lib/typography.css";
 
 /* BotBound Design System.
- * Inter Tight for display. Inter for body. IBM Plex Mono for system labels.
+ * Inter Tight for display. Inter for body, controls, and interface labels.
+ * IBM Plex Mono is reserved for technical values and section eyebrows.
  * Electric violet is action. Near-black canvas is calm. Platinum is the wire. */
 
 :root {
