@@ -9,12 +9,11 @@ import {
   AgentMailConnectError,
   agentmailLocalPart,
   agentmailGrantedScopes,
-  deleteAgentMailWebhook,
   deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
+  getAgentMailWebhook,
   hasExactAgentMailManagedScope,
   listAgentMailInboxes,
-  listAgentMailWebhooks,
   normalizeAgentMailInbox,
   resolveAgentMailInbox,
   verifyAgentMailCredentials,
@@ -58,24 +57,6 @@ const managedMailboxRateLimiter = createRateLimiter({
   max: 30,
 });
 
-async function removeUnverifiableAgentMailWebhook(input: {
-  apiKey: string;
-  webhookId: string;
-  userId: string;
-  emailAddress: string;
-}): Promise<void> {
-  try {
-    await deleteAgentMailWebhook(input.apiKey, input.webhookId);
-  } catch (cleanupError) {
-    log.warn("AgentMail orphan webhook cleanup failed", {
-      userId: input.userId,
-      email: input.emailAddress,
-      webhookId: input.webhookId,
-      error: getErrorMessage(cleanupError),
-    });
-  }
-}
-
 async function persistAgentMailDeliverySubscription(input: {
   apiKey: string;
   inboxId: string;
@@ -101,38 +82,29 @@ async function persistAgentMailDeliverySubscription(input: {
     // already valid. In that case the encrypted stored secret is authoritative.
     if (!ensured.secret && stored?.refreshToken) return;
 
-    try {
-      let signingSecret = ensured.secret;
-      if (!signingSecret) {
-        const webhooks = await listAgentMailWebhooks(input.apiKey);
-        signingSecret =
-          webhooks.find((webhook) => webhook.webhookId === ensured.webhookId)?.secret ?? null;
-      }
-      if (!signingSecret) {
-        throw new Error("AgentMail webhook did not expose its signing secret");
-      }
+    let signingSecret = ensured.secret;
+    if (!signingSecret) {
+      // GET /v0/webhooks/{id} is the documented secret source. List/create may
+      // omit it; never delete a working console webhook just because BotBound
+      // has not stored the secret yet.
+      signingSecret = (await getAgentMailWebhook(input.apiKey, ensured.webhookId)).secret;
+    }
+    if (!signingSecret) {
+      throw new Error("AgentMail webhook did not expose its signing secret");
+    }
 
-      const persisted = await drizzle
-        .update(schema.emailAccounts)
-        .set({ refreshToken: encryptSecret(signingSecret) })
-        .where(
-          and(
-            eq(schema.emailAccounts.id, input.accountId),
-            eq(schema.emailAccounts.userId, input.userId),
-          ),
-        )
-        .returning({ id: schema.emailAccounts.id });
-      if (persisted.length !== 1) {
-        throw new Error("AgentMail signing secret was not stored on the mailbox account");
-      }
-    } catch (signingSecretError) {
-      await removeUnverifiableAgentMailWebhook({
-        apiKey: input.apiKey,
-        webhookId: ensured.webhookId,
-        userId: input.userId,
-        emailAddress: input.emailAddress,
-      });
-      throw signingSecretError;
+    const persisted = await drizzle
+      .update(schema.emailAccounts)
+      .set({ refreshToken: encryptSecret(signingSecret) })
+      .where(
+        and(
+          eq(schema.emailAccounts.id, input.accountId),
+          eq(schema.emailAccounts.userId, input.userId),
+        ),
+      )
+      .returning({ id: schema.emailAccounts.id });
+    if (persisted.length !== 1) {
+      throw new Error("AgentMail signing secret was not stored on the mailbox account");
     }
   } catch (err) {
     // IMAP remains a durable fallback when push registration is unavailable.

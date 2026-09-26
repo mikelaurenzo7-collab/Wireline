@@ -5,6 +5,10 @@ const mockLogout = vi.fn().mockResolvedValue(undefined);
 const mockGetMailboxLock = vi.fn().mockResolvedValue({ release: vi.fn() });
 const mockSearch = vi.fn();
 const mockFetch = vi.fn();
+const { mockFetchWithTimeout, mockLog } = vi.hoisted(() => ({
+  mockFetchWithTimeout: vi.fn(),
+  mockLog: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
 
 vi.mock("imapflow", () => ({
   ImapFlow: class MockImapFlow {
@@ -30,11 +34,9 @@ vi.mock("nodemailer", () => ({
   },
 }));
 
-const mockFetchWithTimeout = vi.fn();
-
 vi.mock("./server-context", () => ({
   fetchWithTimeout: (...args: unknown[]) => mockFetchWithTimeout(...args),
-  log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
+  log: mockLog,
 }));
 
 import {
@@ -188,6 +190,138 @@ describe("agentmail-mail", () => {
       inbox_ids: ["trywireline@agentmail.to"],
       client_id: `wireline-mailbox-webhook:${accountId}`,
     });
+    vi.unstubAllEnvs();
+  });
+
+  it("adopts an existing account webhook and GETs the signing secret without deleting it", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    const accountId = "42a8c934-7b02-4d8d-95c4-3573d7aab937";
+    const url = `https://botbound.app/api/webhooks/agentmail/${accountId}`;
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhooks: [
+            {
+              webhook_id: "wh_console",
+              url: `${url}/`,
+              event_types: ["message.received"],
+            },
+            {
+              webhook_id: "wh_legacy",
+              client_id: "wireline-mailbox-webhook",
+              url: `https://botbound.me/api/webhooks/agentmail/${accountId}`,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(204, {}))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          webhook_id: "wh_console",
+          url,
+          secret: "whsec_adopted",
+        }),
+      );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "michael@botbound.app",
+        accountId,
+        hasStoredSecret: false,
+      }),
+    ).resolves.toEqual({ webhookId: "wh_console", secret: "whsec_adopted" });
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_legacy");
+    expect(mockFetchWithTimeout.mock.calls[1][1].method).toBe("DELETE");
+    expect(mockFetchWithTimeout.mock.calls[2][0]).toContain("/webhooks/wh_console");
+    expect(mockFetchWithTimeout.mock.calls[2][1]?.method).not.toBe("DELETE");
+    expect(
+      mockFetchWithTimeout.mock.calls.some(
+        (call) => call[1]?.method === "DELETE" && String(call[0]).includes("/webhooks/wh_console"),
+      ),
+    ).toBe(false);
+    vi.unstubAllEnvs();
+  });
+
+  it("logs AgentMail HTTP status and a redacted body when webhook create fails", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    const accountId = "11111111-1111-4111-8111-111111111111";
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(200, { webhooks: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse(400, {
+          name: "ValidationError",
+          code: "invalid_event_types",
+          message: "event_types contains an unknown value",
+          secret: "whsec_must_not_leak",
+          errors: [{ path: "event_types", message: "unknown value" }],
+        }),
+      );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "michael@botbound.app",
+        accountId,
+        hasStoredSecret: false,
+      }),
+    ).rejects.toThrow("Could not register the AgentMail inbound webhook for this inbox.");
+    expect(mockLog.warn).toHaveBeenCalledWith(
+      "AgentMail webhook request failed",
+      expect.objectContaining({
+        operation: "webhooks.create",
+        status: 400,
+        body: expect.objectContaining({
+          code: "invalid_event_types",
+          message: "event_types contains an unknown value",
+          secret: "[REDACTED]",
+        }),
+      }),
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it("logs AgentMail HTTP status and body when webhook list fails", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    mockFetchWithTimeout.mockResolvedValueOnce(
+      jsonResponse(403, { code: "missing_permission", message: "webhook_read is required" }),
+    );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "michael@botbound.app",
+        accountId: "11111111-1111-4111-8111-111111111111",
+        hasStoredSecret: false,
+      }),
+    ).rejects.toThrow("That AgentMail API key was rejected.");
+    expect(mockLog.warn).toHaveBeenCalledWith(
+      "AgentMail webhook request failed",
+      expect.objectContaining({
+        operation: "webhooks.list",
+        status: 403,
+        body: expect.objectContaining({ code: "missing_permission" }),
+      }),
+    );
+    vi.unstubAllEnvs();
+  });
+
+  it("GETs the signing secret when create omits it from the response", async () => {
+    vi.stubEnv("APP_URL", "https://botbound.app");
+    const accountId = "11111111-1111-4111-8111-111111111111";
+    const url = `https://botbound.app/api/webhooks/agentmail/${accountId}`;
+    mockFetchWithTimeout
+      .mockResolvedValueOnce(jsonResponse(200, { webhooks: [] }))
+      .mockResolvedValueOnce(jsonResponse(201, { webhook_id: "wh_created", url }))
+      .mockResolvedValueOnce(
+        jsonResponse(200, { webhook_id: "wh_created", url, secret: "whsec_from_get" }),
+      );
+    await expect(
+      ensureAgentMailWebhook({
+        apiKey: "am_test",
+        inboxId: "michael@botbound.app",
+        accountId,
+        hasStoredSecret: false,
+      }),
+    ).resolves.toEqual({ webhookId: "wh_created", secret: "whsec_from_get" });
+    expect(mockFetchWithTimeout.mock.calls[2][0]).toContain("/webhooks/wh_created");
     vi.unstubAllEnvs();
   });
 

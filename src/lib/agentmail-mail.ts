@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
 import { decryptSecret } from "./secret-vault";
-import { getErrorMessage } from "./server-utils";
+import { getErrorMessage, sanitizeErrorMessage, sanitizeForAudit } from "./server-utils";
 import {
   existingManagedEmailDomain,
   isBotBoundManagedEmailDomain,
@@ -593,22 +593,46 @@ export type AgentMailWebhook = {
   secret: string | null;
 };
 
+function uniqueIds(value: unknown, extra?: string | null): string[] {
+  const ids = Array.isArray(value) ? value.map((id) => String(id).trim()).filter(Boolean) : [];
+  const scoped = String(extra ?? "").trim();
+  if (scoped && !ids.includes(scoped)) ids.push(scoped);
+  return ids;
+}
+
 function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
   const row = asRecord(raw);
   if (!row) return null;
   const webhookId = String(row.webhook_id ?? row.webhookId ?? "").trim();
   const url = String(row.url ?? "").trim();
   if (!webhookId || !url) return null;
-  const ids = (value: unknown) =>
-    Array.isArray(value) ? value.map((id) => String(id).trim()).filter(Boolean) : [];
   return {
     webhookId,
     url,
     clientId: String(row.client_id ?? row.clientId ?? "").trim() || null,
-    inboxIds: ids(row.inbox_ids ?? row.inboxIds),
-    eventTypes: ids(row.event_types ?? row.eventTypes),
+    inboxIds: uniqueIds(row.inbox_ids ?? row.inboxIds, String(row.inbox_id ?? row.inboxId ?? "")),
+    eventTypes: uniqueIds(row.event_types ?? row.eventTypes),
     secret: String(row.secret ?? "").trim() || null,
   };
+}
+
+function canonicalAgentMailWebhookUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return null;
+    if (parsed.username || parsed.password || parsed.search || parsed.hash) return null;
+    const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
+    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+function webhookUrlsMatch(left: string, right: string | null): boolean {
+  if (!right) return false;
+  const canonicalLeft = canonicalAgentMailWebhookUrl(left);
+  const canonicalRight = canonicalAgentMailWebhookUrl(right);
+  return Boolean(canonicalLeft && canonicalRight && canonicalLeft === canonicalRight);
 }
 
 function webhookOwnedByAccount(
@@ -616,11 +640,12 @@ function webhookOwnedByAccount(
   accountId: string,
   url: string | null,
 ): boolean {
-  if (url && webhook.url === url) return true;
+  if (webhookUrlsMatch(webhook.url, url)) return true;
   if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
   if (webhook.clientId !== AGENTMAIL_WEBHOOK_CLIENT_ID) return false;
   try {
     const legacyUrl = new URL(webhook.url);
+    const pathname = legacyUrl.pathname.replace(/\/+$/, "") || "/";
     return (
       ["https://botbound.me", "https://www.botbound.me", "https://trywireline.com"].includes(
         legacyUrl.origin,
@@ -629,11 +654,38 @@ function webhookOwnedByAccount(
       !legacyUrl.password &&
       !legacyUrl.search &&
       !legacyUrl.hash &&
-      legacyUrl.pathname === `/api/webhooks/agentmail/${accountId}`
+      pathname === `/api/webhooks/agentmail/${accountId}`
     );
   } catch {
     return false;
   }
+}
+
+function redactAgentMailApiBody(body: unknown): unknown {
+  if (typeof body === "string") return sanitizeErrorMessage(body);
+  return sanitizeForAudit(body);
+}
+
+function logAgentMailWebhookRequestFailure(operation: string, status: number, body: unknown): void {
+  log.warn("AgentMail webhook request failed", {
+    operation,
+    status,
+    body: redactAgentMailApiBody(body),
+  });
+}
+
+function throwIfAgentMailWebhookRequestFailed(
+  operation: string,
+  status: number,
+  body: unknown,
+  message: string,
+): void {
+  if (status >= 200 && status < 300) return;
+  logAgentMailWebhookRequestFailure(operation, status, body);
+  if (status === 401 || status === 403) {
+    throw new AgentMailConnectError("That AgentMail API key was rejected.");
+  }
+  throw new AgentMailConnectError(message);
 }
 
 export async function listAgentMailWebhooks(credential: string): Promise<AgentMailWebhook[]> {
@@ -643,7 +695,12 @@ export async function listAgentMailWebhooks(credential: string): Promise<AgentMa
     const query = new URLSearchParams({ limit: "100" });
     if (pageToken) query.set("page_token", pageToken);
     const { status, body } = await agentMailJson(credential, `/webhooks?${query}`);
-    assertAgentMailStatus(status, "Could not list AgentMail webhooks with that API key.");
+    throwIfAgentMailWebhookRequestFailed(
+      "webhooks.list",
+      status,
+      body,
+      "Could not list AgentMail webhooks with that API key.",
+    );
     const payload = asRecord(body);
     for (const row of Array.isArray(payload?.webhooks) ? payload.webhooks : []) {
       const webhook = normalizeAgentMailWebhook(row);
@@ -656,12 +713,51 @@ export async function listAgentMailWebhooks(credential: string): Promise<AgentMa
   return webhooks;
 }
 
+export async function getAgentMailWebhook(
+  credential: string,
+  webhookId: string,
+): Promise<AgentMailWebhook> {
+  const { status, body } = await agentMailJson(
+    credential,
+    `/webhooks/${encodeURIComponent(webhookId)}`,
+  );
+  throwIfAgentMailWebhookRequestFailed(
+    "webhooks.get",
+    status,
+    body,
+    "Could not read the AgentMail inbound webhook.",
+  );
+  const webhook =
+    normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
+  if (!webhook) {
+    throw new AgentMailConnectError("AgentMail returned an invalid webhook.");
+  }
+  return webhook;
+}
+
+async function readAgentMailWebhookSecret(
+  apiKey: string,
+  webhook: AgentMailWebhook,
+): Promise<string | null> {
+  if (webhook.secret) return webhook.secret;
+  return (await getAgentMailWebhook(apiKey, webhook.webhookId)).secret;
+}
+
 export async function deleteAgentMailWebhook(credential: string, webhookId: string): Promise<void> {
-  const { status } = await agentMailJson(credential, `/webhooks/${encodeURIComponent(webhookId)}`, {
-    method: "DELETE",
-  });
+  const { status, body } = await agentMailJson(
+    credential,
+    `/webhooks/${encodeURIComponent(webhookId)}`,
+    {
+      method: "DELETE",
+    },
+  );
   if (status === 404) return;
-  assertAgentMailStatus(status, "Could not remove the previous AgentMail webhook.");
+  throwIfAgentMailWebhookRequestFailed(
+    "webhooks.delete",
+    status,
+    body,
+    "Could not remove the previous AgentMail webhook.",
+  );
 }
 
 export function publicAgentMailWebhookUrl(accountId: string): string | null {
@@ -669,6 +765,21 @@ export function publicAgentMailWebhookUrl(accountId: string): string | null {
   if ("error" in resolved) return null;
   if (/localhost|127\.0\.0\.1/i.test(resolved.url)) return null;
   return `${resolved.url}/api/webhooks/agentmail/${accountId}`;
+}
+
+async function adoptAgentMailWebhook(
+  apiKey: string,
+  webhook: AgentMailWebhook,
+  hasStoredSecret: boolean,
+): Promise<{ webhookId: string; secret: string | null }> {
+  if (hasStoredSecret) {
+    return { webhookId: webhook.webhookId, secret: webhook.secret };
+  }
+  const secret = await readAgentMailWebhookSecret(apiKey, webhook);
+  if (!secret) {
+    throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
+  }
+  return { webhookId: webhook.webhookId, secret };
 }
 
 export async function ensureAgentMailWebhook(input: {
@@ -687,17 +798,11 @@ export async function ensureAgentMailWebhook(input: {
   const owned = (await listAgentMailWebhooks(input.apiKey)).filter((webhook) =>
     webhookOwnedByAccount(webhook, input.accountId, url),
   );
-  const reusable = owned.find(
-    (webhook) =>
-      webhook.url === url &&
-      input.hasStoredSecret &&
-      webhook.inboxIds.includes(input.inboxId) &&
-      AGENTMAIL_WEBHOOK_EVENT_TYPES.every((eventType) => webhook.eventTypes.includes(eventType)),
-  );
+  const adopted = owned.find((webhook) => webhookUrlsMatch(webhook.url, url)) ?? null;
   for (const webhook of owned) {
-    if (webhook !== reusable) await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
+    if (webhook !== adopted) await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
   }
-  if (reusable) return { webhookId: reusable.webhookId, secret: null };
+  if (adopted) return adoptAgentMailWebhook(input.apiKey, adopted, input.hasStoredSecret);
 
   const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
     method: "POST",
@@ -708,12 +813,30 @@ export async function ensureAgentMailWebhook(input: {
       client_id: agentMailWebhookClientId(input.accountId),
     }),
   });
-  assertAgentMailStatus(status, "Could not register the AgentMail inbound webhook for this inbox.");
+  if (status < 200 || status >= 300) {
+    logAgentMailWebhookRequestFailure("webhooks.create", status, body);
+    if (status === 401 || status === 403) {
+      throw new AgentMailConnectError("That AgentMail API key was rejected.");
+    }
+    throw new AgentMailConnectError(
+      "Could not register the AgentMail inbound webhook for this inbox.",
+    );
+  }
   const created =
     normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
   if (!created)
     throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
-  return { webhookId: created.webhookId, secret: created.secret };
+  let secret = created.secret;
+  if (!secret) secret = await readAgentMailWebhookSecret(input.apiKey, created);
+  if (secret) return { webhookId: created.webhookId, secret };
+
+  await deleteAgentMailWebhook(input.apiKey, created.webhookId).catch((cleanupError) => {
+    log.warn("Unverifiable AgentMail webhook cleanup failed", {
+      webhookId: created.webhookId,
+      error: getErrorMessage(cleanupError),
+    });
+  });
+  throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
 }
 
 export async function deleteAgentMailWebhooksForAccount(input: {

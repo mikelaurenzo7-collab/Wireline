@@ -21,6 +21,8 @@ const h = vi.hoisted(() => ({
   domain: vi.fn(),
   mutate: vi.fn(),
   where: vi.fn(),
+  getWebhook: vi.fn(),
+  updates: [] as Array<{ refreshToken: string }>,
 }));
 vi.mock("express", () => ({
   Router: () => ({
@@ -75,6 +77,16 @@ vi.mock("../src/lib/server-context", () => ({
       };
       return query;
     },
+    update: () => ({
+      set: (value: { refreshToken: string }) => {
+        h.updates.push(value);
+        return {
+          where: () => ({
+            returning: async () => [{ id: "mailbox" }],
+          }),
+        };
+      },
+    }),
   },
 }));
 vi.mock("../src/lib/paid-bot-identity", () => ({
@@ -88,12 +100,11 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   AgentMailConnectError: class extends Error {},
   agentmailLocalPart: (email: string) => email.split("@")[0],
   agentmailGrantedScopes: h.mutate,
-  deleteAgentMailWebhook: h.mutate,
   deleteAgentMailWebhooksForAccount: h.mutate,
   ensureAgentMailWebhook: h.ensureWebhook,
+  getAgentMailWebhook: h.getWebhook,
   hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
   listAgentMailInboxes: h.inboxes,
-  listAgentMailWebhooks: h.mutate,
   normalizeAgentMailInbox: h.mutate,
   resolveAgentMailInbox: h.mutate,
   verifyAgentMailCredentials: h.verifyCredentials,
@@ -108,7 +119,7 @@ vi.mock("../src/lib/api-validation", () => ({
   agentmailConnectSchema: {},
 }));
 vi.mock("../src/lib/secret-vault", () => ({
-  encryptSecret: h.mutate,
+  encryptSecret: (value: string) => `enc:${value}`,
   decryptSecret: h.mutate,
   isVaultConfigured: () => true,
 }));
@@ -145,6 +156,7 @@ beforeEach(() => {
   h.agent = true;
   h.phone = "+12025550123";
   h.accounts = [];
+  h.updates = [];
   h.beforeFence = undefined;
   h.eligible.mockResolvedValue(["bot"]);
   h.phoneOwned.mockResolvedValue(undefined);
@@ -162,6 +174,7 @@ beforeEach(() => {
   h.inboxes.mockResolvedValue([]);
   h.verifyCredentials.mockResolvedValue(undefined);
   h.ensureWebhook.mockResolvedValue({ webhookId: "existing-hook", secret: null });
+  h.getWebhook.mockRejectedValue(new Error("Unexpected AgentMail webhook GET"));
   vi.stubEnv("AGENTMAIL_API_KEY", "test-only-key");
   vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.app");
 });
@@ -230,6 +243,44 @@ describe("compatibility mailbox admission", () => {
       expect(h.mutate).not.toHaveBeenCalled();
     },
   );
+  it("persists a created AgentMail webhook signing secret onto the mailbox row", async () => {
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "existing@bots.botbound.me",
+        oauthGrantedScopes: "managed",
+        refreshToken: null,
+      },
+    ];
+    h.inboxes.mockResolvedValue([{ inboxId: "legacy-inbox", email: "existing@bots.botbound.me" }]);
+    h.ensureWebhook.mockResolvedValue({ webhookId: "wh_created", secret: "whsec_create" });
+    const res = await invoke("managed-mailbox");
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(h.ensureWebhook).toHaveBeenCalledWith(
+      expect.objectContaining({ inboxId: "legacy-inbox", hasStoredSecret: false }),
+    );
+    expect(h.updates).toEqual([{ refreshToken: "enc:whsec_create" }]);
+    expect(h.getWebhook).not.toHaveBeenCalled();
+    expect(h.mutate).not.toHaveBeenCalled();
+  });
+  it("GETs an existing webhook secret when BotBound has not stored one and keeps the webhook", async () => {
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "existing@bots.botbound.me",
+        oauthGrantedScopes: "managed",
+        refreshToken: null,
+      },
+    ];
+    h.inboxes.mockResolvedValue([{ inboxId: "legacy-inbox", email: "existing@bots.botbound.me" }]);
+    h.ensureWebhook.mockResolvedValue({ webhookId: "wh_console", secret: null });
+    h.getWebhook.mockResolvedValue({ webhookId: "wh_console", secret: "whsec_get" });
+    const res = await invoke("managed-mailbox");
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(h.getWebhook).toHaveBeenCalledWith("test-only-key", "wh_console");
+    expect(h.updates).toEqual([{ refreshToken: "enc:whsec_get" }]);
+    expect(h.mutate).not.toHaveBeenCalled();
+  });
   it("does not recreate a missing legacy mailbox", async () => {
     h.accounts = [
       {

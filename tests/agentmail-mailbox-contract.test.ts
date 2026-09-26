@@ -88,9 +88,13 @@ describe("BotBound managed AgentMail contract", () => {
 
   it("registers signed inbound delivery without asking the Account Holder to configure webhooks", () => {
     expect(agentmailRoutes).toContain("ensureAgentMailWebhook");
+    expect(agentmailRoutes).toContain("getAgentMailWebhook");
     expect(agentmailRoutes).toContain("deleteAgentMailWebhooksForAccount");
     expect(agentmailRoutes).toContain("AgentMail webhook did not expose its signing secret");
     expect(agentmailRoutes).toContain(".returning({ id: schema.emailAccounts.id })");
+    expect(agentmailRoutes).not.toContain("removeUnverifiableAgentMailWebhook");
+    expect(agentmailLib).toContain("webhooks.get");
+    expect(agentmailLib).toContain("AgentMail webhook request failed");
     expect(registry).toContain('from "../routes/agentmail-webhook-routes"');
     expect(registry).toContain("app.use(agentmailWebhookRouter)");
   });
