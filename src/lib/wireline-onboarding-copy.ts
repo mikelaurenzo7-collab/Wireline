@@ -73,11 +73,12 @@ export const POST_CREATE_WIZARD_COPY = {
   },
 } as const;
 
-/** Phone setup and post-create CTAs when self-serve Stripe Checkout is closed. */
+/** Phone setup, post-create, and Preview Voice CTAs while checkout stays closed. */
 export const SOFT_OPEN_CHECKOUT_COPY = {
-  title: "Self-serve checkout isn't open yet",
-  detail:
-    "Paid plans and live numbers stay founder-led during BotBound's soft open. Keep training and using Studio Preview Voice.",
-  cta: "Contact BotBound",
+  title: "Live numbers, with BotBound",
+  detail: "Preview Voice is ready. We'll connect your paid line when you go live.",
+  savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Studio.`,
+  allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",
+  cta: "Talk with BotBound",
   href: "/contact?topic=billing",
 } as const;

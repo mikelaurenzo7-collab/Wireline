@@ -21,7 +21,9 @@ async function mockWorkspace(page: Page) {
         ? { user: { id: "journey-owner", email: "owner@example.test", full_name: "Journey Owner" } }
         : path === "/api/agents"
           ? { agents }
-          : { accounts: [], data: [], numbers: [], integrations: [] };
+          : path === "/api/billing/plans"
+            ? { checkout_available: true, stripe_configured: true, plans: [] }
+            : { accounts: [], data: [], numbers: [], integrations: [] };
     await route.fulfill({ status: 200, json: payload });
   });
 }

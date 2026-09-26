@@ -7,6 +7,7 @@ import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
+import SoftOpenCheckoutNote from "./SoftOpenCheckoutNote";
 import { authFetch } from "../../lib/api";
 import { fetchSelfServeCheckoutAvailable } from "../../lib/checkout-availability";
 import {
@@ -174,9 +175,7 @@ export default function PostCreateActivationWizard({
   useEffect(() => {
     setPostSignupFlowActive(true);
     void refreshPhone();
-    if (payload.phoneActivationRequired === true) {
-      void fetchSelfServeCheckoutAvailable().then(setCheckoutAvailable);
-    }
+    void fetchSelfServeCheckoutAvailable().then(setCheckoutAvailable);
     return () => {
       phoneRequestId.current += 1;
       setPostSignupFlowActive(false);
@@ -194,7 +193,6 @@ export default function PostCreateActivationWizard({
     setProvisioning(true);
     setWireError(null);
     setActivationNeeded(false);
-    setCheckoutAvailable(null);
     try {
       const response = await authFetch("/api/phone-numbers/provision", {
         method: "POST",
@@ -211,7 +209,8 @@ export default function PostCreateActivationWizard({
       };
       if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
         setActivationNeeded(true);
-        setCheckoutAvailable(await fetchSelfServeCheckoutAvailable());
+        const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
+        setCheckoutAvailable(available);
         return;
       }
       if (!response.ok || body?.ok === false) {
@@ -330,11 +329,22 @@ export default function PostCreateActivationWizard({
         detail: "Calling is not confirmed yet. Open Phone setup to finish connecting this number.",
       };
     }
+    if (checkoutAvailable === false) {
+      return {
+        title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
+        detail: SOFT_OPEN_CHECKOUT_COPY.savedDetail(payload.agentName),
+      };
+    }
     return {
       title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
       detail: POST_CREATE_WIZARD_COPY.complete.deferredDetail(payload.agentName),
     };
-  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName]);
+  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName, checkoutAvailable]);
+
+  const checkoutClosed = checkoutAvailable === false;
+  const canProvisionNumber = checkoutAvailable === true;
+  const waitingForLaunch =
+    loadingPhone || (!hasLiveLine && !hasLine && !phoneLookupFailed && checkoutAvailable === null);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: dismiss });
@@ -437,106 +447,94 @@ export default function PostCreateActivationWizard({
 
           {step === "launch" ? (
             <section className="grid gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.launch.title}
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.launch.detail}
-                </p>
-              </div>
-
-              {loadingPhone ? (
+              {waitingForLaunch ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   Checking your line…
                 </div>
-              ) : hasLiveLine && phoneNumber ? (
-                <div className="rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
-                  <p className="text-xs font-semibold text-primary">
-                    {ACTIVATION_PENDING_COPY.phoneLabel}
-                  </p>
-                  <p className="mt-1 font-mono text-lg tabular-nums text-foreground">
-                    {formatPhone(phoneNumber)}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {payload.phoneProvisioned
-                      ? "Your line is connected from Fast Start."
-                      : "This number is connected to this Bot."}
-                  </p>
-                </div>
-              ) : hasLine && phoneNumber ? (
-                <div className="rounded-xl border border-border bg-card px-4 py-3">
-                  <p className="text-xs font-semibold text-foreground">Number reserved</p>
-                  <p className="mt-1 font-mono text-lg tabular-nums text-foreground">
-                    {formatPhone(phoneNumber)}
-                  </p>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {phoneLookup?.status === "configuration_required"
-                      ? "Calling needs platform setup. Open Phone setup or contact BotBound support."
-                      : "Calling is not confirmed yet. Retry the connection without purchasing another number."}
-                  </p>
-                </div>
-              ) : phoneLookupFailed ? null : (
-                <div className="rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
-                  No live line yet. Connect one to receive real calls with this Bot.
-                </div>
-              )}
+              ) : checkoutClosed && !hasLiveLine && !hasLine && !phoneLookupFailed ? (
+                <SoftOpenCheckoutNote />
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {POST_CREATE_WIZARD_COPY.steps.launch.title}
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {POST_CREATE_WIZARD_COPY.steps.launch.detail}
+                    </p>
+                  </div>
 
-              {activationNeeded && !phoneLookupFailed ? (
-                <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
-                  {checkoutAvailable === false ? (
-                    <>
-                      <p className="text-sm font-semibold text-foreground">
-                        {SOFT_OPEN_CHECKOUT_COPY.title}
+                  {hasLiveLine && phoneNumber ? (
+                    <div className="rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-4 py-3">
+                      <p className="text-xs font-semibold text-primary">
+                        {ACTIVATION_PENDING_COPY.phoneLabel}
                       </p>
-                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                        {SOFT_OPEN_CHECKOUT_COPY.detail}
+                      <p className="mt-1 font-mono text-lg tabular-nums text-foreground">
+                        {formatPhone(phoneNumber)}
                       </p>
-                      <Button asChild size="sm" className="mt-3">
-                        <Link to={SOFT_OPEN_CHECKOUT_COPY.href}>{SOFT_OPEN_CHECKOUT_COPY.cta}</Link>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {payload.phoneProvisioned
+                          ? "Your line is connected from Fast Start."
+                          : "This number is connected to this Bot."}
+                      </p>
+                    </div>
+                  ) : hasLine && phoneNumber ? (
+                    <div className="rounded-xl border border-border bg-card px-4 py-3">
+                      <p className="text-xs font-semibold text-foreground">Number reserved</p>
+                      <p className="mt-1 font-mono text-lg tabular-nums text-foreground">
+                        {formatPhone(phoneNumber)}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {phoneLookup?.status === "configuration_required"
+                          ? "Calling needs platform setup. Open Phone setup or contact BotBound support."
+                          : "Calling is not confirmed yet. Retry the connection without purchasing another number."}
+                      </p>
+                    </div>
+                  ) : phoneLookupFailed ? null : (
+                    <div className="rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
+                      No live line yet. Connect one to receive real calls with this Bot.
+                    </div>
+                  )}
+
+                  {activationNeeded && !phoneLookupFailed && canProvisionNumber ? (
+                    <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
                       <p className="text-sm font-semibold text-foreground">
                         {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
                       </p>
                       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                         {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
                       </p>
-                      {checkoutAvailable === true ? (
-                        <Button asChild size="sm" className="mt-3">
-                          <Link
-                            to={activationPlanPath}
-                            onClick={() => stashPostCreateWizardStep("launch")}
-                          >
-                            {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
-                          </Link>
-                        </Button>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              ) : wireError ? (
-                <StatusNotice
-                  tone="destructive"
-                  title={wireError}
-                  action={
-                    phoneLookupFailed ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => void refreshPhone()}
-                        disabled={refreshingPhone}
-                      >
-                        Retry line lookup
+                      <Button asChild size="sm" className="mt-3">
+                        <Link
+                          to={activationPlanPath}
+                          onClick={() => stashPostCreateWizardStep("launch")}
+                        >
+                          {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
+                        </Link>
                       </Button>
-                    ) : undefined
-                  }
-                />
-              ) : null}
+                    </div>
+                  ) : wireError ? (
+                    <StatusNotice
+                      tone="destructive"
+                      title={wireError}
+                      action={
+                        phoneLookupFailed ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => void refreshPhone()}
+                            disabled={refreshingPhone}
+                          >
+                            Retry line lookup
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  ) : null}
+                </>
+              )}
 
               <div className="flex flex-wrap gap-2">
                 {hasLiveLine ? (
@@ -564,21 +562,27 @@ export default function PostCreateActivationWizard({
                       <Link to="/phone?tab=setup">Open Phone setup</Link>
                     </Button>
                   </>
+                ) : checkoutClosed ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
+                    {POST_CREATE_WIZARD_COPY.steps.launch.skip}
+                  </Button>
                 ) : (
                   <>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={provisioning || refreshingPhone || phoneLookupFailed}
-                      onClick={() => void provisionLine()}
-                    >
-                      {provisioning ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Phone size={14} aria-hidden="true" />
-                      )}
-                      {POST_CREATE_WIZARD_COPY.steps.launch.primary}
-                    </Button>
+                    {canProvisionNumber ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={provisioning || refreshingPhone || phoneLookupFailed}
+                        onClick={() => void provisionLine()}
+                      >
+                        {provisioning ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Phone size={14} aria-hidden="true" />
+                        )}
+                        {POST_CREATE_WIZARD_COPY.steps.launch.primary}
+                      </Button>
+                    ) : null}
                     <Button type="button" variant="secondary" size="sm" onClick={() => finish()}>
                       {POST_CREATE_WIZARD_COPY.steps.launch.skip}
                     </Button>
@@ -702,8 +706,16 @@ export default function PostCreateActivationWizard({
             <>
               {!hasLiveLine ? (
                 <Button asChild variant="secondary" size="sm">
-                  <Link to="/phone?tab=setup">
-                    {hasLine ? "Open Phone setup" : POST_CREATE_WIZARD_COPY.complete.phoneCta}
+                  <Link
+                    to={
+                      checkoutClosed && !hasLine ? SOFT_OPEN_CHECKOUT_COPY.href : "/phone?tab=setup"
+                    }
+                  >
+                    {hasLine
+                      ? "Open Phone setup"
+                      : checkoutClosed
+                        ? SOFT_OPEN_CHECKOUT_COPY.cta
+                        : POST_CREATE_WIZARD_COPY.complete.phoneCta}
                   </Link>
                 </Button>
               ) : null}

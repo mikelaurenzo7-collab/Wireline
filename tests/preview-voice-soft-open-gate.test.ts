@@ -121,4 +121,22 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     const checkout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
     expect(checkout).toContain("enforceLaunchHardGate");
   });
+
+  it("hides live-number checkout CTAs while self-serve billing is closed", () => {
+    const setup = read("src/components/PhoneSetupPanel.tsx");
+    const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
+    const roleplay = read("src/components/RoleplaySandbox.tsx");
+    const note = read("src/components/onboarding/SoftOpenCheckoutNote.tsx");
+    const copy = read("src/lib/wireline-onboarding-copy.ts");
+
+    expect(copy).toContain('title: "Live numbers, with BotBound"');
+    expect(copy).toContain('cta: "Talk with BotBound"');
+    expect(note).toContain("SOFT_OPEN_CHECKOUT_COPY");
+    expect(setup).toContain("SoftOpenCheckoutNote");
+    expect(setup).toContain("checkoutAvailable === true");
+    expect(wizard).toContain("SoftOpenCheckoutNote");
+    expect(wizard).toContain("canProvisionNumber");
+    expect(roleplay).toContain("SOFT_OPEN_CHECKOUT_COPY");
+    expect(roleplay).toContain("fetchSelfServeCheckoutAvailable");
+  });
 });

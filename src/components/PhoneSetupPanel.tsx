@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router";
 
 import { Button, EmptyState } from "./atoms";
 import { StatusNotice } from "./molecules";
+import SoftOpenCheckoutNote from "./onboarding/SoftOpenCheckoutNote";
 import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
@@ -12,7 +13,6 @@ import {
   fetchSelfServeCheckoutAvailable,
   isBillingSettingsPath,
 } from "../lib/checkout-availability";
-import { SOFT_OPEN_CHECKOUT_COPY } from "../lib/wireline-onboarding-copy";
 
 type PhoneNumberRecord = {
   id: string;
@@ -61,6 +61,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   const [error, setError] = useState<string | null>(null);
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
   const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
+  const [liveNumberClosed, setLiveNumberClosed] = useState(false);
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
@@ -123,7 +124,6 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     setLoading(true);
     setError(null);
     setRecoveryPath(null);
-    setCheckoutAvailable(null);
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
@@ -156,6 +156,16 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     void loadNumbers();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSelfServeCheckoutAvailable().then((available) => {
+      if (!cancelled) setCheckoutAvailable(available);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function provisionNumber() {
     if (working || loading || inventoryUnavailable || !selectedAgentId) return;
     const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
@@ -167,7 +177,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     setMessage(null);
     setError(null);
     setRecoveryPath(null);
-    setCheckoutAvailable(null);
+    setLiveNumberClosed(false);
     try {
       const response = await authFetch("/api/phone-numbers/provision", {
         method: "POST",
@@ -186,17 +196,19 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
             : null);
         setRecoveryPath(nextRecoveryPath);
         if (isBillingSettingsPath(nextRecoveryPath)) {
-          const available = await fetchSelfServeCheckoutAvailable();
+          const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
           setCheckoutAvailable(available);
-          throw new Error(
-            available
-              ? body.error || "Could not activate a number."
-              : SOFT_OPEN_CHECKOUT_COPY.detail,
-          );
+          if (!available) {
+            setAddingLine(false);
+            setLiveNumberClosed(true);
+            return;
+          }
+          throw new Error(body.error || "Could not activate a number.");
         }
         throw new Error(body.error || "Could not activate a number.");
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
+      setLiveNumberClosed(false);
       await loadNumbers(selectedAgentId);
       setAddingLine(false);
       setAreaCode("");
@@ -234,6 +246,15 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   }
 
   const normalizedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
+  const checkoutClosed = checkoutAvailable === false;
+  const awaitingCheckout =
+    !loading && !inventoryUnavailable && numbers.length === 0 && checkoutAvailable === null;
+  const showSoftOpen = (checkoutClosed && numbers.length === 0) || liveNumberClosed;
+  const showProvisionForm =
+    addingLine &&
+    !inventoryUnavailable &&
+    !showSoftOpen &&
+    (numbers.length > 0 || checkoutAvailable === true);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -241,7 +262,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
         <div>
           <h2 className="text-lg font-semibold text-foreground">Lines</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {loading
+            {loading || awaitingCheckout
               ? "Checking lines…"
               : inventoryUnavailable
                 ? "Lines unavailable"
@@ -253,7 +274,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
             type="button"
             size="sm"
             variant="secondary"
-            onClick={() => setAddingLine((value) => !value)}
+            onClick={() => {
+              setLiveNumberClosed(false);
+              setAddingLine((value) => !value);
+            }}
             disabled={loading || inventoryUnavailable || working}
           >
             <Plus className="size-4" aria-hidden="true" />
@@ -265,20 +289,12 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       {error ? (
         <StatusNotice
           tone="destructive"
-          title={
-            checkoutAvailable === false ? SOFT_OPEN_CHECKOUT_COPY.title : "Lines Need Attention"
-          }
+          title="Lines Need Attention"
           action={
-            recoveryPath ? (
-              checkoutAvailable === false ? (
-                <Button asChild size="sm" variant="secondary">
-                  <Link to={SOFT_OPEN_CHECKOUT_COPY.href}>{SOFT_OPEN_CHECKOUT_COPY.cta}</Link>
-                </Button>
-              ) : checkoutAvailable === true ? (
-                <Button asChild size="sm" variant="secondary">
-                  <Link to={recoveryPath}>Open billing</Link>
-                </Button>
-              ) : undefined
+            recoveryPath && checkoutAvailable === true ? (
+              <Button asChild size="sm" variant="secondary">
+                <Link to={recoveryPath}>Open billing</Link>
+              </Button>
             ) : inventoryUnavailable ? (
               <Button
                 size="sm"
@@ -296,11 +312,11 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       ) : null}
       {message ? <StatusNotice tone="success">{message}</StatusNotice> : null}
 
-      {loading ? (
+      {loading || awaitingCheckout ? (
         <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
           Loading lines…
         </div>
-      ) : !inventoryUnavailable && numbers.length === 0 && !addingLine ? (
+      ) : !inventoryUnavailable && numbers.length === 0 && !addingLine && !showSoftOpen ? (
         <EmptyState
           framed
           density="compact"
@@ -318,7 +334,9 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
         />
       ) : null}
 
-      {addingLine && !inventoryUnavailable ? (
+      {showSoftOpen && !inventoryUnavailable ? <SoftOpenCheckoutNote /> : null}
+
+      {showProvisionForm ? (
         <section
           className="rounded-xl border border-border bg-card p-4 sm:p-5"
           aria-label="Add phone line"

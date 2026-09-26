@@ -129,19 +129,24 @@ type Props = {
   onValueChange?: (value: string) => void;
   onKeyDown?: (event: { key: string; preventDefault: () => void }) => void;
 };
+function expand(node: ReactElement<Props>): ReactNode {
+  return typeof node.type === "function" && node.type.name === "SoftOpenCheckoutNote"
+    ? (node.type as (props: { detail?: string }) => ReactNode)(node.props as { detail?: string })
+    : node.props.children;
+}
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
   return [
     node,
-    ...elements(node.props.children),
+    ...elements(expand(node)),
     ...elements(node.props.action),
     ...elements(node.props.secondary),
   ];
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
-  if (isValidElement<Props>(node)) return text(node.props.children);
+  if (isValidElement<Props>(node)) return text(expand(node));
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
 function render(component: () => ReactNode): ReactNode {
@@ -175,9 +180,20 @@ const lines = [
   { id: "line-a", agent_id: "bot-a", phone_number: "+13125550101" },
   { id: "line-b", agent_id: "bot-b", phone_number: "+13125550102" },
 ];
-async function loadLines(numbers = lines) {
+async function loadLines(numbers = lines, checkoutAvailable = true) {
   h.runEffects = true;
-  h.fetch.mockResolvedValue(new Response(JSON.stringify({ numbers })));
+  h.fetch.mockImplementation(async (path: string) => {
+    if (path === "/api/billing/plans") {
+      return new Response(
+        JSON.stringify({
+          checkout_available: checkoutAvailable,
+          stripe_configured: true,
+          plans: [],
+        }),
+      );
+    }
+    return new Response(JSON.stringify({ numbers }));
+  });
   phone();
   await vi.waitFor(() => expect(text(phone())).not.toContain("Loading lines…"));
 }
@@ -276,7 +292,7 @@ describe("Bot context across workspace pages", () => {
     button("Add line").props.onClick!();
     expect(formBot().props.value).toBe("bot-b");
     expect(text(selectedLine())).toContain("Bravo");
-    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("applies Studio context when the Bot roster loads after line inventory", async () => {
@@ -303,7 +319,7 @@ describe("Bot context across workspace pages", () => {
       false,
     );
     expect(button("Add line")).toBeDefined();
-    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("opens setup for a reviewed Bot without a line and preserves a manual cancellation", async () => {
@@ -324,7 +340,7 @@ describe("Bot context across workspace pages", () => {
     h.preferred = "bot-b";
     expect(formBot()).toBeUndefined();
     expect(text(selectedLine())).toContain("Bravo");
-    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("keeps provisioning focused on the chosen Bot even when Studio initially selected another", async () => {
@@ -338,49 +354,31 @@ describe("Bot context across workspace pages", () => {
         ),
     );
     button("Activate Line").props.onClick!();
-    await vi.waitFor(() => expect(h.fetch).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(h.fetch).toHaveBeenCalledTimes(4));
     await vi.waitFor(() => expect(text(selectedLine())).toContain("Alpha"));
     const request = h.fetch.mock.calls.find(([, options]) => options?.method === "POST");
     expect(JSON.parse(String(request?.[1].body))).toEqual({ agent_id: "bot-a" });
   });
 
   it("does not imply Stripe Checkout when self-serve billing is closed", async () => {
-    await loadLines([]);
-    h.fetch.mockImplementation(async (path: string, options?: RequestInit) => {
-      if (path === "/api/phone-numbers/provision" && options?.method === "POST") {
-        return new Response(
-          JSON.stringify({
-            ok: false,
-            code: "ACTIVATION_REQUIRED",
-            error: "Choose Starter, Starter Plus, or Pro before connecting a production number.",
-          }),
-          { status: 402 },
-        );
-      }
-      if (path === "/api/billing/plans") {
-        return new Response(
-          JSON.stringify({ checkout_available: false, stripe_configured: true, plans: [] }),
-        );
-      }
-      return new Response(JSON.stringify({ numbers: [] }));
-    });
-    button("Activate Line").props.onClick!();
-    await vi.waitFor(() => {
-      const notice = elements(phone()).find((node) => node.type === "notice");
-      expect(notice?.props.title).toBe("Self-serve checkout isn't open yet");
-    });
+    await loadLines([], false);
     const tree = phone();
+    expect(text(tree)).toContain("Live numbers, with BotBound");
     expect(text(tree)).toContain(
-      "Paid plans and live numbers stay founder-led during BotBound's soft open",
+      "Preview Voice is ready. We'll connect your paid line when you go live.",
     );
+    expect(
+      elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
+    ).toBe(false);
     expect(text(tree)).not.toContain("Choose Starter");
     const contact = elements(tree).find(
       (node) => node.type === "a" && node.props.to === "/contact?topic=billing",
     );
-    expect(text(contact)).toBe("Contact BotBound");
+    expect(text(contact)).toBe("Talk with BotBound");
     expect(elements(tree).some((node) => node.type === "a" && text(node) === "Open billing")).toBe(
       false,
     );
+    expect(elements(tree).some((node) => node.type === "notice")).toBe(false);
   });
 
   it("keeps the billing recovery CTA when checkout is available", async () => {

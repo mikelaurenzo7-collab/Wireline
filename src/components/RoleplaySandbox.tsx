@@ -4,6 +4,8 @@ import { Link } from "react-router";
 import LiveVoiceSandbox from "./LiveVoiceSandbox";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
+import { fetchSelfServeCheckoutAvailable } from "../lib/checkout-availability";
+import { SOFT_OPEN_CHECKOUT_COPY } from "../lib/wireline-onboarding-copy";
 
 type SimulationAllowanceStatus = {
   month_to_date_usd: number;
@@ -24,6 +26,7 @@ type SimulationAllowanceStatus = {
  */
 function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
   const [status, setStatus] = useState<SimulationAllowanceStatus | null>(null);
+  const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
 
   // refreshTick bumps when a simulation session starts or ends: each session
   // lands a new reserve record, so a mount-only fetch would keep showing the
@@ -40,6 +43,16 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
       cancelled = true;
     };
   }, [refreshTick]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSelfServeCheckoutAvailable().then((available) => {
+      if (!cancelled) setCheckoutAvailable(available);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!status || !(status.monthly_limit_usd > 0)) return null;
 
@@ -80,18 +93,36 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
       </div>
       {status.hard_capped_now ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-          This month's included simulation is used.{" "}
-          <Link
-            to="/settings/billing"
-            className="font-semibold text-primary underline underline-offset-4"
-          >
-            Choose a plan
-          </Link>{" "}
-          to keep testing and go live.
+          {checkoutAvailable === false ? (
+            <>
+              {SOFT_OPEN_CHECKOUT_COPY.allowanceDetail}{" "}
+              <Link
+                to={SOFT_OPEN_CHECKOUT_COPY.href}
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                {SOFT_OPEN_CHECKOUT_COPY.cta}
+              </Link>
+            </>
+          ) : checkoutAvailable === true ? (
+            <>
+              This month's included simulation is used.{" "}
+              <Link
+                to="/settings/billing"
+                className="font-semibold text-primary underline underline-offset-4"
+              >
+                Choose a plan
+              </Link>{" "}
+              to keep testing and go live.
+            </>
+          ) : (
+            "This month's included simulation is used."
+          )}
         </p>
       ) : nearLimit ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-          Running low. A paid plan removes the simulation ceiling and adds a live number.
+          {checkoutAvailable === true
+            ? "Running low. A paid plan removes the simulation ceiling and adds a live number."
+            : "Running low. Preview Voice is still available."}
         </p>
       ) : null}
     </div>

@@ -62,15 +62,20 @@ type Props = {
   onClick?: () => unknown;
 };
 type Element = ReactElement<Props>;
+function expand(node: Element): ReactNode {
+  return typeof node.type === "function" && node.type.name === "SoftOpenCheckoutNote"
+    ? (node.type as (props: { detail?: string }) => ReactNode)(node.props as { detail?: string })
+    : node.props.children;
+}
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
   if (!isValidElement<Props>(node)) return [];
-  return [node, ...elements(node.props.children), ...elements(node.props.action)];
+  return [node, ...elements(expand(node)), ...elements(node.props.action)];
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
   if (isValidElement<Props>(node))
-    return `${node.props.title || ""}${text(node.props.children)}${text(node.props.action)}`;
+    return `${node.props.title || ""}${text(expand(node))}${text(node.props.action)}`;
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
 const phone = "+13125550100";
@@ -87,8 +92,39 @@ function button(label: string) {
 function response(numbers: unknown[], status = 200) {
   return new Response(JSON.stringify({ numbers }), { status });
 }
+function plans(available = true) {
+  return new Response(
+    JSON.stringify({ checkout_available: available, stripe_configured: true, plans: [] }),
+  );
+}
 function line(status?: string) {
   return { agent_id: "bot", phone_number: phone, native_voice_status: status };
+}
+function stubFetch({
+  numbers = [] as unknown[],
+  numbersStatus = 200,
+  checkoutAvailable = true,
+  provision,
+}: {
+  numbers?: unknown[] | (() => unknown[]);
+  numbersStatus?: number | (() => number);
+  checkoutAvailable?: boolean;
+  provision?: Response | (() => Response);
+} = {}) {
+  h.fetch.mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url === "/api/billing/plans") return plans(checkoutAvailable);
+    if (url === "/api/phone-numbers" && init?.method !== "POST") {
+      const current = typeof numbers === "function" ? numbers() : numbers;
+      const status = typeof numbersStatus === "function" ? numbersStatus() : numbersStatus;
+      return response(current, status);
+    }
+    if (url === "/api/phone-numbers/provision") {
+      if (typeof provision === "function") return provision();
+      if (provision) return provision;
+      throw new Error("unexpected provision");
+    }
+    throw new Error(String(url));
+  });
 }
 async function mount() {
   render();
@@ -118,27 +154,26 @@ describe("setup guide requires confirmed calling", () => {
   it.each(["degraded", "configuration_required", "unavailable", undefined])(
     "keeps a %s line reserved and recovers without another number purchase",
     async (status) => {
-      h.fetch.mockResolvedValueOnce(response([line(status)]));
+      let numbers = [line(status)];
+      stubFetch({ numbers: () => numbers });
       await mount();
       expect(text(render())).toContain("Number reserved");
       expect(text(render())).not.toContain("Your live number");
       expect(button("Continue")).toBeUndefined();
       expect(button("Get a number")).toBeUndefined();
       expect(button("Retry connection")?.props.disabled).toBe(false);
-      h.fetch.mockResolvedValueOnce(response([line("active")]));
+      numbers = [line("active")];
       button("Retry connection")?.props.onClick?.();
       await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
       button("Continue")?.props.onClick?.();
       expect(text(render())).toContain("It's on the Line");
-      expect(h.fetch.mock.calls.map(([url]) => url)).toEqual([
-        "/api/phone-numbers",
-        "/api/phone-numbers",
-      ]);
+      expect(h.fetch.mock.calls.filter(([url]) => url === "/api/phone-numbers")).toHaveLength(2);
+      expect(h.fetch.mock.calls.some(([url]) => url === "/api/billing/plans")).toBe(true);
     },
   );
 
   it("does not resurrect an old payload number after a successful empty inventory read", async () => {
-    h.fetch.mockResolvedValueOnce(response([]));
+    stubFetch({ numbers: [] });
     await mount();
     expect(text(render())).not.toContain("(312) 555-0100");
     expect(text(render())).toContain("No live line yet");
@@ -147,11 +182,17 @@ describe("setup guide requires confirmed calling", () => {
   });
 
   it("does not trust a previously provisioned payload when routing lookup fails", async () => {
-    h.fetch.mockResolvedValueOnce(response([], 503));
+    let numbersStatus = 503;
+    let numbers: unknown[] = [];
+    stubFetch({
+      numbers: () => numbers,
+      numbersStatus: () => numbersStatus,
+    });
     await mount();
     expect(text(render())).not.toContain("Your live number");
     expect(button("Continue")).toBeUndefined();
-    h.fetch.mockResolvedValueOnce(response([line("active")]));
+    numbersStatus = 200;
+    numbers = [line("active")];
     button("Retry line lookup")?.props.onClick?.();
     await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
   });
@@ -163,14 +204,18 @@ describe("setup guide requires confirmed calling", () => {
       phoneProvisionRequested: false,
       phoneProvisioned: false,
     };
-    h.fetch.mockResolvedValueOnce(response([]));
+    let numbers: unknown[] = [];
+    stubFetch({
+      numbers: () => numbers,
+      provision: () => {
+        numbers = [line("degraded")];
+        return new Response(
+          JSON.stringify({ ok: false, activation_pending: true, phone_number: phone }),
+          { status: 503 },
+        );
+      },
+    });
     await mount();
-    h.fetch.mockResolvedValueOnce(
-      new Response(JSON.stringify({ ok: false, activation_pending: true, phone_number: phone }), {
-        status: 503,
-      }),
-    );
-    h.fetch.mockResolvedValueOnce(response([line("degraded")]));
     button("Get a number")?.props.onClick?.();
     await vi.waitFor(() => expect(button("Retry connection")?.props.disabled).toBe(false));
     expect(button("Get a number")).toBeUndefined();
@@ -189,27 +234,19 @@ describe("setup guide requires confirmed calling", () => {
       phoneProvisionRequested: false,
       phoneProvisioned: false,
     };
-    h.fetch.mockImplementation(async (url: string) => {
-      if (url === "/api/phone-numbers") return response([]);
-      if (url === "/api/phone-numbers/provision") {
-        return new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 });
-      }
-      if (url === "/api/billing/plans") {
-        return new Response(
-          JSON.stringify({ checkout_available: false, stripe_configured: true, plans: [] }),
-        );
-      }
-      throw new Error(String(url));
-    });
+    stubFetch({ numbers: [], checkoutAvailable: false });
     await mount();
-    button("Get a number")?.props.onClick?.();
-    await vi.waitFor(() => expect(text(render())).toContain("Self-serve checkout isn't open yet"));
     const tree = render();
-    expect(text(tree)).toContain("Keep training and using Studio Preview Voice");
+    expect(button("Get a number")).toBeUndefined();
+    expect(text(tree)).toContain("Live numbers, with BotBound");
+    expect(text(tree)).toContain(
+      "Preview Voice is ready. We'll connect your paid line when you go live.",
+    );
+    expect(text(tree)).not.toContain("Every paid plan includes a US number");
     expect(text(tree)).not.toContain("Choose your plan");
     expect(text(tree)).not.toContain("Starter begins at $19/mo");
     const contact = elements(tree).find(
-      (element) => element.type === "a" && text(element) === "Contact BotBound",
+      (element) => element.type === "a" && text(element) === "Talk with BotBound",
     );
     expect(contact?.props.to).toBe("/contact?topic=billing");
   });
@@ -221,17 +258,11 @@ describe("setup guide requires confirmed calling", () => {
       phoneProvisionRequested: false,
       phoneProvisioned: false,
     };
-    h.fetch.mockImplementation(async (url: string) => {
-      if (url === "/api/phone-numbers") return response([]);
-      if (url === "/api/phone-numbers/provision") {
-        return new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 });
-      }
-      if (url === "/api/billing/plans") {
-        return new Response(
-          JSON.stringify({ checkout_available: true, stripe_configured: true, plans: [] }),
-        );
-      }
-      throw new Error(String(url));
+    stubFetch({
+      numbers: [],
+      checkoutAvailable: true,
+      provision: () =>
+        new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 }),
     });
     await mount();
     button("Get a number")?.props.onClick?.();
@@ -240,6 +271,6 @@ describe("setup guide requires confirmed calling", () => {
       (element) => element.type === "a" && text(element) === "Choose your plan",
     );
     expect(plan?.props.to).toBe("/settings/billing");
-    expect(text(render())).not.toContain("Self-serve checkout isn't open yet");
+    expect(text(render())).not.toContain("Live numbers, with BotBound");
   });
 });
