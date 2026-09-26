@@ -219,6 +219,7 @@ describe("setup guide requires confirmed calling", () => {
       agentName: "Front Desk",
       phoneProvisionRequested: false,
       phoneProvisioned: false,
+      phoneActivationRequired: true,
     };
     stubFetch({ numbers: [], checkoutAvailable: false });
     await mount();
