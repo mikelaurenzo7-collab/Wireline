@@ -41,10 +41,24 @@ vi.mock("../src/lib/temporary-tab-index", () => ({
 }));
 
 let focused: "heading" | "anchor" | "control" | null = null;
-const heading = { focus: vi.fn(() => { focused = "heading"; }) };
-const anchor = { focus: vi.fn(() => { focused = "anchor"; }), scrollIntoView: vi.fn() };
-const sectionControl = { focus: vi.fn(() => { focused = "control"; }) };
+const heading = {
+  focus: vi.fn(() => {
+    focused = "heading";
+  }),
+};
+const anchor = {
+  focus: vi.fn(() => {
+    focused = "anchor";
+  }),
+  scrollIntoView: vi.fn(),
+};
+const sectionControl = {
+  focus: vi.fn(() => {
+    focused = "control";
+  }),
+};
 const scrollTo = vi.fn();
+const queryModals = vi.fn((): unknown[] => []);
 
 function render(location: Partial<typeof harness.location> = {}) {
   harness.location = { ...harness.location, ...location };
@@ -61,6 +75,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
   focused = null;
+  queryModals.mockReset().mockReturnValue([]);
   harness.location = { pathname: "/studio", search: "", hash: "" };
   harness.first = { current: true };
   harness.message = "";
@@ -70,6 +85,7 @@ beforeEach(() => {
   vi.stubGlobal("window", { setTimeout, clearTimeout, scrollTo });
   vi.stubGlobal("document", {
     querySelector: () => heading,
+    querySelectorAll: queryModals,
     getElementById: (id: string) => (id === "usage" ? anchor : null),
   });
 });
@@ -101,6 +117,34 @@ describe("route change focus", () => {
     expect(scrollTo).not.toHaveBeenCalled();
     expect(harness.restoreTabIndex).not.toHaveBeenCalled();
     expect(harness.message).toBe("");
+  });
+
+  it("lets an open dialog own focus when a deep-linked page loads", () => {
+    queryModals.mockReturnValue([{ closest: () => null, getClientRects: () => [{}] }]);
+    sectionControl.focus();
+
+    render({ search: "?create=1" });
+
+    expect(focused).toBe("control");
+    expect(heading.focus).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(harness.message).toBe("");
+
+    queryModals.mockReturnValue([]);
+    render({ pathname: "/phone", search: "" });
+    expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(harness.message).toBe("Phone loaded");
+  });
+
+  it("focuses the destination while a closing sheet finishes its animation", () => {
+    render();
+    vi.clearAllMocks();
+    queryModals.mockReturnValue([{ closest: () => ({}), getClientRects: () => [{}] }]);
+
+    render({ pathname: "/settings/billing" });
+
+    expect(heading.focus).toHaveBeenCalledExactlyOnceWith({ preventScroll: true });
+    expect(harness.message).toBe("Settings loaded");
   });
 
   it("still focuses and announces a different page", () => {

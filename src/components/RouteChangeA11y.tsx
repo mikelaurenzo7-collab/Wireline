@@ -19,6 +19,23 @@ export default function RouteChangeA11y() {
     let restoreTabIndex: (() => void) | null = null;
 
     const id = window.setTimeout(() => {
+      // A deep link can open a dialog as the lazy page commits. Its own focus
+      // handling must win over page entry, including on slower route loads.
+      // Closing sheets may remain mounted for their exit animation.
+      const openModal = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          'dialog[open], [aria-modal="true"][role="dialog"], [aria-modal="true"][role="alertdialog"]',
+        ),
+      ).some(
+        (modal) =>
+          !modal.closest('[hidden], [inert], [aria-hidden="true"], [data-state="closed"]') &&
+          modal.getClientRects().length > 0,
+      );
+      if (openModal) {
+        first.current = false;
+        return;
+      }
+
       if (location.hash) {
         let targetId = "";
         try {

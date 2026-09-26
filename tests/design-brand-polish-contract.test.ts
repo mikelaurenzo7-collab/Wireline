@@ -1,12 +1,36 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { globSync } from "node:fs";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const root = process.cwd();
 const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const read = (path: string) => source(path).replace(/\r\n/g, "\n");
 const withoutComments = (value: string) => value.replace(/\/\*[\s\S]*?\*\//g, "");
+
+function hasModalElement(text: string) {
+  const file = ts.createSourceFile(
+    "component.tsx",
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let found = false;
+  function visit(node: ts.Node) {
+    if (found) return;
+    if (ts.isJsxAttribute(node) && node.initializer && ts.isStringLiteral(node.initializer)) {
+      const name = node.name.getText(file);
+      found =
+        (name === "role" && node.initializer.text === "dialog") ||
+        (name === "aria-modal" && node.initializer.text === "true");
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return found;
+}
 
 describe("E2E design and BotBound brand polish", () => {
   it("keeps every mobile agent tab visible and readable", () => {
@@ -254,7 +278,8 @@ describe("E2E design and BotBound brand polish", () => {
     const offenders = files.filter((file) => {
       const text = source(file);
       return (
-        /role="dialog"|aria-modal="true"/.test(text) &&
+        // Inspect JSX attributes; a DOM selector does not declare a dialog.
+        hasModalElement(text) &&
         !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text)
       );
     });
