@@ -85,6 +85,8 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("emailAddress: existing.emailAddress");
     expect(identity).toContain("AgentMail webhook registration requires a public APP_URL");
     expect(identity).toContain("if (!ensured.secret && input.hasStoredSecret) return");
+    expect(identity).toContain("getAgentMailWebhook(input.apiKey, ensured.webhookId)");
+    expect(identity).not.toContain("Unverifiable paid Bot AgentMail webhook cleanup failed");
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
     expect(identity).toContain("if (existing) return { ...existing, reused: true }");
     expect(identity).toContain("reused: Boolean(provisioned.reused)");

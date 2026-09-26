@@ -6,11 +6,10 @@ import {
   AGENTMAIL_MANAGED_SCOPE_MARKER,
   agentmailGrantedScopes,
   createAgentMailInbox,
-  deleteAgentMailWebhook,
   ensureAgentMailWebhook,
+  getAgentMailWebhook,
   hasExactAgentMailManagedScope,
   listAgentMailInboxes,
-  listAgentMailWebhooks,
   publicAgentMailWebhookUrl,
   verifyAgentMailCredentials,
   verifyManagedAgentMailDomainIdentity,
@@ -23,8 +22,7 @@ import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { planById } from "./plan-catalog";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
 import { selectPaidBotIdentityAgents } from "./paid-bot-identity-capacity";
-import { drizzle, log } from "./server-context";
-import { getErrorMessage } from "./server-utils";
+import { drizzle } from "./server-context";
 import { encryptSecret, isVaultConfigured } from "./secret-vault";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { getTwilioClient } from "./twilio-service";
@@ -301,20 +299,9 @@ async function ensureManagedDeliveryWebhook(input: {
 
   let signingSecret = ensured.secret;
   if (!signingSecret) {
-    signingSecret =
-      (await listAgentMailWebhooks(input.apiKey)).find(
-        (webhook) => webhook.webhookId === ensured.webhookId,
-      )?.secret ?? null;
+    signingSecret = (await getAgentMailWebhook(input.apiKey, ensured.webhookId)).secret;
   }
   if (!signingSecret) {
-    await deleteAgentMailWebhook(input.apiKey, ensured.webhookId).catch((cleanupError) =>
-      log.warn("Unverifiable paid Bot AgentMail webhook cleanup failed", {
-        userId: input.userId,
-        accountId: input.accountId,
-        webhookId: ensured.webhookId,
-        error: getErrorMessage(cleanupError),
-      }),
-    );
     throw new Error("AgentMail webhook did not expose its signing secret.");
   }
 

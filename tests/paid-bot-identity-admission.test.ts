@@ -151,12 +151,11 @@ vi.mock("../src/lib/agentmail-mail", () => ({
   AGENTMAIL_MANAGED_SCOPE_MARKER: "managed",
   agentmailGrantedScopes: h.provider,
   createAgentMailInbox: h.createInbox,
-  deleteAgentMailWebhook: h.provider,
   ensureAgentMailWebhook: h.provider,
+  getAgentMailWebhook: h.provider,
   hasExactAgentMailManagedScope: (scopes: string) => scopes === "managed",
   listAgentMailInboxes: h.inboxesRead,
   publicAgentMailWebhookUrl: h.webhookUrl,
-  listAgentMailWebhooks: h.provider,
   verifyAgentMailCredentials: h.provider,
   verifyManagedAgentMailDomainIdentity: h.domainIdentity,
 }));
