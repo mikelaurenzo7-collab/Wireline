@@ -157,9 +157,12 @@ async function stripeStatus() {
     jsonFetch("https://api.stripe.com/v1/balance", { headers }),
     jsonFetch(`https://api.stripe.com/v1/prices?${catalogParams.toString()}`, { headers }),
     jsonFetch("https://api.stripe.com/v1/account", { headers }),
-    jsonFetch("https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100", {
-      headers,
-    }),
+    // Stripe omits the allowed plan-switch catalog unless it is expanded.
+    // Match the dedicated portal verifier so a valid live catalog can be audited.
+    jsonFetch(
+      "https://api.stripe.com/v1/billing_portal/configurations?active=true&limit=100&expand[]=data.features.subscription_update.products",
+      { headers },
+    ),
     jsonFetch("https://api.stripe.com/v1/webhook_endpoints?limit=100", { headers }),
     jsonFetch("https://api.stripe.com/v1/tax/settings", { headers }),
     jsonFetch("https://api.stripe.com/v1/tax/registrations?status=active&limit=100", {
