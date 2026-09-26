@@ -44,6 +44,8 @@ describe("self-service calling setup", () => {
     expect(setup).toContain('body.code === "ACTIVATION_REQUIRED"');
     expect(setup).toContain('body.code === "SUBSCRIPTION_REQUIRED"');
     expect(setup).toContain("Open billing");
+    expect(setup).toContain("SOFT_OPEN_CHECKOUT_COPY");
+    expect(setup).toContain("fetchSelfServeCheckoutAvailable");
     expect(setup).toContain("href={`tel:${activeNumber.phone_number}`}");
     expect(setup).toMatch(/Caller Identity/i);
     expect(setup).toContain("<details");

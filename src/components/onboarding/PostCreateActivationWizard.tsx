@@ -8,9 +8,11 @@ import RoleplaySandbox from "../RoleplaySandbox";
 import { Button } from "../atoms";
 import { StatusNotice } from "../molecules";
 import { authFetch } from "../../lib/api";
+import { fetchSelfServeCheckoutAvailable } from "../../lib/checkout-availability";
 import {
   ACTIVATION_PENDING_COPY,
   POST_CREATE_WIZARD_COPY,
+  SOFT_OPEN_CHECKOUT_COPY,
 } from "../../lib/wireline-onboarding-copy";
 import { setPostSignupFlowActive } from "../../lib/post-signup-onboarding";
 import {
@@ -106,11 +108,11 @@ export default function PostCreateActivationWizard({
   const hasLiveLine = Boolean(phoneLookup?.active && !refreshingPhone && !phoneLookupFailed);
   const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
-  // 402 ACTIVATION_REQUIRED is not an error — it is the plan-choice moment for
-  // a customer who just built and trained a Bot, and may already have privately
-  // tested it. It gets a designed panel with a direct route to billing, never a
-  // bare destructive notice.
+  // 402 ACTIVATION_REQUIRED is not an error — it is the go-live moment for a
+  // customer who just built and trained a Bot. When checkout is open it is a
+  // plan-choice panel. When checkout is closed it must not imply Stripe works.
   const [activationRequested, setActivationNeeded] = useState(false);
+  const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
   const activationNeeded =
     !phoneNumber && (activationRequested || payload.phoneActivationRequired === true);
   const [testStarted, setTestStarted] = useState(false);
@@ -172,18 +174,27 @@ export default function PostCreateActivationWizard({
   useEffect(() => {
     setPostSignupFlowActive(true);
     void refreshPhone();
+    if (payload.phoneActivationRequired === true) {
+      void fetchSelfServeCheckoutAvailable().then(setCheckoutAvailable);
+    }
     return () => {
       phoneRequestId.current += 1;
       setPostSignupFlowActive(false);
     };
     // Verify background provisioning without remounting or resetting the step.
-  }, [refreshPhone, payload.phoneNumber, payload.phoneProvisioned]);
+  }, [
+    refreshPhone,
+    payload.phoneNumber,
+    payload.phoneProvisioned,
+    payload.phoneActivationRequired,
+  ]);
 
   async function provisionLine() {
     if (provisioning || refreshingPhone || phoneLookupFailed) return;
     setProvisioning(true);
     setWireError(null);
     setActivationNeeded(false);
+    setCheckoutAvailable(null);
     try {
       const response = await authFetch("/api/phone-numbers/provision", {
         method: "POST",
@@ -200,6 +211,7 @@ export default function PostCreateActivationWizard({
       };
       if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
         setActivationNeeded(true);
+        setCheckoutAvailable(await fetchSelfServeCheckoutAvailable());
         return;
       }
       if (!response.ok || body?.ok === false) {
@@ -473,20 +485,38 @@ export default function PostCreateActivationWizard({
 
               {activationNeeded && !phoneLookupFailed ? (
                 <div className="rounded-xl border border-primary/25 bg-[var(--wireline-color-action-primary-container)] px-4 py-4">
-                  <p className="text-sm font-semibold text-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
-                  </p>
-                  <Button asChild size="sm" className="mt-3">
-                    <Link
-                      to={activationPlanPath}
-                      onClick={() => stashPostCreateWizardStep("launch")}
-                    >
-                      {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
-                    </Link>
-                  </Button>
+                  {checkoutAvailable === false ? (
+                    <>
+                      <p className="text-sm font-semibold text-foreground">
+                        {SOFT_OPEN_CHECKOUT_COPY.title}
+                      </p>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                        {SOFT_OPEN_CHECKOUT_COPY.detail}
+                      </p>
+                      <Button asChild size="sm" className="mt-3">
+                        <Link to={SOFT_OPEN_CHECKOUT_COPY.href}>{SOFT_OPEN_CHECKOUT_COPY.cta}</Link>
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-foreground">
+                        {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
+                      </p>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                        {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
+                      </p>
+                      {checkoutAvailable === true ? (
+                        <Button asChild size="sm" className="mt-3">
+                          <Link
+                            to={activationPlanPath}
+                            onClick={() => stashPostCreateWizardStep("launch")}
+                          >
+                            {POST_CREATE_WIZARD_COPY.steps.launch.activationCta}
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               ) : wireError ? (
                 <StatusNotice

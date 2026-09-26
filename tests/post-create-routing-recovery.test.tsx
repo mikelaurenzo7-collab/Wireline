@@ -181,4 +181,65 @@ describe("setup guide requires confirmed calling", () => {
       h.fetch.mock.calls.filter(([url]) => url === "/api/phone-numbers/provision"),
     ).toHaveLength(1);
   });
+
+  it("uses honest soft-open copy instead of a checkout CTA when billing is closed", async () => {
+    payload = {
+      agentId: "bot",
+      agentName: "Front Desk",
+      phoneProvisionRequested: false,
+      phoneProvisioned: false,
+    };
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === "/api/phone-numbers") return response([]);
+      if (url === "/api/phone-numbers/provision") {
+        return new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 });
+      }
+      if (url === "/api/billing/plans") {
+        return new Response(
+          JSON.stringify({ checkout_available: false, stripe_configured: true, plans: [] }),
+        );
+      }
+      throw new Error(String(url));
+    });
+    await mount();
+    button("Get a number")?.props.onClick?.();
+    await vi.waitFor(() => expect(text(render())).toContain("Self-serve checkout isn't open yet"));
+    const tree = render();
+    expect(text(tree)).toContain("Keep training and using Studio Preview Voice");
+    expect(text(tree)).not.toContain("Choose your plan");
+    expect(text(tree)).not.toContain("Starter begins at $19/mo");
+    const contact = elements(tree).find(
+      (element) => element.type === "a" && text(element) === "Contact BotBound",
+    );
+    expect(contact?.props.to).toBe("/contact?topic=billing");
+  });
+
+  it("keeps the paid-plan CTA when self-serve checkout is available", async () => {
+    payload = {
+      agentId: "bot",
+      agentName: "Front Desk",
+      phoneProvisionRequested: false,
+      phoneProvisioned: false,
+    };
+    h.fetch.mockImplementation(async (url: string) => {
+      if (url === "/api/phone-numbers") return response([]);
+      if (url === "/api/phone-numbers/provision") {
+        return new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 });
+      }
+      if (url === "/api/billing/plans") {
+        return new Response(
+          JSON.stringify({ checkout_available: true, stripe_configured: true, plans: [] }),
+        );
+      }
+      throw new Error(String(url));
+    });
+    await mount();
+    button("Get a number")?.props.onClick?.();
+    await vi.waitFor(() => expect(text(render())).toContain("Choose your plan"));
+    const plan = elements(render()).find(
+      (element) => element.type === "a" && text(element) === "Choose your plan",
+    );
+    expect(plan?.props.to).toBe("/settings/billing");
+    expect(text(render())).not.toContain("Self-serve checkout isn't open yet");
+  });
 });

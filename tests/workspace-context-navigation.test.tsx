@@ -115,6 +115,7 @@ type Props = {
   id?: string;
   role?: string;
   to?: string;
+  title?: string;
   agentId?: string;
   value?: string;
   disabled?: boolean;
@@ -341,6 +342,79 @@ describe("Bot context across workspace pages", () => {
     await vi.waitFor(() => expect(text(selectedLine())).toContain("Alpha"));
     const request = h.fetch.mock.calls.find(([, options]) => options?.method === "POST");
     expect(JSON.parse(String(request?.[1].body))).toEqual({ agent_id: "bot-a" });
+  });
+
+  it("does not imply Stripe Checkout when self-serve billing is closed", async () => {
+    await loadLines([]);
+    h.fetch.mockImplementation(async (path: string, options?: RequestInit) => {
+      if (path === "/api/phone-numbers/provision" && options?.method === "POST") {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            code: "ACTIVATION_REQUIRED",
+            error: "Choose Starter, Starter Plus, or Pro before connecting a production number.",
+          }),
+          { status: 402 },
+        );
+      }
+      if (path === "/api/billing/plans") {
+        return new Response(
+          JSON.stringify({ checkout_available: false, stripe_configured: true, plans: [] }),
+        );
+      }
+      return new Response(JSON.stringify({ numbers: [] }));
+    });
+    button("Activate Line").props.onClick!();
+    await vi.waitFor(() => {
+      const notice = elements(phone()).find((node) => node.type === "notice");
+      expect(notice?.props.title).toBe("Self-serve checkout isn't open yet");
+    });
+    const tree = phone();
+    expect(text(tree)).toContain(
+      "Paid plans and live numbers stay founder-led during BotBound's soft open",
+    );
+    expect(text(tree)).not.toContain("Choose Starter");
+    const contact = elements(tree).find(
+      (node) => node.type === "a" && node.props.to === "/contact?topic=billing",
+    );
+    expect(text(contact)).toBe("Contact BotBound");
+    expect(elements(tree).some((node) => node.type === "a" && text(node) === "Open billing")).toBe(
+      false,
+    );
+  });
+
+  it("keeps the billing recovery CTA when checkout is available", async () => {
+    await loadLines([]);
+    h.fetch.mockImplementation(async (path: string, options?: RequestInit) => {
+      if (path === "/api/phone-numbers/provision" && options?.method === "POST") {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            code: "ACTIVATION_REQUIRED",
+            error: "Choose Starter, Starter Plus, or Pro before connecting a production number.",
+            recovery_path: "/settings/billing",
+          }),
+          { status: 402 },
+        );
+      }
+      if (path === "/api/billing/plans") {
+        return new Response(
+          JSON.stringify({ checkout_available: true, stripe_configured: true, plans: [] }),
+        );
+      }
+      return new Response(JSON.stringify({ numbers: [] }));
+    });
+    button("Activate Line").props.onClick!();
+    await vi.waitFor(() => {
+      expect(
+        elements(phone()).some((node) => node.type === "a" && text(node) === "Open billing"),
+      ).toBe(true);
+    });
+    const billing = elements(phone()).find(
+      (node) => node.type === "a" && text(node) === "Open billing",
+    );
+    expect(billing?.props.to).toBe("/settings/billing");
+    expect(text(phone())).toContain("Choose Starter");
   });
 });
 

@@ -8,6 +8,11 @@ import CompanyIdentityPack from "./settings/CompanyIdentityPack";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import {
+  fetchSelfServeCheckoutAvailable,
+  isBillingSettingsPath,
+} from "../lib/checkout-availability";
+import { SOFT_OPEN_CHECKOUT_COPY } from "../lib/wireline-onboarding-copy";
 
 type PhoneNumberRecord = {
   id: string;
@@ -55,6 +60,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
+  const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
   const [selectedNumberId, setSelectedNumberId] = useState<string | null>(null);
   const [addingLine, setAddingLine] = useState(false);
   const companyIdentityRef = useRef<HTMLDetailsElement>(null);
@@ -117,6 +123,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     setLoading(true);
     setError(null);
     setRecoveryPath(null);
+    setCheckoutAvailable(null);
     try {
       const response = await authFetch("/api/phone-numbers");
       const body = await response.json().catch(() => ({}));
@@ -160,6 +167,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     setMessage(null);
     setError(null);
     setRecoveryPath(null);
+    setCheckoutAvailable(null);
     try {
       const response = await authFetch("/api/phone-numbers/provision", {
         method: "POST",
@@ -171,12 +179,21 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       });
       const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
       if (!response.ok || body.ok === false) {
-        setRecoveryPath(
+        const nextRecoveryPath =
           body.recovery_path ||
-            (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
-              ? "/settings/billing"
-              : null),
-        );
+          (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+            ? "/settings/billing"
+            : null);
+        setRecoveryPath(nextRecoveryPath);
+        if (isBillingSettingsPath(nextRecoveryPath)) {
+          const available = await fetchSelfServeCheckoutAvailable();
+          setCheckoutAvailable(available);
+          throw new Error(
+            available
+              ? body.error || "Could not activate a number."
+              : SOFT_OPEN_CHECKOUT_COPY.detail,
+          );
+        }
         throw new Error(body.error || "Could not activate a number.");
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
@@ -248,12 +265,20 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       {error ? (
         <StatusNotice
           tone="destructive"
-          title="Lines Need Attention"
+          title={
+            checkoutAvailable === false ? SOFT_OPEN_CHECKOUT_COPY.title : "Lines Need Attention"
+          }
           action={
             recoveryPath ? (
-              <Button asChild size="sm" variant="secondary">
-                <Link to={recoveryPath}>Open billing</Link>
-              </Button>
+              checkoutAvailable === false ? (
+                <Button asChild size="sm" variant="secondary">
+                  <Link to={SOFT_OPEN_CHECKOUT_COPY.href}>{SOFT_OPEN_CHECKOUT_COPY.cta}</Link>
+                </Button>
+              ) : checkoutAvailable === true ? (
+                <Button asChild size="sm" variant="secondary">
+                  <Link to={recoveryPath}>Open billing</Link>
+                </Button>
+              ) : undefined
             ) : inventoryUnavailable ? (
               <Button
                 size="sm"

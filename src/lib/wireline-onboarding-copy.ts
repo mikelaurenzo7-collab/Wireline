@@ -67,8 +67,17 @@ export const POST_CREATE_WIZARD_COPY = {
       `${agentName} is on ${phone}. Dial from your phone when you're ready. That's activation.`,
     deferredTitle: "Ready When You Are",
     deferredDetail: (agentName: string) =>
-      `${agentName} is saved. Connect a number under Calls when you want it live.`,
+      `${agentName} is saved. Connect a number under Phone when you want it live.`,
     studioCta: "Continue in Studio",
     phoneCta: "Get a number",
   },
+} as const;
+
+/** Phone setup and post-create CTAs when self-serve Stripe Checkout is closed. */
+export const SOFT_OPEN_CHECKOUT_COPY = {
+  title: "Self-serve checkout isn't open yet",
+  detail:
+    "Paid plans and live numbers stay founder-led during BotBound's soft open. Keep training and using Studio Preview Voice.",
+  cta: "Contact BotBound",
+  href: "/contact?topic=billing",
 } as const;
