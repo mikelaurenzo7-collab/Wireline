@@ -159,6 +159,7 @@ describe("product documentation and compatibility contract", () => {
       "/approvals",
       "/apps",
       "/call-logs",
+      "/calls",
     ];
     for (const route of privateRoutes) {
       expect(robots).toContain(`Disallow: ${route}`);

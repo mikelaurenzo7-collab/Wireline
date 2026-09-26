@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { isWorkspaceRoute } from "../src/lib/workspace-route-scope";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -40,9 +41,13 @@ describe("canonical Phone routes", () => {
 
     expect(routes).toContain('path="/call-logs"');
     expect(routes).toContain('path="/logs"');
+    expect(routes).toContain('path="/calls"');
     expect(
       routes.match(/<PreservingRedirect to="\/phone" searchParams=\{\{ tab: "logs" \}\} \/>/g),
     ).toHaveLength(2);
+    expect(routes).toContain('<PreservingRedirect to="/phone" />');
+    expect(isWorkspaceRoute("/calls")).toBe(true);
+    expect(isWorkspaceRoute("/call-logs")).toBe(true);
     expect(routes).toContain("new URLSearchParams(location.search)");
     expect(routes).toContain("${location.hash}");
     expect(routes).not.toContain('path="/triage"');

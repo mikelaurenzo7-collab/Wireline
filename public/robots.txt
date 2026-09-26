@@ -16,6 +16,7 @@ Disallow: /apps
 Disallow: /settings
 Disallow: /call-logs
 Disallow: /logs
+Disallow: /calls
 Disallow: /audit
 Disallow: /dnc
 Disallow: /onboarding

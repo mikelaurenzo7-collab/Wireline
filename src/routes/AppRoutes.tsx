@@ -157,6 +157,7 @@ export default function AppRoutes() {
           path="/logs"
           element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
         />
+        <Route path="/calls" element={<PreservingRedirect to="/phone" />} />
         <Route path="/phone" element={<PhonePage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />

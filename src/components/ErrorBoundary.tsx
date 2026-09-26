@@ -66,7 +66,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (typeof window === "undefined") return { href: "/", label: "Back home" };
     const path = window.location.pathname;
     const isWorkspace =
-      /^\/(?:overview|studio|agents|approvals|call-logs|logs|inbox|phone|knowledge|insights|connections|settings|apps|admin|billing|audit|dnc|templates|onboarding)/.test(
+      /^\/(?:overview|studio|agents|approvals|call-logs|logs|calls|inbox|phone|knowledge|insights|connections|settings|apps|admin|billing|audit|dnc|templates|onboarding)/.test(
         path,
       );
     if (isWorkspace) return { href: "/studio", label: "Back to workspace" };

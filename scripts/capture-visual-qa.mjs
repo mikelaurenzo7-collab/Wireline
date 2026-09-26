@@ -118,6 +118,7 @@ const LEGACY_ROUTE_PREFIXES = new Set([
   "/chat",
   "/call-logs",
   "/logs",
+  "/calls",
   "/founder",
   "/pulse",
   "/fleet",
@@ -130,6 +131,7 @@ function routeReached(base, requestedRoute, finalUrl) {
     ["/overview", "/studio"],
     ["/studio/live-video", "/studio"],
     ["/settings/phone", "/phone"],
+    ["/calls", "/phone"],
     ["/apps", "/settings/apps"],
     ["/apps/command", "/settings/apps/command"],
   ]);
