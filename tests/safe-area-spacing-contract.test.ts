@@ -61,8 +61,9 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).not.toMatch(
       /\.wl-workspace-shell > nav\[aria-label="Workspace navigation"\] \{[^}]*safe-area-inset-(?:left|right)/s,
     );
-    expect(ownership).toMatch(
-      /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom: 5\.25rem;/,
+    expect(ownership).toContain("var(--wl-workspace-dock-height, 5.25rem)");
+    expect(workspace).toContain(
+      'useChromeHeight(".wl-workspace-shell", "--wl-workspace-dock-height")',
     );
     expect(workspace).not.toContain("pb-[calc(5.25rem+env(safe-area-inset-bottom))]");
     const workspaceSpacing = workspace.match(

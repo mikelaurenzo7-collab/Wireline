@@ -1,14 +1,13 @@
-/* Letterpress typography: titles are authored in Title Case and rendered as
- * written. Compact labels and controls retain their uppercase treatment;
- * explanatory copy stays in sentence case. Customer text is never recased. */
+/* Authored case is the default for titles, navigation, controls, and form
+ * labels. Uppercase is reserved for explicit metadata and section eyebrows. */
 
 /* Three knobs, all live. There is deliberately no separate display tracking:
  * the cased title tier below sets one value for every title size, and a fourth
  * variable that the same file overrode 50 lines later was a knob that looked
  * tunable and did nothing. */
 :is(.wl-ui-caps, .wl-cased) {
-  --wl-caps-title-tracking: -0.025em;
-  --wl-caps-control-tracking: 0.045em;
+  --wl-caps-title-tracking: -0.02em;
+  --wl-caps-control-tracking: 0;
   /* Label tracking has one origin: the `overline` entry in
    * design-tokens/wireline.tokens.json. This used to declare its own 0.12em
    * while `.wl-eyebrow` hardcoded 0.14em and seven other stylesheets read the
@@ -29,7 +28,7 @@
   font-family: var(--wireline-font-family-display);
   font-weight: 700;
   letter-spacing: var(--wl-caps-title-tracking);
-  line-height: 1.05;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -114,7 +113,7 @@
     .wl-preserve-case
   ):not([class*="wl-preserve-case"]) {
   letter-spacing: var(--wl-caps-control-tracking);
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 /* Mono micro-labels — the eyebrow tier. */
@@ -189,12 +188,12 @@
   }
 }
 
-/* Controls join the cased system: buttons, tabs, menu items, badges, and nav.
- * Caps need air that lowercase does not, so the control tier carries its own
- * tracking rather than inheriting the tight display value. */
+/* Controls read as written. Neutral tracking leaves room for full actions
+ * and destination names at narrow widths and enlarged text sizes. */
 :is(.wl-ui-caps, .wl-cased)
   :is(
     button,
+    summary,
     [role="button"],
     [role="tab"],
     [role="menuitem"],
@@ -210,7 +209,7 @@
     footer a
   ) {
   letter-spacing: var(--wl-caps-control-tracking);
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 /* A control is a label, not a container. Anything a button wraps that is a
@@ -301,12 +300,10 @@
   line-height: 1.25;
 }
 
-/* The system-wide opt-out applies here as everywhere: a label whose text is
- * the start of a running sentence ("I agree to the … Terms") is prose, and
- * uppercasing only the label half split one sentence into two type systems. */
+/* Field labels and table headers use authored case, like the controls they describe. */
 :is(.wl-ui-caps, .wl-cased) :is(label, legend, th):not(.wl-preserve-case) {
-  letter-spacing: var(--wl-caps-label-tracking);
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 /* The rest of what a label can hold is not a caption and must read as written:
@@ -328,8 +325,8 @@
 :is(.wl-ui-caps, .wl-cased)
   :is(label, legend)
   > span:first-child:not(:has(input, textarea, select, button)) {
-  letter-spacing: var(--wl-caps-label-tracking);
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 :is(.wl-ui-caps, .wl-cased)
@@ -348,28 +345,6 @@
 }
 
 @media (max-width: 640px) {
-  :is(.wl-ui-caps, .wl-cased) {
-    --wl-caps-control-tracking: 0.04em;
-    /* The label tier deliberately has no responsive override, unlike the control
-     * tier above it.
-     *
-     * There was one: a literal 0.11em, written when the base was 0.12em so it
-     * read as a tightening. Re-pointing the base at the 0.09em token left the
-     * literal behind and mobile silently became *wider* than desktop — the
-     * intent inverted exactly where horizontal space is scarcest.
-     *
-     * Deriving it from the token instead (`calc(… - 0.01em)`) fixed the
-     * inversion but not the split, because only this file reads
-     * `--wl-caps-label-tracking`; the seven stylesheets unified in the previous
-     * commit read the token directly and never saw the breakpoint. Measured on a
-     * 390px viewport that came back as 0.08em and 0.09em side by side — two
-     * values for one tier again, from the opposite direction.
-     *
-     * A tier defined as one value is one value. The knob is gone rather than
-     * re-plumbed: at 0.09em the tier is already tight enough that the hair it
-     * bought was never worth a second code path. */
-  }
-
   .wl-page-title {
     font-size: clamp(1.8rem, 8.4vw, 2.7rem);
     line-height: 1.03;

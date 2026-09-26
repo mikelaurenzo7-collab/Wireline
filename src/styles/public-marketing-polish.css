@@ -429,9 +429,14 @@
   }
 }
 
-/* Phone marketing buttons default to full-width so hero stacks stay tappable.
- * The sticky conversion bar is a two-action row: if either button is 100%
- * wide, "How It Works" consumes the bar and Start Free clips off the right. */
+/* Both conversion actions keep their full label. Enlarged text gets a second
+ * row instead of squeezing the primary action into an empty purple sliver. */
+.marketing-sticky-cta__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.5rem;
+}
+
 .marketing-sticky-cta :is(.marketing-btn-primary, .marketing-btn-secondary) {
   width: auto;
   max-width: 100%;

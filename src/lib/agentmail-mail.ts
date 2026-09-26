@@ -591,6 +591,9 @@ export type AgentMailWebhook = {
   inboxIds: string[];
   eventTypes: string[];
   secret: string | null;
+  enabled: boolean;
+  podIds: string[];
+  ownerInboxId: string | null;
 };
 
 function uniqueIds(value: unknown, extra?: string | null): string[] {
@@ -613,6 +616,9 @@ function normalizeAgentMailWebhook(raw: unknown): AgentMailWebhook | null {
     inboxIds: uniqueIds(row.inbox_ids ?? row.inboxIds, String(row.inbox_id ?? row.inboxId ?? "")),
     eventTypes: uniqueIds(row.event_types ?? row.eventTypes),
     secret: String(row.secret ?? "").trim() || null,
+    enabled: row.enabled !== false,
+    podIds: uniqueIds(row.pod_ids ?? row.podIds),
+    ownerInboxId: String(row.inbox_id ?? row.inboxId ?? "").trim() || null,
   };
 }
 
@@ -622,7 +628,7 @@ function canonicalAgentMailWebhookUrl(url: string): string | null {
     if (parsed.protocol !== "https:") return null;
     if (parsed.username || parsed.password || parsed.search || parsed.hash) return null;
     const pathname = parsed.pathname.replace(/\/+$/, "") || "/";
-    return `${parsed.protocol}//${parsed.hostname.toLowerCase()}${pathname}`;
+    return `${parsed.origin}${pathname}`;
   } catch {
     return null;
   }
@@ -740,7 +746,16 @@ async function readAgentMailWebhookSecret(
   webhook: AgentMailWebhook,
 ): Promise<string | null> {
   if (webhook.secret) return webhook.secret;
-  return (await getAgentMailWebhook(apiKey, webhook.webhookId)).secret;
+  const current = await getAgentMailWebhook(apiKey, webhook.webhookId);
+  if (current.webhookId !== webhook.webhookId || !webhookUrlsMatch(current.url, webhook.url)) {
+    throw new AgentMailConnectError("AgentMail webhook identity changed; reconnect the mailbox.");
+  }
+  if (!current.enabled) {
+    throw new AgentMailConnectError(
+      "AgentMail webhook is disabled; enable it in AgentMail and reconnect.",
+    );
+  }
+  return current.secret;
 }
 
 export async function deleteAgentMailWebhook(credential: string, webhookId: string): Promise<void> {
@@ -770,12 +785,68 @@ export function publicAgentMailWebhookUrl(accountId: string): string | null {
 async function adoptAgentMailWebhook(
   apiKey: string,
   webhook: AgentMailWebhook,
-  hasStoredSecret: boolean,
+  inboxId: string,
 ): Promise<{ webhookId: string; secret: string | null }> {
-  if (hasStoredSecret) {
-    return { webhookId: webhook.webhookId, secret: webhook.secret };
+  if (!webhook.enabled) {
+    throw new AgentMailConnectError(
+      "AgentMail webhook is disabled; enable it in AgentMail and reconnect.",
+    );
   }
-  const secret = await readAgentMailWebhookSecret(apiKey, webhook);
+  if (webhook.ownerInboxId && webhook.ownerInboxId !== inboxId) {
+    throw new AgentMailConnectError(
+      "AgentMail webhook belongs to another inbox; reconnect the matching mailbox.",
+    );
+  }
+  const patch: { add_inbox_ids?: string[]; event_types?: string[] } = {};
+  // Empty filters cover the organization and all standard events. Preserve
+  // those subscriptions, and preserve extra explicit subscriptions on PATCH.
+  if (
+    (webhook.inboxIds.length > 0 || webhook.podIds.length > 0) &&
+    !webhook.inboxIds.includes(inboxId)
+  ) {
+    patch.add_inbox_ids = [inboxId];
+  }
+  if (
+    webhook.eventTypes.length > 0 &&
+    !AGENTMAIL_WEBHOOK_EVENT_TYPES.every((event) => webhook.eventTypes.includes(event))
+  ) {
+    patch.event_types = [...new Set([...webhook.eventTypes, ...AGENTMAIL_WEBHOOK_EVENT_TYPES])];
+  }
+  let ready = webhook;
+  if (Object.keys(patch).length > 0) {
+    const { status, body } = await agentMailJson(
+      apiKey,
+      `/webhooks/${encodeURIComponent(webhook.webhookId)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      },
+    );
+    throwIfAgentMailWebhookRequestFailed(
+      "webhooks.update",
+      status,
+      body,
+      "Could not repair the AgentMail delivery subscription.",
+    );
+    const updated =
+      normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
+    if (
+      !updated ||
+      !updated.enabled ||
+      updated.webhookId !== webhook.webhookId ||
+      !webhookUrlsMatch(updated.url, webhook.url) ||
+      (patch.add_inbox_ids && !updated.inboxIds.includes(inboxId)) ||
+      (patch.event_types && !patch.event_types.every((event) => updated.eventTypes.includes(event)))
+    ) {
+      throw new AgentMailConnectError(
+        "AgentMail did not confirm the repaired delivery subscription.",
+      );
+    }
+    ready = updated;
+  }
+  // A stored secret can belong to a replaced console webhook. Always return
+  // the current provider secret so the caller persists it on this mailbox.
+  const secret = await readAgentMailWebhookSecret(apiKey, ready);
   if (!secret) {
     throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
   }
@@ -799,10 +870,10 @@ export async function ensureAgentMailWebhook(input: {
     webhookOwnedByAccount(webhook, input.accountId, url),
   );
   const adopted = owned.find((webhook) => webhookUrlsMatch(webhook.url, url)) ?? null;
-  for (const webhook of owned) {
-    if (webhook !== adopted) await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
-  }
-  if (adopted) return adoptAgentMailWebhook(input.apiKey, adopted, input.hasStoredSecret);
+  // Reconnect is not a cleanup operation: deleting older hooks here can lose
+  // delivery before the caller durably stores the replacement signing secret.
+  // Explicit mailbox disconnect owns removal of account-owned subscriptions.
+  if (adopted) return adoptAgentMailWebhook(input.apiKey, adopted, input.inboxId);
 
   const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
     method: "POST",
@@ -824,7 +895,7 @@ export async function ensureAgentMailWebhook(input: {
   }
   const created =
     normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
-  if (!created)
+  if (!created || !created.enabled || !webhookUrlsMatch(created.url, url))
     throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
   let secret = created.secret;
   if (!secret) secret = await readAgentMailWebhookSecret(input.apiKey, created);

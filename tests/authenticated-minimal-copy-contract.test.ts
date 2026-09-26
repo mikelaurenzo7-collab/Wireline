@@ -99,14 +99,14 @@ describe("authenticated minimal copy contract", () => {
   it("keeps the Studio Build empty canvas distinct from the composer prompt", () => {
     const studio = read("src/components/StudioWorkroom.tsx");
     const emptyHeading = studio.match(
-      /<h3 className="text-lg font-semibold text-foreground">[\s\S]*?<\/h3>/,
+      /<h3 className="text-2xl font-semibold text-foreground">[\s\S]*?<\/h3>/,
     )?.[0];
     const composerPlaceholder = studio.match(
       /placeholder=\{\s*mode === "test" \? "Ask as a customer…" : "([^"]+)"/,
     )?.[1];
 
-    expect(emptyHeading).toContain("Start with a Real Customer Question");
-    expect(emptyHeading).toContain("Ready to Build");
+    expect(emptyHeading).toContain("Try a customer conversation");
+    expect(emptyHeading).toContain("Make this Bot your own");
     expect(emptyHeading).not.toMatch(/Describe What Should Change/i);
     expect(emptyHeading).not.toMatch(/describe what should change/i);
     expect(composerPlaceholder).toBe("Describe what should change");

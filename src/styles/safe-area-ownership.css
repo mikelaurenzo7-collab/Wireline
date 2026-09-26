@@ -108,7 +108,9 @@
    * Padding the column AND this scroller reserved two empty bands above the
    * dock, which left first-run Studio with a 200px void under the only card. */
   .wl-workspace-shell .wl-workspace-content {
-    padding-bottom: 5.25rem;
+    padding-bottom: calc(
+      var(--wl-workspace-dock-height, 5.25rem) + 1rem - env(safe-area-inset-bottom, 0px)
+    );
   }
 
   /* Inbox is a contained conversation surface. The scrollport above already

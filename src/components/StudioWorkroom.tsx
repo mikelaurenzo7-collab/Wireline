@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Loader2, Phone, Send, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Send, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -445,14 +445,18 @@ const StudioWorkroom = forwardRef<
         >
           {split ? (
             <div className="flex min-w-0 items-center gap-2">
-              {onModeChange ? null : (
-                <span className="inline-flex h-6 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  {mode === "test" ? "Customer test" : "Build"}
-                </span>
+              {onModeChange ? (
+                modeToggle
+              ) : (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    {mode === "test" ? "Customer test" : "Build"}
+                  </span>
+                  <span className="wl-preserve-case truncate text-sm font-medium text-foreground">
+                    {agentName}
+                  </span>
+                </>
               )}
-              <span className="wl-preserve-case truncate text-xs font-medium text-foreground">
-                {agentName}
-              </span>
             </div>
           ) : (
             <div className="min-w-0 max-w-full">
@@ -473,7 +477,7 @@ const StudioWorkroom = forwardRef<
             </div>
           )}
           <div className="flex max-w-full shrink-0 flex-wrap items-center gap-1.5">
-            {modeToggle}
+            {split && onModeChange ? null : modeToggle}
             {mode === "test" && allowOutbound ? (
               <Button
                 type="button"
@@ -537,12 +541,21 @@ const StudioWorkroom = forwardRef<
                 ) : null}
               </div>
             ) : (
-              <div className="flex h-full min-h-52 flex-col items-center justify-center text-center">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {mode === "test"
-                    ? "Start with a Real Customer Question"
-                    : "Ready to Build"}
+              <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
+                <div
+                  className="mb-1 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"
+                  aria-hidden="true"
+                >
+                  {mode === "test" ? <MessageSquare size={22} /> : <Sparkles size={22} />}
+                </div>
+                <h3 className="text-2xl font-semibold text-foreground">
+                  {mode === "test" ? "Try a customer conversation" : "Make this Bot your own"}
                 </h3>
+                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+                  {mode === "test"
+                    ? "Ask a question and see how your Bot responds. This is a private rehearsal."
+                    : "Describe a change to the greeting, tone, or rules. Review the update before it is applied."}
+                </p>
               </div>
             )}
           </div>
@@ -551,10 +564,7 @@ const StudioWorkroom = forwardRef<
         <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
           <div className="mx-auto max-w-3xl">
             {showStarterPrompts ? (
-              <div
-                className="mb-2 flex gap-1.5 overflow-x-auto pb-0.5"
-                aria-label="Starter prompts"
-              >
+              <div className="mb-3 flex flex-wrap gap-2" aria-label="Starter prompts">
                 {quickPrompts.slice(0, 3).map((prompt) => (
                   <button
                     key={prompt}
@@ -563,7 +573,7 @@ const StudioWorkroom = forwardRef<
                       setDraft(prompt);
                       requestAnimationFrame(() => inputRef.current?.focus());
                     }}
-                    className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0`}
+                    className={`${WL_COMPOSER_CLASSES.starterChip} max-w-full whitespace-normal text-left`}
                   >
                     {prompt}
                   </button>
@@ -594,14 +604,12 @@ const StudioWorkroom = forwardRef<
                 }}
                 rows={1}
                 disabled={sending}
-                placeholder={
-                  mode === "test" ? "Ask as a customer…" : "Describe what should change"
-                }
+                placeholder={mode === "test" ? "Ask as a customer…" : "Describe what should change"}
                 className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
               />
               <div className="wl-composer-dock__toolbar">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-muted/55 px-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {mode === "test" ? "Test" : "Build"}
                   </span>
                 </div>

@@ -10,11 +10,13 @@
  */
 
 .wl-public-rail {
+  min-width: 0;
   width: min(100%, var(--wireline-layout-contentMax, 72rem));
   margin-inline: auto;
 }
 
 .wl-marketing-rail {
+  min-width: 0;
   width: min(100%, var(--wireline-layout-marketingRail, 68rem));
   margin-inline: auto;
 }
@@ -136,15 +138,15 @@
      descendant — text, buttons, and the soft/muted variants below — resolves
      against a dark canvas even when the page renders in light mode. Dark mode
      is byte-identical: these are its own generated values. */
-  --wireline-color-canvas-default: #0A0A0E;
+  --wireline-color-canvas-default: #0a0a0e;
   --wireline-color-surface-default: #141319;
-  --wireline-color-text-primary: #F5F4F8;
-  --wireline-color-text-secondary: #B6B1C6;
-  --wireline-color-text-tertiary: #908CA5;
+  --wireline-color-text-primary: #f5f4f8;
+  --wireline-color-text-secondary: #b6b1c6;
+  --wireline-color-text-tertiary: #908ca5;
   --wireline-color-border-default: #262430;
-  --wireline-color-action-primary-default: #A78BFA;
+  --wireline-color-action-primary-default: #a78bfa;
   --border: #262430;
-  background: color-mix(in srgb, #0A0A0E 62%, #000);
+  background: color-mix(in srgb, #0a0a0e 62%, #000);
   color: var(--wireline-color-text-primary);
   border: 1px solid var(--wireline-color-border-default);
 }
@@ -169,7 +171,8 @@
 
 .marketing-live-dot {
   background: var(--wireline-color-action-primary-default);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 28%, transparent);
 }
 
 .marketing-tag-success {

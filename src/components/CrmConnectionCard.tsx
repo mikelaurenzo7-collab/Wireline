@@ -621,7 +621,7 @@ export default function CrmConnectionCard() {
             const betaPill = beta ? (
               <span
                 className="ml-1 shrink-0 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
-                title="OAuth is live; Bot actions (auto-log calls, push deals) are in active development."
+                title="Bot actions (auto-log calls, push deals) are in active development."
               >
                 Beta
               </span>

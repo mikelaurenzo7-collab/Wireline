@@ -109,12 +109,12 @@ describe("E2E design and BotBound brand polish", () => {
     expect(sticky).toContain("MARKETING_VOICE.primaryCta");
     expect(sticky).toContain('secondaryLabel = "How It Works"');
     expect(sticky).toContain("min-h-[48px]");
-    expect(sticky).toContain("flex-nowrap");
-    expect(sticky).toContain("w-auto");
+    expect(sticky).toContain("marketing-sticky-cta__actions");
+    expect(sticky).toContain("--wl-marketing-sticky-height");
     expect(footer).toContain("min-h-11 items-center");
   });
 
-  it("keeps the phone sticky conversion bar as two side-by-side actions", () => {
+  it("lets the phone conversion actions stack before their labels clip", () => {
     const hardening = read("src/styles/system-hardening.css");
     const polish = read("src/styles/public-marketing-polish.css");
     const mobile = read("src/lib/marketing-mobile.ts");
@@ -129,6 +129,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(polish).toContain(
       ".marketing-sticky-cta :is(.marketing-btn-primary, .marketing-btn-secondary)",
     );
+    expect(polish).toContain("repeat(auto-fit, minmax(min(100%, 8rem), 1fr))");
     expect(mobile).toContain('"/blog"');
     expect(mobile).toContain('"/security"');
     expect(mobile).toContain('"/trust"');
@@ -237,7 +238,7 @@ describe("E2E design and BotBound brand polish", () => {
     expect(read("src/components/RouteChangeA11y.tsx")).toContain('className="sr-only"');
   });
 
-  it("cases controls with the system but never customer-authored values or BotBound", () => {
+  it("preserves authored case for controls, customer values, and BotBound", () => {
     const caps = read("src/styles/uppercase-system.css");
     const brand = read("src/styles/brand-identity.css");
     expect(caps).toContain("text-transform: uppercase");
@@ -262,10 +263,9 @@ describe("E2E design and BotBound brand polish", () => {
     );
   });
 
-  it("uppercases field captions without shouting field values", () => {
+  it("keeps field captions and values in authored case", () => {
     const caps = read("src/styles/uppercase-system.css");
-    expect(caps).toMatch(/label|legend|wl-field-label/i);
-    expect(caps).toContain("text-transform: uppercase");
+    expect(caps).toMatch(/:is\(label, legend, th\)[^{]*\{[^}]*text-transform: none;/);
     expect(caps).toMatch(/input|textarea|select/);
     expect(caps).toContain("text-transform: none");
   });

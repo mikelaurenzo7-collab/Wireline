@@ -5,6 +5,7 @@ import { emitProductEvent } from "../../lib/product-event-client";
 import { MARKETING_VOICE } from "../../lib/product-copy";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { cn } from "../../lib/utils";
+import { useChromeHeight } from "../../hooks/useChromeHeight";
 
 type Props = {
   href?: string;
@@ -22,6 +23,11 @@ export default function MarketingStickyCta({
   className,
 }: Props) {
   const [visible, setVisible] = useState(false);
+  const chromeRef = useChromeHeight<HTMLDivElement>(
+    ".marketing-surface",
+    "--wl-marketing-sticky-height",
+    visible,
+  );
 
   useEffect(() => {
     const heroAction = document.querySelector(".marketing-hero__actions");
@@ -44,25 +50,23 @@ export default function MarketingStickyCta({
 
   return (
     <div
+      ref={chromeRef}
       className={cn(
         "marketing-sticky-cta pointer-events-none fixed inset-x-0 bottom-0 z-[45] lg:hidden",
         className,
       )}
     >
       <div className="pointer-events-auto border-t border-border bg-background px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.05)] sm:px-4">
-        {/* Secondary hugs its label so the primary CTA never ellipsizes at 360-430px.
-         * Phone marketing buttons default to width:100%; the sticky row must opt out
-         * or "How It Works" consumes the bar and clips Start Free. */}
-        <div className="mx-auto flex w-full max-w-lg flex-nowrap items-stretch gap-2">
+        <div className="marketing-sticky-cta__actions mx-auto w-full max-w-lg">
           <Link
             to={secondaryHref}
-            className="marketing-btn-secondary min-h-[48px] w-auto max-w-[min(100%,11.75rem)] shrink-0 px-3.5 text-sm font-semibold"
+            className="marketing-btn-secondary min-h-[48px] px-3 text-sm font-semibold"
           >
             <span>{secondaryLabel}</span>
           </Link>
           <Link
             to={href}
-            className="marketing-btn-primary min-h-[48px] w-auto min-w-0 flex-1 gap-1.5 px-3 text-sm font-semibold"
+            className="marketing-btn-primary min-h-[48px] min-w-0 gap-1.5 px-3 text-sm font-semibold"
             onClick={() =>
               emitProductEvent({
                 event: "landing_primary_cta_clicked",

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- billing and analytics provider errors remain loosely typed. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { motion } from "motion/react";
 import {
   CreditCard,
   Loader2,
@@ -15,6 +14,7 @@ import {
   Plus,
 } from "lucide-react";
 import { authFetch } from "../lib/api";
+import BillingIntervalControl from "./BillingIntervalControl";
 import { cn } from "../lib/utils";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
@@ -555,42 +555,11 @@ function PlanPicker({
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
   return (
-    <div className="rounded-md wl-panel border border-border p-4 sm:p-6 space-y-5">
-      <div className="border-b border-border pb-4">
+    <div className="wl-billing-plans space-y-5">
+      <div className="pb-1">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Plans</h3>
-          <div
-            className="inline-flex shrink-0 rounded-full border border-border bg-muted/40 p-1"
-            role="group"
-            aria-label="Billing interval"
-          >
-            <button
-              type="button"
-              onClick={() => onBillingIntervalChange("month")}
-              className={cn(
-                "min-h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition",
-                billingInterval === "month"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-pressed={billingInterval === "month"}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => onBillingIntervalChange("year")}
-              className={cn(
-                "min-h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-[0.14em] transition",
-                billingInterval === "year"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-pressed={billingInterval === "year"}
-            >
-              Annual
-            </button>
-          </div>
+          <BillingIntervalControl value={billingInterval} onChange={onBillingIntervalChange} />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
@@ -615,19 +584,17 @@ function PlanPicker({
                 ? Math.max(0, Math.round(12 - plan.price_usd_annual / plan.price_usd_monthly))
                 : 0;
             return (
-              <motion.div
+              <div
                 key={plan.id}
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className={cn(
-                  "relative rounded-md wl-panel border p-4 sm:p-5 flex flex-col gap-4 transition-all group overflow-hidden",
+                  "wl-billing-plan min-w-0 rounded-xl border bg-card flex flex-col gap-4 transition-colors",
                   isSignupMatch
                     ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
                     : "border-border hover:border-[color:var(--wireline-color-border-strong)]",
                 )}
                 data-accent={accent}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
                     <Icon className="w-5 h-5 wl-accent-text" />
                   </div>
@@ -637,9 +604,9 @@ function PlanPicker({
                 </div>
                 <div>
                   <h4 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-                    {plan.name}
+                    {plan.name.replace(/^BotBound\s+/, "")}
                   </h4>
-                  <div className="mt-1.5 flex items-baseline gap-1">
+                  <div className="mt-1.5 flex flex-wrap items-baseline gap-1">
                     <span className="font-semibold tracking-[-.02em] text-4xl text-foreground tabular-nums">
                       ${price.toLocaleString()}
                     </span>
@@ -678,7 +645,7 @@ function PlanPicker({
                     asChild
                     disableAnimations
                     variant="outline"
-                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground shadow-premium-button hover:border-[color:var(--wireline-color-border-strong)] hover:bg-muted hover-premium-glow wl-label wl-accent-subscribe"
+                    className="w-full rounded-md border-border bg-card py-3 font-medium text-foreground hover:border-[color:var(--wireline-color-border-strong)] hover:bg-muted wl-label wl-accent-subscribe"
                   >
                     <Link to="/studio">
                       Open Free Builder <ArrowRight className="w-3 h-3" />
@@ -703,7 +670,7 @@ function PlanPicker({
                     onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
                     disabled={isBusy || !canSubscribe}
                     className={cn(
-                      "w-full py-3 rounded-md wl-label font-medium shadow-premium-button border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted hover-premium-glow",
+                      "w-full py-3 rounded-md wl-label font-medium border-border hover:border-[color:var(--wireline-color-border-strong)] text-foreground bg-card hover:bg-muted",
                       !isBusy && canSubscribe && "wl-accent-subscribe",
                     )}
                   >
@@ -750,8 +717,7 @@ function PlanPicker({
                     </ul>
                   </details>
                 ) : null}
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] opacity-0 group-hover:opacity-60 transition-opacity duration-300 wl-accent-hover-bar" />
-              </motion.div>
+              </div>
             );
           })}
       </div>

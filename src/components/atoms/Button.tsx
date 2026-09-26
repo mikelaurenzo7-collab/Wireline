@@ -13,14 +13,14 @@ export const buttonVariants = cva(
   // next to real buttons at 40px, most visibly in the Overview action rows.
   // Carrying the floor here makes the control the same height whatever element
   // it becomes. The `link` variant opts out below — it is text, not a control.
-  "relative inline-flex min-h-[var(--wireline-interaction-target-minimum,40px)] min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+  "relative inline-flex min-h-[var(--wireline-interaction-target-minimum,40px)] min-w-0 max-w-full items-center justify-center gap-2 whitespace-normal text-center leading-snug rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {
         default:
-          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-primary-hover)] hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
+          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-xs)] hover:bg-[var(--wireline-color-action-primary-hover)]",
         primary:
-          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-primary-hover)] hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
+          "bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-xs)] hover:bg-[var(--wireline-color-action-primary-hover)]",
         wire: "bg-[var(--wireline-color-action-secondary-container)] text-[var(--wireline-color-action-secondary-default)] border border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_32%,transparent)] shadow-[var(--wireline-elevation-wireGlow),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-action-secondary-containerStrong)] hover:border-[color-mix(in_srgb,var(--wireline-color-action-secondary-default)_48%,transparent)] hover:shadow-[0_0_0_1px_color-mix(in_srgb,var(--wireline-color-action-secondary-default)_40%,transparent),0_12px_36px_-12px_color-mix(in_srgb,var(--wireline-color-action-secondary-default)_36%,transparent)]",
         destructive:
           "bg-[var(--wireline-color-status-error)] text-[var(--wireline-color-text-onAction)] shadow-[var(--wireline-elevation-sm),var(--wireline-elevation-inset)] hover:bg-[var(--wireline-color-status-error)]/90 hover:shadow-[var(--wireline-elevation-md),var(--wireline-elevation-insetRaised)]",
@@ -39,10 +39,10 @@ export const buttonVariants = cva(
           "border border-[var(--wireline-color-action-primary-default)]/80 bg-[var(--wireline-color-action-primary-default)] text-[var(--wireline-color-text-onAction)] shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_2px_0_rgba(17,17,17,1),0_8px_18px_rgba(17,17,17,0.18)] active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25),0_1px_0_rgba(17,17,17,1)]",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        md: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-8",
+        default: "h-auto px-4 py-2",
+        md: "h-auto px-4 py-2",
+        sm: "h-auto min-h-9 px-3 py-1.5 text-sm",
+        lg: "h-auto min-h-12 px-6 py-3",
         icon: "h-9 w-9 px-0 [&_svg]:size-5",
       },
     },

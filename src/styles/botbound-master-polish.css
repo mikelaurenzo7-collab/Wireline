@@ -263,7 +263,9 @@
 
 .wl-workspace-shell
   .wl-workspace-content
-  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    .wl-composer-dock__input
+  ) {
   border-color: var(--bb-polish-rule);
   border-radius: 0.7rem;
   background: color-mix(
@@ -276,7 +278,9 @@
 
 .wl-workspace-shell
   .wl-workspace-content
-  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):hover {
+  :where(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    .wl-composer-dock__input
+  ):hover {
   border-color: var(--bb-polish-rule-strong);
 }
 
@@ -289,6 +293,20 @@
     var(--wireline-color-canvas-default)
   );
   box-shadow: var(--bb-polish-shadow);
+}
+
+/* The composer is one surface. Its textarea should not look like a second
+ * card nested above an unrelated toolbar. */
+.wl-workspace-shell .wl-composer-dock .wl-composer-dock__input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wl-workspace-shell .wl-composer-dock__toolbar {
+  border-top: 0;
+  padding-top: 0.25rem;
 }
 
 .wl-workspace-shell .wl-composer-dock:focus-within {

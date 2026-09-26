@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Link, useLocation } from "react-router";
 import { ArrowUpRight, ChevronsLeft, ChevronsRight, Search } from "lucide-react";
 
@@ -11,6 +11,7 @@ import { BotBoundWordmark } from "./brand/BotBoundBrand";
 import BotBoundMark from "./brand/BotBoundMark";
 import { useAuth } from "../contexts/AuthContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
+import { useChromeHeight } from "../hooks/useChromeHeight";
 import { workspaceSidebarLabel } from "../lib/user-display";
 import {
   MOBILE_MORE_HREF,
@@ -106,11 +107,13 @@ function MobileDockLink({
   pathname,
   moreOpen,
   onMore,
+  moreTriggerRef,
 }: {
   item: ShellNavItem;
   pathname: string;
   moreOpen: boolean;
   onMore: () => void;
+  moreTriggerRef: RefObject<HTMLButtonElement | null>;
 }) {
   const isMore = item.href === MOBILE_MORE_HREF;
   const active = isMobilePrimaryActive(pathname, item.href);
@@ -120,6 +123,7 @@ function MobileDockLink({
   if (isMore) {
     return (
       <button
+        ref={moreTriggerRef}
         type="button"
         aria-label="More destinations"
         aria-expanded={moreOpen}
@@ -288,9 +292,12 @@ function MobileDock({
   moreOpen: boolean;
   onMoreOpen: (open: boolean) => void;
 }) {
+  const dockRef = useChromeHeight(".wl-workspace-shell", "--wl-workspace-dock-height");
+  const moreTriggerRef = useRef<HTMLButtonElement>(null);
+
   return (
     <>
-      <nav aria-label="Workspace navigation" className="wl-shell-dock lg:hidden">
+      <nav ref={dockRef} aria-label="Workspace navigation" className="wl-shell-dock lg:hidden">
         <div className="wl-shell-dock-inner">
           {MOBILE_PRIMARY_NAV.map((item) => (
             <MobileDockLink
@@ -299,11 +306,17 @@ function MobileDock({
               pathname={pathname}
               moreOpen={moreOpen}
               onMore={() => onMoreOpen(true)}
+              moreTriggerRef={moreTriggerRef}
             />
           ))}
         </div>
       </nav>
-      <MobileNavMoreSheet open={moreOpen} onOpenChange={onMoreOpen} pathname={pathname} />
+      <MobileNavMoreSheet
+        open={moreOpen}
+        onOpenChange={onMoreOpen}
+        pathname={pathname}
+        returnFocusRef={moreTriggerRef}
+      />
     </>
   );
 }

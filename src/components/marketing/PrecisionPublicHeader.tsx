@@ -11,15 +11,21 @@ import {
 import { BotBoundLockup } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { signupHrefForPlan } from "../../lib/signup-intent";
+import { useChromeHeight } from "../../hooks/useChromeHeight";
 
 export default function PrecisionPublicHeader() {
+  const headerRef = useChromeHeight(".marketing-surface", "--wl-marketing-chrome-top");
+
   return (
-    <header className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl">
+    <header
+      ref={headerRef}
+      className="wl-public-header fixed inset-x-0 top-0 z-[80] border-b border-border bg-[color:color-mix(in_srgb,var(--wireline-page)_96%,transparent)] backdrop-blur-xl"
+    >
       <SkipToContentLink href="#main-content" />
-      <div className="wl-measure mx-auto flex h-16 min-w-0 items-center gap-2 px-3 sm:gap-5 sm:px-6 lg:px-8">
+      <div className="wl-measure mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="min-w-0 shrink rounded-[var(--radius-md)] text-foreground focus-visible:outline-none"
+          className="max-w-full shrink-0 rounded-[var(--radius-md)] text-foreground wl-focus-ring-halo"
           aria-label="BotBound home"
         >
           <BotBoundLockup size="standard" />
@@ -73,7 +79,7 @@ export default function PrecisionPublicHeader() {
                 <Menu size={20} aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[100] min-w-44">
+            <DropdownMenuContent align="end" className="z-[100] w-44 min-w-0">
               <DropdownMenuItem asChild className="min-h-11 px-3">
                 <NavLink to="/features">Features</NavLink>
               </DropdownMenuItem>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockConnect = vi.fn();
 const mockLogout = vi.fn().mockResolvedValue(undefined);
@@ -69,8 +69,10 @@ function jsonResponse(status: number, body: unknown) {
 }
 
 describe("agentmail-mail", () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchWithTimeout.mockReset();
     mockConnect.mockResolvedValue(undefined);
     mockSearch.mockResolvedValue([101, 102]);
     mockFetch.mockImplementation(async function* () {
@@ -204,7 +206,7 @@ describe("agentmail-mail", () => {
             {
               webhook_id: "wh_console",
               url: `${url}/`,
-              event_types: ["message.received"],
+              event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
             },
             {
               webhook_id: "wh_legacy",
@@ -214,7 +216,6 @@ describe("agentmail-mail", () => {
           ],
         }),
       )
-      .mockResolvedValueOnce(jsonResponse(204, {}))
       .mockResolvedValueOnce(
         jsonResponse(200, {
           webhook_id: "wh_console",
@@ -230,10 +231,9 @@ describe("agentmail-mail", () => {
         hasStoredSecret: false,
       }),
     ).resolves.toEqual({ webhookId: "wh_console", secret: "whsec_adopted" });
-    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_legacy");
-    expect(mockFetchWithTimeout.mock.calls[1][1].method).toBe("DELETE");
-    expect(mockFetchWithTimeout.mock.calls[2][0]).toContain("/webhooks/wh_console");
-    expect(mockFetchWithTimeout.mock.calls[2][1]?.method).not.toBe("DELETE");
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
+    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/wh_console");
+    expect(mockFetchWithTimeout.mock.calls[1][1]?.method).not.toBe("DELETE");
     expect(
       mockFetchWithTimeout.mock.calls.some(
         (call) => call[1]?.method === "DELETE" && String(call[0]).includes("/webhooks/wh_console"),
@@ -428,40 +428,39 @@ describe("agentmail-mail", () => {
     expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
   });
 
-  it("removes old generic hooks while reusing the new account-specific subscription", async () => {
+  it("preserves old hooks until the caller can durably store the current signing secret", async () => {
     vi.stubEnv("APP_URL", "https://botbound.app");
     const accountId = "11111111-1111-4111-8111-111111111111";
     const path = `/api/webhooks/agentmail/${accountId}`;
-    mockFetchWithTimeout
-      .mockResolvedValueOnce(
-        jsonResponse(200, {
-          webhooks: [
-            {
-              webhook_id: "old",
-              client_id: "wireline-mailbox-webhook",
-              url: `https://botbound.me${path}`,
-            },
-            {
-              webhook_id: "new",
-              client_id: agentMailWebhookClientId(accountId),
-              url: `https://botbound.app${path}`,
-              inbox_ids: ["bot@botbound.app"],
-              event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
-            },
-            {
-              webhook_id: "other-account",
-              client_id: "wireline-mailbox-webhook",
-              url: "https://botbound.me/api/webhooks/agentmail/another-account",
-            },
-            {
-              webhook_id: "lookalike",
-              client_id: "wireline-mailbox-webhook",
-              url: `https://botbound.me.attacker.example${path}`,
-            },
-          ],
-        }),
-      )
-      .mockResolvedValueOnce(jsonResponse(204, {}));
+    mockFetchWithTimeout.mockResolvedValueOnce(
+      jsonResponse(200, {
+        webhooks: [
+          {
+            webhook_id: "old",
+            client_id: "wireline-mailbox-webhook",
+            url: `https://botbound.me${path}`,
+          },
+          {
+            webhook_id: "new",
+            secret: "whsec_current",
+            client_id: agentMailWebhookClientId(accountId),
+            url: `https://botbound.app${path}`,
+            inbox_ids: ["bot@botbound.app"],
+            event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
+          },
+          {
+            webhook_id: "other-account",
+            client_id: "wireline-mailbox-webhook",
+            url: "https://botbound.me/api/webhooks/agentmail/another-account",
+          },
+          {
+            webhook_id: "lookalike",
+            client_id: "wireline-mailbox-webhook",
+            url: `https://botbound.me.attacker.example${path}`,
+          },
+        ],
+      }),
+    );
     await expect(
       ensureAgentMailWebhook({
         apiKey: "am_test",
@@ -469,10 +468,8 @@ describe("agentmail-mail", () => {
         accountId,
         hasStoredSecret: true,
       }),
-    ).resolves.toEqual({ webhookId: "new", secret: null });
-    expect(mockFetchWithTimeout.mock.calls).toHaveLength(2);
-    expect(mockFetchWithTimeout.mock.calls[1][0]).toContain("/webhooks/old");
-    expect(mockFetchWithTimeout.mock.calls[1][1].method).toBe("DELETE");
+    ).resolves.toEqual({ webhookId: "new", secret: "whsec_current" });
+    expect(mockFetchWithTimeout.mock.calls).toHaveLength(1);
     vi.unstubAllEnvs();
   });
 

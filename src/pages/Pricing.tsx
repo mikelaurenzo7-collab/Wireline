@@ -5,7 +5,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { signupHrefForPlan } from "../lib/signup-intent";
-import { cn } from "../lib/utils";
+import BillingIntervalControl from "../components/BillingIntervalControl";
 import type { BillingPlansResponse } from "../types/api-billing";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
@@ -256,38 +256,7 @@ export default function Pricing() {
               Every active paid Bot gets its own BotBound phone number.
             </p>
             <div className="marketing-hero__actions mt-6">
-              <div
-                className="inline-flex justify-self-center rounded-full border border-border bg-muted/40 p-1"
-                role="group"
-                aria-label="Billing interval"
-              >
-                <button
-                  type="button"
-                  onClick={() => setBillingInterval("month")}
-                  className={cn(
-                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
-                    billingInterval === "month"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  aria-pressed={billingInterval === "month"}
-                >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBillingInterval("year")}
-                  className={cn(
-                    "min-h-11 rounded-full px-5 text-xs font-semibold uppercase tracking-[0.14em] transition",
-                    billingInterval === "year"
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  aria-pressed={billingInterval === "year"}
-                >
-                  Annual
-                </button>
-              </div>
+              <BillingIntervalControl value={billingInterval} onChange={setBillingInterval} />
             </div>
           </div>
 
@@ -307,13 +276,13 @@ export default function Pricing() {
           <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
             <article className="flex flex-col rounded-[var(--radius-xl)] border border-border bg-card p-4 text-center">
               <h2 className="wl-card-title">Free Builder</h2>
-              <div className="mt-3 flex items-end justify-center gap-1.5">
+              <div className="mt-3 flex flex-wrap items-end justify-center gap-1.5">
                 <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                   $0
                 </span>
                 <span className="text-xs text-muted-foreground">forever</span>
               </div>
-              <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
+              <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-sm leading-5">
                 {FREE_BUILDER_HIGHLIGHTS.map((feature) => (
                   <li key={feature} className="flex gap-2">
                     <Check
@@ -326,7 +295,7 @@ export default function Pricing() {
               </ul>
               <Link
                 to={signupHrefForPlan("personal")}
-                className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+                className="marketing-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
               >
                 Build Free <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
@@ -351,14 +320,14 @@ export default function Pricing() {
                   >
                     {featured ? (
                       <span
-                        className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-foreground shadow-sm"
+                        className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 max-w-full rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
                         aria-label="Recommended plan"
                       >
                         Recommended
                       </span>
                     ) : null}
                     <h2 className="wl-card-title">{publicName}</h2>
-                    <div className="mt-3 flex items-end justify-center gap-1.5">
+                    <div className="mt-3 flex flex-wrap items-end justify-center gap-1.5">
                       <span className="text-[1.85rem] font-semibold leading-none tracking-[-0.04em]">
                         ${price}
                       </span>
@@ -373,7 +342,7 @@ export default function Pricing() {
                           : `or $${plan.price_usd_annual}/yr`}
                       </p>
                     ) : null}
-                    <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-[12px] leading-5">
+                    <ul className="mx-auto mt-3 w-full flex-1 space-y-1.5 text-left text-sm leading-5">
                       {highlights.map((feature) => (
                         <li key={feature} className="flex gap-2">
                           <Check
@@ -386,7 +355,7 @@ export default function Pricing() {
                     </ul>
                     <Link
                       to={path}
-                      className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition ${
+                      className={`mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${
                         featured ? "marketing-btn-primary border-0" : "marketing-btn-secondary"
                       }`}
                     >
@@ -412,17 +381,17 @@ export default function Pricing() {
             id="scale"
             className="mt-2 flex scroll-mt-24 flex-col items-center gap-3 rounded-[var(--radius-xl)] border border-border bg-card px-5 py-3 text-center lg:flex-row lg:justify-between lg:text-left"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
               <h2 className="wl-card-title">Scale &amp; Enterprise</h2>
               <span className="text-sm text-muted-foreground">Custom</span>
             </div>
-            <p className="text-[13px] leading-5 text-muted-foreground lg:flex-1 lg:px-6">
+            <p className="text-sm leading-5 text-muted-foreground lg:flex-1 lg:px-6">
               25+ live Bot capacity, tailored voice, text, email, and data usage, custom telephony
               and integrations, security, rollout, and support plan
             </p>
             <Link
               to="/contact?topic=enterprise"
-              className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition"
+              className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition"
             >
               Design a Scale Plan <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
@@ -476,10 +445,10 @@ export default function Pricing() {
                     key={question}
                     className="group h-fit rounded-xl border border-border bg-card px-4 py-3 text-left"
                   >
-                    <summary className="cursor-pointer list-none text-[13px] font-semibold leading-5 text-foreground marker:hidden">
+                    <summary className="cursor-pointer list-none text-sm font-semibold leading-5 text-foreground marker:hidden">
                       {question}
                     </summary>
-                    <p className="mt-2 text-[13px] leading-[1.6] text-muted-foreground">{answer}</p>
+                    <p className="mt-2 text-sm leading-[1.6] text-muted-foreground">{answer}</p>
                   </details>
                 ))}
               </div>

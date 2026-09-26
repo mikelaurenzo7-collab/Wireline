@@ -1,23 +1,15 @@
 import { Link } from "react-router";
+import type { RefObject } from "react";
 
-import {
-  MOBILE_MORE_GROUPS,
-  isNavActive,
-  type ShellNavItem,
-} from "../../constants/navigation";
+import { MOBILE_MORE_GROUPS, isNavActive, type ShellNavItem } from "../../constants/navigation";
 import { navIcon } from "../nav-icons";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "../ui/shadcn/Sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../ui/shadcn/Sheet";
 
 type MobileNavMoreSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pathname: string;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
 };
 
 function MoreNavLink({
@@ -55,6 +47,7 @@ export default function MobileNavMoreSheet({
   open,
   onOpenChange,
   pathname,
+  returnFocusRef,
 }: MobileNavMoreSheetProps) {
   const close = () => onOpenChange(false);
 
@@ -63,6 +56,14 @@ export default function MobileNavMoreSheet({
       <SheetContent
         side="bottom"
         className="wl-shell-more-sheet px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
+        onCloseAutoFocus={(event) => {
+          // This controlled sheet is opened by the dock, outside Radix's
+          // Trigger. Restore its focus on dismissal, unless navigation removed it.
+          if (returnFocusRef.current?.isConnected) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
       >
         <SheetHeader className="text-left">
           <SheetTitle className="wl-shell-more-title text-left">More</SheetTitle>
@@ -77,12 +78,7 @@ export default function MobileNavMoreSheet({
               </h2>
               <div className="wl-shell-more-group-items">
                 {group.items.map((item) => (
-                  <MoreNavLink
-                    key={item.href}
-                    item={item}
-                    pathname={pathname}
-                    onNavigate={close}
-                  />
+                  <MoreNavLink key={item.href} item={item} pathname={pathname} onNavigate={close} />
                 ))}
               </div>
             </section>
