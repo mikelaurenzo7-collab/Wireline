@@ -12,8 +12,14 @@ describe("launch readiness deep pass 2026-07-27", () => {
       carrier.indexOf('"/api/phone-numbers/search"'),
       carrier.indexOf('"/api/phone-numbers/claim"'),
     );
-    expect(search).toContain("PHONE_CAPACITY_REACHED");
-    expect(search).toContain("getIncludedPhoneLineSlots(req.user.id)");
+    expect(search).toContain("await assertNumberCapacity(req.user.id)");
+    const capacity = carrier.slice(
+      carrier.indexOf("async function assertNumberCapacity"),
+      carrier.indexOf("async function queueManagedIdentity"),
+    );
+    expect(capacity).toContain("PHONE_CAPACITY_REACHED");
+    expect(capacity).toContain("getIncludedPhoneLineSlots(userId)");
+    expect(capacity).toContain("Number(held || 0) >= slots");
 
     const claim = carrier.slice(
       carrier.indexOf('"/api/phone-numbers/claim"'),

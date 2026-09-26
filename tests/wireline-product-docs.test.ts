@@ -35,8 +35,10 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("active paid Bot gets a dedicated production number");
     expect(readme).toContain("BotBound-managed email identity");
     expect(readme).toContain(
-      "Web creation on an active paid account starts identity setup automatically",
+      "Customers choose an available US area code and exact number in Phone setup before activation",
     );
+    expect(readme).toContain("managed email setup follows automatically");
+    expect(readme).toContain("never chooses a new number for the customer");
     expect(readme).toContain(
       "connected-client drafts stay private until their phone line is activated from BotBound",
     );

@@ -31,13 +31,14 @@ const source = (path: string) => readFileSync(resolve(root, path), "utf8");
 const TOKEN = "var(--wireline-typography-overline-letterSpacing)";
 
 /**
- * Rules whose selector is specifically about the label tier. Matched on class
+ * Rules whose selector is specifically about the eyebrow tier. Interface
+ * labels, badges, and insight captions now use natural sans-serif typography;
+ * they must not inherit overline tracking. Matched on class
  * and custom-property names only: a bare `label` element in a selector list, or
  * a `:not(.wl-eyebrow)` exclusion, is not a label-tier definition — the mobile
  * reset for Studio and Settings contains both and is deliberately a reset.
  */
-const LABEL_SELECTOR =
-  /(^|[\s,>+~])\.[\w-]*(eyebrow|overline|stitch-label|tile__label|wl-label|insight-label|micro-badge)[\w-]*/i;
+const LABEL_SELECTOR = /(^|[\s,>+~])\.[\w-]*(eyebrow|overline|stitch-label|tile__label)[\w-]*/i;
 
 describe("label tracking single-source contract", () => {
   it("routes the caps-system label variable at the design token", () => {

@@ -78,7 +78,7 @@ describe("authenticated Bot navigation contract", () => {
     const route = read("src/routes/agent-test-routes.ts");
     expect(workroom).toContain("/test/stream");
     expect(workroom).toContain("WORKSPACE_VOICE.testPrompts");
-    expect(workroom).toContain("Browser test");
+    expect(workroom).toContain("Private rehearsal");
     expect(copy).toContain("What can you help with?");
     expect(copy).toContain("I want to book an appointment.");
     expect(route).toContain("Reply only as that customer-facing Bot");
