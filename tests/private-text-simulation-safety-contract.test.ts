@@ -67,7 +67,8 @@ describe("private text simulation account admission", () => {
     expect(handler).toBeGreaterThan(start);
     expect(admission).toContain("enforcePrivateVoiceSimulationSpendCap");
     expect(admission).not.toMatch(/\benforceSpendCap\b/);
-    expect(admission).toContain("enforceLaunchHardGate");
+    expect(admission).toContain("enforceVoiceLaunchHardGate");
+    expect(admission).not.toMatch(/\benforceLaunchHardGate\b/);
     expect(admission).toContain("simulationMinuteQuota");
 
     const liveAgent = read("src/lib/voice/openai-live-agent-service.ts");

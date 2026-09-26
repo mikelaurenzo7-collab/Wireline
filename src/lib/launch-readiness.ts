@@ -165,6 +165,17 @@ export function isVoiceLaunchBlocked(): boolean {
   return voice?.level !== "ready";
 }
 
+/**
+ * Studio Preview Voice may still spend OpenAI Realtime, so LAUNCH_HARD_GATE can
+ * pause it when the voice stack is not ready. Self-serve billing / checkout
+ * blockers must not fail this private rehearsal — checkout and number
+ * provision keep the broader launch and billing fences.
+ */
+export function isVoiceLaunchHardBlocked(): boolean {
+  if (process.env.LAUNCH_HARD_GATE !== "true") return false;
+  return isVoiceLaunchBlocked();
+}
+
 export function launchBlockResponse() {
   const report = evaluateLaunchReadiness();
   return {
@@ -175,5 +186,17 @@ export function launchBlockResponse() {
     launch_blockers: report.launch_blockers,
     deferred_checklist: report.deferred_checklist,
     capabilities: report.capabilities,
+  };
+}
+
+export function voiceLaunchBlockResponse() {
+  const report = evaluateLaunchReadiness();
+  const voice = report.capabilities.find((capability) => capability.id === "voice_ready");
+  return {
+    code: "VOICE_LAUNCH_NOT_READY",
+    error:
+      "Preview Voice is unavailable until BotBound voice (OpenAI, Twilio, and the voice worker) is ready.",
+    launch_blockers: voice?.blockers ?? [],
+    capabilities: voice ? [voice] : [],
   };
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter, simulationMinuteQuota } from "../middleware/api-rate-limits";
-import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
+import { enforceVoiceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { enforcePrivateVoiceSimulationSpendCap } from "../lib/spend-guards";
 import { validateBody } from "../lib/api-validation";
 import {
@@ -62,7 +62,9 @@ router.post(
   "/api/voice/live/session",
   authenticateUser,
   sessionLimiter,
-  enforceLaunchHardGate,
+  // Voice-stack hard gate only. Closed self-serve checkout must not fail
+  // Studio Preview Voice; checkout and number provision keep their own fences.
+  enforceVoiceLaunchHardGate,
   enforcePrivateVoiceSimulationSpendCap,
   validateBody(sessionSchema),
   simulationMinuteQuota,
