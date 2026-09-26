@@ -755,6 +755,19 @@ async function readAgentMailWebhookSecret(
       "AgentMail webhook is disabled; enable it in AgentMail and reconnect.",
     );
   }
+  if (
+    !current.secret &&
+    (current.ownerInboxId !== webhook.ownerInboxId ||
+      !(["inboxIds", "podIds", "eventTypes"] as const).every(
+        (field) =>
+          current[field].length === webhook[field].length &&
+          current[field].every((value) => webhook[field].includes(value)),
+      ))
+  ) {
+    throw new AgentMailConnectError(
+      "AgentMail webhook subscriptions changed; reconnect the mailbox.",
+    );
+  }
   return current.secret;
 }
 
@@ -786,6 +799,7 @@ async function adoptAgentMailWebhook(
   apiKey: string,
   webhook: AgentMailWebhook,
   inboxId: string,
+  hasStoredSecret: boolean,
 ): Promise<{ webhookId: string; secret: string | null }> {
   if (!webhook.enabled) {
     throw new AgentMailConnectError(
@@ -844,10 +858,10 @@ async function adoptAgentMailWebhook(
     }
     ready = updated;
   }
-  // A stored secret can belong to a replaced console webhook. Always return
-  // the current provider secret so the caller persists it on this mailbox.
+  // Prefer the provider's current secret over an older saved value. If the
+  // same validated hook omits it, callers retain their encrypted secret.
   const secret = await readAgentMailWebhookSecret(apiKey, ready);
-  if (!secret) {
+  if (!secret && !hasStoredSecret) {
     throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
   }
   return { webhookId: webhook.webhookId, secret };
@@ -873,7 +887,8 @@ export async function ensureAgentMailWebhook(input: {
   // Reconnect is not a cleanup operation: deleting older hooks here can lose
   // delivery before the caller durably stores the replacement signing secret.
   // Explicit mailbox disconnect owns removal of account-owned subscriptions.
-  if (adopted) return adoptAgentMailWebhook(input.apiKey, adopted, input.inboxId);
+  if (adopted)
+    return adoptAgentMailWebhook(input.apiKey, adopted, input.inboxId, input.hasStoredSecret);
 
   const { status, body } = await agentMailJson(input.apiKey, "/webhooks", {
     method: "POST",
@@ -895,19 +910,28 @@ export async function ensureAgentMailWebhook(input: {
   }
   const created =
     normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
-  if (!created || !created.enabled || !webhookUrlsMatch(created.url, url))
+  if (!created)
     throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
-  let secret = created.secret;
-  if (!secret) secret = await readAgentMailWebhookSecret(input.apiKey, created);
-  if (secret) return { webhookId: created.webhookId, secret };
-
-  await deleteAgentMailWebhook(input.apiKey, created.webhookId).catch((cleanupError) => {
-    log.warn("Unverifiable AgentMail webhook cleanup failed", {
-      webhookId: created.webhookId,
-      error: getErrorMessage(cleanupError),
+  try {
+    if (!created.enabled || !webhookUrlsMatch(created.url, url)) {
+      throw new AgentMailConnectError("AgentMail created an inactive or mismatched webhook.");
+    }
+    const secret = await readAgentMailWebhookSecret(input.apiKey, created);
+    if (!secret) {
+      throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
+    }
+    return { webhookId: created.webhookId, secret };
+  } catch (error) {
+    // Only roll back the resource this attempt created. Existing hooks remain
+    // intact even when provider validation or signing-secret recovery fails.
+    await deleteAgentMailWebhook(input.apiKey, created.webhookId).catch((cleanupError) => {
+      log.warn("Unverifiable AgentMail webhook cleanup failed", {
+        webhookId: created.webhookId,
+        error: getErrorMessage(cleanupError),
+      });
     });
-  });
-  throw new AgentMailConnectError("AgentMail webhook did not expose its signing secret");
+    throw error;
+  }
 }
 
 export async function deleteAgentMailWebhooksForAccount(input: {

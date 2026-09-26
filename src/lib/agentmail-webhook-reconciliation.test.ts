@@ -42,6 +42,36 @@ describe("AgentMail reconnect delivery guarantees", () => {
     expect(request.mock.calls[1][0]).toBe("https://api.agentmail.to/v0/webhooks/current");
   });
 
+  it("retains the stored secret when the same valid webhook omits it from list and GET", async () => {
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [webhook] }))
+      .mockResolvedValueOnce(response(200, webhook));
+
+    await expect(ensureAgentMailWebhook(input)).resolves.toEqual({
+      webhookId: "current",
+      secret: null,
+    });
+    expect(request.mock.calls).toHaveLength(2);
+  });
+
+  it("requires a provider secret when the mailbox has no saved secret", async () => {
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [webhook] }))
+      .mockResolvedValueOnce(response(200, webhook));
+
+    await expect(ensureAgentMailWebhook({ ...input, hasStoredSecret: false })).rejects.toThrow(
+      /signing secret/i,
+    );
+  });
+
+  it("does not use the stored fallback when GET reveals a different subscription", async () => {
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [webhook] }))
+      .mockResolvedValueOnce(response(200, { ...webhook, inbox_ids: ["other@botbound.app"] }));
+
+    await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
+  });
+
   it("repairs partial subscriptions without removing other subscribed events or inboxes", async () => {
     request
       .mockResolvedValueOnce(
@@ -118,5 +148,33 @@ describe("AgentMail reconnect delivery guarantees", () => {
       response(200, { webhooks: [{ ...webhook, enabled: false, secret: "whsec_current" }] }),
     );
     await expect(ensureAgentMailWebhook(input)).rejects.toThrow(/disabled/i);
+  });
+
+  it.each([{ enabled: false }, { url: "https://other.example/webhook" }])(
+    "removes a newly created hook that fails validation: %j",
+    async (invalid) => {
+      request
+        .mockResolvedValueOnce(response(200, { webhooks: [] }))
+        .mockResolvedValueOnce(
+          response(201, { ...webhook, webhook_id: "created", secret: "whsec_new", ...invalid }),
+        )
+        .mockResolvedValueOnce(response(204, {}));
+
+      await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
+      expect(request.mock.calls[2]?.[0]).toBe("https://api.agentmail.to/v0/webhooks/created");
+      expect(request.mock.calls[2]?.[1].method).toBe("DELETE");
+    },
+  );
+
+  it("cleans up only the new hook when its secret lookup fails", async () => {
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [] }))
+      .mockResolvedValueOnce(response(201, { ...webhook, webhook_id: "created" }))
+      .mockResolvedValueOnce(response(503, { message: "temporarily unavailable" }))
+      .mockResolvedValueOnce(response(204, {}));
+
+    await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
+    expect(request.mock.calls[3]?.[0]).toBe("https://api.agentmail.to/v0/webhooks/created");
+    expect(request.mock.calls[3]?.[1].method).toBe("DELETE");
   });
 });
