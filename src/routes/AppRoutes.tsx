@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import RouteFallback from "../components/layout/RouteFallback";
 import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
+import RouteChangeA11y from "../components/RouteChangeA11y";
 import { VisualQaPageMarker, withVisualQaPage } from "../components/VisualQaMarker";
 
 const AgentStudioHome = lazy(() =>
@@ -133,6 +134,7 @@ function AdminWorkspace() {
 export default function AppRoutes() {
   return (
     <Suspense fallback={loading}>
+      <RouteChangeA11y />
       <Routes>
         <Route path="/" element={<Navigate to="/studio" replace />} />
         {/* Overview is retired as a separate command center. Studio is home. */}

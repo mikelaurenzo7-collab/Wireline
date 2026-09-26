@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
 
@@ -31,8 +32,13 @@ export const AGENTMAIL_WEBHOOK_EVENT_TYPES = [
   "message.rejected",
 ] as const;
 
-export function agentMailWebhookClientId(accountId: string): string {
-  return `${AGENTMAIL_WEBHOOK_CLIENT_ID}:${accountId}`;
+export function agentMailWebhookClientId(accountId: string, webhookUrl?: string): string {
+  const accountKey = `${AGENTMAIL_WEBHOOK_CLIENT_ID}:${accountId}`;
+  if (!webhookUrl) return accountKey;
+  // AgentMail treats client_id as an idempotency key. A destination change
+  // must create a replacement without reusing or deleting the old hook.
+  const destination = canonicalAgentMailWebhookUrl(webhookUrl) ?? webhookUrl;
+  return `${accountKey}:${createHash("sha256").update(destination).digest("hex").slice(0, 24)}`;
 }
 
 export class AgentMailConnectError extends Error {
@@ -647,7 +653,9 @@ function webhookOwnedByAccount(
   url: string | null,
 ): boolean {
   if (webhookUrlsMatch(webhook.url, url)) return true;
-  if (webhook.clientId === agentMailWebhookClientId(accountId)) return true;
+  const accountKey = agentMailWebhookClientId(accountId);
+  if (webhook.clientId === accountKey || webhook.clientId?.startsWith(`${accountKey}:`))
+    return true;
   if (webhook.clientId !== AGENTMAIL_WEBHOOK_CLIENT_ID) return false;
   try {
     const legacyUrl = new URL(webhook.url);
@@ -880,13 +888,21 @@ export async function ensureAgentMailWebhook(input: {
     });
     return null;
   }
-  const owned = (await listAgentMailWebhooks(input.apiKey)).filter((webhook) =>
-    webhookOwnedByAccount(webhook, input.accountId, url),
-  );
-  const adopted = owned.find((webhook) => webhookUrlsMatch(webhook.url, url)) ?? null;
+  const existing = await listAgentMailWebhooks(input.apiKey);
+  const owned = existing.filter((webhook) => webhookOwnedByAccount(webhook, input.accountId, url));
+  // Provider list order is not an ownership signal. Concurrent reconnects must
+  // select the same current hook even if duplicate subscriptions exist.
+  const adopted =
+    owned
+      .filter((webhook) => webhookUrlsMatch(webhook.url, url))
+      .sort(
+        (left, right) =>
+          Number(right.enabled) - Number(left.enabled) ||
+          left.webhookId.localeCompare(right.webhookId),
+      )[0] ?? null;
   // Reconnect is not a cleanup operation: deleting older hooks here can lose
   // delivery before the caller durably stores the replacement signing secret.
-  // Explicit mailbox disconnect owns removal of account-owned subscriptions.
+  // The caller retires duplicates only after durably storing that secret.
   if (adopted)
     return adoptAgentMailWebhook(input.apiKey, adopted, input.inboxId, input.hasStoredSecret);
 
@@ -896,7 +912,7 @@ export async function ensureAgentMailWebhook(input: {
       url,
       event_types: [...AGENTMAIL_WEBHOOK_EVENT_TYPES],
       inbox_ids: [input.inboxId],
-      client_id: agentMailWebhookClientId(input.accountId),
+      client_id: agentMailWebhookClientId(input.accountId, url),
     }),
   });
   if (status < 200 || status >= 300) {
@@ -908,11 +924,15 @@ export async function ensureAgentMailWebhook(input: {
       "Could not register the AgentMail inbound webhook for this inbox.",
     );
   }
-  const created =
-    normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(asRecord(body)?.webhook);
-  if (!created)
-    throw new AgentMailConnectError("AgentMail created a webhook but did not return its id.");
+  const createdPayload = asRecord(asRecord(body)?.webhook) ?? asRecord(body);
+  const created = normalizeAgentMailWebhook(body) ?? normalizeAgentMailWebhook(createdPayload);
+  const createdId =
+    created?.webhookId ??
+    String(createdPayload?.webhook_id ?? createdPayload?.webhookId ?? "").trim();
   try {
+    if (!created) {
+      throw new AgentMailConnectError("AgentMail returned an invalid webhook after creation.");
+    }
     if (!created.enabled || !webhookUrlsMatch(created.url, url)) {
       throw new AgentMailConnectError("AgentMail created an inactive or mismatched webhook.");
     }
@@ -922,14 +942,16 @@ export async function ensureAgentMailWebhook(input: {
     }
     return { webhookId: created.webhookId, secret };
   } catch (error) {
-    // Only roll back the resource this attempt created. Existing hooks remain
-    // intact even when provider validation or signing-secret recovery fails.
-    await deleteAgentMailWebhook(input.apiKey, created.webhookId).catch((cleanupError) => {
-      log.warn("Unverifiable AgentMail webhook cleanup failed", {
-        webhookId: created.webhookId,
-        error: getErrorMessage(cleanupError),
+    // Idempotent creation can return an existing resource. Never roll back a
+    // hook that was already present before this registration attempt.
+    if (createdId && !existing.some((webhook) => webhook.webhookId === createdId)) {
+      await deleteAgentMailWebhook(input.apiKey, createdId).catch((cleanupError) => {
+        log.warn("Unverifiable AgentMail webhook cleanup failed", {
+          webhookId: createdId,
+          error: getErrorMessage(cleanupError),
+        });
       });
-    });
+    }
     throw error;
   }
 }
@@ -937,11 +959,24 @@ export async function ensureAgentMailWebhook(input: {
 export async function deleteAgentMailWebhooksForAccount(input: {
   apiKey: string;
   accountId: string;
+  /** Retire duplicates only after this hook's signing secret has been persisted. */
+  keepWebhookId?: string;
 }): Promise<void> {
   const url = publicAgentMailWebhookUrl(input.accountId);
   const webhooks = await listAgentMailWebhooks(input.apiKey);
+  if (input.keepWebhookId) {
+    const retained = webhooks.find((webhook) => webhook.webhookId === input.keepWebhookId);
+    if (!retained?.enabled || !webhookUrlsMatch(retained.url, url)) {
+      throw new AgentMailConnectError(
+        "AgentMail replacement webhook could not be confirmed; previous subscriptions were retained.",
+      );
+    }
+  }
   for (const webhook of webhooks) {
-    if (webhookOwnedByAccount(webhook, input.accountId, url)) {
+    if (
+      webhook.webhookId !== input.keepWebhookId &&
+      webhookOwnedByAccount(webhook, input.accountId, url)
+    ) {
       await deleteAgentMailWebhook(input.apiKey, webhook.webhookId);
     }
   }

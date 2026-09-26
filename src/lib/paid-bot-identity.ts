@@ -6,6 +6,7 @@ import {
   AGENTMAIL_MANAGED_SCOPE_MARKER,
   agentmailGrantedScopes,
   createAgentMailInbox,
+  deleteAgentMailWebhooksForAccount,
   ensureAgentMailWebhook,
   getAgentMailWebhook,
   hasExactAgentMailManagedScope,
@@ -318,6 +319,11 @@ async function ensureManagedDeliveryWebhook(input: {
   if (updated.length !== 1) {
     throw new Error("AgentMail signing secret was not stored on the managed mailbox account.");
   }
+  await deleteAgentMailWebhooksForAccount({
+    apiKey: input.apiKey,
+    accountId: input.accountId,
+    keepWebhookId: ensured.webhookId,
+  });
 }
 
 async function preparePaidBotMailbox(userId: string, agentId: string) {

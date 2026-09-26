@@ -190,7 +190,10 @@ describe("agentmail-mail", () => {
     ).resolves.toEqual({ webhookId: "wh_1", secret: "whsec_test" });
     expect(JSON.parse(mockFetchWithTimeout.mock.calls[1][1].body)).toMatchObject({
       inbox_ids: ["trywireline@agentmail.to"],
-      client_id: `wireline-mailbox-webhook:${accountId}`,
+      client_id: agentMailWebhookClientId(
+        accountId,
+        `https://trywireline.com/api/webhooks/agentmail/${accountId}`,
+      ),
     });
     vi.unstubAllEnvs();
   });
@@ -370,7 +373,10 @@ describe("agentmail-mail", () => {
     expect(methods).not.toContain("DELETE");
     expect(JSON.parse(mockFetchWithTimeout.mock.calls[1][1].body)).toMatchObject({
       inbox_ids: ["support@agentmail.to"],
-      client_id: agentMailWebhookClientId(secondAccountId),
+      client_id: agentMailWebhookClientId(
+        secondAccountId,
+        `https://trywireline.com/api/webhooks/agentmail/${secondAccountId}`,
+      ),
     });
     vi.unstubAllEnvs();
   });

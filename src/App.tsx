@@ -171,8 +171,11 @@ function ViewportModeRoot({ children }: { children: ReactNode }) {
 }
 
 function AppRouter() {
+  const location = useLocation();
   return (
     <Suspense fallback={<RouteLoading />}>
+      {/* Focus only after the lazy page commits. Workspace has its own boundary. */}
+      {!isWorkspaceRoute(location.pathname) && <RouteChangeA11y />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/features" element={<Features />} />
@@ -234,7 +237,6 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <ViewportModeRoot>
-            <RouteChangeA11y />
             <ThemeProvider>
               <ToastProvider>
                 <BrandingProvider>

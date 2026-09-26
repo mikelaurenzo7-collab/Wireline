@@ -108,7 +108,9 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(consent).toContain(
       'className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0"',
     );
-    expect(consent).toContain('className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0"');
+    expect(consent).toContain(
+      'className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-2 sm:flex sm:shrink-0"',
+    );
     expect(consent).toContain("sm:items-center");
   });
 

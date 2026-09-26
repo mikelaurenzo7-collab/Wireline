@@ -90,7 +90,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/components/WorkspaceShell.tsx",
     workspaceShell,
-    /useChromeHeight\("\.wl-workspace-shell", "--wl-workspace-dock-height"\)/,
+    /useChromeHeight\(":root", "--wl-workspace-dock-height"\)/,
     "the mobile dock must own its measured clearance",
   );
   mustExclude(

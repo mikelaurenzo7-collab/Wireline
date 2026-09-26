@@ -13,7 +13,7 @@ export const buttonVariants = cva(
   // next to real buttons at 40px, most visibly in the Overview action rows.
   // Carrying the floor here makes the control the same height whatever element
   // it becomes. The `link` variant opts out below — it is text, not a control.
-  "relative inline-flex min-h-[var(--wireline-interaction-target-minimum,40px)] min-w-0 max-w-full items-center justify-center gap-2 whitespace-normal text-center leading-snug rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
+  "relative inline-flex min-h-[var(--wireline-interaction-target-minimum,40px)] min-w-0 max-w-full items-center justify-center gap-2 whitespace-normal [overflow-wrap:anywhere] text-center leading-snug rounded-[var(--wireline-radius-md)] text-sm font-semibold tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wireline-color-focus-default)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--wireline-color-canvas-default)] disabled:pointer-events-none disabled:opacity-60 aria-disabled:pointer-events-none aria-disabled:opacity-60 aria-busy:cursor-wait aria-busy:opacity-80 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:size-4",
   {
     variants: {
       variant: {

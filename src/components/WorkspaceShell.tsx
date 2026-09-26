@@ -292,7 +292,7 @@ function MobileDock({
   moreOpen: boolean;
   onMoreOpen: (open: boolean) => void;
 }) {
-  const dockRef = useChromeHeight(".wl-workspace-shell", "--wl-workspace-dock-height");
+  const dockRef = useChromeHeight(":root", "--wl-workspace-dock-height");
   const moreTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (

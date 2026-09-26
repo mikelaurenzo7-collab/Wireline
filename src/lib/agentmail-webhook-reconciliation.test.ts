@@ -6,7 +6,12 @@ vi.mock("./server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 
-import { AGENTMAIL_WEBHOOK_EVENT_TYPES, ensureAgentMailWebhook } from "./agentmail-mail";
+import {
+  AGENTMAIL_WEBHOOK_EVENT_TYPES,
+  agentMailWebhookClientId,
+  deleteAgentMailWebhooksForAccount,
+  ensureAgentMailWebhook,
+} from "./agentmail-mail";
 
 const accountId = "11111111-1111-4111-8111-111111111111";
 const url = `https://botbound.app/api/webhooks/agentmail/${accountId}`;
@@ -176,5 +181,163 @@ describe("AgentMail reconnect delivery guarantees", () => {
     await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
     expect(request.mock.calls[3]?.[0]).toBe("https://api.agentmail.to/v0/webhooks/created");
     expect(request.mock.calls[3]?.[1].method).toBe("DELETE");
+  });
+
+  it("uses a new destination-specific idempotency key during a domain migration", async () => {
+    const legacy = {
+      ...webhook,
+      webhook_id: "legacy",
+      url: url.replace("botbound.app", "botbound.me"),
+      client_id: agentMailWebhookClientId(accountId),
+      secret: "whsec_legacy",
+    };
+    request.mockImplementation(async (target: string, options?: RequestInit) => {
+      if (target.includes("?limit=")) return response(200, { webhooks: [legacy] });
+      if (options?.method === "POST") {
+        const posted = JSON.parse(String(options.body));
+        return response(
+          200,
+          posted.client_id === legacy.client_id
+            ? legacy
+            : { ...webhook, webhook_id: "created", secret: "whsec_new" },
+        );
+      }
+      return response(204, {});
+    });
+
+    await expect(ensureAgentMailWebhook(input)).resolves.toEqual({
+      webhookId: "created",
+      secret: "whsec_new",
+    });
+    expect(request.mock.calls.some((call) => call[1]?.method === "DELETE")).toBe(false);
+    const posted = JSON.parse(request.mock.calls[1][1].body);
+    expect(posted.client_id).not.toBe(legacy.client_id);
+    expect(posted.client_id).toBe(agentMailWebhookClientId(accountId, url));
+  });
+
+  it("never rolls back a preexisting hook returned by an idempotent create", async () => {
+    const legacy = {
+      ...webhook,
+      webhook_id: "legacy",
+      url: url.replace("botbound.app", "botbound.me"),
+      client_id: agentMailWebhookClientId(accountId),
+      secret: "whsec_legacy",
+    };
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [legacy] }))
+      .mockResolvedValueOnce(response(200, legacy))
+      .mockResolvedValueOnce(response(204, {}));
+
+    await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
+    expect(request.mock.calls.some((call) => call[1]?.method === "DELETE")).toBe(false);
+  });
+
+  it("rolls back a newly returned id even when its URL is missing", async () => {
+    request
+      .mockResolvedValueOnce(response(200, { webhooks: [] }))
+      .mockResolvedValueOnce(response(200, { webhook_id: "created" }))
+      .mockResolvedValueOnce(response(204, {}));
+
+    await expect(ensureAgentMailWebhook(input)).rejects.toThrow();
+    expect(request.mock.calls[2]?.[0]).toBe("https://api.agentmail.to/v0/webhooks/created");
+    expect(request.mock.calls[2]?.[1].method).toBe("DELETE");
+  });
+
+  it("disconnects destination-specific account hooks without touching another account", async () => {
+    request
+      .mockResolvedValueOnce(
+        response(200, {
+          webhooks: [
+            {
+              ...webhook,
+              url: "https://old.example/hook",
+              client_id: `${agentMailWebhookClientId(accountId)}:destination-key`,
+            },
+            {
+              ...webhook,
+              webhook_id: "other",
+              url: "https://old.example/other",
+              client_id: `${agentMailWebhookClientId("other-account")}:destination-key`,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(response(204, {}));
+
+    await deleteAgentMailWebhooksForAccount({ apiKey: input.apiKey, accountId });
+    expect(request.mock.calls).toHaveLength(2);
+    expect(request.mock.calls[1][0]).toBe("https://api.agentmail.to/v0/webhooks/current");
+  });
+
+  it("retires only owned duplicates after the selected signing secret has been persisted", async () => {
+    request
+      .mockResolvedValueOnce(
+        response(200, {
+          webhooks: [
+            webhook,
+            { ...webhook, webhook_id: "duplicate" },
+            {
+              ...webhook,
+              webhook_id: "legacy",
+              url: url.replace("botbound.app", "botbound.me"),
+              client_id: agentMailWebhookClientId(accountId),
+            },
+            { ...webhook, webhook_id: "other", url: "https://other.example/webhook" },
+          ],
+        }),
+      )
+      .mockResolvedValue(response(204, {}));
+
+    await deleteAgentMailWebhooksForAccount({
+      apiKey: input.apiKey,
+      accountId,
+      keepWebhookId: "current",
+    });
+    expect(
+      request.mock.calls.filter((call) => call[1]?.method === "DELETE").map((call) => call[0]),
+    ).toEqual([
+      "https://api.agentmail.to/v0/webhooks/duplicate",
+      "https://api.agentmail.to/v0/webhooks/legacy",
+    ]);
+  });
+
+  it("adopts the same enabled current hook regardless of duplicate list order", async () => {
+    const first = { ...webhook, webhook_id: "a", secret: "whsec_a" };
+    const second = { ...webhook, webhook_id: "b", secret: "whsec_b" };
+    const disabled = { ...webhook, webhook_id: "0", enabled: false };
+    for (const webhooks of [
+      [disabled, second, first],
+      [first, second, disabled],
+    ]) {
+      request.mockResolvedValueOnce(response(200, { webhooks }));
+      await expect(ensureAgentMailWebhook(input)).resolves.toEqual({
+        webhookId: "a",
+        secret: "whsec_a",
+      });
+    }
+  });
+
+  it.each([
+    { webhook_id: "missing" },
+    { enabled: false },
+    { url: "https://other.example/webhook" },
+  ])("keeps previous deliveries when the retained hook is not confirmed: %j", async (invalid) => {
+    request.mockResolvedValueOnce(
+      response(200, {
+        webhooks: [
+          { ...webhook, ...invalid },
+          { ...webhook, webhook_id: "older" },
+        ],
+      }),
+    );
+
+    await expect(
+      deleteAgentMailWebhooksForAccount({
+        apiKey: input.apiKey,
+        accountId,
+        keepWebhookId: "current",
+      }),
+    ).rejects.toThrow(/previous subscriptions were retained/);
+    expect(request.mock.calls.some((call) => call[1]?.method === "DELETE")).toBe(false);
   });
 });

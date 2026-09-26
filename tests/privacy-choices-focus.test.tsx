@@ -162,7 +162,7 @@ afterEach(() => {
 describe("privacy choices return focus", () => {
   it.each([
     ["Essential only", "denied"],
-    ["Allow measurement", "granted"],
+    ["Allow optional", "granted"],
     ["Keep advertising measurement off and dismiss", "denied"],
   ])("returns to the opener after %s and preserves its choice", (label, expectedChoice) => {
     open();

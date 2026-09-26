@@ -9,6 +9,19 @@
  * renders against instead.
  */
 
+/* Global overlays, including portals, share the actual fixed control height.
+ * The controls already include the device inset; use max() to count it once. */
+:root {
+  --wl-fixed-overlay-bottom: calc(
+    max(
+        var(--wl-workspace-dock-height, 0px),
+        var(--wl-marketing-sticky-height, 0px),
+        env(safe-area-inset-bottom, 0px)
+      ) +
+      1rem
+  );
+}
+
 .marketing-surface {
   --wl-marketing-chrome-top: calc(4rem + env(safe-area-inset-top, 0px));
   --wl-marketing-chrome-bottom: calc(2.1rem + env(safe-area-inset-bottom, 0px));

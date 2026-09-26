@@ -106,6 +106,11 @@ async function persistAgentMailDeliverySubscription(input: {
     if (persisted.length !== 1) {
       throw new Error("AgentMail signing secret was not stored on the mailbox account");
     }
+    await deleteAgentMailWebhooksForAccount({
+      apiKey: input.apiKey,
+      accountId: input.accountId,
+      keepWebhookId: ensured.webhookId,
+    });
   } catch (err) {
     // IMAP remains a durable fallback when push registration is unavailable.
     log.warn("AgentMail delivery subscription skipped", {

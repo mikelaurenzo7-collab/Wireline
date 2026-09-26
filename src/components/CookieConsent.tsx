@@ -5,7 +5,6 @@ import { Cookie, X } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import { cn } from "../lib/utils";
-import { isMarketingStickyCtaRoute } from "../lib/marketing-mobile";
 import { isAuthPortalPath, isMarketingPublicPath } from "../lib/public-routes";
 
 const NOTICE_STORAGE_KEY = "wireline_cookie_consent";
@@ -95,11 +94,6 @@ export default function CookieConsent() {
     return () => window.removeEventListener(OPEN_PRIVACY_CHOICES_EVENT, openPrivacyChoices);
   }, []);
 
-  const clearMarketingSticky =
-    !hasSession &&
-    isMarketingStickyCtaRoute(location.pathname) &&
-    !isAuthPortalPath(location.pathname);
-
   const saveChoice = useCallback(
     (choice: MeasurementConsent) => {
       const effectiveChoice = privacySignalEnabled ? "denied" : choice;
@@ -162,14 +156,7 @@ export default function CookieConsent() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 24, opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
-          className={cn(
-            "fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)]",
-            clearMarketingSticky
-              ? "bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]"
-              : hasSession
-                ? "bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]"
-                : "bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-[calc(3.75rem+env(safe-area-inset-bottom,0px))]",
-          )}
+          className="fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-5 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-md"
           role="region"
           aria-label="Privacy choices"
           tabIndex={-1}
@@ -177,23 +164,19 @@ export default function CookieConsent() {
         >
           <div
             className={cn(
-              "rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
+              "relative rounded-md border border-border bg-background/95 backdrop-blur-xl shadow-lg flex items-start gap-2.5 sm:items-center",
               hasSession ? "px-3 py-2.5" : "px-3.5 py-3",
             )}
           >
-            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
+            <div className="hidden sm:flex w-7 h-7 rounded-md items-center justify-center shrink-0 mt-0.5 wl-cookie-icon">
               <Cookie className="w-3.5 h-3.5 text-brand" />
             </div>
 
             <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
-              <p
-                className={cn(
-                  "leading-relaxed text-foreground/80 sm:flex-1",
-                  hasSession
-                    ? "text-[11px] sm:text-[length:var(--wireline-typography-caption-size)]"
-                    : "text-[length:var(--wireline-typography-caption-size)]",
-                )}
-              >
+              <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
+                Privacy choices
+              </h2>
+              <p className="text-sm leading-relaxed text-foreground/80 sm:flex-1">
                 Essential storage keeps{" "}
                 <span className="font-semibold text-foreground">BotBound</span> working. Optional
                 measurement stays off until you allow it.{" "}
@@ -215,7 +198,7 @@ export default function CookieConsent() {
                   Your privacy signal keeps measurement off.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                <div className="grid [grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))] gap-2 sm:flex sm:shrink-0">
                   <ShadButton
                     type="button"
                     variant="outline"
@@ -233,7 +216,7 @@ export default function CookieConsent() {
                     onClick={() => saveChoice("granted")}
                     className="min-w-0 sm:min-w-[148px]"
                   >
-                    Allow measurement
+                    Allow optional
                   </ShadButton>
                 </div>
               )}
@@ -246,7 +229,7 @@ export default function CookieConsent() {
               disableAnimations
               onClick={dismiss}
               aria-label="Keep advertising measurement off and dismiss"
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
+              className="absolute right-1 top-1 sm:static shrink-0 w-9 h-9 sm:-mt-1 sm:-mr-1.5 text-muted hover:text-foreground touch-press hover:scale-[1.05]"
             >
               <X className="w-4 h-4" />
             </ShadButton>

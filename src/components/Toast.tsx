@@ -113,14 +113,9 @@ export default function ToastStack() {
   const location = useLocation();
   const marketingSticky = !user && isMarketingStickyCtaRoute(location.pathname);
 
-  // Clear the mobile dock (signed-in) or marketing sticky CTA (public conversion
-  // routes). --toast-mobile-bottom is set inline so it cannot drift from the
-  // WorkspaceShell dock / MarketingStickyCta heights.
-  const mobileBottom = user
-    ? "calc(5.25rem + env(safe-area-inset-bottom, 0px))"
-    : marketingSticky
-      ? "calc(5.25rem + env(safe-area-inset-bottom, 0px))"
-      : "calc(1rem + env(safe-area-inset-bottom, 0px))";
+  // Root measurements also cover signed-in visitors on public routes and
+  // controls that grow to multiple rows when text is enlarged.
+  const mobileBottom = "var(--wl-fixed-overlay-bottom)";
 
   return (
     <div
@@ -129,7 +124,7 @@ export default function ToastStack() {
       aria-atomic="false"
       aria-relevant="additions text"
       aria-label="Notifications"
-      className="toast-stack fixed inset-x-3 max-md:bottom-[var(--toast-mobile-bottom)] md:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex max-h-[calc(100dvh-var(--toast-mobile-bottom)-1rem)] flex-col gap-2 items-stretch overflow-y-auto overscroll-contain md:max-h-[calc(100dvh-2.5rem)] md:items-end pointer-events-none"
+      className="toast-stack fixed inset-x-3 max-lg:bottom-[var(--toast-mobile-bottom)] lg:bottom-5 md:inset-x-auto md:right-5 z-[9999] flex max-h-[calc(100dvh-var(--toast-mobile-bottom)-1rem)] flex-col gap-2 items-stretch overflow-y-auto overscroll-contain lg:max-h-[calc(100dvh-2.5rem)] md:items-end pointer-events-none"
       style={{ "--toast-mobile-bottom": mobileBottom } as ToastStackStyle}
       data-marketing-sticky={marketingSticky ? "true" : undefined}
     >

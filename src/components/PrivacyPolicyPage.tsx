@@ -128,7 +128,7 @@ export default function PrivacyPolicyPage() {
                 <p className="mt-1 text-sm leading-6 text-foreground/75">
                   Plausible product analytics remains separate and does not use advertising cookies.
                   Meta advertising measurement loads only when you choose{" "}
-                  <strong>Allow measurement</strong>.
+                  <strong>Allow optional</strong>.
                 </p>
               </div>
 
@@ -161,7 +161,7 @@ export default function PrivacyPolicyPage() {
                   disabled={privacySignalEnabled}
                   onClick={() => saveMeasurementConsent("granted")}
                 >
-                  Allow measurement
+                  Allow optional
                 </ShadButton>
               </div>
             </div>
@@ -350,7 +350,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               Meta Pixel is optional and remains off until you choose{" "}
-              <strong>Allow measurement</strong>. Global Privacy Control overrides an allow choice.
+              <strong>Allow optional</strong>. Global Privacy Control overrides an allow choice.
               Turning measurement off replaces BotBound's browser-side measurement function with a
               no-op so future BotBound-triggered Meta events stop;{" "}
               {"a request already in flight before revocation may still complete"}.

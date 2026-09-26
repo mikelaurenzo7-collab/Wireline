@@ -35,7 +35,11 @@ export default function RouteChangeA11y() {
       } else {
         window.scrollTo({ top: 0, left: 0 });
 
-        const target = document.querySelector<HTMLElement>("main h1, h1, main");
+        // A selector list returns document order, so including `main` in the
+        // same query always selects the ancestor before its page heading.
+        const target =
+          document.querySelector<HTMLElement>("main h1, h1") ??
+          document.querySelector<HTMLElement>("main");
         if (target) {
           restoreTabIndex = addTemporaryTabIndex(target);
           target.focus({ preventScroll: true });

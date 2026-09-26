@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import type { RefObject } from "react";
+import { useRef, type RefObject } from "react";
 
 import { MOBILE_MORE_GROUPS, isNavActive, type ShellNavItem } from "../../constants/navigation";
 import { navIcon } from "../nav-icons";
@@ -49,16 +49,24 @@ export default function MobileNavMoreSheet({
   pathname,
   returnFocusRef,
 }: MobileNavMoreSheetProps) {
-  const close = () => onOpenChange(false);
+  const navigating = useRef(false);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
         className="wl-shell-more-sheet px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
+        onOpenAutoFocus={() => {
+          navigating.current = false;
+        }}
         onCloseAutoFocus={(event) => {
           // This controlled sheet is opened by the dock, outside Radix's
-          // Trigger. Restore its focus on dismissal, unless navigation removed it.
+          // Trigger. A new route owns focus; ordinary dismissal returns to More.
+          if (navigating.current) {
+            event.preventDefault();
+            navigating.current = false;
+            return;
+          }
           if (returnFocusRef.current?.isConnected) {
             event.preventDefault();
             returnFocusRef.current.focus();
@@ -78,7 +86,15 @@ export default function MobileNavMoreSheet({
               </h2>
               <div className="wl-shell-more-group-items">
                 {group.items.map((item) => (
-                  <MoreNavLink key={item.href} item={item} pathname={pathname} onNavigate={close} />
+                  <MoreNavLink
+                    key={item.href}
+                    item={item}
+                    pathname={pathname}
+                    onNavigate={() => {
+                      navigating.current = item.href.split(/[?#]/)[0] !== pathname;
+                      onOpenChange(false);
+                    }}
+                  />
                 ))}
               </div>
             </section>

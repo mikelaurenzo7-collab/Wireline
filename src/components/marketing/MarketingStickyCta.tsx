@@ -24,7 +24,7 @@ export default function MarketingStickyCta({
 }: Props) {
   const [visible, setVisible] = useState(false);
   const chromeRef = useChromeHeight<HTMLDivElement>(
-    ".marketing-surface",
+    ":root",
     "--wl-marketing-sticky-height",
     visible,
   );

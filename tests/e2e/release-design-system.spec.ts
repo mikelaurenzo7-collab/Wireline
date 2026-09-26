@@ -182,3 +182,73 @@ test("Studio retains a draft and exposes the final action after text enlargement
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).not.toHaveValue("");
 });
+
+test("More navigation leaves focus on the destination page", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockWorkspace(page);
+  await page.goto("/settings/billing");
+  await page.getByRole("button", { name: "More destinations" }).click();
+  const sheet = page.getByRole("dialog", { name: "More", exact: true });
+  await sheet.getByRole("link", { name: "Connections", exact: true }).click();
+  await expect(page).toHaveURL(/\/connections$/);
+  await expect(sheet).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Connections", level: 1 })).toBeFocused();
+});
+
+test("global overlays clear wrapped workspace and marketing controls", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await mockWorkspace(page);
+  for (const [path, chrome] of [
+    ["/settings/billing", ".wl-shell-dock"],
+    ["/pricing", ".marketing-sticky-cta"],
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("group", { name: "Billing interval" })).toBeVisible();
+    await enlargeText(page);
+    if (path === "/pricing") await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
+    await expect(page.locator(chrome)).toBeVisible();
+    const chromeBox = (await page.locator(chrome).boundingBox())!;
+    await expect
+      .poll(() =>
+        page
+          .getByRole("log", { name: "Notifications" })
+          .evaluate((el) => el.getBoundingClientRect().bottom),
+      )
+      .toBeLessThan(chromeBox.y);
+    await page.evaluate(() => window.dispatchEvent(new Event("wireline:open-privacy-choices")));
+    const privacy = page.getByRole("region", { name: "Privacy choices" });
+    await expect(privacy).toBeVisible();
+    await expectContentFits(privacy.locator("*"));
+    await expect
+      .poll(() => privacy.evaluate((el) => el.getBoundingClientRect().bottom))
+      .toBeLessThan(chromeBox.y);
+    const lastChoice = privacy.getByRole("button", { name: "Allow optional", exact: true });
+    await lastChoice.scrollIntoViewIfNeeded();
+    const choiceBox = (await lastChoice.boundingBox())!;
+    expect(choiceBox.y).toBeGreaterThanOrEqual(0);
+    expect(choiceBox.y + choiceBox.height).toBeLessThan(chromeBox.y);
+    await page.keyboard.press("Escape");
+    await expect(privacy).toBeHidden();
+  }
+});
+
+test("the phone action wraps a valid unbroken Bot name", async ({ page }) => {
+  const name = "B".repeat(100);
+  await page.setViewportSize({ width: 320, height: 800 });
+  await mockWorkspace(page);
+  await page.route("**/api/agents", (route) =>
+    route.fulfill({ json: { agents: [{ id: "design-bot", name, role: "receptionist" }] } }),
+  );
+  await page.route("**/api/phone-numbers", (route) =>
+    route.fulfill({
+      json: {
+        numbers: [{ id: "design-line", phone_number: "+15555550123", agent_id: "design-bot" }],
+      },
+    }),
+  );
+  await page.goto("/phone?tab=setup");
+  const action = page.getByRole("link", { name: `Open ${name}`, exact: true });
+  await expect(action).toBeVisible();
+  await enlargeText(page);
+  await expectContentFits(action);
+});
