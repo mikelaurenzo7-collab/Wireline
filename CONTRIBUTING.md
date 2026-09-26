@@ -24,7 +24,7 @@ BotBound is a production SaaS monorepo. Changes must preserve tenant isolation, 
 
 ## Verification ladder
 
-For the direct Render migration target with the existing Supabase database, use the provider-specific sequence in
+For production on Render with the existing Supabase database, use the provider-specific sequence in
 `docs/DEPLOYMENT_RUNBOOK.md`: full local verification, reviewed exact source,
 and Render web/worker artifact and source parity replace the legacy
 Vercel preview requirement for that target. This exception does not waive tests,

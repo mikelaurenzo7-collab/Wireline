@@ -66,10 +66,11 @@ describe("repository and documentation organization", () => {
     expect(exists("DATABASE_SETUP.md")).toBe(true);
     expect(exists("DEPLOY.md")).toBe(true);
     expect(databaseRunbook).toContain("wireline_server");
+    expect(deploymentRunbook).toContain("The current production host is Render");
     expect(deploymentRunbook).toContain(
-      "`revaluate/botbound` is its only permitted production project",
+      "`revaluate/botbound` is its only permitted legacy production project",
     );
-    expect(deploymentRunbook).toContain("### Direct Render migration target");
+    expect(deploymentRunbook).toContain("### Render production and release sequence");
     expect(databasePointer).toContain("docs/DATABASE_OPERATIONS.md");
     expect(databasePointer).toContain("Never use `db:push`");
     expect(databasePointer).toContain("wireline_server");

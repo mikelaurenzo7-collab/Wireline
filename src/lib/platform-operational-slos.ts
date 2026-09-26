@@ -1,4 +1,5 @@
 import type { SloHealth } from "./operator-slos";
+import { evaluateJobQueueHealth } from "./job-queue-health";
 
 export type MeasuredSloStatus = "ok" | "degraded" | "insufficient_data";
 
@@ -50,6 +51,7 @@ export function evaluatePlatformOperationalSlos(input: {
   dbOk: boolean;
   dbLatencyMs: number;
   pendingJobs?: number | null;
+  oldestPendingAgeSeconds?: number | null;
   webhookSuccessRate?: number | null;
   webhookAttempts?: number | null;
   webhookCompletedDeliveries?: number | null;
@@ -90,8 +92,10 @@ export function evaluatePlatformOperationalSlos(input: {
   let jobsStatus: MeasuredSloStatus = "insufficient_data";
   let jobsDimension: SloHealth = "ok";
   if (typeof pending === "number") {
-    jobsStatus = pending > 200 ? "degraded" : "ok";
-    jobsDimension = pending > 200 ? "critical" : pending > 50 ? "warn" : "ok";
+    const queue = evaluateJobQueueHealth(pending, input.oldestPendingAgeSeconds);
+    jobsDimension = queue.health;
+    jobsStatus = jobsDimension === "ok" ? "ok" : "degraded";
+    notes.push(...queue.notes);
   } else {
     notes.push("Job queue depth was not measured for this snapshot.");
   }
@@ -160,7 +164,13 @@ export function evaluatePlatformOperationalSlos(input: {
         configured: typeof pending === "number",
         status: jobsStatus,
         target_label: "Background job backlog",
-        evidence: typeof pending === "number" ? { pending_jobs: pending } : undefined,
+        evidence:
+          typeof pending === "number"
+            ? {
+                pending_jobs: pending,
+                oldest_pending_age_seconds: input.oldestPendingAgeSeconds ?? null,
+              }
+            : undefined,
       },
       webhooks: {
         configured: completed >= 10 && rate !== null && rate !== undefined,

@@ -2,6 +2,7 @@ import * as schema from "../db/schema";
 import { eq, and, gte, inArray, or, sql } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import { getQueueStats, type QueueStats } from "./job-queue";
+import { evaluateJobQueueHealth } from "./job-queue-health";
 import type { WebhookEvent } from "./webhook-helpers";
 
 type DrizzleDB = typeof drizzle;
@@ -49,6 +50,7 @@ const DEFAULT_WINDOW_H = 24;
 
 export function evaluateAccountHolderSloHealth(input: {
   pendingJobs: number;
+  oldestPendingAgeSeconds?: number | null;
   deadEnrichmentWindow: number;
   webhookCompletedWindow: number;
   webhookSuccessRate: number | null;
@@ -60,16 +62,10 @@ export function evaluateAccountHolderSloHealth(input: {
   ai_errors: SloHealth;
   notes: string[];
 } {
-  const notes: string[] = [];
-  const jobs_queue: SloHealth =
-    input.pendingJobs > 200 ? "critical" : input.pendingJobs > 50 ? "warn" : "ok";
-  if (input.pendingJobs > 50) {
-    notes.push(
-      input.pendingJobs > 200
-        ? "Job backlog is very high, confirm cron POST /api/jobs/sweep is scheduled on serverless deployments."
-        : "Job backlog elevated, sweep latency may affect enrichment and outbound tasks.",
-    );
-  }
+  const { health: jobs_queue, notes } = evaluateJobQueueHealth(
+    input.pendingJobs,
+    input.oldestPendingAgeSeconds,
+  );
 
   const enrichment_failures: SloHealth =
     input.deadEnrichmentWindow > 5 ? "critical" : input.deadEnrichmentWindow > 0 ? "warn" : "ok";
@@ -114,7 +110,8 @@ export function getSloWebhookEvents(
       event: "slo.jobs.critical",
       dimension: "jobs_queue",
       health: "critical",
-      summary: "Job queue backlog has exceeded the critical threshold (>200 pending).",
+      summary:
+        "Job queue has exceeded the critical threshold: more than 200 pending jobs or a pending job overdue by more than one hour.",
       window_hours: windowHours,
       evaluated_at: evaluatedAt,
     });
@@ -357,6 +354,7 @@ export async function getPlatformSloSnapshot(
   ]);
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
+    oldestPendingAgeSeconds: jobWindow.oldest_pending_age_seconds,
     deadEnrichmentWindow: jobWindow.enrichment.dead,
     webhookCompletedWindow: webhooks.success_in_window + webhooks.terminal_failure_in_window,
     webhookSuccessRate: webhooks.success_rate,
@@ -584,6 +582,7 @@ export async function getAccountHolderSloSnapshot(
 
   const health = evaluateAccountHolderSloHealth({
     pendingJobs: queue.pending,
+    oldestPendingAgeSeconds: oldest_pending_age_seconds,
     deadEnrichmentWindow: enDead,
     webhookCompletedWindow: completed_in_window,
     webhookSuccessRate: success_rate,

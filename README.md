@@ -23,7 +23,7 @@ Every **active paid Bot gets a dedicated production number and BotBound-managed 
 
 ## Technology and ownership
 
-- **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and a Vercel-capable server bundle.
+- **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and Node 22 on Render. The Vercel bundle remains a legacy rollback path.
 - **Design:** the **BotBound Design System**, generated from shared semantic tokens for web, browser, iOS, and Android. Dark is the first-visit appearance; saved appearance preferences take precedence. Technical token filenames retain the `wireline` namespace.
 - **Managed reasoning:** OpenAI GPT-5.6 Terra primary with Vercel AI Gateway and Gemini continuity in `src/lib/ai-models.ts`; provider names and model versions are not duplicated across repository overview docs.
 - **Voice/PSTN:** OpenAI Realtime owns authenticated Studio/ChatGPT rehearsals, founder-owned internal Bot profiles, and every customer phone conversation. Public voice previews are retired. Twilio owns carrier transport, numbers, SIP, and SMS. There is no alternate call runtime.

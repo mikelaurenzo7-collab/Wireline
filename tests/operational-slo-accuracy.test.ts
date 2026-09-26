@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getPlatformJobWindowStats } from "../src/lib/operator-slos";
+import {
+  evaluateAccountHolderSloHealth,
+  getPlatformJobWindowStats,
+  getSloWebhookEvents,
+} from "../src/lib/operator-slos";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
 
 afterEach(() => {
@@ -14,6 +18,56 @@ function setIncidentEnvironment(input: { token?: string; cron?: string; owner?: 
 }
 
 describe("platform operational SLO accuracy", () => {
+  it.each([
+    { pending: 3, age: 600, health: "ok" },
+    { pending: 3, age: 601, health: "warn" },
+    { pending: 3, age: 3600, health: "warn" },
+    { pending: 3, age: 3601, health: "critical" },
+    { pending: 3, age: 39_600, health: "critical" },
+    { pending: 0, age: 39_600, health: "ok" },
+    { pending: 3, age: -60, health: "ok" },
+    { pending: 51, age: null, health: "warn" },
+    { pending: 201, age: 0, health: "critical" },
+  ])(
+    "agrees across tenant and platform health for $pending jobs, age $age",
+    ({ pending, age, health }) => {
+      const tenant = evaluateAccountHolderSloHealth({
+        pendingJobs: pending,
+        oldestPendingAgeSeconds: age,
+        deadEnrichmentWindow: 0,
+        webhookCompletedWindow: 0,
+        webhookSuccessRate: null,
+        auditErrorsWindow: 0,
+      });
+      const platform = evaluatePlatformOperationalSlos({
+        dbOk: true,
+        dbLatencyMs: 12,
+        pendingJobs: pending,
+        oldestPendingAgeSeconds: age,
+      });
+      expect(tenant.jobs_queue).toBe(health);
+      expect(platform.dimensions.jobs_queue).toBe(health);
+      expect(platform.targets.job_queue.status).toBe(health === "ok" ? "ok" : "degraded");
+      expect(platform.targets.job_queue.evidence).toMatchObject({
+        pending_jobs: pending,
+        oldest_pending_age_seconds: age,
+      });
+      expect(platform.banner_status).toBe(
+        health === "critical" ? "critical" : health === "warn" ? "degraded" : "healthy",
+      );
+      if (pending > 0 && age !== null && age > 600) {
+        expect(tenant.notes.join(" ")).toContain("minutes overdue");
+        expect(platform.notes.join(" ")).toContain("minutes overdue");
+      }
+    },
+  );
+
+  it("describes an age-triggered critical queue without claiming a large backlog", () => {
+    const [event] = getSloWebhookEvents({ jobs_queue: "critical" }, 24, "2026-09-26T09:00:00Z");
+    expect(event.event).toBe("slo.jobs.critical");
+    expect(event.summary).toContain("or a pending job overdue by more than one hour");
+  });
+
   it("requires both protected monitor access and an owner contact", () => {
     setIncidentEnvironment({ token: "monitor-secret" });
     const tokenOnly = evaluatePlatformOperationalSlos({ dbOk: true, dbLatencyMs: 12 });
@@ -94,6 +148,18 @@ describe("platform operational SLO accuracy", () => {
 });
 
 describe("platform job-window measurements", () => {
+  it("does not treat intentionally scheduled future jobs as overdue", async () => {
+    const db = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn().mockResolvedValue([{ oldestPendingAt: "2026-08-16T12:00:00.000Z" }]),
+        })),
+      })),
+    } as unknown as Parameters<typeof getPlatformJobWindowStats>[0];
+    const result = await getPlatformJobWindowStats(db, 24, new Date("2026-08-15T12:00:00.000Z"));
+    expect(result.oldest_pending_age_seconds).toBe(0);
+  });
+
   it("maps actual queue age and enrichment states instead of placeholders", async () => {
     const now = new Date("2026-08-15T12:00:00.000Z");
     const where = vi.fn().mockResolvedValue([

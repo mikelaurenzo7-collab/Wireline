@@ -34,6 +34,7 @@ import {
   canonicalRuntimeCommitFinding,
   resolveCanonicalProductionUrl,
 } from "./lib/production-url.mjs";
+import { readLaunchDeployment, resolveLaunchProvider } from "./lib/launch-deployment-status.mjs";
 
 const { Pool } = pg;
 const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion();
@@ -47,6 +48,7 @@ const outputPath = resolve(
 );
 const productionUrl = resolveCanonicalProductionUrl(process.env.WIRELINE_PRODUCTION_URL);
 const canonicalOrigin = new URL(productionUrl).origin;
+const productionProvider = resolveLaunchProvider(process.argv.slice(2));
 
 function git(...args) {
   return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
@@ -709,13 +711,19 @@ const worktreeClean = git("status", "--porcelain") === "";
 const [ahead, behind] = git("rev-list", "--left-right", "--count", "HEAD...origin/main")
   .split(/\s+/)
   .map(Number);
-const [readiness, canonicalRuntime, stripe, database, twilio, vercel] = await Promise.all([
+const [readiness, canonicalRuntime, stripe, database, twilio, production] = await Promise.all([
   launchReadiness(),
   canonicalRuntimeStatus(sourceCommit),
   stripeStatus(),
   databaseStatus(),
   twilioStatus(),
-  vercelStatus(),
+  readLaunchDeployment({
+    provider: productionProvider,
+    productionUrl,
+    expectedRevision: sourceCommit,
+    readJson: jsonFetch,
+    readVercelStatus: vercelStatus,
+  }),
 ]);
 
 const blockers = [];
@@ -783,19 +791,22 @@ if (twilio.status !== "reachable") {
     blockers.push("twilio_usage_triggers_missing");
   }
 }
-// An unreadable Vercel API leaves production_commit undefined, which is never
-// equal to the source commit — so "the deployed commit is behind" was the
-// reported cause of every Vercel outage or rotated read token.
-if (vercel.status !== "ready") {
-  blockers.push("vercel_unreachable");
-} else if (vercel.production_commit !== sourceCommit) {
-  blockers.push("production_commit_mismatch");
-}
-if ((vercel.environment_audit?.parity_gaps || []).length > 0) {
-  blockers.push("vercel_required_env_scope_gap");
-}
-if ((vercel.environment_audit?.potentially_unencrypted_secret_keys || []).length > 0) {
-  blockers.push("vercel_potential_unencrypted_secret");
+if (productionProvider === "render") {
+  blockers.push(...production.blockers);
+} else {
+  // Legacy rollback verification is explicit; Render never reads Vercel credentials.
+  const vercel = production;
+  if (vercel.status !== "ready") {
+    blockers.push("vercel_unreachable");
+  } else if (vercel.production_commit !== sourceCommit) {
+    blockers.push("production_commit_mismatch");
+  }
+  if ((vercel.environment_audit?.parity_gaps || []).length > 0) {
+    blockers.push("vercel_required_env_scope_gap");
+  }
+  if ((vercel.environment_audit?.potentially_unencrypted_secret_keys || []).length > 0) {
+    blockers.push("vercel_potential_unencrypted_secret");
+  }
 }
 for (const item of readiness.blockers || []) {
   const label = typeof item === "string" ? item : item?.code || item?.capability;
@@ -821,10 +832,13 @@ const record = {
     origin_main_behind: behind,
     worktree_clean: worktreeClean,
   },
-  production: vercel,
+  production,
   live_checks: { readiness, canonical_runtime: canonicalRuntime, stripe, database, twilio },
   runtime_policy: {
-    managed_structured_chain: ["OpenAI", "Vercel AI Gateway", "Gemini"],
+    managed_structured_chain:
+      productionProvider === "render"
+        ? ["OpenAI", "Gemini"]
+        : ["OpenAI", "Vercel AI Gateway", "Gemini"],
     openai:
       "managed structured runtime (GPT-5.6 Terra) and OpenAI Realtime for every browser and Twilio PSTN conversation",
     twilio: "carrier transport, numbers, SIP, and SMS only",

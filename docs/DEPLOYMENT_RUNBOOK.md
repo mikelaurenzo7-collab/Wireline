@@ -1,24 +1,25 @@
 # BotBound Deployment Runbook
 
 Status: **Canonical production runbook**  
-Last reconciled: **September 25, 2026**
+Last reconciled: **September 26, 2026**
 
-The production baseline before the direct Render cutover is GitHub `main`, Vercel project `revaluate/botbound`, and customer origin `https://botbound.me`. The prepared target is documented below; do not infer a completed cutover from committed configuration. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
+The current production host is Render, with customer origin `https://botbound.app`, web/API service `botbound-api`, and persistent voice service `botbound-voice`. GitHub `main` is the release source. Serving the public origin does not certify matching service revisions, scheduler operation, provider readiness, or launch approval; verify those separately for each release. The legacy `trywireline.com` origin is retained only for explicitly verified callback or rollback compatibility.
 
 Production telephone calls also require the persistent Node 22 voice worker in `deploy/voice-worker/`. The web/API service owns the public application and signed callback entry; the worker owns the call's sideband connection, tools, transcript and settlement. Both services must run the same reviewed release. A healthy website alone does not certify telephone service.
 
-While Vercel remains active or available for rollback, `revaluate/botbound` is its only permitted production project. Never copy production credentials into a duplicate Vercel project to bypass a failed gate. The reviewed cutover transfers the public origin and backend execution directly to Render, with authoritative DNS moved off Vercel and the existing Supabase database retained.
+While Vercel remains available for an explicitly reviewed rollback, `revaluate/botbound` is its only permitted legacy production project. Never copy production credentials into a duplicate Vercel project to bypass a failed gate. Render serves the current public application; Porkbun hosts the `.app` DNS zone and the existing Supabase database remains authoritative.
 
 ## Current launch posture
 
-### Direct Render migration target
+### Render production and release sequence
 
-The prepared migration uses Render for the public HTTPS entry point, existing
+Render hosts the public HTTPS entry point, existing
 Node 22 web/API and persistent telephone processes. The web/API service serves
 the built React interface directly; the account model and existing Supabase
-database stay intact. This section governs
-the new target; the Vercel sequence below remains the legacy rollback procedure
-until a verified cutover. Preparing this configuration does not certify it live.
+database stay intact. This section governs the current target; the Vercel
+sequence below remains a legacy rollback procedure. The Blueprint describes
+desired configuration; do not assume every declared resource has been created
+or every readiness gate has passed.
 
 `render.yaml` starts with two 0.5 CPU / 512 MB always-on services in Ohio and
 two 0.5 CPU / 512 MB cron services. Creating these resources incurs Render
@@ -44,7 +45,7 @@ release metadata are outside that directory. Build/start wrappers bind the
 artifact role and SHA to Render's actual source revision. Never fake Vercel
 variables to satisfy a release gate.
 
-Before public cutover:
+For a Render release or traffic cutover:
 
 1. Run the existing full local verification and obtain review for the exact
    candidate. Preserve named CI failures. Use exact-source Render web and worker
@@ -117,6 +118,21 @@ and is the Render health check; `/healthz` continues to describe admission
 readiness. This single-worker configuration pauses new admissions during drain.
 Platform maintenance can still interrupt connections; seamless continuity is
 not asserted by this deployment configuration.
+
+Run `npm run launch:status -- --output artifacts/launch-status.json` from the clean
+release checkout with the approved production probe credentials. The command
+defaults to Render, checks API source identity and traffic state, and requires
+the authenticated voice-worker source, signing and duration proof. Missing
+credentials remain unverified blockers; a public liveness response is not a
+substitute. `--provider vercel` is only for an explicitly selected legacy rollback.
+This report does not establish scheduler execution, real-call success, capacity
+or alert delivery; retain those separate proofs with the release.
+
+The protected SLO monitor evaluates queue depth and time overdue from `run_at`.
+More than 50 pending jobs or a job over 10 minutes overdue is a warning; more
+than 200 pending jobs or a job over one hour overdue is critical. Verify both
+scheduler execution and retry errors when either threshold is reached, even
+when the backlog is small. A future scheduled job is not overdue.
 
 On persistent hosts, daily-brief claims are not reclaimed by age while an older
 handler might still be running. An unresolved claim after a crash needs explicit

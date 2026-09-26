@@ -13,12 +13,8 @@ The browser extension and native apps are separate client surfaces. They are not
 ### Environment variables
 
 - Core authenticated development requires `POSTGRES_URL`, `INTERNAL_JWT_SECRET`, and at least one configured structured-AI route. `.env.example` is the canonical inventory.
-- Live provider credentials and production provider configuration are Production-only in Vercel. Preview and Development values must be dedicated sandboxes or unset.
-- Pull only Development-scoped variables into a local ignored file when the task requires them:
-
-  ```bash
-  npx vercel env pull .env --environment=development --yes --token="$VERCEL_TOKEN"
-  ```
+- Render is the production host. Live provider credentials and production configuration belong only in its production secret store. Preview and local Development values must be dedicated sandboxes or unset.
+- When authenticated local work needs configuration, use dedicated Development values in an ignored `.env` file. Do not pull production secrets or legacy Vercel host metadata into local development.
 
 - `dotenv/config` does not override variables already present in the process environment. Cursor-injected secrets therefore take precedence over `.env`.
 - The server starts in a degraded state when optional environment values are absent. Unconfigured features return actionable errors at request time.
@@ -50,7 +46,7 @@ npm run build
 npm run smoke:server
 ```
 
-Use `npm run verify:full` before merge for release-impacting work. GitHub Actions may fail to start because of the repository account billing limit; use the exact-head Vercel gate, CodeRabbit, command-level results, and production verification without ignoring any named job that actually ran and found a defect.
+Use `npm run verify:full` before merge for release-impacting work. GitHub Actions may fail to start because of the repository account billing limit; preserve command-level results and review evidence. Render release certification requires the exact web/worker source and authenticated readiness described in `docs/DEPLOYMENT_RUNBOOK.md`. A legacy Vercel check is not Render deployment evidence. Keep any named job that actually ran and found a defect visible until resolved.
 
 ### Product smoke
 

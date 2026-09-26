@@ -248,6 +248,7 @@ router.get(
         dbOk: db.ok,
         dbLatencyMs: db.latency_ms,
         pendingJobs: platformSnapshot.jobs.queue.pending,
+        oldestPendingAgeSeconds: platformSnapshot.jobs.oldest_pending_age_seconds,
         webhookSuccessRate: platformSnapshot.webhooks.success_rate,
         webhookAttempts: platformSnapshot.webhooks.attempts_in_window,
         webhookCompletedDeliveries:
