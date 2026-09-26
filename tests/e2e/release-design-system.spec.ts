@@ -195,6 +195,14 @@ test("More navigation leaves focus on the destination page", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Connections", level: 1 })).toBeFocused();
 });
 
+test("a signed-in unknown route has one page announcer", async ({ page }) => {
+  await mockWorkspace(page);
+  await page.goto("/unknown-design-review-page");
+  await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.getByTestId("route-announcer")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
+});
+
 test("global overlays clear wrapped workspace and marketing controls", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await mockWorkspace(page);
