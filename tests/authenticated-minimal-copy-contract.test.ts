@@ -96,6 +96,23 @@ describe("authenticated minimal copy contract", () => {
     expect(studio).not.toContain("Shift+Enter line break");
   });
 
+  it("keeps the Studio Build empty canvas distinct from the composer prompt", () => {
+    const studio = read("src/components/StudioWorkroom.tsx");
+    const emptyHeading = studio.match(
+      /<h3 className="text-lg font-semibold text-foreground">[\s\S]*?<\/h3>/,
+    )?.[0];
+    const composerPlaceholder = studio.match(
+      /placeholder=\{\s*mode === "test" \? "Ask as a customer…" : "([^"]+)"/,
+    )?.[1];
+
+    expect(emptyHeading).toContain("Start with a Real Customer Question");
+    expect(emptyHeading).toContain("Ready to Build");
+    expect(emptyHeading).not.toMatch(/Describe What Should Change/i);
+    expect(emptyHeading).not.toMatch(/describe what should change/i);
+    expect(composerPlaceholder).toBe("Describe what should change");
+    expect(studio).not.toContain("Describe a change…");
+  });
+
   it("keeps channel empty states title-only", () => {
     const ops = read("src/lib/wireline-ops-design.ts");
     expect(ops).not.toMatch(/OPS_CHANNEL_EMPTY[\s\S]*eyebrow:/);
