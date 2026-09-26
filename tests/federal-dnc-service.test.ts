@@ -81,8 +81,19 @@ describe("federal-dnc-service", () => {
       expect((await lookupFederalDnc("+15551234567")).listed).toBe(true);
     }
 
-    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [] });
-    expect((await lookupFederalDnc("+15551234567")).listed).toBe(true);
+    for (const payload of [
+      [],
+      [null],
+      [{}],
+      [{ ResultCode: "UNKNOWN" }],
+      [{ ResultCode: "C" }, { ResultCode: "D" }],
+    ]) {
+      fetchMock.mockResolvedValueOnce({ ok: true, json: async () => payload });
+      expect(await lookupFederalDnc("+15551234567")).toMatchObject({
+        listed: true,
+        source: "error",
+      });
+    }
   });
 
   it("treats misplaced Vercel tokens as unconfigured", () => {

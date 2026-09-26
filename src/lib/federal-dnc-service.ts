@@ -9,6 +9,7 @@
  */
 import { log } from "./server-context";
 import { isFederalDncVendorConfigured } from "./federal-dnc-config";
+import { parseDncScrubResult } from "./federal-dnc-result.mjs";
 
 export { isFederalDncVendorConfigured };
 
@@ -34,26 +35,6 @@ export function normalizeUsPhone10(phone: string): string | null {
   if (digits.length === 11 && digits.startsWith("1")) return digits.slice(1);
   if (digits.length === 10) return digits;
   return null;
-}
-
-const DNCSCRUB_CALLABLE_RESULT_CODES = new Set(["C", "E", "G", "H", "O", "W", "X", "Y"]);
-
-/**
- * DNCScrub v5 returns one-letter disposition codes. Only the provider's
- * documented callable outcomes may pass. D/P/B/I/M/L/F/V, blank responses,
- * malformed payloads, and future unknown codes all fail closed.
- */
-function isDncScrubBlocked(resultCode: unknown): boolean {
-  if (typeof resultCode !== "string" || !resultCode.trim()) return true;
-  return !DNCSCRUB_CALLABLE_RESULT_CODES.has(resultCode.trim().toUpperCase());
-}
-
-type DncScrubRow = { ResultCode?: string; resultCode?: string };
-
-function parseDncScrubListed(payload: unknown): boolean {
-  if (!Array.isArray(payload) || payload.length === 0) return true;
-  const row = payload[0] as DncScrubRow;
-  return isDncScrubBlocked(row.ResultCode ?? row.resultCode);
 }
 
 function buildDncScrubRequestUrl(apiUrl: string, phone10: string): string {
@@ -93,8 +74,12 @@ async function lookupFederalDncDncScrub(
     return { listed: true, source: "error", checked_at };
   }
 
-  const data = (await response.json()) as unknown;
-  return { listed: parseDncScrubListed(data), source: "vendor", checked_at };
+  const result = parseDncScrubResult(await response.json());
+  return {
+    listed: result.listed,
+    source: result.recognized ? "vendor" : "error",
+    checked_at,
+  };
 }
 
 async function lookupFederalDncGenericPost(

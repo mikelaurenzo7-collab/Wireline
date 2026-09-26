@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import "dotenv/config";
+import { parseDncScrubResult } from "../src/lib/federal-dnc-result.mjs";
 
 const TEST_PHONE = "2025550100";
 const TIMEOUT_MS = 8_000;
-const DNCSCRUB_FEDERAL_RESULT_CODES = new Set(["D", "DNCL", "FED", "FEDERAL", "NDNC"]);
 
 function output(result, exitCode) {
   console.log(JSON.stringify(result, null, 2));
@@ -23,19 +23,6 @@ function isDncScrubProvider(apiUrl) {
   } catch {
     return apiUrl.toLowerCase().includes("dncscrub.com");
   }
-}
-
-function isDncScrubFederalListed(resultCode) {
-  if (typeof resultCode !== "string" || !resultCode.trim()) return false;
-  const normalized = resultCode.trim().toUpperCase();
-  if (DNCSCRUB_FEDERAL_RESULT_CODES.has(normalized)) return true;
-  return normalized.startsWith("D") && normalized.length <= 4;
-}
-
-function parseDncScrubListed(payload) {
-  if (!Array.isArray(payload) || payload.length === 0) return false;
-  const row = payload[0];
-  return isDncScrubFederalListed(row?.ResultCode ?? row?.resultCode);
 }
 
 function buildDncScrubRequestUrl(apiUrl) {
@@ -59,8 +46,8 @@ async function probeDncScrub(apiUrl, apiKey) {
   if (!response.ok) {
     return {
       probe_ok: false,
-      listed: false,
-      detail: `DNCScrub probe failed with HTTP ${response.status}: ${text.slice(0, 300)}`,
+      listed: true,
+      detail: `DNCScrub probe failed with HTTP ${response.status}.`,
     };
   }
 
@@ -70,24 +57,25 @@ async function probeDncScrub(apiUrl, apiKey) {
   } catch {
     return {
       probe_ok: false,
-      listed: false,
+      listed: true,
       detail: "DNCScrub probe returned non-JSON response.",
     };
   }
 
-  if (!Array.isArray(payload)) {
+  const result = parseDncScrubResult(payload);
+  if (!result.recognized) {
     return {
       probe_ok: false,
-      listed: false,
-      detail: "DNCScrub probe returned JSON but not the expected array payload.",
+      listed: true,
+      detail: "DNCScrub probe returned a malformed or unrecognized result.",
     };
   }
 
   return {
     probe_ok: true,
-    listed: parseDncScrubListed(payload),
+    listed: result.listed,
     detail:
-      "DNCScrub accepted the loginId header and returned JSON for the harmless NANP probe number.",
+      "DNCScrub returned a recognized result for the harmless NANP probe number. This is not permission to call.",
   };
 }
 
@@ -106,8 +94,8 @@ async function probeGenericPost(apiUrl, apiKey) {
   if (!response.ok) {
     return {
       probe_ok: false,
-      listed: false,
-      detail: `Generic federal DNC probe failed with HTTP ${response.status}: ${text.slice(0, 300)}`,
+      listed: true,
+      detail: `Generic federal DNC probe failed with HTTP ${response.status}.`,
     };
   }
 
@@ -117,15 +105,24 @@ async function probeGenericPost(apiUrl, apiKey) {
   } catch {
     return {
       probe_ok: false,
-      listed: false,
+      listed: true,
       detail: "Generic federal DNC probe returned non-JSON response.",
+    };
+  }
+
+  if (typeof payload?.listed !== "boolean") {
+    return {
+      probe_ok: false,
+      listed: true,
+      detail: "Generic federal DNC probe returned no boolean listed result.",
     };
   }
 
   return {
     probe_ok: true,
-    listed: payload?.listed === true,
-    detail: "Generic federal DNC endpoint accepted the bearer token and returned JSON.",
+    listed: payload.listed,
+    detail:
+      "Generic federal DNC endpoint returned a boolean listed result. This is not permission to call.",
   };
 }
 
@@ -227,7 +224,7 @@ async function main() {
       {
         configured: true,
         probe_ok: false,
-        listed: false,
+        listed: true,
         source: "error",
         detail: error instanceof Error ? error.message : String(error),
       },
