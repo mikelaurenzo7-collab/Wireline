@@ -541,7 +541,7 @@ const StudioWorkroom = forwardRef<
                 <h3 className="text-lg font-semibold text-foreground">
                   {mode === "test"
                     ? "Start with a Real Customer Question"
-                    : "Describe What Should Change"}
+                    : "Ready to Build"}
                 </h3>
               </div>
             )}
@@ -594,7 +594,9 @@ const StudioWorkroom = forwardRef<
                 }}
                 rows={1}
                 disabled={sending}
-                placeholder={mode === "test" ? "Ask as a customer…" : "Describe a change…"}
+                placeholder={
+                  mode === "test" ? "Ask as a customer…" : "Describe what should change"
+                }
                 className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
               />
               <div className="wl-composer-dock__toolbar">
