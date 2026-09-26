@@ -62,7 +62,6 @@ describe("authenticated modal lifecycle contract", () => {
       ["src/components/DeployAgentModal.tsx", "if (!deploying) onClose()"],
       ["src/components/OutboundDialDialog.tsx", "if (!next && !placing) onClose()"],
       ["src/components/DncManager.tsx", "if (!nextOpen && adding) return"],
-      ["src/components/onboarding/PostCreateActivationWizard.tsx", "if (provisioning) return"],
       ["src/pages/TeamSettings.tsx", "if (inviting) return"],
     ] as const) {
       expect(source(path), path).toContain(guard);

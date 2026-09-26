@@ -231,7 +231,7 @@ The next release target is a controlled design-partner pilot. This runbook is no
 
 Public marketing describes capabilities and outcomes. Operational setup and release instructions belong in the product and this runbook.
 
-A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid web account can prepare the Bot's managed number and mailbox automatically within plan capacity. That background setup is not proof that its knowledge or customer workflow is ready.
+A Bot must pass a private browser test before directing customer traffic to it. Free Builder stays private; an active paid account chooses its number in Phone setup, then managed mailbox setup runs within plan capacity. Background repair may restore an already-owned line but cannot choose or purchase a new number. That background setup is not proof that its knowledge or customer workflow is ready.
 
 ## Non-negotiable release invariants
 

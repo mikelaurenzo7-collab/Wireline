@@ -129,9 +129,9 @@ export default function AgentStudioHome() {
       phoneProvisionRequested: true,
       emailProvisionRequested: true,
     };
-    // Mailbox provisioning is BotBound-managed. Phone provisioning is also
-    // automatic, but its server route retains the existing paid-plan/live-work
-    // activation gate before any Twilio number can be purchased.
+    // Customers choose their number in Phone setup. This shared reconciler
+    // repairs an already-owned line and provisions its managed mailbox while
+    // preserving the paid-plan/live-work activation gate.
     updatePostCreateWizard(pending);
 
     let active = true;

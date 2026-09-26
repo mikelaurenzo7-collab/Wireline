@@ -127,6 +127,8 @@ type Props = {
   "aria-labelledby"?: string;
   onClick?: () => unknown;
   onValueChange?: (value: string) => void;
+  onChange?: () => void;
+  type?: string;
   onKeyDown?: (event: { key: string; preventDefault: () => void }) => void;
 };
 function expand(node: ReactElement<Props>): ReactNode {
@@ -168,6 +170,13 @@ function phone() {
 }
 function button(label: string) {
   return elements(phone()).find((node) => node.type === "button" && text(node) === label)!;
+}
+async function selectNumber() {
+  await button("Find numbers").props.onClick!();
+  await vi.waitFor(() =>
+    expect(elements(phone()).some((node) => node.props.type === "radio")).toBe(true),
+  );
+  elements(phone()).find((node) => node.props.type === "radio")!.props.onChange!();
 }
 function formBot() {
   return elements(phone()).find(
@@ -218,7 +227,7 @@ beforeEach(() => {
   h.preferred = "bot-b";
   h.fetch.mockReset();
   h.navigate.mockReset();
-  vi.stubGlobal("window", { localStorage: { getItem: () => "bot-b" } });
+  vi.stubGlobal("window", { localStorage: { getItem: () => "bot-b" }, setTimeout, clearTimeout });
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -312,7 +321,7 @@ describe("Bot context across workspace pages", () => {
   it("lets the first-line form close without provisioning", async () => {
     await loadLines([]);
     expect(formBot().props.value).toBe("bot-b");
-    expect(button("Activate Line").props.disabled).toBe(false);
+    expect(button("Activate Line").props.disabled).toBe(true);
     expect(text(phone())).toContain("Area Code (Optional)");
     button("Cancel").props.onClick!();
     expect(elements(phone()).some((node) => node.props["aria-label"] === "Add phone line")).toBe(
@@ -327,7 +336,7 @@ describe("Bot context across workspace pages", () => {
     h.preferred = "bot-c";
     await loadLines();
     expect(formBot().props.value).toBe("bot-c");
-    expect(button("Activate Line").props.disabled).toBe(false);
+    expect(button("Activate Line").props.disabled).toBe(true);
     button("Cancel").props.onClick!();
     h.agents = h.agents.map((agent) => ({ ...agent }));
     expect(formBot()).toBeUndefined();
@@ -348,25 +357,32 @@ describe("Bot context across workspace pages", () => {
     button("Add line").props.onClick!();
     formBot().props.onValueChange!("bot-a");
     h.fetch.mockImplementation(
-      async (_path: string, options?: RequestInit) =>
+      async (path: string, options?: RequestInit) =>
         new Response(
-          JSON.stringify(options?.method === "POST" ? { ok: true } : { numbers: lines }),
+          JSON.stringify(
+            path === "/api/phone-numbers/available"
+              ? { available: [{ phone_number: "+13125550101" }] }
+              : options?.method === "POST"
+                ? { ok: true, phone_number: "+13125550101" }
+                : { numbers: lines },
+          ),
         ),
     );
-    button("Activate Line").props.onClick!();
-    await vi.waitFor(() => expect(h.fetch).toHaveBeenCalledTimes(4));
+    await selectNumber();
+    await button("Activate Line").props.onClick!();
     await vi.waitFor(() => expect(text(selectedLine())).toContain("Alpha"));
-    const request = h.fetch.mock.calls.find(([, options]) => options?.method === "POST");
-    expect(JSON.parse(String(request?.[1].body))).toEqual({ agent_id: "bot-a" });
+    const request = h.fetch.mock.calls.find(([path]) => path === "/api/phone-numbers/provision");
+    expect(JSON.parse(String(request?.[1].body))).toEqual({
+      agent_id: "bot-a",
+      phone_number: "+13125550101",
+    });
   });
 
   it("does not imply Stripe Checkout when self-serve billing is closed", async () => {
     await loadLines([], false);
     const tree = phone();
-    expect(text(tree)).toContain("Live numbers, with BotBound");
-    expect(text(tree)).toContain(
-      "Preview Voice is ready. We'll connect your paid line when you go live.",
-    );
+    expect(text(tree)).toContain("Live activation is paused");
+    expect(text(tree)).toContain("Use Studio for private testing.");
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
     ).toBe(false);
@@ -374,7 +390,7 @@ describe("Bot context across workspace pages", () => {
     const contact = elements(tree).find(
       (node) => node.type === "a" && node.props.to === "/contact?topic=billing",
     );
-    expect(text(contact)).toBe("Talk with BotBound");
+    expect(text(contact)).toBe("Contact support");
     expect(elements(tree).some((node) => node.type === "a" && text(node) === "Open billing")).toBe(
       false,
     );
@@ -400,9 +416,12 @@ describe("Bot context across workspace pages", () => {
           JSON.stringify({ checkout_available: true, stripe_configured: true, plans: [] }),
         );
       }
+      if (path === "/api/phone-numbers/available")
+        return new Response(JSON.stringify({ available: [{ phone_number: "+13125550101" }] }));
       return new Response(JSON.stringify({ numbers: [] }));
     });
-    button("Activate Line").props.onClick!();
+    await selectNumber();
+    await button("Activate Line").props.onClick!();
     await vi.waitFor(() => {
       expect(
         elements(phone()).some((node) => node.type === "a" && text(node) === "Open billing"),

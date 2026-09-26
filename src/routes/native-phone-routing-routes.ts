@@ -11,7 +11,8 @@ import {
   validateBody,
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
-import { drizzle } from "../lib/server-context";
+import { drizzle, log } from "../lib/server-context";
+import { enqueuePaidBotIdentityReconciliation } from "../lib/paid-bot-identity";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
 import { assignNativePhoneLine } from "../lib/voice/native-phone-assignment";
 import {
@@ -224,6 +225,19 @@ async function respondWithProvision(
     });
     return;
   }
+  if (input.agentId) {
+    try {
+      await enqueuePaidBotIdentityReconciliation(req.user.id);
+    } catch (error) {
+      // The line is already owned. Retrying this idempotent endpoint or the
+      // periodic identity reconciler can repair mail setup without a new line.
+      log.error("Paid Bot mailbox reconciliation could not be queued after phone selection", {
+        userId: req.user.id,
+        agentId: input.agentId,
+        error: error instanceof Error ? error.message : "Unknown queue failure",
+      });
+    }
+  }
   res.status(result.reused ? 200 : 201).json({
     ok: true,
     phone_number: result.phoneNumber,
@@ -297,12 +311,7 @@ router.delete(
     const [owned] = await drizzle
       .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
       .from(schema.phoneNumbers)
-      .where(
-        and(
-          eq(schema.phoneNumbers.userId, req.user.id),
-          eq(schema.phoneNumbers.id, lineId),
-        ),
-      )
+      .where(and(eq(schema.phoneNumbers.userId, req.user.id), eq(schema.phoneNumbers.id, lineId)))
       .limit(1);
     if (!owned) throw AppError.notFound("Phone number not found.");
 

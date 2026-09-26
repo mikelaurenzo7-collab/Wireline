@@ -15,8 +15,10 @@ const h = vi.hoisted(() => ({
   mutationTail: Promise.resolve(),
   lockHeld: false,
   purchase: vi.fn(),
+  find: vi.fn(),
   route: vi.fn(),
   remove: vi.fn(),
+  releasePurchase: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -144,7 +146,7 @@ vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: async () => ({ allowed: true }),
 }));
 vi.mock("../src/lib/agent-phone-lines", () => ({
-  findAgentPhoneLine: async () => null,
+  findAgentPhoneLine: h.find,
   ensureTenantTelecomDefaults: vi.fn(),
   isTwilioPhoneNumberSid: () => true,
 }));
@@ -170,7 +172,7 @@ vi.mock("../src/lib/voice/native-phone-carrier", () => ({
   NATIVE_PROVISIONING_UNAVAILABLE: "unavailable",
   configureNativeNumberRouting: h.route,
   purchaseNativeNumber: h.purchase,
-  releasePurchasedNativeNumber: vi.fn(),
+  releasePurchasedNativeNumber: h.releasePurchase,
   resolveOwnedTwilioNumberSid: vi.fn(),
 }));
 
@@ -197,6 +199,7 @@ beforeEach(() => {
     expect(h.lockHeld).toBe(true);
   });
   h.purchase.mockRejectedValue(new Error("Purchase deliberately stopped"));
+  h.find.mockReset().mockResolvedValue(null);
   h.route.mockImplementation(
     async ({ carrierNumberId }: { carrierNumberId: string }) => carrierNumberId,
   );
@@ -276,6 +279,86 @@ describe("native number release and reuse share the identity lock", () => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("native phone assignment reuses owned capacity", () => {
+  it("background identity repair waits for a customer choice without claiming or buying a line", async () => {
+    const result = await provisionNativeTenantNumber({
+      userId: "tenant",
+      agentId: "bot",
+      requireExistingLine: true,
+    });
+    expect(result).toMatchObject({ ok: false, code: "NUMBER_SELECTION_REQUIRED" });
+    expect(h.lines[0].agentId).toBeNull();
+    expect(h.purchase).not.toHaveBeenCalled();
+    expect(h.route).not.toHaveBeenCalled();
+  });
+
+  it("releases the extra purchase and reports a competing assignment without substituting it", async () => {
+    h.lines = [];
+    const selected = "+15615550102";
+    const purchase = { phoneNumber: selected, sid: "PN_selected" };
+    h.purchase.mockResolvedValue(purchase);
+    h.beforeMutation = () => {
+      h.lines = [{ ...detached(1n), agentId: "bot" }];
+    };
+    const result = await provisionNativeTenantNumber({
+      userId: "tenant",
+      agentId: "bot",
+      preferredPhoneNumber: selected,
+    });
+    expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
+    expect(h.releasePurchase).toHaveBeenCalledWith(
+      expect.objectContaining({ purchase, cause: "AGENT_ALREADY_PROVISIONED" }),
+    );
+    expect(h.route).not.toHaveBeenCalled();
+    expect(h.lines[0].phoneNumber).not.toBe(selected);
+  });
+
+  it("does not substitute a different assigned number for an explicit choice", async () => {
+    h.find.mockResolvedValue({
+      id: 1n,
+      phoneNumber: "+12025550121",
+      carrierNumberId: "PN1",
+    });
+    await expect(
+      provisionNativeTenantNumber({
+        userId: "tenant",
+        agentId: "bot",
+        preferredPhoneNumber: "+14155550123",
+      }),
+    ).resolves.toMatchObject({ ok: false, code: "CONFLICT" });
+    expect(h.route).not.toHaveBeenCalled();
+    expect(h.purchase).not.toHaveBeenCalled();
+  });
+
+  it("keeps retrying the same selected assigned number idempotent", async () => {
+    h.find.mockResolvedValue({
+      id: 1n,
+      phoneNumber: "+12025550121",
+      carrierNumberId: "PN1",
+    });
+    await expect(
+      provisionNativeTenantNumber({
+        userId: "tenant",
+        agentId: "bot",
+        preferredPhoneNumber: "+12025550121",
+      }),
+    ).resolves.toMatchObject({ ok: true, reused: true, phoneNumber: "+12025550121" });
+    expect(h.purchase).not.toHaveBeenCalled();
+  });
+
+  it("does not replace an explicit choice with a detached number at capacity", async () => {
+    h.slots = 1;
+    await expect(
+      provisionNativeTenantNumber({
+        userId: "tenant",
+        agentId: "bot",
+        preferredPhoneNumber: "+14155550123",
+      }),
+    ).resolves.toMatchObject({ ok: false, code: "PHONE_CAPACITY_REACHED" });
+    expect(h.lines[0].agentId).toBeNull();
+    expect(h.route).not.toHaveBeenCalled();
+    expect(h.purchase).not.toHaveBeenCalled();
+  });
+
   it("reuses a detached owned line before buying while paid capacity remains", async () => {
     await expect(
       provisionNativeTenantNumber({ userId: "tenant", agentId: "bot" }),

@@ -213,7 +213,9 @@ async function ensurePaidBotPhone(userId: string, agentId: string) {
     userId,
     agentId,
     campaignLabel: "paid-bot-identity",
+    requireExistingLine: true,
   });
+  if (provisioned.code === "NUMBER_SELECTION_REQUIRED") return null;
   if (!provisioned.ok || !provisioned.phoneNumber) {
     throw new Error(provisioned.error || "Paid Bot phone provisioning did not return a number.");
   }
@@ -490,6 +492,9 @@ export async function ensurePaidBotIdentity(input: {
       // losing the last slot must not leave an unpaired mailbox above capacity.
       // A later mailbox failure is retried against this same owned phone line.
       const phone = await ensurePaidBotPhone(input.userId, input.agentId);
+      // Customers choose their number in Phone setup. Background repair may
+      // restore an owned line, but must not consume their slot with a random one.
+      if (!phone) return { ...ineligibleIdentity(currentPlan.planId), eligible: true };
       const email = await ensurePaidBotMailbox(
         input.userId,
         input.agentId,

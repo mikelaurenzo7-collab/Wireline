@@ -177,7 +177,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
   const dockBox = (await page.locator(".wl-shell-dock").boundingBox())!;
   expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(dockBox.y);
   await page.getByRole("button", { name: "Close Bot settings", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Make this Bot your own" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What should we change?" })).toBeVisible();
   await page.getByRole("button", { name: "Add a rule", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).not.toHaveValue("");

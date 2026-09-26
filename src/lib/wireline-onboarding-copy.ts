@@ -45,7 +45,7 @@ export const POST_CREATE_WIZARD_COPY = {
       label: "Launch",
       title: "Put It on the Line",
       detail: "Every paid plan includes a US number. Callers reach this Bot directly.",
-      primary: "Get a number",
+      primary: "Choose a number",
       skip: "Launch later",
       activationRequired: "Your Bot is created. A live number needs a plan.",
       activationDetail: (starterPriceUsd: number) =>
@@ -75,10 +75,10 @@ export const POST_CREATE_WIZARD_COPY = {
 
 /** Phone setup, post-create, and Preview Voice CTAs while checkout stays closed. */
 export const SOFT_OPEN_CHECKOUT_COPY = {
-  title: "Live numbers, with BotBound",
-  detail: "Preview Voice is ready. We'll connect your paid line when you go live.",
+  title: "Live activation is paused",
+  detail: "Use Studio for private testing.",
   savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Studio.`,
   allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",
-  cta: "Talk with BotBound",
+  cta: "Contact support",
   href: "/contact?topic=billing",
 } as const;

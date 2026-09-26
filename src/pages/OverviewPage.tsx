@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  CalendarCheck2,
-  Inbox,
-  Phone,
-  Plus,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { CalendarCheck2, Inbox, Phone, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router";
 
 import ActivationChecklist from "../components/ActivationChecklist";
@@ -205,16 +198,7 @@ export default function OverviewPage() {
       <WorkspacePageFrame mode="operate" className="wl-overview">
         <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-              One Workspace
-            </p>
             <h1 className={isFirstRun ? "sr-only" : "wl-app-page-title mt-1"}>Overview</h1>
-            {!isFirstRun ? (
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Build and operate Bots for any role or workflow. Voice, text, email, knowledge,
-                tools, and outcomes stay together.
-              </p>
-            ) : null}
           </div>
           {!isFirstRun ? (
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -271,12 +255,14 @@ export default function OverviewPage() {
             ) : null}
             {recentUnavailable ? (
               <StatusNotice tone="warning" title="Conversation Preview Partial">
-                Recent customer conversations could not be refreshed. Open Inbox for the full record.
+                Recent customer conversations could not be refreshed. Open Inbox for the full
+                record.
               </StatusNotice>
             ) : null}
             {metricsUnavailable ? (
               <StatusNotice tone="warning" title="Metrics Partial">
-                Today&apos;s operating metrics could not be refreshed. Existing conversations and outcomes are unchanged.
+                Today&apos;s operating metrics could not be refreshed. Existing conversations and
+                outcomes are unchanged.
               </StatusNotice>
             ) : null}
 

@@ -60,7 +60,7 @@ npx tsx scripts/reconcile-paid-bot-identities.mts
 
 Exit code `2` means active paid Bots are missing a phone or managed mailbox. Review the exact Bot IDs and provider readiness before applying anything.
 
-Apply mode can provision both Twilio phone numbers and AgentMail inboxes:
+Customers first choose an exact available number in Phone setup. Apply mode repairs an already-owned Twilio line and provisions its AgentMail inbox; it never chooses or purchases a new number:
 
 ```bash
 npx tsx scripts/reconcile-paid-bot-identities.mts --apply

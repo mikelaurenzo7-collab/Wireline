@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Phone, Sparkles, X } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useModalFocusTrap } from "../../lib/use-modal-focus-trap";
 import { useBodyScrollLock } from "../../lib/use-body-scroll-lock";
 
@@ -40,31 +40,6 @@ function isWizardStep(value: string | null): value is PostCreateWizardStep {
   );
 }
 
-/** Keep provision failures owner-safe — never surface ORM/provider internals. */
-function safeProvisionError(
-  status: number,
-  code: string | null | undefined,
-  raw: string | null | undefined,
-): string {
-  const normalized = code?.toLowerCase();
-  if (status === 401 || status === 403) {
-    return "Your session expired. Sign in again to continue connecting a number.";
-  }
-  if (status === 402 || normalized === "activation_required") {
-    return POST_CREATE_WIZARD_COPY.steps.launch.activationRequired;
-  }
-  if (status === 429 || normalized === "rate_limited") {
-    return "You're going a bit fast. Try provisioning again in a moment.";
-  }
-  if (status >= 500) {
-    return "Number provisioning hit a temporary snag. Try again in a moment.";
-  }
-  if (typeof raw === "string" && raw.trim() && raw.trim().length <= 160 && !/[({]/.test(raw)) {
-    return raw.trim();
-  }
-  return "Could not provision a number.";
-}
-
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "");
   const domestic = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
@@ -88,6 +63,7 @@ export default function PostCreateActivationWizard({
   payload,
   onClose,
 }: PostCreateActivationWizardProps) {
+  const navigate = useNavigate();
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
     if (stored === "channels") return "test";
@@ -107,15 +83,12 @@ export default function PostCreateActivationWizard({
   const phoneNumber = phoneLookup ? phoneLookup.phoneNumber : payload.phoneNumber || null;
   const loadingPhone = refreshingPhone;
   const hasLiveLine = Boolean(phoneLookup?.active && !refreshingPhone && !phoneLookupFailed);
-  const [provisioning, setProvisioning] = useState(false);
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the go-live moment for a
   // customer who just built and trained a Bot. When checkout is open it is a
   // plan-choice panel. When checkout is closed it must not imply Stripe works.
-  const [activationRequested, setActivationNeeded] = useState(false);
   const [checkoutAvailable, setCheckoutAvailable] = useState<boolean | null>(null);
-  const activationNeeded =
-    !phoneNumber && (activationRequested || payload.phoneActivationRequired === true);
+  const activationNeeded = !phoneNumber && payload.phoneActivationRequired === true;
   const [testStarted, setTestStarted] = useState(false);
 
   const stepOrder: WizardStep[] = ["train", "test", "launch", "complete"];
@@ -188,71 +161,14 @@ export default function PostCreateActivationWizard({
     payload.phoneActivationRequired,
   ]);
 
-  async function provisionLine() {
-    if (provisioning || refreshingPhone || phoneLookupFailed) return;
-    setProvisioning(true);
-    setWireError(null);
-    setActivationNeeded(false);
-    try {
-      const response = await authFetch("/api/phone-numbers/provision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent_id: payload.agentId }),
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
-        message?: string;
-        code?: string;
-        phone_number?: string;
-        activation_pending?: boolean;
-      };
-      if (response.status === 402 && body?.code === "ACTIVATION_REQUIRED") {
-        setActivationNeeded(true);
-        const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
-        setCheckoutAvailable(available);
-        return;
-      }
-      if (!response.ok || body?.ok === false) {
-        if (body?.activation_pending && typeof body.phone_number === "string") {
-          setPhoneLookup({ phoneNumber: body.phone_number, active: false, status: "degraded" });
-          await refreshPhone();
-          return;
-        }
-        setWireError(safeProvisionError(response.status, body?.code, body?.error || body?.message));
-        return;
-      }
-      const refreshed = await refreshPhone();
-      if (!refreshed.ok || !refreshed.active) return;
-      emitProductEventOnce({
-        event: "phone_channel_wired",
-        agentId: payload.agentId,
-        metadata: { channel: "phone", source: "fast_start_provision" },
-      });
-      emitProductEventOnce({
-        event: "number_wired",
-        agentId: payload.agentId,
-        metadata: { channel: "phone", source: "fast_start_provision" },
-      });
-      emitProductEventOnce({
-        event: "phone_number_provision_completed",
-        agentId: payload.agentId,
-      });
-      emitProductEventOnce({
-        event: "wire_started",
-        agentId: payload.agentId,
-      });
-      finish(refreshed.phoneNumber);
-    } catch {
-      setWireError("Could not provision a number.");
-    } finally {
-      setProvisioning(false);
-    }
+  function chooseNumber() {
+    if (refreshingPhone || phoneLookupFailed) return;
+    dismiss();
+    navigate(`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`);
   }
 
   function finish(line: string | null = hasLiveLine ? phoneNumber : null) {
     setStep("complete");
-    // Provision passes its freshly confirmed line because state has not rendered yet.
     if (line && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -267,7 +183,6 @@ export default function PostCreateActivationWizard({
   }
 
   function dismiss() {
-    if (provisioning) return;
     if (step === "complete" && hasLiveLine && testStarted) {
       emitProductEventOnce({
         event: "agent_launch_completed",
@@ -357,7 +272,6 @@ export default function PostCreateActivationWizard({
       role="dialog"
       aria-modal="true"
       aria-labelledby="post-create-wizard-title"
-      aria-busy={provisioning}
     >
       <div className="flex max-h-[min(92dvh,880px)] w-full max-w-2xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] border border-border bg-background shadow-[var(--wireline-elevation-lg)] sm:rounded-[var(--radius-xl)]">
         <header className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-6">
@@ -375,7 +289,6 @@ export default function PostCreateActivationWizard({
           <button
             type="button"
             onClick={dismiss}
-            disabled={provisioning}
             className="grid size-11 shrink-0 place-items-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
             aria-label="Close setup guide"
           >
@@ -553,13 +466,18 @@ export default function PostCreateActivationWizard({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={refreshingPhone || provisioning}
+                      disabled={refreshingPhone}
                       onClick={() => void refreshPhone()}
                     >
                       Retry connection
                     </Button>
                     <Button asChild variant="secondary" size="sm">
-                      <Link to="/phone?tab=setup">Open Phone setup</Link>
+                      <Link
+                        to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}
+                        onClick={dismiss}
+                      >
+                        Open Phone setup
+                      </Link>
                     </Button>
                   </>
                 ) : checkoutClosed ? (
@@ -572,14 +490,10 @@ export default function PostCreateActivationWizard({
                       <Button
                         type="button"
                         size="sm"
-                        disabled={provisioning || refreshingPhone || phoneLookupFailed}
-                        onClick={() => void provisionLine()}
+                        disabled={refreshingPhone || phoneLookupFailed}
+                        onClick={chooseNumber}
                       >
-                        {provisioning ? (
-                          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                        ) : (
-                          <Phone size={14} aria-hidden="true" />
-                        )}
+                        <Phone size={14} aria-hidden="true" />
                         {POST_CREATE_WIZARD_COPY.steps.launch.primary}
                       </Button>
                     ) : null}
@@ -677,13 +591,7 @@ export default function PostCreateActivationWizard({
 
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
           {step !== "complete" ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={dismiss}
-              disabled={provisioning}
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
               Skip for now
             </Button>
           ) : null}
@@ -719,7 +627,7 @@ export default function PostCreateActivationWizard({
                   </Link>
                 </Button>
               ) : null}
-              <Button type="button" size="sm" onClick={dismiss} disabled={provisioning}>
+              <Button type="button" size="sm" onClick={dismiss}>
                 {POST_CREATE_WIZARD_COPY.complete.studioCta}
               </Button>
             </>

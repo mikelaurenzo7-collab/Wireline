@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Loader2, MessageSquare, Phone, Send, Sparkles, Trash2 } from "lucide-react";
+import { ArrowUp, Loader2, Phone, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -433,51 +433,18 @@ const StudioWorkroom = forwardRef<
       className="flex h-full min-h-0 flex-col overflow-y-auto bg-background"
       aria-label={mode === "test" ? `${agentName} customer test` : `${agentName} workroom`}
     >
-      <header
-        className={`shrink-0 border-b border-border/60 bg-card/40 ${
-          split ? "px-3 py-2.5 sm:px-4" : "px-4 py-4 sm:px-6"
-        }`}
-      >
-        <div
-          className={`mx-auto flex w-full max-w-3xl justify-between gap-4 ${
-            split ? "items-center" : "flex-col items-start sm:flex-row"
-          }`}
-        >
-          {split ? (
-            <div className="flex min-w-0 items-center gap-2">
-              {onModeChange ? (
-                modeToggle
-              ) : (
-                <>
-                  <span className="text-sm text-muted-foreground">
-                    {mode === "test" ? "Customer test" : "Build"}
-                  </span>
-                  <span className="wl-preserve-case truncate text-sm font-medium text-foreground">
-                    {agentName}
-                  </span>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="min-w-0 max-w-full">
-              <p className="text-eyebrow text-primary">
-                {mode === "test" ? "Browser test" : "Build by conversation"}
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-                {mode === "test" ? (
-                  <>
-                    Talk to <span className="wl-preserve-case">{agentName}</span> Like a Customer
-                  </>
-                ) : (
-                  <>
-                    Improve <span className="wl-preserve-case">{agentName}</span>
-                  </>
-                )}
-              </h2>
-            </div>
-          )}
+      <header className={`shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}>
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            {onModeChange ? (
+              modeToggle
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {mode === "test" ? "Test" : "Build"}
+              </span>
+            )}
+          </div>
           <div className="flex max-w-full shrink-0 flex-wrap items-center gap-1.5">
-            {split && onModeChange ? null : modeToggle}
             {mode === "test" && allowOutbound ? (
               <Button
                 type="button"
@@ -542,20 +509,12 @@ const StudioWorkroom = forwardRef<
               </div>
             ) : (
               <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
-                <div
-                  className="mb-1 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"
-                  aria-hidden="true"
-                >
-                  {mode === "test" ? <MessageSquare size={22} /> : <Sparkles size={22} />}
-                </div>
-                <h3 className="text-2xl font-semibold text-foreground">
-                  {mode === "test" ? "Try a customer conversation" : "Make this Bot your own"}
-                </h3>
-                <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-                  {mode === "test"
-                    ? "Ask a question and see how your Bot responds. This is a private rehearsal."
-                    : "Describe a change to the greeting, tone, or rules. Review the update before it is applied."}
-                </p>
+                <h2 className="text-2xl font-semibold text-foreground">
+                  {mode === "test" ? "Try a customer question" : "What should we change?"}
+                </h2>
+                {mode === "test" ? (
+                  <p className="text-sm text-muted-foreground">Private rehearsal</p>
+                ) : null}
               </div>
             )}
           </div>
@@ -608,23 +567,22 @@ const StudioWorkroom = forwardRef<
                 className="wl-composer-dock__input max-h-40 overflow-y-auto disabled:opacity-60"
               />
               <div className="wl-composer-dock__toolbar">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {mode === "test" ? "Test" : "Build"}
-                  </span>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="ml-auto flex shrink-0 items-center gap-2">
                   <Button
                     type="button"
                     size="sm"
                     disabled={!draft.trim() || sending || loading || clearing}
                     onClick={submit}
-                    className="min-w-9"
+                    className="size-10 shrink-0 rounded-full p-0"
                     aria-busy={sending}
                     aria-label={sending ? "Sending" : "Send"}
+                    title={sending ? "Sending" : "Send"}
                   >
-                    {sending ? <Loader2 className="animate-spin" size={14} /> : <Send size={14} />}
-                    <span className="ml-1 hidden sm:inline">{sending ? "Sending" : "Send"}</span>
+                    {sending ? (
+                      <Loader2 className="animate-spin" size={16} aria-hidden="true" />
+                    ) : (
+                      <ArrowUp size={18} aria-hidden="true" />
+                    )}
                   </Button>
                 </div>
               </div>

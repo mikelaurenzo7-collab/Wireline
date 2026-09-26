@@ -726,11 +726,6 @@ export default function EmailInbox({
             <EmptyState
               icon={<Mail className="size-5" aria-hidden="true" />}
               title={agentId ? "No Email for This Bot" : "No Email Yet"}
-              description={
-                agentId || accountId
-                  ? undefined
-                  : "Connected mailbox conversations will appear here."
-              }
               density="compact"
               titleTone="ui"
               withHalo={false}

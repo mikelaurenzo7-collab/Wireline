@@ -20,7 +20,6 @@ export default function OutboundHub({
   onViewChange: (id: OutboundView) => void;
 }) {
   const [showDial, setShowDial] = useState(false);
-  const activeLabel = OUTBOUND_VIEW_TABS.find((tab) => tab.id === activeView)?.label || "Outbound";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -63,9 +62,7 @@ export default function OutboundHub({
             <Phone className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Dial</span>
           </Button>
-        ) : (
-          <span className="hidden text-xs text-muted-foreground sm:inline">{activeLabel}</span>
-        )}
+        ) : null}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (

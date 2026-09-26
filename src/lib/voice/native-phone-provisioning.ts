@@ -156,6 +156,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
   areaCode?: string;
   preferredPhoneNumber?: string;
   campaignLabel?: string;
+  requireExistingLine?: boolean;
 }): Promise<NativePhoneProvisionResult> {
   if (!autoProvisioningEnabled()) {
     return {
@@ -192,6 +193,14 @@ async function provisionNativeTenantNumberUnfenced(input: {
     if (!agent) return { ok: false, code: "NOT_FOUND", error: "Agent not found." };
     const existingLine = await findAgentPhoneLine(input.userId, input.agentId);
     if (existingLine) {
+      if (input.preferredPhoneNumber && input.preferredPhoneNumber !== existingLine.phoneNumber) {
+        return {
+          ok: false,
+          code: "CONFLICT",
+          error:
+            "This Bot already has a different number. Manage its existing line or choose another Bot.",
+        };
+      }
       return activateLine({
         userId: input.userId,
         agentId: input.agentId,
@@ -203,13 +212,21 @@ async function provisionNativeTenantNumberUnfenced(input: {
     }
   }
 
+  if (input.requireExistingLine) {
+    return {
+      ok: false,
+      code: "NUMBER_SELECTION_REQUIRED",
+      error: "Choose your number in Phone setup.",
+    };
+  }
+
   const phoneSlots = await getIncludedPhoneLineSlots(input.userId);
   const [{ held }] = await drizzle
     .select({ held: sql<number>`count(*)` })
     .from(schema.phoneNumbers)
     .where(eq(schema.phoneNumbers.userId, input.userId));
   const atCapacity = Number(held || 0) >= phoneSlots;
-  if (input.agentId && (atCapacity || (!input.areaCode && !input.preferredPhoneNumber))) {
+  if (input.agentId && !input.preferredPhoneNumber && (atCapacity || !input.areaCode)) {
     const agentId = input.agentId;
     // Automatic identity setup should use a number already owned by the tenant
     // before adding recurring carrier cost. Serialize both the Bot recheck and
@@ -314,6 +331,13 @@ async function provisionNativeTenantNumberUnfenced(input: {
       };
     }
     if (input.agentId) {
+      if (input.preferredPhoneNumber && input.preferredPhoneNumber !== persisted.line.phoneNumber) {
+        return {
+          ok: false,
+          code: "CONFLICT",
+          error: "This Bot was assigned another number. Refresh your lines before trying again.",
+        };
+      }
       return activateLine({
         userId: input.userId,
         agentId: input.agentId,
@@ -369,6 +393,7 @@ export async function provisionNativeTenantNumber(input: {
   areaCode?: string;
   preferredPhoneNumber?: string;
   campaignLabel?: string;
+  requireExistingLine?: boolean;
 }): Promise<NativePhoneProvisionResult> {
   const environmentPolicy = await liveExternalActionPolicyForUser(input.userId);
   if (!environmentPolicy.allowed) {

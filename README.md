@@ -19,7 +19,7 @@ Public marketing leads with capabilities, outcomes, and a clear signup action. O
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
 - **Identity - retired live talking-head:** identity badges stay on every Bot. Video files and clip-script substitutes are not offered. LiveAvatar / HeyGen sessions are not minted.
 
-Every **active paid Bot gets a dedicated production number and BotBound-managed email identity**, up to plan capacity. Web creation on an active paid account starts identity setup automatically. Free Builder Bots receive no live identity, and connected-client drafts stay private until their phone line is activated from BotBound. Unused Bot capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` for the commercial contract.
+Every **active paid Bot gets a dedicated production number and BotBound-managed email identity**, up to plan capacity. Customers choose an available US area code and exact number in Phone setup before activation; managed email setup follows automatically. Background identity repair reuses an owned line and never chooses a new number for the customer. Free Builder Bots receive no live identity, and connected-client drafts stay private until their phone line is activated from BotBound. Unused Bot capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` for the commercial contract.
 
 ## Technology and ownership
 

@@ -194,6 +194,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it("waits for number selection without buying or creating a mailbox", async () => {
+    h.target = "oldest";
+    h.phoneProvision.mockResolvedValue({ ok: false, code: "NUMBER_SELECTION_REQUIRED" });
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).resolves.toMatchObject({ eligible: true, phone: null, email: null });
+    expect(h.phoneProvision).toHaveBeenCalledWith(
+      expect.objectContaining({ requireExistingLine: true }),
+    );
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
   it.each(["bots.botbound.me", "bots.botbound.app"])(
     "retains an existing %s mailbox after the configured domain changes",
     async (domain) => {

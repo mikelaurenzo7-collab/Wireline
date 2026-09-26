@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   mounting: true,
   fetch: vi.fn(),
   event: vi.fn(),
+  navigate: vi.fn(),
 }));
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
@@ -31,7 +32,7 @@ vi.mock("react", async (importOriginal) => ({
   useCallback: (callback: unknown) => callback,
   useMemo: (factory: () => unknown) => factory(),
 }));
-vi.mock("react-router", () => ({ Link: "a" }));
+vi.mock("react-router", () => ({ Link: "a", useNavigate: () => h.navigate }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
 vi.mock("../src/lib/use-modal-focus-trap", () => ({ useModalFocusTrap: vi.fn() }));
 vi.mock("../src/lib/use-body-scroll-lock", () => ({ useBodyScrollLock: vi.fn() }));
@@ -160,7 +161,7 @@ describe("setup guide requires confirmed calling", () => {
       expect(text(render())).toContain("Number reserved");
       expect(text(render())).not.toContain("Your live number");
       expect(button("Continue")).toBeUndefined();
-      expect(button("Get a number")).toBeUndefined();
+      expect(button("Choose a number")).toBeUndefined();
       expect(button("Retry connection")?.props.disabled).toBe(false);
       numbers = [line("active")];
       button("Retry connection")?.props.onClick?.();
@@ -177,7 +178,7 @@ describe("setup guide requires confirmed calling", () => {
     await mount();
     expect(text(render())).not.toContain("(312) 555-0100");
     expect(text(render())).toContain("No live line yet");
-    expect(button("Get a number")?.props.disabled).toBe(false);
+    expect(button("Choose a number")?.props.disabled).toBe(false);
     expect(button("Continue")).toBeUndefined();
   });
 
@@ -197,34 +198,19 @@ describe("setup guide requires confirmed calling", () => {
     await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
   });
 
-  it("retains a reserved line after partial provisioning and offers routing recovery", async () => {
+  it("opens the chosen Bot's number picker without an automatic purchase", async () => {
     payload = {
       agentId: "bot",
       agentName: "Front Desk",
       phoneProvisionRequested: false,
       phoneProvisioned: false,
     };
-    let numbers: unknown[] = [];
-    stubFetch({
-      numbers: () => numbers,
-      provision: () => {
-        numbers = [line("degraded")];
-        return new Response(
-          JSON.stringify({ ok: false, activation_pending: true, phone_number: phone }),
-          { status: 503 },
-        );
-      },
-    });
+    stubFetch({ numbers: [] });
     await mount();
-    button("Get a number")?.props.onClick?.();
-    await vi.waitFor(() => expect(button("Retry connection")?.props.disabled).toBe(false));
-    expect(button("Get a number")).toBeUndefined();
-    expect(text(render())).toContain("Number reserved");
-    expect(text(render())).not.toContain("It's on the Line");
+    button("Choose a number")?.props.onClick?.();
+    expect(h.navigate).toHaveBeenCalledWith("/phone?tab=setup&agent=bot");
+    expect(h.fetch.mock.calls.some(([url]) => url === "/api/phone-numbers/provision")).toBe(false);
     expect(h.event.mock.calls.some(([event]) => event.event === "phone_channel_wired")).toBe(false);
-    expect(
-      h.fetch.mock.calls.filter(([url]) => url === "/api/phone-numbers/provision"),
-    ).toHaveLength(1);
   });
 
   it("uses honest soft-open copy instead of a checkout CTA when billing is closed", async () => {
@@ -237,16 +223,14 @@ describe("setup guide requires confirmed calling", () => {
     stubFetch({ numbers: [], checkoutAvailable: false });
     await mount();
     const tree = render();
-    expect(button("Get a number")).toBeUndefined();
-    expect(text(tree)).toContain("Live numbers, with BotBound");
-    expect(text(tree)).toContain(
-      "Preview Voice is ready. We'll connect your paid line when you go live.",
-    );
+    expect(button("Choose a number")).toBeUndefined();
+    expect(text(tree)).toContain("Live activation is paused");
+    expect(text(tree)).toContain("Use Studio for private testing.");
     expect(text(tree)).not.toContain("Every paid plan includes a US number");
     expect(text(tree)).not.toContain("Choose your plan");
     expect(text(tree)).not.toContain("Starter begins at $19/mo");
     const contact = elements(tree).find(
-      (element) => element.type === "a" && text(element) === "Talk with BotBound",
+      (element) => element.type === "a" && text(element) === "Contact support",
     );
     expect(contact?.props.to).toBe("/contact?topic=billing");
   });
@@ -257,20 +241,15 @@ describe("setup guide requires confirmed calling", () => {
       agentName: "Front Desk",
       phoneProvisionRequested: false,
       phoneProvisioned: false,
+      phoneActivationRequired: true,
     };
-    stubFetch({
-      numbers: [],
-      checkoutAvailable: true,
-      provision: () =>
-        new Response(JSON.stringify({ code: "ACTIVATION_REQUIRED" }), { status: 402 }),
-    });
+    stubFetch({ numbers: [], checkoutAvailable: true });
     await mount();
-    button("Get a number")?.props.onClick?.();
-    await vi.waitFor(() => expect(text(render())).toContain("Choose your plan"));
+    expect(text(render())).toContain("Choose your plan");
     const plan = elements(render()).find(
       (element) => element.type === "a" && text(element) === "Choose your plan",
     );
     expect(plan?.props.to).toBe("/settings/billing");
-    expect(text(render())).not.toContain("Live numbers, with BotBound");
+    expect(text(render())).not.toContain("Live activation is paused");
   });
 });

@@ -24,10 +24,16 @@ type PhoneNumberRecord = {
 
 type ProvisionResponse = {
   ok?: boolean;
+  phone_number?: string;
   error?: string;
   code?: string;
   recovery_path?: string;
   reused?: boolean;
+};
+
+type AvailablePhoneNumber = {
+  phone_number: string;
+  region?: string | null;
 };
 
 const PHONE_AGENT_UNSET = "__unassigned__";
@@ -57,6 +63,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   const [attaching, setAttaching] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [areaCode, setAreaCode] = useState("");
+  const [availableNumbers, setAvailableNumbers] = useState<AvailablePhoneNumber[]>([]);
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState("");
+  const [searching, setSearching] = useState(false);
+  const numberSearchRef = useRef<AbortController | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recoveryPath, setRecoveryPath] = useState<string | null>(null);
@@ -126,7 +136,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     setRecoveryPath(null);
     try {
       const response = await authFetch("/api/phone-numbers");
-      const body = await response.json().catch(() => ({}));
+      const body = (await response.json().catch(() => null)) ?? {};
       if (!response.ok) throw new Error(body?.error || "Phone numbers unavailable.");
       if (!Array.isArray(body?.numbers))
         throw new Error("Phone numbers could not be verified. Try again.");
@@ -156,6 +166,14 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     void loadNumbers();
   }, []);
 
+  useEffect(
+    () => () => {
+      numberSearchRef.current?.abort();
+      numberSearchRef.current = null;
+    },
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     void fetchSelfServeCheckoutAvailable().then((available) => {
@@ -166,13 +184,111 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     };
   }, []);
 
-  async function provisionNumber() {
-    if (working || loading || inventoryUnavailable || !selectedAgentId) return;
+  function resetNumberSearch() {
+    numberSearchRef.current?.abort();
+    numberSearchRef.current = null;
+    setSearching(false);
+    setAvailableNumbers([]);
+    setSelectedPhoneNumber("");
+  }
+
+  async function handlePhoneFailure(body: ProvisionResponse, fallback: string) {
+    const nextRecoveryPath =
+      body.recovery_path ||
+      (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
+        ? "/settings/billing"
+        : null);
+    setRecoveryPath(nextRecoveryPath);
+    if (isBillingSettingsPath(nextRecoveryPath)) {
+      const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
+      setCheckoutAvailable(available);
+      if (!available) {
+        setAddingLine(false);
+        setLiveNumberClosed(true);
+        return;
+      }
+    }
+    throw new Error(body.error || fallback);
+  }
+
+  async function searchNumbers() {
+    if (working || loading || inventoryUnavailable) return;
     const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
     if (requestedAreaCode && requestedAreaCode.length !== 3) {
       setError("Enter a 3-digit area code, or leave it blank.");
       return;
     }
+    resetNumberSearch();
+    const controller = new AbortController();
+    numberSearchRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    setSearching(true);
+    setMessage(null);
+    setError(null);
+    setRecoveryPath(null);
+    try {
+      const response = await authFetch(
+        requestedAreaCode ? "/api/phone-numbers/search" : "/api/phone-numbers/available",
+        requestedAreaCode
+          ? {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ area_code: requestedAreaCode }),
+              signal: controller.signal,
+            }
+          : { signal: controller.signal },
+      );
+      const body = await response.json().catch(() => ({}));
+      if (numberSearchRef.current !== controller) return;
+      if (!response.ok) {
+        await handlePhoneFailure(body, "Could not search phone numbers. Try again.");
+        return;
+      }
+      if (
+        !Array.isArray(body.available) ||
+        body.available.some(
+          (row: AvailablePhoneNumber | null) =>
+            !row ||
+            typeof row.phone_number !== "string" ||
+            !/^\+1\d{10}$/.test(row.phone_number) ||
+            (requestedAreaCode && row.phone_number.slice(2, 5) !== requestedAreaCode),
+        )
+      ) {
+        throw new Error("Available numbers could not be verified. Search again.");
+      }
+      if (body.available.length === 0) {
+        throw new Error("No numbers are available for this search. Try another nearby area code.");
+      }
+      setAvailableNumbers(body.available);
+    } catch (reason) {
+      if (numberSearchRef.current !== controller) return;
+      setError(
+        controller.signal.aborted
+          ? "The number search timed out. Try again."
+          : reason instanceof Error
+            ? reason.message
+            : "Could not search phone numbers. Try again.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      if (numberSearchRef.current === controller) {
+        numberSearchRef.current = null;
+        setSearching(false);
+      }
+    }
+  }
+
+  async function provisionNumber() {
+    if (
+      working ||
+      loading ||
+      searching ||
+      inventoryUnavailable ||
+      !selectedAgentId ||
+      !availableNumbers.some((number) => number.phone_number === selectedPhoneNumber)
+    )
+      return;
+    const requestedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
     setWorking(true);
     setMessage(null);
     setError(null);
@@ -184,34 +300,26 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agent_id: selectedAgentId,
+          phone_number: selectedPhoneNumber,
           ...(requestedAreaCode ? { area_code: requestedAreaCode } : {}),
         }),
       });
-      const body = (await response.json().catch(() => ({}))) as ProvisionResponse;
+      const body = ((await response.json().catch(() => null)) ?? {}) as ProvisionResponse;
       if (!response.ok || body.ok === false) {
-        const nextRecoveryPath =
-          body.recovery_path ||
-          (body.code === "ACTIVATION_REQUIRED" || body.code === "SUBSCRIPTION_REQUIRED"
-            ? "/settings/billing"
-            : null);
-        setRecoveryPath(nextRecoveryPath);
-        if (isBillingSettingsPath(nextRecoveryPath)) {
-          const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
-          setCheckoutAvailable(available);
-          if (!available) {
-            setAddingLine(false);
-            setLiveNumberClosed(true);
-            return;
-          }
-          throw new Error(body.error || "Could not activate a number.");
-        }
-        throw new Error(body.error || "Could not activate a number.");
+        await handlePhoneFailure(body, "Could not activate a number.");
+        return;
+      }
+      if (body.ok !== true || body.phone_number !== selectedPhoneNumber) {
+        throw new Error(
+          "The selected number's activation could not be confirmed. Refresh your lines before trying again.",
+        );
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
       setLiveNumberClosed(false);
       await loadNumbers(selectedAgentId);
       setAddingLine(false);
       setAreaCode("");
+      resetNumberSearch();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not activate a number.");
     } finally {
@@ -354,7 +462,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                   onValueChange={setSelectedAgentId}
                   disabled={working || loading}
                 >
-                  <SelectTrigger className="h-10" aria-label="Bot for this line">
+                  <SelectTrigger
+                    className="h-auto min-h-10 whitespace-normal [&>span]:line-clamp-none [&>span]:min-w-0 [&>span]:break-words"
+                    aria-label="Bot for this line"
+                  >
                     <SelectValue placeholder="Select Bot" />
                   </SelectTrigger>
                   <SelectContent>
@@ -388,22 +499,88 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                   maxLength={3}
                   disabled={working || loading}
                   value={normalizedAreaCode}
-                  onChange={(event) =>
-                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3))
-                  }
+                  onChange={(event) => {
+                    resetNumberSearch();
+                    setError(null);
+                    setAreaCode(event.target.value.replace(/\D/g, "").slice(0, 3));
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void searchNumbers();
+                    }
+                  }}
                   placeholder="312"
                   className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm outline-none focus:border-primary/50"
                 />
               </span>
             </label>
           </div>
-          <div className="mt-4 flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="mt-3"
+            onClick={() => void searchNumbers()}
+            disabled={
+              working ||
+              loading ||
+              searching ||
+              inventoryUnavailable ||
+              (normalizedAreaCode.length > 0 && normalizedAreaCode.length !== 3)
+            }
+          >
+            {searching ? "Searching…" : "Find numbers"}
+          </Button>
+          {availableNumbers.length > 0 ? (
+            <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
+              <legend className="mb-2 text-sm font-semibold text-foreground">
+                Choose your number
+              </legend>
+              {availableNumbers.map((number) => (
+                <label
+                  key={number.phone_number}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 focus-within:ring-2 focus-within:ring-primary"
+                >
+                  <input
+                    type="radio"
+                    name="new-phone-number"
+                    value={number.phone_number}
+                    checked={selectedPhoneNumber === number.phone_number}
+                    onChange={() => setSelectedPhoneNumber(number.phone_number)}
+                    disabled={working || searching}
+                    className="size-4 shrink-0 accent-primary"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">
+                      {formatPhone(number.phone_number)}
+                    </span>
+                    {typeof number.region === "string" && number.region ? (
+                      <span className="block text-xs text-muted-foreground">{number.region}</span>
+                    ) : null}
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          ) : null}
+          <p className="sr-only" role="status" aria-label="Number selection">
+            {selectedPhoneNumber
+              ? `${formatPhone(selectedPhoneNumber)} selected.`
+              : "Choose a number before activation."}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
             <Button
               type="button"
               size="sm"
               onClick={() => void provisionNumber()}
               disabled={
-                working || loading || inventoryUnavailable || agentsLoading || !selectedAgentId
+                working ||
+                loading ||
+                searching ||
+                inventoryUnavailable ||
+                agentsLoading ||
+                !selectedAgentId ||
+                !selectedPhoneNumber
               }
             >
               {working ? "Activating…" : "Activate Line"}
@@ -412,7 +589,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
               type="button"
               size="sm"
               variant="ghost"
-              onClick={() => setAddingLine(false)}
+              onClick={() => {
+                resetNumberSearch();
+                setAddingLine(false);
+              }}
               disabled={working}
             >
               Cancel
@@ -506,6 +686,25 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
           ) : null}
         </div>
       ) : null}
+
+      <details className="rounded-xl border border-border bg-card">
+        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-foreground">
+          Use an existing number
+        </summary>
+        <div className="space-y-2 border-t border-border p-4 text-sm text-muted-foreground">
+          <p>
+            After activating a BotBound line, you can ask your current carrier to forward incoming
+            calls to it. Outbound calls use your BotBound number.
+          </p>
+          <p>
+            To transfer the number itself,{" "}
+            <Link to="/support" className="underline underline-offset-4">
+              contact support
+            </Link>{" "}
+            for an eligibility check.
+          </p>
+        </div>
+      </details>
 
       <details
         ref={companyIdentityRef}
