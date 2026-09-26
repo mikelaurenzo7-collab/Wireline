@@ -92,6 +92,35 @@ beforeEach(() => {
 });
 
 describe("number selection resumes managed identity", () => {
+  it.each(["post:/api/phone-numbers/provision", "post:/api/phone-numbers/claim"])(
+    "queues repair for a saved reservation even when routing is pending on %s",
+    async (path) => {
+      h.provision.mockResolvedValue({
+        ok: false,
+        phoneNumber: number,
+        activationPending: true,
+        code: "NATIVE_VOICE_ACTIVATION_PENDING",
+        error: "Number reserved; routing not confirmed.",
+      });
+      const res = response();
+      await h.routes.get(path)!(request(), res);
+      expect(h.queue).toHaveBeenCalledExactlyOnceWith("tenant");
+      expect(res.status).toHaveBeenCalledWith(503);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: false,
+          activation_pending: true,
+          phone_number: number,
+        }),
+      );
+    },
+  );
+
+  it("does not queue identity for a failed purchase with no saved line", async () => {
+    h.provision.mockResolvedValue({ ok: false, code: "PHONE_CAPACITY_REACHED" });
+    await h.routes.get("post:/api/phone-numbers/provision")!(request(), response());
+    expect(h.queue).not.toHaveBeenCalled();
+  });
   it.each(["post:/api/phone-numbers/provision", "patch:/api/phone-numbers/:id"])(
     "queues tenant-owned email setup after %s",
     async (path) => {

@@ -225,6 +225,11 @@ async function respondWithProvision(
     preferredPhoneNumber: input.phoneNumber,
     campaignLabel: input.campaignLabel,
   });
+  // Routing may fail after the selected line is durably assigned. That saved
+  // reservation still needs mailbox reconciliation, which can retry routing.
+  if (input.agentId && (result.ok || (result.activationPending && result.phoneNumber))) {
+    await queueManagedIdentity(req.user.id, input.agentId);
+  }
   if (!result.ok) {
     res.status(statusForProvisionFailure(result.code, result.activationPending)).json({
       ok: false,
@@ -236,9 +241,6 @@ async function respondWithProvision(
       activation_pending: result.activationPending === true,
     });
     return;
-  }
-  if (input.agentId) {
-    await queueManagedIdentity(req.user.id, input.agentId);
   }
   res.status(result.reused ? 200 : 201).json({
     ok: true,

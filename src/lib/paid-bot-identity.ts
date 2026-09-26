@@ -20,6 +20,7 @@ import {
   upsertOwnedEmailAccount,
 } from "./owned-email-account";
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
+import { findAgentPhoneLine } from "./agent-phone-lines";
 import { planById } from "./plan-catalog";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
 import { selectPaidBotIdentityAgents } from "./paid-bot-identity-capacity";
@@ -475,6 +476,11 @@ export async function ensurePaidBotIdentity(input: {
   if (!agent) throw new Error("Paid Bot identity job references a Bot that no longer exists.");
   if (!plan.eligible) {
     return ineligibleIdentity(plan.planId);
+  }
+  // Waiting for a customer's choice is a local state, not a provider failure.
+  // Avoid mail/carrier preflight and its retry budget until an owned line exists.
+  if (!(await findAgentPhoneLine(input.userId, input.agentId))) {
+    return { ...ineligibleIdentity(plan.planId), eligible: true, selectionRequired: true };
   }
 
   const fenced = await runTenantProviderWorkWithDeletionFence({

@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   provider: vi.fn(),
   createInbox: vi.fn(),
   phoneProvision: vi.fn(),
+  selectedLine: vi.fn(),
   phoneRelease: vi.fn(),
   ownedNumbers: vi.fn(),
   vaultConfigured: vi.fn(),
@@ -115,6 +116,7 @@ vi.mock("../src/lib/phone-line-entitlements", () => ({
 vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: async () => {},
 }));
+vi.mock("../src/lib/agent-phone-lines", () => ({ findAgentPhoneLine: h.selectedLine }));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   runTenantProviderWorkWithDeletionFence: async ({
     perform,
@@ -181,6 +183,7 @@ beforeEach(() => {
     throw new Error("Provider work must not run");
   });
   h.phoneProvision.mockImplementation((...args: unknown[]) => h.provider(...args));
+  h.selectedLine.mockResolvedValue({ id: 1n, phoneNumber: "+12025550123" });
   h.createInbox.mockImplementation((...args: unknown[]) => h.provider(...args));
   h.phoneRelease.mockResolvedValue({ ok: true });
   h.ownedNumbers.mockResolvedValue([{ sid: "PN_test_owned_line" }]);
@@ -194,7 +197,32 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
-  it("waits for number selection without buying or creating a mailbox", async () => {
+  it("waits locally for number selection even while providers are unavailable or unconfigured", async () => {
+    h.target = "oldest";
+    h.selectedLine.mockResolvedValue(null);
+    h.inboxesRead.mockRejectedValue(new Error("AgentMail unavailable"));
+    h.domainIdentity.mockRejectedValue(new Error("Domain verification unavailable"));
+    vi.stubEnv("AGENTMAIL_API_KEY", "");
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "");
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).resolves.toMatchObject({
+      eligible: true,
+      selectionRequired: true,
+      phone: null,
+      email: null,
+    });
+    expect(h.selectedLine).toHaveBeenCalledExactlyOnceWith("tenant", "oldest");
+    expect(h.fence).not.toHaveBeenCalled();
+    expect(h.inboxesRead).not.toHaveBeenCalled();
+    expect(h.domainIdentity).not.toHaveBeenCalled();
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.ownedNumbers).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
+  it("returns to selection if the owned line disappears before phone repair", async () => {
     h.target = "oldest";
     h.phoneProvision.mockResolvedValue({ ok: false, code: "NUMBER_SELECTION_REQUIRED" });
     await expect(
