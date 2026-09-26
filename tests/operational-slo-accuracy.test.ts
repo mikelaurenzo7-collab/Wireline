@@ -6,6 +6,7 @@ import {
   getSloWebhookEvents,
 } from "../src/lib/operator-slos";
 import { evaluatePlatformOperationalSlos } from "../src/lib/platform-operational-slos";
+import { getQueueStats } from "../src/lib/job-queue";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -18,6 +19,29 @@ function setIncidentEnvironment(input: { token?: string; cron?: string; owner?: 
 }
 
 describe("platform operational SLO accuracy", () => {
+  it("reports an overdue queue when PostgreSQL returns bigint counts as strings", async () => {
+    const counts = ["3", "0", "0", "5", "2"];
+    const db = {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn().mockResolvedValue([{ count: counts.shift() }]),
+        })),
+      })),
+    } as unknown as Parameters<typeof getQueueStats>[0];
+
+    const queue = await getQueueStats(db);
+    expect(queue).toEqual({ pending: 3, running: 0, failed: 0, dead: 5, done_last_hour: 2 });
+    const platform = evaluatePlatformOperationalSlos({
+      dbOk: true,
+      dbLatencyMs: 12,
+      pendingJobs: queue.pending,
+      oldestPendingAgeSeconds: 64_272,
+    });
+    expect(platform.dimensions.jobs_queue).toBe("critical");
+    expect(platform.banner_status).toBe("critical");
+    expect(platform.targets.job_queue.status).toBe("degraded");
+  });
+
   it.each([
     { pending: 3, age: 600, health: "ok" },
     { pending: 3, age: 601, health: "warn" },

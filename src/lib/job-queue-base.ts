@@ -501,11 +501,14 @@ export async function getQueueStats(db: DrizzleDB, userId?: string): Promise<Que
       .then((r) => r[0].count),
   ]);
 
+  // PostgreSQL count(*) is bigint, which node-postgres returns as a string.
+  // sql<number> only describes the TypeScript type; normalize the driver values
+  // before numeric-only SLO consumers evaluate queue depth and overdue age.
   return {
-    pending: pending || 0,
-    running: running || 0,
-    failed: failed || 0,
-    dead: dead || 0,
-    done_last_hour: done || 0,
+    pending: Number(pending ?? 0),
+    running: Number(running ?? 0),
+    failed: Number(failed ?? 0),
+    dead: Number(dead ?? 0),
+    done_last_hour: Number(done ?? 0),
   };
 }
