@@ -209,6 +209,20 @@ describe("shared web identity reconciliation", () => {
     h.ensure.mockResolvedValue({ eligible: false });
     await expect(invoke("managed-identity")).rejects.toMatchObject({ code: "ACTIVATION_REQUIRED" });
   });
+  it("asks an eligible customer to select a number instead of reporting an empty identity as ready", async () => {
+    h.ensure.mockResolvedValue({
+      eligible: true,
+      selectionRequired: true,
+      phone: null,
+      email: null,
+    });
+    await expect(invoke("managed-identity")).rejects.toMatchObject({
+      status: 409,
+      code: "NUMBER_SELECTION_REQUIRED",
+      message: "Choose a number in Phone setup before managed email setup can continue.",
+    });
+    expect(h.mutate).not.toHaveBeenCalled();
+  });
   it("keeps configuration failures out of the customer response", async () => {
     h.ensure.mockRejectedValue(new Error("Internal provider configuration details"));
     await expect(invoke("managed-identity")).rejects.toMatchObject({

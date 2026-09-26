@@ -201,13 +201,19 @@ export async function main() {
         userId: candidate.userId,
         agentId: candidate.agentId,
       });
-      if (result.eligible) repaired += 1;
+      if (result.eligible && result.phone && result.email) repaired += 1;
+      else if (result.eligible)
+        failures.push({
+          agentId: candidate.agentId,
+          error: "Choose a number in Phone setup before managed email setup can continue.",
+        });
       console.log(
         JSON.stringify({
           agentId: candidate.agentId,
           name: candidate.name,
           plan: candidate.plan,
           eligible: result.eligible,
+          selectionRequired: result.selectionRequired === true,
           phone: result.phone,
           email: result.email,
           phoneReused: result.phoneReused,

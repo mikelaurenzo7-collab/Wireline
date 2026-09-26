@@ -150,6 +150,7 @@ router.get(
 router.get(
   "/api/phone-numbers/available",
   authenticateUser,
+  enforceLiveWorkActivation,
   asyncHandler(async (req: AuthenticatedRequest, res: Response, next) => {
     const policy = await liveExternalActionPolicyForUser(req.user.id);
     const fixture = resolveNonProductionPhoneNumberPickerInventory(policy);

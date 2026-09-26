@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { IncomingMessage, ServerResponse } from "node:http";
 
 const h = vi.hoisted(() => ({
   rows: [
@@ -64,8 +65,10 @@ vi.mock("drizzle-orm", () => ({
   and: (...values: unknown[]) => values,
   asc: (value: unknown) => value,
   inArray: (...values: unknown[]) => values,
+  gt: (...values: unknown[]) => values,
 }));
 vi.mock("../src/lib/server-context", () => ({
+  log: { error: vi.fn() },
   drizzle: {
     select: () => {
       let table = "";
@@ -123,6 +126,66 @@ beforeEach(() => {
 afterEach(() => {
   process.exitCode = exitCode;
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
+
+describe("paid identity repair reporting", () => {
+  it.each([false, true])("the operator API reports complete=%s truthfully", async (complete) => {
+    vi.stubEnv("CRON_SECRET", "test-only-operator-secret");
+    h.provision.mockImplementation(async ({ agentId }: { agentId: string }) => ({
+      eligible: agentId === "eligible",
+      selectionRequired: agentId === "eligible" && !complete,
+      phone: agentId === "eligible" && complete ? "+12025550123" : null,
+      email: agentId === "eligible" && complete ? "managed@botbound.app" : null,
+    }));
+    const { default: handler } = await import("../api/reconcile-paid-bot-identities");
+    const res = { statusCode: 0, setHeader: vi.fn(), end: vi.fn() };
+    await handler(
+      {
+        method: "POST",
+        url: "/api/reconcile-paid-bot-identities",
+        headers: { authorization: "Bearer test-only-operator-secret" },
+      } as IncomingMessage,
+      res as unknown as ServerResponse,
+    );
+    expect(res.statusCode).toBe(complete ? 200 : 207);
+    expect(JSON.parse(res.end.mock.calls[0][0])).toMatchObject({
+      ok: complete,
+      failed: complete ? 0 : 1,
+      intentionally_ineligible: 1,
+      results: [
+        { agentId: "private-draft", ok: true, skipped: true },
+        { agentId: "eligible", ok: complete, selection_required: !complete },
+      ],
+    });
+  });
+
+  it.each([false, true])("the apply command counts complete=%s truthfully", async (complete) => {
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "botbound.app");
+    vi.stubEnv("AGENTMAIL_API_KEY", "test-only-provider-key");
+    h.provision.mockResolvedValue({
+      eligible: true,
+      selectionRequired: !complete,
+      phone: complete ? "+12025550123" : null,
+      email: complete ? "managed@botbound.app" : null,
+    });
+    const originalArgv = process.argv;
+    try {
+      process.argv = [...originalArgv, "--apply"];
+      vi.resetModules();
+      const { main: apply } = await import("../scripts/reconcile-paid-bot-identities.mts");
+      await apply();
+    } finally {
+      process.argv = originalArgv;
+    }
+    const result = JSON.parse(vi.mocked(console.log).mock.calls.at(-1)![0]);
+    expect(result.repaired).toBe(complete ? 1 : 0);
+    expect(result.failures).toEqual(
+      complete ? [] : [{ agentId: "eligible", error: expect.stringContaining("Choose a number") }],
+    );
+    expect(process.exitCode).toBe(complete ? undefined : 1);
+    expect(h.provision).toHaveBeenCalledExactlyOnceWith({ userId: "tenant", agentId: "eligible" });
+  });
 });
 
 describe("paid identity operator dry-run audit", () => {

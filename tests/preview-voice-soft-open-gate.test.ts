@@ -122,7 +122,7 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     expect(checkout).toContain("enforceLaunchHardGate");
   });
 
-  it("hides live-number checkout CTAs while self-serve billing is closed", () => {
+  it("keeps checkout closure separate from server-verified live-number entitlement", () => {
     const setup = read("src/components/PhoneSetupPanel.tsx");
     const wizard = read("src/components/onboarding/PostCreateActivationWizard.tsx");
     const roleplay = read("src/components/RoleplaySandbox.tsx");
@@ -133,7 +133,9 @@ describe("Studio Preview Voice during a closed self-serve checkout", () => {
     expect(copy).toContain('cta: "Contact support"');
     expect(note).toContain("SOFT_OPEN_CHECKOUT_COPY");
     expect(setup).toContain("SoftOpenCheckoutNote");
-    expect(setup).toContain("checkoutAvailable === true");
+    expect(setup).toContain('body.code === "ACTIVATION_REQUIRED"');
+    expect(setup).toContain("const showSoftOpen = liveNumberClosed");
+    expect(setup).not.toContain("const checkoutClosed");
     expect(wizard).toContain("SoftOpenCheckoutNote");
     expect(wizard).toContain("canProvisionNumber");
     expect(roleplay).toContain("SOFT_OPEN_CHECKOUT_COPY");

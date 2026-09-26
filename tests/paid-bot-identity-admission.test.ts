@@ -199,7 +199,7 @@ describe("paid identity admission at queue and provider boundaries", () => {
     h.phoneProvision.mockResolvedValue({ ok: false, code: "NUMBER_SELECTION_REQUIRED" });
     await expect(
       ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
-    ).resolves.toMatchObject({ eligible: true, phone: null, email: null });
+    ).resolves.toMatchObject({ eligible: true, selectionRequired: true, phone: null, email: null });
     expect(h.phoneProvision).toHaveBeenCalledWith(
       expect.objectContaining({ requireExistingLine: true }),
     );

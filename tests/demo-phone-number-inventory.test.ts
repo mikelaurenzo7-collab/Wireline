@@ -65,12 +65,14 @@ describe("demo phone-number picker inventory", () => {
     expect(start).toBeGreaterThan(-1);
     expect(end).toBeGreaterThan(start);
     const policyIndex = availabilityRoute.indexOf("liveExternalActionPolicyForUser(req.user.id)");
+    const entitlementIndex = availabilityRoute.indexOf("enforceLiveWorkActivation");
     const fixtureIndex = availabilityRoute.indexOf(
       "resolveNonProductionPhoneNumberPickerInventory(policy)",
     );
     const limiterIndex = availabilityRoute.indexOf("phoneNumberRateLimiter");
     const carrierIndex = availabilityRoute.indexOf("listNativeAvailableLocalNumbers(");
-    expect(policyIndex).toBeGreaterThan(-1);
+    expect(entitlementIndex).toBeGreaterThan(availabilityRoute.indexOf("authenticateUser"));
+    expect(policyIndex).toBeGreaterThan(entitlementIndex);
     expect(fixtureIndex).toBeGreaterThan(policyIndex);
     expect(limiterIndex).toBeGreaterThan(fixtureIndex);
     expect(carrierIndex).toBeGreaterThan(limiterIndex);

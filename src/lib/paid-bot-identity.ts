@@ -45,6 +45,7 @@ export const PAID_BOT_IDENTITY_JOB_TYPE = "paid_bot_identity_reconcile" as const
 
 export type PaidBotIdentityResult = {
   eligible: boolean;
+  selectionRequired: boolean;
   planId: string | null;
   phone: string | null;
   email: string | null;
@@ -186,6 +187,7 @@ async function paidPlanForUser(
 function ineligibleIdentity(planId: string | null): PaidBotIdentityResult {
   return {
     eligible: false,
+    selectionRequired: false,
     planId,
     phone: null,
     email: null,
@@ -494,7 +496,12 @@ export async function ensurePaidBotIdentity(input: {
       const phone = await ensurePaidBotPhone(input.userId, input.agentId);
       // Customers choose their number in Phone setup. Background repair may
       // restore an owned line, but must not consume their slot with a random one.
-      if (!phone) return { ...ineligibleIdentity(currentPlan.planId), eligible: true };
+      if (!phone)
+        return {
+          ...ineligibleIdentity(currentPlan.planId),
+          eligible: true,
+          selectionRequired: true,
+        };
       const email = await ensurePaidBotMailbox(
         input.userId,
         input.agentId,
@@ -504,6 +511,7 @@ export async function ensurePaidBotIdentity(input: {
 
       return {
         eligible: true,
+        selectionRequired: false,
         planId: currentPlan.planId,
         phone: phone.phoneNumber,
         email: email.email,

@@ -113,6 +113,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     ok: boolean;
     eligible?: boolean;
     skipped?: boolean;
+    selection_required?: boolean;
     phone?: string | null;
     email?: string | null;
     error?: string;
@@ -127,9 +128,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       results.push({
         agentId: row.agentId,
         plan: row.plan,
-        ok: true,
+        ok: !identity.eligible || Boolean(identity.phone && identity.email),
         eligible: identity.eligible,
         skipped: !identity.eligible,
+        selection_required: identity.selectionRequired === true,
+        ...(identity.eligible && (!identity.phone || !identity.email)
+          ? { error: "Choose a number in Phone setup before managed email setup can continue." }
+          : {}),
         phone: identity.phone,
         email: identity.email,
       });

@@ -1,8 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function workspace(page: Page) {
+async function workspace(page: Page, checkoutAvailable: boolean | "unavailable" = true) {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/plans" && checkoutAvailable === "unavailable") {
+      await route.fulfill({ status: 503, json: { error: "Plans temporarily unavailable" } });
+      return;
+    }
     await route.fulfill({
       json:
         path === "/api/auth/session"
@@ -10,7 +14,7 @@ async function workspace(page: Page) {
           : path === "/api/agents"
             ? { agents: [{ id: "local-bot", name: "Local Business", role: "receptionist" }] }
             : path === "/api/billing/plans"
-              ? { checkout_available: true, stripe_configured: true, plans: [] }
+              ? { checkout_available: checkoutAvailable, stripe_configured: true, plans: [] }
               : { numbers: [], accounts: [], integrations: [], data: [] },
     });
   });
@@ -144,8 +148,8 @@ for (const kind of ["unavailable", "malformed", "null", "wrong-area"] as const) 
   });
 }
 
-test("a full plan offers billing recovery instead of blaming the area code", async ({ page }) => {
-  await workspace(page);
+test("a full plan offers billing recovery even when new checkout is paused", async ({ page }) => {
+  await workspace(page, false);
   await page.route("**/api/phone-numbers/available", (route) =>
     route.fulfill({
       status: 403,
@@ -165,6 +169,48 @@ test("a full plan offers billing recovery instead of blaming the area code", asy
   );
   await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeDisabled();
   await expect(page.getByText("Try another nearby area code", { exact: false })).toHaveCount(0);
+});
+
+for (const checkout of [false, "unavailable"] as const) {
+  test(`an entitled customer can choose a number with checkout=${checkout}`, async ({ page }) => {
+    await workspace(page, checkout);
+    let purchases = 0;
+    await page.route("**/api/phone-numbers/provision", (route) => {
+      purchases += 1;
+      return route.fulfill({ json: { ok: false } });
+    });
+    await page.route("**/api/phone-numbers/available", (route) =>
+      route.fulfill({
+        json: { available: [{ phone_number: "+13125550101", region: "Chicago, IL" }] },
+      }),
+    );
+    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+    await page.getByRole("radio", { name: "(312) 555-0101 Chicago, IL", exact: true }).check();
+    await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeEnabled();
+    await expect(page.getByText("Live activation is paused", { exact: true })).toHaveCount(0);
+    expect(purchases).toBe(0);
+  });
+}
+
+test("an unactivated customer gets the paused-sales explanation after the entitlement check", async ({
+  page,
+}) => {
+  await workspace(page, false);
+  let purchases = 0;
+  await page.route("**/api/phone-numbers/provision", (route) => {
+    purchases += 1;
+    return route.fulfill({ json: { ok: false } });
+  });
+  await page.route("**/api/phone-numbers/available", (route) =>
+    route.fulfill({
+      status: 402,
+      json: { code: "ACTIVATION_REQUIRED", error: "Activate a paid plan." },
+    }),
+  );
+  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await expect(page.getByText("Live activation is paused", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toHaveCount(0);
+  expect(purchases).toBe(0);
 });
 
 test("a reserved line only reports connected after routing is confirmed", async ({ page }) => {

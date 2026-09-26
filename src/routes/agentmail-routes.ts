@@ -285,6 +285,13 @@ router.post(
           "Activate an eligible paid Bot before setting up its phone and email.",
         );
       }
+      if (!identity.phone || !identity.email) {
+        throw new AppError(
+          409,
+          "NUMBER_SELECTION_REQUIRED",
+          "Choose a number in Phone setup before managed email setup can continue.",
+        );
+      }
       res.json({
         ok: true,
         phone_number: identity.phone,

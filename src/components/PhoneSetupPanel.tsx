@@ -205,7 +205,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
     if (isBillingSettingsPath(nextRecoveryPath)) {
       const available = checkoutAvailable ?? (await fetchSelfServeCheckoutAvailable());
       setCheckoutAvailable(available);
-      if (!available) {
+      if (!available && body.code === "ACTIVATION_REQUIRED") {
         setAddingLine(false);
         setLiveNumberClosed(true);
         return;
@@ -372,15 +372,10 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
   }
 
   const normalizedAreaCode = areaCode.replace(/\D/g, "").slice(0, 3);
-  const checkoutClosed = checkoutAvailable === false;
-  const awaitingCheckout =
-    !loading && !inventoryUnavailable && numbers.length === 0 && checkoutAvailable === null;
-  const showSoftOpen = (checkoutClosed && numbers.length === 0) || liveNumberClosed;
-  const showProvisionForm =
-    addingLine &&
-    !inventoryUnavailable &&
-    !showSoftOpen &&
-    (numbers.length > 0 || checkoutAvailable === true);
+  // New-sales availability is not an existing customer's entitlement. Both
+  // searches verify live-work access on the server before querying the carrier.
+  const showSoftOpen = liveNumberClosed;
+  const showProvisionForm = addingLine && !inventoryUnavailable && !showSoftOpen;
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
@@ -388,7 +383,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
         <div>
           <h2 className="text-lg font-semibold text-foreground">Lines</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {loading || awaitingCheckout
+            {loading
               ? "Checking lines…"
               : inventoryUnavailable
                 ? "Lines unavailable"
@@ -417,7 +412,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
           tone="destructive"
           title="Lines Need Attention"
           action={
-            recoveryPath && checkoutAvailable === true ? (
+            recoveryPath ? (
               <Button asChild size="sm" variant="secondary">
                 <Link to={recoveryPath}>Open billing</Link>
               </Button>
@@ -438,7 +433,7 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
       ) : null}
       {message ? <StatusNotice tone="success">{message}</StatusNotice> : null}
 
-      {loading || awaitingCheckout ? (
+      {loading ? (
         <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">
           Loading lines…
         </div>
