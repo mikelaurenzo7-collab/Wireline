@@ -14,6 +14,8 @@ const harness = vi.hoisted(() => ({ wedge: "sales" }));
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
   useEffect: () => undefined,
+  useLayoutEffect: () => undefined,
+  useRef: () => ({ current: null }),
   useState: () => [true, vi.fn()],
 }));
 vi.mock("react-router", () => ({

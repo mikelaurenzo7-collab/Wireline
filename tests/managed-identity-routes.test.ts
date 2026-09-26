@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
   where: vi.fn(),
   getWebhook: vi.fn(),
   updates: [] as Array<{ refreshToken: string }>,
+  persistedRows: 1,
 }));
 vi.mock("express", () => ({
   Router: () => ({
@@ -82,7 +83,8 @@ vi.mock("../src/lib/server-context", () => ({
         h.updates.push(value);
         return {
           where: () => ({
-            returning: async () => [{ id: "mailbox" }],
+            returning: async () =>
+              Array.from({ length: h.persistedRows }, () => ({ id: "mailbox" })),
           }),
         };
       },
@@ -157,6 +159,7 @@ beforeEach(() => {
   h.phone = "+12025550123";
   h.accounts = [];
   h.updates = [];
+  h.persistedRows = 1;
   h.beforeFence = undefined;
   h.eligible.mockResolvedValue(["bot"]);
   h.phoneOwned.mockResolvedValue(undefined);
@@ -254,6 +257,7 @@ describe("compatibility mailbox admission", () => {
     ];
     h.inboxes.mockResolvedValue([{ inboxId: "legacy-inbox", email: "existing@bots.botbound.me" }]);
     h.ensureWebhook.mockResolvedValue({ webhookId: "wh_created", secret: "whsec_create" });
+    h.mutate.mockResolvedValue(undefined);
     const res = await invoke("managed-mailbox");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(h.ensureWebhook).toHaveBeenCalledWith(
@@ -261,7 +265,11 @@ describe("compatibility mailbox admission", () => {
     );
     expect(h.updates).toEqual([{ refreshToken: "enc:whsec_create" }]);
     expect(h.getWebhook).not.toHaveBeenCalled();
-    expect(h.mutate).not.toHaveBeenCalled();
+    expect(h.mutate).toHaveBeenCalledExactlyOnceWith({
+      apiKey: "test-only-key",
+      accountId: "mailbox",
+      keepWebhookId: "wh_created",
+    });
   });
   it("GETs an existing webhook secret when BotBound has not stored one and keeps the webhook", async () => {
     h.accounts = [
@@ -275,10 +283,32 @@ describe("compatibility mailbox admission", () => {
     h.inboxes.mockResolvedValue([{ inboxId: "legacy-inbox", email: "existing@bots.botbound.me" }]);
     h.ensureWebhook.mockResolvedValue({ webhookId: "wh_console", secret: null });
     h.getWebhook.mockResolvedValue({ webhookId: "wh_console", secret: "whsec_get" });
+    h.mutate.mockResolvedValue(undefined);
     const res = await invoke("managed-mailbox");
     expect(res.status).toHaveBeenCalledWith(200);
     expect(h.getWebhook).toHaveBeenCalledWith("test-only-key", "wh_console");
     expect(h.updates).toEqual([{ refreshToken: "enc:whsec_get" }]);
+    expect(h.mutate).toHaveBeenCalledExactlyOnceWith({
+      apiKey: "test-only-key",
+      accountId: "mailbox",
+      keepWebhookId: "wh_console",
+    });
+  });
+  it("does not retire older hooks when the replacement signing secret is not persisted", async () => {
+    h.accounts = [
+      {
+        id: "mailbox",
+        emailAddress: "existing@bots.botbound.me",
+        oauthGrantedScopes: "managed",
+        refreshToken: null,
+      },
+    ];
+    h.inboxes.mockResolvedValue([{ inboxId: "legacy-inbox", email: "existing@bots.botbound.me" }]);
+    h.ensureWebhook.mockResolvedValue({ webhookId: "wh_created", secret: "whsec_create" });
+    h.persistedRows = 0;
+
+    await invoke("managed-mailbox");
+    expect(h.updates).toEqual([{ refreshToken: "enc:whsec_create" }]);
     expect(h.mutate).not.toHaveBeenCalled();
   });
   it("does not recreate a missing legacy mailbox", async () => {

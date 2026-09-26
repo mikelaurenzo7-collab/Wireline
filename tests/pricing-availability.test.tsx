@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Pricing from "../src/pages/Pricing";
+import BillingIntervalControl from "../src/components/BillingIntervalControl";
 import { activationBillingHref, captureSignupIntentFromLocation } from "../src/lib/signup-intent";
 
 const harness = vi.hoisted(() => ({
@@ -30,6 +31,13 @@ type Element = ReactElement<{
 
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
+  // Exercise the real shared picker so these tests still select its controls.
+  if (
+    isValidElement<Parameters<typeof BillingIntervalControl>[0]>(node) &&
+    node.type === BillingIntervalControl
+  ) {
+    return elements(BillingIntervalControl(node.props));
+  }
   if (!isValidElement<Element["props"]>(node)) return [];
   return [node, ...elements(node.props.children)];
 }
