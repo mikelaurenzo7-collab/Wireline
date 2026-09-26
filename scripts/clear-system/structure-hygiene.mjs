@@ -54,8 +54,8 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/index.css",
     indexCss,
-    /@media \(max-width: 767px\)[\s\S]*font-size:\s*16px/,
-    "root CSS must protect legacy mobile editors from Safari focus zoom",
+    /@media \(max-width: 767px\)[\s\S]*font-size:\s*max\(16px,\s*1rem\)/,
+    "mobile editors must respect enlarged text while retaining the Safari zoom floor",
   );
 
   mustInclude(
@@ -128,8 +128,8 @@ export function checkStructureHygiene({ read, mustInclude, mustExclude, mustBeDe
   mustInclude(
     "src/styles/safe-area-ownership.css",
     safeAreaOwnership,
-    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
-    "mobile and tablet workspace scrollers must clear the fixed dock",
+    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom:\s*calc\(\s*var\(--wl-workspace-dock-height, 5\.25rem\) \+ 1rem - env\(safe-area-inset-bottom, 0px\)\s*\);/,
+    "workspace scrollers must clear the measured dock without repeating the device inset",
   );
   mustExclude(
     "src/styles/responsive.css",

@@ -84,8 +84,14 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/styles/safe-area-ownership.css",
     safeAreaOwnership,
-    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[\s\S]*padding-bottom:\s*5\.25rem;/,
-    "mobile and tablet workspace scrollers must clear the fixed dock once",
+    /@media \(max-width: 1023px\)[\s\S]*\.wl-workspace-shell \.wl-workspace-content \{[^}]*padding-bottom:\s*calc\(\s*var\(--wl-workspace-dock-height, 5\.25rem\) \+ 1rem - env\(safe-area-inset-bottom, 0px\)\s*\);/,
+    "workspace scrollers must clear the measured dock without repeating the device inset",
+  );
+  mustInclude(
+    "src/components/WorkspaceShell.tsx",
+    workspaceShell,
+    /useChromeHeight\("\.wl-workspace-shell", "--wl-workspace-dock-height"\)/,
+    "the mobile dock must own its measured clearance",
   );
   mustExclude(
     "src/styles/responsive.css",
