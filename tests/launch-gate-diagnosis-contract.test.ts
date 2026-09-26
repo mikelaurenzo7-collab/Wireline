@@ -23,7 +23,7 @@ describe("launch blockers distinguish a failed check from a failed probe", () =>
     {
       name: "twilio",
       unreachable: "twilio_unreachable",
-      derived: "twilio_prepaid_balance_below_150",
+      derived: "twilio_usage_triggers_missing",
     },
     { name: "vercel", unreachable: "vercel_unreachable", derived: "production_commit_mismatch" },
     { name: "stripe", unreachable: "stripe_not_reachable", derived: "stripe_brand_not_wireline" },

@@ -265,6 +265,13 @@ above while retaining the same source, review, schema and provider proofs.
 
 Confirm account access, current invoices/credits, a suitable always-on worker host, and read-only database health (`npm run db:health`) before scheduling the release. See the founder sequence in [LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./LAUNCH_GURU_PLAYBOOK_2026-07-20.md). An absent host, blocked deployment account, unknown required credit balance or failed recharge remains unresolved, even when source checks pass.
 
+Twilio funding follows actual usage; there is no fixed prepaid launch reserve.
+The launch diagnostic requires a verified, finite, positive USD balance and the
+configured daily and monthly usage alerts. Empty balances and unreadable funding
+remain separate blockers. The founder may replenish credit manually as usage
+grows. This funding policy does not replace carrier, consent, DNC, or real-call
+verification requirements.
+
 From a secure operator environment containing the canonical production configuration, run:
 
 ```bash

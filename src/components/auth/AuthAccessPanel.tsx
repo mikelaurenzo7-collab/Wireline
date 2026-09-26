@@ -42,6 +42,7 @@ import {
 import { StatusNotice } from "../molecules";
 import { Checkbox } from "../ui/shadcn/Checkbox";
 import { WirelineLockup } from "../brand/WirelineBrand";
+import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 
 type AuthMode = "signin" | "signup" | "reset";
 type AuthField = "email" | "password";
@@ -241,6 +242,14 @@ export default function AuthAccessPanel({
   const isSignUp = mode === "signup";
   const isReset = mode === "reset";
   const intentLabel = signupIntentLabel(signupIntent);
+  const { notice } = usePaidPlanAvailability({
+    enabled: isSignUp,
+    interval: signupIntent?.preferredBillingInterval === "year" ? "year" : "month",
+    planId:
+      signupIntent?.preferredPlanId && signupIntent.preferredPlanId !== "personal"
+        ? signupIntent.preferredPlanId
+        : undefined,
+  });
   const oauthProviders = availableProviders
     ? PROVIDERS.filter((provider) => availableProviders[provider.id] === true)
     : [];
@@ -573,6 +582,7 @@ export default function AuthAccessPanel({
           {isSignUp && intentLabel ? (
             <span className="wl-access-panel__intent">{intentLabel}</span>
           ) : null}
+          {isSignUp ? <p role="status">{notice}</p> : null}
         </header>
 
         {!isReset ? (

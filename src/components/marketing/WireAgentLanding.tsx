@@ -20,6 +20,7 @@ import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
+import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
 
 const FEATURED_TEMPLATE_KEYS = [
   "sales-rep",
@@ -61,6 +62,7 @@ const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
 });
 
 export default function WireAgentLanding() {
+  const { canActivate, notice } = usePaidPlanAvailability();
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -197,6 +199,7 @@ export default function WireAgentLanding() {
                 <p>PRICING</p>
                 <h2>Build Free. Go Live on Your Terms</h2>
                 <span>One private Bot to start. More live Bots as your business grows.</span>
+                <span>{notice}</span>
               </header>
               <div className="landing-prestige__price-grid">
                 {PUBLIC_PLANS.map(({ id, plan }) => {
@@ -227,7 +230,7 @@ export default function WireAgentLanding() {
                         </li>
                         <li>
                           {free
-                            ? "Activate when ready"
+                            ? "Upgrade for live work"
                             : `${plan.included_phone_numbers} number${plan.included_phone_numbers === 1 ? "" : "s"} included`}
                         </li>
                       </ul>
@@ -236,7 +239,9 @@ export default function WireAgentLanding() {
                         className={featured ? "is-primary" : undefined}
                         onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
                       >
-                        {free ? "Start free" : `Choose ${PLAN_NAMES[id]}`}
+                        {free
+                          ? "Start free"
+                          : `${canActivate(id) ? "Choose" : "Set up"} ${PLAN_NAMES[id]}`}
                       </Link>
                     </article>
                   );

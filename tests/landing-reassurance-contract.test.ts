@@ -38,7 +38,7 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.voice_minutes_monthly");
     expect(landing).toContain("plan.included_phone_numbers");
     expect(landing).toContain("Private simulation");
-    expect(landing).toContain("Activate when ready");
+    expect(landing).toContain("Upgrade for live work");
   });
 
   it("keeps conversion explicit and owner control visible", () => {

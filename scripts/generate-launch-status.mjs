@@ -35,6 +35,10 @@ import {
   resolveCanonicalProductionUrl,
 } from "./lib/production-url.mjs";
 import { readLaunchDeployment, resolveLaunchProvider } from "./lib/launch-deployment-status.mjs";
+import {
+  readTwilioPrepaidBalanceUsd,
+  twilioFundingBlocker,
+} from "./lib/twilio-funding-readiness.mjs";
 
 const { Pool } = pg;
 const PINNED_STRIPE_API_VERSION = getPinnedStripeApiVersion();
@@ -596,9 +600,7 @@ async function twilioStatus() {
   ]);
   return {
     status: balance.ok && triggers.ok ? "reachable" : "blocked",
-    prepaid_balance_usd: Number.isFinite(Number(balance.body?.balance))
-      ? Number(balance.body.balance)
-      : null,
+    prepaid_balance_usd: readTwilioPrepaidBalanceUsd(balance.body),
     usage_trigger_count: Array.isArray(triggers.body?.usage_triggers)
       ? triggers.body.usage_triggers.length
       : null,
@@ -765,15 +767,14 @@ if (database.status !== "reachable") {
   blockers.push("recap_agent_index_missing");
 }
 // Same rule as the database probe: a probe that could not run reports that it
-// could not run. Reading an unreachable Twilio API as "balance below $150" and
+// could not run. Reading an unreachable Twilio API as "balance depleted" and
 // "usage triggers missing" sent an operator to top up an account and recreate
 // alerts that were both already fine.
 if (twilio.status !== "reachable") {
   blockers.push("twilio_unreachable");
 } else {
-  if (typeof twilio.prepaid_balance_usd !== "number" || twilio.prepaid_balance_usd < 150) {
-    blockers.push("twilio_prepaid_balance_below_150");
-  }
+  const fundingBlocker = twilioFundingBlocker(twilio.prepaid_balance_usd);
+  if (fundingBlocker) blockers.push(fundingBlocker);
   const expectedTriggerValue = new Map([
     ["daily", Number(process.env.TWILIO_DAILY_USAGE_TRIGGER_USD || 25)],
     ["monthly", Number(process.env.TWILIO_MONTHLY_USAGE_TRIGGER_USD || 200)],

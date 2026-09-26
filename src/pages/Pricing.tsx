@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -6,7 +6,7 @@ import { PageMeta } from "../lib/page-meta";
 import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../lib/plan-catalog";
 import { signupHrefForPlan } from "../lib/signup-intent";
 import BillingIntervalControl from "../components/BillingIntervalControl";
-import type { BillingPlansResponse } from "../types/api-billing";
+import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
@@ -188,50 +188,8 @@ const pricingJsonLd = {
 
 export default function Pricing() {
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
-  const [billingPlans, setBillingPlans] = useState<BillingPlansResponse | null>(null);
-  const [availability, setAvailability] = useState<"loading" | "ready" | "unavailable">("loading");
   const annual = billingInterval === "year";
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    const timeout = window.setTimeout(() => controller.abort(), 10_000);
-
-    void fetch("/api/billing/plans", { signal: controller.signal, cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Plan availability could not be loaded.");
-        const payload = (await response.json()) as BillingPlansResponse;
-        if (!payload || !Array.isArray(payload.plans)) {
-          throw new Error("Plan availability is incomplete.");
-        }
-        if (active) {
-          setBillingPlans(payload);
-          setAvailability("ready");
-        }
-      })
-      .catch(() => {
-        if (active) setAvailability("unavailable");
-      })
-      .finally(() => window.clearTimeout(timeout));
-
-    return () => {
-      active = false;
-      controller.abort();
-      window.clearTimeout(timeout);
-    };
-  }, []);
-
-  const canActivate = (planId: StripePlanId) => {
-    const livePlan = billingPlans?.plans.find((plan) => plan?.id === planId);
-    return (
-      billingPlans?.checkout_available === true &&
-      billingPlans?.stripe_configured === true &&
-      livePlan?.contact_sales === false &&
-      livePlan.configured === true &&
-      (!annual || livePlan.annual_configured === true)
-    );
-  };
-  const anyPaidActivationAvailable = PAID_TIERS.some(({ plan }) => canActivate(plan.id));
+  const { canActivate, notice } = usePaidPlanAvailability({ interval: billingInterval });
 
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
@@ -264,13 +222,7 @@ export default function Pricing() {
             role="status"
             className="mx-auto mb-4 max-w-3xl text-xs leading-5 text-muted-foreground"
           >
-            {availability === "loading"
-              ? "Checking activation availability…"
-              : availability === "unavailable"
-                ? "Activation status unavailable. Build free and check back."
-                : anyPaidActivationAvailable
-                  ? "Build free. Activate when ready."
-                  : "Build free. Paid activation is currently unavailable."}
+            {notice}
           </p>
 
           <div className="mt-4 grid items-stretch gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
