@@ -244,7 +244,7 @@ export default function PostCreateActivationWizard({
         detail: "Calling is not confirmed yet. Open Phone setup to finish connecting this number.",
       };
     }
-    if (checkoutAvailable === false) {
+    if (activationNeeded && checkoutAvailable === false) {
       return {
         title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
         detail: SOFT_OPEN_CHECKOUT_COPY.savedDetail(payload.agentName),
@@ -254,12 +254,19 @@ export default function PostCreateActivationWizard({
       title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
       detail: POST_CREATE_WIZARD_COPY.complete.deferredDetail(payload.agentName),
     };
-  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName, checkoutAvailable]);
+  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName, checkoutAvailable, activationNeeded]);
 
-  const checkoutClosed = checkoutAvailable === false;
-  const canProvisionNumber = checkoutAvailable === true;
+  // A sales pause must not prevent an existing paid customer from choosing
+  // their line. The Phone picker checks current server-owned entitlement.
+  const checkoutClosed = activationNeeded && checkoutAvailable === false;
+  const canProvisionNumber = !activationNeeded || checkoutAvailable === true;
   const waitingForLaunch =
-    loadingPhone || (!hasLiveLine && !hasLine && !phoneLookupFailed && checkoutAvailable === null);
+    loadingPhone ||
+    (activationNeeded &&
+      !hasLiveLine &&
+      !hasLine &&
+      !phoneLookupFailed &&
+      checkoutAvailable === null);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalFocusTrap(dialogRef, { onEscape: dismiss });

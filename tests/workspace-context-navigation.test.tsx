@@ -378,8 +378,19 @@ describe("Bot context across workspace pages", () => {
     });
   });
 
-  it("does not imply Stripe Checkout when self-serve billing is closed", async () => {
+  it("does not imply Stripe Checkout after the server requires activation while sales are closed", async () => {
     await loadLines([], false);
+    expect(button("Find numbers")).toBeDefined();
+    h.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ code: "ACTIVATION_REQUIRED", error: "Activate a paid plan." }),
+        {
+          status: 402,
+        },
+      ),
+    );
+    await button("Find numbers").props.onClick!();
+    await vi.waitFor(() => expect(text(phone())).toContain("Live activation is paused"));
     const tree = phone();
     expect(text(tree)).toContain("Live activation is paused");
     expect(text(tree)).toContain("Use Studio for private testing.");

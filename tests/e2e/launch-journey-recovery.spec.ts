@@ -93,6 +93,34 @@ for (const failure of ["unavailable", "malformed"] as const) {
   });
 }
 
+test("a paid Bot's setup guide still opens number selection while new checkout is paused", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  await page.route("**/api/billing/plans", (route) =>
+    route.fulfill({ json: { checkout_available: false, stripe_configured: true, plans: [] } }),
+  );
+  await page.addInitScript(() => {
+    sessionStorage.setItem(
+      "wireline:post-create-wizard",
+      JSON.stringify({
+        agentId: "bot-front-desk",
+        agentName: "Front Desk",
+        phoneProvisionRequested: true,
+        phoneProvisioned: false,
+        phoneActivationRequired: false,
+      }),
+    );
+    sessionStorage.setItem("wireline:post-create-wizard-step", "launch");
+  });
+  await page.goto("/studio?agent=bot-front-desk");
+  const guide = page.getByRole("dialog", { name: "Next Up for Front Desk" });
+  await expect(guide.getByText("Live activation is paused", { exact: true })).toHaveCount(0);
+  await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
+  await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
+  await expect(page.getByRole("button", { name: "Find numbers", exact: true })).toBeVisible();
+});
+
 test("caller identity deep links reveal the section", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto("/phone?tab=setup#company-identity");
