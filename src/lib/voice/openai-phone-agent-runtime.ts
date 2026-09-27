@@ -1,3 +1,4 @@
+import { resolveAgentGreeting } from "../agent-greeting";
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
@@ -513,7 +514,7 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     voice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
-      : runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+      : resolveAgentGreeting(runtime.agent, runtime.directives),
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
   };

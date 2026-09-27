@@ -27,6 +27,7 @@ import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
 import StudioWorkroom, {
   type StudioWorkroomDraft,
   type StudioWorkroomHandle,
+  type StudioConversationSession,
 } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 
@@ -115,7 +116,15 @@ export default function StudioWorkspaceV2() {
   const workroomRef = useRef<StudioWorkroomHandle>(null);
   // A mode change ends its stream, but its unsent draft belongs to the Bot and
   // mode. Keep drafts above the keyed workroom rather than dropping user edits.
-  const workroomDraftsRef = useRef(new Map<string, StudioWorkroomDraft>());
+  const workroomSession = useMemo(
+    () => ({
+      ownerId: user?.id,
+      drafts: new Map<string, StudioWorkroomDraft>(),
+      conversations: new Map<string, StudioConversationSession>(),
+    }),
+    [user?.id],
+  );
+  const { drafts: workroomDrafts, conversations: workroomConversations } = workroomSession;
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
@@ -296,17 +305,34 @@ export default function StudioWorkspaceV2() {
   );
 
   const workroomKey = `${active.id}:${workroomMode}`;
+  let conversationSession = workroomConversations.get(workroomKey);
+  if (!conversationSession) {
+    conversationSession = {
+      snapshot: {
+        messages: [],
+        clearing: false,
+        clearError: null,
+        replyError: null,
+        interrupted: false,
+      },
+      loaded: false,
+      operations: new Map(),
+      listeners: new Set(),
+    };
+    workroomConversations.set(workroomKey, conversationSession);
+  }
   const workroom = (
     <StudioWorkroom
-      key={workroomKey}
+      key={`${user?.id}:${workroomKey}`}
       ref={workroomRef}
       agentId={active.id}
       agentName={active.name}
       markKey={active.mark_key}
       initialCommand={commandParam || undefined}
       commandNonce={commandNonceParam || undefined}
-      initialDraft={workroomDraftsRef.current.get(workroomKey)}
-      onDraftChange={(draft) => workroomDraftsRef.current.set(workroomKey, draft)}
+      initialDraft={workroomDrafts.get(workroomKey)}
+      onDraftChange={(draft) => workroomDrafts.set(workroomKey, draft)}
+      conversationSession={conversationSession}
       layout={splitWorkspace ? "split" : "standalone"}
       mode={workroomMode}
       onModeChange={setWorkroomMode}

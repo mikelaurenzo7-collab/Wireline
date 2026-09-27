@@ -1,3 +1,4 @@
+import { resolveAgentGreeting } from "../agent-greeting";
 import { and, desc, eq } from "drizzle-orm";
 import { AppError } from "../api-error";
 import { runInBackground } from "../background-work";
@@ -407,7 +408,7 @@ export async function createOpenAILiveVoiceCall(input: {
     voice,
     greeting: reviewRequired
       ? RUNTIME_REVIEW_REQUIRED_GREETING
-      : runtime.agent.firstMessage?.trim() || `Hi, this is ${runtime.agent.name}. How can I help?`,
+      : resolveAgentGreeting(runtime.agent, runtime.directives),
     wireline: {
       provider: "openai_realtime",
       agentId: runtime.agent.id,

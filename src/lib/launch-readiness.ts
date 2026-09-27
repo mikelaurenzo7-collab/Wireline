@@ -17,6 +17,7 @@ import { validateEnv } from "./env-validator";
 import { assertPlanMarginFloors } from "./tenant-economics";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 import { isPersistentVoiceWorkerConfigured } from "./voice/openai-sip-worker-config";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "./outbound-call-purpose";
 
 export type ReadinessLevel = "ready" | "degraded" | "blocked";
 export type CapabilityReadiness = {
@@ -80,6 +81,13 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const deferred_checklist: string[] = [];
   if (!isFederalDncVendorConfigured()) {
     deferred_checklist.push("FEDERAL_DNC_API_URL+FEDERAL_DNC_API_KEY");
+  }
+  // Provider configuration does not establish per-recipient permission. The
+  // direct-dial artifact resolver and campaign execution still fail closed
+  // until immutable, server-verified written-consent records are supported.
+  // Keep that implementation gap visible even after DNC credentials are set.
+  if (!DIRECT_OUTBOUND_AVAILABILITY.available) {
+    deferred_checklist.push(DIRECT_OUTBOUND_AVAILABILITY.code);
   }
 
   const emailBlockers: string[] = [];

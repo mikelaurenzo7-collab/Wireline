@@ -6,12 +6,17 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { ArrowUp, Loader2, Phone, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
 import OutboundDialDialog from "./OutboundDialDialog";
+import StudioProposalReview, {
+  type StudioProposals,
+  type StudioProposalOperation,
+} from "./StudioProposalReview";
 import { useStreamingChat } from "../hooks/useStreamingChat";
 import { authFetch } from "../lib/api";
 import type { BotMarkKey } from "../lib/bot-mark";
@@ -24,25 +29,26 @@ type StudioMessage = {
   role: "Account Holder" | "agent";
   content: string;
   createdAt: string;
-  proposals?: {
-    changes?: unknown[];
-    toolToggles?: unknown[];
-    actions?: unknown[];
+  proposals?: StudioProposals;
+};
+
+export type StudioConversationSession = {
+  snapshot: {
+    messages: StudioMessage[];
+    clearing: boolean;
+    clearError: string | null;
+    replyError: string | null;
+    interrupted: boolean;
   };
+  loaded: boolean;
+  operations: Map<string, StudioProposalOperation>;
+  listeners: Set<() => void>;
 };
 
 type WorkroomMode = "configure" | "test";
 
 const CONFIGURE_PROMPTS = WORKSPACE_VOICE.configurePrompts;
 const TEST_PROMPTS = WORKSPACE_VOICE.testPrompts;
-
-function proposalCount(message: StudioMessage) {
-  return (
-    (message.proposals?.changes?.length || 0) +
-    (message.proposals?.toolToggles?.length || 0) +
-    (message.proposals?.actions?.length || 0)
-  );
-}
 
 function MessageSkeletons() {
   return (
@@ -68,13 +74,16 @@ function MessageBubble({
   message,
   agentName,
   mode,
+  agentId,
+  operations,
 }: {
   message: StudioMessage;
   agentName: string;
   mode: WorkroomMode;
+  agentId: string;
+  operations: Map<string, StudioProposalOperation>;
 }) {
   const isUser = message.role === "Account Holder";
-  const suggestions = proposalCount(message);
 
   if (isUser) {
     return (
@@ -95,10 +104,13 @@ function MessageBubble({
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-[14px] leading-[1.5] text-foreground shadow-sm">
           <p className="whitespace-pre-wrap break-words">{message.content}</p>
         </div>
-        {mode === "configure" && message.proposals && suggestions > 0 ? (
-          <div className="mt-2 rounded-xl border border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] px-3 py-2 text-xs text-[var(--wireline-color-status-success)]">
-            {suggestions} proposed update{suggestions === 1 ? "" : "s"} ready for review.
-          </div>
+        {mode === "configure" && message.proposals ? (
+          <StudioProposalReview
+            agentId={agentId}
+            proposals={message.proposals}
+            messageId={message.id}
+            operations={operations}
+          />
         ) : null}
       </div>
     </article>
@@ -115,6 +127,7 @@ const StudioWorkroom = forwardRef<
     commandNonce?: string;
     initialDraft?: StudioWorkroomDraft;
     onDraftChange?: (draft: StudioWorkroomDraft) => void;
+    conversationSession?: StudioConversationSession;
     layout?: "standalone" | "canvas" | "split";
     mode?: WorkroomMode;
     onModeChange?: (mode: WorkroomMode) => void;
@@ -128,6 +141,7 @@ const StudioWorkroom = forwardRef<
     commandNonce,
     initialDraft,
     onDraftChange,
+    conversationSession,
     layout = "standalone",
     mode = "configure",
     onModeChange,
@@ -135,7 +149,65 @@ const StudioWorkroom = forwardRef<
   },
   ref,
 ) {
-  const [messages, setMessages] = useState<StudioMessage[]>([]);
+  const localSession = useRef<StudioConversationSession>({
+    snapshot: {
+      messages: [],
+      clearing: false,
+      clearError: null,
+      replyError: null,
+      interrupted: false,
+    },
+    loaded: false,
+    operations: new Map(),
+    listeners: new Set(),
+  });
+  const session = conversationSession || localSession.current;
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      session.listeners.add(listener);
+      return () => {
+        session.listeners.delete(listener);
+      };
+    },
+    [session],
+  );
+  const {
+    messages,
+    clearing,
+    clearError,
+    replyError: error,
+    interrupted,
+  } = useSyncExternalStore(
+    subscribe,
+    () => session.snapshot,
+    () => session.snapshot,
+  );
+  const updateSession = useCallback(
+    (patch: Partial<StudioConversationSession["snapshot"]>) => {
+      session.snapshot = { ...session.snapshot, ...patch };
+      session.listeners.forEach((listener) => listener());
+    },
+    [session],
+  );
+  const setMessages = useCallback(
+    (next: StudioMessage[] | ((current: StudioMessage[]) => StudioMessage[])) => {
+      updateSession({
+        messages: typeof next === "function" ? next(session.snapshot.messages) : next,
+      });
+    },
+    [session, updateSession],
+  );
+  const setError = useCallback(
+    (replyError: string | null) => updateSession({ replyError }),
+    [updateSession],
+  );
+  const requestActive = useRef(false);
+  useEffect(
+    () => () => {
+      if (requestActive.current) updateSession({ interrupted: true });
+    },
+    [updateSession],
+  );
   const [draft, setDraft] = useState(() => {
     const command = initialCommand?.trim() || null;
     if (
@@ -151,10 +223,8 @@ const StudioWorkroom = forwardRef<
       command,
     );
   });
-  const [loading, setLoading] = useState(mode === "configure");
+  const [loading, setLoading] = useState(mode === "configure" && !session.loaded);
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [clearing, setClearing] = useState(false);
   const [showOutboundDial, setShowOutboundDial] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -185,7 +255,12 @@ const StudioWorkroom = forwardRef<
 
   const loadMessages = useCallback(
     async (signal?: AbortSignal) => {
+      if (session.loaded) {
+        setLoading(false);
+        return;
+      }
       if (mode === "test") {
+        session.loaded = true;
         setMessages([]);
         setLoading(false);
         return;
@@ -201,7 +276,9 @@ const StudioWorkroom = forwardRef<
         if (!response.ok) throw new Error("Conversation could not be loaded.");
         const payload = await response.json();
         if (signal?.aborted) return;
-        setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+        if (!Array.isArray(payload.messages)) throw new Error("Conversation could not be loaded.");
+        session.loaded = true;
+        setMessages(payload.messages);
       } catch (reason) {
         if (signal?.aborted) return;
         setError(reason instanceof Error ? reason.message : "Conversation could not be loaded.");
@@ -209,7 +286,7 @@ const StudioWorkroom = forwardRef<
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [agentId, mode],
+    [agentId, mode, session, setMessages, setError],
   );
 
   const {
@@ -218,6 +295,7 @@ const StudioWorkroom = forwardRef<
     reset: resetStream,
   } = useStreamingChat(endpoint, {
     onComplete: (payload) => {
+      requestActive.current = false;
       setMessages((current) => [
         ...current,
         {
@@ -237,6 +315,7 @@ const StudioWorkroom = forwardRef<
       requestAnimationFrame(() => inputRef.current?.focus());
     },
     onError: (message) => {
+      requestActive.current = false;
       setError(message);
       setSending(false);
       resetStream();
@@ -323,20 +402,35 @@ const StudioWorkroom = forwardRef<
     setDraft("");
     setError(null);
     setSending(true);
+    requestActive.current = true;
+    updateSession({ interrupted: false });
     void streamSend({ content: text, history: mode === "test" ? history : undefined });
-  }, [clearing, draft, loading, messages, mode, sending, streamSend]);
+  }, [
+    clearing,
+    draft,
+    loading,
+    messages,
+    mode,
+    sending,
+    streamSend,
+    setMessages,
+    setError,
+    updateSession,
+  ]);
 
   const clearConversation = useCallback(async () => {
     if (clearing || sending || loading) return;
     if (mode === "test") {
       setMessages([]);
+      updateSession({ interrupted: false });
+      session.operations.clear();
       setError(null);
       requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
     if (!window.confirm("Clear this conversation?")) return;
 
-    setClearing(true);
+    updateSession({ clearing: true, clearError: null });
     setError(null);
     try {
       const response = await authFetch(
@@ -346,13 +440,19 @@ const StudioWorkroom = forwardRef<
         },
       );
       if (!response.ok) throw new Error("Conversation could not be cleared.");
-      setMessages([]);
+      const payload = await response.json();
+      if (payload?.cleared !== true)
+        throw new Error("Conversation clear was not confirmed. Try again.");
+      updateSession({ messages: [], interrupted: false });
+      session.operations.clear();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Conversation could not be cleared.");
+      updateSession({
+        clearError: reason instanceof Error ? reason.message : "Conversation could not be cleared.",
+      });
     } finally {
-      setClearing(false);
+      updateSession({ clearing: false });
     }
-  }, [agentId, clearing, loading, mode, sending]);
+  }, [agentId, clearing, loading, mode, sending, session, setMessages, setError, updateSession]);
 
   const workingLabel =
     streamState.phase === "connecting" || streamState.phase === "preparing"
@@ -468,10 +568,33 @@ const StudioWorkroom = forwardRef<
         aria-labelledby={onModeChange ? modeTabId(mode) : undefined}
         className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0"
       >
-        {error ? (
+        {error || clearError || interrupted ? (
           <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
-            <StatusNotice tone="destructive" title="Conversation Issue">
-              {error}
+            <StatusNotice
+              tone="destructive"
+              title="Conversation Issue"
+              action={
+                (interrupted || error) &&
+                messages.some((message) => message.role === "Account Holder") ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      const lastQuestion = [...messages]
+                        .reverse()
+                        .find((message) => message.role === "Account Holder");
+                      if (lastQuestion)
+                        setDraft((current) => (current.trim() ? current : lastQuestion.content));
+                      requestAnimationFrame(() => inputRef.current?.focus());
+                    }}
+                  >
+                    Edit and retry
+                  </Button>
+                ) : undefined
+              }
+            >
+              {error || clearError || "The reply was interrupted when you left this conversation."}
             </StatusNotice>
           </div>
         ) : null}
@@ -496,6 +619,8 @@ const StudioWorkroom = forwardRef<
                     message={message}
                     agentName={agentName}
                     mode={mode}
+                    agentId={agentId}
+                    operations={session.operations}
                   />
                 ))}
                 {sending ? (
@@ -513,7 +638,9 @@ const StudioWorkroom = forwardRef<
                   {mode === "test" ? "Try a customer question" : "What should we change?"}
                 </h2>
                 {mode === "test" ? (
-                  <p className="text-sm text-muted-foreground">Private rehearsal</p>
+                  <p className="text-sm text-muted-foreground">
+                    Private rehearsal. Save improvements in Build.
+                  </p>
                 ) : null}
               </div>
             )}

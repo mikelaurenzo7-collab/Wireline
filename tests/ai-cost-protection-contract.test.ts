@@ -24,9 +24,18 @@ describe("AI cost-protection contract", () => {
     const source = read("src/routes/agent-workspace-routes.ts");
     const occurrences = source.match(/withAudit\("workspace"\)/g) || [];
     expect(occurrences.length).toBeGreaterThanOrEqual(3);
-    expect(source.match(/enforceSpendCap/g)!.length).toBeGreaterThanOrEqual(4); // import + 3 mounts
+    for (const path of [
+      "/api/agents/:id/workspace/messages",
+      "/api/agents/:id/workspace/messages/stream",
+    ]) {
+      const start = source.indexOf(`router.post(\n  "${path}"`);
+      const admission = source.slice(start, source.indexOf("async (req", start));
+      expect(admission).toContain("enforcePrivateTextSimulationSpendCap");
+      expect(admission).not.toMatch(/\benforceSpendCap\b/);
+    }
     const pdfRoute = source.slice(source.indexOf('"/api/agents/:id/workspace/files"'));
     expect(pdfRoute.slice(0, 600)).toContain("claudeRateLimiter");
+    expect(pdfRoute.slice(0, 600)).toContain("enforceSpendCap");
   });
 
   it("meters every AI setup surface and caps the simulation one", () => {

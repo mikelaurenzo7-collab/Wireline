@@ -1,3 +1,4 @@
+import { resolveAgentGreeting } from "./agent-greeting";
 import { and, desc, eq } from "drizzle-orm";
 
 import { AppError } from "./api-error";
@@ -135,7 +136,7 @@ export async function loadPrivateAgentTestContext(
     "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
     "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
     savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
-    agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
+    `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
     knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
     businessProfile ? `Workspace profile: ${businessProfile}` : "",

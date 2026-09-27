@@ -123,10 +123,11 @@ concurrency, environment, DNC, and spend admission controls remain in place.
 
 ### Why the worker is separate
 
-The Vercel API function is configured for 600 seconds. Vercel `waitUntil` shares
-that function timeout, so it cannot own a one-hour sideband. Vercel continues to
-own the public application, signed Twilio callbacks, and job sweeps. After verifying
-OpenAI's original signature, its SIP webhook forwards the untouched signed bytes
+Render hosts the public application, signed Twilio callbacks, and scheduled job
+sweeps. The separate persistent worker owns the one-hour sideband and its admission
+and drain lifecycle. The legacy Vercel function's 600-second limit and shared
+`waitUntil` timeout cannot support that call duration. After verifying
+OpenAI's original signature, the Render API SIP webhook forwards the untouched signed bytes
 to a persistent Node 22 worker. Both a distinct service secret and the original
 OpenAI signature are checked before the worker resolves the tenant, reserves spend,
 claims the call, or accepts it. Failed or timed-out forwarding returns retryable
@@ -151,8 +152,9 @@ never be invented. A live crash/continuity drill remains release proof.
 
 ### Deployment and shutdown
 
-No paid worker host is provisioned by this change. Long-call activation stays
-blocked until an always-on instance and its production configuration are deployed.
+The production worker runs as a separate always-on Render service. Long-call
+activation requires verified deployment, production configuration, and the
+controlled call and drain proofs in `docs/DEPLOYMENT_RUNBOOK.md`.
 A Vercel function, scale-to-zero service, or host that kills WebSocket processes
 after a short request deadline is not suitable.
 
@@ -168,7 +170,7 @@ after a short request deadline is not suitable.
   checkout or image is authentic by itself.
 - Use a separate HTTPS worker origin with TLS termination. Set
   `WIRELINE_VOICE_WORKER_URL` and a random, independent
-  `WIRELINE_VOICE_WORKER_SECRET` of at least 32 bytes on Vercel. Put the same
+  `WIRELINE_VOICE_WORKER_SECRET` of at least 32 bytes on the Render API. Put the same
   service secret on the worker. Neither value belongs in browser code.
 - The worker needs the reviewed production database connection, tenant JWT/token
   secrets, OpenAI SIP configuration, canonical `APP_URL=https://botbound.app`,
@@ -207,7 +209,7 @@ after a short request deadline is not suitable.
   allow the full call horizon plus five minutes, **65 minutes at the default**,
   or use the pre-drain procedure. A host-enforced 30-second shutdown grace will
   interrupt calls despite application cleanup.
-- Keep the Vercel minute job sweep and production alerts enabled. Prove one
+- Keep the Render minute job sweep and production alerts enabled. Prove one
   inbound and one approved outbound call beyond five minutes, late tool use,
   final transcript/usage, service-auth rejection, duplicate delivery, overload,
   and zero-loss rolling drain before enabling sales.

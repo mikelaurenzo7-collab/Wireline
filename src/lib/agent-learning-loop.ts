@@ -1,10 +1,9 @@
 /**
- * Customer learning loop — compound moat from calls → lessons → outcomes.
+ * Lesson review and learning summaries.
  */
 import { and, desc, eq, gte } from "drizzle-orm";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { computeScorecard, type CallLogRow } from "./agent-scorecard";
 
 export const PRODUCTIVE_OUTCOMES = new Set(["booked", "qualified", "followup", "info"]);
 
@@ -50,11 +49,7 @@ export async function getLearningDigest(userId: string, agentId: string): Promis
       .limit(50),
     drizzle
       .select({
-        id: schema.callLogs.id,
         outcomeTag: schema.callLogs.outcomeTag,
-        qaScore: schema.callLogs.qaScore,
-        durationSeconds: schema.callLogs.durationSeconds,
-        createdAt: schema.callLogs.createdAt,
       })
       .from(schema.callLogs)
       .where(
@@ -68,48 +63,15 @@ export async function getLearningDigest(userId: string, agentId: string): Promis
   ]);
 
   const pending = lessons.filter((l) => l.status === "pending").length;
-  const approved = lessons.filter((l) => l.status !== "rejected").length;
+  const approved = lessons.filter((l) => l.status === "approved").length;
   const topLessons = lessons
     .filter((l) => l.status !== "rejected")
     .slice(0, 3)
     .map((l) => l.lesson);
 
-  const logs: CallLogRow[] = callRows.map((r) => ({
-    id: String(r.id),
-    durationSeconds: r.durationSeconds,
-    createdAt: r.createdAt ?? undefined,
-  }));
-
-  const midpoint = Math.floor(logs.length / 2);
-  const prior = logs.slice(0, midpoint);
-  const current = logs.slice(midpoint);
-
-  let outcomeLiftPct: number | null = null;
-  if (current.length >= 3 && prior.length >= 3) {
-    const priorScore = computeScorecard({
-      focus: "general",
-      windowDays: 15,
-      now: Date.now(),
-      currentLogs: prior,
-      priorLogs: [],
-      appointments: [],
-      openFollowUps: [],
-    });
-    const currentScore = computeScorecard({
-      focus: "general",
-      windowDays: 15,
-      now: Date.now(),
-      currentLogs: current,
-      priorLogs: prior,
-      appointments: [],
-      openFollowUps: [],
-    });
-    const priorVal = priorScore.primary.value;
-    const curVal = currentScore.primary.value;
-    if (priorVal > 0) {
-      outcomeLiftPct = Math.round(((curVal - priorVal) / priorVal) * 100);
-    }
-  }
+  // Call volume cannot establish a lesson's effect on outcomes. Preserve the
+  // response field without inventing a lift until that effect is measured.
+  const outcomeLiftPct = null;
 
   const objectionsTrending: string[] = [];
   const objectionCount = callRows.filter((r) => r.outcomeTag === "other").length;

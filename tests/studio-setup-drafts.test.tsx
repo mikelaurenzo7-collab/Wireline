@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StudioAgentWorkspacePanel from "../src/components/StudioAgentWorkspacePanel";
+import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import { createStudioSetupDrafts, type StudioSetupDrafts } from "../src/lib/studio-setup-drafts";
 import { defaultBotMarkKey } from "../src/lib/bot-mark";
 import { setCreateBriefRecoveryOwner } from "../src/lib/create-brief-recovery";
@@ -10,6 +11,9 @@ const h = vi.hoisted(() => ({
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
   refCursor: 0,
+  effectCursor: 0,
+  dependencies: [] as Array<readonly unknown[]>,
+  surface: "setup" as "setup" | "review",
   effects: [] as Array<() => unknown>,
   cleanups: [] as Array<() => void>,
   mounting: true,
@@ -21,6 +25,8 @@ const h = vi.hoisted(() => ({
     personality: "Clear. Keep the repair shop policy.",
     directives: [] as Array<{ content: string }>,
     mark_key: "spark-rose",
+    openingGreeting: undefined as string | undefined,
+    firstMessage: undefined as string | undefined,
   },
 }));
 vi.mock("react", async (original) => ({
@@ -36,8 +42,13 @@ vi.mock("react", async (original) => ({
     ];
   },
   useRef: (initial: unknown) => (h.refs[h.refCursor++] ??= { current: initial }),
-  useEffect: (effect: () => unknown) => {
-    if (h.mounting) h.effects.push(effect);
+  useEffect: (effect: () => unknown, dependencies: readonly unknown[]) => {
+    const index = h.effectCursor++;
+    const previous = h.dependencies[index];
+    h.dependencies[index] = dependencies;
+    if (!previous || dependencies.some((value, i) => !Object.is(value, previous[i]))) {
+      h.effects.push(effect);
+    }
   },
   useLayoutEffect: (effect: () => unknown) => {
     if (h.mounting) h.effects.push(effect);
@@ -51,7 +62,7 @@ vi.mock("../src/contexts/AgentsContext", () => ({
   AGENTS_CHANGED_EVENT: "agents-changed",
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: (...args: unknown[]) => h.fetch(...args) }));
-vi.mock("../src/components/atoms", () => ({ Button: "button" }));
+vi.mock("../src/components/atoms", () => ({ Button: "button", Skeleton: "skeleton" }));
 vi.mock("../src/components/molecules", () => ({ StatusNotice: "aside" }));
 vi.mock("../src/components/BotMark", () => ({ default: "mark" }));
 vi.mock("../src/components/BotMarkPicker", () => ({ default: "mark-picker" }));
@@ -93,12 +104,29 @@ let drafts: StudioSetupDrafts;
 function render() {
   h.stateCursor = 0;
   h.refCursor = 0;
-  return StudioAgentWorkspacePanel({
-    agentId: h.botId,
-    agentName: "Repair Bot",
-    compact: h.compact,
-    drafts,
-    onTestVoiceInChat: vi.fn(),
+  h.effectCursor = 0;
+  const tree =
+    h.surface === "review"
+      ? StudioAgentReviewPanel({
+          agentId: h.botId,
+          agentName: "Repair Bot",
+          onEdit: vi.fn(),
+          onTest: vi.fn(),
+        })
+      : StudioAgentWorkspacePanel({
+          agentId: h.botId,
+          agentName: "Repair Bot",
+          compact: h.compact,
+          drafts,
+          onTestVoiceInChat: vi.fn(),
+        });
+  if (!h.mounting) flushEffects();
+  return tree;
+}
+function flushEffects() {
+  h.effects.splice(0).forEach((effect) => {
+    const cleanup = effect();
+    if (typeof cleanup === "function") h.cleanups.push(cleanup as () => void);
   });
 }
 function unmount() {
@@ -109,14 +137,13 @@ async function mount(waitForSetup = true) {
   h.states = [];
   h.refs = [];
   h.effects = [];
+  h.dependencies = [];
   h.mounting = true;
   render();
   h.mounting = false;
-  h.effects.forEach((effect) => {
-    const cleanup = effect();
-    if (typeof cleanup === "function") h.cleanups.push(cleanup as () => void);
-  });
-  if (waitForSetup) await vi.waitFor(() => expect(field("setup-greeting")).toBeDefined());
+  flushEffects();
+  if (waitForSetup && h.surface === "setup")
+    await vi.waitFor(() => expect(field("setup-greeting")).toBeDefined());
 }
 function field(id: string) {
   return elements(render()).find((element) => element.props.id === id);
@@ -138,14 +165,22 @@ beforeEach(() => {
   h.userId = "owner-a";
   h.botId = "bot-a";
   h.compact = true;
+  h.surface = "setup";
   drafts = createStudioSetupDrafts(h.userId);
   h.config = {
     personality: "Clear. Keep the repair shop policy.",
     directives: [],
     mark_key: "spark-rose",
+    openingGreeting: undefined,
+    firstMessage: undefined,
   };
   setCreateBriefRecoveryOwner(h.userId);
-  vi.stubGlobal("window", { dispatchEvent: vi.fn() });
+  const events = new EventTarget();
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn((event: Event) => events.dispatchEvent(event)),
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
+  });
   h.fetch.mockReset().mockImplementation(async (path: string, options?: RequestInit) => {
     const body = options?.body ? JSON.parse(String(options.body)) : null;
     if (!options?.method) return json(h.config);
@@ -164,6 +199,59 @@ afterEach(() => {
 });
 
 describe("Studio inspector draft lifecycle", () => {
+  it("refreshes approved Build changes on the event without overwriting a dirty greeting", async () => {
+    await mount();
+    change("setup-greeting", "My unsaved greeting");
+    h.config.openingGreeting = "Approved server greeting";
+    h.config.personality = "Clear role.\n\n## DELIVERY TONE\nWarm. Concise and useful.";
+    window.dispatchEvent(new Event("agents-changed"));
+    await vi.waitFor(() => expect(button("Warm").props["aria-pressed"]).toBe(true));
+    expect(field("setup-greeting")!.props.value).toBe("My unsaved greeting");
+    expect(h.fetch.mock.calls.filter(([, options]) => !options?.method)).toHaveLength(2);
+  });
+
+  it("refreshes Review with the effective greeting and newest delivery tone", async () => {
+    h.surface = "review";
+    h.config.openingGreeting = "First saved greeting";
+    await mount(false);
+    await vi.waitFor(() => expect(text(render())).toContain("First saved greeting"));
+    h.config.openingGreeting = "New approved greeting";
+    h.config.personality =
+      "Clear support policy.\n\n## DELIVERY TONE\nWarm. Concise, useful, and discreet.";
+    window.dispatchEvent(new Event("agents-changed"));
+    await vi.waitFor(() => expect(text(render())).toContain("New approved greeting"));
+    expect(text(render())).toContain("Warm and natural");
+    expect(text(render())).not.toContain("Clear support policy");
+  });
+
+  it("shows the resolved runtime greeting and prioritizes the saved delivery tone", async () => {
+    h.config.openingGreeting = "Welcome to Acme.";
+    h.config.firstMessage = "Stale creation greeting";
+    h.config.personality =
+      "Clear, warm support role.\n\n## DELIVERY TONE\nAuthoritative. Concise, useful, and discreet.";
+    await mount();
+    expect(field("setup-greeting")!.props.value).toBe("Welcome to Acme.");
+    expect(button("Authoritative").props["aria-pressed"]).toBe(true);
+    expect(button("Clear").props["aria-pressed"]).toBe(false);
+  });
+
+  it("falls back to a saved firstMessage from compatible config responses", async () => {
+    h.config.firstMessage = "Welcome from the original setup.";
+    await mount();
+    expect(field("setup-greeting")!.props.value).toBe("Welcome from the original setup.");
+  });
+
+  it("notifies listeners only after the confirmed greeting is written", async () => {
+    await mount();
+    change("setup-greeting", "Confirmed greeting");
+    vi.mocked(window.dispatchEvent).mockImplementation(() => {
+      expect(h.config.directives).toEqual([{ content: "Opening greeting: Confirmed greeting" }]);
+      return true;
+    });
+    await save();
+    expect(window.dispatchEvent).toHaveBeenCalledOnce();
+  });
+
   it("keeps voice preview on the saved Bot identity until a mark draft is confirmed", async () => {
     await mount();
     const preview = () => elements(render()).find((element) => element.type === "voice-picker")!;

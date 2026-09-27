@@ -1,10 +1,8 @@
 import { AppError } from "../lib/api-error";
 /* eslint-disable @typescript-eslint/no-explicit-any -- tenant configuration columns and aggregated drizzle rows have shapes that vary by route. */
 /**
- * Agent Workspace — per-agent Account Holder chat (legacy surface).
- *
- * @deprecated Merchants use `/chat` + Director Coach mode. Routes kept for
- * PDF → agent knowledge ingest, founder broadcast, and API compatibility.
+ * Agent Workspace — Studio Build chat and explicitly approved configuration.
+ * Planning is private; proposals never dispatch external actions automatically.
  *
  * Memory model: thread history + recent call summaries injected each turn.
  */
@@ -21,6 +19,8 @@ import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
 import { findOwnedAgentProfile } from "../lib/agent-ownership";
 import {
   planWorkspace,
+  buildWorkspaceStreamContext,
+  normalizePlan,
   WORKSPACE_FIELDS,
   WORKSPACE_VIBE_OPTIONS,
   type WorkspaceFieldKey,
@@ -34,9 +34,65 @@ import { executeAction } from "../lib/action-engine";
 import { runStructuredStream } from "../lib/ai-structured";
 import { isRuntimeAvailable } from "../lib/ai-client";
 import { withAudit } from "../middleware/audit-middleware";
-import { enforceSpendCap } from "../lib/spend-guards";
+import { enforceSpendCap, enforcePrivateTextSimulationSpendCap } from "../lib/spend-guards";
+import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../lib/agent-greeting";
+import { composeSetupPersonality } from "../lib/compose-setup-personality";
+import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
 
 const router = express.Router();
+
+/** Both composer routes plan against the same saved, tenant-owned configuration. */
+async function loadPlanningAgent(agentId: string, userId: string) {
+  const [agentRows, personalities, directives] = await drizzle.transaction((tx) =>
+    serialQueryBatch([
+      tx
+        .select({
+          id: schema.agents.id,
+          name: schema.agents.name,
+          role: schema.agents.role,
+          archetype: schema.agents.archetype,
+          personalityVibe: schema.agents.personalityVibe,
+          firstMessage: schema.agents.firstMessage,
+          emailAgentTone: schema.agents.emailAgentTone,
+          emailSignature: schema.agents.emailSignature,
+          outOfHoursMessage: schema.agents.outOfHoursMessage,
+          transferPhone: schema.agents.transferPhone,
+          escalationEmail: schema.agents.escalationEmail,
+          escalationPhone: schema.agents.escalationPhone,
+          enabledTools: schema.agents.enabledTools,
+          websiteUrl: schema.agents.websiteUrl,
+          timezone: schema.agents.timezone,
+          emailAutoRespond: schema.agents.emailAutoRespond,
+          slackChannelId: schema.agents.slackChannelId,
+          autoZoomLink: schema.agents.autoZoomLink,
+          autonomyLevel: schema.agents.autonomyLevel,
+        })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.personality.content })
+        .from(schema.personality)
+        .where(and(eq(schema.personality.agentId, agentId), eq(schema.personality.userId, userId)))
+        .limit(1),
+      tx
+        .select({ content: schema.directives.content })
+        .from(schema.directives)
+        .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
+        .orderBy(desc(schema.directives.priority))
+        .limit(40),
+    ]),
+  );
+  const agent = agentRows[0];
+  return agent
+    ? {
+        ...agent,
+        firstMessage: resolveAgentGreeting(agent, directives),
+        personality: personalities[0]?.content || "",
+        directives,
+      }
+    : null;
+}
 
 // Hard cap on stored history per agent — keeps the LLM payload bounded
 // + storage manageable. Most account holders won't get near this. When the
@@ -114,7 +170,7 @@ router.post(
   // Composer turns reach a paid model — they must respect the tenant's hard
   // cap and land in auditLog.costUsd like every other AI surface, or this
   // becomes invisible COGS the spend guards can't see.
-  enforceSpendCap,
+  enforcePrivateTextSimulationSpendCap,
   withAudit("workspace"),
   validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
@@ -124,25 +180,7 @@ router.post(
 
       // Load agent + current config (the planner proposes changes against
       // the live values) + recent call context.
-      const [agent] = await drizzle
-        .select({
-          id: schema.agents.id,
-          name: schema.agents.name,
-          role: schema.agents.role,
-          archetype: schema.agents.archetype,
-          personalityVibe: schema.agents.personalityVibe,
-          firstMessage: schema.agents.firstMessage,
-          emailAgentTone: schema.agents.emailAgentTone,
-          emailSignature: schema.agents.emailSignature,
-          outOfHoursMessage: schema.agents.outOfHoursMessage,
-          transferPhone: schema.agents.transferPhone,
-          escalationEmail: schema.agents.escalationEmail,
-          escalationPhone: schema.agents.escalationPhone,
-          enabledTools: schema.agents.enabledTools,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
-        .limit(1);
+      const agent = await loadPlanningAgent(agentId, req.user.id);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const recentCalls = await drizzle
@@ -241,7 +279,7 @@ router.post(
   "/api/agents/:id/workspace/messages/stream",
   authenticateEventStream,
   claudeRateLimiter,
-  enforceSpendCap,
+  enforcePrivateTextSimulationSpendCap,
   withAudit("workspace"),
   validateBody(workspaceMessageSchema),
   async (req: AuthenticatedRequest, res: Response) => {
@@ -252,17 +290,7 @@ router.post(
         throw AppError.fromHttpStatus(503, "LLM not configured");
       }
 
-      const [agent] = await drizzle
-        .select({
-          id: schema.agents.id,
-          name: schema.agents.name,
-          role: schema.agents.role,
-          archetype: schema.agents.archetype,
-          enabledTools: schema.agents.enabledTools,
-        })
-        .from(schema.agents)
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
-        .limit(1);
+      const agent = await loadPlanningAgent(agentId, req.user.id);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
       const { createSseStream, writeSseBootstrap } = await import("../lib/sse-stream");
@@ -300,43 +328,24 @@ router.post(
 
       const { STRUCTURED_RUNTIME_MODELS } = await import("../lib/structured-runtime-models");
 
-      const DIRECT_AGENT_TOOL_SCHEMA = {
-        name: "direct_agent",
-        description: "Reply to the Account Holder and propose changes.",
-        input_schema: {
-          type: "object" as const,
-          properties: {
-            reply: { type: "string", description: "Conversational reply (≤120 words)." },
-            config_changes: { type: "array", items: { type: "object" } },
-            tool_toggles: { type: "array", items: { type: "object" } },
-            actions: { type: "array", items: { type: "object" } },
-          },
-          required: ["reply"],
-        },
-      };
-
-      const name = agent.name || "the agent";
-      const role = agent.role || "AI receptionist";
-      const system = `You are ${name}, a BotBound AI ${role}. Reply in first person, warm and concise.`;
-      const transcript = history
-        .slice(-12)
-        .map((m) => `${m.role === "Account Holder" ? "Operator" : "You"}: ${m.content}`)
-        .join("\n");
-      const user = `${transcript ? `Conversation:\n${transcript}\n\n` : ""}Operator: ${userMessage}`;
+      const recentCalls = await drizzle
+        .select({
+          summary: schema.callLogs.summary,
+          sentiment: schema.callLogs.sentiment,
+          intent: schema.callLogs.intentLabel,
+        })
+        .from(schema.callLogs)
+        .where(and(eq(schema.callLogs.agentId, agentId), eq(schema.callLogs.userId, req.user.id)))
+        .orderBy(desc(schema.callLogs.createdAt))
+        .limit(5);
+      const context = buildWorkspaceStreamContext({ userMessage, history, agent, recentCalls });
 
       try {
-        const { result, thinking, thinkingDurationMs } = await runStructuredStream<{
-          reply?: string;
-          config_changes?: unknown;
-          changes?: unknown;
-          tool_toggles?: unknown;
-          toolToggles?: unknown;
-          actions?: unknown;
-        }>(
+        const { result, thinking, thinkingDurationMs } = await runStructuredStream<
+          Parameters<typeof normalizePlan>[0]
+        >(
           {
-            system,
-            user,
-            tool: DIRECT_AGENT_TOOL_SCHEMA,
+            ...context,
             model: STRUCTURED_RUNTIME_MODELS.STANDARD,
             maxTokens: 1500,
           },
@@ -345,17 +354,13 @@ router.post(
             onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
             onThinkingEnd: (fullText, durationMs) =>
               sse.write("thinking_end", { thinking: fullText, durationMs }),
-            onResult: (r) => sse.write("reply", r),
+            onResult: (r) =>
+              sse.write("reply", normalizePlan((r || {}) as Parameters<typeof normalizePlan>[0])),
           },
         );
 
-        const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
-        // Normalize to client-expected keys (changes/toolToggles/actions) so
-        // StudioWorkroom onComplete can populate interactive proposals.
-        // The structured tool uses config_changes / tool_toggles in raw LLM output.
-        const changes = (result as any)?.config_changes ?? (result as any)?.changes ?? [];
-        const toolToggles = (result as any)?.tool_toggles ?? (result as any)?.toolToggles ?? [];
-        const actions = (result as any)?.actions ?? [];
+        // Use the same allowlist and validation as the non-streaming planner.
+        const { reply, changes, toolToggles, actions } = normalizePlan(result || {});
 
         sse.write("reply", { reply, changes, toolToggles, actions });
         sse.write("done", {
@@ -557,13 +562,16 @@ router.post(
       const agentId = req.params.id;
       const field = String(req.body?.field || "") as WorkspaceFieldKey;
       const rawValue = req.body?.value;
-      const spec = WORKSPACE_FIELDS[field];
+      const spec = Object.hasOwn(WORKSPACE_FIELDS, field) ? WORKSPACE_FIELDS[field] : null;
       if (!spec) throw AppError.fromHttpStatus(400, "Unknown field");
       if (typeof rawValue !== "string" || !rawValue.trim()) {
         throw AppError.fromHttpStatus(400, "Value required");
       }
       let value: string | boolean = rawValue.trim().slice(0, spec.maxLen);
       if (spec.kind === "boolean") {
+        if (!["true", "false"].includes(value.toLowerCase())) {
+          throw AppError.fromHttpStatus(400, "Value must be true or false");
+        }
         value = value.toLowerCase() === "true";
       }
       if (spec.kind === "vibe") {
@@ -593,10 +601,75 @@ router.post(
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      await drizzle
-        .update(schema.agents)
-        .set({ [spec.column]: value })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+      await drizzle.transaction(async (tx) => {
+        // Serialize related setup changes and repeated rule saves for this Bot.
+        await tx.execute(
+          sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
+        );
+        if (spec.kind === "directive") {
+          const [existing] = await tx
+            .select({ id: schema.directives.id })
+            .from(schema.directives)
+            .where(
+              and(
+                eq(schema.directives.agentId, agentId),
+                eq(schema.directives.userId, req.user.id),
+                eq(schema.directives.content, String(value)),
+              ),
+            )
+            .limit(1);
+          if (!existing)
+            await tx
+              .insert(schema.directives)
+              .values({ agentId, userId: req.user.id, content: String(value), priority: 5 });
+        } else {
+          if (!spec.column) throw AppError.fromHttpStatus(400, "Unknown configuration field");
+          await tx
+            .update(schema.agents)
+            .set({ [spec.column]: value })
+            .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+          if (field === "first_message") {
+            // Retire the previous Studio override in the same transaction so
+            // a reviewed Build greeting becomes the effective runtime greeting.
+            await tx
+              .delete(schema.directives)
+              .where(
+                and(
+                  eq(schema.directives.agentId, agentId),
+                  eq(schema.directives.userId, req.user.id),
+                  sql`left(${schema.directives.content}, ${OPENING_GREETING_PREFIX.length}) = ${OPENING_GREETING_PREFIX}`,
+                ),
+              );
+          }
+          if (field === "personality_vibe") {
+            const [current] = await tx
+              .select({ content: schema.personality.content })
+              .from(schema.personality)
+              .where(
+                and(
+                  eq(schema.personality.agentId, agentId),
+                  eq(schema.personality.userId, req.user.id),
+                ),
+              )
+              .limit(1);
+            const content = composeSetupPersonality(current?.content, String(value), true);
+            if (removesRegulatedTemplateProvenance(current?.content, content)) {
+              throw new AppError(
+                409,
+                "REGULATED_TEMPLATE_PROVENANCE_PROTECTED",
+                "This review-required Bot's regulated template marker cannot be removed.",
+              );
+            }
+            await tx
+              .insert(schema.personality)
+              .values({ agentId, userId: req.user.id, content })
+              .onConflictDoUpdate({
+                target: schema.personality.agentId,
+                set: { userId: req.user.id, content },
+              });
+          }
+        }
+      });
 
       log.info("workspace config change applied", { agentId, field });
       res.json({ success: true, field, label: spec.label, value });
@@ -622,18 +695,27 @@ router.post(
       if (!isAgentToolName(tool)) throw AppError.fromHttpStatus(400, "Unknown tool");
       if (typeof enable !== "boolean") throw AppError.fromHttpStatus(400, "enable must be boolean");
 
-      const agent = await findOwnedAgentProfile(agentId, req.user.id);
-      if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+      const next = await drizzle.transaction(async (tx) => {
+        // Each proposal changes one capability. Lock before reading the array
+        // so concurrent approvals cannot overwrite another saved toggle.
+        const [agent] = await tx
+          .select({ role: schema.agents.role, enabledTools: schema.agents.enabledTools })
+          .from(schema.agents)
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
+          .limit(1)
+          .for("update");
+        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
-      const next = enable
-        ? Array.from(new Set([...current, tool]))
-        : current.filter((t) => t !== tool);
-
-      await drizzle
-        .update(schema.agents)
-        .set({ enabledTools: normalizeEnabledTools(next) })
-        .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+        const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+        const updated = enable
+          ? Array.from(new Set([...current, tool]))
+          : current.filter((t) => t !== tool);
+        await tx
+          .update(schema.agents)
+          .set({ enabledTools: normalizeEnabledTools(updated) })
+          .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
+        return updated;
+      });
 
       log.info("workspace tool toggled", { agentId, tool, enable });
       res.json({ success: true, tool, enable, enabledTools: next });
@@ -691,8 +773,12 @@ router.post(
       if (!result.success) {
         throw AppError.fromHttpStatus(400, String(result.error || "Action failed"));
       }
-      log.info("workspace action executed", { agentId, kind });
-      res.json({ success: true, kind });
+      const queued = result.queued === true;
+      log.info(queued ? "workspace action queued for approval" : "workspace action executed", {
+        agentId,
+        kind,
+      });
+      res.json({ success: true, kind, queued });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace run-action failed", { error: getErrorMessage(e) });

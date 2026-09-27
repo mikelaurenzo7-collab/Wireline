@@ -53,10 +53,11 @@ export type WorkspaceFieldKey =
   | "slack_channel_id"
   | "name"
   | "auto_zoom_link"
-  | "autonomy_level";
+  | "autonomy_level"
+  | "operating_rule";
 
 interface FieldSpec {
-  /** Drizzle column name on `schema.agents`. */
+  /** Drizzle column on `schema.agents`; null for an additive directive. */
   column:
     | "firstMessage"
     | "personalityVibe"
@@ -73,13 +74,15 @@ interface FieldSpec {
     | "slackChannelId"
     | "name"
     | "autoZoomLink"
-    | "autonomyLevel";
+    | "autonomyLevel"
+    | null;
   label: string;
-  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url";
+  kind: "text" | "vibe" | "phone" | "email" | "boolean" | "url" | "directive";
   maxLen: number;
 }
 
 export const WORKSPACE_FIELDS: Record<WorkspaceFieldKey, FieldSpec> = {
+  operating_rule: { column: null, label: "Operating rule", kind: "directive", maxLen: 2000 },
   first_message: {
     column: "firstMessage",
     label: "Greeting (first message)",
@@ -243,6 +246,14 @@ export interface PlanWorkspaceInput {
     escalationEmail?: string | null;
     escalationPhone?: string | null;
     enabledTools?: unknown;
+    personality?: string;
+    directives?: Array<{ content?: string | null }>;
+    websiteUrl?: string | null;
+    timezone?: string | null;
+    emailAutoRespond?: boolean | null;
+    slackChannelId?: string | null;
+    autoZoomLink?: boolean | null;
+    autonomyLevel?: string | null;
   };
   recentCalls: Array<{
     summary?: string | null;
@@ -389,7 +400,7 @@ function buildSystemPrompt(input: PlanWorkspaceInput): string {
   const currentConfig = WORKSPACE_FIELD_KEYS.map((key) => {
     const spec = WORKSPACE_FIELDS[key];
     const col = spec.column;
-    const value = (agent as Record<string, unknown>)[col];
+    const value = col ? (agent as Record<string, unknown>)[col] : "(add one operating rule)";
     const display =
       value === null || value === undefined || value === "" ? "(not set)" : String(value);
     return `- ${key}: ${display}`;
@@ -430,11 +441,19 @@ Creative collaborator mode (chat-only, no extra tools required):
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
+- For an explicit new operating rule, use operating_rule with one complete, concise instruction. This appends a rule without replacing existing rules.
+- Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
 - Everything you propose is a PROPOSAL the Account Holder approves. Say so naturally ("I've drafted… approve it when ready").
 - Be decisive: if the Account Holder's intent is clear, prepare the change rather than asking clarifying questions.
 
 Allowlisted config fields (current values):
 ${currentConfig}
+
+Saved personality:
+${agent.personality || "(not set)"}
+
+Current operating rules:
+${agent.directives?.map((rule) => `- ${rule.content || ""}`).join("\n") || "(none)"}
 
 Your capabilities (toggle state):
 ${capabilityLines}
@@ -477,6 +496,11 @@ function validateFieldValue(field: WorkspaceFieldKey, raw: unknown): string | nu
     const lower = value.toLowerCase();
     return (WORKSPACE_VIBE_OPTIONS as readonly string[]).includes(lower) ? lower : null;
   }
+  if (spec.kind === "boolean") {
+    const normalized = value.toLowerCase();
+    return ["true", "false"].includes(normalized) ? normalized : null;
+  }
+  if (spec.kind === "url" && !/^https?:\/\//.test(value)) return null;
   if (spec.kind === "email") {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null;
   }
@@ -510,7 +534,7 @@ export function normalizePlan(
     for (const c of raw.config_changes) {
       if (!c || typeof c !== "object") continue;
       const field = (c as Record<string, unknown>).field;
-      if (typeof field !== "string" || !(field in WORKSPACE_FIELDS)) continue;
+      if (typeof field !== "string" || !Object.hasOwn(WORKSPACE_FIELDS, field)) continue;
       const key = field as WorkspaceFieldKey;
       if (seenFields.has(key)) continue;
       const value = validateFieldValue(key, (c as Record<string, unknown>).value);

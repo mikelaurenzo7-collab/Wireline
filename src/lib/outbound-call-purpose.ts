@@ -8,6 +8,18 @@ export type OutboundCallPurpose = (typeof OUTBOUND_CALL_PURPOSES)[number];
 
 export const OUTBOUND_CONSENT_VERSION = "tcpa-v1";
 
+/**
+ * Current product capability, shared by customer guidance and readiness.
+ * This descriptor never authorizes a call. The server must independently
+ * verify recipient evidence before this capability can become available.
+ */
+export const DIRECT_OUTBOUND_AVAILABILITY = Object.freeze({
+  available: false,
+  code: "AUDITABLE_RECIPIENT_CONSENT",
+  message:
+    "Outbound calls require verified consent from each recipient. Consent setup is not available yet.",
+});
+
 export function isOutboundCallPurpose(value: unknown): value is OutboundCallPurpose {
   return typeof value === "string" && (OUTBOUND_CALL_PURPOSES as readonly string[]).includes(value);
 }

@@ -84,7 +84,7 @@ Candidate code surfaces:
 Run this cadence before turning on paid traffic and again after each production deploy that touches
 billing, auth, runtime providers, telephony, or public claims:
 
-1. Verify the active Vercel production deployment is READY and runtime logs show no new 5xx cluster.
+1. Verify Render production services are live on the exact reviewed source and runtime logs show no new 5xx cluster, using the deployment runbook's release proof requirements.
 2. Review read-only provider configuration, then exercise the approved controlled live billing
    lifecycle in the deployment runbook. Retain sandbox regression coverage separately; do not
    create charges or subscriptions merely to produce an audit result.

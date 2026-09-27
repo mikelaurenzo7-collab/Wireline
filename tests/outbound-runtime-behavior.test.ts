@@ -145,6 +145,75 @@ describe("outbound dial gate runtime", () => {
     expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
   });
 
+  it.each([undefined, false])(
+    "rejects legacy metadata consent when server-verified consent is %s",
+    async (hasExpressWrittenConsent) => {
+      vi.doMock("../src/lib/server-context", () => ({
+        drizzle: {
+          select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+        },
+        log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      }));
+      vi.doMock("../src/lib/tcpa-calling-hours", () => ({
+        resolveCallingHoursForPhone: () => ({ allowed: true }),
+      }));
+      vi.doMock("../src/lib/federal-dnc-service", () => ({
+        assertFederalDncForMarketing: () => ({ allowed: true }),
+        isFederalDncListed: async () => false,
+      }));
+      vi.doMock("../src/lib/compliance", () => ({ isDncBlocked: async () => false }));
+
+      const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+      const result = await evaluateOutboundDialGate({
+        userId: "tenant-user",
+        phone: "+13125551234",
+        isMarketingCall: true,
+        metadata: { has_express_written_consent: true },
+        hasExpressWrittenConsent,
+      });
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: "blocked_tcpa",
+        tcpaDecision: { abort_reason: "no_express_consent_required" },
+      });
+    },
+  );
+
+  it("preserves a server-confirmed callback without trusting stored marketing consent", async () => {
+    const select = vi.fn();
+    const assertFederalDncForMarketing = vi.fn();
+    const isDncBlocked = vi.fn(async () => false);
+    const isFederalDncListed = vi.fn(async () => false);
+    const resolveCallingHoursForPhone = vi.fn(() => ({ allowed: true }));
+    vi.doMock("../src/lib/server-context", () => ({
+      drizzle: { select },
+      log: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+    }));
+    vi.doMock("../src/lib/tcpa-calling-hours", () => ({ resolveCallingHoursForPhone }));
+    vi.doMock("../src/lib/federal-dnc-service", () => ({
+      assertFederalDncForMarketing,
+      isFederalDncListed,
+    }));
+    vi.doMock("../src/lib/compliance", () => ({ isDncBlocked }));
+
+    const { evaluateOutboundDialGate } = await import("../src/lib/outbound-dial-gate");
+    const result = await evaluateOutboundDialGate({
+      userId: "tenant-user",
+      phone: "+13125551234",
+      isRequestedCallback: true,
+      hasExpressWrittenConsent: false,
+      metadata: { has_express_written_consent: false },
+    });
+
+    expect(result.allowed).toBe(true);
+    expect(resolveCallingHoursForPhone).toHaveBeenCalledWith("+13125551234");
+    expect(isDncBlocked).toHaveBeenCalledWith("tenant-user", "+13125551234");
+    expect(isFederalDncListed).toHaveBeenCalledWith("+13125551234");
+    expect(assertFederalDncForMarketing).not.toHaveBeenCalled();
+    expect(select).not.toHaveBeenCalled();
+  });
+
   it("writes JSON-safe duplicate_of_lead_id when another lead was called recently", async () => {
     const otherId = 1234567890123456789n;
     const limit = vi.fn(async () => [{ id: otherId }]);

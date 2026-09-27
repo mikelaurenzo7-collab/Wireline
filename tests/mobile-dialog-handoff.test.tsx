@@ -261,12 +261,9 @@ describe("mobile dialog handoff", () => {
 });
 
 describe("outbound dialog viewport ownership", () => {
-  it("keeps expanded consent in the scrollable body and actions outside it", () => {
+  it("explains unavailable dialing before collecting a futile form, with reachable recovery links", () => {
     const component = () => OutboundDialDialog({ open: true, onClose: vi.fn() });
-    let nodes = render(component);
-    nodes.find((node) => node.type === "select" && node.props.value === "service_or_requested")!
-      .props.onChange!({ target: { value: "marketing_or_sales" } });
-    nodes = render(component);
+    const nodes = render(component);
     const content = nodes.find((node) => node.type === "dialog-content")!;
     const classes = cn(dialogContentVariants(), content.props.className).split(" ");
     expect(classes).toContain("flex");
@@ -275,7 +272,9 @@ describe("outbound dialog viewport ownership", () => {
     expect(classes).toContain("max-h-[calc(100dvh-2rem)]");
     const body = nodes.find((node) => node.props.className?.includes("overflow-y-auto"))!;
     expect(body.props.className).toContain("min-h-0");
-    expect(descendants(body).some((node) => node.type === "textarea")).toBe(true);
+    expect(
+      descendants(body).some((node) => ["input", "textarea", "select"].includes(String(node.type))),
+    ).toBe(false);
     expect(descendants(body).some((node) => node.type === "a")).toBe(true);
     expect(descendants(body).some((node) => node.type === "dialog-footer")).toBe(false);
     expect(nodes.find((node) => node.type === "dialog-footer")!.props.className).toContain(
@@ -284,5 +283,14 @@ describe("outbound dialog viewport ownership", () => {
     expect(nodes.find((node) => node.type === "dialog-header")!.props.className).toContain(
       "shrink-0",
     );
+    expect(
+      nodes.some((node) => node.type === "button" && node.props.children === "Place call"),
+    ).toBe(false);
+    expect(
+      nodes.some((node) => node.type === "a" && node.props.children === "Test in Studio"),
+    ).toBe(true);
+    expect(
+      nodes.some((node) => node.type === "a" && node.props.children === "Review compliance"),
+    ).toBe(true);
   });
 });

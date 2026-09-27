@@ -4,6 +4,7 @@ type Handler = (req: unknown, res: unknown) => Promise<unknown>;
 const h = vi.hoisted(() => ({
   routes: new Map<string, Handler>(),
   directives: [] as string[],
+  firstMessage: null as string | null,
   lockTail: Promise.resolve(),
 }));
 vi.mock("express", () => ({
@@ -59,6 +60,13 @@ vi.mock("../src/lib/server-context", async () => {
               await new Promise((resolve) => setImmediate(resolve));
             },
           }),
+          update: () => ({
+            set: ({ firstMessage }: { firstMessage: string | null }) => ({
+              where: async () => {
+                h.firstMessage = firstMessage;
+              },
+            }),
+          }),
           insert: () => ({
             values: async ({ content }: { content: string }) => {
               h.directives.push(content);
@@ -91,15 +99,18 @@ function save(content: string) {
 beforeEach(() => {
   h.directives = ["Keep customer data private."];
   h.lockTail = Promise.resolve();
+  h.firstMessage = "Original greeting";
 });
 
 describe("greeting replacement concurrency", () => {
   it("keeps only the latest greeting when two sessions save together", async () => {
     await Promise.all([save("Opening greeting: Hello."), save("Opening greeting: Welcome.")]);
     expect(h.directives).toEqual(["Keep customer data private.", "Opening greeting: Welcome."]);
+    expect(h.firstMessage).toBe("Welcome.");
   });
   it("can clear a greeting while another session is saving it", async () => {
     await Promise.all([save("Opening greeting: Hello."), save("")]);
     expect(h.directives).toEqual(["Keep customer data private."]);
+    expect(h.firstMessage).toBeNull();
   });
 });

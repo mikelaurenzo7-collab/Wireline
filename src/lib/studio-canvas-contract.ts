@@ -110,15 +110,18 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "chat-workroom", pattern: /<StudioWorkroom/ },
     { id: "review-panel", pattern: /StudioAgentReviewPanel/ },
     { id: "shared-agent-hook", pattern: /useStudioActiveAgentId/ },
-    // Request lifetimes are isolated by Bot and mode; drafts live above them.
-    { id: "workroom-key", pattern: /<StudioWorkroom[\s\S]*key=\{workroomKey\}/ },
+    // Request lifetimes are isolated by account, Bot and mode; drafts live above them.
+    {
+      id: "workroom-key",
+      pattern: /<StudioWorkroom[\s\S]*key=\{`\$\{user\?\.id\}:\$\{workroomKey\}`\}/,
+    },
     {
       id: "workroom-mode-isolation",
       pattern: /const workroomKey = `\$\{active\.id\}:\$\{workroomMode\}`/,
     },
     {
       id: "workroom-draft-preservation",
-      pattern: /initialDraft=\{workroomDraftsRef\.current\.get\(workroomKey\)\}/,
+      pattern: /initialDraft=\{workroomDrafts\.get\(workroomKey\)\}/,
     },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
     { id: "empty-state", pattern: /Build Your Bot/i },

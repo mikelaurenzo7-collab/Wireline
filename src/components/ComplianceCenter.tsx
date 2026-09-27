@@ -5,6 +5,7 @@ import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
 import type { ConsentLedgerEvent } from "../lib/tcpa-consent";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 import { Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -156,10 +157,18 @@ export default function ComplianceCenter() {
                 </dd>
               </div>
             </dl>
-            {!summary.federal_dnc_configured ? (
-              <StatusNotice tone="warning" title="Federal DNC Setup Pending">
-                Marketing dials stay blocked until BotBound completes federal DNC setup. Studio
-                non-marketing dials still use your workspace DNC list and TCPA consent.{" "}
+            {!DIRECT_OUTBOUND_AVAILABILITY.available || !summary.federal_dnc_configured ? (
+              <StatusNotice
+                tone="warning"
+                title={
+                  DIRECT_OUTBOUND_AVAILABILITY.available
+                    ? "Federal DNC Setup Pending"
+                    : "Outbound calls unavailable"
+                }
+              >
+                {!DIRECT_OUTBOUND_AVAILABILITY.available
+                  ? DIRECT_OUTBOUND_AVAILABILITY.message
+                  : "Marketing calls remain blocked until federal DNC setup is complete."}{" "}
                 <Link to="/security" className="text-primary underline underline-offset-2">
                   Open Trust / Security
                 </Link>

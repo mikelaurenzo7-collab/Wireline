@@ -4,7 +4,8 @@ import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { defaultBotMarkKey, isBotMarkKey, type BotMarkKey } from "../lib/bot-mark";
-import { composeSetupPersonality } from "../lib/compose-setup-personality";
+import { composeSetupPersonality, readSetupDeliveryTone } from "../lib/compose-setup-personality";
+import { OPENING_GREETING_PREFIX } from "../lib/agent-greeting";
 import { AGENTS_CHANGED_EVENT, useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -37,20 +38,33 @@ type StudioAgentWorkspacePanelProps = {
 type AgentSetupResponse = {
   mark_key?: string | null;
   personality?: string;
+  openingGreeting?: string | null;
+  firstMessage?: string | null;
   directives?: Array<{ content?: string }>;
 };
 
 function inferPersonality(value: string | undefined) {
-  const normalized = value?.toLowerCase() ?? "";
-  return PERSONALITIES.find((option) => normalized.includes(option.toLowerCase())) ?? "Clear";
+  const normalized = readSetupDeliveryTone(value).toLowerCase();
+  return (
+    [...PERSONALITIES, "Playful", "Authoritative"].find((option) =>
+      normalized.includes(option.toLowerCase()),
+    ) ?? "Clear"
+  );
 }
 
 /** Marks the single directive row that holds this agent's opening greeting. */
-const GREETING_PREFIX = "Opening greeting:";
+const GREETING_PREFIX = OPENING_GREETING_PREFIX;
 
-function existingGreeting(directives: AgentSetupResponse["directives"]) {
-  const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
-  return match?.content?.slice(GREETING_PREFIX.length).trim() ?? "";
+function existingGreeting(config: AgentSetupResponse) {
+  const match = config.directives?.find((directive) =>
+    directive.content?.startsWith(GREETING_PREFIX),
+  );
+  return (
+    config.openingGreeting?.trim() ||
+    match?.content?.slice(GREETING_PREFIX.length).trim() ||
+    config.firstMessage?.trim() ||
+    ""
+  );
 }
 
 export default function StudioAgentWorkspacePanel({
@@ -86,6 +100,9 @@ export default function StudioAgentWorkspacePanel({
     knowledge: setupKnowledge,
   } = snapshot.values;
   const applyingSetup = snapshot.saving;
+  const toneOptions = PERSONALITIES.some((tone) => tone === setupPersonality)
+    ? PERSONALITIES
+    : [...PERSONALITIES, setupPersonality];
   useEffect(
     () => setupDrafts.subscribe(agentId, () => refreshDraft((current) => current + 1)),
     [agentId, setupDrafts],
@@ -109,6 +126,17 @@ export default function StudioAgentWorkspacePanel({
   const [reloadKey, setReloadKey] = useState(0);
   const activeAgentIdRef = useRef(agentId);
 
+  useEffect(() => {
+    const reload = () => setReloadKey((current) => current + 1);
+    window.addEventListener(AGENTS_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(AGENTS_CHANGED_EVENT, reload);
+  }, []);
+
+  useEffect(() => {
+    setSetupError(null);
+    setSetupNotice(null);
+  }, [agentId, user?.id]);
+
   useLayoutEffect(() => {
     activeAgentIdRef.current = agentId;
     activeUserIdRef.current = user?.id ?? null;
@@ -122,8 +150,6 @@ export default function StudioAgentWorkspacePanel({
     let cancelled = false;
     setLoadingSetup(true);
     setSetupLoadError(null);
-    setSetupError(null);
-    setSetupNotice(null);
     const recovered = user?.id ? readCreateBrief(user.id, agentId) : "";
     setupDrafts.seedKnowledge(agentId, recovered);
     setRecoveringBrief(Boolean(recovered));
@@ -142,7 +168,7 @@ export default function StudioAgentWorkspacePanel({
             markKey: isBotMarkKey(data.mark_key) ? data.mark_key : defaultBotMarkKey(agentId),
             loadedPersonality: personality || null,
             tone: inferPersonality(personality),
-            greeting: existingGreeting(data.directives),
+            greeting: existingGreeting(data),
             knowledge: "",
           },
           startedRevision,
@@ -188,6 +214,7 @@ export default function StudioAgentWorkspacePanel({
       isCreateBriefRecoveryOwner(setupUserId);
     setSetupError(null);
     setSetupNotice(null);
+    let confirmedChange = false;
     try {
       const personalityText = composeSetupPersonality(
         loadedPersonality,
@@ -210,8 +237,8 @@ export default function StudioAgentWorkspacePanel({
         );
       }
       setupDrafts.confirm(setupAgentId, { markKey: setupMarkKey }, { markKey: setupMarkKey });
+      confirmedChange = true;
       if (!isCurrentAgent()) return;
-      window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
       await saveManual("personality", personalityText);
       setupDrafts.confirm(
         setupAgentId,
@@ -263,6 +290,8 @@ export default function StudioAgentWorkspacePanel({
       }
     } finally {
       setupDrafts.endSave(setupAgentId);
+      if (confirmedChange && isCurrentAgent())
+        window.dispatchEvent(new Event(AGENTS_CHANGED_EVENT));
     }
   }
 
@@ -324,7 +353,7 @@ export default function StudioAgentWorkspacePanel({
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold text-foreground">Tone</legend>
                 <div className="wl-studio-tone-options grid gap-2">
-                  {PERSONALITIES.map((option) => {
+                  {toneOptions.map((option) => {
                     const selected = setupPersonality === option;
                     return (
                       <button

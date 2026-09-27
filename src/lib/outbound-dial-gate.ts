@@ -54,6 +54,7 @@ export async function evaluateOutboundDialGate(opts: {
   /** Outbound lead primary key (bigint column). */
   leadId?: bigint | number | string;
   lastCalledAt?: Date | null;
+  /** Lead context only. Stored metadata never establishes written consent. */
   metadata?: Record<string, unknown>;
   /** Marketing/campaign/intake default to true; direct service calls pass false. */
   isMarketingCall?: boolean;
@@ -62,7 +63,7 @@ export async function evaluateOutboundDialGate(opts: {
    * when an untrusted direct-dial client labels the call non-marketing.
    */
   requireFederalDncScreening?: boolean;
-  /** Explicit consent override; falls back to metadata.has_express_written_consent. */
+  /** Written consent independently verified by the server at this boundary. */
   hasExpressWrittenConsent?: boolean;
   /**
    * Caller-requested callbacks are a distinct TCPA class: the consumer asked,
@@ -81,11 +82,10 @@ export async function evaluateOutboundDialGate(opts: {
   const isRequestedCallback = opts.isRequestedCallback === true || isLiveSessionFollowUp;
   const isMarketingCall = isRequestedCallback ? false : opts.isMarketingCall !== false;
   const requiresFederalDncScreening = isMarketingCall || opts.requireFederalDncScreening === true;
-  const metadata = opts.metadata || {};
-  const hasExpressWrittenConsent =
-    opts.hasExpressWrittenConsent === true ||
-    metadata.has_express_written_consent === true ||
-    isRequestedCallback;
+  // Legacy imports could persist a client-supplied consent boolean. Every
+  // execution path must reject that claim, including cadences and deferred
+  // intake/callback jobs that read records created before input sanitization.
+  const hasExpressWrittenConsent = opts.hasExpressWrittenConsent === true || isRequestedCallback;
 
   if (requiresFederalDncScreening) {
     const federalGate = assertFederalDncForMarketing();

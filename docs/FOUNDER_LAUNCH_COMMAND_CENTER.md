@@ -51,7 +51,7 @@ A release is current only when evidence is collected against the exact `main` co
 For every release, verify rather than copy forward:
 
 - exact Git SHA and verified source state;
-- Vercel production READY state and intended aliases;
+- Render API, voice worker, and schedulers live on that exact source, with the intended production domain;
 - release-boundary and full non-E2E test results;
 - app, server, and audit-module TypeScript;
 - zero-warning ESLint;
@@ -73,7 +73,7 @@ These are real external readiness items, not reasons to rewrite working product 
 Verify signed delivery feedback through both controls:
 
 1. Resend has a production webhook pointing at `https://botbound.app/api/webhooks/resend`;
-2. `RESEND_WEBHOOK_SECRET` is set in production Vercel.
+2. `RESEND_WEBHOOK_SECRET` is set on the production Render API.
 
 The receiver, schema, suppression semantics, and rollback path are already implemented. See `docs/RESEND_DELIVERY_FEEDBACK.md`.
 
@@ -110,7 +110,7 @@ Record current evidence after verification; do not copy old dollar balances or c
 ## Not launch blockers by themselves
 
 - **Supabase Auth leaked-password advisory:** BotBound customer passwords use the custom scrypt/HIBP-screened auth path, not Supabase Auth. Do not present the Supabase Auth toggle as a customer-auth control unless that architecture changes.
-- **GitHub hosted-runner billing failure:** restore CI when the account permits it, but do not call a runner-startup/billing failure a code regression. Exact-head Vercel deep certification remains the release gate while that external condition persists.
+- **GitHub hosted-runner billing failure:** restore CI when the account permits it, but do not call a runner-startup/billing failure a code regression. Exact-head verification and Render release certification in `docs/DEPLOYMENT_RUNBOOK.md` remain required while that external condition persists.
 - **Unused-index advisor notices on demo/test data:** do not delete indexes based on pre-customer statistics alone.
 
 ## First-customer gate
@@ -158,7 +158,7 @@ The repaired historical derivatives remain QA/editing drafts until exact-product
 
 **GO** only when:
 
-- exact `main` is deployed READY;
+- exact `main` is live on the required Render services;
 - public health is healthy and authenticated voice-reliability evidence shows no material degradation;
 - no new production error/fatal cluster is present;
 - required production env gate passes;

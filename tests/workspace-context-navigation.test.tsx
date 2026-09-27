@@ -55,6 +55,7 @@ vi.mock("react", async (original) => ({
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (callback: unknown) => callback,
   useImperativeHandle: () => {},
+  useSyncExternalStore: (_subscribe: unknown, getSnapshot: () => unknown) => getSnapshot(),
 }));
 vi.mock("react-router", () => ({
   Link: "a",
@@ -63,6 +64,7 @@ vi.mock("react-router", () => ({
   useNavigate: () => h.navigate,
 }));
 vi.mock("../src/contexts/AgentsContext", () => ({
+  AGENTS_CHANGED_EVENT: "wireline:agents-changed",
   useAgents: () => ({
     agents: h.agents,
     loading: h.agentsLoading,
@@ -227,7 +229,13 @@ beforeEach(() => {
   h.preferred = "bot-b";
   h.fetch.mockReset();
   h.navigate.mockReset();
-  vi.stubGlobal("window", { localStorage: { getItem: () => "bot-b" }, setTimeout, clearTimeout });
+  vi.stubGlobal("window", {
+    localStorage: { getItem: () => "bot-b" },
+    setTimeout,
+    clearTimeout,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
 });
 afterEach(() => vi.unstubAllGlobals());
 

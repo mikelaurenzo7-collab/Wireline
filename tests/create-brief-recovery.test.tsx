@@ -164,7 +164,11 @@ beforeEach(() => {
   });
   setCreateBriefRecoveryOwner(null);
   setCreateBriefRecoveryOwner(h.userId);
-  vi.stubGlobal("window", { dispatchEvent: vi.fn() });
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
   vi.stubGlobal("requestAnimationFrame", (callback: () => void) => {
     callback();
     return 1;

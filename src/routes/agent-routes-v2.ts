@@ -1,3 +1,4 @@
+import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../lib/agent-greeting";
 import { Router, type Response } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
@@ -604,6 +605,7 @@ router.get(
         const agentRows = await tx
           .select({
             name: schema.agents.name,
+            firstMessage: schema.agents.firstMessage,
             markKey: schema.agents.markKey,
             role: schema.agents.role,
             archetype: schema.agents.archetype,
@@ -683,6 +685,8 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
+      firstMessage: record?.firstMessage || null,
+      openingGreeting: resolveAgentGreeting(record || {}, directives),
       role: record?.role || "customer_service",
       archetype: record?.archetype || "Assistant",
       flowConfig: record?.flowConfig || null,
@@ -791,6 +795,17 @@ router.post(
               sql`left(${schema.directives.content}, ${replacePrefix.length}) = ${replacePrefix}`,
             ),
           );
+          // Keep the canonical first-message value in sync so older clients
+          // and non-Studio surfaces also use the confirmed greeting. Clearing
+          // it restores the generated default instead of a stale old greeting.
+          if (replacePrefix === OPENING_GREETING_PREFIX) {
+            await tx
+              .update(schema.agents)
+              .set({ firstMessage: content.slice(OPENING_GREETING_PREFIX.length).trim() || null })
+              .where(
+                and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)),
+              );
+          }
           if (content) {
             await tx.insert(schema.directives).values({
               agentId: req.params.id,

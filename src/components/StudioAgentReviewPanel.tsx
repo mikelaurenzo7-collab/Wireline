@@ -7,12 +7,15 @@ import { StatusNotice } from "./molecules";
 import { authFetch } from "../lib/api";
 import { formatAgentRoleLabel } from "../lib/product-copy";
 import { resolveVoiceLabel } from "../lib/voice-catalog";
-
-const GREETING_PREFIX = "Opening greeting:";
+import { resolveAgentGreeting } from "../lib/agent-greeting";
+import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
+import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
 
 type AgentConfigResponse = {
   role?: string | null;
   personality?: string | null;
+  openingGreeting?: string | null;
+  firstMessage?: string | null;
   directives?: Array<{ content?: string | null }>;
   voice?: {
     voiceId?: string | null;
@@ -33,16 +36,12 @@ type StudioAgentReviewPanelProps = {
   compact?: boolean;
 };
 
-function openingGreeting(directives: AgentConfigResponse["directives"]) {
-  const match = directives?.find((directive) => directive.content?.startsWith(GREETING_PREFIX));
-  return match?.content?.slice(GREETING_PREFIX.length).trim() || "Uses the standard greeting";
-}
-
 function toneLabel(personality?: string | null) {
-  const value = personality?.trim();
+  const value = readSetupDeliveryTone(personality);
   if (!value) return "Clear and professional";
 
-  const normalized = value.toLowerCase().replace(/[\s_-]+/g, " ");
+  const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
+  const normalized = sentence.toLowerCase().replace(/[\s_-]+/g, " ");
   const knownTone: Record<string, string> = {
     business: "Clear and professional",
     clear: "Clear and professional",
@@ -51,10 +50,13 @@ function toneLabel(personality?: string | null) {
     warm: "Warm and natural",
     friendly: "Friendly and conversational",
     concise: "Concise and direct",
+    playful: "Playful",
+    authoritative: "Authoritative",
+    polished: "Polished",
+    energetic: "Energetic",
   };
   if (knownTone[normalized]) return knownTone[normalized];
 
-  const sentence = value.split(/[.\n]/)[0]?.trim() || "Clear and professional";
   return sentence.length > 80 ? `${sentence.slice(0, 77).trimEnd()}…` : sentence;
 }
 
@@ -71,6 +73,13 @@ export default function StudioAgentReviewPanel({
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const reload = () => setReloadKey((current) => current + 1);
+    window.addEventListener(AGENTS_CHANGED_EVENT, reload);
+    return () => window.removeEventListener(AGENTS_CHANGED_EVENT, reload);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,7 +106,7 @@ export default function StudioAgentReviewPanel({
     return () => {
       cancelled = true;
     };
-  }, [agentId]);
+  }, [agentId, reloadKey]);
 
   const voiceName = resolveVoiceLabel(
     config?.voice?.provider?.trim().toLowerCase() === "presenter"
@@ -152,7 +161,15 @@ export default function StudioAgentReviewPanel({
               {[
                 { label: "Role", value: role },
                 { label: "Tone", value: toneLabel(config?.personality) },
-                { label: "Greeting", value: openingGreeting(config?.directives) },
+                {
+                  label: "Greeting",
+                  value:
+                    config?.openingGreeting?.trim() ||
+                    resolveAgentGreeting(
+                      { name: agentName, firstMessage: config?.firstMessage },
+                      config?.directives,
+                    ),
+                },
                 { label: "Phone voice", value: voiceName },
               ].map((item) => (
                 <div key={item.label} className="py-3 first:pt-0 last:pb-0">

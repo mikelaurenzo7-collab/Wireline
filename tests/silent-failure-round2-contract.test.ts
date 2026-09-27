@@ -173,7 +173,11 @@ describe("SMS inbox never paints one thread's messages under another's header", 
 describe("the opening greeting is replaced, not appended", () => {
   it("always sends the greeting as a prefix replace, including when cleared", () => {
     const panel = read("src/components/StudioAgentWorkspacePanel.tsx");
-    expect(panel).toContain('const GREETING_PREFIX = "Opening greeting:"');
+    expect(read("src/lib/agent-greeting.ts")).toContain(
+      'OPENING_GREETING_PREFIX = "Opening greeting:"',
+    );
+    expect(panel).toContain('import { OPENING_GREETING_PREFIX } from "../lib/agent-greeting"');
+    expect(panel).toContain("const GREETING_PREFIX = OPENING_GREETING_PREFIX");
     expect(panel).toContain("GREETING_PREFIX,");
     // The old shape gated the call on a non-empty greeting, so clearing no-op'd.
     expect(panel).not.toContain("if (greetingTrimmed) {");

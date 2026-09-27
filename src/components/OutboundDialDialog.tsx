@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Loader2, Phone } from "lucide-react";
 
@@ -21,7 +21,10 @@ import {
   OUTBOUND_CONSENT_LEARN_MORE,
   OUTBOUND_CONSENT_LEGAL_PATH,
 } from "../lib/outbound-consent-copy";
-import type { OutboundCallPurpose } from "../lib/outbound-call-purpose";
+import {
+  DIRECT_OUTBOUND_AVAILABILITY,
+  type OutboundCallPurpose,
+} from "../lib/outbound-call-purpose";
 import { emitProductEvent } from "../lib/product-event-client";
 
 type OutboundDialDialogProps = {
@@ -57,6 +60,14 @@ export default function OutboundDialDialog({
   const [callPurpose, setCallPurpose] = useState<OutboundCallPurpose>("service_or_requested");
   const [consentConfirmed, setConsentConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const openingUrlRef = useRef("");
+  const closingForNavigationRef = useRef(false);
+
+  const closeForNavigation = () => {
+    closingForNavigationRef.current = true;
+    onClose();
+  };
 
   // Reset the form when the dialog opens or its seed values change — but NOT
   // when the agents list refreshes in the background. Keeping `voiceAgents` in
@@ -86,6 +97,7 @@ export default function OutboundDialDialog({
   }, [open, agentId, initialAgentId, voiceAgents]);
 
   const canPlace =
+    DIRECT_OUTBOUND_AVAILABILITY.available &&
     !placing &&
     !!agentId &&
     number.trim().length > 0 &&
@@ -153,6 +165,32 @@ export default function OutboundDialDialog({
       <DialogContent
         showClose={!placing}
         aria-busy={placing}
+        onOpenAutoFocus={() => {
+          // Controlled callers have no DialogTrigger for Radix to restore.
+          openerRef.current =
+            document.activeElement instanceof HTMLElement &&
+            document.activeElement !== document.body
+              ? document.activeElement
+              : null;
+          openingUrlRef.current = window.location.href;
+          closingForNavigationRef.current = false;
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const opener = openerRef.current;
+          openerRef.current = null;
+          // Destination-page focus takes precedence when a link leaves the dialog.
+          if (closingForNavigationRef.current || openingUrlRef.current !== window.location.href) {
+            return;
+          }
+          if (
+            opener?.isConnected &&
+            opener.getClientRects().length &&
+            !opener.matches(":disabled")
+          ) {
+            opener.focus({ preventScroll: true });
+          }
+        }}
         onEscapeKeyDown={(event) => {
           if (placing) event.preventDefault();
         }}
@@ -167,12 +205,35 @@ export default function OutboundDialDialog({
             New Outbound Call
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            Pick a Bot with a live line, enter a number, and classify the call before dialing.
+            {DIRECT_OUTBOUND_AVAILABILITY.available
+              ? "Pick a Bot with a live line, enter a number, and classify the call before dialing."
+              : "Outbound calling is not available yet."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain">
-          {loading ? (
+          {!DIRECT_OUTBOUND_AVAILABILITY.available ? (
+            <div className="space-y-4 px-6 py-5">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {DIRECT_OUTBOUND_AVAILABILITY.message}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link
+                    to={`/studio?workroom=test${initialAgentId ? `&agent=${encodeURIComponent(initialAgentId)}` : ""}`}
+                    onClick={closeForNavigation}
+                  >
+                    Test in Studio
+                  </Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link to="/settings/compliance" onClick={closeForNavigation}>
+                    Review compliance
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          ) : loading ? (
             <div className="flex items-center gap-2 px-6 py-8 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               Loading Bots…
@@ -190,7 +251,11 @@ export default function OutboundDialDialog({
           ) : voiceAgents.length === 0 ? (
             <p className="px-6 py-8 text-sm text-muted-foreground">
               No Bots with a phone line yet.{" "}
-              <Link to="/studio?create=1" className="text-brand underline underline-offset-2">
+              <Link
+                to="/studio?create=1"
+                onClick={closeForNavigation}
+                className="text-brand underline underline-offset-2"
+              >
                 Create and activate one in Studio
               </Link>
               .
@@ -268,6 +333,7 @@ export default function OutboundDialDialog({
                     </span>
                     <Link
                       to={OUTBOUND_CONSENT_LEGAL_PATH}
+                      onClick={closeForNavigation}
                       className="text-xs text-brand underline-offset-2 hover:underline"
                     >
                       {OUTBOUND_CONSENT_LEARN_MORE}
@@ -281,18 +347,20 @@ export default function OutboundDialDialog({
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-[var(--wireline-color-surface-default)] px-6 py-4 sm:gap-0">
           <Button type="button" variant="secondary" onClick={onClose} disabled={placing}>
-            Cancel
+            {DIRECT_OUTBOUND_AVAILABILITY.available ? "Cancel" : "Close"}
           </Button>
-          <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
-            {placing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                Placing…
-              </>
-            ) : (
-              "Place call"
-            )}
-          </Button>
+          {DIRECT_OUTBOUND_AVAILABILITY.available ? (
+            <Button type="button" onClick={() => void placeCall()} disabled={!canPlace}>
+              {placing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Placing…
+                </>
+              ) : (
+                "Place call"
+              )}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,3 +1,4 @@
+import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { Router, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -149,7 +150,7 @@ router.post(
         "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
         "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
         savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
-        agent.firstMessage ? `Preferred opening: ${agent.firstMessage}` : "",
+        `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",
         knowledgeLines.length ? `Knowledge facts:\n- ${knowledgeLines.join("\n- ")}` : "",
         businessProfile ? `Workspace profile: ${businessProfile}` : "",
@@ -217,6 +218,7 @@ router.post(
         );
 
         const reply = typeof result?.reply === "string" ? result.reply.trim() : "";
+        if (!reply) throw new Error("The private rehearsal did not return a reply. Try again.");
         sse.write("reply", { reply, changes: [], toolToggles: [], actions: [] });
         sse.write("done", {
           reply,
