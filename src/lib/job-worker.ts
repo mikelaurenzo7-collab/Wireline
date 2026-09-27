@@ -470,13 +470,13 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
       throw new Error("Paid Bot identity job contains an invalid tenant payload.");
     }
     const result = await ensurePaidBotIdentity({ userId: ownerId, agentId });
-    if (result.eligible && !result.phone) {
+    if (result.eligible && result.selectionRequired) {
       // A choice may be persisted while this attempt is still running. Keep a
       // claimable follow-up without consuming retries or marking an incomplete
       // identity successful; the selection request can reuse this same job.
       throw new ProviderSpendPausedError(
         job.type,
-        "Choose a number in Phone setup before managed email setup can continue.",
+        "Choose a number in Phone setup to finish activation.",
       );
     }
     await persistJobResult(job.id, {
