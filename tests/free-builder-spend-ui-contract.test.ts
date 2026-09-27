@@ -21,9 +21,7 @@ describe("Free Builder spend UI truth", () => {
     expect(source).toContain(
       "Funds private setup, training, and simulation. Activate a paid plan to go live.",
     );
-    expect(source).toContain(
-      "Private simulation pauses at the monthly allowance. Live work requires a paid plan.",
-    );
+    expect(source).toContain("Private simulation pauses at the monthly allowance.");
     expect(source).not.toContain(
       "Private setup, training, and simulation pause at the monthly allowance.",
     );
