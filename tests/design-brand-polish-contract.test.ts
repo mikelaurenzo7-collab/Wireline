@@ -278,9 +278,10 @@ describe("E2E design and BotBound brand polish", () => {
     const offenders = files.filter((file) => {
       const text = source(file);
       return (
-        // Inspect JSX attributes; a DOM selector does not declare a dialog.
-        hasModalElement(text) &&
-        !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text)
+        // Named components already satisfy this contract. Only parse the
+        // remaining files; a DOM selector alone does not declare a dialog.
+        !/DialogTitle|aria-labelledby|aria-label=|wl-dialog-title|<h[1-3]/.test(text) &&
+        hasModalElement(text)
       );
     });
     expect(offenders, `dialogs need an accessible name contract:\n${offenders.join("\n")}`).toEqual(

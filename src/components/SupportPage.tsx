@@ -22,7 +22,8 @@ export function SupportPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [receiptEmail, setReceiptEmail] = useState<string | null>(null);
+  const submitted = receiptEmail !== null;
   const [error, setError] = useState<string | null>(null);
   const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
   const confirmationDescriptionId = useId();
@@ -54,7 +55,7 @@ export function SupportPage() {
       }
       const payload = (await response.json().catch(() => null)) as { sent?: boolean } | null;
       if (!payload?.sent) throw new Error("Support ticket was not delivered.");
-      setSubmitted(true);
+      setReceiptEmail(email);
       if (typeof window !== "undefined" && (window as any).plausible) {
         (window as any).plausible("SupportTicketSubmitted", { props: { issueType } });
       }
@@ -134,7 +135,7 @@ export function SupportPage() {
                 id={confirmationDescriptionId}
                 className="mt-2 text-sm leading-6 text-muted-foreground"
               >
-                We'll follow up at <strong className="text-foreground">{email}</strong>.
+                We'll follow up at <strong className="text-foreground">{receiptEmail}</strong>.
               </p>
             </div>
           ) : (

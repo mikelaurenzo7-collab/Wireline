@@ -53,6 +53,7 @@ vi.mock("../src/components/ui/shadcn/Input", () => ({ Input: "input" }));
 type Props = {
   children?: ReactNode;
   value?: string;
+  disabled?: boolean;
   href?: string;
   role?: string;
   id?: string;
@@ -248,7 +249,7 @@ describe.each([
     expect(fallback()).toBeUndefined();
   });
 
-  it("focuses and describes the receipt only after confirmed delivery", async () => {
+  it("focuses the confirmed receipt with the submitted email even if the draft changes", async () => {
     let finish!: (value: Response) => void;
     fetchMock.mockReturnValueOnce(
       new Promise<Response>((resolve) => {
@@ -257,7 +258,10 @@ describe.each([
     );
     const pending = submit();
     render();
+    expect(control(emailLabel).props.disabled).not.toBe(true);
+    change(emailLabel, "edited-while-sending@example.com");
     expect(receiptFocus).not.toHaveBeenCalled();
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).email).toBe("owner@example.com");
     finish(response({ sent: true }));
     await pending;
     render();
@@ -268,8 +272,35 @@ describe.each([
       (node) => node.props.id === receipt.props["aria-describedby"],
     );
     expect(text(description)).toContain("We'll follow up at owner@example.com.");
+    expect(text(description)).not.toContain("edited-while-sending@example.com");
     expect(elements(tree).some((node) => node.type === "form")).toBe(false);
     render();
+    expect(receiptFocus).toHaveBeenCalledOnce();
+  });
+
+  it("keeps edits after an unconfirmed request and receipts the successful retry's email", async () => {
+    let finish!: (value: Response) => void;
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const pending = submit();
+    render();
+    change(emailLabel, "retry@example.com");
+    finish(response({ sent: false }));
+    await pending;
+    render();
+    expect(control(emailLabel).props.value).toBe("retry@example.com");
+    expect(receiptFocus).not.toHaveBeenCalled();
+    expect(text(tree)).not.toContain(success);
+
+    fetchMock.mockResolvedValueOnce(response({ sent: true }));
+    await submit();
+    render();
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).email).toBe("retry@example.com");
+    expect(text(tree)).toContain("We'll follow up at retry@example.com.");
+    expect(text(tree)).not.toContain("owner@example.com");
     expect(receiptFocus).toHaveBeenCalledOnce();
   });
 

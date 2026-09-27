@@ -34,7 +34,8 @@ export function ContactPage() {
   const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [receiptEmail, setReceiptEmail] = useState<string | null>(null);
+  const submitted = receiptEmail !== null;
   const [error, setError] = useState<string | null>(null);
   const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
   const [invalidField, setInvalidField] = useState<"email" | "subject" | "body" | null>(null);
@@ -126,7 +127,7 @@ export function ContactPage() {
       if (!payload?.sent) {
         throw new Error("Message was not delivered.");
       }
-      setSubmitted(true);
+      setReceiptEmail(normalizedEmail);
       if (
         typeof window !== "undefined" &&
         (window as { plausible?: (name: string, options?: unknown) => void }).plausible
@@ -214,7 +215,7 @@ export function ContactPage() {
                 Message Received
               </h3>
               <p id={confirmationDescriptionId} className="mt-2 text-sm text-muted-foreground">
-                We'll follow up at {email}.
+                We'll follow up at {receiptEmail}.
               </p>
             </div>
           ) : (
