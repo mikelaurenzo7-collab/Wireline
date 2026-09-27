@@ -1,5 +1,7 @@
 # BotBound Launch Copy Kit
 
+> Historical offer snapshot: this kit retains its September 26 baseline and retired Starter/Pro pricing for provenance. Its universal number/mailbox and Bot-capacity statements are not current sales copy. Use [current billing scope](../../docs/P0_BILLING_OPS_NOTE.md) and [the catalog](../../src/lib/plan-catalog.ts): one Bot with selected-channel resources, initially Calls-only. Reconcile final captions and recapture product proof after the reviewed Render release before publishing; this notice does not recertify existing assets.
+
 Source review: September 26, 2026. Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. Authenticated private Test and explicit Build Save are verified; self-serve paid activation and general voice admissions remain paused. [Current offer and release boundaries](../launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md) distinguish this usable private workspace from unverified live operations.
 
 The [September Refresh](../launch-2026-09-refresh/README.md) reconciles this kit with the September 15–19 Drive sales campaign and pilot notes. Sales remains a creative variant alongside the general product story and the incoming-call pilot focus.

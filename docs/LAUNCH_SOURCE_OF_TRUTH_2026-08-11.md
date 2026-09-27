@@ -4,6 +4,8 @@ Established 2026-08-11; homepage headline revised 2026-09-24.
 
 **Active launch authority** for public positioning, launch creative, dogfood proof, and pre-customer GTM.
 
+> September 27 commercial scope correction: the earlier offer and universal number/additional-Bot statements below are historical. Current channel packages include one Bot, a number only with Calls/SMS and a mailbox only with Email; extra-Bot sales are deferred. Initial activation is Calls-only. [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) and the source catalog govern current amounts and availability; the unchanged hero and proof standards remain applicable.
+
 This document is the tie-breaker for active launch language and creative status. Historical audits remain historical. The campaign pack and creative media kit still own detailed scripts, shot lists, and production mechanics, but when their high-level positioning or asset-status language conflicts with this file, this file wins.
 
 ## Current launch boundary

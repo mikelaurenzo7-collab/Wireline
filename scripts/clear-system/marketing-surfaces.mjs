@@ -202,13 +202,39 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     /prefers-reduced-motion: reduce/,
     "signature motion must respect reduced motion",
   );
-  for (const tier of ["Free Builder", "Starter", "Starter Plus", "Pro", "Scale"])
+  for (const tier of ["Free Builder", "Light", "Regular", "High"])
     mustInclude(
       "src/pages/Pricing.tsx",
       pricingPage,
       new RegExp(tier.replace(" ", "\\s+")),
       `pricing must expose ${tier}`,
     );
+  const channelPicker = read("src/components/ChannelPlanPicker.tsx");
+  for (const label of ["Calls", "Email", "SMS", "Light", "Regular", "High"])
+    mustInclude(
+      "src/components/ChannelPlanPicker.tsx",
+      channelPicker,
+      new RegExp(`label: "${label}"`),
+      `shared pricing selector must preserve ${label}`,
+    );
+  mustInclude(
+    "src/components/ChannelPlanPicker.tsx",
+    channelPicker,
+    /interval === "year" \? plan\.price_usd_annual : plan\.price_usd_monthly/,
+    "pricing must use the exact catalog price for each interval",
+  );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /usePaidPlanAvailability\(\{[\s\S]*interval: billingInterval,[\s\S]*planId: selectedPlanId/,
+    "pricing must check live availability for the selected package and interval",
+  );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /checkoutAvailability === "sms_readiness_required"[\s\S]*canActivate\(plan\.id\) && !smsPending/,
+    "pricing must keep unavailable SMS selections out of activation",
+  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,
@@ -224,7 +250,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustExclude(
     "src/pages/Pricing.tsx",
     pricingPage,
-    /\$159|WIRELINE\s+Business/i,
+    /BotBound\s+(?:Starter(?:\s+Plus)?|Pro|Scale|Business)\b|WIRELINE\s+Business/i,
     "pricing must not revive retired offer",
   );
   mustExclude(

@@ -174,13 +174,25 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     /included_phone_numbers/,
     "plan catalog must back included-number claims",
   );
-  for (const tier of ["Free Builder", "Starter Plus"])
+  for (const tier of ["Free Builder"])
     mustInclude(
       "src/pages/Pricing.tsx",
       pricingPage,
       new RegExp(tier.replace(" ", "\\s+")),
       `pricing must preserve ${tier}`,
     );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /STRIPE_PLANS\.filter\(\(plan\) => plan\.catalogFamily === "channels"\)/,
+    "public pricing must select the current channel catalog, not retained historical plans",
+  );
+  mustInclude(
+    "src/pages/Pricing.tsx",
+    pricingPage,
+    /<ChannelPlanPicker[\s\S]*plans=\{CHANNEL_PLANS\}/,
+    "public pricing must render the shared channel and capacity selector",
+  );
   mustInclude(
     "src/pages/Pricing.tsx",
     pricingPage,

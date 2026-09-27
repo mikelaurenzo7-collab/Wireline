@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 386
-**Protected:** 309
+**Routes scanned:** 389
+**Protected:** 312
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -168,6 +168,9 @@
 | auth-session-hardening-routes.ts | POST | `/api/auth/refresh` | inline | — | yes | Protected |
 | auth-session-hardening-routes.ts | GET | `/api/auth/session` | — | — | yes | Public (allowlisted) |
 | auth-session-hardening-routes.ts | POST | `/api/auth/signout` | — | — | yes | Public (allowlisted) |
+| billing-capacity-routes.ts | GET | `/api/billing/capacity-upgrade` | inline | — | — | Protected |
+| billing-capacity-routes.ts | POST | `/api/billing/capacity-upgrade` | inline | — | — | Protected |
+| billing-capacity-routes.ts | DELETE | `/api/billing/capacity-upgrade` | inline | — | — | Protected |
 | billing-portal-readiness-routes.ts | POST | `/api/billing/portal` | inline | — | — | Protected |
 | billing-routes.ts | GET | `/api/admin/stripe-customer-audit` | inline | platform_admin | — | Protected |
 | billing-routes.ts | GET | `/api/billing/extra-agents` | inline | — | — | Protected |

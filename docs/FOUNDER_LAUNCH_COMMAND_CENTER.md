@@ -4,6 +4,8 @@ Updated: 2026-08-11
 Status: **Active owner go/no-go runbook**  
 Primary authority: `docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md`
 
+> September 27 launch boundary: [P0 Billing Ops](P0_BILLING_OPS_NOTE.md) supersedes earlier expansion and follow-up examples below. Start with one Calls-only Bot and verified inbound service. Email, SMS, additional Bots and outbound dialing remain separately held; a consented purpose alone does not clear the current outbound consent/funding implementation gates.
+
 This file is deliberately short and state-light. Historical launch audits belong in Git history and `docs/AUDIT_INDEX.md`; provider balances, deployment SHAs, test totals, and temporary incident findings do **not** belong here as permanent operating truth.
 
 ## Authority order

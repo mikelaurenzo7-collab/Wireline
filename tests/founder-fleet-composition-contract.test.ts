@@ -149,10 +149,21 @@ describe("founder fleet composition", () => {
       }
     }
 
-    // Retired pricing must never survive in seeded knowledge.
-    for (const retired of ["$9/month", "$29/month", "$49/month", "$99/year"]) {
-      expect(facts).not.toContain(retired);
-    }
+    // Prices can recur in different offers; reject retired identities and
+    // unsupported benefits rather than forbidding valid channel amounts.
+    expect(facts).not.toMatch(/BotBound (?:Starter|Pro|Scale|Business)\b/);
+    expect(facts).not.toMatch(
+      /Additional agents are an add-on|Every paid Bot includes|never cut mid conversation/,
+    );
+    expect(facts).toContain("Extra-Bot add-ons are not available");
+    expect(facts).toContain("one call at a time");
+    expect(facts).toContain(
+      "up to 10 minutes of completion credit within the call's duration limit",
+    );
+    expect(facts).toContain("SMS activation is unavailable");
+    const email = facts.split("\n").find((line) => line.startsWith("BotBound Email Light:"))!;
+    expect(email).toContain("Calls not included, no included number, 1 managed mailbox");
+    expect(email).not.toContain("until a paid plan is active");
 
     // Guardrail so a seeded agent cannot improvise commercial terms.
     expect(facts).toMatch(/escalate instead of inventing an offer/i);

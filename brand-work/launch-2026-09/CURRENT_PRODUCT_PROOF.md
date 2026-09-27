@@ -1,5 +1,7 @@
 # Current Product Proof — Status and Capture Standard
 
+> September 27 production override: the old `.me` certification procedure and required SMS/email continuation below are historical. Certify the exact Render release at `https://botbound.app` under the [Deployment Runbook](../../docs/DEPLOYMENT_RUNBOOK.md), using the non-owner pilot account for authenticated customer-flow proof. The initial [Calls-only scope](../../docs/P0_BILLING_OPS_NOTE.md) requires real call/outcome evidence; unavailable channels remain explicitly unverified. The local simulated capture workflow remains internal layout evidence only.
+
 ## Current capture workflow
 
 A file named “current” is not evidence of current source. The adjacent JSON must match the intended Git commit and the tracked/non-ignored source fingerprint, pass all seven route checks, and match the screenshot and contact-sheet hashes. Ignored generated files, environment values, installed dependencies, authenticated behavior, and deployed availability are outside that fingerprint.

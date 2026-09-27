@@ -5,8 +5,35 @@ import {
   WIRELINE_OBJECTIONS,
 } from "../src/lib/wireline-agent-objections";
 import { WIRELINE_PERSONAS } from "../src/lib/wireline-agent-personas";
+import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 describe("founder agent prompt truth contract", () => {
+  it("quotes all current channel capacities and exact annual prices without retired benefits", () => {
+    const sales = WIRELINE_PERSONAS.sales.systemPrompt;
+    const current = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+    expect(current).toHaveLength(21);
+    for (const plan of current) {
+      expect(sales).toContain(
+        `${plan.name}: $${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year`,
+      );
+    }
+    expect(sales).toContain("Annual savings vary by package and capacity");
+    expect(sales).toContain("SMS activation is unavailable");
+    expect(sales).toContain("only selected channels are included");
+    const prompts = Object.values(WIRELINE_PERSONAS)
+      .map((persona) => persona.systemPrompt)
+      .join("\n");
+    expect(prompts).not.toMatch(
+      /BotBound (?:Starter|Pro|Scale)|Annual pricing saves two months|Pro and Scale|beyond Pro/,
+    );
+    expect(WIRELINE_PERSONAS.success.systemPrompt).toContain(
+      "Light, Regular and High currently include one Bot",
+    );
+    expect(WIRELINE_PERSONAS.technical.systemPrompt).toContain(
+      "PDF and Word uploads are not supported",
+    );
+  });
+
   it("keeps objection handling free of unsupported comparisons and demo promises", () => {
     const playbook = renderPlaybookForSystemPrompt();
 

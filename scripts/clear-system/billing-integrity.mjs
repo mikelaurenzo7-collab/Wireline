@@ -11,9 +11,7 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   const dbSchema = read("src/db/schema.ts");
   const creditWallet = read("src/lib/credit-wallet.ts");
   const billingRoutes = read("src/routes/billing-routes.ts");
-  const stripeRuntimeAllowanceRetry = read(
-    "src/middleware/stripe-runtime-allowance-retry.ts",
-  );
+  const stripeRuntimeAllowanceRetry = read("src/middleware/stripe-runtime-allowance-retry.ts");
   const checkoutFulfillment = read("src/lib/stripe-checkout-fulfillment.ts");
   const balanceMigration = read("drizzle/migrations/0074_harden_conversation_balance_ledger.sql");
   const wirelineKnowledge = read("src/data/wireline-knowledge.ts");
@@ -156,15 +154,29 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /BotBound Starter[\s\S]*BotBound Starter Plus[\s\S]*BotBound Pro[\s\S]*BotBound Enterprise/,
-    "shared product knowledge must match the launch catalog with canonical BotBound casing",
+    /BotBound Free Builder[\s\S]*STRIPE_PLANS\.filter\(\(plan\) => plan\.catalogFamily === "channels"\)\.map[\s\S]*BotBound Enterprise/,
+    "shared product knowledge must derive current channel offers from the catalog",
   );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
-    /\$159|BotBound Business/i,
-    "shared product knowledge must not quote the retired self-serve Business offer",
+    /BotBound\s+(?:Starter(?:\s+Plus)?|Pro|Scale|Business)\b/i,
+    "shared product knowledge must not quote retired self-serve offers",
   );
+  for (const field of [
+    "price_usd_monthly",
+    "price_usd_annual",
+    "voice_minutes_monthly",
+    "included_phone_numbers",
+    "included_mailboxes",
+    "ai_spend_allowance_usd_monthly",
+  ])
+    mustInclude(
+      "src/data/wireline-knowledge.ts",
+      wirelineKnowledge,
+      new RegExp(`plan\\.${field}`),
+      `shared product knowledge must use the catalog's ${field}`,
+    );
   mustExclude(
     "src/data/wireline-knowledge.ts",
     wirelineKnowledge,
@@ -265,8 +277,14 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/lib/wireline-agent-personas.ts",
     wirelinePersonas,
-    /Free Builder:[\s\S]*Starter:/,
-    "demo-line personas must quote Free Builder + Starter catalog truth",
+    /WIRELINE_PLANS\.map\(\(plan\) =>[\s\S]*plan\.name[\s\S]*plan\.price[\s\S]*plan\.includes\.join/,
+    "internal personas must quote the shared current channel catalog",
+  );
+  mustExclude(
+    "src/lib/wireline-agent-personas.ts",
+    wirelinePersonas,
+    /Annual pricing saves two months|Pro and Scale|beyond Pro|Starter:\s*\$|Training ingests PDFs/i,
+    "internal personas must not invent annual discounts, retired tier benefits, or unsupported intake",
   );
 
   const conversationBalance = read("src/lib/conversation-balance.ts");

@@ -3,6 +3,8 @@
 **Status:** Active canonical operating map.  
 **Updated:** September 27, 2026.
 
+> Current Render routing overrides the historical continuity inventory below: structured reasoning uses direct OpenAI with configured Gemini continuity. AI Gateway is disabled on Render. [Deployment Runbook](DEPLOYMENT_RUNBOOK.md) governs actual provider configuration; do not enable an optional provider merely because it appears in this map.
+
 This document records BotBound's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
 ## Runtime stack

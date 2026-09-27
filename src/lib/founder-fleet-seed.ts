@@ -12,8 +12,8 @@ import { AGENT_TOOL_NAME_VALUES, type AgentToolName } from "./agent-capabilities
 import { ROLE_PERSONALITY_TEMPLATES } from "./agent-constants";
 import { pickRotatedVoiceId } from "../data/voice-roster";
 import { getOwnerEmails } from "./auth-service";
-import { BRAND_SYSTEM, AGENT_NUMBER_PROMISE } from "./product-copy";
-import { plansForClient, EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY } from "./plan-catalog";
+import { BRAND_SYSTEM } from "./product-copy";
+import { plansForClient } from "./plan-catalog";
 import { FOUNDER_FLEET_SEED_CONTRACT_VERSION } from "./founder-internal-runtime-policy";
 import {
   defaultBotMarkKey,
@@ -248,20 +248,31 @@ export function wirelinePlanFacts(): string[] {
         ? "free"
         : `$${plan.price_usd_monthly}/month or $${plan.price_usd_annual}/year`;
     const minutes = plan.voice_minutes_monthly
-      ? `${plan.voice_minutes_monthly} guaranteed live voice minutes each month`
-      : "no production minutes until a paid plan is active";
+      ? `${plan.voice_minutes_monthly} included call minutes per month`
+      : plan.is_free
+        ? "private testing only; no live customer calls"
+        : "Calls not included";
     const numbers = plan.included_phone_numbers
       ? `${plan.included_phone_numbers} included BotBound number${plan.included_phone_numbers === 1 ? "" : "s"}`
       : "no included number";
-    const agents = `${plan.max_agents} agent${plan.max_agents === 1 ? "" : "s"}`;
-    return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}.`;
+    const mailboxes = plan.included_mailboxes
+      ? `${plan.included_mailboxes} managed mailbox${plan.included_mailboxes === 1 ? "" : "es"}`
+      : "no managed mailbox";
+    const agents = `${plan.max_agents} Bot${plan.max_agents === 1 ? "" : "s"}`;
+    const availability = plan.is_free
+      ? "Private setup and bounded rehearsal."
+      : plan.checkout_availability === "sms_readiness_required"
+        ? "SMS activation is unavailable."
+        : "Activation depends on current Billing availability.";
+    return `${plan.name}: ${price}. ${agents}, ${minutes}, ${numbers}, ${mailboxes}. ${availability}`;
   });
   return [
     `BotBound in one line: ${BRAND_SYSTEM.northStar}`,
     ...lines,
-    `Additional agents are an add-on at $${EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY}/month each.`,
-    AGENT_NUMBER_PROMISE,
-    "Usage beyond included minutes draws from prepaid Runtime Balance. There is no surprise postpaid overage invoice, and live calls are never cut mid conversation.",
+    "Channel packages include one Bot with only the selected channels. Extra-Bot add-ons are not available. Calls/SMS include one number; Email includes one managed mailbox.",
+    "Channel call minutes and managed AI renew on the monthly subscription anniversary, including annual plans; unused included usage does not roll over.",
+    "Calls packages allow one call at a time. Extra minutes use prepaid Runtime Balance, with up to 10 minutes of completion credit within the call's duration limit. Any amount due pauses new calls and prepaid extras until topped up. There is no automatic overage invoice or guarantee that a call cannot end at its duration limit.",
+    "Outbound calling remains unavailable until its consent, screening and pre-dial funding gates pass. A selected area code does not grant recipient permission.",
     "Quote only these plan facts. If asked for a discount, custom terms, or anything not listed, take the request and escalate instead of inventing an offer.",
   ];
 }
