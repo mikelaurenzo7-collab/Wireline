@@ -118,7 +118,10 @@ describe("Twilio voice failover contract", () => {
       routes.indexOf('router.post("/api/twilio-webhook/voice-fallback"'),
     );
     expect(shared).toContain("/sounds/wireline-transfer-chime.wav");
-    expect(shared).toContain("escapeTwimlValue(fallbackNumber)");
+    expect(shared).toContain("escapeTwimlValue(receipt.fallbackNumber)");
+    expect(shared).toContain("prepareTwilioVoiceFallback");
+    expect(shared).toContain('timeLimit="${receipt.maxSeconds}"');
+    expect(shared).toContain('statusCallbackEvent="completed"');
     expect(shared).toContain("return res.status(200).send(twimlHangup())");
     expect(shared).not.toMatch(/<Record\b|transcribeCallback|openai-[a-z-]+\.mp3/);
   });
@@ -126,7 +129,7 @@ describe("Twilio voice failover contract", () => {
   it("validates transfer destinations and escapes dynamic TwiML values", () => {
     expect(routes).toContain("function validE164");
     expect(routes).toMatch(/\^\\\+\[1-9\]\\d\{7,14\}\$/);
-    expect(routes).toContain("escapeTwimlValue(fallbackNumber)");
+    expect(routes).toContain("escapeTwimlValue(receipt.fallbackNumber)");
     expect(inboundRoutes).toContain("escapeXml(sipUri)");
   });
 

@@ -50,6 +50,9 @@ describe("authz tooling covers factory handlers, commented declarations, and sub
     expect(matrix).toMatch(
       /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback-complete` \|.*\| Public \(allowlisted\) \|/,
     );
+    expect(matrix).toMatch(
+      /\| twilio-webhook-base\.ts \| POST \| `\/api\/twilio-webhook\/voice-fallback-status` \|.*\| Public \(allowlisted\) \|/,
+    );
     // live-voice-routes.ts -> live-voice-profile-routes.ts.
     expect(matrix).toMatch(
       /\| live-voice-profile-routes\.ts \| GET \| `\/api\/voice\/live\/profile` \|.*\| Protected \|/,

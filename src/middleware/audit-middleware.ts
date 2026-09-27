@@ -15,6 +15,11 @@ import {
 import { clearBudgetCache, recordDailySpend, evaluateSpend } from "../lib/spend-guards";
 import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "../lib/ai-usage";
 import {
+  managedAiSpendPredicate,
+  providerSpendMeter,
+  type ProviderSpendMeter,
+} from "../lib/provider-spend-meter";
+import {
   OPENAI_REALTIME_RESERVE_ENV,
   OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
   resolveOpenAIRealtimeSessionReserveUsd,
@@ -411,6 +416,7 @@ export type PlatformCostReservation = {
   costUsd: number;
   /** True when this request reused an earlier durable debit. */
   adopted: boolean;
+  meter?: ProviderSpendMeter;
 };
 
 export type PlatformCostReservationDecision =
@@ -426,7 +432,9 @@ export type PlatformCostReservationDecision =
 /**
  * Atomically serialize fixed-cost platform reservations on the tenant budget
  * row, verify fresh month-to-date spend, and write the audit debit before a
- * browser receives a provider-funded realtime session.
+ * browser receives a provider-funded realtime session. Server-owned phone
+ * receipts retain durable provider COGS here; the voice admission policy owns
+ * their included-minute/Runtime Balance coverage instead of the AI cap.
  */
 export async function reservePlatformCostRecord(opts: {
   userId: string;
@@ -437,9 +445,12 @@ export async function reservePlatformCostRecord(opts: {
   idempotencyKey?: string;
   requestMeta?: Record<string, unknown>;
 }): Promise<PlatformCostReservationDecision> {
-  if (!(opts.costUsd > 0)) return { reserved: false, reason: "unavailable" };
+  if (!(opts.costUsd > 0) || !Number.isFinite(opts.costUsd)) {
+    return { reserved: false, reason: "unavailable" };
+  }
   const period = new Date().toISOString().slice(0, 7);
   const periodStart = new Date(`${period}-01T00:00:00.000Z`);
+  const meter = providerSpendMeter({ ...opts, metadata: opts.requestMeta });
 
   try {
     const decision = await drizzle.transaction(async (tx) => {
@@ -461,7 +472,13 @@ export async function reservePlatformCostRecord(opts: {
       const idempotencyKey = String(opts.idempotencyKey || "").trim() || null;
       if (idempotencyKey) {
         const [existing] = await tx
-          .select({ id: schema.auditLog.id, costUsd: schema.auditLog.costUsd })
+          .select({
+            id: schema.auditLog.id,
+            costUsd: schema.auditLog.costUsd,
+            action: schema.auditLog.action,
+            provider: schema.auditLog.provider,
+            metadata: schema.auditLog.metadata,
+          })
           .from(schema.auditLog)
           .where(
             and(
@@ -479,6 +496,7 @@ export async function reservePlatformCostRecord(opts: {
               userId: opts.userId,
               costUsd: Number(existing.costUsd || opts.costUsd),
               adopted: true,
+              meter: providerSpendMeter(existing),
             },
           } as const;
         }
@@ -486,7 +504,7 @@ export async function reservePlatformCostRecord(opts: {
 
       const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
       const hardCapEnabled = budget.enabled !== false && budget.hardCap === true;
-      if (hardCapEnabled && !(monthlyLimitUsd > 0)) {
+      if (meter === "managed_ai" && hardCapEnabled && !(monthlyLimitUsd > 0)) {
         return { reserved: false, reason: "unavailable" } as const;
       }
 
@@ -496,10 +514,18 @@ export async function reservePlatformCostRecord(opts: {
         })
         .from(schema.auditLog)
         .where(
-          and(eq(schema.auditLog.userId, opts.userId), gte(schema.auditLog.createdAt, periodStart)),
+          and(
+            eq(schema.auditLog.userId, opts.userId),
+            gte(schema.auditLog.createdAt, periodStart),
+            managedAiSpendPredicate(),
+          ),
         );
       const monthToDateUsd = Number(mtd?.costUsd || 0);
-      if (hardCapEnabled && monthToDateUsd + opts.costUsd > monthlyLimitUsd) {
+      if (
+        meter === "managed_ai" &&
+        hardCapEnabled &&
+        monthToDateUsd + opts.costUsd > monthlyLimitUsd
+      ) {
         return {
           reserved: false,
           reason: "cap_reached",
@@ -535,6 +561,7 @@ export async function reservePlatformCostRecord(opts: {
           userId: opts.userId,
           costUsd: opts.costUsd,
           adopted: false,
+          meter,
         },
       } as const;
     });
@@ -630,6 +657,9 @@ export async function commitPlatformCostReservation(
   const transitioned = await setPlatformCostReservationState(reservation, "committed");
   if (!transitioned) return;
   recordDailySpend(reservation.costUsd);
+  // Live phone usage settles against included voice/Runtime Balance. Retain
+  // provider COGS telemetry without publishing false managed-AI budget alerts.
+  if (reservation.meter === "live_voice") return;
   await evaluateSpend(reservation.userId, reservation.costUsd).catch((error: unknown) =>
     log.error("Reserved platform cost spend evaluation failed", {
       userId: reservation.userId,
@@ -660,6 +690,8 @@ export async function extendCommittedPlatformCostReservation(
       .for("update");
     const [row] = await tx
       .select({
+        action: schema.auditLog.action,
+        provider: schema.auditLog.provider,
         costUsd: schema.auditLog.costUsd,
         metadata: schema.auditLog.metadata,
       })
@@ -681,7 +713,7 @@ export async function extendCommittedPlatformCostReservation(
     const state = metadata.accounting_state;
     if (
       !row ||
-      metadata.surface !== "openai_sip" ||
+      providerSpendMeter(row) !== "live_voice" ||
       !["committed", "reserved_before_provider", "provider_outcome_ambiguous"].includes(
         String(state),
       )
@@ -718,7 +750,6 @@ export async function extendCommittedPlatformCostReservation(
   if (delta > 0) {
     clearBudgetCache(reservation.userId);
     recordDailySpend(delta);
-    await evaluateSpend(reservation.userId, delta);
   }
 }
 

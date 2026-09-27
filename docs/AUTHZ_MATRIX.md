@@ -4,9 +4,9 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 385
+**Routes scanned:** 386
 **Protected:** 309
-**Public (allowlisted):** 76
+**Public (allowlisted):** 77
 **Violations:** 0
 
 ## Public Allowlist (explicit security decisions)
@@ -84,6 +84,7 @@
 | `POST /api/twilio-webhook/sms` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/voice-fallback` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/voice-fallback-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
+| `POST /api/twilio-webhook/voice-fallback-status` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/voicemail-complete` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/voicemail-transcription` | Twilio signature validation; valid provider retries are never IP-throttled |
 | `POST /api/twilio-webhook/message-status` | Twilio signature validation; valid provider retries are never IP-throttled |
@@ -460,6 +461,7 @@
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/sms` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback-complete` | — | — | yes | Public (allowlisted) |
+| twilio-webhook-base.ts | POST | `/api/twilio-webhook/voice-fallback-status` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voicemail-complete` | — | — | yes | Public (allowlisted) |
 | twilio-webhook-base.ts | POST | `/api/twilio-webhook/voicemail-transcription` | — | — | yes | Public (allowlisted) |
 | twilio-webhook.ts | POST | `/api/twilio-webhook/message-status` | — | — | yes | Public (allowlisted) |

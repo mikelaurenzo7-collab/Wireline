@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Loader2, CreditCard, AlertTriangle, Sparkles, Mail, Check } from "lucide-react";
+import { X, Loader2, CreditCard, AlertTriangle, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
 import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
@@ -19,12 +19,6 @@ import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import type { BillingPlansResponse, ClientPlan } from "../types/api-billing";
 import { ShadButton } from "./ui/shadcn/ShadButton";
-
-const TIER_PITCH: Record<string, string> = {
-  team: "Shared inbox, routing, connected numbers, and core integrations",
-  business: "Approvals, analytics, CRM sync, roles, and pooled live work",
-  enterprise: "Governed rollout, security review, custom policy, and committed usage",
-};
 
 type CheckoutTier = {
   id: string;
@@ -57,6 +51,8 @@ function selfServeTiers(
           price_usd_monthly: plan.price_usd_monthly,
           price_usd_annual: plan.price_usd_annual,
           features: plan.features,
+          max_agents: plan.max_agents,
+          voice_minutes_monthly: plan.voice_minutes_monthly,
           // A local price id is not release authorization. Fail closed until
           // the server confirms this exact deployment may open checkout.
           configured: false,
@@ -74,10 +70,10 @@ function selfServeTiers(
     const monthlyReady = checkoutAvailable && plan.configured === true;
     return {
       id: plan.id,
-      label: plan.name,
+      label: plan.name.replace(/^BotBound\s+/, ""),
       price: useAnnual ? plan.price_usd_annual : plan.price_usd_monthly,
       suffix: useAnnual ? ("/yr" as const) : ("/mo" as const),
-      pitch: TIER_PITCH[plan.id] ?? plan.features[0] ?? "",
+      pitch: `${plan.max_agents} ${plan.max_agents === 1 ? "Bot" : "Bots"} · ${plan.voice_minutes_monthly} min/mo`,
       interval: useAnnual ? ("year" as const) : ("month" as const),
       disabled: !monthlyReady,
       disabledReason: !monthlyReady
@@ -95,31 +91,31 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   switch (detail.code) {
     case "ACTIVATION_REQUIRED":
       return {
-        title: "Activate Live Work",
-        body: "Create and train stay free. Choose a live plan when your Bot is ready for a live number and customer conversations.",
+        title: "Go live",
+        body: "Choose a plan to connect your Bot.",
       };
     case "EMAIL_UNVERIFIED":
       return {
-        title: "Verify Your Email First",
-        body: "We sent you a link from BotBound. Click it to unlock paid activation and agent deployment. Check your inbox and spam folder, or resend the link below.",
+        title: "Verify your email",
+        body: "Open the link in your email to continue.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
-        title: "Trial Limit Reached",
+        title: "Trial limit reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
-            ? `You've used ${detail.current} of ${detail.limit} during your legacy trial. Choose a live plan to keep going. Your data and agent stay exactly as they are.`
-            : "You've hit your legacy trial limit. Choose a live plan to keep going.",
+            ? `You've used ${detail.current} of ${detail.limit}. Choose a plan to continue.`
+            : "Choose a plan to continue.",
       };
     case "TRIAL_EXPIRED":
       return {
-        title: "Your Legacy Trial Ended",
-        body: "Choose a live plan to restore your agent. Your settings and call history stay exactly as you left them.",
+        title: "Your trial has ended",
+        body: "Choose a plan to resume. Your Bot and history are saved.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
-        title: "Subscription Paused",
-        body: "Your subscription is past due. Open BotBound Billing to update your payment method and restore live work.",
+        title: "Payment needed",
+        body: "Update your payment method to resume live work.",
       };
     default:
       return { title: "Capacity Required", body: detail.error };
@@ -216,12 +212,6 @@ export default function TrialGateModal() {
     !catalogPending &&
     checkoutTiers.length > 0 &&
     checkoutTiers.every((tier) => tier.disabled === true);
-  const eyebrow =
-    detail.code === "ACTIVATION_REQUIRED"
-      ? "Activate live work"
-      : detail.code === "SUBSCRIPTION_REQUIRED"
-        ? "Restore billing"
-        : "Choose a live plan";
   const showBillingPortal = detail.code === "SUBSCRIPTION_REQUIRED";
   const showPlanCheckout =
     detail.code !== "EMAIL_UNVERIFIED" && detail.code !== "SUBSCRIPTION_REQUIRED";
@@ -399,16 +389,12 @@ export default function TrialGateModal() {
               <X className="h-4 w-4" />
             </ShadButton>
 
-            <div className="px-[clamp(16px,4vw,32px)] pt-8 pb-6">
-              <div className="mb-3 flex items-center gap-2 pr-12 font-medium text-brand wl-label">
-                <Sparkles className="h-3 w-3" />
-                {eyebrow}
-              </div>
+            <div className="px-[clamp(16px,4vw,32px)] pt-6 pb-4">
               <h2
                 data-slot="dialog-title"
 
                 id="trial-gate-title"
-                className="mb-2 text-balance font-display text-2xl text-foreground sm:text-3xl"
+                className="mb-2 pr-12 text-balance font-display text-2xl text-foreground sm:text-3xl"
               >
                 {title}
               </h2>
@@ -416,7 +402,9 @@ export default function TrialGateModal() {
                 id="trial-gate-description"
                 className="max-w-xl text-sm leading-relaxed text-foreground/75 sm:text-base"
               >
-                {body}
+                {showPlanCheckout && checkoutUnavailable
+                  ? "Checkout is temporarily unavailable. Your Bot is saved."
+                  : body}
               </p>
             </div>
 
@@ -492,7 +480,7 @@ export default function TrialGateModal() {
                     href="/settings/billing"
                     className="text-xs text-brand underline-offset-2 hover:underline"
                   >
-                    View BotBound billing details
+                    Billing details
                   </a>
                 </div>
               )}
@@ -504,71 +492,74 @@ export default function TrialGateModal() {
                       Checking checkout availability
                     </p>
                   )}
-                  {checkoutUnavailable && (
-                    <p className="mb-3 flex items-start gap-2 text-xs leading-relaxed text-foreground/65">
-                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
-                      Checkout is temporarily unavailable. Your Bot is saved.
-                    </p>
-                  )}
                   {annualFallbackNote && (
                     <p className="mb-3 text-xs leading-relaxed text-foreground/65">
-                      Annual billing is not configured for checkout yet. Monthly prices are shown.
+                      Annual billing is unavailable. Monthly prices are shown.
                     </p>
                   )}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {checkoutTiers.map((tier) => {
-                      const isPending = pending === tier.id;
-                      const isRecommended = tier.id === recommendedPlanId;
-                      return (
-                        <ShadButton
-                          key={tier.id}
-                          type="button"
-                          disableAnimations
-                          variant="outline"
-                          onClick={() => checkout(tier.id, tier.interval)}
-                          disabled={!!pending || !!tier.disabled}
-                          title={tier.disabledReason}
-                          className={cn(
-                            "relative h-auto w-full flex-col items-start justify-start gap-0 rounded-md p-4 text-left touch-manipulation",
-                            isRecommended
-                              ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
-                              : "hover:border-brand/30 hover:bg-black/3",
-                          )}
-                        >
-                          {isRecommended && (
-                            <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
-                              Recommended
-                            </div>
-                          )}
-                          <div className="mb-1 font-display text-lg text-foreground">
-                            {tier.label}
-                          </div>
-                          <div className="mb-2 flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="font-display text-2xl text-foreground">
-                              ${tier.price}
-                            </span>
-                            <span className="wl-label-muted/70">{tier.suffix}</span>
-                          </div>
-                          <p className="mb-3 text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
-                            {tier.pitch}
-                          </p>
-                          <div className="mt-auto inline-flex items-center gap-1.5 text-brand wl-label">
-                            {isPending ? (
-                              <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Opening
-                              </>
-                            ) : (
-                              <>
-                                <CreditCard className="h-3 w-3" />
-                                Pick {tier.label}
-                              </>
+                  <details open={!catalogPending && !checkoutUnavailable}>
+                    <summary
+                      hidden={!checkoutUnavailable}
+                      className="min-h-11 cursor-pointer py-3 text-sm font-medium text-brand"
+                    >
+                      View plans
+                    </summary>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {checkoutTiers.map((tier) => {
+                        const isPending = pending === tier.id;
+                        const isRecommended = tier.id === recommendedPlanId;
+                        return (
+                          <ShadButton
+                            key={tier.id}
+                            type="button"
+                            disableAnimations
+                            variant="outline"
+                            onClick={() => checkout(tier.id, tier.interval)}
+                            disabled={!!pending || !!tier.disabled}
+                            title={tier.disabledReason}
+                            aria-label={`Choose ${tier.label}, $${tier.price}${tier.suffix}`}
+                            className={cn(
+                              "relative h-auto w-full flex-col items-stretch justify-start gap-0 rounded-md p-4 text-left touch-manipulation",
+                              isRecommended
+                                ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
+                                : "hover:border-brand/30 hover:bg-black/3",
                             )}
-                          </div>
-                        </ShadButton>
-                      );
-                    })}
-                  </div>
+                          >
+                            {isRecommended && (
+                              <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
+                                Recommended
+                              </div>
+                            )}
+                            <div className="mb-1 font-display text-lg text-foreground">
+                              {tier.label}
+                            </div>
+                            <div className="mb-2 flex items-baseline gap-1 whitespace-nowrap">
+                              <span className="font-display text-2xl text-foreground">
+                                ${tier.price}
+                              </span>
+                              <span className="wl-label-muted/70">{tier.suffix}</span>
+                            </div>
+                            <p className="mb-3 text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
+                              {tier.pitch}
+                            </p>
+                            <div className="mt-auto inline-flex items-center gap-1.5 text-brand wl-label">
+                              {isPending ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Opening
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="h-3 w-3" />
+                                  Choose {tier.label}
+                                </>
+                              )}
+                            </div>
+                          </ShadButton>
+                        );
+                      })}
+                    </div>
+                  </details>
                 </>
               )}
 
@@ -584,12 +575,16 @@ export default function TrialGateModal() {
 
               {showPlanCheckout && (
                 <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted/70 wl-label">
-                  <span>Secure checkout</span>
-                  <span>&middot;</span>
+                  <Link
+                    to="/settings/billing"
+                    onClick={closeModal}
+                    className="text-brand hover:underline"
+                  >
+                    Compare plans
+                  </Link>
                   <span>Cancel anytime</span>
-                  <span>&middot;</span>
-                  <Link to="/contact" className="text-brand transition-colors hover:text-brand/80">
-                    Need Enterprise?
+                  <Link to="/contact" onClick={closeModal} className="text-brand hover:underline">
+                    Contact sales
                   </Link>
                 </div>
               )}

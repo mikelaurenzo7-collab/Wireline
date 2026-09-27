@@ -1,34 +1,118 @@
 /**
- * Native inbound PSTN must keep the same cost and solvency posture as the
- * retired Vapi assistant-request gates: answer the line, but degrade overflow
- * and insolvency to a bounded take-a-message conversation instead of the full
- * agent. Outbound is already admission-gated before Twilio dials.
+ * Native inbound PSTN verifies paid voice coverage before accepting AI work.
+ * Exhausted coverage or capacity rejects the new session; an already admitted
+ * call can finish normally. Outbound is gated before Twilio dials.
  *
- * Fail-open on wallet/quota lookup errors so a database blip does not mute a
- * paying tenant. Callers are never hung up on for billing except a suspended
- * subscription, which speaks one truthful line and ends.
+ * Verify the independent voice coverage before accepting provider work. A
+ * lookup failure is retryable; it must not grant an unverified full session.
+ * Covered after-hours calls retain bounded message-taking. Per-call duration
+ * bounds alone cannot fund unlimited AI messages after a balance is depleted.
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
-import {
-  isWithinBusinessHours,
-  type AgentRuntimeProfile,
-} from "../agent-runtime";
+import { isWithinBusinessHours, type AgentRuntimeProfile } from "../agent-runtime";
 import { inboundConcurrencyExceeded } from "../inbound-concurrency";
 import { drizzle, log, quotaTracker } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import { getVoiceWalletSnapshot } from "../voice-wallet-guard";
+import { AppError } from "../api-error";
+import { providerSpendMeter } from "../provider-spend-meter";
 
-export const INBOUND_TAKE_MESSAGE_GRACE_USD = 5;
-
-export type NativeInboundAdmissionMode = "full" | "suspended" | "take_message";
+export type NativeInboundAdmissionMode = "full" | "suspended" | "take_message" | "recovery_notice";
 
 export type NativeInboundAdmission = {
   mode: NativeInboundAdmissionMode;
-  reason?: "subscription" | "completion_grace" | "concurrency" | "daily_minutes" | "after_hours";
+  reason?:
+    | "subscription"
+    | "completion_grace"
+    | "coverage"
+    | "concurrency"
+    | "daily_minutes"
+    | "after_hours"
+    | "recovery";
   greeting?: string;
 };
+
+/** A signed redelivery may recover work already admitted before coverage changed. */
+export async function resolveNativeInboundCallAdmission(input: {
+  userId: string;
+  agentId: string;
+  callId: string;
+  twilioCallSid: string;
+  callerNumber: string | null;
+}): Promise<NativeInboundAdmission> {
+  const [prior] = await drizzle
+    .select({
+      action: schema.auditLog.action,
+      provider: schema.auditLog.provider,
+      metadata: schema.auditLog.metadata,
+      costUsd: schema.auditLog.costUsd,
+      phase: schema.callLogs.openaiSipPhase,
+    })
+    .from(schema.callLogs)
+    .innerJoin(
+      schema.auditLog,
+      and(
+        eq(schema.auditLog.userId, schema.callLogs.userId),
+        eq(schema.auditLog.action, "voice.realtime.session"),
+        eq(schema.auditLog.idempotencyKey, `openai-sip:${input.callId}`),
+      ),
+    )
+    .where(
+      and(
+        eq(schema.callLogs.userId, input.userId),
+        eq(schema.callLogs.agentId, input.agentId),
+        eq(schema.callLogs.vapiCallId, `openai:${input.callId}`),
+        eq(schema.callLogs.openaiSipSourceId, `twilio:${input.twilioCallSid}`),
+        eq(schema.callLogs.direction, "inbound"),
+        input.callerNumber === null
+          ? isNull(schema.callLogs.customerNumber)
+          : eq(schema.callLogs.customerNumber, input.callerNumber),
+      ),
+    )
+    .limit(1)
+    .catch((error: unknown) => {
+      log.error("Native inbound recovery lookup failed closed", {
+        userId: input.userId,
+        error: getErrorMessage(error),
+      });
+      throw AppError.serviceUnavailable("Voice admission could not be verified. Please try again.");
+    });
+  if (
+    prior &&
+    providerSpendMeter(prior) === "live_voice" &&
+    Number.isFinite(Number(prior.costUsd)) &&
+    Number(prior.costUsd) > 0
+  ) {
+    const metadata = prior.metadata as Record<string, unknown>;
+    if (
+      ["claimed", "running", "terminal"].includes(String(prior.phase)) &&
+      ["reserved_before_provider", "provider_outcome_ambiguous", "committed"].includes(
+        String(metadata.accounting_state),
+      )
+    ) {
+      const admission = metadata.inbound_admission;
+      if (admission && typeof admission === "object" && !Array.isArray(admission)) {
+        const saved = admission as Record<string, unknown>;
+        if (saved.mode === "full") return { mode: "full" };
+        if (saved.mode === "take_message" && saved.reason === "after_hours") {
+          return {
+            mode: "take_message",
+            reason: "after_hours",
+            ...(typeof saved.greeting === "string" ? { greeting: saved.greeting } : {}),
+          };
+        }
+      } else if (admission === undefined) {
+        // A legacy receipt proves prior funding but not full Bot privileges.
+        // Recover only a brief tool-free notice for this exact existing call;
+        // claim fencing still suppresses active/terminal duplicates.
+        return { mode: "recovery_notice", reason: "recovery" };
+      }
+    }
+  }
+  return resolveNativeInboundAdmission(input.userId, input.agentId);
+}
 
 export async function resolveNativeInboundAdmission(
   userId: string,
@@ -44,12 +128,16 @@ export async function resolveNativeInboundAdmission(
       return { mode: "suspended", reason: "subscription" };
     }
   } catch (error) {
-    log.error("Native inbound subscription check failed, continuing remaining gates", {
+    log.error("Native inbound subscription check failed closed", {
       userId,
       error: getErrorMessage(error),
     });
+    throw AppError.serviceUnavailable(
+      "Voice subscription could not be verified. Please try again.",
+    );
   }
 
+  let admission: NativeInboundAdmission = { mode: "full" };
   if (agentId) {
     try {
       const [agent] = await drizzle
@@ -68,52 +156,58 @@ export async function resolveNativeInboundAdmission(
           timezone: agent.timezone,
         })
       ) {
-        return {
+        admission = {
           mode: "take_message",
           reason: "after_hours",
           greeting: agent.outOfHoursMessage?.trim() || undefined,
         };
       }
     } catch (error) {
-      log.warn("Native inbound after-hours lookup failed, admitting remaining gates", {
+      log.warn("Native inbound after-hours lookup failed closed", {
         userId,
         agentId,
         error: getErrorMessage(error),
       });
+      throw AppError.serviceUnavailable(
+        "Voice availability could not be verified. Please try again.",
+      );
     }
   }
 
   try {
     const wallet = await getVoiceWalletSnapshot(userId);
-    if (wallet.completion_grace_due_usd >= INBOUND_TAKE_MESSAGE_GRACE_USD) {
-      return { mode: "take_message", reason: "completion_grace" };
+    if (!wallet.live_voice_enabled) return { mode: "suspended", reason: "subscription" };
+    if (wallet.completion_grace_due_usd > 0) {
+      return { mode: "suspended", reason: "completion_grace" };
+    }
+    if (!wallet.sufficient) {
+      return { mode: "suspended", reason: "coverage" };
     }
   } catch (error) {
-    log.error("Native inbound wallet check failed, admitting full agent", {
+    log.error("Native inbound wallet check failed closed", {
       userId,
       error: getErrorMessage(error),
     });
+    throw AppError.serviceUnavailable("Voice coverage could not be verified. Please try again.");
   }
 
   if (await inboundConcurrencyExceeded(userId)) {
-    return { mode: "take_message", reason: "concurrency" };
+    return { mode: "suspended", reason: "concurrency" };
   }
 
   try {
-    const dailyDecision = await quotaTracker.checkAndIncrement(
-      userId,
-      "voice_minutes_daily",
-      0,
-    );
-    if (dailyDecision && !dailyDecision.allowed) {
-      return { mode: "take_message", reason: "daily_minutes" };
+    const dailyDecision = await quotaTracker.checkAndIncrement(userId, "voice_minutes_daily", 0);
+    if (!dailyDecision?.persisted) throw new Error("Voice quota lookup was not durable.");
+    if (!dailyDecision.allowed) {
+      return { mode: "suspended", reason: "daily_minutes" };
     }
   } catch (error) {
-    log.error("Native inbound daily-minute check failed, admitting full agent", {
+    log.error("Native inbound daily-minute check failed closed", {
       userId,
       error: getErrorMessage(error),
     });
+    throw AppError.serviceUnavailable("Voice allowance could not be verified. Please try again.");
   }
 
-  return { mode: "full" };
+  return admission;
 }

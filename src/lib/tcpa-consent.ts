@@ -1,13 +1,9 @@
 // TCPA + state-level call recording consent.
 //
-// US law splits jurisdictions into "one-party" (the agent's own consent
-// to record is sufficient) and "two-party" / "all-party" (every party
-// on the line must be notified before recording).
-//
-// For two-party states, a recorded compliance disclosure must be played
-// at call start before any substantive conversation. Outbound dialers
-// that omit this expose the Account Holder to TCPA + state-recording statute
-// liability ($500–$5,000 per call).
+// Recording consent is separate from permission to place an artificial-voice
+// call. State rules depend on the participants, privacy, and circumstances;
+// playing a notice alone does not establish every required party's consent.
+// Area-code inference is a conservative policy hint, not proof of location.
 //
 // This module is the authoritative jurisdiction map + disclosure-text
 // generator. Pure functions only — no side effects. The DB-backed
@@ -428,8 +424,8 @@ export function inferStateFromPhone(phone: string | null | undefined): string | 
 
 /**
  * Get the consent rule for a phone number. Defaults to **two_party**
- * when state is unknown (safer — over-disclosing is never a violation,
- * under-disclosing is). Pass `defaultRule` to override.
+ * when state is unknown. This classification does not establish consent or
+ * resolve cross-state rules. Pass `defaultRule` to override.
  */
 export function getConsentRuleForPhone(
   phone: string | null | undefined,
@@ -469,8 +465,9 @@ export function buildConsentDisclosure(opts: {
 }
 
 /**
- * Full TCPA + state-recording outbound-call gate. Returns the action
- * the dialer must take before connecting (or whether it must abort).
+ * Consent/disclosure policy decision, used alongside the authoritative outbound
+ * gate. This helper alone does not prove recipient consent, screening freshness,
+ * calling hours, or a lawful basis for an informational call.
  *
  * @param phone     The customer's phone number (E.164 or NANP-formatted).
  * @param flags     Account Holder + per-call compliance flags.
@@ -499,12 +496,12 @@ export interface ConsentInputs {
   /** Set when this number appears on the federal DNC registry. */
   is_federal_dnc?: boolean;
   /**
-   * For TCPA marketing/auto-dial calls, prior express written consent is
-   * required. Inbound calls and lead-form opt-ins satisfy this; cold
-   * outbound to a number we have no relationship with does not.
+   * Verified recipient permission for the business, purpose, and artificial-voice
+   * marketing call. An inbound call, relationship, or generic lead form alone
+   * does not establish prior express written consent.
    */
   has_express_written_consent?: boolean;
-  /** Treat call as marketing/auto-dial (true) or as servicing/relationship (false). */
+  /** Marketing purpose; false does not exempt an artificial-voice call from consent. */
   is_marketing_call?: boolean;
   /** Account Holder's business name to weave into the disclosure. */
   business_name?: string;
@@ -546,7 +543,7 @@ export function evaluateOutboundConsent(input: ConsentInputs): ConsentDecision {
 
   const { rule, state } = getConsentRuleForPhone(input.phone, input.default_rule ?? "two_party");
   const mustDisclose = true; // BotBound policy: always disclose recording.
-  const mustOffer = rule === "two_party";
+  const mustOffer = input.is_marketing_call === true || rule === "two_party";
   return {
     allowed: true,
     rule,
@@ -581,11 +578,10 @@ export type ConsentLedgerEvent =
   | "disclosure_not_detected"
   // No transcript/evidence was available, so delivery cannot be asserted either way.
   | "disclosure_unverifiable"
-  // AI-identity disclosure (FCC 24-17: an AI-generated voice is an "artificial
-  // or prerecorded voice" under the TCPA). This obligation is federal and
-  // applies to every outbound AI call in every state — unlike the recording
-  // disclosure, which only binds in two-party states — so its delivery is
-  // evidenced on the same append-only ledger.
+  // BotBound requires explicit AI identity disclosure and evidences delivery.
+  // FCC 24-17 classifies AI voices as artificial/prerecorded; the specific
+  // additional AI-disclosure language in FCC 24-84 was a proposal, not itself
+  // a final rule. Do not conflate our policy with that proposed requirement.
   | "ai_disclosure_played"
   | "ai_disclosure_not_detected"
   | "ai_disclosure_unverifiable"

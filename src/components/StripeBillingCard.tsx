@@ -51,8 +51,7 @@ const PLAN_ACCENTS: Record<string, string> = {
   enterprise: BRAND.colors.primary,
 };
 
-const CHECKOUT_RELEASE_MESSAGE =
-  "New purchases are temporarily unavailable. Please try again soon.";
+const CHECKOUT_RELEASE_MESSAGE = "New purchases are temporarily paused.";
 
 export type CheckoutAvailability = "loading" | "available" | "paused" | "unavailable";
 
@@ -375,8 +374,8 @@ export default function StripeBillingCard({
         >
           <AlertTriangle className="mt-0.5 w-4 h-4 text-[var(--wireline-color-status-warning)] shrink-0" />
           <p className="text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-foreground/75">
-            {CHECKOUT_RELEASE_MESSAGE} Existing subscriptions and secure billing management remain
-            available.
+            {CHECKOUT_RELEASE_MESSAGE}
+            {sub?.has_subscription ? " You can still manage your subscription below." : ""}
           </p>
         </div>
       ) : null}
@@ -670,11 +669,9 @@ function PlanPicker({
                     )}
                   </ShadButton>
                 )}
-                {!isFree && !canSubscribe && (
+                {!isFree && !canSubscribe && checkoutReleased && (
                   <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
-                    {checkoutReleased
-                      ? "Online checkout is not yet available for this plan"
-                      : "Online checkout is temporarily unavailable"}
+                    Online checkout is not yet available for this plan
                   </p>
                 )}
                 {plan.features.length > 0 ? (

@@ -1,7 +1,7 @@
 # Vendor Launch Map
 
 **Status:** Active canonical operating map.  
-**Updated:** August 30, 2026.
+**Updated:** September 27, 2026.
 
 This document records BotBound's intended production provider roles and the evidence required before a capability is treated as launch-ready. Historical balances, account screenshots, temporary tokens, and one-off audit results do not belong here; use the executable probes and deployment logs for current evidence.
 
@@ -45,6 +45,20 @@ Leftover Stripe Live Video price IDs may still exist so webhooks do not brick bi
 ### Voice
 
 Production voice inventory is not equivalent to compliance clearance. Before scaled outbound traffic, prove the responsible business identity, applicable caller-ID/attestation posture, consent basis, quiet-hour rules, DNC handling, and live transfer/handoff behavior.
+
+The call's purpose and recipient permission are separate from the area code a customer chooses for their business number. A customer choosing a local number does not grant permission to call people in that area. Customer attestations also do not replace BotBound's server-owned consent and suppression checks.
+
+| Flow | Current launch boundary |
+| --- | --- |
+| Private Studio Build/Test | No recipient is dialed; keep external actions disabled and provider spend capped. |
+| Inbound customer call | A caller reaches the business voluntarily; verify routing, paid coverage, identification, and applicable recording/transcription policy. Federal outbound screening is not a prerequisite to receiving the call. |
+| Requested callback | Require the existing server-recorded callback request, destination, purpose and one-time execution controls. Keep suppression, calling-hour and coverage checks. A generic form submission is not interchangeable with that request. |
+| Appointment, support, recruiting, payment or other service call | Do not infer consent from a purpose label or an existing relationship. Applicable artificial-voice consent and state rules still matter. Keep direct dialing closed until the required auditable recipient permission and the supported workflow exist. |
+| Marketing/campaign call | Require auditable recipient permission, applicable written consent, current screening, internal suppression, calling hours, identification and working opt-out. Fail closed when the required evidence or screening service is unavailable. |
+
+FCC 24-17 treats AI-generated voices as artificial/prerecorded voices under the TCPA; it does not make nonmarketing AI calls universally exempt. Explicit AI identification is BotBound policy. FCC 24-84 proposed additional AI-specific disclosures and is not itself a final disclosure rule. The January 2025 court decision vacated the FCC's new one-to-one consent restriction; do not describe that vacated rule as an operative January 2025 requirement. Existing applicable consent obligations remain. [FCC 24-17](https://docs.fcc.gov/public/attachments/FCC-24-17A1.pdf), [current calling rules](https://www.ecfr.gov/current/title-47/chapter-I/subchapter-B/part-64/subpart-L/section-64.1200), [FCC proposal](https://docs.fcc.gov/public/attachments/FCC-24-84A1_Rcd.pdf), [court decision](https://media.ca11.uscourts.gov/opinions/pub/files/202410277.pdf).
+
+State recording consent is a separate question. A notice, area-code inference, or continued conversation is not universal proof of all required consent. Do not market the product as eliminating legal exposure. For example, Illinois regulates surreptitious recording/transmission of private conversations; its rule is not simply a notice checkbox. [Illinois statute](https://ilga.gov/documents/legislation/ilcs/documents/072000050K14-2.htm).
 
 ### SMS
 

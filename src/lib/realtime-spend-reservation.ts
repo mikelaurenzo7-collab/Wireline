@@ -17,12 +17,15 @@ import { releaseSimulationMinuteQuota } from "../middleware/api-rate-limits";
 import { drizzle, log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 import { shouldRetainRealtimeReservation } from "./realtime-provider-outcome";
+import { providerSpendMeter } from "./provider-spend-meter";
+import type { NativeInboundAdmission } from "./voice/native-inbound-admission";
 
 export async function reserveRealtimeSessionSpend(
   req: Request,
   userId: string,
-  surface: string,
+  surface: "openai_sip" | "studio_simulation" | "live_voice_session",
   idempotencyKey?: string,
+  inboundAdmission?: NativeInboundAdmission,
 ): Promise<PlatformCostReservation> {
   const reserveUsd = platformCostReserveUsd("openai_realtime_session");
   const decision = await reservePlatformCostRecord({
@@ -32,7 +35,14 @@ export async function reserveRealtimeSessionSpend(
     model: OPENAI_REALTIME_DEFAULT_MODEL,
     costUsd: reserveUsd,
     idempotencyKey,
-    requestMeta: { surface, reserve_window_seconds: 300, reserve_window_usd: reserveUsd },
+    requestMeta: {
+      surface,
+      reserve_window_seconds: 300,
+      reserve_window_usd: reserveUsd,
+      ...(surface === "openai_sip" && inboundAdmission
+        ? { inbound_admission: inboundAdmission }
+        : {}),
+    },
   });
 
   if (decision.reserved) return decision.reservation;
@@ -112,7 +122,13 @@ export async function reconcileOpenAISipDurationSpend(
 ): Promise<void> {
   if (seconds <= 300) return;
   const [receipt] = await drizzle
-    .select({ id: schema.auditLog.id, costUsd: schema.auditLog.costUsd })
+    .select({
+      id: schema.auditLog.id,
+      costUsd: schema.auditLog.costUsd,
+      action: schema.auditLog.action,
+      provider: schema.auditLog.provider,
+      metadata: schema.auditLog.metadata,
+    })
     .from(schema.auditLog)
     .where(
       and(
@@ -122,13 +138,16 @@ export async function reconcileOpenAISipDurationSpend(
       ),
     )
     .limit(1);
-  if (!receipt) throw new Error("SIP duration accounting receipt is missing.");
+  if (!receipt || providerSpendMeter(receipt) !== "live_voice") {
+    throw new Error("SIP duration accounting receipt is missing.");
+  }
   await extendCommittedPlatformCostReservation(
     {
       userId,
       auditId: receipt.id,
       costUsd: Number(receipt.costUsd),
       adopted: true,
+      meter: providerSpendMeter(receipt),
     },
     seconds,
   );

@@ -2,7 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import { enforceLaunchHardGate } from "../middleware/launch-hard-gate";
 import { dialRateLimiter } from "../middleware/api-rate-limits";
 import { enforceTrialOutboundCap } from "./trial-gate";
-import { enforce24hSpendCap, enforceSpendCap } from "./spend-guards";
+import { enforce24hSpendCap } from "./spend-guards";
+import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { quotaRejectionHeaders } from "./tenant-quotas";
 import { log, quotaTracker } from "./server-context";
 import { assertVoiceWalletSolvent } from "./voice-wallet-guard";
@@ -25,13 +26,7 @@ export class OutboundVoiceControlError extends Error {
 }
 
 export type OutboundVoiceSource =
-  | "manual"
-  | "bulk_import"
-  | "campaign"
-  | "cadence"
-  | "callback"
-  | "director"
-  | "automation";
+  "manual" | "bulk_import" | "campaign" | "cadence" | "callback" | "director" | "automation";
 
 export interface AssertOutboundVoiceAllowedInput {
   userId: string;
@@ -114,6 +109,7 @@ function quotaUnavailableError(input: AssertOutboundVoiceAllowedInput) {
 export async function assertOutboundVoiceAllowed(
   input: AssertOutboundVoiceAllowedInput,
 ): Promise<void> {
+  await assertLiveExternalActionAllowed(input.userId, "provider_spend_admission");
   try {
     await assertVoiceWalletSolvent(input.userId);
   } catch (err) {
@@ -126,7 +122,7 @@ export async function assertOutboundVoiceAllowed(
   await assertMiddlewarePasses(enforceLaunchHardGate, input);
   await assertMiddlewarePasses(enforceTrialOutboundCap, input);
   await assertMiddlewarePasses(enforce24hSpendCap, input);
-  await assertMiddlewarePasses(enforceSpendCap, input);
+  // PSTN is funded by included voice/Runtime Balance, not the managed AI cap.
   await assertMiddlewarePasses(dialRateLimiter, input);
 
   let quotaDecision;

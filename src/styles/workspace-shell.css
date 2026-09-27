@@ -329,12 +329,20 @@
 
 .wl-shell-notice-rail {
   display: grid;
+  flex-shrink: 0;
   gap: 0.625rem;
   padding-inline: 0.75rem;
 }
 
 .wl-shell-notice-rail:empty {
   display: none;
+}
+
+/* A tall notice must scroll before a full-height route, not shrink its nested
+ * panes until their headers cover the controls. The route keeps its usable
+ * viewport; the outer scrollport also owns the existing mobile dock clearance. */
+[data-wireline-full-bleed="true"] > .wl-workspace-content {
+  overflow-y: auto;
 }
 
 /* Mobile dock */

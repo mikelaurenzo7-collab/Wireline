@@ -297,7 +297,7 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
 
   return tenantStore.run(userId, async () => {
     try {
-      await persistConsentControl({
+      const result = await persistConsentControl({
         userId,
         agentId: destination.agentId,
         destinationNumber: destination.destinationNumber,
@@ -310,6 +310,14 @@ router.post("/api/twilio-webhook/sms", async (req: Request, res: Response, next:
         control,
         legacy,
       });
+
+      if (result === "duplicate") {
+        // Provider redelivery must not generate another paid confirmation or
+        // let an old START erase a newer emergency STOP. If the first START's
+        // failsafe clear failed, the retry prompt asks for a fresh START/SID.
+        res.setHeader("Content-Type", "text/xml");
+        return res.status(200).send(emptyTwiml());
+      }
 
       if (control === "start") {
         // Commit the canonical delete + consent event first. A stale emergency

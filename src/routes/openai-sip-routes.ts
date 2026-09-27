@@ -24,7 +24,7 @@ import { verifyStandardWebhook } from "../lib/standard-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { isOutboundCallPurpose, type OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
-import { resolveNativeInboundAdmission } from "../lib/voice/native-inbound-admission";
+import { resolveNativeInboundCallAdmission } from "../lib/voice/native-inbound-admission";
 import { verifyOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import { buildOpenAIRealtimeAgentRuntime } from "../lib/voice/openai-phone-agent-runtime";
 import {
@@ -100,7 +100,12 @@ function sipHeader(payload: IncomingWebhook, name: string): string {
   return typeof row?.value === "string" ? row.value.trim() : "";
 }
 
-async function resolveInboundContext(calledNumber: string, callerNumber: string | null) {
+async function resolveInboundContext(
+  calledNumber: string,
+  callerNumber: string | null,
+  callId: string,
+  twilioCallSid: string,
+) {
   const [line] = await drizzle
     .select({
       userId: schema.phoneNumbers.userId,
@@ -121,7 +126,13 @@ async function resolveInboundContext(calledNumber: string, callerNumber: string 
       direction: "inbound" as const,
       businessName: line.businessName,
       admission: await tenantStore.run(line.userId, () =>
-        resolveNativeInboundAdmission(line.userId, line.agentId!),
+        resolveNativeInboundCallAdmission({
+          userId: line.userId,
+          agentId: line.agentId!,
+          callId,
+          twilioCallSid,
+          callerNumber,
+        }),
       ),
     },
   };
@@ -344,7 +355,12 @@ router.post(
 
       const context = outboundToken
         ? await resolveOutboundContext(outboundToken, callId)
-        : await resolveInboundContext(calledNumber!, callerNumber);
+        : await resolveInboundContext(
+            calledNumber!,
+            callerNumber,
+            callId,
+            inboundVerification?.ok ? inboundVerification.claims.twilioCallSid : "",
+          );
       if (!context) {
         log.warn("OpenAI incoming call rejected: no active BotBound line", {
           calledSuffix: phoneSuffixForLog(calledNumber ?? ""),
@@ -364,6 +380,17 @@ router.post(
       const sessionInput: OpenAISipIncomingCall = { callId, ...context.call };
       if (inboundVerification?.ok) {
         sessionInput.inboundTwilioCallSid = inboundVerification.claims.twilioCallSid;
+      }
+      if (sessionInput.direction === "inbound" && sessionInput.admission?.mode === "suspended") {
+        // Coverage and capacity refusals are terminal for this new call. Do not
+        // accept a paid AI session merely to explain that paid AI is unavailable.
+        await rejectCall(callId, 603);
+        res.status(202).json({
+          received: true,
+          handled: false,
+          reason: sessionInput.admission.reason ?? "subscription",
+        });
+        return;
       }
       let runtime: Awaited<ReturnType<typeof buildOpenAIRealtimeAgentRuntime>>;
       try {
@@ -429,6 +456,7 @@ router.post(
           sessionInput.userId,
           "openai_sip",
           `openai-sip:${callId}`,
+          sessionInput.admission,
         );
       } catch (error) {
         const owned = await settleOwnedPreSessionFailure({

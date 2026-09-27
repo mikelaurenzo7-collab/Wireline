@@ -36,7 +36,7 @@ function monthlyPeriodKey(now: Date = new Date()): string {
 
 export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalletSnapshot> {
   // This runs on the inbound assistant-request hot path, where the caller
-  // fails open on error. A Promise.all here checked out one pooled client per
+  // rejects unavailable coverage. A Promise.all here checked out one pooled client per
   // query — two simultaneous inbound calls could exhaust the max-5 pool,
   // time out, and hand an insolvent tenant the full assistant. serialQueryBatch
   // resolves the lazy builders strictly one at a time, so this request never

@@ -41,6 +41,10 @@ import {
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
+import {
+  completeTwilioVoiceFallback,
+  prepareTwilioVoiceFallback,
+} from "../lib/voice/twilio-fallback";
 
 const router = Router();
 
@@ -542,9 +546,30 @@ export async function handleTwilioVoiceFallback(req: Request, res: Response) {
   const transferChimeUrl = publicAssetUrl("/sounds/wireline-transfer-chime.wav");
 
   if (fallbackNumber) {
+    let receipt;
+    try {
+      receipt = await prepareTwilioVoiceFallback({
+        userId: tenantUserId,
+        parentCallSid: String(req.body?.CallSid || ""),
+        calledNumber: to,
+        callerNumber: from,
+        fallbackNumber,
+      });
+    } catch (error) {
+      log.error("Voice fallback admission unavailable", {
+        tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return res.status(503).send(twimlHangup());
+    }
+    if (!receipt) return res.status(200).send(twimlHangup());
+    const statusUrl =
+      publicAssetUrl("/api/twilio-webhook/voice-fallback-status") +
+      "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
-    twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST">${escapeTwimlValue(fallbackNumber)}</Dial>\n`;
+    twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST" timeLimit="${receipt.maxSeconds}" callerId="${escapeTwimlValue(receipt.calledNumber)}">`;
+    twiml += `<Number statusCallback="${escapeTwimlValue(statusUrl)}" statusCallbackMethod="POST" statusCallbackEvent="completed">${escapeTwimlValue(receipt.fallbackNumber)}</Number></Dial>\n`;
     twiml += `</Response>`;
     return res.status(200).send(twiml);
   }
@@ -561,17 +586,49 @@ router.post("/api/twilio-webhook/voice-fallback-complete", async (req: Request, 
     return res.status(403).send(twimlHangup());
   }
 
-  const to = typeof req.body?.To === "string" ? req.body.To : "";
-  const tenantUserId = await resolveProductionInboundTenant(to, req.path);
-  if (!tenantUserId) return res.status(200).send(twimlHangup());
-
-  const dialStatus =
-    typeof req.body?.DialCallStatus === "string"
-      ? req.body.DialCallStatus.trim().toLowerCase()
-      : "unknown";
-  log.info("Voice failover transfer completed", { dial_status: dialStatus });
-
+  try {
+    await completeTwilioVoiceFallback({
+      parentCallSid: String(req.body?.CallSid || ""),
+      childCallSid: String(req.body?.DialCallSid || ""),
+      calledNumber: String(req.body?.To || ""),
+      callerNumber: String(req.body?.From || ""),
+      status: String(req.body?.DialCallStatus || "")
+        .trim()
+        .toLowerCase(),
+      durationSeconds: req.body?.DialCallDuration,
+    });
+  } catch (error) {
+    log.error("Voice fallback settlement requires retry", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(503).send(twimlHangup());
+  }
   return res.status(200).send(twimlHangup());
+});
+
+// A completed child status arrives even when the original caller hangs up and
+// ends TwiML processing. Both callbacks converge on the one pre-Dial receipt.
+router.post("/api/twilio-webhook/voice-fallback-status", async (req: Request, res: Response) => {
+  if (!verifyTwilioSignature(req)) return res.status(403).end();
+  try {
+    await completeTwilioVoiceFallback({
+      parentCallSid: String(req.body?.ParentCallSid || ""),
+      childCallSid: String(req.body?.CallSid || ""),
+      calledNumber: String(req.body?.To || ""),
+      callerNumber: String(req.body?.From || ""),
+      status: String(req.body?.CallStatus || "")
+        .trim()
+        .toLowerCase(),
+      durationSeconds: req.body?.CallDuration,
+      source: "status",
+    });
+    return res.status(204).end();
+  } catch (error) {
+    log.error("Voice fallback child settlement requires retry", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return res.status(503).end();
+  }
 });
 
 router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: Response) => {

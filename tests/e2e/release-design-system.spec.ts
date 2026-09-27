@@ -68,23 +68,35 @@ for (const viewport of [
       }),
     );
     await page.goto("/phone?tab=setup");
+    await expect(page.getByText(/Couldn't check your email status/)).toBeVisible();
     if (viewport.largeText) await enlargeText(page);
+    // The selected dock/rail item and Lines tab already provide visual context.
+    // Keep semantic headings without letting them occupy a second title band.
+    for (const name of ["Calls", "Lines"]) {
+      const heading = page.getByRole("heading", { name, exact: true });
+      await expect(heading).toHaveCount(1);
+      expect((await heading.boundingBox())?.height).toBeLessThanOrEqual(1);
+    }
     await page.getByRole("button", { name: "Add line", exact: true }).click();
     await page.getByRole("button", { name: "Find numbers", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Activate Live Work", exact: true });
+    const dialog = page.getByRole("dialog", { name: "Go live", exact: true });
     await expect(dialog).toBeVisible();
     await expect(
       dialog.getByText("Checkout is temporarily unavailable. Your Bot is saved.", { exact: true }),
     ).toBeVisible();
-    const plans = dialog.getByRole("button", { name: /Pick BotBound/ });
-    await expect(plans).toHaveCount(3);
+    const plans = dialog.getByRole("button", { name: /^Choose / });
+    await expect(plans).toHaveCount(0);
     await page.evaluate(() => document.fonts.ready);
+    await expect(dialog).toHaveCSS("opacity", "1");
+    await expect(dialog.locator(":scope > div")).toHaveCSS("opacity", "1");
     await testInfo.attach(`activation-${viewport.width}`, {
       path: await page
         .screenshot({ path: testInfo.outputPath(`activation-${viewport.width}.png`) })
         .then(() => testInfo.outputPath(`activation-${viewport.width}.png`)),
       contentType: "image/png",
     });
+    await dialog.getByText("View plans", { exact: true }).click();
+    await expect(plans).toHaveCount(3);
     for (const card of await plans.all()) {
       await expect(card).toBeDisabled();
       const geometry = await card.evaluate((element) => {
@@ -129,10 +141,47 @@ for (const viewport of [
         );
       }
     }
+    await testInfo.attach(`activation-plans-${viewport.width}`, {
+      path: await page
+        .screenshot({ path: testInfo.outputPath(`activation-plans-${viewport.width}.png`) })
+        .then(() => testInfo.outputPath(`activation-plans-${viewport.width}.png`)),
+      contentType: "image/png",
+    });
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
   });
 }
+
+test("Activity keeps its document heading without repeating the selected navigation label", async ({
+  page,
+}, testInfo) => {
+  await mockWorkspace(page);
+  await page.route("**/api/billing/status", (route) =>
+    route.fulfill({
+      json: {
+        stripe_configured: true,
+        subscription: null,
+        agent_count: 1,
+        email_verified: true,
+      },
+    }),
+  );
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (width === 390) await page.goto("/insights");
+    const heading = page.getByRole("heading", { level: 1, name: "Activity", exact: true });
+    await expect(heading).toHaveCount(1);
+    expect((await heading.boundingBox())?.height).toBeLessThanOrEqual(1);
+    await expect(page.getByRole("combobox", { name: "Activity view" })).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await testInfo.attach(`activity-${width}`, {
+      path: await page
+        .screenshot({ path: testInfo.outputPath(`activity-${width}.png`), animations: "disabled" })
+        .then(() => testInfo.outputPath(`activity-${width}.png`)),
+      contentType: "image/png",
+    });
+  }
+});
 
 async function expectContentFits(locator: Locator) {
   await expect
@@ -277,6 +326,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
   await page.setViewportSize({ width: 390, height: 844 });
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
+  await expect(page.getByText(/Couldn't check your email status/)).toBeVisible();
   const greeting = page.getByRole("textbox", { name: "Opening greeting", exact: true });
   const draft = "Welcome to the repair desk. How can I help?";
   await greeting.fill(draft);

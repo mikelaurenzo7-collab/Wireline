@@ -316,13 +316,20 @@ export function applyInboundAdmission(
   const mode = inboundAdmissionMode(input);
   if (mode === "full") return runtime;
   if (mode === "suspended") {
+    throw new AppError(
+      402,
+      "VOICE_ADMISSION_DENIED",
+      "This line cannot start a new AI call until voice coverage and capacity are available.",
+    );
+  }
+  if (mode === "recovery_notice") {
     return {
       ...runtime,
-      greeting: "The automated service for this line is suspended.",
+      greeting: "We couldn't restore this call. Please call again.",
       session: {
         ...runtime.session,
         instructions:
-          "Explain that automated service on this line is suspended and end the call. Do not use tools or answer business questions.",
+          "Explain briefly that this call could not be restored and ask the caller to call again. End politely. Do not collect a message, answer business questions, or use tools.",
         tools: [],
         tool_choice: "none",
       },
@@ -1698,7 +1705,11 @@ async function runRealtimeSession(
       const admissionMode = inboundAdmissionMode(input);
       const allowedTakeMessage =
         admissionMode !== "take_message" || call.name === "create_followup_task";
-      if (admissionMode === "suspended" || !allowedTakeMessage) {
+      if (
+        admissionMode === "suspended" ||
+        admissionMode === "recovery_notice" ||
+        !allowedTakeMessage
+      ) {
         toolCallsFailed += 1;
         sendJson(ws, {
           type: "conversation.item.create",
@@ -2006,7 +2017,7 @@ async function runRealtimeSession(
 
         const admissionMode = inboundAdmissionMode(input);
         const maxDurationMs =
-          admissionMode === "suspended"
+          admissionMode === "suspended" || admissionMode === "recovery_notice"
             ? 20_000
             : admissionMode === "take_message"
               ? 300_000

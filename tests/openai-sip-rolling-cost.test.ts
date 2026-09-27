@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
-  row: { costUsd: "1", metadata: {} as Record<string, unknown> },
+  row: {
+    action: "voice.realtime.session",
+    provider: "openai",
+    costUsd: "1",
+    metadata: {} as Record<string, unknown>,
+  },
   tail: Promise.resolve(),
   failWrite: false,
   daily: vi.fn(),
@@ -20,6 +25,8 @@ vi.mock("../src/db/schema", () => ({
     id: "id",
     userId: "userId",
     costUsd: "costUsd",
+    action: "action",
+    provider: "provider",
     metadata: "metadata",
   },
 }));
@@ -52,7 +59,7 @@ vi.mock("../src/lib/server-context", () => {
             h.failWrite = false;
             throw new Error("temporary database failure");
           }
-          h.row = value;
+          h.row = { ...h.row, ...value };
         },
       }),
     }),
@@ -86,6 +93,8 @@ import { extendCommittedPlatformCostReservation } from "../src/middleware/audit-
 const reservation = { auditId: 1n, userId: "tenant", costUsd: 1, adopted: false };
 beforeEach(() => {
   h.row = {
+    action: "voice.realtime.session",
+    provider: "openai",
     costUsd: "1",
     metadata: { accounting_state: "committed", surface: "openai_sip", reserve_window_usd: 1 },
   };
@@ -104,6 +113,7 @@ describe("rolling admitted SIP cost estimate", () => {
     expect(h.row.costUsd).toBe("12");
     expect(h.daily.mock.calls.reduce((total, [delta]) => total + delta, 0)).toBe(11);
     expect(h.row.metadata.cost_basis).toBe("realtime_duration_estimate");
+    expect(h.evaluate).not.toHaveBeenCalled();
   });
   it("is monotonic and idempotent when heartbeats and final replay overlap", async () => {
     await Promise.all([
@@ -148,4 +158,15 @@ describe("rolling admitted SIP cost estimate", () => {
     expect(h.row.costUsd).toBe("12");
     expect(h.daily).not.toHaveBeenCalled();
   });
+  it.each(["action", "provider"] as const)(
+    "does not extend a receipt with unrelated %s",
+    async (field) => {
+      h.row[field] = "other";
+      await expect(extendCommittedPlatformCostReservation(reservation, 301)).rejects.toThrow(
+        "Admitted",
+      );
+      expect(h.row.costUsd).toBe("1");
+      expect(h.daily).not.toHaveBeenCalled();
+    },
+  );
 });

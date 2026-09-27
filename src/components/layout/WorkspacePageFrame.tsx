@@ -131,12 +131,8 @@ type WorkspaceOperateIntroProps = {
   tabs?: ReactNode;
   action?: ReactNode;
   /**
-   * Drop the visible heading at `lg` and up, where the workspace sidebar already
-   * names the selected section — printing "Calls" under a selected "Calls" rail
-   * item labels the page twice. The heading stays `sr-only` (kept in the
-   * accessibility tree so the page retains a document outline) rather than
-   * removed, and it stays visible below `lg`, where the sidebar is hidden and
-   * this is the page's only on-screen name.
+   * Keep the document heading accessible without repeating the active section
+   * already named by the desktop rail or mobile dock.
    */
   titleHidden?: boolean;
 };
@@ -148,28 +144,29 @@ export function WorkspaceOperateIntro({
   action,
   titleHidden = false,
 }: WorkspaceOperateIntroProps) {
-  const showBarAlways = Boolean(tabs || action);
+  if (titleHidden && !tabs && !action) {
+    return <h1 className="sr-only">{title}</h1>;
+  }
+
   return (
-    <header
-      className={cn(
-        "wl-operate-surface shrink-0 border-b border-border/60 pb-3",
-        // First-run Insights has a page title on the phone and nothing else.
-        // Keep that name under the dock's More sheet, and drop the empty
-        // bordered bar on desktop where the rail already says Activity.
-        !showBarAlways && titleHidden && "lg:hidden",
-      )}
-    >
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className={cn("wl-display-3 break-words text-balance", titleHidden && "lg:sr-only")}>
-            {title}
-          </h1>
+    <header className="wl-operate-surface shrink-0 border-b border-border/60 pb-3">
+      {titleHidden ? <h1 className="sr-only">{title}</h1> : null}
+      {!titleHidden || action ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-end gap-3",
+            titleHidden ? "justify-end" : "justify-between",
+          )}
+        >
+          {!titleHidden ? (
+            <div className="min-w-0">
+              <h1 className="wl-display-3 break-words text-balance">{title}</h1>
+            </div>
+          ) : null}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
-      </div>
-      {/* When the heading collapses to sr-only at lg+, pull the tab strip up so
-          the operate bar doesn't keep a phantom gap where the title used to sit. */}
-      {tabs ? <div className={cn("mt-3", titleHidden && !action && "lg:mt-0")}>{tabs}</div> : null}
+      ) : null}
+      {tabs ? <div className={cn((!titleHidden || action) && "mt-3")}>{tabs}</div> : null}
     </header>
   );
 }

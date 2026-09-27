@@ -2,8 +2,8 @@
  * src/lib/spend-guards.ts
  *
  * Per-user spend tracking, customer-selected hard caps, and spend webhooks.
- * A hard cap is enforced before new outbound voice work begins; it deliberately
- * does not terminate an in-flight conversation mid-sentence.
+ * The managed AI cap covers build, training, tools and private voice previews.
+ * Phone calls use their own included voice/Runtime Balance admission policy.
  */
 
 import type { Request, Response, NextFunction } from "express";
@@ -14,6 +14,7 @@ import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator
 import { getErrorMessage } from "./server-utils";
 import { resolveHardSpendCapStatus } from "./spend-budget-policy";
 import { resolveAiDailySpendAlertUsd } from "./ai-spend-alert";
+import { managedAiSpendPredicate } from "./provider-spend-meter";
 import {
   assertLiveExternalActionAllowed,
   assertPrivateTextSimulationAllowed,
@@ -92,6 +93,7 @@ export async function getBudgetSnapshot(
         and(
           eq(schema.auditLog.userId, userId),
           gte(schema.auditLog.createdAt, periodStartIso(period)),
+          managedAiSpendPredicate(),
         ),
       )
       .then((rows) => rows[0]),
@@ -283,7 +285,7 @@ export async function enforceSpendCap(req: AuthedRequest, res: Response, next: N
  * Admission for a tool-free private text rehearsal. Demo/test classifications
  * are intentional here: the model can only return text. Preview Voice uses the
  * sibling private-voice guard. The ordinary live guard remains in front of
- * PSTN, SMS, email, number provision, and agent tools.
+ * managed AI work such as agent tools; PSTN has separate voice coverage gates.
  */
 export async function enforcePrivateTextSimulationSpendCap(
   req: AuthedRequest,

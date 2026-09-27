@@ -216,6 +216,7 @@ vi.mock("../src/lib/voice/ai-disclosure-evidence", () => ({
 }));
 
 import {
+  applyInboundAdmission,
   replayOpenAISipPostCallFinalization,
   runOpenAISipCallSession,
   settleOpenAISipPreSessionFailure,
@@ -240,6 +241,37 @@ const emit = async (event: Record<string, unknown>) => {
   h.sockets[0].emit("message", Buffer.from(JSON.stringify(event)));
   await vi.advanceTimersByTimeAsync(0);
 };
+describe("funded inbound runtime construction", () => {
+  it("never constructs a paid AI notice for suspended inbound work", () => {
+    expect(() =>
+      applyInboundAdmission(runtime as any, {
+        ...call,
+        admission: { mode: "suspended", reason: "coverage" },
+      }),
+    ).toThrow("cannot start a new AI call");
+  });
+  it("retains covered after-hours message-taking", () => {
+    const result = applyInboundAdmission(runtime as any, {
+      ...call,
+      admission: { mode: "take_message", reason: "after_hours" },
+    });
+    expect(result.session.instructions).toContain("AFTER-HOURS MODE");
+  });
+  it("limits legacy funded recovery to a tool-free 20-second notice", async () => {
+    const recovering = {
+      ...call,
+      admission: { mode: "recovery_notice" as const, reason: "recovery" as const },
+    };
+    const notice = applyInboundAdmission(runtime as any, recovering);
+    expect(notice.session.tools).toEqual([]);
+    expect(notice.session.tool_choice).toBe("none");
+    const session = runOpenAISipCallSession(recovering, notice, 1n, claim, reservation);
+    await vi.advanceTimersByTimeAsync(20_001);
+    await session;
+    expect(h.tool).not.toHaveBeenCalled();
+    expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 20 }));
+  });
+});
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-19T12:00:00Z"));

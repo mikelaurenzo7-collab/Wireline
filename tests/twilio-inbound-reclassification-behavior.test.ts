@@ -114,6 +114,8 @@ describe("signed Twilio inbound account-environment decision", () => {
 describe("signed Twilio voice reclassification fence", () => {
   async function loadVoiceRouter(input: {
     allowed: boolean;
+    auth?: boolean;
+    completionError?: Error;
     selectRows?: unknown[][];
     lookupError?: Error;
   }) {
@@ -140,7 +142,7 @@ describe("signed Twilio voice reclassification fence", () => {
       tenantStore: { run: vi.fn(async (_userId: string, operation: () => unknown) => operation()) },
     }));
     vi.doMock("../src/lib/twilio-webhook-auth", () => ({
-      evaluateTwilioWebhookAuth: vi.fn(() => ({ ok: true })),
+      evaluateTwilioWebhookAuth: vi.fn(() => ({ ok: input.auth ?? true })),
     }));
     vi.doMock("../src/lib/twilio-inbound-environment", () => ({
       resolveTwilioInboundEnvironment: environment,
@@ -148,8 +150,20 @@ describe("signed Twilio voice reclassification fence", () => {
     vi.doMock("../src/lib/app-url", () => ({
       resolveCanonicalAppUrl: vi.fn(() => ({ url: "https://botbound.app" })),
     }));
+    const settle = vi.fn(async () => {
+      if (input.completionError) throw input.completionError;
+      return false;
+    });
+    vi.doMock("../src/lib/voice/twilio-fallback", () => ({
+      prepareTwilioVoiceFallback: vi.fn(async (input: Record<string, unknown>) => ({
+        ...input,
+        maxSeconds: 3600,
+        completion: null,
+      })),
+      completeTwilioVoiceFallback: settle,
+    }));
     const module = await import("../src/routes/twilio-webhook-base");
-    return { router: module.default, select, environment };
+    return { router: module.default, select, environment, settle };
   }
 
   it("returns Hangup-only from both independently signed failover routes for demo tenants", async () => {
@@ -176,8 +190,9 @@ describe("signed Twilio voice reclassification fence", () => {
       expect(String(captured.body)).not.toMatch(/<(?:Say|Play|Dial|Record)\b/);
     }
 
-    expect(environment).toHaveBeenCalledTimes(2);
-    expect(select).toHaveBeenCalledTimes(2);
+    // New work is classified; settlement uses its durable pre-Dial owner instead.
+    expect(environment).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledTimes(1);
   });
 
   it("preserves the production transfer response after the environment gate", async () => {
@@ -218,6 +233,59 @@ describe("signed Twilio voice reclassification fence", () => {
       expect(captured).toEqual({ statusCode: 200, body: HANGUP_TWIML });
       expect(String(captured.body)).not.toMatch(/<(?:Say|Play|Dial|Record)\b/);
     }
+  });
+
+  it("authenticates child completion before accessing a durable owner", async () => {
+    const { router, settle, select } = await loadVoiceRouter({ allowed: true, auth: false });
+    const path = "/api/twilio-webhook/voice-fallback-status";
+    const { response, captured } = fakeResponse();
+    await routeHandler(router, path)({ path, body: {} }, response, vi.fn());
+    expect(captured.statusCode).toBe(403);
+    expect(settle).not.toHaveBeenCalled();
+    expect(select).not.toHaveBeenCalled();
+  });
+
+  it("maps signed parent/child status fields without looking up the number's new owner", async () => {
+    const { router, settle, select } = await loadVoiceRouter({ allowed: false });
+    const path = "/api/twilio-webhook/voice-fallback-status";
+    const { response, captured } = fakeResponse();
+    await routeHandler(router, path)(
+      {
+        path,
+        body: {
+          ParentCallSid: "parent",
+          CallSid: "child",
+          To: "+12025550140",
+          From: "+12025550141",
+          CallStatus: "completed",
+          CallDuration: "60",
+        },
+      },
+      response,
+      vi.fn(),
+    );
+    expect(captured.statusCode).toBe(204);
+    expect(select).not.toHaveBeenCalled();
+    expect(settle).toHaveBeenCalledWith({
+      parentCallSid: "parent",
+      childCallSid: "child",
+      calledNumber: "+12025550140",
+      callerNumber: "+12025550141",
+      status: "completed",
+      durationSeconds: "60",
+      source: "status",
+    });
+  });
+
+  it("keeps a failed child settlement retryable", async () => {
+    const { router } = await loadVoiceRouter({
+      allowed: true,
+      completionError: new Error("ledger unavailable"),
+    });
+    const path = "/api/twilio-webhook/voice-fallback-status";
+    const { response, captured } = fakeResponse();
+    await routeHandler(router, path)({ path, body: {} }, response, vi.fn());
+    expect(captured.statusCode).toBe(503);
   });
 
   it.each([
@@ -479,9 +547,9 @@ describe("signed Twilio SMS reclassification fence", () => {
 });
 
 describe("signed Twilio inbound reclassification contracts", () => {
-  it("gates both signed failover routes before media while preserving evidence callbacks", () => {
+  it("gates new failover media while settling accepted work against durable receipts", () => {
     const base = source("src/routes/twilio-webhook-base.ts");
-    expect(base.match(/resolveProductionInboundTenant\(to, req\.path\)/g)).toHaveLength(2);
+    expect(base.match(/resolveProductionInboundTenant\(to, req\.path\)/g)).toHaveLength(1);
 
     const fallback = base.slice(
       base.indexOf("export async function handleTwilioVoiceFallback"),
@@ -501,11 +569,9 @@ describe("signed Twilio inbound reclassification contracts", () => {
     expect(transfer).toBeGreaterThan(fallbackHangup);
 
     const completeSignature = complete.indexOf("verifyTwilioSignature(req)");
-    const completeEnvironment = complete.indexOf("resolveProductionInboundTenant(to, req.path)");
-    const completeHangup = complete.indexOf("if (!tenantUserId)");
     expect(completeSignature).toBeGreaterThan(-1);
-    expect(completeEnvironment).toBeGreaterThan(completeSignature);
-    expect(completeHangup).toBeGreaterThan(completeEnvironment);
+    expect(complete.indexOf("completeTwilioVoiceFallback(")).toBeGreaterThan(completeSignature);
+    expect(complete).not.toContain("resolveProductionInboundTenant");
     expect(complete).toContain("return res.status(200).send(twimlHangup())");
     expect(complete).not.toMatch(/<(?:Play|Dial|Record)\b/);
 

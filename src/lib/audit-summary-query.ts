@@ -7,6 +7,7 @@ import {
   pricingForModel,
 } from "./ai-models";
 import type { AuditSummary } from "./audit-summary";
+import { managedAiSpendPredicate } from "./provider-spend-meter";
 
 type Numeric = number | string | null;
 type CostBucket = { calls: Numeric; cost: Numeric };
@@ -65,6 +66,7 @@ export function buildAuditSummaryQuery(userId: string, since: Date): SQL {
       from ${auditLog}
       where ${auditLog.userId} = ${userId}
         and ${auditLog.createdAt} >= ${since.toISOString()}::timestamptz
+        and ${managedAiSpendPredicate()}
     ), priced as (
       select *, input + cache_read + cache_create as prompt_tokens from scoped
     )

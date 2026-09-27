@@ -156,6 +156,7 @@ test("Studio settings and navigation reflow at 320px with enlarged text", async 
   await page.setViewportSize({ width: 320, height: 844 });
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
+  await expect(page.getByText(/Couldn't check your email status/)).toBeVisible();
   await page.evaluate(() =>
     document.documentElement.style.setProperty("font-size", "32px", "important"),
   );

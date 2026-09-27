@@ -42,28 +42,35 @@ describe("inbound concurrency ceiling", () => {
     expect(await inboundConcurrencyExceeded("user-1")).toBe(true);
   });
 
-  it("fails open on a count error — a DB blip must not degrade the line", async () => {
+  it("fails closed on a count error before accepting provider work", async () => {
     const { inboundConcurrencyExceeded } = await loadModule(new Error("pool timeout"));
-    expect(await inboundConcurrencyExceeded("user-1")).toBe(false);
+    await expect(inboundConcurrencyExceeded("user-1")).rejects.toMatchObject({ status: 503 });
+  });
+  it.each([NaN, -1, Infinity])("fails closed on invalid concurrency %s", async (count) => {
+    const { inboundConcurrencyExceeded } = await loadModule(count);
+    await expect(inboundConcurrencyExceeded("user-1")).rejects.toMatchObject({ status: 503 });
   });
 });
 
 describe("inbound concurrency wiring contract", () => {
-  it("gates OpenAI inbound overflow to take-a-message before the accepted session", () => {
+  it("rejects unfunded OpenAI inbound work before runtime construction and acceptance", () => {
     const admission = read("src/lib/voice/native-inbound-admission.ts");
     const routes = read("src/routes/openai-sip-routes.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
-    expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD = 5");
     expect(admission).toContain("inboundConcurrencyExceeded");
     expect(admission).toContain("voice_minutes_daily");
     expect(admission).toContain("after_hours");
     expect(admission).toContain("isWithinBusinessHours");
-    expect(routes).toContain("resolveNativeInboundAdmission");
+    expect(routes).toContain("resolveNativeInboundCallAdmission");
     expect(routes).toContain("tenantStore.run(line.userId");
-    expect(admission).toContain(
-      "Native inbound subscription check failed, continuing remaining gates",
-    );
+    expect(admission).toContain("Native inbound subscription check failed closed");
     expect(session).toContain("applyInboundAdmission");
+    expect(session).toContain('"VOICE_ADMISSION_DENIED"');
+    const refused = routes.indexOf('sessionInput.admission?.mode === "suspended"');
+    expect(refused).toBeGreaterThan(-1);
+    expect(refused).toBeLessThan(routes.indexOf("await buildOpenAIRealtimeAgentRuntime("));
+    expect(refused).toBeLessThan(routes.indexOf("await reserveRealtimeSessionSpend("));
+    expect(refused).toBeLessThan(routes.indexOf("await acceptCall("));
     expect(session).toContain("create_followup_task");
     expect(session).toContain("line-suspended");
     const apply = routes.indexOf("applyInboundAdmission(");

@@ -209,8 +209,9 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
       // Declaratory Ruling (FCC 24-17), which classifies AI-generated voices as
       // "artificial or prerecorded voice" under the TCPA — with no carve-out for
       // tech that "purports to provide the equivalent of a live agent" — and
-      // requires identification/disclosure of the entity responsible for the call
-      // (and, per the FCC 24-84 NPRM, an up-front AI disclosure). Generic by design;
+      // requires identification of the entity responsible for the call.
+      // Explicit AI identification is BotBound policy; FCC 24-84 was a proposal.
+      // Generic by design;
       // Account Holders must confirm the binding language for their jurisdiction.
       return [
         "## COMPLIANCE: TCPA (AI voice disclosure)",
@@ -218,7 +219,7 @@ export function complianceDisclosure(mode: ComplianceMode | string | null | unde
         "- At the start of the call, clearly disclose that this is an automated AI assistant, and state the name of the business you are calling on behalf of.",
         '- Honor any "do not call", "stop calling", "remove me", or opt-out request immediately: confirm the removal, do not re-solicit, and end the call.',
         '- Honor "speak to a human" / "is this a real person" requests directly and without deflecting.',
-        "- Do not place or continue a marketing or telemarketing call without the Account Holder's confirmed prior express written consent for this contact.",
+        "- Do not place or continue a marketing or telemarketing call without verified prior express written consent from this recipient for this business and purpose.",
       ].join("\n");
     case "none":
     default:

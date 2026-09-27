@@ -280,7 +280,7 @@ async function mount(surface: Surface) {
           element.type === "button" &&
           (text(element).includes("Subscribe") ||
             text(element).includes("Checkout paused") ||
-            text(element).includes("Pick Starter") ||
+            text(element).includes("Choose Starter") ||
             text(element).includes("Manage Subscription")),
       ),
     ).toBe(true);
@@ -296,7 +296,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
     async (flag) => {
       h.catalog.checkout_available = flag;
       await mount(surface);
-      const control = button(surface, surface === "card" ? "Checkout paused" : "Pick Starter");
+      const control = button(surface, surface === "card" ? "Checkout paused" : "Choose Starter");
       expect(control.props.disabled).toBe(true);
       await control.props.onClick?.();
       expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
@@ -310,7 +310,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
   );
   it("opens a configured monthly plan only when the server gate is open", async () => {
     await mount(surface);
-    const control = button(surface, surface === "card" ? "Subscribe" : "Pick Starter");
+    const control = button(surface, surface === "card" ? "Subscribe" : "Choose Starter");
     expect(control.props.disabled).toBe(false);
     if (surface === "card") expect(h.checkoutAvailability).toHaveBeenLastCalledWith("available");
     await control.props.onClick?.();
@@ -326,9 +326,26 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
     h.catalog.plans = [paidPlan({ configured: false, annual_configured: false })];
     await mount(surface);
     expect(
-      button(surface, surface === "card" ? "Checkout paused" : "Pick Starter").props.disabled,
+      button(surface, surface === "card" ? "Checkout paused" : "Choose Starter").props.disabled,
     ).toBe(true);
   });
+});
+
+it("keeps paused plans optional and makes available checkout immediately accessible", async () => {
+  h.catalog.checkout_available = false;
+  await mount("modal");
+  expect(render("modal").find((element) => element.type === "details")?.props.open).toBe(false);
+  const compare = render("modal").find(
+    (element) => element.type === "a" && element.props.to === "/settings/billing",
+  );
+  expect(compare).toBeDefined();
+  compare?.props.onClick?.();
+  expect(render("modal")).toEqual([]);
+
+  h.catalog.checkout_available = true;
+  await mount("modal");
+  expect(render("modal").find((element) => element.type === "details")?.props.open).toBe(true);
+  expect(button("modal", "Choose Starter").props.disabled).toBe(false);
 });
 
 it.each(["http", "network", "malformed"])(

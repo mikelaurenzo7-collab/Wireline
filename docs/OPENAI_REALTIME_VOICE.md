@@ -115,11 +115,20 @@ remaining, the worker logs a warning and instructs the Bot to explain the limit,
 agree the next step, and offer an approved callback or transfer. It does not splice
 a new session into the same call or promise unlimited duration.
 
-Private Studio/ChatGPT rehearsals remain five minutes. Inbound overflow,
-after-hours, and completion-grace message-taking remains five minutes; a suspended
-subscription's short notice remains 20 seconds. Balance exhaustion alone does not
-cut an admitted full conversation. Existing subscription, daily-minute,
-concurrency, environment, DNC, and spend admission controls remain in place.
+Private Studio/ChatGPT rehearsals remain five minutes. Covered after-hours
+message-taking also remains five minutes. A suspended subscription, depleted
+voice coverage, completion-grace debt, exhausted daily allowance, or exhausted
+concurrency rejects a new inbound SIP call before OpenAI acceptance; BotBound
+does not start a paid AI session to announce the refusal. Unavailable accounting
+returns a retryable error instead of granting work. Balance exhaustion does not
+cut an already admitted full conversation. Phone calls retain their provider
+cost receipts separately from the managed AI cap; voice coverage, environment,
+DNC, and other admission controls remain in place.
+
+Signed redelivery of the same previously funded call restores its recorded
+admission mode under the existing tenant/source/claim fences. A legacy receipt
+without that mode permits only a tool-free recovery notice lasting at most
+20 seconds; it cannot upgrade an old restricted session to full Bot privileges.
 
 ### Why the worker is separate
 

@@ -379,18 +379,12 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Lines</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {loading
-              ? "Checking lines…"
-              : inventoryUnavailable
-                ? "Lines unavailable"
-                : `${numbers.length} line${numbers.length === 1 ? "" : "s"}`}
+      <h2 className="sr-only">Lines</h2>
+      {numbers.length > 0 ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            {numbers.length} {numbers.length === 1 ? "line" : "lines"}
           </p>
-        </div>
-        {numbers.length > 0 ? (
           <Button
             type="button"
             size="sm"
@@ -404,8 +398,8 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
             <Plus className="size-4" aria-hidden="true" />
             Add line
           </Button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {error ? (
         <StatusNotice
