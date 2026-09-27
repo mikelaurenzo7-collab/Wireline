@@ -54,14 +54,14 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
         ariaLabel: "Outbound",
         icon: PhoneOutgoing,
       },
-      {
-        id: "appointments",
-        label: "Appointments",
-        shortLabel: "Appts",
-        ariaLabel: "Appointments",
-        icon: Calendar,
-      },
     ],
+  },
+  {
+    pathname: "/calendar",
+    defaultTab: "agenda",
+    ariaLabel: "Calendar sections",
+    layoutIdPrefix: "calendar-section",
+    tabs: [{ id: "agenda", label: "Calendar", icon: Calendar }, { id: "availability", label: "Availability", icon: CalendarClock }],
   },
   {
     pathname: "/insights",

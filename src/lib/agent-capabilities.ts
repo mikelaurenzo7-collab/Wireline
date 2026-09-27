@@ -187,14 +187,14 @@ export const AGENT_TOOL_CATALOG: readonly AgentToolCatalogEntry[] = [
   {
     name: "check_calendar_availability",
     label: "Check calendar availability",
-    description: "Reads connected calendars before proposing a time.",
+    description: "Checks Calendar or a connected calendar before proposing a time.",
     group: "calendar",
     integration: "calendar",
   },
   {
     name: "book_appointment",
     label: "Book appointment",
-    description: "Creates a calendar event once the slot is confirmed.",
+    description: "Books an available time using your Calendar approval preference.",
     group: "calendar",
     integration: "calendar",
   },

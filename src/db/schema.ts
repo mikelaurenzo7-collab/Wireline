@@ -105,6 +105,8 @@ export const settings = pgTable("wireline_settings", {
   primaryProduct: text("primary_product"),
   /** Tenant-wide operating hours (JSON) for template {{operatingHours}} substitution. */
   businessHours: jsonb("business_hours"),
+  /** Explicitly configured workspace booking calendar; null keeps legacy connector behavior. */
+  nativeCalendar: jsonb("native_calendar"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),

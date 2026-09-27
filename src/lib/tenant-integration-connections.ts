@@ -7,6 +7,7 @@ import {
   type PlatformIntegrationFlags,
 } from "./platform-integration-flags";
 import { X_ENGAGEMENT_TOOL_NAMES } from "./x-service";
+import { getNativeCalendarConfiguration } from "./native-calendar";
 
 const CRM_TOOL_NAMES = new Set<AgentToolName>([
   "crm_search_contacts",
@@ -48,6 +49,10 @@ export interface TenantIntegrationConnections {
   google_calendar: boolean;
   /** Microsoft 365 Calendar OAuth. */
   microsoft_calendar: boolean;
+  /** Workspace calendar with owner-configured booking hours. */
+  native_calendar?: boolean;
+  /** A saved native policy is authoritative even when booking is paused. */
+  native_calendar_configured?: boolean;
   /** Gmail / Google mail OAuth (emailAccounts). */
   google_mail: boolean;
   /** Microsoft Outlook mail OAuth. */
@@ -62,7 +67,7 @@ const X_ENGAGEMENT_SET = new Set<string>(X_ENGAGEMENT_TOOL_NAMES);
 export async function loadTenantIntegrationConnections(
   userId: string,
 ): Promise<TenantIntegrationConnections> {
-  const [crmRows, calendarRows, emailRows] = await Promise.all([
+  const [crmRows, calendarRows, emailRows, nativeCalendar] = await Promise.all([
     drizzle
       .select({
         provider: schema.crmConnections.provider,
@@ -78,6 +83,7 @@ export async function loadTenantIntegrationConnections(
       .select({ provider: schema.emailAccounts.provider })
       .from(schema.emailAccounts)
       .where(eq(schema.emailAccounts.userId, userId)),
+    getNativeCalendarConfiguration(userId),
   ]);
 
   const providers = new Set(crmRows.filter((r) => r.active !== false).map((r) => r.provider));
@@ -99,6 +105,8 @@ export async function loadTenantIntegrationConnections(
     zoom: providers.has("zoom"),
     google_calendar: calendarProviders.has("google"),
     microsoft_calendar: calendarProviders.has("microsoft") || calendarProviders.has("microsoft365"),
+    native_calendar: nativeCalendar.settings.enabled,
+    native_calendar_configured: nativeCalendar.configured,
     google_mail: mailProviders.has("google"),
     microsoft_mail: mailProviders.has("microsoft") || mailProviders.has("microsoft365"),
   };
@@ -120,7 +128,8 @@ export function filterToolsByTenantConnections(
     if (name === "log_to_google_sheets") return conn.google_sheets;
     if (name === "generate_zoom_link") return conn.zoom;
     if (name === "check_calendar_availability" || name === "book_appointment") {
-      return conn.google_calendar || conn.microsoft_calendar;
+      if (conn.native_calendar_configured) return Boolean(conn.native_calendar);
+      return Boolean(conn.native_calendar || conn.google_calendar || conn.microsoft_calendar);
     }
     if (CRM_TOOL_NAMES.has(name)) return conn.salesforce || conn.hubspot;
     if (name === "enrich_lead") return platform.apollo;

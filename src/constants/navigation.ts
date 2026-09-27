@@ -12,6 +12,7 @@
 export type NavIconName =
   | "BarChart3"
   | "Bot"
+  | "CalendarDays"
   | "CheckSquare"
   | "GraduationCap"
   | "Home"
@@ -130,6 +131,17 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     desktop: { group: "work", order: 30 },
     mobile: { placement: "primary", order: 30 },
     shortcut: { key: "P", hint: "g p" },
+  },
+  {
+    href: "/calendar",
+    title: "Calendar",
+    label: "Calendar",
+    eyebrow: "Operate",
+    description: "Manage appointments, availability, and booking rules.",
+    icon: "CalendarDays",
+    desktop: { group: "work", order: 40 },
+    mobile: { placement: "more", group: "Operate", order: 15 },
+    shortcut: { key: "C", hint: "g c" },
   },
   {
     href: "/insights",
@@ -293,9 +305,9 @@ function byMobilePlacement(placement: MobileNavPlacement) {
     .map(shellItem);
 }
 
-/** Daily work stays focused on Studio, Inbox, then Calls. */
+/** Daily work stays focused on Studio, Inbox, Calls, and Calendar. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone". */
+/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
@@ -311,7 +323,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Knowledge, approvals, connections, and settings.",
+    description: "Calendar, knowledge, approvals, connections, and settings.",
     icon: "MoreHorizontal",
     section: "System",
   },

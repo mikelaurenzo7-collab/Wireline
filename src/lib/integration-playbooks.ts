@@ -143,18 +143,18 @@ const PLAYBOOKS: Record<ToolIntegration, IntegrationPlaybook> = {
     label: "Calendar",
     headline: "Real availability. No double-books, no 'let me check and call back'.",
     orbitHint: "Check slots · book live",
-    connectPath: "/connections",
+    connectPath: "/calendar?tab=availability",
     tasks: [
       {
         id: "cal-check",
         callerMoment: '"What times work this week?"',
-        agentAction: "Reads connected Google or Microsoft calendars for open slots.",
+        agentAction: "Checks your Calendar hours and existing bookings, or a connected Google or Microsoft calendar.",
         tools: ["check_calendar_availability"],
       },
       {
         id: "cal-book",
         callerMoment: '"Book me for Tuesday at 2"',
-        agentAction: "Creates the calendar event and confirms time zone with the caller.",
+        agentAction: "Books an available time or requests approval, following your Calendar rules and confirmed timezone.",
         tools: ["book_appointment"],
       },
     ],

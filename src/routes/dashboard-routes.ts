@@ -16,6 +16,8 @@ import {
 } from "../lib/dashboard-cache";
 import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
 
+import { bookNativeAppointment, updateCalendarAppointment, cancelCalendarAppointment } from "../lib/native-calendar";
+
 const router = Router();
 
 // ────────────────────────────────────────────────────────────────────
@@ -472,66 +474,19 @@ router.get(
   },
 );
 
-const APPOINTMENT_STATUSES = [
-  "Scheduled",
-  "Confirmed",
-  "Completed",
-  "Cancelled",
-  "Rescheduled",
-] as const;
-
 router.post(
   "/api/appointments",
   authenticateUser,
   dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { customer_name, service_type, date, time, phone_number, notes, agent_id, status } =
-        req.body;
-      if (!customer_name?.trim() || !date?.trim() || !time?.trim()) {
-        throw AppError.fromHttpStatus(400, "customer_name, date, and time are required");
-      }
-      if (typeof customer_name !== "string" || customer_name.length > 200) {
-        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
-      }
-      if (notes && (typeof notes !== "string" || notes.length > 2000)) {
-        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
-      }
-      if (agent_id) {
-        const [agent] = await drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(and(eq(schema.agents.id, agent_id), eq(schema.agents.userId, req.user.id)))
-          .limit(1);
-        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-      }
-
-      const [data] = (await drizzle
-        .insert(schema.appointments)
-        .values({
-          userId: req.user.id,
-          customerName: customer_name.trim(),
-          serviceType:
-            typeof service_type === "string" ? service_type.trim() || "General" : "General",
-          date: date.trim(),
-          time: time.trim(),
-          phoneNumber: typeof phone_number === "string" ? phone_number.trim() || null : null,
-          notes: typeof notes === "string" ? notes.trim() || null : null,
-          agentId: agent_id || null,
-          status: APPOINTMENT_STATUSES.includes(status) ? status : "Scheduled",
-        })
-        .returning()) as any[];
-
-      invalidateDashboard(req.user.id);
-      res.json({ appointment: data });
-    } catch (error: any) {
-      // Deliberate 400/404 validation errors are raised inside this try; without
-      // the rethrow they were rewritten as an opaque 500 and the caller lost the
-      // reason their request was rejected.
-      if (error instanceof AppError) throw error;
-      log.error("Failed to create appointment", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to create appointment");
-    }
+    const body = req.body || {};
+    const appointment = await bookNativeAppointment(req.user.id, {
+      customerName: body.customer_name, serviceType: body.service_type,
+      date: body.date, time: body.time, timeZone: body.time_zone,
+      phoneNumber: body.phone_number, notes: body.notes, agentId: body.agent_id,
+      requestKey: body.request_key,
+    });
+    res.json({ appointment });
   },
 );
 
@@ -540,79 +495,7 @@ router.patch(
   authenticateUser,
   dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const allowed = [
-        "status",
-        "date",
-        "time",
-        "customer_name",
-        "service_type",
-        "notes",
-        "phone_number",
-        "agent_id",
-      ];
-      const bodyUpdates: Record<string, any> = {};
-      for (const k of allowed) if (req.body[k] !== undefined) bodyUpdates[k] = req.body[k];
-      if (Object.keys(bodyUpdates).length === 0)
-        throw AppError.fromHttpStatus(400, "No valid fields to update");
-
-      if (typeof bodyUpdates.customer_name === "string" && bodyUpdates.customer_name.length > 200) {
-        throw AppError.fromHttpStatus(400, "customer_name must be 200 characters or less");
-      }
-      if (typeof bodyUpdates.notes === "string" && bodyUpdates.notes.length > 2000) {
-        throw AppError.fromHttpStatus(400, "notes must be 2000 characters or less");
-      }
-      if (
-        bodyUpdates.status !== undefined &&
-        !APPOINTMENT_STATUSES.includes(bodyUpdates.status as (typeof APPOINTMENT_STATUSES)[number])
-      ) {
-        return res
-          .status(400)
-          .json({ error: `status must be one of: ${APPOINTMENT_STATUSES.join(", ")}` });
-      }
-
-      if (bodyUpdates.agent_id) {
-        const [agent] = await drizzle
-          .select({ id: schema.agents.id })
-          .from(schema.agents)
-          .where(
-            and(
-              eq(schema.agents.id, bodyUpdates.agent_id as string),
-              eq(schema.agents.userId, req.user.id),
-            ),
-          )
-          .limit(1);
-        if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
-      }
-
-      const updates: any = {};
-      if (bodyUpdates.status !== undefined) updates.status = bodyUpdates.status;
-      if (bodyUpdates.date !== undefined) updates.date = bodyUpdates.date;
-      if (bodyUpdates.time !== undefined) updates.time = bodyUpdates.time;
-      if (bodyUpdates.customer_name !== undefined) updates.customerName = bodyUpdates.customer_name;
-      if (bodyUpdates.service_type !== undefined) updates.serviceType = bodyUpdates.service_type;
-      if (bodyUpdates.notes !== undefined) updates.notes = bodyUpdates.notes;
-      if (bodyUpdates.phone_number !== undefined) updates.phoneNumber = bodyUpdates.phone_number;
-      if (bodyUpdates.agent_id !== undefined) updates.agentId = bodyUpdates.agent_id;
-
-      const [data] = (await drizzle
-        .update(schema.appointments)
-        .set(updates)
-        .where(
-          and(
-            eq(schema.appointments.id, req.params.id),
-            eq(schema.appointments.userId, req.user.id),
-          ),
-        )
-        .returning()) as any[];
-
-      invalidateDashboard(req.user.id);
-      res.json({ appointment: data });
-    } catch (error: any) {
-      if (error instanceof AppError) throw error;
-      log.error("Failed to update appointment", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to update appointment");
-    }
+    res.json({ appointment: await updateCalendarAppointment(req.user.id, req.params.id, req.body || {}) });
   },
 );
 
@@ -621,22 +504,8 @@ router.delete(
   authenticateUser,
   dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      await drizzle
-        .delete(schema.appointments)
-        .where(
-          and(
-            eq(schema.appointments.id, req.params.id),
-            eq(schema.appointments.userId, req.user.id),
-          ),
-        );
-      invalidateDashboard(req.user.id);
-      res.json({ success: true });
-    } catch (error: any) {
-      if (error instanceof AppError) throw error;
-      log.error("Failed to delete appointment", { error: getErrorMessage(error) });
-      throw AppError.fromHttpStatus(500, "Failed to delete appointment");
-    }
+    await cancelCalendarAppointment(req.user.id, req.params.id);
+    res.json({ success: true });
   },
 );
 

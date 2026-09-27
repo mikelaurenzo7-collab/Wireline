@@ -7,7 +7,6 @@ import PhoneSetupPanel from "../components/PhoneSetupPanel";
 import PhoneCallHistoryPanel from "../components/PhoneCallHistoryPanel";
 import CallOpsOverview from "../components/CallOpsOverview";
 import OutboundHub from "../components/outbound/OutboundHub";
-import AppointmentsPanel from "../components/AppointmentsPanel";
 import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
@@ -24,12 +23,6 @@ const PHONE_TABS = [
   { id: "logs", label: "History" },
   { id: "analytics", label: "Analytics" },
   { id: "outbound", label: "Outbound" },
-  {
-    id: "appointments",
-    label: "Appointments",
-    shortLabel: "Appts",
-    ariaLabel: "Appointments",
-  },
   { id: "setup", label: "Lines" },
 ] as const;
 
@@ -203,11 +196,6 @@ export default function PhonePage() {
                   <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
                 </div>
               )}
-            </div>
-          )}
-          {primaryTab === "appointments" && (
-            <div className="contents" data-visual-qa-state="primary-appointments">
-              <AppointmentsPanel />
             </div>
           )}
           {primaryTab === "setup" && !scopeBlocked && (

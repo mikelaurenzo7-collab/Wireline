@@ -178,6 +178,7 @@ export const settings = pgTable("wireline_settings", {
   primaryProduct: text("primary_product"),
   /** Tenant-wide operating hours (JSON) for template {{operatingHours}} substitution. */
   businessHours: jsonb("business_hours"),
+  nativeCalendar: jsonb("native_calendar"),
   crmType: text("crm_type"),
   twilioMessagingEnabled: boolean("twilio_messaging_enabled").default(false),
   twilioLookupEnabled: boolean("twilio_lookup_enabled").default(false),
@@ -751,6 +752,13 @@ export const appointments = pgTable(
     status: text("status").default("Scheduled"),
     notes: text("notes"),
     phoneNumber: text("phone_number"),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    endAt: timestamp("end_at", { withTimezone: true }),
+    timeZone: text("time_zone"),
+    bookingSource: text("booking_source"),
+    bookingRequestKey: text("booking_request_key"),
+    bookingFingerprint: text("booking_fingerprint"),
+    bufferMinutes: integer("buffer_minutes").default(0).notNull(),
     // True when the row was inserted by /api/admin/seed-demo-account so
     // the UI can render a "DEMO" pill and account holders won't mistake the
     // seeded showcase rows for real customer activity.

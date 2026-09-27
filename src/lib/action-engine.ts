@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
@@ -12,6 +13,10 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
+import {
+  bookNativeAppointment,
+  getNativeCalendarConfiguration,
+} from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import {
@@ -335,6 +340,44 @@ async function executeAutonomousAction(
     case "send_text_message":
       return handleSendTextMessage(userId, action, context);
     case "schedule_calendar": {
+      const nativeCalendar = await getNativeCalendarConfiguration(userId);
+      if (nativeCalendar.configured) {
+        const payload = action.payload;
+        const appointment = await bookNativeAppointment(userId, {
+          agentId: action.agentId,
+          callId: context.sourceType === "phone_call" ? context.sourceId : undefined,
+          date: payload.date,
+          time: payload.time,
+          timeZone: payload.timezone,
+          customerName: typeof payload.customer_name === "string" ? payload.customer_name : "",
+          serviceType: payload.service_type || payload.event_name,
+          phoneNumber: payload.customer_number,
+          notes: action.reasoning,
+          requestKey: `native-calendar:action:${createHash("sha256")
+            .update(
+              JSON.stringify([
+                context.sourceType,
+                context.sourceId,
+                context.approvalTaskId || null,
+                action.agentId || null,
+                payload.date,
+                payload.time,
+                payload.timezone,
+                payload.customer_name,
+                payload.service_type || payload.event_name,
+              ]),
+            )
+            .digest("hex")}`,
+        });
+        if (appointment.status !== "Scheduled" && appointment.status !== "Requested") {
+          return { success: false, error: "The appointment is no longer scheduled. Check Calendar." };
+        }
+        return {
+          success: true,
+          ...(appointment.status === "Requested" ? { queued: true } : {}),
+          actionId: appointment.id,
+        };
+      }
       const rawTimeZone = action.payload.timezone || agentTimeZone;
       if (!rawTimeZone) {
         return {
@@ -348,7 +391,7 @@ async function executeAutonomousAction(
         time: action.payload.time,
         timeZone,
       });
-      const endTime = addMinutesToIso(startTime, 60);
+      const endTime = addMinutesToIso(startTime, nativeCalendar.settings.duration_minutes);
       const calOk = await service.bookAppointment({
         title: action.payload.event_name || "Meeting",
         description: `${action.reasoning || "Scheduled by your Bot"}\n\nConfirmed timezone: ${timeZone}.`,

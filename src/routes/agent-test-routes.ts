@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "../lib/agent-greeting";
+import { nativeCalendarRehearsalContext } from "../lib/native-calendar-rehearsal";
 import { Router, type Response } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -76,6 +77,7 @@ router.post(
               escalationKeywords: schema.agents.escalationKeywords,
               escalationPhone: schema.agents.escalationPhone,
               escalationEmail: schema.agents.escalationEmail,
+              enabledTools: schema.agents.enabledTools,
             })
             .from(schema.agents)
             .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)))
@@ -145,6 +147,7 @@ router.post(
       const businessProfile = agent.businessVariables
         ? JSON.stringify(agent.businessVariables).slice(0, 6000)
         : "";
+      const calendarContext = await nativeCalendarRehearsalContext(req.user.id, agent.enabledTools);
 
       const system = [
         `You are ${agent.name || "the Bot"}, a customer-facing Bot configured for this role: ${agent.role || "general support"}.`,
@@ -152,6 +155,7 @@ router.post(
         "Reply only as that customer-facing Bot. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
         "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
         "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this browser roleplay.",
+        calendarContext,
         savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
         `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
         directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",

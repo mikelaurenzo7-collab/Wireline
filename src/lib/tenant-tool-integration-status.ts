@@ -7,6 +7,8 @@ export type TenantToolIntegrationContext = {
   calendarReconnectGoogle: boolean;
   calendarReconnectMicrosoft: boolean;
   emailProviders: string[];
+  nativeCalendar?: boolean;
+  nativeCalendarConfigured?: boolean;
 };
 
 const PLATFORM_MANAGED: ReadonlySet<ToolIntegration> = new Set([
@@ -25,6 +27,8 @@ export function resolveTenantToolIntegrationStatus(
   if (PLATFORM_MANAGED.has(integration)) return "configured";
 
   if (integration === "calendar") {
+    if (ctx.nativeCalendarConfigured === true) return ctx.nativeCalendar === true ? "configured" : "missing";
+    if (ctx.nativeCalendar === true) return "configured";
     const hasGoogle = ctx.emailProviders.includes("google");
     const hasMicrosoft = ctx.emailProviders.includes("microsoft");
     const googleReady = hasGoogle && !ctx.calendarReconnectGoogle;

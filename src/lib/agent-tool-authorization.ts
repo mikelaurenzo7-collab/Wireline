@@ -44,6 +44,8 @@ export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
   zoom: false,
   google_calendar: false,
   microsoft_calendar: false,
+  native_calendar: false,
+  native_calendar_configured: false,
   google_mail: false,
   microsoft_mail: false,
 };

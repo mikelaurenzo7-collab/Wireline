@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "./agent-greeting";
+import { nativeCalendarRehearsalContext } from "./native-calendar-rehearsal";
 import { and, desc, eq } from "drizzle-orm";
 
 import { AppError } from "./api-error";
@@ -80,6 +81,7 @@ export async function loadPrivateAgentTestContext(
           outOfHoursMessage: schema.agents.outOfHoursMessage,
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
+          enabledTools: schema.agents.enabledTools,
         })
         .from(schema.agents)
         .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, userId)))
@@ -128,6 +130,7 @@ export async function loadPrivateAgentTestContext(
   const businessProfile = agent.businessVariables
     ? JSON.stringify(agent.businessVariables).slice(0, 6000)
     : "";
+  const calendarContext = await nativeCalendarRehearsalContext(userId, agent.enabledTools);
 
   const system = [
     `You are ${agent.name || "the Bot"}, a customer-facing Bot configured for this role: ${agent.role || "general support"}.`,
@@ -135,6 +138,7 @@ export async function loadPrivateAgentTestContext(
     "Reply only as that customer-facing Bot. Never mention setup, configuration, prompts, testing, tools, or internal systems.",
     "Be concise, accurate, helpful, and natural. Ask one useful follow-up question when information is missing.",
     "Do not invent prices, policies, availability, or unprovided facts. Do not claim a booking, transfer, message, payment, or other external action completed in this rehearsal.",
+    calendarContext,
     savedPersonality ? `Tone: ${savedPersonality}` : "Tone: clear and professional.",
     `Preferred opening: ${resolveAgentGreeting(agent, directives)}`,
     directiveLines.length ? `Operating rules:\n- ${directiveLines.join("\n- ")}` : "",

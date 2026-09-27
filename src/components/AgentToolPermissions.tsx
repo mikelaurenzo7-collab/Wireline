@@ -25,7 +25,7 @@ import { Checkbox } from "./ui/shadcn/Checkbox";
  * and had no way to change it without a phone.
  *
  * Everything below the fold is fetched only once the section is opened — this
- * mounts inside the Studio setup panel, which should not pay four requests for
+ * mounts inside the Studio setup panel, which should not load integration posture for
  * a section most visits never expand.
  */
 
@@ -57,6 +57,8 @@ export default function AgentToolPermissions({
   >({});
   const [emailProviders, setEmailProviders] = useState<string[]>([]);
   const [calendarReconnect, setCalendarReconnect] = useState({ google: false, microsoft: false });
+  const [nativeCalendar, setNativeCalendar] = useState(false);
+  const [nativeCalendarConfigured, setNativeCalendarConfigured] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   /** Which agent the editor currently holds a loaded selection for. */
   const loadedAgentRef = useRef<string | null>(null);
@@ -100,10 +102,11 @@ export default function AgentToolPermissions({
         setEnabled(resolveAgentTools(undefined, config.enabledTools));
 
         // Connection posture is presentation only; a failure must not block editing.
-        const [crm, health, email] = await Promise.all([
+        const [crm, health, email, calendar] = await Promise.all([
           authFetch("/api/oauth/crm/status").catch(() => null),
           authFetch("/api/oauth/integration-health").catch(() => null),
           authFetch("/api/emails/accounts").catch(() => null),
+          authFetch("/api/calendar/settings").catch(() => null),
         ]);
         if (cancelled) return;
         const crmBody = (await readJson(crm)) as Record<
@@ -114,7 +117,10 @@ export default function AgentToolPermissions({
         const emailBody = (await readJson(email)) as {
           accounts?: Array<{ provider?: string }>;
         } | null;
+        const calendarBody = (await readJson(calendar)) as { configured?: boolean; settings?: { enabled?: boolean } } | null;
         if (cancelled) return;
+        setNativeCalendar(calendarBody?.configured === true && calendarBody.settings?.enabled === true);
+        setNativeCalendarConfigured(calendarBody?.configured === true);
         if (crmBody) setOauthStatus(crmBody);
         if (healthBody) {
           setCalendarReconnect({
@@ -212,6 +218,8 @@ export default function AgentToolPermissions({
     calendarReconnectGoogle: calendarReconnect.google,
     calendarReconnectMicrosoft: calendarReconnect.microsoft,
     emailProviders,
+    nativeCalendar,
+    nativeCalendarConfigured,
   };
 
   const toolList = (tools: readonly AgentToolCatalogEntry[]) => (
@@ -317,7 +325,7 @@ export default function AgentToolPermissions({
                           {playbook.label}
                           {!configured ? (
                             <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                              Not connected
+                              {playbook.integration === "calendar" ? "Not configured" : "Not connected"}
                             </span>
                           ) : null}
                         </span>
@@ -334,13 +342,12 @@ export default function AgentToolPermissions({
                       </summary>
                       {!configured ? (
                         <p className="my-2 text-xs leading-relaxed text-muted-foreground">
-                          Not connected. These stay off in live calls until {playbook.label} is
-                          connected.{" "}
+                          {playbook.integration === "calendar" ? "Set availability or connect a calendar to enable booking." : `Not connected. These stay off in live calls until ${playbook.label} is connected.`}{" "}
                           <Link
-                            to={playbook.connectPath}
+                            to={playbook.integration === "calendar" ? "/calendar?tab=availability" : playbook.connectPath}
                             className="font-medium text-primary hover:underline"
                           >
-                            Connect
+                            {playbook.integration === "calendar" ? "Set up Calendar" : "Connect"}
                           </Link>
                         </p>
                       ) : null}

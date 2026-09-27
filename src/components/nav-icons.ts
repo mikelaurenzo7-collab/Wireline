@@ -14,6 +14,7 @@
 import {
   BarChart3,
   Bot,
+  CalendarDays,
   CheckSquare,
   GraduationCap,
   Home,
@@ -30,6 +31,7 @@ import type { NavIconName } from "../constants/navigation";
 const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   BarChart3,
   Bot,
+  CalendarDays,
   CheckSquare,
   GraduationCap,
   Home,

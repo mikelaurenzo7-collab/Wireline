@@ -414,7 +414,7 @@ export const AGENT_TOOL_DEFS = {
   check_calendar_availability: {
     name: "check_calendar_availability",
     description:
-      "Checks the calendar for already-booked times on a date. ALWAYS run this before confirming any appointment slot.",
+      "Checks the workspace Calendar or a connected calendar. ALWAYS run this before offering an appointment. Use only returned available slots and their stated timezone; never reveal other customers' appointment details.",
     parameters: {
       type: "object",
       properties: {
@@ -435,7 +435,7 @@ export const AGENT_TOOL_DEFS = {
   book_appointment: {
     name: "book_appointment",
     description:
-      "Books an appointment. Only use AFTER confirming availability with check_calendar_availability.",
+      "Books an appointment after checking availability and the caller confirms the exact time and timezone. Follow the returned status: Scheduled is booked; Requested is awaiting the owner's chosen approval. Do not invent an owner-confirmation requirement for automatic booking.",
     parameters: {
       type: "object",
       properties: {

@@ -206,6 +206,24 @@ export class IntegrationService {
           const accounts = await this.getAccounts("calendar");
           if (accounts.length === 0) return false;
 
+          // Availability may have changed after the caller chose a time. Recheck
+          // the exact interval before creating a meeting or calendar event.
+          // Any read failure fails closed through the enclosing error handler.
+          const start = new Date(params.startTime);
+          const end = new Date(params.endTime);
+          if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+            return false;
+          }
+          for (const account of accounts) {
+            const busy =
+              account.provider === "google"
+                ? await this.getGoogleBusySlots(account, start, end, "UTC")
+                : account.provider === "microsoft"
+                  ? await this.getMicrosoftBusySlots(account, start, end, "UTC")
+                  : null;
+            if (!busy || busy.length > 0) return false;
+          }
+
           // Check if the agent has auto_zoom_link enabled.
           let zoomUrl: string | undefined;
           if (params.agentId) {

@@ -5,11 +5,13 @@ const source = readFileSync("src/lib/ai-brains.ts", "utf8");
 
 describe("post-call action extraction", () => {
   it("requires exact timezone-safe calendar payloads", () => {
-    expect(source).toContain("{event_name, date, time, timezone, attendees}");
+    expect(source).toContain("{event_name, customer_name, date, time, timezone, attendees}");
     expect(source).toContain("date is YYYY-MM-DD");
     expect(source).toContain("time is 24-hour HH:mm");
     expect(source).toContain("confirmed IANA zone");
     expect(source).toContain("Never emit schedule_calendar when any of date, time, or timezone is unresolved");
+    expect(source).toContain("or the customer name is missing");
+    expect(source).toContain("Do not schedule again if a live booking tool already confirmed the appointment");
   });
 
   it("keeps the autonomous extraction surface deliberately narrower than manual actions", () => {

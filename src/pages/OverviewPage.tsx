@@ -49,7 +49,7 @@ function metricRows(metrics: OverviewMetrics) {
     {
       label: "Appointments booked",
       value: metrics.appointmentsBooked,
-      href: "/phone?tab=appointments",
+      href: "/calendar",
       icon: CalendarCheck2,
       tone: metrics.appointmentsBooked > 0 ? ("wire" as const) : ("neutral" as const),
     },

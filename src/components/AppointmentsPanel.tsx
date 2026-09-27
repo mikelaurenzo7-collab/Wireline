@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Clock3 } from "lucide-react";
-import { Link } from "react-router";
 
 import { authFetch } from "../lib/api";
 import { formatPhone } from "../lib/safe-number";
@@ -16,9 +15,24 @@ type Appointment = {
   status: string | null;
   phone_number: string | null;
   demo?: boolean;
+  start_at?: string | null;
+  end_at?: string | null;
+  time_zone?: string | null;
+  booking_source?: string | null;
 };
 
 function scheduleLabel(appointment: Appointment): string {
+  if (appointment.start_at && appointment.time_zone) {
+    const instant = new Date(appointment.start_at);
+    if (Number.isFinite(instant.getTime())) {
+      try {
+        return new Intl.DateTimeFormat(undefined, {
+          month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+          timeZone: appointment.time_zone, timeZoneName: "short",
+        }).format(instant);
+      } catch { /* Retain the original local date/time for older records. */ }
+    }
+  }
   let date = appointment.date;
   let time = appointment.time;
   // These are local calendar/clock strings, not instants. UTC formatting keeps
@@ -47,6 +61,10 @@ function scheduleLabel(appointment: Appointment): string {
 }
 
 function appointmentTimestamp(appointment: Appointment): number | null {
+  if (appointment.start_at) {
+    const instant = new Date(appointment.start_at).getTime();
+    if (Number.isFinite(instant)) return instant;
+  }
   if (!appointment.date) return null;
   const value = appointment.time
     ? `${appointment.date} ${appointment.time}`
@@ -55,7 +73,14 @@ function appointmentTimestamp(appointment: Appointment): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-function AppointmentRow({ appointment }: { appointment: Appointment }) {
+export function AppointmentRow({ appointment, busy, confirmingCancel, onCancelIntent, onStatus }: {
+  appointment: Appointment;
+  busy?: boolean;
+  confirmingCancel?: boolean;
+  onCancelIntent?: (id: string | null) => void;
+  onStatus?: (appointment: Appointment, status: "Confirmed" | "Cancelled") => void;
+}) {
+  const editable = appointment.booking_source === "native" && appointment.status !== "Cancelled";
   return (
     <li className="flex items-start gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -66,7 +91,7 @@ function AppointmentRow({ appointment }: { appointment: Appointment }) {
           <strong className="min-w-0 break-words text-sm font-semibold text-foreground">
             {appointment.customer_name || "Customer"}
           </strong>
-          <Badge variant={appointment.status === "Scheduled" ? "success" : "outline"}>
+          <Badge variant={["Scheduled", "Confirmed"].includes(appointment.status || "") ? "success" : "outline"}>
             {appointment.status || "Scheduled"}
           </Badge>
         </div>
@@ -82,16 +107,34 @@ function AppointmentRow({ appointment }: { appointment: Appointment }) {
           <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
           <span>{scheduleLabel(appointment)}</span>
         </span>
+        {editable && onStatus ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {confirmingCancel ? <>
+              <span className="w-full text-sm">Cancel this appointment?</span>
+              <Button variant="secondary" size="sm" disabled={busy} onClick={() => onCancelIntent?.(null)}>Keep appointment</Button>
+              <Button variant="destructive" size="sm" disabled={busy} onClick={() => onStatus(appointment, "Cancelled")}>{busy ? "Saving…" : "Cancel appointment"}</Button>
+            </> : <>
+              {appointment.status === "Requested" ? <Button size="sm" disabled={busy} onClick={() => onStatus(appointment, "Confirmed")}>{busy ? "Saving…" : "Confirm"}</Button> : null}
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => onCancelIntent?.(appointment.id)}>Cancel</Button>
+            </>}
+          </div>
+        ) : null}
       </div>
     </li>
   );
 }
 
-export default function AppointmentsPanel() {
+export default function AppointmentsPanel({ calendarConfigured = null, onConfigure }: {
+  calendarConfigured?: boolean | null;
+  onConfigure?: () => void;
+} = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [calendarConnected, setCalendarConnected] = useState<boolean | null>(null);
+  const [mutatingId, setMutatingId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const mutationRef = useRef(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -159,25 +202,27 @@ export default function AppointmentsPanel() {
     };
   }, [loadAppointments]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadCalendar() {
-      try {
-        const calendarRes = await authFetch("/api/calendar/accounts");
-        const calData = calendarRes.ok
-          ? ((await calendarRes.json().catch(() => null)) as { accounts?: unknown[] } | null)
-          : null;
-        if (cancelled) return;
-        setCalendarConnected(Array.isArray(calData?.accounts) ? calData.accounts.length > 0 : null);
-      } catch {
-        if (!cancelled) setCalendarConnected(null);
-      }
+  async function changeStatus(appointment: Appointment, status: "Confirmed" | "Cancelled") {
+    if (mutationRef.current) return;
+    mutationRef.current = true;
+    setMutatingId(appointment.id);
+    setMutationError(null);
+    try {
+      const response = await authFetch(`/api/appointments/${encodeURIComponent(appointment.id)}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
+      });
+      const body = await response.json().catch(() => null) as { appointment?: { id?: string; status?: string }; error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "The appointment could not be updated. Try again.");
+      if (body?.appointment?.id !== appointment.id || body.appointment.status !== status) throw new Error("We couldn't confirm this update. Refresh Calendar before retrying.");
+      setAppointments((current) => current.map((row) => row.id === appointment.id ? { ...row, status } : row));
+      setCancelConfirmId(null);
+    } catch (reason) {
+      setMutationError(reason instanceof Error ? reason.message : "The appointment could not be updated. Try again.");
+    } finally {
+      mutationRef.current = false;
+      setMutatingId(null);
     }
-    void loadCalendar();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }
 
   const { upcoming, past } = useMemo(() => {
     const now = Date.now();
@@ -185,7 +230,7 @@ export default function AppointmentsPanel() {
     const history: Appointment[] = [];
     for (const appointment of appointments) {
       const timestamp = appointmentTimestamp(appointment);
-      if (timestamp !== null && timestamp < now) history.push(appointment);
+      if (appointment.status === "Cancelled" || (timestamp !== null && timestamp < now)) history.push(appointment);
       else future.push(appointment);
     }
     future.sort(
@@ -241,12 +286,10 @@ export default function AppointmentsPanel() {
           withHalo={false}
           className="w-full max-w-lg"
           icon={<CalendarDays className="size-5" aria-hidden="true" />}
-          title={calendarConnected === false ? "Connect a Calendar" : "No Appointments Yet"}
+          title="No Appointments Yet"
           action={
-            calendarConnected !== null ? (
-              <Button asChild variant="secondary" size="sm">
-                <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
-              </Button>
+            calendarConfigured === false && onConfigure ? (
+              <Button variant="secondary" size="sm" onClick={onConfigure}>Set availability</Button>
             ) : undefined
           }
         />
@@ -256,6 +299,7 @@ export default function AppointmentsPanel() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
+      {mutationError ? <StatusNotice tone="warning" title="Appointment not updated">{mutationError}</StatusNotice> : null}
       <section aria-labelledby="upcoming-appointments">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 id="upcoming-appointments" className="text-sm font-semibold text-foreground">
@@ -266,7 +310,7 @@ export default function AppointmentsPanel() {
         {upcoming.length ? (
           <ul className="flex flex-col gap-2">
             {upcoming.map((appointment) => (
-              <AppointmentRow key={appointment.id} appointment={appointment} />
+              <AppointmentRow key={appointment.id} appointment={appointment} busy={mutatingId !== null} confirmingCancel={cancelConfirmId === appointment.id} onCancelIntent={setCancelConfirmId} onStatus={changeStatus} />
             ))}
           </ul>
         ) : (
@@ -308,7 +352,7 @@ export default function AppointmentsPanel() {
           onToggle={(event) => setPastOpen(event.currentTarget.open)}
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground">
-            Past
+            History
             <span className="text-xs font-normal tabular-nums text-muted-foreground">
               {past.length}
             </span>

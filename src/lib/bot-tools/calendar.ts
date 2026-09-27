@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
+import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
@@ -12,6 +13,12 @@ import {
 } from "../calendar-time";
 import { dispatchWebhook } from "../webhook-helpers";
 import { IntegrationService } from "../integrations";
+import { AppError } from "../api-error";
+import {
+  bookNativeAppointment,
+  getNativeCalendarAvailability,
+  getNativeCalendarConfiguration,
+} from "../native-calendar";
 import { postAgentNotification as slackPostAgentNotification } from "../slack-service";
 import {
   assertExternalEntityActionAllowed,
@@ -35,6 +42,12 @@ async function resolveCalendarTimeZone(
 }
 
 function calendarInputFailure(toolCallId: string, error: unknown): ToolCallResult | null {
+  if (error instanceof AppError && error.status >= 400 && error.status < 500) {
+    return {
+      toolCallId,
+      result: `${error.message} No appointment was confirmed. Check the available times before trying again.`,
+    };
+  }
   if (!(error instanceof CalendarTimeError)) return null;
   return {
     toolCallId,
@@ -52,6 +65,20 @@ export async function handleCalendarToolCall(
   if (fn === "check_calendar_availability") {
     try {
       const { date, timezone } = args || {};
+      const nativeCalendar = await getNativeCalendarConfiguration(agent.user_id);
+      if (nativeCalendar.configured) {
+        await assertLiveExternalActionAllowed(agent.user_id, "native_calendar_availability");
+        const availability = await getNativeCalendarAvailability(agent.user_id, { date });
+        return {
+          toolCallId,
+          result: JSON.stringify({
+            calendar: "BotBound",
+            ...availability,
+            instruction:
+              "Offer only these available slots, in the stated timezone. Check the booking result before saying an appointment is confirmed.",
+          }),
+        };
+      }
       const timeZone = await resolveCalendarTimeZone(context, timezone);
       // Validate locally before IntegrationService catches provider errors so a
       // malformed or DST-invalid request produces a caller-correctable result.
@@ -86,9 +113,43 @@ export async function handleCalendarToolCall(
         };
       }
 
+      const nativeCalendar = await getNativeCalendarConfiguration(agent.user_id);
+      if (nativeCalendar.configured) {
+        await assertLiveExternalActionAllowed(agent.user_id, "native_calendar_booking");
+        const callId = typeof message.call?.id === "string" ? message.call.id : undefined;
+        const appointment = await bookNativeAppointment(agent.user_id, {
+          agentId: agent.id,
+          callId,
+          date,
+          time,
+          timeZone: timezone,
+          customerName: customer_name.trim(),
+          serviceType: service_type.trim(),
+          phoneNumber:
+            typeof message.call?.customer?.number === "string"
+              ? message.call.customer.number
+              : undefined,
+          requestKey: `native-calendar:tool:${createHash("sha256")
+            .update(JSON.stringify([agent.id, callId || null, toolCallId]))
+            .digest("hex")}`,
+        });
+        const start = new Date(appointment.startAt).toISOString();
+        const end = new Date(appointment.endAt).toISOString();
+        const displayTime = formatTimeRangeInZone(start, end, appointment.timeZone);
+        return {
+          toolCallId,
+          result:
+            appointment.status === "Scheduled"
+              ? `Appointment booked for ${displayTime}.`
+              : appointment.status === "Requested"
+                ? `Appointment requested for ${displayTime}. It is pending owner approval and is not confirmed.`
+                : "That appointment is no longer scheduled. Check availability before making a new booking.",
+        };
+      }
+
       const timeZone = await resolveCalendarTimeZone(context, timezone);
       const startTime = localDateTimeToUtcIso({ date, time, timeZone });
-      const endTime = addMinutesToIso(startTime, 60);
+      const endTime = addMinutesToIso(startTime, nativeCalendar.settings.duration_minutes);
       const displayTime = formatTimeRangeInZone(startTime, endTime, timeZone);
       const title = `${service_type.trim()} for ${customer_name.trim()}`;
       const service = new IntegrationService(agent.user_id);

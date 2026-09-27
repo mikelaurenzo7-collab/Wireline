@@ -505,6 +505,13 @@
       "when": 1788360099639,
       "tag": "0173_openai_sip_claim_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790524800000,
+      "tag": "0174_native_booking_calendar",
+      "breakpoints": true
     }
   ]
 }

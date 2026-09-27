@@ -33,6 +33,9 @@ const SalesforceIntegrationPage = lazy(() =>
 const PhonePage = lazy(() =>
   import("../pages/PhonePage").then((module) => withVisualQaPage(module, "phone")),
 );
+const CalendarPage = lazy(() =>
+  import("../pages/CalendarPage").then((module) => withVisualQaPage(module, "calendar")),
+);
 const InsightsPage = lazy(() =>
   import("../pages/InsightsPage").then((module) => withVisualQaPage(module, "insights")),
 );
@@ -104,6 +107,16 @@ function PhoneSettingsRedirect() {
   return <Navigate to={`/phone?${search.toString()}${location.hash}`} replace />;
 }
 
+/** Appointments have one home; retain scoped bookmarks and anchors. */
+export function PhoneRoute() {
+  const location = useLocation();
+  const search = new URLSearchParams(location.search);
+  if (search.get("tab") !== "appointments") return <PhonePage />;
+  search.delete("tab");
+  const query = search.toString();
+  return <Navigate to={`/calendar${query ? `?${query}` : ""}${location.hash}`} replace />;
+}
+
 /** Apps lives under Settings; preserve old bookmarks without maintaining two chromes. */
 function AppsToSettingsRedirect({ command = false }: { command?: boolean }) {
   const location = useLocation();
@@ -160,7 +173,8 @@ export default function AppRoutes() {
           element={<PreservingRedirect to="/phone" searchParams={{ tab: "logs" }} />}
         />
         <Route path="/calls" element={<PreservingRedirect to="/phone" />} />
-        <Route path="/phone" element={<PhonePage />} />
+        <Route path="/phone" element={<PhoneRoute />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<EmailToInboxRedirect />} />
