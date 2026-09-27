@@ -337,7 +337,7 @@ export default function TeamSettings() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviting}>
+                <Button type="submit" disabled={inviting || !canInvite}>
                   {inviting ? (
                     <>
                       <Loader2 className="size-4 animate-spin" aria-hidden="true" />

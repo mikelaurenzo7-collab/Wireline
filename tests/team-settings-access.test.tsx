@@ -56,7 +56,10 @@ type Props = {
   disabled?: boolean;
   to?: string;
   href?: string;
+  type?: string;
   onClick?: () => void;
+  onChange?: (event: { target: { value: string } }) => void;
+  onSubmit?: (event: { preventDefault: () => void }) => void | Promise<void>;
 };
 let tree: ReactNode;
 
@@ -136,6 +139,48 @@ describe("team access status", () => {
     expect(text(tree)).not.toContain("Owner");
     expect(elements(tree).some((node) => node.type === "p" && text(node) === "You")).toBe(true);
     expect(invite().disabled).toBe(true);
+  });
+
+  it("disables retry after an invite becomes unavailable while preserving its error and Cancel", async () => {
+    await load({ members: [] });
+    invite().onClick!();
+    render();
+    expect(text(tree)).toContain("Invite Teammate");
+    const email = elements(tree).find((node) => node.type === "input");
+    email!.props.onChange!({ target: { value: "teammate@example.test" } });
+    render();
+    h.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          code: "SHARED_WORKSPACES_NOT_CERTIFIED",
+          error: "Internal certification details",
+        }),
+        { status: 503 },
+      ),
+    );
+    const form = elements(tree).find((node) => node.type === "form");
+    await form!.props.onSubmit!({ preventDefault: vi.fn() });
+    render();
+
+    expect(h.fetch).toHaveBeenLastCalledWith("/api/team/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "teammate@example.test", role: "member" }),
+    });
+    expect(text(tree)).toContain("Invite Teammate");
+    expect(text(tree)).toContain("Team invitations are currently unavailable.");
+    expect(text(tree)).not.toContain("Internal certification details");
+    const submit = elements(tree).find(
+      (node) => node.type === "button" && node.props.type === "submit",
+    );
+    expect(submit!.props.disabled).toBe(true);
+    expect(invite().disabled).toBe(true);
+    const cancel = elements(tree).find((node) => node.type === "button" && text(node) === "Cancel");
+    expect(cancel!.props.disabled).toBe(false);
+    cancel!.props.onClick!();
+    render();
+    expect(text(tree)).not.toContain("Invite Teammate");
+    expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("retains confirmed roles from a successful member response", async () => {
