@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 389
-**Protected:** 312
+**Routes scanned:** 392
+**Protected:** 315
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -189,7 +189,10 @@
 | cadence-routes.ts | GET | `/api/cadences/runs` | inline | — | — | Protected |
 | cadence-routes.ts | POST | `/api/cadences/runs/:id/pause` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/accounts` | inline | — | — | Protected |
+| calendar-routes.ts | GET | `/api/calendar/availability` | inline | — | — | Protected |
 | calendar-routes.ts | GET | `/api/calendar/events` | inline | — | — | Protected |
+| calendar-routes.ts | GET | `/api/calendar/settings` | inline | — | — | Protected |
+| calendar-routes.ts | PUT | `/api/calendar/settings` | inline | — | — | Protected |
 | calendar-routes.ts | POST | `/api/calendar/sync` | inline | — | — | Protected |
 | call-ops-analytics-routes.ts | GET | `/api/call-ops/analytics` | inline | — | — | Protected |
 | call-ops-metrics-routes.ts | GET | `/api/call-ops/metrics` | inline | — | — | Protected |

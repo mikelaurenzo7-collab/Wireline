@@ -100,12 +100,14 @@ Consequences:
 
 4. **Validate the exact branch head**
 
-   Run the relevant focused tests and `npm run verify:full`. Require the exact-head Vercel preview to be READY. Preview logs must state that database migrations were skipped.
+   Run the relevant focused tests and `npm run verify:full`, and review the exact committed SHA. Render is the current production host; use the release sequence in [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md#render-production-and-release-sequence), including exact-source web/worker parity and authenticated readiness after promotion. A legacy Vercel preview is not Render release evidence. Artifact builds must skip database migrations.
 
 5. **Apply through a controlled path**
 
-   - Normal path: after the exact-head Preview is green, promote the journal from that exact reviewed checkout with `scripts/promote-production-schema.mjs`, verify its effects, then merge and deploy the same SHA to Production.
-   - Urgent/pre-merge verification path: apply the committed migration through the authenticated Supabase migration tool only after the exact head is green, then run non-destructive transactional probes.
+   - Inspect the live catalog and migration ledger read-only before applying anything. Confirm exactly which committed append-only migrations are pending; never replay the historical backlog to reconcile a filename listing.
+   - Normal path: after exact-head validation and review, promote the journal from that clean reviewed checkout with `scripts/promote-production-schema.mjs`, verify its effects, then deploy the same SHA. Run this in the authorized production environment; production credentials stay in Render's secret store.
+   - Urgent/pre-merge verification path: apply the exact committed migration through the authenticated Supabase migration tool only after the exact head is green, then run non-destructive transactional probes. Record the applied migration and reconcile its journal state before the next normal promotion.
+   - Keep affected features closed during schema promotion and release verification. Only additive changes compatible with the running release may precede its replacement; otherwise use an explicit maintenance window.
 
 6. **Verify production**
 
