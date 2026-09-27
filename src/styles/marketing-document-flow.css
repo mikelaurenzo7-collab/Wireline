@@ -69,6 +69,12 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   min-height: 0;
 }
 
+/* Nested hash destinations scroll with the document too. Keep their headings
+ * below the measured public header, including when enlarged text wraps it. */
+.wl-ui-caps.wl-ui-caps--document .marketing-flow [id] {
+  scroll-margin-top: calc(var(--wl-marketing-chrome-top, 4rem) + 1rem);
+}
+
 .wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-flow > .marketing-frame-stack > * {
   flex-shrink: 1;
 }

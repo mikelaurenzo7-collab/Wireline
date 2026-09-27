@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
+import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 const SOLUTIONS = {
   sales: {
@@ -78,7 +79,7 @@ type SolutionKey = keyof typeof SOLUTIONS;
 
 export default function SolutionsPage() {
   const { wedge = "support" } = useParams<{ wedge: string }>();
-  const key = (wedge in SOLUTIONS ? wedge : "support") as SolutionKey;
+  const key = (Object.hasOwn(SOLUTIONS, wedge) ? wedge : "support") as SolutionKey;
   const page = SOLUTIONS[key];
 
   return (
@@ -112,6 +113,11 @@ export default function SolutionsPage() {
                 {page.secondary.label}
               </Link>
             </div>
+            {key === "sales" ? (
+              <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
+                {MARKETING_CALLS_NOTICE} Build and test your Sales Bot free.
+              </p>
+            ) : null}
           </div>
           <ol className="grid gap-3 sm:grid-cols-3">
             {page.sequence.map(([title, copy], index) => (

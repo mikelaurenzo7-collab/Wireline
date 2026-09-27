@@ -72,6 +72,13 @@ describe("route meta prerendering", () => {
     expect(resolveRouteMeta("/for/not-a-real-vertical")).toBeNull();
   });
 
+  it.each(["constructor", "toString", "__proto__", "hasOwnProperty"])(
+    "does not resolve inherited object key %s as a public wedge",
+    (slug) => {
+      expect(resolveRouteMeta(`/for/${slug}`)).toBeNull();
+    },
+  );
+
   it("derives every /for/:slug page's meta from WEDGES (one source of truth)", () => {
     for (const [slug, wedge] of Object.entries(WEDGES)) {
       const publicSlug = publicWedgeSlug(slug as keyof typeof WEDGES);

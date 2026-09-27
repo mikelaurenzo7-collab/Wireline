@@ -7,6 +7,7 @@ import { FLAT_OVERAGE_PER_MIN_USD, STRIPE_PLANS, type StripePlanId } from "../li
 import { signupHrefForPlan } from "../lib/signup-intent";
 import BillingIntervalControl from "../components/BillingIntervalControl";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
+import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 
@@ -326,7 +327,8 @@ export default function Pricing() {
 
           <p className="mx-auto mt-4 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
             Included usage is shown per month. Extra voice is {TOPUP_RATE}, prepaid. No automatic
-            overages. Live phone and email setup depend on account eligibility and availability.
+            overages. Live phone and email setup depend on account eligibility and availability.{" "}
+            {MARKETING_CALLS_NOTICE}
           </p>
 
           <article

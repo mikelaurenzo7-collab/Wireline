@@ -1,5 +1,9 @@
 import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
 
+// Marketing campaigns cannot dial until recipient consent has a verified,
+// server-owned setup path. Keep acquisition copy honest while that is pending.
+export const MARKETING_CALLS_NOTICE = "Marketing calls are not available yet.";
+
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
 export const BRAND_SYSTEM = {

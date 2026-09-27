@@ -19,7 +19,7 @@ export function publicWedgeSlug(key: VerticalKey): string {
 
 function wedgeKeyForPublicSlug(slug: string): VerticalKey | null {
   if (slug === "everyday" || slug === "personal") return "personal";
-  return slug in WEDGES ? (slug as VerticalKey) : null;
+  return Object.hasOwn(WEDGES, slug) ? (slug as VerticalKey) : null;
 }
 
 export interface RouteMeta {

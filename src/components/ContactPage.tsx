@@ -1,4 +1,4 @@
-import React, { useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
@@ -40,9 +40,15 @@ export function ContactPage() {
   const [invalidField, setInvalidField] = useState<"email" | "subject" | "body" | null>(null);
   const errorId = useId();
   const inquiryLabelId = useId();
+  const confirmationDescriptionId = useId();
+  const confirmationRef = useRef<HTMLHeadingElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (submitted) confirmationRef.current?.focus();
+  }, [submitted]);
 
   const clearFieldError = (field: typeof invalidField) => {
     if (invalidField !== field) return;
@@ -199,8 +205,17 @@ export function ContactPage() {
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Message Received</h3>
-              <p className="mt-2 text-sm text-muted-foreground">We'll follow up at {email}.</p>
+              <h3
+                ref={confirmationRef}
+                tabIndex={-1}
+                aria-describedby={confirmationDescriptionId}
+                className="mt-4 text-xl font-semibold text-foreground"
+              >
+                Message Received
+              </h3>
+              <p id={confirmationDescriptionId} className="mt-2 text-sm text-muted-foreground">
+                We'll follow up at {email}.
+              </p>
             </div>
           ) : (
             <form onSubmit={onSubmit} noValidate className="mt-7 space-y-5">

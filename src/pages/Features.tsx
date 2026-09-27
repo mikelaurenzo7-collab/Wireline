@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { signupHrefForPlan } from "../lib/signup-intent";
+import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 const CORE_FEATURES = [
   "Shared Context",
@@ -47,6 +48,7 @@ export default function Features() {
                 SEE PRICING
               </Link>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">{MARKETING_CALLS_NOTICE}</p>
           </header>
 
           <h2

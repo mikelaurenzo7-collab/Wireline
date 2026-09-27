@@ -17,6 +17,8 @@ import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { type PainIconName, type VerticalKey, WEDGES } from "../data/vertical-wedges";
 import { signupHrefForWedge } from "../lib/signup-intent";
+import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../lib/outbound-call-purpose";
 
 const PAIN_ICONS: Record<PainIconName, LucideIcon> = {
   Calendar,
@@ -126,6 +128,14 @@ export default function VerticalLanding({
               {cfg.secondaryCta.label}
             </CtaLink>
           </div>
+          {slug === "sales" && (
+            <p className="mt-4 text-sm text-muted-foreground">{MARKETING_CALLS_NOTICE}</p>
+          )}
+          {isEverydayCalls && !DIRECT_OUTBOUND_AVAILABILITY.available && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Outbound calls are not available yet. Build and test privately.
+            </p>
+          )}
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {cfg.pains.map((pain) => {

@@ -21,6 +21,7 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
+import { MARKETING_CALLS_NOTICE } from "../../lib/product-copy";
 
 const FEATURED_TEMPLATE_KEYS = [
   "sales-rep",
@@ -128,7 +129,7 @@ export default function WireAgentLanding() {
                 </Link>
               </nav>
               <div className="landing-prestige__explore">
-                <p>Build &amp; test free. Explore live plans.</p>
+                <p>Build &amp; test free. {MARKETING_CALLS_NOTICE}</p>
                 <nav aria-label="Explore BotBound">
                   <Link to="/features">
                     How it works <ArrowRight aria-hidden="true" />

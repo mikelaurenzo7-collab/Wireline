@@ -1,4 +1,4 @@
-import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import MarketingPageFrame from "../src/components/layout/MarketingPageFrame";
 import MarketingStickyCta from "../src/components/marketing/MarketingStickyCta";
@@ -28,7 +28,7 @@ vi.mock("../src/components/marketing/MarketingChromeBar", () => ({ default: "foo
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
 
-type Element = ReactElement<{ children?: ReactNode; to?: string }>;
+type Element = ReactElement<{ children?: ReactNode; to?: string; className?: string }>;
 
 function elements(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -69,6 +69,36 @@ describe("marketing signup continuity", () => {
     expect(heroLink?.props.to).toBeTruthy();
     expect(stickyDestination(page)).toBe(heroLink?.props.to);
   });
+
+  it.each(["constructor", "toString", "__proto__", "hasOwnProperty", "not-a-solution"])(
+    "falls back to the support solution for the unknown route %s",
+    (wedge) => {
+      harness.wedge = wedge;
+      const page = SolutionsPage();
+      const heading = elements(page).find((element) => element.type === "h1");
+      const heroLink = elements(page).find(
+        (element) => element.type === "a" && element.props.to?.startsWith("/signup"),
+      );
+      expect(heading?.props.children).toBe("A Front Desk That Answers Before Demand Goes Cold");
+      expect(heroLink?.props.to).toBe("/signup?wedge=support");
+      expect(stickyDestination(page)).toBe(heroLink?.props.to);
+    },
+  );
+
+  it.each(["sales", "support"])(
+    "shows the marketing-call availability notice only for sales: %s",
+    (wedge) => {
+      harness.wedge = wedge;
+      const notice = elements(SolutionsPage()).find(
+        (element) =>
+          element.type === "p" &&
+          Children.toArray(element.props.children).join("") ===
+            "Marketing calls are not available yet. Build and test your Sales Bot free.",
+      );
+      expect(Boolean(notice)).toBe(wedge === "sales");
+      if (notice) expect(notice.props.className).not.toContain("sr-only");
+    },
+  );
 
   it("keeps the generic free signup destination for pages without a role choice", () => {
     const page = <MarketingPageFrame stickyCta>Public content</MarketingPageFrame>;

@@ -8,6 +8,23 @@ const PUBLIC_ROUTES = [
   { path: "/pricing", name: "pricing" },
 ] as const;
 
+for (const width of [1365, 320]) {
+  test(`nested privacy anchors clear the public header at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await openPublicRoute(page, "/privacy#ccpa");
+    const target = page.locator("#ccpa");
+    await expect(target).toBeFocused();
+    await expect
+      .poll(async () => {
+        const targetBounds = await target.boundingBox();
+        const headerBounds = await page.locator(".wl-public-header").boundingBox();
+        return targetBounds!.y - (headerBounds!.y + headerBounds!.height);
+      })
+      .toBeGreaterThanOrEqual(12);
+    await expect(page.getByRole("heading", { name: /California Privacy Rights/ })).toBeInViewport();
+  });
+}
+
 async function openPublicRoute(page: Page, path: string) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {

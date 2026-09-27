@@ -185,7 +185,7 @@ const PACKS: Record<string, TrustPack> = {
 
 export default function TrustPackPage() {
   const { vertical } = useParams<{ vertical: string }>();
-  const pack = vertical ? PACKS[vertical] : null;
+  const pack = vertical && Object.hasOwn(PACKS, vertical) ? PACKS[vertical] : null;
   /*
    * These four pages are submitted in sitemap.xml and are where regulated
    * buyers get sent, so the build prerenders their head from

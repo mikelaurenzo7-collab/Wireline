@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- support telemetry is intentionally optional. */
-import React, { useId, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CheckCircle2, Loader2, Mail, Send } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
@@ -25,6 +25,12 @@ export function SupportPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [emailFallbackAvailable, setEmailFallbackAvailable] = useState(false);
+  const confirmationDescriptionId = useId();
+  const confirmationRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (submitted) confirmationRef.current?.focus();
+  }, [submitted]);
   const emailFallbackHref = `mailto:support@botbound.app?subject=${encodeURIComponent(`[Support / ${issueType}] ${subject.trim() || "(no subject)"}`)}&body=${encodeURIComponent(`From: ${email.trim()}\n\n${body}`)}`;
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -116,8 +122,18 @@ export function SupportPage() {
           {submitted ? (
             <div className="py-10 text-center">
               <CheckCircle2 className="mx-auto h-10 w-10 text-primary" />
-              <h3 className="mt-4 text-xl font-semibold text-foreground">Request Received</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              <h3
+                ref={confirmationRef}
+                tabIndex={-1}
+                aria-describedby={confirmationDescriptionId}
+                className="mt-4 text-xl font-semibold text-foreground"
+              >
+                Request Received
+              </h3>
+              <p
+                id={confirmationDescriptionId}
+                className="mt-2 text-sm leading-6 text-muted-foreground"
+              >
                 We'll follow up at <strong className="text-foreground">{email}</strong>.
               </p>
             </div>

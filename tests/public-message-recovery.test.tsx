@@ -8,6 +8,10 @@ const hooks = vi.hoisted(() => ({
   refs: [] as Array<{ current: unknown }>,
   cursor: 0,
   refCursor: 0,
+  idCursor: 0,
+  effectCursor: 0,
+  dependencies: [] as Array<readonly unknown[]>,
+  effects: [] as Array<() => void>,
   search: "",
 }));
 
@@ -15,8 +19,16 @@ const hooks = vi.hoisted(() => ({
 // lightweight, persistent-state UI harness; no browser or live messages needed.
 vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
-  useId: () => "contact-error",
+  useId: () => `message-${hooks.idCursor++}`,
   useRef: (initial: unknown) => (hooks.refs[hooks.refCursor++] ??= { current: initial }),
+  useEffect(effect: () => void, dependencies: readonly unknown[]) {
+    const index = hooks.effectCursor++;
+    const previous = hooks.dependencies[index];
+    hooks.dependencies[index] = dependencies;
+    if (!previous || dependencies.some((value, i) => !Object.is(value, previous[i]))) {
+      hooks.effects.push(effect);
+    }
+  },
   useState(initial: unknown) {
     const index = hooks.cursor++;
     if (!(index in hooks.values)) {
@@ -44,6 +56,7 @@ type Props = {
   href?: string;
   role?: string;
   id?: string;
+  tabIndex?: number;
   ref?: { current: { focus: () => void; scrollIntoView: () => void } | null };
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
@@ -75,6 +88,10 @@ beforeEach(() => {
   hooks.refs = [];
   hooks.cursor = 0;
   hooks.refCursor = 0;
+  hooks.idCursor = 0;
+  hooks.effectCursor = 0;
+  hooks.dependencies = [];
+  hooks.effects = [];
   hooks.search = "";
   fetchMock.mockReset();
   navigate.mockReset();
@@ -114,10 +131,18 @@ describe.each([
   },
 ])("$name message recovery", ({ name, component, emailLabel, bodyLabel, success }) => {
   let tree: ReactNode;
+  const receiptFocus = vi.fn();
   const render = () => {
     hooks.cursor = 0;
     hooks.refCursor = 0;
+    hooks.idCursor = 0;
+    hooks.effectCursor = 0;
     tree = component();
+    const receipt = elements(tree).find((node) => node.type === "h3" && text(node) === success);
+    if (receipt?.props.ref) {
+      receipt.props.ref.current = { focus: receiptFocus, scrollIntoView: vi.fn() };
+    }
+    hooks.effects.splice(0).forEach((effect) => effect());
   };
   const control = (label: string) => {
     const wrapper = elements(tree).find(
@@ -139,6 +164,7 @@ describe.each([
     return form.props.onSubmit({ preventDefault() {} });
   };
   beforeEach(() => {
+    receiptFocus.mockReset();
     render();
     change(emailLabel, "owner@example.com");
     change("Subject", "Phone routing question");
@@ -163,6 +189,7 @@ describe.each([
       expect(control(bodyLabel).props.value).toBe("Please help with my routing rules.");
       expect(text(tree)).toContain("Delivery wasn't confirmed. Retry or send by email.");
       expect(text(tree)).not.toContain(success);
+      expect(receiptFocus).not.toHaveBeenCalled();
       expect(fallback()?.props.href).toMatch(/^mailto:support@botbound\.app\?/);
     },
   );
@@ -219,6 +246,31 @@ describe.each([
     render();
     expect(text(tree)).toContain(success);
     expect(fallback()).toBeUndefined();
+  });
+
+  it("focuses and describes the receipt only after confirmed delivery", async () => {
+    let finish!: (value: Response) => void;
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const pending = submit();
+    render();
+    expect(receiptFocus).not.toHaveBeenCalled();
+    finish(response({ sent: true }));
+    await pending;
+    render();
+    const receipt = elements(tree).find((node) => node.type === "h3" && text(node) === success)!;
+    expect(receipt.props.tabIndex).toBe(-1);
+    expect(receiptFocus).toHaveBeenCalledOnce();
+    const description = elements(tree).find(
+      (node) => node.props.id === receipt.props["aria-describedby"],
+    );
+    expect(text(description)).toContain("We'll follow up at owner@example.com.");
+    expect(elements(tree).some((node) => node.type === "form")).toBe(false);
+    render();
+    expect(receiptFocus).toHaveBeenCalledOnce();
   });
 
   it.each([400, 429])(
