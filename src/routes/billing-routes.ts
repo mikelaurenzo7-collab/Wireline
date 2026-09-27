@@ -752,7 +752,7 @@ router.get(
 
       // Email-verification state — surfaces to EmailVerifyBanner so
       // it can show/hide without a separate /api/me call.
-      let emailVerified = true;
+      let emailVerified: boolean | null = null;
       try {
         const [u] = await drizzle
           .select({ verifiedAt: schema.users.emailVerifiedAt })
@@ -761,9 +761,9 @@ router.get(
           .limit(1);
         emailVerified = !!u?.verifiedAt;
       } catch {
-        // Fail-open in the banner: if the DB lookup hiccups, assume
-        // verified so we don't false-flag a real user.
-        emailVerified = true;
+        // A lookup failure is not proof of verification. Clients retain the
+        // last confirmed state and can retry without claiming success.
+        emailVerified = null;
       }
 
       res.json({

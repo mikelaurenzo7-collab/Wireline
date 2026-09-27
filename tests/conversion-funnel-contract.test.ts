@@ -61,7 +61,10 @@ describe("email verification confirms itself", () => {
     expect(routes).not.toMatch(/\$\{baseUrl\}\/\?verified=/);
 
     const banner = read("src/components/layout/EmailVerifyBanner.tsx");
-    expect(banner).toContain('params.get("verified")');
+    expect(banner).toContain("readEmailVerificationReturn(search)");
+    expect(read("src/components/auth/AuthAccessPanel.tsx")).toContain(
+      "emailVerificationSignInNotice",
+    );
     expect(read("src/components/WorkspaceShell.tsx")).toContain("<EmailVerifyBanner />");
   });
 });

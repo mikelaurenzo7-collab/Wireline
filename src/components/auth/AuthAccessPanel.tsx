@@ -25,6 +25,10 @@ import {
   type SignupPlanId,
 } from "../../lib/signup-intent";
 import { getPasswordPolicyError } from "../../lib/password-policy";
+import {
+  emailVerificationSignInNotice,
+  readEmailVerificationReturn,
+} from "../../lib/email-verification-return";
 import { clearFreshSignupSession, markFreshSignupSession } from "../../lib/post-signup-onboarding";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import {
@@ -212,6 +216,10 @@ export default function AuthAccessPanel({
   const { signIn, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const verificationReturn = readEmailVerificationReturn(location.search);
+  const verificationNotice = verificationReturn
+    ? emailVerificationSignInNotice(verificationReturn)
+    : null;
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -788,6 +796,11 @@ export default function AuthAccessPanel({
             </StatusNotice>
           ) : null}
           {message ? <StatusNotice tone="success" title={message} /> : null}
+          {verificationNotice && !isReset ? (
+            <StatusNotice tone={verificationNotice.tone} title={verificationNotice.title}>
+              {verificationNotice.message}
+            </StatusNotice>
+          ) : null}
 
           <button type="submit" className="wl-access-panel__submit" disabled={disabled}>
             {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}

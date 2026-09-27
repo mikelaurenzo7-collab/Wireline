@@ -9,6 +9,7 @@ const harness = vi.hoisted(() => ({
   refCursor: 0,
   effects: [] as Array<() => unknown>,
   mounting: true,
+  search: "",
   fetch: vi.fn(),
   navigate: vi.fn(),
   signIn: vi.fn(),
@@ -44,7 +45,7 @@ vi.mock("react", async (importOriginal) => {
 });
 vi.mock("react-router", () => ({
   Link: "a",
-  useLocation: () => ({ pathname: "/", search: "" }),
+  useLocation: () => ({ pathname: "/", search: harness.search }),
   useNavigate: () => harness.navigate,
 }));
 vi.mock("../src/contexts/AuthContext", () => ({
@@ -93,6 +94,8 @@ type Props = {
   type?: string;
   className?: string;
   disabled?: boolean;
+  title?: string;
+  tone?: string;
   "aria-label"?: string;
   "aria-pressed"?: boolean;
   onClick?: () => void | Promise<void>;
@@ -177,6 +180,7 @@ beforeEach(() => {
   harness.refs = [];
   harness.effects = [];
   harness.mounting = true;
+  harness.search = "";
   harness.fetch.mockImplementation(async (url: string) => {
     if (url === "/api/auth/providers") {
       return response({
@@ -193,6 +197,27 @@ afterEach(() => {
 });
 
 describe("account access pending requests", () => {
+  it.each([
+    ["1", "Verification link accepted", "info"],
+    ["expired", "This verification link is no longer available", "warning"],
+    ["error", "We couldn’t finish checking this link", "warning"],
+  ])(
+    "explains the %s verification return before the signed-out user signs in",
+    (result, title, tone) => {
+      harness.search = `?verified=${result}`;
+      const notice = find((element) => element.type === "aside" && element.props.title === title);
+      expect(notice.props.tone).toBe(tone);
+      expect(notice.props.children).toMatch(/Sign in to (confirm|check) your email status/);
+      expect(harness.signIn).not.toHaveBeenCalled();
+      expect(harness.navigate).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not invent a verification result for an unrelated sign-in visit", () => {
+    harness.search = "?verified=unknown";
+    expect(render().some((element) => element.type === "aside")).toBe(false);
+  });
+
   it("does not lock the form when local validation rejects a submission", async () => {
     await mount();
     field("email", "");

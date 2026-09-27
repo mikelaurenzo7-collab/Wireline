@@ -19,6 +19,7 @@ describe("web managed identity setup", () => {
     const result = await bootstrapManagedBotIdentity("bot/id");
     expect(h.request).toHaveBeenCalledExactlyOnceWith("/api/agents/bot%2Fid/managed-identity", {
       method: "POST",
+      suppressTrialGateEvent: true,
     });
     expect(result.mailbox).toMatchObject({
       provisioned: true,
@@ -27,7 +28,7 @@ describe("web managed identity setup", () => {
     });
     expect(result.phone).toMatchObject({ provisioned: true, phoneNumber: "+12025550123" });
   });
-  it("retains the activation prompt when shared admission rejects the Bot", async () => {
+  it("retains the wizard's activation state when shared admission rejects the Bot", async () => {
     h.request.mockResolvedValue(Response.json({ code: "ACTIVATION_REQUIRED" }, { status: 402 }));
     const result = await bootstrapManagedBotIdentity("bot");
     expect(result.phone).toMatchObject({

@@ -409,7 +409,10 @@ const BillingStatus: JsonSchema = {
       description:
         "Max provisioned voice numbers while active, equals the subscribed plan agent cap (one number slot per purchased agent seat).",
     },
-    email_verified: { type: "boolean" },
+    email_verified: {
+      type: ["boolean", "null"],
+      description: "Confirmed email verification state, or null when the lookup is unavailable.",
+    },
     subscription: {
       type: ["object", "null"],
       description: "Mirrored Stripe subscription summary.",

@@ -9,6 +9,8 @@ const DEFAULT_TIMEOUT_MS = DEFAULT_REQUEST_TIMEOUT_MS;
 export interface AuthFetchOptions extends RequestInit {
   /** Override the default 120s cap for a slow backend call. */
   timeoutMs?: number;
+  /** Background flows with their own activation UI may suppress only the global 402 dialog. */
+  suppressTrialGateEvent?: boolean;
 }
 
 // Logger stub for client-side (avoid console.error in production)
@@ -340,7 +342,13 @@ export async function authFetch(
   input: RequestInfo | URL,
   init: AuthFetchOptions = {},
 ): Promise<Response> {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, signal, headers, ...rest } = init;
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    suppressTrialGateEvent = false,
+    signal,
+    headers,
+    ...rest
+  } = init;
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   const mergedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal;
@@ -361,7 +369,7 @@ export async function authFetch(
       credentials: "include",
       signal: mergedSignal,
     });
-    void maybeDispatchTrialGateEvent(response);
+    if (!suppressTrialGateEvent) void maybeDispatchTrialGateEvent(response);
     void maybeDispatchAuthSessionExpired(
       response,
       typeof input === "string" ? input : input.toString(),

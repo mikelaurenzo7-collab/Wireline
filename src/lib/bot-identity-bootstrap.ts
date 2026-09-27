@@ -35,6 +35,9 @@ export async function bootstrapManagedBotIdentity(
       `/api/agents/${encodeURIComponent(agentId)}/managed-identity`,
       {
         method: "POST",
+        // The setup wizard owns this expected Free Builder activation state.
+        // Keep its guide visible instead of stacking a second payment dialog.
+        suppressTrialGateEvent: true,
       },
     );
     const body = (await safeJson(response)) as {

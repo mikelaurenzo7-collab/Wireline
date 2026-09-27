@@ -43,7 +43,8 @@ export interface BillingStatusResponse {
   agent_count: number;
   phone_lines_used: number;
   phone_lines_included: number;
-  email_verified: boolean;
+  /** null means the verification lookup was unavailable. */
+  email_verified: boolean | null;
   subscription: BillingSubscriptionState | null;
   trial: BillingTrialBlock | null;
   signup_intent: BillingSignupIntent | null;

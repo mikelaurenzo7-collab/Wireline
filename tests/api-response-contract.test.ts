@@ -12,7 +12,7 @@ describe("API response contract", () => {
   it("exports billing status types consumed by global banners", () => {
     const billingTypes = read("src/types/api-billing.ts");
     expect(billingTypes).toContain("export interface BillingStatusResponse");
-    expect(billingTypes).toContain("email_verified: boolean");
+    expect(billingTypes).toContain("email_verified: boolean | null");
     expect(billingTypes).toContain("trial: BillingTrialBlock | null");
 
     // TrialBanner was removed 2026-08-13: unmounted since the activation
