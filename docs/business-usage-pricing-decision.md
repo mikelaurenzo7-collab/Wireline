@@ -1,3 +1,5 @@
+> Superseded for new-sale package selection on September 27, 2026 by [Channel pricing decision](PRICING_DECISION_2026-09-27.md) and [Billing operations](P0_BILLING_OPS_NOTE.md). The earlier bundles below remain historical design/record compatibility, not current new-sale prices.
+
 # BotBound Billing Catalog Direction
 
 Canonical operating proof runbook: [BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md).

@@ -10,7 +10,7 @@ import { authenticateUser } from "../middleware/auth";
 import type { AuthenticatedRequest } from "../types/auth";
 import { getErrorMessage } from "../lib/server-utils";
 import {
-  defaultAiSpendBudgetUsdForTier,
+  defaultAiSpendBudgetUsdForPlan,
   getEffectiveSubscriptionPlanId,
   subscriptionPlanToTier,
 } from "../lib/plan-entitlements";
@@ -67,7 +67,7 @@ async function ensurePersistedSpendBudget(
   }
 
   const liveProviderWorkEnabled = tier !== "free";
-  const maximumLimitUsd = defaultAiSpendBudgetUsdForTier(tier);
+  const maximumLimitUsd = defaultAiSpendBudgetUsdForPlan(planId);
   const planName =
     customerPlanName(resolvedPlan?.name) ||
     `${BOTBOUND_BRAND_NAME} ${liveProviderWorkEnabled ? "Live" : "Free Builder"}`;

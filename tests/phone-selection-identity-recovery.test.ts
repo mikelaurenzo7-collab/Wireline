@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   preview: vi.fn(),
   held: 0,
   slots: 1,
+  channels: ["voice", "email"] as string[],
 }));
 
 vi.mock("express", () => ({
@@ -32,6 +33,9 @@ vi.mock("../src/lib/server-context", () => ({
 vi.mock("../src/lib/agent-phone-lines", () => ({ isTwilioPhoneNumberSid: () => true }));
 vi.mock("../src/lib/phone-line-entitlements", () => ({
   getIncludedPhoneLineSlots: async () => h.slots,
+}));
+vi.mock("../src/lib/channel-entitlements", () => ({
+  getTenantChannelEntitlements: async () => ({ channels: h.channels }),
 }));
 vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: vi.fn(),
@@ -83,6 +87,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.held = 0;
   h.slots = 1;
+  h.channels = ["voice", "email"];
   h.queue.mockResolvedValue({ queued: 1 });
   h.provision.mockResolvedValue({ ok: true, phoneNumber: number, reused: false });
   h.assign.mockResolvedValue({
@@ -92,6 +97,14 @@ beforeEach(() => {
 });
 
 describe("number selection resumes managed identity", () => {
+  it("does not depend on an email reconciliation job for Calls-only", async () => {
+    h.channels = ["voice"];
+    h.queue.mockRejectedValue(new Error("Mail worker unavailable"));
+    const res = response();
+    await h.routes.get("post:/api/phone-numbers/provision")!(request(), res);
+    expect(h.queue).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: true }));
+  });
   it.each(["post:/api/phone-numbers/provision", "post:/api/phone-numbers/claim"])(
     "queues repair for a saved reservation even when routing is pending on %s",
     async (path) => {

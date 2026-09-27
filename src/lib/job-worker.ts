@@ -81,6 +81,7 @@ const SELF_MANAGED_DELETION_FENCE_JOB_TYPES = new Set<JobRow["type"]>([
  * reconciliation under the fence and let the ensuing local purge erase it. */
 const TERMINAL_DELETION_CLEANUP_JOB_TYPES = new Set<JobRow["type"]>([
   "twilio_message_reconciliation",
+  "twilio_fallback_reconcile",
 ]);
 
 function attemptNumber(job: JobRow): number {
@@ -500,6 +501,11 @@ async function dispatchJobInProviderContext(job: JobRow): Promise<void> {
   }
   if (job.type === "twilio_message_reconciliation") {
     await handleTwilioMessageReconciliationJob(job);
+    return;
+  }
+  if (job.type === "twilio_fallback_reconcile") {
+    const { reconcileTwilioFallbackJob } = await import("./voice/twilio-fallback-recovery");
+    await reconcileTwilioFallbackJob(job);
     return;
   }
   if (job.type === "post_call_artifact") {

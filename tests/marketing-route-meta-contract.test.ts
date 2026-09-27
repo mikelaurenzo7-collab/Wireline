@@ -14,6 +14,7 @@ import {
 } from "../src/lib/marketing-route-meta";
 import { WEDGES } from "../src/data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "../src/lib/brand";
+import { ACCOUNT_TERMS_DESCRIPTION, ACCOUNT_TERMS_LAST_UPDATED } from "../src/lib/legal-consent";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 const indexHtml = read("index.html");
@@ -143,7 +144,13 @@ describe("route meta prerendering", () => {
       const source = read(path);
       const inlineTitle = meta.title.replace(new RegExp(` \\| ${BOTBOUND_BRAND_NAME}$`), "");
       expect(source, `${route} title`).toContain(inlineTitle);
-      expect(source, `${route} description`).toContain(meta.description);
+      if (route === "/terms") {
+        expect(source).toContain("description={ACCOUNT_TERMS_DESCRIPTION}");
+        expect(meta.description).toBe(ACCOUNT_TERMS_DESCRIPTION);
+        expect(meta.description).toContain(ACCOUNT_TERMS_LAST_UPDATED);
+      } else {
+        expect(source, `${route} description`).toContain(meta.description);
+      }
       expect(meta.noIndex, route).not.toBe(true);
     }
   });

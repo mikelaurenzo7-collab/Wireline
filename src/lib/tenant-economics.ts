@@ -5,10 +5,12 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import {
-  PHONE_NUMBER_COST_MONTHLY_USD,
   VOICE_VARIABLE_COST_PER_MIN_USD,
-  estimatedStripeCommercialFeesUsd,
-  planById,
+  estimatedPlanMonthlyCosts,
+  STRIPE_PLANS,
+  HARD_CONTRIBUTION_MARGIN_FLOOR,
+  LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
+  estimatedContributionMarginAtExpectedUsage,
   type BillingInterval,
   type StripePlan,
 } from "./plan-catalog";
@@ -20,14 +22,10 @@ export const MARGIN_AT_RISK_THRESHOLD_PCT = 10;
  * Catalog-level pricing-review reference: fleet blended COGS above this means
  * the priced-in reserve no longer covers reality and pricing needs review.
  *
- * The reference is the reserve itself, and it must sit below the point where
- * the launch-certified 30% hard contribution floor (assertPlanMarginFloors)
- * breaks — solving the full-utilization margin for the floor across the
- * launch-safe v6 catalog puts the binding constraint above $0.13/min.
- * The prior $0.14 value only flagged drift once four of the eight
- * plan-interval combinations were already below the certified floor.
- * round6-margin-capacity-contract re-derives that bound from the catalog and
- * pins this beneath it; `npm run economics:report` prints both.
+ * The reference is the reserve itself. The catalog must separately clear the
+ * full contribution floor including mailbox capacity and commercial fees;
+ * this rate alone is not proof of plan profitability. The economics report
+ * and launch gate expose any price/allowance combination below that floor.
  *
  * This is a FLEET pricing bound, not a per-tenant health check: an individual
  * tenant's observed rate naturally varies above the modeled average, so
@@ -60,7 +58,7 @@ export function computeGrossMarginPct(revenuePerMin: number, cogsPerMin: number)
 /**
  * Contribution margin at full included utilization for one billing interval.
  *
- * Annual is billed at a discount (roughly two months free) while the reserved
+ * Annual is billed at the explicit package-specific discount while the reserved
  * monthly COGS is unchanged, so the annual interval is always the tighter of
  * the two. Callers that guard pricing must check both — see
  * {@link assertPlanMarginFloors}.
@@ -69,25 +67,10 @@ export function computePlanFullUtilizationMarginPct(
   plan: StripePlan,
   interval: BillingInterval = "month",
 ): number | null {
-  const recurringRevenue =
-    interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+  const costs = estimatedPlanMonthlyCosts(plan, interval);
+  const recurringRevenue = costs.revenueUsd;
   if (!Number.isFinite(recurringRevenue) || recurringRevenue <= 0) return null;
-  const commercialFees =
-    interval === "year"
-      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
-      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
-  const voiceCost = plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD;
-  const numberCost = plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD;
-  // Treat every included Runtime Allowance and independently metered AI dollar
-  // as fully consumed COGS. This is the reachable worst case because neither
-  // allowance debits the voice meter or the other allowance.
-  const totalCost =
-    voiceCost +
-    numberCost +
-    plan.runtime_allowance_usd_monthly +
-    plan.ai_spend_allowance_usd_monthly +
-    commercialFees;
-  return Math.round(((recurringRevenue - totalCost) / recurringRevenue) * 1000) / 10;
+  return Math.round(((recurringRevenue - costs.totalCostUsd) / recurringRevenue) * 1000) / 10;
 }
 
 export async function getTenantEconomics(userId: string): Promise<TenantEconomics> {
@@ -154,54 +137,37 @@ export async function countAtRiskTenants(): Promise<number> {
   return count;
 }
 
-export function assertPlanMarginFloors(): { ok: boolean; violations: string[] } {
-  // Catalog v6 (docs/PRICING_DECISION_2026-07-25.md): one flat $0.22 top-up
-  // rate and a uniform 30% hard contribution floor at full utilization —
-  // launch readiness enforces the same bar on every paid tier instead of the
-  // old per-tier ladder.
-  const overageFloors: Record<string, number> = {
-    starter: 35,
-    team: 35,
-    business: 35,
-    enterprise: 35,
-  };
-  const includedFloors: Record<string, number> = {
-    starter: 30,
-    team: 30,
-    business: 30,
-    enterprise: 30,
-  };
+/** New-sale guard; legacy exposure remains visible without rewriting old promises. */
+export function assertPlanMarginFloors(): {
+  ok: boolean;
+  violations: string[];
+  legacyExposure: string[];
+} {
   const violations: string[] = [];
-
-  for (const id of Object.keys(overageFloors)) {
-    const plan = planById(id);
-    if (!plan) {
-      violations.push(`${id}: plan missing from canonical catalog`);
-      continue;
+  const legacyExposure: string[] = [];
+  for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    const findings = plan.catalogFamily === "legacy" ? legacyExposure : violations;
+    if (plan.channels.includes("voice")) {
+      const overageMargin = computeGrossMarginPct(
+        plan.overage_per_min_usd,
+        VOICE_VARIABLE_COST_PER_MIN_USD,
+      );
+      if (overageMargin == null || overageMargin < 35)
+        findings.push(`${plan.id}: voice overage margin below 35%`);
     }
-
-    const overageMargin = computeGrossMarginPct(
-      plan.overage_per_min_usd,
-      VOICE_VARIABLE_COST_PER_MIN_USD,
-    );
-    const overageFloor = overageFloors[id];
-    if (overageMargin == null || overageMargin < overageFloor) {
-      violations.push(`${id}: overage margin ${overageMargin ?? "n/a"}% < floor ${overageFloor}%`);
-    }
-
-    const includedFloor = includedFloors[id];
-    // Annual is the binding interval (discounted revenue, unchanged monthly
-    // COGS). Checking only the monthly side would have let an annual plan sink
-    // below its floor without ever tripping launch readiness.
     for (const interval of ["month", "year"] as const) {
-      const includedMargin = computePlanFullUtilizationMarginPct(plan, interval);
-      if (includedMargin == null || includedMargin < includedFloor) {
-        violations.push(
-          `${id}: ${interval}ly full-utilization contribution ${includedMargin ?? "n/a"}% < floor ${includedFloor}%`,
+      const costs = estimatedPlanMonthlyCosts(plan, interval);
+      const full = (costs.revenueUsd - costs.totalCostUsd) / costs.revenueUsd;
+      const expected = estimatedContributionMarginAtExpectedUsage(plan, interval);
+      if (full < HARD_CONTRIBUTION_MARGIN_FLOOR)
+        findings.push(
+          `${plan.id}: ${interval} full-use margin ${(full * 100).toFixed(2)}% below ${HARD_CONTRIBUTION_MARGIN_FLOOR * 100}%`,
         );
-      }
+      if (expected < LAUNCH_CONTRIBUTION_MARGIN_FLOOR)
+        findings.push(
+          `${plan.id}: ${interval} expected-use margin ${(expected * 100).toFixed(2)}% below ${LAUNCH_CONTRIBUTION_MARGIN_FLOOR * 100}%`,
+        );
     }
   }
-
-  return { ok: violations.length === 0, violations };
+  return { ok: violations.length === 0, violations, legacyExposure };
 }

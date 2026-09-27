@@ -1,3 +1,5 @@
+import type { StripePlanId } from "./plan-catalog";
+
 export const PRODUCT_EVENT_VERSION = "2026-07-19";
 
 export const PRODUCT_EVENT_NAMES = [
@@ -125,7 +127,7 @@ export type ProductEventPayload = {
   event: ProductEventName;
   audience?: ProductEventAudience;
   surface: ProductEventSurface;
-  planId?: "personal" | "starter" | "team" | "business" | "enterprise";
+  planId?: StripePlanId;
   wedge?: string;
   templateId?: string;
   agentId?: string;

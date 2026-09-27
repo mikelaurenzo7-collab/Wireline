@@ -62,6 +62,7 @@ function harness() {
   let durable: FallbackReceipt | null = null;
   const settled = new Map<string, { owner: string; duration: number }>();
   const store = {
+    releasePresence: vi.fn(async () => {}),
     findLine: vi.fn(async () => ({ agentId: "bot-1" })),
     find: vi.fn(async () => durable),
     claim: vi.fn(async (value: FallbackAdmission) => {
@@ -82,6 +83,7 @@ function harness() {
     maxSeconds: vi.fn(() => 60),
     acquireLease: vi.fn(async () => ({ id: leaseId, expiresAt: new Date(leaseExpiry) })),
     releaseLease: vi.fn(async () => {}),
+    releaseFunding: vi.fn(async () => {}),
     track: vi.fn(async (value: { userId: string; durationSeconds: number; vapiCallId: string }) => {
       expect(scoped.current!.getStore()).toBe(value.userId);
       settled.set(value.vapiCallId, { owner: value.userId, duration: value.durationSeconds });
@@ -188,6 +190,15 @@ describe("bounded human fallback admission", () => {
     expect(await prepareTwilioVoiceFallback(input, h.dependencies)).toBeNull();
   });
 
+  it("does not restart the funded deadline while its deletion lease is still valid", async () => {
+    const h = harness();
+    h.seed({ ...receipt, deadlineAtMs: Date.now() - 1 });
+    expect(await prepareTwilioVoiceFallback(input, h.dependencies)).toBeNull();
+    expect(h.dependencies.acquireLease).not.toHaveBeenCalled();
+    expect(h.dependencies.releaseFunding).not.toHaveBeenCalled();
+    expect(h.dependencies.track).not.toHaveBeenCalled();
+  });
+
   it("retains the deletion lease when the admission transaction commit is ambiguous", async () => {
     const h = harness();
     h.store.claim.mockImplementationOnce(async (admission) => {
@@ -254,6 +265,7 @@ describe("durable fallback settlement", () => {
       "ledger unavailable",
     );
     expect(h.dependencies.releaseLease).not.toHaveBeenCalled();
+    expect(h.store.releasePresence).not.toHaveBeenCalled();
     await expect(completeTwilioVoiceFallback(callback, h.dependencies)).resolves.toBe(true);
     expect(h.settled.size).toBe(1);
     expect(h.dependencies.releaseLease).toHaveBeenCalledWith({ id: leaseId, userId: owner });
@@ -317,7 +329,7 @@ describe("durable fallback settlement", () => {
     expect(h.dependencies.track).not.toHaveBeenCalled();
   });
 
-  it("counts a real unanswered child attempt with zero seconds through canonical voice billing", async () => {
+  it("returns funding for a carrier-confirmed unanswered attempt without customer usage", async () => {
     const h = harness();
     h.seed();
     expect(
@@ -326,8 +338,11 @@ describe("durable fallback settlement", () => {
         h.dependencies,
       ),
     ).toBe(true);
-    expect(h.dependencies.track).toHaveBeenCalledWith(
-      expect.objectContaining({ durationSeconds: 0 }),
+    expect(h.dependencies.track).not.toHaveBeenCalled();
+    expect(h.dependencies.releaseFunding).toHaveBeenCalledWith(
+      owner,
+      `twilio-fallback:${PARENT}`,
+      "confirmed_unanswered",
     );
   });
 });

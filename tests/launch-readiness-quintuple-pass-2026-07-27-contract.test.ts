@@ -74,12 +74,18 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
     expect(grace).not.toContain("temporary negative Conversation Balance");
   });
 
-  it("documents founder catalog v6 prices in the active P0 billing ops note", () => {
+  it("documents channel prices and gated SMS truthfully in the active billing ops note", () => {
     const note = read("docs/P0_BILLING_OPS_NOTE.md");
-    expect(note).toContain("$19");
-    expect(note).toContain("$39");
-    expect(note).toContain("$79");
-    expect(note).toContain("The retired $159 Business tier remains resolver-compatible");
+    for (const price of ["$15", "$9", "$12", "$21", "$20", "$18", "$26"])
+      expect(note).toContain(price);
+    expect(note).toContain(
+      "Old starter/team/business/enterprise and extra-Bot IDs remain resolvable",
+    );
+    expect(note).toContain("all twelve SMS capacity quotes stay unavailable");
+    expect(note).toContain("$59 / $690");
+    expect(note).toContain("$219 / $2,499");
+    expect(note).toContain("next successful paid renewal");
+    expect(note).toContain("up to 10 additional completion minutes");
     expect(note).not.toMatch(/\| Business \| \$159/);
     expect(note).not.toMatch(/\| Starter \| \$9 \|/);
     expect(note).not.toMatch(/\| Starter Plus \| \$24 \|/);

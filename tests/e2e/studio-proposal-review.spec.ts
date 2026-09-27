@@ -35,6 +35,19 @@ async function mockWorkspace(page: Page) {
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
+    if (path === "/api/billing/status") {
+      await route.fulfill({
+        json: {
+          channel_entitlements: {
+            plan_id: "omnichannel",
+            subscription_status: "active",
+            channels: ["voice", "email", "sms"],
+            is_owner: false,
+          },
+        },
+      });
+      return;
+    }
     if (request.method() !== "GET") {
       writes.push({ path, body: request.postData() ? request.postDataJSON() : null });
     }

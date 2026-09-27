@@ -1,5 +1,8 @@
 # BotBound Launch Release — September 2026
 
+> September 27 commercial revision: this package contains historical offers and renders. Do not publish assets quoting Starter, $19 entry pricing, or available outbound/SMS. The current channel catalog is `src/lib/plan-catalog.ts`: Email $9, Calls $15, Calls + Email $21 monthly. SMS combinations remain unavailable. Re-render and review any selected asset against the released source before promotion.
+
+
 ## The Campaign in One Sentence
 
 The phone has impeccable timing. BotBound gives the second ring somewhere useful to go.

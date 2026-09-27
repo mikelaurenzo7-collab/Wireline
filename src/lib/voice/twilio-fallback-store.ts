@@ -1,8 +1,9 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { drizzle } from "../server-context";
 import { OPENAI_SIP_PROVIDER_MAX_SECONDS } from "./openai-sip-config";
-import { inboundConcurrentCallCeiling } from "../inbound-concurrency";
+import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
+import { reserveVoiceCallFunding } from "../voice-call-funding";
 import {
   fallbackReceiptId,
   TWILIO_FALLBACK_DURATION_TOLERANCE_SECONDS,
@@ -62,7 +63,9 @@ async function readReceipt(
     typeof admission.leaseId !== "string" ||
     !/^[a-f0-9-]{36}$/i.test(admission.leaseId) ||
     typeof admission.leaseExpiresAt !== "string" ||
-    !Number.isFinite(Date.parse(admission.leaseExpiresAt))
+    !Number.isFinite(Date.parse(admission.leaseExpiresAt)) ||
+    (admission.deadlineAtMs !== undefined &&
+      (!Number.isSafeInteger(admission.deadlineAtMs) || Number(admission.deadlineAtMs) <= 0))
   ) {
     throw new Error("Twilio fallback admission receipt is malformed.");
   }
@@ -92,6 +95,9 @@ async function readReceipt(
     calledNumber: admission.calledNumber,
     fallbackNumber: admission.fallbackNumber,
     maxSeconds: Number(admission.maxSeconds),
+    ...(admission.deadlineAtMs !== undefined
+      ? { deadlineAtMs: Number(admission.deadlineAtMs) }
+      : {}),
     leaseId: admission.leaseId,
     leaseExpiresAt: admission.leaseExpiresAt,
     completion,
@@ -127,9 +133,6 @@ export const twilioFallbackStore: TwilioFallbackStore = {
 
   async claim(input: FallbackAdmission) {
     return drizzle.transaction(async (tx) => {
-      await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(hashtext(${`voice-fallback:${input.userId}`}))`,
-      );
       // Hold the exact line assignment through receipt creation. A settings-only
       // sender or concurrent release/reassignment cannot authorize a new Dial.
       const [line] = await tx
@@ -161,26 +164,22 @@ export const twilioFallbackStore: TwilioFallbackStore = {
         }
         return receipt;
       }
-      const [capacity] = await tx
-        .select({ live: sql<string>`count(*)` })
-        .from(schema.signalPresence)
-        .where(
-          and(
-            eq(schema.signalPresence.userId, input.userId),
-            gte(schema.signalPresence.startedAt, new Date(Date.now() - 2 * 60 * 60 * 1000)),
-            sql`coalesce(${schema.signalPresence.label}, '') not like ${"% · Outbound"}`,
-          ),
-        );
-      const live = Number(capacity?.live);
-      if (!Number.isSafeInteger(live) || live < 0)
-        throw new Error("Fallback voice capacity is unavailable.");
-      if (live >= inboundConcurrentCallCeiling()) return null;
+      if (!(await hasInboundCapacityInTransaction(tx, input.userId))) return null;
+      const funding = await reserveVoiceCallFunding(tx, {
+        userId: input.userId,
+        providerCallId: key,
+        maxSeconds: input.maxSeconds,
+      });
+      const fundedInput = funding
+        ? { ...input, maxSeconds: funding.maxSeconds, deadlineAtMs: funding.deadlineAtMs }
+        : input;
       const [inserted] = await tx
         .insert(schema.callLogs)
         .values({
           userId: input.userId,
           agentId: input.agentId,
           vapiCallId: key,
+          openaiSipSourceId: `twilio-fallback:${input.parentCallSid}`,
           direction: "inbound",
           customerNumber: input.callerNumber,
           summary: "Human fallback transfer requested.",
@@ -193,7 +192,10 @@ export const twilioFallbackStore: TwilioFallbackStore = {
           event(input.userId, key, ADMITTED, {
             calledNumber: input.calledNumber,
             fallbackNumber: input.fallbackNumber,
-            maxSeconds: input.maxSeconds,
+            maxSeconds: fundedInput.maxSeconds,
+            ...(fundedInput.deadlineAtMs !== undefined
+              ? { deadlineAtMs: fundedInput.deadlineAtMs }
+              : {}),
             leaseId: input.leaseId,
             leaseExpiresAt: input.leaseExpiresAt,
           }),
@@ -207,7 +209,18 @@ export const twilioFallbackStore: TwilioFallbackStore = {
           label: "Human fallback",
           type: "voice",
         });
-        return { ...input, completion: null };
+        await tx.insert(schema.jobs).values({
+          userId: input.userId,
+          type: "twilio_fallback_reconcile",
+          payload: { parentCallSid: input.parentCallSid },
+          status: "pending",
+          attempts: 0,
+          maxAttempts: 5,
+          runAt: new Date(
+            (fundedInput.deadlineAtMs ?? Date.now() + fundedInput.maxSeconds * 1000) + 60_000,
+          ),
+        });
+        return { ...fundedInput, completion: null };
       }
       const [existing] = await tx
         .select()
@@ -292,11 +305,22 @@ export const twilioFallbackStore: TwilioFallbackStore = {
           and(eq(schema.callLogs.vapiCallId, key), eq(schema.callLogs.userId, receipt.userId)),
         );
       await tx
-        .delete(schema.signalPresence)
+        .update(schema.signalPresence)
+        .set({ status: "settling", controlUrl: null })
         .where(
           and(eq(schema.signalPresence.id, key), eq(schema.signalPresence.userId, receipt.userId)),
         );
       return completion;
     });
+  },
+  async releasePresence(receipt) {
+    await drizzle
+      .delete(schema.signalPresence)
+      .where(
+        and(
+          eq(schema.signalPresence.id, fallbackReceiptId(receipt.parentCallSid)),
+          eq(schema.signalPresence.userId, receipt.userId),
+        ),
+      );
   },
 };

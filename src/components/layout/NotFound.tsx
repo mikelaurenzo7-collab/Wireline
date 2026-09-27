@@ -109,7 +109,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
                 to="/pricing"
                 icon={Compass}
                 label="Pricing"
-                hint="Plans from $19"
+                hint="Email from $9 · Calls from $15"
                 accent={BRAND.colors.primary}
               />
             </>

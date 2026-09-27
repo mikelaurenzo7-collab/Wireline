@@ -20,7 +20,7 @@ async function mockPublicAccount(page: Page, plans: unknown, status = 200) {
 const paidPlans = {
   stripe_configured: true,
   checkout_available: true,
-  plans: ["starter", "team", "business"].map((id) => ({
+  plans: ["voice", "email", "voice-email", "voice-regular", "voice-email-regular"].map((id) => ({
     id,
     contact_sales: false,
     configured: true,
@@ -35,17 +35,19 @@ test("paused activation stays explicit from the homepage through paid signup", a
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
-  await page.getByRole("link", { name: "Set up Starter", exact: true }).click();
-  await expect(page).toHaveURL(/\/signup\?plan=starter/);
+  await page.getByRole("link", { name: "Set up Calls", exact: true }).click();
+  await expect(page).toHaveURL(/\/signup\?plan=voice/);
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
-  await expect(access).toContainText("$19/month");
+  await expect(access).toContainText("$59/month");
   await page.getByRole("link", { name: "Pricing", exact: true }).click();
   await expect(
     page.getByText("Build free. Paid activation is currently unavailable."),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Set up Starter", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Build with these channels", exact: true }),
+  ).toBeVisible();
 });
 
 for (const failure of ["http", "malformed"] as const) {
@@ -61,8 +63,8 @@ for (const failure of ["http", "malformed"] as const) {
     await expect(
       page.getByRole("region", { name: "Account access" }).getByRole("status"),
     ).toHaveText("Activation status unavailable. Build free and check back.");
-    await expect(page.getByRole("link", { name: "Set up Starter", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Choose Starter", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Set up Calls", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Choose Calls", exact: true })).toHaveCount(0);
   });
 }
 
@@ -71,21 +73,21 @@ test("signup checks the selected annual plan even when other paid plans are avai
 }) => {
   await mockPublicAccount(page, {
     ...paidPlans,
-    plans: paidPlans.plans.map((plan) => ({ ...plan, annual_configured: plan.id !== "starter" })),
+    plans: paidPlans.plans.map((plan) => ({ ...plan, annual_configured: plan.id !== "voice" })),
   });
-  await page.goto("/signup?plan=starter&interval=year");
+  await page.goto("/signup?plan=voice&interval=year");
   const access = page.getByRole("region", { name: "Account access" });
-  await expect(access).toContainText("$190/year");
+  await expect(access).toContainText("$150/year");
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
   await page.getByRole("link", { name: "BotBound home", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(access).toContainText("$190/year");
+  await expect(access).toContainText("$150/year");
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
-  await page.goto("/signup?plan=starter&interval=month");
+  await page.goto("/signup?plan=voice&interval=month");
   await expect(access.getByRole("status")).toHaveText("Build free. Activate when ready.");
 });
 

@@ -22,6 +22,7 @@ import {
 import { assertLiveExternalActionAllowed } from "./account-environment-policy";
 import { findAgentPhoneLine } from "./agent-phone-lines";
 import { planById } from "./plan-catalog";
+import { getTenantChannelEntitlements, requireTenantChannel } from "./channel-entitlements";
 import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
 import { selectPaidBotIdentityAgents } from "./paid-bot-identity-capacity";
 import { drizzle } from "./server-context";
@@ -143,37 +144,60 @@ function managedMailboxUsername(agentName: string, agentId: string): string {
 async function paidPlanForUser(
   userId: string,
   agentId?: string,
-): Promise<{ eligible: boolean; planId: string | null; agentIds: string[] }> {
-  const [row] = await drizzle
-    .select({ planId: schema.subscriptions.plan, status: schema.subscriptions.status })
-    .from(schema.subscriptions)
-    .where(eq(schema.subscriptions.userId, userId))
-    .limit(1);
-  const planId = row?.planId?.trim() || null;
-  const status = row?.status?.trim().toLowerCase() || "";
+): Promise<{
+  eligible: boolean;
+  planId: string | null;
+  agentIds: string[];
+  phoneAgentIds: string[];
+  mailboxAgentIds: string[];
+}> {
+  const entitlement = await getTenantChannelEntitlements(userId);
+  const planId = entitlement.planId;
+  const status = entitlement.subscriptionStatus;
   const plan = planById(planId);
   const paid =
     Boolean(planId) &&
     PAID_IDENTITY_STATUSES.has(status) &&
-    Boolean(plan && plan.price_usd_monthly > 0 && plan.included_phone_numbers > 0);
-  if (!paid) return { eligible: false, planId, agentIds: [] };
+    Boolean(plan && plan.price_usd_monthly > 0);
+  if (!paid)
+    return { eligible: false, planId, agentIds: [], phoneAgentIds: [], mailboxAgentIds: [] };
 
-  const [agents, lines, phoneSlots] = await Promise.all([
+  const includesPhone = entitlement.channels.some(
+    (channel) => channel === "voice" || channel === "sms",
+  );
+  const includesEmail = entitlement.channels.includes("email");
+  const [agents, lines, phoneSlots, mailboxes] = await Promise.all([
     drizzle
       .select({ id: schema.agents.id, businessVariables: schema.agents.businessVariables })
       .from(schema.agents)
       .where(eq(schema.agents.userId, userId))
       .orderBy(asc(schema.agents.createdAt), asc(schema.agents.id)),
-    drizzle
-      .select({ agentId: schema.phoneNumbers.agentId })
-      .from(schema.phoneNumbers)
-      .where(eq(schema.phoneNumbers.userId, userId)),
-    getIncludedPhoneLineSlots(userId),
+    includesPhone
+      ? drizzle
+          .select({ agentId: schema.phoneNumbers.agentId })
+          .from(schema.phoneNumbers)
+          .where(eq(schema.phoneNumbers.userId, userId))
+      : Promise.resolve<Array<{ agentId: string | null }>>([]),
+    includesPhone ? getIncludedPhoneLineSlots(userId) : Promise.resolve(0),
+    includesEmail
+      ? drizzle
+          .select({
+            agentId: schema.emailAccounts.agentId,
+            oauthGrantedScopes: schema.emailAccounts.oauthGrantedScopes,
+          })
+          .from(schema.emailAccounts)
+          .where(
+            and(
+              eq(schema.emailAccounts.userId, userId),
+              eq(schema.emailAccounts.provider, "agentmail"),
+            ),
+          )
+      : Promise.resolve<Array<{ agentId: string | null; oauthGrantedScopes: string | null }>>([]),
   ]);
   // A paid active subscription includes at least one phone slot. Zero/invalid
   // live capacity indicates an inconsistent account projection, not an
   // intentionally private or over-capacity Bot. Surface it for retry/repair.
-  if (!Number.isFinite(phoneSlots) || phoneSlots < 1) {
+  if (includesPhone && (!Number.isFinite(phoneSlots) || phoneSlots < 1)) {
     throw new Error(
       "PAID_IDENTITY_ENTITLEMENT_MISMATCH: Active paid subscription has no live phone entitlement. Reconcile subscription and account settings before provisioning.",
     );
@@ -181,8 +205,31 @@ async function paidPlanForUser(
   // The phone entitlement already includes purchased extras. A stored Bot-only
   // grant must not silently expand paid carrier/mailbox allocation. Recheck in
   // the worker as well as at enqueue time so stale jobs cannot outlive a downgrade.
-  const agentIds = selectPaidBotIdentityAgents(agents, lines, phoneSlots);
-  return { eligible: agentId ? agentIds.includes(agentId) : agentIds.length > 0, planId, agentIds };
+  const phoneAgentIds = selectPaidBotIdentityAgents(agents, lines, phoneSlots);
+  const mailboxSlots = includesEmail
+    ? plan?.catalogFamily === "legacy"
+      ? phoneSlots
+      : (plan?.included_mailboxes ?? 0)
+    : 0;
+  const mailboxAgentIds = !includesEmail
+    ? []
+    : plan?.catalogFamily === "legacy"
+      ? phoneAgentIds
+      : selectPaidBotIdentityAgents(
+          agents,
+          mailboxes
+            .filter((mailbox) => hasExactAgentMailManagedScope(mailbox.oauthGrantedScopes))
+            .map((mailbox) => ({ agentId: mailbox.agentId ?? "unassigned-managed-mailbox" })),
+          mailboxSlots,
+        );
+  const agentIds = [...new Set([...phoneAgentIds, ...mailboxAgentIds])];
+  return {
+    eligible: agentId ? agentIds.includes(agentId) : agentIds.length > 0,
+    planId,
+    agentIds,
+    phoneAgentIds,
+    mailboxAgentIds,
+  };
 }
 
 function ineligibleIdentity(planId: string | null): PaidBotIdentityResult {
@@ -200,6 +247,10 @@ function ineligibleIdentity(planId: string | null): PaidBotIdentityResult {
 /** Read-only eligibility shared by queue admission and operator audits. */
 export async function getPaidBotIdentityAgentIds(userId: string): Promise<string[]> {
   return (await paidPlanForUser(userId)).agentIds;
+}
+
+export async function getPaidBotMailboxAgentIds(userId: string): Promise<string[]> {
+  return (await paidPlanForUser(userId)).mailboxAgentIds;
 }
 
 export async function assertTwilioOwnedNumber(phoneNumber: string): Promise<void> {
@@ -453,9 +504,8 @@ async function ensurePaidBotMailbox(
 /**
  * Idempotent paid-Bot identity reconciler.
  *
- * A paid Bot is not fully activated until both resources exist:
- * - a number owned by BotBound's Twilio account and imported into the voice runtime;
- * - a platform-managed AgentMail inbox on the configured verified custom domain.
+ * Only resources included in the current package are reconciled. Customers
+ * choose their phone number; Email setup can complete independently.
  *
  * The durable queue retries transient provider failures. Free Builder and
  * inactive/canceled plans exit without allocating provider resources.
@@ -479,7 +529,12 @@ export async function ensurePaidBotIdentity(input: {
   }
   // Waiting for a customer's choice is a local state, not a provider failure.
   // Avoid mail/carrier preflight and its retry budget until an owned line exists.
-  if (!(await findAgentPhoneLine(input.userId, input.agentId))) {
+  if (
+    plan.phoneAgentIds.includes(input.agentId) &&
+    (!plan.mailboxAgentIds.includes(input.agentId) ||
+      planById(plan.planId)?.catalogFamily === "legacy") &&
+    !(await findAgentPhoneLine(input.userId, input.agentId))
+  ) {
     return { ...ineligibleIdentity(plan.planId), eligible: true, selectionRequired: true };
   }
 
@@ -493,36 +548,39 @@ export async function ensurePaidBotIdentity(input: {
       await assertLiveExternalActionAllowed(input.userId, "paid_bot_identity_provision");
       const currentPlan = await paidPlanForUser(input.userId, input.agentId);
       if (!currentPlan.eligible) return ineligibleIdentity(currentPlan.planId);
-      const mailbox = await preparePaidBotMailbox(input.userId, input.agentId);
+      const includesPhone = currentPlan.phoneAgentIds.includes(input.agentId);
+      const includesEmail = currentPlan.mailboxAgentIds.includes(input.agentId);
+      const mailbox = includesEmail
+        ? await preparePaidBotMailbox(input.userId, input.agentId)
+        : null;
 
       // Secure tenant-owned phone capacity before creating a managed mailbox.
       // Native phone persistence serializes competing provision/claim requests;
       // losing the last slot must not leave an unpaired mailbox above capacity.
       // A later mailbox failure is retried against this same owned phone line.
-      const phone = await ensurePaidBotPhone(input.userId, input.agentId);
+      const phone = includesPhone ? await ensurePaidBotPhone(input.userId, input.agentId) : null;
       // Customers choose their number in Phone setup. Background repair may
       // restore an owned line, but must not consume their slot with a random one.
-      if (!phone)
+      if (includesPhone && !phone && planById(currentPlan.planId)?.catalogFamily === "legacy") {
         return {
           ...ineligibleIdentity(currentPlan.planId),
           eligible: true,
           selectionRequired: true,
         };
-      const email = await ensurePaidBotMailbox(
-        input.userId,
-        input.agentId,
-        agent.name || "Bot",
-        mailbox,
-      );
+      }
+      if (includesEmail) await requireTenantChannel(input.userId, "email");
+      const email = mailbox
+        ? await ensurePaidBotMailbox(input.userId, input.agentId, agent.name || "Bot", mailbox)
+        : null;
 
       return {
         eligible: true,
-        selectionRequired: false,
+        selectionRequired: includesPhone && !phone,
         planId: currentPlan.planId,
-        phone: phone.phoneNumber,
-        email: email.email,
-        phoneReused: phone.reused,
-        emailReused: email.reused,
+        phone: phone?.phoneNumber ?? null,
+        email: email?.email ?? null,
+        phoneReused: phone?.reused ?? false,
+        emailReused: email?.reused ?? false,
       };
     },
   });

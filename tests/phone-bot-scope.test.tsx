@@ -2,7 +2,16 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import PhonePage from "../src/pages/PhonePage";
 
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => ({
+    status: "ready",
+    data: { channels: h.channels },
+    includes: (channel: string) => h.channels.includes(channel),
+    retry: vi.fn(),
+  }),
+}));
 const h = vi.hoisted(() => ({
+  channels: ["voice", "email", "sms"] as string[],
   params: new URLSearchParams(),
   agents: [] as Array<{ id: string; name: string }>,
   loading: false,
@@ -78,6 +87,7 @@ const button = (nodes: Element[], label: string) =>
   nodes.find((node) => node.type === "button" && text(node) === label);
 
 beforeEach(() => {
+  h.channels = ["voice", "email", "sms"];
   h.params = new URLSearchParams({ agent: "bot-b", tab: "logs" });
   h.agents = [{ id: "bot-a", name: "Alpha" }];
   h.loading = false;
@@ -149,4 +159,14 @@ describe("explicit Calls Bot scope", () => {
     h.degraded = true;
     expect(render().some((node) => node.type === "call-analytics")).toBe(true);
   });
+});
+
+it("an Email package preserves call history but does not mount phone provisioning or outbound controls", () => {
+  h.channels = ["email"];
+  h.params = new URLSearchParams({ tab: "logs" });
+  expect(history(render())).toBeDefined();
+  h.params = new URLSearchParams({ tab: "setup" });
+  expect(render().some((node) => node.type === "phone-setup")).toBe(false);
+  h.params = new URLSearchParams({ tab: "outbound" });
+  expect(render().some((node) => node.type === "outbound-hub")).toBe(false);
 });

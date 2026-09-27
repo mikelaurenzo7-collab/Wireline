@@ -5,6 +5,14 @@ import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import StudioWorkroom from "../src/components/StudioWorkroom";
 import KnowledgePage from "../src/pages/KnowledgePage";
 
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => ({
+    status: "ready",
+    data: { channels: ["voice", "email", "sms"] },
+    includes: () => true,
+    retry: vi.fn(),
+  }),
+}));
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
   refs: [] as Array<{ current: unknown }>,

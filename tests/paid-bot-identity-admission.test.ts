@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   jobs: [] as Array<{ payload: { agentId: string } }>,
   accounts: [] as Array<{
     id: string;
+    agentId?: string;
     emailAddress: string;
     oauthGrantedScopes: string;
     refreshToken: string | null;
@@ -104,12 +105,17 @@ vi.mock("../src/lib/server-context", () => ({
     },
   },
 }));
-vi.mock("../src/lib/plan-catalog", () => ({
-  planById: (id: string) =>
-    id === "starter"
-      ? { price_usd_monthly: 19, included_phone_numbers: 1 }
-      : { price_usd_monthly: 0, included_phone_numbers: 0 },
-}));
+vi.mock("../src/lib/channel-entitlements", async () => {
+  const { planById } = await import("../src/lib/plan-catalog");
+  return {
+    getTenantChannelEntitlements: async () => ({
+      planId: h.planId,
+      subscriptionStatus: h.status,
+      channels: planById(h.planId)?.channels ?? [],
+    }),
+    requireTenantChannel: async () => {},
+  };
+});
 vi.mock("../src/lib/phone-line-entitlements", () => ({
   getIncludedPhoneLineSlots: async () => h.slots,
 }));
@@ -198,6 +204,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
   it("waits locally for number selection even while providers are unavailable or unconfigured", async () => {
+    h.planId = "voice";
     h.target = "oldest";
     h.selectedLine.mockResolvedValue(null);
     h.inboxesRead.mockRejectedValue(new Error("AgentMail unavailable"));
@@ -220,6 +227,51 @@ describe("paid identity admission at queue and provider boundaries", () => {
     expect(h.ownedNumbers).not.toHaveBeenCalled();
     expect(h.provider).not.toHaveBeenCalled();
     expect(h.createInbox).not.toHaveBeenCalled();
+  });
+
+  it("activates Calls-only with AgentMail entirely unconfigured", async () => {
+    h.planId = "voice";
+    h.target = "oldest";
+    vi.stubEnv("AGENTMAIL_API_KEY", "");
+    vi.stubEnv("AGENTMAIL_DEFAULT_DOMAIN", "");
+    h.vaultConfigured.mockReturnValue(false);
+    h.phoneProvision.mockResolvedValue({ ok: true, phoneNumber: "+12025550123", reused: true });
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).resolves.toMatchObject({ eligible: true, phone: "+12025550123", email: null });
+    expect(h.inboxesRead).not.toHaveBeenCalled();
+    expect(h.vaultConfigured).not.toHaveBeenCalled();
+    expect(h.domainIdentity).not.toHaveBeenCalled();
+  });
+
+  it("activates Email-only without consulting a Twilio number or phone allowance", async () => {
+    h.planId = "email";
+    h.slots = 0;
+    h.target = "oldest";
+    h.accounts = [
+      {
+        id: "mailbox",
+        agentId: "oldest",
+        emailAddress: "existing@botbound.app",
+        oauthGrantedScopes: "managed",
+        refreshToken: "stored-secret",
+      },
+    ];
+    h.inboxesRead.mockResolvedValue([
+      { inboxId: "existing-inbox", email: "existing@botbound.app" },
+    ]);
+    h.provider.mockReturnValue({ webhookId: "existing-webhook", secret: null });
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: "oldest" }),
+    ).resolves.toMatchObject({
+      eligible: true,
+      selectionRequired: false,
+      phone: null,
+      email: "existing@botbound.app",
+    });
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.ownedNumbers).not.toHaveBeenCalled();
+    expect(h.selectedLine).not.toHaveBeenCalled();
   });
 
   it("returns to selection if the owned line disappears before phone repair", async () => {

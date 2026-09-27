@@ -2,7 +2,12 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Pricing from "../src/pages/Pricing";
 import BillingIntervalControl from "../src/components/BillingIntervalControl";
-import { activationBillingHref, captureSignupIntentFromLocation } from "../src/lib/signup-intent";
+import ChannelPlanPicker from "../src/components/ChannelPlanPicker";
+import {
+  activationBillingHref,
+  captureSignupIntentFromLocation,
+  persistSignupIntent,
+} from "../src/lib/signup-intent";
 
 const harness = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -14,7 +19,8 @@ vi.mock("react", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react")>()),
   useState: (initial: unknown) => {
     const index = harness.index++;
-    if (!(index in harness.states)) harness.states[index] = initial;
+    if (!(index in harness.states))
+      harness.states[index] = typeof initial === "function" ? initial() : initial;
     return [harness.states[index], (value: unknown) => (harness.states[index] = value)];
   },
   useEffect: (effect: () => () => void) => harness.effects.push(effect),
@@ -38,12 +44,22 @@ function elements(node: ReactNode): Element[] {
   ) {
     return elements(BillingIntervalControl(node.props));
   }
+  if (
+    isValidElement<Parameters<typeof ChannelPlanPicker>[0]>(node) &&
+    node.type === ChannelPlanPicker
+  )
+    return elements(ChannelPlanPicker(node.props));
   if (!isValidElement<Element["props"]>(node)) return [];
   return [node, ...elements(node.props.children)];
 }
 
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
+  if (
+    isValidElement<Parameters<typeof ChannelPlanPicker>[0]>(node) &&
+    node.type === ChannelPlanPicker
+  )
+    return text(ChannelPlanPicker(node.props));
   if (isValidElement<Element["props"]>(node)) return text(node.props.children);
   return typeof node === "string" || typeof node === "number" ? String(node) : "";
 }
@@ -65,7 +81,7 @@ function response(overrides: Record<string, unknown> = {}) {
   return {
     checkout_available: true,
     stripe_configured: true,
-    plans: ["starter", "team", "business"].map((id) => ({
+    plans: ["voice-regular", "email", "voice-email"].map((id) => ({
       id,
       configured: true,
       annual_configured: true,
@@ -108,25 +124,38 @@ function mount() {
 async function load(payload: unknown) {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => payload }));
   mount();
-  await vi.waitFor(() => expect(harness.states[2]).toBe("ready"));
+  await vi.waitFor(() => expect(harness.states[3]).toBe("ready"));
 }
 
 describe("public pricing activation availability", () => {
+  it("defaults new choices to Regular while honoring an explicit or stored Light choice", () => {
+    expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
+    harness.states = [];
+    persistSignupIntent({
+      preferredPlanId: "email",
+      preferredBillingInterval: "year",
+      capturedAt: "2026-09-27T12:00:00Z",
+    });
+    expect(planLink("email")?.props.to).toBe("/signup?plan=email&interval=year");
+    harness.states = [];
+    window.location.search = "?plan=voice&interval=month";
+    expect(planLink("voice")?.props.to).toBe("/signup?plan=voice&interval=month");
+  });
   it("keeps Free Builder and plan intent available while checking, without offering a purchase", () => {
     expect(text(render())).toContain("Checking activation availability…");
     expect(text(planLink("free"))).toBe("Build Free ");
-    expect(text(planLink("starter"))).toBe("Set up Starter ");
+    expect(text(planLink("voice-regular"))).toBe("Build with these channels ");
     expect(text(render())).not.toContain("Start for $19");
   });
 
   it("offers paid activation only after the live endpoint confirms it", async () => {
     await load(response());
-    expect(text(planLink("starter"))).toBe("Start for $19 ");
+    expect(text(planLink("voice-regular"))).toBe("Get started ");
     expect(fetch).toHaveBeenCalledWith("/api/billing/plans", {
       signal: expect.any(AbortSignal),
       cache: "no-store",
     });
-    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter&interval=month");
+    expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
   });
 
   it.each([
@@ -140,9 +169,9 @@ describe("public pricing activation availability", () => {
       { configured: "true", annual_configured: "true", contact_sales: false },
     ],
   ])("keeps a free setup CTA when %s", async (_reason, flags) => {
-    await load(response({ plans: [{ id: "starter", ...flags }] }));
-    expect(text(planLink("starter"))).toBe("Set up Starter ");
-    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter&interval=month");
+    await load(response({ plans: [{ id: "voice-regular", ...flags }] }));
+    expect(text(planLink("voice-regular"))).toBe("Build with these channels ");
+    expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
     expect(text(render())).toContain("Build free. Paid activation is currently unavailable.");
   });
 
@@ -153,23 +182,23 @@ describe("public pricing activation availability", () => {
     ["the selected plan is missing", response({ plans: [] })],
   ])("does not offer activation when %s", async (_reason, payload) => {
     await load(payload);
-    expect(text(planLink("starter"))).toBe("Set up Starter ");
+    expect(text(planLink("voice-regular"))).toBe("Build with these channels ");
   });
 
   it("checks annual availability separately and preserves annual signup intent", async () => {
     await load(
       response({
         plans: [
-          { id: "starter", configured: true, annual_configured: false, contact_sales: false },
+          { id: "voice-regular", configured: true, annual_configured: false, contact_sales: false },
         ],
       }),
     );
-    expect(text(planLink("starter"))).toBe("Start for $19 ");
+    expect(text(planLink("voice-regular"))).toBe("Get started ");
     elements(render())
       .find((element) => element.type === "button" && text(element) === "Annual")
       ?.props.onClick?.();
-    expect(text(planLink("starter"))).toBe("Set up Starter ");
-    expect(planLink("starter")?.props.to).toBe("/signup?plan=starter&interval=year");
+    expect(text(planLink("voice-regular"))).toBe("Build with these channels ");
+    expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=year");
   });
 
   it("offers the annual CTA only when that interval is enabled", async () => {
@@ -177,14 +206,15 @@ describe("public pricing activation availability", () => {
     elements(render())
       .find((element) => element.type === "button" && text(element) === "Annual")
       ?.props.onClick?.();
-    expect(text(planLink("starter"))).toBe("Start for $190/yr ");
+    expect(text(planLink("voice-regular"))).toBe("Get started ");
   });
 
   it.each([
-    ["starter", "starter"],
-    ["starter-plus", "team"],
-    ["pro", "business"],
+    ["voice", "voice"],
+    ["email", "email"],
+    ["voice-email", "voice-email"],
   ])("replaces an earlier annual choice with the visible monthly %s plan", (slug, planId) => {
+    window.location.search = `?plan=${slug}`;
     const chooseInterval = (label: string) => {
       const button = elements(render()).find(
         (element) => element.type === "button" && text(element) === label,
@@ -223,9 +253,9 @@ describe("public pricing activation availability", () => {
             .mockResolvedValue({ ok: failure !== "http", json: async () => ({ plans: null }) }),
     );
     mount();
-    await vi.waitFor(() => expect(harness.states[2]).toBe("unavailable"));
+    await vi.waitFor(() => expect(harness.states[3]).toBe("unavailable"));
     expect(text(render())).toContain("Activation status unavailable. Build free and check back.");
-    expect(text(planLink("starter"))).toBe("Set up Starter ");
+    expect(text(planLink("voice-regular"))).toBe("Build with these channels ");
     expect(planLink("free")?.props.to).toBe("/signup?plan=free");
   });
 
@@ -240,6 +270,6 @@ describe("public pricing activation availability", () => {
     const signal = request.mock.calls[0][1].signal as AbortSignal;
     cleanups[0]();
     expect(signal.aborted).toBe(true);
-    expect(harness.states[2]).toBe("loading");
+    expect(harness.states[3]).toBe("loading");
   });
 });

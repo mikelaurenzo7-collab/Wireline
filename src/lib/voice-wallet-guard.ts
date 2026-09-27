@@ -2,16 +2,17 @@
  * Pre-call voice coverage gate.
  *
  * Billing is evaluated only before a new live action. Once a provider call has
- * started, Wireline lets it finish normally. If that completed call exceeds the
- * remaining included pool and prepaid balance, post-call completion grace records
- * the amount due and this gate blocks the next live action until coverage returns.
+ * started, its reserved duration includes a bounded completion buffer. If a
+ * completed call exceeds included and prepaid coverage, the amount due blocks
+ * the next live action until coverage returns.
  */
 import { and, eq } from "drizzle-orm";
 import { getCreditBalanceUsd } from "./credit-wallet";
-import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
+import { FLAT_OVERAGE_PER_MIN_USD, planById, planIncludesChannel } from "./plan-catalog";
 import { includedVoiceMinutes } from "./voice-usage";
 import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
+import { VOICE_COMPLETION_GRACE_MINUTES, type VoiceCallPolicy } from "./voice-funding-policy";
 
 export const MIN_BILLABLE_MINUTES_BUFFER = 1;
 const MONTHLY_DIMENSION = "voice_minutes_monthly";
@@ -26,7 +27,8 @@ export type VoiceWalletSnapshot = {
   included_minutes: number;
   included_minutes_used: number;
   included_minutes_remaining: number;
-  current_call_policy: "finish_current_block_next";
+  current_call_policy: VoiceCallPolicy;
+  completion_grace_minutes: number | null;
   sufficient: boolean;
 };
 
@@ -74,7 +76,7 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
   // Require a *resolved* catalog plan: an unresolvable stored plan id must fail
   // closed (402) rather than pass `null !== "personal"` and hand live voice to
   // a tenant whose overage rate the ledger can no longer price.
-  const liveVoiceEnabled = activeSubscription && !!plan && plan.id !== "personal";
+  const liveVoiceEnabled = activeSubscription && planIncludesChannel(planId, "voice");
   const minuteRate = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
   // Include the extra-agent add-on minutes the customer paid for — the usage
   // accounting (voice-usage.ts) already counts them, so the pre-call gate must
@@ -101,7 +103,13 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
     included_minutes: includedMinutes,
     included_minutes_used: includedUsed,
     included_minutes_remaining: includedRemaining,
-    current_call_policy: "finish_current_block_next",
+    current_call_policy:
+      plan?.catalogFamily === "channels" ? "bounded_completion_grace" : "finish_current_block_next",
+    completion_grace_minutes: !liveVoiceEnabled
+      ? 0
+      : plan?.catalogFamily === "channels"
+        ? VOICE_COMPLETION_GRACE_MINUTES
+        : null,
     sufficient,
   };
 }
@@ -114,7 +122,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
   const completionGraceDue = snapshot.completion_grace_due_usd > 0;
   const err = new Error(
     noLivePlan
-      ? "A paid plan is required for live voice."
+      ? "A plan with Calls is required for live voice."
       : completionGraceDue
         ? "A completed call has an outstanding completion-grace balance."
         : "Included minutes and Runtime Balance are depleted.",
@@ -123,8 +131,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
   (err as Error & { status: number; body: Record<string, unknown> }).body = noLivePlan
     ? {
         code: "LIVE_PLAN_REQUIRED",
-        error:
-          "Free Builder is for setup and private simulation. Choose Starter, Starter Plus, or Pro before placing live calls.",
+        error: "Add Calls to your plan before placing live calls.",
         recovery_path: "/settings/billing",
         recovery_action: "choose_plan",
         current_call_policy: snapshot.current_call_policy,
@@ -133,7 +140,7 @@ export async function assertVoiceWalletSolvent(userId: string): Promise<void> {
       ? {
           code: "VOICE_COMPLETION_GRACE_DUE",
           error:
-            "Your previous call finished normally after prepaid coverage ran out. Add Runtime Balance before starting another live call.",
+            "Your previous call used completion credit. Add Runtime Balance to clear the amount due before starting another live call.",
           balance_usd: snapshot.balance_usd,
           completion_grace_due_usd: snapshot.completion_grace_due_usd,
           included_minutes_remaining: snapshot.included_minutes_remaining,

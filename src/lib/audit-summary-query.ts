@@ -24,7 +24,7 @@ export interface AuditSummaryAggregate {
     sample_count: Numeric;
   };
   by_day: Array<CostBucket & { day: string }>;
-  by_action: Array<CostBucket & { action: string; latency_sum: Numeric }>;
+  by_action: Array<CostBucket & { action: string; latency_sum: Numeric; sample_count: Numeric }>;
   by_model: Array<CostBucket & { model: string }>;
 }
 
@@ -79,7 +79,7 @@ export function buildAuditSummaryQuery(userId: string, since: Date): SQL {
             coalesce(sum(output), 0)::text as output,
             coalesce(sum(cache_read), 0)::text as cache_read,
             coalesce(sum(cache_create), 0)::text as cache_create,
-            coalesce(sum(latency_ms), 0)::text as latency_sum,
+            coalesce(sum(latency_ms) filter (where latency_ms > 0), 0)::text as latency_sum,
             coalesce(sum((cache_read * ${cacheRateDifference("cacheRead")}
               + cache_create * ${cacheRateDifference("cacheWrite")}) / 1000000::numeric), 0)::text as cache_savings,
             percentile_disc(0.5) within group (order by latency_ms)
@@ -99,7 +99,8 @@ export function buildAuditSummaryQuery(userId: string, since: Date): SQL {
       'by_action', coalesce((
         select jsonb_agg(to_jsonb(actions)) from (
           select action, count(*)::text as calls, sum(cost)::text as cost,
-            sum(latency_ms)::text as latency_sum
+            coalesce(sum(latency_ms) filter (where latency_ms > 0), 0)::text as latency_sum,
+            count(*) filter (where latency_ms > 0)::text as sample_count
           from scoped group by action
         ) actions
       ), '[]'::jsonb),
@@ -129,6 +130,7 @@ export function formatAuditSummaryAggregate(
 ): AuditSummary {
   const total = aggregate.totals;
   const calls = numeric(total.calls, true);
+  const latencySamples = numeric(total.sample_count, true);
   const cost = numeric(total.cost);
   return {
     window_days: windowDays,
@@ -141,12 +143,14 @@ export function formatAuditSummaryAggregate(
       cache_create: numeric(total.cache_create, true),
       cache_savings_usd: round4(numeric(total.cache_savings)),
       avg_cost_per_call: calls ? round4(cost / calls) : 0,
-      avg_latency: calls ? Math.round(numeric(total.latency_sum, true) / calls) : 0,
+      avg_latency: latencySamples
+        ? Math.round(numeric(total.latency_sum, true) / latencySamples)
+        : 0,
     },
     latency: {
       p50_ms: numeric(total.p50_ms, true),
       p95_ms: numeric(total.p95_ms, true),
-      sample_count: numeric(total.sample_count, true),
+      sample_count: latencySamples,
     },
     by_day: aggregate.by_day
       .map((row) => ({
@@ -161,7 +165,7 @@ export function formatAuditSummaryAggregate(
         calls: numeric(row.calls, true),
         cost: round4(numeric(row.cost)),
         avg_latency_ms: Math.round(
-          numeric(row.latency_sum, true) / Math.max(1, numeric(row.calls, true)),
+          numeric(row.latency_sum, true) / Math.max(1, numeric(row.sample_count, true)),
         ),
       }))
       .sort((a, b) => b.cost - a.cost || a.action.localeCompare(b.action)),

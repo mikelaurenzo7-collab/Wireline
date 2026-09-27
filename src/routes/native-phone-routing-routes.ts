@@ -11,6 +11,7 @@ import {
   validateBody,
 } from "../lib/api-validation";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
+import { getTenantChannelEntitlements } from "../lib/channel-entitlements";
 import { drizzle, log } from "../lib/server-context";
 import { enqueuePaidBotIdentityReconciliation } from "../lib/paid-bot-identity";
 import { enforceLiveWorkActivation } from "../lib/trial-gate";
@@ -65,6 +66,8 @@ async function assertNumberCapacity(userId: string): Promise<void> {
 }
 
 async function queueManagedIdentity(userId: string, agentId: string): Promise<void> {
+  const entitlement = await getTenantChannelEntitlements(userId);
+  if (!entitlement.channels.includes("email")) return;
   try {
     await enqueuePaidBotIdentityReconciliation(userId);
   } catch (error) {

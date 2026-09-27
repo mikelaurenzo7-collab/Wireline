@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Mail, RefreshCw, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
+import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
 import { Badge, Button, Skeleton } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
@@ -36,6 +37,8 @@ const PROVIDERS: Array<{
 ];
 
 export default function MailboxConnectionCard() {
+  const access = useChannelEntitlements();
+  const emailIncluded = access.includes("email");
   const [accounts, setAccounts] = useState<MailboxAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusUnavailable, setStatusUnavailable] = useState(false);
@@ -87,14 +90,16 @@ export default function MailboxConnectionCard() {
       stopPopupPoll();
       setBusy(null);
       void loadAccounts().then(() => {
-        void authFetch("/api/emails/sync", { method: "POST" }).catch(() => undefined);
+        if (emailIncluded)
+          void authFetch("/api/emails/sync", { method: "POST" }).catch(() => undefined);
       });
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [loadAccounts, stopPopupPoll]);
+  }, [emailIncluded, loadAccounts, stopPopupPoll]);
 
   async function connect(provider: ConnectableMailboxProvider) {
+    if (access.status !== "ready" || (provider === "icloud" && !emailIncluded)) return;
     if (provider === "icloud") {
       setShowIcloudForm(true);
       setError(null);
@@ -131,6 +136,7 @@ export default function MailboxConnectionCard() {
 
   async function connectIcloud(event: React.FormEvent) {
     event.preventDefault();
+    if (!emailIncluded) return;
     setBusy("icloud");
     setError(null);
     try {
@@ -174,22 +180,34 @@ export default function MailboxConnectionCard() {
   }
 
   const customerAccounts = accounts.filter((account) => account.provider !== "agentmail");
+  const visibleProviders = PROVIDERS.filter(
+    (provider) =>
+      provider.id !== "icloud" ||
+      emailIncluded ||
+      customerAccounts.some((account) => account.provider === "icloud"),
+  );
 
   return (
     <section aria-labelledby="mailbox-connections-title">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
-            Email Connections
+            {access.status !== "ready"
+              ? "Account connections"
+              : emailIncluded
+                ? "Email & calendar"
+                : "Calendar"}
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            Connect an existing inbox. Your BotBound email is managed for you.
+            {emailIncluded
+              ? "Connect your existing inbox and calendar."
+              : "Connect your calendar for scheduling."}
           </p>
         </div>
         <Mail className="size-5 shrink-0 text-primary" aria-hidden="true" />
       </div>
 
-      {loading ? (
+      {loading || access.status === "loading" ? (
         <div
           className="mt-5 grid gap-3 md:grid-cols-3"
           aria-busy="true"
@@ -222,17 +240,35 @@ export default function MailboxConnectionCard() {
         </div>
       ) : (
         <>
+          {access.status === "error" ? (
+            <StatusNotice
+              tone="warning"
+              title="Connection access unavailable"
+              className="mt-4"
+              action={
+                <Button size="sm" variant="secondary" onClick={access.retry}>
+                  Retry
+                </Button>
+              }
+            >
+              Try again to connect an account.
+            </StatusNotice>
+          ) : null}
           {error ? (
             <StatusNotice tone="destructive" title="Inbox Action Unavailable" className="mt-4">
               {error}
             </StatusNotice>
           ) : null}
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {PROVIDERS.map((provider) => {
+          <div
+            className={`mt-5 grid gap-3 ${visibleProviders.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}
+          >
+            {visibleProviders.map((provider) => {
               const providerAccounts = customerAccounts.filter(
                 (item) => item.provider === provider.id,
               );
               const isBusy = busy === provider.id;
+              const label =
+                !emailIncluded && provider.id === "google" ? "Google Calendar" : provider.label;
               return (
                 <article
                   key={provider.id}
@@ -244,15 +280,13 @@ export default function MailboxConnectionCard() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">
-                          {provider.label}
-                        </span>
+                        <span className="text-sm font-semibold text-foreground">{label}</span>
                         {providerAccounts.length ? (
                           <Badge variant="outline">Connected</Badge>
                         ) : null}
                       </span>
                       <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                        {provider.detail}
+                        {!emailIncluded && provider.id !== "icloud" ? "Calendar" : provider.detail}
                       </span>
                     </span>
                   </div>
@@ -285,7 +319,7 @@ export default function MailboxConnectionCard() {
                     </ul>
                   ) : null}
 
-                  {provider.id === "icloud" && showIcloudForm ? (
+                  {provider.id === "icloud" && showIcloudForm && emailIncluded ? (
                     <form
                       className="mt-auto grid gap-2 pt-4"
                       onSubmit={(event) => void connectIcloud(event)}
@@ -331,23 +365,23 @@ export default function MailboxConnectionCard() {
                         </Button>
                       </div>
                     </form>
-                  ) : (
+                  ) : provider.id !== "icloud" || emailIncluded ? (
                     <div className="mt-auto pt-3">
                       <Button
                         type="button"
                         size="sm"
                         variant={providerAccounts.length ? "secondary" : "primary"}
                         className="w-full"
-                        disabled={isBusy}
+                        disabled={isBusy || access.status !== "ready"}
                         onClick={() => void connect(provider.id)}
                       >
                         {isBusy ? (
                           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                         ) : null}
-                        {providerAccounts.length ? "Connect another" : `Connect ${provider.label}`}
+                        {providerAccounts.length ? "Connect another" : `Connect ${label}`}
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                 </article>
               );
             })}

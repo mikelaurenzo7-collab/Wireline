@@ -1,5 +1,8 @@
 # BotBound Outbound Launch - the First Move
 
+> September 27 commercial revision: this package contains historical offers and renders. Do not publish assets quoting Starter, $19 entry pricing, or available outbound/SMS. The current channel catalog is `src/lib/plan-catalog.ts`: Email $9, Calls $15, Calls + Email $21 monthly. SMS combinations remain unavailable. Re-render and review any selected asset against the released source before promotion.
+
+
 This package is the outbound-only creative release for BotBound's launch-state product. It does not replace **The Second Ring**, which remains the inbound campaign and historical release.
 
 **Creative-ready is not publication authorization.** Paid or organic outbound promotion stays on hold until the current launch registry marks the exact asset and copy approved, the production SHA has passed its full release ladder, and `outbound_campaign_ready` is true.

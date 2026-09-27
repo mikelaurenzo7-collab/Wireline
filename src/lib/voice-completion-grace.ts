@@ -1,4 +1,5 @@
 import { getCreditBalanceUsd, reverseCredit } from "./credit-wallet";
+import { settleVoiceCallFunding } from "./voice-call-funding";
 
 export type VoiceCompletionCharge = {
   applied_usd: number;
@@ -14,10 +15,10 @@ function cents(value: number): number {
 /**
  * Finalize prepaid voice usage after a provider call has ended.
  *
- * This intentionally permits a temporary negative Runtime Balance. Wireline
- * never terminates an active call because the included pool or prepaid balance is
- * exhausted mid-conversation. Instead, the completed call is charged in full and
- * the pre-call gate blocks the next live action until the amount due is restored.
+ * This intentionally permits a temporary negative Runtime Balance. Channel
+ * packages reserve funding before acceptance and allow up to ten completion
+ * minutes within their persisted session deadline. The completed call is charged
+ * in full and the pre-call gate blocks new calls and prepaid extras until paid.
  *
  * The ledger reference is idempotent per provider call id, so webhook retries do
  * not duplicate the charge.
@@ -30,6 +31,16 @@ export async function chargeCompletedVoiceUsage(opts: {
   rateUsd: number;
 }): Promise<VoiceCompletionCharge> {
   const costUsd = cents(opts.costUsd);
+  const funded = await settleVoiceCallFunding({ ...opts, costUsd });
+  if (funded) {
+    const balance = cents(funded.balance);
+    return {
+      applied_usd: cents(funded.applied),
+      balance_usd: balance,
+      completion_grace_due_usd: Math.max(0, cents(-balance)),
+      used_completion_grace: balance < 0,
+    };
+  }
   if (!(costUsd > 0)) {
     const balance = cents(await getCreditBalanceUsd(opts.userId));
     return {

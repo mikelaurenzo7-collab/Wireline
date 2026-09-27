@@ -6,20 +6,30 @@ import {
   WIRELINE_ONE_LINER,
   WIRELINE_PLANS,
 } from "./wireline-knowledge";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 
 describe("BotBound knowledge", () => {
   it("keeps public offer naming aligned with the launch catalog and brand law", () => {
     expect(WIRELINE_PLANS.map((plan) => plan.name)).toEqual([
       "BotBound Free Builder",
-      "BotBound Starter",
-      "BotBound Starter Plus",
-      "BotBound Pro",
+      ...STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => plan.name),
       "BotBound Enterprise",
       "Runtime Balance",
     ]);
 
     expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("Legacy");
     expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("$159");
+    for (const plan of STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")) {
+      const knowledge = WIRELINE_PLANS.find((item) => item.name === plan.name)!;
+      expect(knowledge.price).toContain(`$${plan.price_usd_monthly}/mo`);
+      expect(knowledge.price).toContain(`$${plan.price_usd_annual}/year`);
+      if (plan.channels.includes("sms"))
+        expect(knowledge.price).toContain("SMS activation unavailable");
+      if (!plan.channels.includes("email"))
+        expect(knowledge.includes.join(" ")).not.toContain("mailbox included");
+      if (!plan.channels.includes("voice"))
+        expect(knowledge.includes.join(" ")).not.toContain("call minutes/month");
+    }
   });
 
   it("keeps Free Builder locked out of live work and never promises balance-funded calls", () => {

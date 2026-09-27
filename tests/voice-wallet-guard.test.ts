@@ -43,6 +43,39 @@ async function loadModules() {
 }
 
 describe("voice-wallet-guard", () => {
+  it("discloses the bounded buffer without treating it as permission to start an unfunded call", async () => {
+    const { drizzle, getCreditBalanceUsd, getVoiceWalletSnapshot } = await loadModules();
+    vi.mocked(drizzle.select).mockImplementation(
+      selectSequence(
+        [[{ plan: "voice", status: "active" }], [{ used: 30 }], [{ extraAgents: 0 }]],
+        1,
+      ) as never,
+    );
+    vi.mocked(getCreditBalanceUsd).mockResolvedValue(0);
+    expect(await getVoiceWalletSnapshot("user-1")).toMatchObject({
+      current_call_policy: "bounded_completion_grace",
+      completion_grace_minutes: 10,
+      sufficient: false,
+    });
+  });
+  it.each(["email", "sms", "email-sms"])(
+    "does not unlock live voice on %s with Runtime Balance",
+    async (plan) => {
+      const { drizzle, getCreditBalanceUsd, getVoiceWalletSnapshot } = await loadModules();
+      vi.mocked(drizzle.select).mockImplementation(
+        selectSequence([
+          [{ plan, status: "active" }],
+          [{ used: 0 }],
+          [{ extraAgents: 0 }],
+        ]) as never,
+      );
+      vi.mocked(getCreditBalanceUsd).mockResolvedValue(100);
+      expect(await getVoiceWalletSnapshot("user-1")).toMatchObject({
+        live_voice_enabled: false,
+        sufficient: false,
+      });
+    },
+  );
   it("requires a paid plan before any live voice work", async () => {
     const { drizzle, getCreditBalanceUsd, assertVoiceWalletSolvent, getVoiceWalletSnapshot } =
       await loadModules();

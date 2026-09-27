@@ -14,6 +14,8 @@ import {
   liveExternalActionPolicyForUser,
 } from "./account-environment-policy";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
+import { requireTenantChannel } from "./channel-entitlements";
+import { sendFundedManagedEmail } from "./managed-mail-send-spend";
 
 const MAX_CALENDAR_PAGES = 20;
 
@@ -287,6 +289,7 @@ export class IntegrationService {
     const limit = Math.min(Math.max(opts.limit ?? 25, 1), 100);
     const failures: InboxFetchFailure[] = [];
     try {
+      await requireTenantChannel(this.userId, "email");
       // Only canonical email-account rows may source inbox persistence. Google
       // and Microsoft callbacks upsert both calendar and mailbox rows; falling
       // back to calendar rows lost the mailbox identity needed for safe dedupe.
@@ -486,6 +489,10 @@ export class IntegrationService {
           await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
             email: params.to,
           });
+          await requireTenantChannel(this.userId, "email");
+          // This service sends one recipient per attempt. Reject header injection
+          // and recipient lists before reserving funds or opening a transport.
+          if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return false;
 
           const accounts = await this.getAccounts("mail");
           // Fallback: If no mail account, try calendar accounts (many have mail too)
@@ -556,8 +563,14 @@ export class IntegrationService {
               if (!account.accessToken || !account.emailAddress) return false;
               const email = account.emailAddress as string;
               const apiKey = decryptSecret(account.accessToken);
-              providerWorkStarted = true;
-              return sendAgentMail(email, apiKey, sendParams);
+              return sendFundedManagedEmail({
+                userId: this.userId,
+                provider: "agentmail",
+                perform: async () => {
+                  providerWorkStarted = true;
+                  return sendAgentMail(email, apiKey, sendParams);
+                },
+              });
             }
             if (account.provider === "yahoo") {
               log.warn("Yahoo Mail send refused because XOAUTH2 transport is not implemented", {
@@ -577,31 +590,36 @@ export class IntegrationService {
             return false;
           }
 
-          // Non-marketing messages here are transactional/relationship mail: team
-          // invitations, account-holder digests, or one-off follow-ups requested
-          // during an active customer conversation. Do not gate those on a marketing
-          // opt-out and do not append a misleading commercial unsubscribe footer.
+          // Customer-requested follow-ups remain Email-channel work even when
+          // the platform provides the transport. System security/billing notices
+          // use email-service directly and are independent of this channel.
           const { sendEmail: sendPlatformEmail } = await import("./email-service");
           const escaped = params.body
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
           const html = `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.55; white-space: pre-wrap;">${escaped}</div>`;
-          providerWorkStarted = true;
-          const result = await sendPlatformEmail({
-            to: params.to,
-            subject: params.subject,
-            text: params.body,
-            html,
+          if (!process.env.RESEND_API_KEY?.trim()) return false;
+          return sendFundedManagedEmail({
+            userId: this.userId,
+            provider: "resend",
+            perform: async () => {
+              providerWorkStarted = true;
+              const result = await sendPlatformEmail({
+                to: params.to,
+                subject: params.subject,
+                text: params.body,
+                html,
+              });
+              if (!result.ok) {
+                log.warn("Platform Resend fallback failed for tenant email", {
+                  userId: this.userId,
+                  error: result.error,
+                });
+              }
+              return result.ok;
+            },
           });
-          if (!result.ok) {
-            log.warn("Platform Resend fallback failed for tenant email", {
-              userId: this.userId,
-              to: params.to,
-              error: result.error,
-            });
-          }
-          return result.ok;
         },
       });
       if (!fenced.performed) {

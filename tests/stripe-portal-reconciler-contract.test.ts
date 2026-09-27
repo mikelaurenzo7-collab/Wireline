@@ -67,11 +67,9 @@ describe("Stripe customer portal reconciliation", () => {
       proration_behavior: "none",
     });
     expect(params.features.subscription_update).toMatchObject({
-      enabled: true,
-      default_allowed_updates: ["price"],
-      proration_behavior: "create_prorations",
+      enabled: false,
     });
-    expect(params.features.subscription_update.products).toHaveLength(3);
+    expect(params.features.subscription_update.products).toBeUndefined();
   });
 
   it("detects customer-control and plan-switch drift after write", () => {
@@ -107,6 +105,7 @@ describe("Stripe customer portal reconciliation", () => {
         subscription_cancel: { ...params.features.subscription_cancel, mode: "immediately" },
         subscription_update: {
           ...params.features.subscription_update,
+          enabled: true,
           default_allowed_updates: ["price", "quantity"],
           products: [{ product: "prod_starter", prices: ["price_starter_month"] }],
         },
@@ -116,15 +115,12 @@ describe("Stripe customer portal reconciliation", () => {
       expect.arrayContaining([
         "legal_urls_mismatch",
         "subscription_cancel_incomplete",
-        "subscription_update_incomplete",
-        "plan_switch_mismatch:prod_starter",
-        "plan_switch_mismatch:prod_team",
-        "plan_switch_mismatch:prod_pro",
+        "subscription_update_must_be_disabled",
       ]),
     );
   });
 
-  it("accepts Stripe's omitted product readback only when the exact write is freshly attested", () => {
+  it("accepts omitted product catalogs because package switching is disabled", () => {
     const params = managedPortalConfigurationParams("https://botbound.app", products);
     const attestedAt = Number(params.metadata?.wireline_portal_catalog_attested_at);
     const configuration = {
@@ -158,7 +154,7 @@ describe("Stripe customer portal reconciliation", () => {
         "https://botbound.app",
         products,
       ),
-    ).toContain("plan_switch_catalog_unverifiable");
+    ).toEqual([]);
   });
 
   it("keeps production portal repair explicit, pinned, bounded, and idempotent", () => {
@@ -174,11 +170,7 @@ describe("Stripe customer portal reconciliation", () => {
 
     expect(script).toContain("assertStripePortalOperatorEnvironment(process.env, {");
     expect(script).toContain('new URL("../dist/render-release.json", import.meta.url)');
-    expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");
-    expect(script).toContain("FOUNDER_PRODUCTS");
-    expect(script).toContain("stripePriceMatchesFounderPlan");
-    expect(script).toContain("product.name !== expectedProduct.name");
-    expect(script).toContain("configuredPriceId !== price.id");
+    expect(script).toContain("const portalProducts: PortalProduct[] = []");
     expect(script).toContain("managedPortalConfigurationFindings");
     expect(script).toContain('expand: ["data.features.subscription_update.products"]');
     expect(script).toContain('expand: ["features.subscription_update.products"]');
@@ -197,7 +189,6 @@ describe("Stripe customer portal reconciliation", () => {
       "node --import tsx scripts/reconcile-stripe-customer-portal.mts --apply",
     );
     expect(route).toContain("resolveOwnedStripeCustomer({");
-    expect(route).toContain("stripePriceMatchesFounderPlan");
     expect(route).toContain("authenticatedEmail: req.user!.email");
     expect(route).toContain("customer: ownedCustomer.id");
     expect(route).toContain("PORTAL_CONFIGURATION_REVERIFY_MS");

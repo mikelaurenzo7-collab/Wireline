@@ -397,7 +397,7 @@ export default function BillingSettings() {
                   {CONVERSATION_BALANCE_COPY.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Prepaid voice, SMS, and enrichment beyond your plan.
+                  Prepaid voice, SMS, and generated work beyond your plan.
                 </p>
               </div>
               <ShieldCheck className="size-5 shrink-0 text-primary" aria-hidden="true" />

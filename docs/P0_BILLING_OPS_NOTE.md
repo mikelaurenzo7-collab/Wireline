@@ -1,92 +1,65 @@
-# P0 Billing Ops Note — 2026-07-27
+# Billing operations — September 27, 2026
 
-Status: **Active** — founder early-access catalog v6 is the live commercial source of truth.
+Status: **current source contract; provider/deployment verification required**. This document does not certify that new prices exist in Stripe or that checkout is released. Render is production. The user reports that current accounts are demo/test; preserve all Stripe history and verify live subscription inventory before any destructive operation.
 
-This note is the current launch source for billing operations. Historical billing decisions remain in their original documents for audit context, but the active catalog is defined by:
+The authoritative files are `src/lib/plan-catalog.ts`, `scripts/lib/stripe-founder-catalog.mjs`, and the strict checkout validator. Catalog version: `channel_plans_2026_09_v1`.
 
-- `src/lib/plan-catalog.ts` — product-facing entitlements and prices (`FOUNDER_CATALOG_VERSION = founder_early_access_2026_07_v6`)
-- `scripts/lib/stripe-founder-catalog.mjs` — canonical Stripe product/price manifest
-- `scripts/setup-stripe-catalog.mjs` — idempotent live reconciler
-- `scripts/audit-stripe-catalog-live.mjs` — live dependency and parity audit
+| Channels                  | Light monthly / annual | Regular monthly / annual | High monthly / annual |
+| ------------------------- | ---------------------: | -----------------------: | --------------------: |
+| Calls                     |             $15 / $150 |               $59 / $690 |         $219 / $2,499 |
+| Email                     |               $9 / $90 |               $29 / $290 |            $69 / $690 |
+| SMS (unavailable)         |             $12 / $120 |               $29 / $339 |            $79 / $899 |
+| Calls + Email             |             $21 / $210 |               $79 / $899 |         $269 / $2,999 |
+| Calls + SMS (unavailable) |             $20 / $200 |               $79 / $939 |         $279 / $3,199 |
+| Email + SMS (unavailable) |             $18 / $180 |               $49 / $499 |         $129 / $1,399 |
+| All three (unavailable)   |             $26 / $260 |             $99 / $1,109 |         $319 / $3,699 |
 
-## Founder catalog lock (v6)
+Capacity never increases Bot count or concurrency. Every package has one Bot; Calls/SMS share one local number and Email has one mailbox. Light / Regular / High Calls include 30 / 250 / 1,000 minutes monthly. Standalone managed allowances are Calls $1.50 / $3 / $5; Email $2.50 / $10 / $30; SMS $2.50 / $7 / $15. Combinations add only each channel's incremental allowance above the Calls/base amount, so Email+SMS and all three receive $3.50 / $14 / $40. SMS transport is $2 / $10 / $30, separately funded. Annual prices are explicit, not ten times monthly; savings vary by package and capacity. Daily Calls guardrails are 60 / 250 / 1,000 minutes, with the same durable wallet admission and one unsettled call per tenant. Monthly usage still resets on the UTC calendar month, independently of the subscription billing date.
 
-| Plan               | Monthly | Annual | Billing model      |
-| ------------------ | ------: | -----: | ------------------ |
-| Free Builder       |      $0 |      — | No Stripe product  |
-| Starter            |     $19 |   $190 | Fixed subscription |
-| Starter Plus       |     $39 |   $390 | Fixed subscription |
-| Pro                |     $79 |   $790 | Fixed subscription |
-| Scale & Enterprise |  Custom | Custom | Sales-assisted     |
+No fixed email-message count or unlimited use is promised. SMS registration and receiving costs remain unverified, so all twelve SMS capacity quotes stay unavailable. See [the pricing decision](PRICING_DECISION_2026-09-27.md).
 
-The retired $159 Business tier remains resolver-compatible for historical Stripe events and
-existing entitlements, but it is not public, returned by the plans API, or accepted by self-serve
-checkout. New customers needing more than Pro use the sales-assisted Scale path.
+Free Builder remains private setup/testing, with no Stripe product or live provider access. Runtime Balance top-ups remain $10/$25/$50/$100. A call requires at least one funded minute before admission. Channel packages permit up to 10 additional completion minutes within the call's persisted duration limit; a single unsettled call holds its funds until settlement. Any resulting balance due pauses new calls and prepaid extras until paid. Included Email/AI may continue within their independent allowance. There is no automatic extra card charge or automatic overage invoice. Dashboard and billing access remain available.
 
-Add-ons:
+Old starter/team/business/enterprise and extra-Bot IDs remain resolvable with historical prices and allowances. They are not new-sale plans. Setup preserves historical objects; no subscriptions are migrated or canceled. New one-Bot channel packages cannot purchase the historical extra-Bot bundle. Retired Live Video stays unavailable.
 
-- Extra Agent + 50 Minutes: $15/month
-- Runtime Balance (Conversation Balance API/module path retained): prepaid $10, $25, $50, or $100 ($10 minimum; dynamic Stripe checkout amounts from `src/lib/conversation-balance.ts`)
+## Provider reconciliation
 
-Live Video is retired. Its historical Stripe price IDs remain reconciliation-only so old webhook
-events and subscriptions fail closed without breaking billing. No new checkout, entitlement, or
-presenter session is offered.
-
-Voice usage is not postpaid or metered in this launch catalog. Included Runtime Allowance and prepaid Runtime Balance are the supported model. Free Builder and pending-activation tenants cannot spend Runtime Balance on live SMS or voice.
-
-## Live Stripe reconciliation
-
-Account: **BotBound** (`acct_1TkyXL8e6If87QKm`) — the live billing account after the 2026-07
-Stripe project reconnect. `Cadence AI` is the account's former label in dated July audit evidence;
-it is not the current customer-facing identity. Older notes that cite `acct_1TXb0SJohDtfy3Ik` refer
-to a separate retired Stripe account and are historical.
-
-- Active founder products + canonical prices must match `scripts/lib/stripe-founder-catalog.mjs`.
-- Render production price-ID environment variables must stay in parity with the live catalog.
-- Preview must **not** receive production Stripe secrets (see `scripts/check-deployment-boundaries.mjs`).
-- Webhook `https://botbound.app/api/stripe-webhook` enabled_events must match
-  `src/routes/billing-routes.ts` (including `charge.refunded` / `charge.dispute.created`).
-
-Do not delete Stripe products or prices. Archive products and deactivate prices only after dependency checks.
-
-## Required prelaunch proof
-
-Run the static catalog check from a clean checkout. Run the read-only live checks in the Render production shell using its existing injected credentials; do not export production secrets into local development:
+Run static checks locally. Live read-only checks use the Render shell's existing injected credentials; do not export secrets:
 
 ```bash
 npm run stripe:catalog:check
+npm run economics:report
 npm run stripe:audit-live
 npm run stripe:portal:verify
 npm run stripe:webhook:check
 ```
 
-The explicit `stripe:audit-legacy-vercel` and `stripe:verify-vercel-parity` commands remain available only for an authorized legacy rollback investigation. They are not evidence of Render configuration parity; verify Render's configured price IDs against the canonical catalog separately.
+The active Stripe manifest creates only Calls, Email, Calls + Email, contact-sales and Runtime Balance products. Each of the three available channel families has Light, Regular and High products: nine recurring products and eighteen recurring prices, plus contact-sales and Runtime Balance products and four top-up presets. SMS products/prices are deliberately absent. Light env names: `STRIPE_VOICE_PRICE_ID`, `STRIPE_VOICE_ANNUAL_PRICE_ID`, `STRIPE_EMAIL_PRICE_ID`, `STRIPE_EMAIL_ANNUAL_PRICE_ID`, `STRIPE_VOICE_EMAIL_PRICE_ID`, `STRIPE_VOICE_EMAIL_ANNUAL_PRICE_ID`. Regular/High insert `_REGULAR` or `_HIGH` before `_PRICE_ID` or `_ANNUAL_PRICE_ID` (18 interval IDs total). Exact amounts, annual intervals, channel/resource metadata, currency and live active product identity must match before checkout. No old price ID is a fallback for a new package.
 
-Then verify in a non-production test workspace:
+The managed Stripe portal remains payment/invoice/contact/cancellation-only. The in-app capacity endpoint supports only a higher capacity with identical channels and billing interval, scheduled at the next successful paid renewal (including the next annual renewal for annual customers). No immediate proration, quota reset, extra Bot, channel switch or cancellation/re-purchase. Runtime top-ups remain the immediate option. The authoritative paid base-plan invoice must match the subscription, customer, target price and effective period before higher capacity is projected. A Stripe phase change alone is insufficient. Failed payments keep the old capacity and ordinary subscription payment gates still apply.
 
-1. Free signup creates no Stripe subscription and cannot send paid SMS or start live voice.
-2. Starter checkout shows **$19/month** and returns to the authenticated billing surface.
-3. The webhook persists the subscription and entitlement state once when replayed.
-4. Customer Portal cancellation appears in `GET /api/billing/status`.
-5. A $10 Runtime Balance checkout credits the ledger once when the event is replayed.
-6. Included Runtime Allowance is consumed before prepaid Runtime Balance.
-7. Extra Agent uses the canonical recurring price; retired Live Video price IDs remain absent from new checkout.
-8. Annual CTAs only appear when `/api/billing/plans` reports `annual_configured: true`.
+GET/POST/DELETE `/api/billing/capacity-upgrade` provide status, scheduling and removal. The operation is serialized with deletion cleanup; durable provider metadata and stable per-generation Stripe keys recover interrupted attempts. An incomplete attempt is labelled unconfirmed, not scheduled. Removing a change releases only the exact owned schedule and keeps the current subscription. Stripe portal cancellation is unavailable while any schedule is attached, so the UI exposes removal before cancellation; a paid applied phase is detached automatically without reverting its price. Foreign schedules are never overwritten. No automatic usage invoice or extra card charge is introduced.
 
-## Environment hygiene
+### Current managed-email capacity hold
 
-- Keep canonical `STRIPE_*_PRICE_ID` values correct on Production.
-- Keep webhook signing secrets environment-specific.
-- Never expose `STRIPE_SECRET_KEY` or webhook secrets to client bundles.
-- Never copy production Postgres / live Stripe keys into Preview.
-- Redeploy after changing price IDs or webhook configuration.
-- Run the live audit before and after any catalog mutation.
+The AgentMail console observed September 27 reports **10 of 11 inboxes used, one spare** (`live-account/agentmail-capacity-10-of-11.png` in the external release evidence). That is not capacity for unrestricted Email sales. No upgrade has been approved or purchased. Launch Calls first with only the six Calls capacity/interval price environment IDs configured. Keep all Email and Calls + Email capacity/interval IDs unset until capacity is explicitly funded and verified. For channel packages, an unset interval ID prevents server price resolution before any Stripe lookup, matching the disabled UI. Merely creating a catalog price does not release checkout. Do not sell the single spare inbox as an unbounded public offer or build assumptions on a future subscription upgrade.
 
-## Release-time deployment evidence
+## Required proof
 
-- Canonical production target: `main` → `https://botbound.app`. Re-verify READY state, public health,
-  and the served source commit after every deploy; do not treat a status copied into this note as
-  evergreen evidence.
-- Residual ops (not code-blockable): federal DNC vendor `loginId`, one live $19 checkout proof, GitHub Actions spending restore, rotate any Vercel token pasted into chat.
+1. Free signup creates no subscription and cannot start live customer work.
+2. Each available channel selection resolves to its exact monthly/annual Stripe price.
+3. All twelve SMS-containing capacity selections reject checkout before customer/session creation, even with configured price IDs.
+4. Subscription webhook replay projects channels and exact allowances once; legacy seeded records keep historical limits.
+5. Email-only provisions no number; Calls-only provisions no mailbox. Disabled channels cannot send through API, tools or queued work.
+6. Managed email/Lookup reservations reject unfunded attempts, serialize competing reservations and retain uncertain provider outcomes.
+7. Customer Portal payment and period-end cancellation work after any owned scheduled capacity change is removed; same-channel increases activate only after the next paid renewal.
+8. Runtime top-up replay grants credit once; monetary refunds reverse the correct original grant.
+9. Billing status reports authoritative channels, or unknown on read failure, without fabricating access.
+10. Exact Render web/worker revision and readiness agree after release.
+11. Call funding holds and provider claims commit together; retries retain their original deadline. Completion refunds unused holds or charges only the remaining amount once. Definitive unanswered/startup failures release holds only after confirmed termination; uncertain calls retain their hold and no second admission is granted.
 
-_Refresh this note after every live catalog change or end-to-end billing proof._
+The economics report enforces floors on new packages and prints historical below-floor exposure separately. SMS arithmetic excludes unresolved regulatory and receiving costs and is not SMS launch proof. Provider list prices are assumptions until actual invoice/traffic reconciliation confirms them.
+
+Never delete prices, subscriptions, mailboxes or numbers as an incidental catalog update. No provider mutation is authorized merely by running this note's read-only checks.
+
+Recovery limit: an interrupted create whose exact Stripe idempotency receipt has expired may need manual provider reconciliation. Never adopt or release an unknown schedule merely from metadata. No Stripe mutation or sandbox/live renewal proof is implied by local unit tests.

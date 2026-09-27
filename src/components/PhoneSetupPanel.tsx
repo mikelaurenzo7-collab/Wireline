@@ -54,7 +54,13 @@ function formatProvisionedDate(value?: string | null) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentId?: string }) {
+export default function PhoneSetupPanel({
+  initialAgentId = "",
+  voiceEnabled = true,
+}: {
+  initialAgentId?: string;
+  voiceEnabled?: boolean;
+}) {
   const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
@@ -439,7 +445,11 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
           withHalo={false}
           icon={<Phone className="size-5" aria-hidden="true" />}
           title="No Line Yet"
-          description="Add a number when this Bot is ready for real calls."
+          description={
+            voiceEnabled
+              ? "Add a number when this Bot is ready for real calls."
+              : "Add a number for this Bot's text conversations."
+          }
           action={
             <Button type="button" onClick={() => setAddingLine(true)}>
               <Plus className="size-4" aria-hidden="true" />
@@ -649,25 +659,31 @@ export default function PhoneSetupPanel({ initialAgentId = "" }: { initialAgentI
                     {formatPhone(activeNumber.phone_number)}
                   </h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {activeNumber.native_voice_status === "active"
-                      ? "Connected"
-                      : !activeNumber.agent_id
-                        ? "Unassigned"
-                        : "Connection not confirmed"}
+                    {!voiceEnabled
+                      ? "Text line"
+                      : activeNumber.native_voice_status === "active"
+                        ? "Connected"
+                        : !activeNumber.agent_id
+                          ? "Unassigned"
+                          : "Connection not confirmed"}
                     {formatProvisionedDate(activeNumber.created_at)
                       ? ` · ${formatProvisionedDate(activeNumber.created_at)}`
                       : ""}
                   </p>
                 </div>
-                <Button asChild size="sm" variant="secondary">
-                  <a href={`tel:${activeNumber.phone_number}`}>
-                    <Phone className="size-4" aria-hidden="true" />
-                    Call
-                  </a>
-                </Button>
+                {voiceEnabled ? (
+                  <Button asChild size="sm" variant="secondary">
+                    <a href={`tel:${activeNumber.phone_number}`}>
+                      <Phone className="size-4" aria-hidden="true" />
+                      Call
+                    </a>
+                  </Button>
+                ) : null}
               </div>
 
-              {activeNumber.agent_id && activeNumber.native_voice_status !== "active" ? (
+              {voiceEnabled &&
+              activeNumber.agent_id &&
+              activeNumber.native_voice_status !== "active" ? (
                 <Button
                   type="button"
                   size="sm"

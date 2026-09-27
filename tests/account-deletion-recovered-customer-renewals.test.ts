@@ -12,10 +12,13 @@ const h = vi.hoisted(() => ({
   retrieve: vi.fn(),
   update: vi.fn(),
   customer: vi.fn(),
+  cancelCapacity: vi.fn(),
 }));
 vi.mock("../src/lib/server-context", () => ({
   log: { warn: vi.fn(), error: vi.fn() },
   drizzle: {
+    transaction: async (callback: (tx: unknown) => Promise<unknown>) =>
+      callback({ execute: vi.fn() }),
     select: () => {
       let table: string;
       const query = {
@@ -62,6 +65,9 @@ vi.mock("../src/lib/stripe-customer-binding", () => ({
   resolveOwnedStripeCustomer: async ({ customerId }: { customerId: string }) =>
     h.ownedCustomers.has(customerId) ? { id: customerId } : null,
 }));
+vi.mock("../src/lib/stripe-capacity-upgrade", () => ({
+  releaseOwnedCapacitySchedule: h.cancelCapacity,
+}));
 
 import { stopRenewalForDeletion } from "../src/lib/account-deletion-billing";
 
@@ -91,9 +97,76 @@ beforeEach(() => {
     ...patch,
   }));
   h.customer.mockReset().mockRejectedValue({ code: "resource_missing" });
+  h.cancelCapacity.mockReset().mockImplementation(async ({ subscriptionId }) => {
+    const sub = h.subscriptions.find((item) => item.id === subscriptionId)!;
+    sub.schedule = null;
+    return { status: "removed" };
+  });
 });
 
 describe("deletion renewal closure uses recovered, verified Stripe customers", () => {
+  function scheduledSubscription() {
+    h.snapshot = {
+      stripeCustomerId: "cus_owner",
+      stripeSubscriptionId: "sub_scheduled",
+      currentPeriodEnd: null,
+    };
+    h.ownedCustomers.add("cus_owner");
+    const sub = {
+      ...subscription("sub_scheduled", "cus_owner"),
+      schedule: "sub_sched_owned",
+      items: { data: [] },
+    } as unknown as Stripe.Subscription;
+    h.subscriptions = [sub];
+    return sub;
+  }
+  it("releases a verified capacity schedule before stopping renewal", async () => {
+    scheduledSubscription();
+    expect((await stopRenewalForDeletion(userId)).confirmed).toBe(true);
+    expect(h.cancelCapacity).toHaveBeenCalledWith(
+      expect.objectContaining({ userId, customerId: "cus_owner", subscriptionId: "sub_scheduled" }),
+      expect.anything(),
+    );
+    expect(h.cancelCapacity.mock.invocationCallOrder[0]).toBeLessThan(
+      h.update.mock.invocationCallOrder[0],
+    );
+    expect(h.update).toHaveBeenCalledWith(
+      "sub_scheduled",
+      expect.objectContaining({ cancel_at_period_end: true }),
+    );
+  });
+  it("does not declare billing stopped after an ambiguous or foreign schedule release", async () => {
+    scheduledSubscription();
+    h.cancelCapacity.mockRejectedValue(new Error("Schedule ownership unavailable"));
+    expect((await stopRenewalForDeletion(userId)).confirmed).toBe(false);
+    expect(h.update).not.toHaveBeenCalled();
+  });
+  it("verifies that the schedule actually detached before cancellation", async () => {
+    scheduledSubscription();
+    h.cancelCapacity.mockResolvedValue({ status: "removed" });
+    expect((await stopRenewalForDeletion(userId)).confirmed).toBe(false);
+    expect(h.update).not.toHaveBeenCalled();
+  });
+  it("also removes a future capacity phase when cancellation was already set", async () => {
+    scheduledSubscription().cancel_at_period_end = true;
+    expect((await stopRenewalForDeletion(userId)).confirmed).toBe(true);
+    expect(h.cancelCapacity).toHaveBeenCalledOnce();
+    expect(h.update).not.toHaveBeenCalled();
+  });
+  it("re-reads the subscription under the lock when inventory missed a newly created schedule", async () => {
+    const sub = scheduledSubscription();
+    h.list.mockImplementation(() => ({
+      async *[Symbol.asyncIterator]() {
+        yield { ...sub, schedule: null };
+      },
+    }));
+    expect((await stopRenewalForDeletion(userId)).confirmed).toBe(true);
+    expect(h.cancelCapacity).toHaveBeenCalledOnce();
+    expect(h.update).toHaveBeenCalledWith(
+      sub.id,
+      expect.objectContaining({ cancel_at_period_end: true }),
+    );
+  });
   it("stops siblings on the primary subscription's actual customer when the local customer is stale", async () => {
     h.snapshot = {
       stripeCustomerId: "cus_stale",

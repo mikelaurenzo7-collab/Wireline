@@ -12,8 +12,9 @@ describe("annual billing purchase path", () => {
     const billingCard = read("src/components/StripeBillingCard.tsx");
     const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
 
-    expect(pricing).toContain('billingInterval === "year"');
-    expect(pricing).toContain('`${ctaPath}&interval=${showAnnual ? "year" : "month"}`');
+    expect(read("src/components/ChannelPlanPicker.tsx")).toContain('interval === "year"');
+    expect(pricing).toContain("signupHrefForPlan(plan.id as SignupPlanId");
+    expect(pricing).toContain("interval: billingInterval");
     expect(billingCard).toContain("interval },");
     expect(billingCard).toContain('billingInterval === "year"');
     expect(launchCheckout).toContain('req.body?.interval === "year"');

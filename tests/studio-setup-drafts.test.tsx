@@ -6,6 +6,14 @@ import { createStudioSetupDrafts, type StudioSetupDrafts } from "../src/lib/stud
 import { defaultBotMarkKey } from "../src/lib/bot-mark";
 import { setCreateBriefRecoveryOwner } from "../src/lib/create-brief-recovery";
 
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => ({
+    status: "ready",
+    data: { channels: ["voice", "email", "sms"] },
+    includes: () => true,
+    retry: vi.fn(),
+  }),
+}));
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
   refs: [] as Array<{ current: unknown }>,

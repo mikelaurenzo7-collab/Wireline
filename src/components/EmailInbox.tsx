@@ -144,10 +144,12 @@ export default function EmailInbox({
   embedded = false,
   agentId,
   accountId,
+  channelEnabled = true,
 }: {
   embedded?: boolean;
   agentId?: string | null;
   accountId?: string | null;
+  channelEnabled?: boolean;
 }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -730,7 +732,7 @@ export default function EmailInbox({
               titleTone="ui"
               withHalo={false}
               action={
-                !agentId && !accountId && mailboxConnected === false ? (
+                channelEnabled && !agentId && !accountId && mailboxConnected === false ? (
                   <Button asChild variant="secondary" size="sm">
                     <Link to="/connections">Connect email</Link>
                   </Button>

@@ -1,5 +1,6 @@
 import { WEDGES, type VerticalKey } from "../data/vertical-wedges";
 import { BOTBOUND_BRAND_NAME, BOTBOUND_PRODUCTION_ORIGIN } from "./brand";
+import { ACCOUNT_TERMS_DESCRIPTION } from "./legal-consent";
 
 // Public crawl/social metadata is permanently canonical to the BotBound brand
 // origin. APP_URL remains independently configurable for provider callbacks.
@@ -50,9 +51,9 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | From $19/Month",
+    title: "Pricing | Email from $9, Calls from $15",
     description:
-      "Build a Bot free. Paid plans start at $19/month, with included numbers, call minutes, text, email, and prepaid usage controls. Check live activation availability.",
+      "Build a Bot free. Choose Email from $9/month, Calls from $15/month, or combine channels. SMS activation is pending. Check live availability and included usage.",
   },
   "/features": {
     title: "Features",
@@ -129,8 +130,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   },
   "/terms": {
     title: "Terms of Service",
-    description:
-      "BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026.",
+    description: ACCOUNT_TERMS_DESCRIPTION,
   },
   "/solutions/sales": {
     title: "Find the Lead. Make the Call. Book the Next Step. | BotBound",

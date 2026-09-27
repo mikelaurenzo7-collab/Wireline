@@ -234,9 +234,8 @@ export default function AppointmentsPanel() {
 
   if (appointments.length === 0) {
     return (
-      <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
+      <div className="wl-call-history-empty mx-auto my-4 grid min-h-[24rem] w-full max-w-[980px] flex-1 place-items-center px-4 py-8 sm:px-8">
         <EmptyState
-          framed
           density="compact"
           titleTone="ui"
           withHalo={false}
@@ -245,7 +244,7 @@ export default function AppointmentsPanel() {
           title={calendarConnected === false ? "Connect a Calendar" : "No Appointments Yet"}
           action={
             calendarConnected !== null ? (
-              <Button asChild>
+              <Button asChild variant="secondary" size="sm">
                 <Link to="/connections">{calendarConnected ? "Calendar" : "Connect calendar"}</Link>
               </Button>
             ) : undefined

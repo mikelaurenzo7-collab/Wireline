@@ -93,8 +93,11 @@ vi.mock("../src/lib/wireline-create-flow", () => ({
   updatePostCreateWizard: vi.fn(),
 }));
 vi.mock("../src/lib/signup-intent", () => ({
+  DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",
   getStoredSignupIntent: () => null,
-  recommendedPlanFromIntent: () => "starter",
+  recommendedPlanFromIntent: () => "voice",
+  persistSignupIntent: vi.fn(),
+  mergeSignupIntent: (_previous: unknown, next: unknown) => next,
   billingIntervalFromIntent: () =>
     new URLSearchParams(window.location.search).get("interval") === "year" ? "year" : "month",
 }));
@@ -231,7 +234,7 @@ beforeEach(() => {
     search: "",
     pathname: "/settings/billing",
     hash: "",
-    href: "",
+    href: "http://localhost/settings/billing",
     replace: vi.fn(),
   };
   vi.stubGlobal("window", {
@@ -437,19 +440,19 @@ describe("Billing Settings shared recovery", () => {
     );
     await settle();
     const upgrade = () => tree.find((element) => element.type === "usage-meter")!;
-    const opening = button("Manage Subscription").props.onClick?.();
+    const opening = button("Manage billing").props.onClick?.();
     // A second entry point can be clicked before React commits the busy state.
     upgrade().props.onUpgrade?.();
     await settle();
     expect(requests("/api/billing/portal")).toHaveLength(1);
-    expect(button("Manage Subscription").props.disabled).toBe(true);
+    expect(button("Manage billing").props.disabled).toBe(true);
     expect(upgrade().props.upgradePending).toBe(true);
 
     finish(response({ error: "Billing portal unavailable. Try again." }, 503));
     await opening;
     await settle();
     expect(hasText("Billing portal unavailable. Try again.")).toBe(true);
-    expect(button("Manage Subscription").props.disabled).toBe(false);
+    expect(button("Manage billing").props.disabled).toBe(false);
     expect(upgrade().props.upgradePending).toBe(false);
 
     h.fetch.mockImplementation((path: string) =>
@@ -528,7 +531,7 @@ describe("Billing Settings shared recovery", () => {
       expect(hasText("Cancels at period end")).toBe(false);
     }
     if (label !== "Renews") expect(hasText("Renews")).toBe(false);
-    expect(button("Manage Subscription").props.disabled).toBe(false);
+    expect(button("Manage billing").props.disabled).toBe(false);
   });
 
   it("recovers the page status and Runtime Balance when the plan-card Retry succeeds", async () => {
@@ -551,13 +554,13 @@ describe("Billing Settings shared recovery", () => {
     await settle();
     button("Annual").props.onClick?.();
     await settle();
-    expect(hasText("$190/yr")).toBe(true);
+    expect(hasText("$690/year")).toBe(true);
     balanceFails = false;
     button("Retry").props.onClick?.();
     await settle();
     expect(requests("/api/billing/plans")).toHaveLength(2);
     expect(hasText("$24.50")).toBe(true);
-    expect(hasText("$190/yr")).toBe(true);
+    expect(hasText("$690/year")).toBe(true);
     expect(hasText("Runtime Balance is temporarily unavailable.")).toBe(false);
   });
 

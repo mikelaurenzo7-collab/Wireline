@@ -321,9 +321,6 @@ async function stripeStatus() {
   const portalHasCustomerControls = (configuration) => {
     const features = configuration?.features;
     const customerUpdates = new Set(features?.customer_update?.allowed_updates || []);
-    const subscriptionUpdates = new Set(
-      features?.subscription_update?.default_allowed_updates || [],
-    );
     const cancellationReasons = new Set(
       features?.subscription_cancel?.cancellation_reason?.options || [],
     );
@@ -341,10 +338,7 @@ async function stripeStatus() {
       features?.subscription_cancel?.cancellation_reason?.enabled === true &&
       cancellationReasons.size === expectedCancellationReasons.size &&
       [...expectedCancellationReasons].every((reason) => cancellationReasons.has(reason)) &&
-      features?.subscription_update?.enabled === true &&
-      features?.subscription_update?.proration_behavior === "create_prorations" &&
-      subscriptionUpdates.size === 1 &&
-      subscriptionUpdates.has("price")
+      features?.subscription_update?.enabled === false
     );
   };
   const activeManagedPortalConfigurations = portalConfigurations.filter(
@@ -359,7 +353,6 @@ async function stripeStatus() {
     activeManagedPortalConfigurations.length === 1 && managedPortalConfigurations.length === 1
       ? managedPortalConfigurations[0]
       : null;
-  const portalFeatures = portalConfiguration?.features ?? {};
   const portalFindings = [];
   if (portalResult.body?.has_more === true) portalFindings.push("portal_audit_truncated");
   if (managedPortalConfigurations.length === 0) {
@@ -389,57 +382,11 @@ async function stripeStatus() {
     portalFindings.push("legal_urls_mismatch");
   }
 
-  const expectedPortalPrices = new Map();
-  for (const price of liveCatalogPrices) {
-    const productId = price?.product && typeof price.product === "object" ? price.product.id : null;
-    if (!productId || !price?.id) continue;
-    const ids = expectedPortalPrices.get(productId) || [];
-    ids.push(price.id);
-    expectedPortalPrices.set(productId, ids);
-  }
-  const returnedPortalProducts = portalFeatures.subscription_update?.products;
-  const actualPortalPrices = new Map();
-  for (const product of Array.isArray(returnedPortalProducts) ? returnedPortalProducts : []) {
-    if (typeof product?.product !== "string" || !Array.isArray(product?.prices)) continue;
-    actualPortalPrices.set(product.product, [...product.prices].sort());
-  }
-  if (expectedPortalPrices.size !== PUBLIC_SELF_SERVE_PLAN_IDS.length) {
-    portalFindings.push("expected_catalog_products_unresolved");
-  } else {
-    const expectedFingerprintInput = [...expectedPortalPrices.entries()]
-      .map(([productId, priceIds]) => `${productId}:${[...new Set(priceIds)].sort().join(",")}`)
-      .sort()
-      .join("|");
-    const expectedFingerprint = createHash("sha256")
-      .update(expectedFingerprintInput)
-      .digest("hex")
-      .slice(0, 32);
-    if (portalConfiguration?.metadata?.wireline_portal_products_fp !== expectedFingerprint) {
-      portalFindings.push("products_fingerprint_mismatch");
-    }
-    if (Array.isArray(returnedPortalProducts)) {
-      for (const [productId, priceIds] of expectedPortalPrices) {
-        const actualIds = actualPortalPrices.get(productId) || [];
-        if (actualIds.join(",") !== [...priceIds].sort().join(",")) {
-          portalFindings.push(`plan_switch_prices_mismatch:${productId}`);
-        }
-      }
-      for (const productId of actualPortalPrices.keys()) {
-        if (!expectedPortalPrices.has(productId)) {
-          portalFindings.push(`unexpected_plan_switch_product:${productId}`);
-        }
-      }
-    } else {
-      const attestedAt = Number(portalConfiguration?.metadata?.wireline_portal_catalog_attested_at);
-      const updatedAt = Number(portalConfiguration?.updated);
-      if (
-        !Number.isInteger(attestedAt) ||
-        !Number.isInteger(updatedAt) ||
-        Math.abs(updatedAt - attestedAt) > 5
-      ) {
-        portalFindings.push("plan_switch_catalog_unverifiable");
-      }
-    }
+  // No channel-switching catalog is exposed during this rollout. Verify the
+  // empty fingerprint plus explicit disabled updates; payment/cancel remain live.
+  const expectedFingerprint = createHash("sha256").update("").digest("hex").slice(0, 32);
+  if (portalConfiguration?.metadata?.wireline_portal_products_fp !== expectedFingerprint) {
+    portalFindings.push("products_fingerprint_mismatch");
   }
   const portalReady = Boolean(
     portalResult.ok && portalConfiguration && portalFindings.length === 0,

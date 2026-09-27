@@ -30,7 +30,33 @@ const publicSignupPlanIdSchema = z.preprocess(
     const normalized = value.trim().toLowerCase();
     return ["enterprise", "scale", "custom"].includes(normalized) ? "business" : normalized;
   },
-  z.enum(["personal", "starter", "team", "business"]),
+  z.enum([
+    "personal",
+    "voice",
+    "email",
+    "sms",
+    "voice-email",
+    "voice-sms",
+    "email-sms",
+    "omnichannel",
+    "voice-regular",
+    "voice-high",
+    "email-regular",
+    "email-high",
+    "sms-regular",
+    "sms-high",
+    "voice-email-regular",
+    "voice-email-high",
+    "voice-sms-regular",
+    "voice-sms-high",
+    "email-sms-regular",
+    "email-sms-high",
+    "omnichannel-regular",
+    "omnichannel-high",
+    "starter",
+    "team",
+    "business",
+  ]),
 );
 
 export const signinSchema = z.object({

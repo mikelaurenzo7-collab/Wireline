@@ -19,6 +19,19 @@ async function mockWorkspace(page: Page) {
   // Keep the whole journey local: no account/database reads or provider work.
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/api/billing/status") {
+      await route.fulfill({
+        json: {
+          channel_entitlements: {
+            plan_id: "omnichannel",
+            subscription_status: "active",
+            channels: ["voice", "email", "sms"],
+            is_owner: false,
+          },
+        },
+      });
+      return;
+    }
     if (url.pathname === "/api/emails/threads") threadRequests.push(url);
     const json =
       url.pathname === "/api/auth/session"

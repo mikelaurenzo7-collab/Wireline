@@ -736,7 +736,9 @@ export async function extendCommittedPlatformCostReservation(
           reserve_window_usd: unit,
           reserve_window_seconds: 300,
           observed_duration_seconds: Math.ceil(elapsedSeconds),
-          cost_basis: "realtime_duration_estimate",
+          cost_basis: metadata.provider_usage_observed
+            ? "realtime_observed_with_duration_reserve_floor"
+            : "realtime_duration_estimate",
         },
       })
       .where(

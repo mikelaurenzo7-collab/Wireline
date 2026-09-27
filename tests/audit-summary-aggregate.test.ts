@@ -64,8 +64,14 @@ describe("whole-period audit summary aggregates", () => {
         },
         by_day: [{ day, calls: "5002", cost: "1.120000" }],
         by_action: [
-          { action: "signup", calls: "5001", cost: "0", latency_sum: "0" },
-          { action: "training", calls: "1", cost: "1.120000", latency_sum: "600" },
+          { action: "signup", calls: "5001", cost: "0", latency_sum: "0", sample_count: "0" },
+          {
+            action: "training",
+            calls: "1",
+            cost: "1.120000",
+            latency_sum: "600",
+            sample_count: "1",
+          },
         ],
         by_model: [
           { model: "unknown", calls: "5001", cost: "0" },
@@ -76,6 +82,7 @@ describe("whole-period audit summary aggregates", () => {
     );
     expect(actual).toEqual(computeAuditSummary({ rows, windowDays: 30 }));
     expect(actual.totals.calls).toBeGreaterThan(5_000);
+    expect(actual.totals.avg_latency).toBe(600);
     expect(actual.by_action.find((row) => row.action === "signup")?.calls).toBe(5_001);
   });
 
@@ -85,19 +92,25 @@ describe("whole-period audit summary aggregates", () => {
     );
   });
 
-  it("retains zero/negative latency in averages but positive-only nearest-rank percentiles", () => {
+  it("uses only timed events for averages and percentiles while retaining all event counts", () => {
     const aggregate = emptyAggregate();
     aggregate.totals = {
       ...aggregate.totals,
       calls: "8",
-      latency_sum: "112",
+      latency_sum: "117",
       p50_ms: 7,
       p95_ms: 100,
       sample_count: "5",
     };
-    aggregate.by_action = [{ action: "unknown", calls: "8", cost: "0", latency_sum: "112" }];
+    aggregate.by_action = [
+      { action: "unknown", calls: "8", cost: "0", latency_sum: "117", sample_count: "5" },
+    ];
     aggregate.by_model = [{ model: "unknown", calls: "8", cost: "0" }];
-    expect(formatAuditSummaryAggregate(aggregate, 1)).toEqual(
+    const actual = formatAuditSummaryAggregate(aggregate, 1);
+    expect(actual.totals).toMatchObject({ calls: 8, avg_latency: 23 });
+    expect(actual.by_action[0]).toMatchObject({ calls: 8, avg_latency_ms: 23 });
+    expect(actual.latency.sample_count).toBe(5);
+    expect(actual).toEqual(
       computeAuditSummary({
         rows: [null, 0, -5, 1, 2, 7, 7, 100].map((latencyMs) => ({ latencyMs })),
         windowDays: 1,

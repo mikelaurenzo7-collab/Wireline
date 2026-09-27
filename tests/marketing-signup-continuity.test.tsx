@@ -61,11 +61,11 @@ describe("marketing signup continuity", () => {
   );
 
   it.each([
-    ["sales", "Marketing calls are not available yet."],
-    ["home-services", "Marketing calls are not available yet."],
-    ["medical", "Marketing calls are not available yet."],
-    ["real-estate", "Marketing calls are not available yet."],
-    ["insurance", "Marketing calls are not available yet."],
+    ["sales", "Outbound calls are not available yet."],
+    ["home-services", "Outbound calls are not available yet."],
+    ["medical", "Outbound calls are not available yet."],
+    ["real-estate", "Outbound calls are not available yet."],
+    ["insurance", "Outbound calls are not available yet."],
     ["personal", "Outbound calls are not available yet. Build and test privately."],
     ["legal", undefined],
     ["restaurants", undefined],
@@ -114,7 +114,7 @@ describe("marketing signup continuity", () => {
         (element) =>
           element.type === "p" &&
           Children.toArray(element.props.children).join("") ===
-            "Marketing calls are not available yet. Build and test your Sales Bot free.",
+            "Outbound calls are not available yet. Build and test your Sales Bot free.",
       );
       expect(Boolean(notice)).toBe(wedge === "sales");
       if (notice) expect(notice.props.className).not.toContain("sr-only");

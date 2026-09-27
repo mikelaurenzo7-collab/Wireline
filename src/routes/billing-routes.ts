@@ -11,6 +11,7 @@ import {
   stripe,
   stripeAvailable,
   syncSubscriptionFromStripe,
+  stripeSubscriptionIdForInvoice,
   stripeCheckoutIntegrationIdentifier,
   stripeCheckoutTaxConfig,
   isMissingStripeResource,
@@ -18,6 +19,7 @@ import {
 import { sendPaymentFailedEmail } from "../lib/email-service";
 import { planById, plansForClient, FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
 import { getIncludedPhoneLineSlots } from "../lib/phone-line-entitlements";
+import { getTenantChannelEntitlements } from "../lib/channel-entitlements";
 import { getWorkspaceUsageSnapshot } from "../lib/workspace-usage-snapshot";
 import { reverseCredit } from "../lib/credit-wallet";
 import {
@@ -430,6 +432,14 @@ router.post("/stripe-webhook", async (req: Request, res: Response) => {
       }
       case "invoice.payment_succeeded": {
         const inv = event.data.object as Stripe.Invoice;
+        // Scheduled capacity is granted only after the authoritative renewal
+        // invoice is paid. Failure must release the webhook claim for retry.
+        const renewedSubscriptionId = stripeSubscriptionIdForInvoice(inv);
+        if (renewedSubscriptionId) {
+          const renewed = await stripe.subscriptions.retrieve(renewedSubscriptionId);
+          if (renewed.metadata.wireline_capacity_target_plan)
+            await syncSubscriptionFromStripe(renewed);
+        }
         try {
           const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
           if (customerId) {
@@ -766,9 +776,23 @@ router.get(
         emailVerified = null;
       }
 
+      let channelEntitlements = null;
+      try {
+        const channels = await getTenantChannelEntitlements(req.user.id);
+        channelEntitlements = {
+          plan_id: channels.planId,
+          subscription_status: channels.subscriptionStatus,
+          channels: channels.channels,
+          is_owner: channels.isOwner,
+        };
+      } catch {
+        // An unavailable authoritative read must not look like zero purchased channels.
+        channelEntitlements = null;
+      }
       res.json({
         stripe_configured: stripeAvailable(),
         agent_count: agentCount ?? 0,
+        channel_entitlements: channelEntitlements,
         phone_lines_used: phoneLineCount ?? 0,
         phone_lines_included: entitlementSlots,
         email_verified: emailVerified,

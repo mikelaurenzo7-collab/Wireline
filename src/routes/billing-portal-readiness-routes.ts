@@ -4,16 +4,10 @@ import { Router } from "express";
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import {
-  FOUNDER_CATALOG_VERSION,
-  planLookupKey,
-  STRIPE_PLANS,
-  type StripePlan,
-} from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import { isMissingStripeResource, stripe, stripeAvailable } from "../lib/stripe-helpers";
-import { stripePriceMatchesFounderPlan } from "../lib/stripe-founder-price-contract";
 import { resolveOwnedStripeCustomer } from "../lib/stripe-customer-binding";
 import {
   managedPortalConfigurationFindings,
@@ -37,84 +31,6 @@ type PortalConfigCache = {
 let portalConfigurationCache: PortalConfigCache | null = null;
 let portalConfigurationPromise: Promise<string> | null = null;
 const PORTAL_CONFIGURATION_REVERIFY_MS = 5 * 60_000;
-
-type ManagedPriceSpec = {
-  id: string;
-  interval: "month" | "year";
-  lookupKey: string;
-  plan: StripePlan;
-};
-
-function managedPriceSpecifications(): ManagedPriceSpec[] {
-  const paidPlans = STRIPE_PLANS.filter(
-    (plan) => plan.price_usd_monthly > 0 && plan.public !== false,
-  );
-  const specifications = paidPlans.flatMap((plan) => [
-    {
-      id:
-        (plan.priceIdEnv ? process.env[plan.priceIdEnv]?.trim() : "") || plan.fallbackPriceId || "",
-      interval: "month" as const,
-      lookupKey: planLookupKey(plan, "month") || "",
-      plan,
-    },
-    {
-      id:
-        (plan.annualPriceIdEnv ? process.env[plan.annualPriceIdEnv]?.trim() : "") ||
-        plan.fallbackAnnualPriceId ||
-        "",
-      interval: "year" as const,
-      lookupKey: planLookupKey(plan, "year") || "",
-      plan,
-    },
-  ]);
-  if (
-    specifications.some((specification) => !specification.id || !specification.lookupKey) ||
-    new Set(specifications.map((specification) => specification.id)).size !== specifications.length
-  ) {
-    throw new Error("The public Stripe portal price catalog is incomplete or duplicated.");
-  }
-  return specifications;
-}
-
-/** Stable fingerprint so portal upgrade/downgrade choices track live price ids. */
-async function managedPortalProducts(): Promise<PortalProduct[]> {
-  const specifications = managedPriceSpecifications();
-  const byProduct = new Map<string, string[]>();
-
-  const prices = await Promise.all(
-    specifications.map(async (specification) => ({
-      specification,
-      price: await stripe.prices.retrieve(specification.id, { expand: ["product"] }),
-    })),
-  );
-  for (const { specification, price } of prices) {
-    const product =
-      typeof price.product === "string" || "deleted" in price.product ? null : price.product;
-    const productId = product?.id;
-    if (
-      !stripePriceMatchesFounderPlan(price, specification.plan, specification.interval) ||
-      !productId ||
-      product.active !== true
-    ) {
-      throw new Error(
-        `Stripe portal price ${specification.id} failed the launch catalog contract.`,
-      );
-    }
-    const productPrices = byProduct.get(productId) || [];
-    productPrices.push(price.id);
-    byProduct.set(productId, productPrices);
-  }
-
-  const expectedProducts = specifications.length / 2;
-  if (
-    byProduct.size !== expectedProducts ||
-    [...byProduct.values()].some((productPrices) => productPrices.length !== 2)
-  ) {
-    throw new Error("The public Stripe portal catalog must resolve to one product per paid plan.");
-  }
-
-  return [...byProduct.entries()].map(([product, prices]) => ({ product, prices }));
-}
 
 async function createManagedPortalConfiguration(
   baseUrl: string,
@@ -162,7 +78,7 @@ async function createManagedPortalConfiguration(
 }
 
 async function ensureManagedPortalConfiguration(baseUrl: string): Promise<string> {
-  const products = await managedPortalProducts();
+  const products: PortalProduct[] = [];
   const fingerprint = portalProductsFingerprint(products);
 
   if (

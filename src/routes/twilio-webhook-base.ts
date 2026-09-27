@@ -41,6 +41,7 @@ import {
   phoneSuffixForLog,
 } from "../lib/twilio-webhook-privacy";
 import { resolveTwilioInboundEnvironment } from "../lib/twilio-inbound-environment";
+import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call";
 import {
   completeTwilioVoiceFallback,
   prepareTwilioVoiceFallback,
@@ -555,20 +556,45 @@ export async function handleTwilioVoiceFallback(req: Request, res: Response) {
         callerNumber: from,
         fallbackNumber,
       });
+      if (receipt?.deadlineAtMs !== undefined) {
+        await tenantStore.run(receipt.userId, () =>
+          enforceFundedCarrierCallLimit(
+            receipt!.userId,
+            `twilio-fallback:${receipt!.parentCallSid}`,
+            { maxSeconds: receipt!.maxSeconds, deadlineAtMs: receipt!.deadlineAtMs! },
+          ),
+        );
+      }
     } catch (error) {
       log.error("Voice fallback admission unavailable", {
         tenant_suffix: opaqueIdSuffixForLog(tenantUserId),
         error: error instanceof Error ? error.message : String(error),
       });
+      if (receipt)
+        await import("../lib/voice/twilio-fallback-recovery")
+          .then(({ expediteTwilioFallbackRecovery }) =>
+            expediteTwilioFallbackRecovery(receipt!.userId, receipt!.parentCallSid),
+          )
+          .catch(() => {
+            log.error(
+              "Early fallback recovery could not be scheduled; deadline recovery remains durable",
+              { tenant_suffix: opaqueIdSuffixForLog(tenantUserId) },
+            );
+          });
       return res.status(503).send(twimlHangup());
     }
     if (!receipt) return res.status(200).send(twimlHangup());
+    const remainingSeconds =
+      receipt.deadlineAtMs === undefined
+        ? receipt.maxSeconds
+        : Math.min(receipt.maxSeconds, Math.floor((receipt.deadlineAtMs - Date.now()) / 1000));
+    if (remainingSeconds <= 0) return res.status(200).send(twimlHangup());
     const statusUrl =
       publicAssetUrl("/api/twilio-webhook/voice-fallback-status") +
       "#ct=2000&rt=5000&tt=15000&rc=2&rp=ct,rt,5xx";
     let twiml = `<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n`;
     twiml += `  <Play>${escapeTwimlValue(transferChimeUrl)}</Play>\n`;
-    twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST" timeLimit="${receipt.maxSeconds}" callerId="${escapeTwimlValue(receipt.calledNumber)}">`;
+    twiml += `  <Dial answerOnBridge="true" action="/api/twilio-webhook/voice-fallback-complete" method="POST" timeLimit="${remainingSeconds}" callerId="${escapeTwimlValue(receipt.calledNumber)}">`;
     twiml += `<Number statusCallback="${escapeTwimlValue(statusUrl)}" statusCallbackMethod="POST" statusCallbackEvent="completed">${escapeTwimlValue(receipt.fallbackNumber)}</Number></Dial>\n`;
     twiml += `</Response>`;
     return res.status(200).send(twiml);

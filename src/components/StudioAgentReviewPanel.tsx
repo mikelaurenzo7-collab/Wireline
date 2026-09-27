@@ -10,6 +10,9 @@ import { resolveVoiceLabel } from "../lib/voice-catalog";
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { readSetupDeliveryTone } from "../lib/compose-setup-personality";
 import { AGENTS_CHANGED_EVENT } from "../contexts/AgentsContext";
+import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
+import ChannelAccessNotice from "./ChannelAccessNotice";
+import { activationBillingHref, getStoredSignupIntent } from "../lib/signup-intent";
 
 type AgentConfigResponse = {
   role?: string | null;
@@ -70,6 +73,7 @@ export default function StudioAgentReviewPanel({
   className = "",
   compact = false,
 }: StudioAgentReviewPanelProps) {
+  const access = useChannelEntitlements();
   const [config, setConfig] = useState<AgentConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -170,7 +174,7 @@ export default function StudioAgentReviewPanel({
                       config?.directives,
                     ),
                 },
-                { label: "Phone voice", value: voiceName },
+                ...(access.includes("voice") ? [{ label: "Phone voice", value: voiceName }] : []),
               ].map((item) => (
                 <div key={item.label} className="py-3 first:pt-0 last:pb-0">
                   <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
@@ -183,33 +187,63 @@ export default function StudioAgentReviewPanel({
           )}
         </section>
 
-        <StatusNotice
-          tone={hasPhone ? "success" : "warning"}
-          title={hasPhone ? "Phone connected" : "No phone connected"}
-        >
-          {hasPhone
-            ? `Call ${phoneNumber} to test ${agentName} before sharing the number.`
-            : "Test in the browser, then connect a phone when you're ready."}
-        </StatusNotice>
+        {access.includes("voice") ? (
+          <StatusNotice
+            tone={hasPhone ? "success" : "warning"}
+            title={hasPhone ? "Phone connected" : "No phone connected"}
+          >
+            {hasPhone
+              ? `Call ${phoneNumber} to test ${agentName} before sharing the number.`
+              : "Test in the browser, then connect a phone when you're ready."}
+          </StatusNotice>
+        ) : access.status !== "ready" ? (
+          <ChannelAccessNotice access={access} channel="voice" />
+        ) : !access.data?.channels.length ? (
+          <StatusNotice
+            tone="info"
+            title="Choose live channels"
+            action={
+              <Button asChild size="sm" variant="secondary">
+                <Link to={activationBillingHref(getStoredSignupIntent())}>Choose channels</Link>
+              </Button>
+            }
+          >
+            Keep testing privately, then connect your selected channels.
+          </StatusNotice>
+        ) : null}
 
         <section className={sectionClass} aria-label="Next actions">
           <div className="flex flex-col gap-2.5">
-            <Button
-              asChild
-              size={compact ? "sm" : undefined}
-              className="w-full justify-center sm:w-auto sm:self-start"
-            >
-              <Link
-                to={`/phone?tab=${hasPhone ? "logs" : "setup"}&agent=${encodeURIComponent(agentId)}`}
+            {access.includes("voice") ? (
+              <Button
+                asChild
+                size={compact ? "sm" : undefined}
+                className="w-full justify-center sm:w-auto sm:self-start"
               >
-                {hasPhone ? (
-                  <CheckCircle2 className="size-4" aria-hidden="true" />
-                ) : (
-                  <PhoneCall className="size-4" aria-hidden="true" />
-                )}
-                {hasPhone ? "Review outcomes" : "Connect phone"}
-              </Link>
-            </Button>
+                <Link
+                  to={`/phone?tab=${hasPhone ? "logs" : "setup"}&agent=${encodeURIComponent(agentId)}`}
+                >
+                  {hasPhone ? (
+                    <CheckCircle2 className="size-4" aria-hidden="true" />
+                  ) : (
+                    <PhoneCall className="size-4" aria-hidden="true" />
+                  )}
+                  {hasPhone ? "Review outcomes" : "Connect phone"}
+                </Link>
+              </Button>
+            ) : access.includes("email") || access.includes("sms") ? (
+              <Button
+                asChild
+                size={compact ? "sm" : undefined}
+                className="w-full justify-center sm:w-auto sm:self-start"
+              >
+                <Link
+                  to={`/inbox?tab=${access.includes("email") ? "email" : "sms"}&agent=${encodeURIComponent(agentId)}`}
+                >
+                  Open Inbox
+                </Link>
+              </Button>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -242,12 +276,14 @@ export default function StudioAgentReviewPanel({
               />
             </summary>
             <div className="grid text-sm">
-              <Link
-                to={`/phone?tab=setup&agent=${encodeURIComponent(agentId)}#company-identity`}
-                className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
-              >
-                Caller identity
-              </Link>
+              {access.includes("voice") ? (
+                <Link
+                  to={`/phone?tab=setup&agent=${encodeURIComponent(agentId)}#company-identity`}
+                  className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
+                >
+                  Caller identity
+                </Link>
+              ) : null}
               <Link
                 to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                 className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"

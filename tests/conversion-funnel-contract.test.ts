@@ -23,11 +23,7 @@ describe("a signed-in customer can reach Stripe", () => {
 
   it("keeps every public pricing CTA pointed at signup", () => {
     const pricing = read("src/pages/Pricing.tsx");
-    const planIds = Array.from(
-      pricing.matchAll(/ctaPath:\s*signupHrefForPlan\("([^"]+)"\)/g),
-      (match) => match[1],
-    );
-    expect(planIds).toEqual(["starter", "team", "business"]);
+    expect(pricing).toContain("signupHrefForPlan(plan.id as SignupPlanId");
     expect(pricing).toContain('to={signupHrefForPlan("personal")}');
   });
 });

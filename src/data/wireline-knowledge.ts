@@ -5,6 +5,8 @@
  *   3. Referenced by public-facing demo and marketing surfaces.
  */
 
+import { STRIPE_PLANS, FLAT_OVERAGE_PER_MIN_USD } from "../lib/plan-catalog";
+
 export const WIRELINE_URL = "https://botbound.app";
 export const WIRELINE_SUPPORT_EMAIL = "support@botbound.app";
 
@@ -21,43 +23,36 @@ export const WIRELINE_PLANS = [
     bestFor: "Trying BotBound before going live.",
     includes: [
       "One private draft Bot",
-      "Full setup, training, and knowledge tools unlocked",
+      "Setup and bounded private testing",
       "Private simulation only: no live calls, texts, or number until you activate a paid plan",
     ],
   },
-  {
-    name: "BotBound Starter",
-    price: "$19/mo",
-    bestFor: "Solo or founder use going live for the first time.",
+  ...STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => ({
+    name: plan.name,
+    price: `$${plan.price_usd_monthly}/mo or $${plan.price_usd_annual}/year${plan.checkoutAvailability === "sms_readiness_required" ? " (SMS activation unavailable)" : ""}`,
+    bestFor: `One Bot with ${plan.channels.map((channel) => (channel === "voice" ? "Calls" : channel === "email" ? "Email" : "SMS")).join(" + ")} at ${plan.capacityTier} monthly capacity.`,
     includes: [
-      "1 live Bot and 1 production number, provisioned when needed",
-      "50 guaranteed live-voice minutes each month",
-      "$1 monthly Runtime Allowance + $1.50 managed AI allowance",
-      "Lead Hunt access and connected email workflows",
+      "1 Bot; only selected channels are included",
+      ...(plan.channels.includes("voice")
+        ? [
+            `${plan.voice_minutes_monthly} call minutes/month; extra minutes $${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`,
+          ]
+        : []),
+      ...(plan.included_phone_numbers
+        ? [`${plan.included_phone_numbers} local number included, selected by the customer`]
+        : []),
+      ...(plan.included_mailboxes
+        ? [`${plan.included_mailboxes} managed Bot mailbox included`]
+        : []),
+      `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance/month`,
+      ...(plan.runtime_allowance_usd_monthly
+        ? [`$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance/month`]
+        : []),
+      ...(plan.checkoutAvailability === "sms_readiness_required"
+        ? ["SMS activation is unavailable until carrier and cost checks pass"]
+        : ["Activation depends on live checkout availability"]),
     ],
-  },
-  {
-    name: "BotBound Starter Plus",
-    price: "$39/mo",
-    bestFor: "Founders who want two distinct Bots live in the same workspace.",
-    includes: [
-      "2 live Bots and 2 production numbers, provisioned when needed",
-      "100 guaranteed live-voice minutes each month",
-      "$3 monthly Runtime Allowance + $3 managed AI allowance",
-      "Full Lead Hunt, enrichment, research, email, and SMS workflows",
-    ],
-  },
-  {
-    name: "BotBound Pro",
-    price: "$79/mo",
-    bestFor: "Revenue, support, front desk, and multi-role operations.",
-    includes: [
-      "Up to 5 live Bots and 5 production numbers, provisioned when needed",
-      "190 guaranteed live-voice minutes each month",
-      "$6 monthly Runtime Allowance + $6 managed AI allowance",
-      "CRM sync, routing, approvals, and campaign workflows",
-    ],
-  },
+  })),
   {
     name: "BotBound Enterprise",
     price: "Custom committed usage",
@@ -77,7 +72,7 @@ export const WIRELINE_PLANS = [
       "Web checkout only",
       "One-time top-ups",
       "Ledger-backed funding for calls, texts, and follow-up beyond included capacity",
-      "Active calls always finish normally. Depleted coverage only blocks the next action",
+      "Calls can use up to 10 minutes of completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up",
     ],
   },
 ] as const;
@@ -101,7 +96,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Two-Way Texting",
     blurb:
-      "Bots text customers and reply in-thread when customers text back, with STOP and UNSUBSCRIBE handling in place.",
+      "SMS activation is not available yet. When enabled after carrier and consent checks, Bots can handle two-way texting with STOP and UNSUBSCRIBE handling.",
   },
   {
     title: "Recaps and Oversight",

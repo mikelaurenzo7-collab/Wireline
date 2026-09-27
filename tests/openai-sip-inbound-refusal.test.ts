@@ -7,7 +7,12 @@ const h = vi.hoisted(() => ({
   reserve: vi.fn(),
   claim: vi.fn(),
   acquire: vi.fn(),
+  release: vi.fn(),
   provider: vi.fn(),
+  carrierLimit: vi.fn(),
+}));
+vi.mock("../src/lib/voice/funded-carrier-call", () => ({
+  enforceFundedCarrierCallLimit: h.carrierLimit,
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
@@ -33,7 +38,7 @@ vi.mock("../src/lib/account-environment-policy", () => ({
 }));
 vi.mock("../src/lib/account-operation-lease", () => ({
   acquireAccountOperationLease: h.acquire,
-  releaseAccountOperationLease: vi.fn(),
+  releaseAccountOperationLease: h.release,
 }));
 vi.mock("../src/lib/background-work", () => ({ runInBackground: vi.fn() }));
 vi.mock("../src/lib/realtime-spend-reservation", () => ({
@@ -130,10 +135,51 @@ beforeEach(() => {
   h.apply.mockImplementation((runtime: unknown) => runtime);
   h.acquire.mockResolvedValue(null);
   h.provider.mockResolvedValue({ ok: true, status: 200 });
+  h.carrierLimit.mockReset().mockResolvedValue(undefined);
 });
 afterEach(() => vi.unstubAllEnvs());
 
 describe("terminal inbound coverage refusal before paid AI", () => {
+  it("sets the parent carrier duration from the claimed funding before reserving AI or accepting", async () => {
+    const funding = { maxSeconds: 2400, deadlineAtMs: Date.now() + 2400000 };
+    h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
+    h.claim.mockResolvedValue({ callLogId: 1n, ownerToken: "owner", resumed: false, funding });
+    h.reserve.mockResolvedValue({ id: "reserve" });
+    await deliver();
+    expect(h.carrierLimit).toHaveBeenCalledWith("tenant", "openai:call-test", funding);
+    expect(h.carrierLimit.mock.invocationCallOrder[0]).toBeLessThan(
+      h.reserve.mock.invocationCallOrder[0],
+    );
+    expect(h.reserve.mock.invocationCallOrder[0]).toBeLessThan(
+      h.provider.mock.invocationCallOrder[0],
+    );
+  });
+  it.each(["VOICE_FUNDING_IN_USE", "VOICE_FUNDING_REQUIRED", "VOICE_PLAN_REQUIRED"])(
+    "rejects known %s before AI spend and acceptance",
+    async (code) => {
+      h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
+      h.claim.mockRejectedValue(new AppError(402, code, "Call funding unavailable."));
+      await expect(deliver()).resolves.toEqual({
+        status: 202,
+        body: { received: true, handled: false, reason: "call_coverage" },
+      });
+      expect(h.reserve).not.toHaveBeenCalled();
+      expect(h.carrierLimit).not.toHaveBeenCalled();
+    },
+  );
+  it("refuses a fresh call when atomic capacity fills after the early admission read", async () => {
+    h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
+    h.claim.mockRejectedValue(new AppError(429, "VOICE_CONCURRENCY_EXCEEDED", "Line is full."));
+    await expect(deliver()).resolves.toEqual({
+      status: 202,
+      body: { received: true, handled: false, reason: "concurrency" },
+    });
+    expect(h.release).toHaveBeenCalledWith({ id: "lease", userId: "tenant" });
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.provider.mock.calls[0][0]).toMatch(/\/call-test\/reject$/);
+    expect(h.reserve).not.toHaveBeenCalled();
+  });
+
   it.each(["subscription", "coverage", "completion_grace", "daily_minutes", "concurrency"])(
     "rejects known %s once with no runtime, claim or AI reserve",
     async (reason) => {

@@ -12,6 +12,8 @@ import WorkspaceControlBand from "../components/layout/WorkspaceControlBand";
 import { WorkspaceOperateIntro, WorkspacePageFrame } from "../components/layout/WorkspacePageFrame";
 import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import { useAgents } from "../contexts/AgentsContext";
+import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
+import ChannelAccessNotice from "../components/ChannelAccessNotice";
 import {
   OUTBOUND_VIEW_TABS,
   resolveAppPageSecondaryTabId,
@@ -32,6 +34,7 @@ const PHONE_TABS = [
 ] as const;
 
 export default function PhonePage() {
+  const access = useChannelEntitlements();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     agents,
@@ -193,9 +196,13 @@ export default function PhonePage() {
           )}
           {primaryTab === "outbound" && (
             <div className="contents" data-visual-qa-state="primary-outbound">
-              <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
-                <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
-              </div>
+              {!access.includes("voice") ? (
+                <ChannelAccessNotice access={access} channel="voice" />
+              ) : (
+                <div className="contents" data-visual-qa-state={`secondary-${outboundView}`}>
+                  <OutboundHub activeView={outboundView} onViewChange={setOutboundView} />
+                </div>
+              )}
             </div>
           )}
           {primaryTab === "appointments" && (
@@ -208,7 +215,14 @@ export default function PhonePage() {
               className="mx-auto w-full max-w-[1180px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
               data-visual-qa-state="primary-setup"
             >
-              <PhoneSetupPanel initialAgentId={activeAgentId} />
+              {access.includes("voice") || access.includes("sms") ? (
+                <PhoneSetupPanel
+                  initialAgentId={activeAgentId}
+                  voiceEnabled={access.includes("voice")}
+                />
+              ) : (
+                <ChannelAccessNotice access={access} channel="voice" />
+              )}
             </div>
           )}
         </div>

@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   launchGate: vi.fn(),
   email: vi.fn(),
   preferences: vi.fn(),
+  endedReason: "pre-session-rejected",
 }));
 vi.mock("drizzle-orm", () => ({
   and: (...parts: unknown[]) => parts,
@@ -58,7 +59,7 @@ vi.mock("../src/lib/server-context", () => {
             agentId: "bot",
             direction: "inbound",
             durationSeconds: 0,
-            endedReason: "pre-session-rejected",
+            endedReason: h.endedReason,
             pipelineError: "spend_commit_failed",
             vapiCallId: "openai:rtc_test",
             summary: "Rejected before session startup.",
@@ -127,6 +128,7 @@ const job = {
 } as any;
 
 beforeEach(() => {
+  h.endedReason = "pre-session-rejected";
   h.progress = {};
   h.checkpoints = [];
   h.replay.mockReset().mockResolvedValue(undefined);
@@ -139,6 +141,25 @@ beforeEach(() => {
 });
 
 describe("pre-session provider cleanup jobs", () => {
+  it("does not generate a digest for a durably confirmed failed controller open", async () => {
+    h.endedReason = "runtime-error";
+    await expect(
+      handlePostCallDigestJob({
+        ...job,
+        payload: {
+          ...job.payload,
+          finalization: { ...job.payload.finalization, noConversationDelivered: true },
+        },
+      }),
+    ).resolves.toBeUndefined();
+    expect(h.replay).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finalization: expect.objectContaining({ noConversationDelivered: true }),
+      }),
+    );
+    expect(h.environment).not.toHaveBeenCalled();
+    expect(h.email).not.toHaveBeenCalled();
+  });
   it("retries failed hangup and checkpoints only confirmed cleanup without customer notifications", async () => {
     h.replay.mockRejectedValueOnce(new Error("OpenAI hangup returned HTTP 503"));
     await expect(handlePostCallDigestJob(job)).rejects.toThrow("503");

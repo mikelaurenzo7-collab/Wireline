@@ -4,11 +4,10 @@ import { describe, expect, it } from "vitest";
 import {
   HARD_CONTRIBUTION_MARGIN_FLOOR,
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
-  PHONE_NUMBER_COST_MONTHLY_USD,
   STRIPE_PLANS,
   estimatedContributionMarginAtExpectedUsage,
   estimatedContributionMarginAtFullIncludedUsage,
-  estimatedStripeCommercialFeesUsd,
+  estimatedPlanMonthlyCosts,
   planById,
 } from "../src/lib/plan-catalog";
 import {
@@ -18,6 +17,7 @@ import {
 } from "../src/lib/tenant-economics";
 import { BUSINESS_TOOL_NAMES } from "../src/lib/agent-capabilities";
 import { resolveCreateEnabledTools } from "../src/lib/agent-create-defaults";
+import { VOICE_COMPLETION_GRACE_MINUTES } from "../src/lib/voice-funding-policy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -36,7 +36,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
   it("keeps every plan above both floors on both intervals", () => {
     // docs/PRICING_DECISION_2026-07-25.md: planning floor at expected
     // utilization, hard floor at 100% utilization; annual is always binding.
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
       for (const interval of ["month", "year"] as const) {
         expect(
           estimatedContributionMarginAtExpectedUsage(plan, interval),
@@ -56,20 +56,15 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     // of every paid plan; the alarm threshold may not sit above the tightest
     // binding COGS/min, or the launch-certified 30% floor is already broken
     // by the time operations hears about drift.
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
       for (const interval of ["month", "year"] as const) {
-        const revenue = interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
-        const commercialFees =
-          interval === "year"
-            ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
-            : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
+        const costs = estimatedPlanMonthlyCosts(plan, interval);
+        const revenue = costs.revenueUsd;
         const bindingCogsPerMin =
           (revenue * (1 - HARD_CONTRIBUTION_MARGIN_FLOOR) -
-            plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD -
-            plan.runtime_allowance_usd_monthly -
-            plan.ai_spend_allowance_usd_monthly -
-            commercialFees) /
-          plan.voice_minutes_monthly;
+            (costs.totalCostUsd - costs.voiceUsd - costs.completionGraceUsd)) /
+          (plan.voice_minutes_monthly +
+            (plan.channels.includes("voice") ? VOICE_COMPLETION_GRACE_MINUTES : 0));
         expect(
           COGS_DRIFT_THRESHOLD_PER_MIN_USD,
           `${plan.id} ${interval} floor binds at ${bindingCogsPerMin.toFixed(4)}/min`,
@@ -88,21 +83,15 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     // annual interval.
     const DRIFT_STRESS_RATE_PER_MIN_USD = 0.14;
     expect(DRIFT_STRESS_RATE_PER_MIN_USD).toBeGreaterThan(COGS_DRIFT_THRESHOLD_PER_MIN_USD);
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
       const revenue = plan.price_usd_annual / 12;
-      const commercialFees = estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12;
-      const fullCost =
-        plan.voice_minutes_monthly * DRIFT_STRESS_RATE_PER_MIN_USD +
-        plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
-        plan.runtime_allowance_usd_monthly +
-        plan.ai_spend_allowance_usd_monthly +
-        commercialFees;
-      const expectedCost =
-        plan.voice_minutes_monthly * 0.7 * DRIFT_STRESS_RATE_PER_MIN_USD +
-        plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
-        plan.runtime_allowance_usd_monthly * 0.7 +
-        plan.ai_spend_allowance_usd_monthly * 0.7 +
-        commercialFees;
+      const fullCost = estimatedPlanMonthlyCosts(plan, "year", {
+        voiceCostPerMinuteUsd: DRIFT_STRESS_RATE_PER_MIN_USD,
+      }).totalCostUsd;
+      const expectedCost = estimatedPlanMonthlyCosts(plan, "year", {
+        utilization: 0.7,
+        voiceCostPerMinuteUsd: DRIFT_STRESS_RATE_PER_MIN_USD,
+      }).totalCostUsd;
       expect(
         (revenue - expectedCost) / revenue,
         `${plan.id} expected at drift`,
@@ -116,7 +105,7 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
   it("guards the annual interval, not just the monthly one", () => {
     // Annual bills at a discount against unchanged monthly COGS, so it is always
     // the tighter side. A monthly-only floor check let annual sink silently.
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "channels")) {
       const monthly = computePlanFullUtilizationMarginPct(plan, "month")!;
       const annual = computePlanFullUtilizationMarginPct(plan, "year")!;
       expect(annual, `${plan.id}`).toBeLessThanOrEqual(monthly);
@@ -127,20 +116,12 @@ describe("catalog v6 capacity stays inside the two-floor margin guardrail", () =
     expect(assertPlanMarginFloors().ok).toBe(true);
   });
 
-  it("keeps the Stripe founder manifest metadata in step with the catalog", () => {
-    const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
-    for (const [planId, minutes] of [
-      ["starter", 50],
-      ["team", 100],
-      ["business", 190],
-      ["enterprise", 350],
-    ] as const) {
-      expect(manifest).toMatch(
-        new RegExp(
-          `wireline_plan_id: "${planId}",[\\s\\S]{0,100}included_voice_minutes: "${minutes}"`,
-        ),
-      );
+  it("preserves historical allowances without presenting them as new-sale offers", () => {
+    for (const id of ["starter", "team", "business", "enterprise"]) {
+      expect(planById(id)?.checkoutAvailability).toBe("legacy_only");
+      expect(planById(id)?.public).toBe(false);
     }
+    expect(assertPlanMarginFloors().legacyExposure).not.toEqual([]);
   });
 });
 

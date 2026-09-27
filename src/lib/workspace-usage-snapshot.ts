@@ -5,10 +5,11 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
 import { getBudgetSnapshot, clearBudgetCache } from "./spend-guards";
-import { planById } from "./plan-catalog";
+import { planById, planIncludesChannel } from "./plan-catalog";
+import { VOICE_COMPLETION_GRACE_MINUTES, type VoiceCallPolicy } from "./voice-funding-policy";
 import { getVoiceUsageSnapshot } from "./voice-usage";
 import { getCreditBalanceUsd } from "./credit-wallet";
-import { defaultAiSpendBudgetUsdForTier, subscriptionPlanToTier } from "./plan-entitlements";
+import { defaultAiSpendBudgetUsdForPlan } from "./plan-entitlements";
 import { quotaTracker } from "./server-context";
 
 const INTERNAL_AI_TOKEN_DIMENSION = "claude_tokens_daily" as const;
@@ -30,7 +31,8 @@ export interface WorkspaceUsageSnapshot {
   credit_balance_usd: number;
   completion_grace_due_usd: number;
   live_voice_blocked: boolean;
-  current_call_policy: "finish_current_block_next";
+  current_call_policy: VoiceCallPolicy;
+  completion_grace_minutes: number | null;
   extra_usage_funding: "conversation_balance";
   ai_spend_usd: number;
   ai_spend_limit_usd: number;
@@ -60,14 +62,13 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     getCreditBalanceUsd(userId),
   ]);
   const plan = planById(voice.plan_id);
-  const tier = subscriptionPlanToTier(voice.plan_id);
 
   let aiLimit = snap.budget?.enabled ? snap.budget.monthly_limit_usd : 0;
   const aiSpend = snap.mtdCost;
   let aiHardCap = !!snap.budget?.hard_cap;
 
   if (!(aiLimit > 0)) {
-    aiLimit = defaultAiSpendBudgetUsdForTier(tier);
+    aiLimit = defaultAiSpendBudgetUsdForPlan(voice.plan_id);
     aiHardCap = true;
   }
 
@@ -80,10 +81,13 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
   const tokenPct = pct(tokenUsed, tokenLimit);
   const creditBalanceRounded = Number(creditBalanceUsd.toFixed(2));
   const completionGraceDueUsd = Math.max(0, Number((-creditBalanceRounded).toFixed(2)));
-  const freeBuilder = !plan || plan.id === "personal";
+  const hasVoice = planIncludesChannel(voice.plan_id, "voice");
   const insufficientForNextAttempt =
     voice.voice_minutes_remaining < 1 && creditBalanceRounded < voice.overage_per_min_usd;
-  const liveVoiceBlocked = freeBuilder || completionGraceDueUsd > 0 || insufficientForNextAttempt;
+  const activeSubscription =
+    voice.subscription_status === "active" || voice.subscription_status === "trialing";
+  const liveVoiceBlocked =
+    !activeSubscription || !hasVoice || completionGraceDueUsd > 0 || insufficientForNextAttempt;
 
   return {
     plan_id: voice.plan_id,
@@ -101,7 +105,13 @@ export async function getWorkspaceUsageSnapshot(userId: string): Promise<Workspa
     credit_balance_usd: creditBalanceRounded,
     completion_grace_due_usd: completionGraceDueUsd,
     live_voice_blocked: liveVoiceBlocked,
-    current_call_policy: "finish_current_block_next",
+    current_call_policy:
+      plan?.catalogFamily === "channels" ? "bounded_completion_grace" : "finish_current_block_next",
+    completion_grace_minutes: !hasVoice
+      ? 0
+      : plan?.catalogFamily === "channels"
+        ? VOICE_COMPLETION_GRACE_MINUTES
+        : null,
     extra_usage_funding: "conversation_balance",
     ai_spend_usd: Number(aiSpend.toFixed(4)),
     ai_spend_limit_usd: aiLimit,
@@ -137,8 +147,7 @@ export async function ensureDefaultAiSpendBudget(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- drizzle tx and the base client share the query surface but not a common exported type
   executor: any = drizzle,
 ): Promise<void> {
-  const tier = subscriptionPlanToTier(planId);
-  const limit = defaultAiSpendBudgetUsdForTier(tier);
+  const limit = defaultAiSpendBudgetUsdForPlan(planId);
   const [existing] = await executor
     .select({
       monthlyLimitUsd: schema.spendBudgets.monthlyLimitUsd,

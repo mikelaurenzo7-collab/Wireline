@@ -24,13 +24,25 @@ async function mockWorkspace(page: Page) {
                   stripe_configured: true,
                   plans: STRIPE_PLANS.map((plan) => ({
                     ...plan,
+                    catalog_family: plan.catalogFamily,
+                    checkout_availability: plan.checkoutAvailability,
                     is_free: plan.id === "personal",
                     configured: true,
                     annual_configured: true,
                   })),
                 }
               : path === "/api/billing/status"
-                ? { stripe_configured: true, subscription: null, agent_count: 1 }
+                ? {
+                    stripe_configured: true,
+                    subscription: null,
+                    agent_count: 1,
+                    channel_entitlements: {
+                      plan_id: "omnichannel",
+                      subscription_status: "active",
+                      channels: ["voice", "email", "sms"],
+                      is_owner: false,
+                    },
+                  }
                 : {
                     accounts: [],
                     data: [],
@@ -84,8 +96,8 @@ for (const viewport of [
     await expect(
       dialog.getByText("Checkout is temporarily unavailable. Your Bot is saved.", { exact: true }),
     ).toBeVisible();
-    const plans = dialog.getByRole("button", { name: /^Choose / });
-    await expect(plans).toHaveCount(0);
+    const plans = dialog.getByRole("button", { name: "Checkout paused", exact: true });
+    await expect(plans).toBeHidden();
     await page.evaluate(() => document.fonts.ready);
     await expect(dialog).toHaveCSS("opacity", "1");
     await expect(dialog.locator(":scope > div")).toHaveCSS("opacity", "1");
@@ -96,51 +108,24 @@ for (const viewport of [
       contentType: "image/png",
     });
     await dialog.getByText("View plans", { exact: true }).click();
-    await expect(plans).toHaveCount(3);
-    for (const card of await plans.all()) {
-      await expect(card).toBeDisabled();
-      const geometry = await card.evaluate((element) => {
-        const content = [...element.children].filter(
-          (child) => getComputedStyle(child).position !== "absolute",
-        );
-        return {
-          fits: element.scrollWidth <= element.clientWidth + 1,
-          ancestors: [
-            element,
-            element.parentElement!,
-            element.parentElement!.parentElement!,
-            element.parentElement!.parentElement!.parentElement!,
-          ].map((node) => ({
-            width: node.clientWidth,
-            scroll: node.scrollWidth,
-            padding: getComputedStyle(node).padding,
-            class: node.className,
-          })),
-          overflow: [...element.querySelectorAll("*")]
-            .filter((child) => child.scrollWidth > child.clientWidth + 1)
-            .map((child) => ({
-              text: child.textContent,
-              width: child.clientWidth,
-              scroll: child.scrollWidth,
-            })),
-          widths: content.map((child) => child.getBoundingClientRect().width),
-          rows: content.map((child) => ({
-            top: child.getBoundingClientRect().top,
-            bottom: child.getBoundingClientRect().bottom,
-          })),
-        };
-      });
-      expect(geometry.fits, JSON.stringify(geometry)).toBe(true);
-      // Every title, price, description and action has real reading width,
-      // rather than collapsing side by side into individual-letter columns.
-      for (const index of [0, 2, 3]) expect(geometry.widths[index]).toBeGreaterThan(80);
-      expect(geometry.widths[1]).toBeGreaterThan(40);
-      for (let index = 1; index < geometry.rows.length; index += 1) {
-        expect(geometry.rows[index].top).toBeGreaterThanOrEqual(
-          geometry.rows[index - 1].bottom - 1,
-        );
-      }
-    }
+    await expect(plans).toHaveCount(1);
+    await expect(dialog.getByRole("checkbox")).toHaveCount(3);
+    await expect(plans).toBeDisabled();
+    const packageCard = dialog.getByRole("article", { name: "Selected package" });
+    const geometry = await packageCard.evaluate((element) => ({
+      width: element.clientWidth,
+      scroll: element.scrollWidth,
+      overflow: [...element.querySelectorAll("*")]
+        .filter((child) => child.clientWidth > 0 && child.scrollWidth > child.clientWidth + 1)
+        .map((child) => ({
+          text: child.textContent,
+          width: child.clientWidth,
+          scroll: child.scrollWidth,
+        })),
+    }));
+    expect(geometry.width).toBeGreaterThan(150);
+    expect(geometry.scroll, JSON.stringify(geometry)).toBeLessThanOrEqual(geometry.width + 1);
+    expect(geometry.overflow).toEqual([]);
     await testInfo.attach(`activation-plans-${viewport.width}`, {
       path: await page
         .screenshot({ path: testInfo.outputPath(`activation-plans-${viewport.width}.png`) })

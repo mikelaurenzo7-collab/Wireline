@@ -10,6 +10,8 @@ import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-ca
 import { drizzle, log } from "../server-context";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
+import { requireTenantChannel } from "../channel-entitlements";
+import { planById } from "../plan-catalog";
 import { nativeOutboundAmdParams } from "./native-outbound-amd";
 import {
   claimNativeOutboundPlacement,
@@ -32,6 +34,7 @@ export type PlaceCallResult = {
   ok: boolean;
   status: number;
   error?: string;
+  code?: string;
   callId?: string;
   leadId?: string;
   providerOutcomeAmbiguous?: boolean;
@@ -91,6 +94,17 @@ async function placeOutboundCallAfterDeletionFence(
   const customerNumber = normalizeOpenAIPhoneNumber(input.customerNumber);
   if (!customerNumber) {
     return { ok: false, status: 400, error: "Invalid phone number. Use E.164 format." };
+  }
+  const entitlement = await requireTenantChannel(input.userId, "voice");
+  if (planById(entitlement.planId)?.catalogFamily === "channels") {
+    // Ringing, no-answer and AMD can incur cost before a SIP session exists.
+    // Keep these packages closed until that placement has atomic funding too.
+    return {
+      ok: false,
+      status: 503,
+      code: "OUTBOUND_FUNDING_NOT_READY",
+      error: "Outbound calling is not available for this package yet.",
+    };
   }
   if (!openAIOutboundTokenReady() || !openAISipConfigured()) {
     return { ok: false, status: 503, error: "BotBound calling is temporarily unavailable." };

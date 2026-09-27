@@ -13,6 +13,7 @@ import {
   FOUNDER_CATALOG_VERSION,
   FOUNDER_PRICES,
   FOUNDER_PRODUCTS,
+  isHistoricalCatalogObject,
   PRODUCT_BY_KEY,
 } from "./lib/stripe-founder-catalog.mjs";
 
@@ -161,6 +162,12 @@ async function main() {
 
   for (const price of activePrices) {
     if (canonicalPriceIds.has(price.id)) continue;
+    if (isHistoricalCatalogObject(price)) {
+      addFinding(findings, "warning", "Historical price retained for read-only compatibility.", {
+        price_id: price.id,
+      });
+      continue;
+    }
     const product = productById.get(productIdOf(price));
     const retainedRetiredDefault =
       product &&
@@ -207,7 +214,7 @@ async function main() {
   for (const subscription of subscriptions) {
     for (const item of subscription.items?.data || []) {
       const priceId = priceIdOf(item);
-      if (priceId && !canonicalPriceIds.has(priceId)) {
+      if (priceId && !canonicalPriceIds.has(priceId) && !isHistoricalCatalogObject(item.price)) {
         addFinding(findings, "error", "Live subscription uses a noncanonical price.", {
           subscription_id: subscription.id,
           price_id: priceId,
@@ -219,7 +226,7 @@ async function main() {
   for (const { link, lineItems } of paymentLinks) {
     for (const item of lineItems) {
       const priceId = priceIdOf(item);
-      if (priceId && !canonicalPriceIds.has(priceId)) {
+      if (priceId && !canonicalPriceIds.has(priceId) && !isHistoricalCatalogObject(item.price)) {
         addFinding(findings, "error", "Active payment link uses a noncanonical price.", {
           payment_link_id: link.id,
           price_id: priceId,
@@ -231,7 +238,7 @@ async function main() {
   for (const { session, lineItems } of checkoutSessions) {
     for (const item of lineItems) {
       const priceId = priceIdOf(item);
-      if (priceId && !canonicalPriceIds.has(priceId)) {
+      if (priceId && !canonicalPriceIds.has(priceId) && !isHistoricalCatalogObject(item.price)) {
         addFinding(findings, "warning", "Open checkout uses a noncanonical price.", {
           checkout_session_id: session.id,
           price_id: priceId,

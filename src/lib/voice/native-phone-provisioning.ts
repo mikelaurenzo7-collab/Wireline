@@ -3,6 +3,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { AppError } from "../api-error";
+import { requireTenantPhoneChannel } from "../channel-entitlements";
 import { ensureTenantTelecomDefaults, findAgentPhoneLine } from "../agent-phone-lines";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { getIncludedPhoneLineSlots } from "../phone-line-entitlements";
@@ -169,8 +170,12 @@ async function provisionNativeTenantNumberUnfenced(input: {
     return { ok: false, code: "TWILIO_NOT_CONFIGURED", error: NATIVE_PROVISIONING_UNAVAILABLE };
   }
   try {
-    assertNativeActivationConfigured();
+    const entitlement = await requireTenantPhoneChannel(input.userId);
+    if (entitlement.channels.includes("voice")) assertNativeActivationConfigured();
   } catch (error) {
+    if (error instanceof AppError && error.code === "CHANNEL_NOT_INCLUDED") {
+      return { ok: false, code: error.code, error: error.message };
+    }
     log.error("Native phone provisioning blocked because OpenAI Realtime SIP is not configured", {
       userId: input.userId,
       agentId: input.agentId ?? null,
@@ -408,6 +413,7 @@ export async function provisionNativeTenantNumber(input: {
       error: environmentPolicy.message,
     };
   }
+  await requireTenantPhoneChannel(input.userId);
   const outcome = await runTenantProviderWorkWithDeletionFence({
     userId: input.userId,
     operation: "native_phone_provision",

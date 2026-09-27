@@ -9,17 +9,23 @@ const h = vi.hoisted(() => ({
   sent: [] as Array<Record<string, any>>,
   writes: [] as Array<Record<string, any>>,
   account: vi.fn(),
+  providerUsage: vi.fn(),
+  flushProviderUsage: vi.fn(),
   usage: vi.fn(),
   digest: vi.fn(),
   tool: vi.fn(),
   provider: vi.fn(),
   environment: vi.fn(),
+  funding: vi.fn(),
+  refundFunding: vi.fn(),
+  carrierDuration: vi.fn(),
   presenceStatus: "connected" as string | undefined,
   presenceUser: "tenant",
   presenceScopes: [] as unknown[],
   transactionTail: Promise.resolve() as Promise<unknown>,
   respondToPing: true,
   pingFails: false,
+  openFails: false,
   callUser: "tenant",
   callOwner: "owner",
   callPhase: "terminal",
@@ -35,6 +41,10 @@ vi.mock("ws", async () => {
       super();
       h.sockets.push(this);
       queueMicrotask(() => {
+        if (h.openFails) {
+          this.emit("error", new Error("connection refused"));
+          return;
+        }
         this.readyState = 1;
         this.emit("open");
       });
@@ -200,11 +210,24 @@ vi.mock("../src/lib/tcpa-consent", () => ({
 }));
 vi.mock("../src/lib/call-dnc-suppression", () => ({ persistTranscriptDncSuppression: vi.fn() }));
 vi.mock("../src/lib/voice-usage", () => ({ trackVoiceMinutes: h.usage }));
+vi.mock("../src/lib/voice-call-funding", () => ({
+  reserveVoiceCallFunding: async () => null,
+  getVoiceCallFunding: h.funding,
+  releaseVoiceCallFunding: h.refundFunding,
+  releaseVoiceCallFundingInTransaction: h.refundFunding,
+}));
+vi.mock("../src/lib/voice/funded-carrier-call", () => ({
+  enforceFundedCarrierCallLimit: vi.fn(),
+  readTerminalCarrierDuration: h.carrierDuration,
+}));
 vi.mock("../src/middleware/audit-middleware", () => ({
   extendCommittedPlatformCostReservation: h.account,
 }));
 vi.mock("../src/lib/realtime-spend-reservation", () => ({
   reconcileOpenAISipDurationSpend: vi.fn(),
+}));
+vi.mock("../src/lib/realtime-provider-usage", () => ({
+  createRealtimeUsageRecorder: () => ({ observe: h.providerUsage, flush: h.flushProviderUsage }),
 }));
 vi.mock("../src/lib/voice/openai-phone-agent-runtime", () => ({
   buildOpenAIRealtimeAgentRuntime: vi.fn(),
@@ -281,21 +304,46 @@ beforeEach(() => {
   h.sent = [];
   h.writes = [];
   h.account.mockReset().mockResolvedValue(undefined);
+  h.providerUsage.mockReset();
+  h.flushProviderUsage.mockReset().mockResolvedValue(undefined);
   h.usage.mockReset().mockResolvedValue(undefined);
   h.digest.mockReset().mockResolvedValue({ jobId: "job" });
   h.tool.mockReset().mockResolvedValue({ result: { answer: "approved" } });
   h.provider.mockReset().mockResolvedValue({ ok: true, status: 200 });
   h.environment.mockReset().mockResolvedValue(undefined);
+  h.funding.mockReset().mockResolvedValue(null);
+  h.refundFunding.mockReset().mockResolvedValue(undefined);
+  h.carrierDuration.mockReset().mockResolvedValue({ durationSeconds: 120, unanswered: false });
   h.presenceStatus = "connected";
   h.presenceUser = "tenant";
   h.presenceScopes = [];
   h.transactionTail = Promise.resolve();
   h.respondToPing = true;
   h.pingFails = false;
+  h.openFails = false;
   h.callUser = "tenant";
   h.callOwner = "owner";
   h.callPhase = "terminal";
   h.callReason = "provider-heartbeat-timeout";
+});
+
+describe("trusted SIP provider usage observation", () => {
+  it("observes billed failed response usage before failure cleanup and flushes it", async () => {
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    const event = {
+      type: "response.done",
+      response: {
+        id: "resp_failed",
+        status: "failed",
+        usage: { input_tokens: 100, output_tokens: 10 },
+      },
+    };
+    await emit(event);
+    await session;
+    expect(h.providerUsage).toHaveBeenCalledWith(event);
+    expect(h.flushProviderUsage).toHaveBeenCalledOnce();
+  });
 });
 
 describe("accepted SIP startup cleanup", () => {
@@ -304,6 +352,7 @@ describe("accepted SIP startup cleanup", () => {
     async (reason) => {
       h.callPhase = "claimed";
       await expect(settleOpenAISipPreSessionFailure({ call, claim, reason })).resolves.toBe(true);
+      expect(h.presenceStatus).toBe("connected");
       expect(h.writes.some((value) => value.status === "done")).toBe(false);
       expect(h.digest).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -324,8 +373,10 @@ describe("accepted SIP startup cleanup", () => {
       const recorded = h.digest.mock.calls.at(-1)![0];
       h.provider.mockResolvedValueOnce({ ok: false, status: 503 });
       await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow("503");
+      expect(h.presenceStatus).toBe("connected");
       expect(h.usage).not.toHaveBeenCalled();
       await expect(replayOpenAISipPostCallFinalization(recorded)).resolves.toBeUndefined();
+      expect(h.presenceStatus).toBeUndefined();
       expect(h.provider).toHaveBeenCalledTimes(2);
       expect(h.provider.mock.calls.every(([url]) => url.includes("/hangup"))).toBe(true);
       expect(h.usage).not.toHaveBeenCalled();
@@ -375,6 +426,7 @@ describe("accepted SIP startup cleanup", () => {
       settleOpenAISipPreSessionFailure({ call, claim, reason: "spend_reservation_failed" }),
     ).resolves.toBe(true);
     expect(h.writes).toContainEqual(expect.objectContaining({ status: "done" }));
+    expect(h.presenceStatus).toBeUndefined();
     expect(h.digest).not.toHaveBeenCalled();
     expect(h.provider).not.toHaveBeenCalled();
   });
@@ -386,6 +438,117 @@ afterEach(() => {
 });
 
 describe("long business-call lifecycle", () => {
+  it("refunds a confirmed failed sideband-open without charging on durable replay", async () => {
+    const funding = {
+      maxSeconds: 2400,
+      prepaidHoldUsd: 0,
+      graceMinutes: 10,
+      includedMinutes: 30,
+      rateUsd: 0.22,
+      planId: "voice",
+      periodKey: "2026-09",
+      startedAtMs: Date.now(),
+      deadlineAtMs: Date.now() + 2400000,
+    };
+    h.funding.mockResolvedValue(funding);
+    h.openFails = true;
+    const session = runOpenAISipCallSession(
+      { ...call, funding },
+      runtime as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(1);
+    await session;
+    const recorded = h.digest.mock.calls.at(-1)![0];
+    expect(recorded.finalization.noConversationDelivered).toBe(true);
+    expect(recorded.endedReason).toBe("runtime-error");
+    expect(h.usage).not.toHaveBeenCalled();
+    await replayOpenAISipPostCallFinalization(recorded);
+    expect(h.refundFunding).toHaveBeenCalledWith(
+      "tenant",
+      "openai:rtc_test",
+      "confirmed_startup_failure",
+    );
+    expect(h.usage).not.toHaveBeenCalled();
+    expect(h.presenceStatus).toBeUndefined();
+  });
+  it("enforces the original funding deadline after a controller restart, without billing admission time", async () => {
+    const funding = {
+      maxSeconds: 1800,
+      prepaidHoldUsd: 0,
+      graceMinutes: 10,
+      includedMinutes: 30,
+      rateUsd: 0.22,
+      planId: "voice",
+      periodKey: "2026-09",
+      startedAtMs: Date.now() - 1_790_000,
+      deadlineAtMs: Date.now() + 10_000,
+    };
+    const session = runOpenAISipCallSession(
+      { ...call, funding },
+      runtime as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(10_000);
+    await session;
+    expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 10 }));
+    expect(h.provider).toHaveBeenCalled();
+  });
+
+  it("uses the complete verified carrier duration for a recovered session", async () => {
+    const funding = {
+      maxSeconds: 1800,
+      prepaidHoldUsd: 1,
+      graceMinutes: 10,
+      includedMinutes: 30,
+      rateUsd: 0.22,
+      planId: "voice",
+      periodKey: "2026-09",
+      startedAtMs: Date.now() - 100_000,
+      deadlineAtMs: Date.now() + 1_700_000,
+    };
+    h.funding.mockResolvedValue(funding);
+    h.carrierDuration.mockResolvedValue({ durationSeconds: 120, unanswered: false });
+    const session = runOpenAISipCallSession(
+      { ...call, funding, recoveredSession: true },
+      runtime as any,
+      1n,
+      { ...claim, resumed: true },
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(10_000);
+    h.sockets[0].close();
+    await session;
+    expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 120 }));
+    expect(h.writes).toContainEqual({ durationSeconds: 120 });
+  });
+  it("retains its capacity slot when customer usage settlement fails", async () => {
+    h.usage.mockRejectedValue(new Error("ledger unavailable"));
+    const session = start();
+    await vi.advanceTimersByTimeAsync(10_000);
+    h.sockets[0].close();
+    await session;
+    expect(h.presenceStatus).toBe("settling");
+    const recorded = h.digest.mock.calls.at(-1)![0];
+    await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow(
+      "ledger unavailable",
+    );
+    expect(h.presenceStatus).toBe("settling");
+    h.usage.mockResolvedValue(undefined);
+    await replayOpenAISipPostCallFinalization(recorded);
+    expect(h.presenceStatus).toBeUndefined();
+    expect(h.digest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finalization: expect.objectContaining({ terminalStateReady: true }),
+      }),
+      expect.anything(),
+      expect.anything(),
+    );
+  });
   it.each(["provider5xx", "timeout"] as const)(
     "durably retains unconfirmed hangup after %s until replay succeeds",
     async (failure) => {
@@ -561,6 +724,45 @@ function heldResult<T>() {
 }
 
 describe("cross-process SIP transfers", () => {
+  it("keeps funded remote REFER capacity until the entire carrier call settles", async () => {
+    const remote = await remoteCallControl();
+    const funding = {
+      maxSeconds: 2400,
+      prepaidHoldUsd: 0,
+      graceMinutes: 10,
+      includedMinutes: 30,
+      rateUsd: 0.22,
+      planId: "voice",
+      periodKey: "2026-09",
+      startedAtMs: Date.now(),
+      deadlineAtMs: Date.now() + 2400000,
+    };
+    h.funding.mockResolvedValue(funding);
+    h.carrierDuration.mockRejectedValue(new Error("carrier still active"));
+    const session = runOpenAISipCallSession(
+      { ...call, funding },
+      runtime as any,
+      1n,
+      claim,
+      reservation,
+    );
+    await vi.advanceTimersByTimeAsync(10000);
+    h.provider.mockImplementationOnce(async () => {
+      h.sockets[0].close();
+      return { ok: true, status: 200 };
+    });
+    await remote.referOpenAISipCall(call.userId, call.callId, "+12025550103");
+    await session;
+    const recorded = h.digest.mock.calls.at(-1)![0];
+    expect(recorded.finalization.carrierDurationRequired).toBe(true);
+    expect(h.presenceStatus).toBe("settling");
+    expect(h.usage).not.toHaveBeenCalled();
+    expect(h.refundFunding).not.toHaveBeenCalled();
+    h.carrierDuration.mockResolvedValue({ durationSeconds: 150, unanswered: false });
+    await replayOpenAISipPostCallFinalization(recorded);
+    expect(h.usage).toHaveBeenCalledWith(expect.objectContaining({ durationSeconds: 150 }));
+    expect(h.presenceStatus).toBeUndefined();
+  });
   it("observes a successful remote REFER, disarms the deadline and finalizes as transferred", async () => {
     const remote = await remoteCallControl();
     const session = start();

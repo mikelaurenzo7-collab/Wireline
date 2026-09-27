@@ -103,7 +103,7 @@ export default function UsageMeter({
   const lowCredit = credit > 0 && credit < 5;
   const compactTitle = isBlocked
     ? completionDue > 0
-      ? `New live calls paused. Restore $${completionDue.toFixed(2)} after the previous call finished normally.`
+      ? `New live calls paused. Clear $${completionDue.toFixed(2)} in completion credit.`
       : `New live calls paused. Add ${BALANCE_TITLE} or wait for the monthly reset.`
     : `${used} of ${included} included voice minutes used, resets ${resetLabel}`;
 
@@ -184,12 +184,11 @@ export default function UsageMeter({
             </span>
             <span className="text-foreground/85">
               {completionDue > 0
-                ? `The previous call finished normally and used $${completionDue.toFixed(2)} of completion grace. Restore ${BALANCE_TITLE} before starting another live call.`
+                ? `$${completionDue.toFixed(2)} in completion credit is due. Top up ${BALANCE_TITLE} to resume new calls.`
                 : `Your included minutes are used and ${BALANCE_TITLE} cannot cover another attempt. Add balance or wait for the monthly reset.`}
             </span>
             <span className="block text-foreground/55 mt-1">
-              BotBound never cuts off an active call because billing coverage changes
-              mid-conversation.
+              Calls use their admitted duration, including any completion buffer.
             </span>
           </div>
         </div>

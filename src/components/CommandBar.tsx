@@ -309,7 +309,7 @@ export default function CommandBar() {
             initial={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? { opacity: 0, transition: { duration: 0.01 } } : { opacity: 0 }}
-            className="absolute inset-0 bg-[color:color-mix(in_srgb,var(--foreground)_68%,transparent)] backdrop-blur-sm"
+            className="absolute inset-0 bg-[var(--wireline-color-overlay-scrim)] backdrop-blur-sm"
             onMouseDown={close}
           />
           <motion.div

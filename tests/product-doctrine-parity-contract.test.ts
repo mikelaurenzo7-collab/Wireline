@@ -71,17 +71,14 @@ describe("product doctrine parity", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const catalog = read("src/lib/plan-catalog.ts");
 
-    expect(root).toContain(
-      "Every **active paid Bot gets a dedicated production number and BotBound-managed email identity**",
-    );
-    expect(root).toContain("Unused Bot capacity does not pre-provision carrier numbers");
-    expect(pricing).toContain("Every active paid Bot gets its own BotBound phone number");
-    expect(pricing).not.toContain("Every active paid Bot gets its own production number");
-    expect(pricing).toContain("Free Builder and unused Bot slots do not receive live numbers.");
-    expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
-    expect(catalog).toContain("Unused Bot capacity does not pre-provision orphan carrier numbers");
-    expect(catalog).toContain(
-      "1 dedicated production number, provisioned automatically for the active Bot",
-    );
+    expect(root).toContain("unused capacity does not pre-provision carrier numbers");
+    expect(pricing).toContain("Email-only does not require a phone number");
+    expect(pricing).toContain("Free Builder does not receive live numbers");
+    expect(catalog).toContain("included_mailboxes");
+    const identity = read("src/lib/paid-bot-identity.ts");
+    expect(identity).toContain('entitlement.channels.includes("email")');
+    expect(identity).toContain('channel === "voice" || channel === "sms"');
+    expect(identity).toContain("phoneAgentIds");
+    expect(identity).toContain("mailboxAgentIds");
   });
 });

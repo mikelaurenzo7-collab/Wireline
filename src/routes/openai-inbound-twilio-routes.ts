@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { liveExternalActionPolicyForUser } from "../lib/account-environment-policy";
 import { asyncHandler } from "../lib/api-error";
+import { getTenantChannelEntitlements } from "../lib/channel-entitlements";
 import { drizzle, log } from "../lib/server-context";
 import { evaluateTwilioWebhookAuth } from "../lib/twilio-webhook-auth";
 import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
@@ -95,6 +96,12 @@ router.post(
           calledSuffix: phoneSuffixForLog(calledNumber),
           accountEnvironment: environment.environment ?? "missing",
         });
+        res.status(200).send(hangupTwiml());
+        return;
+      }
+
+      const entitlement = await getTenantChannelEntitlements(userId);
+      if (!entitlement.channels.includes("voice")) {
         res.status(200).send(hangupTwiml());
         return;
       }

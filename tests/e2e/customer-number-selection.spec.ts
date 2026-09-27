@@ -3,6 +3,19 @@ import { expect, test, type Page } from "@playwright/test";
 async function workspace(page: Page, checkoutAvailable: boolean | "unavailable" = true) {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/status") {
+      await route.fulfill({
+        json: {
+          channel_entitlements: {
+            plan_id: "omnichannel",
+            subscription_status: "active",
+            channels: ["voice", "email", "sms"],
+            is_owner: false,
+          },
+        },
+      });
+      return;
+    }
     if (path === "/api/billing/plans" && checkoutAvailable === "unavailable") {
       await route.fulfill({ status: 503, json: { error: "Plans temporarily unavailable" } });
       return;

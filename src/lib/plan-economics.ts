@@ -1,8 +1,4 @@
-import {
-  FLAT_OVERAGE_PER_MIN_USD,
-  STRIPE_PLANS,
-  type StripePlanId,
-} from "./plan-catalog";
+import { STRIPE_PLANS, type StripePlanId } from "./plan-catalog";
 
 /**
  * Stable read model for the commercial limits that runtime and launch checks
@@ -25,7 +21,7 @@ export function planEconomics(planId: StripePlanId | string): PlanEconomics | nu
   return {
     planId: plan.id,
     voiceMinutesMonthly: plan.voice_minutes_monthly,
-    overagePerMinuteUsd: FLAT_OVERAGE_PER_MIN_USD,
+    overagePerMinuteUsd: plan.overage_per_min_usd,
     includedPhoneNumbers: plan.included_phone_numbers,
     runtimeAllowanceUsdMonthly: plan.runtime_allowance_usd_monthly,
     aiSpendAllowanceUsdMonthly: plan.ai_spend_allowance_usd_monthly,

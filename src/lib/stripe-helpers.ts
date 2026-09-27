@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import { createHash, randomBytes } from "node:crypto";
 import { drizzle, log, auditLogger, tenantStore } from "./server-context";
 import * as schema from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import {
   STRIPE_PLANS,
@@ -566,6 +566,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       status: schema.subscriptions.status,
       stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
       cancelAtPeriodEnd: schema.subscriptions.cancelAtPeriodEnd,
+      plan: schema.subscriptions.plan,
     })
     .from(schema.subscriptions)
     .where(eq(schema.subscriptions.stripeCustomerId, customerId))
@@ -619,6 +620,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       status: null,
       stripeSubscriptionId: null,
       cancelAtPeriodEnd: false,
+      plan: null,
     };
   } else if (!(await stripeOwnerUserExists(existing.userId))) {
     // The database FK removes this legacy/orphan possibility once migration
@@ -681,10 +683,13 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   }
 
   const userId = existing.userId;
-  const plan =
+  let plan =
     sub.items?.data
       ?.map((item) => basePlanByStripePrice(item.price))
       .find((candidate): candidate is StripePlan => !!candidate) ?? null;
+  const providerPlanId = plan?.id;
+  const { paidCapacityPlan } = await import("./stripe-capacity-upgrade");
+  plan = await paidCapacityPlan(sub, plan, existing.plan, stripe);
   const providerExtraAgents = extraAgentQuantityFromSubscription(sub);
   const extraAgents = clampExtraAgentAddons(providerExtraAgents);
   if (providerExtraAgents > MAX_EXTRA_AGENT_ADDONS) {
@@ -810,6 +815,19 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
     await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
 
+    if (plan?.id === providerPlanId && sub.metadata.wireline_capacity_target_plan === plan?.id) {
+      const { releaseAppliedCapacitySchedule } = await import("./stripe-capacity-upgrade");
+      await drizzle.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-capacity:${userId}`}))`,
+        );
+        await releaseAppliedCapacitySchedule(
+          { userId, customerId, subscriptionId: sub.id, planId: plan!.id },
+          stripe,
+        );
+      });
+    }
+
     invalidateDashboard(userId);
 
     dispatchWebhook(userId, "subscription.changed", {
@@ -836,7 +854,11 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
           ? "subscription_created"
           : "subscription_updated";
 
-    if ((stripeStatus === "active" || stripeStatus === "trialing") && plan?.id) {
+    if (
+      (stripeStatus === "active" || stripeStatus === "trialing") &&
+      plan?.id &&
+      plan.id === providerPlanId
+    ) {
       const interval = subscriptionBillingInterval(sub);
       const periodReference = subscriptionPeriodReference(sub);
       // Must succeed — swallowing here marks the webhook processed with no

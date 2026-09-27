@@ -23,7 +23,8 @@ describe("live-call billing continuity contract", () => {
     expect(outbound.indexOf('outboundVoiceGuard("manual")')).toBeLessThan(
       outbound.indexOf("placeOutboundCall({"),
     );
-    expect(wallet).toContain('current_call_policy: "finish_current_block_next"');
+    expect(wallet).toContain('"bounded_completion_grace"');
+    expect(wallet).toContain('"finish_current_block_next"');
     expect(wallet).toContain('code: "VOICE_COMPLETION_GRACE_DUE"');
     expect(wallet).not.toMatch(/endCall|hangup|terminateCall/);
   });
@@ -93,7 +94,7 @@ describe("live-call billing continuity contract", () => {
     // alone passed for a null plan (orphaned stored plan id), enabling voice
     // the ledger could only price at $0.
     expect(wallet).toContain(
-      'const liveVoiceEnabled = activeSubscription && !!plan && plan.id !== "personal"',
+      'const liveVoiceEnabled = activeSubscription && planIncludesChannel(planId, "voice")',
     );
     expect(wallet).not.toContain("enterpriseContract");
     expect(workspace).not.toContain("enterpriseContract");

@@ -406,8 +406,17 @@ const BillingStatus: JsonSchema = {
     },
     phone_lines_included: {
       type: "integer",
-      description:
-        "Max provisioned voice numbers while active, equals the subscribed plan agent cap (one number slot per purchased agent seat).",
+      description: "Provisioned number slots for the purchased channels; Email-only includes zero.",
+    },
+    channel_entitlements: {
+      type: ["object", "null"],
+      description: "Authoritative purchased-channel access, or null when unavailable.",
+      properties: {
+        plan_id: { type: ["string", "null"] },
+        subscription_status: { type: "string" },
+        channels: { type: "array", items: { type: "string", enum: ["voice", "email", "sms"] } },
+        is_owner: { type: "boolean" },
+      },
     },
     email_verified: {
       type: ["boolean", "null"],
@@ -422,7 +431,7 @@ const BillingStatus: JsonSchema = {
         plan_name: { type: ["string", "null"] },
         max_agents: {
           type: ["integer", "null"],
-          description: "Agent seat cap, also the voice-number slot cap.",
+          description: "Bot capacity; number and mailbox capacities depend on purchased channels.",
         },
         status: { type: ["string", "null"] },
         current_period_end: { type: ["string", "null"], format: "date-time" },
@@ -1028,6 +1037,69 @@ const PATHS: Record<string, PathItem> = {
   },
 
   // ── Quotas & billing ──────────────────────────────────────────────
+  "/api/billing/capacity-upgrade": {
+    get: {
+      summary: "Read same-channel capacity options and scheduled changes",
+      operationId: "getCapacityUpgrade",
+      tags: ["Billing"],
+      security: auth.bearer,
+      responses: {
+        "200": {
+          description:
+            "Current plan/interval, eligible plan IDs, renewal date and nullable pending change. pending.status is scheduled or incomplete; incomplete is not a confirmed future upgrade.",
+          content: {
+            "application/json": { schema: { type: "object", additionalProperties: true } },
+          },
+        },
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "503": errorResponse("Billing state unavailable; retry without inferring entitlement."),
+      },
+    },
+    post: {
+      summary: "Schedule a higher capacity at the next paid renewal",
+      description:
+        "Same channels and billing interval only. No immediate quota reset or proration. Price readiness and active subscription required; repeated same-target requests recover the existing operation.",
+      operationId: "scheduleCapacityUpgrade",
+      tags: ["Billing"],
+      security: auth.bearer,
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["plan_id"],
+              properties: { plan_id: { type: "string" } },
+            },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          description:
+            "Confirmed scheduled receipt: status=scheduled, plan_id, effective_at. Higher capacity requires successful renewal payment.",
+        },
+        "400": COMMON_ERROR_RESPONSES["400"],
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "409": errorResponse("Conflicting scheduled change, deletion, or ineligible subscription."),
+        "503": errorResponse("Package or billing confirmation unavailable."),
+      },
+    },
+    delete: {
+      summary: "Remove an owned scheduled capacity change",
+      description:
+        "Releases only the verified owned schedule, retaining the current subscription and any existing cancellation date. Available when new checkout is closed.",
+      operationId: "removeCapacityUpgrade",
+      tags: ["Billing"],
+      security: auth.bearer,
+      responses: {
+        "200": { description: "Confirmed removal: status=removed." },
+        "401": COMMON_ERROR_RESPONSES["401"],
+        "409": errorResponse("Foreign schedule requires operator review."),
+        "503": errorResponse("Removal could not be confirmed; retry."),
+      },
+    },
+  },
   "/api/quotas": {
     get: {
       summary: "Current quota usage and limits",
@@ -1060,7 +1132,32 @@ const PATHS: Record<string, PathItem> = {
                 type: "object",
                 required: ["plans", "stripe_configured", "checkout_available"],
                 properties: {
-                  plans: { type: "array", items: { type: "object", additionalProperties: true } },
+                  plans: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        channels: {
+                          type: "array",
+                          items: { type: "string", enum: ["voice", "email", "sms"] },
+                        },
+                        included_mailboxes: { type: "integer" },
+                        capacity_tier: {
+                          type: ["string", "null"],
+                          enum: ["light", "regular", "high", null],
+                        },
+                        catalog_family: {
+                          type: ["string", "null"],
+                          enum: ["channels", "legacy", null],
+                        },
+                        checkout_availability: {
+                          type: "string",
+                          enum: ["available", "sms_readiness_required", "legacy_only"],
+                        },
+                      },
+                      additionalProperties: true,
+                    },
+                  },
                   stripe_configured: { type: "boolean" },
                   checkout_available: {
                     type: "boolean",

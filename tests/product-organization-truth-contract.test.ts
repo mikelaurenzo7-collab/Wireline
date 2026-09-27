@@ -52,7 +52,7 @@ describe("product organization truth contracts", () => {
     expect(stripeCard).toContain("showBalanceTopUp?: boolean");
     expect(stripeCard).toContain("showBalanceTopUp ? (");
     expect(stripeCard).toContain("{canAddBalance && <CreditTopUpCard");
-    expect(stripeCard).toMatch(/Manage Subscription/i);
+    expect(stripeCard).toMatch(/Manage billing/i);
     expect(stripeCard).not.toContain(">Manage plan<");
     expect(stripeCard).not.toContain("Open billing portal");
   });

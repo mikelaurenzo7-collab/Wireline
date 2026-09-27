@@ -5,11 +5,7 @@
 import { eq } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { isOwnerEmail } from "./auth-service";
-import {
-  FREE_BUILDER_AI_ALLOWANCE_USD,
-  planById,
-  type StripePlanId,
-} from "./plan-catalog";
+import { FREE_BUILDER_AI_ALLOWANCE_USD, planById, type StripePlanId } from "./plan-catalog";
 import { drizzle } from "./server-context";
 import type { PlanTier } from "./tenant-quotas";
 
@@ -29,6 +25,7 @@ export const FREE_BUILDER_SIMULATION_ALLOWANCE_USD = FREE_BUILDER_AI_ALLOWANCE_U
 
 /** Map wireline_subscriptions.plan → runtime quota tier. */
 export function subscriptionPlanToTier(planId: string | null | undefined): PlanTier {
+  if (planById(planId)?.catalogFamily === "channels") return "personal";
   switch (planId) {
     case "enterprise":
     case "scale":
@@ -70,9 +67,7 @@ export function effectivePlanIdForEntitlements(
   return planId ?? null;
 }
 
-export function subscriptionStatusGrantsEntitlements(
-  status: string | null | undefined,
-): boolean {
+export function subscriptionStatusGrantsEntitlements(status: string | null | undefined): boolean {
   return status === "active" || status === "trialing";
 }
 
@@ -120,6 +115,11 @@ export function defaultAiSpendBudgetUsdForTier(tier: PlanTier): number {
   return plan.ai_spend_allowance_usd_monthly;
 }
 
+/** Funding follows the exact purchased package; quota tiers are only rate-limit profiles. */
+export function defaultAiSpendBudgetUsdForPlan(planId: string | null | undefined): number {
+  return planById(planId)?.ai_spend_allowance_usd_monthly ?? FREE_BUILDER_SIMULATION_ALLOWANCE_USD;
+}
+
 /** Daily burst caps are guardrails, not included-minute promises. */
 const VOICE_BURST_DAILY: Record<PlanTier, number> = {
   free: 0,
@@ -131,6 +131,18 @@ const VOICE_BURST_DAILY: Record<PlanTier, number> = {
 
 export function voiceMinutesDailyQuotaForTier(tier: PlanTier): number {
   return VOICE_BURST_DAILY[tier] ?? 0;
+}
+
+/** Capacity changes minutes, never Bot count or concurrent-call permissions. */
+export function voiceMinutesDailyQuotaForPlan(planId: string | null | undefined): number {
+  const plan = planById(planId);
+  if (plan?.catalogFamily !== "channels")
+    return voiceMinutesDailyQuotaForTier(subscriptionPlanToTier(planId));
+  if (!plan.channels.includes("voice")) return 0;
+  // At least one ordinary 60-minute funded call can finish. Higher capacities
+  // may use their monthly pool in a busy day; the separate durable wallet
+  // admission still bounds every call and prevents unfunded concurrency.
+  return Math.max(60, plan.voice_minutes_monthly);
 }
 
 export async function getSubscriptionPlanId(userId: string): Promise<string | null> {

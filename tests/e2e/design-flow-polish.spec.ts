@@ -6,6 +6,19 @@ async function mockWorkspace(page: Page) {
   // Isolated UI fixtures: no live account, database, billing, or provider calls.
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/status") {
+      await route.fulfill({
+        json: {
+          channel_entitlements: {
+            plan_id: "omnichannel",
+            subscription_status: "active",
+            channels: ["voice", "email", "sms"],
+            is_owner: false,
+          },
+        },
+      });
+      return;
+    }
     const json =
       path === "/api/auth/session"
         ? { user: { id: "design-owner", email: "owner@example.test" } }

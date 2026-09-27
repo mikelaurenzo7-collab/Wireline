@@ -3,6 +3,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import * as schema from "../../db/schema";
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
+import { requireTenantPhoneChannel } from "../channel-entitlements";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
@@ -41,6 +42,8 @@ async function assignNativePhoneLineUnfenced(input: {
   agentId?: string | null;
   campaignLabel?: string;
 }): Promise<NativePhoneAssignmentResult> {
+  const entitlement = await requireTenantPhoneChannel(input.userId);
+  const includesVoice = entitlement.channels.includes("voice");
   const [current] = await drizzle
     .select()
     .from(schema.phoneNumbers)
@@ -71,7 +74,7 @@ async function assignNativePhoneLineUnfenced(input: {
     if (isSavedRuntimeReviewRequired(agent.personality, agent.role)) {
       throw new AppError(409, "RUNTIME_REVIEW_REQUIRED", RUNTIME_REVIEW_REQUIRED_RESPONSE);
     }
-    assertOpenAIRealtimeConfigured(input.userId);
+    if (includesVoice) assertOpenAIRealtimeConfigured(input.userId);
   }
 
   const nextAgentId = input.agentId !== undefined ? input.agentId : current.agentId;
@@ -126,7 +129,8 @@ async function assignNativePhoneLineUnfenced(input: {
 
   return {
     line: updated,
-    nativeVoice: updated.agentId ? { provider: "openai_realtime", status: "active" } : null,
+    nativeVoice:
+      updated.agentId && includesVoice ? { provider: "openai_realtime", status: "active" } : null,
   };
 }
 

@@ -2,7 +2,16 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PostCreateActivationWizard from "../src/components/onboarding/PostCreateActivationWizard";
 
+vi.mock("../src/hooks/useChannelEntitlements", () => ({
+  useChannelEntitlements: () => ({
+    status: "ready",
+    data: { channels: h.channels },
+    includes: (channel: string) => h.channels.includes(channel),
+    retry: vi.fn(),
+  }),
+}));
 const h = vi.hoisted(() => ({
+  channels: ["voice", "email", "sms"] as string[],
   states: [] as unknown[],
   refs: [] as Array<{ current: unknown }>,
   stateCursor: 0,
@@ -134,6 +143,7 @@ async function mount() {
   await vi.waitFor(() => expect(text(render())).not.toContain("Checking your line"));
 }
 beforeEach(() => {
+  h.channels = ["voice", "email", "sms"];
   vi.clearAllMocks();
   h.states = [];
   h.refs = [];
@@ -253,4 +263,25 @@ describe("setup guide requires confirmed calling", () => {
     expect(plan?.props.to).toBe("/settings/billing");
     expect(text(render())).not.toContain("Live activation is paused");
   });
+});
+
+it("email-only activation has no phone prerequisite or invented live milestone", async () => {
+  h.channels = ["email"];
+  payload = {
+    agentId: "bot",
+    agentName: "Email Bot",
+    phoneProvisionRequested: false,
+    phoneProvisioned: false,
+    phoneActivationRequired: true,
+  };
+  stubFetch({ numbers: [] });
+  await mount();
+  expect(text(render())).toContain("Open Email");
+  expect(text(render())).not.toContain("No live line");
+  expect(button("Choose a number")).toBeUndefined();
+  button("Finish for now")?.props.onClick?.();
+  expect(text(render())).toContain("Your Bot is saved");
+  expect(h.event.mock.calls.some(([event]) => event.event === "agent_launch_completed")).toBe(
+    false,
+  );
 });

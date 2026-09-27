@@ -161,9 +161,11 @@ function formatSmsTime(value: string) {
 export default function SmsThreads({
   embedded = false,
   agentId,
+  readOnly = false,
 }: {
   embedded?: boolean;
   agentId?: string | null;
+  readOnly?: boolean;
 }) {
   const { success, error: toastError } = useToast();
   const [threads, setThreads] = useState<SmsThread[]>([]);
@@ -468,6 +470,7 @@ export default function SmsThreads({
   const listOwnsOnlyState = visibleThreads.length === 0 && !activeId;
 
   async function writeWithBot() {
+    if (readOnly) return;
     if (!activeId || sendingLineUnavailable || activePendingSend || drafting || sending) return;
     const threadId = activeId;
     const operation = ++draftOperationRef.current;
@@ -503,6 +506,7 @@ export default function SmsThreads({
 
   async function sendReply() {
     if (
+      readOnly ||
       !activeId ||
       sendingLineUnavailable ||
       sendClaimsRef.current.has(activeId) ||
@@ -959,7 +963,7 @@ export default function SmsThreads({
                     send until a specific Twilio line is attached.
                   </StatusNotice>
                 ) : null}
-                <div className="flex gap-2">
+                <fieldset disabled={readOnly} className="flex min-w-0 gap-2">
                   <Button
                     type="button"
                     variant="secondary"
@@ -1016,7 +1020,7 @@ export default function SmsThreads({
                       <Send className="size-4" />
                     )}
                   </Button>
-                </div>
+                </fieldset>
               </form>
             </div>
           )}

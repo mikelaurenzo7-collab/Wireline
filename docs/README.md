@@ -2,7 +2,7 @@
 
 BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, the post-create guide remains **Train -> Test -> Launch**. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
-Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job rather than choosing Personal or Business, and every role starter enters the same workspace model. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Every active paid Bot has an included number. Outbound, inbound, and hybrid modes are first-class.
+Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job and choose Calls, Email, SMS, or a combination in the same workspace. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Calls/SMS packages include one shared number; Email packages include a managed inbox. SMS and outbound calling remain unavailable until their separate readiness checks pass. The current commercial source is `src/lib/plan-catalog.ts`, reconciled through `docs/P0_BILLING_OPS_NOTE.md`.
 
 This file maps current doctrine, operating runbooks, and active plans. Dated audits and superseded decision evidence live in [AUDIT_INDEX.md](./AUDIT_INDEX.md).
 
@@ -113,12 +113,12 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [September paid-media notes](../brand-work/launch-2026-09/copy/PAID_MEDIA_AND_PLACEMENT_NOTES.md)    | Placement, channel, and media-buying guidance.                                                 |
 | [September PR outreach](../brand-work/launch-2026-09/copy/PR_AND_CREATOR_OUTREACH.md)                | Press and creator outreach copy for the original launch.                                       |
 | [September social posts](../brand-work/launch-2026-09/copy/SOCIAL_POSTS.md)                          | Social copy and channel adaptations for the original launch.                                   |
-| [September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                                                     |
+| [Historical September investor one-pager](../brand-work/launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) | Investor-facing original launch narrative.                                                     |
 | [Outbound asset audit](../brand-work/ASSET-AUDIT-2026-09-01.md)                                      | Exhaustive outbound-pass inventory, creative decisions, repairs, and certification record.     |
 | [Outbound launch workspace](../brand-work/launch-2026-09-outbound/README.md)                         | Outbound-first production library, delivery map, render commands, and release links.           |
 | [Outbound campaign copy](../brand-work/launch-2026-09-outbound/CAMPAIGN_COPY.md)                     | Paid, social, lifecycle, and launch copy for The First Move campaign.                          |
 | [Outbound website messaging](../brand-work/launch-2026-09-outbound/WEBSITE_MESSAGING.md)             | Website message hierarchy that preserves inbound coverage while leading with outbound.         |
-| [Outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md)               | Investor narrative for the outbound wedge and expansion path.                                  |
+| [Historical outbound investor brief](../brand-work/launch-2026-09-outbound/INVESTOR_ONE_PAGER.md)               | Investor narrative for the outbound wedge and expansion path.                                  |
 | [Outbound placement matrix](../brand-work/launch-2026-09-outbound/PLACEMENT_MATRIX.md)               | Candidate asset-to-channel mapping and placement guidance; publication remains gated.          |
 | [Outbound accessibility copy](../brand-work/launch-2026-09-outbound/ALT_TEXT_AND_ACCESSIBILITY.md)   | Alt text, motion, contrast, and accessible publishing notes.                                   |
 | [Outbound release provenance](../brand-work/launch-2026-09-outbound/PROVENANCE.md)                   | Source, model, render, QA, and checksum provenance for the outbound library.                   |

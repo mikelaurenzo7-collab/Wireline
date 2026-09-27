@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { FileText, ArrowLeft } from "lucide-react";
 import { PageMeta } from "../lib/page-meta";
-import { ACCOUNT_TERMS_LAST_UPDATED } from "../lib/legal-consent";
+import { ACCOUNT_TERMS_DESCRIPTION, ACCOUNT_TERMS_LAST_UPDATED } from "../lib/legal-consent";
 import MarketingChrome from "./marketing/MarketingChrome";
 
 const LAST_UPDATED = ACCOUNT_TERMS_LAST_UPDATED;
@@ -109,11 +109,7 @@ export function TermsOfService() {
         "The first paid invoice carries a 30-day money-back guarantee.",
       ]}
     >
-      <PageMeta
-        title="Terms of Service"
-        description="BotBound's terms of service: acceptable use, synthetic voice, billing, telemarketing compliance, messaging, privacy, and governing law. Last updated August 31, 2026."
-        path="/terms"
-      />
+      <PageMeta title="Terms of Service" description={ACCOUNT_TERMS_DESCRIPTION} path="/terms" />
 
       <Section title="1. Acceptance">
         <p>
@@ -243,6 +239,20 @@ export function TermsOfService() {
           selected at checkout. Subscriptions renew automatically at that interval unless canceled
           before the renewal date. You may cancel at any time via the Billing section in Settings;
           cancellation takes effect at the end of the current billing period.
+        </p>
+        <p>
+          Plans include only the channels selected at checkout. Calls use included minutes first,
+          then prepaid Runtime Balance at $0.22 per minute, rounded up per call. A funded call may
+          use up to 10 additional minutes of paid completion credit ($2.20), within its admitted
+          duration and the 60-minute session limit. This buffer does not permit an unfunded new
+          call. Only one call may be active or awaiting settlement on a channel package.
+        </p>
+        <p>
+          We reserve available prepaid funds when a call starts and return unused funds after
+          settlement. Completion credit appears as an amount due in Runtime Balance. New calls and
+          prepaid extras pause until you top up; billing and saved records remain accessible. We do
+          not automatically charge your payment method for this usage or issue an automatic usage
+          invoice. A monthly allowance reset does not erase an amount due.
         </p>
         <p>
           <strong>30-day money-back guarantee.</strong> Submit a request to{" "}

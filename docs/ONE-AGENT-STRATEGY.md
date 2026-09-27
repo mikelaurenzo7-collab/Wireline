@@ -1,7 +1,7 @@
 # BotBound One-Product Strategy
 
-Date: 2026-08-21
-Status: Active positioning note; supersedes Personal-versus-Business framing
+Date: 2026-09-27
+Status: Active positioning note; commercial details in PRICING_DECISION_2026-09-27.md
 
 ## Decision
 
@@ -11,8 +11,8 @@ BotBound leads with one clear promise:
 
 Customers start with the job, not an audience classification. One Bot can carry
 the conversation across channels under shared knowledge, rules, approvals, and
-memory. Additional Bots add concurrency or genuinely separate roles; they do
-not unlock a different product.
+memory. Customers choose the channels they need. Launch packages include one
+Bot; additional-Bot subscriptions are not offered in the new catalog.
 
 ## Positioning rules
 
@@ -21,7 +21,7 @@ not unlock a different product.
 | Broad public marketing       | Bot or Phone Bot                                              |
 | Workspace                    | Bot, Bots, workspace                                          |
 | Role proof                   | Front Desk, Sales Rep, Support, Scheduler, Personal Assistant |
-| Multi-role growth            | Additional Bots, specialized roles, coordinated Bots          |
+| Channel selection            | Calls, Email, SMS; activate only channels that are ready      |
 | CTA                          | Build Your Bot                                                |
 | Technical code and contracts | agent and stable legacy identifiers                           |
 
@@ -31,9 +31,13 @@ Use:
 
 > Your Bot for calls, texts, and email.
 
-> Build free. Go live from $19/month.
+> Build free. Email from $9/month. Calls from $15/month.
 
-> Start with one job. Add another Bot when the work needs it.
+> Start with one job. Choose the channels you need.
+
+Calls + Email is $21/month. SMS combinations remain visible with activation
+unavailable until messaging readiness and cost checks pass. Never imply that a
+Calls-only package includes a mailbox or that Email includes a phone number.
 
 Avoid:
 

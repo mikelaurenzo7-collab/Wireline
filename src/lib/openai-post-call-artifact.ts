@@ -2,6 +2,12 @@ import { eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { recordUsage } from "./ai-audit";
+import { normalizeResponsesUsage } from "./ai-usage";
+import {
+  reconcileArtifactContainerSpend,
+  reserveArtifactContainerSpend,
+  retainAmbiguousArtifactContainerSpend,
+} from "./openai-artifact-spend";
 import { OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 import { BOTBOUND_BRAND_NAME } from "./brand";
@@ -10,7 +16,7 @@ import {
   type ConnectedArtifactDestination,
   type ConnectedArtifactUpload,
 } from "./connected-artifact-storage";
-import { drizzle, fetchWithTimeout, log } from "./server-context";
+import { drizzle, log } from "./server-context";
 
 export type PostCallArtifactFormat = "pdf" | "docx" | "pptx" | "xlsx";
 export type BusinessArtifactPurpose = "call_report" | "operating_report";
@@ -170,6 +176,35 @@ function openAIRequestId(response: Response): string | undefined {
   return requestId || undefined;
 }
 
+/** Keep one deadline across headers AND the body; fetch alone ends at headers. */
+async function readArtifactResponse<T>(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  readBody: (response: Response) => Promise<T>,
+): Promise<{ response: Response; body: T }> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`OpenAI artifact request timed out after ${timeoutMs}ms`));
+      controller.abort();
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([
+      (async () => {
+        const response = await fetch(url, { ...init, signal: controller.signal });
+        return { response, body: await readBody(response) };
+      })(),
+      timeout,
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+    controller.abort();
+  }
+}
+
 export async function generateAndStorePostCallArtifact(
   input: PostCallArtifactInput,
 ): Promise<GeneratedPostCallArtifact> {
@@ -190,31 +225,59 @@ export async function generateAndStorePostCallArtifact(
     process.env.WIRELINE_OPENAI_ARTIFACT_MODEL?.trim() || OPENAI_STRUCTURED_PRIMARY_MODEL;
   const safetyIdentifier = currentProviderSafetyIdentifier();
   const startedAt = Date.now();
-  const response = await fetchWithTimeout(
-    "https://api.openai.com/v1/responses",
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: artifactModel,
-        store: false,
-        ...(safetyIdentifier ? { safety_identifier: safetyIdentifier } : {}),
-        tools: [{ type: "code_interpreter", container: { type: "auto", memory_limit: "1g" } }],
-        tool_choice: "required",
-        max_output_tokens: 8_000,
-        input: promptFor(input, settings || {}),
-      }),
-    },
-    120_000,
+  const containerReservation = await reserveArtifactContainerSpend(input.userId);
+  let response: Response;
+  let payload: Record<string, unknown> & { id?: string; error?: { message?: string } };
+  try {
+    const result = await readArtifactResponse(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: artifactModel,
+          store: false,
+          ...(safetyIdentifier ? { safety_identifier: safetyIdentifier } : {}),
+          tools: [{ type: "code_interpreter", container: { type: "auto", memory_limit: "1g" } }],
+          tool_choice: "required",
+          max_output_tokens: 8_000,
+          input: promptFor(input, settings || {}),
+        }),
+      },
+      120_000,
+      (response) => response.json(),
+    );
+    response = result.response;
+    payload = result.body as typeof payload;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      throw new Error("OpenAI returned an invalid artifact response.");
+    }
+  } catch (error) {
+    await retainAmbiguousArtifactContainerSpend(containerReservation);
+    throw error;
+  }
+  const normalized = normalizeResponsesUsage(
+    payload.usage && typeof payload.usage === "object" && !Array.isArray(payload.usage)
+      ? (payload.usage as Record<string, unknown>)
+      : {},
   );
-  const payload = (await response.json()) as Record<string, unknown> & {
-    id?: string;
-    error?: { message?: string };
-  };
   recordUsage(
     artifactModel,
-    payload as { model?: string; usage?: unknown },
+    {
+      model: typeof payload.model === "string" ? payload.model : artifactModel,
+      usage: {
+        input_tokens: normalized.inputTokens,
+        output_tokens: normalized.outputTokens,
+        cache_read_input_tokens: normalized.cacheReadTokens,
+        cache_creation_input_tokens: normalized.cacheWriteTokens,
+      },
+    },
     Date.now() - startedAt,
+  );
+  const containerIds = await reconcileArtifactContainerSpend(
+    containerReservation,
+    payload,
+    response.status,
   );
   const requestId = openAIRequestId(response);
   if (!response.ok) {
@@ -239,12 +302,21 @@ export async function generateAndStorePostCallArtifact(
     generatedFiles.find((item) => item.filename?.toLowerCase().endsWith(suffix)) ||
     generatedFiles[generatedFiles.length - 1];
   if (!citation) throw new Error("OpenAI completed without returning the requested file.");
+  if (!containerIds.includes(citation.container_id)) {
+    throw new Error("OpenAI artifact file does not match an invoked container.");
+  }
 
-  const download = await fetchWithTimeout(
+  const downloaded = await readArtifactResponse(
     `https://api.openai.com/v1/containers/${encodeURIComponent(citation.container_id)}/files/${encodeURIComponent(citation.file_id)}/content`,
     { headers: { Authorization: `Bearer ${apiKey}` } },
     30_000,
+    async (response) => {
+      if (response.ok) return response.arrayBuffer();
+      void response.body?.cancel().catch(() => undefined);
+      return new ArrayBuffer(0);
+    },
   );
+  const download = downloaded.response;
   if (!download.ok) {
     const downloadRequestId = openAIRequestId(download);
     log.warn("OpenAI artifact file download rejected", {
@@ -253,7 +325,7 @@ export async function generateAndStorePostCallArtifact(
     });
     throw new Error(`OpenAI file download failed (${download.status})`);
   }
-  const bytes = new Uint8Array(await download.arrayBuffer());
+  const bytes = new Uint8Array(downloaded.body);
   if (!bytes.byteLength) throw new Error("OpenAI returned an empty artifact file.");
 
   const stored = await uploadArtifactToConnectedStorage({

@@ -24,6 +24,7 @@ export default function LiveFloorPresence({
 }) {
   const active = signals.filter(isActiveSignal).filter((signal) => signal.agentId);
   if (!active.length) return null;
+  const finalizing = active.every((signal) => signal.status === "settling");
 
   return (
     <section
@@ -32,9 +33,10 @@ export default function LiveFloorPresence({
     >
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Live now</p>
+          <p className={WL_APP_CLASSES.wiredEyebrow}>{finalizing ? "Finalizing" : "Live now"}</p>
           <p className="mt-2 text-sm font-semibold text-foreground">
-            {active.length} customer call{active.length === 1 ? "" : "s"} in progress
+            {active.length} customer call{active.length === 1 ? "" : "s"}
+            {finalizing ? " being recorded" : " in progress"}
           </p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Live until each call ends and its outcome is recorded.
@@ -55,7 +57,10 @@ export default function LiveFloorPresence({
               {signal.customerNumber || "Active caller"}
             </p>
             <p className="mt-1 truncate text-xs text-muted-foreground">
-              {agentNameForId(signal.agentId!)} · {signal.label || signal.status || "In progress"}
+              {agentNameForId(signal.agentId!)} ·{" "}
+              {signal.status === "settling"
+                ? "Finalizing"
+                : signal.label || signal.status || "In progress"}
             </p>
           </li>
         ))}

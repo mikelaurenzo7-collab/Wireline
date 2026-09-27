@@ -12,6 +12,8 @@ import { WorkspaceTabStrip } from "../components/layout/WorkspaceTabStrip";
 import WorkspaceShell from "../components/WorkspaceShell";
 import { useAgents } from "../contexts/AgentsContext";
 import { authFetch } from "../lib/api";
+import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
+import ChannelAccessNotice from "../components/ChannelAccessNotice";
 
 type InboxTabId = "email" | "sms";
 
@@ -32,6 +34,7 @@ const inboxTabs: Array<{ id: InboxTabId; label: string }> = [
  * one canonical Inbox, not separate duplicated workspaces.
  */
 export default function EmailPage() {
+  const access = useChannelEntitlements();
   const [params, setParams] = useSearchParams();
   const {
     agents,
@@ -46,7 +49,9 @@ export default function EmailPage() {
   const requestedTab = params.get("tab") as InboxTabId | null;
   const activeTab: InboxTabId = inboxTabs.some((tab) => tab.id === requestedTab)
     ? (requestedTab as InboxTabId)
-    : "email";
+    : access.includes("sms") && !access.includes("email")
+      ? "sms"
+      : "email";
   const requestedAgentId = params.get("agent")?.trim() || "";
   // A deep link is an explicit scope. Never substitute an all-Bot/all-mailbox
   // request while its metadata is loading, unavailable, or no longer valid.
@@ -224,6 +229,7 @@ export default function EmailPage() {
           }
           secondary={scopeControls}
         />
+        <ChannelAccessNotice access={access} channel={activeTab} />
         {mailboxStatus === "error" && activeTab === "email" && !activeAccountId && !scopeError ? (
           <StatusNotice
             tone="warning"
@@ -264,9 +270,14 @@ export default function EmailPage() {
               embedded
               agentId={activeAgentId || null}
               accountId={activeAccountId || null}
+              channelEnabled={access.includes("email")}
             />
           ) : (
-            <SmsThreads embedded agentId={activeAgentId || null} />
+            <SmsThreads
+              embedded
+              agentId={activeAgentId || null}
+              readOnly={!access.includes("sms")}
+            />
           )}
         </div>
       </WorkspacePageFrame>

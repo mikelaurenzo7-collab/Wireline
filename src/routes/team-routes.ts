@@ -189,16 +189,9 @@ router.post(
         const { sendEmail } = await import("../lib/email-service");
         const result = await sendEmail({ to: email, subject, text, html });
         emailSent = Boolean(result.ok);
-        if (!result.ok) {
-          const { IntegrationService } = await import("../lib/integrations");
-          emailSent = Boolean(
-            await new IntegrationService(req.tenantId).sendEmail({
-              to: email,
-              subject,
-              body: html,
-            }),
-          );
-        }
+        // Invitations are system mail, independent of purchased communication
+        // channels. A failed/ambiguous send must not fall through to a tenant
+        // mailbox (or retry the same platform transport with a different sender).
       } catch (mailError) {
         log.error("Failed to send invitation email", { error: getErrorMessage(mailError) });
       }

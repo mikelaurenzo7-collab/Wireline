@@ -16,6 +16,19 @@ async function mockWorkspace(page: Page) {
   // or reads/writes a connected account or database.
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/billing/status") {
+      await route.fulfill({
+        json: {
+          channel_entitlements: {
+            plan_id: "omnichannel",
+            subscription_status: "active",
+            channels: ["voice", "email", "sms"],
+            is_owner: false,
+          },
+        },
+      });
+      return;
+    }
     const payload =
       path === "/api/auth/session"
         ? { user: { id: "journey-owner", email: "owner@example.test", full_name: "Journey Owner" } }

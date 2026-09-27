@@ -68,9 +68,12 @@ describe("voice allowance boundary copy", () => {
     h.snapshot.live_voice_blocked = true;
     const content = text(UsageMeter({ showBalance: false }));
     expect(content).toContain("New calls paused");
-    expect(content).toContain("used $3.50 of completion grace");
-    expect(content).toContain("Restore Runtime Balance before starting another live call.");
-    expect(content).toContain("BotBound never cuts off an active call");
+    expect(content).toContain("$3.50 in completion credit is due");
+    expect(content).toContain("Top up Runtime Balance to resume new calls.");
+    expect(content).toContain(
+      "Calls use their admitted duration, including any completion buffer.",
+    );
+    expect(content).not.toContain("never cuts off");
   });
 
   it("describes the allowance as approaching while minutes remain", () => {

@@ -77,9 +77,7 @@ export interface AuditSummary {
 }
 
 /** p50 / p95 from sorted latencies (audit log AI + tool rows). */
-export function computeLatencyPercentiles(
-  rows: AuditLogRow[],
-): LatencyPercentiles {
+export function computeLatencyPercentiles(rows: AuditLogRow[]): LatencyPercentiles {
   const values = rows
     .map((r) => num(r.latencyMs ?? r.latency_ms))
     .filter((ms) => ms > 0)
@@ -88,10 +86,7 @@ export function computeLatencyPercentiles(
     return { p50_ms: 0, p95_ms: 0, sample_count: 0 };
   }
   const at = (q: number) => {
-    const idx = Math.min(
-      values.length - 1,
-      Math.max(0, Math.ceil(q * values.length) - 1),
-    );
+    const idx = Math.min(values.length - 1, Math.max(0, Math.ceil(q * values.length) - 1));
     return Math.round(values[idx]);
   };
   return { p50_ms: at(0.5), p95_ms: at(0.95), sample_count: values.length };
@@ -104,10 +99,7 @@ const num = (n: unknown): number => {
 };
 
 /** Input $/MTok for audit dashboards, including vendor long-context tiers. */
-export function inputRateForModel(
-  model: string | null | undefined,
-  totalInputTokens = 0,
-): number {
+export function inputRateForModel(model: string | null | undefined, totalInputTokens = 0): number {
   return pricingForModel(model || DEFAULT_MODEL, totalInputTokens).input;
 }
 
@@ -170,7 +162,7 @@ export function computeAuditSummary(input: {
 
   const byActionMap = new Map<
     string,
-    { action: string; calls: number; cost: number; latencySum: number }
+    { action: string; calls: number; cost: number; latencySum: number; latencyCount: number }
   >();
   for (const r of all) {
     const action = r.action || "unknown";
@@ -179,10 +171,15 @@ export function computeAuditSummary(input: {
       calls: 0,
       cost: 0,
       latencySum: 0,
+      latencyCount: 0,
     };
     a.calls += 1;
     a.cost += num(r.costUsd ?? r.cost_usd);
-    a.latencySum += num(r.latencyMs ?? r.latency_ms);
+    const latency = num(r.latencyMs ?? r.latency_ms);
+    if (latency > 0) {
+      a.latencySum += latency;
+      a.latencyCount += 1;
+    }
     byActionMap.set(action, a);
   }
   const by_action: ByActionBucket[] = Array.from(byActionMap.values())
@@ -190,7 +187,7 @@ export function computeAuditSummary(input: {
       action: a.action,
       calls: a.calls,
       cost: round4(a.cost),
-      avg_latency_ms: Math.round(a.latencySum / Math.max(1, a.calls)),
+      avg_latency_ms: Math.round(a.latencySum / Math.max(1, a.latencyCount)),
     }))
     .sort((x, y) => y.cost - x.cost);
 
@@ -206,8 +203,11 @@ export function computeAuditSummary(input: {
     .map((m) => ({ ...m, cost: round4(m.cost) }))
     .sort((x, y) => y.cost - x.cost);
 
-  const totalLatency = all.reduce(
-    (s, r) => s + num(r.latencyMs ?? r.latency_ms),
+  // A missing/zero timing is not an instantaneous request. Keep the average
+  // population consistent with the positive timings used by the percentiles.
+  const latency = computeLatencyPercentiles(all);
+  const totalLatency = Array.from(byActionMap.values()).reduce(
+    (sum, action) => sum + action.latencySum,
     0,
   );
 
@@ -218,9 +218,9 @@ export function computeAuditSummary(input: {
       cost: round4(totals.cost),
       cache_savings_usd: round4(cacheSavings),
       avg_cost_per_call: totals.calls ? round4(totals.cost / totals.calls) : 0,
-      avg_latency: totals.calls ? Math.round(totalLatency / totals.calls) : 0,
+      avg_latency: latency.sample_count ? Math.round(totalLatency / latency.sample_count) : 0,
     },
-    latency: computeLatencyPercentiles(all),
+    latency,
     by_day,
     by_action,
     by_model,

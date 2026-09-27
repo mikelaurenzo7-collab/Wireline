@@ -25,8 +25,9 @@ import {
 } from "../../lib/wireline-create-flow";
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
-import { planById } from "../../lib/plan-catalog";
 import { activationBillingHref, getStoredSignupIntent } from "../../lib/signup-intent";
+import { useChannelEntitlements } from "../../hooks/useChannelEntitlements";
+import ChannelAccessNotice from "../ChannelAccessNotice";
 
 type WizardStep = PostCreateWizardStep | "complete";
 
@@ -63,6 +64,7 @@ export default function PostCreateActivationWizard({
   payload,
   onClose,
 }: PostCreateActivationWizardProps) {
+  const access = useChannelEntitlements();
   const navigate = useNavigate();
   const [step, setStepState] = useState<WizardStep>(() => {
     const stored = readPostCreateWizardStep();
@@ -82,7 +84,9 @@ export default function PostCreateActivationWizard({
   // read is authoritative, including when an older payload's line was removed.
   const phoneNumber = phoneLookup ? phoneLookup.phoneNumber : payload.phoneNumber || null;
   const loadingPhone = refreshingPhone;
-  const hasLiveLine = Boolean(phoneLookup?.active && !refreshingPhone && !phoneLookupFailed);
+  const hasLiveLine = Boolean(
+    access.includes("voice") && phoneLookup?.active && !refreshingPhone && !phoneLookupFailed,
+  );
   const [wireError, setWireError] = useState<string | null>(null);
   // 402 ACTIVATION_REQUIRED is not an error — it is the go-live moment for a
   // customer who just built and trained a Bot. When checkout is open it is a
@@ -200,11 +204,7 @@ export default function PostCreateActivationWizard({
   }
 
   const hasLine = Boolean(phoneNumber);
-  const starterPriceUsd = planById("starter")?.price_usd_monthly ?? 19;
-  // Preselect the PAID plan the customer told us about at signup. A Free
-  // Builder signup's stored intent (and the no-intent default) is "personal",
-  // which cannot activate a number — the CTA promising "$19/mo" must land on
-  // Starter, never on the free tier.
+  // Preserve the exact selected channel package and billing interval.
   const activationPlanPath = useMemo(() => activationBillingHref(getStoredSignupIntent()), []);
 
   const markWireFunnelEvents = useCallback(() => {
@@ -229,6 +229,11 @@ export default function PostCreateActivationWizard({
   }, [payload.agentId, phoneNumber, hasLiveLine]);
 
   const completeCopy = useMemo(() => {
+    if (!access.includes("voice"))
+      return {
+        title: "Your Bot is saved",
+        detail: "Keep testing privately, or open your selected channels to finish setup.",
+      };
     if (hasLiveLine && phoneNumber) {
       return {
         title: POST_CREATE_WIZARD_COPY.complete.liveTitle,
@@ -254,7 +259,15 @@ export default function PostCreateActivationWizard({
       title: POST_CREATE_WIZARD_COPY.complete.deferredTitle,
       detail: POST_CREATE_WIZARD_COPY.complete.deferredDetail(payload.agentName),
     };
-  }, [hasLine, hasLiveLine, phoneNumber, payload.agentName, checkoutAvailable, activationNeeded]);
+  }, [
+    hasLine,
+    hasLiveLine,
+    phoneNumber,
+    payload.agentName,
+    checkoutAvailable,
+    activationNeeded,
+    access,
+  ]);
 
   // A sales pause must not prevent an existing paid customer from choosing
   // their line. The Phone picker checks current server-owned entitlement.
@@ -343,7 +356,7 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.train.detail}
                 </p>
                 <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-foreground">
-                  {POST_CREATE_WIZARD_COPY.steps.train.salesHint}
+                  Train what matters, then test privately before connecting your channels.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -365,7 +378,63 @@ export default function PostCreateActivationWizard({
             </section>
           ) : null}
 
-          {step === "launch" ? (
+          {step === "launch" && !access.includes("voice") ? (
+            <section className="grid gap-4">
+              {access.status !== "ready" ? (
+                <ChannelAccessNotice access={access} channel="voice" />
+              ) : access.data?.channels.length ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Open your included channels to finish setup and review conversations.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {access.includes("email") ? (
+                      <Button asChild size="sm">
+                        <Link
+                          to={`/inbox?tab=email&agent=${encodeURIComponent(payload.agentId)}`}
+                          onClick={dismiss}
+                        >
+                          Open Email
+                        </Link>
+                      </Button>
+                    ) : null}
+                    {access.includes("sms") ? (
+                      <Button asChild size="sm">
+                        <Link
+                          to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}
+                          onClick={dismiss}
+                        >
+                          Set up text line
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {checkoutAvailable === false ? (
+                    <SoftOpenCheckoutNote />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Choose Calls, Email, SMS, or a combination. Your private tests stay available.
+                    </p>
+                  )}
+                  <Button asChild size="sm">
+                    <Link
+                      to={activationPlanPath}
+                      onClick={() => stashPostCreateWizardStep("launch")}
+                    >
+                      Choose channels
+                    </Link>
+                  </Button>
+                </>
+              )}
+              <Button type="button" size="sm" variant="secondary" onClick={() => finish(null)}>
+                Finish for now
+              </Button>
+            </section>
+          ) : null}
+          {step === "launch" && access.includes("voice") ? (
             <section className="grid gap-4">
               {waitingForLaunch ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -381,7 +450,7 @@ export default function PostCreateActivationWizard({
                       {POST_CREATE_WIZARD_COPY.steps.launch.title}
                     </p>
                     <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      {POST_CREATE_WIZARD_COPY.steps.launch.detail}
+                      Your Calls package includes a US number. Callers reach this Bot directly.
                     </p>
                   </div>
 
@@ -423,7 +492,7 @@ export default function PostCreateActivationWizard({
                         {POST_CREATE_WIZARD_COPY.steps.launch.activationRequired}
                       </p>
                       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                        {POST_CREATE_WIZARD_COPY.steps.launch.activationDetail(starterPriceUsd)}
+                        Review your selected package in Billing before connecting a number.
                       </p>
                       <Button asChild size="sm" className="mt-3">
                         <Link
@@ -619,7 +688,7 @@ export default function PostCreateActivationWizard({
           ) : null}
           {step === "complete" ? (
             <>
-              {!hasLiveLine ? (
+              {!hasLiveLine && access.includes("voice") ? (
                 <Button asChild variant="secondary" size="sm">
                   <Link
                     to={

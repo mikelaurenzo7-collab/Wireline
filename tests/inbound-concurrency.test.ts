@@ -8,14 +8,14 @@ beforeEach(() => {
   delete process.env.WIRELINE_INBOUND_CONCURRENT_CALL_CEILING;
 });
 
-async function loadModule(liveCount: number | Error) {
+async function loadModule(liveCount: number | Error, plan = "starter") {
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: {
-      select: vi.fn(() => ({
+      select: vi.fn((projection) => ({
         from: () => ({
           where: async () => {
             if (liveCount instanceof Error) throw liveCount;
-            return [{ live: String(liveCount) }];
+            return "plan" in projection ? [{ plan }] : [{ live: String(liveCount) }];
           },
         }),
       })),
@@ -26,6 +26,13 @@ async function loadModule(liveCount: number | Error) {
 }
 
 describe("inbound concurrency ceiling", () => {
+  it.each(["voice", "voice-email", "voice-sms", "omnichannel"])(
+    "limits %s to one shared pending/active call",
+    async (plan) => {
+      const { inboundConcurrencyExceeded } = await loadModule(1, plan);
+      expect(await inboundConcurrencyExceeded("user-1")).toBe(true);
+    },
+  );
   it("admits below the ceiling", async () => {
     const { inboundConcurrencyExceeded } = await loadModule(3);
     expect(await inboundConcurrencyExceeded("user-1")).toBe(false);

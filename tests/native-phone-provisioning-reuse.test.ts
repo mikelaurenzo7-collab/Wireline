@@ -145,6 +145,9 @@ vi.mock("../src/lib/company-identity-mutation", async () => {
 vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: async () => ({ allowed: true }),
 }));
+vi.mock("../src/lib/channel-entitlements", () => ({
+  requireTenantPhoneChannel: async () => ({ channels: ["voice"] }),
+}));
 vi.mock("../src/lib/agent-phone-lines", () => ({
   findAgentPhoneLine: h.find,
   ensureTenantTelecomDefaults: vi.fn(),

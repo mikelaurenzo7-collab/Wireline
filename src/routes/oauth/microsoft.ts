@@ -19,6 +19,7 @@ import {
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
+import { getTenantChannelEntitlements } from "../../lib/channel-entitlements";
 
 const router = express.Router();
 
@@ -35,14 +36,19 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
-    await assertOAuthProviderConnectAllowed(uid, "Microsoft");
+    const tenantId = await assertOAuthProviderConnectAllowed(uid, "Microsoft");
+    const emailIncluded = (await getTenantChannelEntitlements(tenantId)).channels.includes("email");
     const redirectUri = getMicrosoftRedirectUri(req);
     const params = new URLSearchParams({
       client_id: process.env.MICROSOFT_CLIENT_ID!,
       response_type: "code",
       redirect_uri: redirectUri,
       response_mode: "query",
-      scope: MS_SCOPES,
+      scope: emailIncluded
+        ? MS_SCOPES
+        : MS_SCOPES.split(" ")
+            .filter((scope) => !scope.startsWith("Mail."))
+            .join(" "),
       state: generateOAuthState(uid ? { userId: uid } : undefined),
     });
 
@@ -80,6 +86,7 @@ router.get(
         );
     }
     await assertOAuthProviderConnectAllowed(userId, "Microsoft");
+    const emailIncluded = (await getTenantChannelEntitlements(userId)).channels.includes("email");
 
     try {
       const redirectUri = getMicrosoftRedirectUri(req);
@@ -117,15 +124,17 @@ router.get(
       const refreshTokenMs = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
       const expiresAtMs = BigInt(Date.now() + (tokens.expires_in || 3600) * 1000);
 
-      const emailAccountConnected = await upsertOwnedEmailAccount({
-        userId,
-        emailAddress,
-        provider: "microsoft",
-        accessToken: accessTokenMs,
-        refreshToken: refreshTokenMs,
-        expiresAt: expiresAtMs,
-        oauthGrantedScopes: scopeStr || null,
-      });
+      const emailAccountConnected =
+        !emailIncluded ||
+        (await upsertOwnedEmailAccount({
+          userId,
+          emailAddress,
+          provider: "microsoft",
+          accessToken: accessTokenMs,
+          refreshToken: refreshTokenMs,
+          expiresAt: expiresAtMs,
+          oauthGrantedScopes: scopeStr || null,
+        }));
       if (!emailAccountConnected) {
         return res.status(409).send(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
       }

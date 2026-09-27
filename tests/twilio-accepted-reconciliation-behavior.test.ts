@@ -13,6 +13,12 @@ function installSendMocks(options: {
   fenceDenied?: boolean;
   threadStatus?: string;
   smsFromNumber?: string | null;
+  lookupEnabled?: boolean;
+  newRecipient?: boolean;
+  insufficientBalance?: boolean;
+  noSender?: boolean;
+  channelDenied?: boolean;
+  lookupResult?: { ok: boolean; valid?: boolean; lineType?: string; reason?: string };
 }) {
   const createMessage = vi.fn(async (_payload?: Record<string, unknown>) => {
     if (options.provider.kind === "rejected") {
@@ -37,8 +43,13 @@ function installSendMocks(options: {
     if (options.failAdjustment && reservationCall > 1) {
       throw new Error("segment ledger unavailable");
     }
-    return { reserved: true, alreadyReserved: false, balanceUsd: 10 };
+    return { reserved: !options.insufficientBalance, alreadyReserved: false, balanceUsd: 10 };
   });
+  const lookupTenantPhoneNumber = vi.fn(async () => ({
+    configured: true,
+    enabled: true,
+    ...(options.lookupResult ?? { ok: true, valid: true, lineType: "mobile" }),
+  }));
 
   const select = vi.fn((projection: Record<string, unknown>) => {
     let rows: unknown[];
@@ -46,8 +57,8 @@ function installSendMocks(options: {
       rows = [
         {
           enabled: true,
-          lookupEnabled: false,
-          messagingServiceSid: "MGservice",
+          lookupEnabled: options.lookupEnabled ?? false,
+          messagingServiceSid: options.noSender ? null : "MGservice",
           smsFromNumber: options.smsFromNumber ?? null,
           whatsappFromNumber: null,
         },
@@ -55,7 +66,9 @@ function installSendMocks(options: {
     } else if ("phone" in projection) {
       rows = [];
     } else {
-      rows = [{ id: "thread-1", agentId: null, status: options.threadStatus ?? "open" }];
+      rows = options.newRecipient
+        ? []
+        : [{ id: "thread-1", agentId: null, status: options.threadStatus ?? "open" }];
     }
     return {
       from: vi.fn(() => ({
@@ -116,7 +129,7 @@ function installSendMocks(options: {
   vi.doMock("../src/lib/twilio-service-base", () => ({
     getTwilioClient: () => ({ messages: { create: createMessage } }),
     isTwilioConfigured: () => true,
-    lookupTenantPhoneNumber: vi.fn(),
+    lookupTenantPhoneNumber,
     SMS_PROVIDER_OUTCOME_AMBIGUOUS: "SMS_PROVIDER_OUTCOME_AMBIGUOUS",
   }));
   vi.doMock("../src/lib/twilio-message-reliability", () => ({
@@ -147,12 +160,19 @@ function installSendMocks(options: {
   vi.doMock("../src/lib/trial-gate", () => ({
     assertLiveWorkEntitlementForUser: vi.fn(async () => ({ ok: true })),
   }));
+  vi.doMock("../src/lib/channel-entitlements", () => ({
+    requireTenantChannel: async () => {
+      if (options.channelDenied)
+        throw Object.assign(new Error("Add SMS"), { code: "CHANNEL_NOT_INCLUDED" });
+    },
+  }));
   vi.doMock("../src/lib/tenant-provider-deletion-fence", () => ({
     runTenantProviderWorkWithDeletionFence,
   }));
 
   return {
     createMessage,
+    lookupTenantPhoneNumber,
     enqueue,
     refundRuntimeUsage,
     reserveRuntimeUsage,
@@ -169,6 +189,124 @@ describe("Twilio accepted-message reliability", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+  });
+  it("does not reserve Runtime or call Lookup/carrier for an excluded SMS channel", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      channelDenied: true,
+      lookupEnabled: true,
+      newRecipient: true,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const result = await sendTenantMessage("user-1", { to: "+13125550101", body: "Test" });
+    expect(result).toMatchObject({ ok: false, code: "CHANNEL_NOT_INCLUDED" });
+    expect(mocks.reserveRuntimeUsage).not.toHaveBeenCalled();
+    expect(mocks.lookupTenantPhoneNumber).not.toHaveBeenCalled();
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+  });
+
+  it.each(["balance", "sender"])("does not pay for Lookup when %s is unavailable", async (gate) => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      lookupEnabled: true,
+      newRecipient: true,
+      insufficientBalance: gate === "balance",
+      noSender: gate === "sender",
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const beforeProviderAttempt = vi.fn();
+    expect(
+      await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Hello",
+        beforeProviderAttempt,
+      }),
+    ).toMatchObject({ ok: false });
+    expect(mocks.lookupTenantPhoneNumber).not.toHaveBeenCalled();
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+    expect(beforeProviderAttempt).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { ok: true, valid: false },
+    { ok: true, valid: true, lineType: "landline" },
+    { ok: false, reason: "Lookup allowance exhausted" },
+  ])("refunds the unsent SMS after validation refuses %j", async (lookupResult) => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      lookupEnabled: true,
+      newRecipient: true,
+      lookupResult,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    const beforeProviderAttempt = vi.fn(async () => undefined);
+    expect(
+      await sendTenantMessage("user-1", {
+        to: "+14155550123",
+        body: "Hello",
+        beforeProviderAttempt,
+        idempotencyKey: "lookup-refusal",
+      }),
+    ).toMatchObject({ ok: false });
+    expect(mocks.reserveRuntimeUsage.mock.invocationCallOrder[0]).toBeLessThan(
+      beforeProviderAttempt.mock.invocationCallOrder[0],
+    );
+    expect(beforeProviderAttempt.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.lookupTenantPhoneNumber.mock.invocationCallOrder[0],
+    );
+    expect(mocks.refundRuntimeUsage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountUsd: 0.02,
+        referenceId: "twilio_message:sms:lookup-refusal",
+        reason: "SMS was not sent after phone validation",
+      }),
+    );
+    expect(mocks.createMessage).not.toHaveBeenCalled();
+  });
+
+  it("lets only the durable attempt winner reach paid Lookup during a concurrent replay", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      lookupEnabled: true,
+      newRecipient: true,
+    });
+    const { sendTenantMessage, SmsProviderAttemptAlreadyClaimedError } =
+      await import("../src/lib/twilio-service");
+    let claimed = false;
+    const beforeProviderAttempt = async () => {
+      if (claimed) throw new SmsProviderAttemptAlreadyClaimedError();
+      claimed = true;
+    };
+    const input = {
+      to: "+14155550123",
+      body: "Hello",
+      idempotencyKey: "same-operation",
+      beforeProviderAttempt,
+    };
+    const outcomes = await Promise.allSettled([
+      sendTenantMessage("user-1", input),
+      sendTenantMessage("user-1", input),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.status === "fulfilled")).toHaveLength(1);
+    expect(outcomes.filter((outcome) => outcome.status === "rejected")).toHaveLength(1);
+    expect(mocks.lookupTenantPhoneNumber).toHaveBeenCalledTimes(1);
+    expect(mocks.createMessage).toHaveBeenCalledTimes(1);
+    expect(mocks.refundRuntimeUsage).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed validation refund visible and never sends the SMS", async () => {
+    const mocks = installSendMocks({
+      provider: { kind: "accepted" },
+      lookupEnabled: true,
+      newRecipient: true,
+      lookupResult: { ok: true, valid: false },
+      failRefund: true,
+    });
+    const { sendTenantMessage } = await import("../src/lib/twilio-service");
+    await expect(
+      sendTenantMessage("user-1", { to: "+14155550123", body: "Hello" }),
+    ).rejects.toThrow("refund ledger unavailable");
+    expect(mocks.createMessage).not.toHaveBeenCalled();
   });
 
   it("refuses demo-account SMS before reserving balance or calling Twilio", async () => {

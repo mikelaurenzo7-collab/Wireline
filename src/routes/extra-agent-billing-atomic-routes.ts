@@ -19,7 +19,7 @@ import {
   reconciledStoredAgentCap,
 } from "../lib/extra-agent-billing";
 import { isLaunchHardBlocked, launchBlockResponse } from "../lib/launch-readiness";
-import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
+import { planById } from "../lib/plan-catalog";
 import { getErrorMessage } from "../lib/server-utils";
 import { auditLogger, drizzle, log } from "../lib/server-context";
 import { stripe, stripeAvailable } from "../lib/stripe-helpers";
@@ -101,7 +101,7 @@ async function validateFounderCatalogPriceId(priceId: string): Promise<string | 
   try {
     const price = await stripe.prices.retrieve(priceId);
     if (!price.active) return null;
-    if (price.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION) return null;
+    if (price.metadata?.wireline_catalog_version !== "founder_early_access_2026_07_v6") return null;
     return price.id;
   } catch (error) {
     log.warn("Extra-agent Stripe price validation failed", {
@@ -205,6 +205,16 @@ router.post("/", authenticateUser, async (req: AuthenticatedRequest, res: Respon
       if (!row) throw AppError.fromHttpStatus(404, "Workspace billing settings not found");
       const plan = planById(row.planId || "personal");
       if (!plan) throw AppError.fromHttpStatus(400, "Plan not found");
+      if (plan.catalogFamily === "channels") {
+        return {
+          status: 409,
+          body: {
+            code: "ADDON_NOT_AVAILABLE",
+            error:
+              "This channel package includes one Bot. Extra-Bot add-ons are not available for this package.",
+          },
+        };
+      }
 
       const currentDbQuantity = Math.max(0, Number(row.currentExtraAgents ?? 0));
       const persistQuantity = async (

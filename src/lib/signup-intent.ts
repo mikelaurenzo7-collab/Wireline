@@ -1,14 +1,62 @@
 import { BOT_ROLE_TEMPLATES } from "./bot-product";
 
 export const SIGNUP_INTENT_STORAGE_KEY = "wireline_signup_intent_v1";
+export const DEFAULT_ACTIVATION_PLAN_ID = "voice-regular";
 
 // Signup attribution stores stable billing ids. Customer-facing URLs use the
 // clean launch names below, while old links remain resolver-compatible.
-export const SIGNUP_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
+export const SIGNUP_PLAN_IDS = [
+  "personal",
+  "voice",
+  "email",
+  "sms",
+  "voice-email",
+  "voice-sms",
+  "email-sms",
+  "omnichannel",
+  "voice-regular",
+  "voice-high",
+  "email-regular",
+  "email-high",
+  "sms-regular",
+  "sms-high",
+  "voice-email-regular",
+  "voice-email-high",
+  "voice-sms-regular",
+  "voice-sms-high",
+  "email-sms-regular",
+  "email-sms-high",
+  "omnichannel-regular",
+  "omnichannel-high",
+  "starter",
+  "team",
+  "business",
+] as const;
 export type SignupPlanId = (typeof SIGNUP_PLAN_IDS)[number];
 
 export const PUBLIC_SIGNUP_PLAN_SLUGS = {
   personal: "free",
+  voice: "voice",
+  email: "email",
+  sms: "sms",
+  "voice-email": "voice-email",
+  "voice-sms": "voice-sms",
+  "email-sms": "email-sms",
+  omnichannel: "omnichannel",
+  "voice-regular": "voice-regular",
+  "voice-high": "voice-high",
+  "email-regular": "email-regular",
+  "email-high": "email-high",
+  "sms-regular": "sms-regular",
+  "sms-high": "sms-high",
+  "voice-email-regular": "voice-email-regular",
+  "voice-email-high": "voice-email-high",
+  "voice-sms-regular": "voice-sms-regular",
+  "voice-sms-high": "voice-sms-high",
+  "email-sms-regular": "email-sms-regular",
+  "email-sms-high": "email-sms-high",
+  "omnichannel-regular": "omnichannel-regular",
+  "omnichannel-high": "omnichannel-high",
   starter: "starter",
   team: "starter-plus",
   business: "pro",
@@ -154,7 +202,11 @@ function normalizePlanId(value: string | null | undefined): SignupPlanId | undef
   if (!cleaned) return undefined;
   if (PLAN_SET.has(cleaned)) return cleaned as SignupPlanId;
   const aliasKey = cleaned.replace(/[-\s]+/g, "_");
-  return LEGACY_PLAN_ALIASES[aliasKey] || LEGACY_PLAN_ALIASES[cleaned];
+  return Object.hasOwn(LEGACY_PLAN_ALIASES, aliasKey)
+    ? LEGACY_PLAN_ALIASES[aliasKey]
+    : Object.hasOwn(LEGACY_PLAN_ALIASES, cleaned)
+      ? LEGACY_PLAN_ALIASES[cleaned]
+      : undefined;
 }
 
 function normalizeTemplateId(value: string | null | undefined): string | undefined {
@@ -326,7 +378,9 @@ export function billingIntervalFromIntent(
 /** Carry signup preferences into the existing paid activation path. */
 export function activationBillingHref(intent: SignupIntent | null | undefined): string {
   const recommended = recommendedPlanFromIntent(intent);
-  const plan = recommended === "personal" ? "starter" : recommended;
+  const plan = ["personal", "starter", "team", "business"].includes(recommended)
+    ? DEFAULT_ACTIVATION_PLAN_ID
+    : recommended;
   const params = new URLSearchParams({ plan, interval: billingIntervalFromIntent(intent) });
   return `/settings/billing?${params.toString()}`;
 }

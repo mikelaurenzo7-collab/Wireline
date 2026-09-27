@@ -7,7 +7,7 @@ import {
   stripePriceMatchesFounderPlan,
 } from "../src/lib/stripe-founder-price";
 
-const starter = planById("starter")!;
+const starter = planById("voice")!;
 
 function validPrice(
   interval: "month" | "year" = "month",
@@ -26,6 +26,12 @@ function validPrice(
     metadata: {
       wireline_plan_id: starter.id,
       wireline_catalog_version: FOUNDER_CATALOG_VERSION,
+      wireline_channels: starter.channels.join(","),
+      included_agents: String(starter.max_agents),
+      included_numbers: String(starter.included_phone_numbers),
+      included_mailboxes: String(starter.included_mailboxes),
+      included_voice_minutes: String(starter.voice_minutes_monthly),
+      included_ai_spend_usd: String(starter.ai_spend_allowance_usd_monthly),
     },
     nickname: null,
     product: {
@@ -41,6 +47,12 @@ function validPrice(
       metadata: {
         wireline_plan_id: starter.id,
         wireline_catalog_version: FOUNDER_CATALOG_VERSION,
+        wireline_channels: starter.channels.join(","),
+        included_agents: String(starter.max_agents),
+        included_numbers: String(starter.included_phone_numbers),
+        included_mailboxes: String(starter.included_mailboxes),
+        included_voice_minutes: String(starter.voice_minutes_monthly),
+        included_ai_spend_usd: String(starter.ai_spend_allowance_usd_monthly),
       },
       name: starter.name,
       package_dimensions: null,
@@ -124,19 +136,38 @@ describe("strict Stripe founder-price contract", () => {
   });
 
   it("uses one exact expanded lookup match and rejects duplicate or truncated results", async () => {
-    vi.stubEnv(starter.priceIdEnv!, "");
+    vi.stubEnv(starter.priceIdEnv!, "price_opted_in");
     const price = validPrice();
+    const lookupClient = (prices: Stripe.Price[], hasMore = false) => {
+      const client = fakeClient(prices, hasMore);
+      vi.mocked(client.prices.retrieve).mockRejectedValue(new Error("stale configured price"));
+      return client;
+    };
 
     await expect(
-      resolveStrictFounderPriceId("starter", "month", fakeClient([price])),
+      resolveStrictFounderPriceId("voice", "month", lookupClient([price])),
     ).resolves.toBe(price.id);
     await expect(
-      resolveStrictFounderPriceId("starter", "month", fakeClient([price, { ...price }])),
+      resolveStrictFounderPriceId("voice", "month", lookupClient([price, { ...price }])),
     ).resolves.toBeNull();
     await expect(
-      resolveStrictFounderPriceId("starter", "month", fakeClient([price], true)),
+      resolveStrictFounderPriceId("voice", "month", lookupClient([price], true)),
     ).resolves.toBeNull();
   });
+
+  it.each(["voice", "email", "voice-email"])(
+    "requires explicit %s interval opt-in even if Stripe has lookup matches",
+    async (id) => {
+      const plan = planById(id)!;
+      vi.stubEnv(plan.priceIdEnv!, " ");
+      vi.stubEnv(plan.annualPriceIdEnv!, "");
+      const client = fakeClient([validPrice()]);
+      await expect(resolveStrictFounderPriceId(id, "month", client)).resolves.toBeNull();
+      await expect(resolveStrictFounderPriceId(id, "year", client)).resolves.toBeNull();
+      expect(client.prices.retrieve).not.toHaveBeenCalled();
+      expect(client.prices.list).not.toHaveBeenCalled();
+    },
+  );
 
   it("treats a configured id as a validated hint and safely falls back", async () => {
     vi.stubEnv(starter.priceIdEnv!, "price_wrong");
@@ -150,7 +181,7 @@ describe("strict Stripe founder-price contract", () => {
       url: "/v1/prices",
     });
 
-    await expect(resolveStrictFounderPriceId("starter", "month", client)).resolves.toBe(exact.id);
+    await expect(resolveStrictFounderPriceId("voice", "month", client)).resolves.toBe(exact.id);
     expect(client.prices.retrieve).toHaveBeenCalledWith("price_wrong", { expand: ["product"] });
     expect(client.prices.list).toHaveBeenCalledWith(
       expect.objectContaining({ expand: ["data.product"], limit: 100 }),
@@ -162,6 +193,10 @@ describe("strict Stripe founder-price contract", () => {
     await expect(resolveStrictFounderPriceId("personal", "month", client)).resolves.toBeNull();
     await expect(resolveStrictFounderPriceId("enterprise", "month", client)).resolves.toBeNull();
     await expect(resolveStrictFounderPriceId("unknown", "month", client)).resolves.toBeNull();
+    await expect(resolveStrictFounderPriceId("starter", "month", client)).resolves.toBeNull();
+    await expect(resolveStrictFounderPriceId("sms", "month", client)).resolves.toBeNull();
+    await expect(resolveStrictFounderPriceId("omnichannel", "month", client)).resolves.toBeNull();
+    expect(client.prices.retrieve).not.toHaveBeenCalled();
     expect(client.prices.list).not.toHaveBeenCalled();
   });
 });

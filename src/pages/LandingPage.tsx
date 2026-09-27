@@ -13,7 +13,9 @@ export default function LandingPage() {
   useEffect(() => {
     captureSignupIntentFromLocation();
   }, []);
-  const publicPlans = STRIPE_PLANS.filter((plan) => plan.public !== false);
+  const publicPlans = STRIPE_PLANS.filter(
+    (plan) => plan.public !== false && plan.checkoutAvailability === "available",
+  );
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",

@@ -6,6 +6,18 @@ import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
 import { getErrorMessage } from "./server-utils";
 import {
+  externalEntityActionPolicyForUser,
+  liveExternalActionPolicyForUser,
+} from "./account-environment-policy";
+import { isLaunchHardBlocked } from "./launch-readiness";
+import { assertLiveWorkEntitlementForUser } from "./trial-gate";
+import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
+import {
+  commitPlatformCostReservation,
+  markPlatformCostReservationAmbiguous,
+  reservePlatformCostRecord,
+} from "../middleware/audit-middleware";
+import {
   createTwilioMessageWithRateLimitRetry,
   withTwilioMessageReliability,
 } from "./twilio-message-reliability";
@@ -29,6 +41,8 @@ export interface TwilioLookupResult {
   configured: boolean;
   enabled: boolean;
   reason?: string;
+  code?: string;
+  recovery_path?: string;
   phoneNumber?: string;
   valid?: boolean;
   lineType?: string | null;
@@ -138,7 +152,45 @@ async function getTenantSettings(userId: string): Promise<TwilioTenantSettings> 
   };
 }
 
-async function fetchPhoneLookup(phone: string): Promise<TwilioLookupResult> {
+/** A conservative enrichment reserve, not a new customer Runtime Balance charge. */
+export const TWILIO_LOOKUP_RESERVE_USD = 0.01;
+
+async function fetchPhoneLookup(userId: string, phone: string): Promise<TwilioLookupResult> {
+  const unavailable = (reason: string, code = "PHONE_LOOKUP_UNAVAILABLE"): TwilioLookupResult => ({
+    ok: false,
+    configured: isTwilioConfigured(),
+    enabled: true,
+    reason,
+    code,
+  });
+  if (!userId?.trim()) return unavailable("The workspace could not be verified.");
+  const normalizedPhone = cleanPhone(phone);
+  if (!/^\+?\d{7,15}$/.test(normalizedPhone)) {
+    return unavailable("Enter a valid phone number.", "PHONE_LOOKUP_INVALID_NUMBER");
+  }
+  if (isLaunchHardBlocked()) {
+    return unavailable("Phone validation is temporarily paused.", "LAUNCH_NOT_READY");
+  }
+
+  // Every paid Lookup caller, including tools and tenant operational alerts,
+  // must prove its owner and live access. Free Builder funds private work only.
+  try {
+    const environment = await liveExternalActionPolicyForUser(userId);
+    if (!environment.allowed) return unavailable(environment.message, environment.code);
+    const entity = await externalEntityActionPolicyForUser(userId, { phone: normalizedPhone });
+    if (!entity.allowed) return unavailable(entity.message, entity.code);
+    const entitlement = await assertLiveWorkEntitlementForUser(userId);
+    if (!entitlement.ok) {
+      return {
+        ...unavailable(entitlement.error, entitlement.code),
+        recovery_path: entitlement.recovery_path,
+      };
+    }
+  } catch (error) {
+    log.warn("Twilio lookup admission failed closed", { error: getErrorMessage(error) });
+    return unavailable("Phone validation is temporarily unavailable. Try again shortly.");
+  }
+
   const client = getTwilioClient();
   if (!client) {
     return {
@@ -150,31 +202,64 @@ async function fetchPhoneLookup(phone: string): Promise<TwilioLookupResult> {
   }
 
   try {
-    const response = await client.lookups.v2
-      .phoneNumbers(cleanPhone(phone))
-      .fetch({ fields: "line_type_intelligence" });
+    const fenced = await runTenantProviderWorkWithDeletionFence({
+      userId,
+      operation: "twilio_phone_lookup",
+      perform: async (): Promise<TwilioLookupResult> => {
+        // Use the existing model/research/enrichment envelope. Each actual
+        // request needs its own debit; reusing a receipt without a cached
+        // result would let retries spend repeatedly against one reservation.
+        const decision = await reservePlatformCostRecord({
+          userId,
+          action: "platform.enrichment.phone_lookup",
+          provider: "twilio",
+          model: "line_type_intelligence",
+          costUsd: TWILIO_LOOKUP_RESERVE_USD,
+          requestMeta: { destination_suffix: normalizedPhone.slice(-4) },
+        });
+        if (!decision.reserved) {
+          return unavailable(
+            decision.reason === "cap_reached"
+              ? "Phone validation has reached your included enrichment allowance. Review Billing or wait for the monthly reset."
+              : "Phone validation could not reserve its allowance. Try again shortly.",
+            decision.reason === "cap_reached" ? "SPEND_CAP_REACHED" : "SPEND_GUARD_UNAVAILABLE",
+          );
+        }
 
-    const lineType = (response as any).lineTypeIntelligence?.type ?? null;
-    const carrierName = (response as any).lineTypeIntelligence?.carrierName ?? null;
-
-    return {
-      ok: true,
-      configured: true,
-      enabled: true,
-      phoneNumber: response.phoneNumber || cleanPhone(phone),
-      valid: response.valid ?? true,
-      lineType,
-      carrierName,
-      countryCode: response.countryCode || null,
-    };
+        try {
+          const response = await client.lookups.v2
+            .phoneNumbers(normalizedPhone)
+            .fetch({ fields: "line_type_intelligence" });
+          // Invalid and landline results still required a paid provider query.
+          await commitPlatformCostReservation(decision.reservation);
+          return {
+            ok: true,
+            configured: true,
+            enabled: true,
+            phoneNumber: response.phoneNumber || normalizedPhone,
+            valid: response.valid ?? true,
+            lineType: (response as any).lineTypeIntelligence?.type ?? null,
+            carrierName: (response as any).lineTypeIntelligence?.carrierName ?? null,
+            countryCode: response.countryCode || null,
+          };
+        } catch (error) {
+          // Once the query was attempted, even an error is not proof that
+          // Twilio charged nothing. Retain the durable cost before returning.
+          await markPlatformCostReservationAmbiguous(decision.reservation);
+          log.warn("Twilio lookup failed", { error: getErrorMessage(error) });
+          return unavailable("Twilio Lookup request failed.");
+        }
+      },
+    });
+    return fenced.performed
+      ? fenced.result
+      : unavailable(
+          "Phone validation is unavailable while account deletion is in progress.",
+          "ACCOUNT_DELETION_IN_PROGRESS",
+        );
   } catch (error) {
-    log.warn("Twilio lookup failed", { error: getErrorMessage(error) });
-    return {
-      ok: false,
-      configured: true,
-      enabled: true,
-      reason: "Twilio Lookup request failed.",
-    };
+    log.warn("Twilio lookup accounting unavailable", { error: getErrorMessage(error) });
+    return unavailable("Phone validation is temporarily unavailable. Try again shortly.");
   }
 }
 
@@ -182,6 +267,14 @@ export async function lookupTenantPhoneNumber(
   userId: string,
   phone: string,
 ): Promise<TwilioLookupResult> {
+  if (!userId?.trim()) {
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      reason: "The workspace could not be verified.",
+    };
+  }
   const settings = await getTenantSettings(userId);
 
   if (!settings.lookupEnabled) {
@@ -193,7 +286,7 @@ export async function lookupTenantPhoneNumber(
     };
   }
 
-  return fetchPhoneLookup(phone);
+  return fetchPhoneLookup(userId, phone);
 }
 
 async function buildMessagePayload(
@@ -231,7 +324,7 @@ async function buildMessagePayload(
   }
 
   if (params.channel === "sms" && settings.lookupEnabled) {
-    const lookup = await fetchPhoneLookup(params.to);
+    const lookup = await fetchPhoneLookup(userId, params.to);
     if (!lookup.ok) {
       return {
         result: {

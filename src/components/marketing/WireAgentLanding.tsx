@@ -49,12 +49,12 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   "customer-support": Headphones,
   custom: WandSparkles,
 };
-const PUBLIC_PLAN_IDS = ["personal", "starter", "team", "business"] as const;
+const PUBLIC_PLAN_IDS = ["personal", "email", "voice-regular", "voice-email-regular"] as const;
 const PLAN_NAMES: Record<(typeof PUBLIC_PLAN_IDS)[number], string> = {
   personal: "Free Builder",
-  starter: "Starter",
-  team: "Starter Plus",
-  business: "Pro",
+  email: "Email",
+  "voice-regular": "Calls",
+  "voice-email-regular": "Calls + Email",
 };
 const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
   const plan = STRIPE_PLANS.find((candidate) => candidate.id === id);
@@ -199,13 +199,13 @@ export default function WireAgentLanding() {
               <header className="landing-prestige__section-heading">
                 <p>PRICING</p>
                 <h2>Build Free. Go Live on Your Terms</h2>
-                <span>One private Bot to start. More live Bots as your business grows.</span>
+                <span>Choose your channels and monthly capacity.</span>
                 <span>{notice}</span>
               </header>
               <div className="landing-prestige__price-grid">
                 {PUBLIC_PLANS.map(({ id, plan }) => {
                   const free = id === "personal";
-                  const featured = id === "team";
+                  const featured = id === "voice-email-regular";
                   return (
                     <article
                       key={id}
@@ -213,6 +213,9 @@ export default function WireAgentLanding() {
                     >
                       <div>
                         <p>{PLAN_NAMES[id]}</p>
+                        {!free ? (
+                          <span>{plan.capacityTier === "light" ? "Light" : "Regular"}</span>
+                        ) : null}
                         <div className="landing-prestige__price-number">
                           <strong>${plan.price_usd_monthly}</strong>
                           <span>{free ? "forever" : "/mo"}</span>
@@ -227,12 +230,18 @@ export default function WireAgentLanding() {
                         <li>
                           {free
                             ? "Private simulation"
-                            : `${plan.voice_minutes_monthly} call minutes/month`}
+                            : plan.voice_minutes_monthly > 0
+                              ? `${plan.voice_minutes_monthly} call minutes/month`
+                              : "1 managed email inbox"}
                         </li>
                         <li>
                           {free
                             ? "Upgrade for live work"
-                            : `${plan.included_phone_numbers} number${plan.included_phone_numbers === 1 ? "" : "s"} included`}
+                            : id === "email"
+                              ? "AI and email allowance included"
+                              : id === "voice-email-regular"
+                                ? "1 number + 1 email inbox"
+                                : "1 local number included"}
                         </li>
                       </ul>
                       <Link

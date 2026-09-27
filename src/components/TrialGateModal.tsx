@@ -12,13 +12,20 @@ import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Loader2, CreditCard, AlertTriangle, Mail, Check } from "lucide-react";
 import { authFetch, safeJson, TRIAL_GATE_EVENT, type TrialGateBlockDetail } from "../lib/api";
-import { cn } from "../lib/utils";
 import { useBodyScrollLock } from "../lib/use-body-scroll-lock";
 import { useModalFocusTrap } from "../lib/use-modal-focus-trap";
-import { getStoredSignupIntent, recommendedPlanFromIntent } from "../lib/signup-intent";
+import {
+  getStoredSignupIntent,
+  DEFAULT_ACTIVATION_PLAN_ID,
+  recommendedPlanFromIntent,
+  persistSignupIntent,
+  mergeSignupIntent,
+  type SignupPlanId,
+} from "../lib/signup-intent";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import type { BillingPlansResponse, ClientPlan } from "../types/api-billing";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
 
 type CheckoutTier = {
   id: string;
@@ -43,23 +50,22 @@ function selfServeTiers(
 ): CheckoutTier[] {
   const hasLiveCatalog = livePlans !== null;
   const source = hasLiveCatalog
-    ? livePlans.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false)
-    : STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
-        (plan) => ({
-          id: plan.id,
-          name: plan.name,
-          price_usd_monthly: plan.price_usd_monthly,
-          price_usd_annual: plan.price_usd_annual,
-          features: plan.features,
-          max_agents: plan.max_agents,
-          voice_minutes_monthly: plan.voice_minutes_monthly,
-          // A local price id is not release authorization. Fail closed until
-          // the server confirms this exact deployment may open checkout.
-          configured: false,
-          annual_configured: false,
-          public: true as const,
-        }),
-      );
+    ? livePlans.filter((plan) => plan.catalog_family === "channels").filter(hasChannelPlanDetails)
+    : STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        price_usd_monthly: plan.price_usd_monthly,
+        price_usd_annual: plan.price_usd_annual,
+        features: plan.features,
+        max_agents: plan.max_agents,
+        voice_minutes_monthly: plan.voice_minutes_monthly,
+        // A local price id is not release authorization. Fail closed until
+        // the server confirms this exact deployment may open checkout.
+        configured: false,
+        annual_configured: false,
+        checkout_availability: plan.checkoutAvailability,
+        public: true as const,
+      }));
 
   return source.map((plan) => {
     const wantAnnual = preferredInterval === "year" && plan.price_usd_annual > 0;
@@ -67,7 +73,10 @@ function selfServeTiers(
     // When the customer preferred annual but Stripe annual is not configured,
     // fall back to monthly rather than offering a broken checkout.
     const useAnnual = wantAnnual && annualReady;
-    const monthlyReady = checkoutAvailable && plan.configured === true;
+    const monthlyReady =
+      checkoutAvailable &&
+      plan.checkout_availability === "available" &&
+      (useAnnual ? annualReady : plan.configured === true);
     return {
       id: plan.id,
       label: plan.name.replace(/^BotBound\s+/, ""),
@@ -131,6 +140,7 @@ export default function TrialGateModal() {
   const [resend, setResend] = useState<ResendOutcome>("idle");
   const [livePlans, setLivePlans] = useState<ClientPlan[] | null>(null);
   const [checkoutAvailable, setCheckoutAvailable] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(DEFAULT_ACTIVATION_PLAN_ID);
   const dialogRef = useRef<HTMLDivElement>(null);
   const checkoutAbortRef = useRef<AbortController | null>(null);
 
@@ -156,6 +166,12 @@ export default function TrialGateModal() {
       setPending(null);
       setLivePlans(null);
       setCheckoutAvailable(false);
+      const intended = recommendedPlanFromIntent(getStoredSignupIntent());
+      setSelectedPlanId(
+        STRIPE_PLANS.some((plan) => plan.id === intended && plan.catalogFamily === "channels")
+          ? intended
+          : DEFAULT_ACTIVATION_PLAN_ID,
+      );
       setDetail(customEvent.detail);
       setError(null);
       setResend("idle");
@@ -203,10 +219,13 @@ export default function TrialGateModal() {
   if (!detail) return null;
 
   const { title, body } = headlineForCode(detail);
-  const recommendedPlanId = recommendedPlanFromIntent(getStoredSignupIntent());
   const preferredInterval =
     getStoredSignupIntent()?.preferredBillingInterval === "year" ? "year" : "month";
   const checkoutTiers = selfServeTiers(preferredInterval, livePlans, checkoutAvailable);
+  const channelPlans =
+    livePlans?.filter((plan) => plan.catalog_family === "channels").filter(hasChannelPlanDetails) ??
+    STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+  const selectedTier = checkoutTiers.find((tier) => tier.id === selectedPlanId);
   const catalogPending = livePlans === null;
   const checkoutUnavailable =
     !catalogPending &&
@@ -504,61 +523,59 @@ export default function TrialGateModal() {
                     >
                       View plans
                     </summary>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      {checkoutTiers.map((tier) => {
-                        const isPending = pending === tier.id;
-                        const isRecommended = tier.id === recommendedPlanId;
+                    <ChannelPlanPicker
+                      id="activation"
+                      plans={channelPlans}
+                      selectedPlanId={selectedPlanId}
+                      onSelectPlan={(id) => {
+                        setSelectedPlanId(id);
+                        persistSignupIntent(
+                          mergeSignupIntent(getStoredSignupIntent(), {
+                            preferredPlanId: id as SignupPlanId,
+                            preferredBillingInterval: preferredInterval,
+                            capturedAt: new Date().toISOString(),
+                          }),
+                        );
+                      }}
+                      interval={selectedTier?.interval ?? preferredInterval}
+                      disabled={!!pending}
+                      renderAction={(plan) => {
+                        const tier = checkoutTiers.find((item) => item.id === plan.id);
+                        const smsPending =
+                          plan.channels.includes("sms") && tier?.disabled !== false;
                         return (
-                          <ShadButton
-                            key={tier.id}
-                            type="button"
-                            disableAnimations
-                            variant="outline"
-                            onClick={() => checkout(tier.id, tier.interval)}
-                            disabled={!!pending || !!tier.disabled}
-                            title={tier.disabledReason}
-                            aria-label={`Choose ${tier.label}, $${tier.price}${tier.suffix}`}
-                            className={cn(
-                              "relative h-auto w-full flex-col items-stretch justify-start gap-0 rounded-md p-4 text-left touch-manipulation",
-                              isRecommended
-                                ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
-                                : "hover:border-brand/30 hover:bg-black/3",
-                            )}
-                          >
-                            {isRecommended && (
-                              <div className="absolute -top-2 left-4 rounded-full bg-brand px-2 py-0.5 font-medium text-on-brand wl-label">
-                                Recommended
-                              </div>
-                            )}
-                            <div className="mb-1 font-display text-lg text-foreground">
-                              {tier.label}
-                            </div>
-                            <div className="mb-2 flex items-baseline gap-1 whitespace-nowrap">
-                              <span className="font-display text-2xl text-foreground">
-                                ${tier.price}
-                              </span>
-                              <span className="wl-label-muted/70">{tier.suffix}</span>
-                            </div>
-                            <p className="mb-3 text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
-                              {tier.pitch}
-                            </p>
-                            <div className="mt-auto inline-flex items-center gap-1.5 text-brand wl-label">
-                              {isPending ? (
+                          <div className="space-y-2">
+                            <ShadButton
+                              type="button"
+                              disableAnimations
+                              className="w-full"
+                              onClick={() => tier && checkout(tier.id, tier.interval)}
+                              disabled={!!pending || !tier || tier.disabled}
+                            >
+                              {pending === plan.id ? (
                                 <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  Opening
+                                  <Loader2 className="size-4 animate-spin" /> Opening
                                 </>
+                              ) : smsPending ? (
+                                "SMS setup unavailable"
+                              ) : tier?.disabled ? (
+                                "Checkout paused"
                               ) : (
                                 <>
-                                  <CreditCard className="h-3 w-3" />
-                                  Choose {tier.label}
+                                  <CreditCard className="size-4" /> Continue to checkout
                                 </>
                               )}
-                            </div>
-                          </ShadButton>
+                            </ShadButton>
+                            {smsPending ? (
+                              <p role="status" className="text-sm text-muted-foreground">
+                                SMS setup is not available yet. Choose Calls or Email to activate
+                                without SMS.
+                              </p>
+                            ) : null}
+                          </div>
                         );
-                      })}
-                    </div>
+                      }}
+                    />
                   </details>
                 </>
               )}

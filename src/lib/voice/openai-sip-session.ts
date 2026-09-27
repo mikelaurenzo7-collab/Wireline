@@ -12,6 +12,7 @@ import {
   assertLiveExternalActionAllowed,
 } from "../account-environment-policy";
 import { notifyInboundCall } from "../mobile-push";
+import { hasInboundCapacityInTransaction } from "../inbound-concurrency";
 import { isMarketingCallPurpose, type OutboundCallPurpose } from "../outbound-call-purpose";
 import { LEAD_STATUS } from "../outbound-status";
 import { enqueuePostCallDigest, type OpenAISipFinalizationContext } from "../post-call-digest";
@@ -25,7 +26,15 @@ import {
 } from "../tcpa-consent";
 import { persistTranscriptDncSuppression } from "../call-dnc-suppression";
 import { trackVoiceMinutes } from "../voice-usage";
+import {
+  reserveVoiceCallFunding,
+  releaseVoiceCallFundingInTransaction,
+  releaseVoiceCallFunding,
+  getVoiceCallFunding,
+  type VoiceCallFunding,
+} from "../voice-call-funding";
 import { reconcileOpenAISipDurationSpend } from "../realtime-spend-reservation";
+import { createRealtimeUsageRecorder } from "../realtime-provider-usage";
 import {
   extendCommittedPlatformCostReservation,
   type PlatformCostReservation,
@@ -35,6 +44,7 @@ import {
   type NativeInboundAdmissionMode,
 } from "./native-inbound-admission";
 import { buildOpenAIRealtimeAgentRuntime } from "./openai-phone-agent-runtime";
+import { enforceFundedCarrierCallLimit, readTerminalCarrierDuration } from "./funded-carrier-call";
 import {
   OPENAI_REALTIME_CALLS_URL,
   buildOpenAISipRealtimeUrl,
@@ -90,6 +100,8 @@ export type OpenAISipIncomingCall = {
   businessName?: string | null;
   complianceMode?: string | null;
   admission?: NativeInboundAdmission;
+  funding?: VoiceCallFunding;
+  recoveredSession?: boolean;
 };
 
 export type OpenAISipCallClaim = {
@@ -97,6 +109,7 @@ export type OpenAISipCallClaim = {
   recoveryJobId: string;
   ownerToken: string;
   resumed: boolean;
+  funding?: VoiceCallFunding;
 };
 
 export type OpenAISipPreSessionFailure =
@@ -466,6 +479,8 @@ export async function referOpenAISipCall(
       phone: phone || undefined,
     });
     await assertLiveExternalActionAllowed(userId, "openai_sip_call_refer");
+    const funding = await getVoiceCallFunding(userId, providerCallId(callId));
+    if (funding) await enforceFundedCarrierCallLimit(userId, providerCallId(callId), funding);
     await openaiCallControl(callId, "refer", { target_uri: targetUri });
     // Publish only confirmed REFER success. The worker may be another process;
     // its heartbeat and terminal transition read this tenant-scoped signal.
@@ -638,6 +653,11 @@ async function claimCall(input: OpenAISipIncomingCall) {
         existing.leaseExpiresAt instanceof Date &&
         existing.leaseExpired === true;
       if (!resumable) return existing.phase === "claimed" ? ("retry" as const) : null;
+      const funding = await reserveVoiceCallFunding(tx, {
+        userId: input.userId,
+        providerCallId: id,
+        maxSeconds: resolveOpenAISipSessionMaxSeconds(),
+      });
       const [reclaimed] = await tx
         .update(schema.callLogs)
         .set({
@@ -680,8 +700,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
         tx,
         {
           runAt: new Date(
-            Date.now() +
-              resolveOpenAISipSessionMaxSeconds() * 1_000 +
+            (funding?.deadlineAtMs ?? Date.now() + resolveOpenAISipSessionMaxSeconds() * 1_000) +
               FINALIZATION_RECOVERY_GRACE_MS,
           ),
         },
@@ -692,8 +711,25 @@ async function claimCall(input: OpenAISipIncomingCall) {
         recoveryJobId: recovery.jobId,
         ownerToken,
         resumed: true,
+        ...(funding ? { funding } : {}),
       };
     }
+
+    const direction = callDirection(input);
+    if (direction === "inbound" && !(await hasInboundCapacityInTransaction(tx, input.userId))) {
+      throw new AppError(429, "VOICE_CONCURRENCY_EXCEEDED", "The line is at its live call limit.");
+    }
+    const admissionMaxSeconds =
+      input.admission?.mode === "take_message"
+        ? 300
+        : input.admission?.mode === "recovery_notice"
+          ? 20
+          : resolveOpenAISipSessionMaxSeconds();
+    const funding = await reserveVoiceCallFunding(tx, {
+      userId: input.userId,
+      providerCallId: id,
+      maxSeconds: admissionMaxSeconds,
+    });
 
     const [created] = await tx
       .insert(schema.callLogs)
@@ -714,7 +750,21 @@ async function claimCall(input: OpenAISipIncomingCall) {
       .returning({ id: schema.callLogs.id });
     if (!created) throw new Error("OpenAI SIP claim insert returned no row.");
 
-    const direction = callDirection(input);
+    if (direction === "inbound") {
+      // Reserve capacity with the durable claim, before the provider accepts.
+      // Exact-call retries return above and retain this same reservation.
+      await tx.insert(schema.signalPresence).values({
+        id,
+        userId: input.userId,
+        agentId: input.agentId,
+        customerNumber: input.callerNumber,
+        status: "connecting",
+        label: "Incoming call",
+        type: "voice",
+        controlUrl: id,
+        startedAt: new Date(),
+      });
+    }
     const recovery = await enqueuePostCallDigest(
       {
         userId: input.userId,
@@ -738,7 +788,8 @@ async function claimCall(input: OpenAISipIncomingCall) {
       tx,
       {
         runAt: new Date(
-          Date.now() + resolveOpenAISipSessionMaxSeconds() * 1_000 + FINALIZATION_RECOVERY_GRACE_MS,
+          (funding?.deadlineAtMs ?? Date.now() + resolveOpenAISipSessionMaxSeconds() * 1_000) +
+            FINALIZATION_RECOVERY_GRACE_MS,
         ),
       },
     );
@@ -748,6 +799,7 @@ async function claimCall(input: OpenAISipIncomingCall) {
       recoveryJobId: recovery.jobId,
       ownerToken,
       resumed: false,
+      ...(funding ? { funding } : {}),
     };
   });
 }
@@ -841,14 +893,16 @@ export function settleOpenAISipPreSessionFailure(input: {
     drizzle.transaction(async (tx) => {
       const now = new Date();
       const providerHangupRequired =
-        input.reason === "spend_commit_failed" || input.reason === "session_start_failed";
+        input.reason === "spend_commit_failed" ||
+        input.reason === "session_start_failed" ||
+        input.claim.resumed;
       const [settledCall] = await tx
         .update(schema.callLogs)
         .set({
           durationSeconds: 0,
           summary: "BotBound rejected this call before an OpenAI SIP session started.",
           outcomeTag: "unreachable",
-          endedReason: "pre-session-rejected",
+          endedReason: input.claim.resumed ? "pre-session-recovery" : "pre-session-rejected",
           pipelineError: input.reason,
           openaiSipPhase: "terminal",
           openaiSipOwnerToken: null,
@@ -869,6 +923,22 @@ export function settleOpenAISipPreSessionFailure(input: {
         )
         .returning({ id: schema.callLogs.id });
       if (!settledCall) return false;
+      if (!providerHangupRequired) {
+        await releaseVoiceCallFundingInTransaction(tx, {
+          userId: input.call.userId,
+          providerCallId: providerCallId(input.call.callId),
+        });
+        // A definite pre-accept refusal no longer owns capacity. Ambiguous
+        // acceptance keeps its reservation until confirmed terminal cleanup.
+        await tx
+          .delete(schema.signalPresence)
+          .where(
+            and(
+              eq(schema.signalPresence.id, providerCallId(input.call.callId)),
+              eq(schema.signalPresence.userId, input.call.userId),
+            ),
+          );
+      }
       if (providerHangupRequired) {
         // Acceptance already succeeded. Keep the termination obligation in
         // the existing job before the route attempts best-effort cleanup, so
@@ -881,7 +951,7 @@ export function settleOpenAISipPreSessionFailure(input: {
             dialedNumber: input.call.calledNumber,
             customerNumber: input.call.callerNumber,
             direction: callDirection(input.call),
-            endedReason: "pre-session-rejected",
+            endedReason: input.claim.resumed ? "pre-session-recovery" : "pre-session-rejected",
             pipelineError: input.reason,
             vapiCallId: providerCallId(input.call.callId),
             finalization: {
@@ -1205,12 +1275,15 @@ async function persistFinishedCall(input: {
   providerHangupRequired?: boolean;
   claim?: OpenAISipCallClaim;
 }) {
-  const durationSeconds = input.connectedAt
+  let durationSeconds = input.connectedAt
     ? Math.max(0, Math.round(((input.endedAt ?? Date.now()) - input.connectedAt) / 1_000))
     : 0;
   const summary = deterministicSummary(input.transcript);
   const direction = callDirection(input.call);
   let endedReason = input.endedReason;
+  let carrierDurationRequired = Boolean(
+    input.call.funding && (input.call.recoveredSession || endedReason === "transferred"),
+  );
 
   // The terminal call row and its unique post-call job commit together. The
   // inline steps below improve latency, but the queue is the durable owner and
@@ -1221,6 +1294,7 @@ async function persistFinishedCall(input: {
       input.call.userId,
       input.call.callId,
     );
+    carrierDurationRequired ||= Boolean(input.call.funding && transferStatus === "transferred");
     if (transferStatus === "transferred" && endedReason !== "caller-dnc") {
       endedReason = "transferred";
     }
@@ -1253,10 +1327,12 @@ async function persistFinishedCall(input: {
       .returning({ id: schema.callLogs.id });
     if (!updated) throw new Error("OpenAI SIP terminal call row could not be persisted.");
 
-    // Retire control authority atomically with terminal state, under the same
-    // lock as REFER. A late mobile request cannot revive a completed session.
+    // Retire control authority with terminal state, but retain capacity until
+    // customer usage settles. Otherwise a new call can reuse unspent minutes
+    // while this call's durable finalizer is still retrying its ledger write.
     await tx
-      .delete(schema.signalPresence)
+      .update(schema.signalPresence)
+      .set({ status: "settling", controlUrl: null })
       .where(
         and(
           eq(schema.signalPresence.id, providerCallId(input.call.callId)),
@@ -1287,6 +1363,13 @@ async function persistFinishedCall(input: {
           leadId: input.call.leadId ? String(input.call.leadId) : null,
           openingPlaybackConfirmed: input.openingPlaybackConfirmed,
           terminalStateReady: true,
+          ...(carrierDurationRequired ? { carrierDurationRequired: true } : {}),
+          ...(input.call.funding &&
+          input.connectedAt === null &&
+          !input.call.recoveredSession &&
+          !carrierDurationRequired
+            ? { noConversationDelivered: true }
+            : {}),
           ...(input.providerHangupRequired && endedReason !== "transferred"
             ? { providerHangupRequired: true }
             : {}),
@@ -1318,17 +1401,6 @@ async function persistFinishedCall(input: {
     });
   });
 
-  await runFinalizerStep("presence", input.call, () =>
-    drizzle
-      .delete(schema.signalPresence)
-      .where(
-        and(
-          eq(schema.signalPresence.id, providerCallId(input.call.callId)),
-          eq(schema.signalPresence.userId, input.call.userId),
-        ),
-      ),
-  );
-
   await runFinalizerStep("outbound_lead", input.call, () =>
     settleOutboundLead({
       call: input.call,
@@ -1338,14 +1410,66 @@ async function persistFinishedCall(input: {
     }),
   );
 
-  await runFinalizerStep("voice_usage", input.call, () =>
-    trackVoiceMinutes({
-      userId: input.call.userId,
-      durationSeconds,
-      vapiCallId: providerCallId(input.call.callId),
-    }),
-  );
+  await runFinalizerStep("voice_usage", input.call, async () => {
+    if (carrierDurationRequired)
+      durationSeconds = await checkpointCarrierDuration(
+        input.call.userId,
+        input.callLogId,
+        providerCallId(input.call.callId),
+      );
+    if (
+      input.call.funding &&
+      input.connectedAt === null &&
+      !input.call.recoveredSession &&
+      !carrierDurationRequired
+    ) {
+      if (input.providerHangupRequired)
+        throw AppError.serviceUnavailable("Call termination is awaiting confirmation.");
+      await releaseVoiceCallFunding(
+        input.call.userId,
+        providerCallId(input.call.callId),
+        "confirmed_startup_failure",
+      );
+    } else
+      await trackVoiceMinutes({
+        userId: input.call.userId,
+        durationSeconds: input.call.funding
+          ? Math.min(durationSeconds, input.call.funding.maxSeconds)
+          : durationSeconds,
+        vapiCallId: providerCallId(input.call.callId),
+      });
+    await drizzle
+      .delete(schema.signalPresence)
+      .where(
+        and(
+          eq(schema.signalPresence.id, providerCallId(input.call.callId)),
+          eq(schema.signalPresence.userId, input.call.userId),
+        ),
+      );
+  });
   return endedReason;
+}
+
+async function checkpointCarrierDuration(
+  userId: string,
+  callLogId: bigint | number | string,
+  providerId: string,
+): Promise<number> {
+  const { durationSeconds } = await readTerminalCarrierDuration(userId, providerId);
+  const [updated] = await drizzle
+    .update(schema.callLogs)
+    .set({ durationSeconds })
+    .where(
+      and(
+        eq(schema.callLogs.id, BigInt(String(callLogId))),
+        eq(schema.callLogs.userId, userId),
+        eq(schema.callLogs.vapiCallId, providerId),
+      ),
+    )
+    .returning({ id: schema.callLogs.id });
+  if (!updated)
+    throw AppError.serviceUnavailable("The carrier duration could not be saved for settlement.");
+  return durationSeconds;
 }
 
 /**
@@ -1359,10 +1483,18 @@ export async function recoverStaleOpenAISipCall(input: {
   finalization: OpenAISipFinalizationContext;
 }): Promise<boolean> {
   const providerId = providerCallId(input.finalization.callId);
+  const funding = await getVoiceCallFunding(input.userId, providerId);
+  let recoveredDuration = 0;
+  if (funding) {
+    if (funding.deadlineAtMs > Date.now())
+      throw AppError.serviceUnavailable("The admitted call can still be active.");
+    recoveredDuration = (await readTerminalCarrierDuration(input.userId, providerId))
+      .durationSeconds;
+  }
   const [recovered] = await drizzle
     .update(schema.callLogs)
     .set({
-      durationSeconds: 0,
+      durationSeconds: recoveredDuration,
       summary: RECOVERED_SUMMARY,
       endedReason: "finalization-recovery",
       pipelineError: "finalization_recovery",
@@ -1426,6 +1558,23 @@ export async function confirmOpenAISipHangupRecovery(input: {
     }
     if (current.endedReason === "transferred") return;
     await hangupOpenAISipCall(input.callId);
+    const scope = and(
+      eq(schema.signalPresence.id, providerId),
+      eq(schema.signalPresence.userId, input.userId),
+    );
+    if (current.endedReason === "pre-session-rejected") {
+      await releaseVoiceCallFundingInTransaction(tx, {
+        userId: input.userId,
+        providerCallId: providerId,
+        disposition: "confirmed_startup_failure",
+      });
+      await tx.delete(schema.signalPresence).where(scope);
+    } else {
+      await tx
+        .update(schema.signalPresence)
+        .set({ status: "settling", controlUrl: null })
+        .where(scope);
+    }
   });
 }
 
@@ -1474,7 +1623,12 @@ export async function replayOpenAISipPostCallFinalization(input: {
   // An accepted call whose startup failed has no conversation to finalize.
   // Its queued obligation is termination only, with no usage or disclosure
   // invented for a session that never started.
-  if (authoritative.endedReason === "pre-session-rejected") return;
+  const funding = await getVoiceCallFunding(input.userId, providerId);
+  if (authoritative.endedReason === "pre-session-rejected") {
+    if (funding)
+      await releaseVoiceCallFunding(input.userId, providerId, "confirmed_startup_failure");
+    return;
+  }
   if (!input.agentId) {
     throw new Error("OpenAI SIP finalization is missing the authoritative Bot identity.");
   }
@@ -1489,7 +1643,30 @@ export async function replayOpenAISipPostCallFinalization(input: {
     ...(input.finalization.leadId ? { leadId: BigInt(input.finalization.leadId) } : {}),
   };
   const transcript = input.transcript || "";
-  const durationSeconds = Math.max(0, Number(input.durationSeconds || 0));
+  const durationSeconds =
+    funding &&
+    (input.finalization.carrierDurationRequired ||
+      ["pre-session-recovery", "transferred"].includes(authoritative.endedReason ?? ""))
+      ? await checkpointCarrierDuration(input.userId, input.callLogId, providerId)
+      : Math.max(0, Number(input.durationSeconds || 0));
+  if (
+    funding &&
+    (input.finalization.noConversationDelivered ||
+      authoritative.endedReason === "runtime-startup-error") &&
+    durationSeconds === 0 &&
+    !transcript
+  ) {
+    await releaseVoiceCallFunding(input.userId, providerId, "confirmed_startup_failure");
+    await drizzle
+      .delete(schema.signalPresence)
+      .where(
+        and(
+          eq(schema.signalPresence.id, providerId),
+          eq(schema.signalPresence.userId, input.userId),
+        ),
+      );
+    return;
+  }
 
   await persistAiDisclosureEvidence({
     call,
@@ -1509,11 +1686,6 @@ export async function replayOpenAISipPostCallFinalization(input: {
     });
   }
 
-  await drizzle
-    .delete(schema.signalPresence)
-    .where(
-      and(eq(schema.signalPresence.id, providerId), eq(schema.signalPresence.userId, input.userId)),
-    );
   await settleOutboundLead({
     call,
     summary: input.summary || "Call completed.",
@@ -1522,9 +1694,14 @@ export async function replayOpenAISipPostCallFinalization(input: {
   });
   await trackVoiceMinutes({
     userId: input.userId,
-    durationSeconds,
+    durationSeconds: funding ? Math.min(durationSeconds, funding.maxSeconds) : durationSeconds,
     vapiCallId: providerId,
   });
+  await drizzle
+    .delete(schema.signalPresence)
+    .where(
+      and(eq(schema.signalPresence.id, providerId), eq(schema.signalPresence.userId, input.userId)),
+    );
   // Critical DNC, presence and customer usage settle before optional estimate
   // replay. Throwing here keeps the durable job retryable without blocking them.
   await reconcileOpenAISipDurationSpend(input.userId, input.finalization.callId, durationSeconds);
@@ -1535,6 +1712,7 @@ async function runRealtimeSession(
   runtime: RealtimeRuntime,
   ownershipSignal?: AbortSignal,
   accountElapsed?: (seconds: number) => Promise<void>,
+  observeUsage?: (event: Record<string, unknown>) => void,
 ): Promise<RealtimeSessionOutcome> {
   const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
   if (!apiKey) throw new Error("OpenAI_API_KEY is missing during SIP session startup.");
@@ -1892,6 +2070,7 @@ async function runRealtimeSession(
 
   const handleEvent = async (event: Record<string, unknown>) => {
     if (!ownsSession()) return;
+    observeUsage?.(event);
     const type = String(event.type || "");
     if (type === "output_audio_buffer.started") {
       sipPlaybackActive = true;
@@ -1986,6 +2165,11 @@ async function runRealtimeSession(
           ws.terminate();
           return;
         }
+        if (input.funding && input.funding.deadlineAtMs <= Date.now()) {
+          endedReason = "botbound-max-duration";
+          void confirmOwnedProviderHangup().then(resolveOnce, rejectOnce);
+          return;
+        }
         connectedAt = Date.now();
         const outbound = callDirection(input) === "outbound";
         const opening = outbound
@@ -2016,12 +2200,15 @@ async function runRealtimeSession(
         }
 
         const admissionMode = inboundAdmissionMode(input);
-        const maxDurationMs =
+        const modeMaxDurationMs =
           admissionMode === "suspended" || admissionMode === "recovery_notice"
             ? 20_000
             : admissionMode === "take_message"
               ? 300_000
               : resolveOpenAISipSessionMaxSeconds() * 1_000;
+        const maxDurationMs = input.funding
+          ? Math.max(0, Math.min(modeMaxDurationMs, input.funding.deadlineAtMs - Date.now()))
+          : modeMaxDurationMs;
         if (accountElapsed) {
           accountingTimer = setInterval(() => {
             if (!ownsSession() || connectedAt === null || endedAt !== null) return;
@@ -2289,6 +2476,10 @@ export async function runOpenAISipCallSession(
       try {
         const claimResult = await claimCall(input);
         callLogId = claimResult && claimResult !== "retry" ? claimResult.callLogId : null;
+        if (claimResult && claimResult !== "retry") {
+          if (claimResult.funding) input.funding = claimResult.funding;
+          input.recoveredSession = claimResult.resumed;
+        }
       } catch (error) {
         log.error("OpenAI SIP call could not establish durable recovery state", {
           userId: input.userId,
@@ -2375,7 +2566,24 @@ export async function runOpenAISipCallSession(
             }
           }
         : undefined;
-      outcome = await runRealtimeSession(input, runtime, ownerFence.signal, accountElapsed);
+      const providerUsage = spendReservation
+        ? createRealtimeUsageRecorder(
+            spendReservation,
+            input.callId,
+            runtime.session.audio?.input?.transcription?.model || "",
+          )
+        : undefined;
+      try {
+        outcome = await runRealtimeSession(
+          input,
+          runtime,
+          ownerFence.signal,
+          accountElapsed,
+          providerUsage?.observe,
+        );
+      } finally {
+        await providerUsage?.flush();
+      }
     } catch (error) {
       log.error("OpenAI SIP session startup failed", {
         userId: input.userId,

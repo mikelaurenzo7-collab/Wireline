@@ -9,7 +9,6 @@ import {
   EXTRA_AGENT_ADDON_PRICE_ENV,
   EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
   EXTRA_AGENT_ADDON_VOICE_MINUTES_MONTHLY,
-  FLAT_OVERAGE_PER_MIN_USD,
   HARD_CONTRIBUTION_MARGIN_FLOOR,
   LAUNCH_CONTRIBUTION_MARGIN_FLOOR,
   STRIPE_PLANS,
@@ -45,6 +44,14 @@ describe("plan economics contract", () => {
         continue;
       }
 
+      if (plan.catalogFamily === "channels") {
+        expect(plan.included_phone_numbers).toBe(
+          Number(plan.channels.includes("voice") || plan.channels.includes("sms")),
+        );
+        expect(plan.included_mailboxes).toBe(Number(plan.channels.includes("email")));
+        expect(plan.extra_agent_price_usd).toBeUndefined();
+        continue;
+      }
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
       const liveBotFeature = plan.features.find((feature) =>
         /\blive (?:Voice )?Bots?\b/i.test(feature),
@@ -68,7 +75,7 @@ describe("plan economics contract", () => {
       const economics = planEconomics(plan.id);
       expect(economics).not.toBeNull();
       expect(economics?.voiceMinutesMonthly).toBe(plan.voice_minutes_monthly);
-      expect(economics?.overagePerMinuteUsd).toBe(FLAT_OVERAGE_PER_MIN_USD);
+      expect(economics?.overagePerMinuteUsd).toBe(plan.overage_per_min_usd);
       expect(economics?.includedPhoneNumbers).toBe(plan.included_phone_numbers);
       expect(economics?.runtimeAllowanceUsdMonthly).toBe(plan.runtime_allowance_usd_monthly);
       expect(economics?.aiSpendAllowanceUsdMonthly).toBe(plan.ai_spend_allowance_usd_monthly);
@@ -81,7 +88,7 @@ describe("plan economics contract", () => {
     expect(LAUNCH_CONTRIBUTION_MARGIN_FLOOR).toBeGreaterThan(HARD_CONTRIBUTION_MARGIN_FLOOR);
 
     for (const plan of STRIPE_PLANS) {
-      if (plan.price_usd_monthly <= 0) continue;
+      if (plan.catalogFamily !== "channels") continue;
 
       expect(
         estimatedContributionMarginAtExpectedUsage(plan, "month"),
@@ -104,7 +111,8 @@ describe("plan economics contract", () => {
       }
     }
 
-    expect(assertPlanMarginFloors()).toEqual({ ok: true, violations: [] });
+    expect(assertPlanMarginFloors()).toMatchObject({ ok: true, violations: [] });
+    expect(assertPlanMarginFloors().legacyExposure.length).toBeGreaterThan(0);
   });
 
   it("keeps current margin telemetry thresholds explicit and conservative", () => {

@@ -44,7 +44,7 @@ The visual layer is intentionally restrained: the BotBound Design System uses da
 - Enforces account entitlement and agent-cap rules.
 - Creates a Bot and starting personality in one transaction.
 - Records an audit event and invalidates account caches.
-- Queues durable identity setup after the Bot record commits. Free Builder allocates no live identity; eligible paid web accounts prepare a managed number and mailbox within plan capacity. Connected-client drafts remain private until explicitly activated in BotBound. Private rehearsal and workflow review still precede customer traffic.
+- Queues durable identity setup after the Bot record commits. Free Builder allocates no live identity. Paid channel entitlements independently authorize the customer-selected number and/or managed mailbox; Email-only has no carrier dependency, and Calls-only has no mailbox dependency. SMS activation also requires carrier readiness. Connected-client drafts remain private until explicitly activated in BotBound. Private rehearsal and workflow review still precede customer traffic.
 
 ### Bot training
 

@@ -34,9 +34,10 @@ const DIFFERENCES = [
 const MARKET_OPTIONS = [
   {
     name: "BotBound",
-    price: "$0 to build · plans from $19/mo",
-    usage: "50 included live voice minutes, one number slot, and prepaid overflow on Starter",
-    fit: "Owners who want their Bot across calls, live conversations, text, email, follow-up, and outcomes",
+    price: "$0 to build · Email $9/mo · Calls $15/mo",
+    usage:
+      "Calls includes 30 minutes and one local number; Calls + Email is $21/mo. SMS activation pending.",
+    fit: "Owners who want a Bot with the channels they choose, connected tools, and logged outcomes",
     href: "/pricing",
     source: "BotBound pricing",
     internal: true,
@@ -240,7 +241,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on September 19, 2026 and may
+            Public prices were checked on the linked official pages on September 27, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.

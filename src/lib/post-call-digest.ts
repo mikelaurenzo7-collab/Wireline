@@ -158,6 +158,8 @@ export type OpenAISipFinalizationContext = {
   terminalStateReady: boolean;
   /** Provider termination still needs durable confirmation. */
   providerHangupRequired?: boolean;
+  carrierDurationRequired?: boolean;
+  noConversationDelivered?: boolean;
 };
 
 type JsonCallContext = Pick<
@@ -316,6 +318,8 @@ function jsonCallContext(ctx: CallContext): JsonCallContext {
           openingPlaybackConfirmed: Boolean(ctx.finalization.openingPlaybackConfirmed),
           terminalStateReady: Boolean(ctx.finalization.terminalStateReady),
           ...(ctx.finalization.providerHangupRequired ? { providerHangupRequired: true } : {}),
+          ...(ctx.finalization.carrierDurationRequired ? { carrierDurationRequired: true } : {}),
+          ...(ctx.finalization.noConversationDelivered ? { noConversationDelivered: true } : {}),
         }
       : undefined;
   return {
@@ -341,6 +345,10 @@ function openAISipFinalizationFromJob(job: JobRow): OpenAISipFinalizationContext
     typeof finalization.terminalStateReady !== "boolean" ||
     (finalization.providerHangupRequired != null &&
       typeof finalization.providerHangupRequired !== "boolean") ||
+    (finalization.carrierDurationRequired != null &&
+      typeof finalization.carrierDurationRequired !== "boolean") ||
+    (finalization.noConversationDelivered != null &&
+      typeof finalization.noConversationDelivered !== "boolean") ||
     (finalization.leadId != null && !/^\d+$/.test(String(finalization.leadId)))
   ) {
     throw new Error("Post-call digest job contains invalid OpenAI SIP finalization metadata.");
@@ -352,6 +360,8 @@ function openAISipFinalizationFromJob(job: JobRow): OpenAISipFinalizationContext
     openingPlaybackConfirmed: finalization.openingPlaybackConfirmed,
     terminalStateReady: finalization.terminalStateReady,
     ...(finalization.providerHangupRequired ? { providerHangupRequired: true } : {}),
+    ...(finalization.carrierDurationRequired === true ? { carrierDurationRequired: true } : {}),
+    ...(finalization.noConversationDelivered === true ? { noConversationDelivered: true } : {}),
   };
 }
 
@@ -1303,6 +1313,11 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
         pipelineError: ctx.pipelineError,
         finalization,
       });
+      if (
+        finalization.carrierDurationRequired ||
+        ["pre-session-recovery", "transferred"].includes(ctx.endedReason ?? "")
+      )
+        ctx = await authoritativeCallContext(job);
     });
     progress = await checkpointPostCallProgress(job, ctx.userId, {
       finalization: { state: "completed" },
@@ -1310,7 +1325,11 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
   }
   // Pre-session failures can retain a hangup obligation after acceptance,
   // but never became a conversation eligible for a digest or notifications.
-  if (finalization && ctx.endedReason === "pre-session-rejected") return;
+  if (
+    finalization &&
+    (ctx.endedReason === "pre-session-rejected" || finalization.noConversationDelivered)
+  )
+    return;
   let core = progress.core?.result || null;
   if (!core) {
     core = await withPostCallExternalFence(ctx, () => runPostCallDigest(ctx));

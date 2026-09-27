@@ -4,10 +4,7 @@
  * and is deliberately separate. Eligibility and ordering are owned
  * by `reasoning-provider-policy.ts`; this module owns transport only. */
 import { log } from "./server-logger";
-import {
-  GEMINI_STRUCTURED_FALLBACK_MODEL,
-  OPENAI_STRUCTURED_PRIMARY_MODEL,
-} from "./ai-models";
+import { GEMINI_STRUCTURED_FALLBACK_MODEL, OPENAI_STRUCTURED_PRIMARY_MODEL } from "./ai-models";
 import {
   orderReasoningProviders,
   resolveReasoningPreference,
@@ -24,7 +21,7 @@ import {
   normalizeUsageTokenCount,
   saturatingUsageTokenSum,
 } from "./ai-usage";
-import { recordAmbiguousProviderAttempt } from "./ai-audit";
+import { recordAmbiguousProviderAttempt, recordUsage } from "./ai-audit";
 import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 
@@ -103,6 +100,14 @@ export class DefiniteProviderRejectionError extends Error {
   ) {
     super(`${provider} request was rejected (${status})`);
     this.name = "DefiniteProviderRejectionError";
+  }
+}
+
+/** A provider returned billable usage, but its output was unusable. */
+class AccountedProviderOutputError extends Error {
+  constructor(provider: RuntimeProviderName) {
+    super(`${provider} returned an unusable response`);
+    this.name = "AccountedProviderOutputError";
   }
 }
 
@@ -493,8 +498,6 @@ async function callResponsesEndpoint(args: {
     throw err;
   }
   timer.dispose();
-  const text = extractResponsesText(payload);
-  if (!text) throw new Error(`${args.provider} returned an empty response`);
   const usage = (payload.usage || {}) as Record<string, unknown>;
   // Responses includes cached and cache-write tokens in input_tokens. Split
   // both details out so the audit layer can apply their actual vendor rates.
@@ -503,6 +506,36 @@ async function callResponsesEndpoint(args: {
   // Gateway model fallbacks are resolved inside one HTTP request. Attribute
   // usage and pricing to the model the provider says actually completed it.
   const evidence = resolveResponsesEvidence(payload, args.model, args.provider);
+  const usageResponse = {
+    model: evidence.model,
+    inference_provider: evidence.inferenceProvider,
+    actual_cost_usd: evidence.actualCostUsd,
+    usage: {
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cache_read_input_tokens: cacheReadTokens,
+      cache_creation_input_tokens: cacheWriteTokens,
+    },
+  };
+  let text: string;
+  let structuredInput: unknown;
+  try {
+    text = extractResponsesText(payload);
+    if (!text) throw new Error("Empty provider output");
+    if (tool) structuredInput = parseStructuredJson(text);
+  } catch (error) {
+    // A 200 response may be incomplete, refused, or contain invalid JSON after
+    // generation was billed. Preserve that attempt before provider fallback.
+    // Valid responses remain recorded once by the structured-runtime caller.
+    const hasKnownUsage = [usage.input_tokens, usage.output_tokens].every(
+      (value) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
+    );
+    if (hasKnownUsage || evidence.actualCostUsd !== undefined) {
+      recordUsage(args.model, usageResponse, Date.now() - started);
+      throw new AccountedProviderOutputError(args.provider);
+    }
+    throw error;
+  }
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
     inferenceProvider: evidence.inferenceProvider,
@@ -522,7 +555,7 @@ async function callResponsesEndpoint(args: {
             id: `call_${Math.random().toString(36).slice(2)}`,
             caller: { type: "direct" },
             name: tool.name,
-            input: parseStructuredJson(text),
+            input: structuredInput,
           },
         ],
         stopReason: "tool_use",
@@ -822,7 +855,7 @@ async function createWithFallbacks(
       if (isAbortError(error, options?.signal)) throw error;
       const definiteRejection = definiteProviderRejection(error, provider.name);
       const providerError = definiteRejection ?? error;
-      if (!definiteRejection) {
+      if (!definiteRejection && !(error instanceof AccountedProviderOutputError)) {
         // The request crossed a provider boundary, but no usage response came
         // back. It may still be billable (notably Gemini's non-cancelable SDK
         // timeout), so cost wrappers must retain their conservative hold.

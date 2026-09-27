@@ -39,6 +39,7 @@ This index preserves dated audits, launch passes, QA records, and superseded dec
 
 | Evidence | Current interpretation |
 | --- | --- |
+| [PRICING_DECISION_2026-09-27.md](./PRICING_DECISION_2026-09-27.md) | Channel and capacity pricing decision, contribution assumptions, bounded call completion, and rollout limits. Current amounts and availability remain in the catalog and canonical billing documents. |
 | [PRICING_DECISION_2026-07-25.md](./PRICING_DECISION_2026-07-25.md) | Founder catalog v6 decision record. Current pricing source remains `src/lib/plan-catalog.ts` plus `business-usage-pricing-decision.md`. |
 | [PLAN_CAPACITY_HEADROOM_2026-07-25.md](./PLAN_CAPACITY_HEADROOM_2026-07-25.md) | Capacity method and prior-plan arithmetic. Later catalog decisions supersede its old plan conclusions. |
 | [RUNNING_COSTS_AUDIT_2026-07-06.md](./RUNNING_COSTS_AUDIT_2026-07-06.md) | Historical cost evidence referenced by launch margin planning. |

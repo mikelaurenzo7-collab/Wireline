@@ -118,6 +118,8 @@ describe("signed Twilio voice reclassification fence", () => {
     completionError?: Error;
     selectRows?: unknown[][];
     lookupError?: Error;
+    fundedDeadline?: number;
+    limitError?: Error;
   }) {
     vi.doUnmock("../src/routes/twilio-webhook-base");
     const rows = input.selectRows ? [...input.selectRows] : null;
@@ -154,16 +156,28 @@ describe("signed Twilio voice reclassification fence", () => {
       if (input.completionError) throw input.completionError;
       return false;
     });
+    const fundedDeadline = input.fundedDeadline;
+    const carrierLimit = vi.fn(async () => {
+      if (input.limitError) throw input.limitError;
+    });
+    const expedite = vi.fn(async () => {});
+    vi.doMock("../src/lib/voice/funded-carrier-call", () => ({
+      enforceFundedCarrierCallLimit: carrierLimit,
+    }));
+    vi.doMock("../src/lib/voice/twilio-fallback-recovery", () => ({
+      expediteTwilioFallbackRecovery: expedite,
+    }));
     vi.doMock("../src/lib/voice/twilio-fallback", () => ({
       prepareTwilioVoiceFallback: vi.fn(async (input: Record<string, unknown>) => ({
         ...input,
         maxSeconds: 3600,
+        ...(fundedDeadline === undefined ? {} : { deadlineAtMs: fundedDeadline }),
         completion: null,
       })),
       completeTwilioVoiceFallback: settle,
     }));
     const module = await import("../src/routes/twilio-webhook-base");
-    return { router: module.default, select, environment, settle };
+    return { router: module.default, select, environment, settle, carrierLimit, expedite };
   }
 
   it("returns Hangup-only from both independently signed failover routes for demo tenants", async () => {
@@ -213,6 +227,25 @@ describe("signed Twilio voice reclassification fence", () => {
     expect(String(captured.body)).toContain("<Play>");
     expect(String(captured.body)).not.toContain("<Say");
     expect(String(captured.body)).toContain("<Dial");
+  });
+
+  it("queues early durable recovery when the parent cap fails after admission, without returning Dial", async () => {
+    const { router, expedite } = await loadVoiceRouter({
+      allowed: true,
+      fundedDeadline: Date.now() + 60000,
+      limitError: new Error("carrier unavailable"),
+      selectRows: [[{ userId: TENANT_ID }], [{ humanFallbackNumber: "+14155550199" }]],
+    });
+    const path = "/api/twilio-webhook/voice-fallback";
+    const { response, captured } = fakeResponse();
+    const parentCallSid = `CA${"1".repeat(32)}`;
+    await routeHandler(router, path)(
+      { path, body: { To: "+12025550140", From: "+12025550141", CallSid: parentCallSid } },
+      response,
+      vi.fn(),
+    );
+    expect(captured).toEqual({ statusCode: 503, body: HANGUP_TWIML });
+    expect(expedite).toHaveBeenCalledWith(TENANT_ID, parentCallSid);
   });
 
   it("hangs up without speech or recording when transfer is unavailable or fails", async () => {

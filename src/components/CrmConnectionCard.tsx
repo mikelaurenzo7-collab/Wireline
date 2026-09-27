@@ -7,7 +7,6 @@ import { authFetch } from "../lib/api";
 import { toolIntegrationForProvider, PROVIDER_ACCENT } from "../lib/integration-playbooks";
 import IntegrationCapabilityPanel from "./IntegrationCapabilityPanel";
 import { getIntegrationLogo } from "./layout/IntegrationLogos";
-import { WL_APP_CLASSES } from "../lib/wireline-design-system";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/shadcn/Select";
 import { Input } from "./ui/shadcn/Input";
 import { Skeleton } from "./atoms";
@@ -121,7 +120,7 @@ export function getIntegrationStatusDetail(
   }
   if (availability.available && oauthConnectAvailable) return group;
   if (availability.available) return `${group} · Platform configured`;
-  return `${group} · Not available yet`;
+  return group;
 }
 
 import { ShadButton } from "./ui/shadcn/ShadButton";
@@ -578,34 +577,24 @@ export default function CrmConnectionCard() {
           {error}
         </StatusNotice>
       ) : null}
-      <div className="rounded-md wl-panel border border-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className={WL_APP_CLASSES.wiredEyebrow}>Connected stack</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span>{integrationSummary.live} connected</span>
+          <span>{integrationSummary.available} available</span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span className="chip-brand">{integrationSummary.live} live</span>
-          <span className="wl-label text-foreground/55">
-            {integrationSummary.available} available
-          </span>
-          {integrationSummary.unavailable > 0 ? (
-            <span className="wl-label text-foreground/55">
-              {integrationSummary.unavailable} unavailable
-            </span>
-          ) : null}
-          <ShadButton
-            type="button"
-            variant="outline"
-            size="sm"
-            disableAnimations
-            onClick={retry}
-            disabled={savingChannel !== null}
-            className="rounded-full wl-label"
-            aria-label="Refresh integration status"
-          >
-            <Loader2 className="w-3 h-3" />
-            Refresh
-          </ShadButton>
-        </div>
+        <ShadButton
+          type="button"
+          variant="outline"
+          size="sm"
+          disableAnimations
+          onClick={retry}
+          disabled={savingChannel !== null}
+          className="text-sm"
+          aria-label="Refresh integration status"
+        >
+          <Loader2 className="w-3 h-3" />
+          Refresh
+        </ShadButton>
       </div>
 
       {/* One flat grid keeps the page symmetric at every viewport; each card
@@ -618,14 +607,15 @@ export default function CrmConnectionCard() {
             if (!s) return null;
             const isConnecting = connecting === key;
             const detail = s.email || s.team || "";
-            const betaPill = beta ? (
-              <span
-                className="ml-1 shrink-0 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
-                title="Bot actions (auto-log calls, push deals) are in active development."
-              >
-                Beta
-              </span>
-            ) : null;
+            const betaPill =
+              beta && resolveIntegrationAvailability(s).available ? (
+                <span
+                  className="ml-1 shrink-0 wl-label px-1.5 py-0.5 rounded-md bg-brand/15 border border-brand/40 text-brand leading-none"
+                  title="Bot actions (auto-log calls, push deals) are in active development."
+                >
+                  Beta
+                </span>
+              ) : null;
 
             const availability = resolveIntegrationAvailability(s);
             const { available: platformReady, connected: isConnected } = availability;
@@ -664,12 +654,8 @@ export default function CrmConnectionCard() {
                     {getIntegrationLogo(key) ?? <span className="wl-label font-bold">{logo}</span>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    {/* No wrap: the Beta pill stays glued to the name on every card
-                        instead of dropping to its own row under longer labels. */}
-                    <div className="flex items-center gap-2">
-                      <div className="min-w-0 truncate text-[length:var(--wireline-typography-overline-size)] font-semibold text-foreground">
-                        {label}
-                      </div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <div className="min-w-0 text-sm font-semibold text-foreground">{label}</div>
                       {isConnected && (
                         <CheckCircle2 className={cn("w-3 h-3 shrink-0", styles.check)} />
                       )}

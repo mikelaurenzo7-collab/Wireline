@@ -25,6 +25,7 @@ import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { isOutboundCallPurpose, type OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { resolveNativeInboundCallAdmission } from "../lib/voice/native-inbound-admission";
+import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call";
 import { verifyOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import { buildOpenAIRealtimeAgentRuntime } from "../lib/voice/openai-phone-agent-runtime";
 import {
@@ -431,6 +432,23 @@ router.post(
           },
           { name: "provider_reject", operation: () => rejectCall(callId, 603) },
         ]);
+        if (
+          error instanceof AppError &&
+          [
+            "VOICE_CONCURRENCY_EXCEEDED",
+            "VOICE_FUNDING_IN_USE",
+            "VOICE_FUNDING_REQUIRED",
+            "VOICE_PLAN_REQUIRED",
+            "VOICE_FUNDING_SETTLED",
+          ].includes(error.code)
+        ) {
+          res.status(202).json({
+            received: true,
+            handled: false,
+            reason: error.code === "VOICE_CONCURRENCY_EXCEEDED" ? "concurrency" : "call_coverage",
+          });
+          return;
+        }
         throw error;
       }
       if (callClaim === "retry") {
@@ -448,9 +466,19 @@ router.post(
         return;
       }
       const claimedCallLogId = callClaim.callLogId;
+      if (callClaim.funding) sessionInput.funding = callClaim.funding;
+      sessionInput.recoveredSession = callClaim.resumed;
 
       let reservation: Awaited<ReturnType<typeof reserveRealtimeSessionSpend>>;
       try {
+        if (sessionInput.funding)
+          await tenantStore.run(sessionInput.userId, () =>
+            enforceFundedCarrierCallLimit(
+              sessionInput.userId,
+              `openai:${callId}`,
+              sessionInput.funding!,
+            ),
+          );
         reservation = await reserveRealtimeSessionSpend(
           req,
           sessionInput.userId,
@@ -472,7 +500,12 @@ router.post(
           },
           ...(owned ? [{ name: "provider_reject", operation: () => rejectCall(callId, 603) }] : []),
         ]);
-        if (error instanceof AppError && (error.status === 402 || error.status === 503)) {
+        if (
+          error instanceof AppError &&
+          (error.status === 402 ||
+            error.status === 503 ||
+            ["VOICE_ALREADY_ENDED", "VOICE_FUNDING_EXPIRED"].includes(error.code))
+        ) {
           log.warn("OpenAI incoming call rejected: spend reservation failed", {
             code: error.code,
           });

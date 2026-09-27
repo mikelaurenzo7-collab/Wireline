@@ -25,17 +25,15 @@ import {
 } from "../lib/owned-email-account";
 import { drizzle, fetchWithTimeout, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
-import {
-  assertTwilioOwnedNumber,
-  ensurePaidBotIdentity,
-  getPaidBotIdentityAgentIds,
-} from "../lib/paid-bot-identity";
+import { ensurePaidBotIdentity, getPaidBotMailboxAgentIds } from "../lib/paid-bot-identity";
 import { encryptSecret, decryptSecret, isVaultConfigured } from "../lib/secret-vault";
 import { authenticateUser } from "../middleware/auth";
 import { createRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
+import { requireTenantChannel } from "../lib/channel-entitlements";
+import { planById } from "../lib/plan-catalog";
 import { runTenantProviderWorkWithDeletionFence } from "../lib/tenant-provider-deletion-fence";
 import {
   existingManagedEmailDomain,
@@ -134,15 +132,8 @@ function managedMailboxDomain(): string | null {
 }
 
 async function hasManagedMailboxEntitlement(userId: string, agentId: string): Promise<boolean> {
-  if (!(await getPaidBotIdentityAgentIds(userId)).includes(agentId)) return false;
-  const [line] = await drizzle
-    .select({ phoneNumber: schema.phoneNumbers.phoneNumber })
-    .from(schema.phoneNumbers)
-    .where(and(eq(schema.phoneNumbers.userId, userId), eq(schema.phoneNumbers.agentId, agentId)))
-    .limit(1);
-  if (!line?.phoneNumber) return false;
-  await assertTwilioOwnedNumber(line.phoneNumber);
-  return true;
+  await requireTenantChannel(userId, "email");
+  return (await getPaidBotMailboxAgentIds(userId)).includes(agentId);
 }
 
 function managedMailboxUsername(agentName: string, agentId: string): string {
@@ -282,21 +273,35 @@ router.post(
         throw new AppError(
           402,
           "ACTIVATION_REQUIRED",
-          "Activate an eligible paid Bot before setting up its phone and email.",
+          "Choose a plan with Calls, Email, or SMS before setting up this Bot's channels.",
         );
       }
-      if (!identity.phone || !identity.email) {
+      const plan = planById(identity.planId);
+      if (!plan)
+        throw AppError.serviceUnavailable("This Bot's channel setup could not be verified.");
+      const needsPhone = plan.channels.some((channel) => channel === "voice" || channel === "sms");
+      const needsEmail = plan.channels.includes("email");
+      if (needsPhone && !identity.phone && identity.selectionRequired) {
         throw new AppError(
           409,
           "NUMBER_SELECTION_REQUIRED",
-          "Choose a number in Phone setup before managed email setup can continue.",
+          "Choose a number in Calls setup to finish connecting this Bot.",
+        );
+      }
+      if (
+        (!needsPhone && !needsEmail) ||
+        (needsPhone && !identity.phone) ||
+        (needsEmail && !identity.email)
+      ) {
+        throw AppError.serviceUnavailable(
+          "This Bot's channel setup is not complete. Please retry.",
         );
       }
       res.json({
         ok: true,
         phone_number: identity.phone,
         email: identity.email,
-        custom_domain: true,
+        custom_domain: Boolean(identity.email),
         phone_reused: identity.phoneReused,
         email_reused: identity.emailReused,
       });
@@ -309,7 +314,7 @@ router.post(
       });
       throw AppError.fromHttpStatus(
         503,
-        "Bot phone and email setup is temporarily unavailable. Please try again.",
+        "Bot channel setup is temporarily unavailable. Please try again.",
       );
     }
   },
@@ -331,6 +336,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     await assertLiveExternalActionAllowed(userId, "managed_agentmail_mailbox_provision");
+    await requireTenantChannel(userId, "email");
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(503, "Managed email is temporarily unavailable.");
     }
@@ -391,7 +397,7 @@ router.post(
           throw new AppError(
             402,
             "ACTIVATION_REQUIRED",
-            "Activate a paid Bot phone line before setting up its managed email.",
+            "Choose a plan with Email and an available mailbox slot before setting up this Bot's email.",
           );
         }
         await verifyManagedAgentMailDomainIdentity(apiKey, undefined, requiredDomain);
@@ -524,6 +530,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     await assertLiveExternalActionAllowed(userId, "agentmail_mailbox_connect");
+    await requireTenantChannel(userId, "email");
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(
         503,

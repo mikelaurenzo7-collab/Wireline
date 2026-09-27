@@ -20,6 +20,7 @@ import {
 } from "../../lib/oauth-helpers";
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
+import { getTenantChannelEntitlements } from "../../lib/channel-entitlements";
 
 const router = express.Router();
 
@@ -36,11 +37,12 @@ router.get(
     }
 
     const uid = req.user?.id as string | undefined;
-    await assertOAuthProviderConnectAllowed(uid, "Google");
+    const tenantId = await assertOAuthProviderConnectAllowed(uid, "Google");
+    const emailIncluded = (await getTenantChannelEntitlements(tenantId)).channels.includes("email");
     const oauth2Client = await getGoogleOAuthClient(req);
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: SCOPES,
+      scope: emailIncluded ? SCOPES : SCOPES.filter((scope) => !scope.includes("/gmail.")),
       prompt: "consent",
       state: generateOAuthState(uid ? { userId: uid } : undefined),
     });
@@ -74,6 +76,7 @@ router.get(
         );
     }
     await assertOAuthProviderConnectAllowed(userId, "Google");
+    const emailIncluded = (await getTenantChannelEntitlements(userId)).channels.includes("email");
 
     try {
       const oauth2Client = await getGoogleOAuthClient(req);
@@ -99,15 +102,19 @@ router.get(
       const refreshTokenGoogle = tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null;
       const expiresAtGoogle = BigInt(tokens.expiry_date ?? Date.now() + 3600 * 1000);
 
-      const emailAccountConnected = await upsertOwnedEmailAccount({
-        userId,
-        emailAddress,
-        provider: "google",
-        accessToken: accessTokenGoogle,
-        refreshToken: refreshTokenGoogle,
-        expiresAt: expiresAtGoogle,
-        oauthGrantedScopes: scopeStr || null,
-      });
+      // Calendar/Drive remain usable without buying the Email channel. Recheck
+      // at callback so a plan change during consent cannot provision a mailbox.
+      const emailAccountConnected =
+        !emailIncluded ||
+        (await upsertOwnedEmailAccount({
+          userId,
+          emailAddress,
+          provider: "google",
+          accessToken: accessTokenGoogle,
+          refreshToken: refreshTokenGoogle,
+          expiresAt: expiresAtGoogle,
+          oauthGrantedScopes: scopeStr || null,
+        }));
       if (!emailAccountConnected) {
         return res.status(409).send(EMAIL_ACCOUNT_OWNERSHIP_CONFLICT_MESSAGE);
       }

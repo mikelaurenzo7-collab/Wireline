@@ -49,8 +49,9 @@ describe("BotBound managed Bot identity", () => {
     );
 
     expect(routes).toContain("hasManagedMailboxEntitlement");
-    expect(routes).toContain("getPaidBotIdentityAgentIds(userId)");
-    expect(routes).toContain("assertTwilioOwnedNumber(line.phoneNumber)");
+    expect(routes).toContain("getPaidBotMailboxAgentIds(userId)");
+    expect(routes).toContain('await requireTenantChannel(userId, "email")');
+    expect(routes).not.toContain("assertTwilioOwnedNumber(line.phoneNumber)");
     expect(routes).not.toContain('subscription.status === "trialing"');
     expect(endpoint).toContain('"ACTIVATION_REQUIRED"');
     expect(endpoint.indexOf("hasManagedMailboxEntitlement")).toBeLessThan(

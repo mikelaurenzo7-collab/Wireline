@@ -171,7 +171,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     items: [
       "Outbound calls require consent checks before dial. Marketing calls respect do-not-call posture.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Marketing and campaign outbound fail closed and stay blocked until BotBound finishes federal DNC setup for the platform. Studio non-marketing dials still use your tenant DNC list and TCPA consent checks.",
+      "Outbound calls are not available yet. Verified recipient consent and applicable DNC checks must be in place before Studio or campaign calls can run.",
     ],
   },
   {
@@ -179,7 +179,7 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     title: "Billing & Spend Controls",
     items: [
       "Runtime Balance is a prepaid ledger. Paid plans draw overflow voice and SMS from funded balance after included minutes. Free Builder cannot run live voice until a paid plan is active.",
-      "Every paid plan draws extra voice, SMS, and enrichment from prepaid Runtime Balance with visible rates; active calls finish, and the next action pauses if coverage is depleted.",
+      "Paid plans include a managed AI allowance for platform-funded AI, research, and enrichment. Calls can use up to 10 minutes of paid completion credit within their session limit. Any amount due pauses new calls and prepaid extras until topped up.",
       "Daily spend accumulators and economics-at-risk alerts help the platform owner catch margin leaks early.",
     ],
   },

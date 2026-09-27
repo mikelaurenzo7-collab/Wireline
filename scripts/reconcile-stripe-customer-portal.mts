@@ -5,12 +5,7 @@ import { readFileSync } from "node:fs";
 import { assertStripePortalOperatorEnvironment } from "./lib/stripe-operator-policy.mts";
 import { getDeploymentIdentity } from "../src/lib/deployment-environment";
 
-import {
-  FOUNDER_CATALOG_VERSION,
-  FOUNDER_PRICES,
-  FOUNDER_PRODUCTS,
-  PUBLIC_SELF_SERVE_PLAN_IDS,
-} from "./lib/stripe-founder-catalog.mjs";
+import { FOUNDER_CATALOG_VERSION } from "./lib/stripe-founder-catalog.mjs";
 import {
   managedPortalConfigurationFindings,
   managedPortalConfigurationIdempotencyKey,
@@ -19,8 +14,6 @@ import {
   type PortalProduct,
 } from "../src/lib/stripe-portal-policy";
 import { STRIPE_API_VERSION } from "../src/lib/stripe-api-version";
-import { planById } from "../src/lib/plan-catalog";
-import { stripePriceMatchesFounderPlan } from "../src/lib/stripe-founder-price-contract";
 
 const APPLY_FLAG = "--apply";
 const apply = process.argv.includes(APPLY_FLAG);
@@ -37,71 +30,9 @@ const { appUrl, secretKey } = assertStripePortalOperatorEnvironment(process.env,
 });
 
 const stripe = new Stripe(secretKey, { apiVersion: STRIPE_API_VERSION, typescript: true });
-const publicPlans = new Set(PUBLIC_SELF_SERVE_PLAN_IDS);
-const expectedPrices = FOUNDER_PRICES.filter(
-  (price) => price.recurring && publicPlans.has(price.metadata?.wireline_plan_id),
-);
-const productByKey = new Map(FOUNDER_PRODUCTS.map((product) => [product.key, product]));
-const lookupKeys = expectedPrices.map((price) => price.lookupKey).filter(Boolean) as string[];
-
-if (expectedPrices.length !== PUBLIC_SELF_SERVE_PLAN_IDS.length * 2 || lookupKeys.length !== 6) {
-  throw new Error(
-    "Canonical public Stripe catalog does not resolve to three monthly/annual plans.",
-  );
-}
-
-const livePrices = await stripe.prices.list({
-  active: true,
-  lookup_keys: lookupKeys,
-  expand: ["data.product"],
-  limit: 100,
-});
-if (livePrices.has_more || livePrices.data.length !== expectedPrices.length) {
-  throw new Error(
-    `Expected exactly ${expectedPrices.length} active public Stripe prices; found ${livePrices.data.length}.`,
-  );
-}
-
-const products = new Map<string, string[]>();
-for (const expected of expectedPrices) {
-  const matches = livePrices.data.filter((price) => price.lookup_key === expected.lookupKey);
-  if (matches.length !== 1) {
-    throw new Error(`${expected.lookupKey} must resolve to exactly one active Stripe price.`);
-  }
-  const [price] = matches;
-  const product =
-    typeof price.product === "string" || "deleted" in price.product ? null : price.product;
-  const expectedProduct = productByKey.get(expected.productKey);
-  const plan = planById(expected.metadata?.wireline_plan_id);
-  const configuredPriceId = expected.envTarget
-    ? String(process.env[expected.envTarget] || "").trim()
-    : "";
-  if (
-    !expectedProduct ||
-    !plan ||
-    !product ||
-    !stripePriceMatchesFounderPlan(price, plan, expected.recurring.interval) ||
-    price.metadata?.wireline_price_key !== expected.key ||
-    product.active !== true ||
-    product.name !== expectedProduct.name ||
-    product.metadata?.wireline_plan_id !== expected.metadata?.wireline_plan_id ||
-    product.metadata?.wireline_catalog_version !== FOUNDER_CATALOG_VERSION ||
-    configuredPriceId !== price.id
-  ) {
-    throw new Error(`${expected.lookupKey} failed the canonical live catalog contract.`);
-  }
-  const ids = products.get(product.id) || [];
-  ids.push(price.id);
-  products.set(product.id, ids);
-}
-
-const portalProducts: PortalProduct[] = [...products.entries()].map(([product, prices]) => ({
-  product,
-  prices,
-}));
-if (portalProducts.length !== PUBLIC_SELF_SERVE_PLAN_IDS.length) {
-  throw new Error(`Expected three public portal products; found ${portalProducts.length}.`);
-}
+// Payment methods, invoices and period-end cancellation only. Package changes
+// remain unavailable until resource retention and subscription items reconcile.
+const portalProducts: PortalProduct[] = [];
 
 const fingerprint = portalProductsFingerprint(portalProducts);
 // Stripe omits the portal's allowed product/price catalog unless it is explicitly

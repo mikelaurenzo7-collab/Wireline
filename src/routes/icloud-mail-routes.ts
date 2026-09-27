@@ -15,6 +15,7 @@ import { createIpRateLimiter } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 import * as schema from "../db/schema";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
+import { requireTenantChannel } from "../lib/channel-entitlements";
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user.id;
     await assertLiveExternalActionAllowed(userId, "icloud_mail_connect");
+    await requireTenantChannel(userId, "email");
 
     if (!isVaultConfigured()) {
       throw AppError.fromHttpStatus(

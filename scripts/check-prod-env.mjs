@@ -89,11 +89,7 @@ const required = [
     "Managed GPT-5.6 Terra structured runtime and all OpenAI Realtime sessions",
     process.env.OPENAI_API_KEY,
   ],
-  [
-    "OPENAI_PROJECT_ID",
-    "OpenAI Realtime SIP project binding",
-    process.env.OPENAI_PROJECT_ID,
-  ],
+  ["OPENAI_PROJECT_ID", "OpenAI Realtime SIP project binding", process.env.OPENAI_PROJECT_ID],
   [
     "OPENAI_WEBHOOK_SECRET",
     "Signature verification for OpenAI Realtime incoming-call events",
@@ -181,8 +177,27 @@ const recommended = [
     "Valid physical postal address required before commercial email can send",
   ],
 
-  // Canonical Founder Early Access catalog. These keys mirror
+  // New-sale channel catalog. These keys mirror
   // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
+  ["STRIPE_VOICE_PRICE_ID", "BotBound Calls monthly price"],
+  ["STRIPE_VOICE_ANNUAL_PRICE_ID", "BotBound Calls annual price"],
+  ["STRIPE_EMAIL_PRICE_ID", "BotBound Email monthly price"],
+  ["STRIPE_EMAIL_ANNUAL_PRICE_ID", "BotBound Email annual price"],
+  ["STRIPE_VOICE_EMAIL_PRICE_ID", "BotBound Calls + Email monthly price"],
+  ["STRIPE_VOICE_EMAIL_ANNUAL_PRICE_ID", "BotBound Calls + Email annual price"],
+  ["STRIPE_VOICE_REGULAR_PRICE_ID", "BotBound Calls regular monthly price"],
+  ["STRIPE_VOICE_REGULAR_ANNUAL_PRICE_ID", "BotBound Calls regular annual price"],
+  ["STRIPE_VOICE_HIGH_PRICE_ID", "BotBound Calls high monthly price"],
+  ["STRIPE_VOICE_HIGH_ANNUAL_PRICE_ID", "BotBound Calls high annual price"],
+  ["STRIPE_EMAIL_REGULAR_PRICE_ID", "BotBound Email regular monthly price"],
+  ["STRIPE_EMAIL_REGULAR_ANNUAL_PRICE_ID", "BotBound Email regular annual price"],
+  ["STRIPE_EMAIL_HIGH_PRICE_ID", "BotBound Email high monthly price"],
+  ["STRIPE_EMAIL_HIGH_ANNUAL_PRICE_ID", "BotBound Email high annual price"],
+  ["STRIPE_VOICE_EMAIL_REGULAR_PRICE_ID", "BotBound Calls + Email regular monthly price"],
+  ["STRIPE_VOICE_EMAIL_REGULAR_ANNUAL_PRICE_ID", "BotBound Calls + Email regular annual price"],
+  ["STRIPE_VOICE_EMAIL_HIGH_PRICE_ID", "BotBound Calls + Email high monthly price"],
+  ["STRIPE_VOICE_EMAIL_HIGH_ANNUAL_PRICE_ID", "BotBound Calls + Email high annual price"],
+  // Historical-only keys remain readable; they do not enable new channel checkout.
   ["STRIPE_STARTER_9_PRICE_ID", "BotBound Starter monthly price"],
   ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "BotBound Starter annual price"],
   ["STRIPE_STARTER_PRICE_ID", "BotBound Starter Plus monthly price"],

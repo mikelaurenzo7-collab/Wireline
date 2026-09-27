@@ -24,10 +24,19 @@ export async function resolveStrictFounderPriceId(
   client: StripePriceClient = stripe,
 ): Promise<string | null> {
   const plan = planById(planId);
-  if (!plan || plan.price_usd_monthly <= 0 || plan.public === false) return null;
+  if (
+    !plan ||
+    plan.price_usd_monthly <= 0 ||
+    plan.public === false ||
+    plan.checkoutAvailability !== "available"
+  )
+    return null;
 
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
   const envPriceId = envKey ? process.env[envKey]?.trim() : undefined;
+  // New channel packages are released deliberately, one interval at a time.
+  // An existing Stripe lookup key alone must not bypass a held Email rollout.
+  if (plan.catalogFamily === "channels" && !envPriceId) return null;
   if (envPriceId) {
     try {
       const configured = await client.prices.retrieve(envPriceId, { expand: ["product"] });

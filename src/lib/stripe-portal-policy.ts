@@ -7,7 +7,6 @@ import { FOUNDER_CATALOG_VERSION } from "./plan-catalog";
 export const MANAGED_PORTAL_METADATA_KEY = "wireline_managed";
 export const PORTAL_PRODUCTS_FINGERPRINT_KEY = "wireline_portal_products_fp";
 export const PORTAL_CATALOG_ATTESTED_AT_KEY = "wireline_portal_catalog_attested_at";
-const PORTAL_ATTESTATION_CLOCK_SKEW_SECONDS = 5;
 const PORTAL_HEADLINE = "Manage your BotBound billing, invoices, and subscription.";
 const CANCELLATION_REASONS = [
   "too_expensive",
@@ -75,14 +74,8 @@ export function managedPortalConfigurationParams(
           options: [...CANCELLATION_REASONS],
         },
       },
-      subscription_update: products.length
-        ? {
-            enabled: true,
-            default_allowed_updates: ["price"],
-            proration_behavior: "create_prorations",
-            products: normalizedProducts(products),
-          }
-        : { enabled: false },
+      // Package migration needs resource retention, proration and item reconciliation.
+      subscription_update: { enabled: false },
     },
     metadata: {
       [MANAGED_PORTAL_METADATA_KEY]: "true",
@@ -164,40 +157,8 @@ export function managedPortalConfigurationFindings(
   ) {
     findings.push("cancellation_reason_disabled");
   }
-  if (
-    features.subscription_update?.enabled !== true ||
-    features.subscription_update?.proration_behavior !== "create_prorations" ||
-    stringSet(features.subscription_update?.default_allowed_updates).size !== 1 ||
-    !stringSet(features.subscription_update?.default_allowed_updates).has("price")
-  ) {
-    findings.push("subscription_update_incomplete");
-  }
-
-  const returnedProducts = features.subscription_update?.products;
-  if (Array.isArray(returnedProducts)) {
-    const expectedProducts = new Map(
-      normalizedProducts(products).map((product) => [product.product, product.prices.join(",")]),
-    );
-    const actualProducts = new Map(
-      returnedProducts.map((product) => [product.product, [...product.prices].sort().join(",")]),
-    );
-    for (const [product, prices] of expectedProducts) {
-      if (actualProducts.get(product) !== prices) findings.push(`plan_switch_mismatch:${product}`);
-    }
-    for (const product of actualProducts.keys()) {
-      if (!expectedProducts.has(product)) {
-        findings.push(`unexpected_plan_switch_product:${product}`);
-      }
-    }
-  } else {
-    const catalogAttestedAt = Number(configuration.metadata?.[PORTAL_CATALOG_ATTESTED_AT_KEY]);
-    if (
-      !Number.isInteger(catalogAttestedAt) ||
-      !Number.isInteger(configuration.updated) ||
-      Math.abs(configuration.updated - catalogAttestedAt) > PORTAL_ATTESTATION_CLOCK_SKEW_SECONDS
-    ) {
-      findings.push("plan_switch_catalog_unverifiable");
-    }
+  if (features.subscription_update?.enabled !== false) {
+    findings.push("subscription_update_must_be_disabled");
   }
 
   return findings;

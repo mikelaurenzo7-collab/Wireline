@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
+import { getTenantChannelEntitlements, requireTenantPhoneChannel } from "../channel-entitlements";
 import { liveExternalActionPolicyForUser } from "../account-environment-policy";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
 import { getCanonicalAppUrl } from "../app-url";
@@ -132,7 +133,10 @@ async function assertNativePhoneExternalActionAllowed(
   action: string,
 ): Promise<void> {
   const policy = await liveExternalActionPolicyForUser(userId);
-  if (policy.allowed) return;
+  if (policy.allowed) {
+    await requireTenantPhoneChannel(userId);
+    return;
+  }
   log.warn("Native phone provider access blocked by account environment", {
     userId,
     action,
@@ -203,11 +207,7 @@ export async function configureNativeNumberRouting(
   return configureNativeNumberRoutingAfterAuthorization(input);
 }
 
-export type OwnedTwilioRoutingRepairState =
-  | "ready"
-  | "not_configured"
-  | "blocked"
-  | "degraded";
+export type OwnedTwilioRoutingRepairState = "ready" | "not_configured" | "blocked" | "degraded";
 
 export type OwnedTwilioRoutingRepairResult = {
   state: OwnedTwilioRoutingRepairState;
@@ -232,6 +232,10 @@ export async function repairOwnedTwilioOpenAIRouting(
   }
   const policy = await liveExternalActionPolicyForUser(userId);
   if (!policy.allowed) {
+    return { state: "blocked", confirmedPhoneNumbers, failures };
+  }
+  const channels = await getTenantChannelEntitlements(userId);
+  if (!channels.channels.some((channel) => channel === "voice" || channel === "sms")) {
     return { state: "blocked", confirmedPhoneNumbers, failures };
   }
 

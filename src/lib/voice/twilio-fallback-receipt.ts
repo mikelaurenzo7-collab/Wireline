@@ -8,6 +8,7 @@ export type FallbackAdmission = {
   fallbackNumber: string;
   agentId: string | null;
   maxSeconds: number;
+  deadlineAtMs?: number;
   leaseId: string;
   leaseExpiresAt: string;
 };
@@ -25,6 +26,7 @@ export type TwilioFallbackStore = {
   claim(input: FallbackAdmission): Promise<FallbackReceipt | null>;
   find(parentCallSid: string): Promise<FallbackReceipt | null>;
   complete(receipt: FallbackReceipt, completion: FallbackCompletion): Promise<FallbackCompletion>;
+  releasePresence(receipt: FallbackReceipt): Promise<void>;
 };
 
 export function fallbackReceiptId(parentCallSid: string): string {

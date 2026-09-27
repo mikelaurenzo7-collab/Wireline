@@ -85,6 +85,7 @@ describe("unified Bot workspace compatibility", () => {
     expect(team?.price_usd_annual).toBe(390);
     expect(team?.max_agents).toBe(2);
     expect(team?.included_phone_numbers).toBe(2);
-    expect(read("src/pages/Pricing.tsx")).toContain("Starter Plus");
+    expect(team?.checkoutAvailability).toBe("legacy_only");
+    expect(read("src/pages/Pricing.tsx")).toContain('plan.catalogFamily === "channels"');
   });
 });

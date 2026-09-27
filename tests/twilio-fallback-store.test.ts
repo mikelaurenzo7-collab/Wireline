@@ -3,14 +3,15 @@ import { PgDialect } from "drizzle-orm/pg-core";
 import { getTableName } from "drizzle-orm";
 import type { FallbackReceipt } from "../src/lib/voice/twilio-fallback-receipt";
 
-const h = vi.hoisted(() => ({ db: null as any }));
+const h = vi.hoisted(() => ({ db: null as any, fund: vi.fn() }));
 vi.mock("../src/lib/server-context", () => ({
   get drizzle() {
     return h.db;
   },
+  log: { error: vi.fn() },
 }));
 vi.mock("../src/lib/voice/openai-sip-config", () => ({ OPENAI_SIP_PROVIDER_MAX_SECONDS: 3600 }));
-vi.mock("../src/lib/inbound-concurrency", () => ({ inboundConcurrentCallCeiling: () => 10 }));
+vi.mock("../src/lib/voice-call-funding", () => ({ reserveVoiceCallFunding: h.fund }));
 import { twilioFallbackStore } from "../src/lib/voice/twilio-fallback-store";
 
 const owner = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -96,9 +97,28 @@ function database(results: unknown[][]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  h.fund.mockResolvedValue(null);
+  delete process.env.WIRELINE_INBOUND_CONCURRENT_CALL_CEILING;
 });
 
 describe("fallback durable receipt repository", () => {
+  it("persists the original funded bound with admission inside the same transaction", async () => {
+    const d = database([[{ agentId: "bot-1" }], [], [{ live: "0" }]]);
+    h.fund.mockResolvedValue({ maxSeconds: 40, deadlineAtMs: 1800000000000 });
+    const { completion: _completion, ...input } = receipt;
+    const result = await twilioFallbackStore.claim(input);
+    expect(h.fund).toHaveBeenCalledWith(d.db, {
+      userId: owner,
+      providerCallId: `twilio-fallback:${parentCallSid}`,
+      maxSeconds: 60,
+    });
+    expect(result).toMatchObject({ maxSeconds: 40, deadlineAtMs: 1800000000000 });
+    expect(d.values[0].value.openaiSipSourceId).toBe(`twilio-fallback:${parentCallSid}`);
+    expect(d.values[1].value.metadata).toMatchObject({
+      maxSeconds: 40,
+      deadlineAtMs: 1800000000000,
+    });
+  });
   it("claims an exact line under lock and persists admission with pending presence atomically", async () => {
     const d = database([[{ agentId: "bot-1" }], [], [{ live: "0" }]]);
     const { completion: _completion, ...input } = receipt;
@@ -112,10 +132,17 @@ describe("fallback durable receipt repository", () => {
       "wireline_call_logs",
       "wireline_audit_log",
       "wireline_signal_presence",
+      "wireline_jobs",
     ]);
     expect(d.values[0].value.durationSeconds).toBeUndefined();
     expect(d.values[0].value.endedReason).toBeUndefined();
     expect(d.values[1].value.metadata).toEqual(admission.metadata);
+    expect(d.values[3].value).toMatchObject({
+      userId: owner,
+      type: "twilio_fallback_reconcile",
+      payload: { parentCallSid },
+      status: "pending",
+    });
   });
 
   it("does not create spend after the line is released or capacity is full", async () => {
@@ -130,7 +157,7 @@ describe("fallback durable receipt repository", () => {
     expect(d.values).toEqual([]);
   });
 
-  it("preserves actual overrun while creating one explicit provider incident and ending presence", async () => {
+  it("preserves actual overrun and holds capacity until customer usage is settled", async () => {
     const d = database([[row], [admission], []]);
     const completion = { childCallSid, status: "completed", durationSeconds: 70 };
     expect(await twilioFallbackStore.complete(receipt, completion)).toEqual(completion);
@@ -147,6 +174,9 @@ describe("fallback durable receipt repository", () => {
       reconciliationRequired: true,
     });
     expect(d.updates[0]).toMatchObject({ durationSeconds: 70, endedReason: "fallback-completed" });
+    expect(d.deleted).toEqual([]);
+    expect(d.updates).toContainEqual({ status: "settling", controlUrl: null });
+    await twilioFallbackStore.releasePresence(receipt);
     expect(d.deleted).toEqual(["wireline_signal_presence"]);
   });
 

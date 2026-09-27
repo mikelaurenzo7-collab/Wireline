@@ -8,9 +8,9 @@
  * - Paid plans consume their monthly included pool first.
  * - Paid extra-agent add-ons increase both agent capacity and included minutes.
  * - Usage beyond the included pool is finalized against Runtime Balance.
- * - A live call is never terminated for billing. If the call exceeds available
- *   prepaid coverage, completion grace records the amount due and the next live
- *   action is blocked until the balance is restored.
+ * - Channel packages reserve call funding before acceptance, with up to ten
+ *   additional completion minutes within the durable session deadline. A
+ *   completion debt pauses new calls and prepaid extras until paid.
  * - No Stripe meter event is emitted and no automatic overage invoice is created.
  * - A provider call contributes to the monthly counter exactly once, while an
  *   unfinished Runtime Balance debit can be resumed safely on webhook retry.
@@ -19,6 +19,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { voiceUsageEvents } from "../db/voice-usage-schema";
 import { chargeCompletedVoiceUsage } from "./voice-completion-grace";
+import { getVoiceCallFundingInTransaction } from "./voice-call-funding";
 import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { drizzle, log } from "./server-context";
 import { dailyPeriodKey } from "./tenant-quotas";
@@ -37,6 +38,7 @@ export function nextMonthlyResetIso(now: Date = new Date()): string {
 
 export interface VoiceUsageSnapshot {
   plan_id: string | null;
+  subscription_status: string | null;
   voice_minutes_used: number;
   voice_minutes_included: number;
   voice_minutes_remaining: number;
@@ -95,9 +97,33 @@ async function prepareVoiceUsage(opts: {
   periodKey: string;
   dailyKey: string;
 }): Promise<PreparedVoiceUsage> {
-  const { userId, providerCallId, minutes, periodKey, dailyKey } = opts;
+  const { userId, providerCallId, dailyKey } = opts;
 
   return drizzle.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${userId}))`);
+    const funding = await getVoiceCallFundingInTransaction(tx, { userId, providerCallId });
+    if (funding?.released) {
+      log.warn("Released call funding received a completion callback; customer usage excluded", {
+        userId,
+        providerCallId,
+      });
+      return {
+        newlyCounted: false,
+        minutes: 0,
+        incrementalOverageMinutes: 0,
+        overageCostUsd: 0,
+        overageRateUsd: funding.rateUsd,
+        planId: funding.planId,
+        chargedAt: new Date(),
+      };
+    }
+    // A cancellation, package change, or UTC month boundary cannot replace the
+    // immutable coverage promised before acceptance. Provider overrun beyond the
+    // admission deadline is platform exposure, never an expanded customer bill.
+    const minutes = funding
+      ? Math.min(opts.minutes, Math.ceil(funding.maxSeconds / 60))
+      : opts.minutes;
+    const periodKey = funding?.periodKey ?? opts.periodKey;
     const [inserted] = await tx
       .insert(voiceUsageEvents)
       .values({
@@ -131,6 +157,18 @@ async function prepareVoiceUsage(opts: {
 
       if (!existing) {
         throw new Error("Voice usage event claim exists but could not be re-read");
+      }
+
+      if (funding) {
+        return {
+          newlyCounted: false,
+          minutes: Number(existing.billableMinutes || minutes),
+          incrementalOverageMinutes: Number(existing.incrementalOverageMinutes || 0),
+          overageCostUsd: Number(existing.overageCostUsd || 0),
+          overageRateUsd: funding.rateUsd,
+          planId: funding.planId,
+          chargedAt: existing.chargedAt ?? null,
+        };
       }
 
       const [billing] = await tx
@@ -205,22 +243,27 @@ async function prepareVoiceUsage(opts: {
     const newUsed = Number(upsertRows[0]?.used ?? minutes);
     const previousUsed = Math.max(0, newUsed - minutes);
 
-    const [billing] = await tx
-      .select({
-        plan: schema.subscriptions.plan,
-        extraAgents: schema.settings.extraAgents,
-      })
-      .from(schema.settings)
-      .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
-      .where(eq(schema.settings.userId, userId))
-      .limit(1);
+    const [billing] = funding
+      ? []
+      : await tx
+          .select({
+            plan: schema.subscriptions.plan,
+            extraAgents: schema.settings.extraAgents,
+          })
+          .from(schema.settings)
+          .leftJoin(schema.subscriptions, eq(schema.subscriptions.userId, schema.settings.userId))
+          .where(eq(schema.settings.userId, userId))
+          .limit(1);
 
-    const planId = billing?.plan ?? null;
+    const planId = funding?.planId ?? billing?.plan ?? null;
     const { plan, included } = includedVoiceMinutes(planId, billing?.extraAgents);
     const previousOverage = Math.max(0, previousUsed - included);
     const newOverageTotal = Math.max(0, newUsed - included);
-    const incrementalOverageMinutes = Math.max(0, newOverageTotal - previousOverage);
-    const overageRateUsd = plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
+    const incrementalOverageMinutes = funding
+      ? Math.max(0, minutes - funding.includedMinutes)
+      : Math.max(0, newOverageTotal - previousOverage);
+    const overageRateUsd =
+      funding?.rateUsd ?? plan?.overage_per_min_usd ?? FLAT_OVERAGE_PER_MIN_USD;
     // Fail CLOSED on an unresolvable stored plan id: charging $0 here would
     // hand that tenant unlimited voice minutes on a never-debited wallet while
     // the UI still displays a charge. A catalog rotation that orphans a plan id
@@ -292,13 +335,12 @@ export async function trackVoiceMinutes(opts: {
       dailyKey,
     });
 
-    if (prepared.incrementalOverageMinutes <= 0 || prepared.overageCostUsd <= 0) return;
     if (prepared.chargedAt) return;
 
     // The ledger debit is itself idempotent on voice_completion:<providerCallId>.
     // If this succeeds but the charged_at checkpoint update fails, a retry may
-    // call it again safely; reverseCredit returns the already-applied ledger
-    // entry rather than debiting twice.
+    // call it again safely. Even zero-overage calls must settle and release an
+    // unused funding hold before another call can claim the included pool.
     const charge = await chargeCompletedVoiceUsage({
       userId,
       costUsd: prepared.overageCostUsd,
@@ -358,6 +400,7 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
     drizzle
       .select({
         plan: schema.subscriptions.plan,
+        subscriptionStatus: schema.subscriptions.status,
         extraAgents: schema.settings.extraAgents,
       })
       .from(schema.settings)
@@ -374,6 +417,7 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
 
   return {
     plan_id: plan?.id ?? null,
+    subscription_status: billing?.subscriptionStatus ?? null,
     voice_minutes_used: used,
     voice_minutes_included: included,
     voice_minutes_remaining: Math.max(0, included - used),

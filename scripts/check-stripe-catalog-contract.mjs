@@ -46,101 +46,57 @@ if (
   errors.push("stripe:catalog:check must run this contract.");
 }
 
-const planEnvTargets = FOUNDER_PRICES.filter(
-  (price) => price.envTarget && price.metadata?.wireline_plan_id,
-).map((price) => price.envTarget);
-
-for (const envTarget of planEnvTargets) {
-  requireText(
-    planCatalog,
-    `"${envTarget}"`,
-    `plan-catalog.ts does not reference canonical price env ${envTarget}.`,
-  );
-}
-
-for (const envTarget of ["STRIPE_EXTRA_AGENT_PRICE_ID"]) {
-  requireText(
-    planCatalog,
-    `"${envTarget}"`,
-    `plan-catalog.ts does not reference canonical add-on env ${envTarget}.`,
-  );
-}
-
-const expectedPlans = [
-  ["starter", 19, 190],
-  ["team", 39, 390],
-  ["business", 79, 790],
-  ["enterprise", 159, 1590],
-];
-for (const [id, monthly, annual] of expectedPlans) {
-  const pattern = new RegExp(
-    `id: "${id}"[\\s\\S]{0,240}?price_usd_monthly: ${monthly},[\\s\\S]{0,120}?price_usd_annual: ${annual},`,
-  );
-  if (!pattern.test(planCatalog)) {
-    errors.push(`plan-catalog.ts price drift for ${id}: expected $${monthly}/$${annual}.`);
-  }
-}
-
-const expectedCapacity = [
-  ["starter", 1, 1, 50, "1.50"],
-  ["team", 2, 2, 100, "3"],
-  ["business", 5, 5, 190, "6"],
-  ["enterprise", 15, 15, 350, "12"],
-];
-for (const [planId, agents, numbers, voiceMinutes, aiSpendUsd] of expectedCapacity) {
-  const product = FOUNDER_PRODUCTS.find(
-    (candidate) => candidate.metadata?.wireline_plan_id === planId,
-  );
-  if (!product) {
-    errors.push(`Founder manifest is missing product metadata for ${planId}.`);
-    continue;
-  }
-
-  const expectedMetadata = {
-    included_agents: String(agents),
-    included_numbers: String(numbers),
-    included_voice_minutes: String(voiceMinutes),
-    included_ai_spend_usd: aiSpendUsd,
-    overage_policy: "prepaid_balance_only",
-  };
-  for (const [key, value] of Object.entries(expectedMetadata)) {
-    if (product.metadata?.[key] !== value) {
-      errors.push(`Founder product metadata drift for ${planId}.${key}: expected ${value}.`);
-    }
-  }
-
-  const recurringPrices = FOUNDER_PRICES.filter(
-    (price) => price.productKey === planId && price.recurring,
-  );
-  if (recurringPrices.length !== 2) {
-    errors.push(`Founder manifest must define monthly and annual prices for ${planId}.`);
-  }
-  for (const price of recurringPrices) {
-    if (price.metadata?.included_voice_minutes !== String(voiceMinutes)) {
-      errors.push(
-        `Founder price metadata drift for ${price.key}: expected ${voiceMinutes} included minutes.`,
-      );
-    }
-    if (price.metadata?.included_ai_spend_usd !== aiSpendUsd) {
-      errors.push(
-        `Founder price metadata drift for ${price.key}: expected $${aiSpendUsd} AI allowance.`,
-      );
-    }
-  }
-}
-
-const extraAgentProduct = FOUNDER_PRODUCTS.find((product) => product.key === "extra_agent");
-const extraAgentPrice = FOUNDER_PRICES.find(
-  (price) => price.key === "extra_agent_monthly_founder_2026_07_v3",
+const { tsImport } = await import("tsx/esm/api");
+const { STRIPE_PLANS } = await tsImport("../src/lib/plan-catalog.ts", import.meta.url);
+const expectedPlans = STRIPE_PLANS.filter(
+  (plan) => plan.price_usd_monthly > 0 && plan.checkoutAvailability === "available",
 );
-for (const [label, metadata] of [
-  ["product", extraAgentProduct?.metadata],
-  ["price", extraAgentPrice?.metadata],
-]) {
-  if (metadata?.included_voice_minutes !== "50" || metadata?.included_phone_numbers !== "1") {
-    errors.push(`Extra-agent ${label} metadata must guarantee 50 minutes and one number slot.`);
+const planEnvTargets = [];
+for (const plan of expectedPlans) {
+  const product = FOUNDER_PRODUCTS.find((item) => item.key === plan.id);
+  if (!product || product.name !== plan.name)
+    errors.push(`Missing or incorrect product for ${plan.id}.`);
+  const metadata = {
+    included_agents: plan.max_agents,
+    included_numbers: plan.included_phone_numbers,
+    included_mailboxes: plan.included_mailboxes,
+    included_voice_minutes: plan.voice_minutes_monthly,
+    included_ai_spend_usd: plan.ai_spend_allowance_usd_monthly,
+  };
+  for (const [key, value] of Object.entries(metadata)) {
+    if (Number(product?.metadata?.[key]) !== value) errors.push(`${plan.id} product ${key} drift.`);
+  }
+  if (product?.metadata?.wireline_channels !== plan.channels.join(","))
+    errors.push(`${plan.id} channel metadata drift.`);
+  for (const interval of ["month", "year"]) {
+    const annual = interval === "year";
+    const key = annual ? plan.lookupKeyAnnual : plan.lookupKeyMonthly;
+    const price = FOUNDER_PRICES.find((item) => item.lookupKey === key);
+    const envTarget = annual ? plan.annualPriceIdEnv : plan.priceIdEnv;
+    planEnvTargets.push(envTarget);
+    if (
+      !price ||
+      price.unitAmount !== (annual ? plan.price_usd_annual : plan.price_usd_monthly) * 100 ||
+      price.envTarget !== envTarget ||
+      price.recurring?.interval !== interval ||
+      price.metadata?.wireline_plan_id !== plan.id
+    )
+      errors.push(`${plan.id} ${interval} price drift.`);
   }
 }
+if (
+  FOUNDER_PRICES.some(
+    (price) =>
+      price.recurring &&
+      !expectedPlans.some((plan) => plan.id === price.metadata?.wireline_plan_id),
+  )
+)
+  errors.push("Unavailable/legacy packages must not receive new prices.");
+requireText(
+  setupCatalog,
+  "isHistoricalCatalogObject",
+  "Setup must preserve historical Stripe objects.",
+);
 
 // Live Video was retired on 2026-08-17. Keeping it in this active manifest
 // would cause stripe:setup to reactivate the archived product and price.
@@ -153,7 +109,11 @@ if (
 
 // Commercial Stripe copy follows the same Bot taxonomy as the application.
 for (const product of FOUNDER_PRODUCTS) {
-  if (/\bvoice agents?\b|\blive agents?\b|\b\d+\+ agents\b/i.test(`${product.name} ${product.description}`)) {
+  if (
+    /\bvoice agents?\b|\blive agents?\b|\b\d+\+ agents\b/i.test(
+      `${product.name} ${product.description}`,
+    )
+  ) {
     errors.push(`Founder Stripe product still exposes retired Agent taxonomy: ${product.key}.`);
   }
 }
@@ -163,13 +123,15 @@ for (const price of FOUNDER_PRICES) {
   }
 }
 
-if (FOUNDER_PRODUCTS.length !== 7) {
+if (FOUNDER_PRODUCTS.length !== expectedPlans.length + 2) {
   errors.push(
-    `Founder manifest must define 7 active paid/add-on/contact products; found ${FOUNDER_PRODUCTS.length}.`,
+    `Founder manifest must define ${expectedPlans.length + 2} active channel/contact/balance products; found ${FOUNDER_PRODUCTS.length}.`,
   );
 }
-if (FOUNDER_PRICES.length !== 13) {
-  errors.push(`Founder manifest must define 13 active prices; found ${FOUNDER_PRICES.length}.`);
+if (FOUNDER_PRICES.length !== expectedPlans.length * 2 + 4) {
+  errors.push(
+    `Founder manifest must define ${expectedPlans.length * 2 + 4} active prices; found ${FOUNDER_PRICES.length}.`,
+  );
 }
 
 for (const [source, label] of [

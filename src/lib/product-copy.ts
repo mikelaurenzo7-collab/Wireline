@@ -1,8 +1,11 @@
 import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "./outbound-call-purpose";
 
-// Marketing campaigns cannot dial until recipient consent has a verified,
-// server-owned setup path. Keep acquisition copy honest while that is pending.
-export const MARKETING_CALLS_NOTICE = "Marketing calls are not available yet.";
+// The current recipient-consent gap blocks every direct outbound call. Keep the
+// narrower campaign notice for when direct calling becomes available.
+export const MARKETING_CALLS_NOTICE = DIRECT_OUTBOUND_AVAILABILITY.available
+  ? "Marketing calls are not available yet."
+  : "Outbound calls are not available yet.";
 
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
@@ -24,7 +27,7 @@ export const BRAND_SYSTEM = {
     "Treat employee roles as starting templates, not product categories or permanent limits.",
     "Make clear only when useful that one Bot can call, text, and email with shared context.",
     "Let customers train the playbook, channels, knowledge, tools, guardrails, approvals, and handoffs.",
-    "State that the included BotBound number applies to paid plans so the free builder is never misrepresented.",
+    "Only promise a number for plans that include Calls or SMS, and an inbox for plans that include Email. State each channel's live availability.",
     "Treat additional Bots as optional expansion for concurrency or genuinely separate roles.",
     "Show logged proof after calls, texts, emails, handoffs, campaigns, and follow-up when proof helps the decision.",
     "Never present Personal or Business as a customer-facing product, workspace, signup, or pricing classification.",

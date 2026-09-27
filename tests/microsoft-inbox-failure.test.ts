@@ -23,6 +23,8 @@ vi.mock("../src/lib/agentmail-mail", () => ({
 }));
 vi.mock("../src/lib/account-environment-policy", () => ({}));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({}));
+vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: vi.fn() }));
+vi.mock("../src/lib/managed-mail-send-spend", () => ({ sendFundedManagedEmail: vi.fn() }));
 
 import { IntegrationService } from "../src/lib/integrations";
 

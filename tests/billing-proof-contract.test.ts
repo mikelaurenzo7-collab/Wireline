@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 const read = (path: string) => readFileSync(path, "utf8").replace(/\r\n/g, "\n");
 
 describe("billing proof contract", () => {
-  it("keeps a single founder-catalog checkout owner reachable for new users", () => {
+  it("keeps a single channel-catalog checkout owner reachable for new users", () => {
     const registry = read("src/server/register-api-routes.ts");
     const launchCheckout = read("src/routes/launch-billing-checkout-routes.ts");
     const atomicCheckout = read("src/routes/launch-billing-checkout-atomic-routes.ts");
@@ -19,10 +19,14 @@ describe("billing proof contract", () => {
     expect(launchCheckout).toContain('code: "LEGACY_PLAN_RETIRED"');
     for (const checkout of [launchCheckout, atomicCheckout]) {
       expect(checkout).toContain(
-        "This self-serve plan is no longer offered. Choose Pro for up to five live agents, or contact sales for a Scale rollout.",
+        "This plan is retained for existing subscriptions. Choose the channels you need for a new subscription.",
       );
-      expect(checkout).toContain('replacement: "business"');
+      expect(checkout).toContain('replacement: "voice"');
       expect(checkout).toContain('contact_sales: "/contact?topic=enterprise"');
+      expect(checkout).toContain('plan.checkoutAvailability !== "available"');
+      expect(checkout.indexOf('code: "CHANNEL_SETUP_UNAVAILABLE"')).toBeLessThan(
+        checkout.indexOf("const [existing]"),
+      );
     }
     expect(launchCheckout).toContain("FOUNDER_CATALOG_VERSION");
     expect(launchCheckout).toContain(
@@ -288,7 +292,7 @@ describe("billing proof contract", () => {
     // a plan id that differs from "personal" — a null plan (orphaned stored
     // id) previously passed `planId !== "personal"` and enabled live voice the
     // ledger could only price at $0.
-    expect(guard).toContain('!!plan && plan.id !== "personal"');
+    expect(guard).toContain('activeSubscription && planIncludesChannel(planId, "voice")');
     expect(guard).toContain('code: "LIVE_PLAN_REQUIRED"');
   });
 
@@ -391,6 +395,12 @@ describe("billing proof contract", () => {
   it("checks the canonical founder Stripe environment without reviving postpaid metering", () => {
     const envCheck = read("scripts/check-prod-env.mjs");
     const canonicalKeys = [
+      "STRIPE_VOICE_PRICE_ID",
+      "STRIPE_VOICE_ANNUAL_PRICE_ID",
+      "STRIPE_EMAIL_PRICE_ID",
+      "STRIPE_EMAIL_ANNUAL_PRICE_ID",
+      "STRIPE_VOICE_EMAIL_PRICE_ID",
+      "STRIPE_VOICE_EMAIL_ANNUAL_PRICE_ID",
       "STRIPE_STARTER_9_PRICE_ID",
       "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
       "STRIPE_STARTER_PRICE_ID",

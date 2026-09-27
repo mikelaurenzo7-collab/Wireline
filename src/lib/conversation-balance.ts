@@ -1,7 +1,7 @@
 /**
  * Runtime Balance is Wireline's prepaid safety wallet for optional and overflow work.
  *
- * Paid plans guarantee monthly live-voice minutes and include a smaller flexible
+ * Plans with Calls include monthly live-voice minutes and a smaller flexible
  * Runtime Allowance for SMS, platform-funded AI/research, enrichment, and generated
  * business artifacts. Runtime Balance covers usage beyond those included amounts
  * without automatic postpaid invoices.
@@ -16,9 +16,9 @@ export const CONVERSATION_BALANCE_PRESETS_USD = [10, 25, 50, 100] as const;
 export const CONVERSATION_BALANCE_COPY = {
   title: "Runtime Balance",
   subtitle:
-    "Your subscription guarantees monthly voice capacity, includes flexible runtime for optional SMS and business artifacts, and funds platform AI, research, and enrichment from its included AI envelope. Add prepaid balance only when you need more.",
+    "Your plan includes capacity for your selected channels. Add prepaid balance when you need more.",
   reassurance:
-    "No automatic overages or auto-refill by default. Active calls finish normally; the next paid action pauses when included capacity and balance are depleted.",
+    "No automatic charges or auto-refill. Calls have up to 10 minutes of completion credit; any amount due pauses new calls and prepaid extras until you top up.",
 } as const;
 
 export function isConversationBalanceAmount(amountUsd: number): boolean {

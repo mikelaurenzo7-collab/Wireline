@@ -13,6 +13,7 @@ import { getErrorMessage } from "./server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "./tenant-provider-deletion-fence";
 import { isLaunchHardBlocked } from "./launch-readiness";
 import { assertLiveWorkEntitlementForUser } from "./trial-gate";
+import { requireTenantChannel } from "./channel-entitlements";
 import { finalizeAcceptedTwilioMessage } from "./twilio-message-reconciliation";
 import {
   externalEntityActionPolicyForUser,
@@ -427,6 +428,23 @@ export async function sendTenantMessage(
     };
   }
 
+  // Shared by interactive sends, Bot tools and jobs. Balance alone never buys
+  // access to a channel excluded from the active package.
+  try {
+    await requireTenantChannel(userId, "sms");
+  } catch (error) {
+    const denied = error as { message?: string; code?: string };
+    return {
+      ok: false,
+      configured: isTwilioConfigured(),
+      enabled: false,
+      channel,
+      reason: denied.message || "Messaging entitlement could not be verified.",
+      code: denied.code || "SERVICE_UNAVAILABLE",
+      recovery_path: "/settings/billing",
+    };
+  }
+
   const [settings, thread, dncBlocked] = await Promise.all([
     settingsFor(userId),
     existingThread(userId, phone, requestedSender || undefined),
@@ -478,28 +496,6 @@ export async function sendTenantMessage(
     retainOnSuccess: (result: TwilioSendResult) =>
       result.ok || result.providerOutcomeAmbiguous === true,
     perform: async (): Promise<TwilioSendResult> => {
-      if (channel === "sms" && settings.lookupEnabled && !thread) {
-        const lookup = await lookupTenantPhoneNumber(userId, phone);
-        if (!lookup.ok || lookup.valid === false) {
-          return {
-            ok: false,
-            configured: lookup.configured,
-            enabled: true,
-            reason: lookup.reason || "The destination number did not pass phone validation.",
-            channel,
-          };
-        }
-        if ((lookup.lineType || "").toLowerCase() === "landline") {
-          return {
-            ok: false,
-            configured: true,
-            enabled: true,
-            reason: "The destination is a landline, so SMS was not sent.",
-            channel,
-          };
-        }
-      }
-
       const segments = channel === "sms" ? estimateSmsSegments(body) : 1;
       const whatsappRate = channel === "whatsapp" ? whatsappCustomerRate() : null;
       if (channel === "whatsapp" && whatsappRate == null) {
@@ -600,7 +596,7 @@ export async function sendTenantMessage(
       }
 
       // The callback is deliberately after every entitlement/configuration/
-      // balance gate and immediately before the provider boundary. It is outside
+      // balance gate and before either paid Lookup or the message boundary. It is outside
       // the provider catch: a failed durable claim proves Twilio was never called,
       // so refund this attempt's reserve and reject for a safe queue retry.
       try {
@@ -640,6 +636,51 @@ export async function sendTenantMessage(
           throw accountingError;
         }
         throw error;
+      }
+
+      if (channel === "sms" && settings.lookupEnabled && !thread) {
+        let lookup: Awaited<ReturnType<typeof lookupTenantPhoneNumber>>;
+        try {
+          lookup = await lookupTenantPhoneNumber(userId, phone);
+        } catch (error) {
+          log.warn("Twilio phone validation unavailable before message send", {
+            userId,
+            error: getErrorMessage(error),
+          });
+          lookup = {
+            ok: false,
+            configured: true,
+            enabled: true,
+            reason: "Phone validation is temporarily unavailable. Try again shortly.",
+            code: "PHONE_LOOKUP_UNAVAILABLE",
+          };
+        }
+        const landline = (lookup.lineType || "").toLowerCase() === "landline";
+        if (!lookup.ok || lookup.valid === false || landline) {
+          // The message has not started. Its debit can be released, but the
+          // separately funded Lookup receipt must remain: validation itself
+          // may have consumed provider money, including invalid destinations.
+          await refundRuntimeUsage({
+            userId,
+            amountUsd: requiredBalance,
+            referenceId: reservationReference,
+            reason: "SMS was not sent after phone validation",
+            provider: "twilio",
+            source: "twilio",
+            metadata: { channel, estimated_segments: segments, pre_provider_failure: true },
+          });
+          return {
+            ok: false,
+            configured: lookup.configured,
+            enabled: true,
+            reason: landline
+              ? "The destination is a landline, so SMS was not sent."
+              : lookup.reason || "The destination number did not pass phone validation.",
+            code: lookup.code,
+            recovery_path: lookup.recovery_path,
+            channel,
+          };
+        }
       }
 
       let message: Awaited<ReturnType<typeof client.messages.create>>;

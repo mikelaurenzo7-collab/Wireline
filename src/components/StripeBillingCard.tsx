@@ -4,8 +4,6 @@ import { Link } from "react-router";
 import {
   CreditCard,
   Loader2,
-  Check,
-  ChevronDown,
   Shield,
   ArrowRight,
   AlertTriangle,
@@ -15,14 +13,20 @@ import {
 } from "lucide-react";
 import { authFetch } from "../lib/api";
 import BillingIntervalControl from "./BillingIntervalControl";
-import { cn } from "../lib/utils";
+import ChannelPlanPicker, { hasChannelPlanDetails } from "./ChannelPlanPicker";
+import CapacityUpgradeCard from "./CapacityUpgradeCard";
+import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { safeDate, formatDate } from "../lib/safe-date";
 import UsageMeter from "./UsageMeter";
 import { ShadButton } from "./ui/shadcn/ShadButton";
 import {
   billingIntervalFromIntent,
+  DEFAULT_ACTIVATION_PLAN_ID,
   getStoredSignupIntent,
   recommendedPlanFromIntent,
+  persistSignupIntent,
+  mergeSignupIntent,
+  type SignupPlanId,
 } from "../lib/signup-intent";
 import { BRAND } from "../constants/brand-colors";
 import { emitProductEvent } from "../lib/product-event-client";
@@ -148,7 +152,10 @@ export default function StripeBillingCard({
       setAgentCount(statusRes.agent_count ?? 0);
       const urlPlan = new URLSearchParams(window.location.search).get("plan");
       const explicitPaidPlan =
-        urlPlan && ["starter", "team", "business", "enterprise"].includes(urlPlan) ? urlPlan : null;
+        urlPlan &&
+        livePlans.some((plan) => plan.id === urlPlan && plan.catalog_family === "channels")
+          ? urlPlan
+          : null;
       const storedIntent = getStoredSignupIntent();
       setSignupPlanInterest(
         explicitPaidPlan ||
@@ -190,7 +197,13 @@ export default function StripeBillingCard({
       interval === "year"
         ? selectedPlan?.annual_configured === true
         : selectedPlan?.configured === true;
-    if (!billingReady || !selfServeBillingReleased || !selectedIntervalReady) {
+    if (
+      !billingReady ||
+      !selfServeBillingReleased ||
+      !selectedIntervalReady ||
+      selectedPlan?.checkout_availability !== "available" ||
+      selectedPlan.catalog_family !== "channels"
+    ) {
       setError(CHECKOUT_RELEASE_MESSAGE);
       return;
     }
@@ -396,6 +409,18 @@ export default function StripeBillingCard({
           showBalance={showUsageBalance}
         />
       ) : null}
+      {hasActiveSubscription &&
+      sub?.status === "active" &&
+      sub.plan &&
+      plans.some((plan) => plan.id === sub.plan && plan.catalog_family === "channels") ? (
+        <CapacityUpgradeCard
+          key={sub.plan}
+          currentPlanId={sub.plan}
+          plans={plans}
+          refreshKey={refreshKey}
+          onRefreshBilling={() => (onRetry ? onRetry() : void refresh())}
+        />
+      ) : null}
       {hasGrantedPlanAccess ? <UsageMeter showBalance={showUsageBalance} /> : null}
       {showBalanceTopUp ? (
         <>{canAddBalance && <CreditTopUpCard busy={creditBusy} onBuy={startCreditCheckout} />}</>
@@ -501,41 +526,6 @@ function CreditTopUpCard({
   );
 }
 
-function planSummary(plan: ClientPlan): string[] {
-  const usd = (value: number) => `$${value.toFixed(2).replace(/\.00$/, "")}`;
-  const allowance = plan.ai_spend_allowance_usd_monthly;
-  if (plan.is_free) {
-    return [
-      "Private setup and simulation",
-      ...(typeof allowance === "number" && Number.isFinite(allowance)
-        ? [`${usd(allowance)} of private AI simulation each month`]
-        : plan.features.filter((feature) => /simulation.*month/i.test(feature))),
-      "No live number until activation",
-    ];
-  }
-  const runtime = plan.runtime_allowance_usd_monthly;
-  return [
-    ...(Number.isFinite(plan.included_phone_numbers)
-      ? [
-          `${plan.included_phone_numbers} phone number${plan.included_phone_numbers === 1 ? "" : "s"} included`,
-        ]
-      : []),
-    ...(Number.isFinite(plan.voice_minutes_monthly)
-      ? [`${plan.voice_minutes_monthly.toLocaleString()} voice minutes each month`]
-      : []),
-    ...(typeof runtime === "number" &&
-    Number.isFinite(runtime) &&
-    typeof allowance === "number" &&
-    Number.isFinite(allowance)
-      ? [`${usd(runtime)} Runtime + ${usd(allowance)} managed AI each month`]
-      : plan.features.filter((feature) => /allowance/i.test(feature))),
-    ...(Number.isFinite(plan.overage_per_min_usd)
-      ? [`$${plan.overage_per_min_usd.toFixed(2)}/min prepaid after included minutes`]
-      : []),
-    ...plan.features.filter((feature) => /no automatic overages/i.test(feature)),
-  ];
-}
-
 function PlanPicker({
   plans,
   signupPlanInterest,
@@ -553,156 +543,102 @@ function PlanPicker({
   onBillingIntervalChange: (interval: "month" | "year") => void;
   onSelectPlan: (planId: string, interval: "month" | "year") => void;
 }) {
+  const availablePlans = plans
+    .filter((plan) => plan.catalog_family === "channels")
+    .filter(hasChannelPlanDetails);
+  const displayPlans = availablePlans.length
+    ? availablePlans
+    : STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+  const [selectedId, setSelectedId] = useState(() =>
+    displayPlans.some((plan) => plan.id === signupPlanInterest)
+      ? signupPlanInterest!
+      : DEFAULT_ACTIVATION_PLAN_ID,
+  );
+  useEffect(() => {
+    if (
+      signupPlanInterest &&
+      STRIPE_PLANS.some(
+        (plan) => plan.catalogFamily === "channels" && plan.id === signupPlanInterest,
+      )
+    )
+      setSelectedId(signupPlanInterest);
+  }, [signupPlanInterest, plans]);
+  function selectPackage(id: string, interval = billingInterval) {
+    setSelectedId(id);
+    persistSignupIntent(
+      mergeSignupIntent(getStoredSignupIntent(), {
+        preferredPlanId: id as SignupPlanId,
+        preferredBillingInterval: interval,
+        capturedAt: new Date().toISOString(),
+      }),
+    );
+    const url = new URL(window.location.href);
+    url.searchParams.set("plan", id);
+    url.searchParams.set("interval", interval);
+    window.history.replaceState(window.history.state, "", url);
+  }
   return (
-    <div className="wl-billing-plans space-y-5">
-      <div className="pb-1">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <h3 className="font-semibold tracking-[-.02em] text-3xl text-foreground">Plans</h3>
-          <BillingIntervalControl value={billingInterval} onChange={onBillingIntervalChange} />
-        </div>
+    <div className="wl-billing-plans space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h3 className="text-2xl font-semibold tracking-tight">Your plan</h3>
+        <BillingIntervalControl
+          value={billingInterval}
+          onChange={(interval) => {
+            selectPackage(selectedId, interval);
+            onBillingIntervalChange(interval);
+          }}
+        />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-        {plans
-          .filter((p) => p.public !== false)
-          .map((plan) => {
-            const Icon = PLAN_ICONS[plan.id] || Building2;
-            const accent = PLAN_ACCENTS[plan.id] || BRAND.colors.primary;
-            const isBusy = busy === plan.id;
-            const isSignupMatch = signupPlanInterest === plan.id;
-            const isFree = plan.is_free === true;
-            const annual = plan.price_usd_annual > 0;
-            const showAnnual = billingInterval === "year" && annual;
-            const canSubscribe =
-              checkoutReleased &&
-              !isFree &&
-              (showAnnual ? plan.annual_configured === true : plan.configured === true);
-            const price = showAnnual ? plan.price_usd_annual : plan.price_usd_monthly;
-            const priceSuffix = isFree ? "forever" : showAnnual ? "/yr" : "/mo";
-            const monthsSaved =
-              annual && plan.price_usd_monthly > 0
-                ? Math.max(0, Math.round(12 - plan.price_usd_annual / plan.price_usd_monthly))
-                : 0;
-            return (
-              <div
-                key={plan.id}
-                className={cn(
-                  "wl-billing-plan min-w-0 rounded-xl border bg-card flex flex-col gap-4 transition-colors",
-                  isSignupMatch
-                    ? "border-brand/50 bg-brand/5 shadow-lg shadow-brand/10"
-                    : "border-border hover:border-[color:var(--wireline-color-border-strong)]",
-                )}
-                data-accent={accent}
+      <ChannelPlanPicker
+        id="billing"
+        plans={displayPlans}
+        selectedPlanId={selectedId}
+        onSelectPlan={selectPackage}
+        interval={billingInterval}
+        disabled={!!busy}
+        renderAction={(plan) => {
+          const live = availablePlans.find((item) => item.id === plan.id);
+          const smsPending =
+            plan.channels.includes("sms") && live?.checkout_availability !== "available";
+          const canSubscribe =
+            checkoutReleased &&
+            live?.checkout_availability === "available" &&
+            (billingInterval === "year" ? live.annual_configured : live.configured) === true;
+          return (
+            <div className="space-y-2">
+              <ShadButton
+                type="button"
+                disableAnimations
+                className="w-full"
+                disabled={!!busy || !canSubscribe}
+                onClick={() => onSelectPlan(plan.id, billingInterval)}
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
-                    <Icon className="w-5 h-5 wl-accent-text" />
-                  </div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {plan.max_agents} {plan.max_agents === 1 ? "Bot" : "Bots"}
-                  </span>
-                </div>
-                <div>
-                  <h4 className="font-semibold tracking-[-.02em] text-2xl text-foreground">
-                    {plan.name.replace(/^BotBound\s+/, "")}
-                  </h4>
-                  <div className="mt-1.5 flex flex-wrap items-baseline gap-1">
-                    <span className="font-semibold tracking-[-.02em] text-4xl text-foreground tabular-nums">
-                      ${price.toLocaleString()}
-                    </span>
-                    <span className="text-xs font-medium text-muted-foreground">{priceSuffix}</span>
-                  </div>
-                  {showAnnual && monthsSaved > 0 ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Save {monthsSaved} month{monthsSaved === 1 ? "" : "s"} vs monthly
-                    </p>
-                  ) : !isFree && billingInterval === "year" && !annual ? (
-                    <p className="mt-1 text-xs text-muted-foreground">Billed monthly</p>
-                  ) : annual ? (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      or ${plan.price_usd_annual}/yr
-                      {monthsSaved > 0
-                        ? ` · save ${monthsSaved} month${monthsSaved === 1 ? "" : "s"}`
-                        : ""}
-                    </p>
-                  ) : null}
-                </div>
-                <ul className="space-y-2 flex-1">
-                  {planSummary(plan).map((f: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-caption">
-                      <Check
-                        className="w-3.5 h-3.5 mt-0.5 shrink-0 wl-accent-text"
-                        strokeWidth={2.5}
-                      />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                {isFree ? (
-                  <ShadButton asChild disableAnimations variant="outline" className="w-full py-3">
-                    <Link to="/studio">
-                      Open Free Builder <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </ShadButton>
-                ) : checkoutReleased && !canSubscribe ? (
-                  <ShadButton asChild disableAnimations variant="outline" className="w-full py-3">
-                    <Link to="/contact?topic=billing">
-                      Contact Sales <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </ShadButton>
+                {busy === plan.id ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Opening checkout
+                  </>
+                ) : smsPending ? (
+                  "SMS setup unavailable"
+                ) : canSubscribe ? (
+                  "Continue to checkout"
                 ) : (
-                  <ShadButton
-                    type="button"
-                    disableAnimations
-                    variant="outline"
-                    onClick={() => onSelectPlan(plan.id, showAnnual ? "year" : "month")}
-                    disabled={isBusy || !canSubscribe}
-                    className="w-full py-3"
-                  >
-                    {isBusy ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : canSubscribe ? (
-                      <>
-                        Subscribe {showAnnual ? "annually" : ""} <ArrowRight className="w-3 h-3" />
-                      </>
-                    ) : (
-                      "Checkout paused"
-                    )}
-                  </ShadButton>
+                  "Checkout paused"
                 )}
-                {!isFree && !canSubscribe && checkoutReleased && (
-                  <p className="text-[length:var(--wireline-typography-overline-size)] text-muted-foreground text-center leading-relaxed">
-                    Online checkout is not yet available for this plan
-                  </p>
-                )}
-                {plan.features.length > 0 ? (
-                  <details className="group/details border-t border-border pt-1">
-                    <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground marker:hidden">
-                      Plan Details
-                      <ChevronDown
-                        className="size-4 shrink-0 transition-transform group-open/details:rotate-180 motion-reduce:transition-none"
-                        aria-hidden="true"
-                      />
-                    </summary>
-                    <ul className="space-y-2 pb-2 pt-1" aria-label={`${plan.name} full details`}>
-                      {plan.features.map((feature, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-2 text-caption text-muted-foreground"
-                        >
-                          <Check
-                            className="mt-0.5 size-3.5 shrink-0 wl-accent-text"
-                            aria-hidden="true"
-                          />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                ) : null}
-              </div>
-            );
-          })}
-      </div>
+              </ShadButton>
+              {smsPending ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  SMS setup is not available yet. Choose Calls or Email to activate without SMS.
+                </p>
+              ) : null}
+            </div>
+          );
+        }}
+      />
+      <ShadButton asChild disableAnimations variant="outline" className="w-full">
+        <Link to="/studio">
+          Open Free Builder <ArrowRight className="size-4" />
+        </Link>
+      </ShadButton>
     </div>
   );
 }
@@ -831,8 +767,8 @@ function ActiveSubCard({
             </p>
             {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
               <p className="text-sm text-[var(--wireline-color-status-warning)]">
-                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Add Bots
-                or upgrade.
+                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Contact
+                support for more capacity.
               </p>
             ) : null}
           </div>
@@ -850,7 +786,7 @@ function ActiveSubCard({
           ) : (
             <ExternalLink className="w-4 h-4" />
           )}
-          Manage Subscription
+          Manage billing
         </ShadButton>
       </div>
     </div>

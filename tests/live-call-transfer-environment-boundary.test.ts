@@ -41,7 +41,10 @@ describe("live-call transfer environment boundary", () => {
     expect(entity).toBeGreaterThan(-1);
     expect(environment).toBeGreaterThan(entity);
     expect(provider).toBeGreaterThan(environment);
-    expect(referBoundary.slice(environment, provider).match(/await /g)).toHaveLength(1);
+    expect(referBoundary.slice(environment, provider)).toContain("await getVoiceCallFunding");
+    expect(referBoundary.slice(environment, provider)).toContain(
+      "await enforceFundedCarrierCallLimit",
+    );
 
     expect(session).toContain(
       "referOpenAISipCall(input.userId, input.callId, result.destination.number)",

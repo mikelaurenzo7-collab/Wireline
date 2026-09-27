@@ -24,7 +24,7 @@ describe("launch readiness cross-surface contract", () => {
     );
     expect(kb).toContain("is not supported yet");
     expect(security).toMatch(
-      /Marketing and campaign outbound[^.]*fail closed[^.]*stay blocked[^.]*federal DNC setup/i,
+      /Outbound calls are not available yet\. Verified recipient consent and applicable DNC checks must be in place/i,
     );
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });

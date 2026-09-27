@@ -2,6 +2,8 @@
  * Client API shapes for /api/billing/* — keep in sync with billing-routes.ts
  * and workspace-usage-snapshot.ts response bodies.
  */
+import type { CommunicationChannel, CheckoutAvailability, CapacityTier } from "../lib/plan-catalog";
+import type { VoiceCallPolicy } from "../lib/voice-funding-policy";
 
 export type BillingTrialStatus = "trialing" | "trial_expired" | (string & {});
 
@@ -39,6 +41,12 @@ export interface BillingSignupIntent {
 
 /** GET /api/billing/status */
 export interface BillingStatusResponse {
+  channel_entitlements?: {
+    plan_id: string | null;
+    subscription_status: string;
+    channels: readonly CommunicationChannel[];
+    is_owner: boolean;
+  } | null;
   stripe_configured: boolean;
   agent_count: number;
   phone_lines_used: number;
@@ -62,6 +70,11 @@ export interface ClientPlan {
   ai_spend_allowance_usd_monthly?: number;
   overage_per_min_usd: number;
   included_phone_numbers: number;
+  included_mailboxes?: number;
+  channels?: readonly CommunicationChannel[];
+  catalog_family?: "channels" | "legacy" | null;
+  capacity_tier?: CapacityTier | null;
+  checkout_availability?: CheckoutAvailability;
   extra_agent_price_usd: number | null;
   extra_agent_voice_minutes_monthly: number;
   extra_agent_included_phone_numbers: number;
@@ -72,7 +85,7 @@ export interface ClientPlan {
   contact_sales: boolean;
   is_free: boolean;
   public: boolean;
-  pricing_model: "guaranteed_voice_plus_flexible_runtime";
+  pricing_model: "guaranteed_voice_plus_flexible_runtime" | "channel_package";
 }
 
 /** GET /api/billing/plans response envelope */
@@ -100,7 +113,8 @@ export interface WorkspaceUsageResponse {
   credit_balance_usd: number;
   completion_grace_due_usd: number;
   live_voice_blocked: boolean;
-  current_call_policy: "finish_current_block_next";
+  current_call_policy: VoiceCallPolicy;
+  completion_grace_minutes?: number | null;
   extra_usage_funding: "conversation_balance";
   ai_spend_usd: number;
   ai_spend_limit_usd: number;

@@ -23,6 +23,7 @@ export function stripePriceMatchesFounderPlan(
   const product = expandedActiveProduct(price);
 
   return Boolean(
+    plan.checkoutAvailability === "available" &&
     lookupKey &&
     price.active === true &&
     price.livemode === true &&
@@ -41,6 +42,15 @@ export function stripePriceMatchesFounderPlan(
     product.livemode === true &&
     product.name === plan.name &&
     product.metadata?.wireline_plan_id === plan.id &&
-    product.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION,
+    product.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
+    [price.metadata, product.metadata].every(
+      (metadata) =>
+        metadata?.wireline_channels === plan.channels.join(",") &&
+        Number(metadata.included_agents) === plan.max_agents &&
+        Number(metadata.included_numbers) === plan.included_phone_numbers &&
+        Number(metadata.included_mailboxes) === plan.included_mailboxes &&
+        Number(metadata.included_voice_minutes) === plan.voice_minutes_monthly &&
+        Number(metadata.included_ai_spend_usd) === plan.ai_spend_allowance_usd_monthly,
+    ),
   );
 }

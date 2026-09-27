@@ -29,16 +29,16 @@ describe("launch readiness triple-pass 2026-07-27", () => {
     expect(gate).toContain('preferredBillingInterval === "year"');
     expect(gate).toContain("interval");
     expect(gate).toContain("selfServeTiers");
-    expect(gate).toContain("tier.suffix");
+    expect(gate).toContain("interval={selectedTier?.interval ?? preferredInterval}");
     expect(gate).not.toContain("const SELF_SERVE_TIERS");
   });
 
   it("disables annual Subscribe when annual Stripe price is not configured", () => {
     const card = read("src/components/StripeBillingCard.tsx");
     expect(card.replace(/\s+/g, " ")).toContain(
-      "const canSubscribe = checkoutReleased && !isFree && (showAnnual ? plan.annual_configured === true : plan.configured === true)",
+      'const canSubscribe = checkoutReleased && live?.checkout_availability === "available" && (billingInterval === "year" ? live.annual_configured : live.configured) === true',
     );
-    expect(card).toContain("disabled={isBusy || !canSubscribe}");
+    expect(card).toContain("disabled={!!busy || !canSubscribe}");
   });
 
   it("fails support ticket delivery honestly", () => {

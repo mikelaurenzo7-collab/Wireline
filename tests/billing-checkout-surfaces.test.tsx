@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StripeBillingCard from "../src/components/StripeBillingCard";
 import TrialGateModal from "../src/components/TrialGateModal";
+import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 const h = vi.hoisted(() => ({
   states: [] as unknown[],
@@ -42,8 +43,11 @@ vi.mock("../src/lib/api", () => ({
   TRIAL_GATE_EVENT: "trial-gate",
 }));
 vi.mock("../src/lib/signup-intent", () => ({
+  DEFAULT_ACTIVATION_PLAN_ID: "voice-regular",
   getStoredSignupIntent: () => null,
-  recommendedPlanFromIntent: () => "starter",
+  recommendedPlanFromIntent: () => "voice-regular",
+  persistSignupIntent: vi.fn(),
+  mergeSignupIntent: (_previous: unknown, next: unknown) => next,
   billingIntervalFromIntent: () => "month",
 }));
 vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
@@ -55,6 +59,7 @@ type Props = {
   disabled?: boolean;
   showBalance?: boolean;
   onClick?: () => unknown;
+  onChange?: () => unknown;
   to?: string;
   open?: boolean;
   "aria-label"?: string;
@@ -69,6 +74,9 @@ function descendants(node: ReactNode): Element[] {
   if (typeof node.type === "function")
     return descendants((node.type as (props: Props) => ReactNode)(node.props));
   return [node, ...descendants(node.props.children)];
+}
+function detailsFrom(nodes: Element[]) {
+  return nodes.find((element) => element.type === "details");
 }
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
@@ -94,10 +102,10 @@ function button(surface: Surface, label: string) {
 }
 function paidPlan(overrides: Record<string, unknown> = {}) {
   return {
-    id: "starter",
-    name: "Starter",
-    price_usd_monthly: 19,
-    price_usd_annual: 190,
+    id: "voice-regular",
+    name: "Calls",
+    price_usd_monthly: 15,
+    price_usd_annual: 150,
     configured: true,
     annual_configured: true,
     contact_sales: false,
@@ -108,6 +116,10 @@ function paidPlan(overrides: Record<string, unknown> = {}) {
     ai_spend_allowance_usd_monthly: 1.5,
     overage_per_min_usd: 0.2,
     is_free: false,
+    catalog_family: "channels",
+    checkout_availability: "available",
+    channels: ["voice"],
+    included_mailboxes: 0,
     public: true,
     features: ["Voice"],
     ...overrides,
@@ -133,7 +145,8 @@ beforeEach(() => {
           : { url: "https://checkout.example.test/session" },
   }));
   vi.stubGlobal("window", {
-    location: { search: "", href: "" },
+    location: { search: "", href: "https://botbound.app/settings/billing" },
+    history: { state: null, replaceState: vi.fn() },
     addEventListener: (_name: string, listener: typeof h.listener) => {
       h.listener = listener;
     },
@@ -165,17 +178,17 @@ describe("billing plan decisions", () => {
       (element) => element.type === "ul" && !element.props["aria-label"],
     );
     expect(text(summary)).toContain("3 phone numbers included");
-    expect(text(summary)).toContain("225 voice minutes each month");
-    expect(text(summary)).toContain("$2.75 Runtime + $4.50 managed AI each month");
-    expect(text(summary)).toContain("$0.31/min prepaid after included minutes");
-    expect(text(summary)).toContain("No automatic overages");
+    expect(text(summary)).toContain("225 call minutes each month");
+    expect(text(summary)).toContain("$2.75 Runtime Allowance each month");
+    expect(text(summary)).toContain("$4.50 managed AI allowance each month");
+    expect(text(detailsFrom(elements))).toContain("No automatic overages");
     expect(text(summary)).not.toContain("Connected calendar");
     const details = elements.find((element) => element.type === "details");
     expect(details?.props.open).toBeUndefined();
     for (const feature of originalFeatures) expect(text(details)).toContain(feature);
     expect(
       elements.findIndex(
-        (element) => element.type === "button" && text(element).includes("Subscribe"),
+        (element) => element.type === "button" && text(element).includes("Continue to checkout"),
       ),
     ).toBeLessThan(elements.indexOf(details!));
   });
@@ -189,10 +202,9 @@ describe("billing plan decisions", () => {
       }),
     ];
     await mount("card");
-    const summary = render("card").find(
-      (element) => element.type === "ul" && !element.props["aria-label"],
+    expect(text(render("card").find((element) => element.type === "details"))).toContain(
+      "$7 monthly Runtime Allowance + $9 managed AI allowance",
     );
-    expect(text(summary)).toContain("$7 monthly Runtime Allowance + $9 managed AI allowance");
   });
 
   it("offers a usable billing contact link for an unavailable individual plan", async () => {
@@ -204,8 +216,8 @@ describe("billing plan decisions", () => {
     const contact = render("card").find(
       (element) => element.type === "a" && text(element).includes("Contact Sales"),
     );
-    expect(contact?.props.to).toBe("/contact?topic=billing");
-    expect(contact?.props.disabled).not.toBe(true);
+    expect(contact).toBeUndefined();
+    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
   });
 
@@ -234,18 +246,20 @@ describe("billing plan decisions", () => {
     ).toBe(false);
     expect(button("card", "Checkout paused").props.disabled).toBe(true);
     expect(
-      elements.some((element) => text(element).includes("No live number until activation")),
+      elements.some((element) => text(element).includes("New purchases are temporarily paused")),
     ).toBe(true);
   });
 
   it("uses the selected annual price and submits the annual checkout interval", async () => {
     await mount("card");
     button("card", "Annual").props.onClick?.();
-    expect(render("card").some((element) => text(element).includes("$190/yr"))).toBe(true);
-    await button("card", "Subscribe annually").props.onClick?.();
+    expect(render("card").some((element) => text(element).includes("$150/year"))).toBe(true);
+    await button("card", "Continue to checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
-      expect.objectContaining({ body: JSON.stringify({ plan_id: "starter", interval: "year" }) }),
+      expect.objectContaining({
+        body: JSON.stringify({ plan_id: "voice-regular", interval: "year" }),
+      }),
     );
   });
 
@@ -257,9 +271,9 @@ describe("billing plan decisions", () => {
       render("card").find(
         (element) => element.type === "a" && text(element).includes("Contact Sales"),
       )?.props.to,
-    ).toBe("/contact?topic=billing");
+    ).toBeUndefined();
     button("card", "Monthly").props.onClick?.();
-    expect(button("card", "Subscribe").props.disabled).toBe(false);
+    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
   });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -278,10 +292,10 @@ async function mount(surface: Surface) {
       controls.some(
         (element) =>
           element.type === "button" &&
-          (text(element).includes("Subscribe") ||
+          (text(element).includes("Continue to checkout") ||
             text(element).includes("Checkout paused") ||
-            text(element).includes("Choose Starter") ||
-            text(element).includes("Manage Subscription")),
+            text(element).includes("Continue to checkout") ||
+            text(element).includes("Manage billing")),
       ),
     ).toBe(true);
     expect(
@@ -296,7 +310,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
     async (flag) => {
       h.catalog.checkout_available = flag;
       await mount(surface);
-      const control = button(surface, surface === "card" ? "Checkout paused" : "Choose Starter");
+      const control = button(surface, "Checkout paused");
       expect(control.props.disabled).toBe(true);
       await control.props.onClick?.();
       expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
@@ -310,7 +324,10 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
   );
   it("opens a configured monthly plan only when the server gate is open", async () => {
     await mount(surface);
-    const control = button(surface, surface === "card" ? "Subscribe" : "Choose Starter");
+    const control = button(
+      surface,
+      surface === "card" ? "Continue to checkout" : "Continue to checkout",
+    );
     expect(control.props.disabled).toBe(false);
     if (surface === "card") expect(h.checkoutAvailability).toHaveBeenLastCalledWith("available");
     await control.props.onClick?.();
@@ -318,16 +335,14 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
       "/api/billing/checkout",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ plan_id: "starter", interval: "month" }),
+        body: JSON.stringify({ plan_id: "voice-regular", interval: "month" }),
       }),
     );
   });
   it("keeps an unconfigured plan disabled even when the platform gate is open", async () => {
     h.catalog.plans = [paidPlan({ configured: false, annual_configured: false })];
     await mount(surface);
-    expect(
-      button(surface, surface === "card" ? "Checkout paused" : "Choose Starter").props.disabled,
-    ).toBe(true);
+    expect(button(surface, "Checkout paused").props.disabled).toBe(true);
   });
 });
 
@@ -345,7 +360,7 @@ it("keeps paused plans optional and makes available checkout immediately accessi
   h.catalog.checkout_available = true;
   await mount("modal");
   expect(render("modal").find((element) => element.type === "details")?.props.open).toBe(true);
-  expect(button("modal", "Choose Starter").props.disabled).toBe(false);
+  expect(button("modal", "Continue to checkout").props.disabled).toBe(false);
 });
 
 it.each(["http", "network", "malformed"])(
@@ -377,13 +392,13 @@ it("keeps existing subscription management available while new purchases are pau
     has_subscription: true,
     status: "active",
     plan: "starter",
-    plan_name: "Starter",
+    plan_name: "Calls",
     max_agents: 1,
     current_period_end: null,
     cancel_at_period_end: false,
   };
   await mount("card");
-  const portal = button("card", "Manage Subscription");
+  const portal = button("card", "Manage billing");
   expect(render("card").find((element) => element.type === "usage-meter")?.props.showBalance).toBe(
     true,
   );
@@ -472,3 +487,45 @@ it.each(["reconciliation", "unmount"] as const)(
     }
   },
 );
+
+describe.each(["card", "modal"] as const)("%s selected channel package", (surface) => {
+  function selectChannel(index: number) {
+    render(surface)
+      .filter((element) => element.type === "input")
+      [index].props.onChange?.();
+  }
+  it("posts Email exactly after Calls is deselected", async () => {
+    h.catalog.plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) =>
+      paidPlan({
+        ...plan,
+        catalog_family: plan.catalogFamily,
+        checkout_availability: plan.checkoutAvailability,
+      }),
+    );
+    await mount(surface);
+    selectChannel(1);
+    selectChannel(0);
+    await button(surface, "Continue to checkout").props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({
+        body: JSON.stringify({ plan_id: "email-regular", interval: "month" }),
+      }),
+    );
+  });
+  it("does not submit an SMS package even if a malformed provider fixture says configured", async () => {
+    h.catalog.plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) =>
+      paidPlan({
+        ...plan,
+        catalog_family: plan.catalogFamily,
+        checkout_availability: plan.checkoutAvailability,
+      }),
+    );
+    await mount(surface);
+    selectChannel(2);
+    const action = button(surface, "SMS setup unavailable");
+    expect(action.props.disabled).toBe(true);
+    await action.props.onClick?.();
+    expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
+  });
+});

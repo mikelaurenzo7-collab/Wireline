@@ -2,7 +2,7 @@ import { Router, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { resolveCanonicalAppUrl } from "../lib/app-url";
-import { FOUNDER_CATALOG_VERSION, planById } from "../lib/plan-catalog";
+import { FOUNDER_CATALOG_VERSION, planById, planPriceId } from "../lib/plan-catalog";
 import { drizzle, auditLogger, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import {
@@ -61,8 +61,8 @@ router.post(
       return res.status(410).json({
         code: "LEGACY_PLAN_RETIRED",
         error:
-          "This self-serve plan is no longer offered. Choose Pro for up to five live agents, or contact sales for a Scale rollout.",
-        replacement: "business",
+          "This plan is retained for existing subscriptions. Choose the channels you need for a new subscription.",
+        replacement: "voice",
         contact_sales: "/contact?topic=enterprise",
       });
     }
@@ -70,6 +70,20 @@ router.post(
       return res.status(400).json({
         code: "FREE_PLAN_NO_CHECKOUT",
         error: "Free Builder does not require checkout.",
+      });
+    }
+    if (plan.checkoutAvailability !== "available") {
+      return res.status(409).json({
+        code: "CHANNEL_SETUP_UNAVAILABLE",
+        error:
+          "SMS setup is not available yet. Registration charges and carrier readiness must be confirmed before checkout.",
+      });
+    }
+
+    if (plan.catalogFamily === "channels" && !planPriceId(plan, interval)) {
+      return res.status(503).json({
+        code: "CHANNEL_CHECKOUT_UNAVAILABLE",
+        error: "This package is not available for checkout yet.",
       });
     }
 

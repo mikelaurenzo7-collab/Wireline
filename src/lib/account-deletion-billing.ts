@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { and, eq, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, or, sql } from "drizzle-orm";
 import {
   isMissingStripeResource,
   stripe,
@@ -11,6 +11,8 @@ import * as schema from "../db/schema";
 import { checkoutOperations } from "../db/security-schema";
 import { getErrorMessage } from "./server-utils";
 import { resolveOwnedStripeCustomer } from "./stripe-customer-binding";
+import { releaseOwnedCapacitySchedule } from "./stripe-capacity-upgrade";
+import { planByStripePrice } from "./plan-catalog";
 
 export type RenewalChangeResult = {
   changed: boolean;
@@ -357,15 +359,46 @@ export async function stopRenewalForDeletion(userId: string): Promise<RenewalCha
   let confirmed: boolean = checkoutClosure.confirmed;
 
   for (const subscription of subscriptions) {
-    if (isTerminalSubscription(subscription) || subscription.cancel_at_period_end) continue;
+    if (isTerminalSubscription(subscription)) continue;
 
     try {
-      const updated = await stripe.subscriptions.update(subscription.id, {
-        cancel_at_period_end: true,
-        metadata: { [DELETION_RENEWAL_MARKER]: "true" },
+      const updated = await drizzle.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-capacity:${userId}`}))`,
+        );
+        // Inventory predates the lock: a capacity request may have won the
+        // race. Inspect the authoritative subscription again while serialized.
+        let current = await stripe.subscriptions.retrieve(subscription.id);
+        if (stripeObjectId(current.customer) !== stripeObjectId(subscription.customer))
+          throw new Error("Subscription customer changed during billing closure.");
+        if (current.schedule) {
+          const customerId = stripeObjectId(current.customer);
+          if (!customerId) throw new Error("Scheduled subscription customer is missing.");
+          // A schedule can replace renewal settings at its next phase. Release
+          // only BotBound's verified capacity change before stopping renewal.
+          await releaseOwnedCapacitySchedule(
+            {
+              userId,
+              customerId,
+              subscriptionId: current.id,
+              planId: planByStripePrice(current.items.data[0]?.price)?.id ?? null,
+            },
+            stripe,
+          );
+          current = await stripe.subscriptions.retrieve(current.id);
+          if (stripeObjectId(current.customer) !== customerId || current.schedule)
+            throw new Error("Scheduled subscription release could not be confirmed.");
+          changed = true;
+        }
+        if (isTerminalSubscription(current) || current.cancel_at_period_end) return current;
+        const updated = await stripe.subscriptions.update(subscription.id, {
+          cancel_at_period_end: true,
+          metadata: { [DELETION_RENEWAL_MARKER]: "true" },
+        });
+        changed = true;
+        confirmed = confirmed && (updated.cancel_at_period_end || updated.status === "canceled");
+        return updated;
       });
-      changed = true;
-      confirmed = confirmed && (updated.cancel_at_period_end || updated.status === "canceled");
       if (snapshot) await syncPrimarySubscription(userId, snapshot, updated);
     } catch (error) {
       if (isMissingStripeResource(error)) continue;

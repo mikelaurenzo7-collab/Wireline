@@ -67,16 +67,16 @@ describe("signup-intent", () => {
   });
 
   it("carries the selected paid plan and annual interval into activation", () => {
-    expect(activationBillingHref(parseSignupIntent("?plan=starter-plus&interval=year"))).toBe(
-      "/settings/billing?plan=team&interval=year",
+    expect(activationBillingHref(parseSignupIntent("?plan=email&interval=year"))).toBe(
+      "/settings/billing?plan=email&interval=year",
     );
   });
 
-  it("keeps Free Builder activation on Starter and preserves the selected interval", () => {
+  it("keeps Free Builder activation on Calls and preserves the selected interval", () => {
     expect(activationBillingHref(parseSignupIntent("?plan=free&interval=year"))).toBe(
-      "/settings/billing?plan=starter&interval=year",
+      "/settings/billing?plan=voice-regular&interval=year",
     );
-    expect(activationBillingHref(null)).toBe("/settings/billing?plan=starter&interval=month");
+    expect(activationBillingHref(null)).toBe("/settings/billing?plan=voice-regular&interval=month");
   });
 
   it.each([

@@ -25,11 +25,11 @@ describe("public landmark integrity", () => {
   it("gives the pricing document a primary heading before its plan cards", () => {
     const pricing = read("src/pages/Pricing.tsx");
     const headingIndex = pricing.indexOf("<h1");
-    const firstPlanIndex = pricing.indexOf('<h2 className="wl-card-title">Free Builder</h2>');
+    const firstPlanIndex = pricing.indexOf("<ChannelPlanPicker");
 
     expect(headingIndex).toBeGreaterThanOrEqual(0);
     expect(firstPlanIndex).toBeGreaterThan(headingIndex);
-    expect(pricing).toContain('<h2 className="wl-card-title">{publicName}</h2>');
-    expect(pricing).toContain('<h2 className="wl-card-title">Scale &amp; Enterprise</h2>');
+    expect(read("src/components/ChannelPlanPicker.tsx")).toContain("<h2");
+    expect(pricing).toContain("More Bots or a Custom Setup?");
   });
 });

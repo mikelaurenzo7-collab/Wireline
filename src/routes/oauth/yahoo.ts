@@ -19,6 +19,7 @@ import {
 import { buildCSP, generateCspNonce } from "../../lib/csp";
 import { createYahooOidcNonce, verifyYahooIdToken } from "../../lib/yahoo-openid";
 import { assertOAuthProviderConnectAllowed } from "../../lib/oauth-connect-environment";
+import { requireTenantChannel } from "../../lib/channel-entitlements";
 
 const router = express.Router();
 
@@ -71,7 +72,8 @@ router.get(
       `${req.protocol}://${req.get("host")}`;
     const redirectUri = `${baseUrl}/api/oauth/yahoo/callback`;
     const uid = req.user?.id as string | undefined;
-    await assertOAuthProviderConnectAllowed(uid, "Yahoo");
+    const tenantId = await assertOAuthProviderConnectAllowed(uid, "Yahoo");
+    await requireTenantChannel(tenantId, "email");
     const nonce = createYahooOidcNonce();
     const params = new URLSearchParams({
       client_id: process.env.YAHOO_CLIENT_ID,
@@ -122,6 +124,7 @@ router.get(
         .send("Complete this connection in the same browser and BotBound account that started it.");
     }
     await assertOAuthProviderConnectAllowed(userId, "Yahoo");
+    await requireTenantChannel(userId, "email");
 
     try {
       const baseUrl =

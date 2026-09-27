@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   ensure: vi.fn(),
   eligible: vi.fn(),
   phoneOwned: vi.fn(),
+  channel: vi.fn(),
   domain: vi.fn(),
   mutate: vi.fn(),
   where: vi.fn(),
@@ -93,9 +94,10 @@ vi.mock("../src/lib/server-context", () => ({
 }));
 vi.mock("../src/lib/paid-bot-identity", () => ({
   ensurePaidBotIdentity: h.ensure,
-  getPaidBotIdentityAgentIds: h.eligible,
+  getPaidBotMailboxAgentIds: h.eligible,
   assertTwilioOwnedNumber: h.phoneOwned,
 }));
+vi.mock("../src/lib/channel-entitlements", () => ({ requireTenantChannel: h.channel }));
 vi.mock("../src/lib/agentmail-mail", () => ({
   AGENTMAIL_API_BASE: "https://api.example.test",
   AGENTMAIL_MANAGED_CREDENTIAL_SENTINEL: "managed",
@@ -163,9 +165,12 @@ beforeEach(() => {
   h.beforeFence = undefined;
   h.eligible.mockResolvedValue(["bot"]);
   h.phoneOwned.mockResolvedValue(undefined);
+  h.channel.mockResolvedValue(undefined);
   h.domain.mockResolvedValue(undefined);
   h.ensure.mockResolvedValue({
     eligible: true,
+    planId: "voice-email",
+    selectionRequired: false,
     phone: "+12025550123",
     email: "bot@botbound.app",
     phoneReused: true,
@@ -184,6 +189,45 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("shared web identity reconciliation", () => {
+  it.each([
+    { planId: "email", phone: null, email: "bot@botbound.app", customDomain: true },
+    { planId: "voice", phone: "+12025550123", email: null, customDomain: false },
+  ])(
+    "returns the purchased $planId identity without requiring the excluded channel",
+    async ({ planId, phone, email, customDomain }) => {
+      h.ensure.mockResolvedValue({
+        eligible: true,
+        planId,
+        selectionRequired: false,
+        phone,
+        email,
+        phoneReused: Boolean(phone),
+        emailReused: Boolean(email),
+      });
+      const res = await invoke("managed-identity");
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ok: true,
+          phone_number: phone,
+          email,
+          custom_domain: customDomain,
+        }),
+      );
+      expect(h.ensure).toHaveBeenCalledExactlyOnceWith({ userId: "tenant", agentId: "bot" });
+      expect(h.channel).not.toHaveBeenCalled();
+      expect(h.mutate).not.toHaveBeenCalled();
+    },
+  );
+  it.each([
+    { planId: "email", phone: null, email: null },
+    { planId: "voice", phone: null, email: null },
+    { planId: "voice-email", phone: "+12025550123", email: null },
+    { planId: "unknown", phone: "+12025550123", email: "bot@botbound.app" },
+  ])("does not report incomplete or unknown $planId coverage as ready", async (identity) => {
+    h.ensure.mockResolvedValue({ eligible: true, selectionRequired: false, ...identity });
+    await expect(invoke("managed-identity")).rejects.toMatchObject({ status: 503 });
+    expect(h.mutate).not.toHaveBeenCalled();
+  });
   it("binds the shared reconciler to the authenticated tenant and returns both identities", async () => {
     const res = await invoke("managed-identity");
     expect(h.ensure).toHaveBeenCalledExactlyOnceWith({ userId: "tenant", agentId: "bot" });
@@ -212,6 +256,7 @@ describe("shared web identity reconciliation", () => {
   it("asks an eligible customer to select a number instead of reporting an empty identity as ready", async () => {
     h.ensure.mockResolvedValue({
       eligible: true,
+      planId: "voice",
       selectionRequired: true,
       phone: null,
       email: null,
@@ -219,7 +264,7 @@ describe("shared web identity reconciliation", () => {
     await expect(invoke("managed-identity")).rejects.toMatchObject({
       status: 409,
       code: "NUMBER_SELECTION_REQUIRED",
-      message: "Choose a number in Phone setup before managed email setup can continue.",
+      message: "Choose a number in Calls setup to finish connecting this Bot.",
     });
     expect(h.mutate).not.toHaveBeenCalled();
   });
@@ -227,7 +272,7 @@ describe("shared web identity reconciliation", () => {
     h.ensure.mockRejectedValue(new Error("Internal provider configuration details"));
     await expect(invoke("managed-identity")).rejects.toMatchObject({
       status: 503,
-      message: "Bot phone and email setup is temporarily unavailable. Please try again.",
+      message: "Bot channel setup is temporarily unavailable. Please try again.",
     });
   });
 });
@@ -352,15 +397,19 @@ describe("compatibility mailbox admission", () => {
     await expect(invoke("managed-mailbox")).rejects.toMatchObject({ code: "ACTIVATION_REQUIRED" });
     expect(h.mutate).not.toHaveBeenCalled();
   });
-  it("requires a persisted phone before any mailbox mutation", async () => {
+  it("does not consult a phone or carrier when Email is included", async () => {
     h.phone = null;
-    await expect(invoke("managed-mailbox")).rejects.toMatchObject({ code: "ACTIVATION_REQUIRED" });
-    expect(h.mutate).not.toHaveBeenCalled();
+    h.domain.mockRejectedValue(new Error("Reached independent email setup"));
+    await expect(invoke("managed-mailbox")).rejects.toThrow("Reached independent email setup");
+    expect(h.phoneOwned).not.toHaveBeenCalled();
   });
-  it("rejects unverified carrier ownership before any mailbox mutation", async () => {
-    h.phoneOwned.mockRejectedValue(new Error("Phone ownership unverified"));
-    await expect(invoke("managed-mailbox")).rejects.toThrow("Phone ownership unverified");
+  it("rejects an excluded Email channel before any mailbox provider work", async () => {
+    h.channel.mockRejectedValue(
+      Object.assign(new Error("Add Email"), { status: 402, code: "CHANNEL_NOT_INCLUDED" }),
+    );
+    await expect(invoke("managed-mailbox")).rejects.toMatchObject({ code: "CHANNEL_NOT_INCLUDED" });
     expect(h.mutate).not.toHaveBeenCalled();
+    expect(h.domain).not.toHaveBeenCalled();
   });
   it("rechecks eligibility after waiting for the deletion fence", async () => {
     h.beforeFence = () => h.eligible.mockResolvedValue([]);

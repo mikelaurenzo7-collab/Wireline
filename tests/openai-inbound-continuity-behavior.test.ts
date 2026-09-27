@@ -51,6 +51,7 @@ async function loadRouter(
     lookupError?: Error;
     environmentAllowed?: boolean;
     buildError?: Error;
+    channels?: string[];
   } = {},
 ) {
   // Several assertions load the route with different infrastructure outcomes
@@ -79,6 +80,9 @@ async function loadRouter(
   }));
   vi.doMock("../src/lib/account-environment-policy", () => ({
     liveExternalActionPolicyForUser: environment,
+  }));
+  vi.doMock("../src/lib/channel-entitlements", () => ({
+    getTenantChannelEntitlements: async () => ({ channels: input.channels ?? ["voice"] }),
   }));
   vi.doMock("../src/lib/founder-fleet-seed", () => ({
     resolveFounderUserId: vi.fn(async () => "founder-1"),
@@ -164,6 +168,15 @@ describe("OpenAI inbound carrier continuity", () => {
       '<Dial answerOnBridge="true" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="300">',
     );
   });
+
+  it.each([["email"], ["sms"], []])(
+    "does not open a SIP leg without Calls (%s)",
+    async (...channels) => {
+      const result = await invokePrimary({ channels: channels.flat() as string[] });
+      expect(result.captured.statusCode).toBe(200);
+      expect(result.captured.body).toBe(HANGUP_TWIML);
+    },
+  );
 
   it.each(["failed", "busy", "no-answer"])(
     "routes %s Dial outcomes into shared continuity",

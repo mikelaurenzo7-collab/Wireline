@@ -1,4 +1,5 @@
 import { selfServeBillingEnabled } from "./billing-release";
+import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
 
 /** Stripe-backed launch plan catalog. Public plan ids remain canonical. */
 
@@ -18,6 +19,8 @@ export const VOICE_VARIABLE_COST_PER_MIN_USD = 0.128;
  */
 export const TENANT_OBSERVED_COGS_HEADROOM_RATIO = 1.15;
 export const PHONE_NUMBER_COST_MONTHLY_USD = 1.15;
+/** AgentMail capacity allocation per paid Bot; not an additional invoice on top of the base subscription. */
+export const MANAGED_MAILBOX_COST_MONTHLY_USD = 2;
 export const PAYMENT_PROCESSING_RATE = 0.029;
 export const PAYMENT_PROCESSING_FIXED_USD = 0.3;
 /** Stripe Billing fee on recurring subscription volume. */
@@ -29,7 +32,7 @@ export const STRIPE_BILLING_RATE = 0.007;
  */
 export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
-export const FOUNDER_CATALOG_VERSION = "founder_early_access_2026_07_v6";
+export const FOUNDER_CATALOG_VERSION = "channel_plans_2026_09_v1";
 /** Free Builder's bounded private model-training reserve. */
 export const FREE_BUILDER_AI_ALLOWANCE_USD = 1.5;
 
@@ -43,7 +46,15 @@ export const EXTRA_AGENT_ADDON_PRICE_ENV = "STRIPE_EXTRA_AGENT_PRICE_ID";
 /** BotBound founder catalog. Keep in sync with scripts/.stripe-env.generated.json. */
 export const EXTRA_AGENT_ADDON_FALLBACK_PRICE_ID = "price_1Tv9K58e6If87QKm7rzn3MNS";
 
-export type StripePlanId = "personal" | "starter" | "team" | "business" | "enterprise";
+export type CommunicationChannel = "voice" | "email" | "sms";
+export type ChannelSelectionId =
+  "voice" | "email" | "sms" | "voice-email" | "voice-sms" | "email-sms" | "omnichannel";
+export type CapacityTier = "light" | "regular" | "high";
+export type ChannelPlanId =
+  ChannelSelectionId | `${ChannelSelectionId}-regular` | `${ChannelSelectionId}-high`;
+export type StripePlanId =
+  "personal" | "starter" | "team" | "business" | "enterprise" | ChannelPlanId;
+export type CheckoutAvailability = "available" | "sms_readiness_required" | "legacy_only";
 
 export type StripePlan = {
   id: StripePlanId;
@@ -64,6 +75,11 @@ export type StripePlan = {
   ai_spend_allowance_usd_monthly: number;
   overage_per_min_usd: number;
   included_phone_numbers: number;
+  included_mailboxes: number;
+  channels: readonly CommunicationChannel[];
+  catalogFamily?: "channels" | "legacy";
+  capacityTier?: CapacityTier;
+  checkoutAvailability: CheckoutAvailability;
   features: string[];
   priceIdEnv?: string;
   annualPriceIdEnv?: string;
@@ -87,6 +103,13 @@ type StripeCatalogPriceLike = {
 };
 
 const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
+  voice: "voice",
+  email: "email",
+  sms: "sms",
+  "voice-email": "voice-email",
+  "voice-sms": "voice-sms",
+  "email-sms": "email-sms",
+  omnichannel: "omnichannel",
   personal: "personal",
   free: "personal",
   builder: "personal",
@@ -112,12 +135,116 @@ const PLAN_ID_ALIASES: Record<string, StripePlanId> = {
 };
 
 const PRICE_KEY_PLAN_PREFIXES: Record<string, StripePlanId> = {
+  voice: "voice",
+  email: "email",
+  sms: "sms",
+  "voice-email": "voice-email",
+  "voice-sms": "voice-sms",
+  "email-sms": "email-sms",
+  omnichannel: "omnichannel",
   personal: "personal",
   starter: "starter",
   team: "team",
   business: "business",
   enterprise: "enterprise",
 };
+
+const CHANNEL_CAPACITIES: {
+  tier: CapacityTier;
+  minutes: number;
+  baseAi: number;
+  emailAi: number;
+  smsAi: number;
+  transport: number;
+}[] = [
+  { tier: "light", minutes: 30, baseAi: 1.5, emailAi: 2.5, smsAi: 2.5, transport: 2 },
+  { tier: "regular", minutes: 250, baseAi: 3, emailAi: 10, smsAi: 7, transport: 10 },
+  { tier: "high", minutes: 1000, baseAi: 5, emailAi: 30, smsAi: 15, transport: 30 },
+];
+const CHANNEL_OFFERS: {
+  id: ChannelSelectionId;
+  label: string;
+  channels: CommunicationChannel[];
+  prices: readonly [number, number][];
+}[] = [
+  {
+    id: "voice",
+    label: "Calls",
+    channels: ["voice"],
+    prices: [
+      [15, 150],
+      [59, 690],
+      [219, 2499],
+    ],
+  },
+  {
+    id: "email",
+    label: "Email",
+    channels: ["email"],
+    prices: [
+      [9, 90],
+      [29, 290],
+      [69, 690],
+    ],
+  },
+  {
+    id: "sms",
+    label: "SMS",
+    channels: ["sms"],
+    prices: [
+      [12, 120],
+      [29, 339],
+      [79, 899],
+    ],
+  },
+  {
+    id: "voice-email",
+    label: "Calls + Email",
+    channels: ["voice", "email"],
+    prices: [
+      [21, 210],
+      [79, 899],
+      [269, 2999],
+    ],
+  },
+  {
+    id: "voice-sms",
+    label: "Calls + SMS",
+    channels: ["voice", "sms"],
+    prices: [
+      [20, 200],
+      [79, 939],
+      [279, 3199],
+    ],
+  },
+  {
+    id: "email-sms",
+    label: "Email + SMS",
+    channels: ["email", "sms"],
+    prices: [
+      [18, 180],
+      [49, 499],
+      [129, 1399],
+    ],
+  },
+  {
+    id: "omnichannel",
+    label: "Calls + Email + SMS",
+    channels: ["voice", "email", "sms"],
+    prices: [
+      [26, 260],
+      [99, 1109],
+      [319, 3699],
+    ],
+  },
+];
+for (const offer of CHANNEL_OFFERS) {
+  for (const capacity of CHANNEL_CAPACITIES) {
+    const id: ChannelPlanId = capacity.tier === "light" ? offer.id : `${offer.id}-${capacity.tier}`;
+    PLAN_ID_ALIASES[id] = id;
+    PRICE_KEY_PLAN_PREFIXES[id] = id;
+  }
+}
 
 const PAID_EXTRA_AGENT_ADDON = {
   extra_agent_price_usd: EXTRA_AGENT_ADDON_PRICE_USD_MONTHLY,
@@ -131,22 +258,15 @@ const EXTRA_AGENT_FEATURE =
   "+$15/mo per additional live Bot adds 50 guaranteed voice minutes and 1 production-number slot; the active Bot gets its line automatically";
 
 /**
- * Founder Early Access commercial contract:
- * - Free Builder creates, configures, and privately simulates one draft Bot.
- * - Every active paid Bot gets a dedicated production number, up to plan capacity.
- * - Unused Bot capacity does not pre-provision orphan carrier numbers.
- * - Paid extra-Bot add-ons increase both Bot count and included voice/number capacity.
- * - Paid Bots receive a BotBound-managed email identity; customer mailbox OAuth is optional input, not activation infrastructure.
- * - Voice is the primary pricing driver because it is the only mandatory, high-variable-cost channel.
- * - Optional text and business-artifact generation use a smaller flexible monthly
- *   Runtime Allowance included in the same subscription. Platform AI, live
- *   research, and enrichment use a separate, explicit AI-spend allowance,
- *   metered per account. Every platform-funded provider call is recorded there.
- * - Voice, Runtime Allowance, and AI spend can all be consumed in the same
- *   month, so the margin floor reserves all three independently.
- * - Connected customer calendar, CRM, commerce, and data providers retain their own limits.
- * - Runtime Balance funds only usage beyond included capacity; there is no automatic postpaid meter.
- * - Active calls finish normally; depleted coverage blocks only the next paid action.
+ * Channel launch catalog:
+ * - Free Builder creates and privately tests one draft Bot within its allowance.
+ * - New paid packages include one Bot and only their selected channels.
+ * - Calls/SMS share one customer-selected number; Email includes one managed mailbox.
+ * - SMS packages stay visible but cannot check out until carrier/cost readiness.
+ * - Every provider attempt is bounded by its separately funded allowance.
+ * - Runtime Balance covers overflow; there is no automatic usage invoice.
+ * - Calls reserve prepaid coverage plus bounded completion credit before acceptance.
+ * - Historical plans remain resolvable for existing records, never new checkout.
  */
 export const STRIPE_PLANS: StripePlan[] = [
   {
@@ -160,6 +280,9 @@ export const STRIPE_PLANS: StripePlan[] = [
     ai_spend_allowance_usd_monthly: FREE_BUILDER_AI_ALLOWANCE_USD,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 0,
+    included_mailboxes: 0,
+    channels: [],
+    checkoutAvailability: "available",
     // Free Builder is not a Stripe product.
     public: true,
     features: [
@@ -180,6 +303,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     ai_spend_allowance_usd_monthly: 1.5,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 1,
+    included_mailboxes: 1,
+    channels: ["voice", "email", "sms"],
+    catalogFamily: "legacy",
+    checkoutAvailability: "legacy_only",
+    public: false,
     priceIdEnv: "STRIPE_STARTER_9_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
     fallbackPriceId: "price_1Tx5X78e6If87QKmltXpASRU",
@@ -211,6 +339,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     ai_spend_allowance_usd_monthly: 3,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 2,
+    included_mailboxes: 2,
+    channels: ["voice", "email", "sms"],
+    catalogFamily: "legacy",
+    checkoutAvailability: "legacy_only",
+    public: false,
     priceIdEnv: "STRIPE_STARTER_PRICE_ID",
     annualPriceIdEnv: "STRIPE_STARTER_ANNUAL_PRICE_ID",
     fallbackPriceId: "price_1Tx5XK8e6If87QKmQG9Jg0j2",
@@ -242,6 +375,11 @@ export const STRIPE_PLANS: StripePlan[] = [
     ai_spend_allowance_usd_monthly: 6,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 5,
+    included_mailboxes: 5,
+    channels: ["voice", "email", "sms"],
+    catalogFamily: "legacy",
+    checkoutAvailability: "legacy_only",
+    public: false,
     priceIdEnv: "STRIPE_TEAM_PRICE_ID",
     annualPriceIdEnv: "STRIPE_TEAM_ANNUAL_PRICE_ID",
     fallbackPriceId: "price_1Tx5Xa8e6If87QKmf1bWe8ol",
@@ -274,6 +412,10 @@ export const STRIPE_PLANS: StripePlan[] = [
     ai_spend_allowance_usd_monthly: 12,
     overage_per_min_usd: FLAT_OVERAGE_PER_MIN_USD,
     included_phone_numbers: 15,
+    included_mailboxes: 15,
+    channels: ["voice", "email", "sms"],
+    catalogFamily: "legacy",
+    checkoutAvailability: "legacy_only",
     priceIdEnv: "STRIPE_BUSINESS_PRICE_ID",
     annualPriceIdEnv: "STRIPE_BUSINESS_ANNUAL_PRICE_ID",
     fallbackPriceId: "price_1Tx5Xm8e6If87QKm7mC84oe8",
@@ -296,17 +438,102 @@ export const STRIPE_PLANS: StripePlan[] = [
       "Priority support posture and no automatic overages",
     ],
   },
+  ...CHANNEL_OFFERS.flatMap((offer) =>
+    CHANNEL_CAPACITIES.map((capacity, index): StripePlan => {
+      const { channels, label } = offer;
+      const id: ChannelPlanId =
+        capacity.tier === "light" ? offer.id : `${offer.id}-${capacity.tier}`;
+      const voice = channels.includes("voice");
+      const email = channels.includes("email");
+      const sms = channels.includes("sms");
+      const envPrefix = `STRIPE_${id.replaceAll("-", "_").toUpperCase()}`;
+      const allowance =
+        capacity.baseAi +
+        (email ? capacity.emailAi - capacity.baseAi : 0) +
+        (sms ? capacity.smsAi - capacity.baseAi : 0);
+      const [monthly, annual] = offer.prices[index];
+      return {
+        id,
+        name: `BotBound ${label} ${capacity.tier[0].toUpperCase()}${capacity.tier.slice(1)}`,
+        channels,
+        catalogFamily: "channels",
+        capacityTier: capacity.tier,
+        // Registration costs and funded inbound handling must be verified before sale.
+        checkoutAvailability: sms ? "sms_readiness_required" : "available",
+        public: true,
+        price_usd_monthly: monthly,
+        price_usd_annual: annual,
+        max_agents: 1,
+        voice_minutes_monthly: voice ? capacity.minutes : 0,
+        included_phone_numbers: voice || sms ? 1 : 0,
+        included_mailboxes: email ? 1 : 0,
+        runtime_allowance_usd_monthly: sms ? capacity.transport : 0,
+        ai_spend_allowance_usd_monthly: allowance,
+        overage_per_min_usd: voice ? FLAT_OVERAGE_PER_MIN_USD : 0,
+        priceIdEnv: `${envPrefix}_PRICE_ID`,
+        annualPriceIdEnv: `${envPrefix}_ANNUAL_PRICE_ID`,
+        lookupKeyMonthly: `${id}_monthly_channels_2026_09_v1`,
+        lookupKeyAnnual: `${id}_annual_channels_2026_09_v1`,
+        features: [
+          "1 Bot",
+          ...(voice
+            ? [`${capacity.minutes.toLocaleString("en-US")} live-call minutes each month`]
+            : []),
+          ...(voice || sms ? ["1 local phone number"] : []),
+          ...(email ? ["1 BotBound email address"] : []),
+          `$${allowance.toFixed(2)} monthly managed allowance for AI${email ? " and email delivery" : ""}${sms ? ", including phone validation" : ""}`,
+          ...(sms
+            ? [
+                `$${capacity.transport} monthly transport allowance`,
+                "SMS setup is not available yet; registration charges are quoted separately",
+              ]
+            : []),
+          ...(voice
+            ? [
+                `Up to ${VOICE_COMPLETION_GRACE_MINUTES} additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras`,
+              ]
+            : []),
+          "No automatic extra charges",
+        ],
+      };
+    }),
+  ),
 ];
+
+/** Channel access follows the authoritative subscription plan, never a client toggle. */
+export function planIncludesChannel(
+  planId: string | null | undefined,
+  channel: CommunicationChannel,
+): boolean {
+  return planById(planId)?.channels.includes(channel) === true;
+}
+
+/** Order and duplicate selections do not change the canonical package. */
+export function channelPlanForSelection(
+  channels: readonly CommunicationChannel[],
+  capacityTier: CapacityTier = "light",
+): StripePlan | null {
+  const selection = new Set(channels);
+  return (
+    STRIPE_PLANS.find(
+      (plan) =>
+        plan.catalogFamily === "channels" &&
+        plan.capacityTier === capacityTier &&
+        plan.channels.length === selection.size &&
+        plan.channels.every((channel) => selection.has(channel)),
+    ) ?? null
+  );
+}
 
 /**
  * Two-floor margin policy (catalog v6; see docs/PRICING_DECISION_2026-07-25.md).
  *
  * Planning floor: contribution at EXPECTED_INCLUDED_UTILIZATION of minutes and
- * allowance (numbers always reserved in full for conservative plan economics)
+ * allowance (numbers, mailboxes, and one unpaid completion buffer reserved in full)
  * must clear LAUNCH_CONTRIBUTION_MARGIN_FLOOR.
  *
  * Hard floor: contribution at 100% utilization, the bounded worst case of a
- * prepaid-only catalog, must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
+ * bounded call-funding catalog, must clear HARD_CONTRIBUTION_MARGIN_FLOOR on both
  * intervals; annual discounted revenue with unchanged COGS is always binding.
  */
 export const LAUNCH_CONTRIBUTION_MARGIN_FLOOR = 0.45;
@@ -324,27 +551,108 @@ export function estimatedStripeCommercialFeesUsd(grossChargeUsd: number): number
   );
 }
 
+export type MonthlyPlanCostBreakdown = {
+  revenueUsd: number;
+  voiceUsd: number;
+  /** One fully unpaid completion buffer, never probability-discounted. */
+  completionGraceUsd: number;
+  numbersUsd: number;
+  mailboxesUsd: number;
+  runtimeUsd: number;
+  managedAiUsd: number;
+  commercialFeesUsd: number;
+  totalCostUsd: number;
+};
+
+type CostModelOptions = { utilization?: number; voiceCostPerMinuteUsd?: number };
+
+function costModelInputs(options: CostModelOptions) {
+  const utilization = options.utilization ?? 1;
+  const voiceRate = options.voiceCostPerMinuteUsd ?? VOICE_VARIABLE_COST_PER_MIN_USD;
+  if (!Number.isFinite(utilization) || utilization < 0 || utilization > 1) {
+    throw new RangeError("Included utilization must be between zero and one.");
+  }
+  if (!Number.isFinite(voiceRate) || voiceRate < 0) {
+    throw new RangeError("Voice cost must be a finite non-negative rate.");
+  }
+  return { utilization, voiceRate };
+}
+
+function withTotalCost(
+  costs: Omit<MonthlyPlanCostBreakdown, "totalCostUsd">,
+): MonthlyPlanCostBreakdown {
+  return {
+    ...costs,
+    totalCostUsd:
+      costs.voiceUsd +
+      costs.completionGraceUsd +
+      costs.numbersUsd +
+      costs.mailboxesUsd +
+      costs.runtimeUsd +
+      costs.managedAiUsd +
+      costs.commercialFeesUsd,
+  };
+}
+
+/** Plan contribution model. Number and mailbox capacity stay reserved at every utilization. */
+export function estimatedPlanMonthlyCosts(
+  plan: StripePlan,
+  interval: BillingInterval,
+  options: CostModelOptions = {},
+): MonthlyPlanCostBreakdown {
+  const { utilization, voiceRate } = costModelInputs(options);
+  const annual = interval === "year";
+  const grossCharge = annual ? plan.price_usd_annual : plan.price_usd_monthly;
+  return withTotalCost({
+    revenueUsd: annual ? grossCharge / 12 : grossCharge,
+    voiceUsd: plan.voice_minutes_monthly * utilization * voiceRate,
+    completionGraceUsd:
+      plan.catalogFamily === "channels" && plan.channels.includes("voice")
+        ? VOICE_COMPLETION_GRACE_MINUTES * voiceRate
+        : 0,
+    numbersUsd: plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD,
+    mailboxesUsd: plan.included_mailboxes * MANAGED_MAILBOX_COST_MONTHLY_USD,
+    runtimeUsd: plan.runtime_allowance_usd_monthly * utilization,
+    managedAiUsd: plan.ai_spend_allowance_usd_monthly * utilization,
+    // One annual payment has one fixed processing fee, spread across 12 months.
+    commercialFeesUsd: estimatedStripeCommercialFeesUsd(grossCharge) / (annual ? 12 : 1),
+  });
+}
+
+/** Monthly extra-Bot capacity; grouped invoices share the parent's fixed payment fee. */
+export function estimatedExtraAgentMonthlyCosts(
+  plan: StripePlan,
+  options: CostModelOptions & { separatePayment?: boolean } = {},
+): MonthlyPlanCostBreakdown {
+  const { utilization, voiceRate } = costModelInputs(options);
+  const revenueUsd = plan.extra_agent_price_usd ?? 0;
+  const enabled = revenueUsd > 0;
+  return withTotalCost({
+    revenueUsd,
+    voiceUsd: enabled ? (plan.extra_agent_voice_minutes_monthly ?? 0) * utilization * voiceRate : 0,
+    completionGraceUsd: 0,
+    numbersUsd: enabled
+      ? (plan.extra_agent_included_phone_numbers ?? 0) * PHONE_NUMBER_COST_MONTHLY_USD
+      : 0,
+    mailboxesUsd: enabled ? MANAGED_MAILBOX_COST_MONTHLY_USD : 0,
+    runtimeUsd: 0,
+    managedAiUsd: 0,
+    commercialFeesUsd: enabled
+      ? estimatedStripeCommercialFeesUsd(revenueUsd) -
+        (options.separatePayment ? 0 : PAYMENT_PROCESSING_FIXED_USD)
+      : 0,
+  });
+}
+
 /** Conservative contribution margin at full included utilization. */
 export function estimatedContributionMarginAtFullIncludedUsage(
   plan: StripePlan,
   interval: BillingInterval,
 ): number {
-  const recurringRevenue =
-    interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+  const costs = estimatedPlanMonthlyCosts(plan, interval);
+  const recurringRevenue = costs.revenueUsd;
   if (recurringRevenue <= 0) return 1;
-
-  const commercialFees =
-    interval === "year"
-      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
-      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
-  const reservedVariableCost =
-    plan.voice_minutes_monthly * VOICE_VARIABLE_COST_PER_MIN_USD +
-    plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
-    plan.runtime_allowance_usd_monthly +
-    plan.ai_spend_allowance_usd_monthly +
-    commercialFees;
-
-  return (recurringRevenue - reservedVariableCost) / recurringRevenue;
+  return (recurringRevenue - costs.totalCostUsd) / recurringRevenue;
 }
 
 /** Contribution margin at expected included utilization. */
@@ -352,22 +660,12 @@ export function estimatedContributionMarginAtExpectedUsage(
   plan: StripePlan,
   interval: BillingInterval,
 ): number {
-  const recurringRevenue =
-    interval === "year" ? plan.price_usd_annual / 12 : plan.price_usd_monthly;
+  const costs = estimatedPlanMonthlyCosts(plan, interval, {
+    utilization: EXPECTED_INCLUDED_UTILIZATION,
+  });
+  const recurringRevenue = costs.revenueUsd;
   if (recurringRevenue <= 0) return 1;
-
-  const commercialFees =
-    interval === "year"
-      ? estimatedStripeCommercialFeesUsd(plan.price_usd_annual) / 12
-      : estimatedStripeCommercialFeesUsd(plan.price_usd_monthly);
-  const expectedVariableCost =
-    plan.voice_minutes_monthly * EXPECTED_INCLUDED_UTILIZATION * VOICE_VARIABLE_COST_PER_MIN_USD +
-    plan.included_phone_numbers * PHONE_NUMBER_COST_MONTHLY_USD +
-    plan.runtime_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
-    plan.ai_spend_allowance_usd_monthly * EXPECTED_INCLUDED_UTILIZATION +
-    commercialFees;
-
-  return (recurringRevenue - expectedVariableCost) / recurringRevenue;
+  return (recurringRevenue - costs.totalCostUsd) / recurringRevenue;
 }
 
 export function canonicalPlanId(id: string | null | undefined): StripePlanId | null {
@@ -379,7 +677,7 @@ export function canonicalPlanId(id: string | null | undefined): StripePlanId | n
 function configuredPriceId(plan: StripePlan, interval: "month" | "year"): string | null {
   const envKey = interval === "year" ? plan.annualPriceIdEnv : plan.priceIdEnv;
   const fallback = interval === "year" ? plan.fallbackAnnualPriceId : plan.fallbackPriceId;
-  return (envKey ? process.env[envKey] : null) || fallback || null;
+  return (envKey ? process.env[envKey]?.trim() : null) || fallback || null;
 }
 
 function configuredExtraAgentPriceId(plan: StripePlan): string | null {
@@ -400,6 +698,8 @@ export function planByPriceId(priceId: string | null | undefined): StripePlan | 
   return (
     STRIPE_PLANS.find(
       (plan) =>
+        plan.fallbackPriceId === priceId ||
+        plan.fallbackAnnualPriceId === priceId ||
         configuredPriceId(plan, "month") === priceId ||
         configuredPriceId(plan, "year") === priceId ||
         configuredExtraAgentPriceId(plan) === priceId ||
@@ -461,7 +761,8 @@ export function plansForClient() {
     const isFree = plan.id === "personal";
     const monthlyConfigured = !!configuredPriceId(plan, "month");
     const annualConfigured = !!configuredPriceId(plan, "year");
-    const paidCheckoutAvailable = checkoutReleased && monthlyConfigured;
+    const packageAvailable = plan.checkoutAvailability === "available";
+    const paidCheckoutAvailable = checkoutReleased && packageAvailable && monthlyConfigured;
 
     return {
       id: plan.id,
@@ -474,6 +775,11 @@ export function plansForClient() {
       ai_spend_allowance_usd_monthly: plan.ai_spend_allowance_usd_monthly,
       overage_per_min_usd: plan.overage_per_min_usd,
       included_phone_numbers: plan.included_phone_numbers,
+      included_mailboxes: plan.included_mailboxes,
+      channels: plan.channels,
+      catalog_family: plan.catalogFamily ?? null,
+      capacity_tier: plan.capacityTier ?? null,
+      checkout_availability: plan.checkoutAvailability,
       extra_agent_price_usd: plan.extra_agent_price_usd ?? null,
       extra_agent_voice_minutes_monthly: plan.extra_agent_voice_minutes_monthly ?? 0,
       extra_agent_included_phone_numbers: plan.extra_agent_included_phone_numbers ?? 0,
@@ -482,11 +788,14 @@ export function plansForClient() {
       // These flags describe Stripe Checkout availability. Free Builder is
       // active without Stripe and must use the Studio path instead.
       configured: !isFree && paidCheckoutAvailable,
-      annual_configured: !isFree && checkoutReleased && monthlyConfigured && annualConfigured,
+      annual_configured: !isFree && paidCheckoutAvailable && annualConfigured,
       contact_sales: !isFree && !paidCheckoutAvailable,
       is_free: isFree,
       public: true,
-      pricing_model: "guaranteed_voice_plus_flexible_runtime" as const,
+      pricing_model:
+        plan.catalogFamily === "channels"
+          ? ("channel_package" as const)
+          : ("guaranteed_voice_plus_flexible_runtime" as const),
     };
   });
 }

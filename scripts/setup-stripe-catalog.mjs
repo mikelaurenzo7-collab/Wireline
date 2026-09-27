@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Reconcile Stripe to the Founder Early Access catalog.
+ * Reconcile Stripe to the current BotBound channel catalog.
  *
  * The free builder is intentionally not a Stripe product. Paid subscriptions
- * guarantee voice capacity; optional provider work uses prepaid Conversation
- * Balance. The reconciler never creates postpaid overage prices.
+ * include their selected channels; optional work uses prepaid Runtime Balance.
+ * The reconciler never creates postpaid overage prices.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
@@ -16,6 +16,7 @@ import {
   FOUNDER_CATALOG_VERSION,
   FOUNDER_PRICES,
   FOUNDER_PRODUCTS,
+  isHistoricalCatalogObject,
 } from "./lib/stripe-founder-catalog.mjs";
 import {
   EXPECTED_PRODUCT_URL,
@@ -26,36 +27,6 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const API_VERSION = "2026-08-26.dahlia";
 const CATALOG_MANIFEST_PATH = join(ROOT, "stripe-catalog-proposal.json");
 const GENERATED_ENV_PATH = join(ROOT, "scripts", ".stripe-env.generated.json");
-
-function parseEnvFile(path) {
-  if (!existsSync(path)) return {};
-  const out = {};
-  for (const rawLine of readFileSync(path, "utf8").split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("#")) continue;
-    const index = line.indexOf("=");
-    if (index === -1) continue;
-    const key = line.slice(0, index).trim();
-    let value = line.slice(index + 1).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    out[key] = value;
-  }
-  return out;
-}
-
-function loadStripeSecret() {
-  if (process.env.STRIPE_SECRET_KEY?.trim()) return process.env.STRIPE_SECRET_KEY.trim();
-  for (const path of [join(ROOT, ".env.local"), join(ROOT, ".tmp", "vercel-production.env")]) {
-    const parsed = parseEnvFile(path);
-    if (parsed.STRIPE_SECRET_KEY) return parsed.STRIPE_SECRET_KEY;
-  }
-  return "";
-}
 
 async function collect(iterator) {
   const rows = [];
@@ -260,9 +231,11 @@ function priceIsBlocked(priceId, dependencies) {
 }
 
 async function main() {
-  const secret = loadStripeSecret();
+  // Use the selected operator environment only; never discover a stale live
+  // credential from a local file or a retired hosting provider export.
+  const secret = process.env.STRIPE_SECRET_KEY?.trim();
   if (!secret) {
-    console.error("STRIPE_SECRET_KEY is required. Pull the Vercel production env first.");
+    console.error("STRIPE_SECRET_KEY is required. Run from the configured Render production shell.");
     process.exit(1);
   }
 
@@ -315,7 +288,7 @@ async function main() {
 
   const cleanup = [];
   for (const price of activePricesBefore) {
-    if (canonicalPriceIds.has(price.id)) continue;
+    if (canonicalPriceIds.has(price.id) || isHistoricalCatalogObject(price)) continue;
     const product = productsBefore.find((row) => row.id === productIdOf(price));
     const looksManaged =
       product?.name?.startsWith("Wireline ") ||
@@ -357,7 +330,7 @@ async function main() {
   }
 
   for (const product of productsBefore.filter((row) => row.active)) {
-    if (canonicalProductIds.has(product.id)) continue;
+    if (canonicalProductIds.has(product.id) || isHistoricalCatalogObject(product)) continue;
     if (
       !product.name?.startsWith("Wireline ") &&
       product.name !== "Conversation Balance" &&

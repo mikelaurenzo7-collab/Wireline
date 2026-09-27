@@ -1,4 +1,5 @@
 import { resolveNativeInboundAdmission } from "./native-inbound-admission";
+import { releaseVoiceCallFunding } from "../voice-call-funding";
 import { resolveOpenAISipSessionMaxSeconds } from "./openai-sip-config";
 import { trackVoiceMinutes } from "../voice-usage";
 import { tenantStore } from "../server-context";
@@ -11,6 +12,7 @@ import {
 import { fallbackReceiptId } from "./twilio-fallback-receipt";
 import type {
   FallbackAdmission,
+  FallbackCompletion,
   FallbackReceipt,
   TwilioFallbackStore,
 } from "./twilio-fallback-receipt";
@@ -31,6 +33,7 @@ type Dependencies = {
   track: typeof trackVoiceMinutes;
   acquireLease: typeof acquireAccountOperationLease;
   releaseLease: typeof releaseAccountOperationLease;
+  releaseFunding: typeof releaseVoiceCallFunding;
 };
 
 const defaults: Dependencies = {
@@ -40,11 +43,15 @@ const defaults: Dependencies = {
   track: trackVoiceMinutes,
   acquireLease: acquireAccountOperationLease,
   releaseLease: releaseAccountOperationLease,
+  releaseFunding: releaseVoiceCallFunding,
 };
 
 /** A human transfer is paid carrier work too. Persist its owner before returning Dial. */
 export async function prepareTwilioVoiceFallback(
-  input: Omit<FallbackAdmission, "agentId" | "maxSeconds" | "leaseId" | "leaseExpiresAt">,
+  input: Omit<
+    FallbackAdmission,
+    "agentId" | "maxSeconds" | "deadlineAtMs" | "leaseId" | "leaseExpiresAt"
+  >,
   dependencies: Dependencies = defaults,
 ): Promise<FallbackReceipt | null> {
   if (
@@ -69,7 +76,9 @@ export async function prepareTwilioVoiceFallback(
       )
         return null;
       // A provider retry keeps its original target/limit and reserved presence.
-      return existing.completion || Date.parse(existing.leaseExpiresAt) <= Date.now()
+      return existing.completion ||
+        Date.parse(existing.leaseExpiresAt) <= Date.now() ||
+        (existing.deadlineAtMs !== undefined && existing.deadlineAtMs <= Date.now())
         ? null
         : existing;
     }
@@ -147,21 +156,42 @@ export async function completeTwilioVoiceFallback(
   ) {
     throw new Error("Twilio fallback duration is not a valid carrier duration.");
   }
-  return tenantStore.run(receipt.userId, async () => {
-    const completion = await dependencies.store.complete(receipt, {
+  return settleTwilioFallbackReceipt(
+    receipt,
+    {
       childCallSid,
       status: input.status,
       durationSeconds,
-    });
+    },
+    dependencies,
+  );
+}
+
+/** Only trusted callback/recovery code may submit a server-bound terminal receipt. */
+export async function settleTwilioFallbackReceipt(
+  receipt: FallbackReceipt,
+  candidate: FallbackCompletion,
+  dependencies: Dependencies = defaults,
+): Promise<boolean> {
+  return tenantStore.run(receipt.userId, async () => {
+    const completion = await dependencies.store.complete(receipt, candidate);
     // One fallback conversation, one canonical usage key. Retrying an unfinished
     // debit uses voice-usage's durable checkpoint rather than charging each leg.
-    await dependencies.track({
-      userId: receipt.userId,
-      // A provider overrun is recorded at its actual duration, but the customer
-      // never pays beyond the server-admitted limit. Reconcile carrier variance.
-      durationSeconds: Math.min(completion.durationSeconds, receipt.maxSeconds),
-      vapiCallId: fallbackReceiptId(receipt.parentCallSid),
-    });
+    if (completion.durationSeconds === 0 && completion.status !== "completed") {
+      await dependencies.releaseFunding(
+        receipt.userId,
+        fallbackReceiptId(receipt.parentCallSid),
+        "confirmed_unanswered",
+      );
+    } else
+      await dependencies.track({
+        userId: receipt.userId,
+        // A provider overrun is recorded at its actual duration, but the customer
+        // never pays beyond the server-admitted limit. Reconcile carrier variance.
+        durationSeconds: Math.min(completion.durationSeconds, receipt.maxSeconds),
+        vapiCallId: fallbackReceiptId(receipt.parentCallSid),
+      });
+    await dependencies.store.releasePresence(receipt);
     await dependencies.releaseLease({ userId: receipt.userId, id: receipt.leaseId });
     return true;
   });

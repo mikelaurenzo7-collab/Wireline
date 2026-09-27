@@ -9,6 +9,19 @@ for (const width of [320, 1280]) {
     await page.route("**/api/**", async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
+      if (path === "/api/billing/status") {
+        await route.fulfill({
+          json: {
+            channel_entitlements: {
+              plan_id: "voice",
+              subscription_status: "active",
+              channels: ["voice"],
+              is_owner: false,
+            },
+          },
+        });
+        return;
+      }
       if (path === "/api/outbound/dial") dialRequests.push(request.method());
       const json =
         path === "/api/auth/session"

@@ -57,13 +57,20 @@ describe("plan-catalog", () => {
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
-    expect(STRIPE_PLANS).toHaveLength(5);
+    expect(STRIPE_PLANS).toHaveLength(12);
     expect(STRIPE_PLANS.map((plan) => plan.id)).toEqual([
       "personal",
       "starter",
       "team",
       "business",
       "enterprise",
+      "voice",
+      "email",
+      "sms",
+      "voice-email",
+      "voice-sms",
+      "email-sms",
+      "omnichannel",
     ]);
   });
 
@@ -75,16 +82,22 @@ describe("plan-catalog", () => {
     expect(enterprise?.public).toBe(false);
     expect(plansForClient().map((plan) => plan.id)).toEqual([
       "personal",
-      "starter",
-      "team",
-      "business",
+      "voice",
+      "email",
+      "sms",
+      "voice-email",
+      "voice-sms",
+      "email-sms",
+      "omnichannel",
     ]);
   });
 
   it("keeps paid plans positive and overage above variable voice cost", () => {
     for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
       expect(plan.price_usd_monthly).toBeGreaterThan(0);
-      expect(plan.overage_per_min_usd).toBeGreaterThan(VOICE_VARIABLE_COST_PER_MIN_USD);
+      if (plan.channels.includes("voice"))
+        expect(plan.overage_per_min_usd).toBeGreaterThan(VOICE_VARIABLE_COST_PER_MIN_USD);
+      else expect(plan.overage_per_min_usd).toBe(0);
     }
   });
 
@@ -104,7 +117,7 @@ describe("plan-catalog", () => {
   });
 
   it("guarantees one number and managed mailbox for every active paid Bot slot", () => {
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "legacy")) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
       expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
       expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
@@ -119,7 +132,7 @@ describe("plan-catalog", () => {
   });
 
   it("keeps price leadership while protecting the two-floor margin policy", () => {
-    const paid = STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0);
+    const paid = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
     for (const plan of paid) {
       for (const interval of ["month", "year"] as const) {
         expect(
@@ -139,7 +152,7 @@ describe("plan-catalog", () => {
   });
 
   it("keeps paid extra-agent add-ons as capacity bundles", () => {
-    for (const plan of STRIPE_PLANS.filter((item) => item.price_usd_monthly > 0)) {
+    for (const plan of STRIPE_PLANS.filter((item) => item.catalogFamily === "legacy")) {
       expect(plan.extra_agent_price_usd, plan.id).toBe(15);
       expect(plan.extra_agent_voice_minutes_monthly, plan.id).toBe(50);
       expect(plan.extra_agent_included_phone_numbers, plan.id).toBe(1);

@@ -25,6 +25,7 @@ import { stripeRuntimeAllowanceRetryPreflight } from "../middleware/stripe-runti
 import { enforceSelfServeBillingRelease } from "../middleware/launch-hard-gate";
 import billingPortalReadinessRouter from "../routes/billing-portal-readiness-routes";
 import launchBillingCheckoutAtomicRouter from "../routes/launch-billing-checkout-atomic-routes";
+import billingCapacityRouter from "../routes/billing-capacity-routes";
 import launchBillingCheckoutRouter from "../routes/launch-billing-checkout-routes";
 import conversationBalanceRouter from "../routes/conversation-balance-routes";
 import spendControlRouter from "../routes/spend-control-routes";
@@ -148,6 +149,7 @@ export function registerApiRoutes(app: Express): void {
 
   app.post("/api/billing/checkout", enforceSelfServeBillingRelease);
   app.use(launchBillingCheckoutAtomicRouter);
+  app.use(billingCapacityRouter);
   app.use(launchBillingCheckoutRouter);
   app.use(billingPortalReadinessRouter);
   app.use("/api/stripe-webhook", stripeRuntimeAllowanceRetryPreflight);

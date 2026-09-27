@@ -16,6 +16,7 @@ import * as schema from "../db/schema";
 import { AuditLogger } from "./audit-logger";
 import { createRbacMiddleware } from "../middleware/require-role";
 import { QuotaTracker, type PlanTier } from "./tenant-quotas";
+import { subscriptionPlanToTier } from "./plan-entitlements";
 
 export async function fetchWithTimeout(
   url: string,
@@ -196,7 +197,9 @@ export const { requirePermission, requireRole } = createRbacMiddleware({ drizzle
 
 export const quotaTracker = new QuotaTracker({
   drizzle,
-  getPlanForUser: async (userId: string): Promise<PlanTier> => {
+  getPlanForUser: async (
+    userId: string,
+  ): Promise<PlanTier | { tier: PlanTier; planId: string | null }> => {
     // Plan lives in wireline_subscriptions.plan (set by syncSubscriptionFromStripe).
     // wireline_settings.subscriptionStatus only stores active/past_due/canceled —
     // it is NOT a plan name. Reading status here would collapse every tier
@@ -215,29 +218,7 @@ export const quotaTracker = new QuotaTracker({
       const stripeActive = sub?.stripeStatus === "active" || sub?.stripeStatus === "trialing";
       if (!stripeActive) return "free";
 
-      switch (sub?.plan) {
-        case "enterprise":
-        case "scale":
-        case "custom":
-          return "enterprise";
-        case "business":
-        case "pro":
-        case "business-growth":
-          return "business";
-        case "team":
-        case "shared":
-          return "team";
-        case "starter":
-        case "business-starter":
-        case "business-lite":
-        case "lite":
-        case "personal-plus":
-          return "personal";
-        case "personal":
-          return "free";
-        default:
-          return "free";
-      }
+      return { tier: subscriptionPlanToTier(sub?.plan), planId: sub?.plan ?? null };
     } catch (err) {
       // Demoting to free-tier quotas is the safe direction for spend, but a
       // paying tenant silently hitting free limits mid-session is a real

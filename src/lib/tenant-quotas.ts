@@ -20,7 +20,7 @@ import { eq, sql, and } from "drizzle-orm";
 import type { VercelPgDatabase } from "drizzle-orm/vercel-postgres";
 import * as schema from "../db/schema";
 import { log } from "./server-context";
-import { voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
+import { voiceMinutesDailyQuotaForPlan, voiceMinutesDailyQuotaForTier } from "./plan-entitlements";
 
 // ─────────────────────────────────────────────────────────────────
 // Plan defaults
@@ -146,14 +146,20 @@ export function resolveLimit(
   return planDefault;
 }
 
-export function resolveProfile(plan: PlanTier, overrides: QuotaOverrideRow[]): QuotaProfile {
+export function resolveProfile(
+  plan: PlanTier,
+  overrides: QuotaOverrideRow[],
+  planId?: string | null,
+): QuotaProfile {
   const out: QuotaProfile = {
     ...PLAN_DEFAULTS[plan],
-    voice_minutes_daily: voiceMinutesDailyQuotaForTier(plan),
+    voice_minutes_daily: planId
+      ? voiceMinutesDailyQuotaForPlan(planId)
+      : voiceMinutesDailyQuotaForTier(plan),
   };
   for (const o of overrides) {
     if (!ALL_DIMENSIONS.includes(o.dimension)) continue;
-    out[o.dimension] = resolveLimit(plan, o.dimension, { value: o.value, enabled: o.enabled });
+    if (o.enabled && Number.isFinite(o.value) && o.value >= 0) out[o.dimension] = o.value;
   }
   return out;
 }
@@ -279,7 +285,7 @@ const OVERRIDE_CACHE_TTL_MS = 30_000;
 export interface QuotaTrackerDeps {
   drizzle: VercelPgDatabase<typeof schema>;
   /** Resolves the plan tier for a user. */
-  getPlanForUser: (userId: string) => Promise<PlanTier>;
+  getPlanForUser: (userId: string) => Promise<PlanTier | { tier: PlanTier; planId: string | null }>;
 }
 
 export class QuotaTracker {
@@ -320,11 +326,19 @@ export class QuotaTracker {
     userId: string,
     bypassOverrideCache = false,
   ): Promise<{ plan: PlanTier; profile: QuotaProfile }> {
-    const [plan, overrides] = await Promise.all([
+    const [resolved, overrides] = await Promise.all([
       this.deps.getPlanForUser(userId),
       this.getOverrides(userId, bypassOverrideCache),
     ]);
-    return { plan, profile: resolveProfile(plan, overrides) };
+    const plan = typeof resolved === "string" ? resolved : resolved.tier;
+    return {
+      plan,
+      profile: resolveProfile(
+        plan,
+        overrides,
+        typeof resolved === "string" ? null : resolved.planId,
+      ),
+    };
   }
 
   private async getUsageForPeriod(
