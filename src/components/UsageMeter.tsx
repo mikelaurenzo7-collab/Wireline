@@ -146,7 +146,7 @@ export default function UsageMeter({
               Voice Minutes
             </h4>
             <p className="wl-label text-foreground/55 font-medium">
-              This month · resets {resetLabel}
+              Current allowance · resets {resetLabel}
             </p>
           </div>
         </div>

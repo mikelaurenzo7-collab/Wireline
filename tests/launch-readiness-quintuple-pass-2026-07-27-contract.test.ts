@@ -76,14 +76,14 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
 
   it("documents channel prices and gated SMS truthfully in the active billing ops note", () => {
     const note = read("docs/P0_BILLING_OPS_NOTE.md");
-    for (const price of ["$15", "$9", "$12", "$21", "$20", "$18", "$26"])
+    for (const price of ["$19", "$9", "$12", "$25", "$24", "$18", "$29"])
       expect(note).toContain(price);
     expect(note).toContain(
       "Old starter/team/business/enterprise and extra-Bot IDs remain resolvable",
     );
     expect(note).toContain("all twelve SMS capacity quotes stay unavailable");
     expect(note).toContain("$59 / $690");
-    expect(note).toContain("$219 / $2,499");
+    expect(note).toContain("$115 / $1,349");
     expect(note).toContain("next successful paid renewal");
     expect(note).toContain("up to 10 additional completion minutes");
     expect(note).not.toMatch(/\| Business \| \$159/);

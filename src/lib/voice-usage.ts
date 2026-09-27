@@ -24,6 +24,7 @@ import { FLAT_OVERAGE_PER_MIN_USD, planById } from "./plan-catalog";
 import { drizzle, log } from "./server-context";
 import { dailyPeriodKey } from "./tenant-quotas";
 import * as schema from "../db/schema";
+import { resolveAllowanceWindow } from "./paid-allowance-period";
 
 const DIMENSION = "voice_minutes_monthly";
 
@@ -383,7 +384,8 @@ export async function trackVoiceMinutes(opts: {
 }
 
 export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageSnapshot> {
-  const periodKey = monthlyPeriodKey();
+  const window = await resolveAllowanceWindow(drizzle, userId);
+  const periodKey = window.key;
 
   const [[usageRow], [billing]] = await Promise.all([
     drizzle
@@ -425,7 +427,7 @@ export async function getVoiceUsageSnapshot(userId: string): Promise<VoiceUsageS
     overage_per_min_usd: overageRate,
     overage_cost_usd: Math.round(overage * overageRate * 100) / 100,
     period_key: periodKey,
-    reset_at: nextMonthlyResetIso(),
+    reset_at: window.end.toISOString(),
     stripe_metered: false,
   };
 }

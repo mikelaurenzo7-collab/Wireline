@@ -324,7 +324,7 @@ function AdminSettingsContent() {
       open: true,
       title: "Permanently Release Number",
       message:
-        "This permanently releases the number from BotBound and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone.",
+        "This permanently releases the number from BotBound and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone. Releasing does not reset the 31-day replacement limit.",
       confirmLabel: "Release number",
       onConfirm: async () => {
         setIsDeletingNumber(id);

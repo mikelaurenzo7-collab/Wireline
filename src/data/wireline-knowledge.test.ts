@@ -18,7 +18,7 @@ describe("BotBound knowledge", () => {
     ]);
 
     expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("Legacy");
-    expect(WIRELINE_PLANS.map((plan) => plan.price).join(" ")).not.toContain("$159");
+    expect(WIRELINE_PLANS.map((plan) => plan.name)).not.toContain("BotBound Business");
     for (const plan of STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")) {
       const knowledge = WIRELINE_PLANS.find((item) => item.name === plan.name)!;
       expect(knowledge.price).toContain(`$${plan.price_usd_monthly}/mo`);

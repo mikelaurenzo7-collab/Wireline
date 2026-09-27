@@ -28,7 +28,11 @@ const importLimits = readFileSync(
   "utf8",
 );
 const spend = readFileSync(
-  new URL("../src/lib/website-knowledge-spend.ts", import.meta.url),
+  new URL("../src/lib/managed-ai-operation-spend.ts", import.meta.url),
+  "utf8",
+);
+const trainingSpend = readFileSync(
+  new URL("../src/lib/training-ai-spend.ts", import.meta.url),
   "utf8",
 );
 const legacyRoute = readFileSync(
@@ -177,8 +181,8 @@ describe("secure website knowledge ingestion", () => {
     expect(timeout).toContain("WEBSITE_KNOWLEDGE_EXTRACTION_TIMEOUT_MS = 20_000");
     expect(timeout).toContain("controller.abort()");
     expect(timeout).toContain("WebsiteKnowledgeExtractionTimeoutError");
-    expect(service).toContain("runWithWebsiteKnowledgeExtractionTimeout((signal)");
-    expect(service).toContain("signal,");
+    expect(trainingSpend).toContain("runWithWebsiteKnowledgeExtractionTimeout((signal)");
+    expect(trainingSpend).toContain("{ ...options, signal }");
     expect(route).toContain("error instanceof WebsiteKnowledgeExtractionTimeoutError");
     expect(route).toContain("AppError.fromHttpStatus(504, error.message)");
   });
@@ -212,9 +216,10 @@ describe("secure website knowledge ingestion", () => {
     expect(importLimits).toContain("max: 50");
     expect(importLimits.match(/failClosedOnError: true/g)).toHaveLength(2);
     expect(route).toContain("enforceLaunchHardGate");
-    expect(route).toContain("runWithWebsiteKnowledgeSpend");
+    expect(service).toContain("runTrainingStructured");
+    expect(trainingSpend).toContain("boundedTrainingReserveUsd");
     expect(route).not.toContain('withAudit("website-import")');
-    expect(spend).toContain("WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD = 0.25");
+    expect(trainingSpend).toContain("trainingAttemptModels(model)");
     expect(spend).toContain("reservePlatformCostRecord");
     expect(spend).toContain('accounting_state: "reserved_before_provider"');
     expect(spend).toContain('"settled_actual"');

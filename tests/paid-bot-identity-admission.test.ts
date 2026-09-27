@@ -171,6 +171,8 @@ vi.mock("../src/lib/agentmail-mail", () => ({
 import {
   enqueuePaidBotIdentityReconciliation,
   ensurePaidBotIdentity,
+  getPaidBotIdentityAgentIds,
+  getPaidBotMailboxAgentIds,
 } from "../src/lib/paid-bot-identity";
 
 beforeEach(() => {
@@ -203,6 +205,39 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("paid identity admission at queue and provider boundaries", () => {
+  it.each([
+    "voice-regular",
+    "voice-high",
+    "email-regular",
+    "email-high",
+    "voice-email-regular",
+    "voice-email-high",
+  ])("keeps %s retained Bots inside one phone and one mailbox allocation", async (planId) => {
+    h.planId = planId;
+    h.agents = Array.from({ length: planId.endsWith("high") ? 15 : 5 }, (_, index) => ({
+      id: `role-${index}`,
+    }));
+    h.target = h.agents.at(-1)!.id;
+    h.lines = [{ agentId: "role-0" }];
+    h.accounts = [
+      {
+        id: "one-mailbox",
+        agentId: "role-0",
+        emailAddress: "roles@botbound.app",
+        oauthGrantedScopes: "managed",
+        refreshToken: "fixture",
+      },
+    ];
+    expect(await getPaidBotIdentityAgentIds("tenant")).toEqual(["role-0"]);
+    expect(await getPaidBotMailboxAgentIds("tenant")).toEqual(
+      planId.includes("email") ? ["role-0"] : [],
+    );
+    await expect(
+      ensurePaidBotIdentity({ userId: "tenant", agentId: h.target }),
+    ).resolves.toMatchObject({ eligible: false, phone: null, email: null });
+    expect(h.phoneProvision).not.toHaveBeenCalled();
+    expect(h.createInbox).not.toHaveBeenCalled();
+  });
   it("waits locally for number selection even while providers are unavailable or unconfigured", async () => {
     h.planId = "voice";
     h.target = "oldest";

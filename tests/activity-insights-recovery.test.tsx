@@ -161,6 +161,53 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("Activity budget recovery", () => {
+  it("shows the paid allowance reset date instead of its internal subscription key", async () => {
+    mountBudget();
+    h.fetch.mockImplementation(async (url: string) =>
+      url === "/api/spend/status"
+        ? response({
+            ...status,
+            period: "paid:sub_customer:1789401600",
+            reset_at: "2026-10-14T16:00:00Z",
+          })
+        : response({ budget }),
+    );
+    await settle();
+    expect(text(tree)).toContain("Resets Oct 14");
+    expect(text(tree)).not.toContain("paid:sub_customer");
+  });
+
+  it.each([undefined, "invalid"])(
+    "does not infer dates from period keys when reset_at is %s",
+    async (resetAt) => {
+      mountBudget();
+      h.fetch.mockImplementation(async (url: string) =>
+        url === "/api/spend/status"
+          ? response({ ...status, period: "paid:sub_customer:1789401600", reset_at: resetAt })
+          : response({ budget }),
+      );
+      await settle();
+      expect(text(tree)).toContain("Current allowance period");
+      expect(text(tree)).not.toContain("Invalid Date");
+      expect(text(tree)).not.toContain("paid:sub_customer");
+    },
+  );
+
+  it("directs a missing paid-period sync to Billing without inventing a new allowance", async () => {
+    mountBudget();
+    h.fetch.mockImplementation(async (url: string) =>
+      url === "/api/spend/status"
+        ? response({ code: "PAID_ALLOWANCE_SYNC_REQUIRED", error: "Paid period unavailable" }, 503)
+        : response({ budget }),
+    );
+    await settle();
+    expect(errors()[0].props.error).toBe(
+      "Open Billing and refresh your subscription to sync your usage allowance.",
+    );
+    expect(saveButton()).toBeUndefined();
+    expect(errors()[0].props.onRetry).toBeTypeOf("function");
+  });
+
   it("renders fired thresholds from the server's camel-case alert records", async () => {
     mountBudget();
     h.fetch.mockImplementation(async (url: string) =>

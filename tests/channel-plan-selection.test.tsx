@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import ChannelPlanPicker from "../src/components/ChannelPlanPicker";
+import ChannelPlanPicker, { channelPlanHighlights } from "../src/components/ChannelPlanPicker";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import {
   activationBillingHref,
@@ -35,6 +35,18 @@ function text(node: ReactNode): string {
 describe("channel package selection", () => {
   it("contains all seven channel combinations at three capacities", () => {
     expect(plans).toHaveLength(21);
+  });
+  it("discloses the simultaneous call limit only for packages with Calls", () => {
+    for (const plan of plans) {
+      const highlights = channelPlanHighlights(plan);
+      if (plan.channels.includes("voice")) {
+        expect(highlights).toContain(
+          `${plan.voice_minutes_monthly} call minutes/month · 1 call at a time`,
+        );
+      } else {
+        expect(highlights.join(" ")).not.toMatch(/call minutes|call at a time/);
+      }
+    }
   });
   it.each(plans)("preserves $id through signup, storage sanitization, and activation", (plan) => {
     const href = signupHrefForPlan(plan.id as SignupPlanId, { interval: "year" });

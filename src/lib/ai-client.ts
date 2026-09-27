@@ -19,6 +19,7 @@ import {
 import {
   normalizeResponsesUsage,
   normalizeUsageTokenCount,
+  POSTGRES_INT32_MAX,
   saturatingUsageTokenSum,
 } from "./ai-usage";
 import { recordAmbiguousProviderAttempt, recordUsage } from "./ai-audit";
@@ -142,6 +143,26 @@ type RuntimeProvider = {
   call: (body: RuntimeRequest, options?: RuntimeRequestOptions) => Promise<RuntimeMessage>;
   breaker?: RuntimeCircuitBreaker;
 };
+
+function knownTokenCount(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= 0 &&
+    value <= POSTGRES_INT32_MAX
+  );
+}
+
+export function hasKnownResponsesUsage(usage: Record<string, unknown>): boolean {
+  if (!knownTokenCount(usage.input_tokens) || !knownTokenCount(usage.output_tokens)) return false;
+  const details = usage.input_tokens_details;
+  if (details === undefined) return true;
+  if (!details || typeof details !== "object" || Array.isArray(details)) return false;
+  const cache = details as Record<string, unknown>;
+  const read = cache.cached_tokens === undefined ? 0 : cache.cached_tokens;
+  const write = cache.cache_write_tokens === undefined ? 0 : cache.cache_write_tokens;
+  return knownTokenCount(read) && knownTokenCount(write) && read + write <= usage.input_tokens;
+}
 
 let client: RuntimeClient | null = null;
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -527,14 +548,16 @@ async function callResponsesEndpoint(args: {
     // A 200 response may be incomplete, refused, or contain invalid JSON after
     // generation was billed. Preserve that attempt before provider fallback.
     // Valid responses remain recorded once by the structured-runtime caller.
-    const hasKnownUsage = [usage.input_tokens, usage.output_tokens].every(
-      (value) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0,
-    );
-    if (hasKnownUsage || evidence.actualCostUsd !== undefined) {
+    if (hasKnownResponsesUsage(usage) || evidence.actualCostUsd !== undefined) {
       recordUsage(args.model, usageResponse, Date.now() - started);
       throw new AccountedProviderOutputError(args.provider);
     }
     throw error;
+  }
+  // Useful output is still returned when usage is missing, but normalized zero
+  // tokens are not proof that generation was free. Spend wrappers keep the hold.
+  if (!hasKnownResponsesUsage(usage) && evidence.actualCostUsd === undefined) {
+    recordAmbiguousProviderAttempt();
   }
   log.info("[ai-runtime] response complete", {
     provider: args.provider,
@@ -653,7 +676,17 @@ async function callGemini(
     role: item.role === "assistant" ? ("model" as const) : ("user" as const),
     parts: [{ text: extractText(item.content) }],
   }));
-  const generationConfig: { responseMimeType?: string } = {};
+  // Gemini's output cap includes thinking tokens. Carry the same requested
+  // bound as Responses so a fallback cannot exceed a setup spend reservation.
+  const requestedOutputTokens = body.max_tokens;
+  const generationConfig: { responseMimeType?: string; maxOutputTokens: number } = {
+    maxOutputTokens:
+      typeof requestedOutputTokens === "number" &&
+      Number.isFinite(requestedOutputTokens) &&
+      requestedOutputTokens > 0
+        ? Math.max(1, Math.floor(requestedOutputTokens))
+        : 4096,
+  };
   if (tool) {
     generationConfig.responseMimeType = "application/json";
     if (contents.length)
@@ -702,7 +735,7 @@ async function callGemini(
     usageMetadata?.candidatesTokenCount,
     usageMetadata?.thoughtsTokenCount,
   );
-  return tool
+  const response = tool
     ? message({
         model: modelId,
         content: [
@@ -727,6 +760,18 @@ async function callGemini(
         outputTokens,
         cacheReadTokens,
       });
+  if (
+    !knownTokenCount(usageMetadata?.promptTokenCount) ||
+    !knownTokenCount(usageMetadata?.candidatesTokenCount) ||
+    (usageMetadata?.thoughtsTokenCount !== undefined &&
+      !knownTokenCount(usageMetadata.thoughtsTokenCount)) ||
+    (usageMetadata?.cachedContentTokenCount !== undefined &&
+      (!knownTokenCount(usageMetadata.cachedContentTokenCount) ||
+        usageMetadata.cachedContentTokenCount > promptTokens))
+  ) {
+    recordAmbiguousProviderAttempt();
+  }
+  return response;
 }
 
 class RuntimeCircuitBreaker {
@@ -852,8 +897,16 @@ async function createWithFallbacks(
       provider.breaker?.recordSuccess();
       return response;
     } catch (error) {
-      if (isAbortError(error, options?.signal)) throw error;
       const definiteRejection = definiteProviderRejection(error, provider.name);
+      if (isAbortError(error, options?.signal)) {
+        // Cancellation does not prove an already-submitted provider request
+        // stopped billing. This also preserves the hold after an earlier lane
+        // recorded known usage and the next in-flight fallback was aborted.
+        if (!definiteRejection && !(error instanceof AccountedProviderOutputError)) {
+          recordAmbiguousProviderAttempt();
+        }
+        throw error;
+      }
       const providerError = definiteRejection ?? error;
       if (!definiteRejection && !(error instanceof AccountedProviderOutputError)) {
         // The request crossed a provider boundary, but no usage response came

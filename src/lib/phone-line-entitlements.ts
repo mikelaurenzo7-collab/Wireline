@@ -21,8 +21,11 @@ export function includedPhoneSlotsForPlan(
   return Math.max(0, tier.included_phone_numbers) + extras * perExtra;
 }
 
-export async function getIncludedPhoneLineSlots(userId: string): Promise<number> {
-  const [settings] = await drizzle
+export async function getIncludedPhoneLineSlots(
+  userId: string,
+  executor: Pick<typeof drizzle, "select"> = drizzle,
+): Promise<number> {
+  const [settings] = await executor
     .select({
       subscriptionStatus: schema.settings.subscriptionStatus,
       extraAgents: schema.settings.extraAgents,
@@ -31,7 +34,7 @@ export async function getIncludedPhoneLineSlots(userId: string): Promise<number>
     .where(eq(schema.settings.userId, userId))
     .limit(1);
 
-  const entitlement = await getTenantChannelEntitlements(userId);
+  const entitlement = await getTenantChannelEntitlements(userId, executor);
   if (entitlement.subscriptionStatus !== "active") return 0;
   const planId = entitlement.planId;
   const tier = planById(planId);

@@ -39,6 +39,16 @@ beforeEach(() => {
 });
 
 describe("voice allowance boundary copy", () => {
+  it("uses the server reset date for a paid allowance instead of interpreting its opaque key", () => {
+    h.snapshot.plan_id = "voice-regular";
+    h.snapshot.period_key = "paid:sub_customer:1789401600";
+    h.snapshot.reset_at = "2026-10-14T16:00:00Z";
+    const content = text(UsageMeter({}));
+    expect(content).toContain("Current allowance · resets Oct 14");
+    expect(content).not.toContain("paid:sub_customer");
+    expect(content).not.toContain("This month");
+  });
+
   it("disables and marks the upgrade action busy while its portal request is pending", () => {
     const action = findButton(UsageMeter({ onUpgrade: vi.fn(), upgradePending: true }));
     expect(isValidElement(action)).toBe(true);

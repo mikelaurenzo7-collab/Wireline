@@ -7,7 +7,6 @@ import { WebsiteFetchError } from "../lib/safe-public-text-fetch";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { importWebsiteKnowledge } from "../lib/website-knowledge-service";
-import { runWithWebsiteKnowledgeSpend } from "../lib/website-knowledge-spend";
 import { WebsiteKnowledgeExtractionTimeoutError } from "../lib/website-knowledge-timeout";
 import { authenticateUser } from "../middleware/auth";
 import {
@@ -75,15 +74,10 @@ router.post(
     if (!agent) throw AppError.fromHttpStatus(404, "Bot not found");
 
     try {
-      const result = await runWithWebsiteKnowledgeSpend({
+      const result = await importWebsiteKnowledge({
+        agentId: req.params.id,
         userId: req.user.id,
-        hostname: parsed.hostname,
-        operation: () =>
-          importWebsiteKnowledge({
-            agentId: req.params.id,
-            userId: req.user.id,
-            url: parsed.toString(),
-          }),
+        url: parsed.toString(),
       });
       log.info("Website knowledge imported", {
         userId: req.user.id,

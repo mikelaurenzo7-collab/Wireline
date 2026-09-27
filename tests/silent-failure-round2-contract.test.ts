@@ -279,8 +279,11 @@ describe("auto-QA failures reach the retry queue", () => {
 describe("every AI-spending surface reaches the spend ledger", () => {
   it("meters the Google Drive knowledge sync", () => {
     const route = read("src/routes/workspace-knowledge-routes.ts");
-    expect(route).toContain('withAudit("workspace-knowledge")');
-    expect(route.indexOf("authenticateUser")).toBeLessThan(route.indexOf('withAudit("'));
+    const service = read("src/services/google-drive-sync-v2.ts");
+    expect(route).toContain("authenticateUser");
+    expect(service).toContain("runTrainingStructured<Extraction>");
+    expect(service).toContain('source: "google_drive"');
+    expect(route).not.toContain('withAudit("workspace-knowledge")');
   });
 });
 

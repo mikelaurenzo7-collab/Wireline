@@ -403,7 +403,12 @@ export async function handleJob(job: JobRow): Promise<void> {
       log.warn("purge_old_data job missing user_id", { jobId: job.id });
       return;
     }
-    const retentionDays = typeof p.retention_days === "number" ? p.retention_days : 365;
+    // Match the settings API's published 90-day floor even for old or malformed
+    // job payloads. Financial admission receipts must survive their 31-day window.
+    const retentionDays =
+      typeof p.retention_days === "number" && Number.isFinite(p.retention_days)
+        ? Math.max(90, Math.trunc(p.retention_days))
+        : 365;
     try {
       // Use parameterized query to prevent SQL injection
       const result = await drizzle.execute(

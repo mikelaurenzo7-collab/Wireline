@@ -1,5 +1,5 @@
 /** Active new-sale Stripe manifest. Historical subscriptions remain read-only. */
-export const FOUNDER_CATALOG_VERSION = "channel_plans_2026_09_v1";
+export const FOUNDER_CATALOG_VERSION = "channel_plans_2026_09_v2";
 // SMS stays a quote until carrier readiness. Email remains an explicit env opt-in.
 const CHANNEL_OFFERS = [
   [
@@ -7,9 +7,9 @@ const CHANNEL_OFFERS = [
     "Calls",
     ["voice"],
     [
-      [15, 150, 1.5],
+      [19, 199, 1.5],
       [59, 690, 3],
-      [219, 2499, 5],
+      [115, 1349, 5],
     ],
   ],
   [
@@ -27,9 +27,9 @@ const CHANNEL_OFFERS = [
     "Calls + Email",
     ["voice", "email"],
     [
-      [21, 210, 2.5],
+      [25, 259, 2.5],
       [79, 899, 10],
-      [269, 2999, 30],
+      [159, 1799, 30],
     ],
   ],
 ].flatMap(([baseId, label, channels, prices]) =>
@@ -42,9 +42,10 @@ const CHANNEL_OFFERS = [
       annual,
       channels,
       capacity,
+      priceVersion: channels.includes("voice") && capacity !== "regular" ? "v2" : "v1",
       numbers: Number(channels.includes("voice")),
       mailboxes: Number(channels.includes("email")),
-      minutes: channels.includes("voice") ? [30, 250, 1000][index] : 0,
+      minutes: channels.includes("voice") ? [50, 250, 500][index] : 0,
       allowance,
     };
   }),
@@ -68,7 +69,7 @@ export const FOUNDER_PRODUCTS = [
     key: offer.id,
     name: `BotBound ${offer.label}`,
     description: `1 Bot with ${offer.label.toLowerCase()}. ${offer.minutes ? `${offer.minutes} live-call minutes/month. Up to 10 additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras. ` : ""}Managed AI${offer.mailboxes ? " and email delivery" : ""} allowance included. No automatic extra charges.`,
-    defaultPriceKey: `${offer.id}_monthly_channels_2026_09_v1`,
+    defaultPriceKey: `${offer.id}_monthly_channels_2026_09_${offer.priceVersion}`,
     metadata: metadataFor(offer),
   })),
   {
@@ -96,7 +97,7 @@ export const FOUNDER_PRICES = [
   ...CHANNEL_OFFERS.flatMap((offer) =>
     ["month", "year"].map((interval) => {
       const annual = interval === "year";
-      const key = `${offer.id}_${annual ? "annual" : "monthly"}_channels_2026_09_v1`;
+      const key = `${offer.id}_${annual ? "annual" : "monthly"}_channels_2026_09_${offer.priceVersion}`;
       return {
         key,
         productKey: offer.id,

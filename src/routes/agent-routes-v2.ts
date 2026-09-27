@@ -8,8 +8,7 @@ import { validateBody } from "../lib/api-validation-base";
 import type { AuthenticatedRequest } from "../types/auth";
 import { authenticateUser } from "../middleware/auth";
 import { agentMutationRateLimit } from "../middleware/api-rate-limits";
-import { withAudit } from "../middleware/audit-middleware";
-import { recordUsage } from "../lib/ai-audit";
+import { recordAmbiguousProviderAttempt, recordUsage } from "../lib/ai-audit";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { getErrorMessage } from "../lib/server-utils";
@@ -51,8 +50,16 @@ import {
   knowledgeTextTruncationNotice,
 } from "../lib/knowledge-asset-limits";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
-import { runStructured } from "../lib/ai-structured";
-import { resolveResponsesEvidence } from "../lib/ai-client";
+import {
+  isTrainingImageAvailable,
+  runTrainingImage,
+  runTrainingStructured,
+} from "../lib/training-ai-spend";
+import {
+  DefiniteProviderRejectionError,
+  hasKnownResponsesUsage,
+  resolveResponsesEvidence,
+} from "../lib/ai-client";
 import { normalizeResponsesUsage } from "../lib/ai-usage";
 import {
   AGENT_CREATE_DEFAULT_ROLE_ID,
@@ -214,15 +221,23 @@ async function persistExtraction(agentId: string, userId: string, extraction: Ex
   });
 }
 
-async function extractTextAsset(fileName: string, text: string): Promise<ExtractedConfig> {
+async function extractTextAsset(
+  userId: string,
+  fileName: string,
+  text: string,
+): Promise<ExtractedConfig> {
   return normalizeExtraction(
-    await runStructured<ExtractedConfig>({
-      system:
-        "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone guidance from a supplied asset. Be conservative. Never invent missing information.",
-      user: `Asset name: ${fileName}\n\nAsset content:\n${text}`,
-      tool: AI_TOOLS.trainingExtraction,
-      complexity: "simple",
-      maxTokens: 1200,
+    await runTrainingStructured<ExtractedConfig>({
+      userId,
+      source: "asset_text",
+      options: {
+        system:
+          "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone guidance from a supplied asset. Be conservative. Never invent missing information.",
+        user: `Asset name: ${fileName}\n\nAsset content:\n${text}`,
+        tool: AI_TOOLS.trainingExtraction,
+        complexity: "simple",
+        maxTokens: 1200,
+      },
     }),
   );
 }
@@ -249,13 +264,14 @@ function responseText(payload: Record<string, unknown>) {
 export async function extractImageAsset(
   fileName: string,
   dataUrl: string,
+  userId: string,
 ): Promise<ExtractedConfig> {
   if (!isAIGatewayConfigured()) {
-    throw AppError.fromHttpStatus(503, "Image intake requires AI Gateway configuration.");
+    throw AppError.fromHttpStatus(503, "Image uploads are unavailable. Upload TXT, MD or CSV.");
   }
   // Keep multimodal extraction separate from the text-only structured adapter,
   // but preserve the same OpenAI-first managed default. Operators can still
-  // select another Gateway vision model explicitly through the environment.
+  // select another bounded GPT-5.6 Gateway vision model through the environment.
   const visionModel = gatewayModelId(process.env.WIRELINE_GATEWAY_VISION_MODEL?.trim() || "");
   const schemaDefinition = {
     type: "object",
@@ -286,70 +302,103 @@ export async function extractImageAsset(
     },
     required: ["directives", "knowledge", "personality"],
   };
-  const startedAt = Date.now();
-  const response = await fetch(`${AI_GATEWAY_BASE_URL}/responses`, {
-    method: "POST",
-    headers: gatewayHeaders(),
-    body: JSON.stringify({
-      model: visionModel,
-      instructions:
-        "Analyze the uploaded image only for explicit facts, operating rules, service details, schedules, product details, or tone direction that can safely train a Bot. Do not infer private information or create facts that are not visibly supported.",
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `Extract agent-training information from the image asset named ${fileName}.`,
-            },
-            { type: "input_image", image_url: dataUrl, detail: "low" },
-          ],
-        },
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "studio_asset_extraction",
-          strict: true,
-          schema: schemaDefinition,
-        },
+  const requestBody = {
+    model: visionModel,
+    instructions:
+      "Analyze the uploaded image only for explicit facts, operating rules, service details, schedules, product details, or tone direction that can safely train a Bot. Do not infer private information or create facts that are not visibly supported.",
+    input: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "input_text",
+            text: `Extract agent-training information from the image asset named ${fileName}.`,
+          },
+          { type: "input_image", image_url: dataUrl, detail: "low" },
+        ],
       },
-      max_output_tokens: 1200,
-    }),
-  });
-  if (!response.ok) throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
-  const payload = (await response.json()) as Record<string, unknown>;
-  const evidence = resolveResponsesEvidence(payload, visionModel, "AI Gateway");
-  const usage = normalizeResponsesUsage(
-    payload.usage && typeof payload.usage === "object"
-      ? (payload.usage as Record<string, unknown>)
-      : {},
-  );
-  // This multimodal path calls Gateway directly rather than the text-only
-  // structured adapter, so record its measured usage explicitly.
-  // Without this the vision spend is invisible to the audit ledger and the
-  // route's withAudit wrapper captures nothing.
-  recordUsage(
-    evidence.model,
-    {
-      model: evidence.model,
-      inference_provider: evidence.inferenceProvider,
-      actual_cost_usd: evidence.actualCostUsd,
-      usage: {
-        input_tokens: usage.inputTokens,
-        output_tokens: usage.outputTokens,
-        cache_read_input_tokens: usage.cacheReadTokens,
-        cache_creation_input_tokens: usage.cacheWriteTokens,
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "studio_asset_extraction",
+        strict: true,
+        schema: schemaDefinition,
       },
     },
-    Date.now() - startedAt,
-  );
-  const output = responseText(payload);
-  try {
-    return normalizeExtraction(JSON.parse(output));
-  } catch {
-    throw AppError.fromHttpStatus(502, "Image intake returned an unreadable result.");
-  }
+    max_output_tokens: 1200,
+  };
+  return runTrainingImage({
+    userId,
+    model: visionModel,
+    promptAndSchema: JSON.stringify(
+      {
+        instructions: requestBody.instructions,
+        text: requestBody.input[0].content[0].text,
+        schema: schemaDefinition,
+      },
+      null,
+      2,
+    ),
+    operation: async () => {
+      const startedAt = Date.now();
+      const response = await fetch(`${AI_GATEWAY_BASE_URL}/responses`, {
+        method: "POST",
+        headers: gatewayHeaders(),
+        body: JSON.stringify(requestBody),
+      });
+      if (!response.ok) {
+        if (response.status >= 400 && response.status < 500)
+          throw new DefiniteProviderRejectionError("AI Gateway", response.status);
+        throw AppError.fromHttpStatus(502, `Image intake failed (${response.status}).`);
+      }
+      const payload = (await response.json()) as Record<string, unknown>;
+      const evidence = resolveResponsesEvidence(payload, visionModel, "AI Gateway");
+      const usage = normalizeResponsesUsage(
+        payload.usage && typeof payload.usage === "object"
+          ? (payload.usage as Record<string, unknown>)
+          : {},
+      );
+      // This multimodal path calls Gateway directly rather than the text-only
+      // structured adapter, so record its measured usage explicitly.
+      // Without this the vision spend is invisible to the audit ledger and the
+      // spend wrapper captures nothing.
+      const rawUsage = payload.usage as Record<string, unknown> | undefined;
+      if (evidence.actualCostUsd === undefined && !hasKnownResponsesUsage(rawUsage || {}))
+        recordAmbiguousProviderAttempt();
+      recordUsage(
+        evidence.model,
+        {
+          model: evidence.model,
+          inference_provider: evidence.inferenceProvider,
+          actual_cost_usd: evidence.actualCostUsd,
+          usage: {
+            input_tokens: usage.inputTokens,
+            output_tokens: usage.outputTokens,
+            cache_read_input_tokens: usage.cacheReadTokens,
+            cache_creation_input_tokens: usage.cacheWriteTokens,
+          },
+        },
+        Date.now() - startedAt,
+      );
+      const output = responseText(payload);
+      try {
+        return normalizeExtraction(JSON.parse(output));
+      } catch {
+        throw AppError.fromHttpStatus(502, "Image intake returned an unreadable result.");
+      }
+    },
+  }).catch((error: unknown) => {
+    // The accounting wrapper needs the definitive rejection classification to
+    // release an unspent hold. Preserve a usable API error after it has done so.
+    if (error instanceof DefiniteProviderRejectionError) {
+      throw AppError.fromHttpStatus(
+        502,
+        "Image training is temporarily unavailable. Try again shortly.",
+      );
+    }
+    throw error;
+  });
 }
 
 router.get("/api/agents", authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
@@ -685,6 +734,7 @@ router.get(
       : null;
     res.json({
       mark_key: record?.markKey || null,
+      capabilities: { image_uploads: isTrainingImageAvailable() },
       firstMessage: record?.firstMessage || null,
       openingGreeting: resolveAgentGreeting(record || {}, directives),
       role: record?.role || "customer_service",
@@ -1009,13 +1059,7 @@ router.post(
   "/api/agent-config/:id/assets",
   authenticateUser,
   agentMutationRateLimit,
-  // Asset extraction reaches paid text/vision models, so its spend must be
-  // recorded. It is deliberately NOT behind the hard spend cap: the Free Builder
-  // budget is a private-simulation allowance (migration 0134), and hard-capping
-  // configuration work would leave an Account Holder who spent their allowance
-  // on Director turns unable to finish setting their agent up. Recording keeps
-  // the cost visible and accruing; the simulation surfaces stay capped.
-  withAudit("asset-extract"),
+  // Paid extraction reserves the shared AI allowance after validation and ownership.
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
@@ -1042,12 +1086,12 @@ router.post(
 
     let extraction: ExtractedConfig;
     if (text) {
-      extraction = await extractTextAsset(fileName, text);
+      extraction = await extractTextAsset(req.user.id, fileName, text);
     } else if (
       /^image\/(png|jpe?g|webp|gif)$/.test(mimeType) &&
       dataUrl.startsWith(`data:${mimeType};base64,`)
     ) {
-      extraction = await extractImageAsset(fileName, dataUrl);
+      extraction = await extractImageAsset(fileName, dataUrl, req.user.id);
     } else {
       throw AppError.fromHttpStatus(
         400,
@@ -1112,9 +1156,6 @@ router.post(
   "/api/train/extract",
   authenticateUser,
   agentMutationRateLimit,
-  // Metered, not capped — see the asset route above: configuration work must not
-  // be hard-blocked by the private-simulation allowance.
-  withAudit("train-extract"),
   async (req: AuthenticatedRequest, res: Response) => {
     const agentId = cleanText(req.body?.agentId, 200);
     const message = cleanText(req.body?.message, 12000);
@@ -1122,13 +1163,17 @@ router.post(
       throw AppError.fromHttpStatus(400, "agentId and message are required");
     if (!(await owned(agentId, req.user.id))) throw AppError.fromHttpStatus(404, "Agent not found");
     const parsed = normalizeExtraction(
-      await runStructured<ExtractedConfig>({
-        system:
-          "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
-        user: message,
-        tool: AI_TOOLS.trainingExtraction,
-        complexity: "simple",
-        maxTokens: 1200,
+      await runTrainingStructured<ExtractedConfig>({
+        userId: req.user.id,
+        source: "training",
+        options: {
+          system:
+            "You are the BotBound Configuration Engine. Extract only explicit operating rules, concrete facts, and requested tone changes. Be conservative. Return empty arrays and an empty personality string when unclear.",
+          user: message,
+          tool: AI_TOOLS.trainingExtraction,
+          complexity: "simple",
+          maxTokens: 1200,
+        },
       }),
     );
     await persistExtraction(agentId, req.user.id, parsed);

@@ -15,7 +15,8 @@ describe("self-service calling setup", () => {
     expect(phonePage).toContain('{ id: "outbound", label: "Outbound" }');
     expect(phonePage).toContain('{ id: "setup", label: "Lines" }');
     expect(phonePage).toContain('primaryTab === "setup"');
-    expect(phonePage).toContain("<PhoneSetupPanel initialAgentId={activeAgentId} />");
+    expect(phonePage).toMatch(/<PhoneSetupPanel\s+initialAgentId=\{activeAgentId\}/);
+    expect(phonePage).toContain('voiceEnabled={access.includes("voice")}');
     expect(phonePage).toContain(
       'aria-label={primaryTab === "setup" ? "Choose Bot for Lines" : "Filter call history by Bot"}',
     );

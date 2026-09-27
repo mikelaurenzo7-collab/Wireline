@@ -6,7 +6,7 @@ import {
   stripeAccountIdentityFindings,
   stripeAccountIdentitySummary,
 } from "../scripts/lib/stripe-account-identity.mjs";
-import { plansForClient } from "../src/lib/plan-catalog";
+import { plansForClient, STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 const RELEASE_ENV_KEYS = [
   "WIRELINE_SELF_SERVE_BILLING_ENABLED",
@@ -15,6 +15,10 @@ const RELEASE_ENV_KEYS = [
   "VERCEL_ENV",
   "VERCEL_GIT_COMMIT_REF",
   "VERCEL_GIT_COMMIT_SHA",
+  ...STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").flatMap((plan) => [
+    plan.priceIdEnv!,
+    plan.annualPriceIdEnv!,
+  ]),
 ] as const;
 
 function restoreEnvironment(previous: Map<string, string | undefined>) {
@@ -184,6 +188,10 @@ describe("Stripe account identity guard", () => {
       for (const key of RELEASE_ENV_KEYS) delete process.env[key];
       process.env.WIRELINE_SELF_SERVE_BILLING_ENABLED = "true";
       process.env.WIRELINE_LAUNCH_DEMO_MODE = "false";
+      for (const plan of STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")) {
+        process.env[plan.priceIdEnv!] = "price_fixture";
+        process.env[plan.annualPriceIdEnv!] = "price_fixture_annual";
+      }
 
       const closedPaid = plansForClient().filter((plan) => plan.price_usd_monthly > 0);
       expect(closedPaid.every((plan) => !plan.configured && !plan.annual_configured)).toBe(true);
@@ -201,10 +209,18 @@ describe("Stripe account identity guard", () => {
       // The retired exact-SHA variable must not be required for every safe redeploy.
       delete process.env.WIRELINE_SELF_SERVE_BILLING_RELEASE_SHA;
       process.env.VERCEL_GIT_COMMIT_SHA = "a".repeat(40);
-      const openPaid = plansForClient().filter((plan) => plan.price_usd_monthly > 0);
+      const openPaid = plansForClient().filter(
+        (plan) => plan.price_usd_monthly > 0 && plan.checkout_availability === "available",
+      );
+      expect(openPaid).toHaveLength(9);
       expect(openPaid.every((plan) => plan.configured && plan.annual_configured)).toBe(true);
-      expect(openPaid.every((plan) => plan.extra_agent_configured)).toBe(true);
+      expect(openPaid.every((plan) => !plan.extra_agent_configured)).toBe(true);
       expect(openPaid.every((plan) => !plan.contact_sales)).toBe(true);
+      expect(
+        plansForClient()
+          .filter((plan) => plan.channels.includes("sms"))
+          .every((plan) => !plan.configured && !plan.annual_configured),
+      ).toBe(true);
     } finally {
       restoreEnvironment(previous);
     }
@@ -212,7 +228,7 @@ describe("Stripe account identity guard", () => {
 
   it("makes the launch gate consume the canonical merchant-identity constants", () => {
     const launchStatus = readFileSync(
-      new URL("../scripts/generate-launch-status.mjs", import.meta.url),
+      new URL("../scripts/lib/stripe-launch-readiness.mjs", import.meta.url),
       "utf8",
     );
 

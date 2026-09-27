@@ -5,6 +5,7 @@ import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { AppError } from "../api-error";
 import { requireTenantPhoneChannel } from "../channel-entitlements";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
+import { assertNoPendingNativeTwilioPurchaseForBot } from "../orphan-carrier-ledger";
 import { drizzle, log } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import {
@@ -106,8 +107,11 @@ async function assignNativePhoneLineUnfenced(input: {
     : isNull(schema.phoneNumbers.agentId);
   const [updated] = await runCompanyIdentityMutation<
     Array<typeof schema.phoneNumbers.$inferSelect>
-  >(input.userId, "phone_number_changed", (tx) =>
-    tx
+  >(input.userId, "phone_number_changed", async (tx) => {
+    if (input.agentId && current.agentId !== input.agentId) {
+      await assertNoPendingNativeTwilioPurchaseForBot(tx, input.userId, input.agentId);
+    }
+    return tx
       .update(schema.phoneNumbers)
       .set({
         ...(input.agentId !== undefined ? { agentId: input.agentId } : {}),
@@ -123,8 +127,8 @@ async function assignNativePhoneLineUnfenced(input: {
           currentAgentPredicate,
         ),
       )
-      .returning(),
-  );
+      .returning();
+  });
   if (!updated) throw AppError.conflict("The phone assignment changed in another request.");
 
   return {

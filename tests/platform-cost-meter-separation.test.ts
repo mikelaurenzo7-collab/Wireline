@@ -8,6 +8,10 @@ const h = vi.hoisted(() => ({
   evaluate: vi.fn(),
   clear: vi.fn(),
 }));
+vi.mock("../src/lib/paid-allowance-period", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/lib/paid-allowance-period")>();
+  return { ...actual, resolveAllowanceWindow: vi.fn(async () => actual.calendarAllowanceWindow()) };
+});
 vi.mock("../src/lib/server-context", () => {
   const db = {
     select: () => {

@@ -46,6 +46,7 @@ function statusForProvisionFailure(code?: string, activationPending?: boolean): 
   if (code === "PHONE_CAPACITY_REACHED") return 403;
   if (code === "NOT_FOUND") return 404;
   if (code === "CONFLICT") return 409;
+  if (code === "PHONE_ACQUISITION_LIMIT" || code === "PHONE_PURCHASE_PENDING") return 409;
   if (code === "BAD_REQUEST" || code === "VALIDATION_ERROR") return 400;
   return 503;
 }

@@ -13,6 +13,17 @@
 //   1 - missing/invalid required vars
 //   2 - missing/invalid recommended vars and PRODUCTION_CHECK=1
 
+import { FOUNDER_PRICES, PUBLIC_SELF_SERVE_PLAN_IDS } from "./lib/stripe-founder-catalog.mjs";
+
+const salePrices = FOUNDER_PRICES.filter(
+  (price) =>
+    price.recurring && PUBLIC_SELF_SERVE_PLAN_IDS.includes(price.metadata?.wireline_plan_id),
+);
+const configuredSalePrices = salePrices.filter((price) =>
+  String(process.env[price.envTarget] || "").trim(),
+);
+const deferredSalePrices = salePrices.filter((price) => !configuredSalePrices.includes(price));
+
 const postgresProtocols = new Set(["postgres:", "postgresql:"]);
 const localDatabaseHosts = new Set(["localhost", "127.0.0.1", "::1"]);
 const ipv4Re = /^(?:\d{1,3}\.){3}\d{1,3}$/;
@@ -176,27 +187,9 @@ const recommended = [
     "WIRELINE_POSTAL_ADDRESS",
     "Valid physical postal address required before commercial email can send",
   ],
+];
 
-  // New-sale channel catalog. These keys mirror
-  // src/lib/plan-catalog.ts and scripts/lib/stripe-founder-catalog.mjs.
-  ["STRIPE_VOICE_PRICE_ID", "BotBound Calls monthly price"],
-  ["STRIPE_VOICE_ANNUAL_PRICE_ID", "BotBound Calls annual price"],
-  ["STRIPE_EMAIL_PRICE_ID", "BotBound Email monthly price"],
-  ["STRIPE_EMAIL_ANNUAL_PRICE_ID", "BotBound Email annual price"],
-  ["STRIPE_VOICE_EMAIL_PRICE_ID", "BotBound Calls + Email monthly price"],
-  ["STRIPE_VOICE_EMAIL_ANNUAL_PRICE_ID", "BotBound Calls + Email annual price"],
-  ["STRIPE_VOICE_REGULAR_PRICE_ID", "BotBound Calls regular monthly price"],
-  ["STRIPE_VOICE_REGULAR_ANNUAL_PRICE_ID", "BotBound Calls regular annual price"],
-  ["STRIPE_VOICE_HIGH_PRICE_ID", "BotBound Calls high monthly price"],
-  ["STRIPE_VOICE_HIGH_ANNUAL_PRICE_ID", "BotBound Calls high annual price"],
-  ["STRIPE_EMAIL_REGULAR_PRICE_ID", "BotBound Email regular monthly price"],
-  ["STRIPE_EMAIL_REGULAR_ANNUAL_PRICE_ID", "BotBound Email regular annual price"],
-  ["STRIPE_EMAIL_HIGH_PRICE_ID", "BotBound Email high monthly price"],
-  ["STRIPE_EMAIL_HIGH_ANNUAL_PRICE_ID", "BotBound Email high annual price"],
-  ["STRIPE_VOICE_EMAIL_REGULAR_PRICE_ID", "BotBound Calls + Email regular monthly price"],
-  ["STRIPE_VOICE_EMAIL_REGULAR_ANNUAL_PRICE_ID", "BotBound Calls + Email regular annual price"],
-  ["STRIPE_VOICE_EMAIL_HIGH_PRICE_ID", "BotBound Calls + Email high monthly price"],
-  ["STRIPE_VOICE_EMAIL_HIGH_ANNUAL_PRICE_ID", "BotBound Calls + Email high annual price"],
+const optional = [
   // Historical-only keys remain readable; they do not enable new channel checkout.
   ["STRIPE_STARTER_9_PRICE_ID", "BotBound Starter monthly price"],
   ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "BotBound Starter annual price"],
@@ -208,9 +201,7 @@ const recommended = [
   ["STRIPE_BUSINESS_ANNUAL_PRICE_ID", "BotBound Business annual price"],
   ["STRIPE_EXTRA_AGENT_PRICE_ID", "Extra Agent + 50 Minutes recurring add-on"],
   ["STRIPE_LIVE_VIDEO_ADDON_PRICE_ID", "Retired Live Video SKU for leftover webhook matching"],
-];
 
-const optional = [
   [
     "PERPLEXITY_API_KEY",
     "Preferred live public-research vendor; grounded Gemini covers when unset",
@@ -342,6 +333,20 @@ const missingRecommended = [
 ];
 const missingOptional = missing(optional);
 const invalidRequired = invalid(required);
+if (!configuredSalePrices.length) {
+  invalidRequired.push([
+    "NEW_SALE_CATALOG",
+    "Configure at least one available new-sale plan interval before launch.",
+  ]);
+}
+for (const price of configuredSalePrices) {
+  if (!/^price_[a-zA-Z0-9]+$/.test(String(process.env[price.envTarget]).trim())) {
+    invalidRequired.push([
+      price.envTarget,
+      "Configured new-sale intervals must contain a Stripe price ID; remove the value to defer this interval.",
+    ]);
+  }
+}
 for (const key of retiredVoiceEnvKeys) {
   if (String(process.env[key] || "").trim()) {
     invalidRequired.push([
@@ -355,6 +360,17 @@ const invalidRecommended = invalid(recommended);
 const banner = (s) => `\n${"-".repeat(64)}\n  ${s}\n${"-".repeat(64)}`;
 
 console.log(banner("BotBound - production env check"));
+console.log("Deferred new-sale intervals (checkout remains unavailable):");
+for (const price of deferredSalePrices)
+  console.log(
+    "    - " +
+      price.envTarget +
+      " (" +
+      price.metadata.wireline_plan_id +
+      ", " +
+      price.recurring.interval +
+      ")",
+  );
 
 if (
   missingRequired.length === 0 &&

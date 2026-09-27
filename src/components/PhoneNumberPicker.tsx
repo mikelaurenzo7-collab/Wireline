@@ -168,7 +168,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             {title || "Pick a Phone Number"}
           </h3>
           <p className="text-[length:var(--wireline-typography-overline-size)] text-muted/70 mt-1.5">
-            Each agent gets its own number so callers can reach it directly.
+            One new number per included line every 31 days. Reassign existing lines anytime.
           </p>
         </div>
         <ShadButton

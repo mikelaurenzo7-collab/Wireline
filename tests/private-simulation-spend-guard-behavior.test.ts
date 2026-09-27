@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   logError: vi.fn(),
 }));
 
+vi.mock("../src/lib/paid-allowance-period", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/lib/paid-allowance-period")>();
+  return { ...actual, resolveAllowanceWindow: vi.fn(async () => actual.calendarAllowanceWindow()) };
+});
+
 vi.mock("../src/lib/account-environment-policy", () => ({
   assertLiveExternalActionAllowed: mocks.assertLiveAllowed,
   assertPrivateTextSimulationAllowed: mocks.assertPrivateTextAllowed,

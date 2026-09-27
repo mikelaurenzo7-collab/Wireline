@@ -32,17 +32,15 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain("Wire / Launch");
     expect(readme).toContain("Studio / Operations");
     expect(readme).toContain("your Bot across calls, texts, and email");
-    expect(readme).toContain("active paid Bot gets a dedicated production number");
-    expect(readme).toContain("BotBound-managed email identity");
+    expect(readme).toContain("Paid packages include one Bot");
+    expect(readme).toContain("Calls includes a local number; Email includes a managed mailbox.");
     expect(readme).toContain(
-      "Customers choose an available US area code and exact number in Phone setup before activation",
+      "Customers choose an available US area code and exact number in Phone setup.",
     );
-    expect(readme).toContain("managed email setup follows automatically");
+    expect(readme).toContain("Calls-only does not allocate an AgentMail mailbox");
     expect(readme).toContain("never chooses a new number for the customer");
-    expect(readme).toContain(
-      "connected-client drafts stay private until their phone line is activated from BotBound",
-    );
-    expect(readme).toContain("Unused Bot capacity does not pre-provision carrier numbers");
+    expect(readme).toContain("Free Builder Bots receive no live identity");
+    expect(readme).toContain("unused capacity does not pre-provision carrier numbers");
     expectNoTerms(readme, retiredProductTerms);
   });
 
@@ -55,8 +53,8 @@ describe("product documentation and compatibility contract", () => {
     expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
     expect(launchTruth).toContain("Your Next Hire Is a Bot.");
     expect(readme).toContain("Broad public copy uses **Bot** or **Phone Bot**");
-    expect(readme).toContain("same workspace model");
-    expect(readme).toContain("included number");
+    expect(readme).toContain("in the same workspace");
+    expect(readme).toContain("Calls/SMS packages include one shared number");
     expect(readme).toContain("Training");
     expect(readme).toContain("BotBound Command");
     expect(readme).toContain("WIRELINE_2026_ROADMAP.md");

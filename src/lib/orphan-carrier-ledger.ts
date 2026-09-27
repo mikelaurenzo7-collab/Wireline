@@ -1,5 +1,10 @@
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
+import * as schema from "../db/schema";
+import { AppError } from "./api-error";
+import { acquireCompanyIdentityMutationLock } from "./company-identity-mutation";
+import { getIncludedPhoneLineSlots } from "./phone-line-entitlements";
+import { reservePhoneNumberAcquisition } from "./phone-number-acquisition";
 import { drizzle } from "./server-context";
 
 export const NATIVE_TWILIO_E164_ORPHAN_MARKER = "twilio:e164";
@@ -15,12 +20,14 @@ export interface NativeTwilioPurchaseClaim {
   operationId: string;
   phoneNumber: string;
   friendlyName: string;
+  agentId?: string;
 }
 
 type NativeTwilioPurchaseClaimState = {
   operationId: string;
   friendlyName: string;
   phase: NativeTwilioPurchaseClaimPhase;
+  agentId?: string;
 };
 
 function returnedRows(result: unknown): unknown[] {
@@ -52,13 +59,14 @@ export function nativeTwilioPurchaseClaimMarker(operationId: string): string {
 }
 
 function serializeNativeTwilioPurchaseClaimState(
-  claim: Pick<NativeTwilioPurchaseClaim, "operationId" | "friendlyName">,
+  claim: Pick<NativeTwilioPurchaseClaim, "operationId" | "friendlyName" | "agentId">,
   phase: NativeTwilioPurchaseClaimPhase,
 ): string {
   return `${NATIVE_TWILIO_PURCHASE_CLAIM_STATE_PREFIX}${JSON.stringify({
     operationId: claim.operationId,
     friendlyName: claim.friendlyName,
     phase,
+    ...(claim.agentId ? { agentId: claim.agentId } : {}),
   } satisfies NativeTwilioPurchaseClaimState)}`;
 }
 
@@ -75,6 +83,8 @@ export function parseNativeTwilioPurchaseClaimState(
       !isOperationId(parsed.operationId) ||
       typeof parsed.friendlyName !== "string" ||
       parsed.friendlyName !== nativeTwilioPurchaseFriendlyName(parsed.operationId) ||
+      (parsed.agentId !== undefined &&
+        (typeof parsed.agentId !== "string" || !parsed.agentId.trim())) ||
       ![
         "prepared",
         "provider_accepted",
@@ -90,26 +100,140 @@ export function parseNativeTwilioPurchaseClaimState(
   }
 }
 
+/** Caller holds the company identity lock; canonical recovery remains allowed. */
+export async function assertNoPendingNativeTwilioPurchaseForBot(
+  tx: Pick<typeof drizzle, "execute">,
+  userId: string,
+  agentId: string,
+): Promise<void> {
+  const result = await tx.execute(sql`
+    SELECT orphan.vapi_number_id, orphan.last_error
+    FROM public.wireline_orphan_carrier_resources AS orphan
+    WHERE orphan.former_user_id = ${userId}::uuid AND orphan.status = 'pending'
+      AND orphan.vapi_number_id LIKE ${`${NATIVE_TWILIO_PURCHASE_CLAIM_MARKER_PREFIX}%`}
+      AND NOT EXISTS (
+        SELECT 1 FROM public.wireline_phone_numbers AS owned
+        WHERE owned.user_id = orphan.former_user_id AND owned.phone_number = orphan.phone_number
+      )
+  `);
+  const pending = returnedRows(result) as { last_error: string | null }[];
+  if (
+    pending.some((row) => {
+      const state = parseNativeTwilioPurchaseClaimState(row.last_error);
+      return !state?.agentId || state.agentId === agentId;
+    })
+  ) {
+    throw new AppError(
+      409,
+      "PHONE_PURCHASE_PENDING",
+      "A number purchase for this Bot is still being resolved. Refresh your lines before assigning another number.",
+    );
+  }
+}
+
 /**
- * Durably claim an exact E.164 before the Twilio purchase mutation starts.
+ * Reserve a paid phone slot and target Bot before the Twilio mutation starts.
  *
  * The existing platform-global orphan ledger is intentionally reused: it
  * already survives terminal tenant erasure and is serviced by the carrier
  * reconciler. Its open `(former_user_id, phone_number)` uniqueness also makes
- * an unresolved attempt a hard duplicate-purchase fence.
+ * an unresolved attempt a hard duplicate-purchase fence. The identity lock
+ * serializes different-number purchases too: releasing a losing allocation
+ * cannot refund the carrier's upfront monthly charge. Uncertain claims retain
+ * capacity until reconciliation proves ownership or removal, regardless of age.
  */
 export async function createPendingNativeTwilioPurchaseClaim(input: {
   userId: string;
   operationId: string;
   phoneNumber: string;
+  agentId?: string;
 }): Promise<NativeTwilioPurchaseClaim> {
   const claim: NativeTwilioPurchaseClaim = {
     userId: input.userId,
     operationId: input.operationId,
     phoneNumber: input.phoneNumber,
     friendlyName: nativeTwilioPurchaseFriendlyName(input.operationId),
+    ...(input.agentId ? { agentId: input.agentId } : {}),
   };
-  const result = await drizzle.execute(sql`
+  return drizzle.transaction(async (tx) => {
+    await acquireCompanyIdentityMutationLock(tx, input.userId);
+    const slots = await getIncludedPhoneLineSlots(input.userId, tx);
+    if (slots <= 0) {
+      throw new AppError(
+        402,
+        "PHONE_CAPACITY_REACHED",
+        "An active plan with an available phone number is required.",
+      );
+    }
+    if (input.agentId) {
+      const [agent] = await tx
+        .select({ id: schema.agents.id })
+        .from(schema.agents)
+        .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
+        .limit(1);
+      if (!agent) throw AppError.notFound("Bot not found.");
+    }
+    const owned = await tx
+      .select({
+        phoneNumber: schema.phoneNumbers.phoneNumber,
+        agentId: schema.phoneNumbers.agentId,
+      })
+      .from(schema.phoneNumbers)
+      .where(eq(schema.phoneNumbers.userId, input.userId));
+    if (
+      owned.some(
+        (line) =>
+          line.phoneNumber === claim.phoneNumber ||
+          (input.agentId && line.agentId === input.agentId),
+      )
+    ) {
+      throw AppError.conflict(
+        "This number or Bot already has a line. Refresh your lines before trying again.",
+      );
+    }
+    const result = await tx.execute(sql`
+      SELECT phone_number, vapi_number_id, last_error
+      FROM public.wireline_orphan_carrier_resources
+      WHERE former_user_id = ${input.userId}::uuid AND status = 'pending'
+    `);
+    const ownedNumbers = new Set(owned.map((line) => line.phoneNumber));
+    const pending = (
+      returnedRows(result) as {
+        phone_number: string;
+        vapi_number_id: string | null;
+        last_error: string | null;
+      }[]
+    ).filter((row) => !ownedNumbers.has(row.phone_number));
+    const botPending =
+      input.agentId &&
+      pending.some((row) => {
+        if (!row.vapi_number_id?.startsWith(NATIVE_TWILIO_PURCHASE_CLAIM_MARKER_PREFIX))
+          return false;
+        const state = parseNativeTwilioPurchaseClaimState(row.last_error);
+        // Older claims lack Bot attribution: do not assume they belong to a
+        // different Bot and buy again while their outcome is unresolved.
+        return !state?.agentId || state.agentId === input.agentId;
+      });
+    if (botPending || pending.some((row) => row.phone_number === claim.phoneNumber)) {
+      throw new AppError(
+        409,
+        "PHONE_PURCHASE_PENDING",
+        "A phone purchase is still being resolved. Refresh your lines before trying again.",
+      );
+    }
+    if (owned.length + pending.length >= slots) {
+      throw new AppError(
+        409,
+        "PHONE_CAPACITY_REACHED",
+        "Your included phone numbers are allocated or awaiting carrier confirmation. Manage your existing numbers in Calls.",
+      );
+    }
+    await reservePhoneNumberAcquisition(tx, {
+      userId: input.userId,
+      operationId: input.operationId,
+      slots,
+    });
+    const inserted = await tx.execute(sql`
     INSERT INTO public.wireline_orphan_carrier_resources
       (former_user_id, phone_number, vapi_number_id, last_error, status)
     VALUES (
@@ -123,10 +247,15 @@ export async function createPendingNativeTwilioPurchaseClaim(input: {
     DO NOTHING
     RETURNING id
   `);
-  if (returnedRows(result).length !== 1) {
-    throw new Error("A native Twilio purchase claim is already pending for this number.");
-  }
-  return claim;
+    if (returnedRows(inserted).length !== 1) {
+      throw new AppError(
+        409,
+        "PHONE_PURCHASE_PENDING",
+        "A phone purchase is still being resolved. Refresh your lines before trying again.",
+      );
+    }
+    return claim;
+  });
 }
 
 /** Keep the pre-provider claim live while recording only non-PII lifecycle state. */

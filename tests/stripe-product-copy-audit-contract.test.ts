@@ -1,23 +1,45 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { FOUNDER_PRODUCTS } from "../scripts/lib/stripe-founder-catalog.mjs";
 
 const catalog = readFileSync("scripts/lib/stripe-founder-catalog.mjs", "utf8");
 const audit = readFileSync("scripts/lib/stripe-product-copy.mjs", "utf8");
 const reconciler = readFileSync("scripts/setup-stripe-catalog.mjs", "utf8");
 
-const ACTIVE_PRODUCT_COPY = [
-  "1 live Voice Bot, 1 production number, 50 voice minutes/month, email + SMS, and no automatic overages.",
-  "2 live Bots, 2 production numbers, 100 pooled voice minutes/month, Lead Hunt, email + SMS, and no automatic overages.",
-  "Up to 5 live Bots, 190 pooled voice minutes/month, routing, approvals, CRM, email + SMS, and no automatic overages.",
-  "Up to 15 live Bots, 350 pooled voice minutes/month, routing, analytics, CRM, email + SMS, and no automatic overages.",
-  "Custom plan for 25+ Bots with advanced governance, SSO, integrations, retention controls, security review, and implementation support.",
-  "+1 live Bot, +1 production-number slot, and +50 guaranteed voice minutes/month.",
-  "Prepaid Runtime Balance for usage beyond included capacity. No automatic overages.",
-] as const;
-
 describe("Stripe customer-facing product truth", () => {
-  it("keeps the active founder manifest aligned with concise supported Bot copy", () => {
-    for (const description of ACTIVE_PRODUCT_COPY) expect(catalog).toContain(description);
+  it("keeps active channel copy aligned with its included capacity and bounded completion policy", () => {
+    const packages = FOUNDER_PRODUCTS.filter(
+      (product) => product.metadata.wireline_billing_model === "channel_package",
+    );
+    expect(packages).toHaveLength(9);
+    for (const product of packages) {
+      const channels = product.metadata.wireline_channels.split(",");
+      const count = Number(product.metadata.included_agents);
+      expect(product.description).toContain(`${count} Bot${count === 1 ? "" : "s"} with`);
+      expect(count).toBe(1);
+      expect(product.description).toContain("No automatic extra charges.");
+      expect(product.description.includes("and email delivery")).toBe(channels.includes("email"));
+      expect(channels).not.toContain("sms");
+      if (channels.includes("voice")) {
+        expect(product.description).toContain(
+          `${product.metadata.included_voice_minutes} live-call minutes/month.`,
+        );
+        expect(product.description).toContain(
+          "Up to 10 additional completion minutes within the call limit",
+        );
+        expect(product.description).toContain(
+          "any balance due pauses new calls and prepaid extras",
+        );
+      } else {
+        expect(product.description).not.toContain("live-call minutes");
+        expect(product.description).not.toContain("completion minutes");
+      }
+    }
+    expect(
+      FOUNDER_PRODUCTS.find((product) => product.key === "conversation_balance")?.description,
+    ).toBe(
+      "Prepaid Runtime Balance for usage beyond included capacity. No automatic extra charges.",
+    );
 
     // Live Video is retired and must not quietly re-enter the active catalog.
     expect(catalog).not.toContain("Live Video for a paid business agent");

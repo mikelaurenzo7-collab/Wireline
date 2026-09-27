@@ -45,6 +45,7 @@ export const WIRELINE_PLANS = [
         ? [`${plan.included_mailboxes} managed Bot mailbox included`]
         : []),
       `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance/month`,
+      "Managed AI and any included call minutes renew on the monthly subscription anniversary, including annual plans; no rollover",
       ...(plan.runtime_allowance_usd_monthly
         ? [`$${plan.runtime_allowance_usd_monthly.toFixed(2)} Runtime Allowance/month`]
         : []),

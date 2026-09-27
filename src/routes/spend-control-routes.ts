@@ -215,6 +215,8 @@ router.get(
 
       res.json({
         period: snap.period,
+        start_at: snap.start_at,
+        reset_at: snap.reset_at,
         month_to_date_usd: Number(snap.mtdCost.toFixed(4)),
         monthly_limit_usd: limit,
         maximum_limit_usd: maximumLimitUsd,

@@ -83,7 +83,9 @@ describe("knowledge asset ingestion API", () => {
     // The refusal has to precede extraction, or the corrupt bytes are billed
     // to a provider before anyone notices.
     const guard = handler.indexOf("KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS");
-    expect(guard).toBeLessThan(handler.indexOf("extractImageAsset(fileName, dataUrl)"));
+    expect(guard).toBeLessThan(
+      handler.indexOf("extractImageAsset(fileName, dataUrl, req.user.id)"),
+    );
   });
 
   it("discloses how much of an over-long text asset was read", () => {

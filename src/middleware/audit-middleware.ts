@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { drizzle, log, quotaTracker } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, lt, sql } from "drizzle-orm";
+import { calendarAllowanceWindow, resolveAllowanceWindow } from "../lib/paid-allowance-period";
+import { AppError } from "../lib/api-error";
 import { enqueue, writeTransactionConfig } from "../lib/job-queue";
 import { reportError } from "../lib/error-reporter";
 import { getErrorMessage } from "../lib/server-utils";
@@ -448,8 +450,6 @@ export async function reservePlatformCostRecord(opts: {
   if (!(opts.costUsd > 0) || !Number.isFinite(opts.costUsd)) {
     return { reserved: false, reason: "unavailable" };
   }
-  const period = new Date().toISOString().slice(0, 7);
-  const periodStart = new Date(`${period}-01T00:00:00.000Z`);
   const meter = providerSpendMeter({ ...opts, metadata: opts.requestMeta });
 
   try {
@@ -502,6 +502,11 @@ export async function reservePlatformCostRecord(opts: {
         }
       }
 
+      const reservedAt = new Date();
+      const window =
+        meter === "managed_ai"
+          ? await resolveAllowanceWindow(tx, opts.userId, reservedAt)
+          : calendarAllowanceWindow(reservedAt);
       const monthlyLimitUsd = Number(budget.monthlyLimitUsd || 0);
       const hardCapEnabled = budget.enabled !== false && budget.hardCap === true;
       if (meter === "managed_ai" && hardCapEnabled && !(monthlyLimitUsd > 0)) {
@@ -516,7 +521,8 @@ export async function reservePlatformCostRecord(opts: {
         .where(
           and(
             eq(schema.auditLog.userId, opts.userId),
-            gte(schema.auditLog.createdAt, periodStart),
+            gte(schema.auditLog.createdAt, window.start),
+            lt(schema.auditLog.createdAt, window.end),
             managedAiSpendPredicate(),
           ),
         );
@@ -529,7 +535,7 @@ export async function reservePlatformCostRecord(opts: {
         return {
           reserved: false,
           reason: "cap_reached",
-          period,
+          period: window.key,
           monthToDateUsd,
           monthlyLimitUsd,
         } as const;
@@ -549,6 +555,7 @@ export async function reservePlatformCostRecord(opts: {
           costUsd: String(opts.costUsd),
           latencyMs: 0,
           idempotencyKey,
+          createdAt: reservedAt,
           metadata: { ...(opts.requestMeta || {}), accounting_state: "reserved_before_provider" },
         })
         .returning({ id: schema.auditLog.id });
@@ -568,6 +575,7 @@ export async function reservePlatformCostRecord(opts: {
     clearBudgetCache(opts.userId);
     return decision;
   } catch (error) {
+    if (error instanceof AppError && error.code === "PAID_ALLOWANCE_SYNC_REQUIRED") throw error;
     log.error("Platform cost reservation failed closed", {
       userId: opts.userId,
       action: opts.action,

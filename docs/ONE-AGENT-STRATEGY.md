@@ -31,11 +31,12 @@ Use:
 
 > Your Bot for calls, texts, and email.
 
-> Build free. Email from $9/month. Calls from $15/month.
+> Build free. Email from $9/month. Calls from $19/month.
 
 > Start with one job. Choose the channels you need.
 
-Calls + Email is $21/month. SMS combinations remain visible with activation
+Calls + Email is $25/month. Calls capacity is 50 / 250 / 500 minutes per month;
+every capacity includes one Bot and one call at a time. SMS combinations remain visible with activation
 unavailable until messaging readiness and cost checks pass. Never imply that a
 Calls-only package includes a mailbox or that Email includes a phone number.
 

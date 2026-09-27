@@ -117,6 +117,22 @@ beforeEach(() => {
 });
 
 describe("phone number picker recovery", () => {
+  it("discloses the acquisition limit and keeps the eligible date visible after a blocked purchase", async () => {
+    const fetchDefault = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation(async (url: string) =>
+      url.endsWith("/claim")
+        ? json({ error: "You can choose a new number on October 28, 2026." }, 409)
+        : fetchDefault(url),
+    );
+    await mount();
+    expect(textOf(render())).toContain("One new number per included line every 31 days.");
+    await button("(312) 555-0120").props.onClick!();
+    expect(alerts()).toEqual([
+      expect.stringContaining("You can choose a new number on October 28, 2026."),
+    ]);
+    expect(h.onClaim).not.toHaveBeenCalled();
+  });
+
   it.each(["claim", "provision"])(
     "keeps a failed %s visible after inventory reload and allows a successful retry",
     async (operation) => {

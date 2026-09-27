@@ -19,9 +19,15 @@ vi.mock("../src/lib/voice/openai-sip-worker-config", () => ({
 }));
 
 import { evaluateLaunchReadiness } from "../src/lib/launch-readiness";
+import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 beforeEach(() => {
   h.federalDncConfigured = true;
+  for (const plan of STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels")) {
+    vi.stubEnv(plan.priceIdEnv!, "");
+    vi.stubEnv(plan.annualPriceIdEnv!, "");
+  }
+  vi.stubEnv("STRIPE_VOICE_PRICE_ID", "price_fixture");
   for (const name of [
     "OPENAI_API_KEY",
     "OPENAI_PROJECT_ID",
@@ -35,6 +41,28 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("outbound capability readiness", () => {
+  it("requires at least one configured sale interval and reports held channels explicitly", () => {
+    vi.stubEnv("STRIPE_VOICE_PRICE_ID", "");
+    expect(evaluateLaunchReadiness().launch_blockers).toContain("NO_CONFIGURED_NEW_SALE_PRICES");
+    vi.stubEnv("STRIPE_EMAIL_ANNUAL_PRICE_ID", "price_fixture");
+    const report = evaluateLaunchReadiness();
+    expect(report.campaign_ready).toBe(true);
+    expect(report.new_sale_catalog.configured).toMatchObject([
+      { plan_id: "email", interval: "year" },
+    ]);
+    expect(report.new_sale_catalog.deferred).toHaveLength(17);
+  });
+
+  it("keeps transactional delivery mandatory while managed-mail readiness follows offered channels", () => {
+    vi.stubEnv("AGENTMAIL_API_KEY", "");
+    expect(evaluateLaunchReadiness().campaign_ready).toBe(true);
+    expect(
+      evaluateLaunchReadiness().capabilities.find((item) => item.id === "managed_email_ready")
+        ?.blockers,
+    ).toEqual(["AGENTMAIL_API_KEY"]);
+    vi.stubEnv("STRIPE_EMAIL_PRICE_ID", "price_fixture");
+    expect(evaluateLaunchReadiness().launch_blockers).toContain("AGENTMAIL_API_KEY");
+  });
   it("does not certify campaigns from configured providers while recipient consent is unsupported", () => {
     const report = evaluateLaunchReadiness();
     expect(report.campaign_ready).toBe(true);

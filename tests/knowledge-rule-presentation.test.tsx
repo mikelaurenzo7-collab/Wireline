@@ -1,23 +1,32 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import KnowledgeBaseClaude from "../src/components/KnowledgeBaseClaude";
+import { authFetch, safeJson } from "../src/lib/api";
 
 const h = vi.hoisted(() => ({
   cursor: 0,
   content: "",
   knowledge: [] as Array<{ id: number; content: string }>,
+  imageUploads: undefined as boolean | undefined,
+  setters: [] as ReturnType<typeof vi.fn>[],
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
   useState(initial: unknown) {
     const index = h.cursor++;
+    const setter = vi.fn();
+    h.setters[index] = setter;
     return [
       index === 0
-        ? { directives: [{ id: 1, content: h.content }], knowledge: h.knowledge }
+        ? {
+            directives: [{ id: 1, content: h.content }],
+            knowledge: h.knowledge,
+            capabilities: { image_uploads: h.imageUploads },
+          }
         : index === 1
           ? false
           : initial,
-      vi.fn(),
+      setter,
     ];
   },
   useRef: (initial: unknown) => ({ current: initial }),
@@ -50,6 +59,71 @@ function paragraphs(content: string) {
 beforeEach(() => {
   h.cursor = 0;
   h.knowledge = [];
+  h.imageUploads = undefined;
+  h.setters = [];
+  vi.clearAllMocks();
+});
+
+describe("knowledge upload capabilities", () => {
+  it.each([undefined, false, true])(
+    "matches chooser and help to server capability %s",
+    (available) => {
+      h.imageUploads = available;
+      const rendered = KnowledgeBaseClaude({ agentId: "bot-a" });
+      const picker = elements(rendered).find((node) => node.type === "input") as ReactElement<{
+        accept: string;
+      }>;
+      expect(picker.props.accept).toContain(".txt,.csv,.md,.markdown");
+      expect(picker.props.accept.includes("image/png")).toBe(available === true);
+      expect(text(rendered).includes("images (PNG, JPG, WEBP, GIF)")).toBe(available === true);
+    },
+  );
+
+  it.each(["image/png", ""])(
+    "rejects dropped images before reading or uploading (%s)",
+    async (type) => {
+      const file = { name: "menu.png", type, size: 100, text: vi.fn() };
+      const dropZone = elements(KnowledgeBaseClaude({ agentId: "bot-a" })).find(
+        (node) => "onDrop" in node.props,
+      ) as ReactElement<{ onDrop: (event: unknown) => void }>;
+      dropZone.props.onDrop({ preventDefault: vi.fn(), dataTransfer: { files: [file] } });
+      await vi.waitFor(() =>
+        expect(h.setters[7]).toHaveBeenCalledWith(
+          "Image uploads are unavailable. Upload TXT, MD or CSV.",
+        ),
+      );
+      expect(file.text).not.toHaveBeenCalled();
+      expect(authFetch).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps text uploads working when images are unavailable", async () => {
+    vi.mocked(authFetch).mockResolvedValue({ ok: true } as Response);
+    vi.mocked(safeJson).mockResolvedValue({ summary: "Knowledge saved." });
+    const file = {
+      name: "hours.txt",
+      type: "text/plain",
+      size: 100,
+      text: vi.fn().mockResolvedValue("Open from nine until five."),
+    };
+    const dropZone = elements(KnowledgeBaseClaude({ agentId: "bot-a" })).find(
+      (node) => "onDrop" in node.props,
+    ) as ReactElement<{ onDrop: (event: unknown) => void }>;
+    dropZone.props.onDrop({ preventDefault: vi.fn(), dataTransfer: { files: [file] } });
+    await vi.waitFor(() => expect(authFetch).toHaveBeenCalledTimes(1));
+    expect(authFetch).toHaveBeenCalledWith(
+      "/api/agent-config/bot-a/assets",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          fileName: "hours.txt",
+          mimeType: "text/plain",
+          text: "Open from nine until five.",
+        }),
+      }),
+    );
+    await vi.waitFor(() => expect(h.setters[5]).toHaveBeenCalledWith("Knowledge saved."));
+  });
 });
 
 describe("knowledge rule presentation", () => {

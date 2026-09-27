@@ -15,9 +15,10 @@ export type TenantChannelEntitlements = {
 /** Server-read identity and subscription are the only sources of channel authority. */
 export async function getTenantChannelEntitlements(
   userId: string,
+  executor: Pick<typeof drizzle, "select"> = drizzle,
 ): Promise<TenantChannelEntitlements> {
   try {
-    const [row] = await drizzle
+    const [row] = await executor
       .select({
         email: schema.users.email,
         plan: schema.subscriptions.plan,

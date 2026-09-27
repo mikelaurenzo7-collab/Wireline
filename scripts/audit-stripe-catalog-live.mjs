@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Read-only audit of the live Stripe account against Founder Early Access.
+ * Read-only audit of the live Stripe account against the current channel catalog.
  *
  * This script performs no writes. It validates the exact active product and
- * price set, then checks that live subscriptions, payment links, and open
- * checkouts do not depend on superseded catalog objects.
+ * price set, preserves historical subscriptions, and reports superseded prices
+ * still offered through payment links or open checkouts.
  */
 
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import Stripe from "stripe";
 
 import {
@@ -76,16 +78,7 @@ async function liveSubscriptions(stripe) {
   );
 }
 
-async function main() {
-  const secret = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!secret) {
-    console.error(
-      "STRIPE_SECRET_KEY must be injected by the authorized host. See npm run stripe:audit-live.",
-    );
-    process.exit(1);
-  }
-
-  const stripe = new Stripe(secret, { apiVersion: API_VERSION });
+export async function auditStripeCatalog(stripe, { env = process.env } = {}) {
   const account = await stripe.accounts.retrieve();
   const products = await collect(stripe.products.list({ limit: 100 }));
   const activeProducts = products.filter((product) => product.active);
@@ -108,6 +101,18 @@ async function main() {
 
   for (const product of activeProducts) {
     if (!expectedProductNames.has(product.name)) {
+      if (isHistoricalCatalogObject(product)) {
+        addFinding(
+          findings,
+          "warning",
+          "Historical product retained for read-only compatibility.",
+          {
+            product_id: product.id,
+            product: product.name,
+          },
+        );
+        continue;
+      }
       addFinding(findings, "error", `Unexpected active product: ${product.name}`, {
         product_id: product.id,
       });
@@ -115,6 +120,8 @@ async function main() {
   }
 
   const canonicalPriceIds = new Set();
+  const enabledSalePriceIds = new Set();
+  const heldSalePriceSpecs = new Map();
 
   for (const expected of FOUNDER_PRICES) {
     const matches = expected.lookupKey
@@ -135,6 +142,14 @@ async function main() {
     const product = productById.get(productIdOf(price));
     const expectedProduct = PRODUCT_BY_KEY.get(expected.productKey);
     canonicalPriceIds.add(price.id);
+    if (
+      !expected.recurring ||
+      (expected.envTarget && String(env[expected.envTarget] || "").trim() === price.id)
+    ) {
+      enabledSalePriceIds.add(price.id);
+    } else {
+      heldSalePriceSpecs.set(price.id, expected);
+    }
 
     if (price.currency !== "usd" || price.unit_amount !== expected.unitAmount) {
       addFinding(findings, "error", `Price amount drift for ${expected.key}.`, {
@@ -226,10 +241,16 @@ async function main() {
   for (const { link, lineItems } of paymentLinks) {
     for (const item of lineItems) {
       const priceId = priceIdOf(item);
-      if (priceId && !canonicalPriceIds.has(priceId) && !isHistoricalCatalogObject(item.price)) {
+      if (priceId && !canonicalPriceIds.has(priceId)) {
         addFinding(findings, "error", "Active payment link uses a noncanonical price.", {
           payment_link_id: link.id,
           price_id: priceId,
+        });
+      } else if (priceId && !enabledSalePriceIds.has(priceId)) {
+        addFinding(findings, "error", "Active payment link sells a held plan interval.", {
+          payment_link_id: link.id,
+          price_id: priceId,
+          env_key: heldSalePriceSpecs.get(priceId)?.envTarget,
         });
       }
     }
@@ -238,16 +259,22 @@ async function main() {
   for (const { session, lineItems } of checkoutSessions) {
     for (const item of lineItems) {
       const priceId = priceIdOf(item);
-      if (priceId && !canonicalPriceIds.has(priceId) && !isHistoricalCatalogObject(item.price)) {
-        addFinding(findings, "warning", "Open checkout uses a noncanonical price.", {
+      if (priceId && !canonicalPriceIds.has(priceId)) {
+        addFinding(findings, "error", "Open checkout uses a noncanonical price.", {
           checkout_session_id: session.id,
           price_id: priceId,
+        });
+      } else if (priceId && !enabledSalePriceIds.has(priceId)) {
+        addFinding(findings, "error", "Open checkout sells a held plan interval.", {
+          checkout_session_id: session.id,
+          price_id: priceId,
+          env_key: heldSalePriceSpecs.get(priceId)?.envTarget,
         });
       }
     }
   }
 
-  const summary = {
+  return {
     account_id: account.id,
     catalog_version: FOUNDER_CATALOG_VERSION,
     active_products: activeProducts.map((product) => product.name).sort(),
@@ -258,12 +285,25 @@ async function main() {
     open_checkout_session_count: checkoutSessions.length,
     findings,
   };
-
-  console.log(JSON.stringify(summary, null, 2));
-  if (findings.some((finding) => finding.level === "error")) process.exit(1);
 }
 
-main().catch((error) => {
-  console.error(error.message || error);
-  process.exit(1);
-});
+async function main() {
+  const secret = process.env.STRIPE_SECRET_KEY?.trim();
+  if (!secret) {
+    throw new Error(
+      "STRIPE_SECRET_KEY must be injected by the authorized host. See npm run stripe:audit-live.",
+    );
+  }
+
+  const stripe = new Stripe(secret, { apiVersion: API_VERSION });
+  const summary = await auditStripeCatalog(stripe);
+  console.log(JSON.stringify(summary, null, 2));
+  if (summary.findings.some((finding) => finding.level === "error")) process.exitCode = 1;
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((error) => {
+    console.error(error.message || error);
+    process.exitCode = 1;
+  });
+}

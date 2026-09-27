@@ -5,6 +5,7 @@ import { planById } from "./plan-catalog";
 import { isOwnerEmail } from "./platform-owner-emails";
 import { drizzle } from "./server-context";
 import { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
+import { resolveAllowanceWindow } from "./paid-allowance-period";
 
 export { VOICE_COMPLETION_GRACE_MINUTES } from "./voice-funding-policy";
 
@@ -84,7 +85,7 @@ function savedFunding(row: FundingReceipt): VoiceCallFunding {
     typeof planId !== "string" ||
     !planId ||
     typeof periodKey !== "string" ||
-    !/^\d{4}-\d{2}$/.test(periodKey)
+    !/^(?:\d{4}-\d{2}|paid:[A-Za-z0-9_]+:\d{1,16})$/.test(periodKey)
   ) {
     throw AppError.serviceUnavailable("The call funding receipt could not be verified.");
   }
@@ -211,7 +212,7 @@ export async function reserveVoiceCallFunding(
   }
 
   const balance = await balanceUsd(tx, opts.userId);
-  const periodKey = new Date().toISOString().slice(0, 7);
+  const { key: periodKey } = await resolveAllowanceWindow(tx, opts.userId);
   const [usage] = await tx
     .select({ used: schema.quotaUsage.used })
     .from(schema.quotaUsage)

@@ -16,7 +16,10 @@ const read = (path: string) =>
  * downstream assertions only run once the probe succeeded.
  */
 describe("launch blockers distinguish a failed check from a failed probe", () => {
-  const script = read("scripts/generate-launch-status.mjs");
+  const script = [
+    read("scripts/generate-launch-status.mjs"),
+    read("scripts/lib/stripe-launch-readiness.mjs"),
+  ].join("\n");
 
   const PROBES = [
     { name: "database", unreachable: "database_unreachable", derived: "recap_agent_index_missing" },

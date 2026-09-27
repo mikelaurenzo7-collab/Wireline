@@ -9,7 +9,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { drizzle, log } from "./server-context";
 import * as schema from "../db/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
+import { eq, and, gte, lt, sql } from "drizzle-orm";
+import { resolveAllowanceWindow } from "./paid-allowance-period";
+import { AppError } from "./api-error";
 import { recordDailySpendUsd, getDailySpendUsd } from "./daily-spend-accumulator";
 import { getErrorMessage } from "./server-utils";
 import { resolveHardSpendCapStatus } from "./spend-budget-policy";
@@ -32,6 +34,8 @@ interface BudgetSnapshot {
   budget: BudgetRow | null;
   mtdCost: number;
   period: string;
+  reset_at: string;
+  start_at: string;
 }
 
 interface BudgetCacheEntry {
@@ -39,18 +43,12 @@ interface BudgetCacheEntry {
   budget: BudgetRow | null;
   mtdCost: number;
   period: string;
+  reset_at: string;
+  start_at: string;
 }
 
 const budgetCache = new Map<string, BudgetCacheEntry>();
 const BUDGET_CACHE_TTL_MS = 60 * 1000;
-
-function currentPeriod(now = new Date()): string {
-  return now.toISOString().slice(0, 7);
-}
-
-function periodStartIso(period: string): Date {
-  return new Date(`${period}-01T00:00:00.000Z`);
-}
 
 export function clearBudgetCache(userId: string) {
   budgetCache.delete(userId);
@@ -60,7 +58,8 @@ export async function getBudgetSnapshot(
   userId: string,
   bypassCache: boolean = false,
 ): Promise<BudgetSnapshot> {
-  const period = currentPeriod();
+  const window = await resolveAllowanceWindow(drizzle, userId);
+  const period = window.key;
   const cached = budgetCache.get(userId);
   if (
     !bypassCache &&
@@ -92,7 +91,8 @@ export async function getBudgetSnapshot(
       .where(
         and(
           eq(schema.auditLog.userId, userId),
-          gte(schema.auditLog.createdAt, periodStartIso(period)),
+          gte(schema.auditLog.createdAt, window.start),
+          lt(schema.auditLog.createdAt, window.end),
           managedAiSpendPredicate(),
         ),
       )
@@ -112,6 +112,8 @@ export async function getBudgetSnapshot(
       : null,
     mtdCost,
     period,
+    reset_at: window.end.toISOString(),
+    start_at: window.start.toISOString(),
   };
   budgetCache.set(userId, entry);
   return entry;
@@ -130,7 +132,7 @@ function getAuthoritativeBudgetSnapshot(userId: string): Promise<BudgetSnapshot>
 
 function bumpBudgetCache(userId: string, deltaUsd: number) {
   const cached = budgetCache.get(userId);
-  if (!cached || cached.period !== currentPeriod()) return;
+  if (!cached || Date.now() >= Date.parse(cached.reset_at)) return;
   cached.mtdCost += deltaUsd;
 }
 
@@ -257,6 +259,11 @@ async function enforcePersistedSpendCap(
       hard_cap: true,
     });
   } catch (err) {
+    if (err instanceof AppError && err.code === "PAID_ALLOWANCE_SYNC_REQUIRED") {
+      return res
+        .status(err.status)
+        .json({ code: err.code, error: err.message, recovery_path: "/settings/billing" });
+    }
     log.error("enforceSpendCap could not verify budget", {
       userId,
       surface,

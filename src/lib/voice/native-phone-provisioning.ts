@@ -8,6 +8,7 @@ import { ensureTenantTelecomDefaults, findAgentPhoneLine } from "../agent-phone-
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
 import { getIncludedPhoneLineSlots } from "../phone-line-entitlements";
 import {
+  assertNoPendingNativeTwilioPurchaseForBot,
   clearNativeTwilioPurchaseClaim,
   NATIVE_TWILIO_PURCHASE_OPERATION_LEASE_MS,
 } from "../orphan-carrier-ledger";
@@ -61,7 +62,6 @@ async function persistPurchasedNumber(input: {
   userId: string;
   agentId?: string;
   campaignLabel?: string;
-  phoneSlots: number;
   purchase: PurchasedNativeNumber;
 }): Promise<PersistOutcome> {
   return runCompanyIdentityMutation(input.userId, "phone_number_changed", async (tx) => {
@@ -83,7 +83,10 @@ async function persistPurchasedNumber(input: {
       .select({ held: sql<number>`count(*)` })
       .from(schema.phoneNumbers)
       .where(eq(schema.phoneNumbers.userId, input.userId));
-    if (Number(held || 0) >= input.phoneSlots) return { kind: "capacity" as const };
+    // Re-read on this transaction: a subscription may change while the carrier
+    // request is in flight. The pre-purchase reservation does not freeze billing.
+    const phoneSlots = await getIncludedPhoneLineSlots(input.userId, tx);
+    if (Number(held || 0) >= phoneSlots) return { kind: "capacity" as const };
 
     const [line] = await tx
       .insert(schema.phoneNumbers)
@@ -252,6 +255,8 @@ async function provisionNativeTenantNumberUnfenced(input: {
         .limit(1);
       if (existing) return existing;
 
+      await assertNoPendingNativeTwilioPurchaseForBot(tx, input.userId, agentId);
+
       const [reusable] = await tx
         .select()
         .from(schema.phoneNumbers)
@@ -289,7 +294,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
     return {
       ok: false,
       code: "PHONE_CAPACITY_REACHED",
-      error: `Your plan includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+      error: `All ${phoneSlots} included phone number${phoneSlots === 1 ? " is" : "s are"} allocated. Manage your existing numbers in Calls.`,
     };
   }
 
@@ -309,7 +314,6 @@ async function provisionNativeTenantNumberUnfenced(input: {
       userId: input.userId,
       agentId: input.agentId,
       campaignLabel: input.campaignLabel,
-      phoneSlots,
       purchase,
     });
   } catch (error) {
@@ -332,7 +336,7 @@ async function provisionNativeTenantNumberUnfenced(input: {
       return {
         ok: false,
         code: "PHONE_CAPACITY_REACHED",
-        error: `Your plan includes ${phoneSlots} dedicated line${phoneSlots === 1 ? "" : "s"}; upgrade or add an Extra Agent for more.`,
+        error: `All ${phoneSlots} included phone number${phoneSlots === 1 ? " is" : "s are"} allocated. Manage your existing numbers in Calls.`,
       };
     }
     if (input.agentId) {

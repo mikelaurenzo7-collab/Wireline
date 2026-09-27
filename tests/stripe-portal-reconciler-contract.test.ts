@@ -165,7 +165,10 @@ describe("Stripe customer portal reconciliation", () => {
       scripts?: Record<string, string>;
     };
     const route = read("src/routes/billing-portal-readiness-routes.ts");
-    const launchStatus = read("scripts/generate-launch-status.mjs");
+    const launchStatus = [
+      read("scripts/generate-launch-status.mjs"),
+      read("scripts/lib/stripe-launch-readiness.mjs"),
+    ].join("\n");
     const webhookSecretSync = read("scripts/sync-stripe-webhook-secret-to-vercel.mjs");
 
     expect(script).toContain("assertStripePortalOperatorEnvironment(process.env, {");

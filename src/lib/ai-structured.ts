@@ -9,7 +9,7 @@ export type StructuredToolSchema = {
   description?: string;
   input_schema: Record<string, unknown>;
 };
-type StructuredOptions = {
+export type StructuredOptions = {
   system: string;
   user: string;
   tool: StructuredToolSchema;

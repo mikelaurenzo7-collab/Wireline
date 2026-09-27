@@ -340,6 +340,38 @@ describe("Studio inspector draft lifecycle", () => {
     expect(drafts.read(h.botId).dirty).toBe(true);
   });
 
+  it.each([
+    [402, "Monthly usage limit reached. Open Billing to review your allowance."],
+    [503, "Open Billing and refresh your subscription before starting new work."],
+  ])(
+    "preserves the actionable training refusal (%s) and confirmed manual setup",
+    async (status, error) => {
+      await mount();
+      change("setup-greeting", "Welcome to the repair shop.");
+      change("setup-knowledge", "Open at 7am.");
+      button("Warm").props.onClick!();
+      const usual = h.fetch.getMockImplementation()!;
+      h.fetch.mockImplementation((path: string, options?: RequestInit) =>
+        path === "/api/train/extract"
+          ? Promise.resolve(json({ error }, status as number))
+          : usual(path, options),
+      );
+      await save();
+      const content = text(render());
+      expect(content).toContain(error);
+      expect(content).toContain("Tone and greeting were saved.");
+      // Confirmed manual changes trigger the normal configuration refresh.
+      await vi.waitFor(() => expect(field("setup-knowledge")).toBeDefined());
+      expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
+      expect(drafts.read(h.botId).values.greeting).toBe("Welcome to the repair shop.");
+      expect(drafts.read(h.botId).values.tone).toBe("Warm");
+      expect(drafts.read(h.botId).dirty).toBe(true);
+      await mount();
+      expect(field("setup-knowledge")!.props.value).toBe("Open at 7am.");
+      expect(field("setup-greeting")!.props.value).toBe("Welcome to the repair shop.");
+    },
+  );
+
   it("does not resubmit knowledge whose save finished while the inspector was closed", async () => {
     await mount();
     change("setup-knowledge", "Open at 7am.");

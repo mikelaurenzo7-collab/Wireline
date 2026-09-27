@@ -8,7 +8,10 @@ const read = (path: string) =>
 describe("launch readiness cross-surface contract", () => {
   it("pins Runtime Balance billing continuity and canonical Stripe catalog checks", () => {
     const grace = read("src/lib/voice-completion-grace.ts");
-    const script = read("scripts/generate-launch-status.mjs");
+    const script = [
+      read("scripts/generate-launch-status.mjs"),
+      read("scripts/lib/stripe-launch-readiness.mjs"),
+    ].join("\n");
     expect(grace).toContain("temporary negative Runtime Balance");
     expect(script).toContain("FOUNDER_CATALOG_VERSION");
     expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");

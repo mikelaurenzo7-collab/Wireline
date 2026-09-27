@@ -178,7 +178,7 @@ describe("billing plan decisions", () => {
       (element) => element.type === "ul" && !element.props["aria-label"],
     );
     expect(text(summary)).toContain("3 phone numbers included");
-    expect(text(summary)).toContain("225 call minutes each month");
+    expect(text(summary)).toContain("225 call minutes/month · 1 call at a time");
     expect(text(summary)).toContain("$2.75 Runtime Allowance each month");
     expect(text(summary)).toContain("$4.50 managed AI allowance each month");
     expect(text(detailsFrom(elements))).toContain("No automatic overages");
@@ -254,6 +254,20 @@ describe("billing plan decisions", () => {
     await mount("card");
     button("card", "Annual").props.onClick?.();
     expect(render("card").some((element) => text(element).includes("$150/year"))).toBe(true);
+    await button("card", "Continue to checkout").props.onClick?.();
+    expect(h.fetch).toHaveBeenCalledWith(
+      "/api/billing/checkout",
+      expect.objectContaining({
+        body: JSON.stringify({ plan_id: "voice-regular", interval: "year" }),
+      }),
+    );
+  });
+
+  it("keeps an annual-only sale selectable instead of marking every purchase paused", async () => {
+    h.catalog.plans = [paidPlan({ configured: false, annual_configured: true })];
+    await mount("card");
+    button("card", "Annual").props.onClick?.();
+    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
     await button("card", "Continue to checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",

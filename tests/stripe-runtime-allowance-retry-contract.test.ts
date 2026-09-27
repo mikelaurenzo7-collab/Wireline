@@ -41,7 +41,10 @@ describe("Stripe Runtime Balance movements fail closed", () => {
    * now read one helper.
    */
   it("derives the webhook event list from the handlers, in one place", async () => {
-    const launchStatus = read("scripts/generate-launch-status.mjs");
+    const launchStatus = [
+      read("scripts/generate-launch-status.mjs"),
+      read("scripts/lib/stripe-launch-readiness.mjs"),
+    ].join("\n");
     const { getHandledStripeWebhookEvents } =
       await import("../scripts/lib/stripe-handled-events.mjs");
 

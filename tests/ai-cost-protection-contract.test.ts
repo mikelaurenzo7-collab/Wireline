@@ -39,14 +39,7 @@ describe("AI cost-protection contract", () => {
   });
 
   it("meters every AI setup surface and caps the simulation one", () => {
-    // Policy: RECORD cost everywhere a paid model is reached. Setup routes that
-    // do not reserve a bounded maximum retain post-hoc metering; the website
-    // import has a strict input/output ceiling and therefore reserves that
-    // maximum atomically, then settles to actual usage.
-    //
-    // withAudit must also sit AFTER the authenticating middleware: it keys the
-    // persisted row on req.user.id at "finish", so mounting it earlier silently
-    // drops every record.
+    // Paid setup generation reserves the same account AI allowance before any provider work.
     const agentTest = read("src/routes/agent-test-routes.ts");
     const testRoute = agentTest.slice(
       agentTest.indexOf('"/api/agents/:id/test/stream"'),
@@ -66,12 +59,11 @@ describe("AI cost-protection contract", () => {
     ] as const) {
       const start = agentRoutes.indexOf(`"${path}"`);
       const block = agentRoutes.slice(start, agentRoutes.indexOf("async (req", start));
-      expect(block, path).toContain(`withAudit("${label}")`);
-      expect(block.indexOf("authenticateUser")).toBeLessThan(
-        block.indexOf(`withAudit("${label}")`),
-      );
-      // Configuration work is measured, never hard-blocked.
-      expect(block, path).not.toContain("enforceSpendCap");
+      expect(block, path).toContain("authenticateUser");
+      expect(block, path).not.toContain(`withAudit("${label}")`);
+      // The inner provider-boundary wrapper owns reservation and accounting.
+      expect(agentRoutes).toContain("runTrainingStructured");
+      expect(agentRoutes).toContain("runTrainingImage");
     }
 
     const qaRoutes = read("src/routes/qa-routes-v2.ts");
@@ -94,11 +86,11 @@ describe("AI cost-protection contract", () => {
     );
     expect(websiteRoute).toContain("enforceLaunchHardGate");
     expect(websiteRoute).not.toContain('withAudit("website-import")');
-    expect(website).toContain("runWithWebsiteKnowledgeSpend");
+    expect(read("src/lib/website-knowledge-service.ts")).toContain("runTrainingStructured");
     expect(websiteRoute.indexOf("authenticateUser")).toBeLessThan(
       websiteRoute.indexOf("enforceLaunchHardGate"),
     );
-    const websiteSpend = read("src/lib/website-knowledge-spend.ts");
+    const websiteSpend = read("src/lib/managed-ai-operation-spend.ts");
     expect(websiteSpend).toContain("reservePlatformCostRecord");
     expect(websiteSpend).toContain("month_to_date_usd");
     expect(websiteSpend).toContain('"SPEND_CAP_REACHED"');

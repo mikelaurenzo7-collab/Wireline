@@ -23,15 +23,19 @@ const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
 const FAQ = [
   [
     "What Changes with Capacity?",
-    "Light, Regular, and High keep the same Bot and selected channels. Calls include 30, 250, or 1,000 minutes each month; Email and SMS allowances increase with capacity. Each package shows its included usage and price.",
+    "Light, Regular, and High keep the same Bot and selected channels. Calls include 50, 250, or 500 minutes each month; Email and SMS allowances increase with capacity. Each package shows its included usage and price.",
   ],
   [
     "Can One Bot Use Several Channels?",
     "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge, rules, and conversation context. SMS packages are not available for activation yet.",
   ],
   [
+    "When Does Included Usage Reset?",
+    "Call minutes and managed AI allowances renew on your monthly subscription anniversary, including annual plans. Billing shows your next reset date. Unused included usage does not roll over.",
+  ],
+  [
     "Which Plans Include a Phone Number?",
-    "Calls and SMS packages include one number per included Bot. Email-only does not require a phone number. Free Builder does not receive live numbers.",
+    "Calls and SMS packages include one local number. One new number per included line is available every 31 days; releasing a number does not reset that limit. Email-only does not require a phone number. Free Builder does not receive live numbers.",
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
@@ -109,8 +113,8 @@ export default function Pricing() {
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
-        title="Pricing | Email from $9, Calls from $15 | BotBound"
-        description="Build a Bot free. Choose Email from $9/month, Calls from $15/month, or combine channels. SMS activation is pending. Check live availability and included usage."
+        title="Pricing | Email from $9, Calls from $19 | BotBound"
+        description="Build a Bot free. Choose Email from $9/month, Calls from $19/month, or combine channels. SMS activation is pending. Check live availability and included usage."
         path="/pricing"
       />
       <script

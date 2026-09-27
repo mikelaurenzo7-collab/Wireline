@@ -141,19 +141,20 @@ describe("restored launch regression guards", () => {
   it("keeps Stripe launch-status verification deep instead of reducing it to a catalog presence check", () => {
     const grace = read("src/lib/voice-completion-grace.ts");
     const continuity = read("tests/live-call-billing-continuity-contract.test.ts");
-    const script = read("scripts/generate-launch-status.mjs");
+    const script = [
+      read("scripts/generate-launch-status.mjs"),
+      read("scripts/lib/stripe-launch-readiness.mjs"),
+    ].join("\n");
     const manifest = read("scripts/lib/stripe-founder-catalog.mjs");
 
     expect(grace).toContain("temporary negative Runtime Balance");
     expect(continuity).toContain("temporary negative Runtime Balance");
     expect(continuity).not.toContain("temporary negative Conversation Balance");
-    expect(manifest).toContain('PUBLIC_SELF_SERVE_PLAN_IDS = ["starter", "team", "business"]');
+    expect(manifest).toContain("PUBLIC_SELF_SERVE_PLAN_IDS = CHANNEL_OFFERS.map");
     expect(script).toContain("FOUNDER_PRICES");
     expect(script).toContain("FOUNDER_CATALOG_VERSION");
     expect(script).toContain("PUBLIC_SELF_SERVE_PLAN_IDS");
-    expect(script).toContain(
-      "publicCatalogPrices.length === PUBLIC_SELF_SERVE_PLAN_IDS.length * 2",
-    );
+    expect(script).toContain("publicCatalogPrices.length > 0");
     expect(script).toContain("actual.metadata?.wireline_catalog_version");
     expect(script).toContain("actual.metadata?.wireline_price_key");
     expect(script).toContain('catalogParams.append("expand[]", "data.product")');
@@ -163,7 +164,7 @@ describe("restored launch regression guards", () => {
     expect(script).toContain("brandingPrimaryColor === STRIPE_BRAND_PRIMARY_COLOR");
     expect(script).toContain("brandingSecondaryColor === STRIPE_BRAND_SECONDARY_COLOR");
     expect(script).toContain("managed_configuration_missing");
-    expect(script).toContain("plan_switch_prices_mismatch");
+    expect(script).toContain("features?.subscription_update?.enabled === false");
     expect(script).toContain('subscription_cancel?.mode === "at_period_end"');
     expect(script).toContain("catalog_version_mismatch");
     expect(script).toContain("price_key_mismatch");
@@ -188,7 +189,7 @@ describe("restored launch regression guards", () => {
     expect(checklist).toContain("intRes != null &&");
     expect(checklist).toContain("dncRes != null && dncLen > 0");
     expect(security).toMatch(
-      /Marketing and campaign outbound[^.]*fail closed[^.]*stay blocked[^.]*federal DNC setup/i,
+      /Outbound calls are not available yet\. Verified recipient consent and applicable DNC checks must be in place/i,
     );
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");

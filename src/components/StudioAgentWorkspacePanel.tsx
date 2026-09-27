@@ -264,7 +264,14 @@ export default function StudioAgentWorkspacePanel({
           body: JSON.stringify({ agentId, message: knowledgeTrimmed }),
         });
         if (!knowledgeResponse.ok) {
-          throw new Error("Knowledge and rules could not be saved.");
+          const body = (await knowledgeResponse.json().catch(() => null)) as {
+            error?: unknown;
+          } | null;
+          const detail =
+            typeof body?.error === "string" && body.error.trim()
+              ? body.error
+              : "Knowledge and rules could not be saved.";
+          throw new Error(`${detail} Tone and greeting were saved.`);
         }
         knowledgeCaptured = await extractionPersistedSomething(knowledgeResponse);
         if (knowledgeCaptured && isCreateBriefRecoveryOwner(setupUserId)) {

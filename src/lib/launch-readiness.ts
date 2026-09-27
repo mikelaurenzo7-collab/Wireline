@@ -18,6 +18,7 @@ import { assertPlanMarginFloors } from "./tenant-economics";
 import { isFederalDncVendorConfigured } from "./federal-dnc-service";
 import { isPersistentVoiceWorkerConfigured } from "./voice/openai-sip-worker-config";
 import { DIRECT_OUTBOUND_AVAILABILITY } from "./outbound-call-purpose";
+import { launchCatalogReadiness } from "./launch-catalog-readiness";
 
 export type ReadinessLevel = "ready" | "degraded" | "blocked";
 export type CapabilityReadiness = {
@@ -34,6 +35,7 @@ export type LaunchReadinessReport = {
   outbound_campaign_ready: boolean;
   hard_gate_enabled: boolean;
   self_serve_billing_enabled: boolean;
+  new_sale_catalog: ReturnType<typeof launchCatalogReadiness>;
   capabilities: CapabilityReadiness[];
   launch_blockers: string[];
   /** Ops checklist items that do not fail platform GO / score / hard-gate. */
@@ -60,6 +62,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   const envValidation = validateEnv();
   const billingReleaseBlockers = selfServeBillingReleaseBlockers();
   const billingReleased = billingReleaseBlockers.length === 0;
+  const catalog = launchCatalogReadiness();
 
   const voiceBlockers: string[] = [];
   if (!isPersistentVoiceWorkerConfigured())
@@ -75,6 +78,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   if (byId.get("stripe")?.status !== "configured") billingBlockers.push("STRIPE_SECRET_KEY");
   else if (!envPresent("STRIPE_WEBHOOK_SECRET")) billingBlockers.push("STRIPE_WEBHOOK_SECRET");
   billingBlockers.push(...billingReleaseBlockers);
+  if (catalog.configured.length === 0) billingBlockers.push("NO_CONFIGURED_NEW_SALE_PRICES");
   const marginCheck = assertPlanMarginFloors();
   if (!marginCheck.ok) billingBlockers.push(...marginCheck.violations);
 
@@ -91,7 +95,9 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
   }
 
   const emailBlockers: string[] = [];
-  if (!envPresent("AGENTMAIL_API_KEY")) emailBlockers.push("AGENTMAIL_API_KEY");
+  const managedEmailBlockers = envPresent("AGENTMAIL_API_KEY") ? [] : ["AGENTMAIL_API_KEY"];
+  const managedEmailSold = catalog.configured.some((entry) => entry.channels.includes("email"));
+  if (managedEmailSold) emailBlockers.push(...managedEmailBlockers);
   if (byId.get("resend")?.status !== "configured") emailBlockers.push("RESEND_API_KEY");
   if (byId.get("resend-feedback")?.status !== "configured") {
     emailBlockers.push("RESEND_WEBHOOK_SECRET");
@@ -122,9 +128,17 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     },
     {
       id: "email_ready",
-      label: "Managed AgentMail + transactional delivery",
+      label: managedEmailSold
+        ? "Managed AgentMail + transactional delivery"
+        : "Transactional delivery",
       level: levelFromBlockers(emailBlockers),
       blockers: emailBlockers,
+    },
+    {
+      id: "managed_email_ready",
+      label: "Managed mailboxes",
+      level: levelFromBlockers(managedEmailBlockers),
+      blockers: managedEmailBlockers,
     },
     {
       id: "oauth_ready",
@@ -153,6 +167,7 @@ export function evaluateLaunchReadiness(): LaunchReadinessReport {
     outbound_campaign_ready: outboundCampaignReady,
     hard_gate_enabled: process.env.LAUNCH_HARD_GATE === "true",
     self_serve_billing_enabled: billingReleased,
+    new_sale_catalog: catalog,
     capabilities,
     launch_blockers,
     deferred_checklist,

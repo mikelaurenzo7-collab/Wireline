@@ -24,6 +24,13 @@ beforeEach(() => {
 });
 
 async function loadModules() {
+  vi.doMock("../src/lib/paid-allowance-period", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../src/lib/paid-allowance-period")>();
+    return {
+      ...actual,
+      resolveAllowanceWindow: vi.fn(async () => actual.calendarAllowanceWindow()),
+    };
+  });
   vi.doMock("../src/lib/server-context", () => ({
     drizzle: { select: vi.fn() },
     serialQueryBatch: async (queries: readonly unknown[]) => {
@@ -47,7 +54,7 @@ describe("voice-wallet-guard", () => {
     const { drizzle, getCreditBalanceUsd, getVoiceWalletSnapshot } = await loadModules();
     vi.mocked(drizzle.select).mockImplementation(
       selectSequence(
-        [[{ plan: "voice", status: "active" }], [{ used: 30 }], [{ extraAgents: 0 }]],
+        [[{ plan: "voice", status: "active" }], [{ used: 50 }], [{ extraAgents: 0 }]],
         1,
       ) as never,
     );

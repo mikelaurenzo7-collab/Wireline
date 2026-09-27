@@ -21,6 +21,10 @@ Public marketing leads with capabilities, outcomes, and a clear signup action. O
 
 Paid packages include one Bot and the **Calls, Email, or SMS channels selected at checkout**. Calls includes a local number; Email includes a managed mailbox. Customers choose an available US area code and exact number in Phone setup. Email-only activation does not require Twilio, and Calls-only does not allocate an AgentMail mailbox. SMS combinations remain unavailable to activate until carrier and cost checks pass. Background identity repair reuses an owned line and never chooses a new number for the customer. Free Builder Bots receive no live identity; unused capacity does not pre-provision carrier numbers. See `src/lib/plan-catalog.ts` for the commercial contract.
 
+Calls Light / Regular / High include 50 / 250 / 500 minutes per month, respectively, with one Bot and one call at a time at every capacity. Higher usage capacity does not add Bots, numbers or mailboxes. Extra-Bot subscriptions are not available for new channel packages. Each included phone slot permits one new carrier number every 31 days; releasing a number does not reset replacement eligibility. Reassigning an existing line does not consume a new acquisition.
+
+Channel-plan call minutes and managed AI allowances reset on the paid monthly subscription anniversary, including monthly slices of annual plans. Unused included usage does not roll over. Billing and Activity show the next reset date; legacy plans and Free Builder retain calendar-month accounting.
+
 ## Technology and ownership
 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and Node 22 on Render. The Vercel bundle remains a legacy rollback path.

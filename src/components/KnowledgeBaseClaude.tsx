@@ -46,6 +46,7 @@ type AgentConfig = {
   knowledge?: ConfigKnowledgeRow[];
   directives?: ConfigDirectiveRow[];
   personality?: string | null;
+  capabilities?: { image_uploads?: boolean };
 };
 
 type AssetBody = {
@@ -146,7 +147,7 @@ function readAsDataUrl(file: File) {
   });
 }
 
-async function readAsset(file: File): Promise<AssetBody> {
+async function readAsset(file: File, imageUploadsAvailable: boolean): Promise<AssetBody> {
   // Checked before the file is read, because nothing downstream reports this
   // honestly: the API body limit answers a bare "request entity too large", and
   // the drop zone used to advertise a ceiling more than ten times what the
@@ -155,10 +156,19 @@ async function readAsset(file: File): Promise<AssetBody> {
     throw new Error(knowledgeAssetTooLargeMessage(file.name, file.size));
   }
   const mimeType = (file.type || "text/plain").toLowerCase();
+  if (
+    !imageUploadsAvailable &&
+    (mimeType.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name))
+  ) {
+    throw new Error("Image uploads are unavailable. Upload TXT, MD or CSV.");
+  }
   if (/^image\/(png|jpe?g|webp|gif)$/.test(mimeType)) {
     return { fileName: file.name, mimeType, dataUrl: await readAsDataUrl(file) };
   }
   const name = file.name.toLowerCase();
+  const supportedTypes = imageUploadsAvailable
+    ? "TXT, MD, CSV, PNG, JPG, WEBP or GIF"
+    : "TXT, MD or CSV";
   if (
     name.endsWith(".pdf") ||
     name.endsWith(".doc") ||
@@ -167,9 +177,7 @@ async function readAsset(file: File): Promise<AssetBody> {
     mimeType.includes("msword") ||
     mimeType.includes("wordprocessingml")
   ) {
-    throw new Error(
-      `${file.name} is not supported yet. Upload TXT, MD, CSV, or a PNG/JPG/WEBP/GIF image.`,
-    );
+    throw new Error(`${file.name} is not supported yet. Upload ${supportedTypes}.`);
   }
   if (
     !mimeType.startsWith("text/") &&
@@ -178,15 +186,14 @@ async function readAsset(file: File): Promise<AssetBody> {
     !name.endsWith(".csv") &&
     !name.endsWith(".markdown")
   ) {
-    throw new Error(
-      `${file.name} is not a supported text or image type. Use TXT, MD, CSV, PNG, JPG, WEBP, or GIF.`,
-    );
+    throw new Error(`${file.name} is not supported. Upload ${supportedTypes}.`);
   }
   return { fileName: file.name, mimeType: mimeType || "text/plain", text: await file.text() };
 }
 
 export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const [config, setConfig] = useState<AgentConfig | null>(null);
+  const imageUploadsAvailable = config?.capabilities?.image_uploads === true;
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -322,7 +329,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     try {
       try {
         for (const file of list) {
-          const payload = await readAsset(file);
+          const payload = await readAsset(file, imageUploadsAvailable);
           if (!operation.isCurrent()) return;
           const response = await authFetch(
             `/api/agent-config/${encodeURIComponent(operation.requestedAgentId)}/assets`,
@@ -583,7 +590,11 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         aria-label="Upload knowledge files"
         className="sr-only"
         onChange={onFilePick}
-        accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
+        accept={
+          imageUploadsAvailable
+            ? ".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
+            : ".txt,.csv,.md,.markdown"
+        }
       />
 
       {showStats ? (
@@ -829,7 +840,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
-            TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF), max {KNOWLEDGE_ASSET_MAX_LABEL} per file
+            {imageUploadsAvailable
+              ? "TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF)"
+              : "TXT, MD, CSV"}
+            , max {KNOWLEDGE_ASSET_MAX_LABEL} per file
           </div>
         </div>
         <div

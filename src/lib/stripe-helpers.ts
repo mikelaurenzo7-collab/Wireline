@@ -20,6 +20,7 @@ import {
 } from "./subscription-welcome-credit";
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
+import { recordPaidAllowanceReceipt, verifiedPaidAllowanceReceipt } from "./paid-allowance-period";
 import { liveStripeCredentialBlocked } from "./preview-spend-policy";
 import {
   MAX_EXTRA_AGENT_ADDONS,
@@ -736,6 +737,27 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     ? new Date(currentPeriodEndUnix * 1000).toISOString()
     : null;
 
+  // Fetch only during authoritative subscription reconciliation, never on a call.
+  // Active status or a scheduled phase alone must not refill a monthly allowance.
+  const paidBaseItem = sub.items?.data?.find(
+    (item) => basePlanByStripePrice(item.price)?.id === plan?.id,
+  );
+  const latestInvoiceId =
+    typeof sub.latest_invoice === "string" ? sub.latest_invoice : sub.latest_invoice?.id;
+  const paidAllowance =
+    plan?.catalogFamily === "channels" &&
+    plan.id === providerPlanId &&
+    stripeStatus === "active" &&
+    paidBaseItem &&
+    latestInvoiceId
+      ? verifiedPaidAllowanceReceipt(
+          sub,
+          plan,
+          paidBaseItem.price.id,
+          await stripe.invoices.retrieve(latestInvoiceId),
+        )
+      : null;
+
   const baseTerminal = TERMINAL_SUBSCRIPTION_STATUSES.has(stripeStatus);
   const baseUnpaid = stripeStatus === "unpaid";
   const basePaused = stripeStatus === "paused";
@@ -756,6 +778,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   // customer lookup and metadata repair above stay at root scope on purpose;
   // they are how identity gets established when no tenant is known yet.
   await tenantStore.run(userId, async () => {
+    if (paidAllowance) await recordPaidAllowanceReceipt(userId, paidAllowance);
     await reconcileLiveVideoAddonWithBasePlan({
       customerId,
       baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,

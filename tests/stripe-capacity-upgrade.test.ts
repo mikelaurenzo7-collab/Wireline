@@ -354,18 +354,21 @@ describe("capacity payment receipt", () => {
   }
   it("grants only the paid target base line without changing existing counters", async () => {
     const f = renewal();
-    expect((await paidCapacityPlan(f.sub, planById("voice-regular"), "voice", f.api))?.id).toBe(
-      "voice-regular",
-    );
+    expect(await paidCapacityPlan(f.sub, planById("voice-regular"), "voice", f.api)).toMatchObject({
+      id: "voice-regular",
+      max_agents: 1,
+      voice_minutes_monthly: 250,
+      included_phone_numbers: 1,
+    });
   });
   it.each(["open", "draft", "uncollectible", "void"])(
     "retains current capacity for %s renewal despite active subscription",
     async (status) => {
       const f = renewal();
       f.invoice.status = status;
-      expect((await paidCapacityPlan(f.sub, planById("voice-regular"), "voice", f.api))?.id).toBe(
-        "voice",
-      );
+      expect(
+        await paidCapacityPlan(f.sub, planById("voice-regular"), "voice", f.api),
+      ).toMatchObject({ id: "voice", max_agents: 1, voice_minutes_monthly: 50 });
     },
   );
   it.each(["wrong-owner", "old-period", "proration", "wrong-price", "truncated"])(

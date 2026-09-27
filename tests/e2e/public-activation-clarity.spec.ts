@@ -77,13 +77,13 @@ test("signup checks the selected annual plan even when other paid plans are avai
   });
   await page.goto("/signup?plan=voice&interval=year");
   const access = page.getByRole("region", { name: "Account access" });
-  await expect(access).toContainText("$150/year");
+  await expect(access).toContainText("$199/year");
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
   await page.getByRole("link", { name: "BotBound home", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(access).toContainText("$150/year");
+  await expect(access).toContainText("$199/year");
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );

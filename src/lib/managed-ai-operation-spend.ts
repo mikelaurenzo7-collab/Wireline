@@ -23,9 +23,7 @@ import { getErrorMessage } from "./server-utils";
 import { clearBudgetCache, evaluateSpend, recordDailySpend } from "./spend-guards";
 import { normalizeUsageTokenCount, saturatingUsageTokenSum } from "./ai-usage";
 
-export const WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD = 0.25;
-
-type SpendDependencies = {
+export type ManagedAiSpendDependencies = {
   preflightTokens: (userId: string) => Promise<{ limit: number; used: number } | null>;
   reserve: (input: {
     userId: string;
@@ -40,31 +38,30 @@ type SpendDependencies = {
   settleKnown: (input: {
     reservation: PlatformCostReservation;
     records: RuntimeCallMeta[];
-    hostname: string;
+    hostname?: string;
+    action?: string;
+    requestMeta?: Record<string, unknown>;
     minimumCostUsd: number;
   }) => Promise<void>;
 };
 
-const productionDependencies: SpendDependencies = {
+const productionDependencies: ManagedAiSpendDependencies = {
   preflightTokens: getAiTokenQuotaExceeded,
   reserve: reservePlatformCostRecord,
   release: releasePlatformCostReservation,
   commit: commitPlatformCostReservation,
-  settleKnown: settleKnownWebsiteKnowledgeSpend,
+  settleKnown: settleKnownManagedAiSpend,
 };
 
 function actualCostUsd(records: RuntimeCallMeta[]): number {
   return records.reduce((sum, record) => sum + resolveRuntimeCallCost(record).costUsd, 0);
 }
 
-export function websiteKnowledgeSettledCostUsd(
-  records: RuntimeCallMeta[],
-  minimumCostUsd = 0,
-): number {
+export function managedAiSettledCostUsd(records: RuntimeCallMeta[], minimumCostUsd = 0): number {
   return Math.max(actualCostUsd(records), Math.max(0, minimumCostUsd));
 }
 
-export function websiteKnowledgeCostDecision(
+export function managedAiCostDecision(
   records: RuntimeCallMeta[],
   minimumCostUsd = 0,
 ): { costUsd: number; costBasis: string; conservativeFloorApplied: boolean } {
@@ -92,7 +89,7 @@ export function websiteKnowledgeCostDecision(
   };
 }
 
-export function aggregateWebsiteKnowledgeUsage(records: RuntimeCallMeta[]): {
+export function aggregateManagedAiUsage(records: RuntimeCallMeta[]): {
   tokenDelta: number;
   inputTokens: number;
   outputTokens: number;
@@ -129,24 +126,26 @@ export function aggregateWebsiteKnowledgeUsage(records: RuntimeCallMeta[]): {
   );
 }
 
-async function settleKnownWebsiteKnowledgeSpend(input: {
+async function settleKnownManagedAiSpend(input: {
   reservation: PlatformCostReservation;
   records: RuntimeCallMeta[];
-  hostname: string;
+  hostname?: string;
+  action?: string;
+  requestMeta?: Record<string, unknown>;
   minimumCostUsd: number;
 }): Promise<void> {
-  const costDecision = websiteKnowledgeCostDecision(input.records, input.minimumCostUsd);
+  const costDecision = managedAiCostDecision(input.records, input.minimumCostUsd);
   const { costUsd } = costDecision;
 
   const providers = [...new Set(input.records.map((record) => record.provider))];
   const models = [...new Set(input.records.map((record) => record.model))];
-  const aggregate = aggregateWebsiteKnowledgeUsage(input.records);
+  const aggregate = aggregateManagedAiUsage(input.records);
   const { tokenDelta } = aggregate;
 
   const [updated] = await drizzle
     .update(schema.auditLog)
     .set({
-      action: "website-knowledge.import",
+      action: input.action || "website-knowledge.import",
       provider: providers.length === 1 ? providers[0] : "multi",
       model: models.length === 1 ? models[0] : models.join(",").slice(0, 255),
       inputTokens: aggregate.inputTokens,
@@ -162,7 +161,8 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
         ambiguous_provider_attempt_floor_usd: input.minimumCostUsd,
         cost_basis: costDecision.costBasis,
         conservative_ambiguous_floor_applied: costDecision.conservativeFloorApplied,
-        hostname: input.hostname,
+        ...input.requestMeta,
+        ...(input.hostname ? { hostname: input.hostname } : {}),
       },
     })
     .where(
@@ -172,7 +172,8 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
       ),
     )
     .returning({ id: schema.auditLog.id });
-  if (!updated) throw new Error("Website import spend reservation disappeared before settlement.");
+  if (!updated)
+    throw new Error("Managed AI operation spend reservation disappeared before settlement.");
 
   clearBudgetCache(input.reservation.userId);
   if (tokenDelta > 0) {
@@ -183,14 +184,14 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
         tokenDelta,
       );
       if (!decision.allowed) {
-        log.warn("Website import crossed the daily AI token quota", {
+        log.warn("Managed AI operation crossed the daily AI token quota", {
           userId: input.reservation.userId,
           limit: decision.limit,
           used: decision.used,
         });
       }
     } catch (error) {
-      log.warn("Website import token accounting failed after provider work", {
+      log.warn("Managed AI operation token accounting failed after provider work", {
         userId: input.reservation.userId,
         error: getErrorMessage(error),
       });
@@ -200,17 +201,20 @@ async function settleKnownWebsiteKnowledgeSpend(input: {
   await evaluateSpend(input.reservation.userId, costUsd);
 }
 
-function reservationError(decision: Exclude<PlatformCostReservationDecision, { reserved: true }>) {
+function reservationError(
+  decision: Exclude<PlatformCostReservationDecision, { reserved: true }>,
+  reserveUsd: number,
+) {
   if (decision.reason === "cap_reached") {
     return new AppError(
       402,
       "SPEND_CAP_REACHED",
-      "This website import could exceed your remaining managed AI allowance. Review Billing or wait for the next monthly reset.",
+      "This operation could exceed your remaining managed AI allowance. Review Billing or wait for the next monthly reset.",
       {
         period: decision.period,
         month_to_date_usd: decision.monthToDateUsd,
         monthly_limit_usd: decision.monthlyLimitUsd,
-        required_reserve_usd: WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD,
+        required_reserve_usd: reserveUsd,
         recovery_path: "/settings/billing",
       },
     );
@@ -218,18 +222,29 @@ function reservationError(decision: Exclude<PlatformCostReservationDecision, { r
   return new AppError(
     503,
     "SPEND_GUARD_UNAVAILABLE",
-    "BotBound could not reserve this import against your managed AI allowance. Try again shortly.",
+    "BotBound could not reserve this operation against your managed AI allowance. Try again shortly.",
   );
 }
 
-export async function runWithWebsiteKnowledgeSpend<T>(
+export async function runWithManagedAiSpend<T>(
   input: {
     userId: string;
-    hostname: string;
+    hostname?: string;
+    action?: string;
+    requestMeta?: Record<string, unknown>;
+    reserveUsd: number;
+    model?: string;
     operation: () => Promise<T>;
   },
-  dependencies: SpendDependencies = productionDependencies,
+  dependencies: ManagedAiSpendDependencies = productionDependencies,
 ): Promise<T> {
+  if (!Number.isFinite(input.reserveUsd) || input.reserveUsd <= 0) {
+    throw new AppError(
+      503,
+      "SPEND_GUARD_UNAVAILABLE",
+      "BotBound could not reserve this operation against your managed AI allowance. Try again shortly.",
+    );
+  }
   const exceeded = await dependencies.preflightTokens(input.userId);
   if (exceeded) {
     throw new AppError(
@@ -246,16 +261,17 @@ export async function runWithWebsiteKnowledgeSpend<T>(
 
   const decision = await dependencies.reserve({
     userId: input.userId,
-    action: "website-knowledge.import",
+    action: input.action || "website-knowledge.import",
     provider: "managed_structured_runtime",
-    model: "bounded_website_extraction",
-    costUsd: WEBSITE_KNOWLEDGE_IMPORT_RESERVE_USD,
+    model: input.model || "bounded_managed_operation",
+    costUsd: input.reserveUsd,
     requestMeta: {
       accounting_state: "reserved_before_provider",
-      hostname: input.hostname,
+      ...input.requestMeta,
+      ...(input.hostname ? { hostname: input.hostname } : {}),
     },
   });
-  if (!decision.reserved) throw reservationError(decision);
+  if (!decision.reserved) throw reservationError(decision, input.reserveUsd);
 
   const reservation = decision.reservation;
   const auditContext = createAuditContext();
@@ -275,10 +291,12 @@ export async function runWithWebsiteKnowledgeSpend<T>(
         reservation,
         records: auditContext.records,
         hostname: input.hostname,
+        action: input.action,
+        requestMeta: input.requestMeta,
         minimumCostUsd: auditContext.ambiguousProviderAttempts > 0 ? reservation.costUsd : 0,
       });
     } catch (error) {
-      log.error("Website import actual-cost settlement failed; retaining reserve", {
+      log.error("Managed AI operation actual-cost settlement failed; retaining reserve", {
         userId: input.userId,
         hostname: input.hostname,
         error: getErrorMessage(error),
@@ -294,7 +312,7 @@ export async function runWithWebsiteKnowledgeSpend<T>(
     try {
       await dependencies.release(reservation);
     } catch (error) {
-      log.error("Website import pre-provider reservation release failed", {
+      log.error("Managed AI operation pre-provider reservation release failed", {
         userId: input.userId,
         hostname: input.hostname,
         error: getErrorMessage(error),

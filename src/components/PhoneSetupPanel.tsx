@@ -585,6 +585,9 @@ export default function PhoneSetupPanel({
               ? `${formatPhone(selectedPhoneNumber)} selected.`
               : "Choose a number before activation."}
           </p>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            One new number per included line every 31 days. Reassign existing lines anytime.
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button
               type="button"

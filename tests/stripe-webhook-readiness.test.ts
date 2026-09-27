@@ -112,7 +112,7 @@ describe("Stripe webhook readiness agrees with runtime and provider alignment", 
   it("wires the shared checks and pin into every launch webhook consumer", () => {
     for (const file of [
       "check-vendor-readiness.mjs",
-      "generate-launch-status.mjs",
+      "lib/stripe-launch-readiness.mjs",
       "align-stripe-webhook-events.mjs",
     ]) {
       const source = readFileSync(resolve("scripts", file), "utf8");

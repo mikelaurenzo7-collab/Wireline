@@ -26,6 +26,7 @@ type SpendGuardScope = "free_simulation_allowance" | "plan_funded";
 
 type SpendStatus = {
   period?: string;
+  reset_at?: string;
   month_to_date_usd?: number;
   monthly_limit_usd?: number;
   maximum_limit_usd?: number;
@@ -97,7 +98,13 @@ function SpendBudgetCard() {
       ]);
       const statusOut = await readApiJson<SpendStatus>(statusRes);
       const budgetOut = await readApiJson<{ budget?: SpendBudget }>(budgetRes);
-      if (statusOut.ok === false) throw new Error(statusOut.error);
+      if (statusOut.ok === false) {
+        if (statusOut.code === "PAID_ALLOWANCE_SYNC_REQUIRED") {
+          setLoadError("Open Billing and refresh your subscription to sync your usage allowance.");
+          return false;
+        }
+        throw new Error(statusOut.error);
+      }
       if (budgetOut.ok === false) throw new Error(budgetOut.error);
       const s = statusOut.data;
       const budgetData = budgetOut.data?.budget;
@@ -191,7 +198,10 @@ function SpendBudgetCard() {
     : isWarn
       ? BRAND.colors.outlineVariant
       : BRAND.colors.primary;
-  const period = status?.period || "N/A";
+  const resetDate = new Date(status.reset_at || "");
+  const period = Number.isFinite(resetDate.getTime())
+    ? `Resets ${resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+    : "Current allowance period";
   const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
   const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Live usage guard";
   const capReachedCopy = isSimulationAllowance
@@ -208,7 +218,7 @@ function SpendBudgetCard() {
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>
       {loadError && (
         <ErrCard
-          error="Budget status could not be refreshed. Showing the last confirmed limits."
+          error={`${loadError} Showing the last confirmed limits.`}
           onRetry={() => void refresh()}
         />
       )}

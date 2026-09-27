@@ -15,6 +15,7 @@ import {
   type NativeTwilioPurchaseClaim,
 } from "../orphan-carrier-ledger";
 import { drizzle, log } from "../server-context";
+import { recordRejectedPhoneNumberAcquisition } from "../phone-number-acquisition";
 import { getErrorMessage } from "../server-utils";
 import { getTwilioClient } from "../twilio-service";
 import {
@@ -94,6 +95,19 @@ function purchaseFields(friendlyName: string) {
   return { ...routingFields(), friendlyName };
 }
 
+function isSupportedLocalInventoryNumber(row: {
+  phoneNumber?: string;
+  isoCountry?: string;
+  capabilities?: { voice?: boolean; sms?: boolean };
+}): boolean {
+  return (
+    /^\+1\d{10}$/.test(row.phoneNumber ?? "") &&
+    row.isoCountry === "US" &&
+    row.capabilities?.voice === true &&
+    row.capabilities?.sms === true
+  );
+}
+
 export async function listNativeAvailableLocalNumbers(
   userId: string,
   areaCode?: string,
@@ -120,6 +134,7 @@ async function listNativeAvailableLocalNumbersAfterAuthorization(
     limit: Math.max(1, Math.min(20, Math.floor(limit))),
   });
   return rows
+    .filter(isSupportedLocalInventoryNumber)
     .map((row) => ({
       phoneNumber: String(row.phoneNumber || ""),
       locality: row.locality ? String(row.locality) : null,
@@ -336,6 +351,7 @@ async function retainPurchaseClaimOrRaise(
 
 export async function purchaseNativeNumber(input: {
   userId: string;
+  agentId?: string;
   areaCode?: string;
   preferredPhoneNumber?: string;
 }): Promise<PurchasedNativeNumber> {
@@ -349,7 +365,26 @@ export async function purchaseNativeNumber(input: {
     throw AppError.badRequest("phone_number must be a US E.164 number");
   }
   let phoneNumber = preferred;
-  if (!phoneNumber) {
+  if (phoneNumber) {
+    // +1 includes Canada, other NANP countries and toll-free numbers. Verify
+    // this exact selection against the same US local catalog used by the UI
+    // before claiming capacity or incurring a carrier charge.
+    const candidates = await client.availablePhoneNumbers("US").local.list({
+      contains: `${phoneNumber}$`,
+      voiceEnabled: true,
+      smsEnabled: true,
+      limit: 1,
+    });
+    if (
+      !candidates.some(
+        (row) => row.phoneNumber === phoneNumber && isSupportedLocalInventoryNumber(row),
+      )
+    ) {
+      throw AppError.conflict(
+        "That number is not available as a US local line. Search again and choose another.",
+      );
+    }
+  } else {
     const candidates = await listNativeAvailableLocalNumbersAfterAuthorization(input.areaCode, 5);
     phoneNumber = candidates[0]?.phoneNumber || null;
   }
@@ -367,10 +402,12 @@ export async function purchaseNativeNumber(input: {
   try {
     claim = await createPendingNativeTwilioPurchaseClaim({
       userId: input.userId,
+      agentId: input.agentId,
       operationId,
       phoneNumber,
     });
   } catch (error) {
+    if (error instanceof AppError) throw error;
     log.error("Native phone purchase was stopped before the provider mutation", {
       userId: input.userId,
       operationId,
@@ -389,6 +426,7 @@ export async function purchaseNativeNumber(input: {
   } catch (error) {
     if (!isAmbiguousTwilioPhoneMutationError(error)) {
       try {
+        await recordRejectedPhoneNumberAcquisition(claim);
         await clearNativeTwilioPurchaseClaim(claim);
       } catch (ledgerError) {
         log.error("Rejected native phone purchase claim could not be cleared", {

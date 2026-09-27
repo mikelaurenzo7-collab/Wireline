@@ -122,24 +122,34 @@ export interface EnqueueResult {
 
 export async function enqueue(db: DrizzleDB, opts: EnqueueOptions): Promise<EnqueueResult> {
   const runAt = opts.runAt ?? new Date();
+  const singletonScheduler = opts.type === "cadence_tick" || opts.type === "callback_tick";
   try {
     const data = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(schema.jobs)
-        .values({
-          userId: opts.userId,
-          type: opts.type,
-          payload: opts.payload,
-          status: "pending" as JobStatus,
-          attempts: 0,
-          maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-          runAt: runAt,
-        })
-        .returning({ id: schema.jobs.id });
+      const insert = tx.insert(schema.jobs).values({
+        userId: opts.userId,
+        type: opts.type,
+        payload: opts.payload,
+        status: "pending" as JobStatus,
+        attempts: 0,
+        maxAttempts: opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+        runAt: runAt,
+      });
+      // Repeated sweeps intentionally share an active tick. Use the exact
+      // migration 0141 index instead of emitting a PostgreSQL error each time.
+      // Other unique violations and ordinary enqueue failures remain errors.
+      const [row] = await (
+        singletonScheduler
+          ? insert.onConflictDoNothing({
+              target: [schema.jobs.userId, schema.jobs.type],
+              where: sql`type IN ('cadence_tick', 'callback_tick') AND status IN ('pending', 'running', 'failed')`,
+            })
+          : insert
+      ).returning({ id: schema.jobs.id });
+      if (!row && !singletonScheduler) throw new Error("Job enqueue returned no persisted row.");
       return row;
     }, writeTransactionConfig());
 
-    return { ok: true, jobId: data.id };
+    return data ? { ok: true, jobId: data.id } : { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message };
   }

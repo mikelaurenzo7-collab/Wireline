@@ -32,7 +32,7 @@ export const STRIPE_BILLING_RATE = 0.007;
  */
 export const STRIPE_TAX_TRANSACTION_RATE = 0.005;
 
-export const FOUNDER_CATALOG_VERSION = "channel_plans_2026_09_v1";
+export const FOUNDER_CATALOG_VERSION = "channel_plans_2026_09_v2";
 /** Free Builder's bounded private model-training reserve. */
 export const FREE_BUILDER_AI_ALLOWANCE_USD = 1.5;
 
@@ -157,9 +157,9 @@ const CHANNEL_CAPACITIES: {
   smsAi: number;
   transport: number;
 }[] = [
-  { tier: "light", minutes: 30, baseAi: 1.5, emailAi: 2.5, smsAi: 2.5, transport: 2 },
+  { tier: "light", minutes: 50, baseAi: 1.5, emailAi: 2.5, smsAi: 2.5, transport: 2 },
   { tier: "regular", minutes: 250, baseAi: 3, emailAi: 10, smsAi: 7, transport: 10 },
-  { tier: "high", minutes: 1000, baseAi: 5, emailAi: 30, smsAi: 15, transport: 30 },
+  { tier: "high", minutes: 500, baseAi: 5, emailAi: 30, smsAi: 15, transport: 30 },
 ];
 const CHANNEL_OFFERS: {
   id: ChannelSelectionId;
@@ -172,9 +172,9 @@ const CHANNEL_OFFERS: {
     label: "Calls",
     channels: ["voice"],
     prices: [
-      [15, 150],
+      [19, 199],
       [59, 690],
-      [219, 2499],
+      [115, 1349],
     ],
   },
   {
@@ -202,9 +202,9 @@ const CHANNEL_OFFERS: {
     label: "Calls + Email",
     channels: ["voice", "email"],
     prices: [
-      [21, 210],
+      [25, 259],
       [79, 899],
-      [269, 2999],
+      [159, 1799],
     ],
   },
   {
@@ -212,9 +212,9 @@ const CHANNEL_OFFERS: {
     label: "Calls + SMS",
     channels: ["voice", "sms"],
     prices: [
-      [20, 200],
+      [24, 249],
       [79, 939],
-      [279, 3199],
+      [179, 2039],
     ],
   },
   {
@@ -232,9 +232,9 @@ const CHANNEL_OFFERS: {
     label: "Calls + Email + SMS",
     channels: ["voice", "email", "sms"],
     prices: [
-      [26, 260],
+      [29, 309],
       [99, 1109],
-      [319, 3699],
+      [219, 2549],
     ],
   },
 ];
@@ -472,12 +472,17 @@ export const STRIPE_PLANS: StripePlan[] = [
         overage_per_min_usd: voice ? FLAT_OVERAGE_PER_MIN_USD : 0,
         priceIdEnv: `${envPrefix}_PRICE_ID`,
         annualPriceIdEnv: `${envPrefix}_ANNUAL_PRICE_ID`,
-        lookupKeyMonthly: `${id}_monthly_channels_2026_09_v1`,
-        lookupKeyAnnual: `${id}_annual_channels_2026_09_v1`,
+        // Stripe prices are immutable: changed Light/High Calls offers need
+        // new keys while unchanged intervals retain their existing identity.
+        lookupKeyMonthly: `${id}_monthly_channels_2026_09_${voice && capacity.tier !== "regular" ? "v2" : "v1"}`,
+        lookupKeyAnnual: `${id}_annual_channels_2026_09_${voice && capacity.tier !== "regular" ? "v2" : "v1"}`,
         features: [
           "1 Bot",
           ...(voice
-            ? [`${capacity.minutes.toLocaleString("en-US")} live-call minutes each month`]
+            ? [
+                `${capacity.minutes.toLocaleString("en-US")} live-call minutes each month`,
+                "1 call at a time",
+              ]
             : []),
           ...(voice || sms ? ["1 local phone number"] : []),
           ...(email ? ["1 BotBound email address"] : []),
@@ -763,6 +768,7 @@ export function plansForClient() {
     const annualConfigured = !!configuredPriceId(plan, "year");
     const packageAvailable = plan.checkoutAvailability === "available";
     const paidCheckoutAvailable = checkoutReleased && packageAvailable && monthlyConfigured;
+    const annualCheckoutAvailable = checkoutReleased && packageAvailable && annualConfigured;
 
     return {
       id: plan.id,
@@ -788,8 +794,8 @@ export function plansForClient() {
       // These flags describe Stripe Checkout availability. Free Builder is
       // active without Stripe and must use the Studio path instead.
       configured: !isFree && paidCheckoutAvailable,
-      annual_configured: !isFree && paidCheckoutAvailable && annualConfigured,
-      contact_sales: !isFree && !paidCheckoutAvailable,
+      annual_configured: !isFree && annualCheckoutAvailable,
+      contact_sales: !isFree && !paidCheckoutAvailable && !annualCheckoutAvailable,
       is_free: isFree,
       public: true,
       pricing_model:

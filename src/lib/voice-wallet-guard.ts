@@ -13,6 +13,7 @@ import { includedVoiceMinutes } from "./voice-usage";
 import { drizzle, serialQueryBatch } from "./server-context";
 import * as schema from "../db/schema";
 import { VOICE_COMPLETION_GRACE_MINUTES, type VoiceCallPolicy } from "./voice-funding-policy";
+import { resolveAllowanceWindow } from "./paid-allowance-period";
 
 export const MIN_BILLABLE_MINUTES_BUFFER = 1;
 const MONTHLY_DIMENSION = "voice_minutes_monthly";
@@ -32,11 +33,8 @@ export type VoiceWalletSnapshot = {
   sufficient: boolean;
 };
 
-function monthlyPeriodKey(now: Date = new Date()): string {
-  return now.toISOString().slice(0, 7);
-}
-
 export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalletSnapshot> {
+  const window = await resolveAllowanceWindow(drizzle, userId);
   // This runs on the inbound assistant-request hot path, where the caller
   // rejects unavailable coverage. A Promise.all here checked out one pooled client per
   // query — two simultaneous inbound calls could exhaust the max-5 pool,
@@ -56,7 +54,7 @@ export async function getVoiceWalletSnapshot(userId: string): Promise<VoiceWalle
         and(
           eq(schema.quotaUsage.userId, userId),
           eq(schema.quotaUsage.dimension, MONTHLY_DIMENSION),
-          eq(schema.quotaUsage.periodKey, monthlyPeriodKey()),
+          eq(schema.quotaUsage.periodKey, window.key),
         ),
       )
       .limit(1),

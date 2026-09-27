@@ -65,7 +65,7 @@ export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
       `${plan.included_phone_numbers} phone number${plan.included_phone_numbers === 1 ? "" : "s"} included`,
     );
   if (plan.channels.includes("voice"))
-    highlights.push(`${plan.voice_minutes_monthly} call minutes each month`);
+    highlights.push(`${plan.voice_minutes_monthly} call minutes/month · 1 call at a time`);
   if (plan.channels.includes("email"))
     highlights.push(
       `${plan.included_mailboxes} Bot mailbox${plan.included_mailboxes === 1 ? "" : "es"} included`,

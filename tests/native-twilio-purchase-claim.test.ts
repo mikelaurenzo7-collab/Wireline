@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 const USER_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const OPERATION_ID = "11111111-1111-4111-8111-111111111111";
@@ -20,7 +21,18 @@ function twilioClient(input?: {
     vi.fn(() => ({ remove })),
     { create, list },
   );
-  return { client: { incomingPhoneNumbers }, create, list, remove };
+  const availablePhoneNumbers = vi.fn(() => ({
+    local: {
+      list: vi.fn(async ({ contains }: { contains: string }) => [
+        {
+          phoneNumber: contains.slice(0, -1),
+          isoCountry: "US",
+          capabilities: { voice: true, sms: true },
+        },
+      ]),
+    },
+  }));
+  return { client: { incomingPhoneNumbers, availablePhoneNumbers }, create, list, remove };
 }
 
 function installCarrierMocks(input: {
@@ -30,9 +42,34 @@ function installCarrierMocks(input: {
 }) {
   const provider = twilioClient({ create: input.create, list: input.list });
   const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+  const tx = {
+    select: () => ({ from: () => ({ where: async () => [] }) }),
+    execute: (query: Parameters<PgDialect["sqlToQuery"]>[0]) =>
+      new PgDialect().sqlToQuery(query).sql.includes("SELECT phone_number")
+        ? Promise.resolve({ rows: [] })
+        : input.execute(query),
+  };
   vi.doMock("../src/lib/server-context", () => ({
-    drizzle: { execute: input.execute },
+    drizzle: {
+      execute: input.execute,
+      transaction: (callback: (value: typeof tx) => unknown) => callback(tx),
+    },
     log,
+  }));
+  vi.doMock("../src/lib/company-identity-mutation", () => ({
+    acquireCompanyIdentityMutationLock: vi.fn(async () => undefined),
+  }));
+  vi.doMock("../src/lib/phone-line-entitlements", () => ({
+    getIncludedPhoneLineSlots: vi.fn(async () => 1),
+  }));
+  // Acquisition-budget behavior is exercised with the real helper in
+  // native-phone-purchase-admission.test.ts; keep these claim protocol cases focused.
+  vi.doMock("../src/lib/phone-number-acquisition", () => ({
+    reservePhoneNumberAcquisition: vi.fn(async () => undefined),
+    recordRejectedPhoneNumberAcquisition: vi.fn(async () => undefined),
+  }));
+  vi.doMock("../src/lib/channel-entitlements", () => ({
+    requireTenantPhoneChannel: vi.fn(async () => ({ channels: ["voice"] })),
   }));
   vi.doMock("../src/lib/twilio-service", () => ({
     getTwilioClient: () => provider.client,

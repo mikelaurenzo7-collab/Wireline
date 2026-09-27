@@ -23,6 +23,15 @@ const STRIPE_PLAN_ENV_KEYS = [
   "STRIPE_TEAM_PRICE_ID",
   "STRIPE_BUSINESS_PRICE_ID",
 ] as const;
+const CHANNEL_PLAN_IDS = [
+  "voice",
+  "email",
+  "sms",
+  "voice-email",
+  "voice-sms",
+  "email-sms",
+  "omnichannel",
+].flatMap((id) => [id, `${id}-regular`, `${id}-high`]);
 
 afterEach(() => {
   for (const key of STRIPE_PLAN_ENV_KEYS) delete process.env[key];
@@ -57,20 +66,14 @@ describe("plan-catalog", () => {
   });
 
   it("keeps the canonical Stripe plan identifiers aligned to the commercial model", () => {
-    expect(STRIPE_PLANS).toHaveLength(12);
+    expect(STRIPE_PLANS).toHaveLength(26);
     expect(STRIPE_PLANS.map((plan) => plan.id)).toEqual([
       "personal",
       "starter",
       "team",
       "business",
       "enterprise",
-      "voice",
-      "email",
-      "sms",
-      "voice-email",
-      "voice-sms",
-      "email-sms",
-      "omnichannel",
+      ...CHANNEL_PLAN_IDS,
     ]);
   });
 
@@ -80,16 +83,7 @@ describe("plan-catalog", () => {
     expect(enterprise?.price_usd_monthly).toBe(159);
     expect(enterprise?.max_agents).toBe(15);
     expect(enterprise?.public).toBe(false);
-    expect(plansForClient().map((plan) => plan.id)).toEqual([
-      "personal",
-      "voice",
-      "email",
-      "sms",
-      "voice-email",
-      "voice-sms",
-      "email-sms",
-      "omnichannel",
-    ]);
+    expect(plansForClient().map((plan) => plan.id)).toEqual(["personal", ...CHANNEL_PLAN_IDS]);
   });
 
   it("keeps paid plans positive and overage above variable voice cost", () => {
@@ -146,7 +140,11 @@ describe("plan-catalog", () => {
       }
     }
     for (const plan of paid) {
-      expect(plan.price_usd_annual, plan.id).toBe(plan.price_usd_monthly * 10);
+      expect(plan.price_usd_annual, plan.id).toBeGreaterThan(0);
+      expect(plan.price_usd_annual, plan.id).toBeLessThan(plan.price_usd_monthly * 12);
+      if (plan.capacityTier === "light" && !plan.channels.includes("voice")) {
+        expect(plan.price_usd_annual, plan.id).toBe(plan.price_usd_monthly * 10);
+      }
     }
     expect(planById("starter")?.price_usd_annual).toBe(190);
   });

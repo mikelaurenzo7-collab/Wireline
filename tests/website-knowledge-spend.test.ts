@@ -8,11 +8,22 @@ import { runStructured } from "../src/lib/ai-structured";
 import { AppError } from "../src/lib/api-error";
 import { WebsiteFetchError } from "../src/lib/safe-public-text-fetch";
 import {
-  aggregateWebsiteKnowledgeUsage,
-  runWithWebsiteKnowledgeSpend,
-  websiteKnowledgeCostDecision,
-  websiteKnowledgeSettledCostUsd,
-} from "../src/lib/website-knowledge-spend";
+  aggregateManagedAiUsage as aggregateWebsiteKnowledgeUsage,
+  runWithManagedAiSpend,
+  managedAiCostDecision as websiteKnowledgeCostDecision,
+  managedAiSettledCostUsd as websiteKnowledgeSettledCostUsd,
+  type ManagedAiSpendDependencies,
+} from "../src/lib/managed-ai-operation-spend";
+
+// Exercise the shared settlement lifecycle with a deterministic test reservation.
+const runWithWebsiteKnowledgeSpend = <T>(
+  input: { userId: string; hostname: string; operation: () => Promise<T> },
+  dependencies: ManagedAiSpendDependencies,
+) =>
+  runWithManagedAiSpend(
+    { ...input, action: "website-knowledge.import", reserveUsd: 0.25 },
+    dependencies,
+  );
 
 const reservation = { auditId: 42n, userId: "user-1", costUsd: 0.25 };
 
@@ -140,9 +151,9 @@ describe("website knowledge spend reservation", () => {
       costBasis: "provider_reported",
       conservativeFloorApplied: false,
     });
-    const source = readFileSync("src/lib/website-knowledge-spend.ts", "utf8");
+    const source = readFileSync("src/lib/managed-ai-operation-spend.ts", "utf8");
     const settlement = source.slice(
-      source.indexOf("async function settleKnownWebsiteKnowledgeSpend"),
+      source.indexOf("async function settleKnownManagedAiSpend"),
       source.indexOf("function reservationError"),
     );
     expect(settlement).toContain("costUsd: String(costUsd)");

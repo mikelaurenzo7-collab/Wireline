@@ -1,7 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resolveRuntimeCallCost, withAuditCapture } from "../src/lib/ai-audit";
+import {
+  createAuditContext,
+  runInAuditContext,
+  resolveRuntimeCallCost,
+  withAuditCapture,
+} from "../src/lib/ai-audit";
 import { extractImageAsset } from "../src/routes/agent-routes-v2";
+
+vi.mock("../src/lib/managed-ai-operation-spend", () => ({
+  runWithManagedAiSpend: ({ operation }: { operation: () => Promise<unknown> }) => operation(),
+}));
 
 const image = "data:image/png;base64,aGVsbG8=";
 
@@ -31,7 +40,7 @@ describe("agent image training through AI Gateway", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(extractImageAsset("menu.png", image)).resolves.toEqual({
+    await expect(extractImageAsset("menu.png", image, "tenant")).resolves.toEqual({
       directives: [],
       knowledge: [],
       personality: "Warm",
@@ -60,27 +69,64 @@ describe("agent image training through AI Gateway", () => {
   it("fails closed when Gateway authentication is unavailable", async () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
-    await expect(extractImageAsset("menu.png", image)).rejects.toMatchObject({ status: 503 });
+    await expect(extractImageAsset("menu.png", image, "tenant")).rejects.toMatchObject({
+      status: 503,
+    });
   });
 
-  it("honors an explicit governed Gateway vision-model override", async () => {
+  it("keeps a rejected provider response actionable after the spend wrapper classifies it", async () => {
+    vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
+    vi.stubEnv("VERCEL_OIDC_TOKEN", "");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => response(429, {})),
+    );
+    await expect(extractImageAsset("menu.png", image, "tenant")).rejects.toMatchObject({
+      status: 502,
+      message: "Image training is temporarily unavailable. Try again shortly.",
+    });
+  });
+
+  it.each([undefined, 0.0019])(
+    "retains ambiguity for impossible cache usage unless authoritative cost is supplied (%s)",
+    async (cost) => {
+      vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
+      vi.stubEnv("VERCEL_OIDC_TOKEN", "");
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          response(200, {
+            model: "openai/gpt-5.6-terra",
+            output_text: JSON.stringify({ directives: [], knowledge: [], personality: "Warm" }),
+            usage: {
+              input_tokens: 100,
+              output_tokens: 10,
+              input_tokens_details: { cached_tokens: 100_000_000 },
+            },
+            ...(cost === undefined ? {} : { provider_metadata: { gateway: { cost } } }),
+          }),
+        ),
+      );
+      const context = createAuditContext();
+      await expect(
+        runInAuditContext(context, () => extractImageAsset("menu.png", image, "tenant")),
+      ).resolves.toMatchObject({ personality: "Warm" });
+      expect(context.ambiguousProviderAttempts).toBe(cost === undefined ? 1 : 0);
+      if (cost !== undefined) expect(resolveRuntimeCallCost(context.records[0]).costUsd).toBe(cost);
+    },
+  );
+
+  it("refuses a vision override without a verified image-token bound before provider work", async () => {
     vi.stubEnv("AI_GATEWAY_API_KEY", "gateway-test-key");
     vi.stubEnv("VERCEL_OIDC_TOKEN", "");
     vi.stubEnv("WIRELINE_GATEWAY_VISION_MODEL", "google/gemini-3.1-pro-preview");
-    const fetchMock = vi.fn(async () =>
-      response(200, {
-        model: "google/gemini-3.1-pro-preview",
-        output_text: JSON.stringify({ directives: [], knowledge: [], personality: "" }),
-        usage: { input_tokens: 8, output_tokens: 1 },
-      }),
-    );
+    const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
-
-    await extractImageAsset("menu.png", image);
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(JSON.parse(String(init.body))).toMatchObject({
-      model: "google/gemini-3.1-pro-preview",
+    await expect(extractImageAsset("menu.png", image, "tenant")).rejects.toMatchObject({
+      status: 503,
+      code: "AI_SPEND_BOUND_UNAVAILABLE",
     });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("propagates authoritative Gateway routing and cost evidence into vision audit records", async () => {
@@ -115,7 +161,7 @@ describe("agent image training through AI Gateway", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const captured = await withAuditCapture(() => extractImageAsset("menu.png", image));
+    const captured = await withAuditCapture(() => extractImageAsset("menu.png", image, "tenant"));
 
     expect(captured.records).toEqual([
       expect.objectContaining({

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getTableName } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 
@@ -46,12 +46,15 @@ function database(
   const locks = new Map<string, Promise<void>>();
   const lockKeys: string[] = [];
   const state = {
-    used: options.used ?? 30,
+    used: options.used ?? 50,
     plan: options.plan ?? "voice",
     status: options.status ?? "active",
     email: options.email ?? "pilot@example.test",
     failInsert: false,
     usageClaimed: false,
+    paidStart: Math.floor(Date.now() / 1000) - 86400,
+    paidEnd: Math.floor(Date.now() / 1000) + 30 * 86400,
+    hasPaidReceipt: true,
   };
   const dialect = new PgDialect();
   const balance = () => rows.reduce((sum, row) => sum + Number(row.deltaUsd), 0);
@@ -102,12 +105,32 @@ function database(
                   return [row];
                 }
                 if (table === "wireline_users") return [{ ...state }];
+                if (table === "wireline_subscriptions")
+                  return [{ ...state, subscriptionId: "sub_paid", customerId: "cus_paid" }];
                 if (table === "wireline_quota_usage") return [{ used: BigInt(state.used) }];
                 if (table === "wireline_voice_usage_events")
                   return state.usageClaimed ? [{ providerCallId: "openai:first" }] : [];
                 if (table !== "wireline_credit_ledger")
                   throw new Error(`Unexpected table ${table}`);
                 const scoped = visible().filter((row) => row.userId === filter?.params[0]);
+                if (filter?.params[1] === "paid_plan_allowance")
+                  return state.hasPaidReceipt
+                    ? [
+                        {
+                          metadata: {
+                            version: 1,
+                            subscription_id: "sub_paid",
+                            customer_id: "cus_paid",
+                            invoice_id: "in_paid",
+                            price_id: "price_paid",
+                            plan_id: state.plan,
+                            interval: "month",
+                            period_start: state.paidStart,
+                            period_end: state.paidEnd,
+                          },
+                        },
+                      ]
+                    : [];
                 if (selection && "balance" in selection)
                   return [
                     { balance: String(scoped.reduce((sum, row) => sum + Number(row.deltaUsd), 0)) },
@@ -164,9 +187,56 @@ function database(
   return { rows, state, lockKeys, db, reserve, balance };
 }
 
+afterEach(() => vi.useRealTimers());
+
+describe("paid channel call periods", () => {
+  it("does not refill a 500-minute plan on Oct 1 after one Sep 30 payment", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-30T12:00:00Z"));
+    const data = database({ plan: "voice-high", used: 0 });
+    data.state.paidStart = Date.parse("2026-09-30T12:00:00Z") / 1000;
+    data.state.paidEnd = Date.parse("2026-10-30T12:00:00Z") / 1000;
+    const funding = await data.reserve();
+    expect(funding?.periodKey).toBe(`paid:sub_paid:${data.state.paidStart}`);
+    await releaseVoiceCallFunding(userId, "openai:first");
+    data.state.used = 500;
+    vi.setSystemTime(new Date("2026-10-01T12:00:00Z"));
+    await expect(data.reserve(call("openai:next"))).rejects.toMatchObject({
+      code: "VOICE_FUNDING_REQUIRED",
+    });
+  });
+
+  it("requires a paid period receipt before granting call capacity", async () => {
+    const data = database({ used: 0 });
+    data.state.hasPaidReceipt = false;
+    await expect(data.reserve()).rejects.toMatchObject({ code: "PAID_ALLOWANCE_SYNC_REQUIRED" });
+    expect(data.rows).toHaveLength(0);
+  });
+});
+
 beforeEach(() => vi.restoreAllMocks());
 
 describe("durable call funding admission", () => {
+  it.each([
+    ["voice-regular", 250],
+    ["voice-high", 500],
+  ] as const)(
+    "keeps %s calls on one remaining minute and one unresolved call hold",
+    async (plan, included) => {
+      const data = database({ plan, used: included - 1 });
+      expect(await data.reserve(call("openai:role-one"))).toMatchObject({
+        includedMinutes: 1,
+        maxSeconds: 660,
+        prepaidHoldUsd: 0,
+        graceMinutes: 10,
+      });
+      await expect(data.reserve(call("openai:role-two"))).rejects.toMatchObject({
+        code: "VOICE_FUNDING_IN_USE",
+      });
+      expect(data.rows).toHaveLength(1);
+      expect(data.lockKeys.every((key) => key === userId)).toBe(true);
+    },
+  );
   it("reserves only funded minutes and persists a bounded deadline across retry", async () => {
     const data = database({ balance: 1.1 });
     const initial = (await data.reserve()) as any;
@@ -182,7 +252,7 @@ describe("durable call funding admission", () => {
   it("persists a zero-dollar hold for included-only calls and shares one pool", async () => {
     const data = database({ used: 0 });
     expect(await data.reserve()).toMatchObject({
-      maxSeconds: 2400,
+      maxSeconds: 3600,
       prepaidHoldUsd: 0,
       graceMinutes: 10,
     });
@@ -204,8 +274,8 @@ describe("durable call funding admission", () => {
 
   it("rejects unpaid or insolvent accounts even if grace or included minutes exist", async () => {
     for (const options of [
-      { used: 30, balance: 0 },
-      { used: 30, balance: 0.21 },
+      { used: 50, balance: 0 },
+      { used: 50, balance: 0.21 },
       { used: 0, balance: -0.01 },
     ]) {
       const data = database(options);

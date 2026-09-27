@@ -19,6 +19,7 @@ const h = vi.hoisted(() => ({
   route: vi.fn(),
   remove: vi.fn(),
   releasePurchase: vi.fn(),
+  pendingPurchaseCheck: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -33,6 +34,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 vi.mock("../src/db/schema", () => ({
   agents: { table: "agents", id: "id", userId: "userId" },
+  personality: { content: "personality", agentId: "agentId", userId: "userId" },
   settings: { table: "settings", userId: "userId", twilioSmsFromNumber: "twilioSmsFromNumber" },
   phoneNumbers: {
     table: "phones",
@@ -69,6 +71,9 @@ vi.mock("../src/lib/server-context", () => {
         const query = {
           from(value: { table: string }) {
             table = value.table;
+            return query;
+          },
+          leftJoin() {
             return query;
           },
           where(value: typeof predicate) {
@@ -144,6 +149,7 @@ vi.mock("../src/lib/company-identity-mutation", async () => {
 });
 vi.mock("../src/lib/account-environment-policy", () => ({
   liveExternalActionPolicyForUser: async () => ({ allowed: true }),
+  assertLiveExternalActionAllowed: vi.fn(),
 }));
 vi.mock("../src/lib/channel-entitlements", () => ({
   requireTenantPhoneChannel: async () => ({ channels: ["voice"] }),
@@ -157,8 +163,13 @@ vi.mock("../src/lib/phone-line-entitlements", () => ({
   getIncludedPhoneLineSlots: async () => h.slots,
 }));
 vi.mock("../src/lib/orphan-carrier-ledger", () => ({
+  assertNoPendingNativeTwilioPurchaseForBot: h.pendingPurchaseCheck,
   clearNativeTwilioPurchaseClaim: vi.fn(),
   NATIVE_TWILIO_PURCHASE_OPERATION_LEASE_MS: 1200000,
+}));
+vi.mock("../src/lib/runtime-template-personality", () => ({
+  isSavedRuntimeReviewRequired: () => false,
+  RUNTIME_REVIEW_REQUIRED_RESPONSE: "review required",
 }));
 vi.mock("../src/lib/tenant-provider-deletion-fence", () => ({
   runTenantProviderWorkWithDeletionFence: async ({
@@ -181,6 +192,8 @@ vi.mock("../src/lib/voice/native-phone-carrier", () => ({
 
 import { provisionNativeTenantNumber } from "../src/lib/voice/native-phone-provisioning";
 import { releaseNativeTenantNumber } from "../src/lib/voice/native-phone-release";
+import { assignNativePhoneLine } from "../src/lib/voice/native-phone-assignment";
+import { AppError } from "../src/lib/api-error";
 
 const detached = (id: bigint, userId = "tenant"): Line => ({
   id,
@@ -198,6 +211,9 @@ beforeEach(() => {
   h.beforeMutation = undefined;
   h.mutationTail = Promise.resolve();
   h.lockHeld = false;
+  h.pendingPurchaseCheck.mockReset().mockImplementation(async () => {
+    expect(h.lockHeld).toBe(true);
+  });
   h.remove.mockReset().mockImplementation(async () => {
     expect(h.lockHeld).toBe(true);
   });
@@ -282,6 +298,65 @@ describe("native number release and reuse share the identity lock", () => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("native phone assignment reuses owned capacity", () => {
+  it("blocks manual assignment while that Bot has an unresolved purchase", async () => {
+    h.pendingPurchaseCheck.mockImplementation(async () => {
+      expect(h.lockHeld).toBe(true);
+      throw new AppError(409, "PHONE_PURCHASE_PENDING", "Purchase pending.");
+    });
+    await expect(
+      assignNativePhoneLine({ userId: "tenant", lineId: 1n, agentId: "bot" }),
+    ).rejects.toMatchObject({ code: "PHONE_PURCHASE_PENDING" });
+    expect(h.lines[0].agentId).toBeNull();
+  });
+
+  it("blocks automatic detached-line reuse while that Bot has an unresolved purchase", async () => {
+    h.pendingPurchaseCheck.mockRejectedValue(
+      new AppError(409, "PHONE_PURCHASE_PENDING", "Purchase pending."),
+    );
+    await expect(
+      provisionNativeTenantNumber({ userId: "tenant", agentId: "bot" }),
+    ).rejects.toMatchObject({ code: "PHONE_PURCHASE_PENDING" });
+    expect(h.lines[0].agentId).toBeNull();
+    expect(h.purchase).not.toHaveBeenCalled();
+    expect(h.route).not.toHaveBeenCalled();
+  });
+
+  it("allows reassignment of an owned line without reserving or buying another", async () => {
+    await expect(
+      assignNativePhoneLine({ userId: "tenant", lineId: 1n, agentId: "bot" }),
+    ).resolves.toMatchObject({ line: { agentId: "bot" } });
+    expect(h.pendingPurchaseCheck).toHaveBeenCalledOnce();
+    expect(h.purchase).not.toHaveBeenCalled();
+  });
+
+  it("keeps canonical line routing recovery available without a new assignment", async () => {
+    h.lines[0].agentId = "bot";
+    await expect(
+      assignNativePhoneLine({ userId: "tenant", lineId: 1n, agentId: "bot" }),
+    ).resolves.toMatchObject({ line: { agentId: "bot" } });
+    expect(h.pendingPurchaseCheck).not.toHaveBeenCalled();
+    expect(h.purchase).not.toHaveBeenCalled();
+  });
+
+  it("compensates a purchase when paid entitlement changes during the provider request", async () => {
+    h.lines = [];
+    const purchase = { phoneNumber: "+13125550101", sid: "PN_selected" };
+    h.purchase.mockImplementation(async () => {
+      h.slots = 0;
+      return purchase;
+    });
+    const result = await provisionNativeTenantNumber({
+      userId: "tenant",
+      agentId: "bot",
+      preferredPhoneNumber: purchase.phoneNumber,
+    });
+    expect(result).toMatchObject({ ok: false, code: "PHONE_CAPACITY_REACHED" });
+    expect(h.releasePurchase).toHaveBeenCalledWith(
+      expect.objectContaining({ purchase, cause: "PHONE_CAPACITY_RACE" }),
+    );
+    expect(h.lines).toHaveLength(0);
+    expect(h.route).not.toHaveBeenCalled();
+  });
   it("background identity repair waits for a customer choice without claiming or buying a line", async () => {
     const result = await provisionNativeTenantNumber({
       userId: "tenant",

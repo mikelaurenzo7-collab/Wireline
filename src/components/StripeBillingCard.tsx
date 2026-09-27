@@ -145,7 +145,11 @@ export default function StripeBillingCard({
       const checkoutAvailable =
         configured &&
         plansRes.checkout_available === true &&
-        livePlans.some((plan) => plan.price_usd_monthly > 0 && plan.configured === true);
+        livePlans.some(
+          (plan) =>
+            plan.price_usd_monthly > 0 &&
+            (plan.configured === true || plan.annual_configured === true),
+        );
       setSelfServeBillingReleased(checkoutAvailable);
       onCheckoutAvailabilityChange?.(checkoutAvailable ? "available" : "paused");
       setSub(statusRes.subscription || null);
@@ -767,8 +771,7 @@ function ActiveSubCard({
             </p>
             {sub.max_agents && sub.max_agents > 1 && agentCount >= sub.max_agents - 1 ? (
               <p className="text-sm text-[var(--wireline-color-status-warning)]">
-                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."} Contact
-                support for more capacity.
+                {agentCount >= sub.max_agents ? "All Bot slots in use." : "Near capacity."}
               </p>
             ) : null}
           </div>
