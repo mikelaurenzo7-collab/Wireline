@@ -2,11 +2,32 @@ import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import { parseArgs } from "node:util";
 import { Resvg } from "@resvg/resvg-js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const campaign = resolve(root, "brand-work/launch-2026-09-refresh");
-const output = resolve(campaign, "exports");
+let outputArgument;
+try {
+  const { values, tokens } = parseArgs({
+    args: process.argv.slice(2),
+    options: { output: { type: "string" } },
+    strict: true,
+    allowPositionals: false,
+    tokens: true,
+  });
+  if (tokens.filter((token) => token.kind === "option" && token.name === "output").length > 1) {
+    throw new Error("--output may be supplied only once");
+  }
+  if (values.output !== undefined && values.output.trim().length === 0) {
+    throw new Error("--output requires a directory path");
+  }
+  outputArgument = values.output;
+} catch (error) {
+  throw new Error(`Invalid renderer arguments: ${error.message}. No release assets were changed.`);
+}
+const output = outputArgument ? resolve(outputArgument) : resolve(campaign, "exports");
+const reviewOutput = outputArgument ? resolve(output, "qa") : resolve(campaign, "qa");
 const manifestPath = resolve(output, "manifest.json");
 const fonts = [
   "InterTight-ExtraBold.ttf",
@@ -38,7 +59,7 @@ function cta(x, y, scale = 1) {
   return `<g transform="translate(${x} ${y}) scale(${scale})"><rect width="250" height="68" rx="12" fill="#B298FB"/>${text("Start Free", 24, 46, 30, "#100B19", 700)}<path d="M205 24l10 10-10 10m-20-10h29" fill="none" stroke="#100B19" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`;
 }
 function frame(w, h, title, content) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img"><title>${esc(title)}</title><desc>BotBound advertising creative. Private testing is free; live use is paid. Prepared artwork, not a product demonstration.</desc><defs><linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#050508" stop-opacity=".76"/><stop offset=".36" stop-color="#050508" stop-opacity="0"/><stop offset=".74" stop-color="#050508" stop-opacity=".05"/><stop offset="1" stop-color="#050508" stop-opacity=".98"/></linearGradient><linearGradient id="side"><stop stop-color="#08070D"/><stop offset=".5" stop-color="#08070D"/><stop offset=".75" stop-color="#08070D" stop-opacity=".08"/></linearGradient><radialGradient id="halo"><stop stop-color="#754AC9" stop-opacity=".38"/><stop offset="1" stop-color="#754AC9" stop-opacity="0"/></radialGradient></defs><rect width="${w}" height="${h}" fill="#08070D"/>${content}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img"><title>${esc(title)}</title><desc>BotBound advertising creative. Private testing is free; live activation is currently paused. Prepared artwork, not a product demonstration.</desc><defs><linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#050508" stop-opacity=".76"/><stop offset=".36" stop-color="#050508" stop-opacity="0"/><stop offset=".74" stop-color="#050508" stop-opacity=".05"/><stop offset="1" stop-color="#050508" stop-opacity=".98"/></linearGradient><linearGradient id="side"><stop stop-color="#08070D"/><stop offset=".5" stop-color="#08070D"/><stop offset=".75" stop-color="#08070D" stop-opacity=".08"/></linearGradient><linearGradient id="photoFooter" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#08070D" stop-opacity="0"/><stop offset=".65" stop-color="#08070D" stop-opacity=".8"/><stop offset="1" stop-color="#08070D" stop-opacity=".88"/></linearGradient><radialGradient id="halo"><stop stop-color="#754AC9" stop-opacity=".38"/><stop offset="1" stop-color="#754AC9" stop-opacity="0"/></radialGradient></defs><rect width="${w}" height="${h}" fill="#08070D"/>${content}</svg>`;
 }
 function exportArt(name, w, h, title, content) {
   const svg = frame(w, h, title, content);
@@ -58,7 +79,8 @@ function exportArt(name, w, h, title, content) {
     title,
     bytes: png.length,
     sha256: createHash("sha256").update(png).digest("hex"),
-    status: "Prepared; distribution held pending live destination verification",
+    status:
+      "Prepared review candidate; free private testing only, live activation paused; distribution unapproved",
   });
 }
 
@@ -87,19 +109,19 @@ for (const [name, w, h] of [
     content +=
       cta(m, foot) +
       text("BotBound.app", w - 290, foot + 46, 31, "#F8F7FC", 600) +
-      text("Private testing free. Live use paid.", m, foot + 118, 28, "#D3CBDF", 400);
+      text("Private testing free. Live activation paused.", m, foot + 118, 28, "#D3CBDF", 400);
   } else {
     const size = wide ? (name === "email" ? 72 : 106) : 92;
     const logoY = wide ? 85 : 96;
     const headlineY = wide ? (name === "email" ? 205 : 285) : 230;
     const xPhoto = wide ? w * 0.46 : w * 0.42;
     const photoW = w - xPhoto;
-    content = `<image href="${photo}" x="${xPhoto}" width="${photoW}" height="${h}" preserveAspectRatio="xMidYMid slice"/><rect width="${w}" height="${h}" fill="url(#side)"/>${logo(m, logoY, wide ? 48 : 52)}${lines(["Stay in", "the Work."], m, headlineY, size)}${text("Bots for calls, texts,", m, headlineY + size + 72, wide ? 27 : 29, "#D3CBDF", 400)}${text("and email.", m, headlineY + size + 112, wide ? 27 : 29, "#D3CBDF", 400)}`;
+    content = `<image href="${photo}" x="${xPhoto}" width="${photoW}" height="${h}" preserveAspectRatio="xMidYMid slice"/><rect width="${w}" height="${h}" fill="url(#side)"/>${wide ? `<rect y="${h - 140}" width="${w}" height="140" fill="url(#photoFooter)"/>` : ""}${logo(m, logoY, wide ? 48 : 52)}${lines(["Stay in", "the Work."], m, headlineY, size)}${text("Bots for calls, texts,", m, headlineY + size + 72, wide ? 27 : 29, "#D3CBDF", 400)}${text("and email.", m, headlineY + size + 112, wide ? 27 : 29, "#D3CBDF", 400)}`;
     const foot = name === "email" ? 440 : wide ? 675 : 817;
     content +=
       cta(m, foot, name === "email" ? 0.82 : 1) +
       text(
-        "Private testing free. Live use paid.",
+        "Private testing free. Live activation paused.",
         m,
         foot + (name === "email" ? 94 : 119),
         name === "email" ? 22 : 25,
@@ -122,7 +144,7 @@ for (const [name, w, h] of [
     `<defs><linearGradient id="footer" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#08070D" stop-opacity="0"/><stop offset=".6" stop-color="#08070D" stop-opacity=".95"/><stop offset="1" stop-color="#08070D"/></linearGradient></defs><rect y="${broadFoot - 150}" width="${w}" height="${h - broadFoot + 150}" fill="url(#footer)"/>` +
     cta(m, broadFoot, name === "email" ? 0.82 : 1) +
     text(
-      "Private testing free. Live use paid.",
+      "Private testing free. Live activation paused.",
       m,
       broadFoot + (name === "email" ? 94 : 119),
       name === "email" ? 22 : 28,
@@ -133,7 +155,7 @@ for (const [name, w, h] of [
   else broad += text("BotBound.app", w - 260, h - 40, 27, "#F8F7FC", 600);
   exportArt(`botbound-small-team-${name}`, w, h, "Small Team. Bigger Reach.", broad);
 }
-mkdirSync(resolve(campaign, "qa"), { recursive: true });
+mkdirSync(reviewOutput, { recursive: true });
 const thumbW = 360,
   thumbH = 690;
 const review = catalog
@@ -144,7 +166,7 @@ const review = catalog
   })
   .join("");
 writeFileSync(
-  resolve(campaign, "qa/contact-sheet.png"),
+  resolve(reviewOutput, "contact-sheet.png"),
   new Resvg(frame(1800, 1380, "Campaign Contact Sheet", review), {
     font: { fontFiles: fonts, loadSystemFonts: false },
   })

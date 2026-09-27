@@ -1,22 +1,22 @@
 # BotBound Launch Copy Kit
 
-Source review: September 20, 2026. Product baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c` (merged PR #1225). This describes source capabilities, not deployed availability. Vercel recovery and deployment remain launch blockers at this review.
+Source review: September 26, 2026. Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. Authenticated private Test and explicit Build Save are verified; self-serve paid activation and general voice admissions remain paused. [Current offer and release boundaries](../launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md) distinguish this usable private workspace from unverified live operations.
 
 The [September Refresh](../launch-2026-09-refresh/README.md) reconciles this kit with the September 15–19 Drive sales campaign and pilot notes. Sales remains a creative variant alongside the general product story and the incoming-call pilot focus.
 
 ## Message Hierarchy
 
-| Purpose | Copy |
-| --- | --- |
-| Brand | Your Next Hire Is a Bot. |
-| Category | Inbound & Outbound Bots |
-| Channels | Bots for calls, texts, and email. |
-| Current flagship | Stay in the Work. |
-| Broad team variant | Small Team. Bigger Reach. |
-| Second Ring variant | Hands Full? Bot on the Line. |
-| Control | Your Bots. Your Rules. |
-| Primary CTA | Start Free |
-| Offer disclosure | Private testing free. Live use paid. |
+| Purpose             | Copy                                          |
+| ------------------- | --------------------------------------------- |
+| Brand               | Your Next Hire Is a Bot.                      |
+| Category            | Inbound & Outbound Bots                       |
+| Channels            | Bots for calls, texts, and email.             |
+| Current flagship    | Stay in the Work.                             |
+| Broad team variant  | Small Team. Bigger Reach.                     |
+| Second Ring variant | Hands Full? Bot on the Line.                  |
+| Control             | Your Bots. Your Rules.                        |
+| Primary CTA         | Start Free                                    |
+| Offer disclosure    | Private testing free. Live activation paused. |
 
 Lead with a recognizable business moment, then explain what a Bot can handle. Use one headline, one short support line when needed, and one CTA. Author titles and headlines in Title Case; body copy uses sentence case. Keep setup instructions inside the product and partner support notes.
 
@@ -32,15 +32,15 @@ Lead with a recognizable business moment, then explain what a Bot can handle. Us
 
 The September Drive campaign **Your Next Sales Hire**, with its **Give Sales a Hand** extension, remains an audience-specific variant. “Sales hire” is a metaphor for software, not a staffing or human-equivalence claim.
 
-| Purpose | Copy |
-| --- | --- |
-| Category | AI Sales Bots |
-| Invitation | Meet Your Next Sales Hire. |
-| Owner story | Give Sales a Hand. |
-| Control | Your Offer. Your Voice. Your Rules. |
-| Capability | Answer questions, qualify interest, and help book the next step. |
-| CTA | Start Free |
-| Disclosure | Private testing free. Live use paid. |
+| Purpose     | Copy                                                             |
+| ----------- | ---------------------------------------------------------------- |
+| Category    | AI Sales Bots                                                    |
+| Invitation  | Meet Your Next Sales Hire.                                       |
+| Owner story | Give Sales a Hand.                                               |
+| Control     | Your Offer. Your Voice. Your Rules.                              |
+| Capability  | Answer questions, qualify interest, and help book the next step. |
+| CTA         | Start Free                                                       |
+| Disclosure  | Private testing free. Live activation paused.                    |
 
 Do not present “Every Lead. A Next Step.” as an outcome guarantee. Deal memory, adaptive plans, quote assistance, daily decision briefs, and complete sales-cycle autonomy remain proposed concepts until their exact behavior is shipped and verified. Outbound-specific distribution still requires readiness approval.
 
@@ -48,13 +48,13 @@ Do not present “Every Lead. A Next Step.” as an outcome guarantee. Deal memo
 
 Start the pilot with incoming calls and one configured, permitted follow-up. A narrow pilot scope is not a product-wide limit on Bots.
 
-| Piece | Source | Purpose |
-| --- | --- | --- |
-| Hero still | Current reviewed refresh or Hands Full export | Recognizable owner problem |
-| Founder post | [Refresh copy](../launch-2026-09-refresh/COPY-KIT.md) | Explain the product and invite interest |
-| Product evidence | Exact deployed-source labeled test call and outcome | Show the real workflow once verified |
-| One-pager | [Investor source](../launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) and reviewed PDF | Explain model and pilot posture |
-| Setup/support note | Template below | Agree the job, handoff, and support path |
+| Piece              | Source                                                                                        | Purpose                                  |
+| ------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Hero still         | Current reviewed refresh or Hands Full export                                                 | Recognizable owner problem               |
+| Founder post       | [Refresh copy](../launch-2026-09-refresh/COPY-KIT.md)                                         | Explain the product and invite interest  |
+| Product evidence   | Exact deployed-source labeled test call and outcome                                           | Show the real workflow once verified     |
+| One-pager          | [Investor source](../launch-2026-09/investor/BOTBOUND-INVESTOR-ONE-PAGER.md) and reviewed PDF | Explain model and pilot posture          |
+| Setup/support note | Template below                                                                                | Agree the job, handoff, and support path |
 
 ### Partner Setup and Support Note
 
@@ -84,7 +84,7 @@ I built BotBound for that moment: Bots for calls, texts, and email, shaped aroun
 
 Start free: `https://botbound.app/signup?plan=free`
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 ## Launch Email
 
@@ -98,7 +98,7 @@ BotBound gives you Bots for calls, texts, and email, with your knowledge, your r
 
 **Start Free:** `https://botbound.app/signup?plan=free`
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 ## Press and Partner Description
 
@@ -116,14 +116,14 @@ A claimed booking, reply, or other result needs a verified labeled test record o
 
 ## CTA and Destination
 
-| Intent | CTA | Destination | Boundary |
-| --- | --- | --- | --- |
-| Free start | Start Free | `/signup?plan=free` | Private draft and rehearsal; no live number |
-| Role discovery | Explore Bots | `/showcase` | No public audio demo |
-| Product explanation | See Features | `/features` | Capabilities and owner controls |
-| Pricing | See Pricing | `/pricing` | Catalog price is not activation evidence |
-| Role signup | Start Free | `/signup?plan=free&template=[verified-template-key]` | Verify the supported key before publishing |
-| Partner discussion | Get in Touch | `/contact` | Confirm the contact path works |
+| Intent              | CTA          | Destination                                          | Boundary                                    |
+| ------------------- | ------------ | ---------------------------------------------------- | ------------------------------------------- |
+| Free start          | Start Free   | `/signup?plan=free`                                  | Private draft and rehearsal; no live number |
+| Role discovery      | Explore Bots | `/showcase`                                          | No public audio demo                        |
+| Product explanation | See Features | `/features`                                          | Capabilities and owner controls             |
+| Pricing             | See Pricing  | `/pricing`                                           | Catalog price is not activation evidence    |
+| Role signup         | Start Free   | `/signup?plan=free&template=[verified-template-key]` | Verify the supported key before publishing  |
+| Partner discussion  | Get in Touch | `/contact`                                           | Confirm the contact path works              |
 
 Use **Build and Test Free** only with an account-required private rehearsal destination. Do not use **Book a Demo** for self-serve signup. Purchase CTAs require current `/api/billing/plans` evidence for the selected plan and interval.
 

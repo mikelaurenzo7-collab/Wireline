@@ -12,4 +12,10 @@ Use case: ads-marketing. Create one new text-free photographic key art for BotBo
 
 ## Reproduction
 
-Run `node scripts/render-botbound-refresh-assets.mjs` with repository dependencies and Node 22. Exports include editable SVG layouts with embedded artwork and PNG delivery files. Source photography is preserved unchanged.
+Use the current refresh renderer with repository dependencies and Node 22:
+
+```powershell
+node scripts/render-botbound-refresh-assets.mjs --output <external-review-directory>
+```
+
+The selected directory receives `png/`, `svg/`, `qa/contact-sheet.png`, and `manifest.json`. Without `--output`, the historical local layout remains `exports/` plus `qa/`. Generated masters stay ignored or external. Source photography is preserved unchanged; layouts use the current paused-activation disclosure. A fresh render does not update the September 20 Drive delivery or inherit its review approval.

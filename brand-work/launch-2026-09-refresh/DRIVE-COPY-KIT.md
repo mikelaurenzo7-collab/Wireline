@@ -1,20 +1,20 @@
 # BotBound Launch Copy Kit
 
-Updated September 20, 2026. Current product baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`, merged PR #1225. This is prepared copy. Vercel recovery and deployment remain blocked; confirm destination, signup, offer, and workflow before distribution.
+Local copy source reviewed September 26, 2026 against `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. This does not update the September 20 Drive delivery. [Current status](LAUNCH-STATUS-2026-09-26.md): free private Test and explicit Build Save verified; paid activation and general voice admissions paused. Recheck the destination and offer before distribution.
 
 ## Current Message System
 
-| Role | Copy |
-| --- | --- |
-| Brand | BotBound |
-| Category | Inbound & Outbound Bots |
-| Flagship | Stay in the Work. |
-| Broad companion | Small Team. Bigger Reach. |
-| Product | Bots for calls, texts, and email. |
-| Control | Your Bots. Your Rules. |
-| Close | Put Your Bot on the Line. |
-| CTA | Start Free |
-| Disclosure | Private testing free. Live use paid. |
+| Role            | Copy                                          |
+| --------------- | --------------------------------------------- |
+| Brand           | BotBound                                      |
+| Category        | Inbound & Outbound Bots                       |
+| Flagship        | Stay in the Work.                             |
+| Broad companion | Small Team. Bigger Reach.                     |
+| Product         | Bots for calls, texts, and email.             |
+| Control         | Your Bots. Your Rules.                        |
+| Close           | Put Your Bot on the Line.                     |
+| CTA             | Start Free                                    |
+| Disclosure      | Private testing free. Live activation paused. |
 
 All titles and headlines use authored Title Case. Use one idea and one CTA per placement. No public setup-step lists. Explain availability where relevant without putting an operational checklist into the hero.
 
@@ -30,7 +30,7 @@ Meet your new Front Desk.
 
 Bots that can answer common questions, capture what callers need, and route the next step using your business rules.
 
-Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ### Partner Setup Note
 
@@ -50,7 +50,7 @@ I built BotBound for that moment: Bots for calls, texts, and email, shaped aroun
 
 Start free: https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 ## Preserved Sales Variants
 
@@ -66,7 +66,7 @@ The September **Your Next Sales Hire** and **Give Sales a Hand** campaigns remai
 
 **CTA:** Start Free
 
-**Disclosure:** Private testing free. Live use paid.
+**Disclosure:** Private testing free. Live activation paused.
 
 “Sales hire” is a metaphor for software, not an employment service or promise of human-equivalent staffing.
 
@@ -76,7 +76,7 @@ The September **Your Next Sales Hire** and **Give Sales a Hand** campaigns remai
 
 You built a business worth choosing. You also have a business to run. Give the next conversation a Bot that works from your offer and rules.
 
-Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ### Outbound Candidate
 
@@ -98,7 +98,7 @@ BotBound gives you Bots for calls, texts, and email, with your knowledge, your r
 
 **Start Free**
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 Confirm sender identity, postal address, unsubscribe mechanism, and destination before sending. No email or outreach is sent by preparing this copy.
 
@@ -110,7 +110,7 @@ BotBound gives owner-led businesses configurable Bots for calls, texts, and emai
 
 We are preparing a small design-partner pilot around incoming calls and a useful follow-up. I'd value your perspective on [specific audience or workflow].
 
-Internal note: personalize before sending. Link only currently reviewed assets and a working destination. Do not call the product launched while hosting is blocked.
+Internal note: personalize before sending. Link only currently reviewed assets and a working destination. Do not describe live calling or paid activation as available while their gates remain closed.
 
 ## Vision, Media, and Evidence
 

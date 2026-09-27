@@ -1,4 +1,6 @@
-# Creative Review and Delivery
+# Creative Review and Delivery — September 20 Historical Record
+
+This records the September 20 delivery and its then-current hosting limits. It is not the current release status; see [September 26 Render and offer review](LAUNCH-STATUS-2026-09-26.md). No remote delivery was changed by the later source review.
 
 Reviewed September 20, 2026 against product source `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`.
 

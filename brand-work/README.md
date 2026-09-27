@@ -46,7 +46,8 @@ The capture targets port 3002 and uses the simulated API on port 3001. Finish so
 ## Regeneration and integrity
 
 - `npm run assets`: product identity derivatives.
-- `npm run brand:launch`: current inbound static campaign candidates.
+- `npm run brand:refresh -- --output <absolute-external-review-directory>`: current Stay in the Work / Small Team. Bigger Reach. static candidates.
+- `npm run brand:launch`: retained Second Ring inbound static campaign candidates.
 - `npm run brand:proof`: current credential-free public UI capture and contact sheet; see the capture instructions above for the two local services.
 - `node scripts/build-botbound-launch-release-manifest.mjs`: assemble an inbound candidate receipt only after current proof passes.
 - `node scripts/build-botbound-promotional-asset-inventory.mjs`: inventory local roles and file signatures; approval and source currency remain unassessed.

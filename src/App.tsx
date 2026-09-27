@@ -2,6 +2,7 @@ import { lazy, Suspense, useLayoutEffect, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { MotionConfig } from "motion/react";
 import { AuthProvider } from "./contexts/AuthContext";
+import { StudioSessionProvider } from "./contexts/StudioSessionContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AgentsProvider } from "./contexts/AgentsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -237,21 +238,23 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
         <AuthProvider>
-          <ViewportModeRoot>
-            <ThemeProvider>
-              <ToastProvider>
-                <BrandingProvider>
-                  <AccountProvider>
-                    <AgentsProvider>
-                      <AppRouter />
-                      <ToastStack />
-                      <CookieConsent />
-                    </AgentsProvider>
-                  </AccountProvider>
-                </BrandingProvider>
-              </ToastProvider>
-            </ThemeProvider>
-          </ViewportModeRoot>
+          <StudioSessionProvider>
+            <ViewportModeRoot>
+              <ThemeProvider>
+                <ToastProvider>
+                  <BrandingProvider>
+                    <AccountProvider>
+                      <AgentsProvider>
+                        <AppRouter />
+                        <ToastStack />
+                        <CookieConsent />
+                      </AgentsProvider>
+                    </AccountProvider>
+                  </BrandingProvider>
+                </ToastProvider>
+              </ThemeProvider>
+            </ViewportModeRoot>
+          </StudioSessionProvider>
         </AuthProvider>
       </BrowserRouter>
     </MotionConfig>

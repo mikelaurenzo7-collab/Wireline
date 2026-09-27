@@ -85,7 +85,9 @@ See `docs/AGENT_CUSTOMIZATION_ARCHITECTURE.md` for the client/domain boundary.
 - No autonomous external action from an intended-action field.
 - No repo-embedded voice SDK.
 
-## Required Vercel environment variables
+## Required production environment variables
+
+Configure these in the Render API secret store. Local development and previews use dedicated sandbox values; do not export production credentials into a checkout.
 
 ```bash
 APP_URL=https://botbound.app

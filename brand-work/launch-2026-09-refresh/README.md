@@ -1,6 +1,6 @@
 # BotBound Creative Refresh
 
-September 20, 2026. Product audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`, merged through PR #1225. This is a creative source package. It does not certify a live deployment, customer result, motion rerender, or paid campaign.
+Creative originated September 20, 2026; source/status reviewed September 26, 2026 against `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), now deployed on Render. See [current offer and release boundaries](LAUNCH-STATUS-2026-09-26.md). This package does not certify customer results, live paid activation, motion rerenders or public distribution.
 
 Current private delivery: [BotBound Creative Refresh](https://drive.google.com/drive/folders/1z0fhFkPl9WW937wsSNQcBKm1j4qVI_bV). It contains [artwork](https://drive.google.com/drive/folders/1zY6QWh42mZjLgjpizl78M_cGNA83gVKE), [guides and sources](https://drive.google.com/drive/folders/1Z7-vgDS-wyZu_I-bBgiNhomnvQjkjq95), and the [customer one-pager](https://drive.google.com/file/d/1zO9aFkf8OBcyd5zxOjJpTWRcWhql5txM/view?usp=drivesdk). These are prepared assets, not live advertising placements.
 
@@ -12,17 +12,17 @@ Bots for calls, texts, and email.
 
 The current broad companion is **Small Team. Bigger Reach.** The product category is **Inbound & Outbound Bots**. Keep the familiar **Put Your Bot on the Line.** close and the approved platinum operator with the violet receiver.
 
-**Start Free** is the primary conversion CTA. **Private testing free. Live use paid.** stays legible beside a free-use offer. Activation depends on current availability, account eligibility, and configuration.
+**Start Free** is the primary conversion CTA. **Private testing free. Live activation paused.** stays legible beside a free-use offer. Activation depends on current availability, account eligibility, and configuration.
 
 ## Campaign Families
 
-| Family | Audience and Job | Status |
-| --- | --- | --- |
-| Stay in the Work | Owner-led businesses protecting their attention | Current broad creative direction |
-| Small Team. Bigger Reach. | Small teams handling calls and follow-up | Current broad companion |
-| The Second Ring | Incoming calls while hands are full | Retained inbound variant with refreshed source |
-| Your Next Sales Hire / Give Sales a Hand | Sales conversations and owner attention | Preserved September Drive sales variants |
-| The First Move | Approved outbound outreach | Creative variant; outbound distribution held |
+| Family                                   | Audience and Job                                | Status                                         |
+| ---------------------------------------- | ----------------------------------------------- | ---------------------------------------------- |
+| Stay in the Work                         | Owner-led businesses protecting their attention | Current broad creative direction               |
+| Small Team. Bigger Reach.                | Small teams handling calls and follow-up        | Current broad companion                        |
+| The Second Ring                          | Incoming calls while hands are full             | Retained inbound variant with refreshed source |
+| Your Next Sales Hire / Give Sales a Hand | Sales conversations and owner attention         | Preserved September Drive sales variants       |
+| The First Move                           | Approved outbound outreach                      | Creative variant; outbound distribution held   |
 
 The current pilot focuses on incoming calls and one configured, permitted follow-up. That limits pilot scope, not the product's Bot capacity. Public creative has no setup-step lists.
 
@@ -38,6 +38,8 @@ The current pilot focuses on incoming calls and one configured, permitted follow
 
 Review evidence, generated exports, checksums, and any new Drive delivery receipt belong with the exact release batch. A source edit never silently reapproves an old image or film.
 
+Render the current static family with `npm run brand:refresh -- --output <absolute-external-review-directory>`. The selected directory receives PNGs, editable SVGs, `qa/contact-sheet.png` and `manifest.json`. `brand:launch` remains the retained Second Ring renderer; generated masters stay ignored or external.
+
 ## Reconciliation Sources
 
 The September 15 Drive brand guide favors **Your Next Sales Hire** and **Give Sales a Hand**. The September 19 Drive copy kit restores the incoming-call pilot while preserving sales as a variant. This refresh keeps those creative investments and applies the latest direction from the owner: broad inbound/outbound clarity, minimal copy, Title Case, and no public setup sequence.
@@ -48,4 +50,4 @@ The September 15 Drive brand guide favors **Your Next Sales Hire** and **Give Sa
 
 ## Release Boundary
 
-At this review, Vercel account recovery and deployment remain blocked. Do not announce working signup, checkout, or live calling based on source readiness. Outbound promotion requires `outbound_campaign_ready` and the existing audience, consent, channel, and destination checks. Films keep their original provenance until picture, audio, copy, and captions are reviewed together. No outreach, ad spend, or scheduled publication is implied by this package.
+Render is the current production host; the prior Vercel account block is historical. Authenticated private Test and explicit Build Save were verified on the deployed source. Self-serve paid checkout and general voice admissions remain paused. Do not advertise live calling or paid activation as available. Outbound promotion requires `outbound_campaign_ready` and the existing audience, consent, channel, and destination checks. Films keep their original provenance until picture, audio, copy, and captions are reviewed together. No outreach, ad spend, or scheduled publication is implied by this package.

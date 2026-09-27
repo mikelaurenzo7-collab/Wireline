@@ -19,7 +19,9 @@ const API_VERSION = "2026-08-26.dahlia";
 const secret = process.env.STRIPE_SECRET_KEY?.trim();
 
 if (!secret) {
-  console.error("STRIPE_SECRET_KEY is required. Run npm run stripe:audit-live with VERCEL_TOKEN.");
+  console.error(
+    "STRIPE_SECRET_KEY must be injected by the authorized host. See npm run stripe:audit-live.",
+  );
   process.exit(1);
 }
 

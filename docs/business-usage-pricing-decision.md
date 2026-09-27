@@ -61,7 +61,7 @@ explicit value of `300` continues to limit that deployment to five minutes until
 Private browser rehearsals and limited take-a-message flows retain a five-minute maximum;
 suspended-account notices remain limited to 20 seconds.
 
-Production and Vercel call admission require a configured persistent voice worker. Deploy and
+Production call admission on Render, and on any legacy Vercel rollback, requires a configured persistent voice worker. Deploy and
 verify that worker, then align the web and worker duration configuration before enabling longer
 live calls. Missing worker configuration fails closed. A configuration change alone does not
 prove a long call survives deployment boundaries; exercise the worker and carrier path before
@@ -238,7 +238,7 @@ These messages must stay aligned across:
 
 ## Still required before live rollout
 
-1. Re-run production checkout, webhook, portal, and billing-status verification after the next Vercel deployment reaches READY.
+1. Re-run production checkout, webhook, portal, and billing-status verification after the exact reviewed source is live on Render, following `docs/DEPLOYMENT_RUNBOOK.md`.
 2. Confirm prepaid Runtime Balance top-ups and included-minute burn remain the only overflow path (no Stripe metered postpaid overage).
 3. Keep Scale sales-assisted until contract, committed-usage operations, and implementation controls are ready.
 4. Enforce custom-auth breached-password screening before public launch.

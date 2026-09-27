@@ -60,7 +60,7 @@ WhatsApp remains optional/private until an approved sender, Meta/WABA posture, c
 
 ## Security and operations
 
-- Keep production secrets server-side and target-scoped in Vercel.
+- Keep production secrets server-side in Render's production secret store. Local development and previews use dedicated sandbox values.
 - Use Upstash-backed distributed limits for production abuse controls.
 - Keep call artifacts transcript-only unless a future explicit, auditable recording feature is introduced.
 - Public trust copy must match deployed retention, recording, and monitoring behavior.
@@ -71,16 +71,16 @@ WhatsApp remains optional/private until an approved sender, Meta/WABA posture, c
 
 Before production merge, require:
 
-1. exact-head Vercel preview build READY;
+1. full local verification and review of the exact source, with the Render release sequence in `docs/DEPLOYMENT_RUNBOOK.md`;
 2. TypeScript application/server/audit-module checks green;
 3. ESLint green;
 4. full Vitest suite green;
 5. canonical Stripe catalog/static billing contracts green;
 6. no unresolved regression introduced by the branch;
-7. production deployment READY after merge; and
+7. required Render production services live on that reviewed source, with authenticated worker readiness and source parity after merge; and
 8. current runtime-error and public-health checks clean.
 
-GitHub Actions billing/startup failures that do not execute repository code are tracked separately and are not treated as code evidence. Exact-head Vercel certification remains the compensating release gate while that external billing condition persists.
+GitHub Actions billing/startup failures that do not execute repository code are tracked separately and are not treated as code evidence. Exact-head verification and Render release certification remain required while that external billing condition persists. A legacy Vercel check does not certify Render.
 
 ## Funding review order
 
@@ -89,7 +89,7 @@ A readable API key, a READY build, or an empty error log does not prove funded s
 
 | Priority | Account | Verify before allocating money |
 | --- | --- | --- |
-| Restore availability | Vercel | Open invoices, project pause, deployment limits, and canonical health. Restore the canonical project; do not duplicate it. |
+| Restore availability | Render | Open invoices, API/voice service state, scheduler execution, deployment source parity, and canonical health. Restore the existing production services; do not duplicate them. |
 | Protect phone continuity | Twilio | Actual balance/currency, recharge failures, recurring number inventory, and carrier eligibility. Reuse detached owned numbers before automatic purchase. |
 | Protect Bot runtime | OpenAI API | Correct organization/project, credit or billing status, usage limits, and Realtime access. An enabled model key alone does not prove funded usage. |
 | Preserve infrastructure | Supabase, Upstash, domain registrar | Active plan, invoices, usage limits, renewal date and payment method. Check the selected account before paying. |
@@ -112,7 +112,7 @@ access is unavailable. Never turn an unread balance into zero or a healthy statu
 
 - `npm run vendor:readiness` — non-billable provider/configuration snapshot. Treat its output as point-in-time evidence; product policy is defined by current source and this map.
 - `npm run stripe:catalog:check` — static canonical Stripe contract.
-- `npm run stripe:audit-live` — read-only live Stripe/account/catalog audit.
+- `npm run stripe:audit-live` — read-only Stripe account/product/catalog audit using the current host's injected key; run in the authorized Render production shell.
 - `npm run dnc:probe` — federal DNC diagnostic after credentials exist.
 - `/api/health`, `/api/health/launch-readiness`, and authenticated `/api/insights/voice-reliability?days=1` — deployed health evidence appropriate to each audience.
 

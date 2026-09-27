@@ -1,18 +1,18 @@
 # Founder Launch Guide
 
-September 20, 2026. This is a short operating guide for the refreshed creative, not a claim that launch gates are complete.
+Source reviewed September 26, 2026. The creative originated September 20. This is a local guide source; the recorded Drive delivery is unchanged. See [current Render and offer status](LAUNCH-STATUS-2026-09-26.md).
 
 ## Use This First
 
 Lead with **Stay in the Work.** Use **Small Team. Bigger Reach.** as the companion. Choose a feed or story composition made for that ratio; do not crop one blindly into the other.
 
-Pair the asset with the matching short caption in [Copy Kit](https://drive.google.com/file/d/1_DbutPOHtSl8bsN0kbVmgDiqSv9HhlM0/view). Use **Start Free**, link to the verified Free Builder route, and keep **Private testing free. Live use paid.** visible with the offer.
+Pair the asset with the matching short caption in [Copy Kit](https://drive.google.com/file/d/1_DbutPOHtSl8bsN0kbVmgDiqSv9HhlM0/view). Use **Start Free**, link to the verified Free Builder route, and keep **Private testing free. Live activation paused.** visible with the offer.
 
 Use **Your Next Sales Hire** or **Give Sales a Hand** for a sales-specific audience. Keep **The First Move** outbound promotion held until its runtime and audience checks pass.
 
 ## Before Publishing
 
-1. Restore a working public deployment. Verify the exact source revision, signup, support path, and advertised activation state. Source merged to main does not mean it is live.
+1. Verify the selected Free Builder destination and support path before distribution. Render is deployed, but live activation and checkout remain paused. Use the private-testing offer; recheck the advertised workflow at publication time.
 2. For the first pilot, verify incoming calls and one permitted follow-up with a clear handoff. Keep existing contact routes available until this works.
 3. Select the exact reviewed asset and caption. Check the final crop, readable text, CTA, link, disclosure, and any example label.
 4. Record the final file hash, destination, date, and platform. Add paid spend only after a separate budget decision and the existing launch gates pass.
@@ -34,4 +34,4 @@ Use one founder post, one matching still, the current one-pager, and a personal 
 
 Keep creative as drafts while the destination is unavailable. Pause distribution if signup, checkout, live routing, consent, or the offer stops matching the creative. Confirm repairs before resuming.
 
-At this review, Vercel account recovery and deployment remain blocked. No new vendor balances are certified by this design work. No outreach or ad spend has been performed by preparing these documents.
+The current production host is Render. The private workspace is available; paid activation, general voice admissions and outbound readiness remain gated. No new vendor balances are certified by this design work. No outreach or ad spend has been performed by preparing these documents.

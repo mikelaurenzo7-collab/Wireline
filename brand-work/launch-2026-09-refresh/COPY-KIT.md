@@ -1,22 +1,22 @@
 # BotBound Refresh Copy Kit
 
-Prepared September 20, 2026. Drafts for a verified destination; do not publish while signup or the advertised workflow is blocked. Keep the selected image, caption, and offer together in the release record.
+Prepared September 20; source reviewed September 26, 2026. Current offer: free private setup and testing while live activation is paused. [Render status and evidence boundary](LAUNCH-STATUS-2026-09-26.md). Drafts still need a verified destination; do not publish a blocked advertised workflow. Keep the selected image, caption, and offer together in the release record.
 
 ## Core Copy
 
-| Placement | Headline | Support |
-| --- | --- | --- |
-| Flagship | Stay in the Work. | Bots for calls, texts, and email. |
-| Broad companion | Small Team. Bigger Reach. | Inbound & Outbound Bots |
-| Hands Full | Hands Full? Bot on the Line. | Calls and follow-up, with your rules. |
-| Front Desk | Meet Your New Front Desk. | Your business. Your answers. Your rules. |
-| Control | Your Bots. Your Rules. | Answers, actions, and handoffs you define. |
-| Sales variant | Give Sales a Hand. | AI sales bots, built around your business. |
-| Outbound candidate | The List Won’t Call Itself. | Bots for approved outreach and follow-up. |
+| Placement          | Headline                     | Support                                    |
+| ------------------ | ---------------------------- | ------------------------------------------ |
+| Flagship           | Stay in the Work.            | Bots for calls, texts, and email.          |
+| Broad companion    | Small Team. Bigger Reach.    | Inbound & Outbound Bots                    |
+| Hands Full         | Hands Full? Bot on the Line. | Calls and follow-up, with your rules.      |
+| Front Desk         | Meet Your New Front Desk.    | Your business. Your answers. Your rules.   |
+| Control            | Your Bots. Your Rules.       | Answers, actions, and handoffs you define. |
+| Sales variant      | Give Sales a Hand.           | AI sales bots, built around your business. |
+| Outbound candidate | The List Won’t Call Itself.  | Bots for approved outreach and follow-up.  |
 
 **CTA:** Start Free
 
-**Disclosure:** Private testing free. Live use paid.
+**Disclosure:** Private testing free. Live activation paused.
 
 Use the disclosure on conversion creative. Explain activation availability in the accompanying caption and destination. OOH recognition layouts may use only the headline, category, brand, and destination without a free-use offer.
 
@@ -30,7 +30,7 @@ I built BotBound for that moment: Bots for calls, texts, and email, shaped aroun
 
 Start free: https://botbound.app/signup?plan=free&utm_source=linkedin&utm_medium=organic_social&utm_campaign=bb_launch_refresh_202609&utm_content=stay_in_the_work_feed
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 ## Short Social Posts
 
@@ -40,13 +40,13 @@ Your attention belongs with the work in front of you.
 
 Give calls and follow-up a Bot, with the answers, actions, and handoffs you define.
 
-Start free at BotBound.app. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ### Small Team. Bigger Reach.
 
 Calls. Texts. Email. Bots that work from your business knowledge and rules.
 
-Start free at BotBound.app. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ### Hands Full
 
@@ -54,7 +54,7 @@ Of course it rang now.
 
 Give your calls and follow-up a Bot. Keep your attention on the work.
 
-Start free at BotBound.app. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ### Control
 
@@ -62,7 +62,7 @@ Your business has its own way of doing things. Your Bots should, too.
 
 Set the answers, actions, and handoffs. Rehearse privately before live use.
 
-Start free at BotBound.app. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ## Sales Variant
 
@@ -70,7 +70,7 @@ You built a business worth choosing. You also have a business to run.
 
 Give sales a hand with Bots that work from your offer, voice, and rules. They can answer questions, qualify interest, and help book the next step when the tools and permissions are in place.
 
-Start free at BotBound.app. Private testing free. Live use paid. Activation subject to availability.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 ## Outbound Candidate
 
@@ -78,7 +78,7 @@ The list won’t call itself.
 
 BotBound brings approved outreach and follow-up into the same workspace. Calls, texts, email, and a record of what happened.
 
-Start free at BotBound.app. Private testing free. Live use paid.
+Start free at BotBound.app. Private testing free. Live activation paused.
 
 Internal note: hold outbound-specific distribution until the existing readiness checks pass. A reviewed list alone does not establish permission to call or message its contacts.
 
@@ -94,7 +94,7 @@ BotBound gives you Bots for calls, texts, and email, with your knowledge, your r
 
 **Start Free**
 
-Private testing free. Live use paid. Activation subject to availability.
+Private testing free. Live activation paused.
 
 Internal note: use the verified signup destination, sender identity, postal address, and unsubscribe mechanism before any send. No email is sent by preparing this draft.
 

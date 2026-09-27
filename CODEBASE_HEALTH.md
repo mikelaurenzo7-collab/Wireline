@@ -63,7 +63,7 @@ The BotBound Design System is the only active design system. Use semantic surfac
 
 - Electric violet is action; ink is structure; silver is the restrained wire accent.
 - Dark mode uses a cool obsidian canvas. Light mode uses a cool near-white canvas with the same hierarchy and tokens.
-- Inter Tight carries display, Inter carries body, and IBM Plex Mono carries labels and metadata.
+- Inter Tight carries display. Inter carries body, controls, and interface labels. IBM Plex Mono is reserved for technical values and section eyebrows.
 - Touch targets stay at least 44px. Focus rings stay visible. Accessible names survive visual polish.
 - Do not reintroduce the retired forest-green/copper palette, signal blue, dark-only Studio experiments, mesh/nebula primitives, or ad-hoc token aliases.
 
@@ -99,7 +99,7 @@ A Markdown file may remain outside `docs/` only when a tool, source-owning surfa
 - `npm run docs:check` validates required links, link targets, duplicate index membership, and complete `docs/` indexing.
 - `npm run verify` runs repository, design, route, docs, OpenAPI, token, Stripe, build, and server-smoke checks.
 - `npm run verify:full` adds TypeScript, ESLint, authorization, bootstrap, CSP, runtime-policy, API-error, security-audit, test, and browser-extension gates.
-- Vercel exact-head validation and post-deploy runtime-error review remain required for release-impacting changes.
+- Release-impacting changes require exact-head verification and Render web/worker source parity, authenticated readiness, and post-deploy runtime-error review as defined in `docs/DEPLOYMENT_RUNBOOK.md`. Vercel validation applies only to its explicitly reviewed legacy rollback path.
 
 ## Audit history
 

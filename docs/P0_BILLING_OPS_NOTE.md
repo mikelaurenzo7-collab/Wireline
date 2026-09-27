@@ -42,7 +42,7 @@ it is not the current customer-facing identity. Older notes that cite `acct_1TXb
 to a separate retired Stripe account and are historical.
 
 - Active founder products + canonical prices must match `scripts/lib/stripe-founder-catalog.mjs`.
-- Vercel Production price-ID env vars must stay in parity with the live catalog.
+- Render production price-ID environment variables must stay in parity with the live catalog.
 - Preview must **not** receive production Stripe secrets (see `scripts/check-deployment-boundaries.mjs`).
 - Webhook `https://botbound.app/api/stripe-webhook` enabled_events must match
   `src/routes/billing-routes.ts` (including `charge.refunded` / `charge.dispute.created`).
@@ -51,13 +51,16 @@ Do not delete Stripe products or prices. Archive products and deactivate prices 
 
 ## Required prelaunch proof
 
-Run from a clean checkout with the live Vercel environment:
+Run the static catalog check from a clean checkout. Run the read-only live checks in the Render production shell using its existing injected credentials; do not export production secrets into local development:
 
 ```bash
 npm run stripe:catalog:check
-npm run stripe:verify-vercel-parity
-node scripts/run-stripe-audit-from-vercel.mjs
+npm run stripe:audit-live
+npm run stripe:portal:verify
+npm run stripe:webhook:check
 ```
+
+The explicit `stripe:audit-legacy-vercel` and `stripe:verify-vercel-parity` commands remain available only for an authorized legacy rollback investigation. They are not evidence of Render configuration parity; verify Render's configured price IDs against the canonical catalog separately.
 
 Then verify in a non-production test workspace:
 

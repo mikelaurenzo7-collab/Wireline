@@ -146,9 +146,19 @@ for (const failure of ["unavailable", "malformed"] as const) {
       await expect(review.getByText(opening.value, { exact: true })).toBeVisible();
       await expect(save).toBeDisabled();
       expect(requests).toHaveLength(2);
+      await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
+      await expect(page).toHaveURL(/\/inbox$/);
+      await page.goBack();
+      await expect(review).toBeVisible();
+      await expect(save).toBeDisabled();
+      expect(requests).toHaveLength(2);
     } finally {
       releaseRetry();
     }
+    await expect(review.getByText("Saved", { exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
+    await expect(page).toHaveURL(/\/inbox$/);
+    await page.goBack();
     await expect(review.getByText("Saved", { exact: true })).toBeVisible();
     expect(requests).toEqual([
       { field: opening.field, value: opening.value },
@@ -189,6 +199,31 @@ test("a tool proposal requires a confirmed enabled-tool result and remains retry
     { tool: emailCapability.tool, enable: true },
     { tool: emailCapability.tool, enable: true },
   ]);
+});
+
+test("Build and Test drafts survive leaving Studio without mixing their conversations", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  const review = await requestProposal(page);
+  const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
+  const testInput = page.getByRole("textbox", {
+    name: "Customer message for Front Desk",
+    exact: true,
+  });
+  await buildInput.fill("Keep this unsent Build instruction.");
+  await page.getByRole("tab", { name: "Test", exact: true }).click();
+  await testInput.fill("Keep this unsent customer scenario.");
+  await page.getByRole("tab", { name: "Build", exact: true }).click();
+  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
+  await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
+  await expect(page).toHaveURL(/\/inbox$/);
+  await page.goBack();
+  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
+  await expect(review).toBeVisible();
+  await page.getByRole("tab", { name: "Test", exact: true }).click();
+  await expect(testInput).toHaveValue("Keep this unsent customer scenario.");
+  await expect(review).toHaveCount(0);
 });
 
 test("Build proposals survive mode and Bot switches without appearing on another Bot", async ({
@@ -240,20 +275,22 @@ test("a delayed clear remains pending across remounts and cannot restore deleted
   await page.getByRole("button", { name: "Clear conversation", exact: true }).click();
   try {
     await expect.poll(() => deleteCount).toBe(1);
-    await page.getByRole("tab", { name: "Test", exact: true }).click();
+    await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
+    await expect(page).toHaveURL(/\/inbox$/);
     await expect(review).toHaveCount(0);
-    await page.getByRole("tab", { name: "Build", exact: true }).click();
+    await page.goBack();
     await expect(review).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Clear conversation", exact: true }),
     ).toBeDisabled();
-    await page.getByRole("tab", { name: "Test", exact: true }).click();
+    await page.getByRole("link", { name: "Open Inbox", exact: true }).click();
+    await expect(page).toHaveURL(/\/inbox$/);
     await expect(review).toHaveCount(0);
   } finally {
     releaseDelete();
   }
 
-  await page.getByRole("tab", { name: "Build", exact: true }).click();
+  await page.goBack();
   await expect(review).toHaveCount(0);
   await expect(page.getByText(plan.reply, { exact: true })).toHaveCount(0);
   await expect(

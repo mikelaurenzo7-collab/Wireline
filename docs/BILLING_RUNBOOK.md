@@ -37,8 +37,10 @@ Do not run catalog writes against production casually. Run the static contract a
 
 ```bash
 npm run stripe:catalog:check
-VERCEL_TOKEN=... npm run stripe:audit-live
+npm run stripe:audit-live
 ```
+
+Run the live audit in the Render production shell with `STRIPE_SECRET_KEY` already injected by its secret store. The command performs the existing account-identity, product-copy, and catalog checks without provider writes. It fails before any audit if the key is absent or is not a live secret/restricted key; it does not fetch credentials from another host. Keep production secrets out of local development. The explicit `npm run stripe:audit-legacy-vercel` command retains the old Vercel credential flow only for an authorized legacy-host investigation.
 
 ## Proof checklist
 
@@ -76,7 +78,7 @@ If a claimed event fails after side effects begin, the handler releases the clai
 
 ### 4. Stripe-hosted identity and product copy remain canonical
 
-Run `VERCEL_TOKEN=... npm run stripe:audit-live` and require:
+Run `npm run stripe:audit-live` in the authorized production environment and require:
 
 1. **Account identity:** customer-facing public name/domain/descriptors are BotBound-aligned. The canonical website is `https://botbound.app`; a historical dashboard label is not the customer-facing identity gate.
 2. **Product copy:** active canonical products match `scripts/lib/stripe-founder-catalog.mjs`, including catalog metadata.
@@ -139,7 +141,7 @@ npm run lint:eslint
 Before a billing release:
 
 ```bash
-VERCEL_TOKEN=... npm run stripe:audit-live
+npm run stripe:audit-live
 ```
 
 Before a release candidate:

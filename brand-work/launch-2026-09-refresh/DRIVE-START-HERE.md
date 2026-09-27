@@ -1,6 +1,6 @@
 # BotBound Brand and Launch Library
 
-Updated September 20, 2026.
+Local navigation source reviewed September 26, 2026; the recorded September 20 Drive delivery is unchanged.
 
 ## Start Here
 
@@ -8,17 +8,17 @@ Updated September 20, 2026.
 
 Lead with **Stay in the Work.** Use **Small Team. Bigger Reach.** as the companion. The product category is **Inbound & Outbound Bots**, with **Bots for calls, texts, and email.** as the short explanation.
 
-Conversion CTA: **Start Free**. Disclosure: **Private testing free. Live use paid.** Activation depends on availability and configuration.
+Conversion CTA: **Start Free**. Disclosure: **Private testing free. Live activation paused.** Activation depends on availability and configuration.
 
 ## Choose the Asset
 
-| Need | Destination |
-| --- | --- |
-| New feed, story, and wide artwork | [Current Artwork](https://drive.google.com/drive/folders/1zY6QWh42mZjLgjpizl78M_cGNA83gVKE) |
-| Founder instructions, copy, and source records | [Guides and Sources](https://drive.google.com/drive/folders/1Z7-vgDS-wyZu_I-bBgiNhomnvQjkjq95) |
-| Short customer introduction | [Current One-Pager](https://drive.google.com/file/d/1zO9aFkf8OBcyd5zxOjJpTWRcWhql5txM/view?usp=drivesdk) |
-| Sales-specific craft creative | [Give Sales a Hand](https://drive.google.com/drive/folders/1j7Pmp_MrzkSNljwPH_MkyPeZ86GWltuR) |
-| Preserved sales campaign | [Your Next Sales Hire](https://drive.google.com/drive/folders/1KGRPCkQH1DLPURJOXTVp3BL1rCp0OgBO) |
+| Need                                           | Destination                                                                                              |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| New feed, story, and wide artwork              | [Current Artwork](https://drive.google.com/drive/folders/1zY6QWh42mZjLgjpizl78M_cGNA83gVKE)              |
+| Founder instructions, copy, and source records | [Guides and Sources](https://drive.google.com/drive/folders/1Z7-vgDS-wyZu_I-bBgiNhomnvQjkjq95)           |
+| Short customer introduction                    | [Current One-Pager](https://drive.google.com/file/d/1zO9aFkf8OBcyd5zxOjJpTWRcWhql5txM/view?usp=drivesdk) |
+| Sales-specific craft creative                  | [Give Sales a Hand](https://drive.google.com/drive/folders/1j7Pmp_MrzkSNljwPH_MkyPeZ86GWltuR)            |
+| Preserved sales campaign                       | [Your Next Sales Hire](https://drive.google.com/drive/folders/1KGRPCkQH1DLPURJOXTVp3BL1rCp0OgBO)         |
 
 Sales variants remain available for their audience. They do not replace the broad product story. The first pilot focuses on incoming calls and one permitted follow-up; outbound distribution stays held until current readiness checks pass.
 
@@ -32,6 +32,6 @@ The September 20 batch contains **10 new marketing images**, **47 refreshed mark
 
 ## Launch Status
 
-Product source baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`, merged PR #1225. Vercel remains account-blocked at this review. Current source and private creative delivery do not establish live signup, checkout, or calling availability.
+Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. [Current status](LAUNCH-STATUS-2026-09-26.md): private Test and Build Save verified; paid activation and general voice admissions paused. Historical Vercel restrictions do not describe the current host.
 
 Before distribution, verify the exact destination, asset/caption pair, offer, crop, and advertised workflow. Product proof needs the exact deployed source and labeled test evidence. No outreach, paid campaign, or ad spend is authorized simply by this library update.

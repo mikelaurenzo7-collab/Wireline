@@ -2,7 +2,7 @@
 
 Current private delivery: [September 20 Creative Refresh](https://drive.google.com/drive/folders/1z0fhFkPl9WW937wsSNQcBKm1j4qVI_bV), with new artwork, a customer one-pager, and reconciled guides. Prepared creative is not a deployment record or paid-media authorization. The revision 4 September 1 package below remains historical.
 
-Source review: **2026-09-20**. Current refresh: [September 20 Creative Refresh](launch-2026-09-refresh/README.md), including reconciled local and Drive positioning. Product audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`. This index preserves the original campaign families below alongside the current refresh and September Drive sales variants. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+Source review: **2026-09-26**. Current creative source: [September Creative Refresh](launch-2026-09-refresh/README.md), with [current Render and offer status](launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md). Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. The September 20 Drive delivery remains a dated creative snapshot; these source edits do not update its remote files. This index preserves the original campaign families below alongside the current refresh and September Drive sales variants. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
 
 ## Choose the Current Source
 
@@ -110,7 +110,8 @@ Files in `apps/botbound-film/out/` are review proofs. Broadcast and paid-deliver
 - `DELIVERY-SHA256SUMS-R3.txt` covers the 62-file certified Drive delivery snapshot.
 - `SOURCE-SHA256SUMS.txt` covers the compact repository source package and preserves the archived revision 3 browser proof.
 - Product, native, billing, OG, and browser icons: `npm run assets`
-- Launch placements: `npm run brand:launch`
+- Current refresh: `npm run brand:refresh -- --output <absolute-external-review-directory>`; creates PNGs, editable SVGs, receipt and contact sheet outside the repository.
+- Retained Second Ring placements: `npm run brand:launch`; this command does not render the current refresh.
 - Current public UI proof: `npm run brand:proof`. Start the credential-free API stub and Vite proof server as described in `launch-2026-09/CURRENT_PRODUCT_PROOF.md`. The command creates all seven frames plus the contact sheet and preserves preceding batches in excluded `_history/` storage. Simulated auth and paused billing are explicit; local output is not deployed-production proof or publication approval.
 - The legacy capture script forwards to current proof. It no longer writes to the archived revision 3 path.
 - Source receipt for a reviewed commit: `node scripts/refresh-botbound-source-checksums.mjs --index`, then `--index --check`. Explicitly stage reviewed sources first; do not include unrelated film WIP. The default command hashes working-tree bytes.

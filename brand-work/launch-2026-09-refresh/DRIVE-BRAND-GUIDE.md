@@ -1,6 +1,6 @@
 # BotBound Brand System
 
-Updated September 20, 2026. This reconciles the September Drive sales campaigns, September 19 incoming-call pilot focus, and the owner's latest direction: broad inbound/outbound clarity, minimal copy, Title Case, and no public setup sequence.
+Local guide source reviewed September 26, 2026; recorded September 20 Drive delivery unchanged. This reconciles the September Drive sales campaigns, September 19 incoming-call pilot focus, and the owner's latest direction: broad inbound/outbound clarity, minimal copy, Title Case, and no public setup sequence.
 
 ## Current Message
 
@@ -16,7 +16,7 @@ Broad companion: **Small Team. Bigger Reach.**
 
 Primary CTA: **Start Free**.
 
-Offer disclosure: **Private testing free. Live use paid.** Activation depends on availability, account eligibility, and configuration.
+Offer disclosure: **Private testing free. Live activation paused.** Activation depends on availability, account eligibility, and configuration.
 
 The near-term pilot is incoming calls with one configured, permitted follow-up. It is a limited pilot scope, not a limit of one Bot per customer.
 
@@ -41,15 +41,15 @@ Use **AI Sales Bots** near **Meet Your Next Sales Hire.** so the software catego
 
 Headlines use Inter Tight 800; body uses Inter. IBM Plex Mono serves compact operational labels. Author every title and headline in Title Case. Body copy uses sentence case. Reserve uppercase for short utility labels; never use CSS to recase names or customer text.
 
-| Role | Color |
-| --- | --- |
-| Canvas | Obsidian `#0A0A0E` |
-| Deep canvas | Black Violet `#050508` |
-| Primary type | Platinum White `#F5F4F8` |
-| Signal | Aurora Violet `#A78BFA` |
-| Receiver | Violet `#8B5CF6` |
-| Light signal | Lilac `#C4B5FD` |
-| Secondary type | Smoke `#B6B1C6` |
+| Role           | Color                    |
+| -------------- | ------------------------ |
+| Canvas         | Obsidian `#0A0A0E`       |
+| Deep canvas    | Black Violet `#050508`   |
+| Primary type   | Platinum White `#F5F4F8` |
+| Signal         | Aurora Violet `#A78BFA`  |
+| Receiver       | Violet `#8B5CF6`         |
+| Light signal   | Lilac `#C4B5FD`          |
+| Secondary type | Smoke `#B6B1C6`          |
 
 Keep most surfaces obsidian and platinum. Use violet to focus attention, not fill every space. Headlines are short and left aligned where the composition allows. Conversion layouts carry one CTA and a legible free/private versus paid/live disclosure.
 
@@ -65,6 +65,6 @@ The Second Ring signal and two-note chime remain recognizable historical creativ
 
 Repository identity sources remain `src/components/brand/BotBoundMark.tsx`, `src/components/brand/BotBoundBrand.tsx`, and `scripts/render-image-assets.mjs`. Campaign sources travel with their individual packages; do not use an unrelated historical generator to recreate a newer campaign.
 
-Product audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`, merged PR #1225. The older PR #1218 record is historical preparation evidence. Vercel remains account-blocked at this review, so merged source is not a live-launch claim.
+Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. PR #1218 and the September 20 source baseline remain historical preparation evidence. [Current status](LAUNCH-STATUS-2026-09-26.md): authenticated private Test and Build Save verified; paid activation and general voice admissions paused. This is not full business-launch certification.
 
 No public setup-step lists, every-call guarantees, guaranteed bookings, invented traction, or unsupported customer proof. Product screenshots must match the exact deployed source. Outbound promotion remains held until `outbound_campaign_ready` and the audience, consent, channels, and destination are cleared. Prepared creative does not authorize ad spend or outreach.

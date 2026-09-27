@@ -1,6 +1,6 @@
 import { Plus, Sparkles, Users, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button, Skeleton } from "../components/atoms";
 import { PanelSkeleton } from "../components/atoms/skeleton-presets";
@@ -9,7 +9,7 @@ import { BotBoundLockup } from "./brand/BotBoundBrand";
 import WorkspaceResizablePanel from "../components/layout/WorkspaceResizablePanel";
 import { useAgents } from "../contexts/AgentsContext";
 import { useAuth } from "../contexts/AuthContext";
-import { createStudioSetupDrafts } from "../lib/studio-setup-drafts";
+import { useStudioSessionState } from "../contexts/StudioSessionContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { writeStudioLastAgentId } from "../lib/studio-agent-preference";
@@ -24,11 +24,7 @@ import {
 import { customerAgentLanguage } from "../lib/product-copy";
 import StudioAgentReviewPanel from "./StudioAgentReviewPanel";
 import StudioAgentWorkspacePanel from "./StudioAgentWorkspacePanel";
-import StudioWorkroom, {
-  type StudioWorkroomDraft,
-  type StudioWorkroomHandle,
-  type StudioConversationSession,
-} from "./StudioWorkroom";
+import StudioWorkroom, { type StudioWorkroomHandle } from "./StudioWorkroom";
 import WorkspaceRecovery from "./WorkspaceRecovery";
 
 type InspectorSection = "setup" | "review";
@@ -110,21 +106,15 @@ function StudioEmptyState() {
 export default function StudioWorkspaceV2() {
   const { loading, degraded, refresh } = useAgents();
   const { user } = useAuth();
-  const setupDrafts = useMemo(() => createStudioSetupDrafts(user?.id ?? null), [user?.id]);
+  const studioSession = useStudioSessionState();
+  const {
+    setupDrafts,
+    drafts: workroomDrafts,
+    conversations: workroomConversations,
+  } = studioSession;
   const { requestedId, resolvedId: resolvedAgentId, agents } = useStudioActiveAgentId();
   const [params, setParams] = useSearchParams();
   const workroomRef = useRef<StudioWorkroomHandle>(null);
-  // A mode change ends its stream, but its unsent draft belongs to the Bot and
-  // mode. Keep drafts above the keyed workroom rather than dropping user edits.
-  const workroomSession = useMemo(
-    () => ({
-      ownerId: user?.id,
-      drafts: new Map<string, StudioWorkroomDraft>(),
-      conversations: new Map<string, StudioConversationSession>(),
-    }),
-    [user?.id],
-  );
-  const { drafts: workroomDrafts, conversations: workroomConversations } = workroomSession;
   const inspectorTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const splitWorkspace = useMediaQuery("(min-width: 1180px)");
   const active = resolvedAgentId ? agents.find((agent) => agent.id === resolvedAgentId) : undefined;
@@ -305,6 +295,7 @@ export default function StudioWorkspaceV2() {
   );
 
   const workroomKey = `${active.id}:${workroomMode}`;
+  studioSession.visitBot(active.id);
   let conversationSession = workroomConversations.get(workroomKey);
   if (!conversationSession) {
     conversationSession = {

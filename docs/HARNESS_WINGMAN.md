@@ -53,7 +53,7 @@ On Windows, the delegate container must run on Linux/macOS; the script installs 
 2. **LLM connector (required)** — AI → Connectors → add Anthropic/Bedrock/OpenAI connector; assign at agent run time
 3. **Harness MCP** — use built-in `harness_hosted_mcp` or create MCP connector pointing to `https://unifiedpipeline.harness.io/mcp-server-external/mcp` with `X-Api-Key` secret
 4. **Secrets** (project scope):
-   - `VERCEL_TOKEN` — Vercel deploy/preview
+   - `VERCEL_TOKEN` — legacy Vercel preview/rollback only; current Render releases follow `docs/DEPLOYMENT_RUNBOOK.md`
    - `GITHUB_ACCESS_TOKEN` — already referenced by GitHub connector
    - `HARNESS_PAT` — optional, for MCP connector header
 

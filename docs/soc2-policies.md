@@ -72,7 +72,7 @@ Remediation should follow Supabase's own linter guidance:
 
 **Evidence collection cadence:**
 
-- **Continuous (automated):** audit log writes, CI pass/fail, Vercel deployment logs, Stripe webhook receipts, rate-limit rejection counts.
+- **Continuous (automated):** audit log writes, CI pass/fail, Render deployment/runtime logs, Stripe webhook receipts, rate-limit rejection counts.
 - **Monthly (manual):** access review of admin accounts, review of open security advisories, verification that DNC/purge jobs ran successfully, pull coverage ratchet thresholds forward.
 
 ## Operating rule

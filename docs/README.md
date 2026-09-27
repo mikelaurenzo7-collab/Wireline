@@ -70,7 +70,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Document                                                                                       | Role                                                                                                                                           |
 | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md)                                             | Shared Postgres, migration, RLS, privilege, and rollback operations.                                                                           |
-| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)                                               | Exact-head preview, production promotion, environment, migration, and rollback workflow.                                                       |
+| [DEPLOYMENT_RUNBOOK.md](./DEPLOYMENT_RUNBOOK.md)                                               | Exact-source Render deployment, production verification, environment, migration, and legacy rollback workflow.                                |
 | [OPENAI_REALTIME_OPERATIONS.md](./OPENAI_REALTIME_OPERATIONS.md)                               | OpenAI Realtime admission reserve, key rotation, in-flight drain, canary, and rollback operations.                                             |
 | [BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md](./BOTBOUND-AUTH-REDIRECT-CALLBACK-CHECKLIST.md) | Canonical-origin cutover inventory for sign-in, integration OAuth, MCP, webhooks, return URLs, deep links, and the launch-time Clerk decision. |
 | [RESEND_DELIVERY_FEEDBACK.md](./RESEND_DELIVERY_FEEDBACK.md)                                   | Signed Resend feedback receiver, provider suppression semantics, activation, and rollback.                                                     |
@@ -134,6 +134,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Document | Role |
 | --- | --- |
 | [Creative Refresh](../brand-work/launch-2026-09-refresh/README.md) | Current creative selection and release boundary. |
+| [Creative Offer Status](../brand-work/launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md) | Dated Render baseline, paused-activation offer, and publication limits. |
 | [Campaign Copy](../brand-work/launch-2026-09-refresh/COPY-KIT.md) | Short audience, founder, and channel drafts. |
 | [Founder Guide](../brand-work/launch-2026-09-refresh/FOUNDER-LAUNCH-GUIDE.md) | Asset selection and launch handoff. |
 | [Source Record](../brand-work/launch-2026-09-refresh/SOURCE-RECORD.md) | Art provenance, prompt, and reproduction. |

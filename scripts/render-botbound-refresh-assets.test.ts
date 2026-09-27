@@ -59,6 +59,7 @@ const output = resolve(campaign, "exports");
 const manifest = resolve(output, "manifest.json");
 const stagedManifest = resolve(output, `manifest-${process.pid}.tmp`);
 const contactSheet = resolve(campaign, "qa/contact-sheet.png");
+const originalArgv = process.argv;
 
 async function render() {
   // @ts-expect-error -- executable .mjs renderer has no declaration file.
@@ -66,6 +67,7 @@ async function render() {
 }
 
 beforeEach(() => {
+  process.argv = originalArgv.slice(0, 2);
   vi.resetModules();
   memory.files.clear();
   memory.events.length = 0;
@@ -77,9 +79,57 @@ beforeEach(() => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  process.argv = originalArgv;
+  vi.restoreAllMocks();
+});
 
 describe("refresh creative batch receipts", () => {
+  it.each(["separate", "equals"])(
+    "keeps %s output arguments outside the historical local delivery",
+    async (syntax) => {
+      const externalOutput = resolve("../external-creative-review");
+      process.argv.push(
+        ...(syntax === "equals" ? [`--output=${externalOutput}`] : ["--output", externalOutput]),
+      );
+
+      await render();
+
+      expect(memory.events.every((event) => event.path.startsWith(externalOutput))).toBe(true);
+      expect(memory.files.get(manifest)?.toString()).toBe('{"assets":["previous batch"]}');
+      expect(memory.files.has(resolve(externalOutput, "qa/contact-sheet.png"))).toBe(true);
+      const receipt = JSON.parse(
+        memory.files.get(resolve(externalOutput, "manifest.json"))!.toString(),
+      );
+      expect(receipt.assets).toHaveLength(10);
+      expect(
+        memory.files
+          .get(resolve(externalOutput, "svg/botbound-stay-in-the-work-feed.svg"))
+          ?.toString(),
+      ).toContain("Private testing free. Live activation paused.");
+    },
+  );
+
+  it.each([
+    { name: "missing path", args: ["--output"] },
+    { name: "option in place of path", args: ["--output", "--unknown"] },
+    { name: "empty equals path", args: ["--output="] },
+    { name: "blank path", args: ["--output", " "] },
+    { name: "misspelled option", args: ["--ouput", "external-review"] },
+    { name: "misspelled equals option", args: ["--ouput=external-review"] },
+    { name: "unexpected positional path", args: ["external-review"] },
+    { name: "duplicate output", args: ["--output", "first", "--output=second"] },
+    { name: "unknown option after valid output", args: ["--output", "external-review", "--nope"] },
+  ])("rejects $name before changing files", async ({ args }) => {
+    process.argv.push(...args);
+
+    await expect(render()).rejects.toThrow(/No release assets were changed/);
+
+    expect(memory.events).toEqual([]);
+    expect(memory.renderCount).toBe(0);
+    expect(memory.files.get(manifest)?.toString()).toBe('{"assets":["previous batch"]}');
+  });
+
   it("invalidates the old receipt before output writes and atomically installs a complete batch", async () => {
     await render();
 

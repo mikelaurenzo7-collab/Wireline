@@ -5,8 +5,9 @@
  * and funding without printing secrets or making billable model/call/message
  * requests.
  *
- * Load production env before running:
- *   node --env-file=.env.production scripts/check-vendor-readiness.mjs
+ * Run inside the authorized production host with its injected secret store:
+ *   node scripts/check-vendor-readiness.mjs
+ * Do not export production credentials into local development.
  */
 
 import { spawnSync } from "node:child_process";
@@ -707,7 +708,7 @@ record(
     ? "Commercial email has a configured physical postal address."
     : "WIRELINE_POSTAL_ADDRESS is missing; commercial email must remain fail-closed.",
   commercialEmailPostalAddressReady
-    ? "Keep the address current in Vercel and every commercial email footer."
+    ? "Keep the address current in Render's production configuration and every commercial email footer."
     : "Provide the operator's valid current postal address before enabling lifecycle or marketing email.",
 );
 

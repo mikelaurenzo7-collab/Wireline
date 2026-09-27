@@ -6,9 +6,9 @@
 
 Includes new broad artwork, a customer one-pager, and reconciled brand, copy, and founder guides. **Small Team. Bigger Reach.** is the companion. **Your Next Sales Hire**, **Give Sales a Hand**, and **The Second Ring** remain audience-specific variants with their own asset records.
 
-General category: **Inbound & Outbound Bots**. CTA: **Start Free**. Disclosure: **Private testing free. Live use paid.**
+General category: **Inbound & Outbound Bots**. CTA: **Start Free**. Disclosure: **Private testing free. Live activation paused.**
 
-Product audit baseline: `e31d23cabb6b37e967bdfc89647e2ec1ed56819c`, merged PR #1225. Vercel remains account-blocked at this review. The release is prepared creative, not a deployment record or public-launch certification.
+Local pointer reviewed September 26 against `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. The linked September 20 delivery is unchanged. [Current status](LAUNCH-STATUS-2026-09-26.md): private Test/Build Save verified, paid activation and general voice admissions paused. Prepared creative is not public-launch certification.
 
 ## Historical Evidence
 

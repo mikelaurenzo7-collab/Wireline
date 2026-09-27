@@ -18,7 +18,7 @@ This is an operator runbook. Response-time language below is prioritization guid
 
 ### Scheduled production work
 
-The deployed Vercel schedule currently runs:
+The Render scheduler configuration in `render.yaml` defines:
 
 - `/api/jobs/sweep` every **minute** for durable background work.
 - `/api/daily-brief/schedule` every **15 minutes** for due daily-brief dispatch.
@@ -34,7 +34,7 @@ Do not describe a monitoring cadence as live until it is present in production c
 - Authenticated `GET /api/insights/voice-reliability?days=1` — tenant-scoped recent voice reliability.
 - Authenticated/operator health routes expose deeper provider, SLO, queue, and integration diagnostics.
 - The incident-response target on the operator SLO surface requires both a protected monitor credential and an owner contact. A configured target is not evidence that an external monitor is polling it or that an alert destination has been tested.
-- Vercel runtime logs and grouped runtime errors are deployment evidence.
+- Render API, voice-worker, and scheduler logs are deployment evidence. Confirm the affected service and source revision; legacy Vercel logs apply only to an explicitly verified rollback deployment.
 - Structured error reporting is forwarded to Sentry **only when the production Sentry DSN is configured**; do not assume an email/Slack routing rule exists without verifying that rule in the active Sentry account.
 
 ### Human / external signals

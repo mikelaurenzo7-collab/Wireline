@@ -23,8 +23,9 @@ import type { BotMarkKey } from "../lib/bot-mark";
 import { WORKSPACE_VOICE } from "../lib/product-copy";
 import { reconcileStudioCommandDraft } from "../lib/studio-route-state";
 import { WL_COMPOSER_CLASSES } from "../lib/wireline-design-system";
+import { retainStudioConversationMessages } from "../lib/studio-session-state";
 
-type StudioMessage = {
+export type StudioMessage = {
   id: string;
   role: "Account Holder" | "agent";
   content: string;
@@ -192,7 +193,10 @@ const StudioWorkroom = forwardRef<
   const setMessages = useCallback(
     (next: StudioMessage[] | ((current: StudioMessage[]) => StudioMessage[])) => {
       updateSession({
-        messages: typeof next === "function" ? next(session.snapshot.messages) : next,
+        messages: retainStudioConversationMessages(
+          session,
+          typeof next === "function" ? next(session.snapshot.messages) : next,
+        ),
       });
     },
     [session, updateSession],

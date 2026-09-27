@@ -16,7 +16,7 @@ type Entry = {
   snapshot: SetupSnapshot;
 };
 
-/** Private, account-scoped memory owned by the mounted Studio workspace. */
+/** Private, account-scoped memory owned by the authenticated page session. */
 export function createStudioSetupDrafts(ownerId: string | null) {
   const entries = new Map<string, Entry>();
   const listeners = new Map<string, Set<() => void>>();
@@ -53,6 +53,16 @@ export function createStudioSetupDrafts(ownerId: string | null) {
 
   return {
     ownerId,
+    isRetained(agentId: string) {
+      const entry = entries.get(agentId);
+      return Boolean(
+        entry?.snapshot.dirty || entry?.snapshot.saving || listeners.get(agentId)?.size,
+      );
+    },
+    forget(agentId: string) {
+      entries.delete(agentId);
+      listeners.delete(agentId);
+    },
     revision: () => revision,
     read: (agentId: string) => entryFor(agentId).snapshot,
     subscribe(agentId: string, listener: () => void) {
