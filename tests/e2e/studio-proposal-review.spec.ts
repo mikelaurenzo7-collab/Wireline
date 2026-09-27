@@ -226,6 +226,56 @@ test("Build and Test drafts survive leaving Studio without mixing their conversa
   await expect(review).toHaveCount(0);
 });
 
+for (const section of ["Setup", "Review"] as const) {
+  test(`${section} testing preserves and focuses an existing customer draft`, async ({ page }) => {
+    await mockWorkspace(page);
+    await page.goto(`/studio?agent=${bots[0].id}&workroom=test`);
+    const input = page.getByRole("textbox", {
+      name: "Customer message for Front Desk",
+      exact: true,
+    });
+    await input.fill("Can you handle this specific customer request?");
+    await page.getByRole("button", { name: "Bot settings", exact: true }).click();
+    await page.getByRole("tab", { name: section, exact: true }).click();
+    await page
+      .getByRole("button", {
+        name: section === "Setup" ? "Test Bot" : "Test conversation",
+        exact: true,
+      })
+      .click();
+    await expect(input).toBeFocused();
+    await expect(input).toHaveValue("Can you handle this specific customer request?");
+    await expect(input).toHaveCSS("resize", "none");
+  });
+}
+
+test("setup seeds an empty Test composer without replacing the Build draft or setup resize", async ({
+  page,
+}) => {
+  await mockWorkspace(page);
+  await page.goto(`/studio?agent=${bots[0].id}`);
+  const buildInput = page.getByRole("textbox", { name: "Message Front Desk", exact: true });
+  await buildInput.fill("Keep this unsent Build instruction.");
+  await expect(buildInput).toHaveCSS("resize", "none");
+  await page.getByRole("button", { name: "Bot settings", exact: true }).click();
+  const greeting = page.getByRole("textbox", { name: "Opening greeting", exact: true });
+  await expect(greeting).toBeVisible();
+  expect(await greeting.evaluate((element) => getComputedStyle(element).resize)).toMatch(
+    /^(block|vertical)$/,
+  );
+  await page.getByRole("button", { name: "Test Bot", exact: true }).click();
+  const testInput = page.getByRole("textbox", {
+    name: "Customer message for Front Desk",
+    exact: true,
+  });
+  await expect(testInput).toBeFocused();
+  await expect(testInput).toHaveValue(
+    "Hi, can you explain what you can do and help me take the next step?",
+  );
+  await page.getByRole("tab", { name: "Build", exact: true }).click();
+  await expect(buildInput).toHaveValue("Keep this unsent Build instruction.");
+});
+
 test("Build proposals survive mode and Bot switches without appearing on another Bot", async ({
   page,
 }) => {

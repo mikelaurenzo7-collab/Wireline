@@ -175,7 +175,13 @@ describe("authenticated responsive polish contract", () => {
     const viewport = read("src/components/layout/ClientRouteViewport.tsx");
 
     expect(picker).toContain("readApiJson");
-    expect(picker).toContain("availableResult.status === 503");
+    // A 503 can be a temporary provider failure, not missing carrier setup.
+    // Preserve its parsed reason; behavioral recovery tests cover retry and
+    // keeping this inventory failure separate from a failed activation.
+    expect(picker).toContain("if (availableResult.ok === false)");
+    expect(picker).toContain("throw new Error(availableResult.error)");
+    expect(picker).toContain("{inventoryError}</p>");
+    expect(picker).toContain("onClick={refresh}");
     expect(picker).toContain("Number inventory unavailable");
     expect(picker).toContain("inventoryUnavailable");
     expect(admin).toContain("<AdminHubViewport scroll>");

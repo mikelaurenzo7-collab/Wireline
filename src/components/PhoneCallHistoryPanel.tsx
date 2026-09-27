@@ -136,7 +136,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
         title: "Create a Bot",
         description: undefined,
         action: (
-          <Button asChild>
+          <Button asChild variant="secondary" size="sm">
             <Link to="/studio?create=1">New Bot</Link>
           </Button>
         ),
@@ -146,7 +146,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           title: "Connect a Line",
           description: undefined,
           action: (
-            <Button asChild>
+            <Button asChild variant="secondary" size="sm">
               <Link to="/phone?tab=setup">Lines</Link>
             </Button>
           ),
@@ -155,16 +155,15 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           title: agentId ? "No calls for this Bot" : "No calls yet",
           description: undefined,
           action: (
-            <Button asChild>
+            <Button asChild variant="secondary" size="sm">
               <a href={`tel:${livePhone}`}>Call the line</a>
             </Button>
           ),
         };
 
   return (
-    <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
+    <div className="wl-call-history-empty mx-auto my-4 grid min-h-[24rem] w-full max-w-[980px] flex-1 place-items-center px-4 py-8 sm:px-8">
       <EmptyState
-        framed
         density="compact"
         titleTone="ui"
         withHalo={false}

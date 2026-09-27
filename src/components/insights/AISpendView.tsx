@@ -69,9 +69,11 @@ function SpendBudgetCard() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [statusRes, budgetRes] = await Promise.all([
         authFetch("/api/spend/status"),
@@ -82,7 +84,20 @@ function SpendBudgetCard() {
       if (statusOut.ok === false) throw new Error(statusOut.error);
       if (budgetOut.ok === false) throw new Error(budgetOut.error);
       const s = statusOut.data;
-      const budgetData = budgetOut.data.budget;
+      const budgetData = budgetOut.data?.budget;
+      if (
+        !s ||
+        typeof s.month_to_date_usd !== "number" ||
+        !Number.isFinite(s.month_to_date_usd) ||
+        typeof s.monthly_limit_usd !== "number" ||
+        !Number.isFinite(s.monthly_limit_usd) ||
+        !budgetData ||
+        budgetData.monthly_limit_usd == null ||
+        String(budgetData.monthly_limit_usd).trim() === "" ||
+        !Number.isFinite(Number(budgetData.monthly_limit_usd))
+      ) {
+        throw new Error("Budget response is incomplete");
+      }
       setStatus(s);
       setBudget(budgetData ?? null);
       setDraft({
@@ -91,18 +106,24 @@ function SpendBudgetCard() {
           : "",
         warn_threshold_pct: budgetData?.warn_threshold_pct ?? 80,
       });
+      return true;
+    } catch {
+      setLoadError("Usage budget is unavailable. Try again.");
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, []);
 
   const save = async () => {
+    if (loading || saving || loadError || !status) return;
     setSaving(true);
     setError(null);
+    setSavedAt(null);
     try {
       const limit = parseFloat(draft.monthly_limit_usd || "0");
       const r = await authFetch("/api/spend/budget", {
@@ -117,8 +138,7 @@ function SpendBudgetCard() {
       });
       const out = await readApiJson(r);
       if (out.ok === false) throw new Error(out.error);
-      setSavedAt(Date.now());
-      await refresh();
+      if (await refresh()) setSavedAt(Date.now());
     } catch (e: any) {
       setError(e?.message || "Save failed");
     } finally {
@@ -131,6 +151,15 @@ function SpendBudgetCard() {
       <div className="rounded-md wl-panel p-6 flex items-center gap-3 text-muted text-sm">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading budget…
       </div>
+    );
+  }
+
+  if (!status) {
+    return (
+      <ErrCard
+        error={loadError || "Usage budget is unavailable. Try again."}
+        onRetry={() => void refresh()}
+      />
     );
   }
 
@@ -161,6 +190,12 @@ function SpendBudgetCard() {
 
   return (
     <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-7 space-y-5")} data-accent={barColor}>
+      {loadError && (
+        <ErrCard
+          error="Budget status could not be refreshed. Showing the last confirmed limits."
+          onRetry={() => void refresh()}
+        />
+      )}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md flex items-center justify-center wl-accent-surface">
@@ -233,6 +268,7 @@ function SpendBudgetCard() {
             max={maximumLimit || undefined}
             step="0.01"
             inputMode="decimal"
+            disabled={loading || saving || !!loadError}
             value={draft.monthly_limit_usd}
             onChange={(e) => setDraft({ ...draft, monthly_limit_usd: e.target.value })}
             placeholder="e.g. 200"
@@ -245,6 +281,7 @@ function SpendBudgetCard() {
           <Input
             type="number"
             inputMode="numeric"
+            disabled={loading || saving || !!loadError}
             min="1"
             max="99"
             step="1"
@@ -276,7 +313,9 @@ function SpendBudgetCard() {
           variant="editorial"
           onClick={save}
           disabled={
+            loading ||
             saving ||
+            !!loadError ||
             !(Number(draft.monthly_limit_usd) > 0) ||
             (maximumLimit > 0 && Number(draft.monthly_limit_usd) > maximumLimit)
           }
@@ -295,7 +334,7 @@ function SpendBudgetCard() {
           {error}
         </div>
       )}
-      {savedAt && !error && Date.now() - savedAt < 4000 && (
+      {savedAt && !error && !loadError && Date.now() - savedAt < 4000 && (
         <div className="text-xs text-brand">Saved.</div>
       )}
     </div>
@@ -339,7 +378,7 @@ export default function AISpendView({ days }: { days: number }) {
         <InsightEmpty
           configKey="spend"
           icon={Brain}
-          titleOverride="No AI usage yet"
+          titleOverride="No recorded usage yet"
           fill={false}
           framed={false}
         />
@@ -348,7 +387,10 @@ export default function AISpendView({ days }: { days: number }) {
   }
 
   const { totals, by_day = [], by_action = [], by_model = [] } = data;
-  const callsHaveHappened = totals.calls > 0;
+  const hasRecordedEvents = totals.calls > 0;
+  const cacheSavings = Number(totals.cache_savings_usd ?? 0);
+  const cacheAmount = Math.abs(cacheSavings);
+  const cacheDecimals = cacheAmount > 0 && cacheAmount < 0.01 ? 4 : 2;
 
   const maxDay = Math.max(0.01, ...by_day.map((d) => Number(d.cost)));
   const maxAction = Math.max(0.01, ...by_action.map((a) => Number(a.cost)));
@@ -357,19 +399,19 @@ export default function AISpendView({ days }: { days: number }) {
     <div className="space-y-5">
       <SpendBudgetCard />
 
-      {!callsHaveHappened ? (
+      {!hasRecordedEvents ? (
         <div className={cn(WL_APP_CLASSES.panelFrame, "p-6 md:p-8")}>
           <InsightEmpty
             configKey="spend"
             icon={Brain}
-            titleOverride="No AI usage in this window"
+            titleOverride="No recorded usage in this window"
             fill={false}
             framed={false}
           />
         </div>
       ) : null}
 
-      {callsHaveHappened && (
+      {hasRecordedEvents && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <SpendStat
@@ -379,20 +421,20 @@ export default function AISpendView({ days }: { days: number }) {
               accent={BRAND.colors.primary}
             />
             <SpendStat
-              label="AI Calls"
+              label="Recorded events"
               value={String(totals.calls)}
               icon={Brain}
               accent={BRAND.colors.primary}
             />
             <SpendStat
-              label="Avg / Call"
+              label="Avg / event"
               value={formatMoney(totals?.avg_cost_per_call, 4)}
               icon={Receipt}
               accent={BRAND.colors.primary}
             />
             <SpendStat
-              label="Saved by Cache"
-              value={formatMoney(totals?.cache_savings_usd, 2)}
+              label={cacheSavings < 0 ? "Cache overhead" : "Saved by cache"}
+              value={formatMoney(cacheAmount, cacheDecimals)}
               icon={Database}
               accent={BRAND.colors.primary}
             />
@@ -411,25 +453,25 @@ export default function AISpendView({ days }: { days: number }) {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.02, duration: 0.4 }}
-                    className="flex items-center gap-3"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3"
                   >
-                    <span className="shrink-0 wl-insight-label w-20 font-mono">
-                      {d.day.slice(5)}
-                    </span>
-                    <div className="flex-1 relative h-7 rounded-md bg-black/10 overflow-hidden">
+                    <span className="wl-insight-label font-mono">{d.day.slice(5)}</span>
+                    <div
+                      className="relative h-7 rounded-md bg-black/10 overflow-hidden"
+                      aria-hidden="true"
+                    >
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.02 }}
-                        className="absolute inset-y-0 left-0 rounded-md flex items-center px-3 bg-brand"
-                      >
-                        <span className="wl-micro-badge font-mono text-on-brand font-medium">
-                          ${safeFixed(d.cost, 2)}
-                        </span>
-                      </motion.div>
-                      <span className="absolute inset-y-0 right-3 flex items-center wl-micro-meta--muted">
-                        {d.calls} calls
-                      </span>
+                        className="absolute inset-y-0 left-0 rounded-md bg-brand"
+                      />
+                    </div>
+                    <div className="text-right tabular-nums">
+                      <div className="text-sm font-medium text-foreground">
+                        ${safeFixed(d.cost, 2)}
+                      </div>
+                      <div className="wl-micro-meta--muted">{d.calls} events</div>
                     </div>
                   </motion.div>
                 );
@@ -439,7 +481,7 @@ export default function AISpendView({ days }: { days: number }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className={cn(WL_APP_CLASSES.insightStatCard, "p-5 space-y-3")}>
-              <div className="wl-insight-label text-brand/70">Spend by Recipe</div>
+              <div className="wl-insight-label text-brand/70">Spend by Action</div>
               <div className="space-y-2">
                 {by_action.slice(0, 12).map((a, i) => {
                   const pct = (Number(a.cost) / maxAction) * 100;
@@ -460,7 +502,7 @@ export default function AISpendView({ days }: { days: number }) {
                         />
                       </div>
                       <div className="flex items-center justify-between wl-insight-label">
-                        <span>{a.calls} calls</span>
+                        <span>{a.calls} events</span>
                         <span>avg {a.avg_latency_ms}ms</span>
                       </div>
                     </div>
@@ -478,8 +520,10 @@ export default function AISpendView({ days }: { days: number }) {
                     className="flex items-baseline justify-between border-b border-border pb-3 last:border-0 last:pb-0"
                   >
                     <div>
-                      <div className="text-sm font-mono text-foreground/90">{m.model}</div>
-                      <div className="wl-insight-label mt-1">{m.calls} calls</div>
+                      <div className="text-sm font-mono text-foreground/90">
+                        {m.model === "unknown" ? "No model recorded" : m.model}
+                      </div>
+                      <div className="wl-insight-label mt-1">{m.calls} events</div>
                     </div>
                     <div className="font-display text-2xl text-brand-display">
                       ${safeFixed(m.cost, 2)}

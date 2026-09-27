@@ -54,7 +54,9 @@ vi.mock("react", async (original) => ({
   },
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (callback: unknown) => callback,
-  useImperativeHandle: () => {},
+  useImperativeHandle: (ref: { current: unknown } | null, create: () => unknown) => {
+    if (ref) ref.current = create();
+  },
   useSyncExternalStore: (_subscribe: unknown, getSnapshot: () => unknown) => getSnapshot(),
 }));
 vi.mock("react-router", () => ({
@@ -455,6 +457,43 @@ describe("Bot context across workspace pages", () => {
 });
 
 describe("Workroom mode keyboard navigation", () => {
+  it.each([
+    { draft: "Keep this customer scenario.", expected: "Keep this customer scenario." },
+    { draft: "", expected: "Suggested customer question" },
+    { draft: "  ", expected: "Suggested customer question" },
+  ])("focuses Test without replacing the existing draft: $draft", ({ draft, expected }) => {
+    const frames: Array<() => void> = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: () => void) => frames.push(callback));
+    const handle = { current: null as null | { focusComposer: (text?: string) => void } };
+    const workroom = () =>
+      render(() =>
+        (
+          StudioWorkroom as unknown as {
+            render: (props: object, ref: typeof handle) => ReactNode;
+          }
+        ).render(
+          {
+            agentId: "bot-b",
+            agentName: "Bravo",
+            mode: "test",
+            initialDraft: { text: draft, command: null, commandNonce: null },
+          },
+          handle,
+        ),
+      );
+    workroom();
+    handle.current!.focusComposer("Suggested customer question");
+    const composer = elements(workroom()).find(
+      (node) => node.props.id === "studio-workroom-message",
+    )!;
+    expect(composer.props.value).toBe(expected);
+    expect((composer.props as Props & { "data-resize": string })["data-resize"]).toBe("none");
+    const focus = vi.fn();
+    (composer.props as Props & { ref: { current: unknown } }).ref.current = { focus };
+    frames.splice(0).forEach((frame) => frame());
+    expect(focus).toHaveBeenCalledOnce();
+  });
+
   it("connects tabs to the active panel and preserves focus after a mode remount", () => {
     const frames: Array<() => void> = [];
     const focused = new Map<string, ReturnType<typeof vi.fn>>();

@@ -139,6 +139,10 @@ export default function StudioWorkspaceV2() {
   const [workroomMode, setWorkroomModeState] = useState<WorkroomMode>(() =>
     readStudioWorkroomMode(routeState),
   );
+  const [customerTestRequest, setCustomerTestRequest] = useState<{
+    agentId: string;
+    ownerId: string;
+  } | null>(null);
   // Settings are requested explicitly, including links from creation and review.
   // The route owns visibility so a saved desktop collapse cannot hide a deep link.
   const inspectorOpen = sectionParam === "setup" || sectionParam === "review";
@@ -236,13 +240,29 @@ export default function StudioWorkspaceV2() {
   );
 
   const startCustomerTest = useCallback(() => {
+    if (!active?.id || !user?.id) return;
+    setCustomerTestRequest({ agentId: active.id, ownerId: user.id });
     setWorkroomMode("test");
-    window.setTimeout(() => {
-      workroomRef.current?.focusComposer(
-        "Hi, can you explain what you can do and help me take the next step?",
-      );
-    }, 120);
-  }, [setWorkroomMode]);
+  }, [active?.id, setWorkroomMode, user?.id]);
+
+  useEffect(() => {
+    if (!customerTestRequest) return;
+    if (
+      customerTestRequest.agentId !== active?.id ||
+      customerTestRequest.ownerId !== user?.id ||
+      workroomMode !== "test"
+    ) {
+      setCustomerTestRequest(null);
+      return;
+    }
+    if (loading || inspectorOpen) return;
+    // The matching Test composer is now committed. Its focus handle preserves
+    // a retained draft; no delayed callback can seed a different Bot or account.
+    workroomRef.current?.focusComposer(
+      "Hi, can you explain what you can do and help me take the next step?",
+    );
+    setCustomerTestRequest(null);
+  }, [active?.id, customerTestRequest, inspectorOpen, loading, user?.id, workroomMode]);
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;

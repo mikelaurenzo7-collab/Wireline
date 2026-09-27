@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_BRAND } from "../../lib/wireline-design-system";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "motion/react";
 import { BarChart3, TrendingUp, Loader2, Star, Play } from "lucide-react";
 import { Button } from "../atoms";
@@ -31,30 +31,40 @@ export default function QualityView({ days }: { days: number }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [scoring, setScoring] = useState(false);
+  const statsRequestRef = useRef(0);
   const { success: toastSuccess, error: toastError, warning: toastWarning } = useToast();
 
   const fetchStats = useCallback(() => {
+    const request = ++statsRequestRef.current;
     setLoading(true);
     setErr(null);
     fetchInsight<InsightsQaStatsResponse>(`/api/qa/stats?days=${days}`)
       .then((d) => {
+        if (statsRequestRef.current !== request) return;
         setData(d);
         setErr(null);
       })
       .catch((e: unknown) => {
+        if (statsRequestRef.current !== request) return;
         if ((e as any)?.name === "AbortError") return;
         const message = e instanceof Error ? e.message : "Request failed";
         setErr(message);
         setData(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (statsRequestRef.current === request) setLoading(false);
+      });
   }, [days]);
 
   useEffect(() => {
     fetchStats();
+    return () => {
+      statsRequestRef.current += 1;
+    };
   }, [fetchStats]);
 
   const handleScoreAll = async () => {
+    const statsRequestAtStart = statsRequestRef.current;
     setScoring(true);
     try {
       const res = await authFetch(`/api/qa/score-batch`, {
@@ -80,7 +90,8 @@ export default function QualityView({ days }: { days: number }) {
       } else {
         toastSuccess("Batch QA complete", `Scored ${d.scored} call${d.scored === 1 ? "" : "s"}.`);
       }
-      fetchStats();
+      // A batch started in another date range must not revive its old read.
+      if (statsRequestRef.current === statsRequestAtStart) fetchStats();
     } catch (e: any) {
       toastError("Batch scoring failed", e.message);
     } finally {

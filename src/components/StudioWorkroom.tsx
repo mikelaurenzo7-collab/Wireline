@@ -242,7 +242,7 @@ const StudioWorkroom = forwardRef<
     ref,
     () => ({
       focusComposer(text?: string) {
-        if (text) setDraft(text);
+        if (text) setDraft((current) => (current.trim() ? current : text));
         requestAnimationFrame(() => inputRef.current?.focus());
       },
     }),
@@ -676,6 +676,7 @@ const StudioWorkroom = forwardRef<
               </label>
               <textarea
                 id="studio-workroom-message"
+                data-resize="none"
                 ref={inputRef}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}

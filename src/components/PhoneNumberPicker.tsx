@@ -41,13 +41,16 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
+  const [inventoryError, setInventoryError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
   const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     setLoading(true);
-    setError(null);
+    // Refresh follows a failed activation too. Keep that action's error until
+    // another action replaces it, even if inventory also becomes unavailable.
+    setInventoryError(null);
     setInventoryUnavailable(false);
     try {
       const [availableResponse, areaCodesResponse] = await Promise.all([
@@ -59,11 +62,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         readApiJson<{ area_codes?: AreaCode[] }>(areaCodesResponse),
       ]);
       if (availableResult.ok === false) {
-        throw new Error(
-          availableResult.status === 503
-            ? "Phone-number inventory is unavailable until the carrier connection is configured."
-            : availableResult.error,
-        );
+        throw new Error(availableResult.error);
       }
       setAvailable(availableResult.data.available || []);
       setPreviewNumbers(new Set());
@@ -72,7 +71,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       setAvailable([]);
       setAreaCodes([]);
       setInventoryUnavailable(true);
-      setError(e?.message || "Could not load available numbers");
+      setInventoryError(e?.message || "Could not load available numbers");
     } finally {
       setLoading(false);
     }
@@ -194,7 +193,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-[var(--wireline-color-status-warning)]" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">Number inventory unavailable</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{error}</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{inventoryError}</p>
               <ShadButton
                 type="button"
                 variant="outline"
@@ -328,7 +327,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       )}
 
       <AnimatePresence>
-        {error && !inventoryUnavailable && (
+        {error && (
           <motion.div
             role="alert"
             initial={{ opacity: 0, y: 6 }}

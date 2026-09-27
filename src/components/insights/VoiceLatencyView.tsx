@@ -17,18 +17,25 @@ export default function VoiceLatencyView({ days }: { days: number }) {
     setErr(null);
 
     Promise.all([
-      fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`).catch(() => null),
-      fetchInsight<VoiceLatencyInsightsResponse>(`/api/insights/latency?days=${days}`).catch(
-        () => null,
-      ),
+      fetchInsight<AuditSummary>(`/api/audit/summary?days=${days}`),
+      fetchInsight<VoiceLatencyInsightsResponse>(`/api/insights/latency?days=${days}`),
     ])
       .then(([actionD, voiceD]) => {
         if (!active) return;
+        if (
+          !actionD?.latency ||
+          !Number.isFinite(actionD.latency.sample_count) ||
+          !Number.isFinite(actionD.latency.p50_ms) ||
+          !Number.isFinite(actionD.latency.p95_ms) ||
+          !Array.isArray(voiceD?.trends)
+        ) {
+          throw new Error("Latency response is incomplete");
+        }
         setActionData(actionD);
         setVoiceData(voiceD);
       })
-      .catch((e) => {
-        if (active) setErr(e instanceof Error ? e.message : "Request failed");
+      .catch(() => {
+        if (active) setErr("Latency data is unavailable. Try again.");
       })
       .finally(() => {
         if (active) setLoading(false);
