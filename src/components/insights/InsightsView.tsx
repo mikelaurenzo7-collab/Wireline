@@ -94,7 +94,8 @@ export default function InsightsView() {
     return views[activeView] ?? views.funnel;
   }, [activeView, days]);
 
-  if (firstRun) {
+  // Account spend and budget remain available before creation or after deleting every Bot.
+  if (firstRun && activeView !== "spend") {
     return (
       <ClientRouteViewport>
         <InsightEmpty configKey="funnel" icon={TrendingUp} />

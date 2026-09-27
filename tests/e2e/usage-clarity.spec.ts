@@ -1,6 +1,37 @@
 import { expect, test } from "@playwright/test";
 import { STRIPE_PLANS } from "../../src/lib/plan-catalog";
 
+const accountSpendResponses: Record<string, unknown> = {
+  "/api/audit/summary": {
+    window_days: 30,
+    totals: {
+      calls: 1,
+      cost: 0.12,
+      input: 100,
+      output: 20,
+      cache_read: 0,
+      cache_create: 0,
+      cache_savings_usd: 0,
+      avg_cost_per_call: 0.12,
+      avg_latency: 200,
+    },
+    latency: { p50_ms: 200, p95_ms: 200, sample_count: 1 },
+    by_day: [{ day: "2026-09-27", calls: 1, cost: 0.12 }],
+    by_action: [{ action: "agent-test", calls: 1, cost: 0.12, avg_latency_ms: 200 }],
+    by_model: [{ model: "unknown", calls: 1, cost: 0.12 }],
+  },
+  "/api/spend/status": {
+    period: "2026-09",
+    monthly_limit_usd: 2,
+    maximum_limit_usd: 2,
+    month_to_date_usd: 0.12,
+    warn_threshold_pct: 80,
+    guard_scope: "free_simulation_allowance",
+    alerts_fired: [],
+  },
+  "/api/spend/budget": { budget: { monthly_limit_usd: "2", warn_threshold_pct: 80 } },
+};
+
 for (const width of [1440, 390]) {
   test(`recent balance activity is readable and links to separate AI spend at ${width}px`, async ({
     page,
@@ -9,7 +40,8 @@ for (const width of [1440, 390]) {
     await page.route("**/api/**", async (route) => {
       const path = new URL(route.request().url()).pathname;
       const json =
-        path === "/api/auth/session"
+        accountSpendResponses[path] ??
+        (path === "/api/auth/session"
           ? { user: { id: "usage-owner", email: "owner@example.test", full_name: "Usage Review" } }
           : path === "/api/billing/plans"
             ? {
@@ -47,7 +79,7 @@ for (const width of [1440, 390]) {
                       },
                     ],
                   }
-                : { agents: [], accounts: [], numbers: [], integrations: [] };
+                : { agents: [], accounts: [], numbers: [], integrations: [] });
       await route.fulfill({ json });
     });
     await page.goto("/settings/billing");
@@ -92,5 +124,22 @@ for (const width of [1440, 390]) {
     await summary.focus();
     await page.keyboard.press("Enter");
     await expect(activity.getByRole("list")).toBeHidden();
+
+    // The account has no Bots, but its prior spend and current allowance still belong to it.
+    await page.keyboard.press("Enter");
+    await activity.getByRole("link", { name: "AI spend", exact: true }).click();
+    await expect(page).toHaveURL(/\/insights\?tab=revenue&view=spend$/);
+    await expect(page.getByText("Simulation allowance", { exact: true })).toBeVisible();
+    await expect(page.getByRole("spinbutton", { name: "Monthly Safety Limit (USD)" })).toHaveValue(
+      "2",
+    );
+    await expect(page.getByText("Total Spend", { exact: true })).toBeVisible();
+    await expect(page.getByText("$0.12", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("No conversations yet", { exact: true })).toHaveCount(0);
+
+    await page.goto("/insights");
+    await expect(page.getByText("No conversations yet", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Create Bot", exact: true })).toBeVisible();
+    await expect(page.getByText("Simulation allowance", { exact: true })).toHaveCount(0);
   });
 }
