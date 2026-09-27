@@ -31,9 +31,13 @@ test("all channel capacities retain exact annual signup intent in one readable s
   });
   await page.setViewportSize({ width: 320, height: 844 });
   await page.goto("/pricing?interval=year");
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     document.documentElement.style.fontSize = "200%";
+    await document.fonts.ready;
   });
+  const privacy = page.getByRole("region", { name: "Privacy choices" });
+  await privacy.getByRole("button", { name: "Essential only", exact: true }).click();
+  await expect(privacy).toBeHidden();
   const labels = { voice: "Calls", email: "Email", sms: "SMS" } as const;
   for (const plan of plans) {
     await page

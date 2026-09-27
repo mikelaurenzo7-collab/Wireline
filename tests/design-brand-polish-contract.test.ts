@@ -211,7 +211,7 @@ describe("E2E design and BotBound brand polish", () => {
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
     expect(landing).toMatch(
-      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number<\/span>/,
+      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("BotBoundLockup");

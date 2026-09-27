@@ -122,7 +122,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number<\/span>/,
+    /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
     "landing must render the voice Bot and phone number hero",
   );
   mustInclude(

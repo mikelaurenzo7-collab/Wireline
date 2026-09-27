@@ -20,7 +20,7 @@ describe("BotBound public iPhone prestige contract", () => {
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Hire a Voice Bot\.<\/span>[\s\S]*?<span>With Its Own Number<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>Hire a Voice Bot\.<\/span>[\s\S]*?<span>With Its Own Number\.<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");

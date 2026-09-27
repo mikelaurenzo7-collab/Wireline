@@ -231,7 +231,7 @@ describe("BotBound product voice", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
     expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number");
+    expect(landing).toContain("With Its Own Number.");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");

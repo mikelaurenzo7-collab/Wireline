@@ -50,7 +50,7 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: "Hire a Voice Bot. With Its Own Number",
+    name: "Hire a Voice Bot. With Its Own Number.",
     exact: true,
   });
   const hero = page.locator(".landing-prestige__hero");

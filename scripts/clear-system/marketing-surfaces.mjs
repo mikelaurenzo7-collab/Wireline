@@ -77,7 +77,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "root landing must embed concise account creation",
     ],
     [
-      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number<\/span>/,
+      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
       "root landing must make the voice Bot and phone number offer explicit",
     ],
     [

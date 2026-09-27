@@ -132,7 +132,7 @@ export default function ChannelPlanPicker({
     <div className="min-w-0 space-y-4">
       <fieldset disabled={disabled || lockChannels} className="min-w-0">
         <legend className="mb-2 text-sm font-medium text-foreground">Choose your channels</legend>
-        <div className="grid min-w-0 grid-cols-3 gap-2">
+        <div className="grid min-w-0 grid-cols-3 gap-2 max-[359px]:grid-cols-1">
           {CHANNEL_CHOICES.map(({ id, label, icon: Icon }) => {
             const checked = plan.channels.includes(id);
             return (

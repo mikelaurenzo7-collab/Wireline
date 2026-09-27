@@ -244,14 +244,21 @@ test("pricing keeps its header, annual prices, and both mobile actions readable 
     "aria-pressed",
     "true",
   );
-  const starter = page
-    .locator("article")
-    .filter({ has: page.getByRole("heading", { name: "Starter", exact: true }) });
-  await expect(starter).toContainText("190");
-  await expect(starter.getByRole("link", { name: "Set up Starter", exact: true })).toHaveAttribute(
-    "href",
-    /interval=year/,
+  const currentPlan = STRIPE_PLANS.find((plan) => plan.id === "voice-regular")!;
+  const selectedPackage = page.getByRole("article", { name: "Selected package" });
+  await expect(
+    selectedPackage.getByRole("heading", {
+      name: currentPlan.name.replace(/^BotBound\s+/, ""),
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(selectedPackage).toContainText(
+    `$${currentPlan.price_usd_annual.toLocaleString()}/year`,
   );
+  await expect(
+    selectedPackage.getByRole("link", { name: "Build with these channels", exact: true }),
+  ).toHaveAttribute("href", `/signup?plan=${currentPlan.id}&interval=year`);
+  await expectContentFits(page.locator("#plans, #plans *"));
 
   await page.locator(".pricing-more__summary").scrollIntoViewIfNeeded();
   await expect(page.locator(".marketing-sticky-cta")).toBeVisible();
@@ -282,11 +289,18 @@ test("billing reflows its interval, cards, and dock without losing bottom action
   await enlargeText(page);
   await interval.getByRole("button", { name: "Annual", exact: true }).click();
   await expectContentFits(page.locator(".wl-billing-plans, .wl-billing-plans *, .wl-shell-dock *"));
-  const starter = page
-    .locator(".wl-billing-plan")
-    .filter({ has: page.getByRole("heading", { name: "Starter", exact: true }) });
-  await expect(starter).toContainText("190");
-  await expect(starter.getByRole("button", { name: "Checkout paused" })).toBeDisabled();
+  const callsPlan = STRIPE_PLANS.find((plan) => plan.id === "voice-regular")!;
+  const selectedPackage = page.getByRole("article", { name: "Selected package" });
+  await expect(
+    selectedPackage.getByRole("heading", {
+      name: callsPlan.name.replace(/^BotBound\s+/, ""),
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(selectedPackage).toContainText(
+    `$${callsPlan.price_usd_annual.toLocaleString()}/year`,
+  );
+  await expect(selectedPackage.getByRole("button", { name: "Checkout paused" })).toBeDisabled();
   const rows = await page
     .locator(".wl-shell-dock-item")
     .evaluateAll(

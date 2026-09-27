@@ -69,7 +69,7 @@ for (const route of PUBLIC_ROUTES) {
  * Assert the served response directly: no redirect, and the route's own head.
  */
 const PRERENDERED_HEAD = [
-  { route: "/pricing", title: "Pricing | From $19/Month | BotBound" },
+  { route: "/pricing", title: "Pricing | Email from $9, Calls from $19 | BotBound" },
   { route: "/features", title: "Features | BotBound" },
   {
     route: "/for/legal",

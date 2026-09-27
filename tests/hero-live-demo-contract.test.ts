@@ -10,7 +10,7 @@ describe("public voice-preview retirement contract", () => {
     const botProduct = read("src/lib/bot-product.ts");
 
     expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number");
+    expect(landing).toContain("With Its Own Number.");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).toContain("Find. Call. Book.");

@@ -95,7 +95,7 @@ export default function WireAgentLanding() {
                 AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
               </p>
               <h1 id="landing-prestige-title">
-                <span>Hire a Voice Bot.</span> <span>With Its Own Number</span>
+                <span>Hire a Voice Bot.</span> <span>With Its Own Number.</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
               <nav className="landing-prestige__directions" aria-label="Choose Bot direction">

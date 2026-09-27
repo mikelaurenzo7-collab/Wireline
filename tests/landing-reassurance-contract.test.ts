@@ -20,7 +20,7 @@ describe("home landing launch clarity", () => {
       '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
     );
     expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number");
+    expect(landing).toContain("With Its Own Number.");
     expect(css).toContain(".landing-prestige__entrance");
     expect(css).toContain(".landing-prestige__desktop-only");
     expect(landing).not.toContain("00:42");

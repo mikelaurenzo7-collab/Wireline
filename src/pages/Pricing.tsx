@@ -125,7 +125,7 @@ export default function Pricing() {
         <div className="wl-public-rail mx-auto max-w-5xl">
           <div className="mx-auto mb-6 max-w-3xl text-center">
             <p className="wl-eyebrow wl-eyebrow--wired text-primary">Pricing</p>
-            <h1 className="marketing-hero-title mx-auto mt-4 text-[clamp(1.9rem,3.4vw,2.9rem)]">
+            <h1 className="marketing-hero-title mx-auto mt-4 min-w-0 max-w-full text-[clamp(1.9rem,3.4vw,2.9rem)] [overflow-wrap:anywhere]">
               Only the Channels You Need
             </h1>
             <p className="marketing-hero-lead mx-auto mt-4">

@@ -109,7 +109,7 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Hire a Voice Bot.");
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("With Its Own Number");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("With Its Own Number.");
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });
