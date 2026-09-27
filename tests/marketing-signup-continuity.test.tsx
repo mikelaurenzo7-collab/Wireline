@@ -60,6 +60,27 @@ describe("marketing signup continuity", () => {
     },
   );
 
+  it.each([
+    ["sales", "Marketing calls are not available yet."],
+    ["home-services", "Marketing calls are not available yet."],
+    ["medical", "Marketing calls are not available yet."],
+    ["real-estate", "Marketing calls are not available yet."],
+    ["insurance", "Marketing calls are not available yet."],
+    ["personal", "Outbound calls are not available yet. Build and test privately."],
+    ["legal", undefined],
+    ["restaurants", undefined],
+  ] as const)("discloses the relevant outbound limit on the %s page", (slug, expectedNotice) => {
+    const notice = elements(VerticalLanding({ slug })).find(
+      (element) =>
+        element.type === "p" &&
+        /^(Marketing|Outbound) calls are not available yet\./.test(
+          Children.toArray(element.props.children).join(""),
+        ),
+    );
+    expect(notice && Children.toArray(notice.props.children).join("")).toBe(expectedNotice);
+    if (notice) expect(notice.props.className).not.toContain("sr-only");
+  });
+
   it.each(["sales", "support"])("preserves the %s solution's signup destination", (wedge) => {
     harness.wedge = wedge;
     const page = SolutionsPage();

@@ -128,7 +128,7 @@ export default function VerticalLanding({
               {cfg.secondaryCta.label}
             </CtaLink>
           </div>
-          {slug === "sales" && (
+          {["sales", "home-services", "medical", "real-estate", "insurance"].includes(slug) && (
             <p className="mt-4 text-sm text-muted-foreground">{MARKETING_CALLS_NOTICE}</p>
           )}
           {isEverydayCalls && !DIRECT_OUTBOUND_AVAILABILITY.available && (
