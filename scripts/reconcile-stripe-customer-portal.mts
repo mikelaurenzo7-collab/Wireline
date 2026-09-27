@@ -46,12 +46,25 @@ const configurations = await stripe.billingPortal.configurations.list({
 if (configurations.has_more) {
   throw new Error("Stripe has more than 100 active portal configurations; refusing partial audit.");
 }
-let configuration = configurations.data.find(
-  (candidate) =>
+function isCurrentManagedConfiguration(candidate: Stripe.BillingPortal.Configuration): boolean {
+  return (
     candidate.metadata?.wireline_managed === "true" &&
     candidate.metadata?.wireline_catalog_version === FOUNDER_CATALOG_VERSION &&
-    candidate.metadata?.wireline_portal_products_fp === fingerprint,
+    candidate.metadata?.wireline_portal_products_fp === fingerprint
+  );
+}
+
+// Stripe cannot deactivate its default configuration. Preserve a default that
+// we already manage, updating it in place across catalog generations rather
+// than creating a replacement that leaves an undeletable stale configuration.
+// Never adopt a Dashboard default that is not explicitly BotBound-managed.
+const managedDefaults = configurations.data.filter(
+  (candidate) => candidate.is_default && candidate.metadata?.wireline_managed === "true",
 );
+if (managedDefaults.length > 1) {
+  throw new Error("Stripe returned multiple default managed portal configurations.");
+}
+let configuration = managedDefaults[0] || configurations.data.find(isCurrentManagedConfiguration);
 
 if (!configuration && !apply) {
   throw new Error("The canonical managed Stripe customer portal configuration is missing.");
@@ -92,6 +105,9 @@ if (staleManaged.length > 0 && !apply) {
   );
 }
 if (apply) {
+  if (staleManaged.some((candidate) => candidate.is_default)) {
+    throw new Error("Refusing to deactivate a default Stripe portal configuration.");
+  }
   await Promise.all(
     staleManaged.map((candidate) =>
       stripe.billingPortal.configurations.update(candidate.id, { active: false }),
