@@ -179,10 +179,14 @@ describe("restored launch regression guards", () => {
     const compliance = read("src/components/ComplianceCenter.tsx");
 
     expect(routes).toContain("Upload a text document or a PNG, JPG, WEBP, or GIF image.");
-    expect(kb).toContain(
-      'accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"',
+    expect(routes).toContain("capabilities: { image_uploads: isTrainingImageAvailable() }");
+    expect(kb).toContain("config?.capabilities?.image_uploads === true");
+    expect(kb).toMatch(
+      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown"/,
     );
     expect(kb).toContain("TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF)");
+    expect(kb).toContain("Image uploads are unavailable. Upload TXT, MD or CSV.");
+    expect(kb).toContain("readAsset(file, imageUploadsAvailable)");
     expect(kb).not.toContain("PDF, DOCX, TXT, CSV");
     expect(kb).toContain("is not supported yet");
     expect(kb).toContain("Knowledge could not be loaded.");

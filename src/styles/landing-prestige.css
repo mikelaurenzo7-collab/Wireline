@@ -114,12 +114,13 @@
   font-size: clamp(3.25rem, 5vw, 6.2rem);
   font-weight: 700;
   letter-spacing: -0.045em;
-  line-height: 0.86;
+  line-height: 1.02;
   word-spacing: 0.04em;
 }
 
 .landing-prestige__hero-copy h1 span {
-  white-space: nowrap;
+  white-space: normal;
+  text-wrap: balance;
 }
 
 .landing-prestige__hero-copy h1 span:last-child {

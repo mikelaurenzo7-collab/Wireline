@@ -1,6 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { MARKETING_VOICE } from "../../src/lib/product-copy";
 
 test.setTimeout(150_000);
 
@@ -51,7 +50,7 @@ test("homepage promise and access path stay inside the desktop viewport", async 
   await gotoHomepageWithMain(page);
 
   const headline = page.getByRole("heading", {
-    name: MARKETING_VOICE.headline,
+    name: "Hire a Voice Bot. With Its Own Number",
     exact: true,
   });
   const hero = page.locator(".landing-prestige__hero");

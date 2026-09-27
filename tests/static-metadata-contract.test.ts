@@ -9,8 +9,8 @@ describe("BotBound static marketing metadata", () => {
   it("keeps the HTML shell aligned with the BotBound promise", () => {
     const index = read("index.html");
 
-    expect(index).toContain("BotBound | Your Next Hire Is a Bot");
-    expect(index).toContain("Your Bot for calls, texts, and email.");
+    expect(index).toContain("BotBound | Hire a Voice Bot");
+    expect(index).toContain("A voice Bot with its own business number.");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
@@ -61,13 +61,13 @@ describe("BotBound static marketing metadata", () => {
     const landing = read("src/pages/LandingPage.tsx");
     const pageMeta = read("src/lib/page-meta.tsx");
 
-    expect(landing).toContain('title="BotBound | Your Next Hire Is a Bot"');
-    expect(landing).toContain("BOT_MARKETING_VOICE.subline");
+    expect(landing).toContain("title={HOME_TITLE}");
+    expect(landing).toContain("description={HOME_DESCRIPTION}");
     expect(landing).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
-    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Your Next Hire Is a Bot"');
-    expect(pageMeta).toContain('DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email."');
+    expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
+    expect(pageMeta).toMatch(/DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./);
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');

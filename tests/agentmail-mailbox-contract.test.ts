@@ -59,8 +59,9 @@ describe("BotBound managed AgentMail contract", () => {
     expect(mailboxCard).not.toContain("/api/integrations/agentmail/connect");
     expect(mailboxCard).not.toContain("AgentMail API key");
     expect(mailboxCard).not.toContain("@agentmail.to");
-    expect(mailboxCard).toContain("Your BotBound email is managed for you.");
-    expect(mailboxCard).toContain("Email Connections");
+    expect(mailboxCard).toContain('accounts.filter((account) => account.provider !== "agentmail")');
+    expect(mailboxCard).toContain('if (account.provider === "agentmail") return');
+    expect(mailboxCard).toMatch(/emailIncluded\s*\?\s*"Email & calendar"\s*:\s*"Calendar"/);
     expect(mailboxCard).toContain('id: "google"');
     expect(mailboxCard).toContain('id: "microsoft"');
     expect(mailboxCard).toContain('id: "icloud"');

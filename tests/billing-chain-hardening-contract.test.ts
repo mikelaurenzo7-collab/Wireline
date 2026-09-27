@@ -105,7 +105,13 @@ describe("entitlement delivery survives webhook failure", () => {
     expect(billingPage).toContain("window.history.state");
     expect(billingCard).toContain("billingReady?: boolean");
     expect(billingCard).toMatch(/if \(billingReady\) \{\s*void refresh\(\);/);
-    expect(billingCard).not.toContain("window.history.replaceState");
+    // The picker may persist plan/interval in the current URL, but must never
+    // delete checkout proof or take over BillingSettings' reconciliation.
+    expect(billingCard).not.toContain("checkoutReturnUrlWithoutProof");
+    expect(billingCard).not.toContain('searchParams.delete("session_id")');
+    expect(billingCard).toContain("new URL(window.location.href)");
+    expect(billingCard).toContain('url.searchParams.set("plan", id)');
+    expect(billingCard).toContain('url.searchParams.set("interval", interval)');
   });
 
   it("ends an expired Checkout return with an honest retry path", () => {
@@ -120,15 +126,15 @@ describe("entitlement delivery survives webhook failure", () => {
 
   it("routes Free Builder to Studio without attempting Stripe Checkout", () => {
     const catalog = read("src/lib/plan-catalog.ts");
-    const freeBranchStart = billingCard.indexOf("{isFree ? (");
+    const freeLinkStart = billingCard.indexOf('<Link to="/studio">');
     const freeBranch = billingCard.slice(
-      freeBranchStart,
-      billingCard.indexOf(") : (", freeBranchStart),
+      freeLinkStart,
+      billingCard.indexOf("</Link>", freeLinkStart),
     );
 
     expect(catalog).toContain("configured: !isFree && paidCheckoutAvailable");
     expect(catalog).toContain("is_free: isFree");
-    expect(billingCard).toContain("const isFree = plan.is_free === true");
+    expect(freeLinkStart).toBeGreaterThan(-1);
     expect(freeBranch).toContain('<Link to="/studio">');
     expect(freeBranch).toContain("Open Free Builder");
     expect(freeBranch).not.toContain("onSelectPlan(plan.id");

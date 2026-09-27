@@ -17,8 +17,8 @@ describe("retired Live Video economics", () => {
     expect(catalogContract).toContain(
       "Retired Live Video must stay out of the active Founder Stripe manifest",
     );
-    expect(catalogContract).toContain("FOUNDER_PRODUCTS.length !== 7");
-    expect(catalogContract).toContain("FOUNDER_PRICES.length !== 13");
+    expect(catalogContract).toContain("FOUNDER_PRODUCTS.length !== expectedPlans.length + 2");
+    expect(catalogContract).toContain("FOUNDER_PRICES.length !== expectedPlans.length * 2 + 4");
   });
 
   it("keeps customer entitlement and new-session behavior closed", () => {

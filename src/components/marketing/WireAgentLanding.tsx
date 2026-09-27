@@ -21,7 +21,6 @@ import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
-import { MARKETING_CALLS_NOTICE } from "../../lib/product-copy";
 
 const FEATURED_TEMPLATE_KEYS = [
   "sales-rep",
@@ -96,24 +95,10 @@ export default function WireAgentLanding() {
                 AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
               </p>
               <h1 id="landing-prestige-title">
-                <span>Your Next Hire</span>
-                <span>Is a Bot</span>
+                <span>Hire a Voice Bot.</span> <span>With Its Own Number</span>
               </h1>
               <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
               <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
-                <Link
-                  className="landing-prestige__direction is-outbound"
-                  to={signupHrefForPlan("personal", { template: "sales-rep" })}
-                  onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
-                >
-                  <span className="landing-prestige__direction-label">
-                    <PhoneOutgoing aria-hidden="true" /> OUTBOUND
-                  </span>
-                  <strong className="wl-preserve-case">Find. Call. Book.</strong>
-                  <span className="landing-prestige__direction-action">
-                    Build a Sales Rep <ArrowRight aria-hidden="true" />
-                  </span>
-                </Link>
                 <Link
                   className="landing-prestige__direction is-inbound"
                   to={signupHrefForPlan("personal", { template: "front-desk" })}
@@ -127,9 +112,23 @@ export default function WireAgentLanding() {
                     Build a Front Desk <ArrowRight aria-hidden="true" />
                   </span>
                 </Link>
+                <Link
+                  className="landing-prestige__direction is-outbound"
+                  to={signupHrefForPlan("personal", { template: "sales-rep" })}
+                  onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
+                >
+                  <span className="landing-prestige__direction-label">
+                    <PhoneOutgoing aria-hidden="true" /> OUTBOUND
+                  </span>
+                  <strong className="wl-preserve-case">Find. Call. Book.</strong>
+                  <span className="landing-prestige__direction-action">
+                    Build a Sales Rep <ArrowRight aria-hidden="true" />
+                  </span>
+                </Link>
               </nav>
               <div className="landing-prestige__explore">
-                <p>Build &amp; test free. {MARKETING_CALLS_NOTICE}</p>
+                <p>Add its own email inbox and SMS.</p>
+                <p>Build and test free. No card required.</p>
                 <nav aria-label="Explore BotBound">
                   <Link to="/features">
                     How it works <ArrowRight aria-hidden="true" />

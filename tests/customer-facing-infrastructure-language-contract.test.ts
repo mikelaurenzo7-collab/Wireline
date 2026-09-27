@@ -121,8 +121,8 @@ describe("customer-facing infrastructure language contract", () => {
     expect(card, "the integration catalog must not mention deployments").not.toContain(
       "Not configured on this deployment",
     );
-    expect(card, "an unavailable integration should read as a roadmap state").toContain(
-      "Not available yet",
+    expect(card, "an unavailable integration should state its status in customer terms").toMatch(
+      /<span[^>]*>Unavailable<\/span>/,
     );
   });
 });

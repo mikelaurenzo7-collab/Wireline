@@ -22,9 +22,11 @@ describe("launch readiness cross-surface contract", () => {
   it("keeps Knowledge upload honesty and public compliance copy", () => {
     const kb = read("src/components/KnowledgeBaseClaude.tsx");
     const security = read("src/components/Security.tsx");
-    expect(kb).toContain(
-      'accept=".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"',
+    expect(kb).toContain("config?.capabilities?.image_uploads === true");
+    expect(kb).toMatch(
+      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown"/,
     );
+    expect(kb).toContain("Image uploads are unavailable. Upload TXT, MD or CSV.");
     expect(kb).toContain("is not supported yet");
     expect(security).toMatch(
       /Outbound calls are not available yet\. Verified recipient consent and applicable DNC checks must be in place/i,

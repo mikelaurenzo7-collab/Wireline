@@ -173,10 +173,14 @@ describe("Resend delivery-feedback contract", () => {
       agentmailKey: process.env.AGENTMAIL_API_KEY,
       resendKey: process.env.RESEND_API_KEY,
       webhookSecret: process.env.RESEND_WEBHOOK_SECRET,
+      emailPrice: process.env.STRIPE_EMAIL_PRICE_ID,
     };
     try {
       process.env.AGENTMAIL_API_KEY = "am_botbound_readiness_test";
       process.env.RESEND_API_KEY = "re_wireline_readiness_test";
+      // This case releases Email for sale. Calls-only releases keep AgentMail
+      // readiness visible separately and still require transactional feedback.
+      process.env.STRIPE_EMAIL_PRICE_ID = "price_email_readiness_fixture";
       delete process.env.RESEND_WEBHOOK_SECRET;
 
       expect(getRuntimeCapabilities().resend).toBe(true);
@@ -220,6 +224,8 @@ describe("Resend delivery-feedback contract", () => {
       else process.env.RESEND_API_KEY = saved.resendKey;
       if (saved.webhookSecret === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
       else process.env.RESEND_WEBHOOK_SECRET = saved.webhookSecret;
+      if (saved.emailPrice === undefined) delete process.env.STRIPE_EMAIL_PRICE_ID;
+      else process.env.STRIPE_EMAIL_PRICE_ID = saved.emailPrice;
     }
   });
 

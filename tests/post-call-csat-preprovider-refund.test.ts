@@ -25,32 +25,34 @@ function installTwilioMocks(
     : vi.fn(async () => undefined);
   const select = vi.fn((projection: Record<string, unknown>) => {
     const rows =
-      "enabled" in projection
-        ? [
-            {
-              enabled: true,
-              lookupEnabled: false,
-              messagingServiceSid: "MG-test",
-              smsFromNumber: null,
-              whatsappFromNumber: null,
-            },
-          ]
-        : "deltaUsd" in projection
-          ? options.historicalBurnUsd
-            ? [{ id: "burn-1", deltaUsd: options.historicalBurnUsd }]
-            : []
-          : "entryKind" in projection
-            ? options.durableRefundEvidence
-              ? [{ id: "refund-1", entryKind: "refund" }]
+      "plan" in projection && "email" in projection
+        ? [{ email: "pilot@example.test", plan: "sms", status: "active" }]
+        : "enabled" in projection
+          ? [
+              {
+                enabled: true,
+                lookupEnabled: false,
+                messagingServiceSid: "MG-test",
+                smsFromNumber: null,
+                whatsappFromNumber: null,
+              },
+            ]
+          : "deltaUsd" in projection
+            ? options.historicalBurnUsd
+              ? [{ id: "burn-1", deltaUsd: options.historicalBurnUsd }]
               : []
-            : "phone" in projection
-              ? []
-              : [{ id: "thread-1", agentId: null }];
-    return {
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({ limit: vi.fn(async () => rows) })),
-      })),
+            : "entryKind" in projection
+              ? options.durableRefundEvidence
+                ? [{ id: "refund-1", entryKind: "refund" }]
+                : []
+              : "phone" in projection
+                ? []
+                : [{ id: "thread-1", agentId: null }];
+    const query = {
+      leftJoin: vi.fn(() => query),
+      where: vi.fn(() => ({ limit: vi.fn(async () => rows) })),
     };
+    return { from: vi.fn(() => query) };
   });
   const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 

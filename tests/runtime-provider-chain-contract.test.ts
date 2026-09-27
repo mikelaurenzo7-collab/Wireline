@@ -33,15 +33,8 @@ describe("structured runtime provider chain policy", () => {
   });
 
   it("promotes an available operator preference without losing continuity", () => {
-    expect(orderReasoningProviders(ALL, "gemini")).toEqual([
-      "gemini",
-      "openai",
-      "gateway",
-    ]);
-    expect(orderReasoningProviders(["openai", "gemini"], "gateway")).toEqual([
-      "openai",
-      "gemini",
-    ]);
+    expect(orderReasoningProviders(ALL, "gemini")).toEqual(["gemini", "openai", "gateway"]);
+    expect(orderReasoningProviders(["openai", "gemini"], "gateway")).toEqual(["openai", "gemini"]);
   });
 
   it("normalizes stale Grok Gateway ids before generic provider ids", () => {
@@ -58,7 +51,15 @@ describe("structured runtime transport", () => {
     expect(client).toContain('endpoint: "https://api.openai.com/v1/responses"');
     expect(client).toContain("gatewayModels: models");
     expect(client).toContain("provider request failed; trying fallback");
-    expect(client).toContain("if (isAbortError(error, options?.signal)) throw error");
+    const abortedAttempt = client.slice(
+      client.indexOf("if (isAbortError(error, options?.signal))"),
+      client.indexOf("const providerError = definiteRejection ?? error"),
+    );
+    expect(abortedAttempt).toContain("recordAmbiguousProviderAttempt()");
+    expect(abortedAttempt).toContain("throw error");
+    expect(abortedAttempt.indexOf("recordAmbiguousProviderAttempt()")).toBeLessThan(
+      abortedAttempt.indexOf("throw error"),
+    );
     expect(client).not.toMatch(/api\.x\.ai|XAI_API_KEY|callXAI|grok/i);
     expect(models).not.toMatch(/XAI_|GROK_/);
   });

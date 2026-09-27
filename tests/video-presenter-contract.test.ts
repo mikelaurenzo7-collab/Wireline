@@ -163,8 +163,8 @@ describe("Live Video retirement", () => {
     expect(contract).toContain(
       "Retired Live Video must stay out of the active Founder Stripe manifest",
     );
-    expect(contract).toContain("FOUNDER_PRODUCTS.length !== 7");
-    expect(contract).toContain("FOUNDER_PRICES.length !== 13");
+    expect(contract).toContain("FOUNDER_PRODUCTS.length !== expectedPlans.length + 2");
+    expect(contract).toContain("FOUNDER_PRICES.length !== expectedPlans.length * 2 + 4");
   });
 
   it("reports no live-video engines while retaining historical provider ids for old records", () => {

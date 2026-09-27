@@ -70,9 +70,11 @@ describe("platform cost metering contract", () => {
     for (const source of [catalog, balance, welcome]) {
       expect(source).not.toContain("platform AI/research, enrichment");
     }
-    expect(balance).toContain(
-      "funds platform AI, research, and enrichment from its included AI envelope",
+    expect(balance).toMatch(
+      /Platform AI,\s*\* research, and enrichment use the included managed AI allowance instead/,
     );
+    expect(balance).toContain("Runtime Balance funds eligible prepaid extras and voice overflow");
+    expect(catalog).toContain("separate from Runtime Allowance and voice");
   });
 
   it("discloses the Free Builder simulation envelope, in lockstep with enforcement", () => {

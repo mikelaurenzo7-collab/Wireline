@@ -35,13 +35,16 @@ describe("call-log reliability truth", () => {
 
   it("the claimed OpenAI call row receives the session's terminal reliability outcome", () => {
     const claimIdx = handlers.indexOf("let callLogId = preclaimedCallLogId ?? null");
-    const sessionIdx = handlers.indexOf(
-      "outcome = await runRealtimeSession(input, runtime, ownerFence.signal, accountElapsed)",
-    );
+    const sessionCall =
+      /outcome = await runRealtimeSession\(\s*input,\s*runtime,\s*ownerFence\.signal,\s*accountElapsed,\s*providerUsage\?\.observe,?\s*\)/.exec(
+        handlers,
+      );
+    const sessionIdx = sessionCall?.index ?? -1;
     const finalizerIdx = handlers.indexOf("async function persistFinishedCall");
     const enqueueIdx = handlers.indexOf("await enqueuePostCallDigest(", finalizerIdx);
     expect(claimIdx).toBeGreaterThan(0);
     expect(sessionIdx).toBeGreaterThan(claimIdx);
+    expect(handlers.slice(sessionIdx)).toMatch(/finally\s*\{\s*await providerUsage\?\.flush\(\)/);
     expect(finalizerIdx).toBeGreaterThan(0);
     expect(enqueueIdx).toBeGreaterThan(finalizerIdx);
     const terminalWrite = handlers.slice(finalizerIdx, enqueueIdx);

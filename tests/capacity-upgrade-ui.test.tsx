@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CapacityUpgradeCard, { CapacityUpgradeContent } from "../src/components/CapacityUpgradeCard";
+import { Checkbox } from "../src/components/ui/shadcn/Checkbox";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import type { ClientPlan } from "../src/types/api-billing";
 
@@ -120,11 +121,9 @@ describe("paid capacity scheduling", () => {
   it("keeps the same channels, requires selection, and confirms the exact renewal receipt", async () => {
     await open();
     expect(button("Schedule capacity increase").props.disabled).toBe(true);
-    expect(
-      render()
-        .filter((node) => node.props.type === "checkbox")
-        .every((node) => node.props.disabled),
-    ).toBe(true);
+    const channels = render().filter((node) => node.type === Checkbox);
+    expect(channels).toHaveLength(3);
+    expect(channels.every((node) => node.props.disabled)).toBe(true);
     selectRegular();
     expect(button("Schedule capacity increase").props.disabled).toBe(false);
     let finish!: (value: Response) => void;

@@ -1,7 +1,12 @@
 import type { Request, Response } from "express";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const h = vi.hoisted(() => ({ select: vi.fn(), lookup: null as Date | null, unavailable: false }));
+const h = vi.hoisted(() => ({
+  select: vi.fn(),
+  emailLookup: vi.fn(),
+  lookup: null as Date | null,
+  unavailable: false,
+}));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: { select: h.select },
   log: { error: vi.fn() },
@@ -19,6 +24,14 @@ vi.mock("../src/middleware/platform-admin", () => ({ requirePlatformAdmin: vi.fn
 vi.mock("../src/lib/stripe-helpers", () => ({ stripeAvailable: () => false }));
 vi.mock("../src/lib/email-service", () => ({}));
 vi.mock("../src/lib/phone-line-entitlements", () => ({ getIncludedPhoneLineSlots: async () => 0 }));
+vi.mock("../src/lib/channel-entitlements", () => ({
+  getTenantChannelEntitlements: async () => ({
+    planId: null,
+    subscriptionStatus: "pending_activation",
+    channels: [],
+    isOwner: false,
+  }),
+}));
 vi.mock("../src/lib/workspace-usage-snapshot", () => ({}));
 vi.mock("../src/lib/credit-wallet", () => ({}));
 vi.mock("../src/lib/subscription-welcome-credit", () => ({}));
@@ -62,18 +75,19 @@ async function billingStatus() {
 beforeEach(() => {
   h.lookup = null;
   h.unavailable = false;
-  let read = 0;
-  // Run the actual handler with its sequential database reads disconnected.
-  // Only the final email lookup may fail; no real database or provider is used.
-  h.select.mockReset().mockImplementation(() => {
-    const index = read++;
-    const result = index === 4 ? [{ verifiedAt: h.lookup }] : [];
+  h.emailLookup.mockReset();
+  // Identify the actual projection, not its incidental ordinal among unrelated
+  // billing/channel reads. Only the email lookup may fail.
+  h.select.mockReset().mockImplementation((selection: Record<string, unknown>) => {
+    const emailLookup = Object.hasOwn(selection, "verifiedAt");
+    if (emailLookup) h.emailLookup();
+    const result = emailLookup ? [{ verifiedAt: h.lookup }] : [];
     const chain = {
       from: () => chain,
       where: () => chain,
       limit: () => chain,
       then: (resolve: (value: unknown) => unknown, reject: (error: Error) => unknown) =>
-        index === 4 && h.unavailable
+        emailLookup && h.unavailable
           ? Promise.reject(new Error("Verification lookup unavailable")).then(resolve, reject)
           : Promise.resolve(result).then(resolve, reject),
     };
@@ -85,7 +99,7 @@ describe("billing email verification truthfulness", () => {
   it("reports unknown when the verification lookup fails without discarding other billing data", async () => {
     h.unavailable = true;
     expect(await billingStatus()).toMatchObject({ email_verified: null, agent_count: 0 });
-    expect(h.select).toHaveBeenCalledTimes(5);
+    expect(h.emailLookup).toHaveBeenCalledTimes(1);
   });
 
   it("reports unverified only from a completed lookup", async () => {

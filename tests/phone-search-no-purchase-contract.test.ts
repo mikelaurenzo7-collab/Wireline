@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { includedPhoneSlotsForPlan } from "../src/lib/phone-line-entitlements";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -18,13 +19,15 @@ describe("phone search does not buy a number", () => {
     expect(search).not.toContain("purchaseTwilioLocalNumber");
   });
 
-  it("only treats a resolved plan's zero slots as zero", () => {
+  it("fails closed for unknown, Free Builder, and Email-only plans", () => {
     const entitlements = read("src/lib/phone-line-entitlements.ts");
     expect(entitlements).toContain("if (tier) return slots;");
-    expect(entitlements).toContain("return 1;");
-    expect(entitlements.indexOf("if (tier) return slots;")).toBeLessThan(
-      entitlements.indexOf("return 1;"),
-    );
+    expect(entitlements).toContain('if (entitlement.subscriptionStatus !== "active") return 0');
+    for (const plan of [null, "missing-plan", "personal", "email"]) {
+      expect(includedPhoneSlotsForPlan(plan, 0)).toBe(0);
+    }
+    expect(includedPhoneSlotsForPlan("voice", 0)).toBe(1);
+    expect(includedPhoneSlotsForPlan("sms", 0)).toBe(1);
   });
 
   it("only copies a purchased native Twilio number onto SMS identity", () => {

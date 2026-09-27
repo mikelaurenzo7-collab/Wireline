@@ -1,6 +1,7 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import ChannelPlanPicker, { channelPlanHighlights } from "../src/components/ChannelPlanPicker";
+import { Checkbox } from "../src/components/ui/shadcn/Checkbox";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 import {
   activationBillingHref,
@@ -77,7 +78,8 @@ describe("channel package selection", () => {
         interval: "month",
         renderAction: () => null,
       });
-      const inputs = elements(tree).filter((element) => element.props.type === "checkbox");
+      const inputs = elements(tree).filter((element) => element.type === Checkbox);
+      expect(inputs).toHaveLength(3);
       ["voice", "email", "sms"].forEach((channel, index) => {
         const checked = plan.channels.includes(channel as "voice" | "email" | "sms");
         expect(inputs[index].props.checked).toBe(checked);

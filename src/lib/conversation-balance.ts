@@ -1,10 +1,11 @@
 /**
  * Runtime Balance is Wireline's prepaid safety wallet for optional and overflow work.
  *
- * Plans with Calls include monthly live-voice minutes and a smaller flexible
- * Runtime Allowance for SMS, platform-funded AI/research, enrichment, and generated
- * business artifacts. Runtime Balance covers usage beyond those included amounts
- * without automatic postpaid invoices.
+ * Plans with Calls include monthly live-voice minutes. A separate Runtime
+ * Allowance funds optional SMS and generated business artifacts. Platform AI,
+ * research, and enrichment use the included managed AI allowance instead.
+ * Runtime Balance funds eligible prepaid extras and voice overflow without
+ * automatic postpaid invoices.
  *
  * The legacy exported constant names remain stable to avoid breaking mobile and API
  * consumers while the customer-facing product language moves to Runtime Balance.

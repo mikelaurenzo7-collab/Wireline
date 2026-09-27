@@ -36,9 +36,16 @@ describe("tenant marketing email compliance contract", () => {
   it("keeps transactional tenant mail out of marketing suppression", () => {
     expect(integrations).toContain("if (params.marketing)");
     expect(integrations).toContain("text: params.body");
-    expect(integrations).toContain(
-      "Non-marketing messages here are transactional/relationship mail",
+    const fallback = integrations.slice(
+      integrations.lastIndexOf("if (params.marketing)"),
+      integrations.indexOf("// --- Private Helpers ---"),
     );
+    const marketingRefusal = fallback.indexOf("return false;");
+    const fundedFallback = fallback.indexOf("return sendFundedManagedEmail({");
+    expect(marketingRefusal).toBeGreaterThan(0);
+    expect(fundedFallback).toBeGreaterThan(marketingRefusal);
+    expect(fallback.slice(fundedFallback)).toContain("perform: async () =>");
+    expect(fallback.slice(fundedFallback)).not.toContain("isTenantEmailSuppressed");
   });
 
   it("pairs idempotent SMS persistence with an explicit Twilio retry policy", () => {

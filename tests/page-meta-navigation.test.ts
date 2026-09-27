@@ -36,8 +36,7 @@ function select(selector: string): HeadElement | null {
   if (!match) throw new Error(`Unsupported test selector: ${selector}`);
   return (
     elements.find(
-      (element) =>
-        element.tagName === match[1] && element.attributes.get(match[2]) === match[3],
+      (element) => element.tagName === match[1] && element.attributes.get(match[2]) === match[3],
     ) ?? null
   );
 }
@@ -66,7 +65,7 @@ describe("page metadata across client navigation", () => {
     expect(content("robots")).toBe("noindex, nofollow");
     expect(content("googlebot")).toBe("noindex, nofollow");
 
-    PageMeta({ title: "BotBound | Your Next Hire Is a Bot", path: "/" });
+    PageMeta({ title: "BotBound | Hire a Voice Bot", path: "/" });
     expect(content("robots")).toBe("index, follow, max-image-preview:large, max-snippet:-1");
     expect(content("googlebot")).toBe("index, follow, max-image-preview:large");
     expect(select('link[rel="canonical"]')?.attributes.get("href")).toBe("https://botbound.app/");
@@ -80,7 +79,9 @@ describe("page metadata across client navigation", () => {
 
     PageMeta({ title: "Pricing", path: "/pricing" });
     expect(content("googlebot")).toBe("index, follow, max-image-preview:large");
-    expect(elements.filter((element) => element.attributes.get("name") === "googlebot")).toHaveLength(1);
+    expect(
+      elements.filter((element) => element.attributes.get("name") === "googlebot"),
+    ).toHaveLength(1);
   });
 
   it("applies both noindex directives when entering a private page", () => {
@@ -98,7 +99,9 @@ describe("page metadata across client navigation", () => {
     expect(elements).toHaveLength(count);
     expect(document.title).toBe("Support | BotBound");
     expect(content("description")).toBe("Contact BotBound support.");
-    expect(select('meta[property="og:url"]')?.attributes.get("content")).toBe("https://botbound.app/support");
+    expect(select('meta[property="og:url"]')?.attributes.get("content")).toBe(
+      "https://botbound.app/support",
+    );
   });
 
   it("clears route-owned structured data when the next page does not supply it", () => {

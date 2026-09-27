@@ -1,12 +1,11 @@
 import { useEffect } from "react";
 import { PageMeta } from "../lib/page-meta";
-import { BOT_MARKETING_VOICE } from "../lib/bot-product";
+import { HOME_DESCRIPTION, HOME_TITLE } from "../lib/marketing-route-meta";
 import { BOTBOUND_PRODUCTION_ORIGIN } from "../lib/brand";
 import { STRIPE_PLANS } from "../lib/plan-catalog";
 import { captureSignupIntentFromLocation } from "../lib/signup-intent";
 import WireAgentLanding from "../components/marketing/WireAgentLanding";
 
-const PUBLIC_DESCRIPTION = BOT_MARKETING_VOICE.subline;
 const PUBLIC_ORIGIN = BOTBOUND_PRODUCTION_ORIGIN;
 
 export default function LandingPage() {
@@ -39,11 +38,7 @@ export default function LandingPage() {
 
   return (
     <>
-      <PageMeta
-        title="BotBound | Your Next Hire Is a Bot"
-        description={PUBLIC_DESCRIPTION}
-        path="/"
-      />
+      <PageMeta title={HOME_TITLE} description={HOME_DESCRIPTION} path="/" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

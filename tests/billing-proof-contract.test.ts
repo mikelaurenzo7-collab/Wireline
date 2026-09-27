@@ -394,13 +394,17 @@ describe("billing proof contract", () => {
 
   it("checks the canonical founder Stripe environment without reviving postpaid metering", () => {
     const envCheck = read("scripts/check-prod-env.mjs");
+    // Current sale intervals come from the canonical manifest; held channels
+    // are deliberately absent from the unconditional required-variable list.
+    expect(envCheck).toContain('from "./lib/stripe-founder-catalog.mjs"');
+    expect(envCheck).toContain("FOUNDER_PRICES.filter(");
+    expect(envCheck).toContain(
+      "PUBLIC_SELF_SERVE_PLAN_IDS.includes(price.metadata?.wireline_plan_id)",
+    );
+    expect(envCheck).toContain("for (const price of configuredSalePrices)");
+    expect(envCheck).toContain("process.env[price.envTarget]");
+    expect(envCheck).toContain('"NEW_SALE_CATALOG"');
     const canonicalKeys = [
-      "STRIPE_VOICE_PRICE_ID",
-      "STRIPE_VOICE_ANNUAL_PRICE_ID",
-      "STRIPE_EMAIL_PRICE_ID",
-      "STRIPE_EMAIL_ANNUAL_PRICE_ID",
-      "STRIPE_VOICE_EMAIL_PRICE_ID",
-      "STRIPE_VOICE_EMAIL_ANNUAL_PRICE_ID",
       "STRIPE_STARTER_9_PRICE_ID",
       "STRIPE_STARTER_9_ANNUAL_PRICE_ID",
       "STRIPE_STARTER_PRICE_ID",

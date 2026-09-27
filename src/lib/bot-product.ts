@@ -197,7 +197,7 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
-  activationLine: "Answers calls. Follows up. Books the next step.",
+  activationLine: "Answers calls, books appointments, and takes messages for your business.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;

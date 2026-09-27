@@ -230,8 +230,8 @@ describe("BotBound product voice", () => {
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("Your Next Hire");
-    expect(landing).toContain("Is a Bot");
+    expect(landing).toContain("Hire a Voice Bot.");
+    expect(landing).toContain("With Its Own Number");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -254,19 +254,24 @@ describe("BotBound product voice", () => {
     expect(BOT_MARKETING_VOICE.subline).toBe(BOT_BRAND.promise);
   });
 
-  it("keeps included phone capacity aligned to live Bot capacity and automatic activation", () => {
-    const publicCapacityPlans = STRIPE_PLANS.filter(
-      (plan) => plan.id !== "enterprise" && plan.id !== "personal",
-    );
-    for (const plan of publicCapacityPlans) {
+  it("allocates one selected channel identity and preserves historical fleet limits", () => {
+    const channelPlans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
+    expect(channelPlans).toHaveLength(21);
+    for (const plan of channelPlans) {
+      const phone = plan.channels.includes("voice") || plan.channels.includes("sms");
+      const email = plan.channels.includes("email");
+      expect(plan.max_agents, plan.id).toBe(1);
+      expect(plan.included_phone_numbers, plan.id).toBe(phone ? 1 : 0);
+      expect(plan.included_mailboxes, plan.id).toBe(email ? 1 : 0);
+      expect(plan.features.includes("1 local phone number"), plan.id).toBe(phone);
+      expect(plan.features.includes("1 BotBound email address"), plan.id).toBe(email);
+    }
+    for (const plan of STRIPE_PLANS.filter((plan) => plan.catalogFamily === "legacy")) {
       expect(plan.included_phone_numbers, plan.id).toBe(plan.max_agents);
       expect(plan.features.join("\n"), plan.id).toMatch(/dedicated production number/i);
       expect(plan.features.join("\n"), plan.id).toMatch(/BotBound-managed email identity/i);
     }
-    const catalog = read("src/lib/plan-catalog.ts");
     const billing = read("src/pages/BillingSettings.tsx");
-    expect(catalog).toContain("Every active paid Bot gets a dedicated production number");
-    expect(catalog).toContain("Paid Bots receive a BotBound-managed email identity");
     expect(billing).toContain("plan.included_phone_numbers");
   });
 

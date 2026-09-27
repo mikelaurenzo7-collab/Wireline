@@ -227,7 +227,9 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Your Next Hire Is a Bot" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hire a Voice Bot. With Its Own Number" }),
+  ).toBeVisible();
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
   await expect(directions.getByText("Find. Call. Book.", { exact: true })).toBeVisible();
   await expect(directions.getByText("Answer. Qualify. Route.", { exact: true })).toBeVisible();

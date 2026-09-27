@@ -77,8 +77,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "root landing must embed concise account creation",
     ],
     [
-      /<span>Your Next Hire<\/span>[\s\S]*<span>Is a Bot<\/span>/,
-      "root landing must use BotBound hero",
+      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number<\/span>/,
+      "root landing must make the voice Bot and phone number offer explicit",
     ],
     [
       /BOT_MARKETING_VOICE\.activationLine/,
@@ -87,6 +87,10 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
     [/Find\. Call\. Book\./, "hero must retain the outbound activation path"],
     [/Answer\. Qualify\. Route\./, "hero must retain the inbound activation path"],
+    [
+      /Add its own email inbox and SMS\./,
+      "hero must present email and SMS as optional channels",
+    ],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],
@@ -118,8 +122,8 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
       "desktop hero must retain the verified horizontal editorial scale",
     ],
     [
-      /\.landing-prestige__hero-copy h1 span\s*\{[\s\S]*?white-space:\s*nowrap;/,
-      "desktop hero must preserve its intentional two-line composition",
+      /\.landing-prestige__hero-copy h1 span\s*\{[^}]*white-space:\s*normal;[^}]*text-wrap:\s*balance;/,
+      "voice Bot headline must wrap safely inside narrow layouts",
     ],
     [
       /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto;/,

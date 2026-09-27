@@ -29,15 +29,16 @@ function buyerPlanLabel(name: string): string {
 }
 
 export function publishedVoiceRates(): VoiceRateRow[] {
-  return STRIPE_PLANS.filter((plan) => plan.price_usd_monthly > 0 && plan.public !== false).map(
-    (plan) => ({
-      planId: plan.id,
-      label: buyerPlanLabel(plan.name),
-      rateUsd: plan.overage_per_min_usd,
-      includedMinutes: plan.voice_minutes_monthly,
-      detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Runtime Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
-    }),
-  );
+  return STRIPE_PLANS.filter(
+    (plan) =>
+      plan.price_usd_monthly > 0 && plan.public !== false && plan.channels.includes("voice"),
+  ).map((plan) => ({
+    planId: plan.id,
+    label: buyerPlanLabel(plan.name),
+    rateUsd: plan.overage_per_min_usd,
+    includedMinutes: plan.voice_minutes_monthly,
+    detail: `${plan.voice_minutes_monthly.toLocaleString()} minutes included monthly. Extra live usage draws from prepaid Runtime Balance at $${plan.overage_per_min_usd.toFixed(2)}/min.`,
+  }));
 }
 
 export function estimateVoiceMinutesFromBalance(

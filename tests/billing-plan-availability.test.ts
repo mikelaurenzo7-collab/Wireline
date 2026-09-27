@@ -61,6 +61,8 @@ beforeEach(() => {
   vi.stubEnv("VERCEL_ENV", "production");
   vi.stubEnv("VERCEL_GIT_COMMIT_REF", "main");
   vi.stubEnv("LAUNCH_HARD_GATE", "false");
+  vi.stubEnv("STRIPE_VOICE_PRICE_ID", "price_calls_fixture");
+  vi.stubEnv("STRIPE_EMAIL_PRICE_ID", "");
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -69,15 +71,16 @@ describe("public billing checkout availability", () => {
     const { body, setHeader } = getPublicPlans();
     expect(body.stripe_configured).toBe(true);
     expect(body.checkout_available).toBe(true);
-    expect(body.plans.find((plan) => plan.id === "starter")?.configured).toBe(true);
+    expect(body.plans.find((plan) => plan.id === "voice")?.configured).toBe(true);
+    expect(body.plans.find((plan) => plan.id === "starter")).toBeUndefined();
     expect(Object.keys(body).sort()).toEqual(["checkout_available", "plans", "stripe_configured"]);
     expect(setHeader).toHaveBeenCalledWith("Cache-Control", "no-store");
   });
 
   it("reports unavailable when the same hard launch gate rejects checkout despite configured prices", () => {
     vi.stubEnv("LAUNCH_HARD_GATE", "true");
-    vi.stubEnv("AGENTMAIL_API_KEY", "");
-    expect(evaluateLaunchReadiness().launch_blockers).toContain("AGENTMAIL_API_KEY");
+    vi.stubEnv("OPENAI_API_KEY", "");
+    expect(evaluateLaunchReadiness().launch_blockers).toContain("OPENAI_API_KEY");
 
     const response = { status: vi.fn(), json: vi.fn() };
     response.status.mockReturnValue(response);
@@ -87,12 +90,25 @@ describe("public billing checkout availability", () => {
     expect(response.status).toHaveBeenCalledWith(503);
 
     const { body } = getPublicPlans();
-    expect(body.plans.find((plan) => plan.id === "starter")?.configured).toBe(true);
+    expect(body.plans.find((plan) => plan.id === "voice")?.configured).toBe(true);
     expect(body.stripe_configured).toBe(true);
     expect(body.checkout_available).toBe(false);
     expect(body).not.toHaveProperty("launch_blockers");
     expect(body).not.toHaveProperty("capabilities");
-    expect(JSON.stringify(body)).not.toContain("AGENTMAIL_API_KEY");
+    expect(JSON.stringify(body)).not.toContain("OPENAI_API_KEY");
+  });
+
+  it("requires managed mail only when an Email interval is released", () => {
+    vi.stubEnv("AGENTMAIL_API_KEY", "");
+    for (const key of ["STRIPE_EMAIL", "STRIPE_VOICE_EMAIL"]) {
+      for (const tier of ["", "_REGULAR", "_HIGH"]) {
+        vi.stubEnv(`${key}${tier}_PRICE_ID`, "");
+        vi.stubEnv(`${key}${tier}_ANNUAL_PRICE_ID`, "");
+      }
+    }
+    expect(evaluateLaunchReadiness().launch_blockers).not.toContain("AGENTMAIL_API_KEY");
+    vi.stubEnv("STRIPE_EMAIL_ANNUAL_PRICE_ID", "price_email_year_fixture");
+    expect(evaluateLaunchReadiness().launch_blockers).toContain("AGENTMAIL_API_KEY");
   });
 
   it.each([
@@ -115,7 +131,7 @@ describe("public billing checkout availability", () => {
   it("reevaluates gate changes on every request", () => {
     expect(getPublicPlans().body.checkout_available).toBe(true);
     vi.stubEnv("LAUNCH_HARD_GATE", "true");
-    vi.stubEnv("AGENTMAIL_API_KEY", "");
+    vi.stubEnv("OPENAI_API_KEY", "");
     expect(getPublicPlans().body.checkout_available).toBe(false);
     vi.stubEnv("LAUNCH_HARD_GATE", "false");
     expect(getPublicPlans().body.checkout_available).toBe(true);

@@ -26,6 +26,17 @@ describe("Clear System channel catalog guard", () => {
 
   it.each([
     [
+      "src/components/marketing/WireAgentLanding.tsx",
+      (source) => source.replace("Hire a Voice Bot.", "Your Next Hire"),
+      "voice Bot and phone number",
+    ],
+    [
+      "src/styles/landing-prestige.css",
+      (source) =>
+        source.replace(/white-space: normal;\s*text-wrap: balance;/, "white-space: nowrap;"),
+      "wrap safely",
+    ],
+    [
       "src/pages/Pricing.tsx",
       (source) => source.replace('plan.catalogFamily === "channels"', "plan.public"),
       "current channel catalog",

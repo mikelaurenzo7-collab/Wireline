@@ -6,8 +6,9 @@ import { ACCOUNT_TERMS_DESCRIPTION } from "./legal-consent";
 // origin. APP_URL remains independently configurable for provider callbacks.
 export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
-export const HOME_TITLE = "BotBound | Your Next Hire Is a Bot";
-export const HOME_DESCRIPTION = "Your Bot for calls, texts, and email.";
+export const HOME_TITLE = "BotBound | Hire a Voice Bot";
+export const HOME_DESCRIPTION =
+  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Build and test free.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =

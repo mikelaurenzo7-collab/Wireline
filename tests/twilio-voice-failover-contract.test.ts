@@ -120,7 +120,13 @@ describe("Twilio voice failover contract", () => {
     expect(shared).toContain("/sounds/wireline-transfer-chime.wav");
     expect(shared).toContain("escapeTwimlValue(receipt.fallbackNumber)");
     expect(shared).toContain("prepareTwilioVoiceFallback");
-    expect(shared).toContain('timeLimit="${receipt.maxSeconds}"');
+    expect(shared).toContain('timeLimit="${remainingSeconds}"');
+    expect(shared).toContain(
+      "Math.min(receipt.maxSeconds, Math.floor((receipt.deadlineAtMs - Date.now()) / 1000))",
+    );
+    expect(shared).toContain(
+      "if (remainingSeconds <= 0) return res.status(200).send(twimlHangup())",
+    );
     expect(shared).toContain('statusCallbackEvent="completed"');
     expect(shared).toContain("return res.status(200).send(twimlHangup())");
     expect(shared).not.toMatch(/<Record\b|transcribeCallback|openai-[a-z-]+\.mp3/);

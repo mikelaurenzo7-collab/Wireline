@@ -22,26 +22,26 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /<title>BotBound \| Your Next Hire Is a Bot<\/title>/,
-    "static metadata must use the BotBound hero",
+    /<title>BotBound \| Hire a Voice Bot<\/title>/,
+    "static metadata must make the voice Bot offer explicit",
   );
   mustInclude(
     "index.html",
     indexHtml,
-    /Your Bot for calls, texts, and email\./,
-    "static metadata must carry the unified multi-channel promise",
+    /A voice Bot with its own business number\./,
+    "static metadata must explain the included phone identity",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_TITLE = "BotBound \| Your Next Hire Is a Bot"/,
+    /DEFAULT_TITLE = "BotBound \| Hire a Voice Bot"/,
     "runtime metadata must use the BotBound hero",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION = "Your Bot for calls, texts, and email\."/,
-    "runtime metadata must carry the unified promise",
+    /DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./,
+    "runtime metadata must carry the voice Bot offer",
   );
   mustInclude(
     "public/site.webmanifest",
@@ -66,7 +66,7 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
     "src/lib/bot-product.ts",
     botProduct,
     /slogan:\s*"Your Next Hire Is a Bot"/,
-    "shared model must preserve the approved BotBound hero",
+    "shared model must preserve the BotBound brand slogan",
   );
   mustInclude(
     "src/lib/bot-product.ts",
@@ -122,8 +122,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Your Next Hire<\/span>[\s\S]*<span>Is a Bot<\/span>/,
-    "landing must render the approved two-line hero",
+    /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number<\/span>/,
+    "landing must render the voice Bot and phone number hero",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
@@ -158,8 +158,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/pages/LandingPage.tsx",
     landingPage,
-    /BOT_MARKETING_VOICE/,
-    "landing metadata must use shared product voice",
+    /title=\{HOME_TITLE\}[\s\S]*description=\{HOME_DESCRIPTION\}/,
+    "landing metadata must use shared homepage title and description",
   );
 
   mustInclude(

@@ -8,9 +8,24 @@ import {
 } from "../src/lib/voice-pricing-display";
 
 describe("voice-pricing-display", () => {
-  it("publishes one prepaid rate for every paid plan", () => {
+  it("publishes voice capacity and the prepaid rate only for public Calls packages", () => {
     const rates = publishedVoiceRates();
-    expect(rates.map((row) => row.planId)).toEqual(["starter", "team", "business"]);
+    expect(rates.map((row) => row.planId)).toEqual([
+      "voice",
+      "voice-regular",
+      "voice-high",
+      "voice-email",
+      "voice-email-regular",
+      "voice-email-high",
+      "voice-sms",
+      "voice-sms-regular",
+      "voice-sms-high",
+      "omnichannel",
+      "omnichannel-regular",
+      "omnichannel-high",
+    ]);
+    expect(rates.slice(0, 3).map((row) => row.includedMinutes)).toEqual([50, 250, 500]);
+    expect(rates.every((row) => row.includedMinutes > 0)).toBe(true);
     expect(rates[0]?.rateUsd).toBe(voiceRateForPlan("starter"));
     expect(rates.every((row) => row.rateUsd === voiceRateForPlan("starter"))).toBe(true);
   });

@@ -15,11 +15,18 @@ describe("live research timeout is not a call-duration cap", () => {
     expect(source).toMatch(/8_000/);
   });
 
-  it("keeps voice accounting rules: finish active calls, prepaid overflow only", () => {
+  it("keeps voice accounting rules: reserved coverage with bounded completion credit", () => {
     const source = readFileSync(resolve("src/lib/voice-usage.ts"), "utf8");
-    expect(source).toMatch(/never terminated for billing/i);
+    const funding = readFileSync(resolve("src/lib/voice-call-funding.ts"), "utf8");
+    expect(source).toContain("reserve call funding before acceptance");
+    expect(source).toContain("additional completion minutes within the durable session deadline");
+    expect(source).toContain("completion debt pauses new calls and prepaid extras until paid");
+    expect(source).not.toMatch(/never terminated for billing/i);
+    expect(funding).toContain("fundedMinutes < 1");
+    expect(funding).toContain("(fundedMinutes + VOICE_COMPLETION_GRACE_MINUTES) * 60");
     expect(source).toMatch(/Runtime Balance/);
     expect(source).not.toMatch(/LIVE_RESEARCH_TIMEOUT/);
+    expect(funding).not.toMatch(/LIVE_RESEARCH_TIMEOUT/);
   });
 
   it("distinguishes the live session limit from billing and research timeouts in pricing", () => {
@@ -27,7 +34,13 @@ describe("live research timeout is not a call-duration cap", () => {
     expect(source).toMatch(/How long can a call last\?/i);
     expect(source).toContain("up to 60 minutes per session");
     expect(source).toContain("unless a shorter limit is configured");
-    expect(source).toContain("Balance depletion does not cut off an active call");
+    expect(source).toContain("Each call requires at least one funded minute");
+    expect(source).toContain(
+      "limited by available coverage, plus a completion buffer of up to 10 minutes",
+    );
+    expect(source).toContain("Unpaid completion usage pauses new calls and prepaid extras");
+    expect(source).toContain("Reaching a session limit ends the call.");
+    expect(source).not.toContain("Balance depletion does not cut off an active call");
     expect(source).not.toContain("Calls run as long as the conversation needs");
     expect(source).not.toContain("An active call is never cut off");
   });

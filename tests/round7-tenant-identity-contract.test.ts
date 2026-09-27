@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { resolveProfile } from "../src/lib/tenant-quotas";
+import { voiceMinutesDailyQuotaForTier } from "../src/lib/plan-entitlements";
+
+vi.mock("../src/lib/server-context", () => ({ log: { warn: vi.fn() } }));
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
@@ -32,7 +36,10 @@ describe("round-7 voice usage integrity", () => {
   });
 
   it("keeps the daily voice quota dimension wired to the tier table", () => {
-    const quotas = read("src/lib/tenant-quotas.ts");
-    expect(quotas).toContain("voice_minutes_daily: voiceMinutesDailyQuotaForTier(plan)");
+    expect(resolveProfile("personal", []).voice_minutes_daily).toBe(
+      voiceMinutesDailyQuotaForTier("personal"),
+    );
+    expect(resolveProfile("personal", [], "voice-high").voice_minutes_daily).toBe(500);
+    expect(resolveProfile("personal", [], "email-high").voice_minutes_daily).toBe(0);
   });
 });

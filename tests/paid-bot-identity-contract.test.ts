@@ -16,7 +16,12 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain('const PAID_IDENTITY_STATUSES = new Set(["active"])');
     expect(identity).not.toContain('new Set(["active", "trialing"])');
     expect(identity).toContain("plan.price_usd_monthly > 0");
-    expect(identity).toContain("plan.included_phone_numbers > 0");
+    expect(identity).toContain('const includesEmail = entitlement.channels.includes("email")');
+    expect(identity).toContain('channel === "voice" || channel === "sms"');
+    expect(identity).toContain(
+      "includesPhone ? getIncludedPhoneLineSlots(userId) : Promise.resolve(0)",
+    );
+    expect(identity).toContain("plan?.included_mailboxes ?? 0");
     expect(identity).toContain("if (!plan.eligible)");
     expect(pricing).toContain('id: "personal"');
     expect(pricing).toContain("included_phone_numbers: 0");
@@ -90,7 +95,8 @@ describe("paid Bot identity reconciliation", () => {
     expect(identity).toContain("listAgentMailInboxes(input.apiKey)");
     expect(identity).toContain("if (existing) return { ...existing, reused: true }");
     expect(identity).toContain("reused: Boolean(provisioned.reused)");
-    expect(identity).toContain("phoneReused: phone.reused");
+    expect(identity).toContain("phoneReused: phone?.reused ?? false");
+    expect(identity).toContain("emailReused: email?.reused ?? false");
   });
 
   it("reserves the exact managed address before any provider mailbox creation", () => {

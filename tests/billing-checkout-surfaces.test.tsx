@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import StripeBillingCard from "../src/components/StripeBillingCard";
 import TrialGateModal from "../src/components/TrialGateModal";
+import { Checkbox } from "../src/components/ui/shadcn/Checkbox";
 import { STRIPE_PLANS } from "../src/lib/plan-catalog";
 
 const h = vi.hoisted(() => ({
@@ -504,9 +505,9 @@ it.each(["reconciliation", "unmount"] as const)(
 
 describe.each(["card", "modal"] as const)("%s selected channel package", (surface) => {
   function selectChannel(index: number) {
-    render(surface)
-      .filter((element) => element.type === "input")
-      [index].props.onChange?.();
+    const channels = render(surface).filter((element) => element.type === Checkbox);
+    expect(channels).toHaveLength(3);
+    channels[index].props.onChange?.();
   }
   it("posts Email exactly after Calls is deselected", async () => {
     h.catalog.plans = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) =>

@@ -35,7 +35,13 @@ describe("launch readiness deep pass 2026-07-27", () => {
       provision.indexOf("async function persistPurchasedNumber"),
       provision.indexOf("async function activateLine"),
     );
-    expect(persist).toContain("Number(held || 0) >= input.phoneSlots");
+    expect(persist).toContain(
+      "const phoneSlots = await getIncludedPhoneLineSlots(input.userId, tx)",
+    );
+    expect(persist).toContain("Number(held || 0) >= phoneSlots");
+    expect(persist.indexOf("getIncludedPhoneLineSlots(input.userId, tx)")).toBeLessThan(
+      persist.indexOf("Number(held || 0) >= phoneSlots"),
+    );
     expect(persist).toContain('return { kind: "capacity" as const }');
     expect(provision).toContain('persisted.kind === "capacity" ? "PHONE_CAPACITY_RACE"');
     expect(provision).toContain("releasePurchasedNativeNumber");

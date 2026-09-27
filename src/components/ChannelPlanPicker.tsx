@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Check, Mail, MessageSquare, Phone } from "lucide-react";
+import { Checkbox } from "./ui/shadcn/Checkbox";
 import {
   FLAT_OVERAGE_PER_MIN_USD,
   planById,
@@ -139,12 +140,10 @@ export default function ChannelPlanPicker({
                 key={id}
                 className={`flex min-h-14 min-w-0 cursor-pointer flex-wrap items-center justify-center gap-2 rounded-xl border px-2 py-3 text-sm font-semibold ${checked ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={checked}
                   onChange={() => choose(id)}
                   disabled={disabled || lockChannels || (checked && plan.channels.length === 1)}
-                  className="size-4 accent-[var(--wireline-color-action-primary-default)]"
                 />
                 <Icon className="size-4 shrink-0" aria-hidden="true" />
                 <span>{label}</span>
