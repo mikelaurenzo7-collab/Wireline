@@ -58,7 +58,7 @@ for (const viewport of [
 ]) {
   test(`activation plans remain readable at ${viewport.width}px${viewport.largeText ? " with enlarged text" : ""}`, async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.setViewportSize(viewport);
     await mockWorkspace(page);
     await page.route("**/api/phone-numbers/available", (route) =>
@@ -78,6 +78,13 @@ for (const viewport of [
     ).toBeVisible();
     const plans = dialog.getByRole("button", { name: /Pick BotBound/ });
     await expect(plans).toHaveCount(3);
+    await page.evaluate(() => document.fonts.ready);
+    await testInfo.attach(`activation-${viewport.width}`, {
+      path: await page
+        .screenshot({ path: testInfo.outputPath(`activation-${viewport.width}.png`) })
+        .then(() => testInfo.outputPath(`activation-${viewport.width}.png`)),
+      contentType: "image/png",
+    });
     for (const card of await plans.all()) {
       await expect(card).toBeDisabled();
       const geometry = await card.evaluate((element) => {
@@ -86,6 +93,24 @@ for (const viewport of [
         );
         return {
           fits: element.scrollWidth <= element.clientWidth + 1,
+          ancestors: [
+            element,
+            element.parentElement!,
+            element.parentElement!.parentElement!,
+            element.parentElement!.parentElement!.parentElement!,
+          ].map((node) => ({
+            width: node.clientWidth,
+            scroll: node.scrollWidth,
+            padding: getComputedStyle(node).padding,
+            class: node.className,
+          })),
+          overflow: [...element.querySelectorAll("*")]
+            .filter((child) => child.scrollWidth > child.clientWidth + 1)
+            .map((child) => ({
+              text: child.textContent,
+              width: child.clientWidth,
+              scroll: child.scrollWidth,
+            })),
           widths: content.map((child) => child.getBoundingClientRect().width),
           rows: content.map((child) => ({
             top: child.getBoundingClientRect().top,
@@ -93,7 +118,7 @@ for (const viewport of [
           })),
         };
       });
-      expect(geometry.fits).toBe(true);
+      expect(geometry.fits, JSON.stringify(geometry)).toBe(true);
       // Every title, price, description and action has real reading width,
       // rather than collapsing side by side into individual-letter columns.
       for (const index of [0, 2, 3]) expect(geometry.widths[index]).toBeGreaterThan(80);

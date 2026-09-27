@@ -399,8 +399,8 @@ export default function TrialGateModal() {
               <X className="h-4 w-4" />
             </ShadButton>
 
-            <div className="px-6 pt-8 pb-6 sm:px-8">
-              <div className="mb-3 flex items-center gap-2 font-medium text-brand wl-label">
+            <div className="px-[clamp(16px,4vw,32px)] pt-8 pb-6">
+              <div className="mb-3 flex items-center gap-2 pr-12 font-medium text-brand wl-label">
                 <Sparkles className="h-3 w-3" />
                 {eyebrow}
               </div>
@@ -420,7 +420,7 @@ export default function TrialGateModal() {
               </p>
             </div>
 
-            <div className="px-6 pb-6 sm:px-8">
+            <div className="px-[clamp(16px,4vw,32px)] pb-6">
               {detail.code === "EMAIL_UNVERIFIED" && (
                 <div className="flex flex-col items-start gap-3">
                   <ShadButton

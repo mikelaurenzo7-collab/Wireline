@@ -70,13 +70,25 @@ for (const width of [1440, 390]) {
       "href",
       "/insights?tab=revenue&view=spend",
     );
-    expect(
-      await activity.evaluate((element) => element.scrollWidth <= element.clientWidth + 1),
-    ).toBe(true);
+    await page.evaluate(() => document.fonts.ready);
+    const screenshotPath = testInfo.outputPath(`balance-activity-${width}.png`);
+    await activity.screenshot({ path: screenshotPath });
     await testInfo.attach(`balance-activity-${width}`, {
-      body: await activity.screenshot(),
+      path: screenshotPath,
       contentType: "image/png",
     });
+    const geometry = await activity.evaluate((element) => ({
+      width: element.clientWidth,
+      scroll: element.scrollWidth,
+      overflow: [...element.querySelectorAll("*")]
+        .filter((child) => child.scrollWidth > child.clientWidth + 1)
+        .map((child) => ({
+          text: child.textContent,
+          width: child.clientWidth,
+          scroll: child.scrollWidth,
+        })),
+    }));
+    expect(geometry.scroll, JSON.stringify(geometry)).toBeLessThanOrEqual(geometry.width + 1);
     await summary.focus();
     await page.keyboard.press("Enter");
     await expect(activity.getByRole("list")).toBeHidden();
