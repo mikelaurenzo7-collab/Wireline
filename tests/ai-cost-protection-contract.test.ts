@@ -364,16 +364,32 @@ describe("AI cost-protection contract", () => {
     expect(client).toContain("cachedContentTokenCount");
   });
 
-  it("deep completion-grace debt routes inbound to a durable bounded take-a-message assistant", () => {
+  it("refuses new unfunded inbound AI while keeping covered after-hours message-taking bounded", () => {
     const admission = read("src/lib/voice/native-inbound-admission.ts");
     const session = read("src/lib/voice/openai-sip-session.ts");
-    expect(admission).toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
+    const route = read("src/routes/openai-sip-routes.ts");
     expect(admission).toContain("getVoiceWalletSnapshot");
+    expect(admission).toContain("wallet.completion_grace_due_usd > 0");
+    expect(admission).toContain('return { mode: "suspended", reason: "completion_grace" }');
+    expect(admission).not.toContain("INBOUND_TAKE_MESSAGE_GRACE_USD");
     // Inbound must also read the daily minute ceiling settlement increments:
     // without it, only OUTBOUND consulted voice_minutes_daily, and a flooded
-    // or farmed number ran the full assistant all day on grace debt alone.
+    // number could repeatedly consume paid AI after its allowance was exhausted.
     expect(admission).toContain('"voice_minutes_daily",');
-    expect(admission).toContain('return { mode: "take_message", reason: "daily_minutes" }');
+    expect(admission).toContain('return { mode: "suspended", reason: "daily_minutes" }');
+    const refusalStart = route.indexOf(
+      'sessionInput.direction === "inbound" && sessionInput.admission?.mode === "suspended"',
+    );
+    const runtimeStart = route.indexOf("let runtime:", refusalStart);
+    expect(refusalStart).toBeGreaterThan(-1);
+    expect(runtimeStart).toBeGreaterThan(refusalStart);
+    const refusal = route.slice(refusalStart, runtimeStart);
+    expect(refusal).toContain("await rejectCall(callId, 603)");
+    expect(refusal).toContain("res.status(202)");
+    expect(refusal).toContain("return;");
+    // Covered after-hours calls retain the useful message-taking path; the
+    // behavior tests separately verify that coverage is checked before return.
+    expect(admission).toContain('reason: "after_hours"');
     expect(session).toContain(
       'admissionMode !== "take_message" || call.name === "create_followup_task"',
     );

@@ -134,9 +134,7 @@ export default function ComplianceCenter() {
               <div className="flex items-baseline justify-between gap-4 sm:block">
                 <dt className="shrink-0 text-xs font-medium text-muted-foreground">Federal DNC</dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.federal_dnc_configured
-                    ? "Platform federal scrub active"
-                    : "Marketing outbound blocked"}
+                  {summary.federal_dnc_configured ? "Configured" : "Marketing outbound blocked"}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 sm:block">
@@ -207,29 +205,24 @@ export default function ComplianceCenter() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Consent Ledger</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Recent disclosure and consent events (rule version{" "}
-                  {summary.consent_rule_version || "N/A"}).
-                </p>
               </div>
-              <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                {recentEvents.length} shown
-              </span>
+              {recentEvents.length > 0 ? (
+                <span className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                  {recentEvents.length} shown
+                </span>
+              ) : null}
             </div>
             <div className="mt-3 grid max-h-[360px] gap-2 overflow-y-auto pr-1">
               {recentEvents.length === 0 ? (
                 <div className="rounded-xl border border-border bg-card p-3.5 text-sm leading-6 text-muted-foreground">
-                  <p>No consent events logged yet.</p>
+                  <p>No consent events yet.</p>
                   <p className="mt-1">
-                    Events appear after customer calls or messages record a disclosure, consent, or
-                    opt-out.{" "}
                     <Link
                       to="/phone?tab=setup"
                       className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
                     >
                       Review phone setup
                     </Link>
-                    .
                   </p>
                 </div>
               ) : (
@@ -255,6 +248,10 @@ export default function ComplianceCenter() {
                 ))
               )}
             </div>
+            <details className="mt-3 text-xs text-muted-foreground">
+              <summary className="w-fit cursor-pointer py-2 wl-focus-ring-halo">Details</summary>
+              <p className="pb-1">Rule version {summary.consent_rule_version || "N/A"}</p>
+            </details>
           </section>
         ) : null}
 

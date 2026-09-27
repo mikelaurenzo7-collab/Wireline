@@ -39,7 +39,9 @@ describe("launch readiness quintuple-pass 2026-07-27", () => {
     expect(modal).toContain("annual_configured");
     expect(modal).toContain("BillingPlansResponse");
     expect(modal).toContain("checkout(tier.id, tier.interval)");
-    expect(modal).toContain("Annual billing is not configured for checkout yet");
+    expect(modal).toContain(
+      "Annual billing is not configured for this plan yet. Monthly is shown.",
+    );
     // Catalog-only fallback must not claim annual is buyable.
     expect(modal).toContain("annual_configured: false");
   });

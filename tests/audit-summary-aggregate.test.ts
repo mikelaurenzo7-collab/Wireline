@@ -134,7 +134,17 @@ describe("whole-period audit summary aggregates", () => {
     expect(query.params).toContain(since.toISOString());
     expect(query.sql).not.toContain(userId);
     expect(query.sql).not.toMatch(/\blimit\b/i);
-    expect(query.sql).not.toContain('"metadata"');
+    // Metadata may classify the guarded meter in WHERE, but event payloads
+    // must never be selected or returned by this aggregate response.
+    const scopedProjection = query.sql.slice(
+      query.sql.indexOf("select"),
+      query.sql.indexOf("from"),
+    );
+    expect(scopedProjection).not.toContain('"metadata"');
+    expect(query.sql).toContain("not coalesce(");
+    expect(query.sql).toContain("\"action\" = 'voice.realtime.session'");
+    expect(query.sql).toContain("\"provider\" = 'openai'");
+    expect(query.sql).toContain("\"metadata\"->>'surface' = 'openai_sip', false)");
     expect(query.sql).toContain("at time zone 'UTC'");
     expect(query.sql).toContain("percentile_disc(0.5)");
     expect(query.sql).toContain("percentile_disc(0.95)");

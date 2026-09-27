@@ -270,6 +270,7 @@ export default function DncManager() {
         e.reason === "opt-out",
     ).length,
   };
+  const isEmpty = !loading && !loadErr && entries.length === 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 bg-background text-foreground">
@@ -287,7 +288,9 @@ export default function DncManager() {
             <span className="app-toolbar-stat">
               {loading
                 ? OPS_CHANNEL_TOOLBAR.dnc.loading
-                : OPS_CHANNEL_TOOLBAR.dnc.stat(entries.length)}
+                : isEmpty || loadErr
+                  ? "Do Not Call"
+                  : OPS_CHANNEL_TOOLBAR.dnc.stat(entries.length)}
             </span>
           }
           actions={
@@ -306,49 +309,55 @@ export default function DncManager() {
                 )}
                 {OPS_CHANNEL_TOOLBAR.dnc.refresh}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => fileRef.current?.click()}
-                disabled={importing}
-              >
-                {importing ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Upload className="w-3 h-3" />
-                )}
-                {OPS_CHANNEL_TOOLBAR.dnc.import}
-              </Button>
-              <Button
-                type="button"
-                // The page's primary action adds a protective block entry — it
-                // should not out-shout the app's genuinely destructive actions.
-                variant="default"
-                size="sm"
-                data-toolbar-dialog-action
-                onClick={openAddDialog}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {OPS_CHANNEL_TOOLBAR.dnc.add}
-              </Button>
+              {!isEmpty ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={importing}
+                >
+                  {importing ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3" />
+                  )}
+                  {OPS_CHANNEL_TOOLBAR.dnc.import}
+                </Button>
+              ) : null}
+              {!isEmpty ? (
+                <Button
+                  type="button"
+                  // The page's primary action adds a protective block entry — it
+                  // should not out-shout the app's genuinely destructive actions.
+                  variant="default"
+                  size="sm"
+                  data-toolbar-dialog-action
+                  onClick={openAddDialog}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {OPS_CHANNEL_TOOLBAR.dnc.add}
+                </Button>
+              ) : null}
             </>
           }
         />
         {/* Stat bar */}
-        <dl className="grid shrink-0 grid-cols-2 gap-x-5 gap-y-3 py-2 lg:grid-cols-4">
-          {[
-            { label: "Total Blocked", value: stats.total },
-            { label: "Manual Entries", value: stats.manual },
-            { label: "CSV Imported", value: stats.csv },
-            { label: "Opt-Out", value: stats.optOut },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-baseline justify-between gap-2">
-              <dt className="text-xs text-muted-foreground">{label}</dt>
-              <dd className="text-sm font-semibold tabular-nums text-foreground">{value}</dd>
-            </div>
-          ))}
-        </dl>
+        {entries.length > 0 ? (
+          <dl className="grid shrink-0 grid-cols-2 gap-x-5 gap-y-3 py-2 lg:grid-cols-4">
+            {[
+              { label: "Total Blocked", value: stats.total },
+              { label: "Manual Entries", value: stats.manual },
+              { label: "CSV Imported", value: stats.csv },
+              { label: "Opt-Out", value: stats.optOut },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-baseline justify-between gap-2">
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd className="text-sm font-semibold tabular-nums text-foreground">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
 
         {/* Main list */}
         <div className="min-h-0 flex-1">
@@ -361,9 +370,11 @@ export default function DncManager() {
                 <h3 className="font-display text-base leading-tight text-foreground">
                   Blocked Numbers
                 </h3>
-                <span className="text-eyebrow ml-1 opacity-80">
-                  {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
-                </span>
+                {entries.length > 0 ? (
+                  <span className="text-eyebrow ml-1 opacity-80">
+                    {filtered.length} {filtered.length === 1 ? "entry" : "entries"}
+                  </span>
+                ) : null}
               </div>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />

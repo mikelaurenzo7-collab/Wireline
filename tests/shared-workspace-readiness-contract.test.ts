@@ -43,12 +43,14 @@ describe("shared workspace readiness posture", () => {
     expect(sessions).toContain("isNotNull(secureTeamMembers.acceptedAt)");
   });
 
-  it("explains the certification state instead of silently disabling collaboration", () => {
+  it("explains invitation availability without exposing internal certification details", () => {
     const page = read("src/pages/TeamSettings.tsx");
     expect(page).toContain('payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED"');
     expect(page).toContain('setTeamAccess("certifying")');
-    expect(page).toContain('title="Invites Unavailable"');
-    expect(page).toContain("shared-workspace security certification");
+    expect(page).toContain("Team invitations are currently unavailable.");
+    expect(page).toContain("throw new Error(TEAM_INVITES_UNAVAILABLE)");
+    expect(page).not.toContain("shared-workspace security certification");
+    expect(page).not.toContain("Invitations will open after");
     expect(page).toContain('teamAccess === "ok"');
     expect(page).toContain("data-wireline-preserve-case");
   });

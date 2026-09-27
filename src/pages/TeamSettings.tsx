@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus, Users, X } from "lucide-react";
-import { Link } from "react-router";
 
 import { Button, Input, NativeSelect } from "../components/atoms";
 import { FormField, StatusNotice } from "../components/molecules";
@@ -34,6 +33,8 @@ const inviteRoleOptions: { value: InviteRole; label: string }[] = [
   { value: "member", label: "Member" },
   { value: "viewer", label: "Viewer" },
 ];
+
+const TEAM_INVITES_UNAVAILABLE = "Team invitations are currently unavailable.";
 
 function formatRole(role: string | null | undefined) {
   if (!role) return "Member";
@@ -81,7 +82,7 @@ export default function TeamSettings() {
       {
         id: user.id || "self",
         email: user.email,
-        role: "owner",
+        role: null,
       },
     ];
   }, [members, user?.email, user?.id]);
@@ -132,6 +133,10 @@ export default function TeamSettings() {
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as TeamErrorPayload | null;
+        if (payload?.code === "SHARED_WORKSPACES_NOT_CERTIFIED") {
+          setTeamAccess("certifying");
+          throw new Error(TEAM_INVITES_UNAVAILABLE);
+        }
         throw new Error(payload?.error || payload?.message || "Invite could not be sent.");
       }
       setInviteSuccess(`Invitation sent to ${inviteEmail}.`);
@@ -157,22 +162,13 @@ export default function TeamSettings() {
         <WorkspacePageIntro title="Team" titleHidden />
 
         {teamAccess === "restricted" ? (
-          <StatusNotice tone="info" title="Solo Workspace">
-            Team invites are available on Starter Plus and Pro plans.{" "}
-            <Link
-              to="/settings/billing"
-              className="font-semibold text-primary underline underline-offset-2"
-            >
-              Review billing
-            </Link>{" "}
-            to add seats.
+          <StatusNotice tone="info" title="Team access restricted">
+            You do not have permission to manage this team.
           </StatusNotice>
         ) : null}
 
         {teamAccess === "certifying" ? (
-          <StatusNotice tone="info" title="Invites Unavailable">
-            Invites open after shared-workspace security certification.
-          </StatusNotice>
+          <StatusNotice tone="info">{TEAM_INVITES_UNAVAILABLE}</StatusNotice>
         ) : null}
 
         {teamAccess === "error" ? (
@@ -195,11 +191,7 @@ export default function TeamSettings() {
               size="sm"
               disabled={!canInvite}
               onClick={openInviteDialog}
-              title={
-                teamAccess === "certifying"
-                  ? "Invitations will open after shared workspace certification."
-                  : undefined
-              }
+              title={teamAccess === "certifying" ? TEAM_INVITES_UNAVAILABLE : undefined}
             >
               <Plus size={14} aria-hidden="true" />
               Invite
@@ -236,8 +228,11 @@ export default function TeamSettings() {
                         {member.email || "Pending invite"}
                       </p>
                       <p className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs text-muted-foreground">
-                        {formatRole(member.role)}
-                        {member.email === user?.email ? " · You" : ""}
+                        {member.role
+                          ? `${formatRole(member.role)}${member.email === user?.email ? " · You" : ""}`
+                          : member.email === user?.email
+                            ? "You"
+                            : formatRole(member.role)}
                       </p>
                     </div>
                   </div>
