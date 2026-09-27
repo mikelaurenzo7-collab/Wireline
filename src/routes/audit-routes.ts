@@ -3,10 +3,14 @@ import { Router, Response } from "express";
 import { AppError } from "../lib/api-error";
 import { drizzle, log, auditLogger } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, gte, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
 import { getErrorMessage } from "../lib/server-utils";
-import { computeAuditSummary } from "../lib/audit-summary";
+import {
+  buildAuditSummaryQuery,
+  formatAuditSummaryAggregate,
+  type AuditSummaryAggregate,
+} from "../lib/audit-summary-query";
 import {
   createAuditEventsHandler,
   createAuditStatsHandler,
@@ -27,14 +31,12 @@ router.get(
       const days = Math.min(Math.max(1, Number.isNaN(rawDays) ? 30 : rawDays), 365);
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-      const rows = await drizzle
-        .select()
-        .from(schema.auditLog)
-        .where(and(eq(schema.auditLog.userId, req.user.id), gte(schema.auditLog.createdAt, since)))
-        .orderBy(desc(schema.auditLog.createdAt))
-        .limit(5000);
-
-      res.json(computeAuditSummary({ rows: rows || [], windowDays: days }));
+      const result = await drizzle.execute<{ summary: AuditSummaryAggregate }>(
+        buildAuditSummaryQuery(req.user.id, since),
+      );
+      const aggregate = result.rows[0]?.summary;
+      if (!aggregate) throw new Error("Audit summary aggregate was not returned");
+      res.json(formatAuditSummaryAggregate(aggregate, days));
     } catch (e: any) {
       log.error("Audit summary failed", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Audit summary failed");

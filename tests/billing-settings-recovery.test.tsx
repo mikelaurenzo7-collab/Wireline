@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BillingSettings from "../src/pages/BillingSettings";
 import StripeBillingCard from "../src/components/StripeBillingCard";
+import { readRuntimeBalanceEntries } from "../src/components/RuntimeBalanceActivity";
 
 type Slot = {
   value?: unknown;
@@ -103,15 +104,22 @@ type Props = {
   action?: ReactNode;
   title?: string;
   disabled?: boolean;
+  open?: boolean;
+  to?: string;
+  dateTime?: string;
+  "aria-label"?: string;
   showBalance?: boolean;
   upgradePending?: boolean;
   onUpgrade?: () => unknown;
   onClick?: () => unknown;
+  onRetry?: () => void;
 };
 type Element = ReactElement<Props>;
 let tree: Element[];
 let statusFails: boolean;
 let balanceFails: boolean;
+let ledger: unknown;
+let retryBilling: (() => void) | undefined;
 let subscription: Record<string, unknown> | null;
 let verify: () => Promise<Response>;
 const response = (body: Record<string, unknown>, status = 200) =>
@@ -140,6 +148,7 @@ function expand(node: ReactNode): Element[] {
   if (Array.isArray(node)) return node.flatMap(expand);
   if (!isValidElement<Props>(node)) return [];
   if (node.type === StripeBillingCard) {
+    retryBilling = node.props.onRetry;
     h.current = "card";
     h.cursor = 0;
     return expand(StripeBillingCard(node.props));
@@ -190,6 +199,8 @@ beforeEach(() => {
   h.dirty = false;
   statusFails = true;
   balanceFails = true;
+  ledger = [];
+  retryBilling = undefined;
   subscription = {
     plan: "starter",
     plan_id: "starter",
@@ -213,7 +224,7 @@ beforeEach(() => {
     if (path === "/api/conversation-balance")
       return balanceFails
         ? response({ error: "Balance unavailable" }, 503)
-        : response({ balance_usd: 24.5 });
+        : response({ balance_usd: 24.5, ledger });
     throw new Error(`Unexpected endpoint ${path}`);
   });
   const location = {
@@ -242,6 +253,174 @@ afterEach(() => {
     .flat()
     .forEach((slot) => slot.cleanup?.());
   vi.unstubAllGlobals();
+});
+
+describe("Runtime Balance recent activity", () => {
+  const entry = (overrides: Record<string, unknown> = {}) => ({
+    id: "ledger-credit",
+    deltaUsd: 10,
+    balanceAfterUsd: 24.5,
+    entryKind: "top_up",
+    reason: "stripe_checkout_cs_private_reference",
+    customerReason: "Runtime Balance top-up",
+    createdAt: "2026-09-27T12:00:00Z",
+    ...overrides,
+  });
+  const activity = () =>
+    tree.find((node) => node.props["aria-label"] === "Recent Runtime Balance activity");
+
+  it("offers a collapsed native disclosure with customer reasons, signed amounts and dates", async () => {
+    statusFails = false;
+    balanceFails = false;
+    ledger = [
+      entry(),
+      entry({
+        id: "ledger-debit",
+        deltaUsd: -0.22,
+        balanceAfterUsd: 14.5,
+        entryKind: "burn",
+        reason: "voice_settlement_private_call_id",
+        customerReason: "Completed live-call usage",
+      }),
+      entry({
+        id: "ledger-refund",
+        deltaUsd: 0.22,
+        balanceAfterUsd: 14.72,
+        entryKind: "refund",
+        reason: "twilio_status_correction_private_id",
+        customerReason: null,
+        createdAt: null,
+      }),
+    ];
+    await settle();
+    const disclosure = tree.find(
+      (node) => node.type === "details" && text(node).startsWith("Recent activity"),
+    )!;
+    expect(disclosure.props.open).toBeUndefined();
+    expect(tree.some((node) => node.type === "summary" && text(node) === "Recent activity")).toBe(
+      true,
+    );
+    expect(text(activity())).toContain("Runtime Balance top-up");
+    expect(text(activity())).toContain("+$10.00");
+    expect(text(activity())).toContain("Completed live-call usage");
+    expect(text(activity())).toContain("−$0.22");
+    expect(text(activity())).toContain("Balance $14.50");
+    expect(text(activity())).toContain("Refund");
+    expect(text(activity())).toContain("+$0.22");
+    expect(text(activity())).toContain("Date unavailable");
+    expect(
+      tree.some((node) => node.type === "time" && node.props.dateTime === "2026-09-27T12:00:00Z"),
+    ).toBe(true);
+    expect(text(activity())).not.toContain("private");
+    expect(hasText("Up to 20 recent balance changes.")).toBe(true);
+    expect(
+      tree.some(
+        (node) => node.type === "a" && node.props.to === "/insights?tab=revenue&view=spend",
+      ),
+    ).toBe(true);
+    expect(hasText("is tracked separately.")).toBe(true);
+  });
+
+  it("caps the recent list at 20 without exposing legacy reasons or internal metadata", async () => {
+    statusFails = false;
+    balanceFails = false;
+    ledger = Array.from({ length: 21 }, (_, index) =>
+      entry({
+        id: `entry-${index}`,
+        customerReason: "stripe_checkout_cs_private_reference",
+        providerObjectId: "secret-provider-reference",
+        metadata: { internal: "private-payload" },
+      }),
+    );
+    await settle();
+    const rows = activity()?.props.children as ReactElement[];
+    expect(rows).toHaveLength(20);
+    expect(rows.every((row) => text(row).includes("Balance top-up"))).toBe(true);
+    expect(text(activity())).not.toContain("private");
+    expect(text(activity())).not.toContain("secret-provider");
+    expect(readRuntimeBalanceEntries(ledger)?.[0]).toEqual({
+      id: "entry-0",
+      description: "Balance top-up",
+      deltaUsd: 10,
+      balanceAfterUsd: 24.5,
+      createdAt: "2026-09-27T12:00:00Z",
+    });
+  });
+
+  it.each([
+    { badLedger: undefined },
+    { badLedger: null },
+    { badLedger: {} },
+    { badLedger: [entry({ deltaUsd: "10" })] },
+    { badLedger: [entry({ balanceAfterUsd: Number.NaN })] },
+    { badLedger: [entry({ createdAt: "not a date" })] },
+  ])(
+    "treats an absent or malformed ledger as unavailable while retaining a valid balance (%j)",
+    async ({ badLedger }) => {
+      statusFails = false;
+      balanceFails = false;
+      ledger = badLedger;
+      await settle();
+      expect(hasText("$24.50")).toBe(true);
+      expect(tree.some((node) => node.props.title === "Activity unavailable")).toBe(true);
+      expect(button("Retry activity").props.onClick).toBeTypeOf("function");
+      expect(hasText("No balance activity yet.")).toBe(false);
+      expect(activity()).toBeUndefined();
+    },
+  );
+
+  it("preserves confirmed entries through pending and failed refresh, then recovers a confirmed empty ledger", async () => {
+    statusFails = false;
+    balanceFails = false;
+    ledger = [entry()];
+    await settle();
+    const usualFetch = h.fetch.getMockImplementation()!;
+    let finish!: (value: Response) => void;
+    h.fetch.mockImplementation((path: string) =>
+      path === "/api/conversation-balance"
+        ? new Promise<Response>((resolve) => {
+            finish = resolve;
+          })
+        : usualFetch(path),
+    );
+    retryBilling?.();
+    await settle();
+    expect(hasText("Refreshing activity…")).toBe(true);
+    expect(text(activity())).toContain("Runtime Balance top-up");
+    finish(response({ balance_usd: 35, ledger: [entry({ deltaUsd: "malformed" })] }));
+    await settle();
+    expect(hasText("$35.00")).toBe(true);
+    expect(hasText("Showing last confirmed entries.")).toBe(true);
+    expect(text(activity())).toContain("Runtime Balance top-up");
+    expect(hasText("No balance activity yet.")).toBe(false);
+    ledger = [];
+    h.fetch.mockImplementation(usualFetch);
+    button("Retry activity").props.onClick?.();
+    await settle();
+    expect(hasText("No balance activity yet.")).toBe(true);
+    expect(activity()).toBeUndefined();
+    expect(tree.some((node) => node.props.title === "Activity unavailable")).toBe(false);
+  });
+
+  it("recovers a balance outage without replacing the last entries with zero activity", async () => {
+    statusFails = false;
+    balanceFails = false;
+    ledger = [entry()];
+    await settle();
+    balanceFails = true;
+    retryBilling?.();
+    await settle();
+    expect(hasText("$24.50")).toBe(true);
+    expect(text(activity())).toContain("Runtime Balance top-up");
+    expect(hasText("Showing last confirmed entries.")).toBe(true);
+    balanceFails = false;
+    ledger = [entry({ id: "refund-new", entryKind: "refund", customerReason: null, deltaUsd: 2 })];
+    button("Retry activity").props.onClick?.();
+    await settle();
+    expect(text(activity())).toContain("Refund");
+    expect(text(activity())).toContain("+$2.00");
+    expect(text(activity())).not.toContain("Runtime Balance top-up");
+  });
 });
 
 describe("Billing Settings shared recovery", () => {

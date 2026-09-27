@@ -71,6 +71,9 @@ router.post(
               timezone: schema.agents.timezone,
               businessVariables: schema.agents.businessVariables,
               outOfHoursMessage: schema.agents.outOfHoursMessage,
+              complianceMode: schema.agents.complianceMode,
+              disallowedTopics: schema.agents.disallowedTopics,
+              escalationKeywords: schema.agents.escalationKeywords,
               escalationPhone: schema.agents.escalationPhone,
               escalationEmail: schema.agents.escalationEmail,
             })
@@ -157,6 +160,15 @@ router.post(
         agent.businessHours ? `Operating hours: ${JSON.stringify(agent.businessHours)}` : "",
         agent.timezone ? `Timezone: ${agent.timezone}` : "",
         agent.outOfHoursMessage ? `After-hours response: ${agent.outOfHoursMessage}` : "",
+        agent.complianceMode && agent.complianceMode !== "none"
+          ? `Compliance mode: ${agent.complianceMode}.`
+          : "",
+        agent.disallowedTopics?.length
+          ? `Do not discuss: ${agent.disallowedTopics.join(", ")}.`
+          : "",
+        agent.escalationKeywords?.length
+          ? `Escalate or take a message when the caller raises: ${agent.escalationKeywords.join(", ")}.`
+          : "",
         agent.escalationPhone || agent.escalationEmail
           ? `Human handoff contact: ${[agent.escalationPhone, agent.escalationEmail].filter(Boolean).join(" · ")}`
           : "",

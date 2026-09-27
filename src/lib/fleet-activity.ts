@@ -96,9 +96,9 @@ export function agentLessonToActivity(l: AgentLessonRow): ActivityEntry {
   return {
     id: String(l.id),
     type: "NEURAL_OPTIMIZATION",
-    trigger: "Behavioral Deviation",
-    action: `Lesson Learned: ${truncatePreview(l.lesson)}`,
-    meta: "Agent Refinement",
+    trigger: "Lesson review",
+    action: `Suggested lesson: ${truncatePreview(l.lesson)}`,
+    meta: "Suggested improvement",
     timestamp: String(l.createdAt),
     importance: "low",
   };

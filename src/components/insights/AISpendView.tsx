@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { WL_APP_CLASSES } from "../../lib/wireline-design-system";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
@@ -11,6 +10,7 @@ import {
   AlertTriangle,
   Save,
   Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { authFetch, readApiJson } from "../../lib/api";
 import { formatMoney, safeFixed } from "../../lib/safe-number";
@@ -34,7 +34,7 @@ type SpendStatus = {
   enabled?: boolean;
   warn_threshold_pct?: number;
   hard_capped_now?: boolean;
-  alerts_fired?: Array<{ threshold_pct: number }>;
+  alerts_fired?: Array<{ thresholdPct: number; firedAt?: string }>;
   guard_scope?: SpendGuardScope;
   plan_name?: string;
   live_provider_work_enabled?: boolean;
@@ -52,6 +52,22 @@ type SpendBudget = {
   live_provider_work_enabled?: boolean;
   simulation_allowance_enabled?: boolean;
 };
+
+function actionLabel(action: string): string {
+  if (/^workspace\.api\.agents\..*\.workspace\.messages(?:\.stream)?$/.test(action)) {
+    return "Studio Build";
+  }
+  if (/^workspace\.api\.agents\..*\.workspace\.files$/.test(action)) {
+    return "Knowledge upload";
+  }
+  if (/^agent-test(?:\.|$)/.test(action)) return "Bot simulation";
+  const label = action
+    .split(".api.")[0]
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "")
+    .replace(/[._\-/]+/g, " ")
+    .trim();
+  return label ? label.charAt(0).toUpperCase() + label.slice(1) : "Other activity";
+}
 
 /* ─────────────────────────  Spend Budget Card  ─────────────────── */
 
@@ -139,8 +155,8 @@ function SpendBudgetCard() {
       const out = await readApiJson(r);
       if (out.ok === false) throw new Error(out.error);
       if (await refresh()) setSavedAt(Date.now());
-    } catch (e: any) {
-      setError(e?.message || "Save failed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -182,10 +198,10 @@ function SpendBudgetCard() {
     ? "Simulation allowance reached. Private simulation is paused"
     : "Live usage limit reached. New paid work is paused";
   const maximumHelper = isSimulationAllowance
-    ? `Up to $${safeFixed(maximumLimit, 2)} for private setup, training, and simulation. Activate a paid plan to go live.`
+    ? `Maximum $${safeFixed(maximumLimit, 2)} per month.`
     : `Up to $${safeFixed(maximumLimit, 2)} for ${status?.plan_name || "the active plan"}. You can lower this guard, but it cannot exceed the usage allowance funded by the plan.`;
   const hardCapHelper = isSimulationAllowance
-    ? "Private simulation pauses at the monthly allowance. Live work requires a paid plan."
+    ? "Private simulation pauses at the monthly allowance."
     : "New paid work pauses at the limit. Completed in-flight work still settles.";
 
   return (
@@ -251,7 +267,7 @@ function SpendBudgetCard() {
           {Array.isArray(status?.alerts_fired) && status.alerts_fired.length > 0 && (
             <div className="wl-insight-label pt-1">
               Alerts fired this period:{" "}
-              {status.alerts_fired.map((a: any) => `${a.threshold_pct}%`).join(" · ")}
+              {status.alerts_fired.map((alert) => `${alert.thresholdPct}%`).join(" · ")}
             </div>
           )}
         </div>
@@ -487,12 +503,25 @@ export default function AISpendView({ days }: { days: number }) {
                   const pct = (Number(a.cost) / maxAction) * 100;
                   return (
                     <div key={a.action} className="space-y-1">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="text-sm text-foreground/85 truncate">{a.action}</span>
-                        <span className="font-display text-lg text-brand-display tabular-nums shrink-0">
-                          ${safeFixed(a.cost, 3)}
-                        </span>
-                      </div>
+                      <details className="group">
+                        <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md [&::-webkit-details-marker]:hidden">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <ChevronDown
+                              aria-hidden
+                              className="size-3.5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                            />
+                            <span className="text-sm text-foreground/85 [overflow-wrap:anywhere]">
+                              {actionLabel(a.action)}
+                            </span>
+                          </span>
+                          <span className="font-display text-lg text-brand-display tabular-nums shrink-0">
+                            ${safeFixed(a.cost, 3)}
+                          </span>
+                        </summary>
+                        <code className="block pb-2 text-xs leading-5 text-muted-foreground [overflow-wrap:anywhere]">
+                          {a.action}
+                        </code>
+                      </details>
                       <div className="relative h-1.5 rounded-full bg-black/10 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}

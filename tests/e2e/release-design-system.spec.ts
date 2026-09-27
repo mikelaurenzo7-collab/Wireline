@@ -50,6 +50,65 @@ async function enlargeText(page: Page) {
   });
 }
 
+for (const viewport of [
+  { width: 1440, height: 900, largeText: false },
+  { width: 768, height: 900, largeText: false },
+  { width: 390, height: 844, largeText: false },
+  { width: 320, height: 844, largeText: true },
+]) {
+  test(`activation plans remain readable at ${viewport.width}px${viewport.largeText ? " with enlarged text" : ""}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await mockWorkspace(page);
+    await page.route("**/api/phone-numbers/available", (route) =>
+      route.fulfill({
+        status: 402,
+        json: { code: "ACTIVATION_REQUIRED", error: "Activate a paid plan." },
+      }),
+    );
+    await page.goto("/phone?tab=setup");
+    if (viewport.largeText) await enlargeText(page);
+    await page.getByRole("button", { name: "Add line", exact: true }).click();
+    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Activate Live Work", exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText("Checkout is temporarily unavailable. Your Bot is saved.", { exact: true }),
+    ).toBeVisible();
+    const plans = dialog.getByRole("button", { name: /Pick BotBound/ });
+    await expect(plans).toHaveCount(3);
+    for (const card of await plans.all()) {
+      await expect(card).toBeDisabled();
+      const geometry = await card.evaluate((element) => {
+        const content = [...element.children].filter(
+          (child) => getComputedStyle(child).position !== "absolute",
+        );
+        return {
+          fits: element.scrollWidth <= element.clientWidth + 1,
+          widths: content.map((child) => child.getBoundingClientRect().width),
+          rows: content.map((child) => ({
+            top: child.getBoundingClientRect().top,
+            bottom: child.getBoundingClientRect().bottom,
+          })),
+        };
+      });
+      expect(geometry.fits).toBe(true);
+      // Every title, price, description and action has real reading width,
+      // rather than collapsing side by side into individual-letter columns.
+      for (const index of [0, 2, 3]) expect(geometry.widths[index]).toBeGreaterThan(80);
+      expect(geometry.widths[1]).toBeGreaterThan(40);
+      for (let index = 1; index < geometry.rows.length; index += 1) {
+        expect(geometry.rows[index].top).toBeGreaterThanOrEqual(
+          geometry.rows[index - 1].bottom - 1,
+        );
+      }
+    }
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+}
+
 async function expectContentFits(locator: Locator) {
   await expect
     .poll(() =>

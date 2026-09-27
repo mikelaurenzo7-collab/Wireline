@@ -34,11 +34,16 @@ import {
 } from "../lib/conversation-balance";
 import { conversationBalanceMinuteEstimates } from "../lib/voice-pricing-display";
 import type { BillingStatusResponse } from "../types/api";
+import RuntimeBalanceActivity, {
+  readRuntimeBalanceEntries,
+  type RuntimeBalanceEntry,
+} from "../components/RuntimeBalanceActivity";
 
 type SubscriptionState = BillingStatusResponse["subscription"];
 
 type ConversationBalanceResponse = {
   balance_usd: number;
+  ledger?: unknown;
 };
 
 type CheckoutReturnNotice = {
@@ -67,6 +72,8 @@ export default function BillingSettings() {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(null);
   const [balanceUsd, setBalanceUsd] = useState<number | null>(null);
+  const [balanceEntries, setBalanceEntries] = useState<RuntimeBalanceEntry[] | null>(null);
+  const [activityUnavailable, setActivityUnavailable] = useState(false);
   const [topUpBusy, setTopUpBusy] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -244,14 +251,21 @@ export default function BillingSettings() {
           ? ((await balanceRes.json().catch(() => null)) as ConversationBalanceResponse | null)
           : null;
         if (cancelled) return;
-        if (balanceData) {
-          setBalanceUsd(Number(balanceData.balance_usd ?? 0));
-        } else if (statusRes.ok) {
-          setLoadError(`${CONVERSATION_BALANCE_COPY.title} is temporarily unavailable.`);
+        if (balanceData && Number.isFinite(balanceData.balance_usd)) {
+          setBalanceUsd(balanceData.balance_usd);
+          const entries = readRuntimeBalanceEntries(balanceData.ledger);
+          if (entries) setBalanceEntries(entries);
+          setActivityUnavailable(entries === null);
+        } else {
+          setActivityUnavailable(true);
+          if (statusRes.ok) {
+            setLoadError(`${CONVERSATION_BALANCE_COPY.title} is temporarily unavailable.`);
+          }
         }
       } catch {
         if (!cancelled) {
           setStatusUnavailable(true);
+          setActivityUnavailable(true);
           setLoadError("Couldn't load billing details. Check your connection and try again.");
         }
       } finally {
@@ -452,6 +466,12 @@ export default function BillingSettings() {
                 ) : null}
               </>
             )}
+            <RuntimeBalanceActivity
+              entries={balanceEntries}
+              loading={loading}
+              unavailable={activityUnavailable}
+              onRetry={retryBilling}
+            />
           </article>
         </section>
 

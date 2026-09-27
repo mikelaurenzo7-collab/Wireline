@@ -153,7 +153,9 @@ type LongContextRule = {
 };
 
 /** Vendor long-context tiers. The higher rate applies to the full request. */
-const MODEL_LONG_CONTEXT_PRICING: Partial<Record<keyof typeof MODEL_PRICING, LongContextRule>> = {
+export const MODEL_LONG_CONTEXT_PRICING: Partial<
+  Record<keyof typeof MODEL_PRICING, LongContextRule>
+> = {
   [OPENAI_MODELS.GPT_5_6_TERRA]: {
     thresholdTokens: 272_000,
     inclusive: false,

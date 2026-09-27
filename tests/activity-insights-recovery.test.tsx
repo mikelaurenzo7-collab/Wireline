@@ -161,6 +161,37 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("Activity budget recovery", () => {
+  it("renders fired thresholds from the server's camel-case alert records", async () => {
+    mountBudget();
+    h.fetch.mockImplementation(async (url: string) =>
+      url === "/api/spend/status"
+        ? response({
+            ...status,
+            alerts_fired: [
+              { thresholdPct: 80, firedAt: "2026-09-26T12:00:00Z" },
+              { thresholdPct: 100, firedAt: "2026-09-27T12:00:00Z" },
+            ],
+          })
+        : response({ budget }),
+    );
+    await settle();
+    expect(text(tree)).toContain("Alerts fired this period: 80% · 100%");
+    expect(text(tree)).not.toContain("undefined%");
+  });
+
+  it("explains the free simulation scope once while retaining the enforced pause", async () => {
+    mountBudget();
+    h.fetch.mockImplementation(async (url: string) =>
+      url === "/api/spend/status"
+        ? response({ ...status, guard_scope: "free_simulation_allowance" })
+        : response({ budget }),
+    );
+    await settle();
+    expect(text(tree).match(/Activate a paid plan to go live\./g)).toHaveLength(1);
+    expect(text(tree)).toContain("Maximum $30.00 per month.");
+    expect(text(tree)).toContain("Private simulation pauses at the monthly allowance.");
+  });
+
   it.each([
     ["/api/spend/status", null],
     ["/api/spend/status", {}],
@@ -340,6 +371,41 @@ describe("Activity spend presentation", () => {
     });
   }
   const stats = () => elements(tree).filter((node) => node.type === "spend-stat");
+
+  it("uses readable action names with the original audit keys in native disclosures", async () => {
+    const agentId = "agent-2dfbe489-96e1-4d57-b71d-784b1ec39ecc";
+    const actions = [
+      [`workspace.api.agents.${agentId}.workspace.messages.stream`, "Studio Build"],
+      [`workspace.api.agents.${agentId}.workspace.messages`, "Studio Build"],
+      [`workspace.api.agents.${agentId}.workspace.files`, "Knowledge upload"],
+      [`agent-test.api.agents.${agentId}.test.stream`, "Bot simulation"],
+      ["terms_accepted", "Terms accepted"],
+      [`custom-check.api.agents.${agentId}.status`, "Custom check"],
+    ];
+    h.insight.mockResolvedValue(
+      computeAuditSummary({
+        windowDays: 7,
+        rows: actions.map(([action]) => ({
+          action,
+          costUsd: 0.01,
+          createdAt: "2026-09-27T00:00:00Z",
+        })),
+      }),
+    );
+    component = () => AISpendView({ days: 7 });
+    await settle();
+    const disclosures = elements(tree).filter((node) => node.type === "details");
+    expect(disclosures).toHaveLength(actions.length);
+    for (const [action, label] of actions) {
+      const disclosure = disclosures.find((node) =>
+        elements(node).some((child) => child.type === "code" && text(child) === action),
+      );
+      expect(disclosure).toBeDefined();
+      const summary = elements(disclosure).find((node) => node.type === "summary")!;
+      expect(text(summary)).toBe(`${label}$0.010`);
+      expect(text(summary)).not.toContain(agentId);
+    }
+  });
 
   it("labels the audit aggregate as recorded events, including non-model account events", async () => {
     const data = summary();

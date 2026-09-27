@@ -119,6 +119,22 @@ For each completed voice call, `trackVoiceMinutes` must:
 7. never emit a Stripe meter event or create an automatic overage invoice; and
 8. use the provider call id as the stable idempotency key.
 
+### Customer usage visibility
+
+Settings > Billing shows included voice usage and Runtime Balance. Its collapsed
+Recent activity section shows up to 20 balance changes, with signed amounts,
+customer-facing reasons, timestamps, and the balance after each entry. Failed
+refreshes retain the last confirmed values and offer retry; missing activity is
+not reported as an empty history.
+
+Activity > Revenue > AI Spend shows recorded model and tool costs for the chosen
+window, plus the current monthly allowance or safety limit. These audit costs
+are separate from the Runtime Balance ledger and are not a complete customer
+invoice. Full-window totals are aggregated in PostgreSQL rather than sampled
+from the most recent events. Calls > Analytics reports elapsed duration; billed
+voice minutes round each completed provider attempt up, so the two measures can
+differ. Monthly included usage resets separately from subscription renewal.
+
 ### 9. Live Video remains retired
 
 Talking-head checkout and session mint stay closed. Identity badges remain. Imagine photos and video files are not generated.

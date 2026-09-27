@@ -515,7 +515,7 @@ export default function TrialGateModal() {
                       Annual billing is not configured for checkout yet. Monthly prices are shown.
                     </p>
                   )}
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {checkoutTiers.map((tier) => {
                       const isPending = pending === tier.id;
                       const isRecommended = tier.id === recommendedPlanId;
@@ -529,7 +529,7 @@ export default function TrialGateModal() {
                           disabled={!!pending || !!tier.disabled}
                           title={tier.disabledReason}
                           className={cn(
-                            "relative h-auto w-full justify-start rounded-md p-4 text-left touch-manipulation",
+                            "relative h-auto w-full flex-col items-start justify-start gap-0 rounded-md p-4 text-left touch-manipulation",
                             isRecommended
                               ? "border-brand/50 bg-brand/5 hover:border-brand hover:bg-brand/10"
                               : "hover:border-brand/30 hover:bg-black/3",
@@ -543,7 +543,7 @@ export default function TrialGateModal() {
                           <div className="mb-1 font-display text-lg text-foreground">
                             {tier.label}
                           </div>
-                          <div className="mb-2 flex items-baseline gap-1">
+                          <div className="mb-2 flex items-baseline gap-1 whitespace-nowrap">
                             <span className="font-display text-2xl text-foreground">
                               ${tier.price}
                             </span>
@@ -552,7 +552,7 @@ export default function TrialGateModal() {
                           <p className="mb-3 text-[length:var(--wireline-typography-overline-size)] leading-relaxed text-foreground/65">
                             {tier.pitch}
                           </p>
-                          <div className="inline-flex items-center gap-1.5 text-brand wl-label">
+                          <div className="mt-auto inline-flex items-center gap-1.5 text-brand wl-label">
                             {isPending ? (
                               <>
                                 <Loader2 className="h-3 w-3 animate-spin" />
