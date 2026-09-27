@@ -128,11 +128,6 @@ const required = [
     process.env.TWILIO_WEBHOOK_BASE_URL,
   ],
   [
-    "PLATFORM_SMS_FROM",
-    "BotBound-owned sender for operational escalation",
-    process.env.PLATFORM_SMS_FROM,
-  ],
-  [
     "STRIPE_SECRET_KEY",
     "Stripe subscriptions, prepaid balances, and billing portal",
     process.env.STRIPE_SECRET_KEY,
@@ -190,6 +185,7 @@ const recommended = [
 ];
 
 const optional = [
+  ["PLATFORM_SMS_FROM", "Optional registered sender for platform SMS alerts; unset disables them"],
   // Historical-only keys remain readable; they do not enable new channel checkout.
   ["STRIPE_STARTER_9_PRICE_ID", "BotBound Starter monthly price"],
   ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "BotBound Starter annual price"],

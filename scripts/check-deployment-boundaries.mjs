@@ -130,7 +130,6 @@ if (isProduction) {
   requireValue("TWILIO_AUTH_TOKEN", "Twilio callbacks cannot be verified");
   requireValue("AGENTMAIL_API_KEY", "paid Bot managed-email provisioning is missing");
   requireValue("AGENTMAIL_DEFAULT_DOMAIN", "BotBound managed-email domain is missing");
-  requireValue("PLATFORM_SMS_FROM", "platform SMS escalation routing is missing");
   requireValue("STRIPE_SECRET_KEY", "production billing is missing");
   requireValue("STRIPE_WEBHOOK_SECRET", "Stripe callbacks cannot be verified");
   requireValue("VITE_STRIPE_PUBLIC_KEY", "production checkout cannot initialize");

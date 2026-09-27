@@ -68,6 +68,13 @@ const runProductionBoundary = (appUrl: string, overrides: NodeJS.ProcessEnv = {}
   });
 
 describe("production environment launch policy", () => {
+  it("does not require optional platform SMS to deploy voice and email", () => {
+    const result = runProductionBoundary("https://botbound.app", { PLATFORM_SMS_FROM: undefined });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const preview = runPreviewBoundary({ PLATFORM_SMS_FROM: "+13125550100" });
+    expect(preview.status).toBe(1);
+    expect(`${preview.stdout}${preview.stderr}`).toContain("PLATFORM_SMS_FROM");
+  });
   it("distinguishes production from Vercel preview even though NODE_ENV is production", () => {
     expect(isProductionDeployment({ VERCEL_ENV: "preview", NODE_ENV: "production" })).toBe(false);
     expect(isProductionDeployment({ VERCEL_ENV: "development", NODE_ENV: "production" })).toBe(

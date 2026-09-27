@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
-function check(prices: Record<string, string>) {
+function check(prices: Record<string, string | undefined>) {
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH,
     APP_URL: "https://botbound.app",
@@ -45,6 +45,13 @@ function check(prices: Record<string, string>) {
 }
 
 describe("production sale interval configuration", () => {
+  it("allows Calls without an unregistered platform SMS sender", () => {
+    const result = check({ STRIPE_VOICE_PRICE_ID: "price_fixture", PLATFORM_SMS_FROM: undefined });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(result.stdout).not.toContain("MISSING REQUIRED");
+    expect(result.stdout).toContain("Optional (informational only)");
+    expect(result.stdout).toContain("PLATFORM_SMS_FROM");
+  });
   it.each(["STRIPE_VOICE_PRICE_ID", "STRIPE_EMAIL_ANNUAL_PRICE_ID"])(
     "accepts %s while listing deferred intervals informationally",
     (key) => {
