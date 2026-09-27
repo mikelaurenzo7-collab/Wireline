@@ -65,6 +65,7 @@ let browser: EventTarget & {
   history: { state: unknown; replaceState: ReturnType<typeof vi.fn> };
 };
 let page: EventTarget & { visibilityState: string };
+let storage: Map<string, string>;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 function deferred() {
@@ -137,7 +138,11 @@ beforeEach(() => {
   page = Object.assign(new EventTarget(), { visibilityState: "visible" });
   vi.stubGlobal("window", browser);
   vi.stubGlobal("document", page);
-  vi.stubGlobal("sessionStorage", { getItem: vi.fn(() => null), setItem: vi.fn() });
+  storage = new Map();
+  vi.stubGlobal("sessionStorage", {
+    getItem: vi.fn((key: string) => storage.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => storage.set(key, value)),
+  });
   tree = null;
 });
 
@@ -191,6 +196,120 @@ describe("email verification feedback and recovery", () => {
     expect(h.fetch).toHaveBeenCalledTimes(1);
   });
 
+  it("coalesces paired tab-return events and stops refreshing after confirmation", async () => {
+    await mount();
+    const pending = deferred();
+    h.fetch.mockReturnValueOnce(pending.promise);
+    page.dispatchEvent(new Event("visibilitychange"));
+    browser.dispatchEvent(new Event("focus"));
+    browser.dispatchEvent(new Event("focus"));
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    pending.resolve(json({ email_verified: false }));
+    await settle();
+    expect(textOf(tree)).toContain("Verify your email");
+
+    // A later return can try again once that shared request has settled.
+    h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
+    await focus();
+    expect(h.fetch).toHaveBeenCalledTimes(3);
+    expect(tree).toBeNull();
+    page.dispatchEvent(new Event("visibilitychange"));
+    await focus();
+    expect(h.fetch).toHaveBeenCalledTimes(3);
+    expect(h.success).toHaveBeenCalledOnce();
+  });
+
+  it("skips foreground status polling for an initially confirmed account", async () => {
+    h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
+    await mount();
+    page.dispatchEvent(new Event("visibilitychange"));
+    await focus();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(tree).toBeNull();
+    expect(h.success).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "refreshes once after a pre-return read reports %s, unless it already confirms verification",
+    async (oldVerified) => {
+      await mount();
+      const old = deferred();
+      h.fetch.mockReturnValueOnce(old.promise);
+      await focus();
+      page.visibilityState = "hidden";
+      page.dispatchEvent(new Event("visibilitychange"));
+
+      // Verification succeeds elsewhere while the old status read is pending.
+      h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
+      page.visibilityState = "visible";
+      page.dispatchEvent(new Event("visibilitychange"));
+      browser.dispatchEvent(new Event("focus"));
+      await settle();
+      expect(h.fetch).toHaveBeenCalledTimes(2);
+
+      old.resolve(json({ email_verified: oldVerified }));
+      // The follow-up includes a second real Response.json() and hook update;
+      // wait for the observable result, not a fixed microtask-loop budget.
+      await vi.waitFor(async () => {
+        await settle();
+        expect(tree).toBeNull();
+        expect(h.fetch).toHaveBeenCalledTimes(oldVerified ? 2 : 3);
+      });
+      expect(h.success).toHaveBeenCalledOnce();
+      await focus();
+      expect(h.fetch).toHaveBeenCalledTimes(oldVerified ? 2 : 3);
+    },
+  );
+
+  it("queues one fresh read after blur/focus even when visibility stays visible", async () => {
+    await mount();
+    const old = deferred();
+    h.fetch.mockReturnValueOnce(old.promise);
+    await focus();
+    browser.dispatchEvent(new Event("blur"));
+    expect(page.visibilityState).toBe("visible");
+
+    h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
+    browser.dispatchEvent(new Event("focus"));
+    browser.dispatchEvent(new Event("focus"));
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    old.resolve(json({ email_verified: false }));
+    await vi.waitFor(async () => {
+      await settle();
+      expect(tree).toBeNull();
+      expect(h.fetch).toHaveBeenCalledTimes(3);
+    });
+    expect(h.success).toHaveBeenCalledOnce();
+    await focus();
+    expect(h.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("defers the queued follow-up if the tab hides again before the old read settles", async () => {
+    await mount();
+    const old = deferred();
+    h.fetch.mockReturnValueOnce(old.promise);
+    await focus();
+    page.visibilityState = "hidden";
+    page.dispatchEvent(new Event("visibilitychange"));
+    page.visibilityState = "visible";
+    page.dispatchEvent(new Event("visibilitychange"));
+    browser.dispatchEvent(new Event("focus"));
+    page.visibilityState = "hidden";
+    page.dispatchEvent(new Event("visibilitychange"));
+    old.resolve(json({ email_verified: false }));
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+
+    h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
+    page.visibilityState = "visible";
+    page.dispatchEvent(new Event("visibilitychange"));
+    await focus();
+    expect(h.fetch).toHaveBeenCalledTimes(3);
+    expect(tree).toBeNull();
+  });
+
   it.each([
     json({ email_verified: null }),
     json({ email_verified: true }, 503),
@@ -220,21 +339,26 @@ describe("email verification feedback and recovery", () => {
     expect(h.success).not.toHaveBeenCalled();
   });
 
-  it("retains confirmed verification through later lookup failures", async () => {
+  it("retains confirmed verification when a later navigation lookup fails", async () => {
     h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
     await mount();
     h.fetch.mockRejectedValueOnce(new Error("Offline"));
-    await focus();
+    h.search = "?agent=bot-b";
+    render();
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
     expect(tree).toBeNull();
     expect(h.success).not.toHaveBeenCalled();
   });
 
-  it("ignores an older status response after a fresh confirmation", async () => {
+  it("ignores a retired return path's response after the current path confirms verification", async () => {
     const old = deferred();
     h.fetch.mockReturnValueOnce(old.promise);
     await mount("?verified=1");
     h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
-    await focus();
+    h.search = "?verified=1&agent=bot-b";
+    render();
+    await settle();
     old.resolve(json({ email_verified: false }));
     await settle();
     expect(tree).toBeNull();
@@ -349,4 +473,31 @@ describe("email verification feedback and recovery", () => {
     await settle();
     expect(tree).toBeNull();
   });
+
+  it.each(["1", "expired", "error"])(
+    "preserves session dismissal when the same %s return URL reloads, without dismissing another account",
+    async (result) => {
+      const search = `?verified=${result}`;
+      await mount(search);
+      await button("Dismiss").onClick?.();
+      await settle();
+      expect(tree).toBeNull();
+      expect(storage.get("wireline.email_verify_banner.dismissed:account-a")).toBe("1");
+
+      // Simulate a reload: new component state/effects, same session storage and URL.
+      h.slots.forEach((slot) => slot.cleanup?.());
+      h.slots = [];
+      h.effects = [];
+      h.cursor = 0;
+      h.dirty = false;
+      await mount(search);
+      expect(tree).toBeNull();
+      expect(h.success).not.toHaveBeenCalled();
+
+      h.ownerId = "account-b";
+      render();
+      await settle();
+      expect(button("Resend email").disabled).toBe(false);
+    },
+  );
 });

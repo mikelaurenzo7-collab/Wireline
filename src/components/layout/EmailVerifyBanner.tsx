@@ -74,6 +74,9 @@ export default function EmailVerifyBanner() {
     if (!ownerId) return;
     let active = true;
     let readVersion = 0;
+    let activeCheck: Promise<void> | null = null;
+    let refreshAfterCheck = false;
+    let wasAway = document.visibilityState !== "visible";
     let resending = false;
     let confirmReturn = verificationReturn !== null;
     if (confirmedRef.current.ownerId !== ownerId) {
@@ -89,7 +92,7 @@ export default function EmailVerifyBanner() {
     };
     // A changed return path retires the preceding request lifecycle. Keep
     // confirmed status, but never leave a retired resend showing "Sending".
-    update({ outcome: "idle", ...(verificationReturn ? { dismissed: false } : {}) });
+    update({ outcome: "idle" });
 
     const confirm = (verified: boolean) => {
       const previous = confirmedRef.current.verified;
@@ -110,18 +113,40 @@ export default function EmailVerifyBanner() {
       }
     };
 
-    const check = async () => {
+    const check = (): Promise<void> => {
+      if (!current()) return Promise.resolve();
+      // Returning to a tab can emit both visibilitychange and focus. Reuse
+      // the same status/Stripe lookup until it settles instead of stacking reads.
+      if (activeCheck) return activeCheck;
       const request = ++readVersion;
       update({ checking: true });
-      try {
-        const response = await authFetch("/api/billing/status");
-        const data: BillingStatusResponse | null = response.ok ? await response.json() : null;
-        if (!current() || request !== readVersion) return;
-        if (typeof data?.email_verified === "boolean") confirm(data.email_verified);
-        else update({ unavailable: true, checking: false });
-      } catch {
-        if (current() && request === readVersion) update({ unavailable: true, checking: false });
-      }
+      const pending = (async () => {
+        try {
+          const response = await authFetch("/api/billing/status");
+          const data: BillingStatusResponse | null = response.ok ? await response.json() : null;
+          if (!current() || request !== readVersion) return;
+          if (typeof data?.email_verified === "boolean") confirm(data.email_verified);
+          else update({ unavailable: true, checking: false });
+        } catch {
+          if (current() && request === readVersion) update({ unavailable: true, checking: false });
+        }
+      })();
+      activeCheck = pending;
+      const release = () => {
+        if (activeCheck !== pending) return;
+        activeCheck = null;
+        if (!refreshAfterCheck) return;
+        refreshAfterCheck = false;
+        if (
+          current() &&
+          document.visibilityState === "visible" &&
+          !wasAway &&
+          confirmedRef.current.verified !== true
+        )
+          void check();
+      };
+      void pending.then(release, release);
+      return pending;
     };
 
     const resend = async () => {
@@ -153,15 +178,30 @@ export default function EmailVerifyBanner() {
       }
     };
     controlsRef.current = { check, resend };
+    const markAway = () => {
+      wasAway = true;
+    };
     const refresh = () => {
-      if (document.visibilityState === "visible") void check();
+      if (document.visibilityState !== "visible") {
+        markAway();
+        return;
+      }
+      const returnedToTab = wasAway;
+      wasAway = false;
+      if (confirmedRef.current.verified === true) return;
+      // A read started before this return can still report the pre-verification
+      // state. Queue one fresh read after it, shared by the paired return events.
+      if (returnedToTab && activeCheck) refreshAfterCheck = true;
+      void check();
     };
     void check();
+    window.addEventListener("blur", markAway);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
     return () => {
       active = false;
       controlsRef.current = null;
+      window.removeEventListener("blur", markAway);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
