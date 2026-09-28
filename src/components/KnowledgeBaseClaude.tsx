@@ -10,6 +10,7 @@ import {
 import { Check, FileText, Loader2, Pencil, Trash2, UploadCloud, X } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
+import { OPENING_GREETING_PREFIX } from "../lib/agent-greeting";
 import {
   KNOWLEDGE_ASSET_MAX_BYTES,
   KNOWLEDGE_ASSET_MAX_FILES,
@@ -214,6 +215,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const [knowledgeBusyId, setKnowledgeBusyId] = useState<string | null>(null);
   const [confirmDeleteKnowledgeId, setConfirmDeleteKnowledgeId] = useState<string | null>(null);
   const [showAllRules, setShowAllRules] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [ruleDraft, setRuleDraft] = useState("");
+  const [ruleBusyId, setRuleBusyId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const confirmDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -240,6 +244,9 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     setIngestError(null);
     setShowAllKnowledge(false);
     setShowAllRules(false);
+    setEditingRuleId(null);
+    setRuleDraft("");
+    setRuleBusyId(null);
     setEditingKnowledgeId(null);
     setKnowledgeDraft("");
     setKnowledgeBusyId(null);
@@ -315,9 +322,13 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       setIngestError("Choose a Bot before adding knowledge.");
       return;
     }
+    if (editingRuleId || ruleBusyId) {
+      setEntryError("Finish editing the rule before uploading files.");
+      return;
+    }
     const picked = Array.from(files);
     const list = picked.slice(0, KNOWLEDGE_ASSET_MAX_FILES);
-    if (!list.length || uploading) return;
+    if (!list.length || uploading || loading) return;
     const operation = startAgentOperation();
     setUploading(true);
     setNotice(null);
@@ -368,6 +379,8 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       // held the opposite. Report whatever landed before reporting what did not.
       if (ingested > 0) {
         setNotice(summaries.length ? summaries.join(" ") : "Knowledge ingested.");
+        // Prevent a rule edit until the post-ingestion snapshot has arrived.
+        setLoading(true);
         setVersion((value) => value + 1);
       }
       // Files past the per-batch cap were being dropped without a word.
@@ -513,6 +526,63 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     }
   }
 
+  async function saveRule(rowId: string) {
+    const content = ruleDraft.trim();
+    if (!content || ruleBusyId || uploading || loading) return;
+    const operation = startAgentOperation();
+    setRuleBusyId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    try {
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(operation.requestedAgentId)}/directive/${encodeURIComponent(rowId)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+          signal: operation.controller.signal,
+        },
+      );
+      const body = (await safeJson(response)) as {
+        success?: boolean;
+        directive?: ConfigDirectiveRow;
+        error?: string;
+      } | null;
+      if (!response.ok) throw new Error(body?.error || "Rule could not be updated.");
+      if (
+        body?.success !== true ||
+        !body.directive ||
+        knowledgeRowId(body.directive) !== rowId ||
+        typeof body.directive.content !== "string" ||
+        !body.directive.content.trim()
+      ) {
+        throw new Error("The saved rule could not be confirmed. Please retry.");
+      }
+      if (!operation.isCurrent()) return;
+      const savedContent = body.directive.content;
+      setConfig((current) =>
+        current
+          ? {
+              ...current,
+              directives: (current.directives || []).map((rule) =>
+                knowledgeRowId(rule) === rowId ? { ...rule, content: savedContent } : rule,
+              ),
+            }
+          : current,
+      );
+      setEditingRuleId(null);
+      setRuleDraft("");
+      setNotice("Rule updated.");
+    } catch (reason) {
+      if (operation.isCurrent()) {
+        setEntryError(reason instanceof Error ? reason.message : "Rule could not be updated.");
+      }
+    } finally {
+      if (operation.isCurrent()) setRuleBusyId(null);
+      operation.finish();
+    }
+  }
+
   const knowledge = config?.knowledge ?? [];
   const directives = config?.directives ?? [];
   const hasPersonality = !!(config?.personality && config.personality.trim());
@@ -537,20 +607,92 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           {(showAllRules ? directives : directives.slice(0, 5)).map((directive, index) => {
             const headline = ruleHeadline(directive.content);
             const body = ruleBody(directive.content, headline);
+            const rowId = knowledgeRowId(directive);
+            const busy = rowId !== null && ruleBusyId === rowId;
+            if (rowId && editingRuleId === rowId) {
+              return (
+                <div key={rowId} className="py-3 first:pt-0 last:pb-0">
+                  <label
+                    htmlFor={`rule-entry-${rowId}`}
+                    className="mb-2 block text-sm font-semibold"
+                  >
+                    Edit rule
+                  </label>
+                  <textarea
+                    id={`rule-entry-${rowId}`}
+                    autoFocus
+                    value={ruleDraft}
+                    onChange={(event) => setRuleDraft(event.target.value)}
+                    maxLength={12_000}
+                    rows={3}
+                    disabled={busy}
+                    className="w-full resize-y rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-canvas-default)] px-3 py-2 text-sm leading-6 text-[var(--wireline-color-text-primary)] outline-none focus:border-[var(--wireline-color-action-primary-default)]"
+                  />
+                  <div className="mt-2 flex flex-wrap justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => {
+                        setEditingRuleId(null);
+                        setRuleDraft("");
+                        setEntryError(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={busy || uploading || loading || !ruleDraft.trim()}
+                      onClick={() => void saveRule(rowId)}
+                    >
+                      {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
             return (
               <div key={directive.id ?? `d-${index}`} className="py-3 first:pt-0 last:pb-0">
-                <p className="break-words text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-                  <FileText
-                    className="mr-1.5 inline size-3.5 text-[var(--wireline-color-action-primary-default)]"
-                    aria-hidden="true"
-                  />
-                  {headline}
-                </p>
-                {body ? (
-                  <p className="mt-1 break-words text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
-                    {body}
-                  </p>
-                ) : null}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+                      <FileText
+                        className="mr-1.5 inline size-3.5 text-[var(--wireline-color-action-primary-default)]"
+                        aria-hidden="true"
+                      />
+                      {headline}
+                    </p>
+                    {body ? (
+                      <p className="mt-1 break-words text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+                        {body}
+                      </p>
+                    ) : null}
+                  </div>
+                  {rowId && !directive.content?.startsWith(OPENING_GREETING_PREFIX) ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="shrink-0"
+                      disabled={Boolean(ruleBusyId) || uploading || loading}
+                      aria-label={`Edit rule: ${headline}`}
+                      onClick={() => {
+                        if (ruleBusyId || uploading || loading) return;
+                        setEditingRuleId(rowId);
+                        setRuleDraft(directive.content || "");
+                        setEntryError(null);
+                        setNotice(null);
+                      }}
+                    >
+                      <Pencil aria-hidden="true" />
+                      Edit
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             );
           })}
@@ -574,7 +716,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     <button
       type="button"
       onClick={() => fileInputRef.current?.click()}
-      disabled={uploading || !agentId}
+      disabled={uploading || loading || Boolean(editingRuleId) || Boolean(ruleBusyId) || !agentId}
       className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[var(--wireline-radius-sm)] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: "var(--wireline-color-action-primary-default)",
@@ -598,6 +740,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ref={fileInputRef}
         type="file"
         multiple
+        disabled={uploading || loading || Boolean(editingRuleId) || Boolean(ruleBusyId) || !agentId}
         // Visually hidden but still in the accessibility tree, so it needs a
         // name of its own: axe reports an unlabelled control otherwise, and a
         // screen reader announces only "file upload button".

@@ -890,6 +890,49 @@ router.post(
 );
 
 router.patch(
+  "/api/agent-config/:id/directive/:rowId",
+  authenticateUser,
+  agentMutationRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const agent = await owned(req.params.id, req.user.id);
+    if (!agent) throw AppError.notFound("Agent not found");
+    if (!/^[1-9]\d{0,18}$/.test(req.params.rowId)) {
+      throw AppError.badRequest("Rule id must be a positive integer");
+    }
+    const rowId = BigInt(req.params.rowId);
+    if (rowId > 9_223_372_036_854_775_807n) {
+      throw AppError.badRequest("Rule id must be a positive integer");
+    }
+    const content = cleanText(req.body?.content, 12000);
+    if (!content) throw AppError.badRequest("Rule content is required");
+    if (content.startsWith(OPENING_GREETING_PREFIX)) {
+      throw AppError.badRequest("Edit the opening greeting in Studio setup.");
+    }
+    // Greetings have a separate atomic save that also updates firstMessage.
+    // Keep this update scoped to one ordinary rule, preserving its ID/priority.
+    const [directive] = await drizzle
+      .update(schema.directives)
+      .set({ content })
+      .where(
+        and(
+          eq(schema.directives.id, rowId),
+          eq(schema.directives.agentId, req.params.id),
+          eq(schema.directives.userId, req.user.id),
+          sql`left(${schema.directives.content}, ${OPENING_GREETING_PREFIX.length}) <> ${OPENING_GREETING_PREFIX}`,
+        ),
+      )
+      .returning({
+        id: schema.directives.id,
+        content: schema.directives.content,
+        priority: schema.directives.priority,
+      });
+    if (!directive)
+      throw AppError.notFound("Rule not found. Edit opening greetings in Studio setup.");
+    res.json({ success: true, directive: { ...directive, id: String(directive.id) } });
+  },
+);
+
+router.patch(
   "/api/agent-config/:id/runtime",
   authenticateUser,
   agentMutationRateLimit,
