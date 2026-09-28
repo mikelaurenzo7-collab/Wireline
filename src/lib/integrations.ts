@@ -155,6 +155,8 @@ export class IntegrationService {
         } else if (account.provider === "microsoft") {
           const slots = await this.getMicrosoftBusySlots(account, startOfDay, endOfDay, timeZone);
           busySlots.push(...slots);
+        } else {
+          throw new Error("Connected calendar provider is not supported");
         }
       }
 
@@ -211,7 +213,11 @@ export class IntegrationService {
           // Any read failure fails closed through the enclosing error handler.
           const start = new Date(params.startTime);
           const end = new Date(params.endTime);
-          if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+          if (
+            !Number.isFinite(start.getTime()) ||
+            !Number.isFinite(end.getTime()) ||
+            end <= start
+          ) {
             return false;
           }
           for (const account of accounts) {
@@ -778,8 +784,17 @@ export class IntegrationService {
         maxResults: 2_500,
         ...(pageToken ? { pageToken } : {}),
       });
+      if (res.data.items != null && !Array.isArray(res.data.items)) {
+        throw new Error("Google calendar returned an invalid event inventory");
+      }
       events.push(...(res.data.items || []));
-      pageToken = res.data.nextPageToken || undefined;
+      if (
+        res.data.nextPageToken != null &&
+        (typeof res.data.nextPageToken !== "string" || !res.data.nextPageToken)
+      ) {
+        throw new Error("Google calendar returned an invalid continuation token");
+      }
+      pageToken = res.data.nextPageToken ?? undefined;
       if (!pageToken) {
         exhausted = true;
         break;
@@ -790,14 +805,16 @@ export class IntegrationService {
     }
 
     return events
+      .filter((event: any) => event.status !== "cancelled" && event.transparency !== "transparent")
       .map((event: any) => {
         if (event.start?.date && !event.start?.dateTime) {
-          return `All day: ${event.summary || "Busy"}`;
+          return "All day: Busy";
         }
         const startIso = event.start?.dateTime;
         const endIso = event.end?.dateTime;
-        if (!startIso || !endIso) return null;
-        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: ${event.summary || "Busy"}`;
+        if (!startIso || !endIso)
+          throw new Error("Google calendar event is missing its time interval");
+        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: Busy`;
       })
       .filter((slot: string | null): slot is string => Boolean(slot));
   }
@@ -864,7 +881,7 @@ export class IntegrationService {
     const query = new URLSearchParams({
       startDateTime: start.toISOString(),
       endDateTime: end.toISOString(),
-      $select: "subject,start,end,isAllDay",
+      $select: "start,end,isAllDay,showAs,isCancelled",
       $orderby: "start/dateTime",
     });
     let nextUrl: string | null =
@@ -897,8 +914,17 @@ export class IntegrationService {
         throw new Error(`Microsoft calendar list failed: ${res.status}`);
       }
       const data = (await res.json()) as any;
-      events.push(...(Array.isArray(data.value) ? data.value : []));
-      nextUrl = typeof data["@odata.nextLink"] === "string" ? data["@odata.nextLink"] : null;
+      if (!Array.isArray(data.value)) {
+        throw new Error("Microsoft calendar returned an invalid event inventory");
+      }
+      events.push(...data.value);
+      if (
+        data["@odata.nextLink"] != null &&
+        (typeof data["@odata.nextLink"] !== "string" || !data["@odata.nextLink"])
+      ) {
+        throw new Error("Microsoft calendar returned an invalid continuation URL");
+      }
+      nextUrl = data["@odata.nextLink"] ?? null;
       if (!nextUrl) {
         exhausted = true;
         break;
@@ -909,14 +935,23 @@ export class IntegrationService {
     }
 
     return events
+      .filter((event: any) => !event.isCancelled && event.showAs !== "free")
       .map((event: any) => {
-        if (event.isAllDay) return `All day: ${event.subject || "Busy"}`;
+        if (event.isAllDay) return "All day: Busy";
         const rawStart = event.start?.dateTime;
         const rawEnd = event.end?.dateTime;
-        if (!rawStart || !rawEnd) return null;
+        if (!rawStart || !rawEnd)
+          throw new Error("Microsoft calendar event is missing its time interval");
+        if (
+          [event.start?.timeZone, event.end?.timeZone].some(
+            (zone) => zone && zone !== "UTC" && zone !== "Etc/UTC",
+          )
+        ) {
+          throw new Error("Microsoft calendar did not return the requested UTC timezone");
+        }
         const startIso = /(?:Z|[+-]\d{2}:\d{2})$/i.test(rawStart) ? rawStart : `${rawStart}Z`;
         const endIso = /(?:Z|[+-]\d{2}:\d{2})$/i.test(rawEnd) ? rawEnd : `${rawEnd}Z`;
-        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: ${event.subject || "Busy"}`;
+        return `${formatIsoInTimeZone(startIso, timeZone)} to ${formatIsoInTimeZone(endIso, timeZone)}: Busy`;
       })
       .filter((slot: string | null): slot is string => Boolean(slot));
   }

@@ -125,6 +125,45 @@ describe("agent tool execution authorization", () => {
     ).toEqual(["log_to_google_sheets", "crm_create_contact", "crm_update_deal_stage"]);
   });
 
+  it("allows selected calendar tools with native booking and no external account or email channel", () => {
+    expect(
+      resolveAuthorizedAgentTools(
+        ["check_calendar_availability", "book_appointment"],
+        { twilioMessaging: false, twilioLookup: false },
+        { ...NO_TENANT_INTEGRATIONS, native_calendar: true, native_calendar_configured: true },
+      ),
+    ).toEqual(["check_calendar_availability", "book_appointment"]);
+    expect(
+      resolveAuthorizedAgentTools(
+        [],
+        {},
+        { ...NO_TENANT_INTEGRATIONS, native_calendar: true, native_calendar_configured: true },
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not bypass a native booking pause through an optional external calendar", () => {
+    expect(
+      resolveAuthorizedAgentTools(
+        ["check_calendar_availability", "book_appointment"],
+        {},
+        {
+          ...NO_TENANT_INTEGRATIONS,
+          native_calendar_configured: true,
+          native_calendar: false,
+          google_calendar: true,
+        },
+      ),
+    ).toEqual([]);
+    expect(
+      resolveAuthorizedAgentTools(
+        ["book_appointment"],
+        {},
+        { ...NO_TENANT_INTEGRATIONS, google_calendar: true },
+      ),
+    ).toEqual(["book_appointment"]);
+  });
+
   it("keeps platform-owned accounts out even when every connection and platform flag is present", () => {
     const allConnected = Object.fromEntries(
       Object.keys(NO_TENANT_INTEGRATIONS).map((key) => [key, true]),

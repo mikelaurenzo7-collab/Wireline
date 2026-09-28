@@ -13,10 +13,7 @@ import { type ActionItem, type ActionResult } from "./action-types";
 import { addMinutesToIso, localDateTimeToUtcIso, normalizeIanaTimeZone } from "./calendar-time";
 import { CRMService } from "./crm-service";
 import { IntegrationService } from "./integrations";
-import {
-  bookNativeAppointment,
-  getNativeCalendarConfiguration,
-} from "./native-calendar";
+import { bookNativeAppointment, getNativeCalendarConfiguration } from "./native-calendar";
 import { touchNavCounts } from "./nav-counts-invalidate";
 import { evaluateOutboundDialGate } from "./outbound-dial-gate";
 import {
@@ -188,13 +185,17 @@ async function resolveActionPolicy(
     }
 
     const inheritedAutonomy = agentRow.tenantAutonomyLevel === "auto" ? "auto" : "draft";
+    // Native Calendar's saved mode creates Scheduled or Requested directly.
+    // A generic draft here would add a second approval stage for the same booking.
     const autonomy =
-      autonomyOverride ||
-      (agentRow.autonomyLevel && agentRow.autonomyLevel !== "inherit"
-        ? agentRow.autonomyLevel === "auto"
-          ? "auto"
-          : "draft"
-        : inheritedAutonomy);
+      scopedAction.type === "schedule_calendar" && connections.native_calendar_configured
+        ? "auto"
+        : autonomyOverride ||
+          (agentRow.autonomyLevel && agentRow.autonomyLevel !== "inherit"
+            ? agentRow.autonomyLevel === "auto"
+              ? "auto"
+              : "draft"
+            : inheritedAutonomy);
 
     return {
       action: scopedAction,
@@ -369,8 +370,13 @@ async function executeAutonomousAction(
             )
             .digest("hex")}`,
         });
-        if (appointment.status !== "Scheduled" && appointment.status !== "Requested") {
-          return { success: false, error: "The appointment is no longer scheduled. Check Calendar." };
+        if (
+          !["Scheduled", "Confirmed", "Rescheduled", "Requested"].includes(appointment.status || "")
+        ) {
+          return {
+            success: false,
+            error: "The appointment is no longer scheduled. Check Calendar.",
+          };
         }
         return {
           success: true,

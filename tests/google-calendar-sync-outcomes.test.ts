@@ -3,8 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   accounts: [] as Record<string, unknown>[],
   list: vi.fn(),
-  values: vi.fn(),
-  upsert: vi.fn(),
+  replace: vi.fn(),
   update: vi.fn(),
   tokenListener: null as ((tokens: Record<string, unknown>) => unknown) | null,
 }));
@@ -12,9 +11,12 @@ vi.mock("../src/lib/server-context", () => ({
   log: { error: vi.fn() },
   drizzle: {
     select: () => ({ from: () => ({ where: async () => h.accounts }) }),
-    insert: () => ({ values: h.values }),
     update: () => ({ set: () => ({ where: h.update }) }),
   },
+}));
+vi.mock("../src/services/calendar-sync-snapshot", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/services/calendar-sync-snapshot")>()),
+  replaceCalendarSnapshot: h.replace,
 }));
 vi.mock("../src/lib/google-apis", () => ({
   googleApis: async () => ({
@@ -39,8 +41,7 @@ beforeEach(() => {
   vi.stubEnv("GOOGLE_CLIENT_ID", "test-client");
   vi.stubEnv("GOOGLE_CLIENT_SECRET", "test-secret");
   h.accounts = [];
-  h.values.mockReturnValue({ onConflictDoUpdate: h.upsert });
-  h.upsert.mockResolvedValue(undefined);
+  h.replace.mockResolvedValue(undefined);
   h.update.mockResolvedValue(undefined);
   h.tokenListener = null;
 });
@@ -104,7 +105,7 @@ describe("Google calendar sync outcomes", () => {
         h.list.mockRejectedValueOnce(new Error("Connection revoked"));
       else {
         h.list.mockResolvedValueOnce({ data: { items: [event()] } });
-        h.upsert.mockRejectedValueOnce(new Error("Database unavailable"));
+        h.replace.mockRejectedValueOnce(new Error("Database unavailable"));
       }
 
       await expect(syncGoogleCalendar("user-1")).resolves.toEqual(
@@ -127,20 +128,21 @@ describe("Google calendar sync outcomes", () => {
     await expect(syncGoogleCalendar("user-1")).resolves.toEqual(
       expect.objectContaining({ status: "partial", syncedCount: 1, failedAccounts: 1 }),
     );
-    expect(h.values).toHaveBeenCalledWith(
-      expect.objectContaining({ accountId: "healthy", externalEventId: "event-1" }),
+    expect(h.replace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: "healthy",
+        events: [expect.objectContaining({ externalEventId: "event-1" })],
+      }),
     );
   });
 
-  it("preserves the count of writes completed before an account fails", async () => {
+  it("does not report partial imports when the atomic snapshot write fails", async () => {
     h.accounts = [account()];
     h.list.mockResolvedValueOnce({ data: { items: [event("one"), event("two")] } });
-    h.upsert
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error("Database unavailable"));
+    h.replace.mockRejectedValueOnce(new Error("Database unavailable"));
 
     await expect(syncGoogleCalendar("user-1")).resolves.toEqual(
-      expect.objectContaining({ status: "partial", syncedCount: 1, failedAccounts: 1 }),
+      expect.objectContaining({ status: "error", syncedCount: 0, failedAccounts: 1 }),
     );
   });
 
@@ -169,4 +171,43 @@ describe("Google calendar sync outcomes", () => {
     await expect(syncGoogleCalendar("user-1")).resolves.toEqual({ status: "no_accounts" });
     expect(h.list).not.toHaveBeenCalled();
   });
+
+  it("reads every page before replacing the cache, including all-day busy time", async () => {
+    h.accounts = [account()];
+    h.list
+      .mockResolvedValueOnce({ data: { items: [event()], nextPageToken: "page-2" } })
+      .mockImplementationOnce(async () => {
+        expect(h.replace).not.toHaveBeenCalled();
+        return {
+          data: {
+            timeZone: "America/Chicago",
+            items: [{ id: "all-day", start: { date: "2026-10-02" }, end: { date: "2026-10-03" } }],
+          },
+        };
+      });
+    expect(await syncGoogleCalendar("user-1")).toEqual({ status: "success", syncedCount: 2 });
+    expect(h.list.mock.calls[1][0].pageToken).toBe("page-2");
+    expect(h.replace.mock.calls[0][0].events[1]).toMatchObject({
+      startTime: new Date("2026-10-02T05:00:00Z"),
+      endTime: new Date("2026-10-03T05:00:00Z"),
+    });
+  });
+
+  it.each(["failure", "loop", "truncated"])(
+    "retains the cache when pagination ends with %s",
+    async (kind) => {
+      h.accounts = [account()];
+      h.list.mockResolvedValueOnce({ data: { items: [event()], nextPageToken: "next" } });
+      if (kind === "failure") h.list.mockRejectedValueOnce(new Error("Page unavailable"));
+      else if (kind === "loop")
+        h.list.mockResolvedValue({ data: { items: [], nextPageToken: "next" } });
+      else
+        h.list.mockImplementation(async () => ({
+          data: { items: [], nextPageToken: `page-${h.list.mock.calls.length}` },
+        }));
+      expect(await syncGoogleCalendar("user-1")).toMatchObject({ status: "error", syncedCount: 0 });
+      expect(h.replace).not.toHaveBeenCalled();
+      expect(h.list.mock.calls.length).toBeLessThanOrEqual(20);
+    },
+  );
 });

@@ -1,8 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- external integration data shape varies by provider. */
 import { encryptSecret, decryptSecret } from "../lib/secret-vault";
-import { drizzle, log } from "../lib/server-context";
+import { drizzle, log, fetchWithTimeout } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  importedCalendarInterval,
+  replaceCalendarSnapshot,
+  type ImportedCalendarEvent,
+} from "./calendar-sync-snapshot";
+
+const MAX_CALENDAR_PAGES = 20;
+
+function microsoftUtcInstant(value: { dateTime?: string; timeZone?: string } | undefined): string {
+  const raw = value?.dateTime;
+  if (typeof raw !== "string") throw new Error("Microsoft calendar event is missing a time.");
+  if (/(?:Z|[+-]\d{2}:\d{2})$/i.test(raw)) return raw;
+  if (value?.timeZone && value.timeZone !== "UTC" && value.timeZone !== "Etc/UTC") {
+    throw new Error("Microsoft calendar did not return the requested UTC timezone.");
+  }
+  return `${raw}Z`;
+}
 
 export async function syncOutlookCalendar(userId: string) {
   if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
@@ -42,11 +59,15 @@ export async function syncOutlookCalendar(userId: string) {
           refresh_token: account.refreshToken ? decryptSecret(account.refreshToken) : "",
         });
 
-        const r = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: params.toString(),
-        });
+        const r = await fetchWithTimeout(
+          "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString(),
+          },
+          15_000,
+        );
 
         const d = (await r.json()) as any;
         if (!r.ok || !d.access_token) {
@@ -69,49 +90,56 @@ export async function syncOutlookCalendar(userId: string) {
       // Fetch events using Microsoft Graph API for next 30 days
       const timeMin = new Date().toISOString();
       const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      const url = `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${timeMin}&endDateTime=${timeMax}&$select=id,subject,start,end,showAs`;
-
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Microsoft Graph API failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = (await response.json()) as any;
-      const events = data.value || [];
-
-      // Upsert events
-      for (const event of events) {
-        if (!event.id || !event.start?.dateTime || !event.end?.dateTime) continue;
-
-        await drizzle
-          .insert(schema.calendarEvents)
-          .values({
-            userId: userId,
-            accountId: account.id,
+      let nextUrl: string | null =
+        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${encodeURIComponent(timeMin)}&endDateTime=${encodeURIComponent(timeMax)}&$select=id,subject,start,end,showAs,isCancelled&$top=100`;
+      const seenUrls = new Set<string>();
+      const events: ImportedCalendarEvent[] = [];
+      for (let page = 0; page < MAX_CALENDAR_PAGES && nextUrl; page += 1) {
+        const parsed = new URL(nextUrl);
+        if (
+          parsed.protocol !== "https:" ||
+          parsed.host !== "graph.microsoft.com" ||
+          parsed.username ||
+          parsed.password ||
+          parsed.hash ||
+          parsed.pathname !== "/v1.0/me/calendarView" ||
+          seenUrls.has(parsed.href)
+        ) {
+          throw new Error("Microsoft calendar returned an unsafe continuation URL.");
+        }
+        seenUrls.add(parsed.href);
+        const response = await fetchWithTimeout(
+          parsed.href,
+          {
+            headers: { Authorization: `Bearer ${accessToken}`, Prefer: 'outlook.timezone="UTC"' },
+          },
+          15_000,
+        );
+        if (!response.ok) throw new Error(`Microsoft Graph API failed: ${response.status}`);
+        const data = (await response.json()) as any;
+        if (!Array.isArray(data.value))
+          throw new Error("Microsoft calendar returned an invalid event inventory.");
+        for (const event of data.value) {
+          if (event.isCancelled || event.showAs === "free") continue;
+          if (!event.id) throw new Error("Microsoft calendar event is missing its identity.");
+          events.push({
             externalEventId: event.id,
             title: event.subject || "Busy",
-            // Graph API returns time with a timezone object, we'll try to convert to ISO
-            startTime: new Date(event.start.dateTime + "Z"),
-            endTime: new Date(event.end.dateTime + "Z"),
+            ...importedCalendarInterval(
+              microsoftUtcInstant(event.start),
+              microsoftUtcInstant(event.end),
+            ),
             status: event.showAs || "confirmed",
-            updatedAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: [schema.calendarEvents.accountId, schema.calendarEvents.externalEventId],
-            set: {
-              title: event.subject || "Busy",
-              startTime: new Date(event.start.dateTime + "Z"),
-              endTime: new Date(event.end.dateTime + "Z"),
-              status: event.showAs || "confirmed",
-              updatedAt: new Date(),
-            },
           });
-
-        totalSynced++;
+        }
+        const next = data["@odata.nextLink"];
+        if (next != null && (typeof next !== "string" || !next))
+          throw new Error("Microsoft calendar returned an invalid continuation URL.");
+        nextUrl = next || null;
       }
+      if (nextUrl) throw new Error("Microsoft calendar pagination exceeded the safety limit.");
+      await replaceCalendarSnapshot({ userId, accountId: account.id, timeMin, timeMax, events });
+      totalSynced += events.length;
       syncedAccounts++;
     } catch (err: any) {
       failedAccounts++;

@@ -4,6 +4,15 @@ import { encryptSecret, decryptSecret } from "../lib/secret-vault";
 import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  googleAllDayInterval,
+  googleTimedInstant,
+  importedCalendarInterval,
+  replaceCalendarSnapshot,
+  type ImportedCalendarEvent,
+} from "./calendar-sync-snapshot";
+
+const MAX_CALENDAR_PAGES = 20;
 
 export async function syncGoogleCalendar(userId: string) {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -79,51 +88,61 @@ export async function syncGoogleCalendar(userId: string) {
       const timeMin = new Date().toISOString();
       const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      const response = await calendar.events
-        .list({
-          calendarId: "primary",
-          timeMin: timeMin,
-          timeMax: timeMax,
-          maxResults: 100,
-          singleEvents: true,
-          orderBy: "startTime",
-        })
-        .finally(async () => {
-          await tokenPersistence;
-        });
-      if (tokenPersistenceError) throw tokenPersistenceError;
-
-      const events = response.data.items || [];
-
-      // Upsert events
-      for (const event of events) {
-        if (!event.id || !event.start?.dateTime || !event.end?.dateTime) continue;
-
-        await drizzle
-          .insert(schema.calendarEvents)
-          .values({
-            userId: userId,
-            accountId: account.id,
+      const events: ImportedCalendarEvent[] = [];
+      let pageToken: string | undefined;
+      const seenTokens = new Set<string>();
+      for (let page = 0; page < MAX_CALENDAR_PAGES; page += 1) {
+        const response = await calendar.events
+          .list({
+            calendarId: "primary",
+            timeMin: timeMin,
+            timeMax: timeMax,
+            maxResults: 100,
+            singleEvents: true,
+            orderBy: "startTime",
+            ...(pageToken ? { pageToken } : {}),
+          })
+          .finally(async () => {
+            await tokenPersistence;
+          });
+        if (tokenPersistenceError) throw tokenPersistenceError;
+        if (response.data.items != null && !Array.isArray(response.data.items)) {
+          throw new Error("Google calendar returned an invalid event inventory.");
+        }
+        for (const event of response.data.items || []) {
+          if (event.status === "cancelled" || event.transparency === "transparent") continue;
+          if (!event.id) throw new Error("Google calendar event is missing its identity.");
+          const interval =
+            event.start?.date && event.end?.date
+              ? googleAllDayInterval(
+                  event.start.date,
+                  event.end.date,
+                  response.data.timeZone || event.start.timeZone || "",
+                )
+              : importedCalendarInterval(
+                  googleTimedInstant(event.start),
+                  googleTimedInstant(event.end),
+                );
+          events.push({
             externalEventId: event.id,
             title: event.summary || "Busy",
-            startTime: new Date(event.start.dateTime),
-            endTime: new Date(event.end.dateTime),
+            ...interval,
             status: event.status || "confirmed",
-            updatedAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: [schema.calendarEvents.accountId, schema.calendarEvents.externalEventId],
-            set: {
-              title: event.summary || "Busy",
-              startTime: new Date(event.start.dateTime),
-              endTime: new Date(event.end.dateTime),
-              status: event.status || "confirmed",
-              updatedAt: new Date(),
-            },
           });
-
-        totalSynced++;
+        }
+        const next = response.data.nextPageToken;
+        if (next == null) {
+          pageToken = undefined;
+          break;
+        }
+        if (typeof next !== "string" || !next || seenTokens.has(next))
+          throw new Error("Google calendar returned an invalid continuation token.");
+        seenTokens.add(next);
+        pageToken = next;
       }
+      if (pageToken) throw new Error("Google calendar pagination exceeded the safety limit.");
+      await replaceCalendarSnapshot({ userId, accountId: account.id, timeMin, timeMax, events });
+      totalSynced += events.length;
       syncedAccounts++;
     } catch (err: any) {
       failedAccounts++;

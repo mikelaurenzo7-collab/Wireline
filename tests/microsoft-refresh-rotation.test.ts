@@ -4,18 +4,22 @@ const state = vi.hoisted(() => ({
   fetch: vi.fn(),
   set: vi.fn(),
   where: vi.fn(),
-  values: vi.fn(),
-  upsert: vi.fn(),
+  replace: vi.fn(),
   accounts: [] as Record<string, unknown>[],
 }));
 
 vi.mock("../src/lib/server-context", () => ({
   log: { error: vi.fn() },
+  fetchWithTimeout: state.fetch,
   drizzle: {
     select: () => ({ from: () => ({ where: async () => state.accounts }) }),
     update: () => ({ set: state.set }),
-    insert: () => ({ values: state.values }),
   },
+}));
+
+vi.mock("../src/services/calendar-sync-snapshot", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/services/calendar-sync-snapshot")>()),
+  replaceCalendarSnapshot: state.replace,
 }));
 
 import { decryptSecret, encryptSecret } from "../src/lib/secret-vault";
@@ -29,8 +33,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", state.fetch);
   state.where.mockResolvedValue(undefined);
   state.set.mockReturnValue({ where: state.where });
-  state.values.mockReturnValue({ onConflictDoUpdate: state.upsert });
-  state.upsert.mockResolvedValue(undefined);
+  state.replace.mockResolvedValue(undefined);
   state.accounts = [];
 });
 
@@ -93,10 +96,13 @@ describe("Outlook calendar sync outcomes", () => {
     await expect(syncOutlookCalendar("test-user")).resolves.toEqual(
       expect.objectContaining({ status: "partial", syncedCount: 1, failedAccounts: 1 }),
     );
-    expect(state.values).toHaveBeenCalledWith(
-      expect.objectContaining({ accountId: "healthy-account", externalEventId: "event-1" }),
+    expect(state.replace).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: "healthy-account",
+        events: [expect.objectContaining({ externalEventId: "event-1" })],
+      }),
     );
-    expect(state.upsert).toHaveBeenCalledOnce();
+    expect(state.replace).toHaveBeenCalledOnce();
   });
 
   it("distinguishes a healthy empty calendar plus a failed calendar from total failure", async () => {

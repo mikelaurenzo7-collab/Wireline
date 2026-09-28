@@ -55,12 +55,61 @@ function calendarInputFailure(toolCallId: string, error: unknown): ToolCallResul
   };
 }
 
+function notifyBookedAppointment(
+  context: ToolCallContext,
+  booking: {
+    title: string;
+    startTime: string;
+    endTime: string;
+    timeZone: string;
+    customerName: string;
+    serviceType: string;
+    displayTime: string;
+  },
+): void {
+  const { agent, agentVoiceName, message } = context;
+  // Notifications remain best effort. A confirmed booking must never become a
+  // failed tool response because an optional notification destination is down.
+  void Promise.allSettled([
+    Promise.resolve().then(() =>
+      dispatchWebhook(agent.user_id, "appointment.booked", {
+        agent_id: agent.id,
+        title: booking.title,
+        start_time: booking.startTime,
+        end_time: booking.endTime,
+        timezone: booking.timeZone,
+        customer_name: booking.customerName,
+        service_type: booking.serviceType,
+      }),
+    ),
+    Promise.resolve().then(() =>
+      slackPostAgentNotification(
+        agent.user_id,
+        `Appointment booked: ${booking.title}\n${booking.displayTime}`,
+        { agentName: agentVoiceName, caller: booking.customerName, outcome: "booked" },
+      ),
+    ),
+    Promise.resolve().then(async () => {
+      const { NotificationService } = await import("../notifications");
+      // sendWinAlert retains the owner's opt-in and alert-recipient checks.
+      return new NotificationService(agent.user_id).sendWinAlert({
+        title: "Meeting booked",
+        message: `${booking.customerName} · ${booking.serviceType} · ${booking.displayTime}`,
+        callId: (message.call as { id?: string } | undefined)?.id,
+        agentName: agentVoiceName,
+        caller: booking.customerName,
+        outcome: "booked",
+      });
+    }),
+  ]);
+}
+
 export async function handleCalendarToolCall(
   fn: string,
   args: any,
   context: ToolCallContext,
 ): Promise<ToolCallResult | null> {
-  const { agent, agentVoiceName, message, toolCallId } = context;
+  const { agent, message, toolCallId } = context;
 
   if (fn === "check_calendar_availability") {
     try {
@@ -136,14 +185,24 @@ export async function handleCalendarToolCall(
         const start = new Date(appointment.startAt).toISOString();
         const end = new Date(appointment.endAt).toISOString();
         const displayTime = formatTimeRangeInZone(start, end, appointment.timeZone);
+        if (appointment.status === "Scheduled" && appointment.created) {
+          notifyBookedAppointment(context, {
+            title: `${service_type.trim()} for ${customer_name.trim()}`,
+            startTime: start,
+            endTime: end,
+            timeZone: appointment.timeZone,
+            customerName: customer_name.trim(),
+            serviceType: service_type.trim(),
+            displayTime,
+          });
+        }
         return {
           toolCallId,
-          result:
-            appointment.status === "Scheduled"
-              ? `Appointment booked for ${displayTime}.`
-              : appointment.status === "Requested"
-                ? `Appointment requested for ${displayTime}. It is pending owner approval and is not confirmed.`
-                : "That appointment is no longer scheduled. Check availability before making a new booking.",
+          result: ["Scheduled", "Confirmed", "Rescheduled"].includes(appointment.status || "")
+            ? `Appointment booked for ${displayTime}.`
+            : appointment.status === "Requested"
+              ? `Appointment requested for ${displayTime}. It is pending owner approval and is not confirmed.`
+              : "That appointment is no longer scheduled. Check availability before making a new booking.",
         };
       }
 
@@ -182,6 +241,11 @@ export async function handleCalendarToolCall(
             customerName: customer_name.trim(),
             serviceType: service_type.trim(),
             status: "Scheduled",
+            startAt: new Date(startTime),
+            endAt: new Date(endTime),
+            timeZone,
+            bufferMinutes: 0,
+            bookingSource: "connected",
             notes: `Booked by your Bot. Confirmed timezone: ${timeZone}. ${displayTime}`,
             phoneNumber:
               (message.call as { customer?: { number?: string } } | undefined)?.customer?.number ??
@@ -195,38 +259,15 @@ export async function handleCalendarToolCall(
           });
         }
 
-        void dispatchWebhook(agent.user_id, "appointment.booked", {
-          agent_id: agent.id,
+        notifyBookedAppointment(context, {
           title,
-          start_time: startTime,
-          end_time: endTime,
-          timezone: timeZone,
-          customer_name: customer_name.trim(),
-          service_type: service_type.trim(),
+          startTime,
+          endTime,
+          timeZone,
+          customerName: customer_name.trim(),
+          serviceType: service_type.trim(),
+          displayTime,
         });
-        void slackPostAgentNotification(
-          agent.user_id,
-          `Appointment booked: ${title}\n${displayTime}`,
-          { agentName: agentVoiceName, caller: customer_name.trim(), outcome: "booked" },
-        );
-        // Account Holder SMS alert — positive event. Fires only when the
-        // Account Holder opted in (twilio_manager_alerts_enabled = true
-        // + twilio_manager_alert_number set). Keeps the Account Holder
-        // in the loop on wins, not just escalations.
-        try {
-          const { NotificationService } = await import("../notifications");
-          const notif = new NotificationService(agent.user_id);
-          void notif.sendWinAlert({
-            title: "Meeting booked",
-            message: `${customer_name.trim()} · ${service_type.trim()} · ${displayTime}`,
-            callId: (message.call as { id?: string } | undefined)?.id,
-            agentName: agentVoiceName,
-            caller: customer_name.trim(),
-            outcome: "booked",
-          });
-        } catch {
-          /* best-effort; never block the tool response */
-        }
       }
       return {
         toolCallId,
