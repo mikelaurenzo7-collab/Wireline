@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   effects: [] as Array<() => void>,
   fetch: vi.fn(),
   onClaim: vi.fn(),
+  refreshAgents: vi.fn(),
 }));
 
 vi.mock("react", async (original) => ({
@@ -34,6 +35,9 @@ vi.mock("motion/react", () => ({
   motion: { button: "button", div: "div" },
 }));
 vi.mock("../src/components/ui/shadcn/Input", () => ({ Input: "input" }));
+vi.mock("../src/contexts/AgentsContext", () => ({
+  useAgents: () => ({ refresh: h.refreshAgents }),
+}));
 vi.mock("../src/components/ui/shadcn/ShadButton", () => ({ ShadButton: "button" }));
 vi.mock("../src/lib/api", async (original) => ({
   ...(await original<typeof import("../src/lib/api")>()),
@@ -108,12 +112,57 @@ beforeEach(() => {
   h.mounted = false;
   h.effects = [];
   h.onClaim.mockReset();
+  h.refreshAgents.mockReset();
   h.fetch.mockReset();
   h.fetch.mockImplementation(async (url: string) => {
     if (url.endsWith("/area-codes")) return json({ area_codes: [] });
     if (url.endsWith("/available") || url.endsWith("/search")) return json(inventory);
     throw new Error(`Unexpected request: ${url}`);
   });
+});
+
+describe("picker mutations refresh the shared roster", () => {
+  it.each(["claim", "provision"])(
+    "refreshes after confirmed %s before its parent callback",
+    async (operation) => {
+      const fetchDefault = h.fetch.getMockImplementation()!;
+      h.fetch.mockImplementation(async (url: string) =>
+        url.endsWith(`/${operation}`)
+          ? json({ ok: true, phone_number: phoneNumber })
+          : fetchDefault(url),
+      );
+      await mount();
+      if (operation === "provision") await search();
+      await button("(312) 555-0120").props.onClick!();
+      expect(h.refreshAgents).toHaveBeenCalledOnce();
+      expect(h.onClaim).toHaveBeenCalledExactlyOnceWith(phoneNumber);
+      expect(h.refreshAgents.mock.invocationCallOrder[0]).toBeLessThan(
+        h.onClaim.mock.invocationCallOrder[0],
+      );
+    },
+  );
+
+  it.each(["claim", "provision"])(
+    "preserves shared state for rejected or unconfirmed %s",
+    async (operation) => {
+      const fetchDefault = h.fetch.getMockImplementation()!;
+      const responses = [
+        json({ error: "Activation rejected" }, 409),
+        json({ ok: true, phone_number: "+13125550199" }),
+      ];
+      h.fetch.mockImplementation(async (url: string) =>
+        url.endsWith(`/${operation}`) ? responses.shift()! : fetchDefault(url),
+      );
+      await mount();
+      for (const message of ["Activation rejected", "could not be confirmed"]) {
+        if (operation === "provision") await search();
+        await button("(312) 555-0120").props.onClick!();
+        expect(alerts()).toEqual([expect.stringContaining(message)]);
+        expect(h.refreshAgents).not.toHaveBeenCalled();
+        expect(h.onClaim).not.toHaveBeenCalled();
+      }
+    },
+  );
 });
 
 describe("phone number picker recovery", () => {

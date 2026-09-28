@@ -32,6 +32,7 @@ const h = vi.hoisted(() => ({
   preferred: "bot-b",
   fetch: vi.fn(),
   navigate: vi.fn(),
+  refreshAgents: vi.fn(),
 }));
 
 vi.mock("react", async (original) => ({
@@ -79,7 +80,7 @@ vi.mock("../src/contexts/AgentsContext", () => ({
     agents: h.agents,
     loading: h.agentsLoading,
     degraded: false,
-    refresh: vi.fn(),
+    refresh: h.refreshAgents,
   }),
 }));
 vi.mock("../src/lib/api", () => ({ authFetch: h.fetch }));
@@ -239,6 +240,7 @@ beforeEach(() => {
   h.preferred = "bot-b";
   h.fetch.mockReset();
   h.navigate.mockReset();
+  h.refreshAgents.mockReset();
   vi.stubGlobal("window", {
     localStorage: { getItem: () => "bot-b" },
     setTimeout,
@@ -461,6 +463,88 @@ describe("Bot context across workspace pages", () => {
     );
     expect(billing?.props.to).toBe("/settings/billing");
     expect(text(phone())).toContain("Choose Starter");
+  });
+});
+
+describe("phone mutations refresh the shared roster", () => {
+  it("refreshes shared phone status after purchase even if the panel reload fails", async () => {
+    await loadLines([]);
+    h.fetch.mockImplementation(async (path: string) => {
+      if (path.endsWith("/available"))
+        return new Response(
+          JSON.stringify({ available: [{ phone_number: lines[1].phone_number }] }),
+        );
+      if (path.endsWith("/provision"))
+        return new Response(JSON.stringify({ ok: true, phone_number: lines[1].phone_number }));
+      return new Response(JSON.stringify({ error: "Line reload unavailable" }), { status: 503 });
+    });
+    await selectNumber();
+    button("Activate Line").props.onClick!();
+    await vi.waitFor(() => expect(h.refreshAgents).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(text(phone())).toContain("Line reload unavailable"));
+  });
+
+  it.each(["bot-a", null])("refreshes after confirmed assignment to %s", async (agentId) => {
+    await loadLines();
+    h.fetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ success: true, number: { id: "line-b", agentId } })),
+    );
+    const assignment = elements(phone()).find(
+      (node) =>
+        node.type === "select" &&
+        elements(node).some((child) => child.props["aria-label"] === "Assigned Bot"),
+    )!;
+    assignment.props.onValueChange!(agentId ?? "__unassigned__");
+    await vi.waitFor(() => expect(h.refreshAgents).toHaveBeenCalledOnce());
+    expect(text(selectedLine())).toContain(agentId ? "Alpha" : "Unassigned");
+    expect(JSON.parse(h.fetch.mock.calls.at(-1)![1].body)).toEqual({ agent_id: agentId });
+  });
+
+  it.each(["rejected", "unconfirmed"])("preserves shared state after %s purchase", async (kind) => {
+    await loadLines([]);
+    h.fetch.mockImplementation(async (path: string) =>
+      path.endsWith("/available")
+        ? new Response(JSON.stringify({ available: [{ phone_number: lines[1].phone_number }] }))
+        : new Response(JSON.stringify(kind === "rejected" ? { error: "Purchase rejected" } : {}), {
+            status: kind === "rejected" ? 409 : 200,
+          }),
+    );
+    await selectNumber();
+    button("Activate Line").props.onClick!();
+    await vi.waitFor(() =>
+      expect(text(phone())).toContain(
+        kind === "rejected" ? "Purchase rejected" : "could not be confirmed",
+      ),
+    );
+    expect(h.refreshAgents).not.toHaveBeenCalled();
+    expect(formBot().props.value).toBe("bot-b");
+  });
+
+  it.each(["rejected", "unconfirmed"])("preserves assignment after %s update", async (kind) => {
+    await loadLines();
+    h.fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify(
+          kind === "rejected"
+            ? { error: "Assignment rejected" }
+            : { success: true, number: { id: "line-b", agentId: "bot-b" } },
+        ),
+        { status: kind === "rejected" ? 409 : 200 },
+      ),
+    );
+    const assignment = elements(phone()).find(
+      (node) =>
+        node.type === "select" &&
+        elements(node).some((child) => child.props["aria-label"] === "Assigned Bot"),
+    )!;
+    assignment.props.onValueChange!("bot-a");
+    await vi.waitFor(() =>
+      expect(text(phone())).toContain(
+        kind === "rejected" ? "Assignment rejected" : "could not be confirmed",
+      ),
+    );
+    expect(h.refreshAgents).not.toHaveBeenCalled();
+    expect(text(selectedLine())).toContain("Bravo");
   });
 });
 

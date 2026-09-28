@@ -6,6 +6,7 @@ import { authFetch, readApiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { Input } from "./ui/shadcn/Input";
 import { ShadButton } from "./ui/shadcn/ShadButton";
+import { useAgents } from "../contexts/AgentsContext";
 
 interface AvailableNumber {
   phone_number: string;
@@ -35,6 +36,7 @@ function formatE164(e164: string): string {
 }
 
 export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumberPickerProps) {
+  const { refresh: refreshAgents } = useAgents();
   const [available, setAvailable] = useState<AvailableNumber[]>([]);
   const [areaCodes, setAreaCodes] = useState<AreaCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,11 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         if (!res.ok || data.ok === false) {
           throw new Error(data.error || "Could not activate that number");
         }
-        onClaim?.(data.phone_number || phoneNumber);
+        if (data.ok !== true || data.phone_number !== phoneNumber) {
+          throw new Error("Number activation could not be confirmed. Refresh your lines.");
+        }
+        refreshAgents();
+        onClaim?.(phoneNumber);
         return;
       }
       const res = await authFetch("/api/phone-numbers/claim", {
@@ -109,6 +115,10 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
       if (!res.ok) {
         throw new Error(data.error || "Could not claim that number");
       }
+      if (data.ok !== true || data.phone_number !== phoneNumber) {
+        throw new Error("Number activation could not be confirmed. Refresh your lines.");
+      }
+      refreshAgents();
       onClaim?.(phoneNumber);
     } catch (e: any) {
       setError(e?.message || "Claim failed");

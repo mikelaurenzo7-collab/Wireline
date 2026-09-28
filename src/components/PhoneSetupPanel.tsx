@@ -61,7 +61,12 @@ export default function PhoneSetupPanel({
   initialAgentId?: string;
   voiceEnabled?: boolean;
 }) {
-  const { agents, loading: agentsLoading, degraded: agentsDegraded } = useAgents();
+  const {
+    agents,
+    loading: agentsLoading,
+    degraded: agentsDegraded,
+    refresh: refreshAgents,
+  } = useAgents();
   const location = useLocation();
   const [numbers, setNumbers] = useState<PhoneNumberRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -325,6 +330,7 @@ export default function PhoneSetupPanel({
       }
       setMessage(body.reused ? "Existing line connected." : "Line activated.");
       setLiveNumberClosed(false);
+      refreshAgents();
       await loadNumbers(selectedAgentId);
       setAddingLine(false);
       setAreaCode("");
@@ -370,6 +376,7 @@ export default function PhoneSetupPanel({
         ),
       );
       setMessage(agentId ? "Bot assigned." : "Line unassigned.");
+      refreshAgents();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not update this line.");
     } finally {
