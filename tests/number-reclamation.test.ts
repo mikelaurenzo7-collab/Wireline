@@ -35,7 +35,12 @@ async function loadModule() {
   const { releaseNativeTenantNumber } = await import("../src/lib/voice/native-phone-release");
   const { runNumberReclamation, NUMBER_RECLAMATION_GRACE_DAYS } =
     await import("../src/lib/number-reclamation");
-  return { drizzle, releaseNativeTenantNumber, runNumberReclamation, NUMBER_RECLAMATION_GRACE_DAYS };
+  return {
+    drizzle,
+    releaseNativeTenantNumber,
+    runNumberReclamation,
+    NUMBER_RECLAMATION_GRACE_DAYS,
+  };
 }
 
 const candidateRow = { userId: "user-1", phoneNumber: "+15550001234" };
@@ -59,7 +64,9 @@ describe("number reclamation", () => {
     vi.mocked(releaseNativeTenantNumber).mockResolvedValue({ ok: true });
 
     const summary = await runNumberReclamation(NOW);
-    expect(releaseNativeTenantNumber).toHaveBeenCalledWith("user-1", "+15550001234");
+    expect(releaseNativeTenantNumber).toHaveBeenCalledWith("user-1", "+15550001234", {
+      reclaimCanceledBefore: new Date(NOW.getTime() - 30 * DAY_MS),
+    });
     expect(summary).toMatchObject({ examined: 1, released: 1, failed: 0, skipped: 0 });
   });
 
@@ -71,7 +78,9 @@ describe("number reclamation", () => {
     vi.mocked(releaseNativeTenantNumber).mockResolvedValue({ ok: true });
 
     const summary = await runNumberReclamation(NOW);
-    expect(releaseNativeTenantNumber).toHaveBeenCalledWith("user-1", "+15550001234");
+    expect(releaseNativeTenantNumber).toHaveBeenCalledWith("user-1", "+15550001234", {
+      reclaimCanceledBefore: new Date(NOW.getTime() - 30 * DAY_MS),
+    });
     expect(summary).toMatchObject({ examined: 1, released: 1, failed: 0, skipped: 0 });
   });
 
@@ -105,8 +114,12 @@ describe("number reclamation", () => {
   });
 
   it("respects the grace window on the re-verify anchor", async () => {
-    const { drizzle, releaseNativeTenantNumber, runNumberReclamation, NUMBER_RECLAMATION_GRACE_DAYS } =
-      await loadModule();
+    const {
+      drizzle,
+      releaseNativeTenantNumber,
+      runNumberReclamation,
+      NUMBER_RECLAMATION_GRACE_DAYS,
+    } = await loadModule();
     const insideGrace = new Date(NOW.getTime() - (NUMBER_RECLAMATION_GRACE_DAYS - 1) * DAY_MS);
     vi.mocked(drizzle.select)
       .mockImplementationOnce(() => chain([candidateRow]) as never)
@@ -126,6 +139,20 @@ describe("number reclamation", () => {
 
     const summary = await runNumberReclamation(NOW);
     expect(summary).toMatchObject({ examined: 1, released: 0, failed: 1 });
+  });
+
+  it("counts an in-transaction billing change as skipped rather than a carrier failure", async () => {
+    const { drizzle, releaseNativeTenantNumber, runNumberReclamation } = await loadModule();
+    vi.mocked(drizzle.select)
+      .mockImplementationOnce(() => chain([candidateRow]) as never)
+      .mockImplementationOnce(() => chain([verifyRow()]) as never);
+    vi.mocked(releaseNativeTenantNumber).mockResolvedValue({ ok: false, skipped: true });
+    expect(await runNumberReclamation(NOW)).toEqual({
+      examined: 1,
+      released: 0,
+      failed: 0,
+      skipped: 1,
+    });
   });
 
   it("wires the daily sweep and the job handler to this module", () => {

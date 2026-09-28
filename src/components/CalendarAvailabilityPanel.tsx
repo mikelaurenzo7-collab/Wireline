@@ -98,6 +98,7 @@ export default function CalendarAvailabilityPanel({
   }
 
   function change(patch: Partial<CalendarSettings>) {
+    if (savingRef.current) return;
     setSaved(false);
     onChange({ ...settings, ...patch });
   }

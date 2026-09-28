@@ -44,6 +44,7 @@ const TOOL_FAILURE_PATTERNS = [
   /\bwas not confirmed\b/i,
   /^No email was sent\./i,
   /^EMAIL_CONFIRMATION_REQUIRED\b/,
+  /^DELIVERY_FAILED\b/,
   /^That action is not enabled\b/i,
   /\bdid not complete successfully\b/i,
   /\bcouldn['’]t safely verify whether that action was already processed\b/i,

@@ -15,8 +15,10 @@
  *   keeps every number.
  * - The app-side `settings.subscriptionStatus` must agree the workspace is not
  *   active — both truth sources must consent before anything destructive runs.
- * - Each release re-verifies its tenant with a fresh read immediately before
- *   touching the carrier, and the run is bounded to
+ * - Each release shares subscription synchronization's customer lease, checks
+ *   pending checkout work and current Stripe state before starting carrier
+ *   deletion, and revalidates local billing while locked. Once the carrier
+ *   DELETE has begun, a new remote payment cannot undo it. The run is bounded to
  *   {@link NUMBER_RECLAMATION_MAX_PER_RUN} releases so a query bug can never
  *   mass-release the fleet in one pass.
  *
@@ -113,14 +115,17 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
       continue;
     }
     // The candidate query and this release can be minutes apart under carrier
-    // latency — a resubscribe in between must win.
+    // latency. The release helper separately checks current provider state at
+    // the final, irreversible release boundary.
     const stillReclaimable = await tenantStillReclaimable(candidate.userId, cutoff);
     if (!stillReclaimable) {
       summary.skipped++;
       continue;
     }
     try {
-      const result = await releaseNativeTenantNumber(candidate.userId, candidate.phoneNumber);
+      const result = await releaseNativeTenantNumber(candidate.userId, candidate.phoneNumber, {
+        reclaimCanceledBefore: cutoff,
+      });
       if (result.ok) {
         summary.released++;
         log.info("number reclamation released canceled workspace line", {
@@ -128,6 +133,8 @@ export async function runNumberReclamation(now = new Date()): Promise<NumberRecl
           phoneSuffix: phoneSuffixForLog(candidate.phoneNumber),
           graceDays: NUMBER_RECLAMATION_GRACE_DAYS,
         });
+      } else if (result.skipped) {
+        summary.skipped++;
       } else {
         summary.failed++;
         log.warn("number reclamation release failed, will retry next run", {

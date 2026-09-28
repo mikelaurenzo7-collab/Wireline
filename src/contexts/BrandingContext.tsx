@@ -20,6 +20,8 @@ type BrandingSettings = {
   primary_product: string;
 };
 
+type BrandingDraft = Pick<BrandingSettings, "brand_name" | "brand_logo_url" | "primary_color">;
+
 const DEFAULT_BRANDING: BrandingSettings = {
   brand_name: "BotBound",
   brand_logo_url: "",
@@ -33,6 +35,10 @@ type BrandingContextType = {
   branding: BrandingSettings;
   updateBranding: (newSettings: Partial<BrandingSettings>) => void;
   isLoading: boolean;
+  isSaving: boolean;
+  saveDraft: BrandingDraft | null;
+  saveError: string | null;
+  beginBrandingSave: (draft: BrandingDraft) => ((error: string | null) => void) | null;
 };
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
@@ -43,6 +49,14 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const scopeRef = useRef({ ownerId });
   if (scopeRef.current.ownerId !== ownerId) scopeRef.current = { ownerId };
   const scope = scopeRef.current;
+  type BrandingSave = {
+    scope: typeof scope;
+    draft: BrandingDraft;
+    isSaving: boolean;
+    error: string | null;
+  };
+  const pendingSaveRef = useRef<BrandingSave | null>(null);
+  const [pendingSave, setPendingSave] = useState<BrandingSave | null>(null);
   const [state, setState] = useState(() => ({
     scope,
     branding: DEFAULT_BRANDING,
@@ -52,6 +66,34 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   // account's settings while the new owner's effect or request is still pending.
   const branding = state.scope === scope ? state.branding : DEFAULT_BRANDING;
   const isLoading = state.scope === scope ? state.isLoading : Boolean(ownerId);
+  const currentSave = pendingSave?.scope === scope ? pendingSave : null;
+  const isSaving = currentSave?.isSaving ?? false;
+  const saveDraft = currentSave?.draft ?? null;
+  const saveError = currentSave?.error ?? null;
+  const beginBrandingSave = useCallback(
+    (draft: BrandingDraft) => {
+      if (
+        !ownerId ||
+        scopeRef.current !== scope ||
+        isLoading ||
+        pendingSaveRef.current?.scope === scope
+      )
+        return null;
+      const operation: BrandingSave = { scope, draft: { ...draft }, isSaving: true, error: null };
+      pendingSaveRef.current = operation;
+      setPendingSave(operation);
+      return (error: string | null) => {
+        if (pendingSaveRef.current !== operation) return;
+        pendingSaveRef.current = null;
+        // Keep the submitted draft through editor remounts and failed saves.
+        // A departed owner cannot expose it to the current account.
+        setPendingSave(
+          error && scopeRef.current === scope ? { ...operation, isSaving: false, error } : null,
+        );
+      };
+    },
+    [ownerId, scope, isLoading],
+  );
 
   useEffect(() => {
     if (!ownerId) {
@@ -118,8 +160,16 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ branding, updateBranding, isLoading }),
-    [branding, updateBranding, isLoading],
+    () => ({
+      branding,
+      updateBranding,
+      isLoading,
+      isSaving,
+      saveDraft,
+      saveError,
+      beginBrandingSave,
+    }),
+    [branding, updateBranding, isLoading, isSaving, saveDraft, saveError, beginBrandingSave],
   );
 
   return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;

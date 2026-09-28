@@ -462,6 +462,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   const [bucket, setBucket] = useState<ApprovalBucket>("pending");
   const [triage, setTriage] = useState<TriageBucket | null>(null);
   const [tasks, setTasks] = useState<FollowUpTaskRow[]>([]);
+  const [tasksLoaded, setTasksLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [triageUnavailable, setTriageUnavailable] = useState(false);
@@ -493,16 +494,19 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       const validTasks = tasksRes?.ok ? parseApprovalTasks(tasksBody) : null;
       const triageReady = validTriage !== null;
       const tasksReady = validTasks !== null;
-      if (!triageReady && !tasksReady) {
-        setError("Could not load approval inbox.");
-        setTriage(null);
-        setTasks([]);
-        return;
-      }
       setTriageUnavailable(!triageReady);
       setTasksUnavailable(!tasksReady);
-      setTriage(validTriage);
-      setTasks(validTasks || []);
+      if (!triageReady && !tasksReady) {
+        setError("Could not load approval inbox.");
+        return;
+      }
+      // A background refresh must not unmount another card's unsaved draft,
+      // including when only one queue can be refreshed.
+      if (validTriage) setTriage(validTriage);
+      if (validTasks) {
+        setTasks(validTasks);
+        setTasksLoaded(true);
+      }
     } catch {
       if (controller.signal.aborted) return;
       setError("Could not load approval inbox.");
@@ -574,6 +578,15 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
   );
   const bucketUnavailable =
     bucket === "pending" || bucket === "compliance" ? tasksUnavailable : triageUnavailable;
+  const bucketLoaded =
+    bucket === "pending" || bucket === "compliance" ? tasksLoaded : triage !== null;
+
+  function resolveTask(id: string) {
+    // The mutation has already succeeded. Remove only that item immediately,
+    // so a failed refresh cannot offer the same action again.
+    setTasks((current) => current.filter((task) => task.id !== id));
+    void load();
+  }
 
   const approvalTabs = (Object.keys(BUCKET_LABELS) as ApprovalBucket[]).map((key) => {
     // A failed load must not dress the tabs in confident "(0)" counts beside
@@ -618,16 +631,13 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
             </ShadButton>
           }
         >
-          Other queues are still available.
+          {bucketLoaded
+            ? "Last loaded items remain available. Try again to refresh the queues."
+            : "Other queues are still available."}
         </StatusNotice>
       ) : null}
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          Loading approvals…
-        </div>
-      ) : error ? (
+      {error && !loading ? (
         <StatusNotice
           tone="destructive"
           title="Approvals Unavailable"
@@ -637,22 +647,34 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
             </ShadButton>
           }
         >
-          Nothing was changed. Try again to load approvals.
+          {bucketLoaded
+            ? "Could not refresh approvals. Last loaded items are shown."
+            : "Nothing was changed. Try again to load approvals."}
         </StatusNotice>
-      ) : bucketUnavailable ? null : bucket === "pending" || bucket === "compliance" ? (
+      ) : null}
+
+      {loading && !bucketLoaded ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          Loading approvals…
+        </div>
+      ) : !bucketLoaded && (error || bucketUnavailable) ? null : bucket === "pending" ||
+        bucket === "compliance" ? (
         actionableTasks.length === 0 ? (
-          <ApprovalEmptyCard
-            title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}
-            description={
-              bucket === "compliance"
-                ? "Reviews that need you will appear here."
-                : "Nothing needs your approval."
-            }
-          />
+          !loading && !error && !bucketUnavailable ? (
+            <ApprovalEmptyCard
+              title={bucket === "compliance" ? "Compliance Queue Clear" : "Approval Queue Clear"}
+              description={
+                bucket === "compliance"
+                  ? "Reviews that need you will appear here."
+                  : "Nothing needs your approval."
+              }
+            />
+          ) : null
         ) : (
           <div className="grid gap-3">
             {actionableTasks.slice(0, visibleCount).map((task) => (
-              <ApprovalTaskCard key={task.id} task={task} onResolved={() => void load()} />
+              <ApprovalTaskCard key={task.id} task={task} onResolved={() => resolveTask(task.id)} />
             ))}
             {actionableTasks.length > visibleCount ? (
               <ShadButton
@@ -672,10 +694,12 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           </div>
         )
       ) : bucketItems.length === 0 ? (
-        <ApprovalEmptyCard
-          title={`${BUCKET_LABELS[bucket]} Clear`}
-          description="Nothing needs your attention."
-        />
+        !loading && !error && !bucketUnavailable ? (
+          <ApprovalEmptyCard
+            title={`${BUCKET_LABELS[bucket]} Clear`}
+            description="Nothing needs your attention."
+          />
+        ) : null
       ) : (
         <div className="grid gap-3">
           {bucketItems.slice(0, visibleCount).map((item) => {

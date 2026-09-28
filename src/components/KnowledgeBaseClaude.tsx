@@ -192,7 +192,15 @@ async function readAsset(file: File, imageUploadsAvailable: boolean): Promise<As
   return { fileName: file.name, mimeType: mimeType || "text/plain", text: await file.text() };
 }
 
-export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
+export default function KnowledgeBaseClaude({
+  agentId,
+  externallyBusy = false,
+  onInteractionChange,
+}: {
+  agentId: string;
+  externallyBusy?: boolean;
+  onInteractionChange?: (busy: boolean) => void;
+}) {
   const [config, setConfig] = useState<AgentConfig | null>(null);
   const imageUploadsAvailable = config?.capabilities?.image_uploads === true;
   const [loading, setLoading] = useState(true);
@@ -224,6 +232,15 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const activeAgentIdRef = useRef(agentId);
   const agentScopeRevisionRef = useRef(0);
   const agentOperationControllersRef = useRef(new Set<AbortController>());
+  const entryMutationPending =
+    externallyBusy || uploading || loading || Boolean(knowledgeBusyId) || Boolean(ruleBusyId);
+  const entryEditorOpen =
+    Boolean(editingKnowledgeId) || Boolean(editingRuleId) || Boolean(confirmDeleteKnowledgeId);
+  useLayoutEffect(() => {
+    onInteractionChange?.(
+      uploading || loading || Boolean(knowledgeBusyId) || Boolean(ruleBusyId) || entryEditorOpen,
+    );
+  }, [uploading, loading, knowledgeBusyId, ruleBusyId, entryEditorOpen, onInteractionChange]);
 
   useLayoutEffect(() => {
     const operationControllers = agentOperationControllersRef.current;
@@ -326,9 +343,13 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
       setEntryError("Finish editing the rule before uploading files.");
       return;
     }
+    if (editingKnowledgeId || knowledgeBusyId || confirmDeleteKnowledgeId) {
+      setEntryError("Finish editing or removing the knowledge entry before uploading files.");
+      return;
+    }
     const picked = Array.from(files);
     const list = picked.slice(0, KNOWLEDGE_ASSET_MAX_FILES);
-    if (!list.length || uploading || loading) return;
+    if (!list.length || entryMutationPending) return;
     const operation = startAgentOperation();
     setUploading(true);
     setNotice(null);
@@ -415,6 +436,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   }
 
   function beginKnowledgeEdit(entry: ConfigKnowledgeRow) {
+    if (entryMutationPending || entryEditorOpen) return;
     const rowId = knowledgeRowId(entry);
     if (!rowId) return;
     setEditingKnowledgeId(rowId);
@@ -432,6 +454,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   }
 
   function beginKnowledgeRemoval(rowId: string) {
+    if (entryMutationPending || entryEditorOpen) return;
     setEditingKnowledgeId(null);
     setKnowledgeDraft("");
     setConfirmDeleteKnowledgeId(rowId);
@@ -447,6 +470,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   }
 
   async function saveKnowledgeEntry(rowId: string) {
+    if (entryMutationPending || editingKnowledgeId !== rowId) return;
     const content = knowledgeDraft.trim();
     if (!content) {
       setEntryError("Knowledge cannot be empty. Remove the entry instead.");
@@ -489,6 +513,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   }
 
   async function removeKnowledgeEntry(rowId: string) {
+    if (entryMutationPending || confirmDeleteKnowledgeId !== rowId) return;
     const operation = startAgentOperation();
     setKnowledgeBusyId(rowId);
     setEntryError(null);
@@ -528,7 +553,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
 
   async function saveRule(rowId: string) {
     const content = ruleDraft.trim();
-    if (!content || ruleBusyId || uploading || loading) return;
+    if (!content || entryMutationPending || editingRuleId !== rowId) return;
     const operation = startAgentOperation();
     setRuleBusyId(rowId);
     setEntryError(null);
@@ -645,7 +670,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                     <Button
                       type="button"
                       size="sm"
-                      disabled={busy || uploading || loading || !ruleDraft.trim()}
+                      disabled={entryMutationPending || !ruleDraft.trim()}
                       onClick={() => void saveRule(rowId)}
                     >
                       {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
@@ -678,10 +703,10 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                       variant="ghost"
                       size="sm"
                       className="shrink-0"
-                      disabled={Boolean(ruleBusyId) || uploading || loading}
+                      disabled={entryMutationPending || entryEditorOpen}
                       aria-label={`Edit rule: ${headline}`}
                       onClick={() => {
-                        if (ruleBusyId || uploading || loading) return;
+                        if (entryMutationPending || entryEditorOpen) return;
                         setEditingRuleId(rowId);
                         setRuleDraft(directive.content || "");
                         setEntryError(null);
@@ -716,7 +741,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     <button
       type="button"
       onClick={() => fileInputRef.current?.click()}
-      disabled={uploading || loading || Boolean(editingRuleId) || Boolean(ruleBusyId) || !agentId}
+      disabled={entryMutationPending || entryEditorOpen || !agentId}
       className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[var(--wireline-radius-sm)] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: "var(--wireline-color-action-primary-default)",
@@ -740,7 +765,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
         ref={fileInputRef}
         type="file"
         multiple
-        disabled={uploading || loading || Boolean(editingRuleId) || Boolean(ruleBusyId) || !agentId}
+        disabled={entryMutationPending || entryEditorOpen || !agentId}
         // Visually hidden but still in the accessibility tree, so it needs a
         // name of its own: axe reports an unlabelled control otherwise, and a
         // screen reader announces only "file upload button".
@@ -842,7 +867,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                         <Button
                           type="button"
                           size="sm"
-                          disabled={busy || !knowledgeDraft.trim()}
+                          disabled={entryMutationPending || !knowledgeDraft.trim()}
                           onClick={() => void saveKnowledgeEntry(rowId)}
                         >
                           {busy ? (
@@ -916,7 +941,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={Boolean(knowledgeBusyId)}
+                            disabled={entryMutationPending || entryEditorOpen}
                             onClick={() => beginKnowledgeEdit(entry)}
                             aria-label={`Edit ${headline}`}
                           >
@@ -931,7 +956,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            disabled={Boolean(knowledgeBusyId)}
+                            disabled={entryMutationPending || entryEditorOpen}
                             onClick={() => beginKnowledgeRemoval(rowId)}
                             aria-label={`Remove ${headline}`}
                           >

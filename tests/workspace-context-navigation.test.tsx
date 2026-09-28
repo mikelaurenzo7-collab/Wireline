@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PhoneSetupPanel from "../src/components/PhoneSetupPanel";
 import StudioAgentReviewPanel from "../src/components/StudioAgentReviewPanel";
 import StudioWorkroom from "../src/components/StudioWorkroom";
-import KnowledgePage from "../src/pages/KnowledgePage";
+import KnowledgePage, { KnowledgeEditor } from "../src/pages/KnowledgePage";
 
 vi.mock("../src/hooks/useChannelEntitlements", () => ({
   useChannelEntitlements: () => ({
@@ -141,6 +141,10 @@ type Props = {
   onClick?: () => unknown;
   onValueChange?: (value: string) => void;
   onChange?: () => void;
+  externallyBusy?: boolean;
+  onInteractionChange?: (busy: boolean) => void;
+  onImportingChange?: (busy: boolean) => void;
+  onImported?: () => void;
   type?: string;
   onKeyDown?: (event: { key: string; preventDefault: () => void }) => void;
 };
@@ -293,8 +297,10 @@ describe("Bot context across workspace pages", () => {
       if (requested) h.params.set("agent", requested);
       const expected = requested === "bot-a" ? "bot-a" : "bot-b";
       const nodes = elements(render(KnowledgePage));
+      expect(nodes.find((node) => node.type === KnowledgeEditor)?.props.agentId).toBe(expected);
+      const editorNodes = elements(render(() => KnowledgeEditor({ agentId: expected })));
       for (const type of ["knowledge-base", "website-import"]) {
-        expect(nodes.find((node) => node.type === type)?.props.agentId).toBe(expected);
+        expect(editorNodes.find((node) => node.type === type)?.props.agentId).toBe(expected);
       }
       expect(nodes.find((node) => node.type === "select")?.props.value).toBe(expected);
       expect(
@@ -302,6 +308,30 @@ describe("Bot context across workspace pages", () => {
       ).toBe(`/studio?agent=${expected}&section=test`);
     },
   );
+
+  it("coordinates website import with open Knowledge drafts and its refresh", () => {
+    const editor = () => elements(render(() => KnowledgeEditor({ agentId: "bot-a" })));
+    const base = () => editor().find((node) => node.type === "knowledge-base")!;
+    const website = () => editor().find((node) => node.type === "website-import")!;
+    expect(website().props.disabled).toBe(true);
+    base().props.onInteractionChange!(false);
+    expect(website().props.disabled).toBe(false);
+    base().props.onInteractionChange!(true);
+    expect(website().props.disabled).toBe(true);
+    const before = base().key;
+    base().props.onInteractionChange!(false);
+    website().props.onImportingChange!(true);
+    expect(base().props.externallyBusy).toBe(true);
+    expect(base().key).toBe(before);
+    website().props.onImported!();
+    expect(base().key).not.toBe(before);
+    base().props.onInteractionChange!(true);
+    website().props.onImportingChange!(false);
+    expect(base().props.externallyBusy).toBe(false);
+    expect(website().props.disabled).toBe(true);
+    base().props.onInteractionChange!(false);
+    expect(website().props.disabled).toBe(false);
+  });
 
   it("opens the selected Bot's line without overriding manual line or form choices on roster refresh", async () => {
     await loadLines();

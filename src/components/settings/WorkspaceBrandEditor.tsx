@@ -15,6 +15,8 @@ type WorkspaceBrandEditorProps = {
   onUpdate: (next: WorkspaceBrandForm) => void;
   onSave: () => void;
   isSaving?: boolean;
+  isLoading?: boolean;
+  saveError?: string | null;
 };
 
 function previewTextColor(hex: string): string {
@@ -34,6 +36,8 @@ export default function WorkspaceBrandEditor({
   onUpdate,
   onSave,
   isSaving = false,
+  isLoading = false,
+  saveError = null,
 }: WorkspaceBrandEditorProps) {
   const baseId = useId();
   const nameId = `${baseId}-name`;
@@ -60,7 +64,7 @@ export default function WorkspaceBrandEditor({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4">
+        <fieldset disabled={isSaving || isLoading} className="min-w-0 space-y-4">
           <div>
             <label htmlFor={nameId} className="app-field-label">
               Workspace name
@@ -117,10 +121,15 @@ export default function WorkspaceBrandEditor({
               </p>
             ) : null}
           </div>
-          <Button type="button" onClick={onSave} disabled={isSaving || !validColor}>
-            {isSaving ? "Saving…" : "Save branding"}
+          {saveError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {saveError} Your changes are kept. Try again.
+            </p>
+          ) : null}
+          <Button type="button" onClick={onSave} disabled={isSaving || isLoading || !validColor}>
+            {isLoading ? "Loading…" : isSaving ? "Saving…" : "Save branding"}
           </Button>
-        </div>
+        </fieldset>
 
         <div
           className="flex flex-col justify-center rounded-xl border border-border p-5"

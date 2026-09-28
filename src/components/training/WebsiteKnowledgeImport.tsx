@@ -16,9 +16,13 @@ type ImportResponse = {
 export default function WebsiteKnowledgeImport({
   agentId,
   onImported,
+  disabled = false,
+  onImportingChange,
 }: {
   agentId: string;
   onImported: () => void;
+  disabled?: boolean;
+  onImportingChange?: (importing: boolean) => void;
 }) {
   const [url, setUrl] = useState("");
   const [importing, setImporting] = useState(false);
@@ -41,7 +45,7 @@ export default function WebsiteKnowledgeImport({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!agentId || importing) return;
+    if (!agentId || importing || disabled) return;
     const value = url.trim();
     if (!value) {
       setError("Enter a public HTTPS website page.");
@@ -68,6 +72,7 @@ export default function WebsiteKnowledgeImport({
     }
 
     setImporting(true);
+    onImportingChange?.(true);
     setError(null);
     setNotice(null);
     const importScope = importScopeRef.current;
@@ -101,7 +106,10 @@ export default function WebsiteKnowledgeImport({
         reason instanceof Error ? reason.message : "That website page could not be imported.",
       );
     } finally {
-      if (isCurrentImport()) setImporting(false);
+      if (isCurrentImport()) {
+        setImporting(false);
+        onImportingChange?.(false);
+      }
     }
   }
 
@@ -139,10 +147,14 @@ export default function WebsiteKnowledgeImport({
           value={url}
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://yourcompany.com/services"
-          disabled={importing || !agentId}
+          disabled={disabled || importing || !agentId}
           className="min-h-11 min-w-0 flex-1 rounded-[var(--wireline-radius-md)] border border-[var(--wireline-color-border-default)] bg-[var(--wireline-color-surface-default)] px-3 text-sm text-[var(--wireline-color-text-primary)] outline-none transition placeholder:text-[var(--wireline-color-text-tertiary)] focus:border-[var(--wireline-color-action-primary-default)] focus:ring-2 focus:ring-[var(--wireline-color-action-primary-container)] disabled:cursor-not-allowed disabled:opacity-60"
         />
-        <Button type="submit" disabled={importing || !agentId || !url.trim()} className="sm:w-auto">
+        <Button
+          type="submit"
+          disabled={disabled || importing || !agentId || !url.trim()}
+          className="sm:w-auto"
+        >
           {importing ? (
             <>
               <Loader2 size={15} className="animate-spin" aria-hidden="true" />

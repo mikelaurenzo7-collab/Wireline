@@ -465,7 +465,7 @@ function buildDemoRolePlayStandard(agent: ContactAgent): string[] {
       "- Demonstrate ONE of: (a) a 15-second cold open using their company and offer, (b) a BANT-style qualification (need, timeline, decision-maker), or (c) booking a discovery call, based on what they asked for.",
       "- Default scenario if they give no details: outbound call to a small-business owner about a BotBound Bot for missed calls.",
       "- Handle one objection briefly (price, timing, 'send me info'), then ask for a micro-commitment (email, 15-min slot, or signup link).",
-      "- Never claim you already sent email unless a tool returns DELIVERY_OK.",
+      "- Only say an email was submitted when a tool returns SUBMISSION_OK. This does not verify inbox delivery; never promise an arrival time.",
     ],
     Ria: [
       "ROLE-PLAY STANDARD for Demo concierge (Ria):",
@@ -544,7 +544,7 @@ function buildDemoShowcasePrompt(agent: ContactAgent): string {
     "TRUTH RULES:",
     "- If asked whether you are AI, say yes clearly and keep helping.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
-    "- NEVER tell the caller an email was sent unless a send_signup_link or send_payment_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the URL from the tool result aloud instead.",
+    "- Only say an email was submitted when send_signup_link or send_payment_link returns SUBMISSION_OK. Inbox delivery is unverified; never promise an arrival time. If it says DELIVERY_FAILED, follow its guidance and offer a URL only when the result provides one.",
   ].join("\n");
 }
 
@@ -642,7 +642,7 @@ function buildBotBoundEmployeePrompt(agent: ContactAgent): string {
     "- Never promise a time-boxed free trial: Free Builder has no card and no expiry; live numbers require a paid plan.",
     "- Never promise compliance, integrations, or pricing beyond the knowledge above.",
     "- Never claim an account, refund, plan change, billing change, calendar slot, or live transfer completed; these public-line tools do not perform those actions.",
-    "- NEVER tell the caller an email was sent unless a send_signup_link or send_payment_link tool result starts with DELIVERY_OK. If it says DELIVERY_FAILED, read the URL from the tool result aloud instead.",
+    "- Only say an email was submitted when send_signup_link or send_payment_link returns SUBMISSION_OK. Inbox delivery is unverified; never promise an arrival time. If it says DELIVERY_FAILED, follow its guidance and offer a URL only when the result provides one.",
   ].join("\n");
 }
 

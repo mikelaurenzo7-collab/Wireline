@@ -44,6 +44,7 @@ async function recoverCreatedSchedule(
   binding: CapacityBinding,
   sub: Stripe.Subscription,
   client: Client,
+  assertSyncLease?: () => Promise<void>,
 ) {
   try {
     return await ownedSchedule(binding, sub, client);
@@ -52,10 +53,12 @@ async function recoverCreatedSchedule(
     if (!intent || !sub.schedule) throw error;
     // This is a mutation endpoint only. Stripe's exact create receipt proves
     // ownership of an interrupted attempt; metadata alone cannot adopt a schedule.
+    await assertSyncLease?.();
     const recovered = await client.subscriptionSchedules.create(
       { from_subscription: sub.id },
       { idempotencyKey: `${intent.key}:create` },
     );
+    await assertSyncLease?.();
     if (
       recovered.id !== idOf(sub.schedule) ||
       idOf(recovered.customer) !== binding.customerId ||
@@ -229,10 +232,15 @@ export async function getCapacityUpgradeStatus(
 export async function releaseOwnedCapacitySchedule(
   binding: CapacityBinding,
   client: Client,
+  assertSyncLease?: () => Promise<void>,
 ): Promise<boolean> {
   const { sub } = await readSubscription(binding, client);
+  await assertSyncLease?.();
   const intent = operationIntent(sub);
-  const schedule = sub.schedule ? await recoverCreatedSchedule(binding, sub, client) : null;
+  const schedule = sub.schedule
+    ? await recoverCreatedSchedule(binding, sub, client, assertSyncLease)
+    : null;
+  await assertSyncLease?.();
   if (!schedule && !intent) return false;
   if (schedule) {
     const released = await client.subscriptionSchedules.release(
@@ -240,6 +248,7 @@ export async function releaseOwnedCapacitySchedule(
       { preserve_cancel_date: true },
       { idempotencyKey: `capacity:${schedule.id}:release` },
     );
+    await assertSyncLease?.();
     if (
       released.status !== "released" ||
       idOf(released.released_subscription) !== binding.subscriptionId
@@ -269,20 +278,24 @@ export async function releaseOwnedCapacitySchedule(
 export async function releaseAppliedCapacitySchedule(
   binding: CapacityBinding,
   client: Client,
+  assertSyncLease?: () => Promise<void>,
 ): Promise<void> {
   const { sub, plan } = await readSubscription(binding, client);
+  await assertSyncLease?.();
   if (plan?.id !== binding.planId) return;
   const intent = operationIntent(sub);
   if (!sub.schedule) {
-    if (intent?.target.id === binding.planId) await releaseOwnedCapacitySchedule(binding, client);
+    if (intent?.target.id === binding.planId)
+      await releaseOwnedCapacitySchedule(binding, client, assertSyncLease);
     return;
   }
   const schedule = await ownedSchedule(binding, sub, client);
+  await assertSyncLease?.();
   if (
     schedule?.metadata?.wireline_target_plan === binding.planId &&
     Number(schedule.metadata?.wireline_effective_at) <= Math.floor(Date.now() / 1000)
   )
-    await releaseOwnedCapacitySchedule(binding, client);
+    await releaseOwnedCapacitySchedule(binding, client, assertSyncLease);
 }
 
 /** Caller serializes this operation per tenant. Stripe keys survive a lost response. */

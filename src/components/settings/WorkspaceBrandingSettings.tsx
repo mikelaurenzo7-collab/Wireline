@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import WorkspaceBrandEditor, { type WorkspaceBrandForm } from "./WorkspaceBrandEditor";
 import { useBranding } from "../../contexts/BrandingContext";
@@ -17,23 +17,35 @@ const EMPTY: WorkspaceBrandForm = {
  * Lives on Settings → Appearance so branding is not buried under Admin.
  */
 export default function WorkspaceBrandingSettings() {
-  const { branding, updateBranding, isLoading } = useBranding();
+  const {
+    branding,
+    updateBranding,
+    isLoading,
+    isSaving: saving,
+    saveDraft,
+    saveError,
+    beginBrandingSave,
+  } = useBranding();
   const { success: toastSuccess, error: toastError } = useToast();
   const [form, setForm] = useState<WorkspaceBrandForm>(EMPTY);
-  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
+    const source = saveDraft ?? branding;
     setForm({
-      brand_name: branding.brand_name || "",
-      brand_logo_url: branding.brand_logo_url || "",
-      primary_color: branding.primary_color || BRAND.colors.primary,
+      brand_name: source.brand_name || "",
+      brand_logo_url: source.brand_logo_url || "",
+      primary_color: source.primary_color || BRAND.colors.primary,
     });
-  }, [branding, isLoading]);
+  }, [branding, isLoading, saveDraft]);
 
   async function save() {
-    if (saving) return;
-    setSaving(true);
+    if (savingRef.current || isLoading) return;
+    const releaseSave = beginBrandingSave(form);
+    if (!releaseSave) return;
+    savingRef.current = true;
+    let failure: string | null = null;
     try {
       const response = await authFetch("/api/settings", {
         method: "POST",
@@ -49,21 +61,24 @@ export default function WorkspaceBrandingSettings() {
       updateBranding(form);
       toastSuccess("Brand saved", "Workspace name, logo, and color updated.");
     } catch (error) {
-      toastError(
-        "Save failed",
-        error instanceof Error ? error.message : "Brand settings could not be saved.",
-      );
+      failure = error instanceof Error ? error.message : "Brand settings could not be saved.";
+      toastError("Save failed", failure);
     } finally {
-      setSaving(false);
+      savingRef.current = false;
+      releaseSave(failure);
     }
   }
 
   return (
     <WorkspaceBrandEditor
       settings={form}
-      onUpdate={setForm}
+      onUpdate={(next) => {
+        if (!saving && !savingRef.current && !isLoading) setForm(next);
+      }}
       onSave={() => void save()}
       isSaving={saving}
+      isLoading={isLoading}
+      saveError={saveError}
     />
   );
 }

@@ -40,11 +40,14 @@ export async function handleSendPaymentLink(
   try {
     const { to_email, plan, email_confirmed } = args;
     if (!looksLikeEmail(to_email)) {
-      return { result: "I couldn't parse that email. Ask the caller to spell it out, then try again." };
+      return {
+        result:
+          "DELIVERY_FAILED: No email was sent. Ask the caller to spell the address, then read it back before trying again.",
+      };
     }
     if (!isEmailConfirmed(email_confirmed)) {
       return {
-        result: `Read "${to_email}" back to the caller to confirm, then call send_payment_link again with email_confirmed set to true.`,
+        result: `DELIVERY_FAILED: No email was sent. Read "${to_email}" back to the caller to confirm, then call send_payment_link again with email_confirmed set to true.`,
       };
     }
 
@@ -56,9 +59,9 @@ export async function handleSendPaymentLink(
       planLabel: plan || undefined,
     });
     if (sent.ok) {
-      deps.log.info?.("send_payment_link delivered", { to: to_email, resendId: sent.id, payUrl });
+      deps.log.info?.("send_payment_link submitted", { to: to_email, resendId: sent.id, payUrl });
       return {
-        result: `DELIVERY_OK: Payment link sent to ${to_email}. Tell the caller it should arrive within a minute. Do not claim delivery unless you see DELIVERY_OK.`,
+        result: `SUBMISSION_OK: Payment link submitted to ${to_email}. Inbox delivery has not been verified. Do not promise an arrival time or automatically resend.`,
       };
     }
     deps.log.error("send_payment_link delivery failed", {
@@ -67,14 +70,14 @@ export async function handleSendPaymentLink(
       payUrl,
     });
     return {
-      result: `DELIVERY_FAILED: Email could not be sent (${sent.error || "transport error"}). Do NOT tell the caller it was sent. Read this URL aloud and confirm they wrote it down: ${payUrl}`,
+      result: `DELIVERY_FAILED: Email submission was not confirmed. Do not claim it was sent or automatically retry. Read this URL aloud and confirm they wrote it down: ${payUrl}`,
     };
   } catch (error) {
     deps.log.error("send_payment_link tool failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return {
-      result: "I wasn't able to send that link right now. Let the caller know they can visit botbound.app/pricing to get started.",
+      result: `DELIVERY_FAILED: Email submission was not confirmed. Do not claim it was sent or automatically retry. Offer this URL instead: ${resolveAppUrl(deps.appUrl)}/pricing`,
     };
   }
 }
@@ -96,12 +99,13 @@ export async function handleSendSignupLink(
     const { to_email, caller_name, email_confirmed } = args;
     if (!looksLikeEmail(to_email)) {
       return {
-        result: "I couldn't parse that email. Ask the caller to spell it out letter by letter, then read it back to confirm before trying again.",
+        result:
+          "DELIVERY_FAILED: No email was sent. Ask the caller to spell the address letter by letter, then read it back to confirm before trying again.",
       };
     }
     if (!isEmailConfirmed(email_confirmed)) {
       return {
-        result: `Before I send this, confirm the address out loud: read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call send_signup_link again with email_confirmed set to true.`,
+        result: `DELIVERY_FAILED: No email was sent. Confirm the address out loud: read "${to_email}" back to the caller slowly, spelling anything ambiguous, and ask "is that correct?". Once they confirm, call send_signup_link again with email_confirmed set to true.`,
       };
     }
 
@@ -112,13 +116,13 @@ export async function handleSendSignupLink(
     });
     const signupUrl = `${resolveAppUrl(deps.appUrl)}/signup`;
     if (sent.ok) {
-      deps.log.info?.("send_signup_link delivered", {
+      deps.log.info?.("send_signup_link submitted", {
         to: to_email,
         resendId: sent.id,
         agentName: deps.agentName,
       });
       return {
-        result: `DELIVERY_OK: Sign-up link sent to ${to_email}. Tell the caller it should arrive within a minute. Do not claim delivery unless you see DELIVERY_OK.`,
+        result: `SUBMISSION_OK: Sign-up link submitted to ${to_email}. Inbox delivery has not been verified. Do not promise an arrival time or automatically resend.`,
       };
     }
     deps.log.error("send_signup_link delivery failed", {
@@ -127,14 +131,14 @@ export async function handleSendSignupLink(
       agentName: deps.agentName,
     });
     return {
-      result: `DELIVERY_FAILED: Email could not be sent (${sent.error || "transport error"}). Do NOT tell the caller it was sent. Read this URL aloud and confirm they wrote it down: ${signupUrl}`,
+      result: `DELIVERY_FAILED: Email submission was not confirmed. Do not claim it was sent or automatically retry. Read this URL aloud and confirm they wrote it down: ${signupUrl}`,
     };
   } catch (error) {
     deps.log.error("send_signup_link tool failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return {
-      result: "I wasn't able to send that right now. Let the caller know they can sign up at botbound.app/signup, or call us back anytime.",
+      result: `DELIVERY_FAILED: Email submission was not confirmed. Do not claim it was sent or automatically retry. Offer this URL instead: ${resolveAppUrl(deps.appUrl)}/signup`,
     };
   }
 }

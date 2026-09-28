@@ -242,6 +242,58 @@ describe("scheduled same-channel capacity", () => {
     await releaseAppliedCapacitySchedule(applied, f.api);
     expect(f.client.subscriptionSchedules.release).toHaveBeenCalledTimes(1);
   });
+  it("stops an applied-phase release when its enclosing sync loses ownership during a provider read", async () => {
+    const f = fixture();
+    await scheduleCapacityUpgrade(binding, "voice-regular", f.api);
+    vi.clearAllMocks();
+    const assertSyncLease = vi.fn(async () => {
+      throw new Error("Sync lease lost");
+    });
+    await expect(releaseAppliedCapacitySchedule(binding, f.api, assertSyncLease)).rejects.toThrow(
+      "Sync lease lost",
+    );
+    expect(f.client.subscriptions.retrieve).toHaveBeenCalledOnce();
+    expect(f.client.subscriptionSchedules.release).not.toHaveBeenCalled();
+    expect(f.client.subscriptions.update).not.toHaveBeenCalled();
+  });
+  it("does not continue clearing provider metadata after losing the sync lease during schedule release", async () => {
+    const f = fixture();
+    await scheduleCapacityUpgrade(binding, "voice-regular", f.api);
+    vi.clearAllMocks();
+    let owned = true;
+    f.client.subscriptionSchedules.release.mockImplementationOnce(async () => {
+      owned = false;
+      return { ...f.schedule(), status: "released", released_subscription: f.sub.id };
+    });
+    const assertSyncLease = async () => {
+      if (!owned) throw new Error("Sync lease lost");
+    };
+    await expect(releaseOwnedCapacitySchedule(binding, f.api, assertSyncLease)).rejects.toThrow(
+      "Sync lease lost",
+    );
+    expect(f.client.subscriptionSchedules.release).toHaveBeenCalledOnce();
+    expect(f.client.subscriptions.update).not.toHaveBeenCalled();
+  });
+  it("does not replay schedule creation after losing the sync lease during an unsuccessful recovery read", async () => {
+    const f = fixture();
+    await scheduleCapacityUpgrade(binding, "voice-regular", f.api);
+    vi.clearAllMocks();
+    let owned = true;
+    f.client.subscriptionSchedules.retrieve.mockImplementationOnce(async () => {
+      owned = false;
+      throw new Error("Schedule read interrupted");
+    });
+    const assertSyncLease = async () => {
+      if (!owned) throw new Error("Sync lease lost");
+    };
+    await expect(releaseOwnedCapacitySchedule(binding, f.api, assertSyncLease)).rejects.toThrow(
+      "Sync lease lost",
+    );
+    expect(f.client.subscriptionSchedules.retrieve).toHaveBeenCalledOnce();
+    expect(f.client.subscriptionSchedules.create).not.toHaveBeenCalled();
+    expect(f.client.subscriptionSchedules.release).not.toHaveBeenCalled();
+    expect(f.client.subscriptions.update).not.toHaveBeenCalled();
+  });
   it("does not overwrite a foreign schedule even during ambiguous-create recovery", async () => {
     const f = fixture();
     f.setSchedule({ ...f.schedule(), id: "sched_foreign" });

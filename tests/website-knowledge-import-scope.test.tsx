@@ -11,6 +11,8 @@ const h = vi.hoisted(() => ({
   fetch: vi.fn(),
   imported: vi.fn(),
   event: vi.fn(),
+  disabled: false,
+  importingChange: vi.fn(),
 }));
 vi.mock("react", async (original) => ({
   ...(await original<typeof import("react")>()),
@@ -51,7 +53,12 @@ function render(agentId = "bot-a") {
   h.stateCursor = 0;
   h.refCursor = 0;
   h.effects = [];
-  return WebsiteKnowledgeImport({ agentId, onImported: h.imported });
+  return WebsiteKnowledgeImport({
+    agentId,
+    onImported: h.imported,
+    disabled: h.disabled,
+    onImportingChange: h.importingChange,
+  });
 }
 function input(agentId = "bot-a") {
   return elements(render(agentId)).find((node) => node.type === "input")!;
@@ -74,9 +81,35 @@ beforeEach(() => {
   h.fetch.mockReset();
   h.imported.mockReset();
   h.event.mockReset();
+  h.disabled = false;
+  h.importingChange.mockReset();
 });
 
 describe("website knowledge import scope", () => {
+  it("blocks import during a sibling draft and reports its pending lifecycle", async () => {
+    changeAgent("bot-a");
+    input().props.onChange!({ target: { value: "https://example.com/info" } });
+    h.disabled = true;
+    expect(input().props.disabled).toBe(true);
+    await submit();
+    expect(h.fetch).not.toHaveBeenCalled();
+    expect(h.importingChange).not.toHaveBeenCalled();
+    h.disabled = false;
+    let finish!: (value: Response) => void;
+    h.fetch.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          finish = done;
+        }),
+    );
+    const pending = submit();
+    expect(h.importingChange).toHaveBeenLastCalledWith(true);
+    finish(new Response(JSON.stringify({ error: "Retry import." }), { status: 503 }));
+    await pending;
+    expect(h.importingChange).toHaveBeenLastCalledWith(false);
+    expect(input().props.value).toBe("https://example.com/info");
+    expect(h.imported).not.toHaveBeenCalled();
+  });
   it.each([200, 503])(
     "keeps another Bot's form clear after the old import returns HTTP %s",
     async (status) => {

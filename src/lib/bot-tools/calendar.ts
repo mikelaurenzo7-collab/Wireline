@@ -27,6 +27,13 @@ import {
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 
+const UNSAVED_CALENDAR_FOLLOW_UP =
+  "No follow-up task was saved. If create_followup_task is available, offer to save a task for review and confirm only after that tool succeeds. Do not promise that anyone will contact the caller.";
+
+// An external provider can fail after accepting a booking. Preserve that
+// uncertainty rather than promising a nonexistent handoff or inviting a retry.
+const BOOKING_NOT_CONFIRMED = `The appointment was not confirmed. Check Calendar before trying to book again. ${UNSAVED_CALENDAR_FOLLOW_UP}`;
+
 async function resolveCalendarTimeZone(
   context: ToolCallContext,
   requestedTimeZone: unknown,
@@ -140,8 +147,7 @@ export async function handleCalendarToolCall(
       if (inputFailure) return inputFailure;
       return {
         toolCallId,
-        result:
-          "I'm having trouble checking availability right now. Can I take your details and have someone call you back with times?",
+        result: `Calendar availability was not confirmed. ${UNSAVED_CALENDAR_FOLLOW_UP}`,
       };
     }
   }
@@ -271,17 +277,14 @@ export async function handleCalendarToolCall(
       }
       return {
         toolCallId,
-        result: success
-          ? `Appointment booked for ${displayTime}.`
-          : "I wasn't able to lock that in right now. Let me take your info and have someone confirm the appointment.",
+        result: success ? `Appointment booked for ${displayTime}.` : BOOKING_NOT_CONFIRMED,
       };
     } catch (error) {
       const inputFailure = calendarInputFailure(toolCallId, error);
       if (inputFailure) return inputFailure;
       return {
         toolCallId,
-        result:
-          "I ran into a hiccup booking that. Let me take your details and have someone confirm the appointment for you.",
+        result: BOOKING_NOT_CONFIRMED,
       };
     }
   }

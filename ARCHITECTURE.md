@@ -80,7 +80,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 - **LLM / structured reasoning:**
   - Central policy and catalog: `src/lib/ai-models.ts`.
   - Primary: direct OpenAI Responses API using GPT-5.6 Terra by default (`WIRELINE_OPENAI_STRUCTURED_MODEL` overrides).
-  - Continuity: Vercel AI Gateway, then Gemini.
+  - Continuity on Render: direct Gemini. The legacy Vercel deployment may use AI Gateway before Gemini; Render disables that transport.
   - Every Bot and call direction shares this same managed chain; roles and use cases change configuration, not the provider default or product mode.
   - Speech generation and live-call voice remain OpenAI-owned; structured continuity never changes the selected speaker.
 - **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.

@@ -54,6 +54,7 @@ type Props = {
   "aria-label"?: string;
   onValueChange?: (value: string) => void;
   task?: { id: string };
+  onResolved?: () => void;
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
   if (Array.isArray(node)) return node.flatMap(elements);
@@ -267,6 +268,37 @@ describe("sequence draft continuity", () => {
 });
 
 describe("approval count availability", () => {
+  it("retains unresolved cards when both queues fail after resolving a sibling", async () => {
+    const tasks = ["draft", "resolved"].map((id) => ({ id, status: "pending" }));
+    h.fetch.mockImplementation((url: string) =>
+      Promise.resolve(json(url === "/api/triage" ? triage : { tasks })),
+    );
+    render(() => ApprovalInbox({}));
+    h.effects[0]();
+    await flush();
+    const cards = () => elements(render(() => ApprovalInbox({}))).filter((node) => node.props.task);
+    const draft = cards().find((node) => node.props.task?.id === "draft")!;
+    let finish!: (response: Response) => void;
+    // Both requests share a deferred failure so the pending state is observable.
+    const failed = new Promise<Response>((resolve) => {
+      finish = resolve;
+    });
+    h.fetch.mockImplementation(() => failed);
+    cards().find((node) => node.props.task?.id === "resolved")!.props.onResolved!();
+    expect(cards().map((node) => node.props.task?.id)).toEqual(["draft"]);
+    expect(cards()[0].key).toBe(draft.key);
+    expect(cards()[0].type).toBe(draft.type);
+    finish(new Response("", { status: 503 }));
+    await flush();
+    expect(cards().map((node) => node.props.task?.id)).toEqual(["draft"]);
+    expect(textOf(render(() => ApprovalInbox({})))).toContain("Last loaded items are shown");
+    expect(
+      elements(render(() => ApprovalInbox({}))).some(
+        (node) => node.props.title === "Approval Queue Clear",
+      ),
+    ).toBe(false);
+  });
+
   it.each(["tasks", "triage"])(
     "omits only counts from the unavailable %s source",
     async (failed) => {

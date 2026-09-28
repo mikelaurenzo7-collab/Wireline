@@ -19,6 +19,8 @@ const h = vi.hoisted(() => {
     webhook: vi.fn(),
     audit: vi.fn(),
     budget: vi.fn(),
+    openCheckouts: vi.fn(),
+    inventoryFailure: false,
   };
 });
 
@@ -30,12 +32,14 @@ vi.mock("stripe", () => ({
         return Object.assign(Promise.resolve({ data }), {
           async *[Symbol.asyncIterator]() {
             yield* data;
+            if (h.inventoryFailure) throw new Error("Next subscription page unavailable");
           },
         });
       },
       update: h.update,
     };
     invoices = { retrieve: vi.fn(async () => ({ id: "in_paid" })) };
+    checkout = { sessions: { list: h.openCheckouts } };
   },
 }));
 vi.mock("../src/lib/server-context", () => ({
@@ -75,7 +79,10 @@ vi.mock("../src/lib/paid-bot-identity", () => ({
 }));
 
 import * as schema from "../src/db/schema";
-import { syncSubscriptionFromStripe } from "../src/lib/stripe-helpers";
+import {
+  syncSubscriptionFromStripe,
+  stripeAllowsCanceledNumberReclamation,
+} from "../src/lib/stripe-helpers";
 import { stripeSubscriptionCancellation } from "../src/lib/stripe-subscription-cancellation";
 
 const END = 1793151098;
@@ -144,6 +151,83 @@ beforeEach(() => {
   h.budget.mockResolvedValue(undefined);
   h.receipt.mockResolvedValue(undefined);
   h.verifyReceipt.mockReturnValue({ period_start: START, period_end: END });
+  h.openCheckouts.mockResolvedValue({ data: [], has_more: false });
+  h.inventoryFailure = false;
+});
+
+describe("provider evidence before destructive number reclamation", () => {
+  const input = {
+    customerId: "cus_pilot",
+    subscriptionId: "sub_pilot",
+    canceledBefore: new Date((END + 1) * 1000),
+  };
+
+  it("requires the expected canceled subscription and fully enumerated old terminal inventory", async () => {
+    h.authoritative = subscription({ status: "canceled" });
+    await expect(stripeAllowsCanceledNumberReclamation(input)).resolves.toBe(true);
+    expect(h.openCheckouts).toHaveBeenCalledExactlyOnceWith({
+      customer: "cus_pilot",
+      status: "open",
+      limit: 1,
+    });
+    expect(h.update).not.toHaveBeenCalled();
+  });
+
+  it.each(["active", "trialing", "incomplete", "past_due", "unpaid", "paused", "future_unknown"])(
+    "retains a number for an unmapped %s subscription even when the old subscription remains canceled",
+    async (status) => {
+      h.authoritative = subscription({ status: "canceled" });
+      h.addons = [
+        subscription({
+          id: "sub_unmapped_new",
+          status: status as Stripe.Subscription.Status,
+          metadata: {},
+          items: { data: [] } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
+        }),
+      ];
+      await expect(stripeAllowsCanceledNumberReclamation(input)).resolves.toBe(false);
+    },
+  );
+
+  it.each([
+    { data: [{ id: "cs_open" }], has_more: false },
+    { data: [], has_more: true },
+    { data: null, has_more: false },
+  ])("retains a line when open-checkout inventory is payable or inconclusive: %j", async (page) => {
+    h.authoritative = subscription({ status: "canceled" });
+    h.openCheckouts.mockResolvedValueOnce(page);
+    await expect(stripeAllowsCanceledNumberReclamation(input)).resolves.toBe(false);
+  });
+
+  it("refuses partial subscription pagination without acknowledging canceled status as complete proof", async () => {
+    h.authoritative = subscription({ status: "canceled" });
+    h.inventoryFailure = true;
+    await expect(stripeAllowsCanceledNumberReclamation(input)).rejects.toThrow(
+      "Next subscription page unavailable",
+    );
+  });
+
+  it.each(["missing", "foreign customer", "within grace", "malformed end"])(
+    "retains the line for %s provider evidence",
+    async (state) => {
+      h.authoritative = state === "missing" ? null : subscription({ status: "canceled" });
+      if (state === "foreign customer") h.authoritative!.customer = "cus_foreign";
+      if (state === "within grace") input.canceledBefore = new Date(END * 1000);
+      if (state === "malformed end") {
+        const item = h.authoritative!.items.data[0] as Stripe.SubscriptionItem & {
+          current_period_end: number;
+        };
+        item.current_period_end = NaN;
+        h.authoritative!.ended_at = null;
+        h.authoritative!.canceled_at = null;
+      }
+      try {
+        await expect(stripeAllowsCanceledNumberReclamation(input)).resolves.toBe(false);
+      } finally {
+        input.canceledBefore = new Date((END + 1) * 1000);
+      }
+    },
+  );
 });
 
 describe("explicit Stripe cancellation reconciliation", () => {

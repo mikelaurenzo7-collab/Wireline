@@ -1,5 +1,5 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import KnowledgeBaseClaude from "../src/components/KnowledgeBaseClaude";
 
 const h = vi.hoisted(() => ({
@@ -8,6 +8,8 @@ const h = vi.hoisted(() => ({
   dirty: false,
   effects: [] as Array<() => void>,
   fetch: vi.fn(),
+  externallyBusy: false,
+  interactionChanged: vi.fn(),
 }));
 vi.mock("react", async (original) => {
   const effect = (callback: () => void | (() => void), deps?: readonly unknown[]) => {
@@ -99,7 +101,11 @@ function render() {
     h.cursor = 0;
     h.dirty = false;
     h.effects = [];
-    tree = KnowledgeBaseClaude({ agentId });
+    tree = KnowledgeBaseClaude({
+      agentId,
+      externallyBusy: h.externallyBusy,
+      onInteractionChange: h.interactionChanged,
+    });
     h.effects.forEach((effect) => effect());
   } while (h.dirty);
 }
@@ -129,16 +135,157 @@ async function edit() {
   render();
 }
 beforeEach(() => {
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => callback());
   h.slots = [];
   h.cursor = 0;
   h.dirty = false;
   h.effects = [];
   h.fetch.mockReset();
+  h.externallyBusy = false;
+  h.interactionChanged.mockReset();
   agentId = "bot-a";
   h.fetch.mockImplementation(async () => response(config()));
 });
+afterEach(() => vi.unstubAllGlobals());
 
 describe("Active Rules editing", () => {
+  it("reports an open draft to the page and locks edits during a website import", async () => {
+    await settle();
+    expect(h.interactionChanged).toHaveBeenLastCalledWith(false);
+    h.externallyBusy = true;
+    render();
+    expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
+    expect(button("Choose files").props.disabled).toBe(true);
+    button(`Edit rule: ${oldRule}`).props.onClick!();
+    render();
+    expect(input()).toBeUndefined();
+    h.externallyBusy = false;
+    render();
+    button(`Edit rule: ${oldRule}`).props.onClick!();
+    render();
+    expect(h.interactionChanged).toHaveBeenLastCalledWith(true);
+    button("Cancel").props.onClick!();
+    render();
+    expect(h.interactionChanged).toHaveBeenLastCalledWith(false);
+  });
+  it("preserves a fact draft and serializes fact edits, rules, removal, and uploads", async () => {
+    const facts = [
+      { id: "11", content: "Hours are weekdays.", source: "manual" },
+      { id: "12", content: "Located in Chicago.", source: "manual" },
+    ];
+    h.fetch.mockResolvedValueOnce(response({ ...config(), knowledge: facts }));
+    await settle();
+    const factButtons = () =>
+      elements(tree).filter(
+        (node) =>
+          node.props["aria-label"]?.startsWith("Edit ") &&
+          !node.props["aria-label"]?.startsWith("Edit rule:"),
+      );
+    factButtons()[0].props.onClick!();
+    render();
+    input().props.onChange!({ target: { value: "New hours draft" } });
+    render();
+    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
+    expect(factButtons()[0].props.disabled).toBe(true);
+    factButtons()[0].props.onClick!();
+    render();
+    expect(input().props.value).toBe("New hours draft");
+    const zone = elements(tree).find((node) => "onDrop" in node.props)! as ReactElement<{
+      onDrop: (event: unknown) => void;
+    }>;
+    zone.props.onDrop({
+      preventDefault: vi.fn(),
+      dataTransfer: { files: [{ name: "extra.txt" }] },
+    });
+    await settle();
+    expect(h.fetch).toHaveBeenCalledTimes(1);
+    expect(input().props.value).toBe("New hours draft");
+    let finish!: (value: Response) => void;
+    h.fetch.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          finish = done;
+        }),
+    );
+    button("Save").props.onClick!();
+    render();
+    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Save").props.disabled).toBe(true);
+    button("Save").props.onClick!();
+    expect(h.fetch).toHaveBeenCalledTimes(2);
+    finish(response({ error: "Please retry." }, 503));
+    await settle();
+    expect(input().props.value).toBe("New hours draft");
+    expect(button("Save").props.disabled).toBe(false);
+    h.fetch.mockResolvedValueOnce(
+      response({ success: true, knowledge: { ...facts[0], content: "New hours draft" } }),
+    );
+    button("Save").props.onClick!();
+    await settle();
+    expect(text(tree)).toContain("Knowledge updated.");
+    expect(button("Choose files").props.disabled).toBe(false);
+    const remove = elements(tree).find((node) => node.props["aria-label"]?.startsWith("Remove "))!;
+    remove.props.onClick!();
+    render();
+    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
+    button("Cancel").props.onClick!();
+    render();
+    expect(button("Choose files").props.disabled).toBe(false);
+  });
+
+  it("blocks fact edit and removal until upload and its snapshot refresh both finish", async () => {
+    const snapshot = {
+      ...config(),
+      knowledge: [{ id: "11", content: "Open weekdays.", source: "manual" }],
+    };
+    h.fetch.mockResolvedValueOnce(response(snapshot));
+    await settle();
+    let finishUpload!: (value: Response) => void;
+    let finishRefresh!: (value: Response) => void;
+    h.fetch.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          finishUpload = done;
+        }),
+    );
+    h.fetch.mockImplementationOnce(
+      () =>
+        new Promise<Response>((done) => {
+          finishRefresh = done;
+        }),
+    );
+    const zone = elements(tree).find((node) => "onDrop" in node.props)! as ReactElement<{
+      onDrop: (event: unknown) => void;
+    }>;
+    zone.props.onDrop({
+      preventDefault: vi.fn(),
+      dataTransfer: {
+        files: [{ name: "hours.txt", type: "text/plain", size: 10, text: async () => "New fact" }],
+      },
+    });
+    await settle();
+    const edit = elements(tree).find(
+      (node) =>
+        node.props["aria-label"]?.startsWith("Edit ") &&
+        !node.props["aria-label"]?.startsWith("Edit rule:"),
+    )!;
+    const remove = elements(tree).find((node) => node.props["aria-label"]?.startsWith("Remove "))!;
+    expect(edit.props.disabled).toBe(true);
+    expect(remove.props.disabled).toBe(true);
+    edit.props.onClick!();
+    remove.props.onClick!();
+    render();
+    expect(input()).toBeUndefined();
+    finishUpload(response({ summary: "Added fact." }));
+    await settle();
+    expect(button("Choose files").props.disabled).toBe(true);
+    finishRefresh(response(snapshot));
+    await settle();
+    expect(button("Choose files").props.disabled).toBe(false);
+  });
+
   it("saves one rule in place through the owned PATCH without appending training", async () => {
     await edit();
     h.fetch.mockResolvedValueOnce(

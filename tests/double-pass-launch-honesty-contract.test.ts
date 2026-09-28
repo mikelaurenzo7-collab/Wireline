@@ -137,7 +137,7 @@ describe("double-pass launch honesty", () => {
     const billing = read("src/routes/billing-routes.ts");
     const app = read("src/App.tsx");
     expect(tools).toContain("`${resolveAppUrl(deps.appUrl)}/pricing${planParam}`");
-    expect(tools).toContain("botbound.app/pricing");
+    expect(tools).toContain('const APP_URL_DEFAULT = "https://botbound.app"');
     expect(tools).not.toContain("/billing${planParam}");
     expect(billing).toContain("updateCardUrl: `${appUrl.url}/settings/billing`");
     expect(app).toContain('path="/billing"');

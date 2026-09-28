@@ -45,14 +45,14 @@ prove a paid lifecycle, successful calls, support response, or observed contribu
 
 BotBound should track contribution margin at the account level.
 
-| Cost/revenue lane | Inputs                                                                    | Required output                                           |
-| ----------------- | ------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Plan revenue      | Stripe subscription, add-ons, extra Bots.                                 | Monthly recurring revenue by account.                     |
-| Runtime Balance   | Credit wallet and ledger deltas.                                          | Prepaid balance, burn rate, and top-up events.            |
-| Voice             | Twilio numbers/SMS/carrier minutes plus OpenAI Realtime audio usage.      | Cost per call, cost per account, unused-number inventory. |
-| AI                | OpenAI/Gemini/Vercel AI Gateway usage.                                    | Token/audio cost by account and feature.                  |
-| Video presenters  | Retired talking-head add-on. Leftover Stripe price IDs stay webhook-only. | Do not sell Live Video.                                   |
-| Email/support     | Resend volume and support ticket volume.                                  | Cost per account and alert thresholds.                    |
+| Cost/revenue lane | Inputs                                                                     | Required output                                           |
+| ----------------- | -------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Plan revenue      | Stripe subscription, add-ons, extra Bots.                                  | Monthly recurring revenue by account.                     |
+| Runtime Balance   | Credit wallet and ledger deltas.                                           | Prepaid balance, burn rate, and top-up events.            |
+| Voice             | Twilio numbers/SMS/carrier minutes plus OpenAI Realtime audio usage.       | Cost per call, cost per account, unused-number inventory. |
+| AI                | Direct OpenAI/Gemini usage on Render.                                      | Token/audio cost by account and feature.                  |
+| Video presenters  | Retired talking-head add-on. Leftover Stripe price IDs stay webhook-only.  | Do not sell Live Video.                                   |
+| Email/support     | AgentMail subscription/mailbox/message costs, Resend volume, support time. | Cost per account and alert thresholds.                    |
 
 ## Alert thresholds
 

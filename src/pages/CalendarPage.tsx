@@ -104,43 +104,47 @@ export default function CalendarPage() {
               calendarConfigured={configured}
               onConfigure={() => selectTab("availability")}
             />
-          ) : error ? (
-            <StatusNotice
-              tone="warning"
-              title="Availability unavailable"
-              className="m-4"
-              action={
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setReload((value) => value + 1)}
-                >
-                  Retry
-                </Button>
-              }
-            >
-              {error}
-            </StatusNotice>
-          ) : settings && configured !== null ? (
-            <CalendarAvailabilityPanel
-              settings={settings}
-              configured={configured}
-              onChange={setSettings}
-              onSaved={(confirmed) => {
-                setSettings(confirmed);
-                setConfigured(true);
-              }}
-            />
-          ) : (
-            <div
-              className="mx-auto w-full max-w-2xl space-y-3 p-4"
-              aria-busy="true"
-              aria-label="Loading availability"
-            >
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-          )}
+          ) : null}
+          {/* Keep the form's pending save and retry state alive across tab changes. */}
+          <div hidden={tab !== "availability"} className="min-w-0">
+            {error ? (
+              <StatusNotice
+                tone="warning"
+                title="Availability unavailable"
+                className="m-4"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setReload((value) => value + 1)}
+                  >
+                    Retry
+                  </Button>
+                }
+              >
+                {error}
+              </StatusNotice>
+            ) : settings && configured !== null ? (
+              <CalendarAvailabilityPanel
+                settings={settings}
+                configured={configured}
+                onChange={setSettings}
+                onSaved={(confirmed) => {
+                  setSettings(confirmed);
+                  setConfigured(true);
+                }}
+              />
+            ) : (
+              <div
+                className="mx-auto w-full max-w-2xl space-y-3 p-4"
+                aria-busy="true"
+                aria-label="Loading availability"
+              >
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-48 w-full" />
+              </div>
+            )}
+          </div>
         </div>
       </WorkspacePageFrame>
     </WorkspaceShell>

@@ -21,6 +21,7 @@ import {
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
 import { stripeSubscriptionCancellation } from "./stripe-subscription-cancellation";
+import { withStripeSubscriptionSyncLease } from "./stripe-subscription-sync-lease";
 import { recordPaidAllowanceReceipt, verifiedPaidAllowanceReceipt } from "./paid-allowance-period";
 import { liveStripeCredentialBlocked } from "./preview-spend-policy";
 import {
@@ -454,6 +455,53 @@ async function currentPlanSubscriptionForCustomer(
   return candidates[0] ?? null;
 }
 
+/** Destructive cleanup needs the whole customer's state, not just mapped plan prices. */
+export async function stripeAllowsCanceledNumberReclamation(input: {
+  customerId: string;
+  subscriptionId: string;
+  canceledBefore: Date;
+}): Promise<boolean> {
+  if (!stripeAvailable()) throw new Error("Stripe reclamation verification is unavailable.");
+  const openCheckouts = await stripe.checkout.sessions.list({
+    customer: input.customerId,
+    status: "open",
+    limit: 1,
+  });
+  if (
+    !Array.isArray(openCheckouts.data) ||
+    openCheckouts.data.length ||
+    openCheckouts.has_more !== false
+  )
+    return false;
+  let foundCanceledSubscription = false;
+  let examined = 0;
+  // The SDK iterator fetches every page. An interrupted or unbounded inventory
+  // is not proof of cancellation; errors propagate without touching the line.
+  for await (const candidate of stripe.subscriptions.list({
+    customer: input.customerId,
+    status: "all",
+    limit: 100,
+  })) {
+    if (++examined > 1_000)
+      throw new Error("Stripe reclamation inventory exceeded its safe bound.");
+    const customerId =
+      typeof candidate.customer === "string" ? candidate.customer : candidate.customer?.id;
+    if (!candidate.id || customerId !== input.customerId) return false;
+    if (candidate.status === "incomplete_expired") continue;
+    if (candidate.status !== "canceled") return false;
+    const end = subscriptionPeriod(candidate).end ?? candidate.ended_at ?? candidate.canceled_at;
+    if (
+      !Number.isSafeInteger(end) ||
+      !end ||
+      end <= 0 ||
+      !(new Date(end * 1000) < input.canceledBefore)
+    )
+      return false;
+    if (candidate.id === input.subscriptionId) foundCanceledSubscription = true;
+  }
+  return foundCanceledSubscription;
+}
+
 /**
  * A Live Video subscription is economically dependent on the base BotBound
  * plan. When the base plan is scheduled to end, becomes unpaid/paused, or
@@ -471,6 +519,7 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
   baseUnpaid: boolean;
   basePaused: boolean;
   restoreCascade: boolean;
+  assertSyncLease: () => Promise<void>;
 }): Promise<void> {
   const {
     customerId,
@@ -489,6 +538,7 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
     status: "all",
     limit: 100,
   });
+  await opts.assertSyncLease();
   const liveVideoAddons = listed.data.filter(
     (candidate) =>
       candidate.metadata?.purpose === "live_video_addon" &&
@@ -503,10 +553,12 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
         addonCancellation.atPeriodEnd &&
         addon.metadata?.wireline_base_plan_cascade === "true"
       ) {
+        await opts.assertSyncLease();
         await stripe.subscriptions.update(addon.id, {
           cancel_at_period_end: false,
           metadata: { wireline_base_plan_cascade: "" },
         });
+        await opts.assertSyncLease();
         log.info("Restored Live Video renewal after base-plan recovery", {
           customerId,
           liveVideoSubscriptionId: addon.id,
@@ -518,10 +570,12 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
     // Preserve an existing explicit cancellation date; rescheduling it to the
     // period end could extend a customer's independently chosen cancellation.
     if (!addonCancellation.scheduled) {
+      await opts.assertSyncLease();
       await stripe.subscriptions.update(addon.id, {
         cancel_at_period_end: true,
         metadata: { wireline_base_plan_cascade: "true" },
       });
+      await opts.assertSyncLease();
       log.info("Scheduled Live Video add-on cancellation with base plan", {
         customerId,
         liveVideoSubscriptionId: addon.id,
@@ -569,6 +623,18 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   const customerId =
     typeof incomingSub.customer === "string" ? incomingSub.customer : incomingSub.customer.id;
 
+  // A fresh provider read alone does not order overlapping webhook/checkout
+  // attempts. Serialize the entire read-to-projection sequence across hosts.
+  return withStripeSubscriptionSyncLease(customerId, (assertSyncLease) =>
+    syncSubscriptionFromStripeUnderLease(incomingSub, customerId, assertSyncLease),
+  );
+}
+
+async function syncSubscriptionFromStripeUnderLease(
+  incomingSub: Stripe.Subscription,
+  customerId: string,
+  assertSyncLease: () => Promise<void>,
+) {
   let [existing] = await drizzle
     .select({
       userId: schema.subscriptions.userId,
@@ -617,6 +683,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       subscriptionId: incomingSub.id,
       userId: metadataUserId,
     });
+    await assertSyncLease();
     await drizzle
       .insert(schema.subscriptions)
       .values({ userId: metadataUserId, stripeCustomerId: customerId, updatedAt: new Date() })
@@ -651,6 +718,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     // harmless. Any transient list error escapes so the outer webhook releases
     // its idempotency claim and Stripe redelivers.
     const authoritative = await currentPlanSubscriptionForCustomer(customerId);
+    await assertSyncLease();
     if (authoritative) {
       if (authoritative.id !== incomingSub.id) {
         log.warn("Stripe sync: ignoring non-authoritative subscription event", {
@@ -699,6 +767,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   const providerPlanId = plan?.id;
   const { paidCapacityPlan } = await import("./stripe-capacity-upgrade");
   plan = await paidCapacityPlan(sub, plan, existing.plan, stripe);
+  await assertSyncLease();
   const providerExtraAgents = extraAgentQuantityFromSubscription(sub);
   const extraAgents = clampExtraAgentAddons(providerExtraAgents);
   if (providerExtraAgents > MAX_EXTRA_AGENT_ADDONS) {
@@ -787,6 +856,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   // customer lookup and metadata repair above stay at root scope on purpose;
   // they are how identity gets established when no tenant is known yet.
   await tenantStore.run(userId, async () => {
+    await assertSyncLease();
     if (paidAllowance) await recordPaidAllowanceReceipt(userId, paidAllowance);
     await reconcileLiveVideoAddonWithBasePlan({
       customerId,
@@ -795,8 +865,10 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       baseUnpaid,
       basePaused,
       restoreCascade,
+      assertSyncLease,
     });
 
+    await assertSyncLease();
     await drizzle
       .insert(schema.subscriptions)
       .values({
@@ -822,6 +894,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         },
       });
 
+    await assertSyncLease();
     await drizzle
       .insert(schema.settings)
       .values({
@@ -845,21 +918,27 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
     const spendBudgetPlanId =
       stripeStatus === "active" || stripeStatus === "trialing" ? (plan?.id ?? null) : null;
+    await assertSyncLease();
     await ensureDefaultAiSpendBudget(userId, spendBudgetPlanId);
 
     if (plan?.id === providerPlanId && sub.metadata.wireline_capacity_target_plan === plan?.id) {
       const { releaseAppliedCapacitySchedule } = await import("./stripe-capacity-upgrade");
+      await assertSyncLease();
       await drizzle.transaction(async (tx) => {
         await tx.execute(
           sql`SELECT pg_advisory_xact_lock(hashtext(${`billing-capacity:${userId}`}))`,
         );
+        await assertSyncLease();
         await releaseAppliedCapacitySchedule(
           { userId, customerId, subscriptionId: sub.id, planId: plan!.id },
           stripe,
+          assertSyncLease,
         );
+        await assertSyncLease();
       });
     }
 
+    await assertSyncLease();
     invalidateDashboard(userId);
 
     dispatchWebhook(userId, "subscription.changed", {
@@ -895,9 +974,11 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       const periodReference = subscriptionPeriodReference(sub);
       // Must succeed — swallowing here marks the webhook processed with no
       // included Runtime Allowance, and Stripe will not retry.
+      await assertSyncLease();
       await grantSubscriptionRuntimeAllowance(userId, periodReference, plan.id, interval);
       if (stripeStatus === "active") {
         const { enqueuePaidBotIdentityReconciliation } = await import("./paid-bot-identity");
+        await assertSyncLease();
         const identityQueue = await enqueuePaidBotIdentityReconciliation(userId);
         log.info("Paid Bot identity reconciliation attached to authoritative subscription sync", {
           userId,

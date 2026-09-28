@@ -38,6 +38,7 @@ vi.mock("../src/lib/notifications", () => ({
 }));
 
 import { handleCalendarToolCall } from "../src/lib/bot-tools/calendar";
+import { enforceAgentToolResultTruth } from "../src/lib/agent-tool-result-truth";
 
 const context: ToolCallContext = {
   toolCallId: "tool-1",
@@ -229,6 +230,63 @@ describe("native Calendar live tools", () => {
     expect(result!.result).toMatch(/^Appointment booked for/);
     await vi.waitFor(() => expect(h.win).toHaveBeenCalledOnce());
   });
+
+  it.each(["native exception", "external exception", "external refusal"])(
+    "does not promise an unsaved handoff or invite duplicate booking after %s",
+    async (failure) => {
+      if (failure.startsWith("external")) {
+        h.configuration.mockResolvedValueOnce({
+          configured: false,
+          settings: { enabled: false, duration_minutes: 30 },
+        });
+        if (failure === "external exception") {
+          h.externalBook.mockRejectedValueOnce(new Error("Provider response interrupted"));
+        } else {
+          h.externalBook.mockResolvedValueOnce(false);
+        }
+      } else {
+        h.book.mockRejectedValueOnce(new Error("Booking result unavailable"));
+      }
+
+      const result = await handleCalendarToolCall("book_appointment", args, context);
+      expect(result!.result).toContain("The appointment was not confirmed.");
+      expect(result!.result).toContain("Check Calendar before trying to book again.");
+      expect(result!.result).toContain("No follow-up task was saved.");
+      expect(result!.result).toContain("If create_followup_task is available");
+      expect(result!.result).toContain("confirm only after that tool succeeds");
+      expect(result!.result).not.toMatch(/have someone confirm|appointment was not booked/i);
+      expect(enforceAgentToolResultTruth("book_appointment", result!)).toEqual(result);
+      expect(h.insert).not.toHaveBeenCalled();
+      expect(h.webhook).not.toHaveBeenCalled();
+      expect(h.slack).not.toHaveBeenCalled();
+      expect(h.win).not.toHaveBeenCalled();
+      if (failure.startsWith("native")) expect(h.externalBook).not.toHaveBeenCalled();
+      else expect(h.book).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([true, false])(
+    "does not promise a callback when availability fails with native configured=%s",
+    async (configured) => {
+      h.configuration.mockResolvedValueOnce({
+        configured,
+        settings: { enabled: configured, duration_minutes: 30 },
+      });
+      const provider = configured ? h.availability : h.externalAvailability;
+      provider.mockRejectedValueOnce(new Error("Calendar unavailable"));
+
+      const result = await handleCalendarToolCall("check_calendar_availability", args, context);
+      expect(result!.result).toContain("Calendar availability was not confirmed.");
+      expect(result!.result).toContain("No follow-up task was saved.");
+      expect(result!.result).toContain("If create_followup_task is available");
+      expect(result!.result).not.toContain("have someone call you back");
+      expect(enforceAgentToolResultTruth("check_calendar_availability", result!)).toEqual(result);
+      expect(h.insert).not.toHaveBeenCalled();
+      expect(h.book).not.toHaveBeenCalled();
+      expect(h.externalBook).not.toHaveBeenCalled();
+      expect(h.webhook).not.toHaveBeenCalled();
+    },
+  );
 
   it("preserves the live environment boundary before native mutation", async () => {
     h.liveAllowed.mockRejectedValueOnce(

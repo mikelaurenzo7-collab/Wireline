@@ -1,6 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
+import { checkoutOperations } from "../../db/security-schema";
 import { isTwilioPhoneNumberSid } from "../agent-phone-lines";
 import { AppError } from "../api-error";
 import { runCompanyIdentityMutation } from "../company-identity-mutation";
@@ -9,6 +10,13 @@ import { getErrorMessage } from "../server-utils";
 import { runTenantProviderWorkWithDeletionFence } from "../tenant-provider-deletion-fence";
 import { getTwilioClient } from "../twilio-service";
 import { resolveOwnedTwilioNumberSid } from "./native-phone-carrier";
+
+type ReclamationGuard = {
+  canceledBefore: Date;
+  customerId: string;
+  subscriptionId: string;
+  assertOwned: () => Promise<void>;
+};
 
 function twilioStatus(error: unknown): number | null {
   const value = Number((error as { status?: unknown } | null)?.status);
@@ -29,7 +37,8 @@ async function releaseTwilioLine(sid: string): Promise<void> {
 async function releaseNativeTenantNumberUnfenced(
   userId: string,
   phoneNumber: string,
-): Promise<{ ok: boolean; error?: string }> {
+  reclamation?: ReclamationGuard,
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
   const [row] = await drizzle
     .select()
     .from(schema.phoneNumbers)
@@ -85,6 +94,79 @@ async function releaseNativeTenantNumberUnfenced(
           error:
             "This line changed while release was pending. Refresh Phone and retry if it should still be released.",
         };
+      }
+
+      if (reclamation) {
+        // Reclamation's earlier candidate read cannot authorize a destructive
+        // release after a customer resubscribes while lookup/lock acquisition
+        // waits. Stripe sync upserts these rows separately; FOR UPDATE fences
+        // both writes until this existing identity transaction is finished.
+        const [billing] = await tx
+          .select({
+            status: schema.subscriptions.status,
+            currentPeriodEnd: schema.subscriptions.currentPeriodEnd,
+            updatedAt: schema.subscriptions.updatedAt,
+            appStatus: schema.settings.subscriptionStatus,
+            stripeCustomerId: schema.subscriptions.stripeCustomerId,
+            stripeSubscriptionId: schema.subscriptions.stripeSubscriptionId,
+          })
+          .from(schema.subscriptions)
+          .innerJoin(schema.settings, eq(schema.settings.userId, schema.subscriptions.userId))
+          .where(eq(schema.subscriptions.userId, userId))
+          .limit(1)
+          .for("update");
+        const anchor = billing?.currentPeriodEnd ?? billing?.updatedAt;
+        if (
+          !billing ||
+          billing.stripeCustomerId !== reclamation.customerId ||
+          billing.stripeSubscriptionId !== reclamation.subscriptionId ||
+          billing.status !== "canceled" ||
+          ["active", "trialing"].includes(billing.appStatus ?? "") ||
+          !anchor ||
+          !(anchor < reclamation.canceledBefore)
+        ) {
+          return { ok: false, skipped: true };
+        }
+
+        const billingWorkPending = async () => {
+          const [checkout] = await tx
+            .select({ id: checkoutOperations.id })
+            .from(checkoutOperations)
+            // Local TTL alone does not prove a remote session closed after a
+            // slow/ambiguous creation. Keep unresolved checkout work intact.
+            .where(
+              and(
+                eq(checkoutOperations.userId, userId),
+                inArray(checkoutOperations.status, ["creating", "open"]),
+              ),
+            )
+            .limit(1);
+          const [operation] = await tx
+            .select({ id: schema.accountOperationLeases.id })
+            .from(schema.accountOperationLeases)
+            .where(
+              and(
+                eq(schema.accountOperationLeases.userId, userId),
+                eq(schema.accountOperationLeases.kind, "billing"),
+                gt(schema.accountOperationLeases.expiresAt, sql`clock_timestamp()`),
+              ),
+            )
+            .limit(1);
+          return Boolean(checkout || operation);
+        };
+        if (await billingWorkPending()) return { ok: false, skipped: true };
+        await reclamation.assertOwned();
+        const { stripeAllowsCanceledNumberReclamation } = await import("../stripe-helpers");
+        const confirmed = await stripeAllowsCanceledNumberReclamation({
+          customerId: reclamation.customerId,
+          subscriptionId: reclamation.subscriptionId,
+          canceledBefore: reclamation.canceledBefore,
+        });
+        await reclamation.assertOwned();
+        if (!confirmed || (await billingWorkPending())) return { ok: false, skipped: true };
+        await reclamation.assertOwned();
+        // This is the irreversible boundary: a new payment accepted remotely
+        // after Twilio DELETE begins cannot be made atomic with carrier release.
       }
 
       try {
@@ -156,16 +238,40 @@ async function releaseNativeTenantNumberUnfenced(
 export async function releaseNativeTenantNumber(
   userId: string,
   phoneNumber: string,
-  options: { terminalCleanup?: boolean } = {},
-): Promise<{ ok: boolean; error?: string }> {
+  options: { terminalCleanup?: boolean; reclaimCanceledBefore?: Date } = {},
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
+  const release = async () => {
+    if (!options.reclaimCanceledBefore)
+      return releaseNativeTenantNumberUnfenced(userId, phoneNumber);
+    const [billing] = await drizzle
+      .select({
+        customerId: schema.subscriptions.stripeCustomerId,
+        subscriptionId: schema.subscriptions.stripeSubscriptionId,
+      })
+      .from(schema.subscriptions)
+      .where(eq(schema.subscriptions.userId, userId))
+      .limit(1);
+    if (!billing?.customerId || !billing.subscriptionId) return { ok: false, skipped: true };
+    const { withStripeSubscriptionSyncLease } = await import("../stripe-subscription-sync-lease");
+    // Match sync's ordering: acquire its lease before company/settings/billing
+    // locks, never wait for a sync while holding rows that sync must update.
+    return withStripeSubscriptionSyncLease(billing.customerId, (assertOwned) =>
+      releaseNativeTenantNumberUnfenced(userId, phoneNumber, {
+        canceledBefore: options.reclaimCanceledBefore!,
+        customerId: billing.customerId!,
+        subscriptionId: billing.subscriptionId!,
+        assertOwned,
+      }),
+    );
+  };
   if (options.terminalCleanup) {
-    return releaseNativeTenantNumberUnfenced(userId, phoneNumber);
+    return release();
   }
   const outcome = await runTenantProviderWorkWithDeletionFence({
     userId,
     operation: "native_phone_release",
     ttlMs: 20 * 60_000,
-    perform: () => releaseNativeTenantNumberUnfenced(userId, phoneNumber),
+    perform: release,
   });
   return outcome.performed
     ? outcome.result

@@ -51,11 +51,32 @@ function EmptyKnowledge() {
   );
 }
 
+export function KnowledgeEditor({ agentId }: { agentId: string }) {
+  const [knowledgeRevision, setKnowledgeRevision] = useState(0);
+  const [knowledgeBusy, setKnowledgeBusy] = useState(true);
+  const [importing, setImporting] = useState(false);
+  return (
+    <div className="space-y-5">
+      <WebsiteKnowledgeImport
+        agentId={agentId}
+        disabled={knowledgeBusy}
+        onImportingChange={setImporting}
+        onImported={() => setKnowledgeRevision((value) => value + 1)}
+      />
+      <KnowledgeBaseClaude
+        key={knowledgeRevision}
+        agentId={agentId}
+        externallyBusy={importing}
+        onInteractionChange={setKnowledgeBusy}
+      />
+    </div>
+  );
+}
+
 export default function KnowledgePage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { agents, loading, degraded, refresh } = useAgents();
-  const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const { requestedId, resolvedId } = useStudioActiveAgentId();
   const agentId = resolvedId || "";
   const rawRequestedTab = params.get("tab");
@@ -150,15 +171,7 @@ export default function KnowledgePage() {
             secondary={secondaryControls}
           />
 
-          {activeTab === "knowledge" ? (
-            <div className="space-y-5">
-              <WebsiteKnowledgeImport
-                agentId={agentId}
-                onImported={() => setKnowledgeRevision((value) => value + 1)}
-              />
-              <KnowledgeBaseClaude key={`${agentId}:${knowledgeRevision}`} agentId={agentId} />
-            </div>
-          ) : null}
+          {activeTab === "knowledge" ? <KnowledgeEditor key={agentId} agentId={agentId} /> : null}
           {activeTab === "reports" ? (
             <div className="space-y-5">
               <ReportingPreferences />

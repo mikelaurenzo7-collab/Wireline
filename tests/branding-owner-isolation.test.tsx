@@ -51,6 +51,10 @@ type Brand = {
 type Value = {
   branding: Brand;
   isLoading: boolean;
+  isSaving: boolean;
+  saveDraft: Pick<Brand, "brand_name" | "brand_logo_url" | "primary_color"> | null;
+  saveError: string | null;
+  beginBrandingSave: (draft: Brand) => ((error: string | null) => void) | null;
   updateBranding: (settings: Partial<Brand>) => void;
 };
 
@@ -91,6 +95,61 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("branding owner isolation", () => {
+  it("keeps one save lock across editor remounts and isolates its release from another owner", async () => {
+    h.fetch.mockResolvedValueOnce(response("Business A"));
+    render();
+    expect(render().beginBrandingSave(render().branding)).toBeNull();
+    const first = await loaded("Business A");
+    const releaseA = first.beginBrandingSave({ ...first.branding, brand_name: "Draft A" })!;
+    expect(render().isSaving).toBe(true);
+    expect(render().saveDraft?.brand_name).toBe("Draft A");
+    expect(render().beginBrandingSave(first.branding)).toBeNull();
+    h.user = { id: "owner-b" };
+    h.fetch.mockResolvedValueOnce(response("Business B"));
+    render();
+    const second = await loaded("Business B");
+    expect(second.isSaving).toBe(false);
+    expect(second.saveDraft).toBeNull();
+    expect(second.saveError).toBeNull();
+    const releaseB = second.beginBrandingSave({ ...second.branding, brand_name: "Draft B" })!;
+    releaseA("Old owner's save failed");
+    expect(render().isSaving).toBe(true);
+    expect(render().saveDraft?.brand_name).toBe("Draft B");
+    expect(render().saveError).toBeNull();
+    expect(render().beginBrandingSave(second.branding)).toBeNull();
+    releaseB(null);
+    expect(render().isSaving).toBe(false);
+    expect(render().saveDraft).toBeNull();
+    expect(first.beginBrandingSave(first.branding)).toBeNull();
+  });
+  it("retains only the submitted failed draft until a confirmed retry or owner change", async () => {
+    h.fetch.mockResolvedValueOnce(response("Business A"));
+    render();
+    const saved = await loaded("Business A");
+    const draft = { ...saved.branding, brand_name: "Submitted draft" };
+    const finish = saved.beginBrandingSave(draft)!;
+    draft.brand_name = "Mutation outside the submitted snapshot";
+    finish("Save unavailable");
+    expect(render().isSaving).toBe(false);
+    expect(render().saveDraft?.brand_name).toBe("Submitted draft");
+    expect(render().saveError).toBe("Save unavailable");
+    expect(render().branding.brand_name).toBe("Business A");
+
+    const retry = { ...saved.branding, brand_name: "Confirmed retry" };
+    const finishRetry = render().beginBrandingSave(retry)!;
+    expect(render().saveError).toBeNull();
+    render().updateBranding(retry);
+    finishRetry(null);
+    expect(render().branding.brand_name).toBe("Confirmed retry");
+    expect(render().saveDraft).toBeNull();
+    expect(render().saveError).toBeNull();
+
+    render().beginBrandingSave(draft)!("Second failure");
+    h.user = null;
+    const signedOut = render(false);
+    expect(signedOut.saveDraft).toBeNull();
+    expect(signedOut.saveError).toBeNull();
+  });
   it("hides the old owner's branding before new-owner effects run, including a failed load", async () => {
     h.fetch.mockResolvedValueOnce(response("Business A"));
     render();

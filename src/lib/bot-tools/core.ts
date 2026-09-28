@@ -182,19 +182,20 @@ async function recordCommsFollowUpTask(
   values: {
     userId: string;
     agentId?: string | null;
-    channel: "email" | "sms";
+    channel: "email" | "sms" | "whatsapp";
     recipient: string | null | undefined;
     payload: Record<string, unknown>;
     deliveryStatus?: "not_sent" | "unconfirmed";
   },
 ): Promise<boolean> {
   try {
+    const manualReview = values.channel !== "sms" || values.deliveryStatus === "unconfirmed";
     await drizzle.insert(schema.followUpTasks).values({
       userId: values.userId,
       agentId: values.agentId ?? null,
-      // Email recovery is human work, not a retry that can repeat an unknown
-      // provider outcome or require an Email channel this account does not own.
-      taskType: values.channel === "email" ? "follow_up" : "send_text_message",
+      // Unknown outcomes need a human duplicate check. WhatsApp recovery must
+      // never enter the SMS-only action executor and silently change transport.
+      taskType: manualReview ? "follow_up" : "send_text_message",
       description:
         values.channel === "email"
           ? `Email follow-up to ${values.recipient || "caller"}. ${
@@ -202,19 +203,24 @@ async function recordCommsFollowUpTask(
                 ? "No email was sent; review the request before sending manually."
                 : "Delivery is unconfirmed; check sent mail before sending to avoid duplicates."
             }`
-          : `Text follow-up to ${values.recipient || "caller"}, flagged for human review from a live call`,
+          : manualReview
+            ? `${values.channel === "whatsapp" ? "WhatsApp" : "SMS"} follow-up to ${values.recipient || "caller"}. ${
+                values.deliveryStatus === "not_sent"
+                  ? "No message was sent; review the request before sending manually."
+                  : "Delivery is unconfirmed; check carrier history before sending to avoid duplicates."
+              }${values.channel === "whatsapp" ? " Use WhatsApp, not SMS." : ""}`
+            : `Text follow-up to ${values.recipient || "caller"}, flagged for human review from a live call`,
       status: "pending",
       priority: "high",
-      targetChannel: values.channel === "email" ? "manual" : values.channel,
+      targetChannel: manualReview ? "manual" : values.channel,
       sourceType: "voice_tool",
-      payload:
-        values.channel === "email"
-          ? {
-              ...values.payload,
-              channel: "email",
-              delivery_status: values.deliveryStatus || "unconfirmed",
-            }
-          : values.payload,
+      payload: manualReview
+        ? {
+            ...values.payload,
+            channel: values.channel,
+            delivery_status: values.deliveryStatus || "unconfirmed",
+          }
+        : values.payload,
     });
     return true;
   } catch {
@@ -527,6 +533,13 @@ export async function handleCoreToolCall(
   }
 
   if (fn === "send_text_message") {
+    const requestedChannel = args?.channel === "whatsapp" ? "whatsapp" : "sms";
+    let sendAttempted = false;
+    let recoveryBody = args?.message_body;
+    const notConfirmed = (reason: string): ToolCallResult => ({
+      toolCallId,
+      result: `The message was not confirmed. ${reason}`,
+    });
     try {
       const { to_number, channel, message_body } = args || {};
       const fallbackNumber =
@@ -536,18 +549,13 @@ export async function handleCoreToolCall(
       const targetNumber = sanitizePhone(to_number || fallbackNumber);
 
       if (!targetNumber) {
-        return {
-          toolCallId,
-          result: "No destination number was available for that message.",
-        };
+        return notConfirmed("No destination number was available for that message.");
       }
 
       if (!agent?.user_id) {
-        return {
-          toolCallId,
-          result:
-            "I wasn't able to send that text because I couldn't verify the account. Please reach out to us directly.",
-        };
+        return notConfirmed(
+          "I wasn't able to send that text because I couldn't verify the account. Please reach out to us directly.",
+        );
       }
 
       const blocked = await tenantLiveExternalActionBlock(
@@ -555,7 +563,7 @@ export async function handleCoreToolCall(
         "vapi_tenant_message_send",
         { phone: targetNumber },
       );
-      if (blocked) return { toolCallId, result: blocked };
+      if (blocked) return notConfirmed(blocked);
 
       // Mid-call SMS must clear the shared outbound gate. The live-session
       // exemptions (skip quiet hours + 24h duplicate, supply consent) are only
@@ -583,13 +591,13 @@ export async function handleCoreToolCall(
           (await recordCommsFollowUpTask(drizzle, {
             userId: agent.user_id,
             agentId: agent?.id,
-            channel: "sms",
+            channel: requestedChannel,
             recipient: targetNumber,
             payload: { to: targetNumber, body: message_body, blocked_reason: gate.reason },
+            deliveryStatus: "not_sent",
           }));
-        return {
-          toolCallId,
-          result: isDncBlock
+        return notConfirmed(
+          isDncBlock
             ? "I can't text that number, it's on a do-not-contact list."
             : gate.reason === "outside_permitted_calling_hours"
               ? recorded
@@ -598,7 +606,7 @@ export async function handleCoreToolCall(
               : recorded
                 ? "I wasn't able to send that text, but I've logged it for human follow-up."
                 : "I wasn't able to send that text right now, please reach out to us directly.",
-        };
+        );
       }
 
       // Throws ClientCommunicationBlockedError on a block (no approved:false
@@ -613,6 +621,8 @@ export async function handleCoreToolCall(
         body: message_body,
         context: `Requested channel: ${channel === "whatsapp" ? "whatsapp" : "sms"}.`,
       });
+      recoveryBody = reviewed.body;
+      sendAttempted = true;
       const outcome = await sendTenantMessage(agent.user_id, {
         to: targetNumber,
         body: reviewed.body,
@@ -680,15 +690,15 @@ export async function handleCoreToolCall(
           });
         }
       }
-      return {
-        toolCallId,
-        result: outcome.ok
-          ? `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`
-          : outcome.reason || "Message send failed.",
-      };
+      return outcome.ok
+        ? {
+            toolCallId,
+            result: `${outcome.channel === "whatsapp" ? "WhatsApp" : "SMS"} sent to ${targetNumber}.`,
+          }
+        : notConfirmed(outcome.reason || "Message send failed.");
     } catch {
-      // Supervisor block or unexpected failure — record a real task so the
-      // "have someone follow up" promise is backed by something a human sees.
+      // An exception after entering the transport does not prove rejection.
+      // Save reviewed content for manual duplicate checking, never a resend.
       const targetForTask =
         sanitizePhone(
           (args?.to_number as string | undefined) ||
@@ -699,17 +709,21 @@ export async function handleCoreToolCall(
         ? await recordCommsFollowUpTask(drizzle, {
             userId: agent.user_id,
             agentId: agent?.id,
-            channel: "sms",
+            channel: requestedChannel,
             recipient: targetForTask,
-            payload: { to: targetForTask, body: args?.message_body },
+            payload: { to: targetForTask, body: recoveryBody },
+            deliveryStatus: sendAttempted ? "unconfirmed" : "not_sent",
           })
         : false;
-      return {
-        toolCallId,
-        result: recorded
-          ? "I've logged that text for our team to follow up on."
-          : "I wasn't able to send that text right now, please reach out to us directly.",
-      };
+      return notConfirmed(
+        recorded
+          ? sendAttempted
+            ? "The request was saved for manual review. Check carrier history before sending to avoid duplicates. Do not retry automatically or promise delivery."
+            : "I've logged that text for our team to follow up on."
+          : sendAttempted
+            ? "The follow-up request could not be saved. Do not retry automatically or promise delivery. Ask the caller to contact the business directly."
+            : "I wasn't able to send that text right now, please reach out to us directly.",
+      );
     }
   }
 
