@@ -79,6 +79,12 @@ for (const width of [320, 1440]) {
         document.documentElement.style.fontSize = "200%";
         await document.fonts.ready;
       });
+    await page.getByRole("checkbox", { name: "Monday", exact: true }).uncheck();
+    await expect(page.getByRole("checkbox", { name: "Monday", exact: true })).not.toBeChecked();
+    await expect(page.getByLabel("Monday start", { exact: true })).toHaveCount(0);
+    await page.getByRole("checkbox", { name: "Tuesday", exact: true }).check();
+    await expect(page.getByRole("checkbox", { name: "Tuesday", exact: true })).toBeChecked();
+    await expect(page.getByLabel("Tuesday start", { exact: true })).toHaveValue("09:00");
     await page.getByRole("textbox", { name: "Appointment name", exact: true }).fill("Repair visit");
     await page
       .getByRole("combobox", { name: "Confirmation", exact: true })
@@ -100,6 +106,7 @@ for (const width of [320, 1440]) {
       enabled: true,
       booking_mode: "approval",
       appointment_name: "Repair visit",
+      weekly_hours: [{ day: 2, start: "09:00", end: "17:00" }],
     });
     await expect
       .poll(() =>
@@ -132,6 +139,22 @@ for (const width of [320, 1440]) {
       const dock = (await page.locator(".wl-shell-dock").boundingBox())!;
       expect(action.y + action.height).toBeLessThanOrEqual(dock.y);
     }
+    const accepting = page.getByRole("switch", { name: "Accept bookings", exact: true });
+    await accepting.uncheck();
+    await expect(accepting).not.toBeChecked();
+    await save.click();
+    await expect.poll(() => writes.length).toBe(3);
+    expect(writes[2]).toMatchObject({
+      enabled: false,
+      weekly_hours: [{ day: 2, start: "09:00", end: "17:00" }],
+    });
+    await expect(page.getByText("Availability saved.", { exact: true })).toBeVisible();
+    await accepting.check();
+    await expect(accepting).toBeChecked();
+    await save.click();
+    await expect.poll(() => writes.length).toBe(4);
+    expect(writes[3]).toMatchObject({ enabled: true });
+    await expect(page.getByText("Availability saved.", { exact: true })).toBeVisible();
     await page.getByText("Connected calendars", { exact: false }).click();
     await expect(page.getByRole("button", { name: "Sync busy times", exact: true })).toBeVisible();
     await expect(page.getByText(/New BotBound bookings stay here/)).toBeVisible();

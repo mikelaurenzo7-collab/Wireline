@@ -219,8 +219,11 @@ export default function CalendarAvailabilityPanel({
                       <Checkbox
                         id={`calendar-day-${day}`}
                         checked={Boolean(hours)}
-                        onCheckedChange={(checked) =>
-                          setDay(day, checked === true ? { start: "09:00", end: "17:00" } : null)
+                        onChange={(event) =>
+                          setDay(
+                            day,
+                            event.target.checked ? { start: "09:00", end: "17:00" } : null,
+                          )
                         }
                       />
                       {DAYS[day]}

@@ -46,7 +46,7 @@ type Props = {
   disabled?: boolean;
   onClick?: () => Promise<void>;
   onSubmit?: (event: FormEvent) => Promise<void>;
-  onChange?: (event: { target: { value: string } }) => void;
+  onChange?: (event: { target: { value: string; checked?: boolean } }) => void;
 };
 const defaults = (): CalendarSettings => ({
   enabled: false,
@@ -112,6 +112,14 @@ beforeEach(() => {
 });
 
 describe("native Calendar availability UI", () => {
+  it("uses native checkbox change events to remove and add available weekdays", () => {
+    field("calendar-day-1").props.onChange!({ target: { value: "", checked: false } });
+    expect(settings.weekly_hours).toEqual([]);
+    field("calendar-day-2").props.onChange!({ target: { value: "", checked: true } });
+    expect(settings.weekly_hours).toEqual([{ day: 2, start: "09:00", end: "17:00" }]);
+    expect(h.fetch).not.toHaveBeenCalled();
+  });
+
   it("enables automatic booking only on an explicit save and accepts the confirmed response", async () => {
     h.fetch.mockImplementation(async (_url, init) =>
       response({ settings: JSON.parse(init.body), configured: true }),
