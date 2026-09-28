@@ -20,6 +20,7 @@ import {
 } from "./subscription-welcome-credit";
 import { STRIPE_API_VERSION } from "./stripe-api-version";
 import { stripeOwnerUserExists } from "./stripe-owner-liveness";
+import { stripeSubscriptionCancellation } from "./stripe-subscription-cancellation";
 import { recordPaidAllowanceReceipt, verifiedPaidAllowanceReceipt } from "./paid-allowance-period";
 import { liveStripeCredentialBlocked } from "./preview-spend-policy";
 import {
@@ -495,8 +496,13 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
   );
 
   for (const addon of liveVideoAddons) {
+    const addonCancellation = stripeSubscriptionCancellation(addon, subscriptionPeriod(addon).end);
     if (restoreCascade) {
-      if (addon.cancel_at_period_end && addon.metadata?.wireline_base_plan_cascade === "true") {
+      if (
+        addon.cancel_at_period_end &&
+        addonCancellation.atPeriodEnd &&
+        addon.metadata?.wireline_base_plan_cascade === "true"
+      ) {
         await stripe.subscriptions.update(addon.id, {
           cancel_at_period_end: false,
           metadata: { wireline_base_plan_cascade: "" },
@@ -509,7 +515,9 @@ async function reconcileLiveVideoAddonWithBasePlan(opts: {
       continue;
     }
 
-    if (!addon.cancel_at_period_end) {
+    // Preserve an existing explicit cancellation date; rescheduling it to the
+    // period end could extend a customer's independently chosen cancellation.
+    if (!addonCancellation.scheduled) {
       await stripe.subscriptions.update(addon.id, {
         cancel_at_period_end: true,
         metadata: { wireline_base_plan_cascade: "true" },
@@ -733,6 +741,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         : "canceled";
 
   const currentPeriodEndUnix = subscriptionPeriod(sub).end;
+  const cancellation = stripeSubscriptionCancellation(sub, currentPeriodEndUnix);
   const currentPeriodEndIso = currentPeriodEndUnix
     ? new Date(currentPeriodEndUnix * 1000).toISOString()
     : null;
@@ -769,7 +778,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
   const restoreCascade =
     priorBaseRequiredCascade &&
     (stripeStatus === "active" || stripeStatus === "trialing") &&
-    !sub.cancel_at_period_end;
+    !cancellation.scheduled;
 
   // Identity is now fixed. Everything below mutates this tenant's rows —
   // including the Runtime Allowance ledger grant — so it runs tenant-scoped
@@ -781,7 +790,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
     if (paidAllowance) await recordPaidAllowanceReceipt(userId, paidAllowance);
     await reconcileLiveVideoAddonWithBasePlan({
       customerId,
-      baseCancelAtPeriodEnd: !!sub.cancel_at_period_end,
+      baseCancelAtPeriodEnd: cancellation.atPeriodEnd,
       baseTerminal,
       baseUnpaid,
       basePaused,
@@ -797,7 +806,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         plan: plan?.id ?? null,
         status: stripeStatus,
         currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-        cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+        cancelAtPeriodEnd: cancellation.atPeriodEnd,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -808,7 +817,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
           plan: plan?.id ?? null,
           status: stripeStatus,
           currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-          cancelAtPeriodEnd: !!sub.cancel_at_period_end,
+          cancelAtPeriodEnd: cancellation.atPeriodEnd,
           updatedAt: new Date(),
         },
       });
@@ -859,7 +868,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
       included_extra_agents: extraAgents,
       status: stripeStatus,
       legacy_status: localStatus,
-      cancel_at_period_end: !!sub.cancel_at_period_end,
+      cancel_at_period_end: cancellation.atPeriodEnd,
       current_period_end: currentPeriodEndIso,
       at: new Date().toISOString(),
     }).catch((error: unknown) =>
@@ -907,7 +916,7 @@ export async function syncSubscriptionFromStripe(incomingSub: Stripe.Subscriptio
         metadata: {
           stripe_status: stripeStatus,
           legacy_status: localStatus,
-          cancel_at_period_end: !!sub.cancel_at_period_end,
+          cancel_at_period_end: cancellation.atPeriodEnd,
           extra_agents: extraAgents,
           provider_extra_agents: providerExtraAgents,
         },

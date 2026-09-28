@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import BillingSettings from "../src/pages/BillingSettings";
 import StripeBillingCard from "../src/components/StripeBillingCard";
 import { readRuntimeBalanceEntries } from "../src/components/RuntimeBalanceActivity";
+import { stripeSubscriptionCancellation } from "../src/lib/stripe-subscription-cancellation";
 
 type Slot = {
   value?: unknown;
@@ -348,6 +349,28 @@ describe("Runtime Balance recent activity", () => {
       balanceAfterUsd: 24.5,
       createdAt: "2026-09-27T12:00:00Z",
     });
+  });
+
+  it("shows the normalized explicit Stripe portal cancellation as Ends while paid access stays Active", async () => {
+    statusFails = false;
+    balanceFails = false;
+    const periodEnd = 1793151098;
+    const cancellation = stripeSubscriptionCancellation(
+      { cancel_at_period_end: false, cancel_at: periodEnd },
+      periodEnd,
+    );
+    subscription = {
+      ...subscription,
+      status: "active",
+      current_period_end: new Date(periodEnd * 1000).toISOString(),
+      cancel_at_period_end: cancellation.atPeriodEnd,
+    };
+    await settle();
+    expect(hasText(`Ends ${new Date(periodEnd * 1000).toLocaleDateString()}`)).toBe(true);
+    expect(hasText("Cancels at period end")).toBe(true);
+    expect(hasText("Active")).toBe(true);
+    expect(hasText("Renews")).toBe(false);
+    expect(button("Manage billing").props.disabled).toBe(false);
   });
 
   it.each([

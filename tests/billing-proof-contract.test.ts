@@ -89,7 +89,8 @@ describe("billing proof contract", () => {
 
     expect(billingRoutes).toContain('case "customer.subscription.updated"');
     expect(billingRoutes).toContain('case "customer.subscription.deleted"');
-    expect(stripeHelpers).toContain("cancelAtPeriodEnd: !!sub.cancel_at_period_end");
+    expect(stripeHelpers).toContain("stripeSubscriptionCancellation(sub, currentPeriodEndUnix)");
+    expect(stripeHelpers).toContain("cancelAtPeriodEnd: cancellation.atPeriodEnd");
     expect(stripeHelpers).toContain('stripeStatus === "past_due" || stripeStatus === "unpaid"');
     expect(billingCard).toContain("cancel_at_period_end");
     expect(billingCard).toContain("Cancels at period end");
