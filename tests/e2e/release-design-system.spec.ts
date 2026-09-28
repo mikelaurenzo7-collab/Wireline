@@ -321,7 +321,7 @@ test("billing reflows its interval, cards, and dock without losing bottom action
 
 test("Studio retains a draft and exposes the final action after text enlargement", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockWorkspace(page);
   await page.goto("/studio?agent=design-bot&section=setup");
@@ -339,9 +339,27 @@ test("Studio retains a draft and exposes the final action after text enlargement
     .locator("#studio-inspector")
     .getByRole("link", { name: "Connections", exact: true });
   await lastAction.scrollIntoViewIfNeeded();
-  const actionBox = (await lastAction.boundingBox())!;
-  const dockBox = (await page.locator(".wl-shell-dock").boundingBox())!;
-  expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(dockBox.y);
+  try {
+    // Font readiness precedes the dock ResizeObserver's clearance update.
+    // Re-read geometry while that settles; persistent overlap must still fail.
+    await expect
+      .poll(
+        async () => {
+          const actionBox = await lastAction.boundingBox();
+          const dockBox = await page.locator(".wl-shell-dock").boundingBox();
+          if (!actionBox || !dockBox) return Number.POSITIVE_INFINITY;
+          return actionBox.y + actionBox.height - dockBox.y;
+        },
+        { timeout: 5_000, message: "Studio's final action must clear the mobile dock" },
+      )
+      .toBeLessThanOrEqual(0);
+  } catch (error) {
+    await testInfo.attach("studio-dock-overlap", {
+      body: await page.screenshot({ fullPage: true }),
+      contentType: "image/png",
+    });
+    throw error;
+  }
   await page.getByRole("button", { name: "Close Bot settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "What should we change?" })).toBeVisible();
   await page.getByRole("button", { name: "Add a rule", exact: true }).click();
