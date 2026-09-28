@@ -110,6 +110,8 @@ export default function Pricing() {
     interval: billingInterval,
     planId: selectedPlanId,
   });
+  const selectedHasCalls =
+    CHANNEL_PLANS.find((plan) => plan.id === selectedPlanId)?.channels.includes("voice") === true;
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
@@ -173,8 +175,13 @@ export default function Pricing() {
               }}
             />
             <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
-              Included usage is shown per month. Extra calls are {TOPUP_RATE}, prepaid. No automatic
-              overages. {MARKETING_CALLS_NOTICE}
+              Included usage is shown per month. No automatic overages.
+              {selectedHasCalls ? (
+                <>
+                  {" "}
+                  Extra calls are {TOPUP_RATE}, prepaid. {MARKETING_CALLS_NOTICE}
+                </>
+              ) : null}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
               <div>

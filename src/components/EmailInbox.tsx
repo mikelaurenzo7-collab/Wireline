@@ -145,11 +145,13 @@ export default function EmailInbox({
   agentId,
   accountId,
   channelEnabled = true,
+  channelAccessResolved = false,
 }: {
   embedded?: boolean;
   agentId?: string | null;
   accountId?: string | null;
   channelEnabled?: boolean;
+  channelAccessResolved?: boolean;
 }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -615,6 +617,21 @@ export default function EmailInbox({
   ) : null;
 
   if (loading && !threads.length) return <InboxLoadingState frameClass={frameClass} />;
+
+  // An unavailable channel needs no second empty state. Keep retained history
+  // and every recovery state visible even when the current plan omits Email.
+  if (
+    channelAccessResolved &&
+    !channelEnabled &&
+    threads.length === 0 &&
+    !selectedId &&
+    !detail &&
+    !error &&
+    !detailError &&
+    !loadMoreError &&
+    !hasMore
+  )
+    return null;
 
   const retryAction = error ? (
     <Button

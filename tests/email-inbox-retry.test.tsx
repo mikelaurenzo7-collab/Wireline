@@ -104,6 +104,8 @@ type Element = ReactElement<Props>;
 let tree: ReactNode;
 let agentId: string | null;
 let accountId: string | null;
+let channelEnabled: boolean;
+let channelAccessResolved: boolean;
 let listResponses: Array<() => Promise<Response>>;
 let syncResponses: Array<() => Promise<Response>>;
 let detailResponses: Array<() => Promise<Response>>;
@@ -127,7 +129,13 @@ function render() {
     h.cursor = 0;
     h.effects = [];
     h.layoutEffects = [];
-    tree = EmailInbox({ embedded: true, agentId, accountId });
+    tree = EmailInbox({
+      embedded: true,
+      agentId,
+      accountId,
+      channelEnabled,
+      channelAccessResolved,
+    });
     h.layoutEffects.forEach((run) => run());
     h.effects.forEach((run) => run());
   } while (h.dirty);
@@ -176,6 +184,8 @@ beforeEach(() => {
   h.fetch.mockReset();
   agentId = null;
   accountId = null;
+  channelEnabled = true;
+  channelAccessResolved = false;
   threads = [];
   savedHandoffs = new Map();
   listResponses = [];
@@ -218,6 +228,47 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
+  it("hides only a confirmed empty inbox when Email is definitively excluded", async () => {
+    channelEnabled = false;
+    await settle();
+    expect(button("Refresh email")).toBeDefined();
+    channelAccessResolved = true;
+    await settle();
+    expect(tree).toBeNull();
+    expect(requests("/api/emails/threads")).toHaveLength(1);
+  });
+
+  it("preserves loading and retry when an excluded inbox has not confirmed its history", async () => {
+    channelEnabled = false;
+    channelAccessResolved = true;
+    const pending = deferred();
+    listResponses = [() => pending.promise];
+    await settle();
+    expect(tree).not.toBeNull();
+    pending.resolve(response({ error: "Temporary inbox failure" }, 503));
+    await settle();
+    expect(errors()).toHaveLength(1);
+    button("Retry").props.onClick?.();
+    await settle();
+    expect(tree).toBeNull();
+  });
+
+  it("preserves retained conversations and search after Email is removed from the plan", async () => {
+    channelEnabled = false;
+    channelAccessResolved = true;
+    threads = [
+      { id: "thread-1", subject: "Retained conversation", customer_email: "jordan@example.test" },
+    ];
+    await settle();
+    expect(text(tree)).toContain("Retained conversation");
+    elements(tree)
+      .find((node) => node.type === "search-field")
+      ?.props.onChange?.({ target: { value: "missing" } });
+    await settle();
+    expect(tree).not.toBeNull();
+    expect(button("Refresh email")).toBeDefined();
+  });
+
   it("returns to search results when the selected email no longer matches and ignores its late detail", async () => {
     threads = [
       { id: "thread-1", subject: "Appointment", customer_email: "jordan@example.test" },

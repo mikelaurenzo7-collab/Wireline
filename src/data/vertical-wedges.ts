@@ -75,7 +75,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Books to Your Calendar",
-        body: "Connects to Google Calendar or Outlook, sees real availability, offers approved slots, books the visit, and sends the customer a confirmation.",
+        body: "Uses your Calendar hours and booking rules to offer available times, book the visit, or request your approval. Google and Outlook busy-time imports are optional.",
       },
       {
         icon: "DollarSign",
@@ -160,7 +160,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can the Bot Actually Book to My Existing Schedule?",
-        a: "Connect Google Calendar or Outlook in Settings. The Bot can read available times, respect configured buffers, book supported events, and send confirmations. Rescheduling behavior depends on the connected calendar and workflow you approve.",
+        a: "Set your hours, buffers, and confirmation preference in Calendar. Your Bot can book an available time or request your approval. You can also import Google or Outlook busy times; new native bookings stay in BotBound.",
       },
       {
         q: "What About Insurance Verification?",

@@ -117,9 +117,14 @@ export default function AgentToolPermissions({
         const emailBody = (await readJson(email)) as {
           accounts?: Array<{ provider?: string }>;
         } | null;
-        const calendarBody = (await readJson(calendar)) as { configured?: boolean; settings?: { enabled?: boolean } } | null;
+        const calendarBody = (await readJson(calendar)) as {
+          configured?: boolean;
+          settings?: { enabled?: boolean };
+        } | null;
         if (cancelled) return;
-        setNativeCalendar(calendarBody?.configured === true && calendarBody.settings?.enabled === true);
+        setNativeCalendar(
+          calendarBody?.configured === true && calendarBody.settings?.enabled === true,
+        );
         setNativeCalendarConfigured(calendarBody?.configured === true);
         if (crmBody) setOauthStatus(crmBody);
         if (healthBody) {
@@ -318,6 +323,10 @@ export default function AgentToolPermissions({
                   const configured =
                     resolveTenantToolIntegrationStatus(playbook.integration, integrationContext) ===
                     "configured";
+                  const calendarPaused =
+                    playbook.integration === "calendar" &&
+                    nativeCalendarConfigured &&
+                    !nativeCalendar;
                   return (
                     <details key={playbook.integration} className="group/actions py-1">
                       <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 py-2 [&::-webkit-details-marker]:hidden">
@@ -325,7 +334,11 @@ export default function AgentToolPermissions({
                           {playbook.label}
                           {!configured ? (
                             <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                              {playbook.integration === "calendar" ? "Not configured" : "Not connected"}
+                              {playbook.integration === "calendar"
+                                ? calendarPaused
+                                  ? "Paused"
+                                  : "Not configured"
+                                : "Not connected"}
                             </span>
                           ) : null}
                         </span>
@@ -342,12 +355,24 @@ export default function AgentToolPermissions({
                       </summary>
                       {!configured ? (
                         <p className="my-2 text-xs leading-relaxed text-muted-foreground">
-                          {playbook.integration === "calendar" ? "Set availability or connect a calendar to enable booking." : `Not connected. These stay off in live calls until ${playbook.label} is connected.`}{" "}
+                          {playbook.integration === "calendar"
+                            ? calendarPaused
+                              ? "Resume booking in Calendar."
+                              : "Set availability or connect a calendar to enable booking."
+                            : `Not connected. These stay off in live calls until ${playbook.label} is connected.`}{" "}
                           <Link
-                            to={playbook.integration === "calendar" ? "/calendar?tab=availability" : playbook.connectPath}
+                            to={
+                              playbook.integration === "calendar"
+                                ? "/calendar?tab=availability"
+                                : playbook.connectPath
+                            }
                             className="font-medium text-primary hover:underline"
                           >
-                            {playbook.integration === "calendar" ? "Set up Calendar" : "Connect"}
+                            {playbook.integration === "calendar"
+                              ? calendarPaused
+                                ? "Open Calendar"
+                                : "Set up Calendar"
+                              : "Connect"}
                           </Link>
                         </p>
                       ) : null}

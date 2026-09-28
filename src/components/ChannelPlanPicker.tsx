@@ -183,7 +183,7 @@ export default function ChannelPlanPicker({
                   <span className="text-xs tabular-nums">
                     {option.channels.includes("voice")
                       ? `${option.voice_minutes_monthly.toLocaleString()} min`
-                      : `$${option.ai_spend_allowance_usd_monthly ?? 0} allowance`}
+                      : `$${(option.ai_spend_allowance_usd_monthly ?? 0).toFixed(2)} allowance`}
                   </span>
                 ) : null}
               </label>

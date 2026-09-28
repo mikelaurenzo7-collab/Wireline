@@ -271,6 +271,7 @@ export default function EmailPage() {
               agentId={activeAgentId || null}
               accountId={activeAccountId || null}
               channelEnabled={access.includes("email")}
+              channelAccessResolved={access.status === "ready"}
             />
           ) : (
             <SmsThreads

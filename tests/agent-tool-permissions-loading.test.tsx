@@ -78,6 +78,40 @@ beforeEach(() => {
 });
 
 describe("agent action editor loading", () => {
+  it.each([true, false])(
+    "reflects saved native Calendar booking enabled=%s even with Google connected",
+    async (enabled) => {
+      h.fetch.mockImplementation((url: string) =>
+        Promise.resolve(
+          json(
+            url.startsWith("/api/agent-config/")
+              ? { enabledTools: [] }
+              : url === "/api/calendar/settings"
+                ? { configured: true, settings: { enabled } }
+                : { accounts: [{ provider: "google" }] },
+          ),
+        ),
+      );
+      render();
+      toggle();
+      await flush();
+      const calendar = elements(render()).find(
+        (node) => node.type === "details" && textOf(node).includes("Calendar"),
+      )!;
+      expect(calendar).toBeDefined();
+      if (enabled) {
+        expect(textOf(calendar)).not.toContain("Not configured");
+        expect(textOf(calendar)).not.toContain("Paused");
+        expect(textOf(calendar)).not.toContain("Set up Calendar");
+      } else {
+        expect(textOf(calendar)).toContain("Paused");
+        expect(textOf(calendar)).toContain("Resume booking in Calendar.");
+        expect(textOf(calendar)).toContain("Open Calendar");
+        expect(textOf(calendar)).not.toContain("connect a calendar");
+      }
+    },
+  );
+
   it("locks the submitted permissions until Save settles and retains edits after failure", async () => {
     let settle!: (response: Response) => void;
     h.fetch.mockImplementation((url: string, options?: RequestInit) => {

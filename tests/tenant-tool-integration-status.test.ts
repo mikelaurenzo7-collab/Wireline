@@ -35,4 +35,30 @@ describe("tenant tool integration status", () => {
       }),
     ).toBe("configured");
   });
+
+  it("uses native Calendar without a provider and respects a saved pause", () => {
+    expect(
+      resolveTenantToolIntegrationStatus("calendar", {
+        ...base,
+        nativeCalendar: true,
+        nativeCalendarConfigured: true,
+      }),
+    ).toBe("configured");
+    expect(
+      resolveTenantToolIntegrationStatus("calendar", {
+        ...base,
+        nativeCalendar: false,
+        nativeCalendarConfigured: true,
+        emailProviders: ["google"],
+      }),
+    ).toBe("missing");
+    expect(
+      resolveTenantToolIntegrationStatus("calendar", {
+        ...base,
+        nativeCalendar: false,
+        nativeCalendarConfigured: false,
+        emailProviders: ["google"],
+      }),
+    ).toBe("configured");
+  });
 });

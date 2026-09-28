@@ -5,6 +5,7 @@ import WorkspaceShell from "../components/WorkspaceShell";
 import NotFound from "../components/layout/NotFound";
 import RouteChangeA11y from "../components/RouteChangeA11y";
 import { VisualQaPageMarker, withVisualQaPage } from "../components/VisualQaMarker";
+import { legacyAppointmentsDestination } from "../lib/page-sub-tabs";
 
 const AgentStudioHome = lazy(() =>
   import("../pages/AgentStudioHome").then((module) => withVisualQaPage(module, "studio")),
@@ -110,11 +111,8 @@ function PhoneSettingsRedirect() {
 /** Appointments have one home; retain scoped bookmarks and anchors. */
 export function PhoneRoute() {
   const location = useLocation();
-  const search = new URLSearchParams(location.search);
-  if (search.get("tab") !== "appointments") return <PhonePage />;
-  search.delete("tab");
-  const query = search.toString();
-  return <Navigate to={`/calendar${query ? `?${query}` : ""}${location.hash}`} replace />;
+  const destination = legacyAppointmentsDestination(location.search, location.hash);
+  return destination ? <Navigate to={destination} replace /> : <PhonePage />;
 }
 
 /** Apps lives under Settings; preserve old bookmarks without maintaining two chromes. */

@@ -13,6 +13,7 @@ const WORKSPACE_EXACT_ROUTES = new Set([
   "/logs",
   "/calls",
   "/phone",
+  "/calendar",
   "/insights",
   "/inbox",
   "/email",

@@ -26,11 +26,24 @@ function scheduleLabel(appointment: Appointment): string {
     const instant = new Date(appointment.start_at);
     if (Number.isFinite(instant.getTime())) {
       try {
-        return new Intl.DateTimeFormat(undefined, {
-          month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
-          timeZone: appointment.time_zone, timeZoneName: "short",
+        const start = new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: appointment.time_zone,
+          timeZoneName: "short",
         }).format(instant);
-      } catch { /* Retain the original local date/time for older records. */ }
+        const duration = appointment.end_at
+          ? (new Date(appointment.end_at).getTime() - instant.getTime()) / 60_000
+          : NaN;
+        return appointment.booking_source === "native" && Number.isFinite(duration) && duration > 0
+          ? `${start} · ${Math.round(duration)} min`
+          : start;
+      } catch {
+        /* Retain the original local date/time for older records. */
+      }
     }
   }
   let date = appointment.date;
@@ -73,14 +86,22 @@ function appointmentTimestamp(appointment: Appointment): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-export function AppointmentRow({ appointment, busy, confirmingCancel, onCancelIntent, onStatus }: {
+export function AppointmentRow({
+  appointment,
+  busy,
+  confirmingCancel,
+  onCancelIntent,
+  onStatus,
+}: {
   appointment: Appointment;
   busy?: boolean;
   confirmingCancel?: boolean;
   onCancelIntent?: (id: string | null) => void;
   onStatus?: (appointment: Appointment, status: "Confirmed" | "Cancelled") => void;
 }) {
-  const editable = appointment.booking_source === "native" && appointment.status !== "Cancelled";
+  const editable =
+    appointment.booking_source === "native" &&
+    ["Requested", "Confirmed", "Scheduled", "Rescheduled"].includes(appointment.status || "");
   return (
     <li className="flex items-start gap-3 rounded-xl border border-border bg-card px-3.5 py-3.5 sm:px-4">
       <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -91,7 +112,11 @@ export function AppointmentRow({ appointment, busy, confirmingCancel, onCancelIn
           <strong className="min-w-0 break-words text-sm font-semibold text-foreground">
             {appointment.customer_name || "Customer"}
           </strong>
-          <Badge variant={["Scheduled", "Confirmed"].includes(appointment.status || "") ? "success" : "outline"}>
+          <Badge
+            variant={
+              ["Scheduled", "Confirmed"].includes(appointment.status || "") ? "success" : "outline"
+            }
+          >
             {appointment.status || "Scheduled"}
           </Badge>
         </div>
@@ -109,14 +134,47 @@ export function AppointmentRow({ appointment, busy, confirmingCancel, onCancelIn
         </span>
         {editable && onStatus ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {confirmingCancel ? <>
-              <span className="w-full text-sm">Cancel this appointment?</span>
-              <Button variant="secondary" size="sm" disabled={busy} onClick={() => onCancelIntent?.(null)}>Keep appointment</Button>
-              <Button variant="destructive" size="sm" disabled={busy} onClick={() => onStatus(appointment, "Cancelled")}>{busy ? "Saving…" : "Cancel appointment"}</Button>
-            </> : <>
-              {appointment.status === "Requested" ? <Button size="sm" disabled={busy} onClick={() => onStatus(appointment, "Confirmed")}>{busy ? "Saving…" : "Confirm"}</Button> : null}
-              <Button variant="ghost" size="sm" disabled={busy} onClick={() => onCancelIntent?.(appointment.id)}>Cancel</Button>
-            </>}
+            {confirmingCancel ? (
+              <>
+                <span className="w-full text-sm">Cancel this appointment?</span>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => onCancelIntent?.(null)}
+                >
+                  Keep appointment
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => onStatus(appointment, "Cancelled")}
+                >
+                  {busy ? "Saving…" : "Cancel appointment"}
+                </Button>
+              </>
+            ) : (
+              <>
+                {appointment.status === "Requested" ? (
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => onStatus(appointment, "Confirmed")}
+                  >
+                    {busy ? "Saving…" : "Confirm"}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => onCancelIntent?.(appointment.id)}
+                >
+                  Cancel
+                </Button>
+              </>
+            )}
           </div>
         ) : null}
       </div>
@@ -124,7 +182,10 @@ export function AppointmentRow({ appointment, busy, confirmingCancel, onCancelIn
   );
 }
 
-export default function AppointmentsPanel({ calendarConfigured = null, onConfigure }: {
+export default function AppointmentsPanel({
+  calendarConfigured = null,
+  onConfigure,
+}: {
   calendarConfigured?: boolean | null;
   onConfigure?: () => void;
 } = {}) {
@@ -209,15 +270,28 @@ export default function AppointmentsPanel({ calendarConfigured = null, onConfigu
     setMutationError(null);
     try {
       const response = await authFetch(`/api/appointments/${encodeURIComponent(appointment.id)}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
       });
-      const body = await response.json().catch(() => null) as { appointment?: { id?: string; status?: string }; error?: string } | null;
-      if (!response.ok) throw new Error(body?.error || "The appointment could not be updated. Try again.");
-      if (body?.appointment?.id !== appointment.id || body.appointment.status !== status) throw new Error("We couldn't confirm this update. Refresh Calendar before retrying.");
-      setAppointments((current) => current.map((row) => row.id === appointment.id ? { ...row, status } : row));
+      const body = (await response.json().catch(() => null)) as {
+        appointment?: { id?: string; status?: string };
+        error?: string;
+      } | null;
+      if (!response.ok)
+        throw new Error(body?.error || "The appointment could not be updated. Try again.");
+      if (body?.appointment?.id !== appointment.id || body.appointment.status !== status)
+        throw new Error("We couldn't confirm this update. Refresh Calendar before retrying.");
+      setAppointments((current) =>
+        current.map((row) => (row.id === appointment.id ? { ...row, status } : row)),
+      );
       setCancelConfirmId(null);
     } catch (reason) {
-      setMutationError(reason instanceof Error ? reason.message : "The appointment could not be updated. Try again.");
+      setMutationError(
+        reason instanceof Error
+          ? reason.message
+          : "The appointment could not be updated. Try again.",
+      );
     } finally {
       mutationRef.current = false;
       setMutatingId(null);
@@ -230,7 +304,11 @@ export default function AppointmentsPanel({ calendarConfigured = null, onConfigu
     const history: Appointment[] = [];
     for (const appointment of appointments) {
       const timestamp = appointmentTimestamp(appointment);
-      if (appointment.status === "Cancelled" || (timestamp !== null && timestamp < now)) history.push(appointment);
+      if (
+        ["Cancelled", "Completed"].includes(appointment.status || "") ||
+        (timestamp !== null && timestamp < now)
+      )
+        history.push(appointment);
       else future.push(appointment);
     }
     future.sort(
@@ -289,7 +367,9 @@ export default function AppointmentsPanel({ calendarConfigured = null, onConfigu
           title="No Appointments Yet"
           action={
             calendarConfigured === false && onConfigure ? (
-              <Button variant="secondary" size="sm" onClick={onConfigure}>Set availability</Button>
+              <Button variant="secondary" size="sm" onClick={onConfigure}>
+                Set availability
+              </Button>
             ) : undefined
           }
         />
@@ -299,7 +379,11 @@ export default function AppointmentsPanel({ calendarConfigured = null, onConfigu
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
-      {mutationError ? <StatusNotice tone="warning" title="Appointment not updated">{mutationError}</StatusNotice> : null}
+      {mutationError ? (
+        <StatusNotice tone="warning" title="Appointment not updated">
+          {mutationError}
+        </StatusNotice>
+      ) : null}
       <section aria-labelledby="upcoming-appointments">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 id="upcoming-appointments" className="text-sm font-semibold text-foreground">
@@ -310,7 +394,14 @@ export default function AppointmentsPanel({ calendarConfigured = null, onConfigu
         {upcoming.length ? (
           <ul className="flex flex-col gap-2">
             {upcoming.map((appointment) => (
-              <AppointmentRow key={appointment.id} appointment={appointment} busy={mutatingId !== null} confirmingCancel={cancelConfirmId === appointment.id} onCancelIntent={setCancelConfirmId} onStatus={changeStatus} />
+              <AppointmentRow
+                key={appointment.id}
+                appointment={appointment}
+                busy={mutatingId !== null}
+                confirmingCancel={cancelConfirmId === appointment.id}
+                onCancelIntent={setCancelConfirmId}
+                onStatus={changeStatus}
+              />
             ))}
           </ul>
         ) : (

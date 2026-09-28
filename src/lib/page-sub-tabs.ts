@@ -61,7 +61,10 @@ export const APP_PAGE_SUB_TAB_ROUTES: AppPageSubTabRoute[] = [
     defaultTab: "agenda",
     ariaLabel: "Calendar sections",
     layoutIdPrefix: "calendar-section",
-    tabs: [{ id: "agenda", label: "Calendar", icon: Calendar }, { id: "availability", label: "Availability", icon: CalendarClock }],
+    tabs: [
+      { id: "agenda", label: "Calendar", icon: Calendar },
+      { id: "availability", label: "Availability", icon: CalendarClock },
+    ],
   },
   {
     pathname: "/insights",
@@ -124,6 +127,15 @@ export function resolveAppPageSubTabId(route: AppPageSubTabRoute, tabParam: stri
   const normalized = normalizeAppPageSubTabParam(route, tabParam) ?? tabParam;
   if (normalized && route.tabs.some((t) => t.id === normalized)) return normalized;
   return route.defaultTab;
+}
+
+/** Keep old appointment bookmarks useful without carrying a retired tab owner. */
+export function legacyAppointmentsDestination(search: string, hash = ""): string | null {
+  const params = new URLSearchParams(search);
+  if (params.get("tab") !== "appointments") return null;
+  params.delete("tab");
+  const query = params.toString();
+  return `/calendar${query ? `?${query}` : ""}${hash}`;
 }
 
 /** Secondary views — driven by ?view= when a primary section exposes nested tabs. */

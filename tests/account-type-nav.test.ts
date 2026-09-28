@@ -16,6 +16,7 @@ describe("legacy account-type navigation compatibility", () => {
     expect(paths).toContain("/studio");
     expect(paths).toContain("/inbox");
     expect(paths).toContain("/phone");
+    expect(paths).toContain("/calendar");
     expect(paths).toContain("/connections");
     expect(paths).toContain("/settings");
     expect(paths).toContain("/insights");
@@ -29,12 +30,11 @@ describe("legacy account-type navigation compatibility", () => {
       "/studio",
       "/inbox",
       "/phone",
+      "/calendar",
     ]);
-    expect(groups.find((group) => group.label === "Manage")?.items.map((item) => item.path)).toEqual([
-      "/insights",
-      "/connections",
-      "/settings",
-    ]);
+    expect(
+      groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
+    ).toEqual(["/insights", "/connections", "/settings"]);
   });
 
   it("keeps secondary tools out of the primary rail", () => {

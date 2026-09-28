@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import AppointmentsPanel from "../src/components/AppointmentsPanel";
+import AppointmentsPanel, { AppointmentRow } from "../src/components/AppointmentsPanel";
 
 const h = vi.hoisted(() => ({
   slots: [] as Array<{ value?: unknown; dependencies?: readonly unknown[]; cleanup?: () => void }>,
@@ -75,11 +75,17 @@ type Props = {
   disabled?: boolean;
   onClick?: () => void;
   appointment?: { id: string; customer_name: string };
+  onStatus?: (
+    appointment: ReturnType<typeof appointment>,
+    status: "Confirmed" | "Cancelled",
+  ) => Promise<void>;
+  onCancelIntent?: (id: string | null) => void;
+  confirmingCancel?: boolean;
 };
 type Element = ReactElement<Props>;
 let tree: ReactNode;
 let appointmentResponses: Array<() => Promise<Response>>;
-let calendarResponse: () => Promise<Response>;
+let panelProps: Parameters<typeof AppointmentsPanel>[0];
 const cursor = "00000000-0000-4000-8000-000000000100";
 function appointment(id: string, future = false) {
   return {
@@ -116,7 +122,7 @@ function render() {
     h.dirty = false;
     h.cursor = 0;
     h.effects = [];
-    tree = AppointmentsPanel();
+    tree = AppointmentsPanel(panelProps);
     h.effects.forEach((run) => run());
   } while (h.dirty);
 }
@@ -157,23 +163,19 @@ beforeEach(() => {
   h.effects = [];
   h.fetch.mockReset();
   appointmentResponses = [];
-  calendarResponse = async () => response({ accounts: [{}] });
-  h.fetch.mockImplementation(async (url: string) =>
-    url === "/api/calendar/accounts"
-      ? calendarResponse()
-      : (appointmentResponses.shift()?.() ?? page([])),
-  );
+  panelProps = {};
+  h.fetch.mockImplementation(async () => appointmentResponses.shift()?.() ?? page([]));
 });
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("appointment history and recovery", () => {
-  it("shows appointments even if the optional calendar connection request rejects", async () => {
-    calendarResponse = async () => {
-      throw new Error("Calendar offline");
-    };
+  it("shows appointments without fetching or requiring an external calendar connection", async () => {
     appointmentResponses = [async () => page([appointment("one", true)])];
     await settle();
     expect(displayed()).toEqual(["one"]);
+    expect(h.fetch.mock.calls.every(([url]) => String(url).startsWith("/api/appointments?"))).toBe(
+      true,
+    );
     expect(elements(tree).some((node) => node.props.title === "Appointments Unavailable")).toBe(
       false,
     );
@@ -261,5 +263,108 @@ describe("appointment history and recovery", () => {
     await settle();
     expect(displayed()).toEqual(["recovered"]);
     expect(requests()).toHaveLength(2);
+  });
+
+  it("sends an empty workspace to native availability instead of requiring a provider", async () => {
+    const configure = vi.fn();
+    panelProps = { calendarConfigured: false, onConfigure: configure };
+    await settle();
+    expect(elements(tree).some((node) => node.props.title === "No Appointments Yet")).toBe(true);
+    button("Set availability").props.onClick!();
+    expect(configure).toHaveBeenCalledOnce();
+    expect(h.fetch.mock.calls.some(([url]) => url === "/api/calendar/accounts")).toBe(false);
+  });
+
+  it("retains a pending request after conflict and confirms only on a verified response", async () => {
+    const pending = {
+      ...appointment("native", true),
+      booking_source: "native",
+      status: "Requested",
+      start_at: "2099-12-25T18:30:00Z",
+      time_zone: "America/Chicago",
+    };
+    let patches = 0;
+    h.fetch.mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method === "PATCH") {
+        patches++;
+        expect(JSON.parse(String(init.body))).toEqual({ status: "Confirmed" });
+        return patches === 1
+          ? response({ error: "That slot is no longer available." }, 409)
+          : response({ appointment: { id: pending.id, status: "Confirmed" } });
+      }
+      return page([pending]);
+    });
+    const row = () => elements(tree).find((node) => node.type === AppointmentRow)!;
+    await settle();
+    await row().props.onStatus!(pending, "Confirmed");
+    await settle();
+    expect(text(tree)).toContain("That slot is no longer available.");
+    expect(row().props.appointment).toMatchObject({ status: "Requested" });
+    await row().props.onStatus!(pending, "Confirmed");
+    await settle();
+    expect(row().props.appointment).toMatchObject({ status: "Confirmed" });
+    expect(text(tree)).not.toContain("That slot is no longer available.");
+  });
+
+  it("does not apply an unverified appointment mutation and allows retry", async () => {
+    const pending = {
+      ...appointment("native", true),
+      booking_source: "native",
+      status: "Requested",
+    };
+    h.fetch.mockImplementation(async (_url: string, init?: RequestInit) =>
+      init?.method === "PATCH"
+        ? response({ appointment: { id: "different-id", status: "Cancelled" } })
+        : page([pending]),
+    );
+    await settle();
+    await elements(tree).find((node) => node.type === AppointmentRow)!.props.onStatus!(
+      pending,
+      "Cancelled",
+    );
+    await settle();
+    expect(
+      elements(tree).find((node) => node.type === AppointmentRow)!.props.appointment,
+    ).toMatchObject({ status: "Requested" });
+    expect(text(tree)).toContain("Refresh Calendar before retrying.");
+  });
+
+  it("uses the stored instant and appointment timezone for native bookings", () => {
+    const result = AppointmentRow({
+      appointment: {
+        ...appointment("native"),
+        booking_source: "native",
+        start_at: "2030-01-10T12:30:00Z",
+        end_at: "2030-01-10T13:15:00Z",
+        time_zone: "America/Chicago",
+      },
+    });
+    expect(text(result)).toContain("2030");
+    expect(text(result)).toContain("6:30");
+    expect(text(result)).toContain("45 min");
+    expect(text(result)).not.toContain("2020");
+  });
+
+  it("does not offer cancellation for a completed native appointment", () => {
+    const result = AppointmentRow({
+      appointment: { ...appointment("complete"), booking_source: "native", status: "Completed" },
+      onStatus: vi.fn(),
+    });
+    expect(text(result)).not.toContain("Cancel");
+  });
+
+  it("keeps completed appointments in History even when their original time is ahead", async () => {
+    appointmentResponses = [
+      async () => page([{ ...appointment("complete", true), status: "Completed" }]),
+    ];
+    await settle();
+    const history = elements(tree).find((node) => node.type === "details");
+    expect(history).toBeDefined();
+    expect(
+      elements(history).find((node) => node.type === AppointmentRow)?.props.appointment?.id,
+    ).toBe("complete");
+    expect(
+      elements(history).find((node) => node.type === AppointmentRow)?.props.onStatus,
+    ).toBeUndefined();
   });
 });

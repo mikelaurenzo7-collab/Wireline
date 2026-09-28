@@ -61,6 +61,8 @@ export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/phone?tab=outbound", "phone", ["primary-outbound", "secondary-dispatch"]),
   visualExpectation("/phone?tab=campaigns", "phone", ["primary-outbound", "secondary-campaigns"]),
   visualExpectation("/phone?tab=callbacks", "phone", ["primary-outbound", "secondary-callbacks"]),
+  visualExpectation("/calendar", "calendar", ["agenda"]),
+  visualExpectation("/calendar?tab=availability", "calendar", ["availability"]),
   visualExpectation("/insights", "insights"),
   visualExpectation("/inbox", "inbox"),
   visualExpectation("/approvals", "approvals"),

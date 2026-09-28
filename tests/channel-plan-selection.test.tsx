@@ -49,6 +49,17 @@ describe("channel package selection", () => {
       }
     }
   });
+  it("formats non-Calls capacity allowances as currency without dropping cents", () => {
+    const tree = ChannelPlanPicker({
+      plans,
+      selectedPlanId: "email",
+      onSelectPlan: vi.fn(),
+      interval: "month",
+      renderAction: () => null,
+    });
+    expect(text(tree)).toContain("$2.50 allowance");
+    expect(text(tree)).not.toContain("$2.5 allowance");
+  });
   it.each(plans)("preserves $id through signup, storage sanitization, and activation", (plan) => {
     const href = signupHrefForPlan(plan.id as SignupPlanId, { interval: "year" });
     const intent = parseSignupIntent(href.slice(href.indexOf("?")));

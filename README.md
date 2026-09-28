@@ -25,6 +25,8 @@ Calls Light / Regular / High include 50 / 250 / 500 minutes per month, respectiv
 
 Channel-plan call minutes and managed AI allowances reset on the paid monthly subscription anniversary, including monthly slices of annual plans. Unused included usage does not roll over. Billing and Activity show the next reset date; legacy plans and Free Builder retain calendar-month accounting.
 
+Calendar owns appointments, weekly availability, timezone, and booking rules at `/calendar`. Save availability to enable native booking; appointments then confirm automatically unless the owner selects approval mode. Requested appointments hold their time until confirmed or cancelled. Google and Outlook connections are optional busy-time imports refreshed by calendar sync; new native bookings are not exported to those providers. Pausing native booking does not silently fall back to them. Existing `/phone?tab=appointments` links redirect to Calendar.
+
 ## Technology and ownership
 
 - **Web/API:** React 19, Vite, Express, TypeScript, Tailwind, Drizzle ORM, Supabase Postgres, and Node 22 on Render. The Vercel bundle remains a legacy rollback path.
