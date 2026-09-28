@@ -1,4 +1,5 @@
 {
+  "background": { "scripts": ["background/service-worker.js"], "type": "module" },
   "sidebar_action": {
     "default_title": "BotBound Command",
     "default_panel": "panel/index.html",

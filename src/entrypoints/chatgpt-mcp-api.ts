@@ -6,7 +6,8 @@ import { registerMcpRoutes } from "../server/register-mcp-routes";
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
-app.use(express.json({ limit: "1mb" }));
+// One bounded 2MiB PNG expands to ~2.7MiB base64, plus bounded planner text.
+app.use(express.json({ limit: "4mb" }));
 
 registerMcpRoutes(app);
 

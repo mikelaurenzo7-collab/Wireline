@@ -1,6 +1,6 @@
 import { DEFAULT_MODEL, selectModelForTask, type TaskComplexity } from "./ai-models";
 import { recordUsage } from "./ai-audit";
-import { getRuntimeClient } from "./ai-client";
+import { getRuntimeClient, type RuntimeImageInput } from "./ai-client";
 import { providerIdentityStore, runWithProviderIdentity } from "./provider-identity-context";
 import { tenantStore } from "./tenant-context-store";
 
@@ -12,6 +12,7 @@ export type StructuredToolSchema = {
 export type StructuredOptions = {
   system: string;
   user: string;
+  images?: RuntimeImageInput[];
   tool: StructuredToolSchema;
   deepThink?: boolean;
   cacheSystem?: boolean;
@@ -59,7 +60,14 @@ function bodyFor(opts: StructuredOptions, model: string) {
     system: opts.system,
     tools: [opts.tool],
     tool_choice: { type: "tool", name: opts.tool.name },
-    messages: [{ role: "user", content: opts.user }],
+    messages: [
+      {
+        role: "user",
+        content: opts.images?.length
+          ? [{ type: "text", text: opts.user }, ...opts.images]
+          : opts.user,
+      },
+    ],
   };
 }
 function structuredResult<T>(

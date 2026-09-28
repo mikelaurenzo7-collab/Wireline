@@ -1,5 +1,6 @@
 {
-  "minimum_chrome_version": "114",
+  "minimum_chrome_version": "116",
+  "background": { "service_worker": "background/service-worker.js", "type": "module" },
   "permissions": ["sidePanel"],
   "side_panel": {
     "default_path": "panel/index.html"

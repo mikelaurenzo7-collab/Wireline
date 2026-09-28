@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
+    />
+    <title>BotBound Desktop</title>
+    <link rel="stylesheet" href="fonts.css" />
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="botbound.png" alt="" width="36" height="36" /><span
+          >BotBound <span class="muted">Desktop</span></span
+        >
+      </div>
+      <div class="actions">
+        <span id="connection-status" role="status">Connecting to app…</span
+        ><button id="connect" class="secondary">Connect</button
+        ><button id="stop" class="stop" disabled>Stop</button>
+      </div>
+    </header>
+    <main>
+      <p id="error" role="alert" hidden></p>
+      <section id="connection-recovery" hidden aria-labelledby="connection-recovery-title">
+        <h2 id="connection-recovery-title">Connection unconfirmed</h2>
+        <p>
+          The sign-in response was lost. In the account you used to connect, open Apps and revoke
+          BotBound Desktop. Then confirm below. This review does not send a revocation request.
+        </p>
+        <button id="recovery-account" class="secondary">Open account Apps</button>
+        <label class="check-row"
+          ><input id="revocation-reviewed" type="checkbox" />I revoked BotBound Desktop access, or
+          confirmed no Desktop connection exists.</label
+        >
+        <button id="confirm-revocation" class="secondary" disabled>Reset local connection</button>
+      </section>
+      <section id="setup" aria-labelledby="setup-title">
+        <div class="section-heading">
+          <h1 id="setup-title">What needs doing?</h1>
+          <button id="account" class="text-button">Open BotBound</button>
+        </div>
+        <form id="task-form">
+          <div class="field-grid">
+            <div>
+              <div class="field-heading"><label for="bot">Your Bot</label></div>
+              <select id="bot" required disabled>
+                <option value="">Connect to choose a Bot</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-heading">
+                <label for="window">Shared window</label
+                ><button id="refresh-windows" class="text-button" type="button">Refresh</button>
+              </div>
+              <select id="window">
+                <option value="">MCP tools only</option>
+              </select>
+            </div>
+          </div>
+          <label for="goal" class="sr-only">Task</label>
+          <textarea
+            id="goal"
+            rows="4"
+            maxlength="4000"
+            required
+            placeholder="Research prospects, edit a document, or work in an app…"
+          ></textarea>
+          <div id="task-tools" class="task-tools" hidden></div>
+          <label class="check-row consent"
+            ><input id="share" type="checkbox" required /><span
+              >Share this task, selected-window screenshots, and approved MCP tool data with
+              BotBound and its AI providers (OpenAI/Gemini).</span
+            ></label
+          >
+          <div class="form-footer">
+            <p class="muted small">One shared window. Every action needs your approval.</p>
+            <button id="start" class="primary" disabled>Start task</button>
+          </div>
+        </form>
+      </section>
+      <section id="current-task" aria-labelledby="task-title" hidden>
+        <div class="section-heading">
+          <h2 id="task-title">Current task</h2>
+          <span id="task-status" class="status-pill"></span>
+        </div>
+        <p id="task-goal" class="task-goal"></p>
+        <p id="task-target" class="muted small"></p>
+        <p id="task-message" role="status"></p>
+        <figure id="preview-box" hidden>
+          <img id="preview" alt="Current view of the window you shared" />
+          <figcaption class="muted small">
+            Only the selected window is shared. Keep sensitive information out of view.
+          </figcaption>
+        </figure>
+        <section id="proposal" class="proposal" aria-labelledby="proposal-title" hidden>
+          <h3 id="proposal-title">Review next action</h3>
+          <p id="proposal-summary"></p>
+          <p id="proposal-destination" class="muted small"></p>
+          <pre id="proposal-arguments" tabindex="0" aria-label="Exact proposed action"></pre>
+          <button id="approve" class="primary">Approve once</button>
+        </section>
+        <form id="reply-form" hidden>
+          <label for="reply"
+            >Your input<textarea id="reply" rows="3" maxlength="1000" required></textarea></label
+          ><button id="resume" class="primary">Resume task</button>
+        </form>
+        <div id="result-review" hidden>
+          <p id="review-instructions">
+            Review the result in the destination before marking this task complete.
+          </p>
+          <label class="check-row"
+            ><input id="reviewed" type="checkbox" /><span id="review-label"
+              >I reviewed the result.</span
+            ></label
+          ><button id="complete" class="primary" disabled>Mark complete</button>
+        </div>
+        <details id="history">
+          <summary>Action history <span id="receipt-count"></span></summary>
+          <ol id="receipts"></ol>
+        </details>
+      </section>
+      <details id="mcp-settings" class="mcp-settings">
+        <summary>MCP connections <span class="muted small">Advanced</span></summary>
+        <p class="muted small">
+          Connect a server you trust. Review its tools and choose which ones this Bot may propose
+          using.
+        </p>
+        <div id="servers"></div>
+        <form id="server-form" class="server-form">
+          <label for="server-label"
+            >Name<input id="server-label" maxlength="80" required placeholder="Your workspace"
+          /></label>
+          <label for="server-url"
+            >HTTPS endpoint<input
+              id="server-url"
+              type="url"
+              required
+              placeholder="https://example.com/mcp"
+          /></label>
+          <label for="server-token"
+            >Access token <span class="muted small">Optional</span
+            ><input id="server-token" type="password" autocomplete="off" spellcheck="false"
+          /></label>
+          <button id="add-server" class="secondary">Add connection</button>
+        </form>
+      </details>
+      <footer class="muted small">
+        You stay in control. Stop revokes this task’s access.
+        <kbd id="stop-shortcut">Ctrl+Shift+.</kbd>
+      </footer>
+    </main>
+  </body>
+</html>

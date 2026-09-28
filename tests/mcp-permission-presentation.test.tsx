@@ -52,6 +52,7 @@ const labels = {
   "agents.read": "Read Bot Context",
   "agents.write": "Edit Drafts & Training",
   "demo.voice": "Private Rehearsals",
+  "computer.plan": "Plan Computer Tasks",
 };
 beforeEach(() => {
   h.cursor = 0;

@@ -27,6 +27,13 @@ import { normalizeProviderReportedCostUsd } from "./ai-provider-cost";
 import { currentProviderSafetyIdentifier } from "./provider-identity-context";
 
 export type RuntimeTextBlock = { type: "text"; text: string; citations?: null };
+/** Inline images only: never ask a provider to fetch an arbitrary customer URL. */
+export type RuntimeImageInput = {
+  type: "image";
+  mimeType: "image/png";
+  data: string;
+  detail: "high" | "low";
+};
 export type RuntimeToolUseBlock = {
   type: "tool_use";
   id: string;
@@ -165,7 +172,23 @@ export function hasKnownResponsesUsage(usage: Record<string, unknown>): boolean 
 }
 
 let client: RuntimeClient | null = null;
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+/** Provider messages and JSON parse excerpts can contain customer input/output. */
+function safeProviderErrorLabel(error: unknown): string {
+  const type =
+    error instanceof DefiniteProviderRejectionError
+      ? "DefiniteProviderRejectionError"
+      : error instanceof AccountedProviderOutputError
+        ? "AccountedProviderOutputError"
+        : error instanceof SyntaxError
+          ? "SyntaxError"
+          : error instanceof TypeError
+            ? "TypeError"
+            : error instanceof Error
+              ? "Error"
+              : "UnknownError";
+  const status = explicitProviderHttpStatus(error);
+  return status === null ? type : `${type} (HTTP ${status})`;
+}
 
 function extractText(value: unknown): string {
   if (typeof value === "string") return value;
@@ -178,6 +201,40 @@ function extractText(value: unknown): string {
   if (block.type === "document")
     return `[${typeof block.title === "string" ? block.title : "attached document"} attached; use only explicitly supplied extracted text.]`;
   return "";
+}
+
+function imageInputs(value: unknown): RuntimeImageInput[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is RuntimeImageInput =>
+      item?.type === "image" &&
+      item.mimeType === "image/png" &&
+      typeof item.data === "string" &&
+      (item.detail === "high" || item.detail === "low"),
+  );
+}
+
+/** Preserve actual multimodal input through every governed continuity lane. */
+export function responsesInputContent(value: unknown) {
+  const images = imageInputs(value);
+  if (!images.length) return extractText(value);
+  return [
+    { type: "input_text", text: extractText(value) },
+    ...images.map((image) => ({
+      type: "input_image",
+      detail: image.detail,
+      image_url: `data:${image.mimeType};base64,${image.data}`,
+    })),
+  ];
+}
+
+export function geminiInputParts(value: unknown): import("@google/generative-ai").Part[] {
+  return [
+    { text: extractText(value) },
+    ...imageInputs(value).map((image) => ({
+      inlineData: { mimeType: image.mimeType, data: image.data },
+    })),
+  ];
 }
 
 const structuredOutputTool = (
@@ -437,7 +494,7 @@ async function callResponsesEndpoint(args: {
         instructions: extractText(args.body.system) || undefined,
         input: args.body.messages.map((item) => ({
           role: item.role === "assistant" ? "assistant" : "user",
-          content: extractText(item.content),
+          content: responsesInputContent(item.content),
         })),
         max_output_tokens: args.body.max_tokens ?? 4096,
         ...(typeof args.store === "boolean" ? { store: args.store } : {}),
@@ -674,7 +731,7 @@ async function callGemini(
   });
   const contents = body.messages.map((item) => ({
     role: item.role === "assistant" ? ("model" as const) : ("user" as const),
-    parts: [{ text: extractText(item.content) }],
+    parts: geminiInputParts(item.content),
   }));
   // Gemini's output cap includes thinking tokens. Carry the same requested
   // bound as Responses so a fallback cannot exceed a setup spend reservation.
@@ -690,8 +747,9 @@ async function callGemini(
   if (tool) {
     generationConfig.responseMimeType = "application/json";
     if (contents.length)
-      contents[contents.length - 1].parts[0].text +=
-        `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`;
+      contents[contents.length - 1].parts.push({
+        text: `\nReturn one JSON object matching this schema:\n${JSON.stringify(tool.input_schema, null, 2)}`,
+      });
   }
   // Google SDK does not forward AbortSignal; race the promise against a timer
   // so a stalled Gemini call cannot hold the request open past the ceiling.
@@ -805,7 +863,7 @@ class RuntimeCircuitBreaker {
     log.warn("[ai-circuit-breaker] provider failure recorded", {
       provider: this.provider,
       failureCount: this.failureCount,
-      error: errorMessage(error),
+      error: safeProviderErrorLabel(error),
     });
     if (this.state === "HALF_OPEN" || this.failureCount >= this.failureThreshold)
       this.transitionTo("OPEN");
@@ -921,7 +979,7 @@ async function createWithFallbacks(
         log.warn("[ai-runtime] provider request failed; trying fallback", {
           provider: provider.name,
           nextProvider: next.name,
-          error: errorMessage(providerError),
+          error: safeProviderErrorLabel(providerError),
           breakerState: provider.breaker?.getState() || "NONE",
         });
     }

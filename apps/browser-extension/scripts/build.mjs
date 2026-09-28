@@ -74,6 +74,28 @@ function assertExtensionPolicy(manifest, target) {
   if (target === "firefox" && !manifest.sidebar_action?.default_panel) {
     throw new Error("firefox: sidebar entrypoint is required.");
   }
+  const background = manifest.background;
+  if (background?.type !== "module") {
+    throw new Error(`${target}: the background entrypoint must load as a module.`);
+  }
+  if (target === "chromium") {
+    if (!background.service_worker || background.scripts || background.page) {
+      throw new Error("chromium: a service-worker background entrypoint is required.");
+    }
+    if (!(Number.parseInt(manifest.minimum_chrome_version, 10) >= 116)) {
+      throw new Error("chromium: sidePanel.open requires Chrome 116 or newer.");
+    }
+  }
+  if (target === "firefox") {
+    if (!background.scripts?.length || background.service_worker || background.page) {
+      throw new Error("firefox: background scripts are required; service workers are unsupported.");
+    }
+    if (
+      !(Number.parseInt(manifest.browser_specific_settings?.gecko?.strict_min_version, 10) >= 128)
+    ) {
+      throw new Error("firefox: the command package requires Firefox 128 or newer.");
+    }
+  }
 }
 
 async function renderIcons(outputDirectory) {

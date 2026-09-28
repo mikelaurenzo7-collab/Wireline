@@ -173,6 +173,9 @@ describe("companion app setup interactions", () => {
     expect(nodes.find((node) => node.props.download)?.props.href).toBe(
       "/downloads/botbound-command-chromium.zip",
     );
+    expect(
+      nodes.some((node) => node.type === "li" && text(node).includes("brave://extensions")),
+    ).toBe(true);
     expect(nodes.some((node) => node.props.role === "note")).toBe(false);
     nodes.find((node) => node.type === "button" && text(node) === "Firefox")!.props.onClick!();
     nodes = render(BrowserCommandInstallPage);
@@ -192,8 +195,8 @@ describe("companion app setup interactions", () => {
         (node) => node.props.role === "note" && text(node).includes("removes it on restart"),
       ),
     ).toBe(true);
-    nodes.find((node) => node.type === "button" && text(node) === "Chrome, Edge & Opera")!.props
-      .onClick!();
+    nodes.find((node) => node.type === "button" && text(node) === "Chrome, Edge, Brave & Opera")!
+      .props.onClick!();
     nodes = render(BrowserCommandInstallPage);
     expect(nodes.find((node) => node.props.download)?.props.href).toBe(
       "/downloads/botbound-command-chromium.zip",

@@ -16,6 +16,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Connections      | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
 | Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                             |
 | BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.             |
+| BotBound Desktop | `apps/desktop/`                                                                                     | **Internal development** owner-reviewed Windows/macOS and MCP tasks; signed distribution and native acceptance pending. |
 | iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
 | Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                |
 | ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                      |
@@ -45,6 +46,9 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                |
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                     |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.    |
+| [COMPUTER_COMPANION.md](./COMPUTER_COMPANION.md)                                                 | Desktop planning, local execution authority, account isolation, spend, and platform release gates. |
+| [Desktop client](../apps/desktop/README.md)                                                     | Local development, task interface, packaging, and distribution requirements. |
+| [Desktop native helpers](../apps/desktop/native/README.md)                                      | Platform compilation, fixed native operations, and device acceptance. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.           |
 | [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.     |
 | [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                   |

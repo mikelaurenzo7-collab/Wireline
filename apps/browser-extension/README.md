@@ -8,9 +8,11 @@ It lets a signed-in BotBound customer deliberately bring the active page, text t
 
 ## What it supports
 
-- **Chrome, Microsoft Edge, and Opera:** one Chromium Manifest V3 artifact using the browser side-panel API when available.
-- **Firefox:** one Manifest V3 overlay using Firefox's native sidebar action.
+- **Chrome, Microsoft Edge, Brave, and Opera:** one Chromium Manifest V3 artifact with a module service worker. The package requires Chromium 116 or newer because opening its side panel uses `sidePanel.open`.
+- **Firefox 128+:** a separate Manifest V3 artifact with module background scripts and Firefox's native sidebar action. It does not declare Chromium's unsupported `background.service_worker` entry.
 - **Fallback:** opening Studio in a tab if a sidebar cannot be opened by the host browser.
+
+Both packages run in desktop browsers on Windows and macOS. These are browser context-capture packages; they do not install an operating-system automation agent. The current downloads are unpacked/temporary installations, not signed store releases.
 
 ## Product role
 
@@ -61,6 +63,8 @@ apps/browser-extension/dist/firefox/
 
 The build generates every browser-required PNG size from the canonical production artwork at `public/brand/botbound-app-icon.png` and merges the shared manifest with the target overlay. `assets/icon.svg` remains a browser-readable compatibility wrapper, not a second drawing of the mark.
 
+The background entrypoint belongs to each target overlay so Firefox never receives a service-worker-only manifest, and Chromium never receives Firefox's `background.scripts` key. Firefox 128 supports `background.type: "module"`; no transpilation or added permissions are needed for the shared script.
+
 ## In-product install (preferred)
 
 Signed-in customers install from **Apps → BotBound Command** (`/settings/apps/command`).
@@ -78,12 +82,16 @@ Rebuild with `node apps/browser-extension/scripts/build.mjs` whenever shipping a
 ## Local validation
 
 1. Run the build command above.
-2. Prefer the in-product download page, or load `dist/chromium` as an unpacked extension in Chrome, Edge, or Opera.
-3. Load `dist/firefox` as a temporary add-on in Firefox.
+2. Prefer the in-product download page, or load `dist/chromium` as an unpacked extension in Chrome, Edge, Brave, or Opera. Use the browser's extensions page (`chrome://extensions`, `edge://extensions`, `brave://extensions`, or `opera://extensions`), enable Developer mode, and choose Load unpacked.
+3. Load `dist/firefox/manifest.json` through Load Temporary Add-on in `about:debugging#/runtime/this-firefox`. Firefox removes temporary installations on restart.
 4. Test the toolbar action, selected-text context menu, page context menu, `tel:` link context menu, and `Ctrl/Command+Shift+Y` shortcut.
 5. Confirm quick commands exist for Call, Text, Email, and Bot task.
 6. Confirm Studio opens with the prefilled brief, the context is visibly labeled as reference, and the URL fragment is removed.
 7. Confirm restricted pages do not break the extension and cannot be silently inspected.
+
+Automated packaging tests build both ZIPs, validate each target's background entrypoint and minimal permissions, compare every packaged capture/panel file with its source, and check that published downloads and legacy aliases match. This proves package contents; installation and toolbar/sidebar behavior still require the browser checks above.
+
+Compatibility references: [Chrome sidePanel API](https://developer.chrome.com/docs/extensions/reference/api/sidePanel), [Firefox background manifest](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background), and [Brave extension support](https://support.brave.com/hc/en-us/articles/360017909112-How-can-I-add-extensions-to-Brave).
 
 ## Store release checklist
 

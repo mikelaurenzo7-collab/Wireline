@@ -125,9 +125,7 @@ export default function McpCoachingPanel() {
       }
       setConnections([]);
       setConfirmDisconnect(false);
-      setNotice(
-        "Cursor, ChatGPT, and Claude can no longer use this account until you connect again.",
-      );
+      setNotice("Connected apps can no longer use this account until you connect again.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't disconnect connected apps.");
     } finally {
@@ -197,7 +195,9 @@ export default function McpCoachingPanel() {
                           ? "Edit Drafts & Training"
                           : scope === "demo.voice"
                             ? "Private Rehearsals"
-                            : scope,
+                            : scope === "computer.plan"
+                              ? "Plan Computer Tasks"
+                              : scope,
                     )
                     .join(" · ")}
                 </p>

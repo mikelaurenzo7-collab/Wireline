@@ -88,12 +88,51 @@ describe("browser-extension download freshness contract", () => {
     expect(renderer).toContain("Browser-extension packaging failed");
   });
 
+  it("packages a Chromium module service worker for Chrome, Edge, and Brave without Firefox-only background keys", () => {
+    const manifestPath = resolve(outputRoot, "chromium/manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    expect(manifest.background).toEqual({
+      service_worker: "background/service-worker.js",
+      type: "module",
+    });
+    expect(Number.parseInt(manifest.minimum_chrome_version, 10)).toBeGreaterThanOrEqual(116);
+    expect(manifest.side_panel).toEqual({ default_path: "panel/index.html" });
+    expect(manifest.permissions.toSorted()).toEqual(
+      ["activeTab", "contextMenus", "scripting", "sidePanel"].toSorted(),
+    );
+    expect(manifest).not.toHaveProperty("host_permissions");
+    expect(manifest).not.toHaveProperty("sidebar_action");
+    expect(manifest).not.toHaveProperty("browser_specific_settings");
+  });
+
+  it("packages a Firefox module background script and sidebar without unsupported service-worker keys", () => {
+    const manifestPath = resolve(outputRoot, "firefox/manifest.json");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    expect(manifest.background).toEqual({
+      scripts: ["background/service-worker.js"],
+      type: "module",
+    });
+    expect(manifest.browser_specific_settings.gecko.strict_min_version).toBe("128.0");
+    expect(manifest.sidebar_action.default_panel).toBe("panel/index.html");
+    expect(manifest.permissions.toSorted()).toEqual(
+      ["activeTab", "contextMenus", "scripting"].toSorted(),
+    );
+    expect(manifest).not.toHaveProperty("host_permissions");
+    expect(manifest).not.toHaveProperty("side_panel");
+    expect(manifest).not.toHaveProperty("minimum_chrome_version");
+  });
+
   for (const target of ["chromium", "firefox"]) {
     it(`generates a ${target} package that exactly matches the extension source`, () => {
       const zipPath = resolve(outputRoot, `botbound-command-${target}.zip`);
       const entries = new Map(
         readZipCentralDirectory(zipPath).map((entry) => [entry.name, entry.crc]),
       );
+
+      expect(
+        entries.get("manifest.json"),
+        `${target}: ZIP manifest differs from the built manifest`,
+      ).toBe(crc32(readFileSync(resolve(outputRoot, target, "manifest.json"))));
 
       const checked: string[] = [];
       for (const directory of VERBATIM_SOURCE_DIRS) {

@@ -6,7 +6,7 @@ import { mcpIssuer, mcpResourceUrl } from "./mcp-oauth-security";
 /** Stable protocol/package name retained for existing connected clients. */
 export const MCP_SERVER_NAME = "wireline";
 export const MCP_SERVER_TITLE = "BotBound";
-export const MCP_SERVER_VERSION = "2.4.0";
+export const MCP_SERVER_VERSION = "2.5.0";
 
 export const MCP_DOCUMENTATION_URL = "https://botbound.app/claude-connector.html";
 export const MCP_PRIVACY_URL = "https://botbound.app/mcp-privacy.html";

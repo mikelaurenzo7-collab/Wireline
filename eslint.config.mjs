@@ -109,6 +109,14 @@ export default [
     },
   },
 
+  // ── Sandboxed desktop renderer — browser globals, no Node access ─────
+  {
+    files: ["apps/desktop/src/renderer/**/*.js"],
+    languageOptions: {
+      globals: { ...globals.browser },
+    },
+  },
+
   // ── Node maintenance scripts (ops layer) ─────────────────────────────
   // These scripts run the launch gates, provider audits, and deploy flow.
   // `no-undef` is the load-bearing rule here: a missing import in an ops
@@ -117,6 +125,7 @@ export default [
   {
     files: [
       "**/scripts/**/*.mjs",
+      "apps/desktop/scripts/**/*.cjs",
       "scripts/lib/**/*.mjs",
       "deploy/render/**/*.mjs",
       "tests/**/*.test.mjs",

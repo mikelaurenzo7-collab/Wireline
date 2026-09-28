@@ -87,6 +87,41 @@ export async function revokeAllMcpGrantsForUser(
   return drizzle.transaction(revoke);
 }
 
+/** Token possession can revoke only its own client/resource grant, never another tenant. */
+export async function revokeMcpGrantByToken(input: {
+  tokenHash: string;
+  clientId: string;
+  resource: string;
+}): Promise<void> {
+  await drizzle.transaction(async (tx) => {
+    // Same account-first ordering as token rotation; then re-read after locking.
+    const owned = sql`
+      SELECT user_id FROM wireline_mcp_access_tokens
+      WHERE token_hash = ${input.tokenHash} AND client_id = ${input.clientId}
+        AND resource = ${input.resource} AND expires_at > now()
+      UNION
+      SELECT user_id FROM wireline_mcp_refresh_tokens
+      WHERE token_hash = ${input.tokenHash} AND client_id = ${input.clientId}
+        AND resource = ${input.resource} AND expires_at > now()
+    `;
+    const locked = (await tx.execute(sql`
+      SELECT id FROM wireline_users WHERE id IN (${owned}) FOR UPDATE
+    `)) as unknown as { rows?: Array<{ id: string }> };
+    if (locked.rows?.length !== 1) return;
+    const matched = (await tx.execute(owned)) as unknown as { rows?: Array<{ user_id: string }> };
+    const userId = locked.rows[0].id;
+    if (matched.rows?.length !== 1 || matched.rows[0].user_id !== userId) return;
+    for (const table of [
+      "wireline_mcp_access_tokens",
+      "wireline_mcp_refresh_tokens",
+      "wireline_mcp_oauth_codes",
+    ]) {
+      await tx.execute(sql`DELETE FROM ${sql.raw(table)}
+        WHERE user_id = ${userId}::uuid AND client_id = ${input.clientId} AND resource = ${input.resource}`);
+    }
+  });
+}
+
 export async function pruneExpiredMcpOAuthRows(): Promise<void> {
   await Promise.all([
     drizzle.execute(sql`DELETE FROM wireline_mcp_oauth_codes WHERE expires_at < now()`),

@@ -85,6 +85,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
   - Speech generation and live-call voice remain OpenAI-owned; structured continuity never changes the selected speaker.
 - **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.
 - **Browser extension:** BotBound Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
+- **Desktop companion:** `apps/desktop` owns local window grants, explicit action approval, third-party MCP credentials, and durable execution receipts. The scoped `plan_computer_step` tool returns one bounded proposal using paid account AI allowance; it cannot execute it. OS helpers recheck the selected window before input. This is an owner-reviewed control surface, not an OS sandbox. See [COMPUTER_COMPANION.md](./docs/COMPUTER_COMPANION.md).
 - **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.
 - **Webhooks:** signature verification and idempotent handling remain server-side.
 
@@ -92,6 +93,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 
 - Tenant-owned queries and writes are scoped to the authenticated user.
 - Provider credentials are environment variables or server-side secrets.
+- Owner-supplied third-party MCP credentials are a separate desktop-only trust boundary: OS-encrypted locally, bound to the approved HTTPS endpoint, and never sent to BotBound or model providers. Shared window images and approved tool context do reach the configured model route with owner consent.
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.

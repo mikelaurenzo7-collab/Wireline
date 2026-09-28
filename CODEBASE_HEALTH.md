@@ -31,7 +31,7 @@ Historic dashboard, manager, command-center, chat, operations, and temporary Stu
 | Voice                | `src/lib/ai-models.ts`, `src/lib/voice/`, `docs/PRODUCTION_VOICE_RUNTIME_POLICY_2026-07-26.md`                                             |
 | Video presenter      | `src/lib/video-presenter/`, `src/components/LiveVideoPresenter.tsx`, `src/routes/video-presenter-routes.ts`                                |
 | Browser extension    | `apps/browser-extension/`                                                                                                                  |
-| Native clients       | `ios/`, `android/`                                                                                                                         |
+| Native clients       | `ios/`, `android/`; owner-controlled computer companion in `apps/desktop/` (internal validation)                                             |
 | ChatGPT App          | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`                                                   |
 
 ## Source-control rules

@@ -3,11 +3,20 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { verifyInternalJwt } from "../lib/auth-utils";
-import { MCP_SCOPES, type McpScope } from "../lib/chatgpt-mcp";
+import {
+  MCP_DEFAULT_SCOPES,
+  MCP_SCOPES,
+  requestedMcpScopes,
+  type McpScope,
+} from "../lib/chatgpt-mcp";
 import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { mcpCatalog, mcpServerCard } from "../lib/mcp-app-metadata";
 import {
   clientDisplayName,
+  BOTBOUND_DESKTOP_CLIENT_ID,
+  isBotBoundDesktopRedirect,
+  desktopTokenAccountMetadata,
+  desktopPlanningScopesAllowed,
   isDynamicClientId,
   isTrustedCimdClientId,
   isTrustedCimdRedirectUri,
@@ -28,6 +37,7 @@ import {
   mcpResourceUrl,
   pruneExpiredMcpOAuthRows,
   revokeMcpAccessTokensForClient,
+  revokeMcpGrantByToken,
   type McpGrantExecutor,
 } from "../lib/mcp-oauth-security";
 import { rateLimit } from "../lib/rate-limit";
@@ -158,6 +168,10 @@ async function fetchDynamicClient(clientId: string): Promise<ClientMetadata | nu
 }
 
 async function validateOAuthClient(clientId: string, redirectUri: string): Promise<boolean> {
+  // This static public client never bypasses PKCE, consent, resource binding,
+  // scope checks, paid planning, or the companion's independent local approval.
+  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID)
+    return isBotBoundDesktopRedirect(clientId, redirectUri);
   // Legacy pre-registered clients remain supported for controlled internal use.
   const configuredClients = commaSet(process.env.MCP_OAUTH_ALLOWED_CLIENT_IDS);
   const configuredRedirects = commaSet(process.env.MCP_OAUTH_ALLOWED_REDIRECT_URIS);
@@ -200,7 +214,12 @@ async function validateAuthorizationRequest(
   }
   // Absent scope means "server default" in OAuth; Claude omits it. A scope
   // parameter that names no known BotBound permission is still rejected.
-  const scopes = source.scope === undefined ? [...MCP_SCOPES] : parseScopes(source.scope);
+  const scopes = requestedMcpScopes(source.scope);
+  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID && !desktopPlanningScopesAllowed(scopes))
+    throw AppError.fromHttpStatus(
+      400,
+      "BotBound Desktop requires an explicit agents.read computer.plan permission request.",
+    );
   if (!scopes.length)
     throw AppError.fromHttpStatus(400, "Choose at least one BotBound permission.");
   if (!(await validateOAuthClient(clientId, redirectUri))) {
@@ -233,7 +252,14 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
     )
     .join("\n");
   const scopeList = request.scopes
-    .map((scope) => `<li>${escapeHtml(scope.replace(".", " "))}</li>`)
+    .map(
+      (scope) =>
+        `<li>${escapeHtml(
+          scope === "computer.plan"
+            ? "Plan computer steps using the selected Bot and observations you share; uses your managed AI allowance. Does not execute actions."
+            : scope.replace(".", " "),
+        )}</li>`,
+    )
     .join("");
   const client = escapeHtml(clientDisplayName(request.redirectUri, request.clientId));
   const partyHost = escapeHtml(relyingPartyHost(request.clientId, request.redirectUri));
@@ -241,7 +267,7 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
   const loopbackWarning =
     request.redirectUri.startsWith("http://localhost") ||
     request.redirectUri.startsWith("http://127.0.0.1")
-      ? `<p class="muted">This callback returns to a local address (<code>${callback}</code>). Only continue if you started this connection from Claude Code or another app on this computer.</p>`
+      ? `<p class="muted">This callback returns to a local address (<code>${callback}</code>). Only continue if you started this connection from ${client} on this computer. A public client name is not proof of the app's identity.</p>`
       : `<p class="muted">After you allow, you will return to <code>${callback}</code>.</p>`;
   return `<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Connect BotBound</title><link rel="stylesheet" href="/static-legal.css" /></head><body class="oauth-consent"><main class="card"><div class="eyebrow">BotBound account connection</div><h1>Connect BotBound to ${client}</h1><p>Signed in as <strong>${escapeHtml(user.email)}</strong>. ${client} (<strong>${partyHost}</strong>) will be able to:</p><ul>${scopeList}</ul>${loopbackWarning}<p class="muted">New users create a BotBound account before this screen. Connecting does not place calls, send messages, connect phone numbers, or launch an agent. Draft changes, private rehearsals, and Training writes each need a separate confirmation. Training facts and rules land in BotBound only after you enable connected-app Training writes in Apps.</p><form method="post" action="/mcp/oauth/authorize">${hidden}<button type="submit">Allow ${client} to use BotBound</button></form></main></body></html>`;
 }
@@ -389,7 +415,11 @@ async function issueTokens(
   },
   tx: McpGrantExecutor,
 ) {
-  await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
+  // Desktop installations share a public client ID, not an installation token family.
+  // Connecting or refreshing one must not invalidate another computer's access token.
+  // Explicit Disconnect everywhere still revokes the whole account/client/resource grant.
+  if (input.clientId !== BOTBOUND_DESKTOP_CLIENT_ID)
+    await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
@@ -407,6 +437,7 @@ async function issueTokens(
     refresh_token: refreshToken,
     scope: input.scopes.join(" "),
     resource: input.resource,
+    ...desktopTokenAccountMetadata(input.clientId, input.userId),
   };
 }
 
@@ -449,6 +480,8 @@ router.get(
       issuer: base,
       authorization_endpoint: `${base}/mcp/oauth/authorize`,
       token_endpoint: `${base}/mcp/oauth/token`,
+      revocation_endpoint: `${base}/mcp/oauth/revoke`,
+      revocation_endpoint_auth_methods_supported: ["none"],
       registration_endpoint: `${base}/mcp/oauth/register`,
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
@@ -489,7 +522,7 @@ router.post("/mcp/oauth/register", express.json({ limit: "64kb" }), async (req, 
       token_endpoint_auth_method: "none",
       grant_types: ["authorization_code", "refresh_token"],
       response_types: ["code"],
-      scope: MCP_SCOPES.join(" "),
+      scope: MCP_DEFAULT_SCOPES.join(" "),
     });
   } catch (error) {
     const code = oauthErrorCode(error);
@@ -658,6 +691,42 @@ router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (
     next(error);
   }
 });
+
+router.post(
+  "/mcp/oauth/revoke",
+  express.urlencoded({ extended: false, limit: "8kb" }),
+  async (req, res, next) => {
+    res.setHeader("Cache-Control", "no-store");
+    try {
+      await assertMcpTokenEndpointRateLimit(req.ip || "anon");
+      const token = typeof req.body?.token === "string" ? req.body.token : "";
+      const clientId = typeof req.body?.client_id === "string" ? req.body.client_id : "";
+      const resource = req.body?.resource === undefined ? mcpResource(req) : req.body.resource;
+      if (
+        !token ||
+        token.length > 1024 ||
+        !clientId ||
+        clientId.length > 2048 ||
+        typeof resource !== "string" ||
+        !resource ||
+        resource.length > 2048
+      )
+        return res
+          .status(400)
+          .json({ error: "invalid_request", code: "MCP_INVALID_REVOCATION_REQUEST" });
+      if (resource !== mcpResource(req))
+        return res
+          .status(400)
+          .json({ error: "invalid_target", code: "MCP_INVALID_REVOCATION_RESOURCE" });
+      // RFC7009 does not require resource and intentionally hides whether a token exists.
+      // Omission uses this server's sole canonical audience; token/client binding is rechecked.
+      await revokeMcpGrantByToken({ tokenHash: tokenHash(token), clientId, resource });
+      return res.status(200).end();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get(["/mcp/server-card", "/server-card"], (req, res) => {
   res.setHeader("Cache-Control", "no-store");

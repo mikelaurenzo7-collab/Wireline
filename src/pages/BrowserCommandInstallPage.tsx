@@ -11,11 +11,11 @@ import { CLIENT_SURFACE_POSTURE } from "../lib/product-copy";
 const DOWNLOADS = [
   {
     id: "chromium",
-    title: "Chrome, Edge & Opera",
+    title: "Chrome, Edge, Brave & Opera",
     href: "/downloads/botbound-command-chromium.zip",
     steps: [
       "Download and unzip the package.",
-      "Open chrome://extensions (or edge://extensions) and enable Developer mode.",
+      "Open chrome://extensions, edge://extensions, brave://extensions, or opera://extensions and enable Developer mode.",
       "Choose Load unpacked, then the folder containing manifest.json.",
       "Pin BotBound Command. Open it from the toolbar, side panel, or Ctrl/Cmd+Shift+Y.",
     ],
