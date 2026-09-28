@@ -10,12 +10,11 @@ export const ACTIVATION_PENDING_COPY = {
   title: "Make Your First",
   titleAccent: "Real Call",
   subtitle: (agentName: string) =>
-    `${agentName} has a number. Dial it from your phone. Activation counts when a real conversation completes.`,
+    `${agentName} has a number. Call it to check the greeting, answers, and conversation.`,
   phoneLabel: "Your live number",
-  dialCta: "Call now to activate",
+  dialCta: "Call your Bot",
   browserTestTitle: "Browser Test (Optional)",
-  browserTestDetail:
-    "Preview voice and script in Studio. Simulator calls do not count toward activation.",
+  browserTestDetail: "Preview your Bot's voice and answers in Studio without calling the number.",
   browserTestAction: "Open Studio",
   opsTitle: "Watch Activity",
   opsDetail: "See the call land in real time once you dial in.",
@@ -23,9 +22,9 @@ export const ACTIVATION_PENDING_COPY = {
 } as const;
 
 export const ACTIVATION_NUDGE_COPY = {
-  eyebrow: "Activation",
-  body: "Dial your line for a real conversation. That's when BotBound counts you as live.",
-  cta: "Call to activate",
+  eyebrow: "First call",
+  body: "Try a call to check your Bot's greeting and answers.",
+  cta: "Call your Bot",
 } as const;
 
 /** Guided steps after create — Train → Test → Launch. */
