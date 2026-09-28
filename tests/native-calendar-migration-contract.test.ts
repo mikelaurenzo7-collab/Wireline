@@ -34,7 +34,11 @@ describe("native booking database invariants", () => {
 
   it("ships a journal entry and current snapshot including the new interval fields", () => {
     const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json"));
-    expect(journal.entries.at(-1)).toMatchObject({ idx: 72, tag: "0174_native_booking_calendar" });
+    expect(
+      journal.entries.find(
+        (entry: { tag: string }) => entry.tag === "0174_native_booking_calendar",
+      ),
+    ).toMatchObject({ idx: 72, tag: "0174_native_booking_calendar" });
     const prior = JSON.parse(read("drizzle/migrations/meta/0071_snapshot.json"));
     const next = JSON.parse(read("drizzle/migrations/meta/0072_snapshot.json"));
     expect(next.prevId).toBe(prior.id);

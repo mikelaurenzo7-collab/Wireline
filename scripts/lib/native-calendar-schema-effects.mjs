@@ -14,6 +14,17 @@ export const NATIVE_CALENDAR_FUNCTION_BODY = normalized(
 if (!NATIVE_CALENDAR_FUNCTION_BODY)
   throw new Error("Native Calendar migration function body is missing.");
 
+function isTenantEquality(expression) {
+  let predicate = String(expression ?? "").trim();
+  if (predicate.startsWith("(") && predicate.endsWith(")"))
+    predicate = predicate.slice(1, -1).trim();
+  // Supabase may wrap this stable tenant lookup in an initplan. Accept only
+  // that scalar SELECT or the direct function call, never extra OR/FROM terms.
+  return /^user_id\s*=\s*(?:(?:public\.)?wireline_current_user_id\(\)|\(\s*SELECT\s+(?:public\.)?wireline_current_user_id\(\)(?:\s+AS\s+wireline_current_user_id)?\s*\))$/u.test(
+    predicate,
+  );
+}
+
 export function evaluateNativeCalendarSchemaEffects(state) {
   const failures = [];
   const fail = (reason) => failures.push(`native_calendar:${reason}`);
@@ -34,10 +45,8 @@ export function evaluateNativeCalendarSchemaEffects(state) {
     if (
       !policy ||
       policy.cmd !== "ALL" ||
-      !/user_id\s*=\s*(?:public\.)?wireline_current_user_id\(\)/u.test(String(policy.qual)) ||
-      !/user_id\s*=\s*(?:public\.)?wireline_current_user_id\(\)/u.test(
-        String(policy.with_check ?? policy.qual),
-      )
+      !isTenantEquality(policy.qual) ||
+      !isTenantEquality(policy.with_check ?? policy.qual)
     )
       fail(`tenant_policy:${name}`);
   }

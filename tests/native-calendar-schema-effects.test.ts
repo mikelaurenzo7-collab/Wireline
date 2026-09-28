@@ -97,6 +97,45 @@ function valid() {
 }
 
 describe("native Calendar release schema effects", () => {
+  it("accepts the exact live initplan tenant policies on all three tables", () => {
+    const state = valid();
+    for (const policy of state.policies) {
+      policy.qual = "(user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))";
+      policy.with_check = policy.qual;
+    }
+    expect(evaluateNativeCalendarSchemaEffects(state)).toEqual([]);
+  });
+
+  it.each(["qual", "with_check"] as const)(
+    "rejects an unsafe initplan %s while preserving the other policy",
+    (field) => {
+      for (const unsafe of [
+        "(user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id) OR true)",
+        "(user_id = wireline_current_user_id() OR true)",
+        "(user_id = ( SELECT auth.uid() AS wireline_current_user_id))",
+        "(user_id = ( SELECT wireline_current_user_id() FROM public.wireline_settings LIMIT 1))",
+      ]) {
+        const state = valid();
+        state.policies[0][field] = unsafe;
+        expect(evaluateNativeCalendarSchemaEffects(state)).toContain(
+          "native_calendar:tenant_policy:wireline_settings",
+        );
+      }
+    },
+  );
+
+  it("still refuses the live inherited service_role execute grant with valid initplan policies", () => {
+    const state = valid();
+    for (const policy of state.policies) {
+      policy.qual = "(user_id = ( SELECT wireline_current_user_id() AS wireline_current_user_id))";
+      policy.with_check = policy.qual;
+    }
+    state.functions[0].owner_only_execute = false;
+    expect(evaluateNativeCalendarSchemaEffects(state)).toEqual([
+      "native_calendar:function_security",
+    ]);
+  });
+
   it("accepts all required native invariants together", () =>
     expect(evaluateNativeCalendarSchemaEffects(valid())).toEqual([]));
   it("fails closed when no native migration effects exist", () => {
