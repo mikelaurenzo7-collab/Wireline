@@ -106,7 +106,11 @@ async function audit(tx: Tx, userId: string, action: string, resourceId: string,
   });
 }
 
-async function assertOwnedAgent(tx: Tx, userId: string, agentId: string | null | undefined) {
+async function assertOwnedCalendarAgent(
+  tx: Tx,
+  userId: string,
+  agentId: string | null | undefined,
+) {
   if (!agentId) return;
   const [row] = await tx
     .select({ id: schema.agents.id })
@@ -313,7 +317,7 @@ export async function bookNativeAppointment(
   const result = await tenantStore.run(userId, () =>
     drizzle.transaction(async (tx) => {
       await lockCalendar(tx, userId);
-      await assertOwnedAgent(tx, userId, clean.agentId);
+      await assertOwnedCalendarAgent(tx, userId, clean.agentId);
       await assertOwnedCall(tx, userId, clean.callId);
       const [prior] = await tx
         .select()
@@ -402,7 +406,7 @@ export async function updateCalendarAppointment(
         updates.phoneNumber = text(input.phone_number, "Phone number", 50);
       if (input.agent_id !== undefined) {
         updates.agentId = text(input.agent_id, "Bot ID", 200);
-        await assertOwnedAgent(tx, userId, updates.agentId);
+        await assertOwnedCalendarAgent(tx, userId, updates.agentId);
       }
       const moved = input.date !== undefined || input.time !== undefined;
       const reactivated =

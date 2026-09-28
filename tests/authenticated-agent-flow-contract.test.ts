@@ -36,7 +36,9 @@ describe("authenticated Bot flow", () => {
     expect(permissions).toMatch(/const \[loading, setLoading\] = useState\(true\)/);
     expect(permissions).toContain("return response.json().catch(() => null);");
     expect(permissions).toContain("Not connected. These stay off in live calls until");
-    expect(permissions).toContain("to={playbook.connectPath}");
+    expect(permissions).toMatch(
+      /to=\{\s*playbook\.integration === "calendar"\s*\? "\/calendar\?tab=availability"\s*:\s*playbook\.connectPath\s*\}/,
+    );
     expect(read("src/lib/agent-runtime-helpers.ts")).toContain("filterToolsByTenantConnections");
     expect(permissions).toContain("const savedFor = agentId;");
     expect(permissions).toMatch(/if \(loadedAgentRef\.current !== savedFor\) return;/);
