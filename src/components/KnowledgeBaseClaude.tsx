@@ -213,6 +213,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
   const [knowledgeDraft, setKnowledgeDraft] = useState("");
   const [knowledgeBusyId, setKnowledgeBusyId] = useState<string | null>(null);
   const [confirmDeleteKnowledgeId, setConfirmDeleteKnowledgeId] = useState<string | null>(null);
+  const [showAllRules, setShowAllRules] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const confirmDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -238,6 +239,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
     setLoadError(null);
     setIngestError(null);
     setShowAllKnowledge(false);
+    setShowAllRules(false);
     setEditingKnowledgeId(null);
     setKnowledgeDraft("");
     setKnowledgeBusyId(null);
@@ -532,7 +534,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
           <h2 className="text-base font-semibold leading-6 text-foreground">Active Rules</h2>
         </div>
         <div className="divide-y divide-border">
-          {directives.slice(0, 5).map((directive, index) => {
+          {(showAllRules ? directives : directives.slice(0, 5)).map((directive, index) => {
             const headline = ruleHeadline(directive.content);
             const body = ruleBody(directive.content, headline);
             return (
@@ -545,7 +547,7 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
                   {headline}
                 </p>
                 {body ? (
-                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
+                  <p className="mt-1 break-words text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
                     {body}
                   </p>
                 ) : null}
@@ -553,6 +555,18 @@ export default function KnowledgeBaseClaude({ agentId }: { agentId: string }) {
             );
           })}
         </div>
+        {directives.length > 5 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-3"
+            aria-expanded={showAllRules}
+            onClick={() => setShowAllRules((current) => !current)}
+          >
+            {showAllRules ? "Show fewer rules" : `Show all ${directives.length} rules`}
+          </Button>
+        ) : null}
       </section>
     ) : null;
 
