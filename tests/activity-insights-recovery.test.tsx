@@ -161,7 +161,7 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("Activity budget recovery", () => {
-  it("shows the paid allowance reset date instead of its internal subscription key", async () => {
+  it("shows the paid allowance end without promising renewal or exposing its internal key", async () => {
     mountBudget();
     h.fetch.mockImplementation(async (url: string) =>
       url === "/api/spend/status"
@@ -173,7 +173,8 @@ describe("Activity budget recovery", () => {
         : response({ budget }),
     );
     await settle();
-    expect(text(tree)).toContain("Resets Oct 14");
+    expect(text(tree)).toContain("Through Oct 14");
+    expect(text(tree)).not.toContain("Resets");
     expect(text(tree)).not.toContain("paid:sub_customer");
   });
 

@@ -17,7 +17,7 @@ describe("Stripe customer-facing product truth", () => {
       const count = Number(product.metadata.included_agents);
       expect(product.description).toContain(`${count} Bot${count === 1 ? "" : "s"} with`);
       expect(count).toBe(1);
-      expect(product.description).toContain("No automatic extra charges.");
+      expect(product.description).toContain("No automatic top-ups or overage invoices.");
       expect(product.description.includes("and email delivery")).toBe(channels.includes("email"));
       expect(channels).not.toContain("sms");
       if (channels.includes("voice")) {
@@ -38,7 +38,7 @@ describe("Stripe customer-facing product truth", () => {
     expect(
       FOUNDER_PRODUCTS.find((product) => product.key === "conversation_balance")?.description,
     ).toBe(
-      "Prepaid Runtime Balance for usage beyond included capacity. No automatic extra charges.",
+      "Prepaid Runtime Balance for usage beyond included capacity. No automatic top-ups or overage invoices.",
     );
 
     // Live Video is retired and must not quietly re-enter the active catalog.

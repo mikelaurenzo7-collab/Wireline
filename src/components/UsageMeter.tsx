@@ -20,7 +20,7 @@ export default function UsageMeter({
   compact?: boolean;
   /** Hide the repeated balance summary only when the containing page already owns it. */
   showBalance?: boolean;
-  /** When provided, approaching/extra-usage states surface a one-click upgrade CTA. */
+  /** Opens billing management when usage approaches its allowance or new calls are paused. */
   onUpgrade?: () => void;
   /** Share the parent portal request state across every billing entry point. */
   upgradePending?: boolean;
@@ -238,7 +238,7 @@ export default function UsageMeter({
           ) : (
             <TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           )}
-          Upgrade Plan
+          Manage billing
         </Button>
       )}
 

@@ -68,7 +68,7 @@ export const FOUNDER_PRODUCTS = [
   ...CHANNEL_OFFERS.map((offer) => ({
     key: offer.id,
     name: `BotBound ${offer.label}`,
-    description: `1 Bot with ${offer.label.toLowerCase()}. ${offer.minutes ? `${offer.minutes} live-call minutes/month. Up to 10 additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras. ` : ""}Managed AI${offer.mailboxes ? " and email delivery" : ""} allowance included. No automatic extra charges.`,
+    description: `1 Bot with ${offer.label.toLowerCase()}. ${offer.minutes ? `${offer.minutes} live-call minutes/month. Up to 10 additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras. ` : ""}Managed AI${offer.mailboxes ? " and email delivery" : ""} allowance included. No automatic top-ups or overage invoices.`,
     defaultPriceKey: `${offer.id}_monthly_channels_2026_09_${offer.priceVersion}`,
     metadata: metadataFor(offer),
   })),
@@ -83,7 +83,7 @@ export const FOUNDER_PRODUCTS = [
     key: "conversation_balance",
     name: "BotBound Runtime Balance",
     description:
-      "Prepaid Runtime Balance for usage beyond included capacity. No automatic extra charges.",
+      "Prepaid Runtime Balance for usage beyond included capacity. No automatic top-ups or overage invoices.",
     defaultPriceKey: "balance_25",
     metadata: {
       wireline_offer: "conversation_balance",

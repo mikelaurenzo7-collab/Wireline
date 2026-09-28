@@ -311,7 +311,7 @@ export default function BillingSettings() {
             ? "Balance top-ups are unavailable. Refresh this page to check again."
             : paidPlan
               ? "Restore your active subscription before adding Runtime Balance."
-              : "Choose Starter, Starter Plus, or Pro before adding Runtime Balance.",
+              : "Choose a paid plan before adding Runtime Balance.",
       );
       return;
     }

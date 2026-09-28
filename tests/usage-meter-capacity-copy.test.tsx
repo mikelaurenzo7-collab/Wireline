@@ -72,13 +72,13 @@ describe("voice allowance boundary copy", () => {
     expect(meter?.props.title).not.toContain("reset");
   });
 
-  it("disables and marks the upgrade action busy while its portal request is pending", () => {
+  it("truthfully labels billing management and disables it while the portal request is pending", () => {
     const action = findButton(UsageMeter({ onUpgrade: vi.fn(), upgradePending: true }));
     expect(isValidElement(action)).toBe(true);
     if (!isValidElement<{ disabled: boolean; "aria-busy": boolean }>(action)) return;
     expect(action.props.disabled).toBe(true);
     expect(action.props["aria-busy"]).toBe(true);
-    expect(text(action)).toBe("Upgrade Plan");
+    expect(text(action)).toBe("Manage billing");
   });
 
   it("keeps the balance visible by default on standalone usage surfaces", () => {

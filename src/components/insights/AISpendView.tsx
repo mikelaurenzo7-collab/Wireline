@@ -200,7 +200,7 @@ function SpendBudgetCard() {
       : BRAND.colors.primary;
   const resetDate = new Date(status.reset_at || "");
   const period = Number.isFinite(resetDate.getTime())
-    ? `Resets ${resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+    ? `Through ${resetDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
     : "Current allowance period";
   const isSimulationAllowance = status?.guard_scope === "free_simulation_allowance";
   const guardTitle = isSimulationAllowance ? "Simulation allowance" : "Live usage guard";
