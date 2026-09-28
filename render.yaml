@@ -178,6 +178,21 @@ projects:
                 sync: false
               - key: WIRELINE_RECONCILE_STRIPE_PORTAL
                 sync: false
+              # Current Calls-only launch catalog: Light/High v2, Regular v1.
+              # Configure exact audited live price IDs; held Email/SMS families
+              # remain unset and are not required by this Blueprint.
+              - key: STRIPE_VOICE_PRICE_ID
+                sync: false
+              - key: STRIPE_VOICE_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_VOICE_REGULAR_PRICE_ID
+                sync: false
+              - key: STRIPE_VOICE_REGULAR_ANNUAL_PRICE_ID
+                sync: false
+              - key: STRIPE_VOICE_HIGH_PRICE_ID
+                sync: false
+              - key: STRIPE_VOICE_HIGH_ANNUAL_PRICE_ID
+                sync: false
               - key: STRIPE_AUTOMATIC_TAX_ENABLED
                 sync: false
               - key: STRIPE_STARTER_9_PRICE_ID
