@@ -58,11 +58,13 @@ test("all channel capacities retain exact annual signup intent in one readable s
     const signup = card.getByRole("link");
     await expect(signup).toHaveAttribute("href", `/signup?plan=${plan.id}&interval=year`);
     const usageNote = page.getByText("Included usage is shown per month.", { exact: false });
-    await expect(usageNote).toContainText("No automatic overages.");
+    await expect(usageNote).toContainText("No automatic top-ups or overage invoices.");
     if (plan.channels.includes("voice"))
-      await expect(usageNote).toContainText("Extra calls are $0.22/min");
+      await expect(usageNote).toContainText(
+        "Extra minutes cost $0.22/min, using Runtime Balance or completion credit.",
+      );
     else {
-      await expect(usageNote).not.toContainText("Extra calls");
+      await expect(usageNote).not.toContainText("Extra minutes");
       await expect(usageNote).not.toContainText("Outbound calls");
     }
     if (plan.checkoutAvailability !== "available")

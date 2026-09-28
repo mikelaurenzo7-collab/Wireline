@@ -498,7 +498,7 @@ export const STRIPE_PLANS: StripePlan[] = [
                 `Up to ${VOICE_COMPLETION_GRACE_MINUTES} additional completion minutes within the call limit; any balance due pauses new calls and prepaid extras`,
               ]
             : []),
-          "No automatic extra charges",
+          "No automatic top-ups or overage invoices",
         ],
       };
     }),

@@ -39,7 +39,7 @@ const FAQ = [
   ],
   [
     "What Happens When Included Call Minutes Run Out?",
-    `Extra calling uses prepaid Runtime Balance at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes, within the 60-minute session cap. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic invoice or overage charge.`,
+    `Extra calling uses prepaid Runtime Balance at ${TOPUP_RATE}. Each call requires at least one funded minute and is limited by available coverage, plus a completion buffer of up to 10 minutes, within the 60-minute session cap. Unpaid completion usage pauses new calls and prepaid extras until you top up. Billing and saved records stay available. No automatic top-ups or overage invoices.`,
   ],
   [
     "How Long Can a Call Last?",
@@ -175,11 +175,12 @@ export default function Pricing() {
               }}
             />
             <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
-              Included usage is shown per month. No automatic overages.
+              Included usage is shown per month. No automatic top-ups or overage invoices.
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  Extra calls are {TOPUP_RATE}, prepaid. {MARKETING_CALLS_NOTICE}
+                  Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit.{" "}
+                  {MARKETING_CALLS_NOTICE}
                 </>
               ) : null}
             </p>
