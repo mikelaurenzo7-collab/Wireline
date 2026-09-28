@@ -29,6 +29,10 @@ import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call"
 import { verifyOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import { buildOpenAIRealtimeAgentRuntime } from "../lib/voice/openai-phone-agent-runtime";
 import {
+  openAIAcceptFailureDiagnostics,
+  safeVoiceAdmissionError,
+} from "../lib/voice/voice-admission-diagnostics";
+import {
   openAIOutboundPlacementMatches,
   verifyOpenAIOutboundToken,
 } from "../lib/voice/openai-outbound-token";
@@ -302,6 +306,10 @@ async function acceptCall(callId: string, session: Record<string, unknown>): Pro
     throw markRealtimeProviderCallOutcome(error, true);
   }
   if (!response.ok && response.status !== 409) {
+    log.error(
+      "OpenAI SIP provider acceptance rejected",
+      await openAIAcceptFailureDiagnostics(response),
+    );
     const error = Object.assign(
       new Error(`OpenAI call acceptance returned HTTP ${response.status}.`),
       { status: response.status },
@@ -470,6 +478,7 @@ router.post(
       sessionInput.recoveredSession = callClaim.resumed;
 
       let reservation: Awaited<ReturnType<typeof reserveRealtimeSessionSpend>>;
+      let spendAdmissionStage: "carrier_limit" | "realtime_spend_reservation" = "carrier_limit";
       try {
         if (sessionInput.funding)
           await tenantStore.run(sessionInput.userId, () =>
@@ -479,6 +488,7 @@ router.post(
               sessionInput.funding!,
             ),
           );
+        spendAdmissionStage = "realtime_spend_reservation";
         reservation = await reserveRealtimeSessionSpend(
           req,
           sessionInput.userId,
@@ -487,6 +497,10 @@ router.post(
           sessionInput.admission,
         );
       } catch (error) {
+        log.error("OpenAI SIP funding admission failed", {
+          stage: spendAdmissionStage,
+          ...safeVoiceAdmissionError(error),
+        });
         const owned = await settleOwnedPreSessionFailure({
           call: sessionInput,
           claim: callClaim,

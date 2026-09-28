@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import RestException from "twilio/lib/base/RestException";
 
 const h = vi.hoisted(() => ({
   admit: vi.fn(),
@@ -90,6 +91,12 @@ vi.mock("../src/lib/voice/openai-sip-session", () => ({
 
 import router from "../src/routes/openai-sip-routes";
 import { AppError } from "../src/lib/api-error";
+import { log } from "../src/lib/server-context";
+import { realtimeProviderCallMayExist } from "../src/lib/realtime-provider-outcome";
+import {
+  settleOpenAISipPreSessionFailure,
+  releaseOpenAISipClaimForRetry,
+} from "../src/lib/voice/openai-sip-session";
 
 async function deliver() {
   const route = router.stack.find(
@@ -140,12 +147,109 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("terminal inbound coverage refusal before paid AI", () => {
-  it("sets the parent carrier duration from the claimed funding before reserving AI or accepting", async () => {
+  it.each(["carrier_limit", "realtime_spend_reservation"] as const)(
+    "records the original safe %s failure before cleanup without admitting provider work",
+    async (stage) => {
+      const funding = { maxSeconds: 2400, deadlineAtMs: Date.now() + 2400000 };
+      const original =
+        stage === "carrier_limit"
+          ? new RestException({
+              statusCode: 400,
+              body: { code: 21220, message: "private carrier request and credentials" },
+            })
+          : new Error("private reservation configuration and credentials");
+      h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
+      h.claim.mockResolvedValue({ callLogId: 1n, ownerToken: "owner", resumed: false, funding });
+      h.reserve.mockResolvedValue({ id: "reserve" });
+      vi.mocked(settleOpenAISipPreSessionFailure).mockResolvedValue(true);
+      if (stage === "carrier_limit") h.carrierLimit.mockRejectedValueOnce(original);
+      else h.reserve.mockRejectedValueOnce(original);
+      const result = await deliver();
+      expect(result.error).toBe(original);
+      expect(log.error).toHaveBeenCalledWith("OpenAI SIP funding admission failed", {
+        stage,
+        ...(stage === "carrier_limit"
+          ? { error_class: "RestException", http_status: 400, error_code: 21220 }
+          : { error_class: "Error", http_status: 503 }),
+      });
+      expect(vi.mocked(log.error).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(settleOpenAISipPreSessionFailure).mock.invocationCallOrder[0],
+      );
+      expect(settleOpenAISipPreSessionFailure).toHaveBeenCalledWith(
+        expect.objectContaining({ reason: "spend_reservation_failed" }),
+      );
+      expect(JSON.stringify(vi.mocked(log.error).mock.calls)).not.toContain("private");
+      expect(h.provider).toHaveBeenCalledOnce();
+      expect(h.provider.mock.calls[0][0]).toMatch(/\/reject$/);
+      expect(h.reserve).toHaveBeenCalledTimes(stage === "carrier_limit" ? 0 : 1);
+    },
+  );
+  it.each([400, 503])(
+    "logs safe provider acceptance diagnostics for HTTP %s without changing outcome semantics",
+    async (status) => {
+      h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
+      h.claim.mockResolvedValue({ callLogId: 1n, ownerToken: "owner", resumed: false });
+      h.reserve.mockResolvedValue({ id: "reserve" });
+      vi.mocked(settleOpenAISipPreSessionFailure).mockResolvedValue(true);
+      h.provider.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "unknown_parameter",
+              type: "invalid_request_error",
+              param: "session.audio.output.voice",
+              message: "sk-private-test-secret prompt and phone number",
+              session: { instructions: "private prompt" },
+            },
+          }),
+          { status, headers: { "x-request-id": "req_test12345678" } },
+        ),
+      );
+      const result = await deliver();
+      expect(result.error).toMatchObject({ status });
+      expect(realtimeProviderCallMayExist(result.error)).toBe(status >= 500);
+      expect(log.error).toHaveBeenCalledWith("OpenAI SIP provider acceptance rejected", {
+        http_status: status,
+        provider_request_id: "req_test12345678",
+        provider_error_body: "parsed",
+        provider_error_code: "unknown_parameter",
+        provider_error_type: "invalid_request_error",
+        provider_error_param: "session.audio.output.voice",
+      });
+      expect(JSON.stringify(vi.mocked(log.error).mock.calls)).not.toContain("sk-private");
+      expect(JSON.stringify(vi.mocked(log.error).mock.calls)).not.toContain("private prompt");
+      if (status < 500) {
+        expect(settleOpenAISipPreSessionFailure).toHaveBeenCalledWith(
+          expect.objectContaining({ reason: "provider_accept_failed" }),
+        );
+        expect(releaseOpenAISipClaimForRetry).not.toHaveBeenCalled();
+      } else {
+        expect(releaseOpenAISipClaimForRetry).toHaveBeenCalledOnce();
+        expect(settleOpenAISipPreSessionFailure).not.toHaveBeenCalled();
+      }
+    },
+  );
+  it("waits for the funded carrier limit to be confirmed before reserving AI or accepting", async () => {
     const funding = { maxSeconds: 2400, deadlineAtMs: Date.now() + 2400000 };
     h.acquire.mockResolvedValue({ id: "lease", expiresAt: new Date() });
     h.claim.mockResolvedValue({ callLogId: 1n, ownerToken: "owner", resumed: false, funding });
     h.reserve.mockResolvedValue({ id: "reserve" });
-    await deliver();
+    let confirmCarrier!: () => void;
+    h.carrierLimit.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          confirmCarrier = resolve;
+        }),
+    );
+    const pending = deliver();
+    await vi.waitFor(() => expect(h.carrierLimit).toHaveBeenCalledOnce());
+    expect(h.reserve).not.toHaveBeenCalled();
+    expect(h.provider).not.toHaveBeenCalled();
+    confirmCarrier();
+    await expect(pending).resolves.toEqual({
+      status: 202,
+      body: { received: true, handled: true },
+    });
     expect(h.carrierLimit).toHaveBeenCalledWith("tenant", "openai:call-test", funding);
     expect(h.carrierLimit.mock.invocationCallOrder[0]).toBeLessThan(
       h.reserve.mock.invocationCallOrder[0],
@@ -153,6 +257,8 @@ describe("terminal inbound coverage refusal before paid AI", () => {
     expect(h.reserve.mock.invocationCallOrder[0]).toBeLessThan(
       h.provider.mock.invocationCallOrder[0],
     );
+    expect(h.provider).toHaveBeenCalledOnce();
+    expect(h.provider.mock.calls[0][0]).toMatch(/\/accept$/);
   });
   it.each(["VOICE_FUNDING_IN_USE", "VOICE_FUNDING_REQUIRED", "VOICE_PLAN_REQUIRED"])(
     "rejects known %s before AI spend and acceptance",

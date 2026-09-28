@@ -34,9 +34,12 @@ function hangupTwiml(): string {
 }
 
 function inboundBridgeTwiml(sipUri: string): string {
+  // Answer the parent before dialing SIP: Twilio rejects the funded REST
+  // timeLimit update on an unanswered parent (21220). The worker must still
+  // confirm that total carrier limit before reserving AI spend or accepting.
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    `<Response><Dial answerOnBridge="true" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
+    `<Response><Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="${resolveOpenAISipSessionMaxSeconds()}">` +
     `<Sip>${escapeXml(sipUri)}</Sip></Dial><Hangup/></Response>`
   );
 }

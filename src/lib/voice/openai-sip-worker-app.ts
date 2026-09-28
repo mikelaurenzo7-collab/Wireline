@@ -11,6 +11,8 @@ import {
   type VoiceWorkerReadiness,
 } from "./openai-sip-worker-readiness";
 import { getDeploymentIdentity } from "../deployment-environment";
+import { log } from "../server-logger";
+import { safeVoiceAdmissionError } from "./voice-admission-diagnostics";
 
 export function createVoiceWorkerApp(
   router: Router,
@@ -149,6 +151,7 @@ export function createVoiceWorkerApp(
   const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     res.locals.voiceWorkerAdmissionRelease?.();
     const status = Number(error?.statusCode ?? error?.status);
+    log.error("Voice worker admission failed", safeVoiceAdmissionError(error));
     res.status(status >= 400 && status < 600 ? status : 503).json({
       error: "Voice call admission could not be completed.",
     });

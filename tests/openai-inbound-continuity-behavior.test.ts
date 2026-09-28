@@ -161,11 +161,14 @@ describe("OpenAI inbound carrier continuity", () => {
     expect(suspended.captured).toEqual({ statusCode: 200, body: HANGUP_TWIML });
   });
 
-  it("serves a signed Dial action before bridging to OpenAI", async () => {
+  it("answers the parent before SIP with bounded setup and the carrier Dial duration cap", async () => {
     const result = await invokePrimary({});
     expect(result.captured.statusCode).toBe(200);
     expect(String(result.captured.body)).toContain(
-      '<Dial answerOnBridge="true" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="300">',
+      '<Dial answerOnBridge="false" timeout="30" action="/api/twilio-webhook/openai-inbound-dial-complete" method="POST" timeLimit="300">',
+    );
+    expect(String(result.captured.body)).toContain(
+      "<Sip>sip:+12025550140@sip.api.openai.com;transport=tls</Sip></Dial><Hangup/>",
     );
   });
 
