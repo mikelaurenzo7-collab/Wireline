@@ -338,6 +338,11 @@ test("Studio retains a draft and exposes the final action after text enlargement
   const lastAction = page
     .locator("#studio-inspector")
     .getByRole("link", { name: "Connections", exact: true });
+  // A user can stop partway through the notice rail before scrolling settings.
+  // The nested scroll target must clear the dock from this position as well.
+  await page.locator(".wl-workspace-content").evaluate((el) => {
+    el.scrollTop = (el.scrollHeight - el.clientHeight) / 2;
+  });
   await lastAction.scrollIntoViewIfNeeded();
   try {
     // Font readiness precedes the dock ResizeObserver's clearance update.
@@ -355,7 +360,10 @@ test("Studio retains a draft and exposes the final action after text enlargement
       .toBeLessThanOrEqual(0);
   } catch (error) {
     await testInfo.attach("studio-dock-overlap", {
-      body: await page.screenshot({ fullPage: true }),
+      body: await page.screenshot({
+        fullPage: true,
+        path: testInfo.outputPath("studio-dock-overlap.png"),
+      }),
       contentType: "image/png",
     });
     throw error;
