@@ -1411,6 +1411,12 @@ async function persistFinishedCall(input: {
   );
 
   await runFinalizerStep("voice_usage", input.call, async () => {
+    // Losing the controller is not proof that the carrier/AI leg ended. Keep
+    // both funding and presence until the queued owner confirms termination;
+    // otherwise a second call could reuse the still-running call's coverage.
+    if (input.providerHangupRequired && endedReason !== "transferred") {
+      throw AppError.serviceUnavailable("Call termination is awaiting confirmation.");
+    }
     if (carrierDurationRequired)
       durationSeconds = await checkpointCarrierDuration(
         input.call.userId,
@@ -1423,8 +1429,6 @@ async function persistFinishedCall(input: {
       !input.call.recoveredSession &&
       !carrierDurationRequired
     ) {
-      if (input.providerHangupRequired)
-        throw AppError.serviceUnavailable("Call termination is awaiting confirmation.");
       await releaseVoiceCallFunding(
         input.call.userId,
         providerCallId(input.call.callId),

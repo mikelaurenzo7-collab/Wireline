@@ -550,6 +550,71 @@ describe("long business-call lifecycle", () => {
     );
   });
   it.each(["provider5xx", "timeout"] as const)(
+    "retains connected-call funding and capacity until uncertain %s hangup is confirmed",
+    async (failure) => {
+      const funding = {
+        maxSeconds: 3600,
+        prepaidHoldUsd: 0,
+        graceMinutes: 10,
+        includedMinutes: 50,
+        rateUsd: 0.22,
+        planId: "voice",
+        periodKey: "paid:in_test:1788360000000",
+        startedAtMs: Date.now(),
+        deadlineAtMs: Date.now() + 3_600_000,
+      };
+      h.funding.mockResolvedValue(funding);
+      if (failure === "provider5xx") h.provider.mockResolvedValue({ ok: false, status: 503 });
+      else h.provider.mockRejectedValue(new Error("provider request timed out"));
+
+      const session = runOpenAISipCallSession(
+        { ...call, funding },
+        runtime as any,
+        1n,
+        claim,
+        reservation,
+      );
+      await vi.advanceTimersByTimeAsync(10_000);
+      h.sockets[0].readyState = 3;
+      h.sockets[0].emit("close", 1006, Buffer.from("connection lost"));
+      await session;
+
+      const recorded = h.digest.mock.calls.at(-1)![0];
+      expect(recorded).toMatchObject({
+        durationSeconds: 10,
+        finalization: { providerHangupRequired: true, terminalStateReady: true },
+      });
+      expect(h.presenceStatus).toBe("settling");
+      expect(h.usage).not.toHaveBeenCalled();
+      expect(h.refundFunding).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(180_000);
+      await expect(replayOpenAISipPostCallFinalization(recorded)).rejects.toThrow();
+      expect(h.presenceStatus).toBe("settling");
+      expect(h.usage).not.toHaveBeenCalled();
+      expect(h.refundFunding).not.toHaveBeenCalled();
+
+      h.provider.mockResolvedValue({ ok: true, status: 200 });
+      await replayOpenAISipPostCallFinalization(recorded);
+      expect(h.presenceStatus).toBeUndefined();
+      expect(h.usage).toHaveBeenCalledExactlyOnceWith({
+        userId: "tenant",
+        durationSeconds: 10,
+        vapiCallId: "openai:rtc_test",
+      });
+      expect(h.refundFunding).not.toHaveBeenCalled();
+      expect(h.carrierDuration).not.toHaveBeenCalled();
+
+      // Redelivery retains the same usage key/duration for the idempotent ledger;
+      // recovery time is never added to customer usage.
+      h.provider.mockResolvedValue({ ok: false, status: 404 });
+      await replayOpenAISipPostCallFinalization(recorded);
+      expect(h.usage).toHaveBeenCalledTimes(2);
+      expect(h.usage.mock.calls[1]).toEqual(h.usage.mock.calls[0]);
+    },
+  );
+
+  it.each(["provider5xx", "timeout"] as const)(
     "durably retains unconfirmed hangup after %s until replay succeeds",
     async (failure) => {
       if (failure === "provider5xx") h.provider.mockResolvedValue({ ok: false, status: 503 });
