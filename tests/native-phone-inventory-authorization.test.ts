@@ -61,6 +61,55 @@ beforeEach(() => {
   h.retain.mockReset().mockResolvedValue(undefined);
 });
 
+describe("Twilio inventory capability normalization", () => {
+  it.each([
+    { name: "live uppercase SMS", capabilities: { voice: true, SMS: true, MMS: true } },
+    { name: "lowercase adapter compatibility", capabilities: { voice: true, sms: true } },
+  ])("accepts $name for search and both purchase paths", async ({ capabilities }) => {
+    h.inventory.mockResolvedValue([{ ...eligible, capabilities }]);
+    await expect(listNativeAvailableLocalNumbers("tenant", "312")).resolves.toEqual([
+      { phoneNumber, locality: null, region: null },
+    ]);
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(h.create).not.toHaveBeenCalled();
+
+    await expect(purchase()).resolves.toMatchObject({ phoneNumber, sid });
+    await expect(
+      purchaseNativeNumber({ userId: "tenant", areaCode: "312" }),
+    ).resolves.toMatchObject({ phoneNumber, sid });
+    expect(h.inventory).toHaveBeenCalledWith({
+      contains: `${phoneNumber}$`,
+      voiceEnabled: true,
+      smsEnabled: true,
+      limit: 1,
+    });
+    expect(h.claim).toHaveBeenCalledTimes(2);
+    expect(h.create).toHaveBeenCalledTimes(2);
+    expect(h.create).toHaveBeenCalledWith(expect.objectContaining({ phoneNumber }));
+  });
+
+  it.each([
+    { name: "missing SMS", capabilities: { voice: true, MMS: true } },
+    { name: "false uppercase SMS", capabilities: { voice: true, SMS: false } },
+    { name: "false lowercase SMS", capabilities: { voice: true, sms: false } },
+    { name: "non-boolean SMS", capabilities: { voice: true, SMS: "true" } },
+    { name: "false voice", capabilities: { voice: false, SMS: true } },
+    { name: "unsupported Voice casing", capabilities: { Voice: true, SMS: true } },
+    { name: "conflicting uppercase SMS", capabilities: { voice: true, SMS: false, sms: true } },
+    { name: "conflicting lowercase SMS", capabilities: { voice: true, SMS: true, sms: false } },
+  ])("rejects $name without any purchase mutation", async ({ capabilities }) => {
+    h.inventory.mockResolvedValue([{ ...eligible, capabilities }]);
+    await expect(listNativeAvailableLocalNumbers("tenant", "312")).resolves.toEqual([]);
+    await expect(purchase()).rejects.toMatchObject({ status: 409 });
+    await expect(purchaseNativeNumber({ userId: "tenant", areaCode: "312" })).rejects.toMatchObject(
+      { status: 404 },
+    );
+    expect(h.claim).not.toHaveBeenCalled();
+    expect(h.create).not.toHaveBeenCalled();
+    expect(h.owned).not.toHaveBeenCalled();
+  });
+});
+
 describe("US local carrier purchase boundary", () => {
   it("verifies the exact preferred local number before its durable claim and purchase", async () => {
     await expect(purchase()).resolves.toMatchObject({ phoneNumber, sid });

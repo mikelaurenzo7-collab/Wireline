@@ -98,13 +98,18 @@ function purchaseFields(friendlyName: string) {
 function isSupportedLocalInventoryNumber(row: {
   phoneNumber?: string;
   isoCountry?: string;
-  capabilities?: { voice?: boolean; sms?: boolean };
+  capabilities?: { voice?: boolean; SMS?: boolean; sms?: boolean };
 }): boolean {
+  // Twilio preserves the carrier's uppercase SMS key; older adapters use sms.
+  // If both are present, contradictory capabilities must still fail closed.
+  const { SMS, sms } = row.capabilities ?? {};
+  const smsEnabled =
+    SMS === undefined ? sms === true : SMS === true && (sms === undefined || sms === true);
   return (
     /^\+1\d{10}$/.test(row.phoneNumber ?? "") &&
     row.isoCountry === "US" &&
     row.capabilities?.voice === true &&
-    row.capabilities?.sms === true
+    smsEnabled
   );
 }
 
