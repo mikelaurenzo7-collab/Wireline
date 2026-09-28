@@ -103,9 +103,9 @@ export default function UsageMeter({
   const lowCredit = credit > 0 && credit < 5;
   const compactTitle = isBlocked
     ? completionDue > 0
-      ? `New live calls paused. Clear $${completionDue.toFixed(2)} in completion credit.`
-      : `New live calls paused. Add ${BALANCE_TITLE} or wait for the monthly reset.`
-    : `${used} of ${included} included voice minutes used, resets ${resetLabel}`;
+      ? `New live calls paused. Review Billing to clear $${completionDue.toFixed(2)} in completion credit.`
+      : `New live calls paused. Review your plan and ${BALANCE_TITLE} in Billing.`
+    : `${used} of ${included} included voice minutes used, current allowance through ${resetLabel}`;
 
   if (compact) {
     return (
@@ -146,7 +146,7 @@ export default function UsageMeter({
               Voice Minutes
             </h4>
             <p className="wl-label text-foreground/55 font-medium">
-              Current allowance · resets {resetLabel}
+              Current allowance · through {resetLabel}
             </p>
           </div>
         </div>
@@ -184,8 +184,8 @@ export default function UsageMeter({
             </span>
             <span className="text-foreground/85">
               {completionDue > 0
-                ? `$${completionDue.toFixed(2)} in completion credit is due. Top up ${BALANCE_TITLE} to resume new calls.`
-                : `Your included minutes are used and ${BALANCE_TITLE} cannot cover another attempt. Add balance or wait for the monthly reset.`}
+                ? `$${completionDue.toFixed(2)} in completion credit is due. Clear it in Billing and check your plan before starting another call.`
+                : `Review your plan and ${BALANCE_TITLE} in Billing before starting another call.`}
             </span>
             <span className="block text-foreground/55 mt-1">
               Calls use their admitted duration, including any completion buffer.

@@ -39,14 +39,37 @@ beforeEach(() => {
 });
 
 describe("voice allowance boundary copy", () => {
-  it("uses the server reset date for a paid allowance instead of interpreting its opaque key", () => {
+  it("uses the server allowance end without promising a renewal or interpreting its opaque key", () => {
     h.snapshot.plan_id = "voice-regular";
     h.snapshot.period_key = "paid:sub_customer:1789401600";
     h.snapshot.reset_at = "2026-10-14T16:00:00Z";
     const content = text(UsageMeter({}));
-    expect(content).toContain("Current allowance · resets Oct 14");
+    expect(content).toContain("Current allowance · through Oct 14");
+    expect(content).not.toContain("resets");
     expect(content).not.toContain("paid:sub_customer");
     expect(content).not.toContain("This month");
+  });
+
+  it("keeps the compact paid allowance boundary neutral about renewal", () => {
+    h.snapshot.reset_at = "2026-10-14T16:00:00Z";
+    const meter = UsageMeter({ compact: true });
+    expect(meter?.props.title).toContain("current allowance through Oct 14");
+    expect(meter?.props.title).not.toContain("resets");
+  });
+
+  it("does not mistake a plan restriction for exhausted minutes or promise a reset", () => {
+    h.snapshot.voice_minutes_used = 0;
+    h.snapshot.live_voice_blocked = true;
+    const content = text(UsageMeter({}));
+    expect(content).toContain("Review your plan and Runtime Balance in Billing");
+    expect(content).not.toContain("included minutes are used");
+    expect(content).not.toContain("monthly reset");
+    expect(content).not.toContain("resume");
+
+    h.cursor = 0;
+    const meter = UsageMeter({ compact: true });
+    expect(meter?.props.title).toContain("Review your plan and Runtime Balance in Billing");
+    expect(meter?.props.title).not.toContain("reset");
   });
 
   it("disables and marks the upgrade action busy while its portal request is pending", () => {
@@ -79,7 +102,10 @@ describe("voice allowance boundary copy", () => {
     const content = text(UsageMeter({ showBalance: false }));
     expect(content).toContain("New calls paused");
     expect(content).toContain("$3.50 in completion credit is due");
-    expect(content).toContain("Top up Runtime Balance to resume new calls.");
+    expect(content).toContain(
+      "Clear it in Billing and check your plan before starting another call.",
+    );
+    expect(content).not.toContain("resume new calls");
     expect(content).toContain(
       "Calls use their admitted duration, including any completion buffer.",
     );
