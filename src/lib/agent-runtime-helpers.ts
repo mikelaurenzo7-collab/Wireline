@@ -421,12 +421,13 @@ export const AGENT_TOOL_DEFS = {
         date: {
           type: "string",
           pattern: "^\\d{4}-\\d{2}-\\d{2}$",
-          description: "Exact local calendar date in YYYY-MM-DD format.",
+          description:
+            "Exact local calendar date in YYYY-MM-DD format. For a configured native Calendar, resolve relative dates from its Calendar-local today, not the Bot's date.",
         },
         timezone: {
           type: "string",
           description:
-            "IANA timezone for that local date, such as America/Chicago. Use the Bot's configured timezone unless the caller confirms a different one.",
+            "IANA timezone for that local date, such as America/Chicago. Prefer the saved native Calendar timezone when configured. Otherwise use the Bot's configured timezone unless the caller confirms a different one.",
         },
       },
       required: ["date", "timezone"],
@@ -452,7 +453,7 @@ export const AGENT_TOOL_DEFS = {
         timezone: {
           type: "string",
           description:
-            "IANA timezone for the appointment, such as America/Chicago. Use the Bot's configured timezone unless the caller confirms a different one.",
+            "IANA timezone for the appointment, such as America/Chicago. Use the timezone returned by availability; a configured native Calendar's saved timezone is authoritative. For an unconfigured external calendar, confirm the caller's timezone or use the Bot's configured timezone.",
         },
         customer_name: { type: "string", description: "Caller's full name." },
         service_type: {

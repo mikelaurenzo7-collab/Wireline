@@ -25,6 +25,7 @@ import {
   runtimeTemplateGuidanceBlock,
 } from "../runtime-template-personality";
 import { drizzle, serialQueryBatch } from "../server-context";
+import { validateNativeCalendarSettings } from "../native-calendar-policy";
 import {
   OPENAI_REALTIME_DEFAULT_MODEL,
   OPENAI_REALTIME_DEFAULT_TRANSCRIBER,
@@ -161,6 +162,7 @@ export type OpenAIRealtimeTenantSettings = {
   twilioMessagingEnabled: boolean | null;
   twilioLookupEnabled: boolean | null;
   businessName: string | null;
+  nativeCalendar?: unknown;
 };
 
 type Snippet = { source: "rule" | "knowledge"; content: string };
@@ -216,7 +218,35 @@ function runtimeTimeContext(timeZoneValue: string | null, now = new Date()): str
   }
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const date = `${values.year}-${values.month}-${values.day}`;
-  return `TIME CONTEXT:\nToday is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one.`;
+  return `TIME CONTEXT:\nToday is ${date}. The Bot's configured IANA timezone is ${timeZone}. Use that timezone for local dates and times unless the caller confirms a different one or the native Calendar time context below applies.`;
+}
+
+function nativeCalendarTimeContext(value: unknown, now: Date): string {
+  if (value == null) return "";
+  try {
+    const calendar = validateNativeCalendarSettings(value);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: calendar.time_zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    const today = `${values.year}-${values.month}-${values.day}`;
+    // Advance the local calendar date, not 24 hours on a DST-sensitive instant.
+    const tomorrow = new Date(`${today}T00:00:00Z`);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    return [
+      "NATIVE CALENDAR TIME CONTEXT:",
+      `Calendar-local today is ${today}; tomorrow is ${tomorrow.toISOString().slice(0, 10)}. The saved Calendar timezone is ${calendar.time_zone}.`,
+      "For appointment scheduling, resolve relative dates such as today and tomorrow from this Calendar-local date, even when the Bot's date differs. Use the saved Calendar timezone and the timezone returned by availability. If the caller uses another timezone, confirm the exact appointment date and time in the Calendar timezone before booking.",
+      calendar.enabled
+        ? "Saved hours do not prove availability. Check availability and use only the returned slots before booking."
+        : "Native Calendar booking is paused. Do not claim availability or a completed booking, and do not bypass the pause with a connected calendar.",
+    ].join("\n");
+  } catch {
+    return "NATIVE CALENDAR TIME CONTEXT:\nSaved Calendar settings could not be verified. Do not infer a scheduling timezone, availability, or a completed booking; collect the request for follow-up.";
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -244,6 +274,7 @@ export function composeOpenAIRealtimeInstructions(input: {
   knowledge: Array<{ content: string | null }>;
   surface: OpenAIRealtimeSurface;
 }) {
+  const now = new Date();
   const internalPolicy = resolveFounderInternalRuntimePolicy({
     agentId: input.agent.id,
     userId: input.agent.userId,
@@ -307,7 +338,8 @@ export function composeOpenAIRealtimeInstructions(input: {
     [
       identity,
       surface,
-      runtimeReviewRequired ? "" : `\n${runtimeTimeContext(input.agent.timezone)}`,
+      runtimeReviewRequired ? "" : `\n${runtimeTimeContext(input.agent.timezone, now)}`,
+      runtimeReviewRequired ? "" : nativeCalendarTimeContext(input.tenant.nativeCalendar, now),
       customInstructions ? `\nCUSTOM ROLE INSTRUCTIONS:\n${customInstructions}` : "",
       internalPolicy && !runtimeReviewRequired
         ? `\n${founderInternalRuntimePolicyBlock(internalPolicy)}`
@@ -367,6 +399,7 @@ async function loadRuntime(agentId: string, userId: string) {
           twilioMessagingEnabled: schema.settings.twilioMessagingEnabled,
           twilioLookupEnabled: schema.settings.twilioLookupEnabled,
           businessName: schema.settings.businessName,
+          nativeCalendar: schema.settings.nativeCalendar,
         })
         .from(schema.settings)
         .where(eq(schema.settings.userId, userId))
