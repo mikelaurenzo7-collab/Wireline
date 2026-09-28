@@ -85,7 +85,6 @@ export const MOBILE_MORE_HREF = "__more__" as const;
  * { href: "/insights", label: "Activity" }
  * { href: "/connections", label: "Connections" }
  * { route: "/templates", parentHref: "/studio" }
- * { route: "/knowledge", parentHref: "/studio" }
  * { route: "/approvals", parentHref: "/inbox" }
  * { route: "/apps", parentHref: "/settings" }
  * { "/apps": "Apps" }
@@ -161,7 +160,7 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     eyebrow: "Build",
     description: "Ground your Bot in trusted business information.",
     icon: "GraduationCap",
-    parentHref: "/studio",
+    desktop: { group: "work", order: 15 },
     mobile: { placement: "more", group: "Build", order: 10 },
     shortcut: { key: "T", hint: "g t" },
   },
@@ -305,9 +304,9 @@ function byMobilePlacement(placement: MobileNavPlacement) {
     .map(shellItem);
 }
 
-/** Daily work stays focused on Studio, Inbox, Calls, and Calendar. */
+/** Daily work and the knowledge behind it share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/inbox"; href: "/phone"; href: "/calendar". */
+/* Derived order: href: "/studio"; href: "/knowledge"; href: "/inbox"; href: "/phone"; href: "/calendar". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");

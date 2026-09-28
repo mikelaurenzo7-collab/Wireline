@@ -28,6 +28,7 @@ describe("legacy account-type navigation compatibility", () => {
     expect(groups.map((group) => group.label)).toEqual(["Work", "Manage"]);
     expect(groups.find((group) => group.label === "Work")?.items.map((item) => item.path)).toEqual([
       "/studio",
+      "/knowledge",
       "/inbox",
       "/phone",
       "/calendar",

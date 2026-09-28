@@ -79,6 +79,7 @@ vi.mock("../src/components/AgentToolPermissions", () => ({ default: "tool-permis
 
 type Props = {
   id?: string;
+  to?: string;
   value?: string;
   children?: ReactNode;
   disabled?: boolean;
@@ -207,6 +208,14 @@ afterEach(() => {
 });
 
 describe("Studio inspector draft lifecycle", () => {
+  it("names the saved Knowledge and rules destination and preserves the active Bot", async () => {
+    await mount();
+    const link = elements(render()).find(
+      (element) => element.type === "a" && text(element) === "Knowledge & rules",
+    );
+    expect(link?.props.to).toBe(`/knowledge?agent=${h.botId}`);
+  });
+
   it("refreshes approved Build changes on the event without overwriting a dirty greeting", async () => {
     await mount();
     change("setup-greeting", "My unsaved greeting");

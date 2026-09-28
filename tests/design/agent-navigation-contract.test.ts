@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { WORKSPACE_NAV, desktopNavParentHref } from "../../src/constants/navigation";
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
@@ -24,7 +25,8 @@ describe("authenticated Bot navigation contract", () => {
     expect(navigation).toMatch(/href: "\/insights", label: "Activity"/);
     expect(navigation).toMatch(/href: "\/connections"[\s\S]*label: "Connections"/);
     expect(navigation).toContain('route: "/templates", parentHref: "/studio"');
-    expect(navigation).toContain('route: "/knowledge", parentHref: "/studio"');
+    expect(WORKSPACE_NAV.slice(0, 2).map((item) => item.href)).toEqual(["/studio", "/knowledge"]);
+    expect(desktopNavParentHref("/knowledge")).toBeNull();
     expect(navigation).toContain('route: "/approvals", parentHref: "/inbox"');
     expect(navigation).toContain('route: "/apps", parentHref: "/settings"');
     expect(shell).toContain("desktopNavParentHref(pathname)");

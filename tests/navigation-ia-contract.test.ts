@@ -10,6 +10,7 @@ import {
   desktopNavParentHref,
   isMobileMoreActive,
   isMobilePrimaryActive,
+  isNavActive,
   workspacePageTitle,
 } from "../src/constants/navigation";
 
@@ -17,6 +18,7 @@ describe("BotBound workspace information architecture", () => {
   it("keeps daily desktop work focused and ordered", () => {
     expect(WORKSPACE_NAV.map((item) => item.href)).toEqual([
       "/studio",
+      "/knowledge",
       "/inbox",
       "/phone",
       "/calendar",
@@ -58,7 +60,10 @@ describe("BotBound workspace information architecture", () => {
   });
 
   it("keeps contextual children under their natural parent", () => {
-    expect(desktopNavParentHref("/knowledge")).toBe("/studio");
+    expect(desktopNavParentHref("/knowledge")).toBeNull();
+    expect(
+      WORKSPACE_NAV.filter((item) => isNavActive("/knowledge", item.href)).map((item) => item.href),
+    ).toEqual(["/knowledge"]);
     expect(desktopNavParentHref("/templates")).toBe("/studio");
     expect(desktopNavParentHref("/approvals")).toBe("/inbox");
     expect(desktopNavParentHref("/apps")).toBe("/settings");

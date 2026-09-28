@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bot,
   Cable,
+  CalendarDays,
   CheckSquare,
   ChevronRight,
   CreditCard,
@@ -60,7 +61,7 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
   {
     id: "knowledge",
     label: "Knowledge",
-    keywords: "facts context sources policies",
+    keywords: "facts context sources policies rules memory training",
     icon: Database,
     href: "/knowledge",
     category: "Workspace",
@@ -86,9 +87,17 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     // "Calls" everywhere: the rail, page titles, and the authenticated 404 all
     // name /phone "Calls" (constants/navigation.ts) — the palette must match.
     label: "Calls",
-    keywords: "phone calls history outbound campaigns appointments",
+    keywords: "phone calls history outbound campaigns",
     icon: Phone,
     href: "/phone",
+    category: "Workspace",
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    keywords: "appointments availability bookings schedule hours",
+    icon: CalendarDays,
+    href: "/calendar",
     category: "Workspace",
   },
   {
@@ -179,6 +188,21 @@ export function resolveCommandSelectionIndex(
   return currentIndex;
 }
 
+export function searchWorkspaceCommands(query: string): readonly CommandItem[] {
+  const language = customerAgentLanguage();
+  const available = WORKSPACE_COMMANDS.map((command) =>
+    command.id === "agents" ? { ...command, label: language.navLabel } : command,
+  );
+  const term = query.trim().toLocaleLowerCase();
+  if (!term) return available;
+  return available.filter((command) =>
+    [command.label, command.keywords, command.category]
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(term),
+  );
+}
+
 export default function CommandBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -193,20 +217,7 @@ export default function CommandBar() {
 
   useBodyScrollLock(isOpen);
 
-  const filteredCommands = useMemo(() => {
-    const language = customerAgentLanguage();
-    const available = WORKSPACE_COMMANDS.map((command) =>
-      command.id === "agents" ? { ...command, label: language.navLabel } : command,
-    );
-    const term = query.trim().toLocaleLowerCase();
-    if (!term) return available;
-    return available.filter((command) =>
-      [command.label, command.keywords, command.category]
-        .join(" ")
-        .toLocaleLowerCase()
-        .includes(term),
-    );
-  }, [query]);
+  const filteredCommands = useMemo(() => searchWorkspaceCommands(query), [query]);
 
   const close = useCallback(() => {
     setIsOpen(false);
