@@ -289,18 +289,22 @@ describe("native calendar transactional booking", () => {
     expect(h.rows.get("wireline_appointments")).toHaveLength(1);
   });
 
-  it("rechecks imported busy time before approving and rescheduling", async () => {
-    h.rows.get("wireline_settings")![0].nativeCalendar.booking_mode = "approval";
-    const row = await bookNativeAppointment(user, input("approval"));
-    h.rows.set("wireline_calendar_events", [
-      { userId: user, startTime: row.startAt, endTime: row.endAt, status: "confirmed" },
-    ]);
-    await expect(
-      updateCalendarAppointment(user, row.id, { status: "Confirmed" }),
-    ).rejects.toMatchObject({ status: 409 });
-    const moved = await updateCalendarAppointment(user, row.id, { time: "11:00" });
-    expect(moved.startAt!.toISOString()).toBe("2026-09-28T16:00:00.000Z");
-  });
+  it.each(["Confirmed", "Scheduled", "Rescheduled"])(
+    "rechecks imported busy time before approving as %s and rescheduling",
+    async (status) => {
+      h.rows.get("wireline_settings")![0].nativeCalendar.booking_mode = "approval";
+      const row = await bookNativeAppointment(user, input("approval"));
+      h.rows.set("wireline_calendar_events", [
+        { userId: user, startTime: row.startAt, endTime: row.endAt, status: "confirmed" },
+      ]);
+      await expect(updateCalendarAppointment(user, row.id, { status })).rejects.toMatchObject({
+        status: 409,
+      });
+      expect(h.rows.get("wireline_appointments")![0].status).toBe("Requested");
+      const moved = await updateCalendarAppointment(user, row.id, { time: "11:00" });
+      expect(moved.startAt!.toISOString()).toBe("2026-09-28T16:00:00.000Z");
+    },
+  );
 
   it("rejects foreign Bot/call provenance and performs no appointment writes", async () => {
     h.rows.set("wireline_agents", [{ id: "foreign", userId: other }]);

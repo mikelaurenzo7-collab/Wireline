@@ -277,7 +277,9 @@ export type NativeAppointmentInput = {
 function text(value: unknown, label: string, max: number, required = false): string | null {
   if (value == null && !required) return null;
   if (typeof value !== "string" || value.trim().length > max || (required && !value.trim())) {
-    throw AppError.badRequest(`${label} must be ${required ? "1–" : "at most "}${max} characters.`);
+    throw AppError.badRequest(
+      `${label} must be ${required ? "1 to " : "at most "}${max} characters.`,
+    );
   }
   return value.trim() || null;
 }
@@ -440,7 +442,12 @@ export async function updateCalendarAppointment(
           bookingFingerprint:
             prior.bookingFingerprint ?? createHash("sha256").update(id).digest("hex"),
         });
-      } else if (prior.status === "Requested" && updates.status === "Confirmed") {
+      } else if (
+        prior.status === "Requested" &&
+        updates.status &&
+        updates.status !== "Requested" &&
+        OCCUPIED_APPOINTMENT_STATUSES.includes(updates.status)
+      ) {
         if (!prior.startAt || !prior.endAt || prior.startAt.getTime() <= Date.now())
           throw AppError.conflict(
             "This request is no longer in the future. Reschedule it before confirming.",

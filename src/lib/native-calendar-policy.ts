@@ -67,7 +67,7 @@ export function validateNativeCalendarSettings(value: unknown): NativeCalendarSe
     }
     const name = typeof input.appointment_name === "string" ? input.appointment_name.trim() : "";
     if (!name || name.length > 100)
-      throw AppError.badRequest("Appointment name must be 1–100 characters.");
+      throw AppError.badRequest("Appointment name must be 1 to 100 characters.");
     if (typeof input.time_zone !== "string" || !input.time_zone.trim()) {
       throw AppError.badRequest("Choose the calendar timezone.");
     }
