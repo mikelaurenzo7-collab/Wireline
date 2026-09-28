@@ -25,6 +25,7 @@ describe("authenticated mobile cleanup", () => {
   it("keeps compact metrics and phone-width labels readable", () => {
     const knowledge = read("src/components/KnowledgeBaseClaude.tsx");
     const phone = read("src/pages/PhonePage.tsx");
+    const calendar = read("src/pages/CalendarPage.tsx");
 
     expect(knowledge).toMatch(/<dl[^>]+aria-label="Knowledge summary"/);
     expect(knowledge).toContain("{stat.label}</dt>");
@@ -32,8 +33,10 @@ describe("authenticated mobile cleanup", () => {
     expect(knowledge).toContain(
       "const showStats = loading || knowledge.length > 0 || directives.length > 0 || hasPersonality",
     );
-    expect(phone).toContain('shortLabel: "Appts"');
+    expect(phone).not.toContain('id: "appointments"');
     expect(phone).toContain("WorkspaceControlBand");
+    expect(calendar).toContain("WorkspaceControlBand");
+    expect(calendar).toMatch(/<WorkspaceTabStrip[\s\S]*?mobileSelect/);
   });
 
   it("keeps heavy-user controls reachable without crowding the Bot workspace", () => {
