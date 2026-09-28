@@ -14,6 +14,9 @@ import {
   type TenantIntegrationConnections,
 } from "./tenant-integration-connections";
 import type { ToolCallContext } from "./agent-tool-types";
+import { getTenantChannelEntitlements } from "./channel-entitlements";
+import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
+import type { CommunicationChannel } from "./plan-catalog";
 
 /**
  * Safety-critical tools that remain callable even when an Account Holder has a
@@ -26,10 +29,7 @@ import type { ToolCallContext } from "./agent-tool-types";
  * verified. Neither entry grants access to an external customer system or
  * money movement.
  */
-const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>([
-  "add_to_dnc",
-  "create_followup_task",
-]);
+const SYSTEM_RUNTIME_TOOL_NAMES = new Set<AgentToolName>(["add_to_dnc", "create_followup_task"]);
 
 export const NO_TENANT_INTEGRATIONS: TenantIntegrationConnections = {
   shopify: false,
@@ -55,6 +55,7 @@ export type AgentToolFeatureFlags = {
   aiTier?: string | null;
   twilioMessaging?: boolean;
   twilioLookup?: boolean;
+  channels?: readonly CommunicationChannel[];
 };
 
 type AgentAuthorizationSnapshot = {
@@ -68,7 +69,10 @@ type AgentAuthorizationSnapshot = {
  * snapshot. Entries exist only while the read is in flight, so a later webhook
  * turn or integration revocation performs a new lookup.
  */
-const inFlightAuthorizationSnapshots = new Map<string, Promise<AgentAuthorizationSnapshot | null>>();
+const inFlightAuthorizationSnapshots = new Map<
+  string,
+  Promise<AgentAuthorizationSnapshot | null>
+>();
 
 /**
  * Resolve a persisted JSON selection without ever expanding malformed data.
@@ -78,9 +82,7 @@ const inFlightAuthorizationSnapshots = new Map<string, Promise<AgentAuthorizatio
  * stale values are ignored instead of invalidating the entire selection. Any
  * other JSON shape fails closed to an empty active set.
  */
-export function sanitizePersistedAgentToolSelection(
-  value: unknown,
-): PersistedAgentToolSelection {
+export function sanitizePersistedAgentToolSelection(value: unknown): PersistedAgentToolSelection {
   if (value == null) return null;
   if (!Array.isArray(value)) return [];
 
@@ -121,16 +123,16 @@ export function resolveAuthorizedAgentTools(
     active = active.filter((tool) => tool !== "lookup_phone_number");
   }
 
-  return filterToolsByTenantConnections(active, connections);
+  return filterToolsByTenantConnections(active, connections).filter((tool) =>
+    isAgentToolChannelAllowed(tool, flags.channels),
+  );
 }
 
 function callIdFromContext(context: ToolCallContext): string {
   const messageCallId = (context.message.call as { id?: unknown } | undefined)?.id;
   const payloadCallId = (context.payload.call as { id?: unknown } | undefined)?.id;
   const callId = messageCallId || payloadCallId;
-  return typeof callId === "string" && callId.trim()
-    ? callId.trim()
-    : `tool:${context.toolCallId}`;
+  return typeof callId === "string" && callId.trim() ? callId.trim() : `tool:${context.toolCallId}`;
 }
 
 function snapshotKey(context: ToolCallContext, agentId: string, userId: string): string {
@@ -165,7 +167,14 @@ async function loadAuthorizationSnapshot(
       });
       return NO_TENANT_INTEGRATIONS;
     }),
-  ]).then(([rows, connections]) => {
+    getTenantChannelEntitlements(userId, context.drizzle).catch((error: unknown) => {
+      context.log.warn("Agent channel lookup failed; disabling customer send tools", {
+        agentId,
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      return { channels: [] };
+    }),
+  ]).then(([rows, connections, entitlements]) => {
     const row = rows[0];
     if (!row) return null;
     return {
@@ -174,6 +183,7 @@ async function loadAuthorizationSnapshot(
         aiTier: row.aiTier,
         twilioMessaging: Boolean(row.twilioMessagingEnabled),
         twilioLookup: Boolean(row.twilioLookupEnabled),
+        channels: entitlements.channels,
       },
       connections,
     };
@@ -231,7 +241,9 @@ export async function isAgentToolExecutionAuthorized(
   if (!snapshot) return false;
 
   const persisted = sanitizePersistedAgentToolSelection(snapshot.enabledTools);
-  return resolveAuthorizedAgentTools(persisted, snapshot.flags, snapshot.connections).includes(name);
+  return resolveAuthorizedAgentTools(persisted, snapshot.flags, snapshot.connections).includes(
+    name,
+  );
 }
 
 /** Canonical names exported for drift-focused regression contracts. */

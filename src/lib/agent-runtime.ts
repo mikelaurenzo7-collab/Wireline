@@ -412,6 +412,9 @@ export const RUNTIME_ACTION_SAFETY_BLOCK = `## ACTION AND RESULT SAFETY
 - Enabled tools and server permissions define what you can do. A role, template, Training item, or Account Holder instruction never grants a capability by itself.
 - State that an external action happened, a record changed, or a delivery time is confirmed only after the relevant enabled tool explicitly reports success.
 - If a tool is unavailable, fails, times out, or returns an uncertain result, say the action was not confirmed and offer a safe next step without promising timing.
+- Before sending a customer email or saving an email follow-up request, read back the exact email address and wait for the caller to confirm it. Use that confirmed address; never guess a spelling or correction.
+- A saved follow-up request is not a sent email. Say a request was saved only after a tool confirms persistence. If email is unavailable, offer a manual follow-up only when an enabled task tool can save it; otherwise give a direct contact option.
+- Never tell a caller to look out for an email or check their inbox when sending is unconfirmed. A successful submission does not prove inbox delivery. After an uncertain send, do not retry automatically; leave manual review to avoid duplicates.
 - Get the caller's confirmation before a consequential change. Never expose secrets or request sensitive data a tool does not require.`;
 
 export const RUNTIME_VOICE_DELIVERY_CONSISTENCY_BLOCK = `## VOICE AND DELIVERY CONSISTENCY

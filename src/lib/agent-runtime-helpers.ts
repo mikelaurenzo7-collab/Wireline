@@ -5,6 +5,9 @@ import {
   loadTenantIntegrationConnections,
 } from "./tenant-integration-connections";
 import { DEFAULT_AGENT_ROLE } from "./agent-constants";
+import { getTenantChannelEntitlements } from "./channel-entitlements";
+import { isAgentToolChannelAllowed } from "./agent-tool-channel-policy";
+import { log } from "./server-context";
 
 export function sanitizePhone(phone: string | undefined | null): string {
   return (phone || "").replace(/[^0-9+]/g, "").slice(0, 20);
@@ -342,10 +345,14 @@ export const AGENT_TOOL_DEFS = {
       type: "object",
       properties: {
         to_email: { type: "string", description: "Customer's email address." },
+        email_confirmed: {
+          type: "boolean",
+          description: "True only after reading back the exact address and the caller confirms it.",
+        },
         subject: { type: "string", description: "Email subject line." },
         body: { type: "string", description: "Email body content." },
       },
-      required: ["to_email", "subject", "body"],
+      required: ["to_email", "email_confirmed", "subject", "body"],
     },
   },
   send_text_message: {
@@ -1185,7 +1192,7 @@ export const ROLE_SPECIFIC_PROTOCOLS: Record<string, string> = {
   technical_support:
     "Be methodical. Use search_leads to find their product version or history. If you cannot solve it, use create_support_ticket to escalate to engineering.",
   scheduler:
-    "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. Use send_email to send the calendar invite immediately after booking, and use send_text_message only if the customer asked for a text confirmation.",
+    "Your goal is a confirmed appointment. ALWAYS check_calendar_availability before suggesting a time. When send_email is available and the caller requests an email, confirm their email address before sending the booking details. Only say an email was sent after the send tool confirms success. Use send_text_message only if available and the customer asked for a text confirmation. If a requested send tool is unavailable, offer a manual follow-up using create_followup_task when available; claim the request is saved only after that tool confirms creation.",
   lead_qualifier:
     "Qualify fast: budget, timeline, authority, need. Use enrich_lead when you have a company or email. Book a demo with book_appointment when qualified; notify the team on Slack or Teams for hot leads.",
   marketing:
@@ -1197,7 +1204,7 @@ export function buildRoleToolDefs(role: string, enabledTools?: unknown): object[
   return toolNames.map((name) => AGENT_TOOL_DEFS[name]).filter(Boolean);
 }
 
-/** Connection-aware tool list for live assistants — omits tools the tenant has not OAuth'd. */
+/** Live tools respect the selected set, available connections and current paid channels. */
 export async function buildRoleToolDefsForTenant(
   role: string,
   enabledTools: unknown,
@@ -1207,8 +1214,25 @@ export async function buildRoleToolDefsForTenant(
 ): Promise<object[]> {
   const { getCachedTenantToolDefs, setCachedTenantToolDefs } = await import("./tenant-tools-cache");
 
-  const cached = await getCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags);
-  if (cached) return cached;
+  // Connection schemas may be cached, but paid channel authority must be fresh.
+  // A downgrade must not keep advertising customer sends from an older cache.
+  const [cached, entitlements] = await Promise.all([
+    getCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags),
+    getTenantChannelEntitlements(userId).catch((error: unknown) => {
+      log.warn("Agent channel lookup failed; disabling customer send tools", {
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      return { channels: [] };
+    }),
+  ]);
+  const allowedTools = (tools: object[]) =>
+    tools.filter((tool) =>
+      isAgentToolChannelAllowed(
+        String((tool as { name?: unknown }).name || ""),
+        entitlements.channels,
+      ),
+    );
+  if (cached) return allowedTools(cached);
 
   let resolved = applyPlanToolUnlocks(resolveAgentTools(role, enabledTools), aiTier);
   if (!tenantFlags?.twilioMessaging) {
@@ -1222,5 +1246,5 @@ export async function buildRoleToolDefsForTenant(
   const tools = toolNames.map((name) => AGENT_TOOL_DEFS[name]).filter(Boolean);
 
   await setCachedTenantToolDefs(userId, role, enabledTools, aiTier, tenantFlags, tools);
-  return tools;
+  return allowedTools(tools);
 }

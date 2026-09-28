@@ -28,6 +28,7 @@ import { ClientCommunicationBlockedError, superviseClientCommunication } from ".
 import { dispatchWebhook } from "./webhook-helpers";
 import { runInBackground } from "./background-work";
 import { loadTenantIntegrationConnections } from "./tenant-integration-connections";
+import { getTenantChannelEntitlements } from "./channel-entitlements";
 import { sendTenantMessage } from "./twilio-service";
 import {
   externalEntityActionPolicyForUser,
@@ -162,12 +163,21 @@ async function resolveActionPolicy(
       });
       return NO_TENANT_INTEGRATIONS;
     });
+    const entitlements = await getTenantChannelEntitlements(userId).catch((error: unknown) => {
+      log.warn("Action channel lookup failed; disabling customer sends", {
+        userId,
+        agentId: scopedAction.agentId,
+        errorClass: error instanceof Error ? error.name : typeof error,
+      });
+      return { channels: [] };
+    });
     const allowedTools = resolveAuthorizedAgentTools(
       sanitizePersistedAgentToolSelection(agentRow.enabledTools),
       {
         aiTier: agentRow.aiTier,
         twilioMessaging: Boolean(agentRow.twilioMessagingEnabled),
         twilioLookup: Boolean(agentRow.twilioLookupEnabled),
+        channels: entitlements.channels,
       },
       connections,
     );

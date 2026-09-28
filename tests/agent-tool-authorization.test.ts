@@ -103,7 +103,7 @@ describe("agent tool execution authorization", () => {
         "send_contract",
         "meta_submit_lead",
       ],
-      { twilioMessaging: false, twilioLookup: false },
+      { twilioMessaging: false, twilioLookup: false, channels: ["email"] },
       NO_TENANT_INTEGRATIONS,
     );
 

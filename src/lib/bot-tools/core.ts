@@ -170,8 +170,8 @@ async function searchAgentKnowledge(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Persist a real follow-up task so a caller-facing promise ("someone will send
- * that to you") is backed by a record a human can act on. The client-comms
+ * Persist a real follow-up request a human can act on without promising future
+ * delivery. The client-comms
  * supervisor THROWS on a block (it never returns approved:false), so a blocked
  * or failed send lands in a catch — where the agent used to tell the caller a
  * human would follow up while writing nothing at all. Best-effort: never let a
@@ -185,21 +185,36 @@ async function recordCommsFollowUpTask(
     channel: "email" | "sms";
     recipient: string | null | undefined;
     payload: Record<string, unknown>;
+    deliveryStatus?: "not_sent" | "unconfirmed";
   },
 ): Promise<boolean> {
   try {
     await drizzle.insert(schema.followUpTasks).values({
       userId: values.userId,
       agentId: values.agentId ?? null,
-      taskType: values.channel === "email" ? "send_email" : "send_text_message",
-      description: `${values.channel === "email" ? "Email" : "Text"} follow-up to ${
-        values.recipient || "caller"
-      }, flagged for human review from a live call`,
+      // Email recovery is human work, not a retry that can repeat an unknown
+      // provider outcome or require an Email channel this account does not own.
+      taskType: values.channel === "email" ? "follow_up" : "send_text_message",
+      description:
+        values.channel === "email"
+          ? `Email follow-up to ${values.recipient || "caller"}. ${
+              values.deliveryStatus === "not_sent"
+                ? "No email was sent; review the request before sending manually."
+                : "Delivery is unconfirmed; check sent mail before sending to avoid duplicates."
+            }`
+          : `Text follow-up to ${values.recipient || "caller"}, flagged for human review from a live call`,
       status: "pending",
       priority: "high",
-      targetChannel: values.channel,
+      targetChannel: values.channel === "email" ? "manual" : values.channel,
       sourceType: "voice_tool",
-      payload: values.payload,
+      payload:
+        values.channel === "email"
+          ? {
+              ...values.payload,
+              channel: "email",
+              delivery_status: values.deliveryStatus || "unconfirmed",
+            }
+          : values.payload,
     });
     return true;
   } catch {
@@ -393,12 +408,21 @@ export async function handleCoreToolCall(
   }
 
   if (fn === "send_email") {
-    const { to_email, subject, body } = args || {};
+    const { to_email, subject, body, email_confirmed } = args || {};
+    let sendAttempted = false;
+    let emailPayload = { to: to_email, subject, body };
     try {
       const blocked = await tenantLiveExternalActionBlock(agent?.user_id, "vapi_email_send", {
         email: to_email,
       });
       if (blocked) return { toolCallId, result: blocked };
+      if (email_confirmed !== true) {
+        return {
+          toolCallId,
+          result:
+            "EMAIL_CONFIRMATION_REQUIRED: No email was sent or follow-up saved. Read back the exact email address and wait for the caller to confirm it before trying again with email_confirmed=true. Do not guess a spelling or correction.",
+        };
+      }
       // Throws ClientCommunicationBlockedError on a block — there is no
       // approved:false return, so a blocked send falls through to the catch,
       // which records a real task instead of fabricating a follow-up.
@@ -413,43 +437,47 @@ export async function handleCoreToolCall(
         context:
           "Outbound email generated from a live Bot tool call during a customer conversation.",
       });
+      emailPayload = { to: to_email, subject: reviewed.subject || subject, body: reviewed.body };
       const service = new IntegrationService(agent?.user_id);
-      const success = await service.sendEmail({
-        to: to_email,
-        subject: reviewed.subject || subject,
-        body: reviewed.body,
-      });
+      sendAttempted = true;
+      const success = await service.sendEmail(emailPayload);
       if (success) {
-        return { toolCallId, result: "Email sent." };
+        return {
+          toolCallId,
+          result: "Email submitted successfully. Inbox delivery has not been verified.",
+        };
       }
       const recorded = await recordCommsFollowUpTask(drizzle, {
         userId: agent?.user_id,
         agentId: agent?.id,
         channel: "email",
         recipient: to_email,
-        payload: { to: to_email, subject: reviewed.subject || subject, body: reviewed.body },
+        payload: emailPayload,
+        deliveryStatus: "unconfirmed",
       });
       return {
         toolCallId,
         result: recorded
-          ? "I wasn't able to send that right now, but I've logged it for our team to send you directly."
-          : "I wasn't able to send that right now. Please reach out to us directly and we'll get it to you.",
+          ? "The email send was not confirmed. Your request was saved for manual review. Do not promise delivery or retry automatically; the team should check sent mail first to avoid duplicates."
+          : "The email send was not confirmed, and your follow-up request could not be saved. Please contact the team directly. Do not retry automatically or promise delivery.",
       };
     } catch {
-      // Blocked by the supervisor or an unexpected failure. Log a real task so
-      // the promised follow-up actually reaches a human.
+      // Preserve uncertainty after starting a send. A provider may have accepted
+      // it before an exception; manual review must not automatically send twice.
       const recorded = await recordCommsFollowUpTask(drizzle, {
         userId: agent?.user_id,
         agentId: agent?.id,
         channel: "email",
         recipient: to_email,
-        payload: { to: to_email, subject, body },
+        payload: emailPayload,
+        deliveryStatus: sendAttempted ? "unconfirmed" : "not_sent",
       });
+      const delivery = sendAttempted ? "The email send was not confirmed." : "No email was sent.";
       return {
         toolCallId,
         result: recorded
-          ? "I've logged your request so our team can send that to you directly."
-          : "I couldn't complete that right now, please reach out to us directly and we'll get it to you.",
+          ? `${delivery} Your request was saved for manual review. Do not promise delivery or retry automatically.${sendAttempted ? " The team should check sent mail first to avoid duplicates." : ""}`
+          : `${delivery} Your follow-up request could not be saved. Please contact the team directly. Do not retry automatically or promise delivery.`,
       };
     }
   }

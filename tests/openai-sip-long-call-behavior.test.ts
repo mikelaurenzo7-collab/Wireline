@@ -26,6 +26,7 @@ const h = vi.hoisted(() => ({
   respondToPing: true,
   pingFails: false,
   openFails: false,
+  failNextToolOutput: false,
   callUser: "tenant",
   callOwner: "owner",
   callPhase: "terminal",
@@ -50,7 +51,12 @@ vi.mock("ws", async () => {
       });
     }
     send(raw: string) {
-      h.sent.push(JSON.parse(raw));
+      const event = JSON.parse(raw);
+      if (h.failNextToolOutput && event.item?.type === "function_call_output") {
+        h.failNextToolOutput = false;
+        throw new Error("tool output transport failed");
+      }
+      h.sent.push(event);
     }
     ping() {
       if (h.pingFails) throw new Error("transport is unavailable");
@@ -308,7 +314,7 @@ beforeEach(() => {
   h.flushProviderUsage.mockReset().mockResolvedValue(undefined);
   h.usage.mockReset().mockResolvedValue(undefined);
   h.digest.mockReset().mockResolvedValue({ jobId: "job" });
-  h.tool.mockReset().mockResolvedValue({ result: { answer: "approved" } });
+  h.tool.mockReset().mockResolvedValue({ result: "Approved knowledge found." });
   h.provider.mockReset().mockResolvedValue({ ok: true, status: 200 });
   h.environment.mockReset().mockResolvedValue(undefined);
   h.funding.mockReset().mockResolvedValue(null);
@@ -321,10 +327,72 @@ beforeEach(() => {
   h.respondToPing = true;
   h.pingFails = false;
   h.openFails = false;
+  h.failNextToolOutput = false;
   h.callUser = "tenant";
   h.callOwner = "owner";
   h.callPhase = "terminal";
   h.callReason = "provider-heartbeat-timeout";
+});
+
+describe("native SIP semantic tool accounting", () => {
+  it.each([
+    [
+      "send_email",
+      "The email send was not confirmed. Your request was saved for manual review.",
+      1,
+    ],
+    ["send_email", "No email was sent. Your request was saved for manual review.", 1],
+    ["send_email", "EMAIL_CONFIRMATION_REQUIRED: Read back the exact address first.", 1],
+    [
+      "send_email",
+      "That action is not enabled for this agent or its required connection is unavailable.",
+      1,
+    ],
+    ["send_email", "Email submitted successfully. Inbox delivery has not been verified.", 0],
+    ["create_followup_task", "Your request was saved for manual review.", 0],
+  ])("counts %s outcome %s as %i failed call", async (name, result, failed) => {
+    h.tool.mockResolvedValue({ toolCallId: "tool-semantic", result });
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    await emit({
+      type: "response.function_call_arguments.done",
+      name,
+      call_id: "tool-semantic",
+      arguments: "{}",
+    });
+    await emit({ type: "response.done", response: { status: "completed" } });
+    h.sockets[0].close();
+    await session;
+    expect(h.tool).toHaveBeenCalledOnce();
+    expect(h.writes).toContainEqual(
+      expect.objectContaining({ toolCallsTotal: 1, toolCallsFailed: failed }),
+    );
+  });
+
+  it("does not double-count a failed send when delivering its tool result also fails", async () => {
+    h.tool.mockResolvedValue({
+      toolCallId: "tool-semantic",
+      result: "The email send was not confirmed. Your request was saved for manual review.",
+    });
+    const session = start();
+    await vi.advanceTimersByTimeAsync(0);
+    await emit({ type: "output_audio_buffer.stopped" });
+    h.failNextToolOutput = true;
+    await emit({
+      type: "response.function_call_arguments.done",
+      name: "send_email",
+      call_id: "tool-semantic",
+      arguments: "{}",
+    });
+    await emit({ type: "response.done", response: { status: "completed" } });
+    h.sockets[0].close();
+    await session;
+    expect(h.failNextToolOutput).toBe(false);
+    expect(h.writes).toContainEqual(
+      expect.objectContaining({ toolCallsTotal: 1, toolCallsFailed: 1 }),
+    );
+  });
 });
 
 describe("trusted SIP provider usage observation", () => {

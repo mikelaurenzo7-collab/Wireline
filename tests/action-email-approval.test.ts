@@ -4,10 +4,17 @@ const h = vi.hoisted(() => ({
   supervise: vi.fn(),
   sendEmail: vi.fn(),
   insert: vi.fn(),
+  entitlements: vi.fn(),
+  agentRows: [] as Array<Record<string, unknown>>,
 }));
 vi.mock("../src/lib/server-context", () => ({
   drizzle: {
-    select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+    select: () => ({
+      from: () => {
+        const chain = { where: () => ({ limit: async () => h.agentRows }) };
+        return { ...chain, leftJoin: () => chain };
+      },
+    }),
     insert: () => ({
       values: (value: unknown) => {
         h.insert(value);
@@ -44,7 +51,11 @@ vi.mock("../src/lib/slack-service", () => ({
 vi.mock("../src/lib/webhook-helpers", () => ({ dispatchWebhook: vi.fn() }));
 vi.mock("../src/lib/background-work", () => ({ runInBackground: vi.fn() }));
 vi.mock("../src/lib/tenant-integration-connections", () => ({
-  loadTenantIntegrationConnections: vi.fn(),
+  loadTenantIntegrationConnections: async () => ({}),
+  filterToolsByTenantConnections: (tools: string[]) => tools,
+}));
+vi.mock("../src/lib/channel-entitlements", () => ({
+  getTenantChannelEntitlements: h.entitlements,
 }));
 vi.mock("../src/lib/twilio-service", () => ({ sendTenantMessage: vi.fn() }));
 
@@ -60,11 +71,62 @@ const action: ActionItem = {
 const context = { sourceId: "call-1", sourceType: "manual_approval" };
 beforeEach(() => {
   vi.clearAllMocks();
+  h.agentRows = [];
+  h.entitlements.mockResolvedValue({ channels: ["email"] });
   h.sendEmail.mockResolvedValue(true);
   h.supervise.mockRejectedValue(new ClientCommunicationBlockedError("The message needs revision."));
 });
 
 describe("email approval supervision", () => {
+  it.each(["auto", "draft"] as const)(
+    "preserves eligible Email agent %s actions with fresh channel authority",
+    async (autonomy) => {
+      h.agentRows = [{ enabledTools: ["send_email"], autonomyLevel: "draft" }];
+      h.supervise.mockResolvedValue({ subject: "Reviewed Subject", body: "Reviewed body." });
+      const result = await executeAction(
+        "tenant",
+        { ...action, agentId: "email-bot" },
+        context,
+        autonomy,
+      );
+      expect(h.entitlements).toHaveBeenCalledWith("tenant");
+      expect(result).toEqual(
+        autonomy === "auto" ? { success: true } : { success: true, queued: true },
+      );
+      expect(h.sendEmail).toHaveBeenCalledTimes(autonomy === "auto" ? 1 : 0);
+      expect(h.insert).toHaveBeenCalledTimes(autonomy === "draft" ? 1 : 0);
+    },
+  );
+
+  it.each(["auto", "draft"] as const)(
+    "blocks Calls-only agent %s email actions before supervision or task creation",
+    async (autonomy) => {
+      h.agentRows = [{ enabledTools: ["send_email"], autonomyLevel: "draft" }];
+      h.entitlements.mockResolvedValue({ channels: ["voice"] });
+      expect(
+        await executeAction("tenant", { ...action, agentId: "calls-bot" }, context, autonomy),
+      ).toMatchObject({ success: false });
+      expect(h.sendEmail).not.toHaveBeenCalled();
+      expect(h.supervise).not.toHaveBeenCalled();
+      expect(h.insert).not.toHaveBeenCalled();
+    },
+  );
+
+  it("keeps manual agent tasks available when channel lookup fails", async () => {
+    h.agentRows = [{ enabledTools: ["create_followup_task"], autonomyLevel: "draft" }];
+    h.entitlements.mockRejectedValue(new Error("Channel lookup unavailable"));
+    expect(
+      await executeAction(
+        "tenant",
+        { ...action, agentId: "calls-bot", type: "create_internal_task" },
+        context,
+        "draft",
+      ),
+    ).toEqual({ success: true });
+    expect(h.insert).toHaveBeenCalledOnce();
+    expect(h.sendEmail).not.toHaveBeenCalled();
+  });
+
   it("keeps a blocked approval editable without claiming execution or creating another draft", async () => {
     const result = await executeAction(
       "tenant",

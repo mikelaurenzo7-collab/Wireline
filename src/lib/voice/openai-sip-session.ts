@@ -6,6 +6,7 @@ import * as schema from "../../db/schema";
 import { AppError } from "../api-error";
 import type { ToolCallContext } from "../agent-tool-types";
 import { dispatchAgentToolCall } from "../agent-tool-dispatch";
+import { isToolCallFailureResult } from "../call-reliability-capture";
 import { complianceFirstMessagePrefix, formatCallbackNumberForSpeech } from "../agent-runtime";
 import {
   assertExternalEntityActionAllowed,
@@ -2014,6 +2015,8 @@ async function runRealtimeSession(
         continue;
       }
 
+      const resultFailed = isToolCallFailureResult(outcome.result.result);
+      if (resultFailed) toolCallsFailed += 1;
       try {
         if (!ownsSession()) break;
         let transferCompleted = false;
@@ -2041,7 +2044,7 @@ async function runRealtimeSession(
           break;
         }
       } catch (error) {
-        toolCallsFailed += 1;
+        if (!resultFailed) toolCallsFailed += 1;
         log.warn("OpenAI Realtime transfer action failed", {
           userId: input.userId,
           agentId: input.agentId,

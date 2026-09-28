@@ -9,7 +9,8 @@ import { Redis } from "@upstash/redis";
 import { log } from "./server-context";
 
 const CACHE_TTL_SECONDS = 120;
-const CACHE_KEY_PREFIX = "wireline:tenant-tools:";
+// v2 requires explicit recipient confirmation in the customer-email tool schema.
+const CACHE_KEY_PREFIX = "wireline:tenant-tools:v2:";
 
 const memoryCache = new Map<string, { data: object[]; expiresAt: number }>();
 
