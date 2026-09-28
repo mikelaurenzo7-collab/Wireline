@@ -10,23 +10,43 @@ import { getErrorMessage } from "../lib/server-utils";
 import { syncGoogleCalendar } from "../services/google-calendar-sync";
 import { syncOutlookCalendar } from "../services/outlook-calendar-sync";
 import type { AuthenticatedRequest } from "../types/auth";
-import { getNativeCalendarAvailability, getNativeCalendarConfiguration, saveNativeCalendarSettings } from "../lib/native-calendar";
+import {
+  getNativeCalendarAvailability,
+  getNativeCalendarConfiguration,
+  saveNativeCalendarSettings,
+} from "../lib/native-calendar";
 
 const router = Router();
 
-router.get("/api/calendar/settings", authenticateUser, calendarRateLimit, async (req: AuthenticatedRequest, res: Response) => {
-  res.json(await getNativeCalendarConfiguration(req.user.id));
-});
+router.get(
+  "/api/calendar/settings",
+  authenticateUser,
+  calendarRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json(await getNativeCalendarConfiguration(req.user.id));
+  },
+);
 
-router.put("/api/calendar/settings", authenticateUser, calendarRateLimit, async (req: AuthenticatedRequest, res: Response) => {
-  const settings = await saveNativeCalendarSettings(req.user.id, req.body);
-  res.json({ settings, configured: true });
-});
+router.put(
+  "/api/calendar/settings",
+  authenticateUser,
+  calendarRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const settings = await saveNativeCalendarSettings(req.user.id, req.body);
+    res.json({ settings, configured: true });
+  },
+);
 
-router.get("/api/calendar/availability", authenticateUser, calendarRateLimit, async (req: AuthenticatedRequest, res: Response) => {
-  if (typeof req.query.date !== "string") throw AppError.badRequest("Choose a date in YYYY-MM-DD format.");
-  res.json(await getNativeCalendarAvailability(req.user.id, { date: req.query.date }));
-});
+router.get(
+  "/api/calendar/availability",
+  authenticateUser,
+  calendarRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    if (typeof req.query.date !== "string")
+      throw AppError.badRequest("Choose a date in YYYY-MM-DD format.");
+    res.json(await getNativeCalendarAvailability(req.user.id, { date: req.query.date }));
+  },
+);
 
 router.get(
   "/api/calendar/accounts",

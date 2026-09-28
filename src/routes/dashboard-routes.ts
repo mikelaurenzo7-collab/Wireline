@@ -9,14 +9,14 @@ import { authenticateUser } from "../middleware/auth";
 import { dashboardRateLimit } from "../middleware/api-rate-limits";
 import { computeDashboardStats } from "../lib/dashboard-stats";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
-import {
-  getCachedDashboard,
-  setCachedDashboard,
-  invalidateDashboard,
-} from "../lib/dashboard-cache";
+import { getCachedDashboard, setCachedDashboard } from "../lib/dashboard-cache";
 import { getCachedNavCounts, setCachedNavCounts } from "../lib/nav-counts-cache";
 
-import { bookNativeAppointment, updateCalendarAppointment, cancelCalendarAppointment } from "../lib/native-calendar";
+import {
+  bookNativeAppointment,
+  updateCalendarAppointment,
+  cancelCalendarAppointment,
+} from "../lib/native-calendar";
 
 const router = Router();
 
@@ -481,9 +481,14 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     const body = req.body || {};
     const appointment = await bookNativeAppointment(req.user.id, {
-      customerName: body.customer_name, serviceType: body.service_type,
-      date: body.date, time: body.time, timeZone: body.time_zone,
-      phoneNumber: body.phone_number, notes: body.notes, agentId: body.agent_id,
+      customerName: body.customer_name,
+      serviceType: body.service_type,
+      date: body.date,
+      time: body.time,
+      timeZone: body.time_zone,
+      phoneNumber: body.phone_number,
+      notes: body.notes,
+      agentId: body.agent_id,
       requestKey: body.request_key,
     });
     res.json({ appointment });
@@ -495,7 +500,9 @@ router.patch(
   authenticateUser,
   dashboardRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    res.json({ appointment: await updateCalendarAppointment(req.user.id, req.params.id, req.body || {}) });
+    res.json({
+      appointment: await updateCalendarAppointment(req.user.id, req.params.id, req.body || {}),
+    });
   },
 );
 

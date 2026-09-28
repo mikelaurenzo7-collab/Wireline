@@ -23,7 +23,7 @@ import { relations, sql } from "drizzle-orm";
 // Index support via sql`` for Drizzle ORM 0.33 compatibility
 //
 // Schema version: latest committed migration is
-// `drizzle/migrations/0173_openai_sip_claim_recovery.sql`.
+// `drizzle/migrations/0174_native_booking_calendar.sql`.
 // Runtime voice defaults are established by 0168; 0169 and 0172 remove empty
 // retired provider ledgers.
 // Live Supabase schema may also be ahead via out-of-band applies — see AGENTS.md.
@@ -765,9 +765,17 @@ export const appointments = pgTable(
     demo: boolean("demo").default(false).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  () => ({
+  (table) => ({
     userIdIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_id ON wireline_appointments USING btree (user_id)`,
     userPhoneTailIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_phone_tail ON wireline_appointments (user_id, right(regexp_replace(phone_number, '[^0-9]', '', 'g'), 10))`,
+    bookingRequestUnique: uniqueIndex("uq_appointments_booking_request")
+      .on(table.userId, table.bookingRequestKey)
+      .where(sql`${table.bookingRequestKey} IS NOT NULL`),
+    userStartIdx: index("idx_appointments_user_start").on(table.userId, table.startAt),
+    nativeIntervalValid: check(
+      "appointments_native_interval_valid",
+      sql`buffer_minutes BETWEEN 0 AND 120 AND ((start_at IS NULL AND end_at IS NULL) OR (start_at IS NOT NULL AND end_at IS NOT NULL AND end_at > start_at)) AND (booking_source IS DISTINCT FROM 'native' OR (start_at IS NOT NULL AND end_at IS NOT NULL AND time_zone IS NOT NULL AND booking_request_key IS NOT NULL AND length(booking_request_key) BETWEEN 1 AND 200 AND booking_fingerprint IS NOT NULL AND booking_fingerprint ~ '^[0-9a-f]{64}$'))`,
+    ),
     userCreatedIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_user_created ON wireline_appointments USING btree (user_id, created_at)`,
     createdAtIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_created_at ON wireline_appointments USING btree (created_at)`,
     statusIdx: sql`CREATE INDEX IF NOT EXISTS idx_appointments_status ON wireline_appointments USING btree (status)`,

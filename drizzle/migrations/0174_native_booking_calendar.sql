@@ -18,7 +18,7 @@ ALTER TABLE public.wireline_appointments ADD CONSTRAINT appointments_native_inte
   AND (booking_source IS DISTINCT FROM 'native' OR (
     start_at IS NOT NULL AND end_at IS NOT NULL AND time_zone IS NOT NULL
     AND booking_request_key IS NOT NULL AND length(booking_request_key) BETWEEN 1 AND 200
-    AND booking_fingerprint ~ '^[0-9a-f]{64}$'
+    AND booking_fingerprint IS NOT NULL AND booking_fingerprint ~ '^[0-9a-f]{64}$'
   ))
 );
 CREATE UNIQUE INDEX uq_appointments_booking_request

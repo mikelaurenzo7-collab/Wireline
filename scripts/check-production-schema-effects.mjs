@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import pg from "pg";
 import { getPostgresConnectionConfig } from "../src/lib/postgres-tls.mjs";
+import { verifyNativeCalendarSchemaEffects } from "./lib/native-calendar-schema-effects.mjs";
 
 const { Pool } = pg;
 
@@ -23,10 +24,7 @@ function extractMigrationFunctionBody(source, functionName) {
 }
 
 const accountEnvironmentPromotionMigration = readFileSync(
-  new URL(
-    "../drizzle/migrations/0163_guard_account_environment_promotion.sql",
-    import.meta.url,
-  ),
+  new URL("../drizzle/migrations/0163_guard_account_environment_promotion.sql", import.meta.url),
   "utf8",
 );
 const legacyVoicePromotionCount = `+ (
@@ -309,7 +307,7 @@ try {
   );
   const privilegeState = new Map(privilegeResult.rows.map((row) => [row.table_name, row]));
 
-  const failures = [];
+  const failures = await verifyNativeCalendarSchemaEffects(pool);
   for (const item of expected) {
     if (!tableState.has(item.table)) {
       failures.push(`${item.table}:missing_table`);
@@ -1490,9 +1488,7 @@ try {
     ) {
       failures.push("sms_send_operations:wrong_status_check");
     }
-    const idempotencyIndexDefinition = String(
-      smsSendOperation.idempotency_index_definition || "",
-    );
+    const idempotencyIndexDefinition = String(smsSendOperation.idempotency_index_definition || "");
     if (
       smsSendOperation.idempotency_index_ready !== true ||
       !/UNIQUE\s+INDEX\s+uq_sms_send_operations_user_idempotency[\s\S]*?\(user_id,\s*idempotency_key\)/iu.test(
@@ -1640,8 +1636,7 @@ try {
       failures.push("account_environment:managed_voice_catalog_blocks_promotion");
     }
     if (
-      normalizeSqlFunctionBody(promotionPreflight.function_body) !==
-      expectedPromotionPreflightBody
+      normalizeSqlFunctionBody(promotionPreflight.function_body) !== expectedPromotionPreflightBody
     ) {
       failures.push("account_environment:preflight_body_drift");
     }

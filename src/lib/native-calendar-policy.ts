@@ -60,12 +60,14 @@ export function validateNativeCalendarSettings(value: unknown): NativeCalendarSe
       throw AppError.badRequest("Calendar settings are required.");
     }
     const input = value as Record<string, unknown>;
-    if (typeof input.enabled !== "boolean") throw AppError.badRequest("Choose whether to accept bookings.");
+    if (typeof input.enabled !== "boolean")
+      throw AppError.badRequest("Choose whether to accept bookings.");
     if (input.booking_mode !== "automatic" && input.booking_mode !== "approval") {
       throw AppError.badRequest("Choose automatic booking or owner approval.");
     }
     const name = typeof input.appointment_name === "string" ? input.appointment_name.trim() : "";
-    if (!name || name.length > 100) throw AppError.badRequest("Appointment name must be 1–100 characters.");
+    if (!name || name.length > 100)
+      throw AppError.badRequest("Appointment name must be 1–100 characters.");
     if (typeof input.time_zone !== "string" || !input.time_zone.trim()) {
       throw AppError.badRequest("Choose the calendar timezone.");
     }
@@ -73,20 +75,28 @@ export function validateNativeCalendarSettings(value: unknown): NativeCalendarSe
       throw AppError.badRequest("Choose up to one availability window per weekday.");
     }
     const seen = new Set<number>();
-    const weekly_hours = input.weekly_hours.map((raw) => {
-      if (!raw || typeof raw !== "object") throw AppError.badRequest("Invalid availability window.");
-      const hour = raw as Record<string, unknown>;
-      const day = integer(hour.day, 0, 6, "Weekday");
-      if (seen.has(day)) throw AppError.badRequest("Use one availability window per weekday.");
-      seen.add(day);
-      const start = clockMinute(hour.start);
-      const end = clockMinute(hour.end);
-      if (end <= start) throw AppError.badRequest("Availability must end after it starts on the same day.");
-      return { day, start: minuteClock(start), end: minuteClock(end) };
-    }).sort((a, b) => a.day - b.day);
-    if (input.enabled && !weekly_hours.length) throw AppError.badRequest("Add availability before enabling booking.");
+    const weekly_hours = input.weekly_hours
+      .map((raw) => {
+        if (!raw || typeof raw !== "object")
+          throw AppError.badRequest("Invalid availability window.");
+        const hour = raw as Record<string, unknown>;
+        const day = integer(hour.day, 0, 6, "Weekday");
+        if (seen.has(day)) throw AppError.badRequest("Use one availability window per weekday.");
+        seen.add(day);
+        const start = clockMinute(hour.start);
+        const end = clockMinute(hour.end);
+        if (end <= start)
+          throw AppError.badRequest("Availability must end after it starts on the same day.");
+        return { day, start: minuteClock(start), end: minuteClock(end) };
+      })
+      .sort((a, b) => a.day - b.day);
+    if (input.enabled && !weekly_hours.length)
+      throw AppError.badRequest("Add availability before enabling booking.");
     const duration = integer(input.duration_minutes, 15, 240, "Appointment duration");
-    if (input.enabled && !weekly_hours.some((hour) => clockMinute(hour.end) - clockMinute(hour.start) >= duration)) {
+    if (
+      input.enabled &&
+      !weekly_hours.some((hour) => clockMinute(hour.end) - clockMinute(hour.start) >= duration)
+    ) {
       throw AppError.badRequest("At least one availability window must fit an appointment.");
     }
     return {
@@ -109,8 +119,10 @@ export function minuteClock(minute: number): string {
 export type CalendarInterval = { startAt: Date; endAt: Date; bufferMinutes?: number };
 
 export function intervalsOverlap(a: CalendarInterval, b: CalendarInterval): boolean {
-  return a.startAt.getTime() < b.endAt.getTime() + (b.bufferMinutes ?? 0) * 60_000 &&
-    b.startAt.getTime() < a.endAt.getTime() + (a.bufferMinutes ?? 0) * 60_000;
+  return (
+    a.startAt.getTime() < b.endAt.getTime() + (b.bufferMinutes ?? 0) * 60_000 &&
+    b.startAt.getTime() < a.endAt.getTime() + (a.bufferMinutes ?? 0) * 60_000
+  );
 }
 
 export function nativeAppointmentInterval(
@@ -119,23 +131,40 @@ export function nativeAppointmentInterval(
   now = new Date(),
 ): CalendarInterval & { date: string; time: string } {
   return calendarValidation(() => {
-    if (!settings.enabled) throw AppError.conflict("Booking is paused. Enable booking in Calendar first.");
+    if (!settings.enabled)
+      throw AppError.conflict("Booking is paused. Enable booking in Calendar first.");
     if (input.timeZone && normalizeIanaTimeZone(input.timeZone) !== settings.time_zone) {
-      throw AppError.badRequest(`This calendar uses ${settings.time_zone}. Confirm the appointment time in that timezone.`);
+      throw AppError.badRequest(
+        `This calendar uses ${settings.time_zone}. Confirm the appointment time in that timezone.`,
+      );
     }
     const date = parseIsoLocalDate(input.date);
     const minute = clockMinute(input.time);
     const day = new Date(Date.UTC(date.year, date.month - 1, date.day)).getUTCDay();
     const hours = settings.weekly_hours.find((entry) => entry.day === day);
-    if (!hours || minute < clockMinute(hours.start) || minute + settings.duration_minutes > clockMinute(hours.end)) {
+    if (
+      !hours ||
+      minute < clockMinute(hours.start) ||
+      minute + settings.duration_minutes > clockMinute(hours.end)
+    ) {
       throw AppError.conflict("That time is outside booking hours. Choose an available time.");
     }
-    const startAt = new Date(localDateTimeToUtcIso({ date: input.date, time: input.time, timeZone: settings.time_zone }));
+    const startAt = new Date(
+      localDateTimeToUtcIso({ date: input.date, time: input.time, timeZone: settings.time_zone }),
+    );
     // Convert both wall-clock endpoints. Reject a span crossing a DST transition,
     // rather than quietly changing the promised appointment duration.
-    const endAt = new Date(localDateTimeToUtcIso({ date: input.date, time: minuteClock(minute + settings.duration_minutes), timeZone: settings.time_zone }));
+    const endAt = new Date(
+      localDateTimeToUtcIso({
+        date: input.date,
+        time: minuteClock(minute + settings.duration_minutes),
+        timeZone: settings.time_zone,
+      }),
+    );
     if (endAt.getTime() - startAt.getTime() !== settings.duration_minutes * 60_000) {
-      throw AppError.conflict("That appointment crosses a daylight-saving change. Choose another time.");
+      throw AppError.conflict(
+        "That appointment crosses a daylight-saving change. Choose another time.",
+      );
     }
     if (startAt.getTime() < now.getTime() + settings.minimum_notice_minutes * 60_000) {
       throw AppError.conflict("That time is too soon. Choose a later available time.");
@@ -143,7 +172,13 @@ export function nativeAppointmentInterval(
     if (startAt.getTime() > now.getTime() + 366 * 86_400_000) {
       throw AppError.badRequest("Appointments can be booked up to one year ahead.");
     }
-    return { startAt, endAt, bufferMinutes: settings.buffer_minutes, date: input.date.trim(), time: minuteClock(minute) };
+    return {
+      startAt,
+      endAt,
+      bufferMinutes: settings.buffer_minutes,
+      date: input.date.trim(),
+      time: minuteClock(minute),
+    };
   });
 }
 
@@ -155,8 +190,12 @@ export function legacyBusyInterval(
   // Never invent the original timezone or duration. An unconverted legacy
   // appointment reserves its whole local day until the owner cancels/rebooks it.
   // Invalid legacy dates fail closed because they cannot safely be placed.
-  try { parseIsoLocalDate(row.date); } catch {
-    throw AppError.conflict("An existing appointment has an invalid date. Correct or cancel it in Calendar before taking new bookings.");
+  try {
+    parseIsoLocalDate(row.date);
+  } catch {
+    throw AppError.conflict(
+      "An existing appointment has an invalid date. Correct or cancel it in Calendar before taking new bookings.",
+    );
   }
   if (row.date !== requestedDate) return null;
   const day = localDateWindowToUtc({ date: requestedDate, timeZone });
