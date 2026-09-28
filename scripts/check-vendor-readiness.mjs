@@ -485,11 +485,9 @@ const stripeCoreReady = Boolean(
   stripeAvailable >= 0,
 );
 
-const stripePublicName = String(
-  stripeAccount?.body?.business_profile?.name ||
-    stripeAccount?.body?.settings?.dashboard?.display_name ||
-    "",
-).trim();
+// Dashboard display_name is internal-only and cannot certify the merchant name
+// used by customer-facing Stripe surfaces outside the Checkout heading override.
+const stripePublicName = String(stripeAccount?.body?.business_profile?.name || "").trim();
 const stripeStatementDescriptor = String(
   stripeAccount?.body?.settings?.payments?.statement_descriptor || "",
 )
