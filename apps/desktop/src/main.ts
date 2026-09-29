@@ -1,3 +1,4 @@
+import squirrelStartup from "electron-squirrel-startup";
 import {
   app,
   BrowserWindow,
@@ -452,22 +453,25 @@ async function boot(): Promise<void> {
   }
 }
 
-if (!app.requestSingleInstanceLock()) app.quit();
-else {
-  app.on("second-instance", () => {
-    window?.show();
-    window?.focus();
-  });
-  app
-    .whenReady()
-    .then(boot)
-    .catch(async () => {
-      const { dialog } = await import("electron");
-      dialog.showErrorBox(
-        "BotBound Desktop",
-        "Could not open the secure workspace. Check your OS permissions and installation; your saved data has not been reset.",
-      );
-      app.quit();
+// Squirrel handles install/update/uninstall before any workspace or native boot.
+if (!squirrelStartup) {
+  if (!app.requestSingleInstanceLock()) app.quit();
+  else {
+    app.on("second-instance", () => {
+      window?.show();
+      window?.focus();
     });
-  app.on("will-quit", () => globalShortcut.unregisterAll());
+    app
+      .whenReady()
+      .then(boot)
+      .catch(async () => {
+        const { dialog } = await import("electron");
+        dialog.showErrorBox(
+          "BotBound Desktop",
+          "Could not open the secure workspace. Check your OS permissions and installation; your saved data has not been reset.",
+        );
+        app.quit();
+      });
+    app.on("will-quit", () => globalShortcut.unregisterAll());
+  }
 }

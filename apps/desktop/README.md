@@ -2,6 +2,8 @@
 
 An owner-directed desktop client for Windows and macOS. Choose a Bot, share one application or browser window and/or approved MCP tools, and give it a task. The owner reviews each proposed action with its exact arguments and destination before execution. The existing browser extension remains a separate context-capture surface.
 
+Windows desktop and browser-window tasks are the current pilot scope. macOS release work is on hold.
+
 This package is under validation. Build outputs are unsigned development artifacts, not public downloads or store releases. A successful build does not certify native permissions, operating-system behavior, signing, or live task completion on both platforms.
 
 ## Local development
@@ -51,7 +53,9 @@ npm run package:mac
 npm run make:mac
 ```
 
-Every packaging command first compiles the native helper on the target operating system, then verifies its platform, architecture, source hash, and binary hash before invoking Forge. A Windows build cannot substitute for the required macOS Swift build. Helpers are copied into `resources/native/win32/BotBound.Native.exe` or `resources/native/darwin/BotBound.Native`; they are not executed from inside ASAR. The Windows maker produces Squirrel installer files and a ZIP. macOS produces an app ZIP. Output remains in ignored `out/`.
+After a CI-style install with `--ignore-scripts`, initialize the Windows installer tooling with `npm rebuild electron-winstaller --ignore-scripts=false` in this directory before `make:win`. This selects the bundled 7-Zip executable for the host architecture; it does not install or launch BotBound.
+
+Every packaging command first compiles the native helper on the target operating system, then verifies its platform, architecture, source hash, and binary hash before invoking Forge. A Windows build cannot substitute for the required macOS Swift build. Helpers are copied into `resources/native/win32/BotBound.Native.exe` or `resources/native/darwin/BotBound.Native`; they are not executed from inside ASAR. The Windows maker produces Squirrel installer files and a ZIP. Squirrel install, update, uninstall and obsolete-version events are handled before the ordinary workspace starts, so setup never starts an owner task. macOS produces an app ZIP. Output remains in ignored `out/`.
 
 For native-only debugging, run `node native/build.mjs --platform win32 --arch x64` on Windows, or `node native/build.mjs --platform darwin --arch arm64` on Apple Silicon (use `x64` on an Intel Mac). Packaging always uses the host architecture and rebuilds this prerequisite.
 

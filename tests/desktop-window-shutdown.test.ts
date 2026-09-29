@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -24,7 +25,7 @@ function deferred() {
   return { promise, finish };
 }
 
-async function bootFixture() {
+async function bootFixture(installerEvent = false) {
   const drain = deferred();
   const stopAndDrain = vi.fn(() => drain.promise);
   const oauth = {
@@ -71,6 +72,7 @@ async function bootFixture() {
   };
   const dependencies: Record<string, unknown> = {
     electron,
+    "electron-squirrel-startup": installerEvent,
     "./store": {
       DesktopStore: class {
         load = vi.fn(async () => undefined);
@@ -105,8 +107,9 @@ async function bootFixture() {
       throw new Error(`Unexpected main dependency: ${name}`);
     },
   });
-  await vi.waitFor(() => expect(close.has("close")).toBe(true));
+  if (!installerEvent) await vi.waitFor(() => expect(close.has("close")).toBe(true));
   return {
+    booted: close.has("close"),
     drain,
     stopAndDrain,
     oauth,
@@ -170,4 +173,56 @@ describe("desktop window shutdown", () => {
     await vi.waitFor(() => expect(test.quit).toHaveBeenCalledOnce());
     expect(test.oauth.disconnect).toHaveBeenCalledTimes(2);
   });
+});
+
+it("does not boot a workspace or native task for installer lifecycle events", async () => {
+  const test = await bootFixture(true);
+  expect(test.booted).toBe(false);
+  expect(test.stopAndDrain).not.toHaveBeenCalled();
+  expect(test.webContents.send).not.toHaveBeenCalled();
+  expect(test.oauth.settleConnection).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["--squirrel-install", "--createShortcut=BotBoundDesktop.exe"],
+  ["--squirrel-updated", "--createShortcut=BotBoundDesktop.exe"],
+  ["--squirrel-uninstall", "--removeShortcut=BotBoundDesktop.exe"],
+  ["--squirrel-obsolete", null],
+  ["--squirrel-firstrun", null],
+])("handles %s without starting native input", (flag, shortcut) => {
+  const desktopRequire = createRequire(resolve("apps/desktop/package.json"));
+  const module = { exports: false };
+  const quit = vi.fn();
+  let close: (() => void) | undefined;
+  const spawn = vi.fn((_file: string, _args: string[], _options: unknown) => ({
+    on: (event: string, callback: () => void) => {
+      expect(event).toBe("close");
+      close = callback;
+    },
+  }));
+  runInNewContext(readFileSync(desktopRequire.resolve("electron-squirrel-startup"), "utf8"), {
+    module,
+    process: {
+      platform: "win32",
+      execPath: "C:\\BotBound\\app-0.1.0\\BotBoundDesktop.exe",
+      argv: ["app", flag],
+    },
+    require: (name: string) => {
+      if (name === "path") return requireBuiltin("node:path").win32;
+      if (name === "child_process") return { spawn };
+      if (name === "electron") return { app: { quit } };
+      if (name === "debug") return () => () => undefined;
+      throw new Error(`Unexpected dependency ${name}`);
+    },
+  });
+  expect(module.exports).toBe(flag !== "--squirrel-firstrun");
+  if (shortcut) {
+    expect(spawn).toHaveBeenCalledWith("C:\\BotBound\\Update.exe", [shortcut], { detached: true });
+    expect(quit).not.toHaveBeenCalled();
+    close!();
+    expect(quit).toHaveBeenCalledOnce();
+  } else {
+    expect(spawn).not.toHaveBeenCalled();
+    expect(quit).toHaveBeenCalledTimes(flag === "--squirrel-obsolete" ? 1 : 0);
+  }
 });
