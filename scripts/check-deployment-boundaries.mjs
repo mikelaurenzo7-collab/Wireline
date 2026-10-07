@@ -268,7 +268,9 @@ const reviewedPreviewCredentialKeys = new Set(["PERPLEXITY_API_KEY", "PERPLEXITY
 const previewSpendAuthorityKeys = [
   "AGENTMAIL_API_KEY",
   "AI_GATEWAY_API_KEY",
+  "ANTHROPIC_API_KEY",
   "APOLLO_API_KEY",
+  "CLOUD_COMPUTER_BROWSER_WS_URL",
   "FEDERAL_DNC_API_KEY",
   "GEMINI_API_KEY",
   "OPENAI_API_KEY",

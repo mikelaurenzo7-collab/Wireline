@@ -19,7 +19,10 @@ describe("native Calendar inherited execute privilege repair", () => {
 
   it("journals the ACL-only repair with an unchanged schema snapshot linked to 0174", () => {
     const journal = JSON.parse(read("drizzle/migrations/meta/_journal.json"));
-    expect(journal.entries.at(-1)).toMatchObject({
+    const entry = journal.entries.find(
+      (candidate: { tag: string }) => candidate.tag === "0175_native_calendar_trigger_execute_acl",
+    );
+    expect(entry).toMatchObject({
       idx: 73,
       tag: "0175_native_calendar_trigger_execute_acl",
       when: 1790556900000,

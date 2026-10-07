@@ -1,6 +1,6 @@
 /**
  * Canonical application schema entrypoint.
- * Latest committed migration: `drizzle/migrations/0175_native_calendar_trigger_execute_acl.sql`.
+ * Latest committed migration: `drizzle/migrations/0176_cloud_computer_tasks.sql`.
  * Runtime voice defaults remain defined by
  * `drizzle/migrations/0168_openai_realtime_voice_runtime.sql`; migrations 0169
  * and 0172 remove empty retired provider ledgers.
@@ -21,6 +21,7 @@
 export * from "./schema-base";
 export * from "./voice-usage-schema";
 export * from "./resend-webhook-schema";
+export * from "./computer-task-schema";
 
 import {
   bigint,

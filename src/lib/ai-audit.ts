@@ -167,6 +167,7 @@ function providerFor(model: string): RuntimeCallMeta["provider"] {
   // with the same model called directly.
   if (normalized.startsWith("openai/") || normalized.startsWith("gpt-")) return "openai";
   if (normalized.startsWith("google/") || normalized.includes("gemini")) return "google";
+  if (normalized.startsWith("anthropic/") || normalized.startsWith("claude-")) return "anthropic";
   return "gateway";
 }
 export function recordUsage(

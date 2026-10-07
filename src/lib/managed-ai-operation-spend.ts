@@ -42,6 +42,7 @@ export type ManagedAiSpendDependencies = {
     action?: string;
     requestMeta?: Record<string, unknown>;
     minimumCostUsd: number;
+    cacheReadQuotaWeight?: number;
   }) => Promise<void>;
 };
 
@@ -126,6 +127,26 @@ export function aggregateManagedAiUsage(records: RuntimeCallMeta[]): {
   );
 }
 
+/**
+ * Tokens charged to the daily AI token quota. Cache reads count in full by
+ * default; an operation that replays a long cached context every turn (the
+ * cloud computer) may weight them by their price ratio instead, so a
+ * multi-turn task is measured by what it costs rather than by replay volume.
+ */
+export function quotaTokenDelta(
+  aggregate: ReturnType<typeof aggregateManagedAiUsage>,
+  cacheReadQuotaWeight = 1,
+): number {
+  if (cacheReadQuotaWeight >= 1) return aggregate.tokenDelta;
+  const weight = Math.max(0, cacheReadQuotaWeight);
+  return saturatingUsageTokenSum(
+    aggregate.inputTokens,
+    aggregate.outputTokens,
+    aggregate.cacheCreateTokens,
+    Math.ceil(aggregate.cacheReadTokens * weight),
+  );
+}
+
 async function settleKnownManagedAiSpend(input: {
   reservation: PlatformCostReservation;
   records: RuntimeCallMeta[];
@@ -133,6 +154,7 @@ async function settleKnownManagedAiSpend(input: {
   action?: string;
   requestMeta?: Record<string, unknown>;
   minimumCostUsd: number;
+  cacheReadQuotaWeight?: number;
 }): Promise<void> {
   const costDecision = managedAiCostDecision(input.records, input.minimumCostUsd);
   const { costUsd } = costDecision;
@@ -140,7 +162,7 @@ async function settleKnownManagedAiSpend(input: {
   const providers = [...new Set(input.records.map((record) => record.provider))];
   const models = [...new Set(input.records.map((record) => record.model))];
   const aggregate = aggregateManagedAiUsage(input.records);
-  const { tokenDelta } = aggregate;
+  const tokenDelta = quotaTokenDelta(aggregate, input.cacheReadQuotaWeight);
 
   const [updated] = await drizzle
     .update(schema.auditLog)
@@ -234,6 +256,8 @@ export async function runWithManagedAiSpend<T>(
     requestMeta?: Record<string, unknown>;
     reserveUsd: number;
     model?: string;
+    /** See quotaTokenDelta. Defaults to 1 (cache reads count in full). */
+    cacheReadQuotaWeight?: number;
     operation: () => Promise<T>;
   },
   dependencies: ManagedAiSpendDependencies = productionDependencies,
@@ -294,6 +318,7 @@ export async function runWithManagedAiSpend<T>(
         action: input.action,
         requestMeta: input.requestMeta,
         minimumCostUsd: auditContext.ambiguousProviderAttempts > 0 ? reservation.costUsd : 0,
+        cacheReadQuotaWeight: input.cacheReadQuotaWeight,
       });
     } catch (error) {
       log.error("Managed AI operation actual-cost settlement failed; retaining reserve", {

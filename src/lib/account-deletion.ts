@@ -58,6 +58,9 @@ export const ACCOUNT_DELETION_TARGETS: ReadonlyArray<AccountDeletionTarget> = [
   { table: "wireline_recap_artifacts", userColumns: ["user_id"] },
   { table: "wireline_call_reliability_staging", userColumns: ["user_id"] },
   { table: "wireline_appointments", userColumns: ["user_id"] },
+  // Cloud computer task ledger (goal, activity log, final report). References
+  // wireline_agents, so it purges before the Bot rows.
+  { table: "wireline_computer_tasks", userColumns: ["user_id"] },
   { table: "wireline_lead_dossiers", userColumns: ["user_id"] },
   {
     table: "wireline_outbound_leads",

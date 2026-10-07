@@ -64,6 +64,15 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
     false,
     ["GEMINI_API_KEY"],
   ),
+  item(
+    "cloud-computer",
+    "Cloud Computer",
+    "Claude plans each Bot's web tasks in an isolated hosted browser.",
+    "ai",
+    false,
+    ["ANTHROPIC_API_KEY", "CLOUD_COMPUTER_BROWSER_WS_URL"],
+    "The Computer page shows the feature as being set up; nothing runs.",
+  ),
   {
     ...item(
       "perplexity",

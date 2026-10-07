@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { estimateCostDetailed } from "../src/lib/ai-audit";
 import {
+  ANTHROPIC_FALLBACK_MODELS,
+  ANTHROPIC_MODELS,
   GEMINI_MODELS,
   MODEL_PRICING,
   OPENAI_MODELS,
@@ -20,6 +22,8 @@ describe("model pricing coverage contract", () => {
   const declaredIds = [
     ...Object.values(OPENAI_MODELS),
     ...Object.values(GEMINI_MODELS),
+    ...Object.values(ANTHROPIC_MODELS),
+    ...Object.values(ANTHROPIC_FALLBACK_MODELS),
   ];
 
   it("prices every declared model id", () => {
@@ -59,6 +63,49 @@ describe("model pricing coverage contract", () => {
       cacheRead: 0.4,
       cacheWrite: 5,
     });
+  });
+
+  it("pins Claude cloud-computer rates, including refusal-fallback models", () => {
+    expect(MODEL_PRICING[ANTHROPIC_MODELS.OPUS_5_5]).toEqual({
+      input: 4,
+      output: 20,
+      cacheRead: 0.2,
+      cacheWrite: 5,
+    });
+    expect(MODEL_PRICING[ANTHROPIC_MODELS.OPUS_5]).toEqual({
+      input: 5,
+      output: 25,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    });
+    expect(MODEL_PRICING[ANTHROPIC_MODELS.SONNET_5_5]).toEqual({
+      input: 2,
+      output: 10,
+      cacheRead: 0.2,
+      cacheWrite: 2.5,
+    });
+    // Opus 5.5 falls back to Opus 5 or Opus 4.8; Sonnet 5.5 to Sonnet 5.
+    expect(MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.OPUS_4_8]).toEqual({
+      input: 5,
+      output: 25,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    });
+    expect(MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.SONNET_5]).toEqual({
+      input: 2,
+      output: 10,
+      cacheRead: 0.2,
+      cacheWrite: 2.5,
+    });
+  });
+
+  it("never prices an unlisted Claude model below the most expensive Claude row", () => {
+    expect(pricingForModel("claude-opus-9-future")).toEqual(
+      MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.OPUS_4_8],
+    );
+    expect(pricingForModel("anthropic/claude-opus-9-future")).toEqual(
+      MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.OPUS_4_8],
+    );
   });
 
   it("applies current vendor long-context rates to the full request", () => {

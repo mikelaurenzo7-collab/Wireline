@@ -34,6 +34,7 @@ const authenticatedRoutes = [
   "/phone",
   "/calendar",
   "/calendar?tab=availability",
+  "/computer",
   "/insights",
   "/inbox",
   "/inbox?tab=sms",

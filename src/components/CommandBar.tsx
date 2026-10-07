@@ -16,6 +16,7 @@ import {
   CreditCard,
   Database,
   Inbox,
+  Monitor,
   MonitorDown,
   Phone,
   Search,
@@ -98,6 +99,14 @@ const WORKSPACE_COMMANDS: readonly CommandItem[] = [
     keywords: "appointments availability bookings schedule hours",
     icon: CalendarDays,
     href: "/calendar",
+    category: "Workspace",
+  },
+  {
+    id: "computer",
+    label: "Computer",
+    keywords: "cloud computer browser web research task browse website",
+    icon: Monitor,
+    href: "/computer",
     category: "Workspace",
   },
   {

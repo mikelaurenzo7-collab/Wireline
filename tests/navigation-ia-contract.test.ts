@@ -22,6 +22,7 @@ describe("BotBound workspace information architecture", () => {
       "/inbox",
       "/phone",
       "/calendar",
+      "/computer",
     ]);
     expect(OPERATE_NAV.map((item) => item.href)).toEqual([
       "/insights",
@@ -74,6 +75,7 @@ describe("BotBound workspace information architecture", () => {
     expect(isMobileMoreActive("/knowledge")).toBe(true);
     expect(isMobileMoreActive("/approvals")).toBe(true);
     expect(isMobileMoreActive("/calendar")).toBe(true);
+    expect(isMobileMoreActive("/computer")).toBe(true);
     expect(isMobileMoreActive("/connections")).toBe(true);
     expect(isMobileMoreActive("/settings/team")).toBe(true);
     expect(isMobileMoreActive("/apps")).toBe(true);
@@ -87,7 +89,7 @@ describe("BotBound workspace information architecture", () => {
     expect(MOBILE_MORE_GROUPS.map((group) => group.label)).toEqual(["Build", "Operate", "System"]);
     expect(MOBILE_MORE_GROUPS.map((group) => group.items.map((item) => item.href))).toEqual([
       ["/knowledge"],
-      ["/calendar", "/approvals"],
+      ["/calendar", "/computer", "/approvals"],
       ["/connections", "/settings"],
     ]);
   });
@@ -104,6 +106,7 @@ describe("BotBound workspace information architecture", () => {
       I: "/inbox",
       P: "/phone",
       C: "/calendar",
+      M: "/computer",
       A: "/studio",
       W: "/connections",
       T: "/knowledge",

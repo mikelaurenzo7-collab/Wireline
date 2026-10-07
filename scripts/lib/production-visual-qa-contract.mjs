@@ -63,6 +63,7 @@ export const PRODUCTION_VISUAL_AUTHENTICATED_EXPECTATIONS = Object.freeze([
   visualExpectation("/phone?tab=callbacks", "phone", ["primary-outbound", "secondary-callbacks"]),
   visualExpectation("/calendar", "calendar", ["agenda"]),
   visualExpectation("/calendar?tab=availability", "calendar", ["availability"]),
+  visualExpectation("/computer", "computer"),
   visualExpectation("/insights", "insights"),
   visualExpectation("/inbox", "inbox"),
   visualExpectation("/approvals", "approvals"),

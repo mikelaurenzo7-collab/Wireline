@@ -455,6 +455,12 @@ Live catalog or portal health is not billing proof. The controlled lifecycle mus
 
 Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMail must retain the intentional support, security, DMARC, and unsubscribe inboxes. Test inbound, support reply, DMARC ingestion, and unsubscribe handling without exposing message contents in logs.
 
+### Anthropic and the hosted browser (cloud computer)
+
+The cloud computer stays off, and `/computer` says it is being set up, until both `ANTHROPIC_API_KEY` and `CLOUD_COMPUTER_BROWSER_WS_URL` are set on the API service and migration `0176_cloud_computer_tasks` is promoted. The browser endpoint must be an isolated hosted-browser vendor over `wss://`; never point it at a browser inside BotBound's network. The URL usually carries the vendor token, so treat it as a secret and keep both keys out of previews.
+
+Before announcing the feature, run one owner task end to end on production: start a task on a paid test account, watch the live screen, answer one `ask_owner` question, stop a second task midway, and confirm the AI allowance ledger shows `computer.browse` entries that settle. `CLOUD_COMPUTER_MODEL` may select `claude-sonnet-5-5` for lower per-turn cost; `CLOUD_COMPUTER_MAX_CONCURRENT` caps browsers per process (default 3).
+
 ### Supabase
 
 All public tables must remain under RLS. Promotion uses append-only Drizzle migrations and verifies the exact journal plus schema effects. BotBound's application ledger is `drizzle.__drizzle_migrations`; the Supabase dashboard's separate migration history may show an older number and is not a reason to replay already-applied DDL. Do not infer safety from a successful rebase or either ledger alone; compare the committed Drizzle journal, the live Drizzle ledger, and concrete schema objects. See [DATABASE_OPERATIONS.md](./DATABASE_OPERATIONS.md#the-migration-journal-is-not-the-whole-history).

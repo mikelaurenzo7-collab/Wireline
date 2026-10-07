@@ -15,6 +15,26 @@ export const OPENAI_MODELS = {
   GPT_4O: "gpt-4o",
 } as const;
 
+/**
+ * Claude models the per-Bot cloud computer may be configured to run
+ * (CLOUD_COMPUTER_MODEL). Opus 5.5 is the default.
+ */
+export const ANTHROPIC_MODELS = {
+  OPUS_5_5: "claude-opus-5-5",
+  OPUS_5: "claude-opus-5",
+  SONNET_5_5: "claude-sonnet-5-5",
+} as const;
+
+/**
+ * Not selectable, but server-side refusal fallback can serve a turn on them
+ * (Opus 5.5 falls back to Opus 5 or Opus 4.8; Sonnet 5.5 to Sonnet 5), so
+ * their usage must be priced at their own rates.
+ */
+export const ANTHROPIC_FALLBACK_MODELS = {
+  OPUS_4_8: "claude-opus-4-8",
+  SONNET_5: "claude-sonnet-5",
+} as const;
+
 export const GEMINI_MODELS = {
   FLASH_3_6: "gemini-3.6-flash",
   FLASH_3_5: "gemini-3.5-flash",
@@ -108,6 +128,13 @@ export const MODEL_PRICING = {
     cacheRead: 0.06,
     cacheWrite: 0,
   },
+  // Anthropic first-party rates, verified 2026-09-25. Cache writes use the
+  // five-minute TTL premium (1.25x input).
+  [ANTHROPIC_MODELS.OPUS_5_5]: { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
+  [ANTHROPIC_MODELS.OPUS_5]: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+  [ANTHROPIC_MODELS.SONNET_5_5]: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  [ANTHROPIC_FALLBACK_MODELS.OPUS_4_8]: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+  [ANTHROPIC_FALLBACK_MODELS.SONNET_5]: { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
   [GEMINI_MODELS.FLASH_3_6]: {
     input: 1.5,
     output: 7.5,
@@ -186,7 +213,12 @@ export function bareModelId(model: string): string {
 export function pricingForModel(model: string, totalInputTokens = 0): ModelPricingRow {
   const bare = bareModelId(model);
   const key = bare as keyof typeof MODEL_PRICING;
-  const standard = MODEL_PRICING[key] ?? MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA];
+  // An unlisted Claude model (for example a new fallback target) is priced at
+  // the most expensive Claude row, never under-charged at GPT rates.
+  const fallbackRow = bare.startsWith("claude-")
+    ? MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.OPUS_4_8]
+    : MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA];
+  const standard = MODEL_PRICING[key] ?? fallbackRow;
   const long = MODEL_LONG_CONTEXT_PRICING[key];
   if (!long) return standard;
   const crossed = long.inclusive

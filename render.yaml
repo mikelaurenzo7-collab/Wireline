@@ -135,6 +135,10 @@ projects:
                 sync: false
               - key: GEMINI_API_KEY
                 sync: false
+              - key: ANTHROPIC_API_KEY
+                sync: false
+              - key: CLOUD_COMPUTER_BROWSER_WS_URL
+                sync: false
               - key: PERPLEXITY_API_KEY
                 sync: false
               - key: TWILIO_ACCOUNT_SID

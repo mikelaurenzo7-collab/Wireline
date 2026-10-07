@@ -93,7 +93,7 @@ export type RuntimeClient = {
   };
 };
 
-export type RuntimeProviderName = "OpenAI" | "Gemini" | "AI Gateway";
+export type RuntimeProviderName = "OpenAI" | "Gemini" | "AI Gateway" | "Anthropic";
 
 /**
  * An explicit provider HTTP 4xx means the request was rejected rather than

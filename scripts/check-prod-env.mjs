@@ -186,6 +186,11 @@ const recommended = [
 
 const optional = [
   ["PLATFORM_SMS_FROM", "Optional registered sender for platform SMS alerts; unset disables them"],
+  ["ANTHROPIC_API_KEY", "Claude planner for each Bot's cloud computer; unset keeps it off"],
+  [
+    "CLOUD_COMPUTER_BROWSER_WS_URL",
+    "Isolated hosted-browser wss:// endpoint; the cloud computer stays off without it",
+  ],
   // Historical-only keys remain readable; they do not enable new channel checkout.
   ["STRIPE_STARTER_9_PRICE_ID", "BotBound Starter monthly price"],
   ["STRIPE_STARTER_9_ANNUAL_PRICE_ID", "BotBound Starter annual price"],

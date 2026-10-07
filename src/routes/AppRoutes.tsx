@@ -37,6 +37,9 @@ const PhonePage = lazy(() =>
 const CalendarPage = lazy(() =>
   import("../pages/CalendarPage").then((module) => withVisualQaPage(module, "calendar")),
 );
+const ComputerPage = lazy(() =>
+  import("../pages/ComputerPage").then((module) => withVisualQaPage(module, "computer")),
+);
 const InsightsPage = lazy(() =>
   import("../pages/InsightsPage").then((module) => withVisualQaPage(module, "insights")),
 );
@@ -173,6 +176,7 @@ export default function AppRoutes() {
         <Route path="/calls" element={<PreservingRedirect to="/phone" />} />
         <Route path="/phone" element={<PhoneRoute />} />
         <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/computer" element={<ComputerPage />} />
         <Route path="/insights" element={<InsightsPage />} />
         <Route path="/inbox" element={<EmailPage />} />
         <Route path="/email" element={<EmailToInboxRedirect />} />

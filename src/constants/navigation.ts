@@ -17,6 +17,7 @@ export type NavIconName =
   | "GraduationCap"
   | "Home"
   | "Inbox"
+  | "Monitor"
   | "MoreHorizontal"
   | "Phone"
   | "Settings"
@@ -141,6 +142,17 @@ export const WORKSPACE_ROUTES: readonly WorkspaceRouteMeta[] = [
     desktop: { group: "work", order: 40 },
     mobile: { placement: "more", group: "Operate", order: 15 },
     shortcut: { key: "C", hint: "g c" },
+  },
+  {
+    href: "/computer",
+    title: "Computer",
+    label: "Computer",
+    eyebrow: "Operate",
+    description: "Give your Bot web tasks on its own secure cloud computer.",
+    icon: "Monitor",
+    desktop: { group: "work", order: 45 },
+    mobile: { placement: "more", group: "Operate", order: 18 },
+    shortcut: { key: "M", hint: "g m" },
   },
   {
     href: "/insights",
@@ -306,7 +318,7 @@ function byMobilePlacement(placement: MobileNavPlacement) {
 
 /** Daily work and the knowledge behind it share the primary rail. */
 export const WORKSPACE_NAV: ShellNavItem[] = byDesktopOrder("work");
-/* Derived order: href: "/studio"; href: "/knowledge"; href: "/inbox"; href: "/phone"; href: "/calendar". */
+/* Derived order: href: "/studio"; href: "/knowledge"; href: "/inbox"; href: "/phone"; href: "/calendar"; href: "/computer". */
 
 /** Lower-frequency visibility and setup destinations stay secondary. */
 export const OPERATE_NAV: ShellNavItem[] = byDesktopOrder("manage");
@@ -322,7 +334,7 @@ export const MOBILE_PRIMARY_NAV: ShellNavItem[] = [
   {
     href: MOBILE_MORE_HREF,
     label: "More",
-    description: "Calendar, knowledge, approvals, connections, and settings.",
+    description: "Calendar, computer, knowledge, approvals, connections, and settings.",
     icon: "MoreHorizontal",
     section: "System",
   },

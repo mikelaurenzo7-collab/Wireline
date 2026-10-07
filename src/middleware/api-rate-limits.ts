@@ -466,6 +466,20 @@ export const calendarRateLimit = createRateLimiter({
   max: 30,
 });
 
+/** Cloud computer reads, including the live-view frame poll (~1 per 1.5s). */
+export const computerReadRateLimit = createRateLimiter({
+  bucket: "api:computer-read",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/** Cloud computer task starts, replies, and stops. */
+export const computerWriteRateLimit = createRateLimiter({
+  bucket: "api:computer-write",
+  windowMs: 60 * 1000,
+  max: 20,
+});
+
 /** Agent CRUD + training mutations. */
 export const agentMutationRateLimit = createRateLimiter({
   bucket: "api:agents-mutate",

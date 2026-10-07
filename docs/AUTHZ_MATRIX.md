@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 393
-**Protected:** 316
+**Routes scanned:** 400
+**Protected:** 323
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -216,6 +216,13 @@
 | compliance-routes.ts | POST | `/api/dnc` | inline | — | — | Protected |
 | compliance-routes.ts | DELETE | `/api/dnc/:id` | inline | — | — | Protected |
 | compliance-routes.ts | GET | `/api/tcpa/consent-check` | inline | — | — | Protected |
+| computer-routes.ts | GET | `/api/computer/status` | inline | — | — | Protected |
+| computer-routes.ts | GET | `/api/computer/tasks` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks` | inline | — | — | Protected |
+| computer-routes.ts | GET | `/api/computer/tasks/:taskId` | inline | — | — | Protected |
+| computer-routes.ts | GET | `/api/computer/tasks/:taskId/frame` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks/:taskId/reply` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks/:taskId/stop` | inline | — | — | Protected |
 | conversation-balance-routes.ts | GET | `/api/conversation-balance` | inline | — | — | Protected |
 | conversation-balance-routes.ts | POST | `/api/conversation-balance/checkout` | inline | — | — | Protected |
 | daily-brief-routes.ts | GET | `/api/daily-brief/schedule` | — | — | yes | Public (allowlisted) |

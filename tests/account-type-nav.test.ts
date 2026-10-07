@@ -32,6 +32,7 @@ describe("legacy account-type navigation compatibility", () => {
       "/inbox",
       "/phone",
       "/calendar",
+      "/computer",
     ]);
     expect(
       groups.find((group) => group.label === "Manage")?.items.map((item) => item.path),
