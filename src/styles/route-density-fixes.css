@@ -13,7 +13,11 @@
 }
 
 [data-wireline-route="/connections"] .wl-workspace-content-inner > .flex > .lg\:grid > aside,
-[data-wireline-route="/connections"] .wl-workspace-content-inner > .flex > .lg\:grid > div:last-child {
+[data-wireline-route="/connections"]
+  .wl-workspace-content-inner
+  > .flex
+  > .lg\:grid
+  > div:last-child {
   align-self: start;
 }
 
@@ -44,10 +48,6 @@
 .agent-workspace-chat-scroll {
   margin-inline: auto;
   width: min(100%, 56rem);
-}
-
-[data-wireline-route="/connections"] .wl-workspace-page {
-  max-width: min(100%, 1080px);
 }
 
 [data-wireline-route="/knowledge"] .wl-workspace-page-intro {

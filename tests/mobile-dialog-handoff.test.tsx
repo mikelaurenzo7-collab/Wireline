@@ -235,7 +235,7 @@ describe("mobile dialog handoff", () => {
     }>;
     const opener = new Target();
     actions
-      .find((action) => action.label === "Add first number")!
+      .find((action) => action.label === "Add First Number")!
       .onClick({
         currentTarget: opener,
       });

@@ -1,11 +1,4 @@
-import React, {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import React, { ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
 import { MoreHorizontal, X } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -223,7 +216,7 @@ export default function PageShell({
               </div>
             )}
             {subtitle && (
-              <p className="mt-0.5 text-caption max-w-2xl text-pretty lg:hidden">{subtitle}</p>
+              <p className="mt-0.5 text-caption max-w-2xl text-balance lg:hidden">{subtitle}</p>
             )}
           </div>
           {actions && (
@@ -359,9 +352,7 @@ export default function PageShell({
                   aria-controls={active ? panelDomId(i) : undefined}
                   tabIndex={active ? 0 : -1}
                   onClick={() => setActiveId(tab.id)}
-                  onKeyDown={(event) =>
-                    activateTabFromKeyboard(event, i, mobileTabListRef.current)
-                  }
+                  onKeyDown={(event) => activateTabFromKeyboard(event, i, mobileTabListRef.current)}
                   className={cn(
                     "touch-press hover:scale-[1.02] relative shrink-0 inline-flex min-h-9 h-auto items-center gap-1.5 px-2.5 py-1.5 transition-[background-color,border-color,color,box-shadow,transform] wl-label font-medium whitespace-nowrap rounded-none",
                     active ? "app-tab-active" : "text-muted",
@@ -462,19 +453,12 @@ export default function PageShell({
             role="tabpanel"
             id={panelDomId(selectedTabIndex)}
             aria-label={activeTab.label}
-            initial={
-              reduceMotion ? false : { opacity: 0, transform: "translate3d(0, 4px, 0)" }
-            }
+            initial={reduceMotion ? false : { opacity: 0, transform: "translate3d(0, 4px, 0)" }}
             animate={{ opacity: 1, transform: "translate3d(0, 0, 0)" }}
             transition={
-              reduceMotion
-                ? { duration: 0.01 }
-                : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+              reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
             }
-            className={cn(
-              "h-full w-full",
-              !reduceMotion && "will-change-[transform,opacity]",
-            )}
+            className={cn("h-full w-full", !reduceMotion && "will-change-[transform,opacity]")}
           >
             {activeTab.content}
           </motion.div>
@@ -507,9 +491,7 @@ export default function PageShell({
               animate={{ y: 0 }}
               exit={reduceMotion ? { opacity: 0 } : { y: "100%" }}
               transition={
-                reduceMotion
-                  ? { duration: 0.01 }
-                  : { type: "spring", stiffness: 360, damping: 32 }
+                reduceMotion ? { duration: 0.01 } : { type: "spring", stiffness: 360, damping: 32 }
               }
               className="fixed bottom-0 left-0 right-0 z-[201] wl-panel-elevated border-t border-border md:hidden shadow-[0_-24px_48px_-20px_rgba(17,17,17,0.18),0_1px_0_rgba(255,255,255,0.75)_inset]"
               drag="y"

@@ -52,8 +52,19 @@
   background-attachment: fixed;
 }
 
-.marketing-surface :where(p, li),
-.wl-workspace-shell :where(p, li) {
+/* Copy is either one whole line or evenly spread across a few; never one word
+ * stranded under the rest. `pretty` leaves two-line blocks untouched in
+ * Chromium, which is where most strays appear, so short copy balances
+ * everywhere (zero specificity: any component rule still wins). Balance stops
+ * past about six lines, so src/lib/long-copy-wrap.ts marks longer blocks and
+ * they use `pretty`, which handles exactly those. Notices inherit this from
+ * their status/alert container. */
+:where(p, li, label, dt, dd, figcaption, blockquote, td, th),
+:where([role="status"], [role="alert"]) {
+  text-wrap: balance;
+}
+
+:where(p, li, dd, blockquote)[data-wl-long-copy="true"] {
   text-wrap: pretty;
 }
 

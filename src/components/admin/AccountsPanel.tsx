@@ -143,7 +143,7 @@ export function AccountsPanel() {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              Add workspace
+              Add Workspace
             </button>
           </div>
           {createError ? (

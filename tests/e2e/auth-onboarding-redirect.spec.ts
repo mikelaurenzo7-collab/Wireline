@@ -65,7 +65,7 @@ test("settings sign-out followed by direct personal signup always enters Fast St
   });
 
   await page.goto("/settings");
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByRole("button", { name: "Sign Out" }).click();
   await expect(page).toHaveURL(/\/signin(?:\?.*)?$/);
 
   // Model the redirect produced if the protected settings route wins the

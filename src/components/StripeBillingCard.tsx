@@ -468,9 +468,12 @@ export default function StripeBillingCard({
 export function BillingTrustFooter() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-[length:var(--wireline-typography-overline-size)] text-muted-foreground uppercase tracking-[0.2em]">
-      <div className="flex items-center gap-2">
-        <Shield className="w-3 h-3" />
-        Encrypted payments · Cancel anytime
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <Shield className="w-3 h-3" aria-hidden="true" />
+        {/* Each phrase stays whole: the pair wraps as two lines, never a stray word. */}
+        <span className="whitespace-nowrap">Encrypted payments</span>
+        <span aria-hidden="true">·</span>
+        <span className="whitespace-nowrap">Cancel anytime</span>
       </div>
       <div className="flex items-center gap-3">
         <a href="/privacy" className="hover:text-foreground transition-colors">

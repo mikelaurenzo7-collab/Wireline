@@ -176,7 +176,7 @@ export default function CookieConsent() {
               <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
                 Privacy choices
               </h2>
-              <p className="text-sm leading-relaxed text-foreground/80 sm:flex-1">
+              <p className="wl-balance text-sm leading-relaxed text-foreground/80 sm:flex-1">
                 Essential storage keeps{" "}
                 <span className="font-semibold text-foreground">BotBound</span> working. Optional
                 measurement stays off until you allow it.{" "}

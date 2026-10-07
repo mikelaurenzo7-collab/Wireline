@@ -197,7 +197,7 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   color: var(--wireline-color-text-secondary);
   font-size: 0.95rem;
   line-height: 1.6;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__note {

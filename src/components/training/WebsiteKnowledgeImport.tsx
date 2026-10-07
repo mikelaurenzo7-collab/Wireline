@@ -127,7 +127,7 @@ export default function WebsiteKnowledgeImport({
             Website Knowledge
           </h2>
           <p className="mt-1 max-w-[72ch] text-xs leading-relaxed text-[var(--wireline-color-text-secondary)]">
-            Add facts and rules from one public HTTPS page.
+            Add facts and rules from one public page of your website.
           </p>
         </div>
       </div>

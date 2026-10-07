@@ -187,7 +187,7 @@ describe("setup guide requires confirmed calling", () => {
     stubFetch({ numbers: [] });
     await mount();
     expect(text(render())).not.toContain("(312) 555-0100");
-    expect(text(render())).toContain("No live line yet");
+    expect(text(render())).toContain("No phone number yet");
     expect(button("Choose a number")?.props.disabled).toBe(false);
     expect(button("Continue")).toBeUndefined();
   });
@@ -277,7 +277,7 @@ it("email-only activation has no phone prerequisite or invented live milestone",
   stubFetch({ numbers: [] });
   await mount();
   expect(text(render())).toContain("Open Email");
-  expect(text(render())).not.toContain("No live line");
+  expect(text(render())).not.toContain("No phone number");
   expect(button("Choose a number")).toBeUndefined();
   button("Finish for now")?.props.onClick?.();
   expect(text(render())).toContain("Your Bot is saved");

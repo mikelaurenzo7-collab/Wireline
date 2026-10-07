@@ -738,15 +738,12 @@ export default function KnowledgeBaseClaude({
     ) : null;
 
   const uploadTrigger = (
-    <button
+    <Button
       type="button"
+      size="sm"
+      className="shrink-0"
       onClick={() => fileInputRef.current?.click()}
       disabled={entryMutationPending || entryEditorOpen || !agentId}
-      className="inline-flex min-h-[36px] shrink-0 items-center gap-2 rounded-[var(--wireline-radius-sm)] px-3.5 text-[12px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-      style={{
-        background: "var(--wireline-color-action-primary-default)",
-        color: "var(--wireline-color-text-onAction)",
-      }}
     >
       {uploading ? (
         <>
@@ -756,7 +753,7 @@ export default function KnowledgeBaseClaude({
       ) : (
         "Choose files"
       )}
-    </button>
+    </Button>
   );
 
   return (
@@ -808,7 +805,7 @@ export default function KnowledgeBaseClaude({
       ) : null}
 
       <section
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-2 empty:hidden"
         aria-label="Saved knowledge"
         aria-busy={loading ? "true" : undefined}
       >
@@ -1016,16 +1013,16 @@ export default function KnowledgeBaseClaude({
           aria-hidden="true"
         />
         <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
-          <h2 className="text-sm font-medium text-[var(--wireline-color-text-secondary)]">
+          <h2 className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
             Add Documents
           </h2>
           <div
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
             {imageUploadsAvailable
-              ? "TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF)"
-              : "TXT, MD, CSV"}
-            , max {KNOWLEDGE_ASSET_MAX_LABEL} per file
+              ? "Text, Markdown, or CSV files, or PNG, JPG, WEBP, or GIF images"
+              : "Text, Markdown, or CSV files"}{" "}
+            up to {KNOWLEDGE_ASSET_MAX_LABEL} each.
           </div>
         </div>
         <div

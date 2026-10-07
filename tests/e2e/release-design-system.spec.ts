@@ -89,7 +89,7 @@ for (const viewport of [
       await expect(heading).toHaveCount(1);
       expect((await heading.boundingBox())?.height).toBeLessThanOrEqual(1);
     }
-    await page.getByRole("button", { name: "Add line", exact: true }).click();
+    await page.getByRole("button", { name: "Add Line", exact: true }).click();
     await page.getByRole("button", { name: "Find numbers", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Go live", exact: true });
     await expect(dialog).toBeVisible();
@@ -369,7 +369,7 @@ test("Studio retains a draft and exposes the final action after text enlargement
     throw error;
   }
   await page.getByRole("button", { name: "Close Bot settings", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "What should we change?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What Should We Change?" })).toBeVisible();
   await page.getByRole("button", { name: "Add a rule", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).toBeFocused();
   await expect(page.getByRole("textbox", { name: "Message Front Desk" })).not.toHaveValue("");

@@ -74,7 +74,8 @@
 }
 
 .wl-rail-link:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent);
+  outline: 2px solid
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 55%, transparent);
   outline-offset: 2px;
 }
 
@@ -109,7 +110,7 @@
 }
 
 .wl-workspace-content .studio-card p {
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .wl-route-section-heading {
@@ -197,23 +198,42 @@
 
 /* Phone history (Claude Design) — live indicator pulse + thin waveform bars. */
 @keyframes wlPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.2); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
 }
 @keyframes wlCallWave {
-  0%, 100% { transform: scaleY(0.55); }
-  50% { transform: scaleY(1); }
+  0%,
+  100% {
+    transform: scaleY(0.55);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  [style*="wlPulse"], [style*="wlCallWave"] { animation: none !important; }
+  [style*="wlPulse"],
+  [style*="wlCallWave"] {
+    animation: none !important;
+  }
 }
 
 /* Responsive type system — utility helpers used by display headlines.
    text-wrap: balance keeps multi-line headings visually centered at every
    viewport so the prototype's tightly composed greetings don't go ragged
    on phones or stretch unevenly on ultra-wide desktops. */
-.wl-balance { text-wrap: balance; }
-.wl-pretty { text-wrap: pretty; }
+.wl-balance {
+  text-wrap: balance;
+}
+.wl-pretty {
+  text-wrap: pretty;
+}
 
 /* Body prose default — 65ch max-width keeps line lengths in the
    readable 45–75ch band on giant monitors without shrinking on phones. */

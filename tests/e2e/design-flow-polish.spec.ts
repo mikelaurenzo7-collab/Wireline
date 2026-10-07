@@ -57,7 +57,7 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/studio?create=1");
     const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
-    await dialog.getByText("Use a Role Starter", { exact: true }).click();
+    await dialog.getByText("Start From a Role", { exact: true }).click();
     const role = dialog.getByRole("combobox", { name: "Bot role starters" });
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
     await role.selectOption("front-desk");

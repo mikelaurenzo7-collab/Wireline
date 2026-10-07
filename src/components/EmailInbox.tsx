@@ -751,7 +751,7 @@ export default function EmailInbox({
               action={
                 channelEnabled && !agentId && !accountId && mailboxConnected === false ? (
                   <Button asChild variant="secondary" size="sm">
-                    <Link to="/connections">Connect email</Link>
+                    <Link to="/connections">Connect Email</Link>
                   </Button>
                 ) : undefined
               }

@@ -225,8 +225,8 @@ describe("authenticated workspace design architecture", () => {
 
   it("gives outbound dispatch an empty queue instead of a lone intake accordion", () => {
     const hub = read("src/components/outbound/OutboundHub.tsx");
-    expect(hub).toContain('title="No Dispatch Queue"');
-    expect(hub).toContain('label: "Lead Hunt"');
+    expect(hub).toContain('title="No Calls Queued"');
+    expect(hub).toContain('label: "Find Leads"');
     expect(hub).toContain('onViewChange("campaigns")');
     expect(hub).toContain("Lead Intake");
   });

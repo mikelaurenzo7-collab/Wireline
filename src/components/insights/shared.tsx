@@ -125,18 +125,18 @@ export function InsightEmpty({
     (agentsLoading
       ? []
       : (agentsDegraded && agents.length === 0) || (phoneLookupDegraded && agents.length > 0)
-        ? [{ label: "Retry Bot status", onClick: refreshAgents, primary: true }]
+        ? [{ label: "Retry Bot Status", onClick: refreshAgents, primary: true }]
         : agents.length === 0
           ? [{ label: "Create Bot", to: "/studio?create=1", primary: true }]
           : !agents.some((agent) => agent.phone_number)
             ? [
-                { label: "Connect phone", to: "/phone?tab=setup", primary: true },
-                { label: "Call history", to: "/phone" },
+                { label: "Connect Phone", to: "/phone?tab=setup", primary: true },
+                { label: "Call History", to: "/phone" },
               ]
             : [...config.actions]);
 
   const firstRun = !agentsLoading && agents.length === 0 && !agentsDegraded;
-  const title = titleOverride ?? (firstRun ? "No conversations yet" : config.title);
+  const title = titleOverride ?? (firstRun ? "No Conversations Yet" : config.title);
   const description =
     firstRun && !titleOverride ? "Activity appears once your Bot starts taking calls." : undefined;
 

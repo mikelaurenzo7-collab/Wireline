@@ -38,8 +38,8 @@ describe("empty-state route hygiene", () => {
     expect(studioChrome).toContain("agentLineStatus(activeAgent, phoneLookupDegraded)");
     expect(readiness).toContain('"Live"');
     expect(readiness).toContain('"Status unavailable"');
-    expect(readiness).toContain('"No live line"');
-    expect(studioChrome).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No live line"/);
+    expect(readiness).toContain('"No phone number"');
+    expect(studioChrome).not.toMatch(/phone_number\s*\?\s*"Live"\s*:\s*"No phone number"/);
 
     expect(routes).toContain("function ToStudioRedirect()");
     expect(routes).toContain('path="/agents" element={<ToStudioRedirect />}');
@@ -54,9 +54,9 @@ describe("empty-state route hygiene", () => {
 
     const insightsEmpty = read("src/components/insights/shared.tsx");
     expect(insightsEmpty).toContain(
-      '{ label: "Connect phone", to: "/phone?tab=setup", primary: true }',
+      '{ label: "Connect Phone", to: "/phone?tab=setup", primary: true }',
     );
-    expect(insightsEmpty).toContain('{ label: "Call history", to: "/phone" }');
+    expect(insightsEmpty).toContain('{ label: "Call History", to: "/phone" }');
     expect(insightsEmpty).not.toContain('to: "/studio?section=test"');
 
     expect(existsSync("src/components/AgentPresenceLivePreview.tsx")).toBe(false);

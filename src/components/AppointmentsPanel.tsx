@@ -365,10 +365,11 @@ export default function AppointmentsPanel({
           className="w-full max-w-lg"
           icon={<CalendarDays className="size-5" aria-hidden="true" />}
           title="No Appointments Yet"
+          description="Appointments your Bot books will appear here."
           action={
             calendarConfigured === false && onConfigure ? (
               <Button variant="secondary" size="sm" onClick={onConfigure}>
-                Set availability
+                Set Availability
               </Button>
             ) : undefined
           }

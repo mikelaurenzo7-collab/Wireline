@@ -147,7 +147,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           description: undefined,
           action: (
             <Button asChild variant="secondary" size="sm">
-              <Link to="/phone?tab=setup">Lines</Link>
+              <Link to="/phone?tab=setup">Add a Line</Link>
             </Button>
           ),
         }
@@ -156,7 +156,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
           description: undefined,
           action: (
             <Button asChild variant="secondary" size="sm">
-              <a href={`tel:${livePhone}`}>Call the line</a>
+              <a href={`tel:${livePhone}`}>Call the Line</a>
             </Button>
           ),
         };

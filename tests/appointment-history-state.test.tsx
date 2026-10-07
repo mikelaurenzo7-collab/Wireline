@@ -270,7 +270,7 @@ describe("appointment history and recovery", () => {
     panelProps = { calendarConfigured: false, onConfigure: configure };
     await settle();
     expect(elements(tree).some((node) => node.props.title === "No Appointments Yet")).toBe(true);
-    button("Set availability").props.onClick!();
+    button("Set Availability").props.onClick!();
     expect(configure).toHaveBeenCalledOnce();
     expect(h.fetch.mock.calls.some(([url]) => url === "/api/calendar/accounts")).toBe(false);
   });

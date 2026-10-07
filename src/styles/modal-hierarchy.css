@@ -58,7 +58,7 @@
   font-size: var(--wireline-modal-copy-size) !important;
   line-height: var(--wireline-modal-copy-leading) !important;
   text-align: left !important;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* Activation / billing used to read like a centered marketing sheet. Keep it a

@@ -206,7 +206,7 @@ export default function OutboundDialDialog({
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             {DIRECT_OUTBOUND_AVAILABILITY.available
-              ? "Pick a Bot with a live line, enter a number, and classify the call before dialing."
+              ? "Pick a Bot with a phone number, enter the number to call, and classify the call before dialing."
               : "Outbound calling is not available yet."}
           </DialogDescription>
         </DialogHeader>

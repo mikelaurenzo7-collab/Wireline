@@ -32,7 +32,7 @@ async function workspace(page: Page, checkoutAvailable: boolean | "unavailable" 
     });
   });
   await page.goto("/phone?tab=setup");
-  await page.getByRole("button", { name: "Add line", exact: true }).click();
+  await page.getByRole("button", { name: "Add Line", exact: true }).click();
 }
 
 test("customers search their own area code and activate only the exact selected number", async ({

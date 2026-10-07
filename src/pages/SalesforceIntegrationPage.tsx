@@ -33,9 +33,9 @@ type PreferenceResponse = {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 function formatConnectedAt(value?: string): string {
-  if (!value) return "N/A";
+  if (!value) return "Not yet";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
+  if (Number.isNaN(date.getTime())) return "Not yet";
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
@@ -59,28 +59,24 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
-            <Cloud size={21} />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-[-.02em] text-foreground">
-              Salesforce Connection
-            </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
-          </div>
+      <div className="flex items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+          <Cloud size={18} />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-semibold text-foreground">Salesforce Connection</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
+          <Badge variant={connected ? "success" : "warning"} className="mt-2">
+            {connected ? "Connected" : "Not connected"}
+          </Badge>
         </div>
-        <Badge variant={connected ? "success" : "warning"} className="shrink-0">
-          {connected ? "Connected" : "Not connected"}
-        </Badge>
       </div>
 
       <dl className="mt-6 divide-y divide-border border-y border-border text-sm">
         <div className="flex items-center justify-between gap-4 py-3">
           <dt className="shrink-0 text-muted-foreground">Organization</dt>
           <dd className="min-w-0 max-w-[13rem] truncate text-right font-medium text-foreground">
-            {connection.instance_url || "Awaiting OAuth connection"}
+            {connection.instance_url || "Not connected yet"}
           </dd>
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
@@ -222,8 +218,10 @@ export default function SalesforceIntegrationPage() {
           <div className="space-y-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-center gap-2">
-                  <Send className="size-5 text-primary" />
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+                    <Send size={18} />
+                  </span>
                   <h2 className="font-semibold text-foreground">Call Activity</h2>
                 </div>
                 <Badge variant={callActivitySyncEnabled && isConnected ? "success" : "warning"}>
@@ -272,17 +270,22 @@ export default function SalesforceIntegrationPage() {
                 <StatusNotice
                   className="mt-5"
                   tone="warning"
-                  title="Connect Salesforce to Control Delivery"
+                  title="Connect Salesforce First"
+                  action={
+                    <Button asChild size="sm">
+                      <Link to="/connections">Connect Salesforce</Link>
+                    </Button>
+                  }
                 >
-                  Complete OAuth from Connections before BotBound can create or pause Salesforce
-                  call activities.
+                  Connect your Salesforce account on the Connections page so BotBound can log your
+                  calls there.
                 </StatusNotice>
               ) : null}
             </section>
 
             <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-              <div className="flex items-start gap-3 border-b border-border px-5 py-4 sm:px-6">
-                <span className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
+              <div className="flex items-center gap-3 border-b border-border px-5 py-4 sm:px-6">
+                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius-md)] bg-accent text-primary">
                   <FileText size={18} />
                 </span>
                 <h2 className="font-semibold text-foreground">Task Fields</h2>
@@ -290,15 +293,15 @@ export default function SalesforceIntegrationPage() {
               <dl className="divide-y divide-border text-sm">
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Subject</dt>
-                  <dd className="text-muted-foreground">Intent + outcome</dd>
+                  <dd className="text-muted-foreground">Call reason and outcome</dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Contact</dt>
-                  <dd className="text-muted-foreground">Phone match</dd>
+                  <dd className="text-muted-foreground">Matched by phone number</dd>
                 </div>
                 <div className="grid gap-1 px-5 py-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-6 sm:px-6">
                   <dt className="font-medium text-foreground">Details</dt>
-                  <dd className="text-muted-foreground">Agent · intent · sentiment</dd>
+                  <dd className="text-muted-foreground">Bot name, call reason, and caller mood</dd>
                 </div>
               </dl>
             </section>
@@ -311,7 +314,7 @@ export default function SalesforceIntegrationPage() {
 
         <div className="flex justify-center border-t border-border pt-6 sm:justify-end">
           <Button asChild variant="secondary">
-            <Link to="/connections">Back to connections</Link>
+            <Link to="/connections">Back to Connections</Link>
           </Button>
         </div>
       </WorkspacePageFrame>

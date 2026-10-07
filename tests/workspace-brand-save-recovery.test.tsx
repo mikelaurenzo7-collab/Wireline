@@ -248,7 +248,7 @@ describe("workspace branding draft recovery", () => {
     );
     expect(html).toContain('role="alert"');
     expect(html).toContain("Please retry later. Your changes are kept. Try again.");
-    expect(html).toContain("Save branding");
+    expect(html).toContain("Save Branding");
     expect(html).not.toMatch(/<fieldset[^>]*disabled/);
   });
 });

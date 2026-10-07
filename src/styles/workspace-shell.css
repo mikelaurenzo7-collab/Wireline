@@ -316,7 +316,7 @@
   color: var(--wireline-color-text-secondary);
   font-size: 0.875rem;
   line-height: 1.55;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .wl-shell-page-actions {

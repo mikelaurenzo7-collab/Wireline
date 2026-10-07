@@ -60,7 +60,7 @@ test("a second Bot keeps its own activation selection and opens its new line", a
   });
 
   await page.goto("/phone?tab=setup");
-  await page.getByRole("button", { name: "Add line", exact: true }).click();
+  await page.getByRole("button", { name: "Add Line", exact: true }).click();
   const botSelection = page.getByRole("combobox", { name: "Bot for this line" });
   await botSelection.click();
   await page.getByRole("option", { name: "Sales Bot", exact: true }).click();
@@ -98,11 +98,11 @@ for (const failure of ["unavailable", "malformed"] as const) {
     await page.goto("/phone?tab=setup");
     await expect(page.getByText("Lines Need Attention", { exact: true })).toBeVisible();
     await expect(page.getByText("No Line Yet", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Add line", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add Line", exact: true })).toHaveCount(0);
     recovered = true;
     await page.getByRole("button", { name: "Retry", exact: true }).click();
     await expect(page.getByText("No Line Yet", { exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add line", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Add Line", exact: true })).toBeEnabled();
   });
 }
 
@@ -145,7 +145,7 @@ test("changing a role starter preserves a supplied customer brief", async ({ pag
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";
   await page.goto(`/studio?create=1&brief=${encodeURIComponent(brief)}`);
   const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-  await dialog.getByText("Use a Role Starter", { exact: true }).click();
+  await dialog.getByText("Start From a Role", { exact: true }).click();
   const description = dialog.getByRole("textbox", { name: "Describe the Job" });
   await expect(description).toHaveValue(brief);
   await dialog
@@ -198,7 +198,7 @@ for (const failure of ["unavailable", "malformed"] as const) {
     await expect(
       guide.getByRole("button", { name: "Choose a number", exact: true }),
     ).toBeDisabled();
-    await expect(guide.getByText("No live line yet.", { exact: false })).toHaveCount(0);
+    await expect(guide.getByText("No phone number yet.", { exact: false })).toHaveCount(0);
     recovered = true;
     await guide.getByRole("button", { name: "Retry line lookup" }).click();
     await expect(guide.getByRole("button", { name: "Choose a number", exact: true })).toBeEnabled();

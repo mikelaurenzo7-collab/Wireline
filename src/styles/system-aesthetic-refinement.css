@@ -73,7 +73,8 @@
     var(--wireline-color-action-secondary-default),
     var(--wireline-color-action-primary-default)
   );
-  box-shadow: 0 0 9px color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
+  box-shadow: 0 0 9px
+    color-mix(in srgb, var(--wireline-color-action-primary-default) 30%, transparent);
 }
 
 :where(.wl-rail-link, .wl-rail-agent-link):focus-visible {
@@ -96,15 +97,18 @@
 }
 
 .wl-workspace-content :where(p, li):not(.wl-preserve-case) {
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* Keep desktop scroll affordance visible but subordinate to the content. */
 @media (pointer: fine) {
   .wl-workspace-content {
     scrollbar-width: thin;
-    scrollbar-color:
-      color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent)
+    scrollbar-color: color-mix(
+        in srgb,
+        var(--wireline-color-action-secondary-default) 18%,
+        transparent
+      )
       transparent;
   }
 
@@ -133,8 +137,11 @@
 
 [data-slot="dialog-content"][data-presentation="modal"] {
   scrollbar-width: thin;
-  scrollbar-color:
-    color-mix(in srgb, var(--wireline-color-action-secondary-default) 18%, transparent)
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--wireline-color-action-secondary-default) 18%,
+      transparent
+    )
     transparent;
 }
 

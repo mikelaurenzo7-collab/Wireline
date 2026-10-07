@@ -4,11 +4,10 @@ import { authFetch } from "../../lib/api";
 import { logFetchError } from "../../lib/utils";
 import { useToast } from "../../contexts/ToastContext";
 import ClientRouteLoading from "../layout/ClientRouteLoading";
-import { OPS_CHANNEL_EMPTY, OPS_CHANNEL_TOOLBAR } from "../../lib/wireline-ops-design";
+import { OPS_CHANNEL_EMPTY } from "../../lib/wireline-ops-design";
 import { Input } from "../ui/shadcn/Input";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/shadcn/Select";
-import { cn } from "../../lib/utils";
 import {
   SALES_PLAYBOOKS,
   playbookGoalTag,
@@ -204,10 +203,8 @@ export default function CampaignsPanel() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div
-        className={cn(
-          OPS_CHANNEL_TOOLBAR,
-          "flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between",
-        )}
+        // Same 1rem inset as the cards below, so the actions share their edge.
+        className="flex flex-col items-stretch gap-2 px-4 pt-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <p className="hidden text-sm text-muted-foreground sm:block">
           TCPA-guarded batch dialing within call windows.
@@ -232,7 +229,7 @@ export default function CampaignsPanel() {
               onClick={() => setShowCreate(true)}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden />
-              Create campaign
+              Create Campaign
             </ShadButton>
           ) : null}
         </div>

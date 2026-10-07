@@ -57,7 +57,7 @@ function renderAccounts() {
 }
 function addButton() {
   return elements(renderAccounts()).find(
-    (node) => node.type === "button" && textOf(node).includes("Add workspace"),
+    (node) => node.type === "button" && textOf(node).includes("Add Workspace"),
   )!;
 }
 

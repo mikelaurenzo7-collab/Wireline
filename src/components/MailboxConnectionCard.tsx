@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Mail, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 
 import { authFetch, safeJson } from "../lib/api";
 import { useChannelEntitlements } from "../hooks/useChannelEntitlements";
@@ -189,13 +189,13 @@ export default function MailboxConnectionCard() {
 
   return (
     <section aria-labelledby="mailbox-connections-title">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div>
+        <div className="min-w-0">
           <h2 id="mailbox-connections-title" className="text-base font-semibold text-foreground">
             {access.status !== "ready"
-              ? "Account connections"
+              ? "Account Connections"
               : emailIncluded
-                ? "Email & calendar"
+                ? "Email & Calendar"
                 : "Calendar"}
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
@@ -204,7 +204,6 @@ export default function MailboxConnectionCard() {
               : "Connect your calendar for scheduling."}
           </p>
         </div>
-        <Mail className="size-5 shrink-0 text-primary" aria-hidden="true" />
       </div>
 
       {loading || access.status === "loading" ? (

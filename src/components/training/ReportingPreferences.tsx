@@ -129,6 +129,7 @@ export default function ReportingPreferences() {
         const response = await authFetch("/api/post-call-output-preferences");
         const data = (await response.json()) as ResponsePayload & { error?: string };
         if (!response.ok) throw new Error(data.error || "Could not load report settings.");
+        if (!data.preferences) throw new Error("Could not load report settings.");
         if (!active) return;
         setPreferences(data.preferences);
         setConnections(data.connections);
@@ -140,8 +141,11 @@ export default function ReportingPreferences() {
         setLocalTime(local.time);
         setLocalWeekday(local.weekday);
       } catch (cause) {
-        if (active)
-          setError(cause instanceof Error ? cause.message : "Could not load report settings.");
+        // Server messages are written for owners; runtime and parse errors
+        // ("Cannot read properties of undefined") never reach the screen.
+        const ownerReadable =
+          cause instanceof Error && !(cause instanceof TypeError || cause instanceof SyntaxError);
+        if (active) setError(ownerReadable ? cause.message : "Could not load report settings.");
       } finally {
         if (active) setLoading(false);
       }

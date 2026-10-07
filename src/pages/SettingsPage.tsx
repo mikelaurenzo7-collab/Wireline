@@ -360,7 +360,7 @@ export default function SettingsPage() {
                   disabled={signingOut}
                   onClick={handleSignOut}
                 >
-                  {signingOut ? "Signing out…" : "Sign out"}
+                  {signingOut ? "Signing Out…" : "Sign Out"}
                 </Button>
               </span>
             </div>

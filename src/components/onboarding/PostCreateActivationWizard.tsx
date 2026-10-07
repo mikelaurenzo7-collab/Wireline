@@ -482,7 +482,7 @@ export default function PostCreateActivationWizard({
                     </div>
                   ) : phoneLookupFailed ? null : (
                     <div className="rounded-xl border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
-                      No live line yet. Connect one to receive real calls with this Bot.
+                      No phone number yet. Connect one to receive real calls with this Bot.
                     </div>
                   )}
 

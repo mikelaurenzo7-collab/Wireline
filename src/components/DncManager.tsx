@@ -273,7 +273,7 @@ export default function DncManager() {
   const isEmpty = !loading && !loadErr && entries.length === 0;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 bg-background text-foreground">
+    <div className="flex h-full min-h-0 flex-col gap-3 text-foreground">
       <Input
         ref={fileRef}
         type="file"
@@ -285,7 +285,7 @@ export default function DncManager() {
         <ClientToolbar
           actionTriggerRef={toolbarTriggerRef}
           left={
-            <span className="app-toolbar-stat">
+            <span className="app-toolbar-stat text-sm font-semibold text-foreground">
               {loading
                 ? OPS_CHANNEL_TOOLBAR.dnc.loading
                 : isEmpty || loadErr
@@ -414,12 +414,13 @@ export default function DncManager() {
                       .title
                   }
                   density="compact"
+                  titleTone="ui"
                   withHalo={false}
                   actions={
                     entries.length === 0
                       ? [
                           {
-                            label: "Add first number",
+                            label: "Add First Number",
                             onClick: openAddDialog,
                             primary: true,
                           },

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Download, ExternalLink, Loader2, Shield } from "lucide-react";
+import { ChevronRight, Download, ExternalLink, Loader2, Shield } from "lucide-react";
 
 import DncManager from "./DncManager";
 import { authFetch } from "../lib/api";
@@ -142,7 +142,7 @@ export default function ComplianceCenter() {
                   Workspace DNC
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.dnc_entry_count} suppressed{" "}
+                  {summary.dnc_entry_count ?? 0} blocked{" "}
                   {summary.dnc_entry_count === 1 ? "number" : "numbers"}
                 </dd>
               </div>
@@ -151,7 +151,7 @@ export default function ComplianceCenter() {
                   Consent Events
                 </dt>
                 <dd className="text-right text-sm font-medium text-foreground sm:mt-1 sm:text-left">
-                  {summary.consent_event_count} logged
+                  {summary.consent_event_count ?? 0} recorded
                 </dd>
               </div>
             </dl>
@@ -161,7 +161,7 @@ export default function ComplianceCenter() {
                 title={
                   DIRECT_OUTBOUND_AVAILABILITY.available
                     ? "Federal DNC Setup Pending"
-                    : "Outbound calls unavailable"
+                    : "Outbound Calls Unavailable"
                 }
               >
                 {!DIRECT_OUTBOUND_AVAILABILITY.available
@@ -179,7 +179,7 @@ export default function ComplianceCenter() {
           <Button type="button" size="sm" variant="secondary" asChild>
             <Link to="/trust" target="_blank" rel="noreferrer">
               <ExternalLink className="size-3.5" />
-              Trust pack
+              Trust Pack
             </Link>
           </Button>
           <Button
@@ -194,7 +194,7 @@ export default function ComplianceCenter() {
             ) : (
               <Download className="size-3.5" />
             )}
-            Audit export
+            Audit Export
           </Button>
         </div>
       </section>
@@ -221,7 +221,7 @@ export default function ComplianceCenter() {
                       to="/phone?tab=setup"
                       className="font-semibold text-foreground underline-offset-4 hover:text-primary hover:underline"
                     >
-                      Review phone setup
+                      Review Phone Setup
                     </Link>
                   </p>
                 </div>
@@ -248,8 +248,14 @@ export default function ComplianceCenter() {
                 ))
               )}
             </div>
-            <details className="mt-3 text-xs text-muted-foreground">
-              <summary className="w-fit cursor-pointer py-2 wl-focus-ring-halo">Details</summary>
+            <details className="group mt-3 text-xs text-muted-foreground">
+              <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 py-2 wl-focus-ring-halo [&::-webkit-details-marker]:hidden">
+                <ChevronRight
+                  className="size-3.5 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+                Details
+              </summary>
               <p className="pb-1">Rule version {summary.consent_rule_version || "N/A"}</p>
             </details>
           </section>

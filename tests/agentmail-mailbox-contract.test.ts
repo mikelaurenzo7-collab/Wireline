@@ -61,7 +61,7 @@ describe("BotBound managed AgentMail contract", () => {
     expect(mailboxCard).not.toContain("@agentmail.to");
     expect(mailboxCard).toContain('accounts.filter((account) => account.provider !== "agentmail")');
     expect(mailboxCard).toContain('if (account.provider === "agentmail") return');
-    expect(mailboxCard).toMatch(/emailIncluded\s*\?\s*"Email & calendar"\s*:\s*"Calendar"/);
+    expect(mailboxCard).toMatch(/emailIncluded\s*\?\s*"Email & Calendar"\s*:\s*"Calendar"/);
     expect(mailboxCard).toContain('id: "google"');
     expect(mailboxCard).toContain('id: "microsoft"');
     expect(mailboxCard).toContain('id: "icloud"');

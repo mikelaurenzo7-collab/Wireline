@@ -184,7 +184,7 @@ describe("restored launch regression guards", () => {
     expect(kb).toMatch(
       /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown"/,
     );
-    expect(kb).toContain("TXT, MD, CSV, or images (PNG, JPG, WEBP, GIF)");
+    expect(kb).toContain("Text, Markdown, or CSV files, or PNG, JPG, WEBP, or GIF images");
     expect(kb).toContain("Image uploads are unavailable. Upload TXT, MD or CSV.");
     expect(kb).toContain("readAsset(file, imageUploadsAvailable)");
     expect(kb).not.toContain("PDF, DOCX, TXT, CSV");

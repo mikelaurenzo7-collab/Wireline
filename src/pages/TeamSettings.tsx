@@ -162,7 +162,7 @@ export default function TeamSettings() {
         <WorkspacePageIntro title="Team" titleHidden />
 
         {teamAccess === "restricted" ? (
-          <StatusNotice tone="info" title="Team access restricted">
+          <StatusNotice tone="info" title="Team Access Restricted">
             You do not have permission to manage this team.
           </StatusNotice>
         ) : null}

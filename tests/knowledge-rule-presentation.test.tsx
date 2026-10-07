@@ -75,7 +75,7 @@ describe("knowledge upload capabilities", () => {
       }>;
       expect(picker.props.accept).toContain(".txt,.csv,.md,.markdown");
       expect(picker.props.accept.includes("image/png")).toBe(available === true);
-      expect(text(rendered).includes("images (PNG, JPG, WEBP, GIF)")).toBe(available === true);
+      expect(text(rendered).includes("PNG, JPG, WEBP, or GIF images")).toBe(available === true);
     },
   );
 

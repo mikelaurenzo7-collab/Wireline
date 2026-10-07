@@ -135,10 +135,10 @@ for (const width of [1440, 390]) {
     );
     await expect(page.getByText("Total Spend", { exact: true })).toBeVisible();
     await expect(page.getByText("$0.12", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("No conversations yet", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("No Conversations Yet", { exact: true })).toHaveCount(0);
 
     await page.goto("/insights");
-    await expect(page.getByText("No conversations yet", { exact: true })).toBeVisible();
+    await expect(page.getByText("No Conversations Yet", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Create Bot", exact: true })).toBeVisible();
     await expect(page.getByText("Simulation allowance", { exact: true })).toHaveCount(0);
   });

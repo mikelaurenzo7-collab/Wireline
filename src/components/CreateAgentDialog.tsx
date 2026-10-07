@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ChevronDown, Loader2, WandSparkles, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, WandSparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { Button, Input, NativeSelect, Textarea } from "./atoms";
@@ -421,8 +421,8 @@ export default function CreateAgentDialog({
         aria-labelledby="create-agent-title"
       >
         <div className="shrink-0 border-b border-border px-3 py-4 sm:px-6 sm:py-5">
-          <div className="flex items-start justify-between gap-2 sm:gap-4">
-            <div className="flex min-w-0 items-start gap-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="min-w-0">
                 <h2
                   ref={headingRef}
@@ -467,9 +467,13 @@ export default function CreateAgentDialog({
               />
             </label>
 
-            <details open={initialTemplate.key !== "custom"}>
-              <summary className="min-h-11 cursor-pointer rounded-md py-3 text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                Use a Role Starter
+            <details className="group" open={initialTemplate.key !== "custom"}>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md py-3 text-sm font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                <ChevronRight
+                  className="size-4 shrink-0 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+                Start From a Role
               </summary>
               <NativeSelect
                 id="create-bot-role"

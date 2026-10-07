@@ -30,7 +30,7 @@ describe("self-service calling setup", () => {
     expect(setup).toContain("Enter a 3-digit area code");
     expect(setup).toContain('aria-label="Bot for this line"');
     expect(setup).toContain('aria-label="Selected line"');
-    expect(setup).toContain("Add line");
+    expect(setup).toContain("Add Line");
     expect(setup).toContain("Activate");
     expect(setup).toContain("Assigned Bot");
     expect(setup).not.toContain("Set up the complete call experience before going live.");

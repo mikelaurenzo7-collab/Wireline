@@ -70,14 +70,14 @@ export default function OutboundHub({
             <div className="flex flex-1 flex-col justify-center px-3 py-6 sm:px-6">
               <EmptyState
                 icon={Zap}
-                title="No Dispatch Queue"
+                title="No Calls Queued"
                 density="compact"
                 fill
                 titleTone="ui"
                 withHalo={false}
                 actions={[
                   {
-                    label: "Lead Hunt",
+                    label: "Find Leads",
                     onClick: () => onViewChange("campaigns"),
                     primary: true,
                   },

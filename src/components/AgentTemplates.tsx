@@ -43,12 +43,26 @@ import { isBotMarkKey } from "../lib/bot-mark";
 // Template definitions — unlocked starting points, not plan locks.
 // ────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Earlier template titles. A Bot keeps the name it was created with, so the
+ * "Deployed" count still recognizes Bots made from a template before it was
+ * renamed into plain language.
+ */
+const LEGACY_TEMPLATE_NAMES: Record<string, string> = {
+  "sales-sdr": "SDR: Outbound Prospecting",
+  "sales-closer": "Closer: Late Stage Deals",
+  "support-tier1": "Tier 1: General Support",
+  "marketing-survey": "NPS & Feedback Collector",
+};
+
+const CHANNEL_LABELS = { voice: "Voice", email: "Email" } as const;
+
 export const AGENT_TEMPLATES = [
   // === SALES & REVENUE ===
   {
     id: "sales-sdr",
     category: "Sales & Revenue",
-    name: "SDR: Outbound Prospecting",
+    name: "Outbound Sales Caller",
     description: "Qualifies prospects, books demos, and updates your CRM.",
     role: "sales",
     channel: "voice" as const,
@@ -61,7 +75,7 @@ export const AGENT_TEMPLATES = [
   {
     id: "sales-closer",
     category: "Sales & Revenue",
-    name: "Closer: Late Stage Deals",
+    name: "Deal Closer",
     description: "Follows up with warm leads and answers pricing questions.",
     role: "sales",
     channel: "voice" as const,
@@ -80,7 +94,7 @@ export const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Filter,
     accent: BRAND.colors.primary,
-    badge: "Inbound",
+    badge: null,
     firstMessage:
       "Thanks for calling! Before I connect you with our team, let me gather a bit of information to make sure we're the right fit for you.",
   },
@@ -88,7 +102,7 @@ export const AGENT_TEMPLATES = [
   {
     id: "support-tier1",
     category: "Customer Support",
-    name: "Tier 1: General Support",
+    name: "General Support",
     description: "Answers common questions and hands off when needed.",
     role: "customer_service",
     channel: "voice" as const,
@@ -115,7 +129,7 @@ export const AGENT_TEMPLATES = [
     id: "scheduler-medical",
     category: "Scheduling",
     name: "Medical Office Scheduler",
-    description: "Coordinates appointment scheduling for approved healthcare deployments.",
+    description: "Books and reschedules patient appointments for approved practices.",
     role: "scheduler",
     channel: "voice" as const,
     icon: Calendar,
@@ -148,7 +162,7 @@ export const AGENT_TEMPLATES = [
     channel: "voice" as const,
     icon: Building2,
     accent: BRAND.colors.primary,
-    badge: "Real Estate",
+    badge: null,
     firstMessage:
       "Hi, I'm following up about a property you asked about. Would you like to review details or request a showing time?",
   },
@@ -200,7 +214,7 @@ export const AGENT_TEMPLATES = [
   {
     id: "marketing-survey",
     category: "Marketing",
-    name: "NPS & Feedback Collector",
+    name: "Customer Feedback Caller",
     description: "Collects satisfaction scores and customer feedback.",
     role: "marketing",
     channel: "voice" as const,
@@ -402,10 +416,8 @@ function TemplateCard({
             )}
             <span
               className={cn(
-                // `capitalize` was covering for the label tier: the channel is a
-                // raw enum ("voice", "email"), and with `.wl-label` declaring
-                // nothing it rendered as a lowercase word at full body size.
-                // The tier casts it now, so the workaround only fought it.
+                // The channel is a raw enum ("voice", "email"); its visible
+                // label comes from CHANNEL_LABELS, not from text-transform.
                 "px-1.5 py-0.5 rounded-full border wl-label leading-none",
                 template.channel === "email"
                   ? "bg-muted border-border text-foreground/70"
@@ -413,7 +425,7 @@ function TemplateCard({
                 alreadyDeployed && "hidden sm:inline-flex",
               )}
             >
-              {template.channel}
+              {CHANNEL_LABELS[template.channel]}
             </span>
             {template.badge && (
               // whitespace-nowrap: a pill that wraps mid-phrase ("EVERYDAY ·
@@ -431,13 +443,13 @@ function TemplateCard({
           </h3>
           <p className="text-xs text-foreground/70 leading-relaxed mt-1">{template.description}</p>
           {selfServeRestriction ? (
-            <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-foreground/60">
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
               {selfServeRestriction}
             </p>
           ) : null}
         </div>
 
-        <details>
+        <details className="mt-auto">
           <summary className="min-h-11 cursor-pointer rounded-md py-3 text-xs font-medium text-foreground/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Sample Greeting
           </summary>
@@ -452,10 +464,10 @@ function TemplateCard({
         <ShadButton
           type="button"
           disableAnimations
-          variant="secondary"
+          variant="outline"
           onClick={() => onDeploy(template)}
           disabled={deploying || !selfServeAvailable}
-          className="w-full !py-2 !text-[length:var(--wireline-typography-overline-size)] !tracking-normal flex items-center justify-center gap-2 shadow-sm"
+          className="w-full flex items-center justify-center gap-2"
           aria-label={
             selfServeAvailable
               ? `${alreadyDeployed ? "Use again" : "Use"} ${template.name} template`
@@ -465,9 +477,9 @@ function TemplateCard({
           {deploying ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : null}
           {selfServeAvailable
             ? alreadyDeployed
-              ? "Use again"
-              : "Use template"
-            : "Review required"}
+              ? "Use Again"
+              : "Use Template"
+            : "Review Required"}
         </ShadButton>
       </div>
     </motion.article>
@@ -690,7 +702,12 @@ export default function AgentTemplates() {
                     template={template}
                     onDeploy={handleOpenDeploy}
                     deploying={deploying === template.id}
-                    deployedCount={deployedCounts.get(template.name.toLowerCase()) ?? 0}
+                    deployedCount={
+                      (deployedCounts.get(template.name.toLowerCase()) ?? 0) +
+                      (deployedCounts.get(
+                        LEGACY_TEMPLATE_NAMES[template.id]?.toLowerCase() ?? "",
+                      ) ?? 0)
+                    }
                   />
                 ))}
               </AnimatePresence>

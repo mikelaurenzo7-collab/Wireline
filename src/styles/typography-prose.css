@@ -225,7 +225,7 @@ html.light .prose {
 .wl-lead {
   font-size: clamp(0.9375rem, 0.875rem + 0.3vw, 1.125rem);
   line-height: 1.6;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .wl-body {

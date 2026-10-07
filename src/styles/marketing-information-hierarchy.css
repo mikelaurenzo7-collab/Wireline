@@ -18,7 +18,7 @@
 /* A title and its explanation should never read like two equal-weight lines. */
 .marketing-surface :where(.wl-paper, .wl-stitch-card, article) > h3 + p,
 .marketing-surface :where(.wl-paper, .wl-stitch-card, article) > div + p {
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* Trust points were the clearest mobile hierarchy miss: 14px heading over
@@ -34,7 +34,7 @@
   max-width: 31ch;
   font-size: 0.8125rem;
   line-height: 1.55;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* Mobile trust points belong to one system, but each idea needs a visible
@@ -63,7 +63,7 @@
 }
 
 .wl-pricing-page #plans article ul li > span {
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* Reusable list language for marketing cards that contain multiple facts.

@@ -105,8 +105,8 @@ describe("authenticated minimal copy contract", () => {
       /placeholder=\{\s*mode === "test" \? "Ask as a customer…" : "([^"]+)"/,
     )?.[1];
 
-    expect(emptyHeading).toContain("Try a customer question");
-    expect(emptyHeading).toContain("What should we change?");
+    expect(emptyHeading).toContain("Try a Customer Question");
+    expect(emptyHeading).toContain("What Should We Change?");
     expect(emptyHeading).not.toMatch(/Describe What Should Change/i);
     expect(emptyHeading).not.toMatch(/describe what should change/i);
     expect(composerPlaceholder).toBe("Describe what should change");

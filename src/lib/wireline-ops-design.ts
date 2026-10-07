@@ -110,7 +110,7 @@ export const OPS_CHANNEL_EMPTY = {
   email: {
     title: "No Threads Yet",
     actions: [
-      { label: "Connect email", to: "/connections", primary: true },
+      { label: "Connect Email", to: "/connections", primary: true },
       { label: "Open Studio", to: "/studio" },
     ],
   },
@@ -433,7 +433,7 @@ export const OPS_CHANNEL_TOOLBAR = {
     stat: (n: number) => `${n} blocked`,
     refresh: "Refresh",
     import: "Import CSV",
-    add: "Add number",
+    add: "Add Number",
   },
 } as const;
 
@@ -456,19 +456,19 @@ export const OPS_ADMIN = {
   tabLabels: {
     accounts: "Accounts",
     branding: "Branding",
-    carrier: "Carrier & routing",
+    carrier: "Carrier & Routing",
     subscription: "Billing",
-    team: "Team access",
-    flywheel: "Growth engine",
-    system: "System health",
-    activity: "Audit activity",
+    team: "Team Access",
+    flywheel: "Growth Engine",
+    system: "System Health",
+    activity: "Audit Activity",
   },
   saveLabels: {
-    branding: "Save branding",
-    carrier: "Save carrier settings",
-    carrierMessaging: "Save messaging config",
-    subscription: "Save billing",
-    growth: "Save growth settings",
+    branding: "Save Branding",
+    carrier: "Save Carrier Settings",
+    carrierMessaging: "Save Messaging Settings",
+    subscription: "Save Billing",
+    growth: "Save Growth Settings",
   },
 } as const;
 

@@ -496,7 +496,7 @@
   color: var(--wireline-color-text-secondary);
   font-size: 0.92rem;
   line-height: 1.55;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 .landing-prestige__role-card ul {

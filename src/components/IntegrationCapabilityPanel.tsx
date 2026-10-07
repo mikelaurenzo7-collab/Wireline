@@ -50,7 +50,7 @@ export default function IntegrationCapabilityPanel({
   return (
     <div className={cn("space-y-3", compact && "space-y-2")} data-accent={accentColor}>
       {!compact && (
-        <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/90 leading-relaxed text-pretty border-l-2 pl-2.5 wl-accent-border-l">
+        <p className="text-[length:var(--wireline-typography-overline-size)] text-foreground/90 leading-relaxed text-balance border-l-2 pl-2.5 wl-accent-border-l">
           {playbook.headline}
         </p>
       )}
@@ -70,7 +70,7 @@ export default function IntegrationCapabilityPanel({
                 <Phone className="w-3 h-3 shrink-0 mt-0.5 wl-accent-text" aria-hidden />
                 <p
                   className={cn(
-                    "text-foreground font-medium leading-snug text-pretty",
+                    "text-foreground font-medium leading-snug text-balance",
                     compact ? "text-sm" : "text-eyebrow",
                   )}
                 >
@@ -81,7 +81,7 @@ export default function IntegrationCapabilityPanel({
                 <Zap className="w-3 h-3 text-brand/80 shrink-0 mt-0.5" aria-hidden />
                 <p
                   className={cn(
-                    "leading-relaxed text-pretty",
+                    "leading-relaxed text-balance",
                     compact ? "text-sm text-muted-foreground" : "wl-micro-meta text-muted/80",
                   )}
                 >

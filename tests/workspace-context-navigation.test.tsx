@@ -336,7 +336,7 @@ describe("Bot context across workspace pages", () => {
   it("opens the selected Bot's line without overriding manual line or form choices on roster refresh", async () => {
     await loadLines();
     expect(text(selectedLine())).toContain("Bravo");
-    button("Add line").props.onClick!();
+    button("Add Line").props.onClick!();
     expect(formBot().props.value).toBe("bot-b");
     formBot().props.onValueChange!("bot-a");
     elements(phone()).find((node) => node.type === "button" && text(node).includes("Alpha"))!.props
@@ -348,7 +348,7 @@ describe("Bot context across workspace pages", () => {
     phone();
     h.preferred = "bot-b";
     expect(formBot()).toBeUndefined();
-    button("Add line").props.onClick!();
+    button("Add Line").props.onClick!();
     expect(formBot().props.value).toBe("bot-b");
     expect(text(selectedLine())).toContain("Bravo");
     expect(h.fetch).toHaveBeenCalledTimes(2);
@@ -364,7 +364,7 @@ describe("Bot context across workspace pages", () => {
     ];
     h.agentsLoading = false;
     expect(text(selectedLine())).toContain("Bravo");
-    button("Add line").props.onClick!();
+    button("Add Line").props.onClick!();
     expect(formBot().props.value).toBe("bot-b");
   });
 
@@ -377,7 +377,7 @@ describe("Bot context across workspace pages", () => {
     expect(elements(phone()).some((node) => node.props["aria-label"] === "Add phone line")).toBe(
       false,
     );
-    expect(button("Add line")).toBeDefined();
+    expect(button("Add Line")).toBeDefined();
     expect(h.fetch).toHaveBeenCalledTimes(2);
   });
 
@@ -404,7 +404,7 @@ describe("Bot context across workspace pages", () => {
 
   it("keeps provisioning focused on the chosen Bot even when Studio initially selected another", async () => {
     await loadLines();
-    button("Add line").props.onClick!();
+    button("Add Line").props.onClick!();
     formBot().props.onValueChange!("bot-a");
     h.fetch.mockImplementation(
       async (path: string, options?: RequestInit) =>

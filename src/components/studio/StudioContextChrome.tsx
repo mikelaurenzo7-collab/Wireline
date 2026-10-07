@@ -109,13 +109,19 @@ export default function StudioContextChrome() {
             </Button>
           ) : null}
           {readyLabel ? (
+            // Status, not a control: quiet text with a state dot, so it never
+            // reads as a third, disabled button between the real ones.
             <span
-              className={`hidden min-h-8 items-center rounded-md border px-2.5 font-mono text-[9px] font-semibold uppercase tracking-[0.1em] md:inline-flex ${
-                lineStatus === "live"
-                  ? "border-[var(--wireline-color-feedback-success-border)] bg-[var(--wireline-color-feedback-success-surface)] text-foreground"
-                  : "border-border bg-muted/50 text-muted-foreground"
+              className={`hidden items-center gap-1.5 px-2 text-xs font-medium md:inline-flex ${
+                lineStatus === "live" ? "text-foreground" : "text-muted-foreground"
               }`}
             >
+              <span
+                aria-hidden="true"
+                className={`size-1.5 rounded-full ${
+                  lineStatus === "live" ? "bg-[var(--wireline-color-status-success)]" : "bg-current"
+                }`}
+              />
               {readyLabel}
             </span>
           ) : null}

@@ -109,7 +109,7 @@ describe("authenticated Bot navigation contract", () => {
 
   it("makes Fast Start brief-first, posture-neutral, and free of provider complexity", () => {
     expect(create).toContain("language.setupPrompt");
-    expect(create).toContain("Use a Role Starter");
+    expect(create).toContain("Start From a Role");
     expect(create).toContain("language.createCta");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("BOT_CHANNELS.map");

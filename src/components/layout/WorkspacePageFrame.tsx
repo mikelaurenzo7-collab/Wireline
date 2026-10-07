@@ -102,7 +102,7 @@ export function WorkspacePageIntro({
         {description ? (
           <p
             className={cn(
-              "max-w-prose text-pretty text-sm leading-relaxed text-muted-foreground",
+              "max-w-prose text-balance text-sm leading-relaxed text-muted-foreground",
               !titleHidden && "mt-2",
               titleHidden === "lg" && "mt-2 lg:mt-0",
               !start && "mx-auto text-center",

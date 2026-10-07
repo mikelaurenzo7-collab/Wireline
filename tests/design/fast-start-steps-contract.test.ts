@@ -9,7 +9,7 @@ describe("Fast Start brief-first flow contract", () => {
 
   it("keeps creation on one brief-first screen with optional role starters", () => {
     expect(create).toContain("{language.setupPrompt}");
-    expect(create).toContain("Use a Role Starter");
+    expect(create).toContain("Start From a Role");
     expect(create).not.toContain("{language.setupDescription}");
     expect(create).toContain("BOT_ROLE_TEMPLATES.map");
     expect(create).toContain("BOT_CHANNELS.map");

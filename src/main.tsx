@@ -13,6 +13,7 @@ import {
 } from "./lib/dom-reconciliation-recovery";
 import { captureException } from "./lib/sentry";
 import { canonicalLegacyBrowserHandoff } from "./lib/canonical-browser-origin";
+import { installLongCopyWrap } from "./lib/long-copy-wrap";
 
 // One CSS entrypoint owns the complete design-system cascade. Keeping the
 // import graph centralized prevents duplicated foundations and order drift.
@@ -84,4 +85,5 @@ if (!legacyBrowserHandoffUrl) {
       </ErrorBoundary>
     </StrictMode>,
   );
+  installLongCopyWrap();
 }

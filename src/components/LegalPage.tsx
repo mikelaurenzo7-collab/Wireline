@@ -106,7 +106,9 @@ export function TermsOfService() {
       summary={[
         "Customers control their agents, knowledge, and authorized voice data.",
         "Outbound calling compliance remains a shared operating responsibility.",
-        "The first paid invoice carries a 30-day money-back guarantee.",
+        // Non-breaking hyphens keep "30-day" and "money-back" whole in this
+        // narrow centered card.
+        "The first paid invoice carries a 30\u2011day money\u2011back guarantee.",
       ]}
     >
       <PageMeta title="Terms of Service" description={ACCOUNT_TERMS_DESCRIPTION} path="/terms" />

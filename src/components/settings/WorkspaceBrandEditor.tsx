@@ -127,7 +127,7 @@ export default function WorkspaceBrandEditor({
             </p>
           ) : null}
           <Button type="button" onClick={onSave} disabled={isSaving || isLoading || !validColor}>
-            {isLoading ? "Loading…" : isSaving ? "Saving…" : "Save branding"}
+            {isLoading ? "Loading…" : isSaving ? "Saving…" : "Save Branding"}
           </Button>
         </fieldset>
 

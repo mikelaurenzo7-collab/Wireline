@@ -51,7 +51,7 @@ export function SectionHeader({
             {title}
           </h3>
           {description && (
-            <p className="mt-1.5 max-w-prose break-words text-pretty text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
+            <p className="mt-1.5 max-w-prose break-words text-balance text-[length:var(--wireline-typography-caption-size)] leading-relaxed text-muted-foreground">
               {description}
             </p>
           )}

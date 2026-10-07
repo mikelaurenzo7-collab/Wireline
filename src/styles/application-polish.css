@@ -46,7 +46,8 @@
   align-items: center;
 }
 
-.wl-ui-caps [data-slot="status-notice"] > div {
+/* Cap the reading column only: the action stays pinned to the notice's edge. */
+.wl-ui-caps [data-slot="status-notice"] > div > div:first-child {
   max-width: 44rem;
 }
 

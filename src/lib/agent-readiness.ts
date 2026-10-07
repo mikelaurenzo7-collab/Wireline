@@ -26,7 +26,7 @@ const LINE_STATUS_LABELS: Record<AgentLineStatus, string> = {
   // Matches the vocabulary already used for the other degraded notices rather
   // than inventing a third way to say the same thing.
   unavailable: "Status unavailable",
-  "needs-setup": "No live line",
+  "needs-setup": "No phone number",
 };
 
 export function agentReadinessLabel(

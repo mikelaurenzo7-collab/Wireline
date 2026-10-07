@@ -639,7 +639,7 @@ const StudioWorkroom = forwardRef<
             ) : (
               <div className="mx-auto flex h-full min-h-52 max-w-md flex-col items-center justify-center gap-3 py-8 text-center">
                 <h2 className="text-2xl font-semibold text-foreground">
-                  {mode === "test" ? "Try a customer question" : "What should we change?"}
+                  {mode === "test" ? "Try a Customer Question" : "What Should We Change?"}
                 </h2>
                 {mode === "test" ? (
                   <p className="text-sm text-muted-foreground">
@@ -654,7 +654,10 @@ const StudioWorkroom = forwardRef<
         <div className="shrink-0 border-t border-border/70 bg-background px-3 pb-[max(0.6rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
           <div className="mx-auto max-w-3xl">
             {showStarterPrompts ? (
-              <div className="mb-3 flex flex-wrap gap-2" aria-label="Starter prompts">
+              <div
+                className="-mx-3 mb-3 flex gap-2 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0"
+                aria-label="Starter prompts"
+              >
                 {quickPrompts.slice(0, 3).map((prompt) => (
                   <button
                     key={prompt}
@@ -663,7 +666,7 @@ const StudioWorkroom = forwardRef<
                       setDraft(prompt);
                       requestAnimationFrame(() => inputRef.current?.focus());
                     }}
-                    className={`${WL_COMPOSER_CLASSES.starterChip} max-w-full whitespace-normal text-left`}
+                    className={`${WL_COMPOSER_CLASSES.starterChip} shrink-0 whitespace-nowrap`}
                   >
                     {prompt}
                   </button>

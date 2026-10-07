@@ -83,7 +83,7 @@ function render() {
   for (const node of tree) {
     if (!node.props.ref) continue;
     if (node.props["aria-label"] === "Campaign name") node.props.ref.current = nameTarget;
-    if (node.type === "button" && text(node) === "Create campaign")
+    if (node.type === "button" && text(node) === "Create Campaign")
       node.props.ref.current = createTarget;
     domRefs.push(node.props.ref);
   }
@@ -92,7 +92,7 @@ function render() {
 }
 function open() {
   render()
-    .find((node) => node.type === "button" && text(node) === "Create campaign")
+    .find((node) => node.type === "button" && text(node) === "Create Campaign")
     ?.props.onClick?.();
   return render();
 }

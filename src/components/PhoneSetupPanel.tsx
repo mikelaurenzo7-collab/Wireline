@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, MapPin, Phone, Plus } from "lucide-react";
+import { Check, ChevronRight, MapPin, Phone, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 import { Button, EmptyState } from "./atoms";
@@ -409,7 +409,7 @@ export default function PhoneSetupPanel({
             disabled={loading || inventoryUnavailable || working}
           >
             <Plus className="size-4" aria-hidden="true" />
-            Add line
+            Add Line
           </Button>
         </div>
       ) : null}
@@ -460,7 +460,7 @@ export default function PhoneSetupPanel({
           action={
             <Button type="button" onClick={() => setAddingLine(true)}>
               <Plus className="size-4" aria-hidden="true" />
-              Add line
+              Add Line
             </Button>
           }
         />
@@ -743,9 +743,13 @@ export default function PhoneSetupPanel({
         </div>
       ) : null}
 
-      <details className="rounded-xl border border-border bg-card">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-foreground">
-          Use an existing number
+      <details className="group rounded-xl border border-border bg-card">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
+          Use an Existing Number
         </summary>
         <div className="space-y-2 border-t border-border p-4 text-sm text-muted-foreground">
           <p>
@@ -765,12 +769,16 @@ export default function PhoneSetupPanel({
       <details
         ref={companyIdentityRef}
         id="company-identity"
-        className="rounded-xl border border-border bg-card"
+        className="group rounded-xl border border-border bg-card"
         data-visual-qa-state={
           location.hash === "#company-identity" ? "company-identity" : undefined
         }
       >
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+          <ChevronRight
+            className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none"
+            aria-hidden="true"
+          />
           Caller Identity
         </summary>
         <div className="border-t border-border p-4">
