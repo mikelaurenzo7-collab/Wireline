@@ -52,13 +52,12 @@ async function publicMetrics(page: Page) {
     const header = document.querySelector<HTMLElement>(".marketing-surface > header");
     const accountNav = document.querySelector<HTMLElement>('nav[aria-label="Account"]');
     const prestigeMain = document.querySelector<HTMLElement>(".landing-prestige__main");
-    const prestigeEntrance = document.querySelector<HTMLElement>(".landing-prestige__entrance");
     const prestigeHero = document.querySelector<HTMLElement>(".landing-prestige__hero");
-    const prestigeAuth = document.querySelector<HTMLElement>(".landing-prestige__auth");
-    const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
-    const prestigeMobileLinks = document.querySelector<HTMLElement>(
-      ".landing-prestige__mobile-links",
+    const prestigeTitle = document.querySelector<HTMLElement>(".landing-prestige__hero h1");
+    const prestigeActions = document.querySelector<HTMLElement>(
+      ".landing-prestige__hero .landing-prestige__actions",
     );
+    const prestigeDirections = document.querySelector<HTMLElement>(".landing-prestige__directions");
     const startFree = Array.from(document.querySelectorAll<HTMLAnchorElement>("a")).find(
       (link) => link.textContent?.trim() === "Start Free",
     );
@@ -70,9 +69,9 @@ async function publicMetrics(page: Page) {
     const accountRect = rect(accountNav);
     const startRect = rect(startFree);
     const prestigeMainRect = rect(prestigeMain);
-    const prestigeEntranceRect = rect(prestigeEntrance);
     const prestigeHeroRect = rect(prestigeHero);
-    const prestigeAuthRect = rect(prestigeAuth);
+    const prestigeTitleRect = rect(prestigeTitle);
+    const prestigeActionsRect = rect(prestigeActions);
     const prestigeDirectionsRect = rect(prestigeDirections);
 
     return {
@@ -95,19 +94,17 @@ async function publicMetrics(page: Page) {
       startRight: startRect?.right ?? 0,
       prestigeMainLeft: prestigeMainRect?.left ?? 0,
       prestigeMainRight: prestigeMainRect?.right ?? 0,
-      prestigeEntranceLeft: prestigeEntranceRect?.left ?? 0,
-      prestigeEntranceRight: prestigeEntranceRect?.right ?? 0,
       prestigeHeroWidth: prestigeHeroRect?.width ?? 0,
       prestigeHeroHeight: prestigeHeroRect?.height ?? 0,
-      prestigeAuthWidth: prestigeAuthRect?.width ?? 0,
-      prestigeAuthHeight: prestigeAuthRect?.height ?? 0,
+      prestigeTitleLeft: prestigeTitleRect?.left ?? -1,
+      prestigeTitleRight: prestigeTitleRect?.right ?? Number.POSITIVE_INFINITY,
+      prestigeTitleCenter: prestigeTitleRect
+        ? prestigeTitleRect.left + prestigeTitleRect.width / 2
+        : 0,
+      prestigeActionsBottom: prestigeActionsRect?.bottom ?? Number.POSITIVE_INFINITY,
       prestigeDirectionsWidth: prestigeDirectionsRect?.width ?? 0,
       prestigeDirectionsHeight: prestigeDirectionsRect?.height ?? 0,
-      prestigeEntranceDisplay: prestigeEntrance ? getComputedStyle(prestigeEntrance).display : "",
       prestigeHeroDisplay: prestigeHero ? getComputedStyle(prestigeHero).display : "",
-      prestigeMobileLinksDisplay: prestigeMobileLinks
-        ? getComputedStyle(prestigeMobileLinks).display
-        : "",
       viewportHeight: window.innerHeight,
       viewportWidth: window.innerWidth,
     };
@@ -145,14 +142,12 @@ for (const { path, name } of PUBLIC_ROUTES) {
 
     expect(metrics.viewportMode).toBe("document");
     if (path === "/") {
-      expectDocumentInsideViewport(metrics, name);
-      expect(metrics.prestigeEntranceDisplay).toBe("grid");
+      expectNoHorizontalEscape(metrics, name);
+      expect(metrics.headerPosition).toBe("fixed");
+      expect(metrics.prestigeHeroDisplay).toBe("grid");
       expect(metrics.prestigeMainLeft).toBeGreaterThanOrEqual(-2);
       expect(metrics.prestigeMainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
-      expect(metrics.prestigeEntranceLeft).toBeGreaterThanOrEqual(-2);
-      expect(metrics.prestigeEntranceRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
-      expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
-      expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
+      expect(metrics.prestigeHeroWidth).toBeGreaterThan(metrics.viewportWidth - 4);
     } else {
       expect(metrics.flowOverflowY).toBe("visible");
       expect(metrics.surfaceOverflow).toBe("visible");
@@ -223,28 +218,38 @@ test("home presents a professional desktop buying frame", async ({ page }) => {
   await page.setViewportSize({ width: 1365, height: 900 });
   await openPublicRoute(page, "/");
 
-  await expect(page.locator(".landing-prestige__entrance")).toBeVisible();
+  await expect(page.locator(".landing-prestige__hero")).toBeVisible();
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Hire a Voice Bot. With Its Own Number." }),
+    page.getByRole("heading", {
+      name: "Voice Bots With a Computer, Phone Number, and Branded Email.",
+    }),
   ).toBeVisible();
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
   await expect(directions.getByText("Find. Call. Book.", { exact: true })).toBeVisible();
   await expect(directions.getByText("Answer. Qualify. Route.", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
+  // Account access is one action away instead of a split-screen form.
+  await expect(page.getByRole("region", { name: "Account access" })).toHaveCount(0);
+  const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
+  await expect(actions.getByRole("link", { name: "Start Free" })).toHaveAttribute(
+    "href",
+    /\/signup\?[^\s]*plan=free/,
+  );
+  await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toHaveAttribute(
+    "href",
+    "/signin",
+  );
   await expect(
-    page.getByRole("heading", { name: "Pick the Work. Put a Bot on It" }),
+    page.getByRole("heading", { name: "Pick the Work. Put a Bot on It." }),
   ).toBeAttached();
 
   const metrics = await publicMetrics(page);
-  expectDocumentInsideViewport(metrics, "desktop home");
-  expect(metrics.prestigeHeroWidth).toBeGreaterThan(540);
-  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(900);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(540);
-  expect(metrics.prestigeAuthHeight).toBeGreaterThanOrEqual(900);
+  expectNoHorizontalEscape(metrics, "desktop home");
+  // The centered promise and both actions land above the fold.
+  expect(Math.abs(metrics.prestigeTitleCenter - metrics.viewportWidth / 2)).toBeLessThan(24);
+  expect(metrics.prestigeActionsBottom).toBeLessThanOrEqual(metrics.viewportHeight);
   expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
 });
 
@@ -253,10 +258,10 @@ test("home remains usable on a short laptop", async ({ page }) => {
   await openPublicRoute(page, "/");
   const metrics = await publicMetrics(page);
 
-  expectDocumentInsideViewport(metrics, "short-laptop home");
-  expect(metrics.prestigeHeroWidth).toBeGreaterThan(500);
-  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(800);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(500);
+  expectNoHorizontalEscape(metrics, "short-laptop home");
+  expect(metrics.prestigeTitleLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
+  expect(metrics.prestigeActionsBottom).toBeLessThanOrEqual(metrics.viewportHeight);
   expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
   expect(metrics.prestigeDirectionsWidth).toBeGreaterThan(240);
 });
@@ -269,24 +274,17 @@ test("home keeps the BotBound promise and account path in one mobile flow", asyn
   await expect(
     page.locator(".landing-prestige__getting-started, .landing-prestige__steps"),
   ).toHaveCount(0);
-  await expect(page.locator(".landing-prestige__desktop-only").first()).toBeVisible();
-  await expect(page.getByRole("region", { name: "Account access" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Create Account", exact: true })).toBeVisible();
-  await expect(
-    page
-      .getByRole("group", { name: "Account access mode" })
-      .getByRole("button", { name: "Create Account", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Public information" })).toBeVisible();
+  await expect(page.locator("#solutions")).toBeAttached();
+  await expect(page.locator("#pricing")).toBeAttached();
+  const actions = page.locator(".landing-prestige__hero .landing-prestige__actions");
+  await expect(actions.getByRole("link", { name: "Start Free" })).toBeInViewport();
+  await expect(actions.getByRole("link", { name: "Sign In", exact: true })).toBeInViewport();
 
   const metrics = await publicMetrics(page);
-  expectDocumentInsideViewport(metrics, "phone home");
-  expect(metrics.prestigeEntranceDisplay).toBe("flex");
+  expectNoHorizontalEscape(metrics, "phone home");
   expect(metrics.prestigeHeroDisplay).toBe("grid");
-  expect(metrics.prestigeHeroWidth).toBeGreaterThan(320);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(320);
-  expect(metrics.prestigeAuthWidth).toBeLessThanOrEqual(metrics.viewportWidth);
-  expect(metrics.prestigeMobileLinksDisplay).toBe("flex");
+  expect(metrics.prestigeTitleLeft).toBeGreaterThanOrEqual(0);
+  expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
 });
 
 test("home direction choices fit the narrowest supported width", async ({ page }) => {
@@ -319,10 +317,8 @@ test("home remains composed on a short wide desktop", async ({ page }) => {
   await openPublicRoute(page, "/");
   const metrics = await publicMetrics(page);
 
-  expectDocumentInsideViewport(metrics, "short-wide home");
-  expect(metrics.prestigeHeroWidth).toBeGreaterThan(580);
-  expect(metrics.prestigeHeroHeight).toBeGreaterThanOrEqual(720);
-  expect(metrics.prestigeAuthWidth).toBeGreaterThan(580);
+  expectNoHorizontalEscape(metrics, "short-wide home");
+  expect(metrics.prestigeTitleRight).toBeLessThanOrEqual(metrics.viewportWidth);
   expect(metrics.prestigeDirectionsHeight).toBeGreaterThanOrEqual(44);
 });
 

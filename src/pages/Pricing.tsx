@@ -135,8 +135,10 @@ export default function Pricing() {
             </p>
           </div>
           <div className="mx-auto max-w-2xl">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">Plans from $9/month</p>
+            <div className="wl-pricing-interval-row mb-4 flex flex-wrap items-center justify-center gap-3 sm:justify-between">
+              <p className="w-full text-center text-sm text-muted-foreground sm:w-auto sm:text-left">
+                Plans from $9/month
+              </p>
               <BillingIntervalControl
                 value={billingInterval}
                 onChange={(interval) => {

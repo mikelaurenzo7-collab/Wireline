@@ -16,13 +16,12 @@ describe("home landing launch clarity", () => {
     expect(landing).not.toContain('variant="stage"');
     expect(landing).not.toContain("Illustrative Workflow");
     expect(landing).not.toContain("Booked and logged");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
-    expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number.");
-    expect(css).toContain(".landing-prestige__entrance");
-    expect(css).toContain(".landing-prestige__desktop-only");
+    expect(landing).not.toContain("<AuthAccessPanel");
+    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain("<span>With a Computer,</span>");
+    expect(landing).toContain("<span>and Branded Email.</span>");
+    expect(css).toContain(".landing-prestige__hero-mark");
+    expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
     expect(landing).not.toContain("00:42");
   });
 
@@ -56,8 +55,7 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.price_usd_monthly");
     expect(landing).toContain('id === "email"');
     expect(landing).toContain("canActivate(id)");
-    expect(landing).toContain("Add its own email inbox and SMS.");
-    expect(landing).toContain("Build and test free. No card required.");
+    expect(landing).toContain("<span>Build and test free.</span> <span>No card required.</span>");
     expect(landing).not.toMatch(/coming soon/i);
     expect(landing.indexOf('className="landing-prestige__direction is-inbound"')).toBeLessThan(
       landing.indexOf('className="landing-prestige__direction is-outbound"'),

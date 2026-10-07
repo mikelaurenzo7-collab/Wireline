@@ -37,6 +37,13 @@
   text-rendering: geometricPrecision;
 }
 
+/* The shared public bar carries the wordmark alone; the phone-Bot mascot is
+ * reserved for the home hero so the brand appears once per screen. */
+.wl-public-header .bb-wordmark.wl-public-header__wordmark {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
 .bb-wordmark__bot {
   color: currentColor;
 }

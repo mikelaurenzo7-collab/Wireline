@@ -108,8 +108,12 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
       "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Build and test free.",
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("Hire a Voice Bot.");
-    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain("With Its Own Number.");
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
+      "<span>With a Computer,</span>",
+    );
+    expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(
+      "<span>and Branded Email.</span>",
+    );
     expect(read("src/pages/Compare.tsx")).toContain("feature-for-feature");
   });
 });

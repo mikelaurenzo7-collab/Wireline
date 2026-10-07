@@ -321,6 +321,13 @@
     justify-content: center;
   }
 
+  /* Left-aligned columns keep their titles on the same edge as the body copy;
+   * centering only the title split one card into two alignments. */
+  .marketing-surface :where([class*="text-left"]) :where(.grid) .wl-card-title,
+  .marketing-surface :where([class*="text-left"]) :where(.grid) .wl-display-4 {
+    justify-content: flex-start;
+  }
+
   .marketing-surface :where(.grid) :where([class*="text-left"]) :where(.wl-card-title) {
     justify-content: flex-start;
   }

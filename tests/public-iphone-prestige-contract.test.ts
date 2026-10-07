@@ -20,7 +20,7 @@ describe("BotBound public iPhone prestige contract", () => {
     );
 
     expect(landing).toMatch(
-      /<h1[^>]*>[\s\S]*?<span>Hire a Voice Bot\.<\/span>[\s\S]*?<span>With Its Own Number\.<\/span>[\s\S]*?<\/h1>/,
+      /<h1[^>]*>[\s\S]*?<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*?<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>[\s\S]*?<\/h1>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -33,31 +33,23 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const css = read("src/styles/landing-prestige.css");
 
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
-    expect(landing).not.toContain("PrecisionPublicHeader");
+    expect(landing).not.toContain("<AuthAccessPanel");
+    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain('to="/signin"');
+    expect(landing).toContain("<PrecisionPublicHeader />");
     expect(css).toMatch(
-      /\.landing-prestige__entrance\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
     );
     expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(css).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
+      /@media \(max-width: 520px\)[\s\S]*?\.landing-prestige__directions\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
     expect(css).toMatch(
       /@media \(max-width: 640px\)[\s\S]*?\.landing-prestige__role-grid,[\s\S]*?\.landing-prestige__price-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/,
     );
-    expect(css).not.toMatch(
-      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
-    );
+    expect(css).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
   });
 
   it("uses the real shared auth implementation and removes audience classification from account entry", () => {
@@ -94,7 +86,8 @@ describe("BotBound public iPhone prestige contract", () => {
     expect(accessStyles).toContain(
       ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) :is(h1, h2)",
     );
-    expect(mobileStyles).toContain(".landing-prestige__auth .wl-access-panel__heading :is(h1, h2)");
+    // The home page no longer embeds account access; its old mobile overrides must not linger.
+    expect(mobileStyles).not.toContain(".landing-prestige__auth");
     expect(accessStyles).not.toContain(
       ".wl-access-panel__heading:has(+ .wl-access-panel__tabs) h1",
     );
@@ -134,7 +127,7 @@ describe("BotBound public iPhone prestige contract", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     const product = read("src/lib/bot-product.ts");
 
-    expect(landing).toContain("Pick the Work. Put a Bot on It");
+    expect(landing).toContain("<span>Pick the Work.</span> <span>Put a Bot on It.</span>");
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("DIRECTION_LABELS[template.direction]");
     expect(landing).not.toContain("template.category");
@@ -155,9 +148,6 @@ describe("BotBound public iPhone prestige contract", () => {
     const mobile = read("src/styles/public-mobile-refinement.css");
     const indexCss = read("src/index.css");
 
-    expect(mobile).toMatch(
-      /\.landing-prestige__auth \.wl-access-panel__card\s*\{[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;[\s\S]*?box-shadow:\s*none;/,
-    );
     expect(mobile).toContain('[aria-label="Privacy Policy summary"]');
     expect(mobile).toContain("#privacy-choices");
     expect(indexCss.indexOf("public-mobile-refinement.css")).toBeLessThan(

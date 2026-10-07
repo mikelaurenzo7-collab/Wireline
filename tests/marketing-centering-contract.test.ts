@@ -27,7 +27,7 @@ describe("marketing centering contract", () => {
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');
     expect(header).toContain('to={signupHrefForPlan("personal")}');
-    expect(header).toContain('<BotBoundLockup size="standard" />');
+    expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
     expect(header).toContain('aria-label="Start Free"');
     expect(header).not.toContain("DialogTrigger");
     expect(header).not.toContain("wl-public-nav-overlay");
@@ -82,7 +82,7 @@ describe("marketing centering contract", () => {
     const legacyMark = read("src/components/brand/WirelineMark.tsx");
 
     expect(mark).toContain("<img");
-    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
+    expect(mark).toContain('src="/brand/botbound-operator-512.webp"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
     expect(mark).not.toContain("viewBox=");

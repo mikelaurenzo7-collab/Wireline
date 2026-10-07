@@ -116,36 +116,45 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/features");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
+    const pillars = page.getByRole("list", { name: "What every Bot gets" });
+    await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
+      "Answers Every Call",
+      "Finishes the Work",
+      "Follows Up in Writing",
+    ]);
     const features = page.getByRole("list", { name: "Built Around Your Business" });
-    await expect(features.getByRole("listitem")).toHaveText([
+    await expect(features.getByRole("heading", { level: 3 })).toHaveText([
+      "Trained on Your Business",
+      "Native Calendar Booking",
+      "Approvals and Handoffs",
       "Shared Context",
-      "Calls and Follow-Ups",
-      "Scheduling and Handoff",
-      "Your Rules and Approvals",
-      "Your Playbook",
       "Clear Outcomes",
+      "Private Test First",
     ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {
         const title = document.querySelector("h1")!;
         const range = document.createRange();
         range.selectNodeContents(title);
-        const featureHeading = document
-          .getElementById("features-list-title")!
-          .getBoundingClientRect();
-        const action = document
-          .querySelector(".wl-features-intro .marketing-hero__actions")!
-          .getBoundingClientRect();
+        const center = (element: Element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.left + rect.width / 2;
+        };
+        const featureHeading = document.getElementById("features-list-title")!;
+        const actions = document.querySelector(".wl-features-intro .marketing-hero__actions")!;
         return {
           lines: range.getClientRects().length,
-          titleLeft: title.getBoundingClientRect().left,
-          featureLeft: featureHeading.left,
-          actionLeft: action.left,
+          titleCenter: center(title),
+          featureCenter: center(featureHeading),
+          actionCenter: center(actions),
+          viewportCenter: innerWidth / 2,
         };
       });
+      // One centered column: title, actions, and section heading share an axis.
       expect(geometry.lines).toBe(1);
-      expect(Math.abs(geometry.titleLeft - geometry.featureLeft)).toBeLessThan(2);
-      expect(Math.abs(geometry.actionLeft - geometry.featureLeft)).toBeLessThan(2);
+      expect(Math.abs(geometry.titleCenter - geometry.viewportCenter)).toBeLessThan(12);
+      expect(Math.abs(geometry.actionCenter - geometry.viewportCenter)).toBeLessThan(12);
+      expect(Math.abs(geometry.featureCenter - geometry.viewportCenter)).toBeLessThan(12);
     }
     const header = page.locator("header.wl-public-header");
     await expect

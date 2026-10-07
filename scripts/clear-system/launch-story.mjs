@@ -116,14 +116,14 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
-    "landing must embed concise account creation",
+    /to=\{signupHrefForPlan\("personal"\)\}/,
+    "landing must route its primary action to free account creation",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",
     landing,
-    /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
-    "landing must render the voice Bot and phone number hero",
+    /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
+    "landing must render the computer, phone number, and email hero",
   );
   mustInclude(
     "src/components/marketing/WireAgentLanding.tsx",

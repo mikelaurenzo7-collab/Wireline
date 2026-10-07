@@ -103,9 +103,8 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
 }
 
 .marketing-surface.wl-features-page .wl-features-intro {
-  text-align: left;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--wireline-color-border-default);
+  text-align: center;
+  padding-bottom: clamp(2rem, 4vw, 3rem);
 }
 
 .marketing-surface.wl-features-page .wl-features-intro .marketing-hero-title {
@@ -113,16 +112,177 @@ body[data-wireline-viewport="document"] .wl-ui-caps,
   text-wrap: balance;
 }
 
+.marketing-surface.wl-features-page .wl-features-intro__lead {
+  line-height: 1.6;
+  text-wrap: balance;
+}
+
 .marketing-surface.wl-features-page .wl-features-intro .marketing-hero__actions {
-  margin: 1.5rem 0 0;
-  justify-content: flex-start;
+  margin: 1.75rem 0 0;
+  justify-content: center;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.6rem;
+  overflow: hidden;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 1.1rem;
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 5%,
+    var(--wireline-color-surface-default)
+  );
+  text-align: left;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 6rem;
+  height: 2px;
+  background: linear-gradient(90deg, var(--wireline-color-action-primary-default), transparent);
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar__icon {
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--wireline-color-action-primary-default) 14%, transparent);
+  color: var(--wireline-color-action-primary-default);
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar__icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__label {
+  margin: 1.25rem 0 0;
+  color: var(--wireline-color-action-primary-default);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar__title {
+  margin: 0.4rem 0 0;
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.3rem, 1.8vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__body {
+  margin: 0.65rem 0 0;
+  max-width: none;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.marketing-surface.wl-features-page .wl-features-pillar .wl-features-pillar__note {
+  margin: auto 0 0;
+  max-width: none;
+  padding-top: 1rem;
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.8rem;
 }
 
 .marketing-surface.wl-features-page .wl-features-controls {
   width: 100%;
   max-width: none;
-  margin: 2rem 0 1rem;
-  text-align: left;
+  margin: clamp(3rem, 6vw, 4.5rem) 0 0;
+  color: var(--wireline-color-text-primary);
+  font-family: var(--wireline-font-family-display);
+  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: 1rem;
+  background: var(--wireline-color-surface-default);
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item > svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.marketing-surface.wl-features-page .wl-features-grid__item p {
+  margin: 0.3rem 0 0;
+  max-width: none;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.marketing-surface.wl-features-page .wl-features-closing {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+@media (max-width: 960px) {
+  .marketing-surface.wl-features-page .wl-features-pillars {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketing-surface.wl-features-page .wl-features-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .marketing-surface.wl-features-page .wl-features-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .wl-ui-caps.wl-ui-caps--document .marketing-surface .marketing-section--tight {

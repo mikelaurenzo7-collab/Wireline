@@ -38,15 +38,17 @@ describe("design system polish e2e verified wins", () => {
     expect(spotlight).not.toMatch(/CHANNELS = \[[\s\S]*icon:/);
   });
 
-  it("puts Blog and Compare CTAs in the shared uppercase action tier", () => {
+  it("puts Blog and Compare CTAs in the shared Title Case action tier", () => {
     const blog = withoutComments(read("src/pages/Blog.tsx"));
     const compare = withoutComments(read("src/pages/Compare.tsx"));
 
     expect(blog).toContain("marketing-btn-primary");
-    expect(blog).toContain("START FREE");
-    expect(blog).toContain("SEE FEATURES");
+    expect(blog).toContain("Start Free");
+    expect(blog).toContain("See Features");
+    expect(blog).not.toMatch(/START FREE|SEE FEATURES/);
     expect(blog).not.toContain('from "../components/atoms"');
-    expect(compare).toMatch(/START FREE|Start Free/);
+    expect(compare).toContain("Start Free");
+    expect(compare).not.toMatch(/START FREE|SEE PRICING/);
     expect(compare).not.toContain(">Start free</");
   });
 

@@ -110,13 +110,13 @@ export default function Blog() {
                 to={signupHrefForPlan("personal")}
                 className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
               >
-                START FREE
+                Start Free
               </Link>
               <Link
                 to="/features"
                 className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
               >
-                SEE FEATURES
+                See Features
               </Link>
             </div>
           </div>

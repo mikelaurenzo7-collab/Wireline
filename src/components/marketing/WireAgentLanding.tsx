@@ -13,10 +13,10 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import AuthAccessPanel from "../auth/AuthAccessPanel";
-import { BotBoundLockup } from "../brand/BotBoundBrand";
+import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
-import { BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import PrecisionPublicHeader from "./PrecisionPublicHeader";
+import { BOT_BRAND, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
@@ -80,210 +80,234 @@ export default function WireAgentLanding() {
 
   return (
     <div className="marketing-surface landing-prestige bg-background text-foreground">
+      <PrecisionPublicHeader />
       <main id="main-content" className="landing-prestige__main" tabIndex={-1}>
-        <section className="landing-prestige__entrance" aria-labelledby="landing-prestige-title">
-          <div className="landing-prestige__hero" aria-label="BotBound">
-            <Link className="landing-prestige__hero-brand" to="/" aria-label="BotBound home">
-              <BotBoundLockup
-                size="display"
-                surface="bare"
-                className="landing-prestige__hero-lockup"
-              />
-            </Link>
-            <div className="landing-prestige__hero-copy">
-              <p className="landing-prestige__eyebrow">
-                AI VOICE BOTS. BUILT AROUND YOUR BUSINESS.
-              </p>
-              <h1 id="landing-prestige-title">
-                <span>Hire a Voice Bot.</span> <span>With Its Own Number.</span>
-              </h1>
-              <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
-              <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
-                <Link
-                  className="landing-prestige__direction is-inbound"
-                  to={signupHrefForPlan("personal", { template: "front-desk" })}
-                  onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
-                >
-                  <span className="landing-prestige__direction-label">
-                    <PhoneIncoming aria-hidden="true" /> INBOUND
-                  </span>
-                  <strong className="wl-preserve-case">Answer. Qualify. Route.</strong>
-                  <span className="landing-prestige__direction-action">
-                    Build a Front Desk <ArrowRight aria-hidden="true" />
-                  </span>
-                </Link>
-                <Link
-                  className="landing-prestige__direction is-outbound"
-                  to={signupHrefForPlan("personal", { template: "sales-rep" })}
-                  onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
-                >
-                  <span className="landing-prestige__direction-label">
-                    <PhoneOutgoing aria-hidden="true" /> OUTBOUND
-                  </span>
-                  <strong className="wl-preserve-case">Find. Call. Book.</strong>
-                  <span className="landing-prestige__direction-action">
-                    Build a Sales Rep <ArrowRight aria-hidden="true" />
-                  </span>
-                </Link>
-              </nav>
-              <div className="landing-prestige__explore">
-                <p>Add its own email inbox and SMS.</p>
-                <p>Build and test free. No card required.</p>
-                <nav aria-label="Explore BotBound">
-                  <Link to="/features">
-                    How it works <ArrowRight aria-hidden="true" />
-                  </Link>
-                  <Link to="/pricing">
-                    Explore pricing <ArrowRight aria-hidden="true" />
-                  </Link>
-                </nav>
-              </div>
+        <section className="landing-prestige__hero" aria-labelledby="landing-prestige-title">
+          <div className="landing-prestige__hero-inner">
+            <div className="landing-prestige__hero-mark" aria-hidden="true">
+              <BotBoundMark className="landing-prestige__hero-bot" />
             </div>
-          </div>
-
-          <div className="landing-prestige__auth">
-            <AuthAccessPanel embedded initialMode="signup" showBrand={false} />
-            <nav className="landing-prestige__mobile-links" aria-label="Public information">
-              <Link to="/privacy">Privacy</Link>
-              <Link to="/terms">Terms</Link>
-              <Link to="/trust">Trust</Link>
+            <p className="landing-prestige__eyebrow">{BOT_BRAND.slogan}</p>
+            <h1 id="landing-prestige-title">
+              <span className="landing-prestige__title-line">
+                <span>Voice Bots</span> <span>With a Computer,</span>
+              </span>{" "}
+              <span className="landing-prestige__title-line is-accent">
+                <span>Phone Number,</span> <span>and Branded Email.</span>
+              </span>
+            </h1>
+            <p className="landing-prestige__promise">
+              {BOT_MARKETING_VOICE.activationLine} Then it finishes the work on its own cloud
+              computer and follows up from its own inbox.
+            </p>
+            <div className="landing-prestige__actions">
+              <Link
+                to={signupHrefForPlan("personal")}
+                className="landing-prestige__cta is-primary"
+                onClick={() => trackSignupIntent("hero_primary", "Start Free")}
+              >
+                Start Free <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link
+                to="/signin"
+                className="landing-prestige__cta"
+                onClick={() => trackSignupIntent("hero_signin", "Sign In")}
+              >
+                Sign In
+              </Link>
+            </div>
+            <p className="landing-prestige__reassurance">
+              <span>Build and test free.</span> <span>No card required.</span>
+            </p>
+            <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
+              <Link
+                className="landing-prestige__direction is-inbound"
+                to={signupHrefForPlan("personal", { template: "front-desk" })}
+                onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
+              >
+                <span className="landing-prestige__direction-label">
+                  <PhoneIncoming aria-hidden="true" /> Inbound
+                </span>
+                <strong>Answer. Qualify. Route.</strong>
+                <span className="landing-prestige__direction-action">
+                  Build a Front Desk <ArrowRight aria-hidden="true" />
+                </span>
+              </Link>
+              <Link
+                className="landing-prestige__direction is-outbound"
+                to={signupHrefForPlan("personal", { template: "sales-rep" })}
+                onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
+              >
+                <span className="landing-prestige__direction-label">
+                  <PhoneOutgoing aria-hidden="true" /> Outbound
+                </span>
+                <strong>Find. Call. Book.</strong>
+                <span className="landing-prestige__direction-action">
+                  Build a Sales Rep <ArrowRight aria-hidden="true" />
+                </span>
+              </Link>
             </nav>
           </div>
         </section>
 
-        <div className="landing-prestige__desktop-only">
-          <section id="solutions" className="landing-prestige__section landing-prestige__roles">
-            <div className="landing-prestige__rail">
-              <header className="landing-prestige__section-heading">
-                <p>OUTBOUND + INBOUND</p>
-                <h2>Pick the Work. Put a Bot on It</h2>
-                <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
-              </header>
-              <div className="landing-prestige__role-grid">
-                {FEATURED_TEMPLATES.map((template) => {
-                  const Icon = ROLE_ICONS[template.key] ?? WandSparkles;
-                  return (
-                    <article key={template.key} className="landing-prestige__role-card">
-                      <div className="landing-prestige__role-topline">
-                        <Icon aria-hidden="true" />
-                        <span>{DIRECTION_LABELS[template.direction]}</span>
-                      </div>
-                      <h3>{template.name}</h3>
-                      <p>{template.summary}</p>
-                      <ul>
-                        {template.moves.map((move) => (
-                          <li key={move}>
-                            <Check aria-hidden="true" />
-                            <span>{move}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <Link
-                        to={signupHrefForPlan("personal", { template: template.key })}
-                        onClick={() => trackSignupIntent("role_starter", template.name)}
-                      >
-                        Build this role
-                        <span className="sr-only">: {template.name}</span>
-                        <ArrowRight aria-hidden="true" />
-                      </Link>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-
-          <section id="pricing" className="landing-prestige__section landing-prestige__pricing">
-            <div className="landing-prestige__rail">
-              <header className="landing-prestige__section-heading">
-                <p>PRICING</p>
-                <h2>Build Free. Go Live on Your Terms</h2>
-                <span>Choose your channels and monthly capacity.</span>
-                <span>{notice}</span>
-              </header>
-              <div className="landing-prestige__price-grid">
-                {PUBLIC_PLANS.map(({ id, plan }) => {
-                  const free = id === "personal";
-                  const featured = id === "voice-email-regular";
-                  return (
-                    <article
-                      key={id}
-                      className={`landing-prestige__price-card${featured ? " is-featured" : ""}`}
+        <section id="solutions" className="landing-prestige__section landing-prestige__roles">
+          <div className="landing-prestige__rail">
+            <header className="landing-prestige__section-heading">
+              <p>Inbound + Outbound</p>
+              <h2>
+                <span>Pick the Work.</span> <span>Put a Bot on It.</span>
+              </h2>
+              <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
+            </header>
+            <div className="landing-prestige__role-grid">
+              {FEATURED_TEMPLATES.map((template) => {
+                const Icon = ROLE_ICONS[template.key] ?? WandSparkles;
+                return (
+                  <article key={template.key} className="landing-prestige__role-card">
+                    <div className="landing-prestige__role-topline">
+                      <Icon aria-hidden="true" />
+                      <span>{DIRECTION_LABELS[template.direction]}</span>
+                    </div>
+                    <h3>{template.name}</h3>
+                    <p>{template.summary}</p>
+                    <ul>
+                      {template.moves.map((move) => (
+                        <li key={move}>
+                          <Check aria-hidden="true" />
+                          <span>{move}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to={signupHrefForPlan("personal", { template: template.key })}
+                      onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
-                      <div>
-                        <p>{PLAN_NAMES[id]}</p>
-                        {!free ? (
-                          <span>{plan.capacityTier === "light" ? "Light" : "Regular"}</span>
-                        ) : null}
-                        <div className="landing-prestige__price-number">
-                          <strong>${plan.price_usd_monthly}</strong>
-                          <span>{free ? "forever" : "/mo"}</span>
-                        </div>
-                      </div>
-                      <ul>
-                        <li>
-                          {free
-                            ? "1 private Bot"
-                            : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
-                        </li>
-                        <li>
-                          {free
-                            ? "Private simulation"
-                            : plan.voice_minutes_monthly > 0
-                              ? `${plan.voice_minutes_monthly} call minutes/month`
-                              : "1 managed email inbox"}
-                        </li>
-                        <li>
-                          {free
-                            ? "Upgrade for live work"
-                            : id === "email"
-                              ? "AI and email allowance included"
-                              : id === "voice-email-regular"
-                                ? "1 number + 1 email inbox"
-                                : "1 local number included"}
-                        </li>
-                      </ul>
-                      <Link
-                        to={signupHrefForPlan(id)}
-                        className={featured ? "is-primary" : undefined}
-                        onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
-                      >
-                        {free
-                          ? "Start free"
-                          : `${canActivate(id) ? "Choose" : "Set up"} ${PLAN_NAMES[id]}`}
-                      </Link>
-                    </article>
-                  );
-                })}
-              </div>
-              <div className="mt-6 flex justify-center">
-                <Link
-                  to="/pricing"
-                  className="wl-focus-ring-halo inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-primary underline-offset-4 hover:underline"
-                >
-                  Compare plans &amp; usage
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </div>
+                      Build this role
+                      <span className="sr-only">: {template.name}</span>
+                      <ArrowRight aria-hidden="true" />
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="landing-prestige__trust" aria-label="BotBound trust and control">
-            <div className="landing-prestige__rail landing-prestige__trust-inner">
-              <div>
-                <ShieldCheck aria-hidden="true" />
-                <strong className="wl-preserve-case">Your Line. Your Rules.</strong>
-              </div>
-              <nav aria-label="Trust links">
-                <Link to="/security">Security</Link>
-                <Link to="/privacy">Privacy</Link>
-                <Link to="/support">Support</Link>
-              </nav>
+        <section id="pricing" className="landing-prestige__section landing-prestige__pricing">
+          <div className="landing-prestige__rail">
+            <header className="landing-prestige__section-heading">
+              <p>Pricing</p>
+              <h2>
+                <span>Build Free.</span> <span>Go Live on Your Terms.</span>
+              </h2>
+              <span>Choose your channels and monthly capacity.</span>
+              <span className="landing-prestige__activation" role="status">
+                {notice}
+              </span>
+            </header>
+            <div className="landing-prestige__price-grid">
+              {PUBLIC_PLANS.map(({ id, plan }) => {
+                const free = id === "personal";
+                const featured = id === "voice-email-regular";
+                return (
+                  <article
+                    key={id}
+                    className={`landing-prestige__price-card${featured ? " is-featured" : ""}`}
+                  >
+                    <div>
+                      <p>{PLAN_NAMES[id]}</p>
+                      <span>
+                        {free ? "Private" : plan.capacityTier === "light" ? "Light" : "Regular"}
+                      </span>
+                      <div className="landing-prestige__price-number">
+                        <strong>${plan.price_usd_monthly}</strong>
+                        <span>{free ? "forever" : "/mo"}</span>
+                      </div>
+                    </div>
+                    <ul>
+                      <li>
+                        <Check aria-hidden="true" />
+                        {free
+                          ? "1 private Bot"
+                          : `${plan.max_agents} live Bot${plan.max_agents === 1 ? "" : "s"}`}
+                      </li>
+                      <li>
+                        <Check aria-hidden="true" />
+                        {free
+                          ? "Private simulation"
+                          : plan.voice_minutes_monthly > 0
+                            ? `${plan.voice_minutes_monthly} call minutes/month`
+                            : "1 managed email inbox"}
+                      </li>
+                      <li>
+                        <Check aria-hidden="true" />
+                        {free
+                          ? "Upgrade for live work"
+                          : id === "email"
+                            ? "AI and email allowance included"
+                            : id === "voice-email-regular"
+                              ? "1 number + 1 email inbox"
+                              : "1 local number included"}
+                      </li>
+                    </ul>
+                    <Link
+                      to={signupHrefForPlan(id)}
+                      className={featured ? "is-primary" : undefined}
+                      onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
+                    >
+                      {free
+                        ? "Start free"
+                        : `${canActivate(id) ? "Choose" : "Set up"} ${PLAN_NAMES[id]}`}
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
-          </section>
-          <LandingFooter />
-        </div>
+            <div className="landing-prestige__pricing-more">
+              <Link to="/pricing">
+                Compare plans &amp; usage
+                <ArrowRight aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-prestige__closing" aria-labelledby="landing-prestige-closing">
+          <div className="landing-prestige__rail">
+            <h2 id="landing-prestige-closing">
+              <span>Put Your First Bot</span> <span>to Work.</span>
+            </h2>
+            <p>Build and test it free. Go live when it sounds like your business.</p>
+            <div className="landing-prestige__actions">
+              <Link
+                to={signupHrefForPlan("personal")}
+                className="landing-prestige__cta is-primary"
+                onClick={() => trackSignupIntent("closing_primary", "Start Free")}
+              >
+                Start Free <ArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/features" className="landing-prestige__cta">
+                How It Works
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-prestige__trust" aria-label="BotBound trust and control">
+          <div className="landing-prestige__rail landing-prestige__trust-inner">
+            <div>
+              <ShieldCheck aria-hidden="true" />
+              <strong>Your Line. Your Rules.</strong>
+            </div>
+            <nav aria-label="Trust links">
+              <Link to="/security">Security</Link>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/support">Support</Link>
+            </nav>
+          </div>
+        </section>
       </main>
+      <LandingFooter />
     </div>
   );
 }

@@ -229,9 +229,9 @@ describe("BotBound product voice", () => {
       expect(source, path).not.toMatch(/guaranteed profit|profit guarantee/i);
     }
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
-    expect(landing).toContain("<AuthAccessPanel embedded");
-    expect(landing).toContain("Hire a Voice Bot.");
-    expect(landing).toContain("With Its Own Number.");
+    expect(landing).not.toContain("<AuthAccessPanel");
+    expect(landing).toContain("<span>With a Computer,</span>");
+    expect(landing).toContain("<span>and Branded Email.</span>");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
@@ -240,7 +240,7 @@ describe("BotBound product voice", () => {
     expect(landing).toContain("template.moves.map");
     expect(landing).toContain("STRIPE_PLANS");
     expect(landing).toContain("LandingFooter");
-    expect(landing).not.toContain("PrecisionPublicHeader");
+    expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("Runtime Balance");
   });
 

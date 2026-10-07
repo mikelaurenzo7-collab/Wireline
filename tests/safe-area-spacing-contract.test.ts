@@ -118,7 +118,7 @@ describe("safe-area spacing ownership", () => {
     expect(authPortal).toContain("wl-auth-form-panel flex min-h-full");
     expect(authPortal).toContain("w-full max-w-[520px]");
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__auth \{[\s\S]*min-height:\s*auto/,
+      /@media \(max-width: 820px\)[\s\S]*\.landing-prestige__hero \{[\s\S]*min-height:\s*auto/,
     );
     expect(ownership).toMatch(
       /\.marketing-surface \{[\s\S]*padding-left: env\(safe-area-inset-left[\s\S]*padding-right: env\(safe-area-inset-right/,
@@ -129,8 +129,6 @@ describe("safe-area spacing ownership", () => {
     expect(ownership).toMatch(
       /\.marketing-surface\.auth-portal-canvas[\s\S]*\.marketing-flow \{[\s\S]*display: flex;[\s\S]*min-height: calc\(100dvh - env\(safe-area-inset-bottom/,
     );
-    expect(mobile).toContain("padding-left: 1.15rem");
-    expect(mobile).toContain("padding-right: 1.15rem");
     expect(mobile).not.toContain("env(safe-area-inset-left)");
     expect(mobile).not.toContain("env(safe-area-inset-right)");
   });

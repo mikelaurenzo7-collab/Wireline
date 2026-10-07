@@ -10,7 +10,7 @@ describe("BotBound brand migration", () => {
     const icon = read("public/botbound-icon.svg");
     const favicon = read("public/favicon.svg");
     expect(component).toContain('data-botbound-mark="phone-bot"');
-    expect(component).toContain('src="/brand/botbound-operator-polished.png"');
+    expect(component).toContain('src="/brand/botbound-operator-512.webp"');
     expect(component).toContain("visibly grips a violet telephone receiver");
     expect(component).not.toContain("<svg");
     for (const source of [icon, favicon]) {

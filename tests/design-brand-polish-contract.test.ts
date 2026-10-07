@@ -125,7 +125,9 @@ describe("E2E design and BotBound brand polish", () => {
     const header = read("src/components/marketing/PrecisionPublicHeader.tsx");
     const sticky = read("src/components/marketing/MarketingStickyCta.tsx");
     const footer = read("src/components/marketing/MarketingFooter.tsx");
-    expect(header).toContain("BotBoundLockup");
+    // The phone-Bot mascot belongs to the home hero; the shared bar carries the wordmark only.
+    expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
+    expect(header).not.toContain("BotBoundLockup");
     expect(header).toContain('aria-label="BotBound home"');
     expect(header).toContain("text-sm font-medium");
     expect(header).toContain("min-h-11 px-4 text-sm font-semibold");
@@ -175,8 +177,10 @@ describe("E2E design and BotBound brand polish", () => {
 
     expect(features).toContain("marketing-hero-title");
     expect(features).not.toContain("MarketingHero");
-    expect(features).toContain("START FREE");
-    expect(features).toContain("SEE PRICING");
+    // Controls use authored Title Case like every other public CTA.
+    expect(features).toContain(">\n                Start Free\n");
+    expect(features).toContain(">\n                See Pricing\n");
+    expect(features).not.toMatch(/START FREE|SEE PRICING/);
     expect(features).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
     expect(pricing).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
     expect(compare).toContain("text-[clamp(1.9rem,3.4vw,2.9rem)]");
@@ -207,15 +211,16 @@ describe("E2E design and BotBound brand polish", () => {
     const landing = withoutComments(read("src/components/marketing/WireAgentLanding.tsx"));
     const prestige = withoutComments(read("src/styles/landing-prestige.css"));
     const auth = read("src/styles/auth-access-panel.css");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
+    // Account access lives behind two clear actions instead of a split form.
+    expect(landing).not.toContain("<AuthAccessPanel");
+    expect(landing).toContain('to={signupHrefForPlan("personal")}');
+    expect(landing).toContain('to="/signin"');
     expect(landing).toMatch(
-      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
+      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
     );
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
-    expect(landing).toContain("BotBoundLockup");
-    expect(landing).toContain('className="landing-prestige__hero-lockup"');
+    expect(landing).toContain("<BotBoundMark");
+    expect(landing).toContain("landing-prestige__hero-mark");
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
     expect(landing).toContain("FEATURED_TEMPLATE_KEYS");
@@ -224,29 +229,20 @@ describe("E2E design and BotBound brand polish", () => {
     expect(landing).toContain('id="pricing"');
     expect(landing).toContain("landing-prestige__trust");
     expect(landing).toContain("<LandingFooter />");
-    expect(landing).not.toContain("<PrecisionPublicHeader");
+    expect(landing).toContain("<PrecisionPublicHeader />");
     expect(landing).not.toContain("ONE WORKSPACE");
     expect(landing).not.toContain("Runtime Balance");
     expect(landing).not.toContain("WIRE YOUR PHONE BOT");
-    expect(prestige).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)");
-    expect(prestige).toContain("--bb-lockup-wordmark-size: clamp(3.25rem, 4.8vw, 4.25rem)");
-    expect(prestige).toContain("--bb-lockup-mark: clamp(5.75rem, 7.5vw, 6.75rem)");
-    expect(prestige).toContain("--bb-lockup-overlap: clamp(0.28rem, 0.55vw, 0.5rem)");
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
     );
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+      /\.landing-prestige__section-heading\s*\{[^}]*margin-inline:\s*auto;[^}]*text-align:\s*center;/,
     );
     expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
     );
-    expect(prestige).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
-    );
-    expect(prestige).not.toMatch(
-      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
-    );
+    expect(prestige).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
     const providerGrid = auth.match(/\.wl-access-panel__oauth\s*\{([^}]+)\}/)?.[1];
     // Provider choices must reflow when the container or enlarged labels need
     // more room; a fixed three-column row collapsed Microsoft's mark at 320px.

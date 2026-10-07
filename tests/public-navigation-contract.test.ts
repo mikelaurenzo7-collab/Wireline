@@ -10,8 +10,8 @@ describe("public navigation contract", () => {
     const header = source("src/components/marketing/PrecisionPublicHeader.tsx");
 
     expect(header).toContain('aria-label="BotBound home"');
-    expect(header).toContain("BotBoundLockup");
-    expect(header).toContain('<BotBoundLockup size="standard" />');
+    expect(header).toContain('<BotBoundWordmark className="wl-public-header__wordmark" />');
+    expect(header).not.toContain("BotBoundLockup");
     expect(header).not.toContain("WirelineLockup");
     expect(header).toContain('aria-label="Account"');
     expect(header).toContain('to="/signin"');

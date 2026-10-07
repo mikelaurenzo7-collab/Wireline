@@ -73,13 +73,15 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [
-      /<AuthAccessPanel embedded initialMode="signup" showBrand=\{false\}\s*\/>/,
-      "root landing must embed concise account creation",
+      /to=\{signupHrefForPlan\("personal"\)\}[\s\S]*?Start Free/,
+      "root landing must lead with one free account-creation action",
     ],
+    [/to="\/signin"/, "root landing must keep sign-in one action away"],
     [
-      /<span>Hire a Voice Bot\.<\/span>[\s\S]*<span>With Its Own Number\.<\/span>/,
-      "root landing must make the voice Bot and phone number offer explicit",
+      /<span>Voice Bots<\/span>\s*<span>With a Computer,<\/span>[\s\S]*<span>Phone Number,<\/span>\s*<span>and Branded Email\.<\/span>/,
+      "root landing must make the computer, phone number, and email offer explicit",
     ],
+    [/<PrecisionPublicHeader \/>/, "root landing must share the public header"],
     [
       /BOT_MARKETING_VOICE\.activationLine/,
       "root landing must source the concise activation promise",
@@ -87,10 +89,6 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     [/landing-prestige__directions/, "hero must expose inbound and outbound starting paths"],
     [/Find\. Call\. Book\./, "hero must retain the outbound activation path"],
     [/Answer\. Qualify\. Route\./, "hero must retain the inbound activation path"],
-    [
-      /Add its own email inbox and SMS\./,
-      "hero must present email and SMS as optional channels",
-    ],
     [/FEATURED_TEMPLATE_KEYS/, "landing must curate role starters"],
     [/template\.moves\.map/, "role starters must show playbook moves"],
     [/id="pricing"/, "landing must preserve direct pricing"],
@@ -102,7 +100,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
   mustExclude(
     "src/components/marketing/WireAgentLanding.tsx",
     executable(landing),
-    /<PrecisionPublicHeader|<BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category|HERO_CHANNEL_ORDER|BOT_CHANNELS|<BotMark|markKey/,
+    /<AuthAccessPanel|<BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-(?:session|call)|variant="stage"|landing-console__activity|Illustrative Workflow|Booked and logged|id="features"|id="trust"|Bot template lane|template\.category|HERO_CHANNEL_ORDER|BOT_CHANNELS|<BotMark|markKey/,
     "root landing must not revive old brochure structures",
   );
   mustExclude(
@@ -114,41 +112,29 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
 
   for (const [pattern, description] of [
     [
-      /grid-template-columns:\s*minmax\(0, 1fr\)\s+minmax\(0, 1fr\)/,
-      "desktop entrance must stay split",
+      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
+      "home hero must be one centered column",
     ],
     [
-      /font-size:\s*clamp\(3\.25rem, 5vw, 6\.2rem\)/,
-      "desktop hero must retain the verified horizontal editorial scale",
+      /\.landing-prestige h2 > span,\s*\.landing-prestige__title-line > span\s*\{[^}]*display:\s*inline-block;[^}]*white-space:\s*nowrap;/,
+      "headings must wrap between phrases, never strand one word",
     ],
     [
-      /\.landing-prestige__hero-copy h1 span\s*\{[^}]*white-space:\s*normal;[^}]*text-wrap:\s*balance;/,
-      "voice Bot headline must wrap safely inside narrow layouts",
+      /\.landing-prestige__section-heading\s*\{[^}]*margin-inline:\s*auto;[^}]*text-align:\s*center;/,
+      "section headings must align with centered content",
     ],
     [
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto;/,
-      "mobile entrance must remain in document flow",
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto;/,
+      "mobile hero must remain in document flow",
     ],
-    [
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid;/,
-      "mobile landing must retain the BotBound product story",
-    ],
-    [
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block;/,
-      "mobile landing must retain long-form BotBound proof",
-    ],
-    [
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto;/,
-      "mobile account access must remain in the public document flow",
-    ],
-    [/\.landing-prestige__role-grid/, "desktop landing must provide role grid"],
+    [/\.landing-prestige__role-grid/, "landing must provide role grid"],
   ])
     mustInclude("src/styles/landing-prestige.css", landingPrestigeCss, pattern, description);
   mustExclude(
     "src/styles/landing-prestige.css",
     landingPrestigeCss,
-    /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none;/,
-    "mobile landing must not hide the BotBound product story",
+    /\.landing-prestige__(?:auth|entrance|desktop-only)\b/,
+    "the retired split entrance must not return",
   );
   mustInclude(
     "src/styles/auth-access-panel.css",
@@ -166,7 +152,7 @@ export function checkMarketingSurfaces({ read, mustInclude, mustExclude, failure
     "src/index.css",
     indexCss,
     /@import "\.\/styles\/landing-prestige\.css";/,
-    "CSS stack must own split landing styling",
+    "CSS stack must own landing styling",
   );
   mustInclude(
     "src/components/marketing/LandingFooter.tsx",

@@ -131,11 +131,13 @@ body {
   --wl-font-display: "Inter Tight";
   --wl-font-sans: "Inter";
   --wl-font-mono: "IBM Plex Mono";
+  /* No global "tnum": in Inter it also swaps hyphens and periods for
+     fixed-width glyphs, so "follow-up" rendered as "follow - up" in prose.
+     Numeric UI opts in with Tailwind's tabular-nums where columns must align. */
   font-feature-settings:
     "kern" 1,
     "liga" 1,
     "calt" 1,
-    "tnum" 1,
     "ss01" 1,
     "cv11" 1;
   text-rendering: optimizeLegibility;

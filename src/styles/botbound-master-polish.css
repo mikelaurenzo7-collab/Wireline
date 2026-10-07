@@ -130,36 +130,8 @@
   min-height: 3rem;
   border-radius: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.055em;
-}
-
-/* The landing entrance should read as one composed statement rather than
- * three islands pinned to the top, centre, and bottom of the viewport. */
-.landing-prestige__hero {
-  grid-template-rows: auto auto auto;
-  align-content: center;
-  align-items: start;
-  justify-items: start;
-  gap: clamp(1.15rem, 2.4vh, 1.85rem);
-}
-
-.landing-prestige__hero::before {
-  display: none;
-  content: none;
-}
-
-.landing-prestige__hero > * {
-  position: relative;
-  z-index: 1;
-}
-
-.landing-prestige__hero-copy {
-  align-self: auto;
-}
-
-.landing-prestige__hero-lockup .bb-lockup__mark,
-.landing-prestige__hero-lockup .bb-mark-image {
-  filter: none;
+  /* Labels are authored in Title Case; caps-style tracking made them look loose. */
+  letter-spacing: -0.005em;
 }
 
 .landing-demo-inline__copy strong {
@@ -397,12 +369,6 @@
 }
 
 @media (max-width: 767px) {
-  .landing-prestige__hero {
-    align-content: start;
-    min-height: auto;
-    gap: 1.25rem;
-  }
-
   .marketing-surface :where(.wl-marketing-actions, .marketing-hero__actions) {
     width: 100%;
   }

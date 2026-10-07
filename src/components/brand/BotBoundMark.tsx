@@ -8,6 +8,9 @@ type BotBoundMarkProps = {
 /**
  * Canonical BotBound mark: the Bot visibly grips a violet telephone receiver.
  *
+ * UI surfaces load a 512px WebP derivative (about 44 KB). The full-resolution
+ * PNG remains the master that the launch-asset render scripts consume.
+ *
  * The transparent UI artwork keeps the Bot and telephone silhouette legible
  * without trapping the identity inside a generic app tile. Platform app icons
  * retain their own square-safe source and mask treatment.
@@ -15,7 +18,10 @@ type BotBoundMarkProps = {
 export default function BotBoundMark({ className = "", label, signal = true }: BotBoundMarkProps) {
   return (
     <img
-      src="/brand/botbound-operator-polished.png"
+      src="/brand/botbound-operator-512.webp"
+      width={512}
+      height={512}
+      decoding="async"
       alt={label ?? ""}
       role={label ? "img" : undefined}
       aria-hidden={label ? undefined : true}

@@ -209,6 +209,27 @@ summary {
   }
 }
 
+/* Route changes and hash links move focus to a heading or landmark so screen
+ * readers announce the new page. Those targets are not interactive controls,
+ * and Chromium reports programmatic focus as :focus-visible on page load, which
+ * drew a ring around every public page title. Keep the focus, drop the ring. */
+:where(h1, h2, h3, h4, h5, h6, main, section, article, [role="region"])[tabindex="-1"]:focus,
+:where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    main,
+    section,
+    article,
+    [role="region"]
+  )[tabindex="-1"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 :disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;

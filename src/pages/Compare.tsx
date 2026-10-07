@@ -122,13 +122,13 @@ export default function Compare() {
               to={signupHrefForPlan("personal")}
               className="marketing-btn-primary min-h-11 px-5 text-sm font-semibold"
             >
-              START FREE
+              Start Free
             </Link>
             <Link
               to="/pricing"
               className="marketing-btn-secondary min-h-11 px-5 text-sm font-semibold"
             >
-              SEE PRICING
+              See Pricing
             </Link>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function Compare() {
             a claim that unlike products are feature-for-feature equivalents.
           </p>
           <details className="group mt-8 border-t border-border">
-            <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+            <summary className="wl-focus-ring-halo flex min-h-11 max-w-none cursor-pointer list-none items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
               Why BotBound
               <ChevronDown
                 className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"

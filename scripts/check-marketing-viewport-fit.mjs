@@ -121,13 +121,11 @@ const home = read("src/components/marketing/WireAgentLanding.tsx");
 const executableHome = executable(home);
 for (const [needle, description] of [
   ["marketing-surface", "home must keep the public marketing surface"],
-  ["landing-prestige__entrance", "home must keep the prestige entrance"],
-  ["landing-prestige__hero-lockup", "home must lead with the canonical display lockup"],
-  ['surface="bare"', "home must render the hero mascot as a transparent cutout"],
-  [
-    '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    "home must keep direct account creation",
-  ],
+  ["landing-prestige__hero", "home must keep the centered hero"],
+  ["<PrecisionPublicHeader />", "home must share the public header"],
+  ["<BotBoundMark", "home must lead with the canonical phone-Bot mascot"],
+  ['to={signupHrefForPlan("personal")}', "home must keep direct free account creation"],
+  ['to="/signin"', "home must keep sign-in one action away"],
   ["landing-prestige__directions", "home must expose inbound and outbound starting paths"],
   ["Find. Call. Book.", "home must keep the outbound activation path"],
   ["Answer. Qualify. Route.", "home must keep the inbound activation path"],

@@ -27,14 +27,14 @@ describe("Clear System channel catalog guard", () => {
   it.each([
     [
       "src/components/marketing/WireAgentLanding.tsx",
-      (source) => source.replace("Hire a Voice Bot.", "Your Next Hire"),
-      "voice Bot and phone number",
+      (source) => source.replace("<span>With a Computer,</span>", "<span>For Calls,</span>"),
+      "computer, phone number, and email",
     ],
     [
       "src/styles/landing-prestige.css",
       (source) =>
-        source.replace(/white-space: normal;\s*text-wrap: balance;/, "white-space: nowrap;"),
-      "wrap safely",
+        source.replace(/display: inline-block;\s*white-space: nowrap;/, "display: inline;"),
+      "never strand one word",
     ],
     [
       "src/pages/Pricing.tsx",

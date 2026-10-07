@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../atoms/DropdownMenu";
-import { BotBoundLockup } from "../brand/BotBoundBrand";
+import { BotBoundWordmark } from "../brand/BotBoundBrand";
 import SkipToContentLink from "../layout/SkipToContentLink";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { useChromeHeight } from "../../hooks/useChromeHeight";
@@ -25,10 +25,10 @@ export default function PrecisionPublicHeader() {
       <div className="wl-measure mx-auto flex min-h-16 min-w-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 sm:gap-x-5 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="max-w-full shrink-0 rounded-[var(--radius-md)] text-foreground wl-focus-ring-halo"
+          className="inline-flex min-h-11 max-w-full shrink-0 items-center rounded-[var(--radius-md)] px-1 text-foreground wl-focus-ring-halo"
           aria-label="BotBound home"
         >
-          <BotBoundLockup size="standard" />
+          <BotBoundWordmark className="wl-public-header__wordmark" />
         </Link>
 
         <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Explore BotBound">

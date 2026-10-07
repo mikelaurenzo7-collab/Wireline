@@ -31,10 +31,10 @@ const paidPlans = {
 test("paused activation stays explicit from the homepage through paid signup", async ({ page }) => {
   await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
   await page.goto("/");
-  const access = page.getByRole("region", { name: "Account access" });
-  await expect(access.getByRole("status")).toHaveText(
+  await expect(page.locator(".landing-prestige__activation")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
   );
+  const access = page.getByRole("region", { name: "Account access" });
   await page.getByRole("link", { name: "Set up Calls", exact: true }).click();
   await expect(page).toHaveURL(/\/signup\?plan=voice/);
   await expect(access.getByRole("status")).toHaveText(
@@ -60,9 +60,9 @@ for (const failure of ["http", "malformed"] as const) {
       failure === "http" ? 503 : 200,
     );
     await page.goto("/");
-    await expect(
-      page.getByRole("region", { name: "Account access" }).getByRole("status"),
-    ).toHaveText("Activation status unavailable. Build free and check back.");
+    await expect(page.locator(".landing-prestige__activation")).toHaveText(
+      "Activation status unavailable. Build free and check back.",
+    );
     await expect(page.getByRole("link", { name: "Set up Calls", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Choose Calls", exact: true })).toHaveCount(0);
   });
@@ -83,6 +83,8 @@ test("signup checks the selected annual plan even when other paid plans are avai
   );
   await page.getByRole("link", { name: "BotBound home", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/signup\?plan=voice&interval=year/);
   await expect(access).toContainText("$199/year");
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
@@ -91,12 +93,10 @@ test("signup checks the selected annual plan even when other paid plans are avai
   await expect(access.getByRole("status")).toHaveText("Build free. Activate when ready.");
 });
 
-test("the mobile homepage keeps activation status inside the visible account flow", async ({
-  page,
-}) => {
+test("mobile signup keeps activation status inside the visible account flow", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
-  await page.goto("/");
+  await page.goto("/signup");
   const access = page.getByRole("region", { name: "Account access" });
   const notice = access.getByRole("status");
   await expect(notice).toHaveText("Build free. Paid activation is currently unavailable.");

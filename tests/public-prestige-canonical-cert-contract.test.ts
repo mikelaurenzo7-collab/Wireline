@@ -17,9 +17,8 @@ describe("canonical BotBound public prestige certification", () => {
     expect(product).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).not.toContain("HERO_CHANNEL_ORDER");
-    expect(landing).toContain(
-      '<AuthAccessPanel embedded initialMode="signup" showBrand={false} />',
-    );
+    expect(landing).not.toContain("<AuthAccessPanel");
+    expect(landing).toContain('to={signupHrefForPlan("personal")}');
     expect(landing).not.toContain("template.category");
     expect(landing).not.toContain("ONE WORKSPACE");
 
@@ -27,20 +26,12 @@ describe("canonical BotBound public prestige certification", () => {
     expect(botMark).toContain("MOTIF_ICONS");
 
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__entrance\s*\{[\s\S]*?display:\s*flex;[\s\S]*?min-height:\s*auto/,
+      /\.landing-prestige__hero\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*text-align:\s*center;/,
     );
     expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?display:\s*grid/,
+      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__hero\s*\{[\s\S]*?min-height:\s*auto/,
     );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*block/,
-    );
-    expect(landingCss).toMatch(
-      /@media \(max-width: 820px\)[\s\S]*?\.landing-prestige__auth\s*\{[\s\S]*?min-height:\s*auto/,
-    );
-    expect(landingCss).not.toMatch(
-      /\.landing-prestige__hero,[\s\S]*?\.landing-prestige__desktop-only\s*\{[\s\S]*?display:\s*none/,
-    );
+    expect(landingCss).not.toMatch(/\.landing-prestige__(?:auth|entrance|desktop-only)\b/);
 
     expect(designVision).toContain("BotBound Design System");
     expect(designVision).not.toMatch(/Aurora Letterpress|Obsidian Design System/i);

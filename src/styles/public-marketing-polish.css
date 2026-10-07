@@ -298,14 +298,13 @@
   padding-block: var(--wl-public-section-space-tight);
 }
 
-.wl-pricing-page #plans article > p,
-.wl-pricing-page #plans article > div > p {
-  max-width: 34ch;
-  margin-inline: auto;
-}
-
-.wl-pricing-page #plans article ul {
-  max-width: 31ch;
+/* The selected-package card is a single left-aligned reading column. The old
+ * multi-card grid centered each paragraph at 34ch, which floated the price and
+ * credit note into the middle of the card and wrapped list rows early. */
+.marketing-surface .wl-public-rail :is(.wl-billing-plan, .wl-pricing-interval-row) p {
+  /* The public rail centers paragraphs with auto margins. Inside a flex row that
+   * splits free space instead of centering, so the price drifted mid-card. */
+  margin-inline: 0;
 }
 
 .wl-pricing-page #plans article li {

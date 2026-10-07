@@ -69,7 +69,7 @@ describe("Atomic Design completion contract", () => {
     const legacyMark = source("src/components/brand/WirelineMark.tsx");
     const renderer = source("scripts/render-image-assets.mjs");
 
-    expect(mark).toContain('src="/brand/botbound-operator-polished.png"');
+    expect(mark).toContain('src="/brand/botbound-operator-512.webp"');
     expect(mark).toContain('data-botbound-mark="phone-bot"');
     expect(mark).not.toContain("<svg");
     expect(legacyMark).toContain('from "./BotBoundMark"');
