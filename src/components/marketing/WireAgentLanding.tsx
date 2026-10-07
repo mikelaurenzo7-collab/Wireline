@@ -108,11 +108,7 @@ export default function WireAgentLanding() {
               >
                 Start Free <ArrowRight aria-hidden="true" />
               </Link>
-              <Link
-                to="/signin"
-                className="landing-prestige__cta"
-                onClick={() => trackSignupIntent("hero_signin", "Sign In")}
-              >
+              <Link to="/signin" className="landing-prestige__cta">
                 Sign In
               </Link>
             </div>

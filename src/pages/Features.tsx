@@ -37,7 +37,8 @@ const PILLARS: readonly Pillar[] = [
     icon: MonitorSmartphone,
     label: "Cloud Computer",
     title: "Finishes the Work",
-    body: "Each Bot gets a secure cloud browser. It looks things up, reads your site, and fills web forms to finish follow-up, then stops and asks you before logins, payments, or anything sensitive.",
+    body: "Each Bot gets a secure cloud browser. It looks things up, reads your site, and fills in web forms to finish follow-up. It pauses for you at logins and payments, and only submits what you ask it to.",
+    note: "Included with paid plans.",
   },
   {
     icon: Mail,
@@ -102,8 +103,8 @@ export default function Features() {
               Inbound &amp; Outbound Bots
             </h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              One Bot with a phone number, a cloud computer, and a branded inbox. Trained on your
-              business and governed by your rules.
+              Build and test free. Paid plans give your Bot a phone number, a cloud computer, and a
+              branded inbox, trained on your business and governed by your rules.
             </p>
             <div className="marketing-hero__actions">
               <Link
