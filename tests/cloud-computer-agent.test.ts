@@ -192,7 +192,8 @@ describe("cloud computer agent loop", () => {
       startUrl: null,
       hooks: h,
     });
-    expect(askOwner).toHaveBeenCalledWith("Log in?");
+    // The first question may wait the full per-question limit (10 minutes).
+    expect(askOwner).toHaveBeenCalledWith("Log in?", 10 * 60_000);
     const reply = (requests[1].messages as Array<{ content: Block[] }>)[2].content[0];
     expect(reply).toMatchObject({ type: "tool_result", tool_use_id: "q1" });
     expect(reply).not.toHaveProperty("toolset_name");
@@ -291,10 +292,16 @@ describe("cloud computer agent loop", () => {
       "sys",
     );
     expect(large).toBeGreaterThan(small);
-    // Priced at the highest rate any fallback model could serve the turn at
-    // (Opus 4.8: $25/MTok output), the 8k output ceiling dominates: ~$0.2-0.35.
-    expect(small).toBeGreaterThan(0.2);
-    expect(small).toBeLessThan(0.4);
+    // Every model in the refusal-fallback chain can run and be billed in one
+    // call (Opus 5.5 $20, then Opus 5 and Opus 4.8 at $25/MTok output), so the
+    // 8k output ceiling is reserved once per model: ~$0.6-0.8 for a tiny prompt.
+    expect(small).toBeGreaterThan(0.6);
+    expect(small).toBeLessThan(0.8);
+    // The Sonnet chain (Sonnet 5.5, then Sonnet 5, $10/MTok output) reserves
+    // well under half as much, which is why it is the default.
+    const sonnet = turnReserveUsd("claude-sonnet-5-5", [{ role: "user", content: "hi" }], "sys");
+    expect(sonnet).toBeGreaterThan(0.15);
+    expect(sonnet).toBeLessThan(small / 2);
     // Replayed thinking is billed as input even though its text is omitted.
     expect(
       turnReserveUsd("claude-opus-5-5", [{ role: "user", content: "hi" }], "sys", 50_000),
@@ -454,5 +461,98 @@ describe("cloud computer agent loop", () => {
     });
     expect(askOwner).not.toHaveBeenCalled();
     expect(outcome).toEqual({ status: "stopped", summary: "Stopped by the owner." });
+  });
+});
+
+describe("cloud computer task limits", () => {
+  const finish = {
+    type: "tool_use",
+    id: "done",
+    name: "finish_task",
+    input: { outcome: "completed", summary: "Done.", sources: [] },
+  };
+  const ask = (id: string) =>
+    message([{ type: "tool_use", id, name: "ask_owner", input: { question: `Question ${id}?` } }]);
+
+  it("attaches screenshots up to the task's budget and never edits earlier results", async () => {
+    const shot: MemberResult = {
+      ok: true,
+      content: [
+        {
+          type: "image",
+          source: { type: "base64", media_type: "image/jpeg", data: "A".repeat(11_000_000) },
+        },
+      ] as MemberResult["content"],
+      activity: "took a screenshot",
+    };
+    const { session } = fakeSession({ screenshot: shot });
+    const { client: anthropic, requests } = client([
+      message([browserUse("s1", "screenshot")]),
+      message([browserUse("s2", "screenshot")]),
+      message([finish]),
+    ]);
+    const { hooks: h } = hooks();
+    await runCloudComputerAgent({
+      client: anthropic,
+      model: "claude-sonnet-5-5",
+      session,
+      bot,
+      goal: "Look at the page.",
+      startUrl: null,
+      hooks: h,
+    });
+    const history = requests[2].messages as Array<{ content: Block[] }>;
+    const first = history[2].content[0].content as Block[];
+    const second = history[4].content[0].content as Block[];
+    expect(first.some((block) => block.type === "image")).toBe(true);
+    expect(second.some((block) => block.type === "image")).toBe(false);
+    expect(JSON.stringify(second)).toContain("screenshot budget");
+    // Append-only: the earlier result is byte-for-byte what the model saw before.
+    expect(JSON.stringify(history[2])).toBe(JSON.stringify((requests[1].messages as unknown[])[2]));
+  });
+
+  it("stops asking the owner after five questions and says why", async () => {
+    const { session } = fakeSession({});
+    const { client: anthropic } = client(["1", "2", "3", "4", "5", "6"].map(ask));
+    const askOwner = vi.fn(async () => "Yes, go ahead.");
+    const { hooks: h } = hooks({ askOwner });
+    const outcome = await runCloudComputerAgent({
+      client: anthropic,
+      model: "claude-sonnet-5-5",
+      session,
+      bot,
+      goal: "Check with me first.",
+      startUrl: null,
+      hooks: h,
+    });
+    expect(askOwner).toHaveBeenCalledTimes(5);
+    expect(outcome.status).toBe("blocked");
+    expect(outcome.summary).toContain("Question 6?");
+    expect(outcome.summary).toContain("already asked you 5 questions");
+  });
+
+  it("caps the total time a task waits on its owner", async () => {
+    let clock = 0;
+    const { session } = fakeSession({});
+    const { client: anthropic } = client(["1", "2", "3", "4"].map(ask));
+    const askOwner = vi.fn(async (_question: string, waitMs: number) => {
+      clock += Math.min(waitMs, 9 * 60_000);
+      return "Okay.";
+    });
+    const { hooks: h } = hooks({ askOwner });
+    const outcome = await runCloudComputerAgent({
+      client: anthropic,
+      model: "claude-sonnet-5-5",
+      session,
+      bot,
+      goal: "Ask as you go.",
+      startUrl: null,
+      hooks: h,
+      now: () => clock,
+    });
+    // 10, 10, then the 2 minutes left of the 20-minute owner-wait budget.
+    expect(askOwner.mock.calls.map((call) => call[1])).toEqual([600_000, 600_000, 120_000]);
+    expect(outcome.status).toBe("blocked");
+    expect(outcome.summary).toContain("already waited 20 minutes");
   });
 });

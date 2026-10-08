@@ -37,12 +37,15 @@ describe("cloud computer production gates", () => {
   });
 
   it("only runs allow-listed Claude models and bounds process capacity", () => {
-    expect(cloudComputerModel({})).toBe(ANTHROPIC_MODELS.OPUS_5_5);
+    expect(cloudComputerModel({})).toBe(ANTHROPIC_MODELS.SONNET_5_5);
+    expect(cloudComputerModel({ CLOUD_COMPUTER_MODEL: ANTHROPIC_MODELS.OPUS_5_5 })).toBe(
+      ANTHROPIC_MODELS.OPUS_5_5,
+    );
     expect(cloudComputerModel({ CLOUD_COMPUTER_MODEL: ANTHROPIC_MODELS.SONNET_5_5 })).toBe(
       ANTHROPIC_MODELS.SONNET_5_5,
     );
     expect(cloudComputerModel({ CLOUD_COMPUTER_MODEL: "gpt-unknown" })).toBe(
-      ANTHROPIC_MODELS.OPUS_5_5,
+      ANTHROPIC_MODELS.SONNET_5_5,
     );
     expect(cloudComputerProcessCapacity({})).toBe(3);
     expect(cloudComputerProcessCapacity({ CLOUD_COMPUTER_MAX_CONCURRENT: "500" })).toBe(3);
@@ -131,6 +134,56 @@ describe("cloud computer source contracts", () => {
         latencyMs: 0,
       }),
     ).toBe(1_100_000);
+  });
+
+  it("finishes each task exactly once and never loses or overwrites its report", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    // One finish wins: the executor, the watchdog and shutdown all go through it.
+    expect(runner).toContain(
+      "function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {",
+    );
+    expect(runner).toContain("if (task.finished) return false;");
+    expect(runner).toContain(
+      "if (finishTask(task, terminalOutcome(outcome))) await persistTerminal(task);",
+    );
+    // The final write retries, and a read settles a stored outcome it missed.
+    expect(runner).toContain("const TERMINAL_PERSIST_BACKOFF_MS = [0, 500, 1_500] as const;");
+    expect(runner).toContain("if (!(await saveOutcome(task))) continue;");
+    // Stop never overwrites a task that already ended.
+    const stop = runner.slice(runner.indexOf("export async function stopComputerTask"));
+    expect(stop).toContain("inArray(schema.computerTasks.status, ACTIVE_STATUSES)");
+    expect(stop).toContain("return toView(updated ?? (await ownedRow(userId, taskId)));");
+  });
+
+  it("honors Stop through a retry and reports a stopped task as stopped", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    expect(runner).toMatch(/await sleep\(3_000\);\s*\/\/[^\n]*\n\s*if \(task\.stop\) throw error;/);
+    expect(runner).toMatch(
+      /outcome = task\.stop\s*\? \{ status: "stopped", summary: STOPPED_SUMMARY \}\s*: failureOutcome\(error, sdk\);/,
+    );
+    // A request too large for the API is the task's size, not a bad request.
+    expect(runner).toContain("if (error.status === 413) return { ...CONTEXT_LIMIT_OUTCOME };");
+    // A requested Stop is visible until the task actually ends.
+    expect(runner).toMatch(/stopping: Boolean\(\s*task &&\s*!task\.finished &&\s*task\.stop &&/);
+  });
+
+  it("ends stuck tasks and settles running tasks before the process exits", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    expect(runner).toContain(
+      "const stopIgnored = task.stopAt !== null && now - task.stopAt > STOP_GRACE_MS;",
+    );
+    expect(runner).toContain('code: "COMPUTER_TIMEOUT"');
+    expect(runner).toContain(
+      "export async function interruptCloudComputerTasks(): Promise<void> {",
+    );
+    expect(runner).toContain("acceptingTasks = false;");
+    expect(runner).toContain("await closeSession(session);");
+    const server = read("server.ts");
+    const shutdown = server.slice(server.indexOf("function gracefulShutdown"));
+    expect(shutdown.indexOf("interruptCloudComputerTasks()")).toBeGreaterThan(-1);
+    expect(shutdown.indexOf("interruptCloudComputerTasks()")).toBeLessThan(
+      shutdown.indexOf("closeServerAndDrain(server, graceMs)"),
+    );
   });
 
   it("enforces one active task per account in the database and stops across processes", () => {

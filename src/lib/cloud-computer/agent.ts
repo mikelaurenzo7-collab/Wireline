@@ -1,11 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 
-import {
-  ANTHROPIC_FALLBACK_MODELS,
-  ANTHROPIC_MODELS,
-  pricingForModel,
-  type ModelPricingRow,
-} from "../ai-models";
+import { ANTHROPIC_FALLBACK_MODELS, ANTHROPIC_MODELS, pricingForModel } from "../ai-models";
 import type { CloudBrowserSession, MemberResult } from "./browser-session";
 
 /**
@@ -23,9 +18,23 @@ export const CLOUD_COMPUTER_LIMITS = {
   maxActions: 120,
   maxRunMs: 15 * 60_000,
   maxOutputTokens: 8_000,
+  /** Longest wait for one owner reply. */
   ownerReplyWaitMs: 10 * 60_000,
+  /** Total time one task may wait on its owner, across all of its questions. */
+  ownerWaitBudgetMs: 20 * 60_000,
+  maxOwnerQuestions: 5,
   goalChars: 2_000,
+  /** Base64 image bytes (screenshots and zooms) one task may keep in its history. */
+  imageBudgetBytes: 20_000_000,
+  /** Serialized request ceiling, below the Messages API's 32 MB request limit. */
+  maxRequestBytes: 30_000_000,
 } as const;
+
+/** A question the owner has under a minute to see and answer is not worth raising. */
+const MIN_OWNER_WAIT_MS = 60_000;
+
+const SCREENSHOT_BUDGET_TEXT =
+  "Screenshot not attached: this task has used its screenshot budget. Use get_page_text or read_page instead.";
 
 /** Members withheld from the model. The executor also refuses them. */
 export const CLOUD_BROWSER_TOOLSET = {
@@ -100,12 +109,24 @@ export type CloudComputerOutcome =
   | { status: "stopped"; summary: string }
   | { status: "failed"; summary: string; code: string };
 
+/** The history no longer fits in one request. Also the outcome for an HTTP 413 from the API. */
+export const CONTEXT_LIMIT_OUTCOME = {
+  status: "failed",
+  code: "COMPUTER_CONTEXT_LIMIT",
+  summary:
+    "This task gathered more on-screen material than one task can hold. Try a narrower task.",
+} as const satisfies CloudComputerOutcome;
+
 export type CloudComputerHooks = {
   emit(event: CloudComputerEvent): Promise<void>;
   frame(jpeg: Buffer): void;
   stopRequested(): boolean;
-  /** Resolve with the owner's reply, or null when they stop or do not answer in time. */
-  askOwner(question: string): Promise<string | null>;
+  /**
+   * Resolve with the owner's reply, or null when they stop or do not answer
+   * within waitMs: the task's remaining owner-wait budget, capped at
+   * ownerReplyWaitMs.
+   */
+  askOwner(question: string, waitMs: number): Promise<string | null>;
   /** Reserve, run, and settle one model turn against the owner's managed AI allowance. */
   meter<T>(input: { reserveUsd: number; turn: number; operation: () => Promise<T> }): Promise<T>;
   /** Record the turn's provider usage in the active audit context. */
@@ -167,25 +188,18 @@ const REFUSAL_FALLBACK_TARGETS: Record<string, readonly string[]> = {
   [ANTHROPIC_MODELS.SONNET_5_5]: [ANTHROPIC_FALLBACK_MODELS.SONNET_5],
 };
 
-/** The highest rates any model that may serve this turn charges. */
-function reserveRates(model: string, inputTokens: number): ModelPricingRow {
-  const rows = [model, ...(REFUSAL_FALLBACK_TARGETS[model] ?? [])].map((id) =>
-    pricingForModel(id, inputTokens),
-  );
-  return {
-    input: Math.max(...rows.map((row) => row.input)),
-    output: Math.max(...rows.map((row) => row.output)),
-    cacheRead: Math.max(...rows.map((row) => row.cacheRead)),
-    cacheWrite: Math.max(...rows.map((row) => row.cacheWrite)),
-  };
-}
-
 /**
- * Upper-bound reserve for one turn: the whole prompt at the cache-write rate
- * plus the full output ceiling, at the highest rates of the configured model
- * and its refusal-fallback targets. Thinking blocks come back with their text
- * omitted but are billed as input when replayed, so earlier turns' output
- * tokens (which include thinking) are counted too.
+ * Upper-bound reserve for one turn, covering every model in the refusal-
+ * fallback chain (the configured model, then each target that may serve the
+ * turn inside the same call):
+ * - input: the whole prompt once, at the highest input or cache-write rate in
+ *   the chain (fallback attempts' input is repriced by credit). Thinking
+ *   blocks come back with their text omitted but are billed as input when
+ *   replayed, so earlier turns' output tokens (which include thinking) count;
+ * - output: the full output ceiling for each model in the chain, because an
+ *   attempt declined partway through is billed and the fallback attempt that
+ *   serves the turn is billed again at its own rate.
+ * The safety margin applies to the total.
  */
 export function turnReserveUsd(
   model: string,
@@ -221,11 +235,13 @@ export function turnReserveUsd(
   visit(messages);
   // 2.5 characters per token stays an upper bound for dense and non-Latin text.
   const inputTokens = Math.ceil(textChars / 2.5) + images * 1_600 + replayedOutputTokens;
-  const rates = reserveRates(model, inputTokens);
+  const chain = [model, ...(REFUSAL_FALLBACK_TARGETS[model] ?? [])].map((id) =>
+    pricingForModel(id, inputTokens),
+  );
+  const inputRate = Math.max(...chain.map((rates) => Math.max(rates.input, rates.cacheWrite)));
+  const outputRate = chain.reduce((sum, rates) => sum + rates.output, 0);
   const cost =
-    (inputTokens * Math.max(rates.input, rates.cacheWrite) +
-      CLOUD_COMPUTER_LIMITS.maxOutputTokens * rates.output) /
-    1_000_000;
+    (inputTokens * inputRate + CLOUD_COMPUTER_LIMITS.maxOutputTokens * outputRate) / 1_000_000;
   return Math.max(0.02, Math.round(cost * 1.15 * 1_000_000) / 1_000_000);
 }
 
@@ -275,6 +291,18 @@ function cleanSources(value: unknown): string[] {
   return out;
 }
 
+/** UTF-8 size of a value as it is serialized into the request body. */
+function jsonBytes(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+/** Base64 bytes an image block adds to every later request, whatever its media type. */
+function imageDataBytes(block: { type: string }): number {
+  if (block.type !== "image") return 0;
+  const data = (block as { source?: { data?: unknown } }).source?.data;
+  return typeof data === "string" ? data.length : 0;
+}
+
 export async function runCloudComputerAgent(input: {
   client: CloudComputerClient;
   model: string;
@@ -288,11 +316,35 @@ export async function runCloudComputerAgent(input: {
   const now = input.now ?? (() => Date.now());
   const startedAt = now();
   const system = buildSystemPrompt(input.bot);
-  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [
-    { role: "user", content: buildTaskMessage(input.goal, input.startUrl) },
-  ];
+  const request = {
+    model: input.model,
+    max_tokens: CLOUD_COMPUTER_LIMITS.maxOutputTokens,
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    cache_control: { type: "ephemeral" },
+    thinking: { type: "adaptive" },
+    output_config: { effort: "medium" },
+    system,
+    tools: [
+      CLOUD_BROWSER_TOOLSET as unknown as Anthropic.Beta.Messages.BetaToolUnion,
+      FINISH_TASK_TOOL as unknown as Anthropic.Beta.Messages.BetaToolUnion,
+      ASK_OWNER_TOOL as unknown as Anthropic.Beta.Messages.BetaToolUnion,
+    ],
+  };
+  const messages: Anthropic.Beta.Messages.BetaMessageParam[] = [];
+  // History is append-only (earlier messages are never edited, which would
+  // invalidate later thinking blocks), so a running total of serialized
+  // message sizes keeps the request body size exact without re-serializing.
+  let requestBytes = jsonBytes({ ...request, messages: [] });
+  const append = (message: Anthropic.Beta.Messages.BetaMessageParam) => {
+    messages.push(message);
+    requestBytes += jsonBytes(message) + 1;
+  };
+  append({ role: "user", content: buildTaskMessage(input.goal, input.startUrl) });
   let actions = 0;
+  let questions = 0;
   let ownerWaitMs = 0;
+  let imageBytes = 0;
   let replayedOutputTokens = 0;
   const overTime = () => now() - startedAt - ownerWaitMs > CLOUD_COMPUTER_LIMITS.maxRunMs;
   const timeLimit: CloudComputerOutcome = {
@@ -300,10 +352,31 @@ export async function runCloudComputerAgent(input: {
     code: "COMPUTER_TIME_LIMIT",
     summary: "The task reached its 15-minute working limit. Try a narrower task.",
   };
+  // Every image stays in the history and is re-sent each turn. Past the
+  // budget, a new result's images are replaced as the result is created;
+  // results already in the history are never changed.
+  const budgetImages = (result: MemberResult): MemberResult => {
+    if (!result.ok) return result;
+    const bytes = result.content.reduce((sum, block) => sum + imageDataBytes(block), 0);
+    if (!bytes) return result;
+    if (imageBytes + bytes <= CLOUD_COMPUTER_LIMITS.imageBudgetBytes) {
+      imageBytes += bytes;
+      return result;
+    }
+    return {
+      ...result,
+      content: [
+        ...result.content.filter((block) => block.type !== "image"),
+        { type: "text", text: SCREENSHOT_BUDGET_TEXT },
+      ],
+    };
+  };
 
   for (let turn = 1; turn <= CLOUD_COMPUTER_LIMITS.maxTurns; turn += 1) {
     if (input.hooks.stopRequested()) return { status: "stopped", summary: "Stopped by the owner." };
     if (overTime()) return timeLimit;
+    // The API would reject this request (413) after earlier turns were paid for.
+    if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
 
     const reserveUsd = turnReserveUsd(input.model, messages, system, replayedOutputTokens);
     const response = await input.hooks.meter({
@@ -312,19 +385,7 @@ export async function runCloudComputerAgent(input: {
       operation: async () => {
         const started = now();
         const message = await input.client.beta.messages.create({
-          model: input.model,
-          max_tokens: CLOUD_COMPUTER_LIMITS.maxOutputTokens,
-          betas: ["server-side-fallback-2026-07-01"],
-          fallbacks: "default",
-          cache_control: { type: "ephemeral" },
-          thinking: { type: "adaptive" },
-          output_config: { effort: "medium" },
-          system,
-          tools: [
-            CLOUD_BROWSER_TOOLSET as unknown as Anthropic.Beta.Messages.BetaToolUnion,
-            FINISH_TASK_TOOL as unknown as Anthropic.Beta.Messages.BetaToolUnion,
-            ASK_OWNER_TOOL as unknown as Anthropic.Beta.Messages.BetaToolUnion,
-          ],
+          ...request,
           messages,
         } as Anthropic.Beta.Messages.MessageCreateParamsNonStreaming);
         input.hooks.recordUsage(input.model, message, now() - started);
@@ -332,7 +393,7 @@ export async function runCloudComputerAgent(input: {
       },
     });
 
-    messages.push({
+    append({
       role: "assistant",
       content: response.content as Anthropic.Beta.Messages.BetaContentBlockParam[],
     });
@@ -390,7 +451,7 @@ export async function runCloudComputerAgent(input: {
             : { type: "tool_result", tool_use_id: use.id, is_error: true, content: text },
         );
       }
-      messages.push({ role: "user", content: results });
+      append({ role: "user", content: results });
       continue;
     }
 
@@ -430,16 +491,36 @@ export async function runCloudComputerAgent(input: {
         if (input.hooks.stopRequested())
           return { status: "stopped", summary: "Stopped by the owner." };
         const question = clip(String((use.input as Record<string, unknown>)?.question ?? ""), 300);
-        await input.hooks.emit({ kind: "question", text: question || "The Bot needs your input." });
+        const needed = question || "The Bot needs your input.";
+        // A task holds a browser and a capacity slot while it waits, so both
+        // the number of questions and the total wait are capped. Past either
+        // cap the question is not raised: the owner gets it in the report.
+        const waitMs = Math.min(
+          CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs,
+          CLOUD_COMPUTER_LIMITS.ownerWaitBudgetMs - ownerWaitMs,
+        );
+        if (questions >= CLOUD_COMPUTER_LIMITS.maxOwnerQuestions || waitMs < MIN_OWNER_WAIT_MS) {
+          const reason =
+            questions >= CLOUD_COMPUTER_LIMITS.maxOwnerQuestions
+              ? `this task already asked you ${CLOUD_COMPUTER_LIMITS.maxOwnerQuestions} questions, the most one task can ask`
+              : `this task already waited ${Math.round(CLOUD_COMPUTER_LIMITS.ownerWaitBudgetMs / 60_000)} minutes for your replies, the longest one task can wait`;
+          return {
+            status: "blocked",
+            summary: `Waiting on you: ${needed} The Bot stopped because ${reason}. Start a new task that includes your answer.`,
+            sources: [],
+          };
+        }
+        questions += 1;
+        await input.hooks.emit({ kind: "question", text: needed });
         const waitStarted = now();
-        const reply = await input.hooks.askOwner(question);
+        const reply = await input.hooks.askOwner(question, waitMs);
         ownerWaitMs += now() - waitStarted;
         if (reply === null) {
           return input.hooks.stopRequested()
             ? { status: "stopped", summary: "Stopped by the owner." }
             : {
                 status: "blocked",
-                summary: `Waiting on you: ${question} The Bot stopped because there was no reply.`,
+                summary: `Waiting on you: ${needed} The Bot stopped because there was no reply.`,
                 sources: [],
               };
         }
@@ -487,7 +568,7 @@ export async function runCloudComputerAgent(input: {
         url: input.session.activeUrl() || undefined,
         ok: result.ok,
       });
-      results.push(browserResult(use.id, result));
+      results.push(browserResult(use.id, budgetImages(result)));
       if (!result.ok) halted = true;
     }
 
@@ -501,7 +582,7 @@ export async function runCloudComputerAgent(input: {
     }
     const frame = await input.session.frame();
     if (frame) input.hooks.frame(frame);
-    messages.push({ role: "user", content: results });
+    append({ role: "user", content: results });
   }
 
   return {

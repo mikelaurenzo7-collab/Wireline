@@ -17,6 +17,7 @@ import { drizzle, log, tenantStore } from "../server-context";
 import { getErrorMessage } from "../server-utils";
 import {
   CLOUD_COMPUTER_LIMITS,
+  CONTEXT_LIMIT_OUTCOME,
   runCloudComputerAgent,
   type CloudComputerEvent,
   type CloudComputerOutcome,
@@ -39,8 +40,21 @@ const STALE_AFTER_MS = 3 * 60_000;
 // A live task touches its row well inside STALE_AFTER_MS, so a long model
 // call or an owner question never reads as abandoned to another process.
 const HEARTBEAT_MS = 60_000;
+// The heartbeat also ends a task whose executor is stuck (a browser call
+// that never returns): one still running this long after Stop was pressed,
+// or one older than its working time, its whole owner-wait budget, and slack
+// for a last turn that starts just inside the working limit (two 5-minute
+// model attempts, one browser step, and margin).
+const STOP_GRACE_MS = 60_000;
+const MAX_TASK_LIFETIME_MS =
+  CLOUD_COMPUTER_LIMITS.maxRunMs + CLOUD_COMPUTER_LIMITS.ownerWaitBudgetMs + 12 * 60_000;
+// A failed final write is retried before the outcome is left for a read to settle.
+const TERMINAL_PERSIST_BACKOFF_MS = [0, 500, 1_500] as const;
+const SESSION_CLOSE_DEADLINE_MS = 10_000;
+const SHUTDOWN_DEADLINE_MS = 5_000;
 const ACTIVE_STATUSES: ComputerTaskStatus[] = ["running", "needs_input"];
 const INTERRUPTED_SUMMARY = "This task was interrupted by a BotBound update. Start it again.";
+const STOPPED_SUMMARY = "Stopped by the owner.";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Cache reads cost a tenth of fresh input; a task replays its whole context
 // every turn, so the daily token quota counts them at that ratio.
@@ -59,11 +73,24 @@ function cleanText(value: string, max: number, keepNewlines = false): string {
   return stripped.slice(0, max);
 }
 
+/** The final state a finished task writes to its row. */
+type TerminalOutcome = {
+  status: Exclude<ComputerTaskStatus, "running" | "needs_input">;
+  summary: string;
+  sources: string[];
+  errorCode: string | null;
+  finishedAt: Date;
+};
+
 type LiveTask = {
   taskId: string;
   userId: string;
   agentId: string;
+  startedAt: number;
   stop: boolean;
+  /** When stop was first requested. */
+  stopAt: number | null;
+  session: CloudBrowserSession | null;
   frame: Buffer | null;
   frameAt: number;
   events: ComputerTaskEvent[];
@@ -71,11 +98,16 @@ type LiveTask = {
   actions: number;
   reply: ((value: string | null) => void) | null;
   finished: boolean;
+  /** Set when the task finishes, and kept until the row holds it. */
+  outcome: TerminalOutcome | null;
+  outcomeSaved: boolean;
 };
 
 const live = new Map<string, LiveTask>();
 /** Accounts with a start in flight: one start per account, counted against capacity. */
 const starting = new Set<string>();
+/** Cleared by the shutdown hook: a task started now would die with the process. */
+let acceptingTasks = true;
 
 function runningCount(): number {
   let count = 0;
@@ -85,8 +117,24 @@ function runningCount(): number {
 
 function pruneFinished(now = Date.now()) {
   for (const [id, task] of live) {
-    if (task.finished && now - task.frameAt > FRAME_RETENTION_MS) live.delete(id);
+    // An outcome its row does not hold yet stays until a read settles it.
+    if (task.finished && task.outcomeSaved && now - task.frameAt > FRAME_RETENTION_MS) {
+      live.delete(id);
+    }
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Stop at the executor's next checkpoint, and end any wait for an owner reply. */
+function requestStop(task: LiveTask) {
+  if (!task.stop) {
+    task.stop = true;
+    task.stopAt = Date.now();
+  }
+  task.reply?.(null);
 }
 
 export type ComputerTaskView = {
@@ -106,6 +154,8 @@ export type ComputerTaskView = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  /** Stop was requested; the task ends at its executor's next checkpoint. */
+  stopping: boolean;
 };
 
 type TaskRow = typeof schema.computerTasks.$inferSelect;
@@ -129,6 +179,13 @@ function toView(row: TaskRow): ComputerTaskView {
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
     liveView: Boolean(task && !task.finished && task.frame && task.userId === row.userId),
+    stopping: Boolean(
+      task &&
+      !task.finished &&
+      task.stop &&
+      task.userId === row.userId &&
+      ACTIVE_STATUSES.includes(row.status),
+    ),
   };
 }
 
@@ -246,6 +303,13 @@ export async function startComputerTask(
       "The cloud computer is not available yet. It turns on once BotBound finishes setting it up.",
     );
   }
+  if (!acceptingTasks) {
+    throw new AppError(
+      503,
+      "COMPUTER_RESTARTING",
+      "BotBound is restarting for an update. Start the task again in a minute.",
+    );
+  }
   // Claim the account's start slot and a capacity slot synchronously, before
   // any await, so two simultaneous starts cannot both pass the checks below.
   if (starting.has(userId)) throw busyError();
@@ -311,6 +375,12 @@ async function admitComputerTask(
   ) {
     throw busyError();
   }
+  // A task this process finished whose final write did not land still holds
+  // the account's one active row: write its stored outcome first.
+  for (const row of busy) {
+    const task = live.get(row.id);
+    if (task?.finished) await saveOutcome(task);
+  }
   await enforceTaskLimits(userId);
 
   const model = cloudComputerModel();
@@ -349,7 +419,10 @@ async function admitComputerTask(
     taskId: row.id,
     userId,
     agentId: brief.agent_id,
+    startedAt: Date.now(),
     stop: false,
+    stopAt: null,
+    session: null,
     frame: null,
     frameAt: Date.now(),
     events: [],
@@ -357,6 +430,8 @@ async function admitComputerTask(
     actions: 0,
     reply: null,
     finished: false,
+    outcome: null,
+    outcomeSaved: false,
   };
   live.set(row.id, task);
 
@@ -379,7 +454,10 @@ async function admitComputerTask(
  * signal: when Stop lands on another process (or the row was settled), the
  * update matches nothing and this executor stops at its next checkpoint.
  */
-async function persist(task: LiveTask, patch: Partial<typeof schema.computerTasks.$inferInsert>) {
+async function persist(
+  task: LiveTask,
+  patch: Partial<typeof schema.computerTasks.$inferInsert>,
+): Promise<"written" | "unmatched" | "error"> {
   try {
     const updated = await drizzle
       .update(schema.computerTasks)
@@ -398,16 +476,106 @@ async function persist(task: LiveTask, patch: Partial<typeof schema.computerTask
         ),
       )
       .returning({ id: schema.computerTasks.id });
-    if (!updated.length && !task.finished) {
-      task.stop = true;
-      task.reply?.(null);
-    }
+    if (updated.length) return "written";
+    if (!task.finished) requestStop(task);
+    return "unmatched";
   } catch (error) {
     log.error("Cloud computer task update failed", {
       taskId: task.taskId,
       error: getErrorMessage(error),
     });
+    return "error";
   }
+}
+
+function terminalOutcome(outcome: CloudComputerOutcome): TerminalOutcome {
+  return {
+    status: outcome.status,
+    summary: cleanText(outcome.summary, 1_500, true),
+    sources: "sources" in outcome ? outcome.sources.map((source) => cleanText(source, 500)) : [],
+    errorCode: outcome.status === "failed" ? outcome.code : null,
+    finishedAt: new Date(),
+  };
+}
+
+function terminalPatch(outcome: TerminalOutcome) {
+  return {
+    status: outcome.status,
+    summary: outcome.summary,
+    sources: outcome.sources,
+    errorCode: outcome.errorCode,
+    question: null,
+    finishedAt: outcome.finishedAt,
+  };
+}
+
+const FINAL_EVENTS: Record<TerminalOutcome["status"], CloudComputerEvent> = {
+  completed: { kind: "result", text: "Finished the task" },
+  blocked: { kind: "result", text: "Needs you to finish" },
+  stopped: { kind: "result", text: "Stopped" },
+  failed: { kind: "error", text: "Could not finish" },
+  interrupted: { kind: "error", text: "Interrupted by a BotBound update" },
+};
+
+/**
+ * Finish a task with its outcome, exactly once. The executor, the heartbeat
+ * watchdog and the shutdown hook can each finish a task; only the first
+ * counts, and the others then write nothing. Synchronous, so the finished
+ * flag is set before any later await can observe the task.
+ */
+function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
+  if (task.finished) return false;
+  task.finished = true;
+  task.outcome = outcome;
+  task.reply?.(null);
+  task.reply = null;
+  task.frame = null;
+  pushEvent(task, FINAL_EVENTS[outcome.status]);
+  return true;
+}
+
+/** Write a finished task's stored outcome while its row is still active. */
+async function saveOutcome(task: LiveTask): Promise<boolean> {
+  if (!task.outcome) return false;
+  if ((await persist(task, terminalPatch(task.outcome))) === "error") return false;
+  // Written, or the row was already ended by another writer: nothing is left to save.
+  task.outcomeSaved = true;
+  return true;
+}
+
+/** The final write, retried with a short backoff; a read settles it if all attempts fail. */
+async function persistTerminal(task: LiveTask): Promise<void> {
+  for (const delay of TERMINAL_PERSIST_BACKOFF_MS) {
+    if (delay) await sleep(delay);
+    if (task.outcomeSaved || (await saveOutcome(task))) return;
+  }
+  log.error("Cloud computer task outcome is not saved yet; the next read of the task settles it", {
+    taskId: task.taskId,
+  });
+}
+
+/** Close a browser without letting a dead connection hold the caller. */
+async function closeSession(session: CloudBrowserSession | null): Promise<void> {
+  if (!session) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    session.close().catch(() => undefined),
+    new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, SESSION_CLOSE_DEADLINE_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+}
+
+/**
+ * End a task its executor cannot end (a browser call that never returns, or
+ * a process shutting down): stop it, settle its row, and close its browser.
+ * The executor, if it ever resumes, finds the task finished and writes nothing.
+ */
+async function forceFinish(task: LiveTask, outcome: TerminalOutcome): Promise<void> {
+  requestStop(task);
+  if (!finishTask(task, outcome)) return;
+  await Promise.allSettled([persistTerminal(task), closeSession(task.session)]);
 }
 
 function pushEvent(task: LiveTask, event: CloudComputerEvent) {
@@ -427,6 +595,8 @@ function failureOutcome(error: unknown, sdk: AnthropicSdk | null): CloudComputer
     return { status: "failed", code: error.code || "COMPUTER_FAILED", summary: error.message };
   }
   if (error instanceof DefiniteProviderRejectionError) {
+    // 413: the task's history outgrew the API's request size, not a bad task.
+    if (error.status === 413) return { ...CONTEXT_LIMIT_OUTCOME };
     return {
       status: "failed",
       code: "COMPUTER_MODEL_REJECTED",
@@ -461,7 +631,7 @@ async function executeTask(
   let sdk: AnthropicSdk | null = null;
   let outcome: CloudComputerOutcome;
   const taskHash = createHash("sha256").update(task.taskId).digest("hex").slice(0, 24);
-  const heartbeat = setInterval(() => void persist(task, {}), HEARTBEAT_MS);
+  const heartbeat = setInterval(() => void heartbeatTick(task, heartbeat), HEARTBEAT_MS);
   heartbeat.unref?.();
   try {
     sdk = await loadAnthropicSdk();
@@ -482,7 +652,8 @@ async function executeTask(
         "The cloud computer could not start a browser. Try again in a few minutes.",
       );
     }
-    if (input.startUrl) {
+    task.session = session;
+    if (input.startUrl && !task.stop) {
       const opened = await session.execute("navigate", { url: input.startUrl });
       pushEvent(task, {
         kind: opened.ok ? "action" : "error",
@@ -516,23 +687,24 @@ async function executeTask(
           task.frameAt = Date.now();
         },
         stopRequested: () => task.stop,
-        askOwner: async (question) => {
+        askOwner: async (question, waitMs) => {
           // Stop pressed during the model call: do not park on a new question.
           if (task.stop) return null;
           await persist(task, { status: "needs_input", question: cleanText(question, 300) });
           if (task.stop) return null;
+          // waitMs is what remains of the task's owner-wait budget.
           const reply = await new Promise<string | null>((resolve) => {
             const timer = setTimeout(() => {
               task.reply = null;
               resolve(null);
-            }, CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs);
+            }, waitMs);
             task.reply = (value) => {
               clearTimeout(timer);
               task.reply = null;
               resolve(value);
             };
           });
-          await persist(task, { status: "running", question: null });
+          if (!task.finished) await persist(task, { status: "running", question: null });
           return reply;
         },
         meter: async ({ reserveUsd, turn, operation }) => {
@@ -573,7 +745,9 @@ async function executeTask(
             return await attempt(0);
           } catch (error) {
             if (!(error instanceof RuntimeUnavailableError) || task.stop) throw error;
-            await new Promise((resolve) => setTimeout(resolve, 3_000));
+            await sleep(3_000);
+            // Stop pressed during the backoff: reserve and send nothing more.
+            if (task.stop) throw error;
             return attempt(1);
           }
         },
@@ -609,7 +783,10 @@ async function executeTask(
       },
     });
   } catch (error) {
-    outcome = failureOutcome(error, sdk);
+    // A step that failed after the owner pressed Stop is still the owner's stop.
+    outcome = task.stop
+      ? { status: "stopped", summary: STOPPED_SUMMARY }
+      : failureOutcome(error, sdk);
     if (!(error instanceof AppError)) {
       log.warn("Cloud computer task failed", {
         taskId: task.taskId,
@@ -618,45 +795,107 @@ async function executeTask(
     }
   } finally {
     clearInterval(heartbeat);
-    if (session) await session.close();
+    await closeSession(session);
   }
 
-  task.finished = true;
-  task.reply = null;
-  task.frame = null;
-  pushEvent(task, {
-    kind:
-      outcome.status === "completed" ? "result" : outcome.status === "failed" ? "error" : "result",
-    text:
-      outcome.status === "completed"
-        ? "Finished the task"
-        : outcome.status === "blocked"
-          ? "Needs you to finish"
-          : outcome.status === "stopped"
-            ? "Stopped"
-            : "Could not finish",
-  });
-  await persist(task, {
-    status: outcome.status,
-    summary: cleanText(outcome.summary, 1_500, true),
-    sources: "sources" in outcome ? outcome.sources.map((source) => cleanText(source, 500)) : [],
-    errorCode: outcome.status === "failed" ? outcome.code : null,
-    question: null,
-    finishedAt: new Date(),
-  });
+  // The watchdog or the shutdown hook may have finished the task already.
+  if (finishTask(task, terminalOutcome(outcome))) await persistTerminal(task);
 }
 
-/** Tasks that were active when their process restarted cannot resume. */
+/**
+ * One heartbeat: keep the row fresh so other processes see the task alive,
+ * or end the task when its executor is stuck. Stop and every limit are
+ * honored at the executor's checkpoints; a browser call with no deadline
+ * never reaches one, and would otherwise hold the account and a capacity
+ * slot until the process restarts.
+ */
+async function heartbeatTick(task: LiveTask, heartbeat: ReturnType<typeof setInterval>) {
+  if (task.finished) {
+    clearInterval(heartbeat);
+    return;
+  }
+  const now = Date.now();
+  const stopIgnored = task.stopAt !== null && now - task.stopAt > STOP_GRACE_MS;
+  if (!stopIgnored && now - task.startedAt <= MAX_TASK_LIFETIME_MS) {
+    await persist(task, {});
+    return;
+  }
+  clearInterval(heartbeat);
+  log.warn("Cloud computer task stopped responding; ending it", {
+    taskId: task.taskId,
+    stopRequested: task.stop,
+  });
+  await forceFinish(
+    task,
+    terminalOutcome(
+      task.stop
+        ? { status: "stopped", summary: STOPPED_SUMMARY }
+        : {
+            status: "failed",
+            code: "COMPUTER_TIMEOUT",
+            summary: "The cloud computer stopped responding, so the task was ended. Try again.",
+          },
+    ),
+  );
+}
+
+/**
+ * Process shutdown: refuse new tasks, then settle every running task as
+ * interrupted and close its browser, so no row or owner view keeps showing a
+ * task that no process runs. Bounded so it never holds a deploy.
+ */
+export async function interruptCloudComputerTasks(): Promise<void> {
+  acceptingTasks = false;
+  const running = [...live.values()].filter((task) => !task.finished);
+  if (!running.length) return;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    Promise.allSettled(
+      running.map((task) =>
+        forceFinish(task, {
+          status: "interrupted",
+          summary: INTERRUPTED_SUMMARY,
+          sources: [],
+          errorCode: null,
+          finishedAt: new Date(),
+        }),
+      ),
+    ),
+    new Promise<void>((resolve) => {
+      timer = setTimeout(resolve, SHUTDOWN_DEADLINE_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+}
+
+/**
+ * Settle active rows no executor will write again. A task this process
+ * finished whose final write did not land gets its stored outcome. A task
+ * whose process restarted (its heartbeat stopped) cannot resume and is
+ * marked interrupted. Both writes only touch rows that are still active.
+ */
 async function settleStaleTasks(rows: TaskRow[]): Promise<TaskRow[]> {
+  const saved = new Map<string, TaskRow>();
+  for (const row of rows) {
+    const task = live.get(row.id);
+    if (!ACTIVE_STATUSES.includes(row.status) || !task?.finished || !task.outcome) continue;
+    // A failed write leaves the row active, so the next read tries again.
+    if (!(await saveOutcome(task))) continue;
+    saved.set(row.id, {
+      ...row,
+      ...terminalPatch(task.outcome),
+      events: task.events,
+      turnCount: task.turns,
+      actionCount: task.actions,
+      updatedAt: new Date(),
+    });
+  }
   const cutoff = Date.now() - STALE_AFTER_MS;
   const stale = rows.filter(
     (row) =>
-      ACTIVE_STATUSES.includes(row.status) &&
-      !live.get(row.id)?.finished &&
-      !live.has(row.id) &&
-      row.updatedAt.getTime() < cutoff,
+      ACTIVE_STATUSES.includes(row.status) && !live.has(row.id) && row.updatedAt.getTime() < cutoff,
   );
-  if (!stale.length) return rows;
+  if (!stale.length) return rows.map((row) => saved.get(row.id) ?? row);
   const ids = stale.map((row) => row.id);
   const now = new Date();
   await drizzle
@@ -685,7 +924,7 @@ async function settleStaleTasks(rows: TaskRow[]): Promise<TaskRow[]> {
           finishedAt: now,
           updatedAt: now,
         }
-      : row,
+      : (saved.get(row.id) ?? row),
   );
 }
 
@@ -749,10 +988,16 @@ export async function getComputerFrame(userId: string, taskId: string): Promise<
 export async function stopComputerTask(userId: string, taskId: string): Promise<ComputerTaskView> {
   const row = await ownedRow(userId, taskId);
   const task = live.get(taskId);
-  if (task && task.userId === userId && !task.finished) {
-    task.stop = true;
-    task.reply?.(null);
-    return toView({ ...row, status: row.status });
+  if (task && task.userId === userId) {
+    if (!task.finished) {
+      requestStop(task);
+      return toView({ ...row, status: row.status });
+    }
+    // The task finished before Stop arrived: its own report stands.
+    if (ACTIVE_STATUSES.includes(row.status)) {
+      const [settled] = await settleStaleTasks([row]);
+      return toView(settled);
+    }
   }
   if (ACTIVE_STATUSES.includes(row.status)) {
     const now = new Date();
@@ -760,14 +1005,22 @@ export async function stopComputerTask(userId: string, taskId: string): Promise<
       .update(schema.computerTasks)
       .set({
         status: "stopped",
-        summary: "Stopped by the owner.",
+        summary: STOPPED_SUMMARY,
         question: null,
         finishedAt: now,
         updatedAt: now,
       })
-      .where(and(eq(schema.computerTasks.id, taskId), eq(schema.computerTasks.userId, userId)))
+      .where(
+        and(
+          eq(schema.computerTasks.id, taskId),
+          eq(schema.computerTasks.userId, userId),
+          inArray(schema.computerTasks.status, ACTIVE_STATUSES),
+        ),
+      )
       .returning();
-    return toView(updated ?? row);
+    // No longer active: the task ended on its own between the read and this
+    // write (here or on another process). Show its real outcome.
+    return toView(updated ?? (await ownedRow(userId, taskId)));
   }
   return toView(row);
 }

@@ -17,7 +17,8 @@ export const OPENAI_MODELS = {
 
 /**
  * Claude models the per-Bot cloud computer may be configured to run
- * (CLOUD_COMPUTER_MODEL). Opus 5.5 is the default.
+ * (CLOUD_COMPUTER_MODEL). Sonnet 5.5 is the default: it fits a small plan's
+ * AI allowance, while an Opus turn reserves several times as much.
  */
 export const ANTHROPIC_MODELS = {
   OPUS_5_5: "claude-opus-5-5",

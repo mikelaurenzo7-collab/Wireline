@@ -23,6 +23,7 @@ function task(overrides: Partial<MockTask> & { id: string; status: string }): Mo
     finishedAt: null,
     updatedAt: NOW,
     liveView: true,
+    stopping: false,
     ...overrides,
   };
 }
@@ -43,12 +44,26 @@ async function fakeFrame(page: Page): Promise<Buffer> {
   return jpeg;
 }
 
+const ACTIVE = new Set(["running", "needs_input"]);
+
 async function mockComputer(
   page: Page,
-  options: { status: Record<string, unknown>; tasks: MockTask[]; frame?: Buffer | null },
+  options: {
+    status: Record<string, unknown>;
+    tasks: MockTask[];
+    frame?: Buffer | null;
+    /** Answer the first status and task-list reads with a server error. */
+    failFirstLoad?: boolean;
+  },
 ) {
   const replies: string[] = [];
+  const stops: string[] = [];
   let tasks = options.tasks;
+  let statusReads = 0;
+  let listReads = 0;
+  const setTask = (id: string, patch: Partial<MockTask>) => {
+    tasks = tasks.map((item) => (item.id === id ? { ...item, ...patch } : item));
+  };
   // Isolated UI fixtures: no live account, database, browser, or model calls.
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -78,15 +93,31 @@ async function mockComputer(
         },
       });
     }
-    if (path === "/api/computer/status") return route.fulfill({ json: options.status });
+    if (path === "/api/computer/status") {
+      statusReads += 1;
+      return options.failFirstLoad && statusReads === 1
+        ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
+        : route.fulfill({ json: options.status });
+    }
     if (path === "/api/computer/tasks" && request.method() === "GET") {
-      return route.fulfill({ json: { tasks } });
+      listReads += 1;
+      return options.failFirstLoad && listReads === 1
+        ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
+        : route.fulfill({ json: { tasks } });
     }
     const frameMatch = /^\/api\/computer\/tasks\/([^/]+)\/frame$/.exec(path);
     if (frameMatch) {
-      return options.frame
+      // Like the server: a finished task's screen is gone.
+      const live = ACTIVE.has(tasks.find((item) => item.id === frameMatch[1])?.status ?? "");
+      return options.frame && live
         ? route.fulfill({ status: 200, contentType: "image/jpeg", body: options.frame })
         : route.fulfill({ status: 204, body: "" });
+    }
+    const stopMatch = /^\/api\/computer\/tasks\/([^/]+)\/stop$/.exec(path);
+    if (stopMatch) {
+      stops.push(stopMatch[1]);
+      setTask(stopMatch[1], { stopping: true });
+      return route.fulfill({ json: { task: tasks.find((item) => item.id === stopMatch[1]) } });
     }
     const replyMatch = /^\/api\/computer\/tasks\/([^/]+)\/reply$/.exec(path);
     if (replyMatch) {
@@ -104,7 +135,36 @@ async function mockComputer(
       json: { accounts: [], data: [], numbers: [], integrations: [], messages: [], threads: [] },
     });
   });
-  return { replies };
+  return { replies, stops, setTask };
+}
+
+/** Nothing in the computer layout is wider than its box, and nothing scrolls sideways. */
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        // The shell clips the page, so the root width alone can never fail.
+        const content = document.querySelector(".wl-workspace-content");
+        if (!content || content.scrollWidth > content.clientWidth + 1) return "workspace content";
+        for (const element of document.querySelectorAll(".wl-computer-layout *")) {
+          if (!(element instanceof HTMLElement)) continue;
+          // Form fields scroll their own text, the activity log is a deliberate
+          // scroller, and screen-reader text is clipped to 1px by design.
+          if (element.matches("input, textarea, select")) continue;
+          if (element.closest(".wl-computer-activity ol, .sr-only")) continue;
+          const style = getComputedStyle(element);
+          if (style.textOverflow === "ellipsis") continue;
+          if (element.scrollWidth > element.clientWidth + 1) {
+            return `${element.tagName.toLowerCase()}.${element.className}`;
+          }
+          if (element.getBoundingClientRect().right > innerWidth + 1) {
+            return `${element.tagName.toLowerCase()}.${element.className} (off screen)`;
+          }
+        }
+        return "none";
+      }),
+    )
+    .toBe("none");
 }
 
 async function capture(page: Page, info: TestInfo, name: string) {
@@ -176,9 +236,7 @@ for (const width of [390, 1440]) {
       return detailTop < composerTop;
     });
     expect(order).toBe(true);
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-      .toBe(true);
+    await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-needs-input-${width}`);
 
     await detail.getByRole("textbox", { name: "Reply to your Bot" }).fill("Yes, skip the sign in.");
@@ -189,8 +247,85 @@ for (const width of [390, 1440]) {
     const history = page.getByRole("complementary", { name: "Recent tasks" });
     await history.getByRole("button", { name: /Google Business page/ }).click();
     await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
+    // The finished task never shows the live task's screen.
+    const finished = page.getByRole("region", { name: /Google Business page/ });
+    await expect(finished.getByText("The screen is cleared after a task ends.")).toBeVisible();
+    await expect(finished.getByRole("img")).toHaveCount(0);
   });
 }
+
+test("a running task keeps updating while the owner reads an older result", async ({
+  page,
+}, info) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const { stops, setTask } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [
+      task({ id: "task-live", status: "running" }),
+      task({
+        id: "task-done",
+        status: "completed",
+        goal: "Check our Google Business page and tell me if our hours match our website.",
+        summary: "Your hours match on both pages.",
+        liveView: false,
+      }),
+    ],
+  });
+
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await expect(
+    detail.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
+  ).toBeVisible();
+
+  // Stop waits for the Bot's next checkpoint, and says so.
+  await detail.getByRole("button", { name: "Stop" }).click();
+  await expect(detail.getByRole("button", { name: "Stopping…" })).toBeDisabled();
+  expect(stops).toEqual(["task-live"]);
+  await capture(page, info, "computer-stopping");
+
+  const history = page.getByRole("complementary", { name: "Recent tasks" });
+  await history.getByRole("button", { name: /Google Business page/ }).click();
+  await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
+
+  // The running task is still followed while the owner reads another one.
+  setTask("task-live", {
+    status: "stopped",
+    stopping: false,
+    summary: "Stopped.",
+    liveView: false,
+  });
+  await expect(
+    history.getByRole("button", { name: /Find three plumbers/ }).getByText("Stopped"),
+  ).toBeVisible();
+  await expect(page.getByText("The task stopped.")).toBeAttached();
+  await page
+    .getByRole("textbox", { name: "What should your Bot do?" })
+    .fill("Compare two supplier prices.");
+  await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
+});
+
+test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await mockComputer(page, { status: READY, tasks: [], failFirstLoad: true });
+
+  await page.goto("/computer");
+  await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
+  const history = page.getByRole("complementary", { name: "Recent tasks" });
+  await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
+  await expect(page.getByText("The task did not start")).toHaveCount(0);
+  await capture(page, info, "computer-load-retry");
+
+  await page.getByRole("button", { name: "Retry" }).first().click();
+  await history.getByRole("button", { name: "Retry" }).click();
+  await expect(page.getByText("Your Bot's Computer Did Not Load")).toHaveCount(0);
+  await expect(history.getByText("No tasks yet.")).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "What should your Bot do?" })
+    .fill("Compare two supplier prices.");
+  await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
+});
 
 test("an account without a paid plan sees one clear upgrade path", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });

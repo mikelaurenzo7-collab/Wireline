@@ -12,9 +12,15 @@ import type { CloudBrowserConnection } from "./browser-session";
 
 const ALLOWED_MODELS = new Set<string>(Object.values(ANTHROPIC_MODELS));
 
+/**
+ * Sonnet 5.5 is the default: each turn reserves against the owner's managed
+ * AI allowance, and an Opus turn (with its Opus fallbacks) reserves several
+ * times as much, too much for a small plan's allowance to finish a task.
+ * Opus 5.5 and Opus 5 stay available through CLOUD_COMPUTER_MODEL.
+ */
 export function cloudComputerModel(env: NodeJS.ProcessEnv = process.env): string {
   const configured = env.CLOUD_COMPUTER_MODEL?.trim();
-  return configured && ALLOWED_MODELS.has(configured) ? configured : ANTHROPIC_MODELS.OPUS_5_5;
+  return configured && ALLOWED_MODELS.has(configured) ? configured : ANTHROPIC_MODELS.SONNET_5_5;
 }
 
 export function cloudComputerConnection(

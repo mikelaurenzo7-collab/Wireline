@@ -457,9 +457,9 @@ Resend must retain verified SPF/DKIM and the negative-delivery webhook. AgentMai
 
 ### Anthropic and the hosted browser (cloud computer)
 
-The cloud computer stays off, and `/computer` says it is being set up, until both `ANTHROPIC_API_KEY` and `CLOUD_COMPUTER_BROWSER_WS_URL` are set on the API service and migration `0176_cloud_computer_tasks` is promoted. The browser endpoint must be an isolated hosted-browser vendor over `wss://`; never point it at a browser inside BotBound's network. The URL usually carries the vendor token, so treat it as a secret and keep both keys out of previews.
+The cloud computer stays off, and `/computer` says it is being set up, until both `ANTHROPIC_API_KEY` and `CLOUD_COMPUTER_BROWSER_WS_URL` are set on the API service and migration `0176_cloud_computer_tasks` is promoted. The browser endpoint must be an isolated hosted-browser vendor over `wss://`; never point it at a browser inside BotBound's network. Choose a vendor whose browsers cannot reach private, loopback, or cloud-metadata addresses: BotBound screens navigation and blanks any tab that lands on a private address, but a hostile page's redirects, WebSockets, and workers are only fully contained by the vendor's network. The URL usually carries the vendor token, so treat it as a secret and keep both keys out of previews.
 
-Before announcing the feature, run one owner task end to end on production: start a task on a paid test account, watch the live screen, answer one `ask_owner` question, stop a second task midway, and confirm the AI allowance ledger shows `computer.browse` entries that settle. `CLOUD_COMPUTER_MODEL` may select `claude-sonnet-5-5` for lower per-turn cost; `CLOUD_COMPUTER_MAX_CONCURRENT` caps browsers per process (default 3).
+Before announcing the feature, run one owner task end to end on production: start a task on a paid test account, watch the live screen, answer one `ask_owner` question, stop a second task midway, and confirm the AI allowance ledger shows `computer.browse` entries that settle. `CLOUD_COMPUTER_MODEL` defaults to `claude-sonnet-5-5`; `claude-opus-5-5` reserves several times more of the AI allowance per turn, so a $1.50 allowance cannot finish a long Opus task. `CLOUD_COMPUTER_MAX_CONCURRENT` caps browsers per process (default 3). Keep the API at one instance: running tasks live in that process.
 
 ### Supabase
 

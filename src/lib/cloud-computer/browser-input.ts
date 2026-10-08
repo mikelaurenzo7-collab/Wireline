@@ -101,6 +101,18 @@ export function parseKeySequence(raw: string): string[] | null {
   return chords;
 }
 
+/**
+ * Whether pressing a normalized chord types text into the focused field: a
+ * printable key or Space, alone or with Shift. Control, Alt, and Meta chords
+ * are shortcuts, and named keys (Enter, Tab, arrows) insert nothing.
+ */
+export function chordTypesText(chord: string): boolean {
+  const parts = chord.split("+");
+  const key = parts[parts.length - 1];
+  if (parts.slice(0, -1).some((modifier) => modifier !== "Shift")) return false;
+  return key === "Space" || key.length === 1;
+}
+
 /** "shift", "ctrl+shift" -> ["Shift"], ["Control", "Shift"]. */
 export function parseModifiers(raw: unknown): string[] | null {
   if (raw === undefined || raw === null || raw === "") return [];

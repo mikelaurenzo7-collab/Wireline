@@ -50,6 +50,7 @@ type ComputerTask = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  stopping: boolean;
 };
 
 type ComputerStatus = {
@@ -77,6 +78,24 @@ const STATUS_COPY: Record<
   stopped: { label: "Stopped", variant: "default" },
   interrupted: { label: "Interrupted", variant: "default" },
 };
+
+// Read aloud when polling sees the task change, so a screen-reader owner hears
+// the question or the outcome without watching the badge.
+const ANNOUNCEMENTS: Partial<Record<TaskStatus, string>> = {
+  completed: "Your Bot finished the task.",
+  blocked: "Your Bot needs you to finish this task.",
+  failed: "Your Bot could not finish the task.",
+  stopped: "The task stopped.",
+  interrupted: "The task was interrupted.",
+};
+
+function announcementFor(previous: ComputerTask | undefined, next: ComputerTask): string | null {
+  if (!previous || previous.status === next.status) return null;
+  if (next.status === "needs_input") {
+    return next.question ? `Your Bot needs you: ${next.question}` : "Your Bot needs you.";
+  }
+  return ANNOUNCEMENTS[next.status] ?? null;
+}
 
 const EXAMPLES = [
   {
@@ -146,13 +165,23 @@ function LiveScreen({ task }: { task: ComputerTask }) {
   const latest = useRef<string | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    if (!active) {
+      // The screen is cleared once a task ends, here as on the server.
+      if (latest.current) URL.revokeObjectURL(latest.current);
+      latest.current = null;
+      return;
+    }
+    const controller = new AbortController();
     let timer: number | undefined;
     const load = async () => {
       try {
-        const response = await authFetch(`/api/computer/tasks/${task.id}/frame`);
-        if (!cancelled && response.status === 200) {
-          const url = URL.createObjectURL(await response.blob());
+        const response = await authFetch(`/api/computer/tasks/${task.id}/frame`, {
+          signal: controller.signal,
+        });
+        if (response.status === 200) {
+          const blob = await response.blob();
+          if (controller.signal.aborted) return;
+          const url = URL.createObjectURL(blob);
           if (latest.current) URL.revokeObjectURL(latest.current);
           latest.current = url;
           setSrc(url);
@@ -160,11 +189,11 @@ function LiveScreen({ task }: { task: ComputerTask }) {
       } catch {
         /* keep the previous frame */
       }
-      if (!cancelled && active) timer = window.setTimeout(load, 1500);
+      if (!controller.signal.aborted) timer = window.setTimeout(load, 1500);
     };
     void load();
     return () => {
-      cancelled = true;
+      controller.abort();
       if (timer) window.clearTimeout(timer);
     };
   }, [task.id, active]);
@@ -193,7 +222,7 @@ function LiveScreen({ task }: { task: ComputerTask }) {
         {active ? <span className="wl-computer-screen__live">Live</span> : null}
       </div>
       <div className="wl-computer-screen__viewport">
-        {src ? (
+        {active && src ? (
           <img src={src} alt="What your Bot's cloud computer shows right now" />
         ) : (
           <div className="wl-computer-screen__empty">
@@ -227,14 +256,16 @@ function TaskDetail({
 }) {
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"stop" | "reply" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // An error belongs to the state it happened in; once the task moves on it is stale.
+  const [failure, setFailure] = useState<{ message: string; status: TaskStatus } | null>(null);
+  const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
   const active = ACTIVE.includes(task.status);
   const events = useMemo(() => [...task.events].reverse(), [task.events]);
 
   const act = async (kind: "stop" | "reply") => {
     setBusy(kind);
-    setError(null);
+    setFailure(null);
     try {
       const response = await authFetch(`/api/computer/tasks/${task.id}/${kind}`, {
         method: "POST",
@@ -246,7 +277,10 @@ function TaskDetail({
       if (kind === "reply") setReply("");
       onChanged(result.data.task);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "That did not go through. Try again.");
+      setFailure({
+        message: reason instanceof Error ? reason.message : "That did not go through. Try again.",
+        status: task.status,
+      });
     } finally {
       setBusy(null);
     }
@@ -271,22 +305,28 @@ function TaskDetail({
           </p>
         </div>
         {active ? (
+          // Stop lands at the Bot's next checkpoint, which can follow a long
+          // thinking step: say so instead of looking like nothing happened.
           <Button
             variant="outline"
             size="sm"
             className="shrink-0"
             onClick={() => void act("stop")}
-            aria-busy={busy === "stop"}
-            disabled={busy !== null}
+            aria-busy={busy === "stop" || task.stopping}
+            disabled={busy !== null || task.stopping}
           >
-            <Square aria-hidden="true" />
-            Stop
+            {task.stopping ? (
+              <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+            ) : (
+              <Square aria-hidden="true" />
+            )}
+            {task.stopping ? "Stopping…" : "Stop"}
           </Button>
         ) : null}
       </header>
 
-      {task.status === "needs_input" && task.question ? (
-        <div className="wl-computer-question" role="status">
+      {task.status === "needs_input" && task.question && !task.stopping ? (
+        <div className="wl-computer-question">
           <div className="flex items-start gap-2">
             <Hand
               className="mt-0.5 size-4 shrink-0 text-[var(--wireline-color-status-warning)]"
@@ -398,90 +438,132 @@ export default function ComputerPage() {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
   const [agentId, setAgentId] = useState<string>("");
   const [status, setStatus] = useState<ComputerStatus | null>(null);
+  const [statusFailed, setStatusFailed] = useState(false);
   const [tasks, setTasks] = useState<ComputerTask[] | null>(null);
+  const [listFailed, setListFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [goal, setGoal] = useState("");
   const [startUrl, setStartUrl] = useState("");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const tasksRef = useRef<ComputerTask[] | null>(null);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   useEffect(() => {
     if (!agentId && agents.length) setAgentId(agents[0].id);
   }, [agents, agentId]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
-      const response = await authFetch("/api/computer/status", { signal: controller.signal }).catch(
-        () => null,
-      );
-      if (!response || controller.signal.aborted) return;
+  const loadStatus = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await authFetch("/api/computer/status", { signal });
       const result = await readApiJson<ComputerStatus>(response);
+      if (signal?.aborted) return;
+      setStatusFailed(!result.ok);
       if (result.ok) setStatus(result.data);
-    })();
-    return () => controller.abort();
+    } catch {
+      if (!signal?.aborted) setStatusFailed(true);
+    }
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadStatus(controller.signal);
+    return () => controller.abort();
+  }, [loadStatus]);
+
+  // One list for the whole account: only one task runs at a time across every
+  // Bot, so a running task or a question must show whichever Bot is selected.
   const loadTasks = useCallback(
-    async (signal?: AbortSignal) => {
-      if (!agentId) return;
-      const response = await authFetch(
-        `/api/computer/tasks?agentId=${encodeURIComponent(agentId)}`,
-        { signal },
-      ).catch(() => null);
-      if (!response || signal?.aborted) return;
-      const result = await readApiJson<{ tasks: ComputerTask[] }>(response);
-      if (!result.ok) {
-        setError(result.error);
-        return;
+    async ({
+      signal,
+      focusActive = false,
+    }: { signal?: AbortSignal; focusActive?: boolean } = {}) => {
+      try {
+        const response = await authFetch("/api/computer/tasks", { signal });
+        const result = await readApiJson<{ tasks: ComputerTask[] }>(response);
+        if (signal?.aborted) return;
+        if (!result.ok) {
+          setListFailed(true);
+          return;
+        }
+        const next = result.data.tasks;
+        const activeTask = next.find((task) => ACTIVE.includes(task.status));
+        setListFailed(false);
+        setTasks(next);
+        setSelectedId((current) =>
+          focusActive && activeTask
+            ? activeTask.id
+            : current && next.some((task) => task.id === current)
+              ? current
+              : (next[0]?.id ?? null),
+        );
+      } catch {
+        if (!signal?.aborted) setListFailed(true);
       }
-      setTasks(result.data.tasks);
-      setSelectedId((current) => current ?? result.data.tasks[0]?.id ?? null);
     },
-    [agentId],
+    [],
   );
 
   useEffect(() => {
-    setTasks(null);
-    setSelectedId(null);
     const controller = new AbortController();
-    void loadTasks(controller.signal);
+    void loadTasks({ signal: controller.signal });
     return () => controller.abort();
   }, [loadTasks]);
 
-  const selected = tasks?.find((task) => task.id === selectedId) ?? null;
-  const anyActive = tasks?.some((task) => ACTIVE.includes(task.status)) ?? false;
+  const applyTask = useCallback((next: ComputerTask, announce: boolean) => {
+    if (announce) {
+      const message = announcementFor(
+        tasksRef.current?.find((task) => task.id === next.id),
+        next,
+      );
+      if (message) setAnnouncement(message);
+    }
+    setTasks((current) =>
+      current ? current.map((task) => (task.id === next.id ? next : task)) : current,
+    );
+  }, []);
 
-  // Poll only while the selected task is active. Keyed on the id, not the
-  // object, so each poll result does not tear the loop down; the next poll is
-  // scheduled after the previous one settles, so slow responses never overlap.
-  const pollingId = selected && ACTIVE.includes(selected.status) ? selected.id : null;
+  const selected = tasks?.find((task) => task.id === selectedId) ?? null;
+  // A new task cannot start while one is active, so the active task is always
+  // the newest. Poll it whichever task the owner is reading, so a question or a
+  // finish is never missed. Keyed on the id, not the object, so each poll result
+  // does not tear the loop down; the next poll waits for the previous one.
+  const activeId = tasks?.find((task) => ACTIVE.includes(task.status))?.id ?? null;
   useEffect(() => {
-    if (!pollingId) return;
+    if (!activeId) return;
     const controller = new AbortController();
     let timer: number | undefined;
     const poll = async () => {
-      const response = await authFetch(`/api/computer/tasks/${pollingId}`, {
-        signal: controller.signal,
-      }).catch(() => null);
-      if (controller.signal.aborted) return;
-      const result = response ? await readApiJson<{ task: ComputerTask }>(response) : null;
-      if (controller.signal.aborted) return;
-      if (result?.ok) {
-        setTasks((current) =>
-          current
-            ? current.map((task) => (task.id === result.data.task.id ? result.data.task : task))
-            : current,
-        );
+      try {
+        const response = await authFetch(`/api/computer/tasks/${activeId}`, {
+          signal: controller.signal,
+        });
+        const result = await readApiJson<{ task: ComputerTask }>(response);
+        if (controller.signal.aborted) return;
+        if (result.ok) {
+          applyTask(result.data.task, true);
+        } else if (result.status === 404) {
+          // Its Bot was deleted: the task went with it.
+          void loadTasks();
+          return;
+        }
+      } catch {
+        /* a dropped poll is retried below */
       }
-      timer = window.setTimeout(poll, 2000);
+      if (!controller.signal.aborted) timer = window.setTimeout(poll, 2000);
     };
     timer = window.setTimeout(poll, 2000);
     return () => {
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
-  }, [pollingId]);
+  }, [activeId, applyTask, loadTasks]);
+
+  const anyActive = activeId !== null;
 
   const start = async () => {
     setStarting(true);
@@ -493,7 +575,11 @@ export default function ComputerPage() {
         body: JSON.stringify({ agentId, goal, startUrl: startUrl.trim() || undefined }),
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
-      if (!result.ok) throw new Error(result.error);
+      if (!result.ok) {
+        // Started from another tab or device: bring that task into view.
+        if (result.code === "COMPUTER_BUSY") void loadTasks({ focusActive: true });
+        throw new Error(result.error);
+      }
       setGoal("");
       setStartUrl("");
       setTasks((current) => [result.data.task, ...(current ?? [])]);
@@ -505,18 +591,16 @@ export default function ComputerPage() {
     }
   };
 
-  const canStart = Boolean(status?.available && agentId && goal.trim().length >= 4 && !anyActive);
+  const canStart = Boolean(
+    status?.available && agentId && tasks !== null && goal.trim().length >= 4 && !anyActive,
+  );
+  const botName = (id: string) =>
+    agents.length > 1 ? agents.find((agent) => agent.id === id)?.name : undefined;
   // The selected task leads and the composer follows it, like a conversation:
   // finishing a task never moves its result out from under the owner.
+  // Keyed per task: its screen, reply draft, and errors never carry over.
   const taskDetail = selected ? (
-    <TaskDetail
-      task={selected}
-      onChanged={(next) =>
-        setTasks((current) =>
-          current ? current.map((task) => (task.id === next.id ? next : task)) : current,
-        )
-      }
-    />
+    <TaskDetail key={selected.id} task={selected} onChanged={(next) => applyTask(next, false)} />
   ) : null;
 
   return (
@@ -528,6 +612,22 @@ export default function ComputerPage() {
         />
 
         {status && !status.available ? <UnavailableNotice status={status} /> : null}
+        {!status && statusFailed ? (
+          <StatusNotice
+            tone="warning"
+            title="Your Bot's Computer Did Not Load"
+            action={
+              <Button size="sm" variant="outline" onClick={() => void loadStatus()}>
+                Retry
+              </Button>
+            }
+          >
+            Check your connection, then try again.
+          </StatusNotice>
+        ) : null}
+        <p className="sr-only" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </p>
 
         {/* An unreachable roster is not an empty one: never invite a duplicate Bot. */}
         {degraded ? (
@@ -641,12 +741,26 @@ export default function ComputerPage() {
 
           <aside className="wl-computer-history" aria-label="Recent tasks">
             <h2 className="wl-overline">Recent Tasks</h2>
-            {tasks === null && agentId ? (
+            {tasks === null && listFailed ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Recent tasks did not load.</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setListFailed(false);
+                    void loadTasks();
+                  }}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : tasks === null ? (
               <div className="space-y-2" aria-busy="true" aria-label="Loading tasks">
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-14 w-full" />
               </div>
-            ) : tasks?.length ? (
+            ) : tasks.length ? (
               <ul>
                 {tasks.map((task) => {
                   const copy = STATUS_COPY[task.status];
@@ -660,7 +774,10 @@ export default function ComputerPage() {
                         <span className="wl-computer-history__goal">{task.goal}</span>
                         <span className="wl-computer-history__meta">
                           <Badge variant={copy.variant}>{copy.label}</Badge>
-                          <span>{timeAgo(task.startedAt)}</span>
+                          <span>
+                            {botName(task.agentId) ? `${botName(task.agentId)} · ` : null}
+                            {timeAgo(task.startedAt)}
+                          </span>
                         </span>
                       </button>
                     </li>

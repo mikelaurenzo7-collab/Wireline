@@ -36,6 +36,7 @@ import {
   requiresRenderDeploymentGate,
 } from "./src/middleware/render-traffic";
 import { closeServerAndDrain, serverShutdownGraceMs } from "./src/lib/server-shutdown";
+import { interruptCloudComputerTasks } from "./src/lib/cloud-computer/task-runner";
 
 let server: Server | null = null;
 let stopping = false;
@@ -48,7 +49,14 @@ function gracefulShutdown(signal: string) {
   stopping = true;
   const graceMs = serverShutdownGraceMs();
   log.info("Shutdown received", { signal });
-  void closeServerAndDrain(server, graceMs)
+  // Cloud computer tasks cannot outlive this process: settle them first.
+  void interruptCloudComputerTasks()
+    .catch((error: unknown) => {
+      log.warn("Cloud computer tasks could not be settled at shutdown", {
+        error: getErrorMessage(error),
+      });
+    })
+    .then(() => closeServerAndDrain(server, graceMs))
     .then((outcome) => {
       if (outcome === "timed_out") {
         log.warn("Shutdown force-exit after grace period", { signal, graceMs });

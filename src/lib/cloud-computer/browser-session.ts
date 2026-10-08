@@ -5,10 +5,12 @@ import {
   type Browser,
   type BrowserContext,
   type Page,
+  type Request as BrowserRequest,
+  type Response as BrowserResponse,
   type Route,
 } from "playwright-core";
 
-import { clampNumber, parseKeySequence, parseModifiers } from "./browser-input";
+import { chordTypesText, clampNumber, parseKeySequence, parseModifiers } from "./browser-input";
 import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
@@ -32,13 +34,21 @@ const READ_MAX_CHARS = 50_000;
 const TEXT_MAX_CHARS = 50_000;
 const MAX_TABS = 8;
 const MAX_TYPE_CHARS = 4_000;
+// Typing is sent in short runs so a deadline or a newly focused password
+// field stops it between runs instead of after thousands of keystrokes.
+const TYPE_CHUNK_CHARS = 40;
+// A verdict lives no longer than its DNS record (and at most a minute); a
+// lookup that failed rather than answered is retried after a few seconds.
 const DNS_CACHE_MS = 60_000;
+const DNS_FAILURE_CACHE_MS = 5_000;
 // Browser egress checks resolve names with c-ares (not the libuv threadpool
 // shared with the rest of the API), bounded per session.
 const DNS_TIMEOUT_MS = 2_500;
 const DNS_CONCURRENCY = 4;
-const DNS_MAX_LOOKUPS = 1_500;
+/** Distinct hosts one session may look up; re-checking a known host is free. */
+const DNS_MAX_HOSTS = 1_500;
 const DNS_CACHE_MAX = 2_000;
+const OPEN_DEADLINE_MS = 60_000;
 // Page scripts can block their own main thread, and page.evaluate has no
 // timeout of its own: every member runs under a hard deadline instead.
 const MEMBER_DEADLINE_MS = 45_000;
@@ -54,6 +64,22 @@ function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
     timer = setTimeout(() => reject(new DeadlineError("Deadline exceeded")), ms);
   });
   return Promise.race([work, deadline]).finally(() => clearTimeout(timer));
+}
+
+/** Text as runs of at most TYPE_CHUNK_CHARS characters, with each newline its own Enter. */
+export function typingPieces(text: string): string[] {
+  const pieces: string[] = [];
+  for (const part of text.split(/(\r\n|\r|\n)/)) {
+    if (!part) continue;
+    if (/^(?:\r\n|\r|\n)$/.test(part)) {
+      pieces.push("\n");
+      continue;
+    }
+    for (let at = 0; at < part.length; at += TYPE_CHUNK_CHARS) {
+      pieces.push(part.slice(at, at + TYPE_CHUNK_CHARS));
+    }
+  }
+  return pieces;
 }
 
 /**
@@ -97,7 +123,10 @@ export type BrowserStateBlock = {
 };
 export type MemberResultBlock =
   | { type: "text"; text: string }
-  | { type: "image"; source: { type: "base64"; media_type: "image/png"; data: string } }
+  | {
+      type: "image";
+      source: { type: "base64"; media_type: "image/png" | "image/jpeg"; data: string };
+    }
   | BrowserStateBlock;
 
 export type MemberResult = {
@@ -113,6 +142,18 @@ export type CloudBrowserConnection =
 type Target = { type: "coordinate"; x: number; y: number } | { type: "ref"; ref: string };
 
 type MemberInput = Record<string, unknown>;
+
+/** Set when a member's deadline passes, so work it started stops at its next check. */
+type MemberToken = { cancelled: boolean };
+
+const PRIVATE_ADDRESS_STOP = "The page moved to a private or unsupported address and was stopped.";
+const TOO_MANY_SITES =
+  "This task has visited too many different sites. Start a new task with a narrower goal.";
+
+/** A vendor default page that holds no earlier session's content. */
+function isFreshPageUrl(raw: string): boolean {
+  return isLocalFrameUrl(raw) || raw.startsWith("about:") || raw.startsWith("chrome://");
+}
 
 class MemberError extends Error {}
 
@@ -164,11 +205,15 @@ export class CloudBrowserSession {
   private activeTabId: string | null = null;
   private nextTabNumber = 1;
   private pendingChanges: BrowserStateChange[] = [];
-  private readonly dnsCache = new Map<string, { at: number; allowed: boolean }>();
+  private readonly dnsCache = new Map<string, { expires: number; allowed: boolean }>();
   private readonly resolver = new Resolver({ timeout: DNS_TIMEOUT_MS, tries: 2 });
   private dnsInFlight = 0;
   private readonly dnsWaiters: Array<() => void> = [];
-  private dnsLookups = 0;
+  private readonly dnsHosts = new Set<string>();
+  private dnsBudgetExceeded = false;
+  /** Tabs that loaded something from a private address the guard could not stop. */
+  private readonly tainted = new WeakSet<Page>();
+  private activeToken: MemberToken | null = null;
   private closed = false;
   private disconnected = false;
   /** Set when a page tried to reach a private or non-web address. */
@@ -180,7 +225,25 @@ export class CloudBrowserSession {
     private readonly ownsContext: boolean,
   ) {}
 
+  /**
+   * Connect and set up a session, bounded: a vendor that accepts the
+   * connection and then never answers cannot hold a task (and its capacity
+   * slot) forever. A session that finishes opening after the deadline is
+   * closed, never used.
+   */
   static async open(connection: CloudBrowserConnection): Promise<CloudBrowserSession> {
+    const opening = CloudBrowserSession.openUnbounded(connection);
+    try {
+      return await withDeadline(opening, OPEN_DEADLINE_MS);
+    } catch (error) {
+      void opening.then((session) => session.close()).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  private static async openUnbounded(
+    connection: CloudBrowserConnection,
+  ): Promise<CloudBrowserSession> {
     const browser =
       connection.kind === "remote"
         ? await chromium.connectOverCDP(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
@@ -189,70 +252,97 @@ export class CloudBrowserSession {
             headless: true,
             args: ["--disable-dev-shm-usage", "--no-first-run", "--no-default-browser-check"],
           });
-    let context: BrowserContext;
+    let context: BrowserContext | null = null;
     let ownsContext = true;
     try {
-      context = await browser.newContext({
-        viewport: CLOUD_BROWSER_VIEWPORT,
-        deviceScaleFactor: 1,
-        acceptDownloads: false,
-        serviceWorkers: "block",
-        javaScriptEnabled: true,
-        permissions: [],
-        locale: "en-US",
-        timezoneId: "America/Chicago",
+      try {
+        context = await browser.newContext({
+          viewport: CLOUD_BROWSER_VIEWPORT,
+          deviceScaleFactor: 1,
+          acceptDownloads: false,
+          serviceWorkers: "block",
+          javaScriptEnabled: true,
+          permissions: [],
+          locale: "en-US",
+          timezoneId: "America/Chicago",
+        });
+      } catch {
+        // Some hosted browsers expose only their own default context over CDP.
+        context = await CloudBrowserSession.vendorDefaultContext(browser);
+        ownsContext = false;
+      }
+      const session = new CloudBrowserSession(browser, context, ownsContext);
+      browser.on("disconnected", () => {
+        session.disconnected = true;
       });
-    } catch {
-      // Some hosted browsers expose a single default context over CDP.
-      const existing = browser.contexts()[0];
-      if (!existing) {
-        await browser.close().catch(() => undefined);
-        throw new Error("The cloud browser did not provide a browsing context.");
+      await context.addInitScript(ISOLATION_INIT_SCRIPT);
+      await context.route("**/*", (route) => session.guard(route));
+      // WebSockets are not seen by context.route; screen them the same way.
+      // Both are first lines only: route handlers never see redirect hops,
+      // and page script or a Worker can open a socket around routeWebSocket.
+      // The listeners below detect what got through, and enforcePublicTabs
+      // blanks the tab before anything it loaded can be read.
+      await context.routeWebSocket(/.*/, async (ws) => {
+        if (await session.urlIsPublic(ws.url())) {
+          ws.connectToServer();
+        } else {
+          session.blockedRequests += 1;
+          await ws.close({ code: 1008, reason: "Blocked" }).catch(() => undefined);
+        }
+      });
+      context.on("request", (request) => session.screenRedirect(request));
+      // The address a response came from is the browser's own resolution, so
+      // it catches DNS rebinding. Only a local launch is checked: a hosted
+      // browser may reach the web through its vendor's proxy, whose address
+      // is not the site's; the vendor's network isolation covers that case.
+      if (connection.kind === "local") {
+        context.on("response", (response) => session.screenServerAddress(response));
       }
-      context = existing;
-      ownsContext = false;
-      // A vendor's default context may outlive this session and was created
-      // without our options: start it clean and refuse downloads explicitly.
-      await context.clearCookies().catch(() => undefined);
-      await context.clearPermissions().catch(() => undefined);
-      const cdp = await browser.newBrowserCDPSession().catch(() => null);
-      await cdp?.send("Browser.setDownloadBehavior", { behavior: "deny" }).catch(() => undefined);
-      await cdp?.detach().catch(() => undefined);
-      for (const extra of context.pages().slice(1)) await extra.close().catch(() => undefined);
-      await context
-        .pages()[0]
-        ?.goto("about:blank")
-        .catch(() => undefined);
+      context.setDefaultTimeout(ACTION_TIMEOUT_MS);
+      context.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
+      context.on("page", (page) => {
+        if (session.pageIds.has(page)) return;
+        const id = session.register(page);
+        session.pendingChanges.push({ type: "tab_opened", tab_id: id });
+      });
+      const first = context.pages()[0] ?? (await context.newPage());
+      if (!session.pageIds.has(first)) session.register(first);
+      session.activeTabId = session.pageIds.get(first) ?? null;
+      // The initial tab is the starting state, not an opened-tab event.
+      session.pendingChanges = [];
+      await first.setViewportSize(CLOUD_BROWSER_VIEWPORT).catch(() => undefined);
+      return session;
+    } catch (error) {
+      const owned = ownsContext ? context : null;
+      await withDeadline(
+        (async () => {
+          await owned?.close().catch(() => undefined);
+          await browser.close().catch(() => undefined);
+        })(),
+        CLOSE_DEADLINE_MS,
+      ).catch(() => undefined);
+      throw error;
     }
-    const session = new CloudBrowserSession(browser, context, ownsContext);
-    browser.on("disconnected", () => {
-      session.disconnected = true;
-    });
-    await context.addInitScript(ISOLATION_INIT_SCRIPT);
-    await context.route("**/*", (route) => session.guard(route));
-    // WebSockets are not seen by context.route; screen them the same way.
-    await context.routeWebSocket(/.*/, async (ws) => {
-      if (await session.urlIsPublic(ws.url())) {
-        ws.connectToServer();
-      } else {
-        session.blockedRequests += 1;
-        await ws.close({ code: 1008, reason: "Blocked" }).catch(() => undefined);
-      }
-    });
-    context.setDefaultTimeout(ACTION_TIMEOUT_MS);
-    context.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS);
-    context.on("page", (page) => {
-      if (session.pageIds.has(page)) return;
-      const id = session.register(page);
-      session.pendingChanges.push({ type: "tab_opened", tab_id: id });
-    });
-    const first = context.pages()[0] ?? (await context.newPage());
-    if (!session.pageIds.has(first)) session.register(first);
-    session.activeTabId = session.pageIds.get(first) ?? null;
-    // The initial tab is the starting state, not an opened-tab event.
-    session.pendingChanges = [];
-    await first.setViewportSize(CLOUD_BROWSER_VIEWPORT).catch(() => undefined);
-    return session;
+  }
+
+  /**
+   * A vendor's default context is used only when it is fresh. Pages or
+   * cookies already in it mean the vendor hands out reused browsers, whose
+   * earlier session's storage and history would be readable here.
+   */
+  private static async vendorDefaultContext(browser: Browser): Promise<BrowserContext> {
+    const existing = browser.contexts()[0];
+    if (!existing) throw new Error("The cloud browser did not provide a browsing context.");
+    const cookies = await existing.cookies().catch(() => []);
+    if (cookies.length || existing.pages().some((page) => !isFreshPageUrl(page.url()))) {
+      throw new Error("The cloud browser was already in use by another session.");
+    }
+    await existing.clearPermissions().catch(() => undefined);
+    const cdp = await browser.newBrowserCDPSession().catch(() => null);
+    await cdp?.send("Browser.setDownloadBehavior", { behavior: "deny" }).catch(() => undefined);
+    await cdp?.detach().catch(() => undefined);
+    for (const extra of existing.pages().slice(1)) await extra.close().catch(() => undefined);
+    return existing;
   }
 
   private register(page: Page): string {
@@ -262,6 +352,7 @@ export class CloudBrowserSession {
     page.on("dialog", (dialog) => {
       dialog.dismiss().catch(() => undefined);
     });
+    page.on("websocket", (ws) => this.screenUrl(page, ws.url()));
     page.on("close", () => {
       this.tabs.delete(id);
       if (this.activeTabId === id) this.activeTabId = [...this.tabs.keys()].at(-1) ?? null;
@@ -284,6 +375,51 @@ export class CloudBrowserSession {
       this.blockedRequests += 1;
       await route.abort("blockedbyclient").catch(() => undefined);
     }
+  }
+
+  /** Mark a tab (or every tab, when the source is unknown) for blanking. */
+  private taint(page: Page | null): void {
+    if (this.closed) return;
+    this.blockedRequests += 1;
+    // A tab already blanked holds nothing; a late result must not fail it again.
+    const pages = page ? [page] : [...this.tabs.values()];
+    for (const tab of pages)
+      if (!tab.isClosed() && tab.url() !== "about:blank") this.tainted.add(tab);
+  }
+
+  private static pageOf(request: BrowserRequest): Page | null {
+    try {
+      return request.frame().page();
+    } catch {
+      // Worker and service-worker requests have no frame.
+      return null;
+    }
+  }
+
+  private screenUrl(page: Page | null, raw: string): void {
+    void this.urlIsPublic(raw).then(
+      (allowed) => {
+        if (!allowed) this.taint(page);
+      },
+      () => undefined,
+    );
+  }
+
+  /** Route handlers see only the first URL of a redirect chain; check every hop. */
+  private screenRedirect(request: BrowserRequest): void {
+    if (!request.redirectedFrom()) return;
+    this.screenUrl(CloudBrowserSession.pageOf(request), request.url());
+  }
+
+  private screenServerAddress(response: BrowserResponse): void {
+    void response.serverAddr().then(
+      (address) => {
+        if (address && isIP(address.ipAddress) && isNonPublicAddress(address.ipAddress)) {
+          this.taint(CloudBrowserSession.pageOf(response.request()));
+        }
+      },
+      () => undefined,
+    );
   }
 
   /** A web URL whose host is a public address (by literal or by DNS). */
@@ -315,23 +451,49 @@ export class CloudBrowserSession {
     const host = normalizeHostname(hostname);
     if (isIP(host)) return !isNonPublicAddress(host);
     const cached = this.dnsCache.get(host);
-    if (cached && Date.now() - cached.at < DNS_CACHE_MS) return cached.allowed;
-    // A page cannot make this session resolve names without bound.
-    if (this.dnsLookups >= DNS_MAX_LOOKUPS) return false;
-    this.dnsLookups += 1;
+    if (cached && Date.now() < cached.expires) return cached.allowed;
+    // A page cannot make this session resolve new names without bound;
+    // re-checking a host it already resolved never counts.
+    if (!this.dnsHosts.has(host)) {
+      if (this.dnsHosts.size >= DNS_MAX_HOSTS) {
+        this.dnsBudgetExceeded = true;
+        return false;
+      }
+      this.dnsHosts.add(host);
+    }
     const [v4, v6] = await this.withDnsSlot(() =>
-      Promise.allSettled([this.resolver.resolve4(host), this.resolver.resolve6(host)]),
+      Promise.allSettled([
+        this.resolver.resolve4(host, { ttl: true }),
+        this.resolver.resolve6(host, { ttl: true }),
+      ]),
     );
-    const addresses = [
+    // "No such record" is an answer; a timeout or server failure is not, and
+    // a family that failed may be exactly the one the browser would use.
+    const failed = [v4, v6].some(
+      (result) =>
+        result.status === "rejected" &&
+        !["ENODATA", "ENOTFOUND"].includes((result.reason as { code?: string })?.code ?? ""),
+    );
+    const records = [
       ...(v4.status === "fulfilled" ? v4.value : []),
       ...(v6.status === "fulfilled" ? v6.value : []),
     ];
-    const allowed = addresses.length > 0 && addresses.every((entry) => !isNonPublicAddress(entry));
-    if (this.dnsCache.size >= DNS_CACHE_MAX) {
-      const oldest = this.dnsCache.keys().next().value;
-      if (oldest !== undefined) this.dnsCache.delete(oldest);
+    const allowed =
+      !failed &&
+      records.length > 0 &&
+      records.every((record) => !isNonPublicAddress(record.address));
+    const ttlMs = failed
+      ? DNS_FAILURE_CACHE_MS
+      : allowed
+        ? Math.min(DNS_CACHE_MS, Math.min(...records.map((record) => record.ttl)) * 1_000)
+        : DNS_CACHE_MS;
+    if (ttlMs > 0) {
+      if (this.dnsCache.size >= DNS_CACHE_MAX) {
+        const oldest = this.dnsCache.keys().next().value;
+        if (oldest !== undefined) this.dnsCache.delete(oldest);
+      }
+      this.dnsCache.set(host, { expires: Date.now() + ttlMs, allowed });
     }
-    this.dnsCache.set(host, { at: Date.now(), allowed });
     return allowed;
   }
 
@@ -349,8 +511,8 @@ export class CloudBrowserSession {
     const blanked = new Set<string>();
     for (const [tabId, page] of [...this.tabs]) {
       if (page.isClosed()) continue;
-      let safe = true;
-      for (const frame of page.frames()) {
+      let safe = !this.tainted.has(page);
+      for (const frame of safe ? page.frames() : []) {
         const raw = frame.url();
         if (isLocalFrameUrl(raw)) continue;
         if (!(await this.urlIsPublic(raw))) {
@@ -359,6 +521,7 @@ export class CloudBrowserSession {
         }
       }
       if (safe) continue;
+      this.tainted.delete(page);
       this.blockedRequests += 1;
       blanked.add(tabId);
       const cleared = await page.goto("about:blank").then(
@@ -429,10 +592,21 @@ export class CloudBrowserSession {
     return { type: "browser_state", tabs, ...(changes.length ? { state_changes: changes } : {}) };
   }
 
-  /** JPEG frame for the owner's live view. Never sent to the model. */
+  /**
+   * JPEG frame for the owner's live view. Never sent to the model. The tabs
+   * are checked before and after the capture, because a frame can commit to
+   * a private address while the screenshot is taken.
+   */
   async frame(): Promise<Buffer | null> {
     try {
-      return await this.activePage().screenshot({ type: "jpeg", quality: 62, timeout: 10_000 });
+      if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
+      const jpeg = await this.activePage().screenshot({
+        type: "jpeg",
+        quality: 62,
+        timeout: 10_000,
+      });
+      if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
+      return jpeg;
     } catch {
       return null;
     }
@@ -441,9 +615,18 @@ export class CloudBrowserSession {
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    if (this.activeToken) this.activeToken.cancelled = true;
     const shutdown = async () => {
-      if (this.ownsContext) await this.context.close().catch(() => undefined);
-      else await this.context.clearCookies().catch(() => undefined);
+      if (this.ownsContext) {
+        await this.context.close().catch(() => undefined);
+      } else {
+        // A vendor's default context outlives this connection: leave nothing
+        // running in it, then end that browser so no later session inherits it.
+        for (const page of this.context.pages()) await page.close().catch(() => undefined);
+        await this.context.clearCookies().catch(() => undefined);
+        const cdp = await this.browser.newBrowserCDPSession().catch(() => null);
+        await cdp?.send("Browser.close").catch(() => undefined);
+      }
       await this.browser.close().catch(() => undefined);
     };
     // A dead websocket must not hold the task open.
@@ -481,11 +664,17 @@ export class CloudBrowserSession {
     }
   }
 
+  /** JPEG keeps each screenshot a fraction of a PNG's size in the model's history. */
   private async screenshotBlock(page: Page): Promise<MemberResultBlock> {
-    const png = await page.screenshot({ type: "png", animations: "disabled", timeout: 15_000 });
+    const jpeg = await page.screenshot({
+      type: "jpeg",
+      quality: 70,
+      animations: "disabled",
+      timeout: 15_000,
+    });
     return {
       type: "image",
-      source: { type: "base64", media_type: "image/png", data: png.toString("base64") },
+      source: { type: "base64", media_type: "image/jpeg", data: jpeg.toString("base64") },
     };
   }
 
@@ -499,7 +688,7 @@ export class CloudBrowserSession {
     try {
       if (!checkUrlAllowed(new URL(url)).allowed) {
         await page.goto("about:blank").catch(() => undefined);
-        fail("Navigation ended on a private or unsupported address and was stopped.");
+        this.failPrivateAddress();
       }
     } catch (error) {
       if (error instanceof MemberError) throw error;
@@ -508,21 +697,24 @@ export class CloudBrowserSession {
 
   /** Execute one browser-toolset member. Errors become is_error results; nothing throws. */
   async execute(member: string, input: MemberInput): Promise<MemberResult> {
+    const token: MemberToken = { cancelled: false };
+    this.activeToken = token;
     try {
       if (this.disconnected) fail("The cloud computer lost its browser connection.");
       const target =
         typeof input?.tab_id === "string" && input.tab_id ? input.tab_id : this.activeTabId;
       const before = await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS);
-      if (target && before.has(target)) {
-        fail("The page moved to a private or unsupported address and was stopped.");
-      }
-      const result = await withDeadline(this.run(member, input ?? {}), MEMBER_DEADLINE_MS);
+      if (target && before.has(target)) this.failPrivateAddress();
+      const result = await withDeadline(this.run(member, input ?? {}, token), MEMBER_DEADLINE_MS);
       // Check again before anything this step read can reach the model: any
-      // tab blanked now may appear in this result's tab list or page text.
+      // tab blanked now may appear in this result's tab list, page text, or
+      // screenshot, and the whole result is withheld.
       const after = await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS);
-      if (after.size) fail("Navigation ended on a private or unsupported address and was stopped.");
+      if (after.size) this.failPrivateAddress();
       return result;
     } catch (error) {
+      // Work the member started (typing, above all) stops at its next check.
+      token.cancelled = true;
       const message =
         error instanceof MemberError
           ? error.message
@@ -534,6 +726,19 @@ export class CloudBrowserSession {
         content: [{ type: "text", text: `Error: ${message}` }],
         activity: `${member.replace(/_/g, " ")} did not work`,
       };
+    } finally {
+      if (this.activeToken === token) this.activeToken = null;
+    }
+  }
+
+  private failPrivateAddress(): never {
+    fail(this.dnsBudgetExceeded ? TOO_MANY_SITES : PRIVATE_ADDRESS_STOP);
+  }
+
+  /** Refuse to put text into a focused password field, in any frame. */
+  private async refuseIntoPasswordField(page: Page): Promise<void> {
+    if (await this.focusedPasswordField(page)) {
+      fail("Passwords are entered by the owner, not the Bot.");
     }
   }
 
@@ -541,7 +746,7 @@ export class CloudBrowserSession {
     return { ok: true, content: [{ type: "text", text }, ...extra], activity };
   }
 
-  private async run(member: string, input: MemberInput): Promise<MemberResult> {
+  private async run(member: string, input: MemberInput, token: MemberToken): Promise<MemberResult> {
     if (this.closed) fail("The cloud computer has shut down.");
     switch (member) {
       case "navigate": {
@@ -588,7 +793,8 @@ export class CloudBrowserSession {
         const cdp = await page.context().newCDPSession(page);
         try {
           const shot = (await cdp.send("Page.captureScreenshot", {
-            format: "png",
+            format: "jpeg",
+            quality: 70,
             clip: { x: Math.max(0, x0), y: Math.max(0, y0), width, height, scale },
           })) as { data: string };
           return {
@@ -596,7 +802,7 @@ export class CloudBrowserSession {
             content: [
               {
                 type: "image",
-                source: { type: "base64", media_type: "image/png", data: shot.data },
+                source: { type: "base64", media_type: "image/jpeg", data: shot.data },
               },
             ],
             activity: "Zoomed in to read details",
@@ -702,25 +908,30 @@ export class CloudBrowserSession {
         if (!text) fail("type needs text.");
         if (text.length > MAX_TYPE_CHARS)
           fail(`Type at most ${MAX_TYPE_CHARS} characters at a time.`);
-        // form_input refuses password fields; typing into a focused one must too.
-        if (await this.focusedPasswordField(page)) {
-          fail("Passwords are entered by the owner, not the Bot.");
+        // form_input refuses password fields; typing into a focused one must
+        // too. Focus can move mid-text (Enter submits a step and focuses the
+        // next field), so the check runs before every run of characters.
+        for (const piece of typingPieces(text)) {
+          if (token.cancelled || this.closed) fail("type was stopped before it finished.");
+          await this.refuseIntoPasswordField(page);
+          if (piece === "\n") await page.keyboard.press("Enter");
+          else await page.keyboard.type(piece, { delay: 8 });
         }
-        await page.keyboard.type(text, { delay: 8 });
         return this.ok("Typed the text.", "Typed into a field");
       }
       case "key": {
         const page = this.activePage(input.tab_id);
         const chords = parseKeySequence(String(input.text ?? ""));
         if (!chords) fail("Unsupported key name. Use names like Enter, Tab, Escape, ctrl+a.");
-        // Printable keys type characters: the password rule applies to them too.
-        const printable = chords.some((chord) => /^(?:Shift\+)?.$/u.test(chord));
-        if (printable && (await this.focusedPasswordField(page))) {
-          fail("Passwords are entered by the owner, not the Bot.");
-        }
+        // Keys that type characters follow the password rule too, checked
+        // before each one: an earlier Tab in the sequence can move focus.
         const repeat = clampNumber(input.repeat, 1, 100, 1);
         for (let i = 0; i < repeat; i += 1) {
-          for (const chord of chords) await page.keyboard.press(chord);
+          for (const chord of chords) {
+            if (token.cancelled || this.closed) fail("key was stopped before it finished.");
+            if (chordTypesText(chord)) await this.refuseIntoPasswordField(page);
+            await page.keyboard.press(chord);
+          }
         }
         await this.settle(page);
         await this.afterNavigationCheck(page);
@@ -732,6 +943,7 @@ export class CloudBrowserSession {
         const page = this.activePage(input.tab_id);
         const chords = parseKeySequence(String(input.text ?? ""));
         if (!chords || chords.length !== 1) fail("hold_key needs one key or chord.");
+        if (chordTypesText(chords[0])) await this.refuseIntoPasswordField(page);
         const keys = chords[0].split("+");
         const seconds = clampNumber(input.duration, 0, 5, 1);
         for (const key of keys) await page.keyboard.down(key);
