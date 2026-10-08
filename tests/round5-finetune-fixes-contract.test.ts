@@ -28,10 +28,11 @@ describe("round-5 fine-tune verified fixes", () => {
     expect(entitlement.effectiveCap).toBe(4);
   });
 
-  it("accepts the Solutions support wedge and recommends Starter", () => {
+  it("accepts the Solutions support wedge and starts the free build", () => {
     const intent = parseSignupIntent("?wedge=support");
     expect(intent?.signupWedge).toBe("support");
-    expect(recommendedPlanFromIntent(intent)).toBe("starter");
+    // Industry CTAs start Free Builder; activation recommends a current plan.
+    expect(recommendedPlanFromIntent(intent)).toBe("personal");
   });
 
   it("retires live-video session mint and keeps sample behind auth", () => {
