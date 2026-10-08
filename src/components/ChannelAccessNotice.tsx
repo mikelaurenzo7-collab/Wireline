@@ -34,6 +34,32 @@ export default function ChannelAccessNotice({
       </StatusNotice>
     );
   const label = channel === "voice" ? "Calls" : channel === "email" ? "Email" : "SMS";
+  // A failed renewal suspends every channel. That is a payment to fix, not a
+  // package the owner never bought.
+  if (
+    access.data?.plan_id &&
+    ["past_due", "unpaid", "incomplete"].includes(access.data.subscription_status)
+  ) {
+    return (
+      <StatusNotice
+        tone="warning"
+        title="Payment needs attention"
+        className="my-3"
+        action={
+          <Button asChild size="sm">
+            <Link to="/settings/billing">Update Payment</Link>
+          </Button>
+        }
+      >
+        {channel === "voice"
+          ? "Calls to your BotBound number aren't answered until your payment is updated."
+          : channel === "email"
+            ? "Your Bot's email is paused until your payment is updated."
+            : "Texts are paused until your payment is updated."}{" "}
+        Your Bots, numbers, and history are kept.
+      </StatusNotice>
+    );
+  }
   const active = access.data?.channels.length !== 0;
   return (
     <StatusNotice

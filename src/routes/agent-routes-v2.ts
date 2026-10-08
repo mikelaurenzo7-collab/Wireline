@@ -143,7 +143,7 @@ function extractionReply(parsed: ExtractedConfig) {
     );
   if (parsed.personality) parts.push("Updated the tone guidance.");
   return parts.length
-    ? `${parts.join(" ")} Review the saved configuration in the readiness panel.`
+    ? `${parts.join(" ")} They now appear under Knowledge.`
     : "I did not find a clear rule, fact, or tone change. Tell me what this agent must do, must avoid, or needs to know.";
 }
 
@@ -1159,6 +1159,7 @@ router.post(
 router.delete(
   "/api/agent-config/:id/:type/:rowId",
   authenticateUser,
+  agentMutationRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const agent = await owned(req.params.id, req.user.id);
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");

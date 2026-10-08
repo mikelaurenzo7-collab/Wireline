@@ -487,6 +487,7 @@ export const STRIPE_PLANS: StripePlan[] = [
           ...(voice || sms ? ["1 local phone number"] : []),
           ...(email ? ["1 BotBound email address"] : []),
           `$${allowance.toFixed(2)} monthly managed allowance for AI${email ? " and email delivery" : ""}${sms ? ", including phone validation" : ""}`,
+          "Cloud computer for web tasks, billed to the AI allowance",
           ...(sms
             ? [
                 `$${capacity.transport} monthly transport allowance`,

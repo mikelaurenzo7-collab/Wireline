@@ -21,6 +21,7 @@ type PhoneNumberRecord = {
   campaign_label?: string | null;
   created_at?: string | null;
   native_voice_status?: string | null;
+  native_voice_error?: string | null;
 };
 
 type ProvisionResponse = {
@@ -30,6 +31,8 @@ type ProvisionResponse = {
   code?: string;
   recovery_path?: string;
   reused?: boolean;
+  /** The number is reserved and assigned; only its routing is still pending. */
+  activation_pending?: boolean;
 };
 
 type AvailablePhoneNumber = {
@@ -319,6 +322,18 @@ export default function PhoneSetupPanel({
         }),
       });
       const body = ((await response.json().catch(() => null)) ?? {}) as ProvisionResponse;
+      if (body.activation_pending && body.phone_number) {
+        // Show the reserved line with its retry; buying again would add a line.
+        await loadNumbers(selectedAgentId);
+        setAddingLine(false);
+        setAreaCode("");
+        resetNumberSearch();
+        setError(
+          body.error ||
+            "Your number is reserved, but its connection is still being set up. Retry the connection from this line instead of buying another number.",
+        );
+        return;
+      }
       if (!response.ok || body.ok === false) {
         await handlePhoneFailure(body, "Could not activate a number.");
         return;
@@ -694,16 +709,28 @@ export default function PhoneSetupPanel({
               {voiceEnabled &&
               activeNumber.agent_id &&
               activeNumber.native_voice_status !== "active" ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="mt-3"
-                  disabled={loading || working || attaching}
-                  onClick={() => void loadNumbers(activeNumber.agent_id || undefined)}
-                >
-                  {loading ? "Checking connection…" : "Retry connection"}
-                </Button>
+                <div className="mt-3 grid justify-items-start gap-2">
+                  {activeNumber.native_voice_error ? (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {activeNumber.native_voice_error}
+                    </p>
+                  ) : null}
+                  {activeNumber.native_voice_status === "configuration_required" ? (
+                    <Button asChild size="sm" variant="secondary">
+                      <Link to="/support">Contact Support</Link>
+                    </Button>
+                  ) : activeNumber.native_voice_status === "unavailable" ? null : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={loading || working || attaching}
+                      onClick={() => void loadNumbers(activeNumber.agent_id || undefined)}
+                    >
+                      {loading ? "Checking connection…" : "Retry connection"}
+                    </Button>
+                  )}
+                </div>
               ) : null}
 
               <label className="mt-5 grid gap-1.5">

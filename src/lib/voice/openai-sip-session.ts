@@ -234,9 +234,19 @@ export function compactOpenAITranscript(lines: OpenAITranscriptLine[]): string {
     : `${full.slice(0, MAX_TRANSCRIPT_CHARS / 2)}\n…\n${full.slice(-MAX_TRANSCRIPT_CHARS / 2)}`;
 }
 
-function deterministicSummary(transcript: string): string {
-  const compact = transcript.replace(/\s+/g, " ").trim();
-  if (!compact) return "Native voice call completed without a usable transcript.";
+/**
+ * The owner's call summary is what the caller said. Every transcript opens
+ * with the Bot's disclosure and greeting, which says nothing about the call.
+ */
+export function deterministicSummary(transcript: string): string {
+  if (!transcript.trim()) return "Native voice call completed without a usable transcript.";
+  const callerTurns = transcript
+    .split("\n")
+    .filter((line) => line.startsWith("Caller: "))
+    .map((line) => line.slice("Caller: ".length).trim())
+    .filter(Boolean);
+  if (!callerTurns.length) return "The caller did not say anything the Bot could transcribe.";
+  const compact = `Caller: ${callerTurns.join(" / ")}`.replace(/\s+/g, " ").trim();
   return compact.length <= 600 ? compact : `${compact.slice(0, 597)}…`;
 }
 

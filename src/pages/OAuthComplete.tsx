@@ -12,6 +12,7 @@ import { readStoredWorkspaceMode, resolvePostAuthDestination } from "../lib/auth
 import MarketingChrome from "../components/marketing/MarketingChrome";
 import { WirelineLockup } from "../components/brand/WirelineBrand";
 import { PageMeta } from "../lib/page-meta";
+import { OAUTH_SIGNUP_CONSENT_REQUIRED } from "../lib/legal-consent";
 import { sanitizeOAuthSignInError } from "../lib/oauth-public-error";
 import { clearFreshSignupSession, markFreshSignupSession } from "../lib/post-signup-onboarding";
 
@@ -30,6 +31,7 @@ export default function OAuthComplete() {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const needsSignup = error === OAUTH_SIGNUP_CONSENT_REQUIRED;
   const handledRef = useRef(false);
   const completionParamsRef = useRef<URLSearchParams | null>(null);
 
@@ -124,7 +126,11 @@ export default function OAuthComplete() {
           </div>
 
           <h1 className="mt-4 font-display text-2xl leading-[1.05] tracking-[-.025em] text-foreground sm:text-3xl">
-            {error ? "Sign-In Failed" : "Completing Sign-In"}
+            {needsSignup
+              ? "Finish Creating Your Account"
+              : error
+                ? "Sign-In Failed"
+                : "Completing Sign-In"}
           </h1>
           <p
             role={error ? "alert" : undefined}
@@ -133,10 +139,20 @@ export default function OAuthComplete() {
             {error || "Securing your session and opening your workspace."}
           </p>
 
+          {needsSignup ? (
+            // A new account needs Terms consent, which only the sign-up form
+            // collects. Signup intent survives in storage across this hop.
+            <Link
+              to="/signup"
+              className="marketing-btn-primary mt-7 inline-flex min-h-12 w-full items-center justify-center"
+            >
+              Create Account
+            </Link>
+          ) : null}
           {error ? (
             <Link
               to="/signin"
-              className="marketing-btn-secondary mt-7 inline-flex min-h-12 w-full items-center justify-center"
+              className={`marketing-btn-secondary ${needsSignup ? "mt-3" : "mt-7"} inline-flex min-h-12 w-full items-center justify-center`}
             >
               Back to sign in
             </Link>

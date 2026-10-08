@@ -11,6 +11,7 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 
+import { useToast } from "../contexts/ToastContext";
 import { authFetch } from "../lib/api";
 import {
   parseApprovalTasks,
@@ -78,6 +79,23 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   human_escalation: "Human Escalation",
   post_call_note: "Post-Call Note",
 };
+
+/** Say what actually happened, so an approved card never just vanishes. */
+function approvalResultMessage(
+  task: FollowUpTaskRow,
+  recipient: string,
+  manualTask: boolean,
+): string {
+  if (manualTask) return "Marked complete.";
+  const type = rawTaskType(task).toLowerCase();
+  if (type.includes("email")) return recipient ? `Email sent to ${recipient}.` : "Email sent.";
+  if (type.includes("text") || type.includes("sms"))
+    return recipient ? `Text sent to ${formatPhone(recipient)}.` : "Text sent.";
+  if (type.includes("crm")) return "CRM note logged.";
+  if (type.includes("calendar") || type.includes("book") || type.includes("meeting"))
+    return "Booking confirmed.";
+  return "Approved and done.";
+}
 
 function taskTypeLabel(task: FollowUpTaskRow): string {
   const key = rawTaskType(task).trim().toLowerCase();
@@ -183,6 +201,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
   const savedTask = savedEdit?.source === task ? savedEdit.value : task;
   const manualHandoff = isHumanHandoff(task);
   const manualTask = manualHandoff || isManualOperatorTask(rawTaskType(task));
+  const { success: toastSuccess } = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -280,6 +299,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
           metadata: { task_id: task.id, task_type: task.task_type || task.taskType || "unknown" },
         });
       }
+      toastSuccess(approvalResultMessage(savedTask, recipient, manualTask));
       onResolved();
     } catch (reason) {
       setError(

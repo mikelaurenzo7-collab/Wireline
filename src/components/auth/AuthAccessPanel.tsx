@@ -112,14 +112,19 @@ function cleanThrownMessage(error: unknown): string | null {
   return message;
 }
 
+function publicSignupPlan(planId: SignupPlanId | null | undefined) {
+  return planId
+    ? STRIPE_PLANS.find((candidate) => candidate.id === planId && candidate.public !== false)
+    : undefined;
+}
+
 function signupPlanLabel(
   planId: SignupPlanId,
   interval: SignupIntent["preferredBillingInterval"],
-): string {
-  const plan = STRIPE_PLANS.find(
-    (candidate) => candidate.id === planId && candidate.public !== false,
-  );
-  if (!plan) return planId;
+): string | null {
+  // Retired plans stay valid in old links but are never shown as an ID.
+  const plan = publicSignupPlan(planId);
+  if (!plan) return null;
   const name = plan.name.replace(/^WIRELINE\s+/i, "");
   if (plan.price_usd_monthly === 0) return name;
   return interval === "year"
@@ -130,14 +135,15 @@ function signupPlanLabel(
 function signupIntentLabel(intent: SignupIntent | null): string | null {
   if (!intent?.preferredPlanId && !intent?.preferredTemplateId && !intent?.signupWedge) return null;
   const parts: string[] = [];
-  if (intent.preferredPlanId) {
-    parts.push(signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval));
-  }
+  const planLabel = intent.preferredPlanId
+    ? signupPlanLabel(intent.preferredPlanId, intent.preferredBillingInterval)
+    : null;
+  if (planLabel) parts.push(planLabel);
   if (intent.preferredTemplateId) {
     parts.push(signupTemplateLabel(intent.preferredTemplateId));
   }
   if (intent.signupWedge) parts.push(intent.signupWedge.replace(/-/g, " "));
-  return parts.join(" · ");
+  return parts.length ? parts.join(" · ") : null;
 }
 
 function defaultFreeIntent(current: SignupIntent | null): SignupIntent | null {
@@ -254,7 +260,9 @@ export default function AuthAccessPanel({
     enabled: isSignUp,
     interval: signupIntent?.preferredBillingInterval === "year" ? "year" : "month",
     planId:
-      signupIntent?.preferredPlanId && signupIntent.preferredPlanId !== "personal"
+      signupIntent?.preferredPlanId &&
+      signupIntent.preferredPlanId !== "personal" &&
+      publicSignupPlan(signupIntent.preferredPlanId)
         ? signupIntent.preferredPlanId
         : undefined,
   });

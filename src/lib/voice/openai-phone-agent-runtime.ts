@@ -148,6 +148,7 @@ export type OpenAIRealtimeInstructionAgent = {
   escalationKeywords: string[] | null;
   escalationPhone: string | null;
   escalationEmail: string | null;
+  transferPhone?: string | null;
   businessVariables: unknown;
   enabledTools: unknown;
   timezone: string | null;
@@ -314,7 +315,7 @@ export function composeOpenAIRealtimeInstructions(input: {
     toStringArray(input.agent.escalationKeywords).length
       ? `Escalate or take a message when the caller raises: ${toStringArray(input.agent.escalationKeywords).join(", ")}.`
       : "",
-    input.agent.escalationPhone || input.agent.escalationEmail
+    input.agent.escalationPhone || input.agent.escalationEmail || input.agent.transferPhone
       ? "A human escalation route exists; offer a callback or handoff only when policy permits."
       : "",
   ]
@@ -382,6 +383,7 @@ async function loadRuntime(agentId: string, userId: string) {
           escalationKeywords: schema.agents.escalationKeywords,
           escalationPhone: schema.agents.escalationPhone,
           escalationEmail: schema.agents.escalationEmail,
+          transferPhone: schema.agents.transferPhone,
           businessVariables: schema.agents.businessVariables,
           enabledTools: schema.agents.enabledTools,
           timezone: schema.agents.timezone,

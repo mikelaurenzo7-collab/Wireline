@@ -4,11 +4,14 @@ import { describe, expect, it } from "vitest";
 import {
   SIGNUP_PLAN_IDS,
   PUBLIC_SIGNUP_PLAN_SLUGS,
+  activationBillingHref,
   mergeSignupIntent,
   parseSignupIntent,
   recommendedPlanFromIntent,
+  SIGNUP_WEDGE_KEYS,
   sanitizeSignupIntent,
   signupHrefForPlan,
+  signupHrefForWedge,
   signupTemplateLabel,
 } from "../src/lib/signup-intent";
 import { signupSchema } from "../src/lib/api-validation";
@@ -205,10 +208,14 @@ describe("signup intent contract", () => {
     ).toBeNull();
   });
 
-  it("lets vertical intent choose the plan when the URL did not specify one", () => {
-    expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=sales"))).toBe("business");
-    expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=home-services"))).toBe("team");
-    expect(recommendedPlanFromIntent(parseSignupIntent("?wedge=support"))).toBe("starter");
+  it("starts every industry wedge on Free Builder and activates a current channel plan", () => {
+    for (const wedge of SIGNUP_WEDGE_KEYS) {
+      const intent = parseSignupIntent(`?wedge=${wedge}`);
+      expect(recommendedPlanFromIntent(intent)).toBe("personal");
+      expect(activationBillingHref(intent)).toContain("plan=voice-regular");
+      // Retired plans (starter, starter-plus, pro) never reach a public CTA.
+      expect(signupHrefForWedge(wedge)).toBe(`/signup?wedge=${wedge}&plan=free`);
+    }
   });
 
   it("merges an explicit plan override without erasing acquisition context", () => {

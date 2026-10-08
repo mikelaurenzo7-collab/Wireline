@@ -360,6 +360,14 @@ describe("durable post-call customer follow-up", () => {
     ).resolves.toBe("login@wireline.test");
   });
 
+  it("never sends the owner's digest to a Bot's managed mailbox", () => {
+    const digest = read("src/lib/post-call-digest.ts");
+    const start = digest.indexOf("export async function pickAccountHolderEmail");
+    const body = digest.slice(start, digest.indexOf("\n}\n", start));
+    expect(body).toContain('ne(schema.emailAccounts.provider, "agentmail")');
+    expect(body).toContain(".orderBy(asc(schema.emailAccounts.createdAt))");
+  });
+
   it("surfaces recipient lookup failures for durable retry", async () => {
     await expect(
       resolveAccountHolderEmail(

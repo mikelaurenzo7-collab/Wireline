@@ -4,7 +4,7 @@ import { AppError, rethrowIfAppError } from "../lib/api-error";
 
 import { log, drizzle, serialQueryBatch } from "../lib/server-context";
 import * as schema from "../db/schema";
-import { eq, and, desc, like, ne, gte, inArray } from "drizzle-orm";
+import { eq, and, desc, like, ne, gte, inArray, or } from "drizzle-orm";
 import { presenceStreams } from "../services/presence-stream-service";
 import { getDeploymentIdentity } from "../lib/deployment-environment";
 import { authenticateUser, authenticateEventStream } from "../middleware/auth";
@@ -450,7 +450,9 @@ router.post(
               : 500;
         res.status(status).json({
           code: result.errorCode || "INTERNAL_ERROR",
-          error: result.error || "Action execution failed",
+          error:
+            result.error ||
+            "This action could not be completed. Check that its channel is connected in Connections, then try again.",
         });
       }
     } catch (error: any) {
@@ -614,7 +616,13 @@ router.get("/api/triage", authenticateUser, async (req: AuthenticatedRequest, re
             .where(
               and(
                 eq(schema.callLogs.userId, req.user.id),
-                eq(schema.callLogs.intentLabel, "escalation"),
+                // The live phone runtime records escalate_to_human as
+                // escalation_attempted; intent_label covers older rows.
+                or(
+                  eq(schema.callLogs.escalationAttempted, true),
+                  eq(schema.callLogs.intentLabel, "escalation"),
+                ),
+                gte(schema.callLogs.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
               ),
             )
             .orderBy(desc(schema.callLogs.createdAt))

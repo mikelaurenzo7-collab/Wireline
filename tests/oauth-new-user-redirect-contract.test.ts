@@ -33,4 +33,11 @@ describe("OAuth new-user redirect integrity", () => {
     expect(completion).toContain("clearFreshSignupSession();");
     expect(atomicExchange).toContain("is_new_user: isNewUserOAuthBridgeCode(code)");
   });
+
+  it("sends a new provider user without Terms consent to sign up, not back to sign in", () => {
+    const completion = read("src/pages/OAuthComplete.tsx");
+    expect(completion).toContain("const needsSignup = error === OAUTH_SIGNUP_CONSENT_REQUIRED;");
+    expect(completion).toContain('"Finish Creating Your Account"');
+    expect(completion).toMatch(/needsSignup \? \([\s\S]*?to="\/signup"[\s\S]*?Create Account/);
+  });
 });

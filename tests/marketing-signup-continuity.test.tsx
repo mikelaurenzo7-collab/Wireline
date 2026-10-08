@@ -5,6 +5,7 @@ import MarketingStickyCta from "../src/components/marketing/MarketingStickyCta";
 import VerticalLanding from "../src/pages/VerticalLanding";
 import SolutionsPage from "../src/pages/SolutionsPage";
 import Blog from "../src/pages/Blog";
+import WireAgentLanding from "../src/components/marketing/WireAgentLanding";
 import { WEDGES, type VerticalKey } from "../src/data/vertical-wedges";
 
 const harness = vi.hoisted(() => ({ wedge: "sales" }));
@@ -26,7 +27,13 @@ vi.mock("react-router", () => ({
 vi.mock("../src/components/marketing/PrecisionPublicHeader", () => ({ default: "header" }));
 vi.mock("../src/components/marketing/MarketingChromeBar", () => ({ default: "footer" }));
 vi.mock("../src/lib/page-meta", () => ({ PageMeta: "page-meta" }));
-vi.mock("../src/lib/product-event-client", () => ({ emitProductEvent: vi.fn() }));
+vi.mock("../src/lib/product-event-client", () => ({
+  emitProductEvent: vi.fn(),
+  emitProductEventOnce: vi.fn(),
+}));
+vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
+  usePaidPlanAvailability: () => ({ canActivate: () => false, notice: "" }),
+}));
 
 type Element = ReactElement<{ children?: ReactNode; to?: string; className?: string }>;
 
@@ -79,6 +86,27 @@ describe("marketing signup continuity", () => {
     );
     expect(notice && Children.toArray(notice.props.children).join("")).toBe(expectedNotice);
     if (notice) expect(notice.props.className).not.toContain("sr-only");
+  });
+
+  it("discloses that outbound calls are off on the home page while it sells outbound roles", () => {
+    const text = (node: ReactNode): string =>
+      Array.isArray(node)
+        ? node.map(text).join("")
+        : isValidElement<Element["props"]>(node)
+          ? text(node.props.children)
+          : typeof node === "string"
+            ? node
+            : "";
+    const notices = elements(WireAgentLanding()).filter(
+      (element) =>
+        (element.type === "p" || element.props.className === "landing-prestige__activation") &&
+        text(element.props.children).startsWith("Outbound calls are not available yet."),
+    );
+    expect(notices.map((element) => text(element.props.children))).toEqual([
+      "Outbound calls are not available yet. Build and test a Sales Rep free.",
+      "Outbound calls are not available yet. Outbound roles build and test free today.",
+    ]);
+    for (const notice of notices) expect(notice.props.className).not.toContain("sr-only");
   });
 
   it.each(["sales", "support"])("preserves the %s solution's signup destination", (wedge) => {

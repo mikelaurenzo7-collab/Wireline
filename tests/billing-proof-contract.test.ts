@@ -424,6 +424,15 @@ describe("billing proof contract", () => {
     expect(envCheck).not.toContain('["STRIPE_VOICE_OVERAGE_METER_EVENT_NAME"');
   });
 
+  it("points a confirmed plan at the first live step it unlocks", () => {
+    const billing = read("src/pages/BillingSettings.tsx");
+    expect(billing).toContain("planConfirmed: true,");
+    expect(billing).toMatch(
+      /liveChannels\.channels\.includes\("voice"\) && liveChannels\.linesUsed === 0[\s\S]*?to="\/phone\?tab=setup">Choose Your Number/,
+    );
+    expect(billing).toContain('<Link to="/inbox">Open Inbox</Link>');
+  });
+
   it("links the canonical billing runbook from the docs index", () => {
     expect(read("docs/BILLING_RUNBOOK.md")).toContain("Status: **Active canonical runbook**");
     expect(read("docs/README.md")).toContain("[BILLING_RUNBOOK.md](./BILLING_RUNBOOK.md)");

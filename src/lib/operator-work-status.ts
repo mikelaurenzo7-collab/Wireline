@@ -9,6 +9,9 @@ export const MANUAL_OPERATOR_TASK_TYPES = [
   "ticket",
   "callback",
   "human_escalation",
+  // Meta inbound messages and low-star reviews need a person, not an action.
+  "messenger_inbound",
+  "review_escalation",
 ] as const;
 
 export function isManualOperatorTask(

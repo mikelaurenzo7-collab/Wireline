@@ -593,7 +593,7 @@ export async function sendTrialEndingSoonEmail(opts: {
       "",
       `Your BotBound activation window closes in ${dayWord}.`,
       "",
-      "Choose Starter or higher to keep your Bots live, your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
+      "Choose a Calls, Email, or Calls + Email plan to keep your Bots live. Your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.",
       "",
       opts.checkoutUrl,
       "",
@@ -605,7 +605,7 @@ export async function sendTrialEndingSoonEmail(opts: {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1A1A23;">
       <h2 style="margin: 0 0 16px; font-weight: 600;">Fund live work within ${escapeHtml(dayWord)}</h2>
       <p style="margin: 0 0 16px; line-height: 1.55;">Your BotBound activation window closes in <strong>${escapeHtml(dayWord)}</strong>.</p>
-      <p style="margin: 0 0 24px; line-height: 1.55;">Choose Starter or higher to keep your Bots live, your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
+      <p style="margin: 0 0 24px; line-height: 1.55;">Choose a Calls, Email, or Calls + Email plan to keep your Bots live. Your phone number, call history, and Bot configuration all carry over. Runtime Balance covers overflow after a paid plan is active.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(opts.checkoutUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Upgrade now</a></p>
       <p style="margin: 32px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you decide not to fund live work, your Bots will stop answering calls when activation lapses.</p>
       ${buildComplianceFooterHtml(opts.to)}

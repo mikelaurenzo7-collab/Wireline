@@ -204,6 +204,7 @@ describe("round-4 audit fix contracts", () => {
       const source = read(path);
       expect(source).not.toContain("Choose Starter, Team, or Business");
     }
-    expect(read("src/lib/trial-gate.ts")).toContain("Starter, Starter Plus, or Pro");
+    expect(read("src/lib/trial-gate.ts")).toContain("Choose a Calls, Email, or Calls + Email plan");
+    expect(read("src/lib/trial-gate.ts")).not.toContain("Starter Plus, or Pro");
   });
 });

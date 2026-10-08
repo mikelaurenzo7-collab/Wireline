@@ -226,16 +226,21 @@ export default function KnowledgeBaseClaude({
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [ruleDraft, setRuleDraft] = useState("");
   const [ruleBusyId, setRuleBusyId] = useState<string | null>(null);
+  const [confirmDeleteRuleId, setConfirmDeleteRuleId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const confirmDeleteCancelRef = useRef<HTMLButtonElement>(null);
   const removeButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const removeRuleButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const activeAgentIdRef = useRef(agentId);
   const agentScopeRevisionRef = useRef(0);
   const agentOperationControllersRef = useRef(new Set<AbortController>());
   const entryMutationPending =
     externallyBusy || uploading || loading || Boolean(knowledgeBusyId) || Boolean(ruleBusyId);
   const entryEditorOpen =
-    Boolean(editingKnowledgeId) || Boolean(editingRuleId) || Boolean(confirmDeleteKnowledgeId);
+    Boolean(editingKnowledgeId) ||
+    Boolean(editingRuleId) ||
+    Boolean(confirmDeleteKnowledgeId) ||
+    Boolean(confirmDeleteRuleId);
   useLayoutEffect(() => {
     onInteractionChange?.(
       uploading || loading || Boolean(knowledgeBusyId) || Boolean(ruleBusyId) || entryEditorOpen,
@@ -264,12 +269,14 @@ export default function KnowledgeBaseClaude({
     setEditingRuleId(null);
     setRuleDraft("");
     setRuleBusyId(null);
+    setConfirmDeleteRuleId(null);
     setEditingKnowledgeId(null);
     setKnowledgeDraft("");
     setKnowledgeBusyId(null);
     setConfirmDeleteKnowledgeId(null);
     setEntryError(null);
     removeButtonRefs.current.clear();
+    removeRuleButtonRefs.current.clear();
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     return () => {
@@ -339,8 +346,8 @@ export default function KnowledgeBaseClaude({
       setIngestError("Choose a Bot before adding knowledge.");
       return;
     }
-    if (editingRuleId || ruleBusyId) {
-      setEntryError("Finish editing the rule before uploading files.");
+    if (editingRuleId || ruleBusyId || confirmDeleteRuleId) {
+      setEntryError("Finish editing or removing the rule before uploading files.");
       return;
     }
     if (editingKnowledgeId || knowledgeBusyId || confirmDeleteKnowledgeId) {
@@ -608,6 +615,56 @@ export default function KnowledgeBaseClaude({
     }
   }
 
+  function beginRuleRemoval(rowId: string) {
+    if (entryMutationPending || entryEditorOpen) return;
+    setConfirmDeleteRuleId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    requestAnimationFrame(() => confirmDeleteCancelRef.current?.focus());
+  }
+
+  function cancelRuleRemoval(rowId: string) {
+    if (ruleBusyId) return;
+    setConfirmDeleteRuleId(null);
+    requestAnimationFrame(() => removeRuleButtonRefs.current.get(rowId)?.focus());
+  }
+
+  async function removeRule(rowId: string) {
+    if (entryMutationPending || confirmDeleteRuleId !== rowId) return;
+    const operation = startAgentOperation();
+    setRuleBusyId(rowId);
+    setEntryError(null);
+    setNotice(null);
+    try {
+      const response = await authFetch(
+        `/api/agent-config/${encodeURIComponent(operation.requestedAgentId)}/directive/${encodeURIComponent(rowId)}`,
+        { method: "DELETE", signal: operation.controller.signal },
+      );
+      const body = (await safeJson(response)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error || "Rule could not be removed.");
+      if (!operation.isCurrent()) return;
+      setConfig((current) =>
+        current
+          ? {
+              ...current,
+              directives: (current.directives || []).filter(
+                (rule) => knowledgeRowId(rule) !== rowId,
+              ),
+            }
+          : current,
+      );
+      setConfirmDeleteRuleId(null);
+      setNotice("Rule removed. Your Bot stops following it on its next call.");
+    } catch (reason) {
+      if (operation.isCurrent()) {
+        setEntryError(reason instanceof Error ? reason.message : "Rule could not be removed.");
+      }
+    } finally {
+      if (operation.isCurrent()) setRuleBusyId(null);
+      operation.finish();
+    }
+  }
+
   const knowledge = config?.knowledge ?? [];
   const directives = config?.directives ?? [];
   const hasPersonality = !!(config?.personality && config.personality.trim());
@@ -697,27 +754,78 @@ export default function KnowledgeBaseClaude({
                       </p>
                     ) : null}
                   </div>
-                  {rowId && !directive.content?.startsWith(OPENING_GREETING_PREFIX) ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="shrink-0"
-                      disabled={entryMutationPending || entryEditorOpen}
-                      aria-label={`Edit rule: ${headline}`}
-                      onClick={() => {
-                        if (entryMutationPending || entryEditorOpen) return;
-                        setEditingRuleId(rowId);
-                        setRuleDraft(directive.content || "");
-                        setEntryError(null);
-                        setNotice(null);
-                      }}
-                    >
-                      <Pencil aria-hidden="true" />
-                      Edit
-                    </Button>
+                  {rowId &&
+                  !directive.content?.startsWith(OPENING_GREETING_PREFIX) &&
+                  confirmDeleteRuleId !== rowId ? (
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={entryMutationPending || entryEditorOpen}
+                        aria-label={`Edit rule: ${headline}`}
+                        onClick={() => {
+                          if (entryMutationPending || entryEditorOpen) return;
+                          setEditingRuleId(rowId);
+                          setRuleDraft(directive.content || "");
+                          setEntryError(null);
+                          setNotice(null);
+                        }}
+                      >
+                        <Pencil aria-hidden="true" />
+                        Edit
+                      </Button>
+                      <Button
+                        ref={(node) => {
+                          if (node) removeRuleButtonRefs.current.set(rowId, node);
+                          else removeRuleButtonRefs.current.delete(rowId);
+                        }}
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={entryMutationPending || entryEditorOpen}
+                        aria-label={`Remove rule: ${headline}`}
+                        onClick={() => beginRuleRemoval(rowId)}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        Remove
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
+                {rowId && confirmDeleteRuleId === rowId ? (
+                  <div
+                    className="mt-2 flex flex-wrap items-center justify-end gap-2"
+                    role="group"
+                    aria-label={`Remove rule: ${headline}`}
+                  >
+                    <span className="text-xs text-muted-foreground">Remove this rule?</span>
+                    <Button
+                      ref={confirmDeleteCancelRef}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => cancelRuleRemoval(rowId)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => void removeRule(rowId)}
+                    >
+                      {busy ? (
+                        <Loader2 className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Trash2 aria-hidden="true" />
+                      )}
+                      Remove
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             );
           })}

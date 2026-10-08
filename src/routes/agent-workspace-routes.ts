@@ -624,9 +624,15 @@ router.post(
               .values({ agentId, userId: req.user.id, content: String(value), priority: 5 });
         } else {
           if (!spec.column) throw AppError.fromHttpStatus(400, "Unknown configuration field");
+          // Approving a transfer number is the owner's opt-in to live transfer;
+          // the call runtime only transfers when the handoff flag is on.
+          const handoff =
+            field === "transfer_phone"
+              ? { escalationHandoffEnabled: String(value).replace(/\D/g, "").length >= 10 }
+              : {};
           await tx
             .update(schema.agents)
-            .set({ [spec.column]: value })
+            .set({ [spec.column]: value, ...handoff })
             .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
           if (field === "first_message") {
             // Retire the previous Studio override in the same transaction so

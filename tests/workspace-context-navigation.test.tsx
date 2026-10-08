@@ -447,7 +447,7 @@ describe("Bot context across workspace pages", () => {
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
     ).toBe(false);
-    expect(text(tree)).not.toContain("Choose Starter");
+    expect(text(tree)).not.toContain("Choose a Calls");
     const contact = elements(tree).find(
       (node) => node.type === "a" && node.props.to === "/contact?topic=billing",
     );
@@ -466,7 +466,8 @@ describe("Bot context across workspace pages", () => {
           JSON.stringify({
             ok: false,
             code: "ACTIVATION_REQUIRED",
-            error: "Choose Starter, Starter Plus, or Pro before connecting a production number.",
+            error:
+              "Choose a Calls, Email, or Calls + Email plan in Billing before connecting a number.",
             recovery_path: "/settings/billing",
           }),
           { status: 402 },
@@ -492,7 +493,7 @@ describe("Bot context across workspace pages", () => {
       (node) => node.type === "a" && text(node) === "Open billing",
     );
     expect(billing?.props.to).toBe("/settings/billing");
-    expect(text(phone())).toContain("Choose Starter");
+    expect(text(phone())).toContain("Choose a Calls, Email, or Calls + Email plan");
   });
 });
 

@@ -106,6 +106,9 @@ describe("live email delivery and manual handoff", () => {
     );
     const task = h.saveTask.mock.calls[0][0];
     expect(isManualOperatorTask(task.taskType)).toBe(true);
+    expect(isManualOperatorTask("messenger_inbound")).toBe(true);
+    expect(isManualOperatorTask("review_escalation")).toBe(true);
+    expect(isManualOperatorTask("send_email")).toBe(false);
     expect(task.description).toContain("check sent mail before sending to avoid duplicates");
     expect(result?.result).toContain("send was not confirmed");
     expect(result?.result).toContain("request was saved for manual review");

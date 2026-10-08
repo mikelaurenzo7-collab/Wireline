@@ -103,8 +103,9 @@ export default function Features() {
               Inbound &amp; Outbound Bots
             </h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Build and test free. Paid plans give your Bot a phone number, a cloud computer, and a
-              branded inbox, trained on your business and governed by your rules.
+              Build and test free. Paid plans add the channels you choose (a local number, a branded
+              inbox, or both) plus a cloud computer, trained on your business and governed by your
+              rules.
             </p>
             <div className="marketing-hero__actions">
               <Link

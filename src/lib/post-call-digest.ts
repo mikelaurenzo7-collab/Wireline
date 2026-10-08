@@ -16,7 +16,7 @@
  * file to the tenant's selected connected destination and retain only metadata/linkage.
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 
 import { BRAND } from "../constants/brand-colors";
 import * as schema from "../db/schema";
@@ -41,11 +41,22 @@ import { emitServerProductEventOnce } from "./product-event-server";
 import { ProviderSpendPausedError } from "./provider-spend-job-pause";
 import { liveExternalActionPolicyForUser } from "./account-environment-policy";
 import { enqueueCallEscalatedWebhookOnce } from "./webhook-helpers";
+import { detectOptOut } from "./tcpa-consent";
 
 export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
 
 const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`;
+
+/** What the caller said, without the Bot's own disclosure, greeting or replies. */
+export function callerTurnsText(transcript: string | null | undefined): string {
+  return (transcript || "")
+    .split("\n")
+    .filter((line) => line.startsWith("Caller: "))
+    .map((line) => line.slice("Caller: ".length).trim())
+    .filter(Boolean)
+    .join("\n");
+}
 
 export function classifyCallOutcome(input: {
   summary?: string | null;
@@ -53,6 +64,12 @@ export function classifyCallOutcome(input: {
   intentLabel?: string | null;
   durationSeconds?: number | null;
   endedReason?: string | null;
+  /**
+   * Durable facts from a live call. When present, "booked" means a calendar
+   * booking was made on this call and opt-out means explicit revocation
+   * language from the caller, never words in the Bot's greeting or replies.
+   */
+  observed?: { callerText: string; appointmentBooked: boolean } | null;
 }): CallOutcomeTag {
   const ended = (input.endedReason || "").toLowerCase();
   if (
@@ -64,6 +81,21 @@ export function classifyCallOutcome(input: {
     ended.includes("customer-did-not-answer")
   ) {
     return "unreachable";
+  }
+  if (input.observed) {
+    const caller = input.observed.callerText;
+    if (detectOptOut(caller).kind === "dnc") return "dnc";
+    if (/\bwrong number\b/i.test(caller)) return "unreachable";
+    if ((input.durationSeconds ?? 0) < 8 || !caller.trim()) return "unreachable";
+    if (input.observed.appointmentBooked) return "booked";
+    const said = `${caller} ${input.intentLabel || ""}`.toLowerCase();
+    if (/\b(not interested|no thanks|no thank you)\b/.test(said)) return "other";
+    if (/\b(qualified|interested|hot lead|budget|good fit)\b/.test(said)) return "qualified";
+    if (/\b(callback|follow.?up|call.?back|reach out later|next week)\b/.test(said)) {
+      return "followup";
+    }
+    if (/\b(question|info|how does|pricing|price|cost|what is|hours)\b/.test(said)) return "info";
+    return "other";
   }
   const s = `${input.summary || ""} ${input.intentLabel || ""}`.toLowerCase();
   if (/\b(unsubscribe|stop|do not call|remove me|dnc)\b/.test(s)) return "dnc";
@@ -701,13 +733,39 @@ async function queueSelectedArtifact(
   return true;
 }
 
+/** A booking the Bot made on this call (the calendar tool stores the call's id). */
+async function callBookedAppointment(userId: string, providerCallId: string): Promise<boolean> {
+  const [booking] = await drizzle
+    .select({ id: schema.appointments.id })
+    .from(schema.appointments)
+    .where(
+      and(
+        eq(schema.appointments.userId, userId),
+        eq(schema.appointments.callId, providerCallId),
+        inArray(schema.appointments.status, ["Scheduled", "Confirmed", "Rescheduled"]),
+      ),
+    )
+    .limit(1);
+  return Boolean(booking);
+}
+
 export async function runPostCallDigest(ctx: CallContext): Promise<PostCallDigestCoreResult> {
+  const observed =
+    ctx.finalization?.provider === "openai_sip"
+      ? {
+          callerText: callerTurnsText(ctx.transcript),
+          appointmentBooked: ctx.vapiCallId
+            ? await callBookedAppointment(ctx.userId, ctx.vapiCallId)
+            : false,
+        }
+      : null;
   const outcomeTag = classifyCallOutcome({
     summary: ctx.summary,
     sentiment: ctx.sentiment,
     intentLabel: ctx.intentLabel,
     durationSeconds: ctx.durationSeconds,
     endedReason: ctx.endedReason,
+    observed,
   });
   const campaignSource = await resolveCampaignSource(ctx.userId, ctx.dialedNumber);
 
@@ -1517,10 +1575,21 @@ export async function resolveAccountHolderEmail(
 export async function pickAccountHolderEmail(userId: string): Promise<string | null> {
   return resolveAccountHolderEmail(
     async () => {
+      // A Bot's managed AgentMail mailbox lives in the same table; a digest
+      // sent there lands in the Bot's own Inbox instead of reaching the owner.
       const [acct] = await drizzle
         .select({ emailAddress: schema.emailAccounts.emailAddress })
         .from(schema.emailAccounts)
-        .where(eq(schema.emailAccounts.userId, userId))
+        .where(
+          and(
+            eq(schema.emailAccounts.userId, userId),
+            or(
+              isNull(schema.emailAccounts.provider),
+              ne(schema.emailAccounts.provider, "agentmail"),
+            ),
+          ),
+        )
+        .orderBy(asc(schema.emailAccounts.createdAt))
         .limit(1);
       return acct?.emailAddress;
     },

@@ -337,6 +337,43 @@ describe("Active Rules editing", () => {
     },
   );
 
+  it("removes one rule through the owned DELETE after an inline confirm", async () => {
+    await settle();
+    button(`Remove rule: ${oldRule}`).props.onClick!();
+    render();
+    expect(text(tree)).toContain("Remove this rule?");
+    h.fetch.mockResolvedValueOnce(response({ success: true }));
+    button("Remove").props.onClick!();
+    await settle();
+    expect(h.fetch).toHaveBeenLastCalledWith(
+      "/api/agent-config/bot-a/directive/31",
+      expect.objectContaining({ method: "DELETE" }),
+    );
+    expect(text(tree)).not.toContain(oldRule);
+    expect(text(tree)).toContain("Protect private customer details.");
+    expect(text(tree)).toContain("Rule removed.");
+    expect(
+      elements(tree).some((node) =>
+        node.props["aria-label"]?.includes("Remove rule: Opening greeting"),
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps a rule when removal fails or is cancelled", async () => {
+    await settle();
+    button(`Remove rule: ${oldRule}`).props.onClick!();
+    render();
+    h.fetch.mockResolvedValueOnce(response({ error: "Please retry later." }, 503));
+    button("Remove").props.onClick!();
+    await settle();
+    expect(text(tree)).toContain(oldRule);
+    expect(text(tree)).toContain("Please retry later.");
+    button("Cancel").props.onClick!();
+    render();
+    expect(text(tree)).not.toContain("Remove this rule?");
+    expect(text(tree)).toContain(oldRule);
+  });
+
   it("supports cancellation and blocks blank saves without making a request", async () => {
     await edit();
     input().props.onChange!({ target: { value: "  " } });
@@ -422,7 +459,7 @@ describe("Active Rules editing", () => {
     drop();
     await settle();
     expect(h.fetch).toHaveBeenCalledTimes(requestsBeforeDrop);
-    expect(text(tree)).toContain("Finish editing the rule before uploading files.");
+    expect(text(tree)).toContain("Finish editing or removing the rule before uploading files.");
     expect(input().props.value).toBe(oldRule);
   });
 });

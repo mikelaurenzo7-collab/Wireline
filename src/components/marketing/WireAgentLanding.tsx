@@ -17,7 +17,9 @@ import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { BOT_BRAND, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
+import { DIRECT_OUTBOUND_AVAILABILITY } from "../../lib/outbound-call-purpose";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
+import { MARKETING_CALLS_NOTICE } from "../../lib/product-copy";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
@@ -143,6 +145,11 @@ export default function WireAgentLanding() {
                 </span>
               </Link>
             </nav>
+            {DIRECT_OUTBOUND_AVAILABILITY.available ? null : (
+              <p className="landing-prestige__reassurance">
+                <span>{MARKETING_CALLS_NOTICE}</span> <span>Build and test a Sales Rep free.</span>
+              </p>
+            )}
           </div>
         </section>
 
@@ -154,6 +161,11 @@ export default function WireAgentLanding() {
                 <span>Pick the Work.</span> <span>Put a Bot on It.</span>
               </h2>
               <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
+              {DIRECT_OUTBOUND_AVAILABILITY.available ? null : (
+                <span className="landing-prestige__activation">
+                  {MARKETING_CALLS_NOTICE} Outbound roles build and test free today.
+                </span>
+              )}
             </header>
             <div className="landing-prestige__role-grid">
               {FEATURED_TEMPLATES.map((template) => {

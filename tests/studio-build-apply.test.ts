@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   owns: true,
   lockTail: Promise.resolve(),
   executeAction: vi.fn(),
+  lastAgentUpdate: null as Record<string, unknown> | null,
 }));
 vi.mock("express", () => ({
   default: {
@@ -86,6 +87,7 @@ vi.mock("../src/lib/server-context", async () => {
           update: () => ({
             set: (value: { firstMessage?: string }) => ({
               where: async () => {
+                h.lastAgentUpdate = value;
                 if (value.firstMessage) h.firstMessage = value.firstMessage;
               },
             }),
@@ -140,6 +142,7 @@ beforeEach(() => {
   h.owns = true;
   h.lockTail = Promise.resolve();
   h.executeAction.mockReset();
+  h.lastAgentUpdate = null;
 });
 
 describe("explicit Studio proposal application", () => {
@@ -162,6 +165,16 @@ describe("explicit Studio proposal application", () => {
     });
     expect(h.firstMessage).toBe("Welcome to Acme.");
     expect(h.rules).toEqual(["Keep the caller's information private."]);
+  });
+
+  it("turns on live transfer only when the owner approves a transfer number", async () => {
+    await apply("transfer_phone", "+1 (512) 555-0100");
+    expect(h.lastAgentUpdate).toEqual({
+      transferPhone: "+1 (512) 555-0100",
+      escalationHandoffEnabled: true,
+    });
+    await apply("escalation_phone", "+1 (512) 555-0101");
+    expect(h.lastAgentUpdate).toEqual({ escalationPhone: "+1 (512) 555-0101" });
   });
 
   it("updates the effective delivery tone without erasing saved instructions", async () => {

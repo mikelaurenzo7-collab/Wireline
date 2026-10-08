@@ -3,7 +3,7 @@
  * Subscription gate for routes that spend money on live telephony.
  *
  * Create → Train stays free. New accounts begin in `pending_activation` until
- * Stripe confirms a public paid plan (Starter, Starter Plus, Pro) or a
+ * Stripe confirms a public paid plan (Calls, Email, Calls + Email) or a
  * governed Scale contract.
  * Provider-spending actions fail closed whenever entitlement state cannot be
  * verified; read-only and draft-building surfaces remain available.
@@ -299,7 +299,7 @@ async function verifyLiveWorkAccount(req: Request, res: Response): Promise<Trial
       res,
       402,
       "ACTIVATION_REQUIRED",
-      "Choose Starter, Starter Plus, or Pro before connecting a production number or starting live work.",
+      "Choose a Calls, Email, or Calls + Email plan in Billing before connecting a number or starting live work.",
       { recovery_path: "/settings/billing" },
     );
     return null;
@@ -398,7 +398,7 @@ export async function assertLiveWorkEntitlementForUser(
       httpStatus: 402,
       code: "ACTIVATION_REQUIRED",
       error:
-        "Choose Starter, Starter Plus, or Pro before connecting a production number or starting live work.",
+        "Choose a Calls, Email, or Calls + Email plan in Billing before connecting a number or starting live work.",
       recovery_path: "/settings/billing",
     };
   }

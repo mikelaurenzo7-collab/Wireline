@@ -11,6 +11,7 @@ import WorkspaceRecovery from "../components/WorkspaceRecovery";
 import KnowledgeBaseClaude from "../components/KnowledgeBaseClaude";
 import ReportingPreferences from "../components/training/ReportingPreferences";
 import RecentCallArtifactRequests from "../components/training/RecentCallArtifactRequests";
+import KnowledgeQuickAdd from "../components/training/KnowledgeQuickAdd";
 import WebsiteKnowledgeImport from "../components/training/WebsiteKnowledgeImport";
 import { useAgents } from "../contexts/AgentsContext";
 import { useStudioActiveAgentId } from "../hooks/useStudioActiveAgentId";
@@ -55,18 +56,25 @@ export function KnowledgeEditor({ agentId }: { agentId: string }) {
   const [knowledgeRevision, setKnowledgeRevision] = useState(0);
   const [knowledgeBusy, setKnowledgeBusy] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [teaching, setTeaching] = useState(false);
   return (
     <div className="space-y-5">
+      <KnowledgeQuickAdd
+        agentId={agentId}
+        disabled={knowledgeBusy || importing}
+        onSavingChange={setTeaching}
+        onSaved={() => setKnowledgeRevision((value) => value + 1)}
+      />
       <WebsiteKnowledgeImport
         agentId={agentId}
-        disabled={knowledgeBusy}
+        disabled={knowledgeBusy || teaching}
         onImportingChange={setImporting}
         onImported={() => setKnowledgeRevision((value) => value + 1)}
       />
       <KnowledgeBaseClaude
         key={knowledgeRevision}
         agentId={agentId}
-        externallyBusy={importing}
+        externallyBusy={importing || teaching}
         onInteractionChange={setKnowledgeBusy}
       />
     </div>

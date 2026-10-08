@@ -74,6 +74,7 @@ export function channelPlanHighlights(plan: ChannelPlanOption): string[] {
   if (typeof plan.ai_spend_allowance_usd_monthly === "number")
     highlights.push(
       `$${plan.ai_spend_allowance_usd_monthly.toFixed(2)} managed AI allowance each month`,
+      "Cloud computer for web tasks, billed to the AI allowance",
     );
   if (
     typeof plan.runtime_allowance_usd_monthly === "number" &&

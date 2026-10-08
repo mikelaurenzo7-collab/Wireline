@@ -107,28 +107,31 @@ export type SignupWedgeRecommendation = {
   templateLabel: string;
 };
 
+// Industry CTAs start the free build ("Create X Bot"). Activation then
+// recommends the current channel plan (activationBillingHref), so a wedge
+// never carries a retired plan into signup.
 export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRecommendation> = {
   "home-services": {
     label: "home services",
-    defaultPlanId: "team",
+    defaultPlanId: "personal",
     templateId: "lead-qualifier",
     templateLabel: "Lead Qualifier",
   },
   medical: {
     label: "medical",
-    defaultPlanId: "business",
+    defaultPlanId: "personal",
     templateId: "appointment-setter",
     templateLabel: "Appointment Setter",
   },
   legal: {
     label: "legal",
-    defaultPlanId: "business",
+    defaultPlanId: "personal",
     templateId: "lead-qualifier",
     templateLabel: "Lead Qualifier",
   },
   "real-estate": {
     label: "real estate",
-    defaultPlanId: "team",
+    defaultPlanId: "personal",
     templateId: "appointment-setter",
     templateLabel: "Appointment Setter",
   },
@@ -140,27 +143,25 @@ export const SIGNUP_WEDGE_RECOMMENDATIONS: Record<SignupWedgeKey, SignupWedgeRec
   },
   insurance: {
     label: "insurance",
-    defaultPlanId: "business",
+    defaultPlanId: "personal",
     templateId: "lead-qualifier",
     templateLabel: "Lead Qualifier",
   },
   restaurants: {
     label: "restaurants",
-    defaultPlanId: "team",
+    defaultPlanId: "personal",
     templateId: "front-desk",
     templateLabel: "Front Desk",
   },
   sales: {
     label: "sales",
-    defaultPlanId: "business",
+    defaultPlanId: "personal",
     templateId: "sales-rep",
     templateLabel: "Sales Rep",
   },
   support: {
     label: "customer coverage",
-    // One-Bot front desk — Starter ($19), not Pro. Wedge-only CTAs
-    // omit ?plan= so billing does not pretune a mismatched badge.
-    defaultPlanId: "starter",
+    defaultPlanId: "personal",
     templateId: "front-desk",
     templateLabel: "Front Desk",
   },

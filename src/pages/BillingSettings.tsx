@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { Loader2, Plus, ShieldCheck } from "lucide-react";
 
 import { Button } from "../components/atoms";
@@ -50,6 +51,8 @@ type CheckoutReturnNotice = {
   tone: "info" | "success";
   title: string;
   message: string;
+  /** A confirmed plan points at the first live step it unlocks. */
+  planConfirmed?: boolean;
 };
 
 function formatUsd(value: number | null) {
@@ -81,6 +84,10 @@ export default function BillingSettings() {
     null,
   );
   const [statusUnavailable, setStatusUnavailable] = useState(false);
+  const [liveChannels, setLiveChannels] = useState<{
+    channels: readonly string[];
+    linesUsed: number;
+  } | null>(null);
   const [checkoutAvailability, setCheckoutAvailability] = useState<CheckoutAvailability>("loading");
   const [refreshKey, setRefreshKey] = useState(0);
   const [billingReady, setBillingReady] = useState(() =>
@@ -139,6 +146,7 @@ export default function BillingSettings() {
                   tone: "success",
                   title: "Plan Confirmed",
                   message: "Your BotBound plan and workspace access are up to date.",
+                  planConfirmed: true,
                 });
               }
             } else if (checkoutOutcome === "retired") {
@@ -237,6 +245,10 @@ export default function BillingSettings() {
           if (cancelled) return;
           if (data) {
             setSubscription(data.subscription ?? null);
+            setLiveChannels({
+              channels: data.channel_entitlements?.channels ?? [],
+              linesUsed: data.phone_lines_used ?? 0,
+            });
             setStatusUnavailable(false);
           } else {
             setStatusUnavailable(true);
@@ -344,6 +356,19 @@ export default function BillingSettings() {
             title={checkoutReturnNotice.title}
             className="mb-6"
             aria-live="polite"
+            action={
+              checkoutReturnNotice.planConfirmed && liveChannels ? (
+                liveChannels.channels.includes("voice") && liveChannels.linesUsed === 0 ? (
+                  <Button asChild size="sm">
+                    <Link to="/phone?tab=setup">Choose Your Number</Link>
+                  </Button>
+                ) : liveChannels.channels.includes("email") ? (
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to="/inbox">Open Inbox</Link>
+                  </Button>
+                ) : undefined
+              ) : undefined
+            }
           >
             {checkoutReturnNotice.message}
           </StatusNotice>
