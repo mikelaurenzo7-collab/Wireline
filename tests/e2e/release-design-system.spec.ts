@@ -58,6 +58,9 @@ async function mockWorkspace(page: Page) {
 async function enlargeText(page: Page) {
   await page.evaluate(async () => {
     document.documentElement.style.fontSize = "200%";
+    // Lay out first, so faces the larger text needs are requested before the
+    // wait; otherwise a check can pass against the fallback font.
+    void document.body.offsetHeight;
     await document.fonts.ready;
   });
 }
