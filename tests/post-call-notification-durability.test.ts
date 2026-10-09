@@ -348,6 +348,43 @@ describe("durable post-call customer follow-up", () => {
     expect(text).not.toContain("<div");
   });
 
+  it("tells the owner a booking request is waiting in Calendar", () => {
+    const view = {
+      agentName: "Ava",
+      customerName: "Sam",
+      direction: "inbound",
+      durationSeconds: 125,
+      summary: "Wants a quote.",
+      sentiment: "positive",
+      outcomeTag: "followup",
+      campaignSource: null,
+      crmLogged: false,
+      bookingRequest: {
+        date: "2026-10-12",
+        time: "09:00",
+        timeZone: "America/Chicago",
+        serviceType: "Water heater <quote>",
+      },
+    };
+    const html = renderDigestEmail(view);
+    const text = renderDigestEmailText(view);
+    expect(html).toContain(
+      "Water heater &lt;quote&gt; on 2026-10-12 at 09:00 (America/Chicago) is waiting for you.",
+    );
+    expect(html).toContain("/calendar");
+    expect(html).toContain("Confirm or cancel the booking request in Calendar");
+    expect(text).toContain(
+      "Booking request: Water heater <quote> on 2026-10-12 at 09:00 (America/Chicago) is waiting for you.",
+    );
+    // Without a request, the digest is unchanged.
+    expect(renderDigestEmailText({ ...view, bookingRequest: null })).not.toContain(
+      "Booking request",
+    );
+    const digest = read("src/lib/post-call-digest.ts");
+    expect(digest).toContain('eq(schema.appointments.status, "Requested")');
+    expect(digest).toContain('bookingRequest ? "BOOKING REQUEST" : core.outcomeTag.toUpperCase()');
+  });
+
   it("prefers a connected mailbox and falls back to the login email", async () => {
     const connected = vi.fn(async () => "  owner@company.test ");
     const login = vi.fn(async () => "login@wireline.test");

@@ -47,6 +47,7 @@ export type CallOutcomeTag =
   "booked" | "qualified" | "followup" | "dnc" | "unreachable" | "info" | "other";
 
 const CALL_LOGS_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/phone?tab=logs`;
+const CALENDAR_URL = `${BOTBOUND_PRODUCTION_ORIGIN}/calendar`;
 
 /** What the caller said, without the Bot's own disclosure, greeting or replies. */
 export function callerTurnsText(transcript: string | null | undefined): string {
@@ -740,6 +741,54 @@ async function queueSelectedArtifact(
   return true;
 }
 
+/** A booking the Bot asked for on this call that waits for the owner's approval. */
+export type DigestBookingRequest = {
+  date: string | null;
+  time: string | null;
+  timeZone: string | null;
+  serviceType: string | null;
+};
+
+async function callBookingRequest(
+  userId: string,
+  providerCallId: string | null | undefined,
+): Promise<DigestBookingRequest | null> {
+  if (!providerCallId) return null;
+  const [request] = await drizzle
+    .select({
+      date: schema.appointments.date,
+      time: schema.appointments.time,
+      timeZone: schema.appointments.timeZone,
+      serviceType: schema.appointments.serviceType,
+    })
+    .from(schema.appointments)
+    .where(
+      and(
+        eq(schema.appointments.userId, userId),
+        eq(schema.appointments.callId, providerCallId),
+        eq(schema.appointments.status, "Requested"),
+      ),
+    )
+    .limit(1);
+  return request ?? null;
+}
+
+/** "Water heater quote on 2026-10-10 at 09:00 (America/Chicago) is waiting for you." */
+export function bookingRequestLine(request: DigestBookingRequest): string {
+  const when = [
+    request.date ? `on ${request.date}` : null,
+    request.time ? `at ${request.time}` : null,
+    request.timeZone ? `(${request.timeZone})` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const what = request.serviceType?.trim() || "An appointment";
+  return `${what}${when ? ` ${when}` : ""} is waiting for you. Confirm or cancel it in Calendar.`;
+}
+
+const BOOKING_REQUEST_NEXT_ACTION =
+  "Confirm or cancel the booking request in Calendar so the caller gets an answer.";
+
 /** A booking the Bot made on this call (the calendar tool stores the call's id). */
 async function callBookedAppointment(userId: string, providerCallId: string): Promise<boolean> {
   const [booking] = await drizzle
@@ -1238,6 +1287,9 @@ async function deliverOwnerDigest(
       });
     }
 
+    // In Calendar approval mode the Bot's booking waits as a request; the
+    // owner must hear about it or the caller never gets a time.
+    const bookingRequest = await callBookingRequest(ctx.userId, ctx.vapiCallId);
     const view = {
       ...ctx,
       outcomeTag: core.outcomeTag,
@@ -1245,8 +1297,9 @@ async function deliverOwnerDigest(
       crmLogged: core.crmLogged,
       crmQueuedForApproval: core.crmQueuedForApproval,
       recapUrl: core.recapUrl,
+      bookingRequest,
     };
-    const subject = `[BotBound · ${core.outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
+    const subject = `[BotBound · ${bookingRequest ? "BOOKING REQUEST" : core.outcomeTag.toUpperCase()}] ${ctx.agentName || "Agent"} → ${ctx.customerName || ctx.customerNumber || "caller"}`;
     const sent = await sendEmail({
       to: recipient,
       subject,
@@ -1705,9 +1758,10 @@ export function renderDigestEmail(d: {
   crmLogged: boolean;
   crmQueuedForApproval?: boolean;
   recapUrl?: string | null;
+  bookingRequest?: DigestBookingRequest | null;
 }): string {
   const dur = Math.round((d.durationSeconds || 0) / 60);
-  const next = nextActionFromOutcome(d.outcomeTag);
+  const next = d.bookingRequest ? BOOKING_REQUEST_NEXT_ACTION : nextActionFromOutcome(d.outcomeTag);
   const identity = `${d.outcomeTag.toUpperCase()}, ${d.agentName || "Agent"} → ${d.customerName || d.customerNumber || "caller"}`;
   const metadata = `${d.direction || "Call"} · ${dur} min · ${d.sentiment || "neutral"} sentiment${d.campaignSource ? ` · Campaign: ${d.campaignSource}` : ""}`;
   const recapBlock = d.recapUrl
@@ -1723,6 +1777,9 @@ export function renderDigestEmail(d: {
     `<p style="margin:0 0 16px;font-size:13px;color:#666;">${escapeHtml(metadata)}</p>`,
     `<div style="background:#f7f7f9;border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:14px;">${escapeHtml(d.summary || "(no summary captured)").replace(/\n/g, "<br/>")}</div>`,
     recapBlock,
+    d.bookingRequest
+      ? `<p style="margin:0 0 16px;padding:12px 14px;border-left:3px solid ${BRAND.colors.primary};background:#f7f7f9;border-radius:8px;font-size:14px;"><strong>Booking request:</strong> ${escapeHtml(bookingRequestLine(d.bookingRequest))} <a href="${CALENDAR_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">Open Calendar →</a></p>`
+      : "",
     `<p style="margin:0 0 6px;font-size:13px;"><strong>Next action:</strong> ${escapeHtml(next)}</p>`,
     `<p style="margin:0 0 16px;font-size:12px;color:#666;">${escapeHtml(crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false))}</p>`,
     `<p style="margin:24px 0 0;font-size:12px;color:#888;">Open the call <a href="${CALL_LOGS_URL}" style="color:${BRAND.colors.primary};text-decoration:none;">in BotBound →</a></p>`,
@@ -1743,6 +1800,7 @@ export function renderDigestEmailText(d: {
   crmLogged: boolean;
   crmQueuedForApproval?: boolean;
   recapUrl?: string | null;
+  bookingRequest?: DigestBookingRequest | null;
 }): string {
   const durationMinutes = Math.round((d.durationSeconds || 0) / 60);
   return [
@@ -1753,7 +1811,10 @@ export function renderDigestEmailText(d: {
     "",
     d.summary || "(no summary captured)",
     "",
-    `Next action: ${nextActionFromOutcome(d.outcomeTag)}`,
+    d.bookingRequest
+      ? `Booking request: ${bookingRequestLine(d.bookingRequest)} ${CALENDAR_URL}`
+      : null,
+    `Next action: ${d.bookingRequest ? BOOKING_REQUEST_NEXT_ACTION : nextActionFromOutcome(d.outcomeTag)}`,
     crmDigestStatusLine(d.crmLogged, d.crmQueuedForApproval ?? false),
     d.recapUrl ? `Recap: ${d.recapUrl}` : null,
     `Open the call: ${CALL_LOGS_URL}`,
