@@ -1,6 +1,7 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import * as schema from "../db/schema";
+import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "./agent-knowledge-search";
 import { runStructured } from "./ai-structured";
 import { drizzle, serialQueryBatch } from "./server-context";
 import { STRUCTURED_RUNTIME_MODELS } from "./structured-runtime-models";
@@ -20,7 +21,9 @@ export type AgentTextReply = {
 const MAX_TEXT_PROMPT_CHARS = 18_000;
 const MAX_TEXT_PROMPT_LINE_CHARS = 700;
 const MAX_TEXT_DIRECTIVES = 24;
-const MAX_TEXT_KNOWLEDGE_ITEMS = 8;
+/** Facts that match the customer's words lead; the newest fill the rest. */
+const MAX_TEXT_RELEVANT_KNOWLEDGE = 6;
+const MAX_TEXT_KNOWLEDGE_ITEMS = 10;
 const MAX_TEXT_MESSAGES = 12;
 const TEXT_PROMPT_TRIM_NOTICE =
   "\n\n[Older background context was trimmed. Use only the retained approved facts and policy.]";
@@ -139,7 +142,7 @@ export async function generateAgentTextReply(input: {
   agentId: string;
   messages: TextConversationMessage[];
 }): Promise<AgentTextReply> {
-  const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+  const [agentRows, personalities, directives] = await drizzle.transaction((tx) =>
     serialQueryBatch([
       tx
         .select({
@@ -179,19 +182,8 @@ export async function generateAgentTextReply(input: {
             eq(schema.directives.userId, input.userId),
           ),
         )
-        .orderBy(desc(schema.directives.priority))
+        .orderBy(...DIRECTIVE_PROMPT_ORDER)
         .limit(MAX_TEXT_DIRECTIVES),
-      tx
-        .select({ content: schema.knowledge.content })
-        .from(schema.knowledge)
-        .where(
-          and(
-            eq(schema.knowledge.agentId, input.agentId),
-            eq(schema.knowledge.userId, input.userId),
-          ),
-        )
-        .orderBy(desc(schema.knowledge.createdAt))
-        .limit(MAX_TEXT_KNOWLEDGE_ITEMS),
     ]),
   );
 
@@ -206,10 +198,6 @@ export async function generateAgentTextReply(input: {
     directives.map((directive) => directive.content),
     MAX_TEXT_DIRECTIVES,
   );
-  const knowledgeLines = compactLines(
-    knowledge.map((item) => item.content),
-    MAX_TEXT_KNOWLEDGE_ITEMS,
-  );
   const disallowedTopics = compactStringList(agent.disallowedTopics);
   const escalationKeywords = compactStringList(agent.escalationKeywords);
   const recentInboundText = input.messages
@@ -217,6 +205,16 @@ export async function generateAgentTextReply(input: {
     .filter((message) => message.direction === "in")
     .map((message) => message.body)
     .join("\n");
+  const knowledgeLines = compactLines(
+    await loadPromptKnowledge(drizzle, {
+      userId: input.userId,
+      agentId: input.agentId,
+      text: recentInboundText,
+      relevant: MAX_TEXT_RELEVANT_KNOWLEDGE,
+      total: MAX_TEXT_KNOWLEDGE_ITEMS,
+    }),
+    MAX_TEXT_KNOWLEDGE_ITEMS,
+  );
   const forcedReviewReason = matchesConfiguredTerm(recentInboundText, escalationKeywords)
     ? "Customer message matches a configured escalation trigger."
     : matchesConfiguredTerm(recentInboundText, disallowedTopics)

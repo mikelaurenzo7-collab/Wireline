@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Live tool payloads are vendor-defined JSON envelopes with route-specific shapes. */
-import { and, desc, eq, ilike, inArray, not, or } from "drizzle-orm";
+import { and, eq, ilike, inArray, not, or } from "drizzle-orm";
 
 import { superviseClientCommunication } from "../ai-supervisor";
 import * as schema from "../../db/schema";
@@ -14,6 +14,11 @@ import { IntegrationService } from "../integrations";
 import { lookupTenantPhoneNumber, sendTenantMessage } from "../twilio-service";
 import { PRESERVED_LEAD_STATUSES, sanitizePhone } from "../agent-runtime-helpers";
 import { handleSendPaymentLink, handleSendSignupLink } from "../agent-link-tool-handlers";
+import {
+  excerptAroundMatch,
+  knowledgeSearchWords,
+  searchAgentKnowledge,
+} from "../agent-knowledge-search";
 
 import type { ToolCallContext, ToolCallResult } from "../agent-tool-types";
 import { phoneSuffixForLog } from "../twilio-webhook-privacy";
@@ -23,88 +28,16 @@ import {
   type ExternalEntityTarget,
 } from "../account-environment-policy";
 
-// ─── Knowledge search helpers ────────────────────────────────────────────────
+// ─── Knowledge search ────────────────────────────────────────────────────────
 const MAX_KB_RESULTS = 8;
 const MAX_KB_RESULT_CHARS = 600;
-const KNOWLEDGE_STOP_WORDS = new Set([
-  "about",
-  "after",
-  "again",
-  "also",
-  "and",
-  "are",
-  "can",
-  "could",
-  "does",
-  "for",
-  "from",
-  "have",
-  "how",
-  "into",
-  "our",
-  "please",
-  "that",
-  "the",
-  "their",
-  "this",
-  "what",
-  "when",
-  "where",
-  "which",
-  "with",
-  "would",
-  "your",
-]);
-
-function tokenize(text: string): string[] {
-  return Array.from(
-    new Set(
-      text
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, " ")
-        .split(/\s+/)
-        .filter((token) => token.length > 2 && !KNOWLEDGE_STOP_WORDS.has(token)),
-    ),
-  );
-}
 
 /**
- * Return the window of an entry AROUND the caller's match, not its opening
- * characters.
- *
- * Entries used to be truncated to MAX_KB_RESULT_CHARS before scoring, which
- * made every entry unsearchable past its first 600 characters — roughly a
- * short paragraph, so most real knowledge entries were affected. A caller
- * asking about something documented in the second half of a page scored zero,
- * was dropped from the results, and heard NO_VERIFIED_MATCH: the agent said it
- * had no verified answer while the answer sat in its own knowledge base. The
- * excerpt is now a presentation concern only.
+ * Search every rule and fact the Bot was taught. Entries are scored whole and
+ * excerpted only on output, around the caller's match, so an answer deep in a
+ * long entry is still found and shown.
  */
-function excerptAroundMatch(content: string, queryTokens: string[]): string {
-  if (content.length <= MAX_KB_RESULT_CHARS) return content;
-  const lower = content.toLowerCase();
-  let hit = -1;
-  for (const token of queryTokens) {
-    const index = lower.indexOf(token);
-    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
-  }
-  if (hit < 0) return `${content.slice(0, MAX_KB_RESULT_CHARS)}…`;
-  // Leave a third of the window as lead-in so the match keeps its context.
-  const start = Math.max(0, hit - Math.floor(MAX_KB_RESULT_CHARS / 3));
-  const end = start + MAX_KB_RESULT_CHARS;
-  return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
-}
-
-function scoreSnippet(content: string, queryTokens: string[]): number {
-  const lower = content.toLowerCase();
-  let score = 0;
-  for (const token of queryTokens) {
-    if (lower.includes(token)) score += 1;
-  }
-  return score;
-}
-
-async function searchAgentKnowledge(
+async function searchKnowledgeForCaller(
   drizzle: any,
   userId: string,
   agentId: string,
@@ -114,57 +47,27 @@ async function searchAgentKnowledge(
     return "NO_VERIFIED_MATCH: The agent identity could not be verified. Do not answer the factual question. Offer to take a message or escalate to a human.";
   }
 
-  const [directives, knowledge] = await Promise.all([
-    drizzle
-      .select({ content: schema.directives.content })
-      .from(schema.directives)
-      .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-      .orderBy(desc(schema.directives.priority))
-      .limit(40),
-    drizzle
-      .select({ content: schema.knowledge.content })
-      .from(schema.knowledge)
-      .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
-      .orderBy(desc(schema.knowledge.createdAt))
-      .limit(200),
-  ]);
-
-  type Snippet = { source: "rule" | "knowledge"; content: string };
-  const snippets: Snippet[] = [
-    // Full content — the excerpt window is applied on OUTPUT, never before
-    // scoring. See excerptAroundMatch below.
-    ...directives.map((d: any) => ({
-      source: "rule" as const,
-      content: (d.content || "").trim(),
-    })),
-    ...knowledge.map((k: any) => ({
-      source: "knowledge" as const,
-      content: (k.content || "").trim(),
-    })),
-  ].filter((s) => s.content.length > 0);
-
-  if (snippets.length === 0) {
-    return "NO_VERIFIED_MATCH: This agent has no approved knowledge for that question. Do not guess or fill gaps from general knowledge. Ask one clarifying question, then take a message or escalate if the caller still needs a factual answer.";
-  }
-
-  const queryTokens = tokenize(query);
-  if (queryTokens.length === 0) {
+  const words = knowledgeSearchWords(query);
+  if (words.length === 0) {
     return "NO_VERIFIED_MATCH: The question is too broad to verify safely. Ask the caller for the specific product, service, policy, date, or detail they need.";
   }
 
-  const scored = snippets
-    .map((s) => ({ ...s, score: scoreSnippet(s.content, queryTokens) }))
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_KB_RESULTS);
-
-  if (scored.length === 0) {
+  const matches = await searchAgentKnowledge(drizzle, {
+    userId,
+    agentId,
+    query,
+    limit: MAX_KB_RESULTS,
+  });
+  if (matches.length === 0) {
     return "NO_VERIFIED_MATCH: No approved knowledge matched the caller's question. Do not answer from memory, inference, or an unrelated entry. For current public facts, use the approved live-research tool only when enabled; otherwise take a message or escalate.";
   }
 
   return [
     "VERIFIED_KNOWLEDGE_MATCH: Answer only from the approved excerpts below. If they do not fully resolve the question, say you do not have a verified answer and offer follow-up; do not combine them with assumptions.",
-    ...scored.map((s) => `[${s.source}] ${excerptAroundMatch(s.content, queryTokens)}`),
+    ...matches.map(
+      (match) =>
+        `[${match.source}] ${excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)}`,
+    ),
   ].join("\n\n");
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -275,7 +178,7 @@ export async function handleCoreToolCall(
             "NO_VERIFIED_MATCH: No specific question was provided. Ask the caller what exact fact they need before answering.",
         };
       }
-      const results = await searchAgentKnowledge(
+      const results = await searchKnowledgeForCaller(
         drizzle,
         agent?.user_id || "",
         webhookAgentId,

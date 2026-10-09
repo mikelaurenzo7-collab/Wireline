@@ -284,22 +284,23 @@ describe("agent tool execution authorization", () => {
  */
 describe("knowledge search reads the whole entry", () => {
   const source = readFileSync(resolve(process.cwd(), "src/lib/bot-tools/core.ts"), "utf8");
+  const search = readFileSync(resolve(process.cwd(), "src/lib/agent-knowledge-search.ts"), "utf8");
 
   it("never truncates before scoring", () => {
-    const build = source.slice(
-      source.indexOf("const snippets: Snippet[] = ["),
-      source.indexOf("if (snippets.length === 0)"),
+    const rank = search.slice(
+      search.indexOf("function ranked("),
+      search.indexOf("/**", search.indexOf("function ranked(")),
     );
-    expect(build).not.toContain("MAX_KB_RESULT_CHARS");
-    expect(build).toContain('content: (d.content || "").trim(),');
-    expect(build).toContain('content: (k.content || "").trim(),');
+    expect(rank).not.toContain("maxChars");
+    expect(rank).toContain(".map((row) => ({ ...row, content: row.content.trim() }))");
+    expect(rank).toContain("knowledgeMatchScore(row.content, words, phrase)");
   });
 
   it("applies the excerpt window on output, around the match", () => {
-    expect(source).toContain("function excerptAroundMatch(");
-    expect(source).toContain("excerptAroundMatch(s.content, queryTokens)");
-    // The window must be anchored on the caller's token, not the entry start.
-    expect(source).toContain("const index = lower.indexOf(token);");
-    expect(source).toContain("Math.max(0, hit - Math.floor(MAX_KB_RESULT_CHARS / 3))");
+    expect(search).toContain("export function excerptAroundMatch(");
+    expect(source).toContain("excerptAroundMatch(match.content, words, MAX_KB_RESULT_CHARS)");
+    // The window must be anchored on the caller's word, not the entry start.
+    expect(search).toContain("const index = lower.indexOf(word);");
+    expect(search).toContain("Math.max(0, hit - Math.floor(maxChars / 3))");
   });
 });

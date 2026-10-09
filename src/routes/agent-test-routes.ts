@@ -1,7 +1,7 @@
 import { resolveAgentGreeting } from "../lib/agent-greeting";
 import { nativeCalendarRehearsalContext } from "../lib/native-calendar-rehearsal";
 import { Router, type Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { AppError } from "../lib/api-error";
@@ -10,6 +10,8 @@ import { isRuntimeAvailable } from "../lib/ai-client";
 import { publicAiStreamFailureMessage } from "../lib/ai-stream-errors";
 import { getErrorMessage } from "../lib/server-utils";
 import { drizzle, log, serialQueryBatch } from "../lib/server-context";
+import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "../lib/agent-knowledge-search";
+import { privateTestConversationText } from "../lib/private-agent-test";
 import { authenticateEventStream } from "../middleware/auth";
 import { claudeRateLimiter } from "../middleware/api-rate-limits";
 import { enforcePrivateTextSimulationSpendCap } from "../lib/spend-guards";
@@ -59,7 +61,7 @@ router.post(
       const agentId = req.params.id;
       const customerMessage = req.body.content.trim();
       const history = req.body.history as Array<{ role: "customer" | "employee"; content: string }>;
-      const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+      const [agentRows, personalities, directives] = await drizzle.transaction((tx) =>
         serialQueryBatch([
           tx
             .select({
@@ -101,16 +103,8 @@ router.post(
                 eq(schema.directives.userId, req.user.id),
               ),
             )
-            .orderBy(desc(schema.directives.priority))
+            .orderBy(...DIRECTIVE_PROMPT_ORDER)
             .limit(30),
-          tx
-            .select({ content: schema.knowledge.content })
-            .from(schema.knowledge)
-            .where(
-              and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, req.user.id)),
-            )
-            .orderBy(desc(schema.knowledge.createdAt))
-            .limit(50),
         ]),
       );
 
@@ -140,8 +134,15 @@ router.post(
         directives.map((directive) => directive.content),
         30,
       );
+      // Facts that answer what the customer said lead, then the newest.
       const knowledgeLines = compactLines(
-        knowledge.map((item) => item.content),
+        await loadPromptKnowledge(drizzle, {
+          userId: req.user.id,
+          agentId,
+          text: privateTestConversationText(customerMessage, history),
+          relevant: 12,
+          total: 50,
+        }),
         50,
       );
       const businessProfile = agent.businessVariables

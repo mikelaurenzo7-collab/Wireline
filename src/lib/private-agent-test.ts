@@ -1,6 +1,8 @@
 import { resolveAgentGreeting } from "./agent-greeting";
 import { nativeCalendarRehearsalContext } from "./native-calendar-rehearsal";
-import { and, desc, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+
+import { DIRECTIVE_PROMPT_ORDER, loadPromptKnowledge } from "./agent-knowledge-search";
 
 import { AppError } from "./api-error";
 import { runStructured, type StructuredToolSchema } from "./ai-structured";
@@ -41,6 +43,24 @@ export const PRIVATE_AGENT_TEST_TOOL: StructuredToolSchema = {
   },
 };
 
+const PROMPT_KNOWLEDGE_ITEMS = 50;
+/** Facts that match the customer's words lead; the newest fill the rest. */
+const PROMPT_RELEVANT_KNOWLEDGE = 12;
+
+/** The customer's side of a rehearsal, newest last, for choosing which facts to show. */
+export function privateTestConversationText(
+  customerMessage: string,
+  history: PrivateAgentTestHistoryItem[] = [],
+): string {
+  return [
+    ...history
+      .slice(-12)
+      .filter((message) => message.role === "customer")
+      .map((message) => message.content),
+    customerMessage,
+  ].join("\n");
+}
+
 function compactLines(values: Array<string | null | undefined>, limit: number) {
   return values
     .map((value) => value?.trim())
@@ -66,8 +86,10 @@ export function buildPrivateAgentTestUserMessage(
 export async function loadPrivateAgentTestContext(
   userId: string,
   agentId: string,
+  /** What the customer has said, so the facts that answer it reach the prompt. */
+  conversationText = "",
 ): Promise<PrivateAgentTestContext> {
-  const [agentRows, personalities, directives, knowledge] = await drizzle.transaction((tx) =>
+  const [agentRows, personalities, directives] = await drizzle.transaction((tx) =>
     serialQueryBatch([
       tx
         .select({
@@ -95,14 +117,8 @@ export async function loadPrivateAgentTestContext(
         .select({ content: schema.directives.content })
         .from(schema.directives)
         .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-        .orderBy(desc(schema.directives.priority))
+        .orderBy(...DIRECTIVE_PROMPT_ORDER)
         .limit(30),
-      tx
-        .select({ content: schema.knowledge.content })
-        .from(schema.knowledge)
-        .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
-        .orderBy(desc(schema.knowledge.createdAt))
-        .limit(50),
     ]),
   );
 
@@ -124,8 +140,14 @@ export async function loadPrivateAgentTestContext(
     30,
   );
   const knowledgeLines = compactLines(
-    knowledge.map((item) => item.content),
-    50,
+    await loadPromptKnowledge(drizzle, {
+      userId,
+      agentId,
+      text: conversationText,
+      relevant: PROMPT_RELEVANT_KNOWLEDGE,
+      total: PROMPT_KNOWLEDGE_ITEMS,
+    }),
+    PROMPT_KNOWLEDGE_ITEMS,
   );
   const businessProfile = agent.businessVariables
     ? JSON.stringify(agent.businessVariables).slice(0, 6000)
@@ -168,7 +190,11 @@ export async function runPrivateAgentTestTurn(input: {
   customerMessage: string;
   history?: PrivateAgentTestHistoryItem[];
 }): Promise<{ agent_id: string; agent_name: string; reply: string }> {
-  const context = await loadPrivateAgentTestContext(input.userId, input.agentId);
+  const context = await loadPrivateAgentTestContext(
+    input.userId,
+    input.agentId,
+    privateTestConversationText(input.customerMessage, input.history || []),
+  );
   if (context.reviewRequired) {
     return {
       agent_id: context.agentId,

@@ -1,4 +1,5 @@
 import { resolveAgentGreeting } from "../agent-greeting";
+import { DIRECTIVE_PROMPT_ORDER } from "../agent-knowledge-search";
 import { and, desc, eq } from "drizzle-orm";
 
 import * as schema from "../../db/schema";
@@ -38,7 +39,6 @@ import { OPENAI_REALTIME_COST_TRUNCATION } from "./openai-realtime-pricing";
 
 const MAX_PROMPT_LINE_LENGTH = 700;
 const MAX_INITIAL_KNOWLEDGE_ITEMS = 8;
-const MAX_LIVE_KB_RESULT_CHARS = 900;
 
 export type WirelineVoiceProfile = "bright" | "warm" | "clear" | "balanced" | "direct";
 
@@ -165,8 +165,6 @@ export type OpenAIRealtimeTenantSettings = {
   businessName: string | null;
   nativeCalendar?: unknown;
 };
-
-type Snippet = { source: "rule" | "knowledge"; content: string };
 
 type ProviderTool = {
   type: "function";
@@ -415,14 +413,15 @@ async function loadRuntime(agentId: string, userId: string) {
         .select({ content: schema.directives.content })
         .from(schema.directives)
         .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-        .orderBy(desc(schema.directives.priority))
+        .orderBy(...DIRECTIVE_PROMPT_ORDER)
         .limit(40),
       tx
         .select({ content: schema.knowledge.content })
         .from(schema.knowledge)
         .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
         .orderBy(desc(schema.knowledge.createdAt))
-        .limit(80),
+        // Only the prompt's opening facts; the search tool reaches the rest.
+        .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
     ]),
   );
 
@@ -553,79 +552,6 @@ export async function buildOpenAIRealtimeAgentRuntime(input: {
     session: commonSession,
     toolNames: tools.map((tool) => tool.name),
   };
-}
-
-function tokens(value: string): string[] {
-  return (
-    value
-      .toLowerCase()
-      .match(/[\p{L}\p{N}]{2,}/gu)
-      ?.slice(0, 16) || []
-  );
-}
-
-function excerptAroundMatch(content: string, queryTokens: string[]): string {
-  if (content.length <= MAX_LIVE_KB_RESULT_CHARS) return content;
-  const lower = content.toLowerCase();
-  let hit = -1;
-  for (const token of queryTokens) {
-    const index = lower.indexOf(token);
-    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
-  }
-  if (hit < 0) return `${content.slice(0, MAX_LIVE_KB_RESULT_CHARS)}…`;
-  const start = Math.max(0, hit - Math.floor(MAX_LIVE_KB_RESULT_CHARS / 3));
-  const end = start + MAX_LIVE_KB_RESULT_CHARS;
-  return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
-}
-
-export async function searchApprovedAgentKnowledge(input: {
-  userId: string;
-  agentId: string;
-  query: unknown;
-}) {
-  const query = trimLine(input.query, 600);
-  if (!query) throw AppError.badRequest("A Training search query is required.");
-
-  const { directives, knowledge } = await loadRuntime(input.agentId, input.userId);
-  const normalizedQuery = query.toLowerCase();
-  const queryTokens = tokens(query);
-  const snippets: Snippet[] = [
-    ...directives.map((item) => ({
-      source: "rule" as const,
-      content: typeof item.content === "string" ? item.content.trim() : "",
-    })),
-    ...knowledge.map((item) => ({
-      source: "knowledge" as const,
-      content: typeof item.content === "string" ? item.content.trim() : "",
-    })),
-  ].filter((item) => item.content);
-
-  const matches = snippets
-    .map((item) => {
-      const content = item.content.toLowerCase();
-      const tokenScore = queryTokens.reduce(
-        (score, token) => score + (content.includes(token) ? 1 : 0),
-        0,
-      );
-      return { item, score: tokenScore + (content.includes(normalizedQuery) ? 8 : 0) };
-    })
-    .filter((row) => row.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map((row) => ({
-      source: row.item.source,
-      content: excerptAroundMatch(row.item.content, queryTokens),
-    }));
-
-  return matches.length
-    ? { found: true, query, matches }
-    : {
-        found: false,
-        query,
-        matches: [],
-        guidance:
-          "No approved Training matched. Tell the caller you do not want to guess and offer a message or human follow-up.",
-      };
 }
 
 function resolveWirelineOpenAIVoice(

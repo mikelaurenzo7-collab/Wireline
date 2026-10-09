@@ -52,7 +52,11 @@ vi.mock("../src/lib/server-context", async () => {
   return {
     log: { error: vi.fn() },
     serialQueryBatch: (queries: Promise<unknown>[]) => Promise.all(queries),
-    drizzle: { transaction: (operation: (tx: unknown) => Promise<unknown>) => operation(tx) },
+    // Facts are chosen after the snapshot read, with the same tenant scope.
+    drizzle: {
+      select: tx.select,
+      transaction: (operation: (tx: unknown) => Promise<unknown>) => operation(tx),
+    },
   };
 });
 

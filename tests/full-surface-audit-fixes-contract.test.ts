@@ -11,22 +11,23 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("live-voice knowledge retrieval", () => {
   const live = read("src/lib/voice/openai-live-agent-service.ts");
+  const search = read("src/lib/agent-knowledge-search.ts");
 
   it("scores full entries and excerpts only on output", () => {
     // Entries were truncated to 900 chars BEFORE scoring, so anything
     // documented past the first ~900 characters of a Training entry scored
     // zero and was dropped: the agent said it had no approved answer while
-    // the answer sat in its own knowledge base. The PSTN path already uses
-    // excerptAroundMatch, so the browser live-voice path must stay aligned.
-    expect(live).toContain("function excerptAroundMatch(");
-    expect(live).toContain("MAX_LIVE_KB_RESULT_CHARS");
-    // The snippet set that feeds scoring must not be pre-truncated.
-    const snippetsIdx = live.indexOf("const snippets: Snippet[] = [");
-    const matchesIdx = live.indexOf("const matches = snippets", snippetsIdx);
-    expect(snippetsIdx).toBeGreaterThan(0);
-    expect(live.slice(snippetsIdx, matchesIdx)).not.toContain("trimLine(item.content, 900)");
+    // the answer sat in its own knowledge base. Calls and voice tests now share
+    // one search, which scores whole entries.
+    const rank = search.slice(
+      search.indexOf("function ranked("),
+      search.indexOf("/**", search.indexOf("function ranked(")),
+    );
+    expect(rank).toContain("knowledgeMatchScore(row.content, words, phrase)");
+    expect(rank).not.toMatch(/content\.slice\(/);
     // …and the excerpt is applied to what is returned.
-    expect(live).toContain("content: excerptAroundMatch(row.item.content, queryTokens)");
+    expect(live).toContain("MAX_LIVE_KB_RESULT_CHARS");
+    expect(live).toContain("excerptAroundMatch(match.content, words, MAX_LIVE_KB_RESULT_CHARS)");
   });
 });
 

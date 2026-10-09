@@ -147,7 +147,8 @@ describe("round-4 audit fix contracts", () => {
     const nativeRuntime = read("src/lib/voice/openai-phone-agent-runtime.ts");
     expect(nativeRuntime).toContain("MAX_INITIAL_KNOWLEDGE_ITEMS");
     expect(nativeRuntime).toContain(".limit(40)");
-    expect(nativeRuntime).toContain(".limit(80)");
+    // The prompt reads only its opening facts; the search tool reaches the rest.
+    expect(nativeRuntime).toContain(".limit(MAX_INITIAL_KNOWLEDGE_ITEMS)");
     expect(nativeRuntime).not.toContain(".limit(500)");
     expect(read("src/lib/voice/openai-phone-agent-runtime.ts")).toContain(
       "clampRuntimePromptPreservingTail",

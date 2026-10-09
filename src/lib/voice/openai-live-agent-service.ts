@@ -1,4 +1,10 @@
 import { resolveAgentGreeting } from "../agent-greeting";
+import {
+  DIRECTIVE_PROMPT_ORDER,
+  excerptAroundMatch,
+  knowledgeSearchWords,
+  searchAgentKnowledge,
+} from "../agent-knowledge-search";
 import { and, desc, eq } from "drizzle-orm";
 import { AppError } from "../api-error";
 import { runInBackground } from "../background-work";
@@ -110,8 +116,6 @@ export type OpenAILiveInstructionAgent = {
   voiceId?: string | null;
   phoneVoiceId?: string | null;
 };
-
-type Snippet = { source: "rule" | "knowledge"; content: string };
 
 function trimLine(value: unknown, max = MAX_PROMPT_LINE_LENGTH): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -315,14 +319,15 @@ async function loadAgentRuntime(agentId: string, userId: string) {
         .select({ content: schema.directives.content })
         .from(schema.directives)
         .where(and(eq(schema.directives.agentId, agentId), eq(schema.directives.userId, userId)))
-        .orderBy(desc(schema.directives.priority))
+        .orderBy(...DIRECTIVE_PROMPT_ORDER)
         .limit(40),
       tx
         .select({ content: schema.knowledge.content })
         .from(schema.knowledge)
         .where(and(eq(schema.knowledge.agentId, agentId), eq(schema.knowledge.userId, userId)))
         .orderBy(desc(schema.knowledge.createdAt))
-        .limit(80),
+        // Only the prompt's opening facts; the search tool reaches the rest.
+        .limit(MAX_INITIAL_KNOWLEDGE_ITEMS),
     ]),
   );
   const agent = agents[0] as OpenAILiveInstructionAgent | undefined;
@@ -427,30 +432,8 @@ export async function createOpenAILiveVoiceCall(input: {
   };
 }
 
-function tokens(value: string): string[] {
-  return (
-    value
-      .toLowerCase()
-      .match(/[a-z0-9]{2,}/g)
-      ?.slice(0, 16) || []
-  );
-}
-
+const MAX_LIVE_KB_RESULTS = 5;
 const MAX_LIVE_KB_RESULT_CHARS = 900;
-
-function excerptAroundMatch(content: string, queryTokens: string[]): string {
-  if (content.length <= MAX_LIVE_KB_RESULT_CHARS) return content;
-  const lower = content.toLowerCase();
-  let hit = -1;
-  for (const token of queryTokens) {
-    const index = lower.indexOf(token);
-    if (index >= 0 && (hit < 0 || index < hit)) hit = index;
-  }
-  if (hit < 0) return `${content.slice(0, MAX_LIVE_KB_RESULT_CHARS)}…`;
-  const start = Math.max(0, hit - Math.floor(MAX_LIVE_KB_RESULT_CHARS / 3));
-  const end = start + MAX_LIVE_KB_RESULT_CHARS;
-  return `${start > 0 ? "…" : ""}${content.slice(start, end)}${end < content.length ? "…" : ""}`;
-}
 
 export async function runOpenAILiveVoiceTool(input: {
   userId: string;
@@ -466,35 +449,25 @@ export async function runOpenAILiveVoiceTool(input: {
       : {};
   const query = trimLine(raw.query, 600);
   if (!query) throw AppError.fromHttpStatus(400, "A Training search query is required.");
-  const { directives, knowledge } = await loadAgentRuntime(input.agentId, input.userId);
-  const normalizedQuery = query.toLowerCase();
-  const queryTokens = tokens(query);
-  const snippets: Snippet[] = [
-    ...directives.map((item) => ({
-      source: "rule" as const,
-      content: typeof item.content === "string" ? item.content.trim() : "",
-    })),
-    ...knowledge.map((item) => ({
-      source: "knowledge" as const,
-      content: typeof item.content === "string" ? item.content.trim() : "",
-    })),
-  ].filter((item) => item.content);
-  const matches = snippets
-    .map((item) => {
-      const content = item.content.toLowerCase();
-      const tokenScore = queryTokens.reduce(
-        (score, token) => score + (content.includes(token) ? 1 : 0),
-        0,
-      );
-      return { item, score: tokenScore + (content.includes(normalizedQuery) ? 8 : 0) };
+  // Ownership first: a search never reads another account's Bot.
+  const [owned] = await drizzle
+    .select({ id: schema.agents.id })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.id, input.agentId), eq(schema.agents.userId, input.userId)))
+    .limit(1);
+  if (!owned) throw AppError.fromHttpStatus(404, "Bot not found.");
+  const words = knowledgeSearchWords(query);
+  const matches = (
+    await searchAgentKnowledge(drizzle, {
+      userId: input.userId,
+      agentId: input.agentId,
+      query,
+      limit: MAX_LIVE_KB_RESULTS,
     })
-    .filter((row) => row.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map((row) => ({
-      source: row.item.source,
-      content: excerptAroundMatch(row.item.content, queryTokens),
-    }));
+  ).map((match) => ({
+    source: match.source,
+    content: excerptAroundMatch(match.content, words, MAX_LIVE_KB_RESULT_CHARS),
+  }));
   return matches.length
     ? { found: true, query, matches }
     : {
