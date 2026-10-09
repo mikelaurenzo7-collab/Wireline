@@ -162,14 +162,18 @@ export default function SmsThreads({
   embedded = false,
   agentId,
   readOnly = false,
+  initialThreadId = null,
 }: {
   embedded?: boolean;
   agentId?: string | null;
   readOnly?: boolean;
+  /** A conversation to open from a link (Approvals); applied once it loads. */
+  initialThreadId?: string | null;
 }) {
   const { success, error: toastError } = useToast();
   const [threads, setThreads] = useState<SmsThread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const linkedThreadRef = useRef<string | null>(initialThreadId);
   const [messages, setMessages] = useState<SmsMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
@@ -308,9 +312,13 @@ export default function SmsThreads({
         }
         return hydrated;
       });
-      setActiveId((current) =>
-        current && next.some((thread) => thread.id === current) ? current : null,
-      );
+      const linked = linkedThreadRef.current;
+      setActiveId((current) => {
+        if (current && next.some((thread) => thread.id === current)) return current;
+        if (linked && next.some((thread) => thread.id === linked)) return linked;
+        return null;
+      });
+      linkedThreadRef.current = null;
     } catch (reason: any) {
       if (!isCurrentRequest()) return;
       const message = reason?.message || "Could not load texts.";

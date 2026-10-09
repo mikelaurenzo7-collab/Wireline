@@ -272,12 +272,14 @@ export default function EmailPage() {
               accountId={activeAccountId || null}
               channelEnabled={access.includes("email")}
               channelAccessResolved={access.status === "ready"}
+              initialThreadId={params.get("thread")}
             />
           ) : (
             <SmsThreads
               embedded
               agentId={activeAgentId || null}
               readOnly={!access.includes("sms")}
+              initialThreadId={params.get("thread")}
             />
           )}
         </div>

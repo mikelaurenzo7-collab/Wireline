@@ -6,10 +6,13 @@ import {
   Loader2,
   Mail,
   MessageSquare,
+  Phone,
   Shield,
   Sparkles,
   UserRoundCheck,
 } from "lucide-react";
+
+import { Link } from "react-router";
 
 import { useToast } from "../contexts/ToastContext";
 import { authFetch } from "../lib/api";
@@ -150,6 +153,63 @@ function evidenceSnippet(
     if (!uniqueParts.includes(recipient)) uniqueParts.unshift(recipient);
   }
   return uniqueParts.join("\n\n");
+}
+
+const KNOWLEDGE_GAP_PREFIX = "[KNOWLEDGE GAP]";
+
+function textField(record: Record<string, unknown> | null | undefined, key: string): string {
+  const value = record?.[key];
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/** The customer's number, so the owner can call back from the card. */
+function taskPhone(task: FollowUpTaskRow): string {
+  return (
+    textField(task.customer_info || task.customerInfo, "phone") ||
+    textField(task.payload, "customer_number") ||
+    textField(task.payload, "phone")
+  );
+}
+
+/** Where the work came from, so the owner can read it before acting. */
+function taskSource(task: FollowUpTaskRow): { to: string; label: string } | null {
+  const type = task.source_type || task.sourceType;
+  const id = task.source_id || task.sourceId;
+  if (type === "email_thread" && id) {
+    return { to: `/inbox?tab=email&thread=${encodeURIComponent(id)}`, label: "Open Conversation" };
+  }
+  if (type === "sms_thread" && id) {
+    return { to: `/inbox?tab=sms&thread=${encodeURIComponent(id)}`, label: "Open Conversation" };
+  }
+  if (type === "phone_call") return { to: "/phone?tab=logs", label: "Open Calls" };
+  return null;
+}
+
+function TaskContactLinks({
+  phone,
+  source,
+}: {
+  phone: string;
+  source: { to: string; label: string } | null;
+}) {
+  if (!phone && !source) return null;
+  const linkClass =
+    "inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium text-foreground hover:bg-muted wl-focus-ring-halo";
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {phone ? (
+        <a href={`tel:${phone}`} className={linkClass}>
+          <Phone className="size-3.5" aria-hidden="true" />
+          Call Back <span className="text-muted-foreground">{formatPhone(phone)}</span>
+        </a>
+      ) : null}
+      {source ? (
+        <Link to={source.to} className={linkClass}>
+          {source.label}
+        </Link>
+      ) : null}
+    </div>
+  );
 }
 
 function actionIcon(task: FollowUpTaskRow) {
@@ -381,6 +441,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             {evidence}
           </p>
         ) : null}
+        <TaskContactLinks phone={taskPhone(task)} source={taskSource(task)} />
         {!manualTask && editing ? (
           <div className="mt-3 grid gap-3">
             {hasSubject ? (
@@ -723,17 +784,37 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
       ) : (
         <div className="grid gap-3">
           {bucketItems.slice(0, visibleCount).map((item) => {
-            const caller =
-              typeof item.payload?.customer_number === "string"
-                ? formatPhone(item.payload.customer_number)
-                : "";
+            const gap = item.task_type === "knowledge_gap";
+            const agentId = textField(item.payload, "agent_id");
+            const question = (item.description || "").replace(KNOWLEDGE_GAP_PREFIX, "").trim();
             return (
               <article key={item.id} className="rounded-xl border border-border bg-card p-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <h3 className="text-sm font-semibold">{taskTypeLabel(item)}</h3>
-                  {caller ? <p className="text-xs text-muted-foreground">{caller}</p> : null}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">{evidenceSnippet(item)}</p>
+                <h3 className="text-sm font-semibold">{taskTypeLabel(item)}</h3>
+                {gap ? (
+                  <>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Your Bot could not answer: {question}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        to={
+                          agentId ? `/knowledge?agent=${encodeURIComponent(agentId)}` : "/knowledge"
+                        }
+                        className="inline-flex min-h-9 items-center rounded-lg border border-border px-3 text-xs font-medium text-foreground hover:bg-muted wl-focus-ring-halo"
+                      >
+                        Add to Knowledge
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm text-muted-foreground">{evidenceSnippet(item)}</p>
+                    <TaskContactLinks
+                      phone={taskPhone(item)}
+                      source={{ to: "/phone?tab=logs", label: "Open Calls" }}
+                    />
+                  </>
+                )}
               </article>
             );
           })}

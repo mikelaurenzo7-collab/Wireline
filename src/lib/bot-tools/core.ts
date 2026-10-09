@@ -294,14 +294,26 @@ export async function handleCoreToolCall(
 
   if (fn === "create_followup_task") {
     try {
-      const { description, priority } = args || {};
+      const { title, description, priority } = args || {};
+      const text = [title, description]
+        .map((part) => (typeof part === "string" ? part.trim() : ""))
+        .filter(Boolean);
+      // The caller's number lets the owner call back straight from Approvals.
+      const callerNumber =
+        (
+          message.call as { customer?: { number?: string | null } } | undefined
+        )?.customer?.number?.trim() || null;
       const [task] = await drizzle
         .insert(schema.followUpTasks)
         .values({
           userId: agent?.user_id,
           agentId: webhookAgentId,
           taskType: "follow_up",
-          description,
+          description:
+            text.length > 1 && !text[1].startsWith(text[0])
+              ? `${text[0]}: ${text[1]}`
+              : text.at(-1) || "Caller follow-up",
+          customerInfo: callerNumber ? { phone: callerNumber } : null,
           priority: priority || "medium",
           status: "pending",
           sourceType: "phone_call",

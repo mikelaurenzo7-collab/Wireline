@@ -146,12 +146,15 @@ export default function EmailInbox({
   accountId,
   channelEnabled = true,
   channelAccessResolved = false,
+  initialThreadId = null,
 }: {
   embedded?: boolean;
   agentId?: string | null;
   accountId?: string | null;
   channelEnabled?: boolean;
   channelAccessResolved?: boolean;
+  /** A conversation to open from a link (Approvals); applied once. */
+  initialThreadId?: string | null;
 }) {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -414,6 +417,15 @@ export default function EmailInbox({
       threadListAbortRef.current?.abort();
     };
   }, [loadThreads]);
+
+  // Opening a linked conversation needs no list row: its detail carries the
+  // thread. Declared after the list reset above, so it wins on first render.
+  const openedThreadRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialThreadId || openedThreadRef.current === initialThreadId) return;
+    openedThreadRef.current = initialThreadId;
+    setSelectedId(initialThreadId);
+  }, [initialThreadId]);
 
   useEffect(() => {
     let cancelled = false;
