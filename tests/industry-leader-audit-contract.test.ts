@@ -51,7 +51,7 @@ describe("industry-leader audit hardening contracts", () => {
 
   it("persists failover voicemail recordings instead of log-only", () => {
     const webhook = read("src/routes/twilio-webhook-base.ts");
-    expect(webhook).toContain("Voicemail left during BotBound call failover");
+    expect(webhook).toContain('summary: "Caller left a voicemail."');
     expect(webhook).not.toContain("Voicemail left during voice failover (Vapi unavailable)");
     expect(webhook).toContain("schema.callLogs");
     expect(webhook).toContain("recordingUrl");

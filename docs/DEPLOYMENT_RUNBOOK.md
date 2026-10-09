@@ -429,6 +429,8 @@ The persistent worker is required for production SIP admission. Full business ca
 
 No hardcoded founder showcase number owns a live route. Inbound PSTN or SIP must resolve through a current tenant-owned `wireline_phone_numbers` assignment. The former founder PSTN canary and its scheduled job are retired; any future reprovisioning exercise must introduce a new, explicitly reviewed probe rather than silently reactivating launch-era numbers.
 
+A caller the Bot cannot take (another call in progress, included minutes used, a daily limit, or a failed bridge) is logged in Calls History with the reason, and the owner is emailed the caller's number, at most ten alerts per account per hour. Without a human fallback number the call then ends. `WIRELINE_MISSED_CALL_VOICEMAIL_ENABLED=true` instead offers voicemail (`<Record>`, transcribed up to two minutes), which upgrades that History row and emails the recording; it records the caller, so review state recording-consent rules before enabling it.
+
 A full carrier launch still requires direct Twilio control-plane verification of Trust Hub, A2P, CNAM, STIR/SHAKEN, geo permissions, usage triggers, callbacks, and number inventory. Application logs or database rows are not substitutes for those console controls.
 
 Reconcile existing numbers read-only against tenant, Bot, plan, account environment and recent usage before cutover or cost cleanup. A seeded Bot or founder/demo assignment does not make a line disposable. Preserve the old routing and ownership evidence, change one verified low-risk line first, and prove its approved workflow before moving the rest. Never release or reroute the inventory merely because the legacy provider appears in its callback URL.

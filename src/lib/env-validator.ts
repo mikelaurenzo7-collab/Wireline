@@ -590,6 +590,15 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     description: "Comma-separated allowed origins",
   },
   {
+    name: "WIRELINE_MISSED_CALL_VOICEMAIL_ENABLED",
+    group: "operational",
+    required: false,
+    description:
+      "Offers voicemail to callers the Bot cannot take; records audio, so enable only after reviewing recording consent",
+    validate: (value) => value === "true" || value === "false",
+    formatHint: "true or false",
+  },
+  {
     name: "WIRELINE_LAUNCH_DEMO_MODE",
     group: "operational",
     required: false,

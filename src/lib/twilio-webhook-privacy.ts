@@ -82,7 +82,7 @@ export function buildFailoverVoicemailEmail(input: FailoverVoicemailEmailInput):
 
   return {
     text: [
-      "A caller left a voicemail while your voice line was in failover mode.",
+      "A caller left a voicemail on your BotBound line.",
       "",
       input.from ? `From: ${input.from}` : null,
       input.to ? `To: ${input.to}` : null,
@@ -95,7 +95,7 @@ export function buildFailoverVoicemailEmail(input: FailoverVoicemailEmailInput):
       .filter(Boolean)
       .join("\n"),
     html: `
-      <p>A caller left a voicemail while your voice line was in failover mode.</p>
+      <p>A caller left a voicemail on your BotBound line.</p>
       <ul>
         ${input.from ? `<li><strong>From:</strong> ${escapedFrom}</li>` : ""}
         ${input.to ? `<li><strong>To:</strong> ${escapedTo}</li>` : ""}

@@ -25,6 +25,7 @@ import { phoneSuffixForLog } from "../lib/twilio-webhook-privacy";
 import { isOutboundCallPurpose, type OutboundCallPurpose } from "../lib/outbound-call-purpose";
 import { LEAD_STATUS } from "../lib/outbound-status";
 import { resolveNativeInboundCallAdmission } from "../lib/voice/native-inbound-admission";
+import { recordMissedCall, type MissedCallReason } from "../lib/voice/missed-calls";
 import { enforceFundedCarrierCallLimit } from "../lib/voice/funded-carrier-call";
 import { verifyOpenAIInboundToken } from "../lib/voice/openai-inbound-token";
 import { buildOpenAIRealtimeAgentRuntime } from "../lib/voice/openai-phone-agent-runtime";
@@ -54,6 +55,17 @@ import {
   type OpenAISipCallClaim,
   type OpenAISipIncomingCall,
 } from "../lib/voice/openai-sip-session";
+
+/** A suspended admission's reason, as the missed-call History entry names it. */
+function missedReason(reason: string | undefined): MissedCallReason {
+  return reason === "concurrency" ||
+    reason === "coverage" ||
+    reason === "completion_grace" ||
+    reason === "daily_minutes" ||
+    reason === "subscription"
+    ? reason
+    : "unavailable";
+}
 
 const router = Router();
 const webhookLimiter = createIpRateLimiter({
@@ -393,6 +405,14 @@ router.post(
       if (sessionInput.direction === "inbound" && sessionInput.admission?.mode === "suspended") {
         // Coverage and capacity refusals are terminal for this new call. Do not
         // accept a paid AI session merely to explain that paid AI is unavailable.
+        // History says why; the carrier fallback then offers voicemail.
+        await recordMissedCall({
+          userId: sessionInput.userId,
+          agentId: sessionInput.agentId,
+          twilioCallSid: sessionInput.inboundTwilioCallSid ?? "",
+          callerNumber: sessionInput.callerNumber,
+          reason: missedReason(sessionInput.admission.reason),
+        });
         await rejectCall(callId, 603);
         res.status(202).json({
           received: true,

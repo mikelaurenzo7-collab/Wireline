@@ -46,6 +46,13 @@ import {
   completeTwilioVoiceFallback,
   prepareTwilioVoiceFallback,
 } from "../lib/voice/twilio-fallback";
+import {
+  MISSED_CALL_OUTCOME,
+  missedCallKey,
+  missedCallVoicemailEnabled,
+  recordMissedCall,
+  voicemailTwiml,
+} from "../lib/voice/missed-calls";
 
 const router = Router();
 
@@ -600,7 +607,19 @@ export async function handleTwilioVoiceFallback(req: Request, res: Response) {
     return res.status(200).send(twiml);
   }
 
-  return res.status(200).send(twimlHangup());
+  // No human to ring: History shows the call and the owner gets the number to
+  // call back (an admission decline already recorded its reason; this adds
+  // nothing then). Voicemail records the caller, so it runs only when the
+  // operator has turned it on.
+  const destination = await lookupMessagingDestination(to).catch(() => null);
+  await recordMissedCall({
+    userId: tenantUserId,
+    agentId: destination?.userId === tenantUserId ? destination.agentId : null,
+    twilioCallSid: String(req.body?.CallSid || ""),
+    callerNumber: from || null,
+    reason: "unavailable",
+  });
+  return res.status(200).send(missedCallVoicemailEnabled() ? voicemailTwiml() : twimlHangup());
 }
 
 router.post("/api/twilio-webhook/voice-fallback", handleTwilioVoiceFallback);
@@ -672,6 +691,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
     typeof req.body?.TranscriptionText === "string" ? req.body.TranscriptionText.trim() : "";
   const from = typeof req.body?.From === "string" ? req.body.From : "";
   const to = typeof req.body?.To === "string" ? req.body.To : "";
+  const callSid = typeof req.body?.CallSid === "string" ? req.body.CallSid.trim() : "";
   const durationRaw = Number(req.body?.RecordingDuration);
   const durationSeconds = Number.isFinite(durationRaw)
     ? Math.max(0, Math.round(durationRaw))
@@ -699,30 +719,67 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
       const recordingKey = createHash("sha256")
         .update(recordingSid || recordingUrl)
         .digest("hex");
-      const [inserted] = await drizzle
-        .insert(schema.callLogs)
-        .values({
-          userId: tenantUserId,
-          vapiCallId: `twilio-voicemail:${recordingKey}`,
-          direction: "inbound",
-          customerNumber: from ? sanitizePhone(from) || from : null,
-          durationSeconds,
-          recordingUrl,
-          transcript: transcription || null,
-          summary: "Voicemail left during BotBound call failover.",
-          outcomeTag: "voicemail",
-          intentLabel: "voicemail",
-        })
-        .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
-        .returning({ id: schema.callLogs.id });
-
-      const [existing] = inserted
-        ? [inserted]
-        : await drizzle
+      const voicemailFields = {
+        durationSeconds,
+        recordingUrl,
+        transcript: transcription || null,
+        outcomeTag: "voicemail",
+        intentLabel: "voicemail",
+      };
+      // A call History already shows as missed becomes its voicemail, so the
+      // owner sees one entry per call. Only a missed row is upgraded; a
+      // repeated callback finds it already upgraded and reuses it.
+      let inserted: { id: bigint } | undefined;
+      let existing: { id: bigint } | undefined;
+      if (callSid) {
+        [inserted] = await drizzle
+          .update(schema.callLogs)
+          .set({
+            ...voicemailFields,
+            summary: sql`'Caller left a voicemail. ' || coalesce(${schema.callLogs.summary}, '')`,
+          })
+          .where(
+            and(
+              eq(schema.callLogs.vapiCallId, missedCallKey(callSid)),
+              eq(schema.callLogs.userId, tenantUserId),
+              eq(schema.callLogs.outcomeTag, MISSED_CALL_OUTCOME),
+            ),
+          )
+          .returning({ id: schema.callLogs.id });
+        if (!inserted) {
+          [existing] = await drizzle
+            .select({ id: schema.callLogs.id })
+            .from(schema.callLogs)
+            .where(
+              and(
+                eq(schema.callLogs.vapiCallId, missedCallKey(callSid)),
+                eq(schema.callLogs.userId, tenantUserId),
+              ),
+            )
+            .limit(1);
+        }
+      }
+      if (!inserted && !existing) {
+        [inserted] = await drizzle
+          .insert(schema.callLogs)
+          .values({
+            userId: tenantUserId,
+            vapiCallId: `twilio-voicemail:${recordingKey}`,
+            direction: "inbound",
+            customerNumber: from ? sanitizePhone(from) || from : null,
+            summary: "Caller left a voicemail.",
+            ...voicemailFields,
+          })
+          .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
+          .returning({ id: schema.callLogs.id });
+        if (!inserted) {
+          [existing] = await drizzle
             .select({ id: schema.callLogs.id })
             .from(schema.callLogs)
             .where(eq(schema.callLogs.vapiCallId, `twilio-voicemail:${recordingKey}`))
             .limit(1);
+        }
+      }
       const voicemail = inserted ?? existing;
       if (!voicemail) {
         throw new Error("Voicemail insert conflicted but the persisted call could not be loaded");
@@ -751,7 +808,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
           userId: tenantUserId,
           action: "voicemail_failover_owner_notification",
           to: owner.email,
-          subject: "BotBound: voicemail left during call failover",
+          subject: from ? `New voicemail from ${from}` : "New voicemail on your BotBound line",
           ...voicemailEmail,
           idempotencyKey: `voicemail-failover/${recordingKey}`,
         });
@@ -818,9 +875,14 @@ router.post("/api/twilio-webhook/voicemail-transcription", async (req: Request, 
     // callback followed by a sid-bearing transcription callback still lands.
     const recordingUrl =
       typeof req.body?.RecordingUrl === "string" ? req.body.RecordingUrl.trim() : "";
-    const candidateCallIds = [...new Set([recordingSid, recordingUrl].filter(Boolean))].map(
-      (value) => `twilio-voicemail:${createHash("sha256").update(value).digest("hex")}`,
-    );
+    const callSid = typeof req.body?.CallSid === "string" ? req.body.CallSid.trim() : "";
+    const candidateCallIds = [
+      ...[...new Set([recordingSid, recordingUrl].filter(Boolean))].map(
+        (value) => `twilio-voicemail:${createHash("sha256").update(value).digest("hex")}`,
+      ),
+      // A voicemail left on a missed call lives on that call's History row.
+      ...(callSid ? [missedCallKey(callSid)] : []),
+    ];
     await tenantStore.run(tenantUserId, async () => {
       await drizzle
         .update(schema.callLogs)

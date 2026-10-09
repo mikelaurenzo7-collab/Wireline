@@ -79,7 +79,7 @@ function statusTone(value: string | null | undefined) {
   if (/booked|qualified|success|completed/.test(normalized)) {
     return "text-[var(--wireline-color-status-success)]";
   }
-  if (/failed|busy|unreachable|voicemail|escalat|handoff|transfer/.test(normalized)) {
+  if (/failed|busy|missed|unreachable|voicemail|escalat|handoff|transfer/.test(normalized)) {
     return "text-[var(--wireline-color-status-warning)]";
   }
   return "text-muted-foreground";
