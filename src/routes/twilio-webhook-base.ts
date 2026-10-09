@@ -51,6 +51,7 @@ import {
   missedCallKey,
   missedCallVoicemailEnabled,
   recordMissedCall,
+  VOICEMAIL_OUTCOME,
   voicemailTwiml,
 } from "../lib/voice/missed-calls";
 
@@ -723,7 +724,7 @@ router.post("/api/twilio-webhook/voicemail-complete", async (req: Request, res: 
         durationSeconds,
         recordingUrl,
         transcript: transcription || null,
-        outcomeTag: "voicemail",
+        outcomeTag: VOICEMAIL_OUTCOME,
         intentLabel: "voicemail",
       };
       // A call History already shows as missed becomes its voicemail, so the

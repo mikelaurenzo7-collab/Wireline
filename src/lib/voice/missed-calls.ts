@@ -36,6 +36,32 @@ const BILLING_REASONS: ReadonlySet<MissedCallReason> = new Set([
 ]);
 
 export const MISSED_CALL_OUTCOME = "missed";
+/** A missed call where the caller left a voicemail; its own email reached the owner. */
+export const VOICEMAIL_OUTCOME = "voicemail";
+
+/** Queue type for the owner's missed-call email (job-worker-base.ts runs it). */
+export const MISSED_CALL_ALERT_JOB = "missed_call_owner_alert";
+
+/**
+ * With voicemail on, the alert waits out the prompt, a two-minute recording,
+ * and its callback. A caller who leaves a voicemail is announced by the
+ * voicemail email; one who hangs up first still reaches the owner as a missed
+ * call.
+ */
+const VOICEMAIL_WINDOW_MS = 4 * 60_000;
+
+type MissedCallAlert = {
+  userId: string;
+  twilioCallSid: string;
+  callerNumber: string | null;
+  reason: MissedCallReason;
+};
+
+function isMissedCallReason(value: unknown): value is MissedCallReason {
+  return (
+    typeof value === "string" && Object.prototype.hasOwnProperty.call(MISSED_CALL_SUMMARIES, value)
+  );
+}
 
 /** Owner alerts per account per hour; History keeps every missed call past this. */
 const MISSED_CALL_ALERTS_PER_HOUR = 10;
@@ -121,12 +147,7 @@ export function buildMissedCallEmail(input: {
   };
 }
 
-async function alertOwner(input: {
-  userId: string;
-  twilioCallSid: string;
-  callerNumber: string | null;
-  reason: MissedCallReason;
-}): Promise<void> {
+async function alertOwner(input: MissedCallAlert): Promise<void> {
   const [recent] = await drizzle
     .select({ count: sql<number>`count(*)::int` })
     .from(schema.callLogs)
@@ -155,18 +176,60 @@ async function alertOwner(input: {
     idempotencyKey: `missed-call/${input.twilioCallSid}`,
   });
   if (!sent.ok && sent.disposition !== "suppressed") {
-    log.warn("Missed-call owner alert was not accepted", {
-      tenant_suffix: opaqueIdSuffixForLog(input.userId),
-      error: sent.error,
-    });
+    // Thrown so the queue retries; the idempotency key keeps a retry from
+    // emailing twice when only the response was lost.
+    throw new Error(sent.error || "Missed-call owner alert was not accepted");
   }
 }
 
 /**
- * Record a missed call in History and, unless voicemail is on (a left
- * voicemail alerts the owner itself), alert the owner. Never throws: nothing
- * here may hold up the carrier response. A repeat for the same call is a
- * no-op, so the first writer's reason stands and the owner hears once.
+ * The queued owner alert for one missed call. A thrown error is retried by
+ * the queue with backoff. A voicemail left on the call already reached the
+ * owner with its recording, so the alert stands down.
+ */
+export async function handleMissedCallAlertJob(job: {
+  payload: unknown;
+  userId?: string | null;
+  user_id?: string | null;
+}): Promise<void> {
+  const payload = (job.payload ?? {}) as Partial<MissedCallAlert>;
+  const owner = job.userId ?? job.user_id;
+  if (
+    !payload.userId ||
+    payload.userId !== owner ||
+    !payload.twilioCallSid ||
+    !isMissedCallReason(payload.reason)
+  ) {
+    throw new Error("Missed-call alert job has an invalid payload.");
+  }
+  const alert: MissedCallAlert = {
+    userId: payload.userId,
+    twilioCallSid: payload.twilioCallSid,
+    callerNumber: typeof payload.callerNumber === "string" ? payload.callerNumber : null,
+    reason: payload.reason,
+  };
+  await tenantStore.run(alert.userId, async () => {
+    const [call] = await drizzle
+      .select({ outcomeTag: schema.callLogs.outcomeTag })
+      .from(schema.callLogs)
+      .where(
+        and(
+          eq(schema.callLogs.userId, alert.userId),
+          eq(schema.callLogs.vapiCallId, missedCallKey(alert.twilioCallSid)),
+        ),
+      )
+      .limit(1);
+    if (call?.outcomeTag === VOICEMAIL_OUTCOME) return;
+    await alertOwner(alert);
+  });
+}
+
+/**
+ * Record a missed call in History and queue the owner's alert with it, in
+ * one transaction, so a recorded call always has its alert and a failed send
+ * is retried. Never throws: nothing here may hold up the carrier response. A
+ * repeat for the same call is a no-op, so the first writer's reason stands
+ * and the owner hears once.
  */
 export async function recordMissedCall(input: {
   userId: string;
@@ -177,30 +240,45 @@ export async function recordMissedCall(input: {
 }): Promise<void> {
   if (!input.twilioCallSid) return;
   try {
-    await tenantStore.run(input.userId, async () => {
-      const callerNumber = input.callerNumber
-        ? sanitizePhone(input.callerNumber) || input.callerNumber
-        : null;
-      const [inserted] = await drizzle
-        .insert(schema.callLogs)
-        .values({
+    await tenantStore.run(input.userId, () =>
+      drizzle.transaction(async (tx) => {
+        const callerNumber = input.callerNumber
+          ? sanitizePhone(input.callerNumber) || input.callerNumber
+          : null;
+        const [inserted] = await tx
+          .insert(schema.callLogs)
+          .values({
+            userId: input.userId,
+            vapiCallId: missedCallKey(input.twilioCallSid),
+            agentId: input.agentId,
+            direction: "inbound",
+            customerNumber: callerNumber,
+            durationSeconds: 0,
+            summary: MISSED_CALL_SUMMARIES[input.reason],
+            outcomeTag: MISSED_CALL_OUTCOME,
+            intentLabel: "missed",
+            endedReason: `declined-${input.reason}`,
+          })
+          .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
+          .returning({ id: schema.callLogs.id });
+        if (!inserted) return;
+        const alert: MissedCallAlert = {
           userId: input.userId,
-          vapiCallId: missedCallKey(input.twilioCallSid),
-          agentId: input.agentId,
-          direction: "inbound",
-          customerNumber: callerNumber,
-          durationSeconds: 0,
-          summary: MISSED_CALL_SUMMARIES[input.reason],
-          outcomeTag: MISSED_CALL_OUTCOME,
-          intentLabel: "missed",
-          endedReason: `declined-${input.reason}`,
-        })
-        .onConflictDoNothing({ target: schema.callLogs.vapiCallId })
-        .returning({ id: schema.callLogs.id });
-      if (inserted && !missedCallVoicemailEnabled()) {
-        await alertOwner({ ...input, callerNumber });
-      }
-    });
+          twilioCallSid: input.twilioCallSid,
+          callerNumber,
+          reason: input.reason,
+        };
+        await tx.insert(schema.jobs).values({
+          userId: input.userId,
+          type: MISSED_CALL_ALERT_JOB,
+          status: "pending",
+          payload: alert,
+          attempts: 0,
+          maxAttempts: 5,
+          runAt: new Date(Date.now() + (missedCallVoicemailEnabled() ? VOICEMAIL_WINDOW_MS : 0)),
+        });
+      }),
+    );
   } catch (error) {
     log.warn("Missed call could not be recorded", {
       tenant_suffix: opaqueIdSuffixForLog(input.userId),

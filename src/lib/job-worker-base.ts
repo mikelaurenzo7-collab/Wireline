@@ -50,6 +50,49 @@ async function persistJobResult(jobId: string, result: Record<string, unknown>):
 }
 
 /**
+ * Queue one follow-up extraction per enrichment job. `enqueue` reports a
+ * failure instead of throwing, so it is raised here for the queue to retry.
+ */
+async function enqueueActionExtractionOnce(
+  enrichmentJob: JobRow,
+  p: {
+    userId: string;
+    agentId: string;
+    callId: string;
+    summary?: string;
+    transcript?: string;
+    customerNumber?: string;
+  },
+): Promise<void> {
+  const [prior] = await drizzle
+    .select({ id: schema.jobs.id })
+    .from(schema.jobs)
+    .where(
+      and(
+        eq(schema.jobs.userId, p.userId),
+        eq(schema.jobs.type, "v2a_action_extraction"),
+        sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`,
+      ),
+    )
+    .limit(1);
+  if (prior) return;
+  const queued = await enqueue(drizzle, {
+    userId: p.userId,
+    type: "v2a_action_extraction",
+    payload: {
+      userId: p.userId,
+      agentId: p.agentId,
+      callId: p.callId,
+      summary: p.summary,
+      transcript: p.transcript,
+      customerNumber: p.customerNumber,
+      enrichmentJobId: enrichmentJob.id,
+    },
+  });
+  if (!queued.ok) throw new Error(`Failed to enqueue V2A extraction: ${queued.error}`);
+}
+
+/**
  * Global job handler.
  * Dispatches jobs from the wireline_jobs table.
  */
@@ -57,6 +100,12 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "post_call_digest") {
     const { handlePostCallDigestJob } = await import("./post-call-digest");
     await handlePostCallDigestJob(job);
+    return;
+  }
+
+  if (job.type === "missed_call_owner_alert") {
+    const { handleMissedCallAlertJob } = await import("./voice/missed-calls");
+    await handleMissedCallAlertJob(job);
     return;
   }
 
@@ -82,6 +131,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       .where(eq(schema.settings.userId, p.userId))
       .limit(1);
     const useFlash = p.useFlash || settings?.aiTier === "starter";
+    if (!useFlash && (!claudeBrain.isBrainAvailable() || !p.transcript)) return;
+
+    // Queue the follow-up drafts before any scoring side effect, once per
+    // enrichment job. A failed enqueue retries this job before anything has
+    // been written, and a retry after a later failure finds the extraction it
+    // already queued instead of drafting the follow-ups twice.
+    await enqueueActionExtractionOnce(job, p);
 
     let result;
     let records: any[] = [];
@@ -100,7 +156,6 @@ export async function handleJob(job: JobRow): Promise<void> {
       result = capture.result;
       records = capture.records;
     } else {
-      if (!claudeBrain.isBrainAvailable() || !p.transcript) return;
       const capture = await claudeBrain.withAuditCapture(() =>
         claudeBrain.postCallAnalysis({
           agentName: p.agentName || "BotBound Bot",
@@ -240,19 +295,6 @@ export async function handleJob(job: JobRow): Promise<void> {
         }),
       );
     }
-    // Automatically enqueue action extraction after enrichment
-    await enqueue(drizzle, {
-      userId: p.userId,
-      type: "v2a_action_extraction",
-      payload: {
-        userId: p.userId,
-        agentId: p.agentId,
-        callId: p.callId,
-        summary: p.summary,
-        transcript: p.transcript,
-        customerNumber: p.customerNumber,
-      },
-    }).catch((e) => log.error("Failed to enqueue V2A extraction", { error: getErrorMessage(e) }));
   }
 
   if (job.type === "v2a_action_extraction") {

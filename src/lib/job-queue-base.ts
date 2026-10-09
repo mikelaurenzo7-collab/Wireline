@@ -48,6 +48,7 @@ export type JobStatus = "pending" | "running" | "done" | "failed" | "dead";
 
 export type JobType =
   | "post_call_enrichment" // Async Claude post-call analysis replacing inline call
+  | "missed_call_owner_alert" // Email the owner a missed call, after any voicemail window
   | "webhook_delivery" // Re-use / extend existing webhook retry mechanism
   | "vapi_webhook" // Async Vapi webhook processing (end-of-call, status updates)
   | "daily_brief" // Pre-compute Account Holder daily brief

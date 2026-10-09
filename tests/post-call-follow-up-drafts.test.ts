@@ -66,4 +66,27 @@ describe("post-call follow-up drafts", () => {
     expect(worker).not.toContain("crm.logCall(");
     expect(worker).toContain("syncEnrichedLead(");
   });
+
+  it("queues follow-up extraction once, before scoring, and retries a failed enqueue", () => {
+    const worker = read("src/lib/job-worker-base.ts");
+    const enrichment = worker.slice(worker.indexOf('if (job.type === "post_call_enrichment")'));
+    // Before any scoring side effect, so a retry has nothing to repeat.
+    expect(enrichment.indexOf("await enqueueActionExtractionOnce(job, p);")).toBeGreaterThan(-1);
+    expect(enrichment.indexOf("await enqueueActionExtractionOnce(job, p);")).toBeLessThan(
+      enrichment.indexOf("claudeBrain.withAuditCapture("),
+    );
+    const helper = worker.slice(
+      worker.indexOf("async function enqueueActionExtractionOnce("),
+      worker.indexOf("export async function handleJob("),
+    );
+    // A retry finds the extraction it already queued.
+    expect(helper).toContain(
+      "sql`${schema.jobs.payload}->>'enrichmentJobId' = ${enrichmentJob.id}`",
+    );
+    expect(helper).toContain("enrichmentJobId: enrichmentJob.id,");
+    // `enqueue` reports failure instead of throwing; the worker must raise it.
+    expect(helper).toContain(
+      "if (!queued.ok) throw new Error(`Failed to enqueue V2A extraction: ${queued.error}`);",
+    );
+  });
 });
