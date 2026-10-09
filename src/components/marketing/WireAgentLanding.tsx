@@ -162,7 +162,7 @@ export default function WireAgentLanding() {
               </h2>
               <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
               {DIRECT_OUTBOUND_AVAILABILITY.available ? null : (
-                <span className="landing-prestige__activation">
+                <span className="landing-prestige__outbound-note">
                   {MARKETING_CALLS_NOTICE} Outbound roles build and test free today.
                 </span>
               )}

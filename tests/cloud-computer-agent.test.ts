@@ -175,6 +175,26 @@ describe("cloud computer agent loop", () => {
     expect(events.map((event) => event.kind)).toEqual(["action", "error"]);
   });
 
+  it("always gives the owner a question to answer", async () => {
+    const { session } = fakeSession({});
+    const { client: anthropic } = client([
+      message([{ type: "tool_use", id: "q1", name: "ask_owner", input: { question: "  " } }]),
+      message([{ type: "text", text: "All set." }], "end_turn"),
+    ]);
+    const askOwner = vi.fn(async () => "Use the public page.");
+    await runCloudComputerAgent({
+      client: anthropic,
+      model: "claude-opus-5-5",
+      session,
+      bot,
+      goal: "Do it.",
+      startUrl: null,
+      hooks: hooks({ askOwner }).hooks,
+    });
+    // An empty question would hide the reply box while the task waits.
+    expect(askOwner).toHaveBeenCalledWith("The Bot needs your input.", 10 * 60_000);
+  });
+
   it("pauses for the owner and returns their reply as a custom tool result", async () => {
     const { session } = fakeSession({});
     const { client: anthropic, requests } = client([

@@ -56,11 +56,15 @@ const FIXTURE = `<!doctype html><html><head><title>Repair Desk</title></head><bo
 </body></html>`;
 
 describe("cloud computer input rules", () => {
-  it("knows which chords type text into the focused field", () => {
+  it("knows which chords put text into the focused field", () => {
     for (const chord of ["a", "A", "Shift+A", "Space", "Shift+Space", "1", "@"]) {
       expect(chordTypesText(chord), chord).toBe(true);
     }
-    for (const chord of ["Enter", "Tab", "Control+A", "Meta+V", "Alt+X", "Shift", "ArrowUp"]) {
+    // A paste inserts the clipboard: the password rule covers it too.
+    for (const chord of ["Control+V", "Meta+V", "Control+Shift+V", "Shift+Insert"]) {
+      expect(chordTypesText(chord), chord).toBe(true);
+    }
+    for (const chord of ["Enter", "Tab", "Control+A", "Control+C", "Alt+X", "Shift", "Insert"]) {
       expect(chordTypesText(chord), chord).toBe(false);
     }
   });

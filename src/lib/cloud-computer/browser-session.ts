@@ -333,7 +333,9 @@ export class CloudBrowserSession {
   private static async vendorDefaultContext(browser: Browser): Promise<BrowserContext> {
     const existing = browser.contexts()[0];
     if (!existing) throw new Error("The cloud browser did not provide a browsing context.");
-    const cookies = await existing.cookies().catch(() => []);
+    // Storage that cannot be read cannot be shown to be empty.
+    const cookies = await existing.cookies().catch(() => null);
+    if (!cookies) throw new Error("The cloud browser's storage could not be checked.");
     if (cookies.length || existing.pages().some((page) => !isFreshPageUrl(page.url()))) {
       throw new Error("The cloud browser was already in use by another session.");
     }

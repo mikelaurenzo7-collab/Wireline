@@ -99,7 +99,7 @@ describe("marketing signup continuity", () => {
             : "";
     const notices = elements(WireAgentLanding()).filter(
       (element) =>
-        (element.type === "p" || element.props.className === "landing-prestige__activation") &&
+        (element.type === "p" || element.props.className === "landing-prestige__outbound-note") &&
         text(element.props.children).startsWith("Outbound calls are not available yet."),
     );
     expect(notices.map((element) => text(element.props.children))).toEqual([

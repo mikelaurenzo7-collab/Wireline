@@ -102,14 +102,19 @@ export function parseKeySequence(raw: string): string[] | null {
 }
 
 /**
- * Whether pressing a normalized chord types text into the focused field: a
- * printable key or Space, alone or with Shift. Control, Alt, and Meta chords
- * are shortcuts, and named keys (Enter, Tab, arrows) insert nothing.
+ * Whether pressing a normalized chord puts text into the focused field: a
+ * printable key or Space, alone or with Shift, or a paste (Control+V,
+ * Meta+V, Shift+Insert), which inserts the clipboard's text. Other Control,
+ * Alt, and Meta chords are shortcuts, and named keys (Enter, Tab, arrows)
+ * insert nothing.
  */
 export function chordTypesText(chord: string): boolean {
   const parts = chord.split("+");
   const key = parts[parts.length - 1];
-  if (parts.slice(0, -1).some((modifier) => modifier !== "Shift")) return false;
+  const modifiers = parts.slice(0, -1);
+  if (key === "V" && (modifiers.includes("Control") || modifiers.includes("Meta"))) return true;
+  if (key === "Insert" && modifiers.includes("Shift")) return true;
+  if (modifiers.some((modifier) => modifier !== "Shift")) return false;
   return key === "Space" || key.length === 1;
 }
 

@@ -73,11 +73,14 @@ describe("hosted browser default context", () => {
         vendorDefaultContext(browser: unknown): Promise<unknown>;
       }
     ).vendorDefaultContext(browser);
-  const browserWith = (urls: string[], cookies: unknown[] = []) => {
+  const browserWith = (urls: string[], cookies: unknown[] | Error = []) => {
     const pages = urls.map((url) => ({ url: () => url, close: vi.fn(async () => undefined) }));
     const context = {
       pages: () => pages,
-      cookies: async () => cookies,
+      cookies: async () => {
+        if (cookies instanceof Error) throw cookies;
+        return cookies;
+      },
       clearPermissions: vi.fn(async () => undefined),
     };
     return {
@@ -99,5 +102,11 @@ describe("hosted browser default context", () => {
     await expect(
       vendorDefaultContext(browserWith(["about:blank"], [{ name: "session", value: "x" }])),
     ).rejects.toThrow("already in use");
+  });
+
+  it("refuses a context whose storage cannot be read", async () => {
+    await expect(
+      vendorDefaultContext(browserWith(["about:blank"], new Error("Storage.getCookies failed"))),
+    ).rejects.toThrow("could not be checked");
   });
 });

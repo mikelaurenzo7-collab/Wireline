@@ -513,7 +513,8 @@ export async function runCloudComputerAgent(input: {
         questions += 1;
         await input.hooks.emit({ kind: "question", text: needed });
         const waitStarted = now();
-        const reply = await input.hooks.askOwner(question, waitMs);
+        // The owner always gets a question to answer, even when the model sent none.
+        const reply = await input.hooks.askOwner(needed, waitMs);
         ownerWaitMs += now() - waitStarted;
         if (reply === null) {
           return input.hooks.stopRequested()

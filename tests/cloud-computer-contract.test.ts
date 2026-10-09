@@ -177,6 +177,8 @@ describe("cloud computer source contracts", () => {
       "export async function interruptCloudComputerTasks(): Promise<void> {",
     );
     expect(runner).toContain("acceptingTasks = false;");
+    // Shutdown runs outside a request, so each final write is made as its owner.
+    expect(runner).toMatch(/running\.map\(\(task\) =>\s*tenantStore\.run\(task\.userId, \(\) =>/);
     expect(runner).toContain("await closeSession(session);");
     const server = read("server.ts");
     const shutdown = server.slice(server.indexOf("function gracefulShutdown"));

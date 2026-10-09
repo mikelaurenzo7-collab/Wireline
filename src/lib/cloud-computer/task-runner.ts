@@ -851,14 +851,17 @@ export async function interruptCloudComputerTasks(): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
     Promise.allSettled(
+      // Shutdown runs outside any request: write each row as its owner.
       running.map((task) =>
-        forceFinish(task, {
-          status: "interrupted",
-          summary: INTERRUPTED_SUMMARY,
-          sources: [],
-          errorCode: null,
-          finishedAt: new Date(),
-        }),
+        tenantStore.run(task.userId, () =>
+          forceFinish(task, {
+            status: "interrupted",
+            summary: INTERRUPTED_SUMMARY,
+            sources: [],
+            errorCode: null,
+            finishedAt: new Date(),
+          }),
+        ),
       ),
     ),
     new Promise<void>((resolve) => {
