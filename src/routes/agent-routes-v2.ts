@@ -92,6 +92,52 @@ type AssetPayload = {
   dataUrl?: unknown;
 };
 
+/** The business-profile columns read by the Studio config and returned by its PATCH. */
+const BUSINESS_PROFILE_COLUMNS = {
+  businessHours: schema.agents.businessHours,
+  timezone: schema.agents.timezone,
+  complianceMode: schema.agents.complianceMode,
+  disallowedTopics: schema.agents.disallowedTopics,
+  escalationKeywords: schema.agents.escalationKeywords,
+  escalationPhone: schema.agents.escalationPhone,
+  escalationEmail: schema.agents.escalationEmail,
+  escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
+  businessVariables: schema.agents.businessVariables,
+  outOfHoursMessage: schema.agents.outOfHoursMessage,
+  kpiFocus: schema.agents.kpiFocus,
+  isBusinessAgent: schema.agents.isBusinessAgent,
+};
+
+function businessProfileView(record: {
+  businessHours: unknown;
+  timezone: string | null;
+  complianceMode: string | null;
+  disallowedTopics: string[] | null;
+  escalationKeywords: string[] | null;
+  escalationPhone: string | null;
+  escalationEmail: string | null;
+  escalationHandoffEnabled: boolean | null;
+  businessVariables: unknown;
+  outOfHoursMessage: string | null;
+  kpiFocus: string | null;
+  isBusinessAgent: boolean | null;
+}) {
+  return {
+    business_hours: record.businessHours || null,
+    timezone: record.timezone || "UTC",
+    compliance_mode: record.complianceMode || "none",
+    disallowed_topics: record.disallowedTopics || [],
+    escalation_keywords: record.escalationKeywords || [],
+    escalation_phone: record.escalationPhone || null,
+    escalation_email: record.escalationEmail || null,
+    escalation_handoff_enabled: record.escalationHandoffEnabled ?? false,
+    business_variables: record.businessVariables || null,
+    out_of_hours_message: record.outOfHoursMessage || null,
+    kpi_focus: record.kpiFocus || null,
+    is_business_agent: record.isBusinessAgent ?? false,
+  };
+}
+
 async function owned(agentId: string, userId: string) {
   const [agent] = await drizzle
     .select({ id: schema.agents.id })
@@ -667,19 +713,7 @@ router.get(
             voiceProvider: schema.agents.voiceProvider,
             phoneVoiceId: schema.agents.phoneVoiceId,
             phoneVoiceProvider: schema.agents.phoneVoiceProvider,
-            // business profile fields
-            businessHours: schema.agents.businessHours,
-            timezone: schema.agents.timezone,
-            complianceMode: schema.agents.complianceMode,
-            disallowedTopics: schema.agents.disallowedTopics,
-            escalationKeywords: schema.agents.escalationKeywords,
-            escalationPhone: schema.agents.escalationPhone,
-            escalationEmail: schema.agents.escalationEmail,
-            escalationHandoffEnabled: schema.agents.escalationHandoffEnabled,
-            businessVariables: schema.agents.businessVariables,
-            outOfHoursMessage: schema.agents.outOfHoursMessage,
-            kpiFocus: schema.agents.kpiFocus,
-            isBusinessAgent: schema.agents.isBusinessAgent,
+            ...BUSINESS_PROFILE_COLUMNS,
             videoPresenterProvider: schema.agents.videoPresenterProvider,
             videoPresenterAvatarId: schema.agents.videoPresenterAvatarId,
             videoPresenterConsentStatus: schema.agents.videoPresenterConsentStatus,
@@ -756,22 +790,7 @@ router.get(
       directives,
       knowledge,
       identity,
-      businessProfile: record
-        ? {
-            business_hours: record.businessHours || null,
-            timezone: record.timezone || "UTC",
-            compliance_mode: record.complianceMode || "none",
-            disallowed_topics: record.disallowedTopics || [],
-            escalation_keywords: record.escalationKeywords || [],
-            escalation_phone: record.escalationPhone || null,
-            escalation_email: record.escalationEmail || null,
-            escalation_handoff_enabled: record.escalationHandoffEnabled ?? false,
-            business_variables: record.businessVariables || null,
-            out_of_hours_message: record.outOfHoursMessage || null,
-            kpi_focus: record.kpiFocus || null,
-            is_business_agent: record.isBusinessAgent ?? false,
-          }
-        : null,
+      businessProfile: record ? businessProfileView(record) : null,
     });
   },
 );
@@ -1059,42 +1078,51 @@ router.patch(
     if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
     const parsed = req.body as z.infer<typeof AgentBusinessProfileSchema>;
+    // A PATCH changes only the fields it sends. The hours editor sends three;
+    // resetting the rest to defaults would turn off live transfer and
+    // compliance settings the owner never touched.
+    const patch: Partial<typeof schema.agents.$inferInsert> = {};
+    if (parsed.business_hours !== undefined) {
+      patch.businessHours =
+        parsed.business_hours && Object.keys(parsed.business_hours).length
+          ? parsed.business_hours
+          : null;
+    }
+    if (parsed.timezone !== undefined) patch.timezone = parsed.timezone;
+    if (parsed.compliance_mode !== undefined) patch.complianceMode = parsed.compliance_mode;
+    if (parsed.disallowed_topics !== undefined) patch.disallowedTopics = parsed.disallowed_topics;
+    if (parsed.escalation_keywords !== undefined) {
+      patch.escalationKeywords = parsed.escalation_keywords;
+    }
+    if (parsed.escalation_phone !== undefined) {
+      patch.escalationPhone = parsed.escalation_phone || null;
+    }
+    if (parsed.escalation_email !== undefined) {
+      patch.escalationEmail = parsed.escalation_email || null;
+    }
+    if (parsed.escalation_handoff_enabled !== undefined) {
+      patch.escalationHandoffEnabled = parsed.escalation_handoff_enabled;
+    }
+    if (parsed.business_variables !== undefined) {
+      patch.businessVariables = parsed.business_variables;
+    }
+    if (parsed.out_of_hours_message !== undefined) {
+      patch.outOfHoursMessage = parsed.out_of_hours_message?.trim() || null;
+    }
+    if (parsed.kpi_focus !== undefined) patch.kpiFocus = parsed.kpi_focus;
+    if (parsed.is_business_agent !== undefined) patch.isBusinessAgent = parsed.is_business_agent;
+    if (!Object.keys(patch).length) {
+      throw AppError.fromHttpStatus(400, "Send at least one business profile field.");
+    }
 
-    await drizzle
+    const [saved] = await drizzle
       .update(schema.agents)
-      .set({
-        businessHours: parsed.business_hours || null,
-        timezone: parsed.timezone || "UTC",
-        complianceMode: parsed.compliance_mode || "none",
-        disallowedTopics: parsed.disallowed_topics || [],
-        escalationKeywords: parsed.escalation_keywords || [],
-        escalationPhone: parsed.escalation_phone || null,
-        escalationEmail: parsed.escalation_email || null,
-        escalationHandoffEnabled: parsed.escalation_handoff_enabled ?? false,
-        businessVariables: parsed.business_variables || null,
-        outOfHoursMessage: parsed.out_of_hours_message || null,
-        kpiFocus: parsed.kpi_focus || null,
-        isBusinessAgent: parsed.is_business_agent ?? false,
-      })
-      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)));
+      .set(patch)
+      .where(and(eq(schema.agents.id, req.params.id), eq(schema.agents.userId, req.user.id)))
+      .returning(BUSINESS_PROFILE_COLUMNS);
+    if (!saved) throw AppError.fromHttpStatus(404, "Agent not found");
 
-    res.json({
-      success: true,
-      businessProfile: {
-        business_hours: parsed.business_hours || null,
-        timezone: parsed.timezone || "UTC",
-        compliance_mode: parsed.compliance_mode || "none",
-        disallowed_topics: parsed.disallowed_topics || [],
-        escalation_keywords: parsed.escalation_keywords || [],
-        escalation_phone: parsed.escalation_phone || null,
-        escalation_email: parsed.escalation_email || null,
-        escalation_handoff_enabled: parsed.escalation_handoff_enabled ?? false,
-        business_variables: parsed.business_variables || null,
-        out_of_hours_message: parsed.out_of_hours_message || null,
-        kpi_focus: parsed.kpi_focus || null,
-        is_business_agent: parsed.is_business_agent ?? false,
-      },
-    });
+    res.json({ success: true, businessProfile: businessProfileView(saved) });
   },
 );
 

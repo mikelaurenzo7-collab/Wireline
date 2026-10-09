@@ -2,29 +2,13 @@ import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { authFetch } from "../lib/api";
 import { readCalendarSettings, type CalendarSettings } from "../lib/calendar-settings-client";
+import { timeZoneOptions } from "../lib/time-zone-options";
 import { Button, Input, NativeSelect, Switch } from "./atoms";
 import { StatusNotice } from "./molecules";
 import { Checkbox } from "./ui/shadcn/Checkbox";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
-
-function calendarTimeZones(current: string): string[] {
-  try {
-    return [...new Set(["UTC", current, ...Intl.supportedValuesOf("timeZone")])];
-  } catch {
-    return [
-      ...new Set([
-        current,
-        "UTC",
-        "America/New_York",
-        "America/Chicago",
-        "America/Denver",
-        "America/Los_Angeles",
-      ]),
-    ];
-  }
-}
 
 export default function CalendarAvailabilityPanel({
   settings,
@@ -198,7 +182,7 @@ export default function CalendarAvailabilityPanel({
                 required
                 className="min-w-0"
               >
-                {calendarTimeZones(settings.time_zone).map((zone) => (
+                {timeZoneOptions(settings.time_zone).map((zone) => (
                   <option key={zone} value={zone}>
                     {zone.replace(/_/g, " ")}
                   </option>

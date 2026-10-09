@@ -22,6 +22,7 @@ import BotMarkPicker from "./BotMarkPicker";
 import { StatusNotice } from "./molecules";
 import SimpleVoicePicker from "./voice/SimpleVoicePicker";
 import AgentToolPermissions from "./AgentToolPermissions";
+import BusinessHoursEditor from "./BusinessHoursEditor";
 
 const PERSONALITIES = ["Clear", "Warm", "Polished", "Energetic"] as const;
 
@@ -497,6 +498,8 @@ export default function StudioAgentWorkspacePanel({
           </h3>
           <SimpleVoicePicker agentId={agentId} agentName={agentName} markKey={savedMarkKey} />
         </section>
+
+        <BusinessHoursEditor agentId={agentId} compact={compact} />
 
         <AgentToolPermissions
           agentId={agentId}

@@ -102,11 +102,28 @@ export const BusinessVariablesSchema = z
     message: "At most 32 variables allowed",
   });
 
+/** True when the runtime can evaluate hours in this zone; an unknown zone would gate in UTC. */
+export function isKnownTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const AgentBusinessProfileSchema = z
   .object({
-    business_hours: BusinessHoursSchema.optional(),
+    // null clears the schedule, so the Bot answers at any time.
+    business_hours: BusinessHoursSchema.nullable().optional(),
     // IANA tz strings can be long-ish (e.g. "America/Argentina/Buenos_Aires").
-    timezone: z.string().min(1).max(64).optional(),
+    timezone: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .refine(isKnownTimeZone, "Choose a valid time zone")
+      .optional(),
     compliance_mode: ComplianceModeSchema.optional(),
     disallowed_topics: z
       .array(z.string().max(120))
