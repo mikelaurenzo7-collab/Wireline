@@ -339,6 +339,8 @@ export async function createOpenAILiveVoiceCall(input: {
   userId: string;
   agentId: string;
   sdp: string;
+  /** Free rehearsals end sooner; the default is the full Studio window. */
+  maxDurationSeconds?: number;
 }) {
   const runtime = await loadAgentRuntime(input.agentId, input.userId);
   const { profile, voice, source: voiceSource } = resolveOpenAILiveVoiceSelection(runtime.agent);
@@ -381,7 +383,10 @@ export async function createOpenAILiveVoiceCall(input: {
     userId: input.userId,
     sdp: input.sdp,
     session,
-    maxDurationSeconds: OPENAI_LIVE_VOICE_MAX_SECONDS,
+    maxDurationSeconds: Math.min(
+      input.maxDurationSeconds ?? OPENAI_LIVE_VOICE_MAX_SECONDS,
+      OPENAI_LIVE_VOICE_MAX_SECONDS,
+    ),
     admission: "private_simulation",
     logContext: { userId: input.userId, agentId: input.agentId },
   });

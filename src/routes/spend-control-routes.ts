@@ -15,6 +15,11 @@ import {
   subscriptionPlanToTier,
 } from "../lib/plan-entitlements";
 import { planById } from "../lib/plan-catalog";
+import { platformCostReserveUsd } from "../middleware/audit-middleware";
+import {
+  OPENAI_FREE_REHEARSAL_SECONDS,
+  realtimeReserveForWindowUsd,
+} from "../lib/voice/openai-realtime-pricing";
 
 const router = express.Router();
 
@@ -212,6 +217,16 @@ router.get(
       const limit = snap.budget?.monthly_limit_usd ? Number(snap.budget.monthly_limit_usd) : 0;
       const percentUsed = limit > 0 ? (snap.mtdCost / limit) * 100 : 0;
       const hardCappedNow = await isHardSpendCapExceeded(req.user.id);
+      // Free Builder sees how many voice tests its allowance still covers.
+      const freeAllowance = guardScope === "free_simulation_allowance";
+      const voiceReserveUsd = realtimeReserveForWindowUsd(
+        platformCostReserveUsd("openai_realtime_session"),
+        OPENAI_FREE_REHEARSAL_SECONDS,
+      );
+      const voiceRehearsalsRemaining =
+        freeAllowance && limit > 0
+          ? Math.max(0, Math.floor(Number(((limit - snap.mtdCost) / voiceReserveUsd).toFixed(6))))
+          : null;
 
       res.json({
         period: snap.period,
@@ -232,6 +247,9 @@ router.get(
         simulation_allowance_enabled: guardScope === "free_simulation_allowance",
         customer_editable: true,
         guard_scope: guardScope,
+        voice_rehearsal_reserve_usd: freeAllowance ? voiceReserveUsd : null,
+        voice_rehearsal_seconds: freeAllowance ? OPENAI_FREE_REHEARSAL_SECONDS : null,
+        voice_rehearsals_remaining: voiceRehearsalsRemaining,
       });
     } catch (err) {
       if (err instanceof AppError) throw err;

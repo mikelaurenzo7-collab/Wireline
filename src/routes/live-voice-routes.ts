@@ -16,6 +16,8 @@ import {
   getOpenAILiveVoiceStatus,
   runOpenAILiveVoiceTool,
 } from "../lib/voice/openai-live-agent-service";
+import { getEffectiveSubscriptionPlanId, subscriptionPlanToTier } from "../lib/plan-entitlements";
+import { OPENAI_FREE_REHEARSAL_SECONDS } from "../lib/voice/openai-realtime-pricing";
 import type { AuthenticatedRequest } from "../types/auth";
 import liveProfileRouter from "./live-voice-profile-routes";
 
@@ -69,12 +71,26 @@ router.post(
   validateBody(sessionSchema),
   simulationMinuteQuota,
   async (req: AuthenticatedRequest, res: Response) => {
-    const reservation = await reserveRealtimeSessionSpend(req, req.user.id, "live_voice_session");
+    // Free Builder rehearses in shorter sessions that reserve less, so its
+    // allowance covers several voice tests.
+    const freeBuilder =
+      subscriptionPlanToTier(await getEffectiveSubscriptionPlanId(req.user.id, req.user.email)) ===
+      "free";
+    const windowSeconds = freeBuilder ? OPENAI_FREE_REHEARSAL_SECONDS : undefined;
+    const reservation = await reserveRealtimeSessionSpend(
+      req,
+      req.user.id,
+      "live_voice_session",
+      undefined,
+      undefined,
+      windowSeconds,
+    );
     try {
       const session = await createOpenAILiveVoiceCall({
         userId: req.user.id,
         agentId: req.body.agentId,
         sdp: req.body.sdp,
+        maxDurationSeconds: windowSeconds,
       });
       await commitRealtimeSessionSpend(reservation);
       res.setHeader("Cache-Control", "no-store");

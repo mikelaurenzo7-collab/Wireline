@@ -14,7 +14,21 @@ type SimulationAllowanceStatus = {
   warn_threshold_pct: number;
   hard_capped_now: boolean;
   simulation_allowance_enabled: boolean;
+  voice_rehearsals_remaining?: number | null;
+  voice_rehearsal_seconds?: number | null;
 };
+
+/** "2 voice tests left this month (2 minutes each)." from the spend status. */
+export function voiceTestsLeftCopy(status: {
+  voice_rehearsals_remaining?: number | null;
+  voice_rehearsal_seconds?: number | null;
+}): string | null {
+  const remaining = status.voice_rehearsals_remaining;
+  if (typeof remaining !== "number") return null;
+  if (remaining <= 0) return "Voice tests are used for this month. Text tests still work.";
+  const minutes = Math.round((status.voice_rehearsal_seconds ?? 120) / 60);
+  return `${remaining} voice ${remaining === 1 ? "test" : "tests"} left this month (${minutes} ${minutes === 1 ? "minute" : "minutes"} each).`;
+}
 
 /**
  * Free Builder's simulation allowance meter. plan-catalog.ts names silent
@@ -91,6 +105,11 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
           style={{ width: `${percent}%` }}
         />
       </div>
+      {!status.hard_capped_now && voiceTestsLeftCopy(status) ? (
+        <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
+          {voiceTestsLeftCopy(status)}
+        </p>
+      ) : null}
       {status.hard_capped_now ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
           {checkoutAvailable === false ? (

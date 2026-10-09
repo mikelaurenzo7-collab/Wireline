@@ -5,6 +5,10 @@ import * as schema from "../db/schema";
 import { AppError } from "./api-error";
 import { OPENAI_REALTIME_DEFAULT_MODEL } from "./voice/openai-realtime-config";
 import {
+  OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
+  realtimeReserveForWindowUsd,
+} from "./voice/openai-realtime-pricing";
+import {
   commitPlatformCostReservation,
   extendCommittedPlatformCostReservation,
   markPlatformCostReservationAmbiguous,
@@ -26,8 +30,14 @@ export async function reserveRealtimeSessionSpend(
   surface: "openai_sip" | "studio_simulation" | "live_voice_session",
   idempotencyKey?: string,
   inboundAdmission?: NativeInboundAdmission,
+  /** A session hard-stopped sooner than the default window reserves proportionally less. */
+  windowSeconds: number = OPENAI_REALTIME_RESERVE_WINDOW_SECONDS,
 ): Promise<PlatformCostReservation> {
-  const reserveUsd = platformCostReserveUsd("openai_realtime_session");
+  const baseReserveUsd = platformCostReserveUsd("openai_realtime_session");
+  const reserveUsd =
+    windowSeconds < OPENAI_REALTIME_RESERVE_WINDOW_SECONDS
+      ? realtimeReserveForWindowUsd(baseReserveUsd, windowSeconds)
+      : baseReserveUsd;
   const decision = await reservePlatformCostRecord({
     userId,
     action: "voice.realtime.session",
@@ -37,7 +47,7 @@ export async function reserveRealtimeSessionSpend(
     idempotencyKey,
     requestMeta: {
       surface,
-      reserve_window_seconds: 300,
+      reserve_window_seconds: Math.min(windowSeconds, OPENAI_REALTIME_RESERVE_WINDOW_SECONDS),
       reserve_window_usd: reserveUsd,
       ...(surface === "openai_sip" && inboundAdmission
         ? { inbound_admission: inboundAdmission }
@@ -58,7 +68,9 @@ export async function reserveRealtimeSessionSpend(
     throw new AppError(
       402,
       "SPEND_CAP_REACHED",
-      "This session would exceed your provider spend limit. Review Billing before starting new live work.",
+      surface === "openai_sip"
+        ? "This session would exceed your provider spend limit. Review Billing before starting new live work."
+        : "This month's AI allowance can't cover another voice test. See your options in Billing.",
       {
         period: decision.period,
         month_to_date_usd: decision.monthToDateUsd,

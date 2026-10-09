@@ -47,6 +47,20 @@ export const OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD =
   ) * RESERVE_ROUNDING_INCREMENT_USD;
 
 /**
+ * Free Builder hears its Bot in two-minute rehearsals, reserving the same
+ * per-second rate as the five-minute window, so its small allowance covers
+ * several voice tests instead of one.
+ */
+export const OPENAI_FREE_REHEARSAL_SECONDS = 120 as const;
+
+/** The admission reserve scaled to a shorter session, rounded up to the next $0.25. */
+export function realtimeReserveForWindowUsd(baseReserveUsd: number, windowSeconds: number): number {
+  const scaled = (baseReserveUsd * windowSeconds) / OPENAI_REALTIME_RESERVE_WINDOW_SECONDS;
+  const steps = Math.ceil(Number((scaled / RESERVE_ROUNDING_INCREMENT_USD).toFixed(6)));
+  return Math.max(1, steps) * RESERVE_ROUNDING_INCREMENT_USD;
+}
+
+/**
  * Retention-ratio truncation is an official Realtime cost-control mechanism:
  * https://developers.openai.com/api/reference/typescript/resources/realtime/subresources/calls/methods/accept
  * It improves cache stability and bounds post-instruction conversation context,
