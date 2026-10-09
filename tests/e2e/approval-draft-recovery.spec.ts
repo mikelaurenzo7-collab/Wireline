@@ -127,7 +127,7 @@ test("approvals let the owner call back, open the source, and fill a knowledge g
                 pending_tasks: [],
                 knowledge_gaps: [
                   {
-                    id: 7,
+                    id: "7",
                     agent_id: "bot-1",
                     lesson: "[KNOWLEDGE GAP] Do you service tankless heaters?",
                   },
