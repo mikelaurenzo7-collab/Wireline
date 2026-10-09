@@ -130,7 +130,9 @@ describe("durable post-call customer follow-up", () => {
     expect(digest).toContain('"artifact",');
     expect(digest).toContain('"autoQa",');
     expect(digest).toContain('"escalationWebhook",');
-    expect(digest.match(/\{ retrySafe: true \}/g)).toHaveLength(3);
+    // Enrichment's enqueue adopts the child it already queued, so replay is safe.
+    expect(digest).toContain('"enrichment",');
+    expect(digest.match(/\{ retrySafe: true \}/g)).toHaveLength(4);
   });
 
   it("retries a failed local escalation enqueue without creating duplicate deliveries", async () => {

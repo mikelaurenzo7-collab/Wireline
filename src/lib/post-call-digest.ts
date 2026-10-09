@@ -220,6 +220,7 @@ type PostCallDeliveryProgress = {
     crm: PostCallEffectProgress<{ logged: boolean; queuedForApproval: boolean }>;
     recap: PostCallEffectProgress<{ url: string | null }>;
     autoQa: PostCallEffectProgress<{ queued: boolean }>;
+    enrichment: PostCallEffectProgress<{ queued: boolean }>;
     mobilePush: PostCallEffectProgress<{ sent: number; devices: number }>;
     escalationWebhook: PostCallEffectProgress<{ queued: number }>;
   }>;
@@ -252,6 +253,7 @@ type PostCallEffectResultMap = {
   crm: { logged: boolean; queuedForApproval: boolean };
   recap: { url: string | null };
   autoQa: { queued: boolean };
+  enrichment: { queued: boolean };
   mobilePush: { sent: number; devices: number };
   escalationWebhook: { queued: number };
 };
@@ -653,12 +655,13 @@ async function writeMicrosoftExcelOutput(
   }
 }
 
-type PostCallChildJobType = "post_call_artifact" | "auto_qa_score";
+type PostCallChildJobType = "post_call_artifact" | "auto_qa_score" | "post_call_enrichment";
 
 /**
  * Retry-safe child enqueue. The partial unique index in migration 0150 makes a
  * lost response after commit adopt the existing child row instead of creating
- * a duplicate artifact or QA run.
+ * a duplicate artifact or QA run. Enrichment has no such index: the parent
+ * runs one attempt at a time, so a retry finds the child it already queued.
  */
 async function enqueuePostCallChildJob(input: {
   parentJob: JobRow;
@@ -666,6 +669,20 @@ async function enqueuePostCallChildJob(input: {
   type: PostCallChildJobType;
   payload: Record<string, unknown>;
 }): Promise<void> {
+  const findChild = () =>
+    drizzle
+      .select({ id: schema.jobs.id })
+      .from(schema.jobs)
+      .where(
+        and(
+          eq(schema.jobs.userId, input.userId),
+          eq(schema.jobs.type, input.type),
+          sql`${schema.jobs.payload}->>'postCallDigestJobId' = ${input.parentJob.id}`,
+        ),
+      )
+      .limit(1);
+  const [prior] = await findChild();
+  if (prior) return;
   const payload = { ...input.payload, postCallDigestJobId: input.parentJob.id };
   const [created] = await drizzle
     .insert(schema.jobs)
@@ -682,17 +699,7 @@ async function enqueuePostCallChildJob(input: {
     .returning({ id: schema.jobs.id });
   if (created) return;
 
-  const [existing] = await drizzle
-    .select({ id: schema.jobs.id })
-    .from(schema.jobs)
-    .where(
-      and(
-        eq(schema.jobs.userId, input.userId),
-        eq(schema.jobs.type, input.type),
-        sql`${schema.jobs.payload}->>'postCallDigestJobId' = ${input.parentJob.id}`,
-      ),
-    )
-    .limit(1);
+  const [existing] = await findChild();
   if (!existing) {
     throw new Error(`Post-call ${input.type} enqueue conflicted without an adoptable child job.`);
   }
@@ -960,6 +967,58 @@ async function publishPostCallRecap(
     log.warn("post-call digest: recap publish failed", { error: err?.message });
     return null;
   }
+}
+
+/**
+ * Enrichment scores the lead (Hot Leads, the digest's sentiment), proposes
+ * follow-ups for approval, and sends call.completed. Only a real conversation
+ * with a Bot qualifies: never a demo row, a call where the caller said
+ * nothing, or an unreachable or opted-out caller.
+ */
+export function shouldEnrichPostCall(input: {
+  demo?: boolean;
+  agentId?: string | null;
+  vapiCallId?: string | null;
+  transcript?: string | null;
+  sipCall: boolean;
+  outcomeTag: CallOutcomeTag;
+}): boolean {
+  if (input.demo || !input.agentId || !input.vapiCallId) return false;
+  if (input.outcomeTag === "unreachable" || input.outcomeTag === "dnc") return false;
+  const spoken = input.sipCall ? callerTurnsText(input.transcript) : (input.transcript ?? "");
+  return spoken.trim().length > 0;
+}
+
+async function queuePostCallEnrichment(
+  job: JobRow,
+  ctx: CallContext,
+  outcomeTag: CallOutcomeTag,
+): Promise<boolean> {
+  if (
+    !shouldEnrichPostCall({
+      ...ctx,
+      sipCall: ctx.finalization?.provider === "openai_sip",
+      outcomeTag,
+    })
+  ) {
+    return false;
+  }
+  await enqueuePostCallChildJob({
+    parentJob: job,
+    userId: ctx.userId,
+    type: "post_call_enrichment",
+    payload: {
+      userId: ctx.userId,
+      agentId: ctx.agentId,
+      callId: ctx.vapiCallId,
+      agentName: ctx.agentName || null,
+      customerNumber: ctx.customerNumber || null,
+      durationSeconds: ctx.durationSeconds || 0,
+      summary: ctx.summary || "",
+      transcript: ctx.transcript || "",
+    },
+  });
+  return true;
 }
 
 async function queuePostCallAutoQa(job: JobRow, ctx: CallContext): Promise<boolean> {
@@ -1508,6 +1567,17 @@ async function handleActivePostCallDigestJob(job: JobRow): Promise<void> {
     { retrySafe: true },
   );
   progress = autoQa.progress;
+
+  const enrichment = await runClaimedPostCallEffect(
+    job,
+    ctx,
+    progress,
+    "enrichment",
+    { queued: false },
+    async () => ({ queued: await queuePostCallEnrichment(job, ctx, coreBase.outcomeTag) }),
+    { retrySafe: true },
+  );
+  progress = enrichment.progress;
 
   const mobilePush = await runClaimedPostCallEffect(
     job,

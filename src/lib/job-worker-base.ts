@@ -8,6 +8,8 @@ import { getErrorMessage } from "./server-utils";
 import { startWorker, type JobRow, enqueue, writeTransactionConfig } from "./job-queue";
 import { executeAction } from "./action-engine";
 import { ActionItemSchema } from "./action-types";
+import { postCallFollowUpAction } from "./post-call-follow-up";
+import { KNOWLEDGE_GAP_PREFIX } from "./agent-runtime-helpers";
 import { persistRuntimeAuditRecords } from "../middleware/audit-middleware";
 import { buildCallCompletedOutcome, dispatchWebhook } from "./webhook-helpers";
 import { CRMService } from "./crm-service";
@@ -22,91 +24,21 @@ import { acquireAccountDeletionFence, runTerminalDeletionSequence } from "./acco
 import { QA_SCORE_SOURCE_RUBRIC, qaRubricShouldRun } from "./qa-score-provenance";
 import { getCanonicalAppUrl } from "./app-url";
 
-type SupportedCrmType = "salesforce" | "hubspot";
-
-function truncateForCrm(text: string | undefined, max = 1_500): string {
-  if (!text) return "";
-  return text.length <= max ? text : `${text.slice(0, max - 3)}...`;
-}
-
-function buildCrmCallDescription(input: {
-  agentName?: string;
-  direction: "inbound" | "outbound";
-  customerNumber?: string | null;
-  durationSeconds?: number;
-  summary?: string;
-  leadScore?: number;
-  intentLabel?: string;
-  sentiment?: string;
-}): string {
-  const lines = [
-    input.agentName ? `Agent: ${input.agentName}` : null,
-    `Direction: ${input.direction}`,
-    input.customerNumber ? `Customer number: ${input.customerNumber}` : null,
-    typeof input.durationSeconds === "number" ? `Duration: ${input.durationSeconds}s` : null,
-    input.intentLabel ? `Intent: ${input.intentLabel}` : null,
-    input.sentiment ? `Sentiment: ${input.sentiment}` : null,
-    typeof input.leadScore === "number" ? `Lead score: ${input.leadScore}` : null,
-    input.summary ? `Summary: ${truncateForCrm(input.summary)}` : null,
-  ].filter(Boolean);
-  return lines.join("\n");
-}
-
-async function syncCallActivityToCrm(input: {
+/**
+ * The post-call digest logs the call itself; enrichment adds only the lead
+ * score it computed, so the CRM never gets the same call twice.
+ */
+async function syncLeadScoreToCrm(input: {
   userId: string;
   crmType?: string | null;
-  agentName?: string;
-  callId: string;
-  direction: "inbound" | "outbound";
   customerNumber?: string | null;
-  durationSeconds?: number;
-  summary?: string;
   leadScore?: number;
-  intentLabel?: string;
-  sentiment?: string;
 }) {
-  if (!input.crmType || (input.crmType !== "salesforce" && input.crmType !== "hubspot")) return;
-  if (!input.customerNumber) return;
-
-  const crm = new CRMService(input.userId);
-  const subjectSuffix = input.intentLabel ? ` - ${truncateForCrm(input.intentLabel, 80)}` : "";
-  const activityId = await crm.logCall({
-    crmType: input.crmType as SupportedCrmType,
-    subject: `BotBound ${input.direction} call${subjectSuffix}`,
-    description: buildCrmCallDescription(input),
-    to_number: input.customerNumber,
-    duration_minutes: input.durationSeconds
-      ? Math.max(1, Math.round(input.durationSeconds / 60))
-      : 0,
-    outcome: input.intentLabel || "completed",
-  });
-
-  if (activityId) {
-    log.info("Post-call CRM sync succeeded", {
-      userId: input.userId,
-      crmType: input.crmType,
-      callId: input.callId,
-      activityId,
-    });
-
-    if (input.leadScore != null) {
-      void crm
-        .syncEnrichedLead({
-          customerNumber: input.customerNumber,
-          leadScore: input.leadScore,
-        })
-        .catch((e) =>
-          log.warn("Post-call lead score CRM sync failed", { error: getErrorMessage(e) }),
-        );
-    }
-
-    return;
-  }
-
-  log.warn("Post-call CRM sync skipped or failed", {
-    userId: input.userId,
-    crmType: input.crmType,
-    callId: input.callId,
+  if (input.crmType !== "salesforce" && input.crmType !== "hubspot") return;
+  if (!input.customerNumber || typeof input.leadScore !== "number") return;
+  await new CRMService(input.userId).syncEnrichedLead({
+    customerNumber: input.customerNumber,
+    leadScore: input.leadScore,
   });
 }
 
@@ -209,6 +141,26 @@ export async function handleJob(job: JobRow): Promise<void> {
         });
     }
 
+    // Questions the Bot could not answer fill the Approvals "Gaps" tab.
+    const gaps = (Array.isArray(result.knowledge_gaps) ? result.knowledge_gaps : [])
+      .map((gap) => (typeof gap === "string" ? gap.trim().slice(0, 300) : ""))
+      .filter(Boolean)
+      .slice(0, 3);
+    for (const gap of gaps) {
+      await drizzle
+        .insert(schema.agentLessons)
+        .values({
+          agentId: p.agentId,
+          userId: p.userId,
+          lesson: `${KNOWLEDGE_GAP_PREFIX} ${gap}`,
+          sourceCallId: p.callId,
+          source: "phone_call",
+        })
+        .onConflictDoNothing({
+          target: [schema.agentLessons.agentId, schema.agentLessons.lesson],
+        });
+    }
+
     if (records.length) {
       await persistRuntimeAuditRecords({
         userId: p.userId,
@@ -256,20 +208,13 @@ export async function handleJob(job: JobRow): Promise<void> {
       enrichment_source: "async_post_call_job",
       enrichment,
     });
-    await syncCallActivityToCrm({
+    await syncLeadScoreToCrm({
       userId: p.userId,
       crmType: settings?.crmType,
-      agentName: p.agentName,
-      callId: p.callId,
-      direction,
       customerNumber: payload.customer_number,
-      durationSeconds: p.durationSeconds,
-      summary: p.summary,
       leadScore: result.lead_score,
-      intentLabel: result.intent_label,
-      sentiment: result.sentiment,
     }).catch((e: unknown) =>
-      log.warn("post_call CRM sync failed", {
+      log.warn("Post-call lead score CRM sync failed", {
         userId: p.userId,
         callId: p.callId,
         error: getErrorMessage(e),
@@ -301,6 +246,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       type: "v2a_action_extraction",
       payload: {
         userId: p.userId,
+        agentId: p.agentId,
         callId: p.callId,
         summary: p.summary,
         transcript: p.transcript,
@@ -312,6 +258,7 @@ export async function handleJob(job: JobRow): Promise<void> {
   if (job.type === "v2a_action_extraction") {
     const p = job.payload as {
       userId: string;
+      agentId?: string;
       callId: string;
       transcript: string;
       summary: string;
@@ -324,14 +271,16 @@ export async function handleJob(job: JobRow): Promise<void> {
       customerNumber: p.customerNumber,
     });
 
-    for (const action of actions) {
+    for (const action of actions.map(postCallFollowUpAction)) {
       await enqueue(drizzle, {
         userId: p.userId,
         type: "execute_action",
         payload: {
           userId: p.userId,
-          action,
+          action: p.agentId ? { ...action, agentId: p.agentId } : action,
           context: { sourceId: p.callId, sourceType: "phone_call" },
+          // Read from a transcript after the call: the owner approves every one.
+          autonomy: "draft",
         },
       });
     }
@@ -347,6 +296,7 @@ export async function handleJob(job: JobRow): Promise<void> {
       userId: string;
       action: any;
       context: { sourceId: string; sourceType: string };
+      autonomy?: "draft";
     };
 
     const parsed = ActionItemSchema.safeParse(p.action);
@@ -355,7 +305,12 @@ export async function handleJob(job: JobRow): Promise<void> {
       return;
     }
 
-    await executeAction(p.userId, parsed.data, p.context);
+    await executeAction(
+      p.userId,
+      parsed.data,
+      p.context,
+      p.autonomy === "draft" ? "draft" : undefined,
+    );
   }
 
   if (job.type === "adaptive_optimization") {
