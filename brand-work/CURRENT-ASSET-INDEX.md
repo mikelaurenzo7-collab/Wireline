@@ -1,12 +1,20 @@
 # BotBound Brand and Launch Asset Index
 
-Current private delivery: [September 20 Creative Refresh](https://drive.google.com/drive/folders/1z0fhFkPl9WW937wsSNQcBKm1j4qVI_bV), with new artwork, a customer one-pager, and reconciled guides. Prepared creative is not a deployment record or paid-media authorization. The revision 4 September 1 package below remains historical.
+## Current Creative Candidate — October 10, 2026
 
-Source review: **2026-09-26**. Current creative source: [September Creative Refresh](launch-2026-09-refresh/README.md), with [current Render and offer status](launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md). Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), deployed on Render. The September 20 Drive delivery remains a dated creative snapshot; these source edits do not update its remote files. This index preserves the original campaign families below alongside the current refresh and September Drive sales variants. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+The [Give Your Bot a Goal family](launch-2026-10-goal/README.md) is the current prepared static set for inbound and outbound voice Bots plus separately started cloud-browser tasks. It includes reviewed wide, feed, story, square, and email-header compositions, with a matching [copy kit](launch-2026-10-goal/COPY-KIT.md) and source/input hashes. The files are local review candidates. No Google Drive delivery, social post, email send, paid placement, or public-release approval is implied. Use this set for new planning; preserve the dated September families below as historical creative.
 
-## Choose the Current Source
+The live site is the authority for the current offer and CTA. Recheck the selected plan and destination before publishing. The current promotional art avoids customer-result claims and does not present browser work as automatically sharing phone or email context.
 
-Start with [the September Refresh](launch-2026-09-refresh/README.md). Its flagship is **Stay in the Work.**, with **Small Team. Bigger Reach.** as the broad companion. The current category is **Inbound & Outbound Bots**. The September Drive **Your Next Sales Hire** and **Give Sales a Hand** campaigns remain sales variants; old films and decks keep their own review holds.
+## Historical Library — September 2026
+
+Recorded private delivery: [September 20 Creative Refresh](https://drive.google.com/drive/folders/1z0fhFkPl9WW937wsSNQcBKm1j4qVI_bV), with artwork, a customer one-pager, and reconciled guides. Prepared creative is not a deployment record or paid-media authorization. The revision 4 September 1 package below remains historical.
+
+Source review: **2026-09-26**. Historical creative source: [September Creative Refresh](launch-2026-09-refresh/README.md), with its [dated Render and offer status](launch-2026-09-refresh/LAUNCH-STATUS-2026-09-26.md). Product baseline: `bffade5df70c2521152fd02c8826a6dafcee1f14` (PR #1264), then deployed on Render. The September 20 Drive delivery remains a dated creative snapshot; these source edits do not update its remote files. This index preserves the original campaign families below alongside the September refresh and Drive sales variants. The September 1 Drive delivery is a recorded creative snapshot; this review does not recertify those remote files or their generated previews. Current production, vendor, and launch status belongs to `../docs/FOUNDER_LAUNCH_COMMAND_CENTER.md`.
+
+## Choose a September Source
+
+For the historical library, start with [the September Refresh](launch-2026-09-refresh/README.md). Its flagship was **Stay in the Work.**, with **Small Team. Bigger Reach.** as the broad companion. The category was **Inbound & Outbound Bots**. The September Drive **Your Next Sales Hire** and **Give Sales a Hand** campaigns remain sales variants; old films and decks keep their own review holds.
 
 | Need                                         | Working source                                      | Release boundary                                                                                         |
 | -------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |

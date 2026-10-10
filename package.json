@@ -38,6 +38,7 @@
     "assets": "node scripts/render-image-assets.mjs",
     "brand:launch": "node scripts/render-botbound-launch-perfection-assets.mjs",
     "brand:refresh": "node scripts/render-botbound-refresh-assets.mjs",
+    "brand:goal": "node scripts/render-botbound-goal-assets.mjs",
     "brand:proof": "node scripts/capture-botbound-current-worktree-proof.mjs",
     "check-prod-env": "node scripts/check-prod-env.mjs",
     "vendor:readiness": "node scripts/check-vendor-readiness.mjs",

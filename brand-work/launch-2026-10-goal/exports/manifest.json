@@ -1,0 +1,68 @@
+{
+  "status": "Prepared review candidates; publication and paid placement not approved by rendering",
+  "destination": "https://botbound.app/signup?plan=free",
+  "claimBoundary": "Computer browser tasks are started separately; Email depends on selected plan",
+  "inputs": [
+    {
+      "file": "public/brand/botbound-operator-polished.png",
+      "sha256": "564d45779db9a1a11559de9788e5535ef923a95faa56b77f7ca3f60d787630a0"
+    },
+    {
+      "file": "brand-work/launch-2026-09-refresh/sources/stay-in-the-work.png",
+      "sha256": "3a06dc5e4df0bc9eb76be0e17bca4b87fed4cdc3490df7e451409c29c33059c4"
+    },
+    {
+      "file": "brand-work/fonts/InterTight-ExtraBold.ttf",
+      "sha256": "aa62a1b66de0ab03e671fa88ccfb61e9e3e0b0085136cf173938d0e3f58e70ca"
+    },
+    {
+      "file": "brand-work/fonts/Inter-Regular.ttf",
+      "sha256": "feb19efe03a59d77edf106d0d9e459a29237b690bd6b82da8a4e796a8b0a64f5"
+    },
+    {
+      "file": "brand-work/fonts/Inter-SemiBold.ttf",
+      "sha256": "770c12639f653dc234dd1a5eecedb114baa8636885e9807da66a7c23a62c46a7"
+    },
+    {
+      "file": "brand-work/fonts/IBMPlexMono-Bold.ttf",
+      "sha256": "25ebfbf2d79ab5a9b76d768f297757b76776199d0a36e153fa525acdcd674631"
+    }
+  ],
+  "assets": [
+    {
+      "file": "botbound-goal-wide-1200x630.png",
+      "width": 1200,
+      "height": 630,
+      "bytes": 527153,
+      "sha256": "61ab300fb3753ed0fbfb35eb185c4c882c2bbb074443fe49549d8f3dc86a5dd3"
+    },
+    {
+      "file": "botbound-goal-email-1200x400.png",
+      "width": 1200,
+      "height": 400,
+      "bytes": 268381,
+      "sha256": "d5a84ad7520022bf52a763c9ab02dbe8653812e19fade0bda33d1e7444844174"
+    },
+    {
+      "file": "botbound-goal-feed-1080x1350.png",
+      "width": 1080,
+      "height": 1350,
+      "bytes": 1575144,
+      "sha256": "dee6c07564426019cefd16da2797a1e94f2487c68e3074799efd312084d1a1bc"
+    },
+    {
+      "file": "botbound-goal-story-1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "bytes": 2166863,
+      "sha256": "875c4c0515b88ac23d611c3dcafe2ad319d9ccc5288bbdba8a0dab4520da68c5"
+    },
+    {
+      "file": "botbound-goal-square-1080x1080.png",
+      "width": 1080,
+      "height": 1080,
+      "bytes": 1165169,
+      "sha256": "5a589eebeacfef7033453fe10b8210d2313e6b678de3764c64c41430a3d04c4e"
+    }
+  ]
+}
