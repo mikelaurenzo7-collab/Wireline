@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { OPENAI_MODELS } from "../src/lib/ai-models";
 import { DefiniteProviderRejectionError } from "../src/lib/ai-client";
 import {
+  buildTaskMessage,
   buildSystemPrompt,
   runCloudComputerAgent,
   turnReserveUsd,
@@ -97,6 +98,18 @@ function client(responses: unknown[]) {
 const bot = { name: "Repair Desk", role: "front desk", facts: ["We serve Austin."], rules: [] };
 
 describe("OpenAI cloud computer agent loop", () => {
+  it("keeps secret-bearing start URL paths out of the model prompt", () => {
+    const message = buildTaskMessage(
+      "Find the hours.",
+      "https://example.com/session/one-time-code?token=secret#fragment",
+      new Date("2026-10-10T12:00:00Z"),
+    );
+    expect(message).toContain("https://example.com/");
+    expect(message).not.toContain("one-time-code");
+    expect(message).not.toContain("token=secret");
+    expect(message).not.toContain("fragment");
+  });
+
   it("uses the Responses computer tool, disables server storage, and accepts a safe finish report", async () => {
     const { session } = fakeSession();
     const { client: openai, requests } = client([
@@ -108,6 +121,7 @@ describe("OpenAI cloud computer agent loop", () => {
             "https://reader:secret@example.com/hours?code=one-time-secret#access_token",
             "https://example.com/magic/one-time-secret",
             "https://example.com/s/3xKr5D2pYq7vM9nT4bR8aC1f",
+            "https://example.com/s/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefgh12345678",
           ],
         }),
       ]),
@@ -613,7 +627,7 @@ describe("OpenAI cloud computer agent loop", () => {
   it("opens a public page from a blank browser and shows its screenshot before continuing", async () => {
     const { session, calls } = fakeSession({}, "about:blank");
     const { client: openai, requests } = client([
-      response([openPublicUrlCall("n1", "https://example.com")]),
+      response([openPublicUrlCall("n1", "https://example.com/session/one-time-code?token=secret")]),
       response([
         functionCall("f1", "finish_task", {
           outcome: "completed",
@@ -633,7 +647,12 @@ describe("OpenAI cloud computer agent loop", () => {
       hooks: hooks().hooks,
     });
 
-    expect(calls).toMatchObject([{ member: "navigate", input: { url: "https://example.com" } }]);
+    expect(calls).toMatchObject([
+      {
+        member: "navigate",
+        input: { url: "https://example.com/session/one-time-code?token=secret" },
+      },
+    ]);
     expect((requests[1].input as Item[]).at(-1)).toEqual({
       type: "function_call_output",
       call_id: "n1",

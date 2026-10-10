@@ -2,7 +2,7 @@ import { estimateCost } from "../ai-audit";
 import { DefiniteProviderRejectionError } from "../ai-client";
 import { log } from "../server-logger";
 import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
-import type { CloudBrowserSession, MemberResult } from "./browser-session";
+import { modelBrowserUrl, type CloudBrowserSession, type MemberResult } from "./browser-session";
 import { displayUrl } from "./url-policy";
 import type { CloudComputerClient } from "./config";
 
@@ -166,7 +166,7 @@ export function buildTaskMessage(goal: string, startUrl: string | null, now = ne
     `Task from your owner (today is ${date}):`,
     goal.trim().slice(0, CLOUD_COMPUTER_LIMITS.goalChars),
     startUrl
-      ? `\nStart here: ${startUrl}`
+      ? `\nA starting page was requested on ${modelBrowserUrl(startUrl)}. Inspect the open browser screen for the current page.`
       : "\nNo start page was given. Choose the most direct public source.",
   ].join("\n");
 }
@@ -191,7 +191,8 @@ function cleanSources(value: unknown): string[] {
             (segment.length >= 20 &&
               /^[A-Za-z0-9_-]+$/.test(segment) &&
               /[A-Za-z]/.test(segment) &&
-              /\d/.test(segment)),
+              /\d/.test(segment)) ||
+            /^[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}$/.test(segment),
         )
       ) {
         continue;
@@ -783,7 +784,7 @@ export async function runCloudComputerAgent(input: {
               {
                 type: "input_text",
                 text: result.ok
-                  ? `Opened ${displayUrl(input.session.activeUrl()) || "the public page"}. Review the screenshot before continuing.`
+                  ? `Opened ${modelBrowserUrl(input.session.activeUrl())}. Review the screenshot before continuing.`
                   : `Could not open the page. ${result.activity}`,
               },
               {

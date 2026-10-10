@@ -22,7 +22,6 @@ import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
 import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
-  displayUrl,
   isNonPublicAddress,
   normalizeHostname,
   parseNavigateTarget,
@@ -953,7 +952,7 @@ export class CloudBrowserSession {
           await page.goto(target.url.toString(), { waitUntil: "domcontentloaded" });
         }
         await this.afterNavigationCheck(page);
-        const where = displayUrl(page.url()) || "the page";
+        const where = modelBrowserUrl(page.url());
         return this.ok(`Navigated to ${where}`, `Opened ${where}`, [await this.browserState()]);
       }
       case "screenshot": {
