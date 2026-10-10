@@ -11,6 +11,7 @@ import type { ConversationOutcomeStatus as OutcomeStatus } from "../lib/conversa
 import { CONVERSATION_OUTCOME_META as OUTCOME_META } from "../lib/conversation-outcome-display";
 import { Badge, Button, EmptyState, Skeleton } from "./atoms";
 import { ConversationActivity, ConversationMessage, SearchField, StatusNotice } from "./molecules";
+import EmailReplyComposer, { type SentEmailReply } from "./EmailReplyComposer";
 
 type EmailThread = {
   id: string;
@@ -100,8 +101,13 @@ function formatTimestamp(value: string) {
   }).format(date);
 }
 
-function isAssistantMessage(role: string) {
-  return role === "ai" || role === "assistant" || role === "out";
+/** Outgoing mail sits on the right: the Bot's replies, and the owner's own as "You". */
+function messageAuthor(role: string): { author: "assistant" | "customer"; label: string } {
+  if (role === "owner") return { author: "assistant", label: "You" };
+  if (role === "ai" || role === "assistant" || role === "out") {
+    return { author: "assistant", label: "Bot" };
+  }
+  return { author: "customer", label: "Customer" };
 }
 
 function activityState(status: OutcomeStatus): "pending" | "active" | "complete" {
@@ -929,12 +935,12 @@ export default function EmailInbox({
                 {detail?.messages.length ? (
                   <div className="space-y-3">
                     {detail.messages.map((message) => {
-                      const assistant = isAssistantMessage(message.role);
+                      const { author, label } = messageAuthor(message.role);
                       return (
                         <ConversationMessage
                           key={message.id}
-                          author={assistant ? "assistant" : "customer"}
-                          label={assistant ? "Bot" : "Customer"}
+                          author={author}
+                          label={label}
                           timestamp={formatTimestamp(message.createdAt)}
                           channel="email"
                         >
@@ -949,6 +955,17 @@ export default function EmailInbox({
               </div>
 
               <footer className="shrink-0 border-t border-border bg-card/35">
+                <EmailReplyComposer
+                  threadId={selected.id}
+                  recipient={selected.sender}
+                  onSent={(message: SentEmailReply) =>
+                    setDetail((current) =>
+                      current && current.thread.id === message.threadId
+                        ? { ...current, messages: [...current.messages, message] }
+                        : current,
+                    )
+                  }
+                />
                 <details className="group">
                   <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-3 text-xs font-semibold text-foreground sm:px-4">
                     <span>Outcome</span>

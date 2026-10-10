@@ -108,11 +108,16 @@ vi.mock("drizzle-orm", () => ({
     Object.fromEntries(Object.entries(table).filter(([key]) => key !== "$table")),
 }));
 vi.mock("../src/middleware/auth", () => ({ authenticateUser: vi.fn() }));
-vi.mock("../src/middleware/api-rate-limits", () => ({ createIpRateLimiter: () => vi.fn() }));
+vi.mock("../src/middleware/api-rate-limits", () => ({
+  createIpRateLimiter: () => vi.fn(),
+  emailReplyRateLimiter: vi.fn(),
+}));
 vi.mock("../src/lib/api-validation", () => ({
   validateBody: () => vi.fn(),
+  emailThreadReplySchema: {},
   emailThreadsReadStateSchema: {},
 }));
+vi.mock("../src/lib/email-thread-reply", () => ({ sendEmailThreadReply: vi.fn() }));
 vi.mock("../src/lib/server-utils", () => ({
   getErrorMessage: String,
   mapObjectToSnake: (value: unknown) => value,

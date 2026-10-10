@@ -497,6 +497,12 @@ export const emailThreadsReadStateSchema = z.object({
   read: z.boolean(),
 });
 
+export const emailThreadReplySchema = z.object({
+  body: z.string().trim().min(1, "Write a reply before sending.").max(10_000),
+  /** Client-generated per composed reply; a retry reuses it and is never sent twice. */
+  operation_key: z.string().uuid(),
+});
+
 export const emailInboxSyncSchema = z.object({
   limit: z.number().int().min(1).max(500).optional(),
   sinceIso: z.string().datetime().optional(),

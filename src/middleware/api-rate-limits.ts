@@ -383,6 +383,17 @@ export const knowledgeRateLimiter = createRateLimiter({
 });
 
 /**
+ * Inbox reply rate limiter.
+ * 20 replies per minute per user, failing closed: each reply is a metered send.
+ */
+export const emailReplyRateLimiter = createRateLimiter({
+  bucket: "api:email-reply",
+  windowMs: 60 * 1000,
+  max: 20,
+  failClosedOnError: true,
+});
+
+/**
  * Outbound dial rate limiter.
  * 60 dial requests per minute per user.
  */

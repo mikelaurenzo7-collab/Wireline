@@ -1,5 +1,6 @@
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
+import { findImapReplyThreading, type ReplyThreading } from "./imap-reply-target";
 import { log } from "./server-context";
 import { getErrorMessage } from "./server-utils";
 
@@ -119,6 +120,15 @@ export async function fetchIcloudInbox(
   }
 }
 
+/** Thread headers for replying to the newest message from `from` in this iCloud inbox. */
+export function findIcloudReplyThreading(
+  email: string,
+  appPassword: string,
+  query: { from: string; subject: string },
+): Promise<ReplyThreading | null> {
+  return findImapReplyThreading(createImapClient(email, appPassword), query);
+}
+
 export async function sendIcloudMail(
   email: string,
   appPassword: string,
@@ -129,6 +139,8 @@ export async function sendIcloudMail(
     textBody?: string;
     htmlBody?: string;
     unsubscribeHeaders?: Record<string, string>;
+    /** Places the message in the customer's existing thread when known. */
+    threading?: ReplyThreading | null;
   },
 ): Promise<boolean> {
   const transporter = nodemailer.createTransport({
@@ -151,6 +163,9 @@ export async function sendIcloudMail(
       text: params.textBody ?? params.body,
       ...(params.htmlBody ? { html: params.htmlBody } : {}),
       ...(params.unsubscribeHeaders ? { headers: params.unsubscribeHeaders } : {}),
+      ...(params.threading
+        ? { inReplyTo: params.threading.inReplyTo, references: params.threading.references }
+        : {}),
     });
     return true;
   } catch (err) {

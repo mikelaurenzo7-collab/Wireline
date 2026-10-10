@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { ImapFlow } from "imapflow";
 import nodemailer from "nodemailer";
+import { findImapReplyThreading, type ReplyThreading } from "./imap-reply-target";
 
 import { resolveCanonicalAppUrl } from "./app-url";
 import { fetchWithTimeout, log } from "./server-context";
@@ -546,6 +547,15 @@ export async function fetchAgentMailInbox(
   }
 }
 
+/** Thread headers for replying to the newest message from `from` in this AgentMail inbox. */
+export function findAgentMailReplyThreading(
+  email: string,
+  credential: string,
+  query: { from: string; subject: string },
+): Promise<ReplyThreading | null> {
+  return findImapReplyThreading(createImapClient(email, credential), query);
+}
+
 export async function sendAgentMail(
   email: string,
   credential: string,
@@ -556,6 +566,8 @@ export async function sendAgentMail(
     textBody?: string;
     htmlBody?: string;
     unsubscribeHeaders?: Record<string, string>;
+    /** Places the message in the customer's existing thread when known. */
+    threading?: ReplyThreading | null;
   },
 ): Promise<boolean> {
   const transporter = nodemailer.createTransport({
@@ -576,6 +588,9 @@ export async function sendAgentMail(
       text: params.textBody ?? params.body,
       ...(params.htmlBody ? { html: params.htmlBody } : {}),
       ...(params.unsubscribeHeaders ? { headers: params.unsubscribeHeaders } : {}),
+      ...(params.threading
+        ? { inReplyTo: params.threading.inReplyTo, references: params.threading.references }
+        : {}),
     });
     return true;
   } catch (error) {

@@ -6,8 +6,15 @@ import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret } from "./secret-vault";
 import { getErrorMessage } from "./server-utils";
 import { createMeeting as createZoomMeeting } from "./zoom-service";
-import { fetchIcloudInbox, sendIcloudMail } from "./icloud-mail";
-import { fetchAgentMailInbox, sendAgentMail } from "./agentmail-mail";
+import { fetchIcloudInbox, findIcloudReplyThreading, sendIcloudMail } from "./icloud-mail";
+import { fetchAgentMailInbox, findAgentMailReplyThreading, sendAgentMail } from "./agentmail-mail";
+import {
+  baseReplySubject,
+  parseReferencesHeader,
+  replyReferences,
+  type ReplyThreading,
+} from "./imap-reply-target";
+import { AppError } from "./api-error";
 import { formatIsoInTimeZone, localDateWindowToUtc, normalizeIanaTimeZone } from "./calendar-time";
 import {
   assertExternalEntityActionAllowed,
@@ -51,7 +58,12 @@ type ConnectedMailboxSendParams = {
   textBody?: string;
   htmlBody?: string;
   unsubscribeHeaders?: Record<string, string>;
+  /** Places the message in the customer's existing thread when known. */
+  threading?: ReplyThreading | null;
 };
+
+/** What a thread reply did: whether it was accepted, and whether it joined the customer's thread. */
+export type ThreadReplyOutcome = { sent: boolean; threaded: boolean };
 
 function plainTextEmailBodyHtml(body: string): string {
   const escaped = body
@@ -82,10 +94,17 @@ function buildConnectedMailboxMime(params: ConnectedMailboxSendParams): string {
   const unsubscribeHeaders = Object.entries(params.unsubscribeHeaders || {}).map(
     ([name, value]) => `${name}: ${safeMimeHeaderValue(value)}`,
   );
+  const threadHeaders = params.threading
+    ? [
+        `In-Reply-To: ${safeMimeHeaderValue(params.threading.inReplyTo)}`,
+        `References: ${safeMimeHeaderValue(params.threading.references)}`,
+      ]
+    : [];
   const headers = [
     `To: ${safeMimeHeaderValue(params.to)}`,
     `Subject: ${subject}`,
     "MIME-Version: 1.0",
+    ...threadHeaders,
     ...unsubscribeHeaders,
   ];
 
@@ -659,6 +678,112 @@ export class IntegrationService {
     }
   }
 
+  /**
+   * Answer one inbox conversation from the mailbox that received it. Unlike
+   * sendEmail, a reply never falls back to another mailbox or to BotBound's
+   * transactional sender: the customer must hear back from the address they
+   * wrote to. Plan, recipient, and environment refusals propagate as AppErrors
+   * so the owner sees why; transport failures return `sent: false`.
+   */
+  async sendThreadReply(params: {
+    accountId: string;
+    to: string;
+    subject: string;
+    body: string;
+  }): Promise<ThreadReplyOutcome> {
+    const notSent: ThreadReplyOutcome = { sent: false, threaded: false };
+    try {
+      let providerWorkStarted = false;
+      const fenced = await runTenantProviderWorkWithDeletionFence({
+        userId: this.userId,
+        operation: "integration_email_reply",
+        retainOnSuccess: () => providerWorkStarted,
+        perform: async (): Promise<ThreadReplyOutcome> => {
+          const environmentPolicy = await liveExternalActionPolicyForUser(this.userId);
+          if (!environmentPolicy.allowed) {
+            log.warn("Inbox reply blocked by account environment", {
+              userId: this.userId,
+              accountEnvironment: environmentPolicy.environment ?? "missing",
+              code: environmentPolicy.code,
+            });
+            return notSent;
+          }
+          await assertExternalEntityActionAllowed(this.userId, "tenant_email_send", {
+            email: params.to,
+          });
+          await requireTenantChannel(this.userId, "email");
+          if (!/^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/.test(params.to)) return notSent;
+
+          const account = (await this.getAccounts("mail")).find(
+            (candidate) => candidate.id === params.accountId,
+          );
+          if (!account) return notSent;
+          const sendParams: ConnectedMailboxSendParams = {
+            to: params.to,
+            subject: params.subject,
+            body: params.body,
+            textBody: params.body,
+            htmlBody: plainTextEmailBodyHtml(params.body),
+          };
+          const query = { from: params.to, subject: params.subject };
+
+          if (account.provider === "google") {
+            const target = await this.findGoogleReplyTarget(account, query);
+            providerWorkStarted = true;
+            const sent = await this.sendGoogleEmail(
+              account,
+              { ...sendParams, threading: target?.threading ?? null },
+              target?.threadId,
+            );
+            return { sent, threaded: sent && Boolean(target) };
+          }
+          if (account.provider === "microsoft") {
+            providerWorkStarted = true;
+            return this.replyMicrosoftEmail(account, params);
+          }
+          if (account.provider === "icloud") {
+            if (!account.accessToken || !account.emailAddress) return notSent;
+            const email = account.emailAddress as string;
+            const appPassword = decryptSecret(account.accessToken);
+            const threading = await findIcloudReplyThreading(email, appPassword, query);
+            providerWorkStarted = true;
+            const sent = await sendIcloudMail(email, appPassword, { ...sendParams, threading });
+            return { sent, threaded: sent && Boolean(threading) };
+          }
+          if (account.provider === "agentmail") {
+            if (!account.accessToken || !account.emailAddress) return notSent;
+            const email = account.emailAddress as string;
+            const apiKey = decryptSecret(account.accessToken);
+            const threading = await findAgentMailReplyThreading(email, apiKey, query);
+            const sent = await sendFundedManagedEmail({
+              userId: this.userId,
+              provider: "agentmail",
+              perform: async () => {
+                providerWorkStarted = true;
+                return sendAgentMail(email, apiKey, { ...sendParams, threading });
+              },
+            });
+            return { sent, threaded: sent && Boolean(threading) };
+          }
+          log.warn("Inbox reply refused: this mailbox provider cannot send", {
+            userId: this.userId,
+            provider: account.provider,
+          });
+          return notSent;
+        },
+      });
+      if (!fenced.performed) {
+        log.warn("Inbox reply blocked by terminal account deletion", { userId: this.userId });
+        return notSent;
+      }
+      return fenced.result;
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      log.error("Inbox reply failed", { userId: this.userId, error: getErrorMessage(err) });
+      return notSent;
+    }
+  }
+
   // --- Private Helpers ---
 
   private async getAccounts(type: "calendar" | "mail") {
@@ -858,6 +983,7 @@ export class IntegrationService {
   private async sendGoogleEmail(
     account: any,
     params: ConnectedMailboxSendParams,
+    providerThreadId?: string,
   ): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const google = await googleApis();
@@ -866,9 +992,60 @@ export class IntegrationService {
     const encodedMessage = Buffer.from(message, "utf8").toString("base64url");
     await gmail.users.messages.send({
       userId: "me",
-      requestBody: { raw: encodedMessage },
+      requestBody: {
+        raw: encodedMessage,
+        ...(providerThreadId ? { threadId: providerThreadId } : {}),
+      },
     });
     return true;
+  }
+
+  /**
+   * The Gmail thread and RFC identifiers of the newest message from `from`
+   * with this subject. The inbox keeps only hashed provider IDs, so Gmail
+   * itself is the source of truth. Any failure means "send without threading".
+   */
+  private async findGoogleReplyTarget(
+    account: any,
+    query: { from: string; subject: string },
+  ): Promise<{ threadId: string; threading: ReplyThreading } | null> {
+    try {
+      const auth = await this.getGoogleClient(account);
+      const google = await googleApis();
+      const gmail = google.gmail({ version: "v1", auth });
+      const subject = baseReplySubject(query.subject).replace(/"/g, "");
+      const list = await gmail.users.messages.list({
+        userId: "me",
+        q: `from:${query.from}${subject ? ` subject:"${subject}"` : ""}`,
+        maxResults: 1,
+      });
+      const latest = list.data.messages?.[0];
+      if (!latest?.id || !latest.threadId) return null;
+      const detail = await gmail.users.messages.get({
+        userId: "me",
+        id: latest.id,
+        format: "metadata",
+        metadataHeaders: ["Message-ID", "References"],
+      });
+      const headers = detail.data.payload?.headers ?? [];
+      const header = (name: string) =>
+        headers.find((h: any) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+      const messageId = header("Message-ID").trim();
+      if (!messageId) return null;
+      return {
+        threadId: latest.threadId,
+        threading: {
+          inReplyTo: messageId,
+          references: replyReferences(parseReferencesHeader(header("References")), messageId),
+        },
+      };
+    } catch (error) {
+      log.warn("Gmail reply threading lookup failed; sending without thread headers", {
+        userId: this.userId,
+        error: getErrorMessage(error),
+      });
+      return null;
+    }
   }
 
   private async getMicrosoftBusySlots(
@@ -1025,6 +1202,79 @@ export class IntegrationService {
       15_000,
     );
     return res.ok;
+  }
+
+  /** The Graph id of the newest inbox message from `from` with this subject. */
+  private async findMicrosoftReplyTarget(
+    token: string,
+    query: { from: string; subject: string },
+  ): Promise<string | null> {
+    try {
+      const search = new URLSearchParams({
+        $filter: `from/emailAddress/address eq '${query.from.replace(/'/g, "''")}'`,
+        $top: "25",
+        $select: "id,subject,receivedDateTime",
+      });
+      const res = await fetchWithTimeout(
+        `https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages?${search.toString()}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+        15_000,
+      );
+      if (!res.ok) return null;
+      const data = (await res.json()) as {
+        value?: Array<{ id?: string; subject?: string; receivedDateTime?: string }>;
+      };
+      const wanted = baseReplySubject(query.subject).toLowerCase();
+      const newest = (data.value ?? [])
+        .filter(
+          (message) =>
+            typeof message.id === "string" &&
+            baseReplySubject(message.subject ?? "").toLowerCase() === wanted,
+        )
+        .sort(
+          (a, b) => Date.parse(b.receivedDateTime ?? "") - Date.parse(a.receivedDateTime ?? ""),
+        )[0];
+      return newest?.id ?? null;
+    } catch (error) {
+      log.warn("Microsoft reply threading lookup failed; sending without thread headers", {
+        userId: this.userId,
+        error: getErrorMessage(error),
+      });
+      return null;
+    }
+  }
+
+  private async replyMicrosoftEmail(
+    account: any,
+    params: { to: string; subject: string; body: string },
+  ): Promise<ThreadReplyOutcome> {
+    const token = await this.getMicrosoftToken(account);
+    const targetId = await this.findMicrosoftReplyTarget(token, {
+      from: params.to,
+      subject: params.subject,
+    });
+    if (targetId) {
+      // Graph's reply action addresses the sender and sets the thread headers.
+      // A failed reply is not retried as a fresh send: it may have been accepted.
+      const res = await fetchWithTimeout(
+        `https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(targetId)}/reply`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: { body: { contentType: "Text", content: params.body } },
+          }),
+        },
+        15_000,
+      );
+      return { sent: res.ok, threaded: res.ok };
+    }
+    const sent = await this.sendMicrosoftEmail(account, {
+      to: params.to,
+      subject: params.subject,
+      body: plainTextEmailBodyHtml(params.body),
+    });
+    return { sent, threaded: false };
   }
 
   private async getMicrosoftToken(account: any): Promise<string> {

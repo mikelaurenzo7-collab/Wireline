@@ -5,10 +5,15 @@ import { drizzle, log } from "../lib/server-context";
 import * as schema from "../db/schema";
 import { eq, and, desc, asc, inArray, sql, getTableColumns } from "drizzle-orm";
 import { authenticateUser } from "../middleware/auth";
-import { validateBody, emailThreadsReadStateSchema } from "../lib/api-validation";
+import {
+  validateBody,
+  emailThreadReplySchema,
+  emailThreadsReadStateSchema,
+} from "../lib/api-validation";
+import { sendEmailThreadReply } from "../lib/email-thread-reply";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
-import { createIpRateLimiter } from "../middleware/api-rate-limits";
+import { createIpRateLimiter, emailReplyRateLimiter } from "../middleware/api-rate-limits";
 import { touchNavCounts } from "../lib/nav-counts-invalidate";
 
 const router = Router();
@@ -308,6 +313,29 @@ router.get(
       log.error("Failed to load email messages", { error: getErrorMessage(e) });
       throw AppError.fromHttpStatus(500, "Failed to load email messages");
     }
+  },
+);
+
+// Answer a conversation from the mailbox that received it. The operation key
+// makes a retried or double-submitted reply send at most once.
+router.post(
+  "/api/emails/threads/:id/reply",
+  authenticateUser,
+  emailReplyRateLimiter,
+  validateBody(emailThreadReplySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const threadId = String(req.params.id || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(threadId)) {
+      throw AppError.notFound("Conversation not found.");
+    }
+    const result = await sendEmailThreadReply({
+      userId: req.user.id,
+      threadId,
+      body: req.body.body,
+      operationKey: req.body.operation_key,
+    });
+    touchNavCounts(req.user.id);
+    res.json(result);
   },
 );
 
