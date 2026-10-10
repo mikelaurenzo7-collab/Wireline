@@ -113,8 +113,8 @@ describe("BotBound public iPhone prestige contract", () => {
     const generator = read("src/lib/bot-mark.ts");
 
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("Call. Book.");
+    expect(landing).toContain("Answer. Act.");
     expect(landing).not.toContain("markKey");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     expect(component).not.toMatch(/monogram|mark\.initial|showMicroMonogram/i);

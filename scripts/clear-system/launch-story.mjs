@@ -28,8 +28,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "index.html",
     indexHtml,
-    /A voice Bot with its own business number\./,
-    "static metadata must explain the included phone identity",
+    /Calls plans include a dedicated phone number/,
+    "static metadata must qualify the dedicated phone identity by plan",
   );
   mustInclude(
     "src/lib/page-meta.tsx",
@@ -40,8 +40,8 @@ export function checkLaunchStory({ read, mustInclude, mustExclude, failures }) {
   mustInclude(
     "src/lib/page-meta.tsx",
     pageMeta,
-    /DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./,
-    "runtime metadata must carry the voice Bot offer",
+    /DEFAULT_DESCRIPTION =\s*"Give your voice Bot a goal:[\s\S]*Calls plans include a dedicated phone number/,
+    "runtime metadata must carry the voice Bot offer and qualified phone identity",
   );
   mustInclude(
     "public/site.webmanifest",

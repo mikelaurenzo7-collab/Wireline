@@ -200,8 +200,8 @@ describe("E2E design and BotBound brand polish", () => {
   it("keeps status foregrounds accessible while public entry paths remain text-labeled", () => {
     const landing = read("src/components/marketing/WireAgentLanding.tsx");
     expect(landing).toContain('aria-label="Choose Bot direction"');
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("Call. Book.");
+    expect(landing).toContain("Answer. Act.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo/);
     const badge = read("src/components/atoms/Badge.tsx");
     expect(badge).toContain("text-[var(--wireline-color-status-success)]");

@@ -105,7 +105,7 @@ describe("marketing copy punctuation and retired-positioning contract", () => {
   it("keeps the R3 brand spine and Phone Bot wedge explicit while preserving precise compounds", () => {
     expect(HOME_TITLE).toBe("BotBound | Hire a Voice Bot");
     expect(HOME_DESCRIPTION).toBe(
-      "BotBound brings inbound and outbound voice calls, cloud browser tasks, and managed email into a Bot workspace. Build and rehearse a Bot for free.",
+      "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser. Calls plans include a dedicated phone number; managed email is available on eligible plans.",
     );
     expect(read("src/lib/bot-product.ts")).toContain('name: "Phone Bot"');
     expect(read("src/components/marketing/WireAgentLanding.tsx")).toContain(

@@ -8,7 +8,7 @@ export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Hire a Voice Bot";
 export const HOME_DESCRIPTION =
-  "BotBound brings inbound and outbound voice calls, cloud browser tasks, and managed email into a Bot workspace. Build and rehearse a Bot for free.";
+  "Give your voice Bot a goal: answer calls, make calls, and work online with a cloud browser. Calls plans include a dedicated phone number; managed email is available on eligible plans.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =

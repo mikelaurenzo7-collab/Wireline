@@ -83,6 +83,7 @@ function writeOgSource(ogImage) {
   <title id="title">BotBound | Give Your Bot a Goal</title>
   <desc id="description">The approved BotBound robot holds a violet phone beside the words Give Your Bot a Goal. Answer calls. Make calls. Work online.</desc>
   <metadata>BotBound | Inbound and outbound voice Bots with cloud-browser work.</metadata>
+  <rect width="1200" height="630" fill="#0A0A0E"/>
   <image href="data:image/png;base64,${embeddedImage}" width="1200" height="630"/>
 </svg>\n`;
   writeFileSync(resolve(root, "public/og-image.svg"), source, "utf8");

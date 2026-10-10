@@ -10,7 +10,7 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain("BotBound | Hire a Voice Bot");
-    expect(index).toContain("BotBound brings inbound and outbound voice calls");
+    expect(index).toContain("Give your voice Bot a goal: answer calls, make calls");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
@@ -68,7 +68,7 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
     expect(pageMeta).toMatch(
-      /DEFAULT_DESCRIPTION =\s*"BotBound brings inbound and outbound voice calls/,
+      /DEFAULT_DESCRIPTION =\s*"Give your voice Bot a goal: answer calls, make calls/,
     );
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
