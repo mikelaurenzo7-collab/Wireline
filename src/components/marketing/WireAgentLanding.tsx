@@ -138,10 +138,6 @@ export default function WireAgentLanding() {
                 <span className="landing-prestige__direction-action">
                   Create an Outbound Bot <ArrowRight aria-hidden="true" />
                 </span>
-                <span className="landing-prestige__direction-note">
-                  Live dialing requires server-verifiable consent records and Federal Do Not Call
-                  screening.
-                </span>
               </Link>
             </nav>
           </div>

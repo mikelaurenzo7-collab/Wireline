@@ -78,7 +78,7 @@ describe("marketing signup continuity", () => {
     },
   );
 
-  it("markets outbound roles while clearly stating the live-dialing gate", () => {
+  it("markets outbound roles without surfacing the live-dialing gate on the landing page", () => {
     const text = (node: ReactNode): string =>
       Array.isArray(node)
         ? node.map(text).join("")
@@ -91,9 +91,11 @@ describe("marketing signup continuity", () => {
     const renderedText = elements(page)
       .map((element) => text(element.props.children))
       .join(" ");
+    expect(renderedText).toContain("Answer. Act.");
     expect(renderedText).toContain("Outbound");
-    expect(renderedText).toContain("server-verifiable consent records");
-    expect(renderedText).toContain("Federal Do Not Call screening");
+    expect(renderedText).toContain("Call. Book.");
+    expect(renderedText).not.toContain("server-verifiable consent records");
+    expect(renderedText).not.toContain("Federal Do Not Call screening");
     expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
   });
 

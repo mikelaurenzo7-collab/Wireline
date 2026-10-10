@@ -337,12 +337,6 @@
   line-height: 1.5;
 }
 
-.landing-prestige__direction-note {
-  color: var(--wireline-color-text-tertiary);
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-
 .landing-prestige__direction-action svg {
   width: 0.9rem;
   height: 0.9rem;
