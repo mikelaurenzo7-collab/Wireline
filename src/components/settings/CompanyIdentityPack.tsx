@@ -267,7 +267,12 @@ export default function CompanyIdentityPack() {
   const [saving, setSaving] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Which request failed decides the notice: a failed load has nothing to
+  // edit, while a failed save or review keeps the owner's edits on screen.
+  const [error, setError] = useState<{
+    kind: "load" | "save" | "review";
+    message: string;
+  } | null>(null);
 
   async function loadIdentity() {
     setLoading(true);
@@ -290,7 +295,10 @@ export default function CompanyIdentityPack() {
         );
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Company identity is unavailable.");
+      setError({
+        kind: "load",
+        message: err instanceof Error ? err.message : "Company identity is unavailable.",
+      });
     } finally {
       setLoading(false);
     }
@@ -355,7 +363,10 @@ export default function CompanyIdentityPack() {
           : "Company identity saved. Existing review state was preserved.",
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save company identity.");
+      setError({
+        kind: "save",
+        message: err instanceof Error ? err.message : "Could not save company identity.",
+      });
     } finally {
       setSaving(false);
     }
@@ -381,7 +392,10 @@ export default function CompanyIdentityPack() {
       setForm(formFromIdentity(reviewed));
       setMessage(reviewed.message || "Verification review requested.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not request verification review.");
+      setError({
+        kind: "review",
+        message: err instanceof Error ? err.message : "Could not request verification review.",
+      });
     } finally {
       setRequesting(false);
     }
@@ -564,7 +578,7 @@ export default function CompanyIdentityPack() {
                 onClick={saveIdentity}
                 disabled={saving || selectedChannelCount === 0 || !isDirty}
               >
-                {saving ? "Saving…" : "Save identity"}
+                {saving ? "Saving…" : "Save Identity"}
               </Button>
               <Button
                 type="button"
@@ -577,10 +591,10 @@ export default function CompanyIdentityPack() {
                 {requesting
                   ? "Requesting…"
                   : reviewRejected
-                    ? "Update identity to resubmit"
+                    ? "Update Identity to Resubmit"
                     : reviewAlreadyRequested
-                      ? "Review already requested"
-                      : "Request verification review"}
+                      ? "Review Already Requested"
+                      : "Request Verification Review"}
               </Button>
             </div>
             {selectedChannelCount === 0 ? (
@@ -609,23 +623,35 @@ export default function CompanyIdentityPack() {
           {message}
         </StatusNotice>
       ) : null}
-      {error ? (
-        // One sentence and a way forward — not the same sentence twice with a
+      {error?.kind === "load" ? (
+        // A short title, one reassuring sentence, and a way forward — not a
         // dead end on a primary setup surface.
         <StatusNotice
           tone="destructive"
           className="mt-5"
-          title="Company Identity Could Not Load. Your Saved Details Are Unchanged."
+          title="Company Identity Unavailable"
           action={
             <button
               type="button"
               onClick={() => void loadIdentity()}
               className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40"
             >
-              Try again
+              Try Again
             </button>
           }
-        />
+        >
+          Your saved details are unchanged.
+        </StatusNotice>
+      ) : error ? (
+        // Reloading here would discard the edits the owner is fixing, so the
+        // notice names the failed step and the form stays as typed.
+        <StatusNotice
+          tone="destructive"
+          className="mt-5"
+          title={error.kind === "save" ? "Changes Not Saved" : "Review Not Requested"}
+        >
+          {error.message}
+        </StatusNotice>
       ) : null}
     </section>
   );

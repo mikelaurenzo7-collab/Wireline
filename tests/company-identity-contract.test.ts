@@ -263,10 +263,10 @@ describe("company identity pack", () => {
     expect(normalizedSurface).toContain("Select at least one identity channel before saving.");
     expect(surface).toContain("min-h-11 cursor-pointer");
     expect(surface).toContain("reviewAlreadyRequested");
-    expect(surface).toContain("Review already requested");
-    expect(surface).toContain("Update identity to resubmit");
+    expect(surface).toContain("Review Already Requested");
+    expect(surface).toContain("Update Identity to Resubmit");
     expect(surface).toContain("Not selected");
-    expect(surface).toContain("Request verification review");
+    expect(surface).toContain("Request Verification Review");
     expect(surface).toContain("md:grid-cols-2 xl:grid-cols-3");
     expect(phoneSetupPanel).toContain("<CompanyIdentityPack />");
     expect(phoneSetupPanel).toContain('id="company-identity"');
