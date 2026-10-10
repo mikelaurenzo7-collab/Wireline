@@ -29,13 +29,13 @@ const PILLARS: readonly Pillar[] = [
     icon: Phone,
     label: "Phone Number",
     title: "Answers and Makes Calls",
-    body: "Give your Bot a local number and a clear playbook. It answers inbound calls, qualifies conversations, books next steps, and records outcomes. Set up outbound follow-up workflows with consent and Do Not Call safeguards; live dialing stays gated until server-verifiable consent records and Federal screening are in place.",
+    body: "Give your Bot a local number and a clear playbook for inbound calls and outbound follow-up. It qualifies conversations, books next steps, and records outcomes.",
   },
   {
     icon: MonitorSmartphone,
     label: "Cloud Computer",
-    title: "Finishes the Work",
-    body: "Each Bot gets a secure cloud browser. It looks things up, reads your site, and fills in web forms to finish follow-up. It pauses for you at logins and payments, and only submits what you ask it to.",
+    title: "Works From a Goal",
+    body: "Give your Bot a goal and a cloud browser. It researches, navigates sites, and fills in forms. When it pauses for you, take control of the browser and hand it back.",
     note: "Included with paid plans.",
   },
   {
@@ -89,7 +89,7 @@ export default function Features() {
     >
       <PageMeta
         title="Features | BotBound"
-        description="Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory."
+        description="Build and train a Bot that calls, texts, emails, books, uses a cloud browser, and logs outcomes under your rules."
         path="/features"
       />
 

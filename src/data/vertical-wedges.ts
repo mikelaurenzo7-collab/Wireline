@@ -63,7 +63,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "home-services",
     metaTitle: "BotBound for Home Services | Phone Bots for Calls and Follow-Up",
     metaDescription:
-      "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and set up follow-up playbooks. Live outbound calling requires server-verifiable consent and Federal Do Not Call screening.",
+      "A voice-first Bot for HVAC, plumbing, electrical, and roofing teams. Answer after-hours calls, book jobs, and follow up on open quotes.",
     eyebrow: "For Home Services Pros",
     headline: "Turn After-Hours Calls into Scheduled Work",
     pains: [
@@ -80,12 +80,12 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "DollarSign",
         title: "Quote Follow-Up",
-        body: "Set up a follow-up playbook from the original quote context. Live outbound calling stays gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+        body: "Use the original quote context to ask the next question, book a visit, and record the outcome.",
       },
       {
         icon: "Shield",
-        title: "Consent and DNC Guardrails",
-        body: "Live outbound calling is gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+        title: "Outreach Controls",
+        body: "Choose who receives follow-up, the calling window, retry limits, and when your Bot should stop.",
       },
     ],
     scriptPreview: `"Hey, this is Sarah from [Your Company]. Sounds like you have water coming through the ceiling. Let me get you on the schedule right now. Are you home in the next 90 minutes or would after 5 work better?"`,
@@ -234,7 +234,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "real-estate",
     metaTitle: "BotBound for Real Estate | Phone Bots for Listing Calls and Follow-Up",
     metaDescription:
-      "A voice-first Bot for real estate teams. Qualify buyers, book showings, and set up lead-reactivation playbooks. Live outbound calling requires server-verifiable consent and Federal Do Not Call screening.",
+      "A voice-first Bot for real estate teams. Qualify buyers, book showings, and reconnect with older leads.",
     eyebrow: "For Real Estate",
     headline: "Work More Listing Calls Without Losing Control",
     pains: [
@@ -251,7 +251,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Sparkles",
         title: "Lead Reactivation",
-        body: "Set up follow-up playbooks for approved older leads using authorized search context. Live outbound calling remains gated until server-verifiable consent and Federal Do Not Call screening are in place.",
+        body: "Build follow-up playbooks for older leads from approved lists and source context, with clear next steps.",
       },
       {
         icon: "DollarSign",
@@ -282,7 +282,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can It Follow Up on Older Leads I Have Not Reached?",
-        a: "Import an approved lead list, choose a cadence, and supply the reengagement script and consent basis. Live outbound dialing remains gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+        a: "Import an approved lead list, choose a cadence, and give your Bot a reengagement script. You control who is contacted and when the sequence stops.",
       },
     ],
   },
@@ -291,52 +291,52 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "personal",
     metaTitle: "BotBound for Everyone | Set Up a Phone Bot for Calls You Avoid",
     metaDescription:
-      "Create a Phone Bot for appointments and customer-service calls, then set up and privately rehearse outbound call playbooks. Live outbound requires server-verifiable consent and Federal Do Not Call screening.",
+      "Create a Phone Bot for appointments and customer-service calls. Give it a call brief, set limits, and rehearse before it acts.",
     eyebrow: "For Everyone Who Hates the Phone",
     headline: "Set Up a Bot for the Calls You Keep Avoiding",
     pains: [
       {
         icon: "Clock",
         title: "Billing Calls",
-        body: "Set up and rehearse your approved offer and the request for written terms. Live outbound calling stays gated until server-verifiable consent and Federal Do Not Call screening are in place.",
+        body: "Prepare an approved offer, rehearse the conversation, and ask for any available terms in writing.",
       },
       {
         icon: "Calendar",
         title: "Appointments",
-        body: "Choose the office and a time window, then rehearse the questions your Bot should ask. Live outbound calling remains gated until consent and Federal Do Not Call checks can be verified.",
+        body: "Choose the office and a time window, then give your Bot the questions to ask and the details to confirm.",
       },
       {
         icon: "DollarSign",
         title: "Returns & Disputes",
-        body: "Rehearse how your Bot should state the approved request, handle a hold, and report an escalation. Live outbound remains gated until recipient-consent records and Federal Do Not Call screening are verified.",
+        body: "Rehearse how your Bot should state the approved request, handle a hold, and report an escalation.",
       },
       {
         icon: "Shield",
         title: "Phone Support",
-        body: "Set up authorized call instructions and review a private rehearsal. Live outbound calling stays gated until consent and Federal Do Not Call checks are verified. Not an emergency or certified accessibility service.",
+        body: "Set up authorized call instructions and review a private rehearsal. Not an emergency or certified accessibility service.",
       },
     ],
     scriptPreview:
       "Hi, this is Alex calling on behalf of [Your Name] regarding account ending in 0000. [Your Name] authorized me to ask whether your team can consider a $1,200 one-time payment offer and send any available terms in writing. If that is not something you can review, who should I speak with?",
     statValue: "Yours",
     statLabel:
-      "Set up the brief and limits, then rehearse privately. Live outbound requires server-verifiable consent records and Federal Do Not Call screening.",
+      "Set the brief, boundaries, and next step. Your Bot follows the instructions you approve.",
     primaryCta: { label: "Create Your Bot", href: signupHrefForWedge("personal") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Your Bot follows the brief and limits you provide. Call outcomes are logged; recording is optional and off by default. You can stop active work or change the instructions at any time.",
     faqs: [
       {
-        q: "Can AI Call for Me?",
-        a: "You can create a Bot and privately rehearse the call. Live outbound dialing stays gated until server-verifiable recipient-consent records and Federal Do Not Call screening are in place. Rules vary by call type and location; use your own legal guidance.",
+        q: "How Do I Prepare a Call?",
+        a: "Give your Bot a call brief, choose whom to contact, set boundaries, and rehearse the conversation before activation. Rules vary by call type and location; use your own legal guidance.",
       },
       {
         q: "Can It Negotiate Debt?",
-        a: "You can rehearse an authorized offer and the request for written terms. Live outbound dialing remains gated until server-verifiable recipient consent and Federal Do Not Call screening are in place. Outcomes are not guaranteed; this is not legal or financial advice.",
+        a: "You can rehearse an authorized offer and a request for written terms. Outcomes are not guaranteed; this is not legal or financial advice.",
       },
       {
         q: "Can It Handle Phone Menus and Hold Time?",
-        a: "You can privately rehearse common menu choices, hold instructions, voicemail wording, and retry limits. Live outbound calling stays gated until recipient consent and Federal Do Not Call screening can be verified.",
+        a: "You can rehearse menu choices, hold instructions, voicemail wording, and retry limits as part of the call brief.",
       },
       {
         q: "Why Not Ask a Friend?",
@@ -353,7 +353,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "insurance",
     metaTitle: "BotBound for Insurance Agencies | Phone Bots for Quote Intake and Renewals",
     metaDescription:
-      "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, and renewal workflows. Live outbound calling requires server-verifiable consent and Federal Do Not Call screening.",
+      "A voice-first Bot for insurance agencies. Capture quote intake, first-notice-of-loss details, and renewal follow-up.",
     eyebrow: "For Insurance Agencies",
     headline: "Keep Quote Intake and Renewal Follow-Up Moving",
     pains: [
@@ -370,12 +370,12 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "MailCheck",
         title: "Renewal Follow-Up",
-        body: "Set up renewal dates, channels, scripts, and stop conditions. Live outbound calling stays gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+        body: "Set renewal dates, channels, scripts, and stop conditions so follow-up stays on schedule.",
       },
       {
         icon: "Shield",
         title: "Licensed-Decision Boundaries",
-        body: "Configured rules keep the Bot from binding coverage or making coverage promises. Live outbound dialing remains gated until server-verifiable consent and Federal Do Not Call screening are in place.",
+        body: "Set boundaries for licensed decisions. The Bot collects details and routes coverage questions to your producer.",
       },
     ],
     scriptPreview: `"Hi, this is Alex with [Your Agency]. I see you requested an auto quote. I'd love to get you accurate numbers fast. Can you tell me the year, make, and model of your primary vehicle, and how many drivers we'll be covering?"`,
@@ -467,19 +467,19 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "sales",
     metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up",
     metaDescription:
-      "Set up a Sales Bot for speed-to-lead, quote follow-up, warm reactivation, and approved CRM actions. Live outbound calling requires server-verifiable consent records and Federal Do Not Call screening.",
+      "Give a Sales Bot the playbook for speed-to-lead, quote follow-up, warm reactivation, and approved CRM actions.",
     eyebrow: "For Sales Teams",
     headline: "Set Up a Sales Bot for Lead Follow-Up",
     pains: [
       {
         icon: "Phone",
-        title: "Governed Outbound Follow-Up",
-        body: "Create a lead follow-up playbook with clear consent requirements, calling windows, and retry limits. Live dialing stays gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
+        title: "Outbound Follow-Up",
+        body: "Give your Bot a lead list, a call playbook, calling windows, and retry limits. Reviewable outcomes keep the next step clear.",
       },
       {
         icon: "Clock",
-        title: "Fast, Governed Speed to Lead",
-        body: "Use an approved inbound request to design a fast follow-up workflow. Live outbound calls remain gated until server-verifiable consent and Federal Do Not Call screening are in place.",
+        title: "Speed to Lead",
+        body: "Turn an inbound request into a timely call, qualification, and booked next step.",
       },
       {
         icon: "Calendar",
@@ -488,8 +488,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "Shield",
-        title: "Outbound Compliance Controls",
-        body: "Live outbound dialing stays gated until server-owned consent records and Federal Do Not Call screening can be verified for the recipient.",
+        title: "Calling Controls",
+        body: "Set who the Bot can contact, when it can call, how often to retry, and when to stop.",
       },
     ],
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week. Got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
@@ -506,8 +506,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
         a: TRUST_DISCLOSURE_FAQ,
       },
       {
-        q: "What Is Required Before an Outbound Call Can Run?",
-        a: "Live outbound dialing stays gated until a server-verifiable consent record and Federal Do Not Call screening are in place. You can set up and privately rehearse the playbook before those checks are ready.",
+        q: "How Do I Control Outreach?",
+        a: "You choose the contacts, playbook, calling window, retry limits, and stop conditions. Rehearse the workflow before activation; the Trust Center explains the safeguards applied to live calls.",
       },
       {
         q: "What About CRM Logging?",

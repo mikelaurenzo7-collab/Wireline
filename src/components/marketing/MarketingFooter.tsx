@@ -77,7 +77,7 @@ export default function MarketingFooter({
               <WirelineLockup size="large" />
             </Link>
             <p className="mt-3 max-w-sm text-[15px] leading-6 text-muted-foreground">
-              Phone Bots that handle the conversation and finish the work.
+              Phone Bots that answer, call, and take action.
             </p>
           </div>
 

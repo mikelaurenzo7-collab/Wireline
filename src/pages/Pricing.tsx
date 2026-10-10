@@ -181,8 +181,7 @@ export default function Pricing() {
                 <>
                   {" "}
                   Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit. Bots
-                  answer calls from their own number. Live outbound dialing is gated until
-                  server-verifiable consent records and Federal Do Not Call screening are in place.
+                  answer and place calls from their own number.
                 </>
               ) : null}
             </p>
@@ -238,9 +237,9 @@ export default function Pricing() {
               ))}
             </div>
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              Live work still requires applicable consent, setup, and availability.{" "}
+              Review setup and safeguards in the{" "}
               <Link to="/trust" className="text-primary underline underline-offset-4">
-                Read the Trust Center
+                Trust Center
               </Link>
               .
             </p>

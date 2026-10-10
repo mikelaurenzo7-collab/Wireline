@@ -6,7 +6,7 @@ const SOLUTIONS = {
   sales: {
     title: "Set Up a Sales Bot for Lead Follow-Up",
     description:
-      "Find leads through a connected source or bring a list. Set up a Sales Bot playbook to qualify, book, and record next steps. Live outbound calling requires server-verifiable consent records and Federal Do Not Call screening.",
+      "Find leads through a connected source or bring a list. Give your Sales Bot a playbook to call, qualify, book, and follow up while keeping every outcome in one place.",
     primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
@@ -15,12 +15,12 @@ const SOLUTIONS = {
         "Lead Hunt surfaces prospects from a connected source, or you import an approved list.",
       ],
       [
-        "Review. Then Rehearse.",
-        "Refine the playbook, consent requirements, and calling window while live outbound remains gated.",
+        "Set the Playbook",
+        "Choose who to contact, what to say, and how your Bot should qualify and book.",
       ],
       [
-        "Prepare the Next Step",
-        "Rehearse how the Bot qualifies, books, hands off, and records each outcome.",
+        "Call. Book. Follow Up.",
+        "Your Bot works through the call, records the outcome, and keeps the next step moving.",
       ],
     ],
     capabilities: [
@@ -37,8 +37,7 @@ const SOLUTIONS = {
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof:
-      "Set up and privately rehearse the sales workflow. Live dialing requires server-verifiable consent records and Federal Do Not Call screening.",
+    proof: "One Bot finds leads, makes calls, books next steps, and keeps follow-up moving.",
   },
   support: {
     title: "A Front Desk That Answers Before Demand Goes Cold",
