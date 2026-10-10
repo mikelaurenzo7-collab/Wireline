@@ -2,8 +2,8 @@ import { estimateCost } from "../ai-audit";
 import { DefiniteProviderRejectionError } from "../ai-client";
 import { log } from "../server-logger";
 import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
-import { modelBrowserUrl, type CloudBrowserSession, type MemberResult } from "./browser-session";
-import { displayUrl } from "./url-policy";
+import type { CloudBrowserSession, MemberResult } from "./browser-session";
+import { displayUrl, modelBrowserUrl } from "./url-policy";
 import type { CloudComputerClient } from "./config";
 
 /**

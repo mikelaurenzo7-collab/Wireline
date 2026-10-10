@@ -230,3 +230,14 @@ export function displayUrl(raw: string, maxLength = 160): string {
     return "";
   }
 }
+
+/** Browser state sent to the model needs site identity, never bearer material in a URL. */
+export function modelBrowserUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    // Page title and screen provide context without a path, query, or fragment.
+    return url.protocol === "http:" || url.protocol === "https:" ? `${url.origin}/` : "about:blank";
+  } catch {
+    return "about:blank";
+  }
+}

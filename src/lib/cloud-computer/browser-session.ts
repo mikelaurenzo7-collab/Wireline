@@ -23,9 +23,12 @@ import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
   isNonPublicAddress,
+  modelBrowserUrl,
   normalizeHostname,
   parseNavigateTarget,
 } from "./url-policy";
+
+export { modelBrowserUrl } from "./url-policy";
 
 /**
  * One Bot's cloud computer: an isolated Chromium session driven through the
@@ -180,19 +183,6 @@ function sanitizeStateText(value: string, max = 4096): string {
   // Control characters are not allowed in browser_state fields.
   // eslint-disable-next-line no-control-regex
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, max);
-}
-
-/** Browser state goes to the model; authentication URLs can carry bearer tokens. */
-export function modelBrowserUrl(raw: string): string {
-  try {
-    const url = new URL(raw);
-    // The tab title and screen provide page context. An origin is enough to
-    // distinguish sites without exposing OAuth codes in query strings or
-    // magic-link tokens embedded in a path.
-    return url.protocol === "http:" || url.protocol === "https:" ? `${url.origin}/` : "about:blank";
-  } catch {
-    return "about:blank";
-  }
 }
 
 function parseTarget(value: unknown, allowRef = true): Target {
