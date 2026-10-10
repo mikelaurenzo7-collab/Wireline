@@ -181,6 +181,10 @@ function cleanSources(value: unknown): string[] {
       if (url.protocol !== "http:" && url.protocol !== "https:") continue;
       url.username = "";
       url.password = "";
+      // Source links are saved in the task ledger and shown to the owner.
+      // Auth flows and magic links often put bearer material after ? or #.
+      url.search = "";
+      url.hash = "";
       const text = url.toString();
       if (!out.includes(text)) out.push(text.slice(0, 500));
     } catch {

@@ -6,7 +6,11 @@ import { chromium } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { chordTypesText } from "../src/lib/cloud-computer/browser-input";
-import { CloudBrowserSession, typingPieces } from "../src/lib/cloud-computer/browser-session";
+import {
+  CloudBrowserSession,
+  modelBrowserUrl,
+  typingPieces,
+} from "../src/lib/cloud-computer/browser-session";
 // @ts-expect-error -- shared .mjs helper without type declarations
 import { resolvePreinstalledChromium } from "../scripts/lib/resolve-preinstalled-chromium.mjs";
 
@@ -70,6 +74,14 @@ const FIXTURE = `<!doctype html><html><head><title>Repair Desk</title></head><bo
 </body></html>`;
 
 describe("cloud computer input rules", () => {
+  it("keeps model tab URLs free of login codes and magic-link paths", () => {
+    expect(modelBrowserUrl("https://name:password@example.com/magic/secret?code=abc#token")).toBe(
+      "https://example.com/",
+    );
+    expect(modelBrowserUrl("about:blank")).toBe("about:blank");
+    expect(modelBrowserUrl("not a URL")).toBe("about:blank");
+  });
+
   it("knows which chords put text into the focused field", () => {
     for (const chord of ["a", "A", "Shift+A", "Space", "Shift+Space", "1", "@"]) {
       expect(chordTypesText(chord), chord).toBe(true);
@@ -256,6 +268,19 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
 
     const bodyText = await session.execute("get_page_text", {});
     expect((bodyText.content[0] as { text: string }).text).not.toContain("owner@example.test");
+  });
+
+  it("leaves private query and fragment values out of model link snapshots", async () => {
+    await session
+      .activePage()
+      .setContent(
+        '<a href="https://example.com/login?code=one-time-secret#access_token=hidden">Continue</a>',
+      );
+    const snapshot = await session.execute("read_page", { filter: "all" });
+    const text = (snapshot.content[0] as { text: string }).text;
+    expect(text).toContain('href="https://example.com/login"');
+    expect(text).not.toContain("one-time-secret");
+    expect(text).not.toContain("access_token");
   });
 
   it("returns real JPEG screenshots and masked zoom crops", async () => {

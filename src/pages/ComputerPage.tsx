@@ -429,6 +429,10 @@ function TaskDetail({
   const ownerAction = async (kind: "take" | "input" | "return", input?: OwnerBrowserInput) => {
     if (ownerActionInFlight.current) return;
     ownerActionInFlight.current = true;
+    // Do not retain owner-entered credentials in React state through a slow
+    // request, error, or a later return to this task.
+    if (kind === "input" && input?.kind === "type") setOwnerText("");
+    if (kind === "return") setOwnerText("");
     setBusy(kind);
     setFailure(null);
     try {
@@ -441,7 +445,6 @@ function TaskDetail({
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) throw new Error(result.error);
-      if (kind === "input" && input?.kind === "type") setOwnerText("");
       if (kind === "input" && (input?.kind === "navigate" || input?.kind === "history")) {
         setOwnerUrl(result.data.task.currentUrl || "");
       }
@@ -645,9 +648,13 @@ function TaskDetail({
               <label htmlFor="computer-owner-input">Type into the focused page field</label>
               <Input
                 id="computer-owner-input"
+                type="password"
                 value={ownerText}
                 onChange={(event) => setOwnerText(event.target.value)}
                 autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 maxLength={1000}
                 disabled={busy !== null}
               />

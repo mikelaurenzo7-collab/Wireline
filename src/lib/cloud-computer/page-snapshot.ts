@@ -157,7 +157,10 @@ export const PAGE_SNAPSHOT_SOURCE = String.raw`(args) => {
     }
     if (role === "link") {
       const href = el.getAttribute("href") || "";
-      if (href && !href.startsWith("javascript:")) line += " href=" + quote(clean(href, 80));
+      // An owner login may leave one-time codes in links. Refs still let the
+      // Bot click links without sending query strings or fragments to AI.
+      const publicHref = href.split(/[?#]/, 1)[0];
+      if (publicHref && !publicHref.startsWith("javascript:")) line += " href=" + quote(clean(publicHref, 80));
     }
     if (el.getAttribute("aria-expanded")) line += " expanded=" + el.getAttribute("aria-expanded");
     if (el.disabled || el.getAttribute("aria-disabled") === "true") line += " disabled";

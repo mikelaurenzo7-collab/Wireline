@@ -183,14 +183,16 @@ function sanitizeStateText(value: string, max = 4096): string {
   return value.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, max);
 }
 
-function stripCredentials(raw: string): string {
+/** Browser state goes to the model; authentication URLs can carry bearer tokens. */
+export function modelBrowserUrl(raw: string): string {
   try {
     const url = new URL(raw);
-    url.username = "";
-    url.password = "";
-    return url.toString();
+    // The tab title and screen provide page context. An origin is enough to
+    // distinguish sites without exposing OAuth codes in query strings or
+    // magic-link tokens embedded in a path.
+    return url.protocol === "http:" || url.protocol === "https:" ? `${url.origin}/` : "about:blank";
   } catch {
-    return raw;
+    return "about:blank";
   }
 }
 
@@ -563,7 +565,7 @@ export class CloudBrowserSession {
       tabs.push({
         tab_id: tabId,
         title: sanitizeStateText(title || "Untitled"),
-        url: sanitizeStateText(stripCredentials(page.url() || "about:blank")),
+        url: sanitizeStateText(modelBrowserUrl(page.url() || "about:blank")),
         ...(tabId === this.activeTabId ? { active: true } : {}),
       });
     }
