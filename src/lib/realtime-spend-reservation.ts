@@ -70,7 +70,7 @@ export async function reserveRealtimeSessionSpend(
       "SPEND_CAP_REACHED",
       surface === "openai_sip"
         ? "This session would exceed your provider spend limit. Review Billing before starting new live work."
-        : "This month's AI allowance can't cover another voice test. See your options in Billing.",
+        : "This month's AI allowance can't cover another voice rehearsal. See your options in Billing.",
       {
         period: decision.period,
         month_to_date_usd: decision.monthToDateUsd,

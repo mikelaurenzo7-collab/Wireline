@@ -17,9 +17,7 @@ import BotBoundMark from "../brand/BotBoundMark";
 import LandingFooter from "./LandingFooter";
 import PrecisionPublicHeader from "./PrecisionPublicHeader";
 import { BOT_BRAND, BOT_MARKETING_VOICE, BOT_ROLE_TEMPLATES } from "../../lib/bot-product";
-import { DIRECT_OUTBOUND_AVAILABILITY } from "../../lib/outbound-call-purpose";
 import { STRIPE_PLANS } from "../../lib/plan-catalog";
-import { MARKETING_CALLS_NOTICE } from "../../lib/product-copy";
 import { emitProductEvent, emitProductEventOnce } from "../../lib/product-event-client";
 import { signupHrefForPlan } from "../../lib/signup-intent";
 import { usePaidPlanAvailability } from "../../hooks/usePaidPlanAvailability";
@@ -98,10 +96,7 @@ export default function WireAgentLanding() {
                 <span>Phone Number,</span> <span>and Branded Email.</span>
               </span>
             </h1>
-            <p className="landing-prestige__promise">
-              {BOT_MARKETING_VOICE.activationLine} Then it finishes the work on its own cloud
-              computer and follows up from its own inbox.
-            </p>
+            <p className="landing-prestige__promise">{BOT_MARKETING_VOICE.activationLine}</p>
             <div className="landing-prestige__actions">
               <Link
                 to={signupHrefForPlan("personal")}
@@ -115,7 +110,7 @@ export default function WireAgentLanding() {
               </Link>
             </div>
             <p className="landing-prestige__reassurance">
-              <span>Build and test free.</span> <span>No card required.</span>
+              <span>Create a Bot for free. Rehearse privately.</span> <span>No card required.</span>
             </p>
             <nav className="landing-prestige__directions" aria-label="Choose Bot direction">
               <Link
@@ -128,7 +123,7 @@ export default function WireAgentLanding() {
                 </span>
                 <strong>Answer. Qualify. Route.</strong>
                 <span className="landing-prestige__direction-action">
-                  Build a Front Desk <ArrowRight aria-hidden="true" />
+                  Create an Inbound Bot <ArrowRight aria-hidden="true" />
                 </span>
               </Link>
               <Link
@@ -141,15 +136,14 @@ export default function WireAgentLanding() {
                 </span>
                 <strong>Find. Call. Book.</strong>
                 <span className="landing-prestige__direction-action">
-                  Build a Sales Rep <ArrowRight aria-hidden="true" />
+                  Create an Outbound Bot <ArrowRight aria-hidden="true" />
+                </span>
+                <span className="landing-prestige__direction-note">
+                  Live dialing requires server-verifiable consent records and Federal Do Not Call
+                  screening.
                 </span>
               </Link>
             </nav>
-            {DIRECT_OUTBOUND_AVAILABILITY.available ? null : (
-              <p className="landing-prestige__reassurance">
-                <span>{MARKETING_CALLS_NOTICE}</span> <span>Build and test a Sales Rep free.</span>
-              </p>
-            )}
           </div>
         </section>
 
@@ -161,11 +155,6 @@ export default function WireAgentLanding() {
                 <span>Pick the Work.</span> <span>Put a Bot on It.</span>
               </h2>
               <span>Start with a role. Make its knowledge, voice, and next steps your own.</span>
-              {DIRECT_OUTBOUND_AVAILABILITY.available ? null : (
-                <span className="landing-prestige__outbound-note">
-                  {MARKETING_CALLS_NOTICE} Outbound roles build and test free today.
-                </span>
-              )}
             </header>
             <div className="landing-prestige__role-grid">
               {FEATURED_TEMPLATES.map((template) => {
@@ -190,7 +179,7 @@ export default function WireAgentLanding() {
                       to={signupHrefForPlan("personal", { template: template.key })}
                       onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
-                      Build This Role
+                      Create This Bot
                       <span className="sr-only">: {template.name}</span>
                       <ArrowRight aria-hidden="true" />
                     </Link>
@@ -206,7 +195,7 @@ export default function WireAgentLanding() {
             <header className="landing-prestige__section-heading">
               <p>Pricing</p>
               <h2>
-                <span>Build Free.</span> <span>Go Live on Your Terms.</span>
+                <span>Create Your Bot for Free.</span> <span>Go Live on Your Terms.</span>
               </h2>
               <span>Choose your channels and monthly capacity.</span>
               <span className="landing-prestige__activation" role="status">
@@ -285,7 +274,10 @@ export default function WireAgentLanding() {
             <h2 id="landing-prestige-closing">
               <span>Put Your First Bot</span> <span>to Work.</span>
             </h2>
-            <p>Build and test it free. Go live when it sounds like your business.</p>
+            <p>
+              Set up your Bot free. Rehearse until it sounds like your business, then go live on
+              your terms.
+            </p>
             <div className="landing-prestige__actions">
               <Link
                 to={signupHrefForPlan("personal")}

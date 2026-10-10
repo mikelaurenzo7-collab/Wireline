@@ -8,7 +8,7 @@
 export const CHATGPT_MCP_RESOURCE_URI = "ui://widget/wireline-agent-launch-v1.html";
 /** Existing clients that omit scope never acquire a newly added permission. */
 export const MCP_DEFAULT_SCOPES = ["agents.read", "agents.write", "demo.voice"] as const;
-export const MCP_SCOPES = [...MCP_DEFAULT_SCOPES, "computer.plan"] as const;
+export const MCP_SCOPES = MCP_DEFAULT_SCOPES;
 export type McpScope = (typeof MCP_SCOPES)[number];
 
 /** Omitted scope preserves old clients; new authority must be named at consent. */

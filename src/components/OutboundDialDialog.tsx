@@ -207,7 +207,7 @@ export default function OutboundDialDialog({
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             {DIRECT_OUTBOUND_AVAILABILITY.available
               ? "Pick a Bot with a phone number, enter the number to call, and classify the call before dialing."
-              : "Outbound calling is not available yet."}
+              : "Live outbound calling is gated until server-verifiable recipient consent records and Federal Do Not Call screening are in place."}
           </DialogDescription>
         </DialogHeader>
 
@@ -223,7 +223,7 @@ export default function OutboundDialDialog({
                     to={`/studio?workroom=test${initialAgentId ? `&agent=${encodeURIComponent(initialAgentId)}` : ""}`}
                     onClick={closeForNavigation}
                   >
-                    Test in Studio
+                    Rehearse in Studio
                   </Link>
                 </Button>
                 <Button variant="secondary" asChild>

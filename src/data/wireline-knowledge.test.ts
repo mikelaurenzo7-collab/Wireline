@@ -58,8 +58,9 @@ describe("BotBound knowledge", () => {
       ...WIRELINE_FEATURES.map((feature) => feature.blurb),
     ].join(" ");
 
-    expect(combined).toContain("federal DNC screening");
-    expect(combined).toContain("Marketing campaigns stay blocked until");
+    expect(combined).toContain("Federal Do Not Call screening");
+    expect(combined).toContain("server-verifiable consent records");
+    expect(combined).toContain("Live outbound calling stays gated until");
     expect(combined).not.toContain("launch outbound campaigns");
     expect(combined).not.toContain("campaigns that dial and qualify leads");
   });

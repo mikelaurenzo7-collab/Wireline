@@ -56,7 +56,7 @@ type SpendBudget = {
 
 function actionLabel(action: string): string {
   if (/^workspace\.api\.agents\..*\.workspace\.messages(?:\.stream)?$/.test(action)) {
-    return "Studio Build";
+    return "Bot Setup";
   }
   if (/^workspace\.api\.agents\..*\.workspace\.files$/.test(action)) {
     return "Knowledge upload";

@@ -114,6 +114,7 @@ vi.mock("../src/middleware/api-rate-limits", () => ({
 }));
 vi.mock("../src/lib/api-validation", () => ({
   validateBody: () => vi.fn(),
+  emailThreadReplyAcknowledgeSchema: {},
   emailThreadReplySchema: {},
   emailThreadsReadStateSchema: {},
 }));

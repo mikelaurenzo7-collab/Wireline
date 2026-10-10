@@ -63,10 +63,10 @@ export function usePaidPlanAvailability({
     status === "loading"
       ? "Checking activation availability…"
       : status === "unavailable"
-        ? "Activation status unavailable. Build free and check back."
+        ? "Activation status unavailable. Create a Bot for free and rehearse privately."
         : available
-          ? "Build free. Activate when ready."
-          : "Build free. Paid activation is currently unavailable.";
+          ? "Create a Bot for free. Rehearse privately, then activate when ready."
+          : "Paid activation is unavailable. Create a Bot for free and rehearse privately.";
 
   return { canActivate, notice };
 }

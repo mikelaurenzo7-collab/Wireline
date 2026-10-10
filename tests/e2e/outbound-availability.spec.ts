@@ -54,10 +54,12 @@ for (const width of [320, 1280]) {
     await opener.click();
     const dialog = page.getByRole("dialog", { name: "New Outbound Call", exact: true });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText("Consent setup is not available yet.");
+    await expect(dialog).toContainText(
+      "Live outbound calling is gated until server-verifiable recipient consent records and Federal Do Not Call screening are in place.",
+    );
     await expect(dialog.locator("input, textarea, select")).toHaveCount(0);
     await expect(dialog.getByRole("button", { name: "Place call", exact: true })).toHaveCount(0);
-    const studio = dialog.getByRole("link", { name: "Test in Studio", exact: true });
+    const studio = dialog.getByRole("link", { name: "Rehearse in Studio", exact: true });
     await expect(studio).toHaveAttribute("href", "/studio?workroom=test");
     await expect(
       dialog.getByRole("link", { name: "Review Compliance", exact: true }),

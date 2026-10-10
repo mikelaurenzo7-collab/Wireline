@@ -34,7 +34,7 @@ type StudioAgentReviewPanelProps = {
   agentRole?: string | null;
   phoneNumber?: string | null;
   onEdit: () => void;
-  onTest: () => void;
+  onRehearse: () => void;
   className?: string;
   compact?: boolean;
 };
@@ -69,7 +69,7 @@ export default function StudioAgentReviewPanel({
   agentRole,
   phoneNumber,
   onEdit,
-  onTest,
+  onRehearse,
   className = "",
   compact = false,
 }: StudioAgentReviewPanelProps) {
@@ -193,8 +193,8 @@ export default function StudioAgentReviewPanel({
             title={hasPhone ? "Phone connected" : "No phone connected"}
           >
             {hasPhone
-              ? `Call ${phoneNumber} to test ${agentName} before sharing the number.`
-              : "Test in the browser, then connect a phone when you're ready."}
+              ? `Call ${phoneNumber} to hear ${agentName} before sharing the number.`
+              : "Rehearse in Studio, then connect a phone when you're ready."}
           </StatusNotice>
         ) : access.status !== "ready" ? (
           <ChannelAccessNotice access={access} channel="voice" />
@@ -208,7 +208,7 @@ export default function StudioAgentReviewPanel({
               </Button>
             }
           >
-            Keep testing privately, then connect your selected channels.
+            Keep rehearsing privately, then connect your selected channels.
           </StatusNotice>
         ) : null}
 
@@ -259,11 +259,11 @@ export default function StudioAgentReviewPanel({
                 type="button"
                 size={compact ? "sm" : undefined}
                 variant="secondary"
-                onClick={onTest}
+                onClick={onRehearse}
                 className="justify-center"
               >
                 <MessageCircle className="size-4" aria-hidden="true" />
-                Test Conversation
+                Rehearse Conversation
               </Button>
             </div>
           </div>

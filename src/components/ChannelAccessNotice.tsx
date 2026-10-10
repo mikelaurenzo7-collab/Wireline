@@ -76,7 +76,7 @@ export default function ChannelAccessNotice({
     >
       {active
         ? "Your plan covers your selected channels. Saved conversations remain available."
-        : "Choose a package to connect this channel. Private testing remains available."}
+        : "Choose a package to connect this channel. Private rehearsal remains available."}
     </StatusNotice>
   );
 }

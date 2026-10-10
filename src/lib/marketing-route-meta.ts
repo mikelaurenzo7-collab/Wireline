@@ -8,7 +8,7 @@ export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Hire a Voice Bot";
 export const HOME_DESCRIPTION =
-  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Build and test free.";
+  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Create a Bot for free, then rehearse privately.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -134,9 +134,9 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
     description: ACCOUNT_TERMS_DESCRIPTION,
   },
   "/solutions/sales": {
-    title: "Find the Lead. Make the Call. Book the Next Step. | BotBound",
+    title: "Set Up a Sales Bot for Lead Follow-Up | BotBound",
     description:
-      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
+      "Find leads through a connected source or bring a list. Set up a Sales Bot playbook to qualify, book, and record next steps. Live outbound calling requires server-verifiable consent records and Federal Do Not Call screening.",
   },
   "/solutions/support": {
     title: "A Front Desk That Answers Before Demand Goes Cold | BotBound",

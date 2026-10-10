@@ -52,7 +52,7 @@ The call's purpose and recipient permission are separate from the area code a cu
 
 | Flow | Current launch boundary |
 | --- | --- |
-| Private Studio Build/Test | No recipient is dialed; keep external actions disabled and provider spend capped. |
+| Private Studio setup/rehearsal | No recipient is dialed; keep external actions disabled and provider spend capped. |
 | Inbound customer call | A caller reaches the business voluntarily; verify routing, paid coverage, identification, and applicable recording/transcription policy. Federal outbound screening is not a prerequisite to receiving the call. |
 | Requested callback | Require the existing server-recorded callback request, destination, purpose and one-time execution controls. Keep suppression, calling-hour and coverage checks. A generic form submission is not interchangeable with that request. |
 | Appointment, support, recruiting, payment or other service call | Do not infer consent from a purpose label or an existing relationship. Applicable artificial-voice consent and state rules still matter. Keep direct dialing closed until the required auditable recipient permission and the supported workflow exist. |

@@ -17,7 +17,7 @@ identifiers, not customer language and not separate product lanes.
 | Surface | Canonical language |
 | --- | --- |
 | Broad marketing | `Bot`, `Phone Bot`, or a concrete role such as `Front Desk` |
-| Signup and setup | `Build your Bot`, then `Train`, `Test`, `Launch`. Never `Wire` as a customer step. |
+| Signup and setup | `Create` a Bot, `Set Up` its playbook, `Rehearse` privately, then activate live work when ready. Never `Wire` as a customer step. |
 | Workspace and navigation | `Bot`, `Bots`, `workspace`, `Knowledge` |
 | Role starters | Job names such as `Sales Rep`, `Support`, or `Personal Assistant` |
 | Pricing | `Free Builder`, `Starter`, `Starter Plus`, `Pro`, `Scale` |
@@ -29,11 +29,13 @@ language.
 
 ## Required prompts
 
-- “Build your Bot.”
+- “Create a Bot.”
+- “Set up its playbook.”
+- “Rehearse privately.”
 - “What job should your Bot own?”
 - “Start with a proven role or create your own.”
 - “Add knowledge and rules.”
-- CTA: “Create Bot” or “Build Your Bot”
+- CTA: “Create a Bot”
 
 ## Avoid
 

@@ -1,11 +1,4 @@
 import { BOT_BRAND, BOT_PRODUCT_TYPES } from "./bot-product";
-import { DIRECT_OUTBOUND_AVAILABILITY } from "./outbound-call-purpose";
-
-// The current recipient-consent gap blocks every direct outbound call. Keep the
-// narrower campaign notice for when direct calling becomes available.
-export const MARKETING_CALLS_NOTICE = DIRECT_OUTBOUND_AVAILABILITY.available
-  ? "Marketing calls are not available yet."
-  : "Outbound calls are not available yet.";
 
 /** Shared customer-facing product voice. Technical routes, schemas, events, and APIs retain `agent` for compatibility. */
 
@@ -37,7 +30,7 @@ export const BRAND_SYSTEM = {
     "Keep deliberate uppercase styling limited to compact overlines, operational labels, buttons, tabs, and navigation; a control style must not change a title.",
     "Render the BotBound brand name in canonical mixed case everywhere it is customer-visible, including prose, metadata, and legal copy.",
     "Keep technical wireline identifiers, URLs, domains, email addresses, API names, event keys, and persisted values in their native casing.",
-    "Never use Wire as a customer-facing setup step, nav label, or CTA. After create, the guide is Train, Test, Launch.",
+    "Never use Wire as a customer-facing setup step, nav label, or CTA. Keep Set Up and private Rehearse in one Studio workspace before Launch.",
     "Keep explanatory body copy, supporting descriptions, and status messages in sentence case. Preserve customer-authored text exactly, including its casing.",
     "Preserve proper names and acronyms in titles. Keep short articles, conjunctions, and prepositions lowercase unless they begin or end a title.",
     "Do not end a title with a period; retain a question mark when the title is a question.",
@@ -172,7 +165,7 @@ export const BUSINESS_MARKETING_VOICE = {
 } as const;
 
 export const WORKSPACE_VOICE = {
-  createHeadline: "Build Your Bot",
+  createHeadline: "Create Your Bot",
   runHeadline: "Your Bot Is Live",
   emptyCue: "Describe the job. Connect calls, text, email, knowledge, and tools.",
   configurePrompts: ["Adjust the greeting", "Change the tone", "Add a rule"],
@@ -198,14 +191,14 @@ export const PRODUCT_POSTURE = {
   personal: {
     badge: "Bot",
     badgeShort: "Bot",
-    createCta: "Build Your Bot",
+    createCta: "Create Your Bot",
     emptyTitle: "Your Bot",
     emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
   },
   business: {
     badge: "Bot",
     badgeShort: "Bot",
-    createCta: "Build Your Bot",
+    createCta: "Create Your Bot",
     emptyTitle: "Your Bot",
     emptyBody: "Calls, text, email, tools, and outcomes with your Bot.",
   },

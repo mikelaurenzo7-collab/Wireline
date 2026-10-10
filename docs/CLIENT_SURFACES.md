@@ -8,7 +8,7 @@ BotBound is one protected agent platform with multiple deliberate control surfac
 | ----------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | Web/API           | Repository root (`src/`, `server.ts`, `api/`)                                                               | Build, train, review, operate, bill, launch agents, and expose versioned contracts                  | Auth, authorization, billing, providers, tool execution, tenant data, launch controls          |
 | Browser extension | `apps/browser-extension/`                                                                                   | Explicit page, selection, phone-number, call, text, follow-up, and task handoff into Studio         | Session state, extraction policies, agent lifecycle, outbound execution                        |
-| Desktop companion | `apps/desktop/`, `docs/COMPUTER_COMPANION.md`                                                                | Owner-approved input in one shared window and calls to selected remote MCP tools                   | Bot ownership, paid planning entitlement, model routing, managed AI spend, and OAuth grants     |
+| Cloud computer     | `src/pages/ComputerPage.tsx`, `src/lib/cloud-computer/`                                                        | Bot work in an isolated hosted browser with owner-visible activity and direct owner takeover       | Browser session ownership, public-network policy, AI spend, task state, and external actions    |
 | iOS               | `ios/`                                                                                                      | Native calls, Siri, widgets, CallKit, push, and approved CarPlay communication flows                | Prompt construction, entitlements, call control decisions, data ownership                      |
 | Android           | `android/`                                                                                                  | Native calls, notifications, widgets, Telecom, FCM, and approved Android Auto communication flows   | Prompt construction, consent, plan enforcement, data ownership                                 |
 | ChatGPT App       | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`, `docs/CHATGPT_APP.md`                    | New-user signup plus first-agent drafting, refinement, rehearsal, and tool-safe workflow assistance | OAuth token security, tenant policy, lifecycle, external actions                               |
@@ -21,7 +21,6 @@ BotBound is one protected agent platform with multiple deliberate control surfac
 ```text
 /apps
   /browser-extension     # Wireline Command manifest overlays, service worker, panel, packaging
-  /desktop               # Electron companion and Windows/macOS input helpers; independent release gate
 /android                 # Native Gradle root; preserve until its release pipeline is extracted
 /ios                     # Native XcodeGen root; preserve until its release pipeline is extracted
 /src                     # Existing web/API runtime; remains deployment root for now
@@ -36,7 +35,7 @@ skills/ rules/ agents/          # Cursor Directory skill, rule, and agent discov
 
 The repository root is the deployed Render web/API runtime. The persistent voice worker is deployed separately from the same reviewed source. Client packaging stays independent of Render, Xcode, Gradle, Supabase, and store signing; the legacy Vercel bundle is a rollback path only.
 
-BotBound Desktop is internal development until its native input, capture alignment, OS permissions, signing, and installation are accepted on each supported OS. Browser automation uses a deliberately shared browser window; it does not widen the browser extension's permissions. Research, documents, spreadsheets, and business-app workflows are examples, not separate hard-coded task modes. Prospect research does not grant permission for outreach. Local helpers cannot be described as a sandbox, and successful input dispatch is not proof that a business action completed.
+Cloud computer sessions use a separate hosted browser for each live task. The owner can view activity and take control when the Bot needs a sign-in or a decision, then hand the session back. Browser extension permissions remain unchanged. Prospect research does not grant permission for outreach, and successful input dispatch is not proof that a business action completed.
 
 ## Release tiers
 

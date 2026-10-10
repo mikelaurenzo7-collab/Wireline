@@ -8,9 +8,13 @@ import { authenticateUser } from "../middleware/auth";
 import {
   validateBody,
   emailThreadReplySchema,
+  emailThreadReplyAcknowledgeSchema,
   emailThreadsReadStateSchema,
 } from "../lib/api-validation";
-import { sendEmailThreadReply } from "../lib/email-thread-reply";
+import {
+  acknowledgeUnresolvedEmailThreadReply,
+  sendEmailThreadReply,
+} from "../lib/email-thread-reply";
 import { getErrorMessage, mapObjectToSnake } from "../lib/server-utils";
 import type { AuthenticatedRequest } from "../types/auth";
 import { createIpRateLimiter, emailReplyRateLimiter } from "../middleware/api-rate-limits";
@@ -335,6 +339,24 @@ router.post(
       operationKey: req.body.operation_key,
     });
     touchNavCounts(req.user.id);
+    res.json(result);
+  },
+);
+
+router.post(
+  "/api/emails/threads/:id/reply/acknowledge",
+  authenticateUser,
+  emailReplyRateLimiter,
+  validateBody(emailThreadReplyAcknowledgeSchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    const threadId = String(req.params.id || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(threadId)) {
+      throw AppError.notFound("Conversation not found.");
+    }
+    const result = await acknowledgeUnresolvedEmailThreadReply({
+      userId: req.user.id,
+      threadId,
+    });
     res.json(result);
   },
 );

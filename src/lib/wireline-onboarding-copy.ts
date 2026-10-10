@@ -1,7 +1,7 @@
 /**
  * Post-signup onboarding copy — Account Holder-facing, BotBound-native.
  * Public marketing uses capability and outcome copy, without a setup sequence.
- * After create, the setup guide is Train → Test → Launch.
+ * After create, the setup guide is Train → Rehearse → Launch.
  */
 
 /** Shown after Fast Start — Bot exists but activation (first useful call) pending. */
@@ -13,7 +13,7 @@ export const ACTIVATION_PENDING_COPY = {
     `${agentName} has a number. Call it to check the greeting, answers, and conversation.`,
   phoneLabel: "Your live number",
   dialCta: "Call your Bot",
-  browserTestTitle: "Browser Test (Optional)",
+  browserTestTitle: "Browser Rehearsal (Optional)",
   browserTestDetail: "Preview your Bot's voice and answers in Studio without calling the number.",
   browserTestAction: "Open Studio",
   opsTitle: "Watch Activity",
@@ -27,7 +27,7 @@ export const ACTIVATION_NUDGE_COPY = {
   cta: "Call your Bot",
 } as const;
 
-/** Guided steps after create — Train → Test → Launch. */
+/** Guided steps after create — Train → Rehearse → Launch. */
 export const POST_CREATE_WIZARD_COPY = {
   eyebrow: "Setup",
   title: "Next Up for",
@@ -38,7 +38,7 @@ export const POST_CREATE_WIZARD_COPY = {
       detail: "Review its instructions. Add a site, document, or policy when needed.",
       salesHint: "Train what matters on day one, hear it privately, then put it on a live number.",
       primary: "Open training",
-      secondary: "Continue to test",
+      secondary: "Continue to rehearsal",
     },
     launch: {
       label: "Launch",
@@ -52,12 +52,12 @@ export const POST_CREATE_WIZARD_COPY = {
       activationCta: "Choose your plan",
     },
     test: {
-      label: "Test",
+      label: "Rehearse",
       title: "Hear It First",
       detail:
-        "Run a private browser test before anyone else hears it. Simulator calls do not count as going live.",
+        "Rehearse a private conversation before anyone else hears it. Simulator calls do not count as going live.",
       primary: "Continue to launch",
-      skip: "Skip test",
+      skip: "Skip rehearsal",
     },
   },
   complete: {
@@ -75,7 +75,7 @@ export const POST_CREATE_WIZARD_COPY = {
 /** Phone setup, post-create, and Preview Voice CTAs while checkout stays closed. */
 export const SOFT_OPEN_CHECKOUT_COPY = {
   title: "Live activation is paused",
-  detail: "Use Studio for private testing.",
+  detail: "Use Studio to rehearse privately.",
   savedDetail: (agentName: string) => `${agentName} is saved. Preview Voice is ready in Studio.`,
   allowanceDetail: "This month's Preview Voice is used. We'll restore it when you go live.",
   cta: "Contact support",

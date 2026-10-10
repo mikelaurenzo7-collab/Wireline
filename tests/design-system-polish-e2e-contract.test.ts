@@ -59,13 +59,13 @@ describe("design system polish e2e verified wins", () => {
     expect(pricing).not.toContain("WalletCards");
     expect(pricing).not.toContain("Sparkles");
     expect(pricing).not.toContain("icon: Users");
-    expect(pricing).toContain("Build Free");
+    expect(pricing).toContain("Create a Free Bot");
     expect(compare).not.toMatch(/DIFFERENCES = \[[\s\S]*icon:/);
   });
 
   it("keeps Bot labels in Title Case and BotBound in canonical mixed case", () => {
     const copy = read("src/lib/product-copy.ts");
-    expect(copy).toContain('createHeadline: "Build Your Bot"');
+    expect(copy).toContain('createHeadline: "Create Your Bot"');
     expect(copy).toContain('runHeadline: "Your Bot Is Live"');
     expect(copy).toContain('createCta: "Create Bot"');
     expect(copy).toContain('emptyTitle: "Your Bot"');

@@ -232,7 +232,7 @@ export default function PostCreateActivationWizard({
     if (!access.includes("voice"))
       return {
         title: "Your Bot Is Saved",
-        detail: "Keep testing privately, or open your selected channels to finish setup.",
+        detail: "Keep rehearsing privately, or open your selected channels to finish setup.",
       };
     if (hasLiveLine && phoneNumber) {
       return {
@@ -356,7 +356,7 @@ export default function PostCreateActivationWizard({
                   {POST_CREATE_WIZARD_COPY.steps.train.detail}
                 </p>
                 <p className="mt-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs leading-relaxed text-foreground">
-                  Train what matters, then test privately before connecting your channels.
+                  Train what matters, then rehearse privately before connecting your channels.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -416,7 +416,7 @@ export default function PostCreateActivationWizard({
                     <SoftOpenCheckoutNote />
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      Choose Calls, Email, SMS, or a combination. Your private tests stay available.
+                      Choose Calls, Email, SMS, or a combination. Private rehearsal stays available.
                     </p>
                   )}
                   <Button asChild size="sm">

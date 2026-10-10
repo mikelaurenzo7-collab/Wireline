@@ -117,7 +117,7 @@ export const TIER_1_TOPICS: readonly string[] = Object.freeze([
   "how to get a phone number",
   "how to clone a voice",
   "vertical fit questions (does this work for [industry])",
-  "Free Builder tier questions (build/test one agent free, no card, no time limit)",
+  "Free Builder tier questions (create one Bot free and rehearse privately, no card)",
   "password-reset guidance; use create_support_ticket for authorized follow-up",
   "receipt or invoice guidance; use create_support_ticket for authorized resend",
   "cancellation guidance; capture the request with create_support_ticket and never claim completion",

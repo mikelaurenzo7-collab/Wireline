@@ -18,16 +18,17 @@ type SimulationAllowanceStatus = {
   voice_rehearsal_seconds?: number | null;
 };
 
-/** "2 voice tests left this month (2 minutes each)." from the spend status. */
-export function voiceTestsLeftCopy(status: {
+/** "2 voice rehearsals left this month (2 minutes each)." from spend status. */
+export function voiceRehearsalsLeftCopy(status: {
   voice_rehearsals_remaining?: number | null;
   voice_rehearsal_seconds?: number | null;
 }): string | null {
   const remaining = status.voice_rehearsals_remaining;
   if (typeof remaining !== "number") return null;
-  if (remaining <= 0) return "Voice tests are used for this month. Text tests still work.";
+  if (remaining <= 0)
+    return "Voice rehearsals are used for this month. Text rehearsals are still available.";
   const minutes = Math.round((status.voice_rehearsal_seconds ?? 120) / 60);
-  return `${remaining} voice ${remaining === 1 ? "test" : "tests"} left this month (${minutes} ${minutes === 1 ? "minute" : "minutes"} each).`;
+  return `${remaining} voice ${remaining === 1 ? "rehearsal" : "rehearsals"} left this month (${minutes} ${minutes === 1 ? "minute" : "minutes"} each).`;
 }
 
 /**
@@ -80,7 +81,7 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
-          Private simulation allowance
+          Private rehearsal allowance
         </p>
         <p className="font-mono text-[length:var(--wireline-typography-caption-size)] tabular-nums text-muted-foreground">
           ${status.month_to_date_usd.toFixed(2)} of ${status.monthly_limit_usd.toFixed(2)} used
@@ -89,7 +90,7 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
       <div
         className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
         role="progressbar"
-        aria-label="Simulation allowance used"
+        aria-label="Rehearsal allowance used"
         aria-valuenow={Math.round(percent)}
         aria-valuemin={0}
         aria-valuemax={100}
@@ -105,9 +106,9 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
           style={{ width: `${percent}%` }}
         />
       </div>
-      {!status.hard_capped_now && voiceTestsLeftCopy(status) ? (
+      {!status.hard_capped_now && voiceRehearsalsLeftCopy(status) ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-          {voiceTestsLeftCopy(status)}
+          {voiceRehearsalsLeftCopy(status)}
         </p>
       ) : null}
       {status.hard_capped_now ? (
@@ -124,23 +125,23 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
             </>
           ) : checkoutAvailable === true ? (
             <>
-              This month's included simulation is used.{" "}
+              This month's included rehearsal allowance is used.{" "}
               <Link
                 to="/settings/billing"
                 className="font-semibold text-primary underline underline-offset-4"
               >
                 Choose a Plan
               </Link>{" "}
-              to keep testing and go live.
+              to keep rehearsing and go live.
             </>
           ) : (
-            "This month's included simulation is used."
+            "This month's included rehearsal allowance is used."
           )}
         </p>
       ) : nearLimit ? (
         <p className="mt-2 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
           {checkoutAvailable === true
-            ? "Running low. A paid plan removes the simulation ceiling and adds a live number."
+            ? "Running low. A paid plan removes the rehearsal ceiling and adds a live number."
             : "Running low. Preview Voice is still available."}
         </p>
       ) : null}
@@ -185,7 +186,7 @@ export default function RoleplaySandbox({
           </span>
           <div>
             <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
-              Test realistic interruptions
+              Rehearse realistic interruptions
             </p>
             <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
               Talk naturally, pause, change your mind, and interrupt the agent while it is speaking.
@@ -198,11 +199,11 @@ export default function RoleplaySandbox({
           </span>
           <div>
             <p className="text-[length:var(--wireline-typography-caption-size)] font-semibold text-foreground">
-              Safe test channel
+              Private rehearsal
             </p>
             <p className="mt-1 text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Live testing may search approved Training context but cannot send, book, transfer, or
-              change outside systems.
+              Your rehearsal may search approved Training context but cannot send, book, transfer,
+              or change outside systems.
             </p>
           </div>
         </div>

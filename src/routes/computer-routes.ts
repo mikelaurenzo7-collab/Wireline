@@ -7,9 +7,13 @@ import {
   getComputerTask,
   listComputerTasks,
   replyToComputerTask,
+  returnComputerControlToBot,
+  sendComputerOwnerInput,
   startComputerTask,
   stopComputerTask,
+  takeComputerControl,
 } from "../lib/cloud-computer/task-runner";
+import { ownerInputFrom } from "../lib/cloud-computer/owner-input";
 import { authenticateUser } from "../middleware/auth";
 import { computerReadRateLimit, computerWriteRateLimit } from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
@@ -104,6 +108,39 @@ router.post(
     res.json({
       task: await replyToComputerTask(req.user.id, String(req.params.taskId), req.body),
     });
+  },
+);
+
+router.post(
+  "/api/computer/tasks/:taskId/control",
+  authenticateUser,
+  computerWriteRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json({ task: await takeComputerControl(req.user.id, String(req.params.taskId)) });
+  },
+);
+
+router.post(
+  "/api/computer/tasks/:taskId/control/input",
+  authenticateUser,
+  computerWriteRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json({
+      task: await sendComputerOwnerInput(
+        req.user.id,
+        String(req.params.taskId),
+        ownerInputFrom(req.body),
+      ),
+    });
+  },
+);
+
+router.post(
+  "/api/computer/tasks/:taskId/control/return",
+  authenticateUser,
+  computerWriteRateLimit,
+  async (req: AuthenticatedRequest, res: Response) => {
+    res.json({ task: await returnComputerControlToBot(req.user.id, String(req.params.taskId)) });
   },
 );
 

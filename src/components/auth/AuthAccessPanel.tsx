@@ -591,7 +591,7 @@ export default function AuthAccessPanel({
           {embedded && isSignUp ? (
             <div className="wl-access-panel__welcome">
               <p>Your First Bot Starts Here</p>
-              <span>Build and test privately before you activate.</span>
+              <span>Set up your Bot, then rehearse privately before you activate it.</span>
             </div>
           ) : null}
           {isReset ? <p>We’ll send a secure reset link.</p> : null}

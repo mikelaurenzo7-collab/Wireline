@@ -17,17 +17,17 @@ import {
   KNOWLEDGE_ASSET_MAX_LABEL,
   knowledgeAssetFileCountNotice,
   knowledgeAssetTooLargeMessage,
+  knowledgeDocumentMimeType,
 } from "../lib/knowledge-asset-limits";
 import { emitProductEvent } from "../lib/product-event-client";
 import { Button } from "./atoms";
 
 /**
- * KnowledgeBaseClaude — Claude Design Knowledge surface for the Training tab.
+ * KnowledgeBaseClaude — BotBound's Knowledge and rules surface for the Training tab.
  *
- * Wireline tailoring: the prototype's Documents / FAQs / Scripts hero maps to
- * Wireline's real content types — Knowledge facts (uploads), Rules
- * (directives), and Tone (personality). The summary, document list, and
- * drop zone all bind to /api/agent-config and the asset ingestion endpoint.
+ * The surface uses Knowledge facts (including OpenAI-powered document uploads),
+ * Rules (directives), and Tone (personality). The summary, document list, and
+ * drop zone bind to /api/agent-config and the owned asset-ingestion endpoint.
  */
 
 type ConfigKnowledgeRow = {
@@ -55,6 +55,7 @@ type AssetBody = {
   mimeType: string;
   text?: string;
   dataUrl?: string;
+  fileBase64?: string;
 };
 
 // Success text belongs to the success token. The violet action token read
@@ -71,7 +72,9 @@ function fileBadge(content: string | undefined): string {
   if (trimmed.endsWith(".pdf")) return "PDF";
   if (trimmed.endsWith(".csv")) return "CSV";
   if (trimmed.endsWith(".txt")) return "TXT";
-  if (trimmed.endsWith(".md")) return "MD";
+  if (trimmed.endsWith(".md") || trimmed.endsWith(".markdown")) return "MD";
+  if (/\.docx$/.test(trimmed)) return "DOCX";
+  if (/\.xlsx$/.test(trimmed)) return "XLSX";
   return "DOC";
 }
 
@@ -161,24 +164,44 @@ async function readAsset(file: File, imageUploadsAvailable: boolean): Promise<As
     !imageUploadsAvailable &&
     (mimeType.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(file.name))
   ) {
-    throw new Error("Image uploads are unavailable. Upload TXT, MD or CSV.");
+    throw new Error(
+      "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
+    );
   }
   if (/^image\/(png|jpe?g|webp|gif)$/.test(mimeType)) {
     return { fileName: file.name, mimeType, dataUrl: await readAsDataUrl(file) };
   }
+  const documentMimeType = knowledgeDocumentMimeType(file.name, file.type);
+  if (documentMimeType) {
+    const dataUrl = await readAsDataUrl(file);
+    const comma = dataUrl.indexOf(",");
+    if (comma < 0 || !dataUrl.slice(0, comma).startsWith("data:")) {
+      throw new Error(`${file.name} could not be read as a supported document.`);
+    }
+    return {
+      fileName: file.name,
+      mimeType: documentMimeType,
+      fileBase64: dataUrl.slice(comma + 1),
+    };
+  }
   const name = file.name.toLowerCase();
   const supportedTypes = imageUploadsAvailable
-    ? "TXT, MD, CSV, PNG, JPG, WEBP or GIF"
-    : "TXT, MD or CSV";
+    ? "TXT, MD, CSV, PDF, Word (DOCX), Excel (XLSX), PNG, JPG, WEBP or GIF"
+    : "TXT, MD, CSV, PDF, Word (DOCX) or Excel (XLSX)";
+  if (/\.(doc|xls)$/i.test(name)) {
+    throw new Error(`${file.name} must be saved as DOCX or XLSX before uploading.`);
+  }
   if (
     name.endsWith(".pdf") ||
-    name.endsWith(".doc") ||
     name.endsWith(".docx") ||
+    name.endsWith(".xlsx") ||
     mimeType.includes("pdf") ||
     mimeType.includes("msword") ||
-    mimeType.includes("wordprocessingml")
+    mimeType.includes("wordprocessingml") ||
+    mimeType.includes("vnd.ms-excel") ||
+    mimeType.includes("spreadsheetml")
   ) {
-    throw new Error(`${file.name} is not supported yet. Upload ${supportedTypes}.`);
+    throw new Error(`${file.name} has a document type that does not match its extension.`);
   }
   if (
     !mimeType.startsWith("text/") &&
@@ -879,8 +902,8 @@ export default function KnowledgeBaseClaude({
         onChange={onFilePick}
         accept={
           imageUploadsAvailable
-            ? ".txt,.csv,.md,.markdown,image/png,image/jpeg,image/jpg,image/webp,image/gif"
-            : ".txt,.csv,.md,.markdown"
+            ? ".txt,.csv,.md,.markdown,.pdf,.docx,.xlsx,image/png,image/jpeg,image/jpg,image/webp,image/gif"
+            : ".txt,.csv,.md,.markdown,.pdf,.docx,.xlsx"
         }
       />
 
@@ -1128,9 +1151,12 @@ export default function KnowledgeBaseClaude({
             className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
           >
             {imageUploadsAvailable
-              ? "Text, Markdown, or CSV files, or PNG, JPG, WEBP, or GIF images"
-              : "Text, Markdown, or CSV files"}{" "}
+              ? "Text, Markdown, CSV, PDF, DOCX, or XLSX files, or PNG, JPG, WEBP, or GIF images"
+              : "Text, Markdown, CSV, PDF, DOCX, or XLSX files"}{" "}
             up to {KNOWLEDGE_ASSET_MAX_LABEL} each.
+            <span className="block">
+              Excel extraction reads up to the first 1,000 rows per sheet.
+            </span>
           </div>
         </div>
         <div

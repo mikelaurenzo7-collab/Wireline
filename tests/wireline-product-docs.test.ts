@@ -27,9 +27,12 @@ describe("product documentation and compatibility contract", () => {
     expect(readme).toContain(
       "Public marketing leads with capabilities, outcomes, and a clear signup action.",
     );
-    expect(readme).toContain("Train -> Test -> Launch");
-    expect(readme).toContain("Create / Build");
-    expect(readme).toContain("Wire / Launch");
+    expect(readme).toContain("customers create a Bot, set it up, and rehearse privately");
+    expect(readme).toContain(
+      "**Set Up** its facts, sources, policies, voice, tone, tools, and workflows.",
+    );
+    expect(readme).toContain("**Rehearse** customer conversations privately and refine the setup.");
+    expect(readme).toContain("**Connect and activate** a number");
     expect(readme).toContain("Studio / Operations");
     expect(readme).toContain("your Bot across calls, texts, and email");
     expect(readme).toContain("Paid packages include one Bot");
@@ -48,7 +51,7 @@ describe("product documentation and compatibility contract", () => {
     const readme = read("docs/README.md");
     const launchTruth = read("docs/LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(readme).toContain("It does not require a setup sequence.");
-    expect(readme).toContain("Train -> Test -> Launch");
+    expect(readme).toContain("customers create a Bot, set it up, and rehearse privately");
     expect(readme).toContain("LAUNCH_SOURCE_OF_TRUTH_2026-08-11.md");
     expect(launchTruth).toContain("Do not add a public setup sequence or repeat process slogans.");
     expect(launchTruth).toContain("Your Next Hire Is a Bot.");

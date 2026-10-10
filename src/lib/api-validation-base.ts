@@ -7,6 +7,7 @@
 
 import { z, ZodSchema, ZodError } from "zod";
 import type { Request, Response, NextFunction } from "express";
+import { KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS } from "./knowledge-asset-limits";
 
 /**
  * Validation middleware factory
@@ -503,6 +504,10 @@ export const emailThreadReplySchema = z.object({
   operation_key: z.string().uuid(),
 });
 
+export const emailThreadReplyAcknowledgeSchema = z.object({
+  owner_confirmed_sent_check: z.literal(true),
+});
+
 export const emailInboxSyncSchema = z.object({
   limit: z.number().int().min(1).max(500).optional(),
   sinceIso: z.string().datetime().optional(),
@@ -520,13 +525,16 @@ export const agentmailConnectSchema = z.object({
   api_key: z.string().min(8).max(256),
 });
 
-export const pdfUploadSchema = z.object({
-  pdfBase64: z
-    .string()
-    .min(1)
-    .max(40 * 1024 * 1024),
-  fileName: z.string().max(255).optional(),
-});
+export const pdfUploadSchema = z
+  .object({
+    pdfBase64: z.string().min(1).max(KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS).optional(),
+    fileBase64: z.string().min(1).max(KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS).optional(),
+    fileName: z.string().max(255).optional(),
+    mimeType: z.string().max(120).optional(),
+  })
+  .refine((value) => Boolean(value.fileBase64) !== Boolean(value.pdfBase64), {
+    message: "Upload one PDF, Word document, or Excel workbook.",
+  });
 
 export const designProfilePatchSchema = z.object({
   companyBlurb: z.string().max(8000).optional(),

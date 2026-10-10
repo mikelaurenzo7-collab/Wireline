@@ -178,22 +178,31 @@ describe("restored launch regression guards", () => {
     const security = read("src/components/Security.tsx");
     const compliance = read("src/components/ComplianceCenter.tsx");
 
-    expect(routes).toContain("Upload a text document or a PNG, JPG, WEBP, or GIF image.");
+    expect(routes).toContain(
+      "Upload a text, PDF, DOCX, or XLSX document, or a PNG, JPG, WEBP, or GIF image.",
+    );
     expect(routes).toContain("capabilities: { image_uploads: isTrainingImageAvailable() }");
     expect(kb).toContain("config?.capabilities?.image_uploads === true");
     expect(kb).toMatch(
-      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown"/,
+      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,\.pdf,\.docx,\.xlsx,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown,\.pdf,\.docx,\.xlsx"/,
     );
-    expect(kb).toContain("Text, Markdown, or CSV files, or PNG, JPG, WEBP, or GIF images");
-    expect(kb).toContain("Image uploads are unavailable. Upload TXT, MD or CSV.");
+    expect(kb).toContain(
+      "Text, Markdown, CSV, PDF, DOCX, or XLSX files, or PNG, JPG, WEBP, or GIF images",
+    );
+    expect(kb).toContain(
+      "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
+    );
     expect(kb).toContain("readAsset(file, imageUploadsAvailable)");
     expect(kb).not.toContain("PDF, DOCX, TXT, CSV");
-    expect(kb).toContain("is not supported yet");
+    expect(kb).toContain("document type that does not match its extension");
     expect(kb).toContain("Knowledge could not be loaded.");
     expect(checklist).toContain("intRes != null &&");
     expect(checklist).toContain("dncRes != null && dncLen > 0");
     expect(security).toMatch(
-      /Outbound calls are not available yet\. Verified recipient consent and applicable DNC checks must be in place/i,
+      /Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start/i,
+    );
+    expect(security).toMatch(
+      /Live outbound dialing is gated until BotBound can verify server-owned recipient-consent records and Federal Do Not Call screening/i,
     );
     expect(security).not.toContain("DNCScrub");
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");

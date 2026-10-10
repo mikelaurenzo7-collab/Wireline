@@ -236,7 +236,7 @@ describe("setup guide requires confirmed calling", () => {
     const tree = render();
     expect(button("Choose a number")).toBeUndefined();
     expect(text(tree)).toContain("Live activation is paused");
-    expect(text(tree)).toContain("Use Studio for private testing.");
+    expect(text(tree)).toContain("Use Studio to rehearse privately.");
     expect(text(tree)).not.toContain("Every paid plan includes a US number");
     expect(text(tree)).not.toContain("Choose your plan");
     expect(text(tree)).not.toContain("Starter begins at $19/mo");

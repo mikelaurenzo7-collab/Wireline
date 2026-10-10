@@ -122,6 +122,17 @@
     );
 }
 
+.landing-prestige p.landing-prestige__eyebrow {
+  margin: 0 0 1.1rem;
+  color: var(--wireline-color-action-primary-default);
+  font-family: var(--wireline-font-family-mono);
+  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
 @keyframes landing-prestige-signal {
   0% {
     opacity: 0;
@@ -134,17 +145,6 @@
     opacity: 0;
     transform: scale(1.32);
   }
-}
-
-.landing-prestige p.landing-prestige__eyebrow {
-  margin: 0 0 1.1rem;
-  color: var(--wireline-color-action-primary-default);
-  font-family: var(--wireline-font-family-mono);
-  font-size: clamp(0.68rem, 0.85vw, 0.78rem);
-  font-weight: 650;
-  letter-spacing: 0.16em;
-  line-height: 1.5;
-  text-transform: uppercase;
 }
 
 .landing-prestige__hero h1 {
@@ -333,6 +333,12 @@
   color: var(--wireline-color-text-secondary);
   font-size: 0.8rem;
   line-height: 1.5;
+}
+
+.landing-prestige__direction-note {
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.7rem;
+  line-height: 1.4;
 }
 
 .landing-prestige__direction-action svg {

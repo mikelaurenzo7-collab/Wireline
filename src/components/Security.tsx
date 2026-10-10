@@ -169,9 +169,9 @@ const TRUST_PACK_SECTIONS: SecurityTopic[] = [
     icon: HeartPulse,
     title: "Call Compliance (TCPA / DNC)",
     items: [
-      "Outbound calls require consent checks before dial. Marketing calls respect do-not-call posture.",
+      "Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start.",
       "Tenant DNC lists are enforced before expensive PSTN actions.",
-      "Outbound calls are not available yet. Verified recipient consent and applicable DNC checks must be in place before Studio or campaign calls can run.",
+      "Live outbound dialing is gated until BotBound can verify server-owned recipient-consent records and Federal Do Not Call screening.",
     ],
   },
   {

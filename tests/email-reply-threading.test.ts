@@ -172,7 +172,11 @@ describe("replying through each mailbox", () => {
     });
     h.gmailSend.mockResolvedValue({});
 
-    await expect(reply("gmail-1")).resolves.toEqual({ sent: true, threaded: true });
+    await expect(reply("gmail-1")).resolves.toEqual({
+      sent: true,
+      threaded: true,
+      ambiguous: false,
+    });
 
     expect(h.gmailList).toHaveBeenCalledWith(
       expect.objectContaining({ q: 'from:dana@example.com subject:"Quote for the kitchen"' }),
@@ -208,7 +212,7 @@ describe("replying through each mailbox", () => {
       )
       .mockResolvedValueOnce(json({}));
 
-    await expect(reply("ms-1")).resolves.toEqual({ sent: true, threaded: true });
+    await expect(reply("ms-1")).resolves.toEqual({ sent: true, threaded: true, ambiguous: false });
     const [url, init] = h.fetch.mock.calls[1];
     expect(url).toBe("https://graph.microsoft.com/v1.0/me/messages/newest/reply");
     expect(JSON.parse(init.body)).toEqual({
@@ -220,7 +224,7 @@ describe("replying through each mailbox", () => {
     h.accounts = [{ id: "ms-1", provider: "microsoft", accessToken: "tok", expiresAt: future }];
     h.fetch.mockResolvedValueOnce(json({ value: [] })).mockResolvedValueOnce(json({}));
 
-    await expect(reply("ms-1")).resolves.toEqual({ sent: true, threaded: false });
+    await expect(reply("ms-1")).resolves.toEqual({ sent: true, threaded: false, ambiguous: false });
     expect(h.fetch.mock.calls[1][0]).toBe("https://graph.microsoft.com/v1.0/me/sendMail");
   });
 
@@ -237,7 +241,11 @@ describe("replying through each mailbox", () => {
     h.agentMailFind.mockResolvedValue(threading);
     h.agentMailSend.mockResolvedValue(true);
 
-    await expect(reply("bot-box")).resolves.toEqual({ sent: true, threaded: true });
+    await expect(reply("bot-box")).resolves.toEqual({
+      sent: true,
+      threaded: true,
+      ambiguous: false,
+    });
     expect(h.funded).toHaveBeenCalledTimes(1);
     expect(h.agentMailSend).toHaveBeenCalledWith(
       "bot@botbound.app",
@@ -250,7 +258,11 @@ describe("replying through each mailbox", () => {
     h.accounts = [
       { id: "someone-else", provider: "agentmail", accessToken: "t", emailAddress: "x@y.z" },
     ];
-    await expect(reply("gone")).resolves.toEqual({ sent: false, threaded: false });
+    await expect(reply("gone")).resolves.toEqual({
+      sent: false,
+      threaded: false,
+      ambiguous: false,
+    });
     expect(h.agentMailSend).not.toHaveBeenCalled();
   });
 });

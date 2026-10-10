@@ -69,7 +69,7 @@ const ENTRIES: ChangelogEntry[] = [
     date: "Jul 13, 2026",
     tag: "feature",
     title: "Fast Start Turns a Blank Workspace into a First Working Bot",
-    body: "New workspaces now open directly into a focused two-step builder with a recommended voice already selected. After creation, BotBound guides the owner through review, number connection, and one real test call instead of dropping them into an empty workspace.",
+    body: "New workspaces now open directly into a focused two-step setup with a recommended voice already selected. After creation, BotBound guides the owner through review, number connection, and one real phone call instead of dropping them into an empty workspace.",
   },
   {
     date: "Jul 13, 2026",

@@ -28,7 +28,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("uses one role-first next action when the workspace is empty", () => {
-    expect(studio).toContain('title="Build Your Bot"');
+    expect(studio).toContain('title="Create Your Bot"');
     expect(studio).not.toMatch(/one (?:job|task)/i);
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).toContain("Create Bot");
@@ -77,6 +77,8 @@ describe("demand-driven authenticated experience", () => {
     expect(setup).toContain("<details");
     expect(setup).toContain("AgentToolPermissions");
     expect(workroom).toContain("/test/stream");
+    expect(workroom).toContain("Rehearse");
+    expect(workroom).not.toContain('role="tablist"');
     expect(review).toContain('aria-label="Next actions"');
   });
 

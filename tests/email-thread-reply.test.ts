@@ -61,7 +61,25 @@ vi.mock("../src/lib/server-context", async (importOriginal) => {
       insert,
       update,
       transaction: async (operation: (tx: unknown) => Promise<unknown>) =>
-        operation({ select, insert, execute: async () => undefined }),
+        operation({
+          select,
+          insert,
+          execute: async () => ({
+            rows: (() => {
+              const latestByResource = new Map<string, Record<string, unknown>>();
+              for (const row of [...h.ledger].reverse()) {
+                const resourceId = String(row.resourceId ?? "");
+                if (resourceId.startsWith(`${THREAD}:`) && !latestByResource.has(resourceId)) {
+                  latestByResource.set(resourceId, row);
+                }
+              }
+              return [...latestByResource.values()].map((row) => ({
+                resource_id: row.resourceId,
+                metadata: row.metadata,
+              }));
+            })(),
+          }),
+        }),
     },
   };
 });
@@ -72,13 +90,17 @@ vi.mock("../src/lib/integrations", () => ({
 }));
 
 import { AppError } from "../src/lib/api-error";
-import { replyRecipient, sendEmailThreadReply } from "../src/lib/email-thread-reply";
+import {
+  acknowledgeUnresolvedEmailThreadReply,
+  replyRecipient,
+  sendEmailThreadReply,
+} from "../src/lib/email-thread-reply";
 
 const USER = "00000000-0000-4000-8000-0000000000aa";
 const THREAD = "00000000-0000-4000-8000-0000000000bb";
 const KEY = "11111111-1111-4111-8111-111111111111";
-const send = (body = "Thanks, we can do Tuesday at 10.") =>
-  sendEmailThreadReply({ userId: USER, threadId: THREAD, body, operationKey: KEY });
+const send = (body = "Thanks, we can do Tuesday at 10.", operationKey = KEY) =>
+  sendEmailThreadReply({ userId: USER, threadId: THREAD, body, operationKey });
 const statuses = () => h.ledger.map((row) => (row.metadata as { status: string }).status);
 
 async function rejectionCode(promise: Promise<unknown>) {
@@ -155,6 +177,48 @@ describe("sending an inbox reply", () => {
     expect(h.sendThreadReply).toHaveBeenCalledTimes(1);
   });
 
+  it("blocks a different operation key while the thread has an unresolved send", async () => {
+    h.sendThreadReply.mockImplementationOnce(() => new Promise(() => undefined));
+    void send();
+    await vi.waitFor(() => expect(statuses()).toEqual(["processing"]));
+
+    expect(
+      await rejectionCode(send("A separate reply", "22222222-2222-4222-8222-222222222222")),
+    ).toBe("EMAIL_REPLY_UNRESOLVED");
+    expect(h.sendThreadReply).toHaveBeenCalledTimes(1);
+  });
+
+  it("unblocks only after an owner acknowledgement and never reuses the uncertain key", async () => {
+    h.sendThreadReply.mockImplementationOnce(() => new Promise(() => undefined));
+    void send();
+    await vi.waitFor(() => expect(statuses()).toEqual(["processing"]));
+
+    await expect(
+      acknowledgeUnresolvedEmailThreadReply({ userId: USER, threadId: THREAD }),
+    ).resolves.toEqual({ acknowledged: true, alreadyAcknowledged: false });
+    await expect(
+      acknowledgeUnresolvedEmailThreadReply({ userId: USER, threadId: THREAD }),
+    ).resolves.toEqual({ acknowledged: true, alreadyAcknowledged: true });
+    expect(statuses()).toEqual(["processing", "owner_acknowledged"]);
+    expect(await rejectionCode(send())).toBe("EMAIL_REPLY_UNRESOLVED");
+
+    await send("Thanks, we can do Tuesday at 10.", "22222222-2222-4222-8222-222222222222");
+    expect(h.sendThreadReply).toHaveBeenCalledTimes(2);
+    expect(statuses()).toEqual(["processing", "owner_acknowledged", "processing", "sent"]);
+    expect(h.ledger[1].metadata).toMatchObject({
+      resolution: "owner_checked_sent",
+      duplicateRiskAccepted: true,
+    });
+  });
+
+  it("does not acknowledge a conversation with no unresolved send", async () => {
+    expect(
+      await rejectionCode(
+        acknowledgeUnresolvedEmailThreadReply({ userId: USER, threadId: THREAD }),
+      ),
+    ).toBe("EMAIL_REPLY_NOT_UNRESOLVED");
+  });
+
   it("treats edited text under an old key as a new reply, not a replay", async () => {
     await send();
     expect(await rejectionCode(send("Actually, Wednesday works better."))).toBe(
@@ -205,6 +269,7 @@ describe("reply plumbing contracts", () => {
   it("routes replies through the governed, rate-limited, idempotent endpoint", () => {
     const routes = read("src/routes/email-routes.ts");
     expect(routes).toContain('"/api/emails/threads/:id/reply"');
+    expect(routes).toContain('"/api/emails/threads/:id/reply/acknowledge"');
     expect(routes).toContain("emailReplyRateLimiter");
     expect(routes).toContain("validateBody(emailThreadReplySchema)");
   });

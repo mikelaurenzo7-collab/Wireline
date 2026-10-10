@@ -67,10 +67,10 @@ export const RUNTIME_INTEGRATIONS: readonly IntegrationDescriptor[] = [
   item(
     "cloud-computer",
     "Cloud Computer",
-    "Claude plans each Bot's web tasks in an isolated hosted browser.",
+    "OpenAI plans each Bot's web tasks in an isolated hosted browser.",
     "ai",
     false,
-    ["ANTHROPIC_API_KEY", "CLOUD_COMPUTER_BROWSER_WS_URL"],
+    ["OPENAI_API_KEY", "CLOUD_COMPUTER_BROWSER_WS_URL"],
     "The Computer page shows the feature as being set up; nothing runs.",
   ),
   {

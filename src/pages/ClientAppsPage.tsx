@@ -33,14 +33,14 @@ const clientSurfaces = [
   {
     icon: MessageSquareText,
     title: "ChatGPT",
-    blurb: "Build and rehearse privately.",
+    blurb: "Set up and rehearse privately.",
     action: "Set Up",
     href: "/settings/apps#chatgpt-mcp",
   },
   {
     icon: Sparkles,
     title: "Claude",
-    blurb: "Build and rehearse privately.",
+    blurb: "Set up and rehearse privately.",
     action: "Connect",
     href: "https://claude.ai/settings/connectors",
   },
@@ -170,7 +170,7 @@ export default function ClientAppsPage() {
               {copied ? "MCP URL copied." : ""}
             </p>
             <p className="text-sm text-muted-foreground">
-              Build and rehearse privately; manage live calls, messages, numbers, and billing in
+              Set up and rehearse privately; manage live calls, messages, numbers, and billing in
               Studio.
             </p>
             <div className="flex flex-wrap gap-3">

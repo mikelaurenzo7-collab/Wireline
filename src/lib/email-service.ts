@@ -343,7 +343,7 @@ export async function sendSignupLinkEmail(opts: {
   const text = [
     greetingText,
     "",
-    "Thanks for the call. Here's the link to create your free BotBound Bot, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number:",
+    "Thanks for the call. Here's the link to create your free BotBound Bot, no credit card required. Add its knowledge, then rehearse a private conversation. Choose a live plan when you're ready for a customer number:",
     "",
     signupUrl,
     "",
@@ -355,7 +355,7 @@ export async function sendSignupLinkEmail(opts: {
   const html = `
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a1a2e;">
       <p style="margin: 0 0 16px; line-height: 1.55;">${greetingHtml}</p>
-      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free BotBound Bot</strong>, no credit card required. Build, train, and test it privately, then choose a live plan when you're ready for a customer number.</p>
+      <p style="margin: 0 0 16px; line-height: 1.55;">Thanks for the call. Here's the link to create your <strong>free BotBound Bot</strong>, no credit card required. Add its knowledge, then rehearse a private conversation. Choose a live plan when you're ready for a customer number.</p>
       <p style="margin: 0 0 24px;"><a href="${escapeHtml(signupUrl)}" style="display: inline-block; background: ${BRAND.colors.primary}; color: ${BRAND.colors.onPrimary}; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your Bot</a></p>
       <p style="margin: 0 0 16px; line-height: 1.55; color: #6B6B7A; font-size: 13px;">Or paste this link into your browser:<br><span style="word-break: break-all;">${escapeHtml(signupUrl)}</span></p>
       <p style="margin: 24px 0 0; line-height: 1.55; color: #6B6B7A; font-size: 13px;">If you have any follow-up questions, just call back, same number you reached me on.</p>

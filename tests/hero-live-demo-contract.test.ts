@@ -19,7 +19,7 @@ describe("public voice-preview retirement contract", () => {
     expect(botProduct).toContain('slogan: "Your Next Hire Is a Bot"');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(botProduct).toContain(
-      'activationLine: "Answers calls, books appointments, and takes messages for your business."',
+      'activationLine:\n    "Your Bot answers customers, lets you plan outbound follow-up, starts work on its cloud computer, and follows through from its own inbox."',
     );
   });
 

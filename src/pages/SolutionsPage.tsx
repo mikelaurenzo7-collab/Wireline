@@ -1,22 +1,27 @@
 import { Link, useParams } from "react-router";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
-import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 const SOLUTIONS = {
   sales: {
-    title: "Find the Lead. Make the Call. Book the Next Step.",
+    title: "Set Up a Sales Bot for Lead Follow-Up",
     description:
-      "Find leads through a connected source or bring a list. Your Sales Bot calls, qualifies, books, follows up, and records the outcome.",
-    primary: { href: "/signup?wedge=sales", label: "Get Your Sales Bot" },
+      "Find leads through a connected source or bring a list. Set up a Sales Bot playbook to qualify, book, and record next steps. Live outbound calling requires server-verifiable consent records and Federal Do Not Call screening.",
+    primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
       [
         "Find or Bring the Leads",
         "Lead Hunt surfaces prospects from a connected source, or you import an approved list.",
       ],
-      ["Review. Then Queue.", "Approve the contacts, playbook, and calling window."],
-      ["Your Bot Calls and Books", "Qualified, booked, handed off, or logged with context."],
+      [
+        "Review. Then Rehearse.",
+        "Refine the playbook, consent requirements, and calling window while live outbound remains gated.",
+      ],
+      [
+        "Prepare the Next Step",
+        "Rehearse how the Bot qualifies, books, hands off, and records each outcome.",
+      ],
     ],
     capabilities: [
       [
@@ -32,7 +37,8 @@ const SOLUTIONS = {
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof: "Your Bot works the approved queue. Your team takes the next steps.",
+    proof:
+      "Set up and privately rehearse the sales workflow. Live dialing requires server-verifiable consent records and Federal Do Not Call screening.",
   },
   support: {
     title: "A Front Desk That Answers Before Demand Goes Cold",
@@ -113,11 +119,6 @@ export default function SolutionsPage() {
                 {page.secondary.label}
               </Link>
             </div>
-            {key === "sales" ? (
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-                {MARKETING_CALLS_NOTICE} Build and test your Sales Bot free.
-              </p>
-            ) : null}
           </div>
           <ol className="grid gap-3 sm:grid-cols-3">
             {page.sequence.map(([title, copy], index) => (

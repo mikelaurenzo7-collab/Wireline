@@ -6,10 +6,12 @@ import type { ComputerTaskEvent, ComputerTaskStatus } from "../../db/computer-ta
 import { assertLiveExternalActionAllowed } from "../account-environment-policy";
 import { recordAmbiguousProviderAttempt, recordUsage } from "../ai-audit";
 import { DefiniteProviderRejectionError, RuntimeUnavailableError } from "../ai-client";
+import { normalizeResponsesUsage } from "../ai-usage";
 import { AppError } from "../api-error";
 import { getTenantChannelEntitlements } from "../channel-entitlements";
 import { getPostgresErrorCode } from "../pg-errors";
 import { isProductionDeployment } from "../deployment-environment";
+import { planById } from "../plan-catalog";
 import { runWithManagedAiSpend } from "../managed-ai-operation-spend";
 import { getAgentCoachingBrief } from "../mcp-agent-coaching";
 import { rateLimit } from "../rate-limit";
@@ -18,16 +20,15 @@ import { getErrorMessage } from "../server-utils";
 import {
   CLOUD_COMPUTER_LIMITS,
   CONTEXT_LIMIT_OUTCOME,
+  CLOUD_COMPUTER_TOOL_CALL_USD,
   runCloudComputerAgent,
   type CloudComputerEvent,
   type CloudComputerOutcome,
 } from "./agent";
-import type { CloudBrowserSession } from "./browser-session";
+import type { CloudBrowserSession, OwnerControlInput } from "./browser-session";
 import {
   cloudComputerClient,
   cloudComputerConnection,
-  loadAnthropicSdk,
-  type AnthropicSdk,
   cloudComputerModel,
   cloudComputerProcessCapacity,
   cloudComputerReadiness,
@@ -93,10 +94,13 @@ type LiveTask = {
   session: CloudBrowserSession | null;
   frame: Buffer | null;
   frameAt: number;
+  currentUrl: string | null;
   events: ComputerTaskEvent[];
   turns: number;
   actions: number;
   reply: ((value: string | null) => void) | null;
+  ownerControl: boolean;
+  ownerInputBusy: boolean;
   finished: boolean;
   /** Set when the task finishes, and kept until the row holds it. */
   outcome: TerminalOutcome | null;
@@ -134,6 +138,8 @@ function requestStop(task: LiveTask) {
     task.stop = true;
     task.stopAt = Date.now();
   }
+  task.ownerControl = false;
+  task.session?.cancelCurrentInput();
   task.reply?.(null);
 }
 
@@ -154,6 +160,9 @@ export type ComputerTaskView = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  currentUrl: string | null;
+  /** True only while this process is holding an owner takeover at a Bot checkpoint. */
+  ownerControl: boolean;
   /** Stop was requested; the task ends at its executor's next checkpoint. */
   stopping: boolean;
 };
@@ -179,6 +188,16 @@ function toView(row: TaskRow): ComputerTaskView {
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
     liveView: Boolean(task && !task.finished && task.frame && task.userId === row.userId),
+    currentUrl: task?.userId === row.userId && !task.finished ? task.currentUrl : null,
+    ownerControl: Boolean(
+      task &&
+      !task.finished &&
+      !task.stop &&
+      task.reply &&
+      task.ownerControl &&
+      task.userId === row.userId &&
+      row.status === "needs_input",
+    ),
     stopping: Boolean(
       task &&
       !task.finished &&
@@ -202,6 +221,19 @@ export type ComputerStatus = {
 };
 
 let storageReady = false;
+
+/** The cloud computer is a paid feature; an active Free Builder plan is not enough. */
+export function hasPaidComputerPlan(entitlement: {
+  planId: string | null;
+  subscriptionStatus: string;
+}): boolean {
+  const plan = planById(entitlement.planId);
+  return Boolean(
+    plan &&
+    (plan.price_usd_monthly > 0 || plan.price_usd_annual > 0) &&
+    ["active", "trialing"].includes(entitlement.subscriptionStatus),
+  );
+}
 
 /**
  * The task ledger ships in migration 0176, promoted separately from the code.
@@ -240,7 +272,7 @@ export async function getComputerStatus(userId: string): Promise<ComputerStatus>
     return { ...base, available: false, reason: "storage_unavailable" };
   }
   const entitlement = await getTenantChannelEntitlements(userId);
-  if (!entitlement.planId || !["active", "trialing"].includes(entitlement.subscriptionStatus)) {
+  if (!hasPaidComputerPlan(entitlement)) {
     return { ...base, available: false, reason: "plan_required" };
   }
   return { ...base, available: true, reason: "ready" };
@@ -346,7 +378,7 @@ async function admitComputerTask(
 ): Promise<ComputerTaskView> {
   const brief = await getAgentCoachingBrief(userId, agentId);
   const entitlement = await getTenantChannelEntitlements(userId);
-  if (!entitlement.planId || !["active", "trialing"].includes(entitlement.subscriptionStatus)) {
+  if (!hasPaidComputerPlan(entitlement)) {
     throw new AppError(
       402,
       "COMPUTER_PLAN_REQUIRED",
@@ -425,10 +457,13 @@ async function admitComputerTask(
     session: null,
     frame: null,
     frameAt: Date.now(),
+    currentUrl: null,
     events: [],
     turns: 0,
     actions: 0,
     reply: null,
+    ownerControl: false,
+    ownerInputBusy: false,
     finished: false,
     outcome: null,
     outcomeSaved: false,
@@ -527,6 +562,8 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   if (task.finished) return false;
   task.finished = true;
   task.outcome = outcome;
+  task.ownerControl = false;
+  task.currentUrl = null;
   task.reply?.(null);
   task.reply = null;
   task.frame = null;
@@ -590,7 +627,7 @@ function pushEvent(task: LiveTask, event: CloudComputerEvent) {
   if (task.events.length > MAX_EVENTS) task.events.splice(0, task.events.length - MAX_EVENTS);
 }
 
-function failureOutcome(error: unknown, sdk: AnthropicSdk | null): CloudComputerOutcome {
+function failureOutcome(error: unknown): CloudComputerOutcome {
   if (error instanceof AppError) {
     return { status: "failed", code: error.code || "COMPUTER_FAILED", summary: error.message };
   }
@@ -603,7 +640,7 @@ function failureOutcome(error: unknown, sdk: AnthropicSdk | null): CloudComputer
       summary: "The AI provider rejected this request. Try rephrasing the task.",
     };
   }
-  if (error instanceof RuntimeUnavailableError || (sdk && error instanceof sdk.default.APIError)) {
+  if (error instanceof RuntimeUnavailableError) {
     return {
       status: "failed",
       code: "COMPUTER_MODEL_UNAVAILABLE",
@@ -628,23 +665,20 @@ async function executeTask(
   },
 ): Promise<void> {
   let session: CloudBrowserSession | null = null;
-  let sdk: AnthropicSdk | null = null;
   let outcome: CloudComputerOutcome;
   const taskHash = createHash("sha256").update(task.taskId).digest("hex").slice(0, 24);
   const heartbeat = setInterval(() => void heartbeatTick(task, heartbeat), HEARTBEAT_MS);
   heartbeat.unref?.();
   try {
-    sdk = await loadAnthropicSdk();
-    const { default: Anthropic } = sdk;
-    const client = await cloudComputerClient();
+    const client = cloudComputerClient();
     try {
       // Playwright loads with the first task, never on an API cold start.
       const { CloudBrowserSession } = await import("./browser-session");
       session = await CloudBrowserSession.open(input.connection);
-    } catch (error) {
+    } catch {
       log.error("Cloud browser connection failed", {
         taskId: task.taskId,
-        error: getErrorMessage(error),
+        stage: "browser_connect",
       });
       throw new AppError(
         503,
@@ -653,12 +687,13 @@ async function executeTask(
       );
     }
     task.session = session;
+    task.currentUrl = displayUrl(session.activeUrl()) || null;
     if (input.startUrl && !task.stop) {
       const opened = await session.execute("navigate", { url: input.startUrl });
       pushEvent(task, {
         kind: opened.ok ? "action" : "error",
         text: opened.activity,
-        url: session.activeUrl(),
+        url: displayUrl(session.activeUrl()) || undefined,
         ok: opened.ok,
       });
       const frame = await session.frame();
@@ -680,6 +715,7 @@ async function executeTask(
         emit: async (event) => {
           if (event.kind === "action" || event.kind === "error") task.actions += 1;
           pushEvent(task, event);
+          if (event.url) task.currentUrl = displayUrl(event.url) || task.currentUrl;
           await persist(task, {});
         },
         frame: (jpeg) => {
@@ -724,20 +760,12 @@ async function executeTask(
                   return await operation();
                 } catch (error) {
                   if (
-                    error instanceof Anthropic.APIConnectionError ||
-                    error instanceof Anthropic.APIConnectionTimeoutError
-                  ) {
-                    // Submitted but unconfirmed: keep the conservative reservation.
-                    recordAmbiguousProviderAttempt();
+                    error instanceof DefiniteProviderRejectionError ||
+                    error instanceof RuntimeUnavailableError
+                  )
                     throw error;
-                  }
-                  if (error instanceof Anthropic.APIError && typeof error.status === "number") {
-                    if ([400, 401, 403, 404, 413, 422].includes(error.status)) {
-                      throw new DefiniteProviderRejectionError("Anthropic", error.status);
-                    }
-                    throw new RuntimeUnavailableError();
-                  }
-                  throw error;
+                  recordAmbiguousProviderAttempt();
+                  throw new RuntimeUnavailableError();
                 }
               },
             });
@@ -752,41 +780,39 @@ async function executeTask(
           }
         },
         recordUsage: (model, response, latencyMs) => {
-          // With refusal fallback, top-level usage covers only the attempt that
-          // produced the message; usage.iterations bills every attempt.
-          const iterations = (response.usage as { iterations?: unknown } | undefined)?.iterations;
-          const attempts = Array.isArray(iterations)
-            ? (iterations as Array<Record<string, unknown>>).filter(
-                (entry) => entry?.type === "message" || entry?.type === "fallback_message",
-              )
-            : [];
-          if (!attempts.length) {
-            recordUsage(model, response as unknown as Parameters<typeof recordUsage>[1], latencyMs);
-            return;
-          }
-          attempts.forEach((entry, index) => {
-            recordUsage(
-              model,
-              {
-                model:
-                  typeof entry.model === "string" && entry.model
-                    ? entry.model
-                    : entry.type === "fallback_message"
-                      ? response.model
-                      : model,
-                usage: entry,
+          const rawUsage =
+            response.usage && typeof response.usage === "object"
+              ? (response.usage as Record<string, unknown>)
+              : {};
+          const usage = normalizeResponsesUsage(rawUsage);
+          const output = Array.isArray(response.output) ? response.output : [];
+          const computerToolCalls = output.filter((item) =>
+            Boolean(
+              item &&
+              typeof item === "object" &&
+              (item as Record<string, unknown>).type === "computer_call",
+            ),
+          ).length;
+          recordUsage(
+            model,
+            {
+              model: typeof response.model === "string" ? response.model : model,
+              usage: {
+                input_tokens: usage.inputTokens,
+                output_tokens: usage.outputTokens,
+                cache_read_input_tokens: usage.cacheReadTokens,
+                cache_creation_input_tokens: usage.cacheWriteTokens,
               },
-              index === attempts.length - 1 ? latencyMs : 0,
-            );
-          });
+              provider_tool_call_cost_usd: computerToolCalls * CLOUD_COMPUTER_TOOL_CALL_USD,
+            },
+            latencyMs,
+          );
         },
       },
     });
   } catch (error) {
     // A step that failed after the owner pressed Stop is still the owner's stop.
-    outcome = task.stop
-      ? { status: "stopped", summary: STOPPED_SUMMARY }
-      : failureOutcome(error, sdk);
+    outcome = task.stop ? { status: "stopped", summary: STOPPED_SUMMARY } : failureOutcome(error);
     if (!(error instanceof AppError)) {
       log.warn("Cloud computer task failed", {
         taskId: task.taskId,
@@ -1046,8 +1072,191 @@ export async function replyToComputerTask(
   if (!task || task.userId !== userId || !task.reply) {
     throw new AppError(409, "COMPUTER_NOT_WAITING", "This task is not waiting for a reply.");
   }
+  if (task.ownerControl) {
+    throw new AppError(
+      409,
+      "COMPUTER_OWNER_CONTROL_ACTIVE",
+      "Return control to your Bot before sending it a reply.",
+    );
+  }
   task.reply(message);
   return toView({ ...row, status: "running", question: null });
+}
+
+export async function takeComputerControl(
+  userId: string,
+  taskId: string,
+): Promise<ComputerTaskView> {
+  const row = await ownedRow(userId, taskId);
+  const task = live.get(taskId);
+  if (
+    row.status !== "needs_input" ||
+    !task ||
+    task.userId !== userId ||
+    task.finished ||
+    task.stop ||
+    !task.reply ||
+    !task.session
+  ) {
+    throw new AppError(
+      409,
+      "COMPUTER_NOT_WAITING",
+      "Your Bot is not waiting at a live browser checkpoint.",
+    );
+  }
+  task.ownerControl = true;
+  if ((await persist(task, { status: "needs_input" })) !== "written") {
+    task.ownerControl = false;
+    throw new AppError(409, "COMPUTER_NOT_WAITING", "This browser task has ended.");
+  }
+  return toView({ ...row, status: "needs_input", events: task.events });
+}
+
+export async function sendComputerOwnerInput(
+  userId: string,
+  taskId: string,
+  input: OwnerControlInput,
+): Promise<ComputerTaskView> {
+  const row = await ownedRow(userId, taskId);
+  const task = live.get(taskId);
+  if (
+    row.status !== "needs_input" ||
+    !task ||
+    task.userId !== userId ||
+    task.finished ||
+    task.stop ||
+    !task.reply ||
+    !task.ownerControl ||
+    !task.session
+  ) {
+    throw new AppError(
+      409,
+      "COMPUTER_CONTROL_REQUIRED",
+      "Take control of the browser before interacting with it.",
+    );
+  }
+  if (task.ownerInputBusy) {
+    throw new AppError(
+      409,
+      "COMPUTER_INPUT_BUSY",
+      "Wait for the current browser action to finish.",
+    );
+  }
+  task.ownerInputBusy = true;
+  try {
+    let frame: Buffer;
+    try {
+      frame = await task.session.executeOwnerInput(input);
+    } catch {
+      // Browser errors may include page-provided strings or entered values.
+      // Keep them out of API output, logs, and the task ledger.
+      throw new AppError(
+        409,
+        "COMPUTER_INPUT_FAILED",
+        "That browser action did not go through. Check the screen and try again.",
+      );
+    }
+    if (task.stop || task.finished || !task.ownerControl) {
+      throw new AppError(
+        409,
+        "COMPUTER_TASK_ENDED",
+        "This browser task is no longer in your control.",
+      );
+    }
+    task.frame = frame;
+    task.frameAt = Date.now();
+    task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
+    return toView({ ...row, status: "needs_input", events: task.events });
+  } finally {
+    task.ownerInputBusy = false;
+  }
+}
+
+export async function returnComputerControlToBot(
+  userId: string,
+  taskId: string,
+): Promise<ComputerTaskView> {
+  const row = await ownedRow(userId, taskId);
+  const task = live.get(taskId);
+  if (
+    row.status !== "needs_input" ||
+    !task ||
+    task.userId !== userId ||
+    task.finished ||
+    task.stop ||
+    !task.reply ||
+    !task.ownerControl ||
+    !task.session
+  ) {
+    throw new AppError(
+      409,
+      "COMPUTER_CONTROL_REQUIRED",
+      "Your Bot is not waiting for you to return browser control.",
+    );
+  }
+  if (task.ownerInputBusy) {
+    throw new AppError(
+      409,
+      "COMPUTER_INPUT_BUSY",
+      "Wait for the current browser action to finish.",
+    );
+  }
+
+  const resume = task.reply;
+  let frame: Buffer | null;
+  try {
+    frame = await task.session.frame();
+  } catch {
+    frame = null;
+  }
+  if (!frame) {
+    throw new AppError(
+      409,
+      "COMPUTER_SCREEN_UNAVAILABLE",
+      "The browser could not confirm a safe screen. Keep control and try again after the page settles.",
+    );
+  }
+  if (
+    task.reply !== resume ||
+    task.finished ||
+    task.stop ||
+    !task.ownerControl ||
+    task.ownerInputBusy
+  ) {
+    throw new AppError(
+      409,
+      "COMPUTER_TASK_ENDED",
+      "This browser task is no longer waiting for you.",
+    );
+  }
+  task.frame = frame;
+  task.frameAt = Date.now();
+  task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
+  task.ownerControl = false;
+  const saved = await persist(task, { status: "running", question: null });
+  if (saved !== "written") {
+    if (saved === "error" && !task.finished && !task.stop) task.ownerControl = true;
+    throw new AppError(
+      saved === "error" ? 503 : 409,
+      saved === "error" ? "COMPUTER_HANDOFF_FAILED" : "COMPUTER_TASK_ENDED",
+      saved === "error"
+        ? "BotBound could not return control to your Bot. Your browser session is still open. Try again."
+        : "This browser task has ended.",
+    );
+  }
+  if (task.stop || task.finished || task.reply !== resume) {
+    throw new AppError(
+      409,
+      "COMPUTER_TASK_ENDED",
+      "This browser task is no longer waiting for you.",
+    );
+  }
+  pushEvent(task, { kind: "note", text: "You returned browser control to your Bot." });
+  // The model gets a fixed handoff signal, never the owner's typed values.
+  resume(
+    "The owner completed the browser step and returned the updated page. Continue from the current browser state. Ask the owner again if you still need help.",
+  );
+  return toView({ ...row, status: "running", question: null, events: task.events });
 }
 
 /** Test seam: clear in-process state between cases. */

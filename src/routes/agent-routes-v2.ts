@@ -44,11 +44,13 @@ import { AgentBusinessProfileSchema } from "../lib/form-validators";
 import { isOwnerEmail } from "../lib/auth-service";
 import { agentCapMessage, resolveAgentEntitlement } from "../lib/agent-entitlements";
 import {
+  KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS,
   KNOWLEDGE_IMAGE_MAX_DATA_URL_CHARS,
   KNOWLEDGE_TEXT_EXTRACT_CHARS,
   knowledgeAssetTooLargeMessage,
   knowledgeTextTruncationNotice,
 } from "../lib/knowledge-asset-limits";
+import { extractKnowledgeDocumentWithOpenAI } from "../lib/knowledge-document-openai";
 import { emitServerProductEventOnce } from "../lib/product-event-server";
 import {
   isTrainingImageAvailable,
@@ -90,6 +92,7 @@ type AssetPayload = {
   mimeType?: unknown;
   text?: unknown;
   dataUrl?: unknown;
+  fileBase64?: unknown;
 };
 
 /** The business-profile columns read by the Studio config and returned by its PATCH. */
@@ -313,7 +316,10 @@ export async function extractImageAsset(
   userId: string,
 ): Promise<ExtractedConfig> {
   if (!isAIGatewayConfigured()) {
-    throw AppError.fromHttpStatus(503, "Image uploads are unavailable. Upload TXT, MD or CSV.");
+    throw AppError.fromHttpStatus(
+      503,
+      "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
+    );
   }
   // Keep multimodal extraction separate from the text-only structured adapter,
   // but preserve the same OpenAI-first managed default. Operators can still
@@ -1138,6 +1144,7 @@ router.post(
     const fileName = cleanText(payload.fileName, 255) || "Untitled asset";
     const mimeType = cleanText(payload.mimeType, 120).toLowerCase();
     const rawDataUrl = typeof payload.dataUrl === "string" ? payload.dataUrl.trim() : "";
+    const rawFileBase64 = typeof payload.fileBase64 === "string" ? payload.fileBase64.trim() : "";
 
     // A base64 payload cut mid-stream is not a smaller image, it is a corrupt
     // one. Running it through the shared `cleanText` slice sent the vision model
@@ -1147,6 +1154,9 @@ router.post(
       throw AppError.fromHttpStatus(413, knowledgeAssetTooLargeMessage(fileName));
     }
     const dataUrl = rawDataUrl;
+    if (rawFileBase64.length > KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS) {
+      throw AppError.fromHttpStatus(413, knowledgeAssetTooLargeMessage(fileName));
+    }
 
     // Text is different: truncating it degrades the extraction rather than
     // corrupting it, so the leading portion is still worth ingesting. What was
@@ -1163,10 +1173,19 @@ router.post(
       dataUrl.startsWith(`data:${mimeType};base64,`)
     ) {
       extraction = await extractImageAsset(fileName, dataUrl, req.user.id);
+    } else if (rawFileBase64) {
+      extraction = normalizeExtraction(
+        await extractKnowledgeDocumentWithOpenAI({
+          userId: req.user.id,
+          fileName,
+          mimeType,
+          fileBase64: rawFileBase64,
+        }),
+      );
     } else {
       throw AppError.fromHttpStatus(
         400,
-        "Upload a text document or a PNG, JPG, WEBP, or GIF image.",
+        "Upload a text, PDF, DOCX, or XLSX document, or a PNG, JPG, WEBP, or GIF image.",
       );
     }
     await persistExtraction(req.params.id, req.user.id, extraction);

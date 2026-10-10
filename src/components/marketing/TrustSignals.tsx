@@ -4,7 +4,7 @@ import { Link } from "react-router";
 const TRUST_POINTS = [
   {
     title: "Private by Default",
-    detail: "Build, train, and test before the agent reaches a real conversation.",
+    detail: "Create and train your Bot, then rehearse privately before any customer conversation.",
   },
   {
     // The enforced compliance stack (TCPA calling hours, DNC checks before

@@ -13,39 +13,10 @@ import { AppError } from "./api-error";
  */
 
 export const MCP_DYNAMIC_CLIENT_ID_PREFIX = "wlmcp_client_";
-export const BOTBOUND_DESKTOP_CLIENT_ID = "botbound-desktop";
-export function desktopPlanningScopesAllowed(scopes: readonly string[]): boolean {
-  return (
-    scopes.includes("agents.read") &&
-    scopes.includes("computer.plan") &&
-    scopes.every((scope) => scope === "agents.read" || scope === "computer.plan")
-  );
-}
-export function desktopTokenAccountMetadata(
-  clientId: string,
-  userId: string,
-): { botbound_account_id?: string } {
-  return clientId === BOTBOUND_DESKTOP_CLIENT_ID ? { botbound_account_id: userId } : {};
-}
-
-/** Public native client, not proof of installed-app identity or execution authority. */
-export function isBotBoundDesktopRedirect(clientId: string, value: string): boolean {
-  if (clientId !== BOTBOUND_DESKTOP_CLIENT_ID) return false;
-  try {
-    const url = new URL(value);
-    return (
-      /^http:\/\/127\.0\.0\.1:\d+\/callback$/.test(value) &&
-      url.hostname === "127.0.0.1" &&
-      Number(url.port) >= 1024 &&
-      Number(url.port) <= 65535 &&
-      !url.username &&
-      !url.password &&
-      !url.search &&
-      !url.hash
-    );
-  } catch {
-    return false;
-  }
+/** Retained only to reject and label grants issued to the retired native client. */
+export const RETIRED_NATIVE_CLIENT_ID = "botbound-desktop";
+export function isRetiredMcpClient(clientId: string): boolean {
+  return clientId === RETIRED_NATIVE_CLIENT_ID;
 }
 export const CLAUDE_CODE_CLIENT_METADATA_PATH = "/oauth/claude-code-client-metadata";
 const ANTHROPIC_REDIRECT_HOSTS = new Set(["claude.ai", "claude.com"]);
@@ -257,7 +228,7 @@ export function validateDynamicClientRegistration(
 
 /** Hostname shown as the relying party on the consent screen (CIMD uses client_id host). */
 export function relyingPartyHost(clientId: string, redirectUri: string): string {
-  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID) return "this computer (public native client)";
+  if (isRetiredMcpClient(clientId)) return "retired BotBound Desktop app";
   const cimd = isTrustedCimdClientId(clientId);
   if (cimd) return cimd.hostname;
   try {
@@ -270,7 +241,7 @@ export function relyingPartyHost(clientId: string, redirectUri: string): string 
 
 /** Human name for the consent screen, derived from the client and callback. */
 export function clientDisplayName(redirectUri: string, clientId?: string): string {
-  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID) return "BotBound Desktop";
+  if (clientId && isRetiredMcpClient(clientId)) return "Retired BotBound Desktop";
   if (clientId && isClaudeCodeClientMetadataUrl(clientId)) return "Claude Code";
   if (isCursorRedirectUri(redirectUri)) return "Cursor";
   if (isLoopbackCallbackUri(redirectUri)) return "Claude Code";
@@ -297,7 +268,7 @@ export function connectedAppLabel(
   clientName: string | null | undefined,
   redirectUris?: unknown,
 ): string {
-  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID) return "BotBound Desktop";
+  if (isRetiredMcpClient(clientId)) return "BotBound Desktop (retired)";
   const uris = parseStoredRedirectUris(redirectUris);
   if (uris.some((uri) => isCursorRedirectUri(uri))) return "Cursor";
   if (isClaudeCodeClientMetadataUrl(clientId) || uris.some((uri) => isLoopbackCallbackUri(uri))) {

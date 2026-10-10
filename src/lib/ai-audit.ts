@@ -9,6 +9,8 @@ export interface RuntimeCallMeta {
   provider: string;
   /** Validated and numeric(12,6)-quantized request charge supplied by the transport. */
   actual_cost_usd?: number;
+  /** Catalog-priced built-in tool fees that are separate from model tokens. */
+  provider_tool_call_cost_usd?: number;
   input_tokens: number;
   output_tokens: number;
   cache_read_tokens: number;
@@ -94,16 +96,19 @@ export function resolveRuntimeCallCost(record: RuntimeCallMeta): {
   const outputTokens = normalizeUsageTokenCount(record.output_tokens);
   const cacheReadTokens = normalizeUsageTokenCount(record.cache_read_tokens);
   const cacheCreateTokens = normalizeUsageTokenCount(record.cache_create_tokens);
+  const providerToolCallCostUsd =
+    normalizeProviderReportedCostUsd(record.provider_tool_call_cost_usd) ?? 0;
   return {
-    costUsd: estimateCost(
-      {
-        input_tokens: inputTokens,
-        output_tokens: outputTokens,
-        cache_read_input_tokens: cacheReadTokens,
-        cache_creation_input_tokens: cacheCreateTokens,
-      },
-      record.model,
-    ),
+    costUsd:
+      estimateCost(
+        {
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          cache_read_input_tokens: cacheReadTokens,
+          cache_creation_input_tokens: cacheCreateTokens,
+        },
+        record.model,
+      ) + providerToolCallCostUsd,
     costBasis: "catalog_estimate",
   };
 }
@@ -176,6 +181,7 @@ export function recordUsage(
     model?: string;
     inference_provider?: unknown;
     actual_cost_usd?: unknown;
+    provider_tool_call_cost_usd?: unknown;
     usage?: any;
   },
   latencyMs: number,
@@ -192,10 +198,16 @@ export function recordUsage(
     ? reportedProvider
     : providerFor(served);
   const actualCostUsd = normalizeProviderReportedCostUsd(response.actual_cost_usd);
+  const providerToolCallCostUsd = normalizeProviderReportedCostUsd(
+    response.provider_tool_call_cost_usd,
+  );
   push({
     model: served,
     provider: inferenceProvider,
     ...(typeof actualCostUsd === "number" ? { actual_cost_usd: actualCostUsd } : {}),
+    ...(typeof providerToolCallCostUsd === "number"
+      ? { provider_tool_call_cost_usd: providerToolCallCostUsd }
+      : {}),
     input_tokens: normalizeUsageTokenCount(
       response.usage?.input_tokens ?? response.usage?.prompt_tokens,
     ),

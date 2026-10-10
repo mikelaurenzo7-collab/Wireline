@@ -23,6 +23,8 @@ function task(overrides: Partial<MockTask> & { id: string; status: string }): Mo
     finishedAt: null,
     updatedAt: NOW,
     liveView: true,
+    currentUrl: "https://austinplumbers.example/",
+    ownerControl: false,
     stopping: false,
     ...overrides,
   };
@@ -58,6 +60,9 @@ async function mockComputer(
 ) {
   const replies: string[] = [];
   const stops: string[] = [];
+  const ownerInputs: unknown[] = [];
+  const takeovers: string[] = [];
+  const returns: string[] = [];
   let tasks = options.tasks;
   let statusReads = 0;
   let listReads = 0;
@@ -75,7 +80,13 @@ async function mockComputer(
       return route.fulfill({
         json: {
           agents: [
-            { id: "design-bot", name: "Front Desk", role: "receptionist", mark_key: "spark-rose" },
+            {
+              id: "design-bot",
+              name: "Front Desk",
+              role: "receptionist",
+              mark_key: "spark-rose",
+              phone_number: "+15125550100",
+            },
           ],
         },
       });
@@ -127,6 +138,35 @@ async function mockComputer(
       );
       return route.fulfill({ json: { task: tasks.find((item) => item.id === replyMatch[1]) } });
     }
+    const controlInputMatch = /^\/api\/computer\/tasks\/([^/]+)\/control\/input$/.exec(path);
+    if (controlInputMatch) {
+      const input = request.postDataJSON() as { kind?: string; url?: string; action?: string };
+      ownerInputs.push(input);
+      if (input.kind === "navigate" && input.url) {
+        setTask(controlInputMatch[1], { currentUrl: new URL(input.url).toString() });
+      }
+      return route.fulfill({
+        json: { task: tasks.find((item) => item.id === controlInputMatch[1]) },
+      });
+    }
+    const controlReturnMatch = /^\/api\/computer\/tasks\/([^/]+)\/control\/return$/.exec(path);
+    if (controlReturnMatch) {
+      returns.push(controlReturnMatch[1]);
+      tasks = tasks.map((item) =>
+        item.id === controlReturnMatch[1]
+          ? { ...item, status: "running", question: null, ownerControl: false }
+          : item,
+      );
+      return route.fulfill({
+        json: { task: tasks.find((item) => item.id === controlReturnMatch[1]) },
+      });
+    }
+    const controlMatch = /^\/api\/computer\/tasks\/([^/]+)\/control$/.exec(path);
+    if (controlMatch) {
+      takeovers.push(controlMatch[1]);
+      setTask(controlMatch[1], { ownerControl: true });
+      return route.fulfill({ json: { task: tasks.find((item) => item.id === controlMatch[1]) } });
+    }
     const taskMatch = /^\/api\/computer\/tasks\/([^/]+)$/.exec(path);
     if (taskMatch) {
       return route.fulfill({ json: { task: tasks.find((item) => item.id === taskMatch[1]) } });
@@ -135,7 +175,7 @@ async function mockComputer(
       json: { accounts: [], data: [], numbers: [], integrations: [], messages: [], threads: [] },
     });
   });
-  return { replies, stops, setTask };
+  return { replies, stops, ownerInputs, takeovers, returns, setTask };
 }
 
 /** Nothing in the computer layout is wider than its box, and nothing scrolls sideways. */
@@ -305,6 +345,83 @@ test("a running task keeps updating while the owner reads an older result", asyn
     .fill("Compare two supplier prices.");
   await expect(page.getByRole("button", { name: "Start Task" })).toBeEnabled();
 });
+
+for (const width of [390, 1440]) {
+  test(`the owner can take over, interact with the live browser, and return control at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+    const { ownerInputs, takeovers, returns } = await mockComputer(page, {
+      status: READY,
+      frame: await fakeFrame(page),
+      tasks: [
+        task({
+          id: "task-live",
+          status: "needs_input",
+          question: "The site asks me to sign in before I can continue.",
+        }),
+      ],
+    });
+
+    await page.goto("/computer");
+    const detail = page.getByRole("region", { name: /Find three plumbers/ });
+    await expect(detail.getByText("Front Desk · +15125550100")).toBeVisible();
+    await detail.getByRole("button", { name: "Take control" }).click();
+    await expect(detail.getByRole("heading", { name: "You’re in control" })).toBeVisible();
+    expect(takeovers).toEqual(["task-live"]);
+
+    const screen = detail.getByRole("img", {
+      name: "Live browser screen. Click or drag to interact with the page.",
+    });
+    await expect(screen).toBeVisible();
+    const bounds = await screen.boundingBox();
+    expect(bounds).not.toBeNull();
+    if (bounds) {
+      await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    }
+    await detail
+      .getByRole("textbox", { name: "Type into the focused page field" })
+      .fill("owner@example.test");
+    await detail.getByRole("button", { name: "Send to page" }).click();
+    await expect(
+      detail.getByRole("textbox", { name: "Type into the focused page field" }),
+    ).toHaveValue("");
+    await detail.getByRole("textbox", { name: "Web address" }).fill("https://login.example.test");
+    await detail.getByRole("button", { name: "Go to website" }).click();
+    await expect(detail.getByRole("textbox", { name: "Web address" })).toHaveValue(
+      "https://login.example.test/",
+    );
+    await detail.getByRole("button", { name: "Back", exact: true }).click();
+    await detail.getByRole("button", { name: "Tab", exact: true }).click();
+    expect(ownerInputs).toContainEqual(
+      expect.objectContaining({ kind: "type", text: "owner@example.test" }),
+    );
+    expect(ownerInputs).toContainEqual(expect.objectContaining({ kind: "key", key: "Tab" }));
+    expect(ownerInputs).toContainEqual(
+      expect.objectContaining({ kind: "navigate", url: "https://login.example.test" }),
+    );
+    expect(ownerInputs).toContainEqual(
+      expect.objectContaining({ kind: "history", action: "back" }),
+    );
+    expect(ownerInputs.some((input) => (input as { kind?: string }).kind === "click")).toBe(true);
+    await expectNoHorizontalOverflow(page);
+    if (width >= 820) {
+      const screenBox = await detail.locator(".wl-computer-screen").boundingBox();
+      const controlsBox = await detail
+        .getByRole("complementary", { name: "Browser controls" })
+        .boundingBox();
+      expect(
+        screenBox && controlsBox && screenBox.x + screenBox.width <= controlsBox.x + 1,
+        JSON.stringify({ screenBox, controlsBox }),
+      ).toBe(true);
+    }
+    await capture(page, info, `computer-owner-control-${width}`);
+
+    await detail.getByRole("button", { name: "Return control to Bot" }).click();
+    await expect(detail.getByText("Working", { exact: true })).toBeVisible();
+    expect(returns).toEqual(["task-live"]);
+  });
+}
 
 test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });

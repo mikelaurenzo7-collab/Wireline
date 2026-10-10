@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { chromium, type Browser } from "playwright-core";
 
 import { CloudBrowserSession } from "../src/lib/cloud-computer/browser-session";
 
@@ -66,47 +67,75 @@ describe("cloud browser address checks", () => {
   });
 });
 
-describe("hosted browser default context", () => {
-  const vendorDefaultContext = (browser: unknown) =>
-    (
-      CloudBrowserSession as unknown as {
-        vendorDefaultContext(browser: unknown): Promise<unknown>;
-      }
-    ).vendorDefaultContext(browser);
-  const browserWith = (urls: string[], cookies: unknown[] | Error = []) => {
-    const pages = urls.map((url) => ({ url: () => url, close: vi.fn(async () => undefined) }));
-    const context = {
-      pages: () => pages,
-      cookies: async () => {
-        if (cookies instanceof Error) throw cookies;
-        return cookies;
-      },
-      clearPermissions: vi.fn(async () => undefined),
+describe("hosted browser context isolation", () => {
+  const browserFixture = () => {
+    const vendorPage = {
+      url: () => "https://another-customer.example/account",
+      setViewportSize: vi.fn(async () => undefined),
+      on: vi.fn(),
+      close: vi.fn(async () => undefined),
     };
-    return {
-      contexts: () => [context],
-      newBrowserCDPSession: async () => ({ send: async () => ({}), detach: async () => undefined }),
-      context,
+    const vendorContext = {
+      pages: vi.fn(() => [vendorPage]),
+      cookies: vi.fn(async () => [{ name: "another-session", value: "private" }]),
     };
+    const isolatedPage = {
+      url: () => "about:blank",
+      setViewportSize: vi.fn(async () => undefined),
+      on: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+    const isolatedContext = {
+      pages: vi.fn(() => [isolatedPage]),
+      addInitScript: vi.fn(async () => undefined),
+      route: vi.fn(async () => undefined),
+      routeWebSocket: vi.fn(async () => undefined),
+      on: vi.fn(),
+      setDefaultTimeout: vi.fn(),
+      setDefaultNavigationTimeout: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+    const browser = {
+      contexts: vi.fn(() => [vendorContext]),
+      newContext: vi.fn(async () => isolatedContext),
+      on: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+    return { browser, vendorContext, vendorPage, isolatedContext, isolatedPage };
   };
 
-  it("uses a fresh vendor context", async () => {
-    const browser = browserWith(["about:blank", "chrome://newtab/"]);
-    expect(await vendorDefaultContext(browser)).toBe(browser.context);
+  it("allocates a fresh context without inspecting or reusing vendor state", async () => {
+    const fixture = browserFixture();
+    vi.spyOn(chromium, "connect").mockResolvedValue(fixture.browser as unknown as Browser);
+
+    const session = await CloudBrowserSession.open({
+      kind: "remote",
+      wsEndpoint: "wss://browserless.example/playwright",
+    });
+
+    expect(fixture.browser.newContext).toHaveBeenCalledOnce();
+    expect(fixture.browser.contexts).not.toHaveBeenCalled();
+    expect(fixture.vendorContext.pages).not.toHaveBeenCalled();
+    expect(fixture.vendorPage.setViewportSize).not.toHaveBeenCalled();
+    expect(fixture.isolatedPage.setViewportSize).toHaveBeenCalledOnce();
+    await session.close();
+    expect(fixture.isolatedContext.close).toHaveBeenCalledOnce();
   });
 
-  it("refuses a context another session already used", async () => {
-    await expect(
-      vendorDefaultContext(browserWith(["https://bank.example/account"])),
-    ).rejects.toThrow("already in use");
-    await expect(
-      vendorDefaultContext(browserWith(["about:blank"], [{ name: "session", value: "x" }])),
-    ).rejects.toThrow("already in use");
-  });
+  it("fails closed instead of falling back to a vendor default context", async () => {
+    const fixture = browserFixture();
+    fixture.browser.newContext.mockRejectedValue(new Error("isolated context unavailable"));
+    vi.spyOn(chromium, "connect").mockResolvedValue(fixture.browser as unknown as Browser);
 
-  it("refuses a context whose storage cannot be read", async () => {
     await expect(
-      vendorDefaultContext(browserWith(["about:blank"], new Error("Storage.getCookies failed"))),
-    ).rejects.toThrow("could not be checked");
+      CloudBrowserSession.open({
+        kind: "remote",
+        wsEndpoint: "wss://browserless.example/playwright",
+      }),
+    ).rejects.toThrow("isolated context unavailable");
+
+    expect(fixture.browser.contexts).not.toHaveBeenCalled();
+    expect(fixture.vendorContext.pages).not.toHaveBeenCalled();
+    expect(fixture.browser.close).toHaveBeenCalledOnce();
   });
 });

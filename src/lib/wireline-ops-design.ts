@@ -58,12 +58,13 @@ export const OPS_COPY = {
   growthDeployFirst: "Deploy an agent first",
   analyticsSection: "Agent analytics",
   sentimentEmptyTitle: "No Conversations Yet",
-  sentimentEmptyHint: "Run a test call to populate sentiment.",
+  sentimentEmptyHint: "Complete a conversation with your Bot to populate sentiment.",
   roiLabel: "Agent efficiency",
   setupEyebrow: "Agent setup",
   setupBody: (done: number, total: number) =>
     `${done} of ${total} complete, agent, Training, number, and first useful call.`,
-  setupHint: "Activation = one real phone conversation, not browser test alone.",
+  setupHint:
+    "Activation requires a real phone conversation; a private browser rehearsal does not activate it.",
   testCallNumber: "(630) 642-5661",
   testCallHref: "tel:+16306425661",
 } as const;
@@ -150,7 +151,7 @@ export const OPS_CHANNEL_EMPTY = {
   },
   sentiment: {
     title: "No Conversations Yet",
-    actions: [{ label: "Call Test Line", to: "tel:+16306425661", primary: true }],
+    actions: [{ label: "Call Demo Line", to: "tel:+16306425661", primary: true }],
   },
   campaigns: {
     title: "No Campaigns Yet",
@@ -321,9 +322,9 @@ export const OPS_STUDIO_ASSISTS = [
       "Review this agent's enabled tools for its role and propose which to turn on or off, with one-line reasons.",
   },
   {
-    label: "Prep a test call",
+    label: "Prep a rehearsal call",
     prompt:
-      "Give me a 60-second test-call script to verify this agent's greeting, Training, and escalation handling.",
+      "Give me a 60-second rehearsal script to review this Bot's greeting, Training, and escalation handling.",
   },
 ] as const;
 

@@ -123,6 +123,8 @@ projects:
                 sync: false
               - key: OPENAI_API_KEY
                 sync: false
+              - key: CLOUD_COMPUTER_BROWSER_WS_URL
+                sync: false
               - key: OPENAI_PROJECT_ID
                 sync: false
               - key: OPENAI_WEBHOOK_SECRET

@@ -16,7 +16,7 @@ export const BOT_PRODUCT_TYPES = [
     name: "Phone Bot",
     label: "PHONE BOT",
     description:
-      "Handle inbound and outbound calls, qualify needs, book next steps, transfer, and recap.",
+      "Answer inbound calls and rehearse outbound playbooks. Live outbound dialing requires server-verifiable consent records and Federal Do Not Call screening.",
   },
   {
     key: "conversation" as const,
@@ -44,7 +44,7 @@ export const BOT_CHANNELS = [
     key: "voice" as const,
     label: "Call",
     description:
-      "Answer and make calls, hold natural conversations, qualify needs, book, transfer, and recap.",
+      "Answer inbound calls, hold natural conversations, qualify needs, book, transfer, and recap. Outbound playbooks can be rehearsed privately; live dialing requires verified consent and Federal Do Not Call screening.",
   },
   {
     key: "text" as const,
@@ -79,7 +79,7 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Sales Rep",
     category: "Operations" as const,
     direction: "hybrid" as const,
-    summary: "Work new leads while they are hot and keep qualified buyers moving.",
+    summary: "Set up lead follow-up playbooks and rehearse each next step.",
     outcomes: ["Qualify Leads", "Handle Objections", "Advance Deals"],
     moves: [
       "Instant lead response",
@@ -92,8 +92,8 @@ export const BOT_ROLE_TEMPLATES = [
     name: "Appointment Setter",
     category: "Operations" as const,
     direction: "outbound" as const,
-    summary: "Turn outreach into qualified calendar time.",
-    outcomes: ["Run Outreach", "Confirm Interest", "Set Meetings"],
+    summary: "Set up appointment-setting playbooks for outreach and calendar handoffs.",
+    outcomes: ["Shape Outreach", "Confirm Interest", "Set Meetings"],
     moves: [
       "Outbound list + call windows",
       "Interest + approved FAQ handling",
@@ -197,7 +197,8 @@ export const BOT_MARKETING_VOICE = {
   eyebrow: BOT_BRAND.supportingLine,
   headline: BOT_BRAND.slogan,
   subline: BOT_BRAND.promise,
-  activationLine: "Answers calls, books appointments, and takes messages for your business.",
+  activationLine:
+    "Your Bot answers customers, lets you plan outbound follow-up, starts work on its cloud computer, and follows through from its own inbox.",
   primaryCta: "Start Free",
   spine: ["Call", "Text", "Email"],
 } as const;

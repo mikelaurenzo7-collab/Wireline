@@ -205,8 +205,8 @@ export function Stat({ label, value }: { label: string; value: string }) {
 
 export function NoKeyInline() {
   // White-label posture: customers never see "missing API key" copy.
-  // If our Anthropic key isn't reachable from the server, that's our
-  // problem to fix on the backend (alerted via Vercel logs +
+  // If a required AI provider isn't reachable from the server, that's our
+  // problem to fix on the backend (alerted via service logs +
   // /api/health/integrations). UI just shows a soft "warming up" state.
   return (
     <div className="px-7 py-4 bg-rose-500/10 border-y border-rose-500/30 flex items-center gap-3">

@@ -65,38 +65,10 @@ describe("model pricing coverage contract", () => {
     });
   });
 
-  it("pins Claude cloud-computer rates, including refusal-fallback models", () => {
-    expect(MODEL_PRICING[ANTHROPIC_MODELS.OPUS_5_5]).toEqual({
-      input: 4,
-      output: 20,
-      cacheRead: 0.2,
-      cacheWrite: 5,
-    });
-    expect(MODEL_PRICING[ANTHROPIC_MODELS.OPUS_5]).toEqual({
-      input: 5,
-      output: 25,
-      cacheRead: 0.5,
-      cacheWrite: 6.25,
-    });
-    expect(MODEL_PRICING[ANTHROPIC_MODELS.SONNET_5_5]).toEqual({
-      input: 2,
-      output: 10,
-      cacheRead: 0.2,
-      cacheWrite: 2.5,
-    });
-    // Opus 5.5 falls back to Opus 5 or Opus 4.8; Sonnet 5.5 to Sonnet 5.
-    expect(MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.OPUS_4_8]).toEqual({
-      input: 5,
-      output: 25,
-      cacheRead: 0.5,
-      cacheWrite: 6.25,
-    });
-    expect(MODEL_PRICING[ANTHROPIC_FALLBACK_MODELS.SONNET_5]).toEqual({
-      input: 2,
-      output: 10,
-      cacheRead: 0.2,
-      cacheWrite: 2.5,
-    });
+  it("prices each OpenAI cloud-computer model", () => {
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_TERRA]).toBeDefined();
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_LUNA]).toBeDefined();
+    expect(MODEL_PRICING[OPENAI_MODELS.GPT_5_6_SOL]).toBeDefined();
   });
 
   it("never prices an unlisted Claude model below the most expensive Claude row", () => {

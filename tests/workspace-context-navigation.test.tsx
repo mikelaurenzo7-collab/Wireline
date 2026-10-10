@@ -280,7 +280,7 @@ describe("Bot context across workspace pages", () => {
           agentName: "Bravo",
           phoneNumber: connected ? "+13125550102" : null,
           onEdit: vi.fn(),
-          onTest: vi.fn(),
+          onRehearse: vi.fn(),
         }),
       );
       const links = elements(tree)
@@ -304,7 +304,7 @@ describe("Bot context across workspace pages", () => {
       }
       expect(nodes.find((node) => node.type === "select")?.props.value).toBe(expected);
       expect(
-        nodes.find((node) => text(node) === "Test in Studio" && node.type === "a")?.props.to,
+        nodes.find((node) => text(node) === "Rehearse in Studio" && node.type === "a")?.props.to,
       ).toBe(`/studio?agent=${expected}&section=test`);
     },
   );
@@ -443,7 +443,7 @@ describe("Bot context across workspace pages", () => {
     await vi.waitFor(() => expect(text(phone())).toContain("Live activation is paused"));
     const tree = phone();
     expect(text(tree)).toContain("Live activation is paused");
-    expect(text(tree)).toContain("Use Studio for private testing.");
+    expect(text(tree)).toContain("Use Studio to rehearse privately.");
     expect(
       elements(tree).some((node) => node.type === "button" && text(node) === "Activate Line"),
     ).toBe(false);
@@ -579,7 +579,7 @@ describe("phone mutations refresh the shared roster", () => {
   });
 });
 
-describe("Workroom mode keyboard navigation", () => {
+describe("Workroom setup and rehearsal flow", () => {
   it.each([
     { draft: "Keep this customer scenario.", expected: "Keep this customer scenario." },
     { draft: "", expected: "Suggested customer question" },
@@ -617,7 +617,7 @@ describe("Workroom mode keyboard navigation", () => {
     expect(focus).toHaveBeenCalledOnce();
   });
 
-  it("connects tabs to the active panel and preserves focus after a mode remount", () => {
+  it("keeps setup and private rehearsal in one workspace and restores focus after switching", () => {
     const frames: Array<() => void> = [];
     const focused = new Map<string, ReturnType<typeof vi.fn>>();
     vi.stubGlobal("requestAnimationFrame", (callback: () => void) => frames.push(callback));
@@ -626,6 +626,7 @@ describe("Workroom mode keyboard navigation", () => {
     const changed = vi.fn((next: "configure" | "test") => {
       mode = next;
     });
+    const modeActionId = "studio-workroom-bot-b-mode-action";
     const workroom = () =>
       render(() =>
         (
@@ -637,37 +638,27 @@ describe("Workroom mode keyboard navigation", () => {
           null,
         ),
       );
-    const tab = (label: string) =>
-      elements(workroom()).find((node) => node.props.role === "tab" && text(node) === label)!;
-    const assertActive = (label: string) => {
-      const active = tab(label);
-      const panel = elements(workroom()).find((node) => node.props.role === "tabpanel")!;
-      expect(active.props["aria-selected"]).toBe(true);
-      expect(active.props.tabIndex).toBe(0);
-      expect(active.props["aria-controls"]).toBe(panel.props.id);
-      expect(panel.props["aria-labelledby"]).toBe(active.props.id);
-      return active;
-    };
-    assertActive("Build");
-    expect(tab("Test").props.tabIndex).toBe(-1);
-    for (const [key, from, to] of [
-      ["ArrowRight", "Build", "Test"],
-      ["ArrowLeft", "Test", "Build"],
-      ["End", "Build", "Test"],
-      ["Home", "Test", "Build"],
-    ]) {
-      const preventDefault = vi.fn();
-      tab(from).props.onKeyDown!({ key, preventDefault });
-      const active = assertActive(to);
-      const focus = vi.fn();
-      focused.set(active.props.id!, focus);
-      frames.splice(0).forEach((frame) => frame());
-      expect(preventDefault).toHaveBeenCalledOnce();
-      expect(focus).toHaveBeenCalledOnce();
-    }
-    const preventDefault = vi.fn();
-    tab("Build").props.onKeyDown!({ key: "Tab", preventDefault });
-    expect(preventDefault).not.toHaveBeenCalled();
-    expect(changed).toHaveBeenCalledTimes(4);
+    const action = (label: string) =>
+      elements(workroom()).find((node) => node.type === "button" && text(node) === label)!;
+
+    expect(elements(workroom()).some((node) => node.props.role === "tablist")).toBe(false);
+    expect(text(workroom())).toContain("Set Up");
+    const focus = vi.fn();
+    focused.set(modeActionId, focus);
+    const rehearsalAction = action("Rehearse");
+    expect(rehearsalAction.props.id).toBe(modeActionId);
+    rehearsalAction.props.onClick!();
+    frames.splice(0).forEach((frame) => frame());
+    expect(changed).toHaveBeenLastCalledWith("test");
+    expect(focus).toHaveBeenCalledOnce();
+    focus.mockClear();
+    expect(text(workroom())).toContain("Private Rehearsal");
+
+    const returnAction = action("Set Up");
+    expect(returnAction.props.id).toBe(modeActionId);
+    returnAction.props.onClick!();
+    frames.splice(0).forEach((frame) => frame());
+    expect(changed).toHaveBeenLastCalledWith("configure");
+    expect(focus).toHaveBeenCalledOnce();
   });
 });

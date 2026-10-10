@@ -24,12 +24,17 @@ describe("launch readiness cross-surface contract", () => {
     const security = read("src/components/Security.tsx");
     expect(kb).toContain("config?.capabilities?.image_uploads === true");
     expect(kb).toMatch(
-      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown"/,
+      /accept=\{\s*imageUploadsAvailable\s*\?\s*"\.txt,\.csv,\.md,\.markdown,\.pdf,\.docx,\.xlsx,image\/png,image\/jpeg,image\/jpg,image\/webp,image\/gif"\s*:\s*"\.txt,\.csv,\.md,\.markdown,\.pdf,\.docx,\.xlsx"/,
     );
-    expect(kb).toContain("Image uploads are unavailable. Upload TXT, MD or CSV.");
-    expect(kb).toContain("is not supported yet");
+    expect(kb).toContain(
+      "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
+    );
+    expect(kb).toContain("document type that does not match its extension");
     expect(security).toMatch(
-      /Outbound calls are not available yet\. Verified recipient consent and applicable DNC checks must be in place/i,
+      /Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start/i,
+    );
+    expect(security).toMatch(
+      /Live outbound dialing is gated until BotBound can verify server-owned recipient-consent records and Federal Do Not Call screening/i,
     );
     expect(security).not.toContain("FEDERAL_DNC_API_KEY");
   });

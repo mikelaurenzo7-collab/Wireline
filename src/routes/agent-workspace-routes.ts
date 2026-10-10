@@ -413,19 +413,13 @@ router.post(
   },
 );
 
-// POST /api/agents/:id/workspace/files — upload a PDF, extract knowledge,
+// POST /api/agents/:id/workspace/files — upload a supported document, extract knowledge,
 // add it to the agent's knowledge base, and acknowledge in the workspace thread.
-//
-// Reuses claudeBrain.knowledgeFromDocument (Claude's native PDF block).
-// File arrives as base64 in the body — matches the existing
-// /api/claude/knowledge-from-document contract. Keeps the upload path
-// simple (no multer / multipart). 30MB ceiling.
 router.post(
   "/api/agents/:id/workspace/files",
   authenticateUser,
-  // PDF extraction is one of the most expensive single AI calls in the app
-  // (native document blocks) and previously had NO rate limit and NO cost
-  // accounting — a free tenant could drive unmetered model spend.
+  // Document extraction uses the same rate limit and managed AI spend system
+  // as Training uploads.
   claudeRateLimiter,
   enforceSpendCap,
   withAudit("workspace"),
@@ -433,20 +427,20 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const agentId = req.params.id;
-      const { pdfBase64, fileName } = req.body;
-      // Magic-number sanity check — bail on obvious non-PDFs. Decode inside the
-      // try, but assert outside it: throwing the "not a PDF" AppError from
-      // within its own catch turned every wrong-file-type upload into the
-      // misleading "Malformed base64 payload." message.
-      let head: string;
-      try {
-        head = Buffer.from(pdfBase64.slice(0, 16), "base64").toString("utf8", 0, 5);
-      } catch {
-        throw AppError.fromHttpStatus(400, "Malformed base64 payload.");
-      }
-      if (!head.startsWith("%PDF")) {
-        throw AppError.fromHttpStatus(400, "File does not look like a valid PDF.");
-      }
+      const legacyPdfUpload = typeof req.body.pdfBase64 === "string";
+      const fileBase64 = legacyPdfUpload ? req.body.pdfBase64 : req.body.fileBase64;
+      const suppliedName =
+        typeof req.body.fileName === "string"
+          ? req.body.fileName
+              .trim()
+              // eslint-disable-next-line no-control-regex
+              .replace(/[\\/\u0000-\u001f\u007f*`]/g, "_")
+              .slice(0, 255)
+          : "";
+      const fileName = suppliedName || "Knowledge upload.pdf";
+      const documentName =
+        legacyPdfUpload && !/\.pdf$/i.test(fileName) ? `${fileName}.pdf` : fileName;
+      const mimeType = req.body.mimeType || (legacyPdfUpload ? "application/pdf" : "");
 
       const [agent] = await drizzle
         .select({ id: schema.agents.id, name: schema.agents.name })
@@ -455,48 +449,40 @@ router.post(
         .limit(1);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
-      // Extract knowledge entries via the managed runtime. Defer the heavy
-      // import so cold-start cost isn't paid on every workspace message.
-      const { knowledgeFromDocument, KnowledgeIngestionUnavailableError } =
-        await import("../lib/ai-brains");
-      let result;
-      try {
-        result = await knowledgeFromDocument({
-          pdfBase64,
-          fileName: typeof fileName === "string" ? fileName.slice(0, 255) : undefined,
-          maxEntries: 12,
-        });
-      } catch (ingestError) {
-        if (ingestError instanceof KnowledgeIngestionUnavailableError) {
-          throw AppError.fromHttpStatus(503, ingestError.message);
-        }
-        throw ingestError;
-      }
+      // Defer the OpenAI spend machinery until the first document upload so
+      // workspace-only traffic pays no cold-start import cost.
+      const { extractKnowledgeDocumentWithOpenAI } =
+        await import("../lib/knowledge-document-openai");
+      const result = await extractKnowledgeDocumentWithOpenAI({
+        userId: req.user.id,
+        fileBase64,
+        fileName: documentName,
+        mimeType,
+      });
 
-      // result.entries is an array of { content, tags? } per the
-      // existing contract. Insert them into the agent's knowledge base
+      // Insert extracted knowledge into the agent's knowledge base
       // (deduped by content per the existing unique constraint).
-      const entries: Array<{ content: string }> = Array.isArray((result as any).entries)
-        ? (result as any).entries
+      const entries: Array<{ content: string }> = Array.isArray(result.knowledge)
+        ? result.knowledge
         : [];
-      let inserted = 0;
-      for (const e of entries) {
-        if (!e?.content) continue;
-        try {
-          await drizzle
+      const validEntries = entries.filter(
+        (entry) => typeof entry?.content === "string" && entry.content.trim(),
+      );
+      const insertedRows = validEntries.length
+        ? await drizzle
             .insert(schema.knowledge)
-            .values({
-              userId: req.user.id,
-              agentId,
-              content: e.content,
-              source: fileName ? `Workspace upload: ${fileName}` : "Workspace upload",
-            } as any)
-            .onConflictDoNothing();
-          inserted++;
-        } catch {
-          // Continue inserting the rest even if one row conflicts.
-        }
-      }
+            .values(
+              validEntries.map((entry) => ({
+                userId: req.user.id,
+                agentId,
+                content: entry.content,
+                source: `Workspace upload: ${fileName}`,
+              })) as any,
+            )
+            .onConflictDoNothing()
+            .returning({ id: schema.knowledge.id })
+        : [];
+      const inserted = insertedRows.length;
 
       // Append an "agent" message to the workspace thread acknowledging
       // the file. Account Holder sees this immediately as if the agent

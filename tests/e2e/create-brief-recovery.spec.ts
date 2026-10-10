@@ -87,7 +87,9 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     await expect(knowledge).toHaveValue(brief);
     await page.getByRole("button", { name: "Save Changes", exact: true }).click();
     await expect(
-      page.getByText("Saved. Run a test before sending live traffic.", { exact: true }),
+      page.getByText("Saved. Rehearse the updated Bot before sending live traffic.", {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(knowledge).toHaveValue("");
     expect(trainingMessages).toHaveLength(2);

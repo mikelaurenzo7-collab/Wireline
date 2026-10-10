@@ -1,6 +1,6 @@
 /**
  * Client-safe knowledge-asset ingestion limits — no server/db imports.
- * Shared by KnowledgeBaseClaude (browser) and agent-routes-v2 (API).
+ * Shared by the Knowledge workspace (browser) and agent-routes-v2 (API).
  *
  * These numbers used to live only inside the route handler, as arguments to a
  * `cleanText(value, max)` helper that silently `.slice()`s whatever it is given.
@@ -22,6 +22,36 @@
  * transport budget with room for the rest of the JSON envelope.
  */
 export const KNOWLEDGE_ASSET_MAX_BYTES = 4_000_000;
+
+/** Base64 expands a binary document by 4/3; keep uploads within express.json's 6 MiB cap. */
+export const KNOWLEDGE_DOCUMENT_MAX_BASE64_CHARS = Math.ceil(KNOWLEDGE_ASSET_MAX_BYTES / 3) * 4;
+
+const KNOWLEDGE_DOCUMENT_MIME_BY_EXTENSION: Record<string, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+};
+
+/** Resolve supported Word, Excel, and PDF types consistently in browser and server code. */
+export function knowledgeDocumentMimeType(fileName: string, declaredMimeType = ""): string | null {
+  const match = /\.([a-z0-9]+)$/i.exec(fileName.trim());
+  const extension = match?.[1]?.toLowerCase();
+  if (!extension || !Object.hasOwn(KNOWLEDGE_DOCUMENT_MIME_BY_EXTENSION, extension)) return null;
+  const expected = KNOWLEDGE_DOCUMENT_MIME_BY_EXTENSION[extension];
+  const declared = declaredMimeType.split(";")[0]?.trim().toLowerCase();
+  const officeMimeAlias =
+    (extension === "docx" && declared === "application/msword") ||
+    (extension === "xlsx" && declared === "application/vnd.ms-excel");
+  if (
+    declared &&
+    declared !== "application/octet-stream" &&
+    declared !== expected &&
+    !officeMimeAlias
+  ) {
+    return null;
+  }
+  return expected;
+}
 
 /** Files accepted per pick/drop. Extra files are dropped, so the UI says so. */
 export const KNOWLEDGE_ASSET_MAX_FILES = 5;

@@ -423,8 +423,8 @@ describe("Activity spend presentation", () => {
   it("uses readable action names with the original audit keys in native disclosures", async () => {
     const agentId = "agent-2dfbe489-96e1-4d57-b71d-784b1ec39ecc";
     const actions = [
-      [`workspace.api.agents.${agentId}.workspace.messages.stream`, "Studio Build"],
-      [`workspace.api.agents.${agentId}.workspace.messages`, "Studio Build"],
+      [`workspace.api.agents.${agentId}.workspace.messages.stream`, "Bot Setup"],
+      [`workspace.api.agents.${agentId}.workspace.messages`, "Bot Setup"],
       [`workspace.api.agents.${agentId}.workspace.files`, "Knowledge upload"],
       [`agent-test.api.agents.${agentId}.test.stream`, "Bot simulation"],
       ["terms_accepted", "Terms accepted"],

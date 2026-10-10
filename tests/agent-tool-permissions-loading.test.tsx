@@ -163,7 +163,7 @@ describe("agent action editor loading", () => {
     )!.props.onClick!();
     settle(json({ enabledTools: submitted }));
     await flush();
-    expect(textOf(render())).toContain("Run a test before the next live call");
+    expect(textOf(render())).toContain("Rehearse the updated actions before the next live call");
     expect(firstAction().props.checked).toBe(true);
   });
 

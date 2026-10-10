@@ -28,7 +28,7 @@ describe("home landing launch clarity", () => {
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(product).toContain(
-      'activationLine: "Answers calls, books appointments, and takes messages for your business."',
+      'activationLine:\n    "Your Bot answers customers, lets you plan outbound follow-up, starts work on its cloud computer, and follows through from its own inbox."',
     );
     expect(landing).toContain("landing-prestige__directions");
     expect(landing).toContain("Find. Call. Book.");
@@ -55,7 +55,9 @@ describe("home landing launch clarity", () => {
     expect(landing).toContain("plan.price_usd_monthly");
     expect(landing).toContain('id === "email"');
     expect(landing).toContain("canActivate(id)");
-    expect(landing).toContain("<span>Build and test free.</span> <span>No card required.</span>");
+    expect(landing).toContain(
+      "<span>Create a Bot for free. Rehearse privately.</span> <span>No card required.</span>",
+    );
     expect(landing).not.toMatch(/coming soon/i);
     expect(landing.indexOf('className="landing-prestige__direction is-inbound"')).toBeLessThan(
       landing.indexOf('className="landing-prestige__direction is-outbound"'),

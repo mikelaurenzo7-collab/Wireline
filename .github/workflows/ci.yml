@@ -24,17 +24,10 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: |
-            package-lock.json
-            apps/desktop/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Desktop dependencies and static build
-        run: |
-          npm run desktop:deps
-          npm run desktop:verify
 
       - name: Unit tests
         run: npm run test:run

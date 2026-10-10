@@ -59,7 +59,7 @@ describe("authenticated mobile cleanup", () => {
 
   it("keeps first run on one brief-first Studio launchpad", () => {
     const studio = read("src/components/StudioWorkspaceV2.tsx");
-    expect(studio).toContain('title="Build Your Bot"');
+    expect(studio).toContain('title="Create Your Bot"');
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).toContain("Create Bot");
     expect(studio).toContain('description="Describe the role and outcome."');

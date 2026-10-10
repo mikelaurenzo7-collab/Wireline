@@ -112,7 +112,7 @@ function render() {
     : StudioAgentWorkspacePanel({
         agentId: h.botId,
         agentName: "My Bot",
-        onTestVoiceInChat: vi.fn(),
+        onRehearseVoiceInChat: vi.fn(),
       });
 }
 function unmount() {

@@ -8,7 +8,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ArrowUp, Loader2, Phone, Trash2 } from "lucide-react";
+import { Link } from "react-router";
+import { ArrowLeft, ArrowUp, Loader2, MessageCircle, Monitor, Phone, Trash2 } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import { StatusNotice } from "../components/molecules";
@@ -467,57 +468,13 @@ const StudioWorkroom = forwardRef<
           ? "Replying"
           : "Working";
 
-  const modeTabId = (option: WorkroomMode) => `studio-workroom-${agentId}-tab-${option}`;
-  const modePanelId = `studio-workroom-${agentId}-panel`;
+  const modeActionId = `studio-workroom-${agentId}-mode-action`;
   const selectMode = (option: WorkroomMode) => {
     onModeChange?.(option);
-    // The workspace remounts the conversation when its mode changes.
-    // Restore focus to the new tab instead of leaving keyboard users at the page root.
-    requestAnimationFrame(() => document.getElementById(modeTabId(option))?.focus());
+    // The workspace remounts the conversation when its mode changes. Keep
+    // keyboard focus on the same in-context action after the remount.
+    requestAnimationFrame(() => document.getElementById(modeActionId)?.focus());
   };
-
-  const modeToggle = onModeChange ? (
-    <div
-      className="inline-flex items-center rounded-lg bg-muted/45 p-0.5"
-      role="tablist"
-      aria-label="Workroom mode"
-    >
-      {(["configure", "test"] as const).map((option) => (
-        <button
-          key={option}
-          id={modeTabId(option)}
-          type="button"
-          role="tab"
-          aria-selected={mode === option}
-          aria-controls={modePanelId}
-          tabIndex={mode === option ? 0 : -1}
-          onClick={() => selectMode(option)}
-          onKeyDown={(event) => {
-            const nextMode =
-              event.key === "Home"
-                ? "configure"
-                : event.key === "End"
-                  ? "test"
-                  : event.key === "ArrowLeft" || event.key === "ArrowRight"
-                    ? option === "configure"
-                      ? "test"
-                      : "configure"
-                    : null;
-            if (!nextMode) return;
-            event.preventDefault();
-            selectMode(nextMode);
-          }}
-          className={`min-h-11 min-w-11 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors wl-focus-ring-halo ${
-            mode === option
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {option === "configure" ? "Build" : "Test"}
-        </button>
-      ))}
-    </div>
-  ) : null;
 
   const clearButton = (
     <button
@@ -525,8 +482,8 @@ const StudioWorkroom = forwardRef<
       disabled={!messages.length || clearing || sending || loading}
       onClick={() => void clearConversation()}
       className="grid size-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground wl-focus-ring-halo disabled:cursor-not-allowed disabled:opacity-35"
-      aria-label={mode === "test" ? "Reset test conversation" : "Clear conversation"}
-      title={mode === "test" ? "Reset test" : "Clear conversation"}
+      aria-label={mode === "test" ? "Reset rehearsal conversation" : "Clear conversation"}
+      title={mode === "test" ? "Reset rehearsal" : "Clear conversation"}
     >
       {clearing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
     </button>
@@ -535,16 +492,46 @@ const StudioWorkroom = forwardRef<
   return (
     <section
       className="flex h-full min-h-0 flex-col overflow-y-auto bg-background"
-      aria-label={mode === "test" ? `${agentName} customer test` : `${agentName} workroom`}
+      aria-label={mode === "test" ? `${agentName} rehearsal conversation` : `${agentName} workroom`}
     >
       <header className={`shrink-0 ${split ? "px-3 py-2 sm:px-4" : "px-4 py-2 sm:px-6"}`}>
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             {onModeChange ? (
-              modeToggle
+              <>
+                <span className="text-sm font-semibold text-foreground">
+                  {mode === "test" ? "Private Rehearsal" : "Set Up"}
+                </span>
+                <Button
+                  id={modeActionId}
+                  type="button"
+                  size="sm"
+                  variant={mode === "test" ? "outline" : "secondary"}
+                  className="min-h-11"
+                  onClick={() => selectMode(mode === "test" ? "configure" : "test")}
+                >
+                  {mode === "test" ? (
+                    <>
+                      <ArrowLeft aria-hidden="true" />
+                      Set Up
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle aria-hidden="true" />
+                      Rehearse
+                    </>
+                  )}
+                </Button>
+                <Button asChild size="sm" variant="outline" className="min-h-11">
+                  <Link to={`/computer?agent=${encodeURIComponent(agentId)}`}>
+                    <Monitor aria-hidden="true" />
+                    Computer
+                  </Link>
+                </Button>
+              </>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {mode === "test" ? "Test" : "Build"}
+                {mode === "test" ? "Private Rehearsal" : "Set Up"}
               </span>
             )}
           </div>
@@ -566,12 +553,7 @@ const StudioWorkroom = forwardRef<
         </div>
       </header>
 
-      <div
-        id={onModeChange ? modePanelId : undefined}
-        role={onModeChange ? "tabpanel" : undefined}
-        aria-labelledby={onModeChange ? modeTabId(mode) : undefined}
-        className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0"
-      >
+      <div className="flex min-h-[24rem] flex-1 flex-col sm:min-h-0">
         {error || clearError || interrupted ? (
           <div className="mx-auto mt-3 w-[calc(100%-2rem)] max-w-3xl">
             <StatusNotice
@@ -643,7 +625,8 @@ const StudioWorkroom = forwardRef<
                 </h2>
                 {mode === "test" ? (
                   <p className="text-sm text-muted-foreground">
-                    Private rehearsal. Save improvements in Build.
+                    Private rehearsal. See what customers experience, then save improvements in Set
+                    Up.
                   </p>
                 ) : null}
               </div>

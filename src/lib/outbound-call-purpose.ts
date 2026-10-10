@@ -17,7 +17,7 @@ export const DIRECT_OUTBOUND_AVAILABILITY = Object.freeze({
   available: false,
   code: "AUDITABLE_RECIPIENT_CONSENT",
   message:
-    "Outbound calls require verified consent from each recipient. Consent setup is not available yet.",
+    "Live outbound calling is gated until server-verifiable recipient consent records and Federal Do Not Call screening are in place.",
 });
 
 export function isOutboundCallPurpose(value: unknown): value is OutboundCallPurpose {

@@ -15,7 +15,6 @@ import {
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 import { PageMeta } from "../lib/page-meta";
 import { signupHrefForPlan } from "../lib/signup-intent";
-import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 type Pillar = {
   icon: LucideIcon;
@@ -29,9 +28,8 @@ const PILLARS: readonly Pillar[] = [
   {
     icon: Phone,
     label: "Phone Number",
-    title: "Answers Every Call",
-    body: "Pick a local number in Phone setup. Your Bot greets callers, answers questions, qualifies the request, books the appointment, and takes a clean message when a person is needed.",
-    note: MARKETING_CALLS_NOTICE,
+    title: "Answers and Makes Calls",
+    body: "Give your Bot a local number and a clear playbook. It answers inbound calls, qualifies conversations, books next steps, and records outcomes. Set up outbound follow-up workflows with consent and Do Not Call safeguards; live dialing stays gated until server-verifiable consent records and Federal screening are in place.",
   },
   {
     icon: MonitorSmartphone,
@@ -76,8 +74,8 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   },
   {
     icon: ShieldCheck,
-    title: "Private Test First",
-    body: "Rehearse privately before your Bot goes live. Build and test free, no card required.",
+    title: "Rehearse Before Launch",
+    body: "Create a Bot for free, then rehearse privately before it goes live. No card required.",
   },
 ];
 
@@ -103,9 +101,9 @@ export default function Features() {
               Inbound &amp; Outbound Bots
             </h1>
             <p className="wl-features-intro__lead mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              Build and test free. Paid plans add the channels you choose (a local number, a branded
-              inbox, or both) plus a cloud computer, trained on your business and governed by your
-              rules.
+              Create a Bot for free, then rehearse privately. Paid plans add the channels you choose
+              (a local number, a branded inbox, or both) plus a cloud computer, trained on your
+              business and governed by your rules.
             </p>
             <div className="marketing-hero__actions">
               <Link
@@ -157,7 +155,7 @@ export default function Features() {
               to={signupHrefForPlan("personal")}
               className="marketing-btn-primary min-h-11 px-5"
             >
-              Build Your Bot Free <ArrowRight className="size-4" aria-hidden="true" />
+              Create Your Bot Free <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
         </div>

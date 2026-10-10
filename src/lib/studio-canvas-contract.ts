@@ -124,7 +124,7 @@ export const STUDIO_CANVAS_REQUIRED = {
       pattern: /initialDraft=\{workroomDrafts\.get\(workroomKey\)\}/,
     },
     { id: "legacy-mode-cleanup", pattern: /next\.delete\("mode"\)/ },
-    { id: "empty-state", pattern: /Build Your Bot/i },
+    { id: "empty-state", pattern: /Create Your Bot/i },
     { id: "command-nonce", pattern: /commandNonce/ },
     { id: "progressive-inspector", pattern: /collapsed=\{!inspectorOpen\}/ },
   ],
@@ -137,7 +137,7 @@ export const STUDIO_CANVAS_REQUIRED = {
     { id: "real-config-api", pattern: /\/api\/agent-config\// },
     { id: "managed-voice-picker", pattern: /SimpleVoicePicker/ },
     { id: "voice-heading", pattern: /Phone Voice/i },
-    { id: "test-in-chat", pattern: /onTestVoiceInChat/ },
+    { id: "rehearse-in-chat", pattern: /onRehearseVoiceInChat/ },
   ],
   reviewPanel: [
     { id: "go-live-review", pattern: /onTest|onEdit/ },

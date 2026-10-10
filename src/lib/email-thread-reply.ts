@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import * as schema from "../db/schema";
 import { AppError } from "./api-error";
@@ -31,7 +31,7 @@ export type EmailThreadReplyResult = {
   message: EmailThreadReplyMessage;
 };
 
-type LedgerStatus = "processing" | "sent" | "failed";
+type LedgerStatus = "processing" | "sent" | "failed" | "owner_acknowledged";
 
 type Claim =
   | { kind: "claimed" }
@@ -107,25 +107,46 @@ async function recordLedger(
   });
 }
 
-async function claimReply(userId: string, key: string, digest: string): Promise<Claim> {
+async function claimReply(
+  userId: string,
+  threadId: string,
+  key: string,
+  digest: string,
+): Promise<Claim> {
   return drizzle.transaction(async (tx) => {
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${userId}:${key}`}))`);
-    const [latest] = await tx
-      .select({ metadata: schema.auditLog.metadata })
-      .from(schema.auditLog)
-      .where(
-        and(
-          eq(schema.auditLog.userId, userId),
-          eq(schema.auditLog.eventType, REPLY_EVENT_TYPE),
-          eq(schema.auditLog.resourceType, REPLY_RESOURCE_TYPE),
-          eq(schema.auditLog.resourceId, key),
-        ),
+    // Serialize all reply operations for one conversation, not just replays of
+    // the same UUID. A second tab or device must see an unresolved first send.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`${userId}:${threadId}`}))`);
+    const latestResult = await tx.execute(sql`
+      SELECT resource_id, metadata
+      FROM (
+        SELECT DISTINCT ON (resource_id) resource_id, metadata
+        FROM public.wireline_audit_log
+        WHERE user_id = ${userId}
+          AND event_type = ${REPLY_EVENT_TYPE}
+          AND resource_type = ${REPLY_RESOURCE_TYPE}
+          AND resource_id LIKE ${`${threadId}:%`}
+        ORDER BY resource_id, id DESC
+      ) AS latest
+    `);
+    const latestRows = (
+      latestResult as unknown as {
+        rows?: Array<{ resource_id?: unknown; metadata?: unknown }>;
+      }
+    ).rows;
+    if (
+      latestRows?.some(
+        (row) =>
+          typeof row.resource_id === "string" &&
+          metadataRecord(row.metadata).status === "processing",
       )
-      .orderBy(desc(schema.auditLog.id))
-      .limit(1);
+    ) {
+      return { kind: "processing" };
+    }
 
-    if (latest) {
-      const metadata = metadataRecord(latest.metadata);
+    const latestForKey = latestRows?.find((row) => row.resource_id === key);
+    if (latestForKey) {
+      const metadata = metadataRecord(latestForKey.metadata);
       if (metadata.bodyDigest !== digest) return { kind: "conflict" };
       if (metadata.status === "sent") {
         const result = cachedResult(metadata);
@@ -135,6 +156,82 @@ async function claimReply(userId: string, key: string, digest: string): Promise<
     }
     await recordLedger(userId, key, "processing", { bodyDigest: digest }, tx);
     return { kind: "claimed" };
+  });
+}
+
+/**
+ * Let the mailbox owner explicitly resolve an ambiguous delivery after checking
+ * Sent. This appends an acknowledgement and never rewrites the original
+ * processing record or makes its operation key reusable.
+ */
+export async function acknowledgeUnresolvedEmailThreadReply(input: {
+  userId: string;
+  threadId: string;
+}): Promise<{ acknowledged: true; alreadyAcknowledged: boolean }> {
+  const [thread] = await drizzle
+    .select({ id: schema.emailThreads.id })
+    .from(schema.emailThreads)
+    .where(
+      and(eq(schema.emailThreads.id, input.threadId), eq(schema.emailThreads.userId, input.userId)),
+    )
+    .limit(1);
+  if (!thread) throw AppError.notFound("Conversation not found.");
+
+  return drizzle.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtext(${`${input.userId}:${input.threadId}`}))`,
+    );
+    const latestResult = await tx.execute(sql`
+      SELECT resource_id, metadata
+      FROM (
+        SELECT DISTINCT ON (resource_id) resource_id, metadata
+        FROM public.wireline_audit_log
+        WHERE user_id = ${input.userId}
+          AND event_type = ${REPLY_EVENT_TYPE}
+          AND resource_type = ${REPLY_RESOURCE_TYPE}
+          AND resource_id LIKE ${`${input.threadId}:%`}
+        ORDER BY resource_id, id DESC
+      ) AS latest
+    `);
+    const latestRows =
+      (
+        latestResult as unknown as {
+          rows?: Array<{ resource_id?: unknown; metadata?: unknown }>;
+        }
+      ).rows ?? [];
+    const unresolved = latestRows.filter(
+      (row) =>
+        typeof row.resource_id === "string" && metadataRecord(row.metadata).status === "processing",
+    );
+
+    if (unresolved.length) {
+      for (const row of unresolved) {
+        const resourceId = row.resource_id;
+        if (typeof resourceId !== "string") continue;
+        const metadata = metadataRecord(row.metadata);
+        await recordLedger(
+          input.userId,
+          resourceId,
+          "owner_acknowledged",
+          {
+            ...(typeof metadata.bodyDigest === "string" ? { bodyDigest: metadata.bodyDigest } : {}),
+            resolution: "owner_checked_sent",
+            duplicateRiskAccepted: true,
+          },
+          tx,
+        );
+      }
+      return { acknowledged: true, alreadyAcknowledged: false };
+    }
+
+    if (latestRows.some((row) => metadataRecord(row.metadata).status === "owner_acknowledged")) {
+      return { acknowledged: true, alreadyAcknowledged: true };
+    }
+    throw new AppError(
+      409,
+      "EMAIL_REPLY_NOT_UNRESOLVED",
+      "There is no unresolved reply in this conversation to acknowledge.",
+    );
   });
 }
 
@@ -187,7 +284,7 @@ export async function sendEmailThreadReply(input: {
 
   const key = `${thread.id}:${input.operationKey}`;
   const digest = bodyDigest(body);
-  const claim = await claimReply(input.userId, key, digest);
+  const claim = await claimReply(input.userId, thread.id, key, digest);
   if (claim.kind === "sent") return claim.result;
   if (claim.kind === "conflict") {
     throw new AppError(
@@ -204,7 +301,7 @@ export async function sendEmailThreadReply(input: {
     );
   }
 
-  let outcome: { sent: boolean; threaded: boolean };
+  let outcome: { sent: boolean; threaded: boolean; ambiguous?: boolean };
   try {
     outcome = await new IntegrationService(input.userId).sendThreadReply({
       accountId: thread.accountId,
@@ -219,6 +316,15 @@ export async function sendEmailThreadReply(input: {
       error: getErrorMessage(error).slice(0, 300),
     }).catch(() => undefined);
     throw error;
+  }
+  if (outcome.ambiguous) {
+    // Keep the processing row. The provider may have accepted the reply, so
+    // this operation key must remain ineligible for another external send.
+    throw new AppError(
+      409,
+      "EMAIL_REPLY_UNRESOLVED",
+      "The mailbox may have accepted this reply. Check its Sent folder before starting another reply.",
+    );
   }
   if (!outcome.sent) {
     await recordLedger(input.userId, key, "failed", { bodyDigest: digest }).catch(() => undefined);

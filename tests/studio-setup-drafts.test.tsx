@@ -120,14 +120,14 @@ function render() {
           agentId: h.botId,
           agentName: "Repair Bot",
           onEdit: vi.fn(),
-          onTest: vi.fn(),
+          onRehearse: vi.fn(),
         })
       : StudioAgentWorkspacePanel({
           agentId: h.botId,
           agentName: "Repair Bot",
           compact: h.compact,
           drafts,
-          onTestVoiceInChat: vi.fn(),
+          onRehearseVoiceInChat: vi.fn(),
         });
   if (!h.mounting) flushEffects();
   return tree;

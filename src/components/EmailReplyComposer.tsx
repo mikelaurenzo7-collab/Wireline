@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Send } from "lucide-react";
 
 import { authFetch, readApiJson } from "../lib/api";
+import {
+  clearPendingEmailReplyOperation,
+  loadPendingEmailReplyOperation,
+  savePendingEmailReplyOperation,
+} from "../lib/email-reply-operation";
 import { Button, Textarea } from "./atoms";
 import { StatusNotice } from "./molecules";
 
@@ -28,6 +33,14 @@ function newOperationKey(): string {
   return crypto.randomUUID();
 }
 
+function unresolvedReplyNotice(): ComposerError {
+  return {
+    title: "Reply Status Unknown",
+    message:
+      "A previous reply may still arrive, even if it is not in Sent yet. Check the mailbox's Sent folder before enabling another reply.",
+  };
+}
+
 /**
  * Reply to one inbox conversation from the mailbox that received it. Each
  * composed reply carries one operation key: retrying the same text after an
@@ -45,25 +58,78 @@ export default function EmailReplyComposer({
 }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [error, setError] = useState<ComposerError | null>(null);
+  const [acknowledging, setAcknowledging] = useState(false);
+  const [error, setError] = useState<ComposerError | null>(() =>
+    loadPendingEmailReplyOperation(threadId) ? unresolvedReplyNotice() : null,
+  );
   const [notice, setNotice] = useState<string | null>(null);
-  const operationKey = useRef(newOperationKey());
+  const [unresolved, setUnresolved] = useState(
+    () => loadPendingEmailReplyOperation(threadId) !== null,
+  );
+  const operationKey = useRef(loadPendingEmailReplyOperation(threadId) ?? newOperationKey());
   const submittedBody = useRef<string | null>(null);
 
   // Another conversation starts a fresh reply, never a stale key or draft.
   useEffect(() => {
     setDraft("");
-    setError(null);
+    const pendingOperation = loadPendingEmailReplyOperation(threadId);
+    setError(pendingOperation ? unresolvedReplyNotice() : null);
     setNotice(null);
-    operationKey.current = newOperationKey();
+    setUnresolved(pendingOperation !== null);
+    operationKey.current = pendingOperation ?? newOperationKey();
     submittedBody.current = null;
   }, [threadId]);
 
   const body = draft.trim();
   const tooLong = body.length > EMAIL_REPLY_MAX_CHARS;
 
+  async function confirmSentFolderChecked() {
+    if (acknowledging) return;
+    setAcknowledging(true);
+    setError(null);
+    try {
+      const response = await authFetch(
+        `/api/emails/threads/${encodeURIComponent(threadId)}/reply/acknowledge`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner_confirmed_sent_check: true }),
+        },
+      );
+      const result = await readApiJson<{ acknowledged?: unknown }>(response);
+      if (!result.ok || result.data.acknowledged !== true) {
+        setError({
+          title: "Reply Still Paused",
+          message: result.ok
+            ? "The unresolved reply was not acknowledged. Keep checking the Sent folder and try again."
+            : result.error,
+        });
+        return;
+      }
+      if (!clearPendingEmailReplyOperation(threadId)) {
+        setError({
+          title: "Reply Still Paused",
+          message:
+            "The mailbox check was recorded, but your browser could not clear its retry token. Try this confirmation again to finish safely.",
+        });
+        return;
+      }
+      setUnresolved(false);
+      setError(null);
+      operationKey.current = newOperationKey();
+      submittedBody.current = null;
+    } catch {
+      setError({
+        title: "Reply Still Paused",
+        message: "We could not record the mailbox check. Keep the reply paused and try again.",
+      });
+    } finally {
+      setAcknowledging(false);
+    }
+  }
+
   async function send() {
-    if (!body || tooLong || sending) return;
+    if (!body || tooLong || sending || unresolved) return;
     if (submittedBody.current !== null && submittedBody.current !== body) {
       operationKey.current = newOperationKey();
     }
@@ -72,6 +138,14 @@ export default function EmailReplyComposer({
     setError(null);
     setNotice(null);
     try {
+      if (!savePendingEmailReplyOperation(threadId, operationKey.current)) {
+        setError({
+          title: "Reply Not Sent",
+          message:
+            "Your browser couldn't save a safe retry token. Enable session storage for this site, then try again.",
+        });
+        return;
+      }
       const response = await authFetch(
         `/api/emails/threads/${encodeURIComponent(threadId)}/reply`,
         {
@@ -82,21 +156,25 @@ export default function EmailReplyComposer({
       );
       const result = await readApiJson<ReplyResponse>(response);
       if (!result.ok) {
-        setError(
-          result.code === "EMAIL_REPLY_UNRESOLVED"
-            ? { title: "Reply May Have Been Sent", message: result.error }
-            : { title: "Reply Not Sent", message: result.error },
-        );
+        const mayHaveSent = result.code === "EMAIL_REPLY_UNRESOLVED";
+        if (mayHaveSent) {
+          setUnresolved(true);
+        } else {
+          clearPendingEmailReplyOperation(threadId);
+        }
+        setError({
+          title: mayHaveSent ? "Reply May Have Been Sent" : "Reply Not Sent",
+          message: result.error,
+        });
         return;
       }
       const message = result.data.message;
       if (!message || typeof message.id !== "string" || typeof message.content !== "string") {
-        setError({
-          title: "Reply Status Unknown",
-          message: "Try again with the same text; it won't send twice.",
-        });
+        setUnresolved(true);
+        setError(unresolvedReplyNotice());
         return;
       }
+      clearPendingEmailReplyOperation(threadId);
       onSent({
         id: message.id,
         threadId,
@@ -113,11 +191,8 @@ export default function EmailReplyComposer({
         );
       }
     } catch {
-      setError({
-        title: "Reply Status Unknown",
-        message:
-          "The connection dropped while sending. Try again with the same text; it won't send twice.",
-      });
+      setUnresolved(true);
+      setError(unresolvedReplyNotice());
     } finally {
       setSending(false);
     }
@@ -133,7 +208,23 @@ export default function EmailReplyComposer({
       }}
     >
       {error ? (
-        <StatusNotice tone="destructive" title={error.title}>
+        <StatusNotice
+          tone="destructive"
+          title={error.title}
+          action={
+            unresolved ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void confirmSentFolderChecked()}
+                disabled={acknowledging}
+              >
+                {acknowledging ? "Recording check…" : "I checked Sent; enable a new reply"}
+              </Button>
+            ) : undefined
+          }
+        >
           {error.message}
         </StatusNotice>
       ) : null}
@@ -155,6 +246,7 @@ export default function EmailReplyComposer({
             }
           }}
           disabled={sending}
+          readOnly={unresolved}
           rows={3}
           state={tooLong ? "invalid" : "default"}
           placeholder="Write your reply"
@@ -173,13 +265,17 @@ export default function EmailReplyComposer({
             ? `Shorten this reply to ${EMAIL_REPLY_MAX_CHARS.toLocaleString("en-US")} characters.`
             : "Sends from this conversation's mailbox."}
         </p>
-        <Button type="submit" disabled={!body || tooLong || sending} aria-busy={sending}>
+        <Button
+          type="submit"
+          disabled={!body || tooLong || sending || unresolved}
+          aria-busy={sending}
+        >
           {sending ? (
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           ) : (
             <Send className="size-4" aria-hidden="true" />
           )}
-          {sending ? "Sending…" : "Send Reply"}
+          {sending ? "Sending…" : unresolved ? "Check Mailbox First" : "Send Reply"}
         </Button>
       </div>
     </form>

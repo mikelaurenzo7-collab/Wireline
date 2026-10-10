@@ -13,10 +13,7 @@ import { requireInternalJwtSecret } from "../lib/internal-jwt-secret";
 import { mcpCatalog, mcpServerCard } from "../lib/mcp-app-metadata";
 import {
   clientDisplayName,
-  BOTBOUND_DESKTOP_CLIENT_ID,
-  isBotBoundDesktopRedirect,
-  desktopTokenAccountMetadata,
-  desktopPlanningScopesAllowed,
+  isRetiredMcpClient,
   isDynamicClientId,
   isTrustedCimdClientId,
   isTrustedCimdRedirectUri,
@@ -168,10 +165,7 @@ async function fetchDynamicClient(clientId: string): Promise<ClientMetadata | nu
 }
 
 async function validateOAuthClient(clientId: string, redirectUri: string): Promise<boolean> {
-  // This static public client never bypasses PKCE, consent, resource binding,
-  // scope checks, paid planning, or the companion's independent local approval.
-  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID)
-    return isBotBoundDesktopRedirect(clientId, redirectUri);
+  if (isRetiredMcpClient(clientId)) return false;
   // Legacy pre-registered clients remain supported for controlled internal use.
   const configuredClients = commaSet(process.env.MCP_OAUTH_ALLOWED_CLIENT_IDS);
   const configuredRedirects = commaSet(process.env.MCP_OAUTH_ALLOWED_REDIRECT_URIS);
@@ -215,11 +209,6 @@ async function validateAuthorizationRequest(
   // Absent scope means "server default" in OAuth; Claude omits it. A scope
   // parameter that names no known BotBound permission is still rejected.
   const scopes = requestedMcpScopes(source.scope);
-  if (clientId === BOTBOUND_DESKTOP_CLIENT_ID && !desktopPlanningScopesAllowed(scopes))
-    throw AppError.fromHttpStatus(
-      400,
-      "BotBound Desktop requires an explicit agents.read computer.plan permission request.",
-    );
   if (!scopes.length)
     throw AppError.fromHttpStatus(400, "Choose at least one BotBound permission.");
   if (!(await validateOAuthClient(clientId, redirectUri))) {
@@ -252,14 +241,7 @@ function oauthConsentPage(request: AuthorizationRequest, user: { email: string }
     )
     .join("\n");
   const scopeList = request.scopes
-    .map(
-      (scope) =>
-        `<li>${escapeHtml(
-          scope === "computer.plan"
-            ? "Plan computer steps using the selected Bot and observations you share; uses your managed AI allowance. Does not execute actions."
-            : scope.replace(".", " "),
-        )}</li>`,
-    )
+    .map((scope) => `<li>${escapeHtml(scope.replace(".", " "))}</li>`)
     .join("");
   const client = escapeHtml(clientDisplayName(request.redirectUri, request.clientId));
   const partyHost = escapeHtml(relyingPartyHost(request.clientId, request.redirectUri));
@@ -415,11 +397,7 @@ async function issueTokens(
   },
   tx: McpGrantExecutor,
 ) {
-  // Desktop installations share a public client ID, not an installation token family.
-  // Connecting or refreshing one must not invalidate another computer's access token.
-  // Explicit Disconnect everywhere still revokes the whole account/client/resource grant.
-  if (input.clientId !== BOTBOUND_DESKTOP_CLIENT_ID)
-    await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
+  await revokeMcpAccessTokensForClient(input.userId, input.clientId, tx);
   const accessToken = `wlmcp_${publicId()}`;
   const refreshToken = `wlmcp_r_${publicId()}`;
   const accessExpiresAt = new Date(Date.now() + ACCESS_TOKEN_TTL_MS);
@@ -437,7 +415,6 @@ async function issueTokens(
     refresh_token: refreshToken,
     scope: input.scopes.join(" "),
     resource: input.resource,
-    ...desktopTokenAccountMetadata(input.clientId, input.userId),
   };
 }
 
@@ -577,12 +554,14 @@ router.post(
 router.post("/mcp/oauth/token", express.urlencoded({ extended: false }), async (req, res, next) => {
   try {
     await assertMcpTokenEndpointRateLimit(req.ip || "anon");
-    await ensureMcpSchema();
     const grantType = text(req.body?.grant_type, 64);
     const clientId = text(req.body?.client_id, 2048);
     const resource = text(req.body?.resource, 2048);
     if (!clientId || resource !== mcpResource(req))
       return res.status(400).json({ error: "invalid_request", code: "INVALID_REQUEST" });
+    if (isRetiredMcpClient(clientId))
+      return res.status(400).json({ error: "invalid_client", code: "INVALID_CLIENT" });
+    await ensureMcpSchema();
     if (grantType === "authorization_code") {
       const code = text(req.body?.code, 1024);
       const redirectUri = text(req.body?.redirect_uri, 2048);

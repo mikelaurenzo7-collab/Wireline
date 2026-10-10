@@ -30,7 +30,7 @@ type StudioAgentWorkspacePanelProps = {
   agentId: string;
   agentName: string;
   isBusinessAgent?: boolean;
-  onTestVoiceInChat: () => void;
+  onRehearseVoiceInChat: () => void;
   className?: string;
   compact?: boolean;
   drafts?: StudioSetupDrafts;
@@ -72,7 +72,7 @@ export default function StudioAgentWorkspacePanel({
   agentId,
   agentName,
   isBusinessAgent = true,
-  onTestVoiceInChat,
+  onRehearseVoiceInChat,
   className = "",
   compact = false,
   drafts,
@@ -290,7 +290,7 @@ export default function StudioAgentWorkspacePanel({
           );
           return;
         }
-        setSetupNotice("Saved. Run a test before sending live traffic.");
+        setSetupNotice("Saved. Rehearse the updated Bot before sending live traffic.");
       }
     } catch (reason) {
       if (isCurrentAgent()) {
@@ -513,10 +513,10 @@ export default function StudioAgentWorkspacePanel({
             type="button"
             size={compact ? "sm" : undefined}
             variant="secondary"
-            onClick={onTestVoiceInChat}
+            onClick={onRehearseVoiceInChat}
             className="h-auto justify-center whitespace-normal"
           >
-            Test Bot
+            Rehearse Bot
           </Button>
           <Button
             asChild

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import path from "node:path";
 import { chromium } from "playwright-core";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -14,6 +15,19 @@ function chromiumPath(): string | null {
   if (preinstalled && existsSync(preinstalled)) return preinstalled;
   try {
     const bundled = chromium.executablePath();
+    if (process.platform === "win32") {
+      const revision = /[\\/]chromium-(\d+)[\\/]/.exec(bundled)?.[1];
+      if (revision) {
+        const cacheRoot = path.dirname(path.dirname(path.dirname(bundled)));
+        const headlessShell = path.join(
+          cacheRoot,
+          `chromium_headless_shell-${revision}`,
+          "chrome-headless-shell-win64",
+          "chrome-headless-shell.exe",
+        );
+        if (existsSync(headlessShell)) return headlessShell;
+      }
+    }
     return bundled && existsSync(bundled) ? bundled : null;
   } catch {
     return null;
@@ -111,7 +125,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(text).toMatch(/link "Pricing" \[ref_\d+\]/);
     expect(text).toMatch(/textbox "Your name" \[ref_\d+\]/);
     expect(text).toMatch(/checkbox "Urgent" \[ref_\d+\] unchecked/);
-    expect(text).toMatch(/combobox "Appliance" \[ref_\d+\] value="Washer"/);
+    expect(text).toMatch(/combobox "Appliance" \[ref_\d+\] has_value/);
     expect(text).toMatch(/button "Check availability" \[ref_\d+\]/);
     const again = await session.execute("read_page", { filter: "interactive" });
     expect((again.content[0] as { text: string }).text).toBe(text);
@@ -161,7 +175,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
       (await session.execute("read_page", { filter: "interactive" })).content[0] as { text: string }
     ).text;
     expect(after).toMatch(/checkbox "Urgent" \[ref_\d+\] checked/);
-    expect(after).toMatch(/combobox "Appliance" \[ref_\d+\] value="Dryer"/);
+    expect(after).toMatch(/combobox "Appliance" \[ref_\d+\] has_value/);
   });
 
   it("refuses passwords, stale refs and unsupported keys as tool errors", async () => {
@@ -204,7 +218,47 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect(nav.ok).toBe(false);
   });
 
-  it("returns real JPEG screenshots and upscaled zoom images", async () => {
+  it("lets the owner enter a password during takeover while Bot typing stays blocked", async () => {
+    const page = session.activePage();
+    await page.setContent(FIXTURE);
+    await page.locator("#pw").focus();
+
+    const frame = await session.executeOwnerInput({ kind: "type", text: "owner-secret-123" });
+    expect(Buffer.isBuffer(frame)).toBe(true);
+    expect(await page.locator("#pw").inputValue()).toBe("owner-secret-123");
+    expect(await session.execute("type", { text: "bot-secret-456" })).toMatchObject({ ok: false });
+    expect(await page.locator("#pw").inputValue()).toBe("owner-secret-123");
+
+    const frameAfterKey = await session.executeOwnerInput({ kind: "key", key: "Enter" });
+    expect(Buffer.isBuffer(frameAfterKey)).toBe(true);
+    await expect(session.executeOwnerInput({ kind: "key", key: "A" })).rejects.toThrow();
+    expect(await page.locator("#pw").inputValue()).toBe("owner-secret-123");
+  });
+
+  it("keeps owner-entered values out of model screenshots and page text", async () => {
+    const page = session.activePage();
+    await page.setContent(
+      '<label for="owner-value">Account email</label><input id="owner-value" oninput="document.getElementById(\'echo\').textContent=this.value"><p id="echo"></p>',
+    );
+    await page.locator("#owner-value").focus();
+    await session.executeOwnerInput({ kind: "type", text: "owner@example.test" });
+
+    const ownerFrame = await session.frame();
+    const modelFrame = await session.modelFrame();
+    expect(ownerFrame).toBeInstanceOf(Buffer);
+    expect(modelFrame).toBeInstanceOf(Buffer);
+    expect(modelFrame?.equals(ownerFrame!)).toBe(false);
+
+    const snapshot = await session.execute("read_page", { filter: "all" });
+    const snapshotText = (snapshot.content[0] as { text: string }).text;
+    expect(snapshotText).toContain("has_value");
+    expect(snapshotText).not.toContain("owner@example.test");
+
+    const bodyText = await session.execute("get_page_text", {});
+    expect((bodyText.content[0] as { text: string }).text).not.toContain("owner@example.test");
+  });
+
+  it("returns real JPEG screenshots and masked zoom crops", async () => {
     const shot = await session.execute("screenshot", {});
     const image = shot.content[0] as {
       type: string;
@@ -219,7 +273,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     const zoom = await session.execute("zoom", { region: [0, 0, 320, 200] });
     const zoomed = zoom.content[0] as { source: { media_type: string; data: string } };
     expect(zoomed.source.media_type).toBe("image/jpeg");
-    expect(jpegSize(Buffer.from(zoomed.source.data, "base64")).width).toBeGreaterThan(320);
+    expect(jpegSize(Buffer.from(zoomed.source.data, "base64")).width).toBe(320);
     expect(await session.frame()).toBeInstanceOf(Buffer);
   });
 

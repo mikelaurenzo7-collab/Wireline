@@ -60,10 +60,30 @@ type ConnectedMailboxSendParams = {
   unsubscribeHeaders?: Record<string, string>;
   /** Places the message in the customer's existing thread when known. */
   threading?: ReplyThreading | null;
+  /** Tracks the start of an outbound provider send for ambiguous-outcome handling. */
+  onSendAttempt?: () => void;
+  /** Marks a provider response that definitively rejected the message. */
+  onDefinitiveFailure?: () => void;
 };
 
-/** What a thread reply did: whether it was accepted, and whether it joined the customer's thread. */
-export type ThreadReplyOutcome = { sent: boolean; threaded: boolean };
+/** What a thread reply did, including whether a failed outcome is safe to retry. */
+export type ThreadReplyOutcome = { sent: boolean; threaded: boolean; ambiguous?: boolean };
+
+function isAmbiguousProviderStatus(status: number): boolean {
+  return status === 408 || status >= 500;
+}
+
+function providerStatusCode(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const value = error as { status?: unknown; response?: { status?: unknown } };
+  const status = Number(value.response?.status ?? value.status);
+  return Number.isInteger(status) && status >= 100 && status <= 599 ? status : null;
+}
+
+function isDefinitiveProviderRejection(error: unknown): boolean {
+  const status = providerStatusCode(error);
+  return status !== null && status >= 400 && status < 500 && status !== 408;
+}
 
 function plainTextEmailBodyHtml(body: string): string {
   const escaped = body
@@ -683,7 +703,7 @@ export class IntegrationService {
    * sendEmail, a reply never falls back to another mailbox or to BotBound's
    * transactional sender: the customer must hear back from the address they
    * wrote to. Plan, recipient, and environment refusals propagate as AppErrors
-   * so the owner sees why; transport failures return `sent: false`.
+   * so the owner sees why; uncertain provider outcomes are marked ambiguous.
    */
   async sendThreadReply(params: {
     accountId: string;
@@ -691,9 +711,15 @@ export class IntegrationService {
     subject: string;
     body: string;
   }): Promise<ThreadReplyOutcome> {
-    const notSent: ThreadReplyOutcome = { sent: false, threaded: false };
+    let providerWorkStarted = false;
+    const markSendStarted = () => {
+      providerWorkStarted = true;
+    };
+    const markDefinitiveFailure = () => {
+      providerWorkStarted = false;
+    };
+    const notSent: ThreadReplyOutcome = { sent: false, threaded: false, ambiguous: false };
     try {
-      let providerWorkStarted = false;
       const fenced = await runTenantProviderWorkWithDeletionFence({
         userId: this.userId,
         operation: "integration_email_reply",
@@ -729,26 +755,37 @@ export class IntegrationService {
 
           if (account.provider === "google") {
             const target = await this.findGoogleReplyTarget(account, query);
-            providerWorkStarted = true;
             const sent = await this.sendGoogleEmail(
               account,
               { ...sendParams, threading: target?.threading ?? null },
               target?.threadId,
+              markSendStarted,
             );
-            return { sent, threaded: sent && Boolean(target) };
+            return {
+              sent,
+              threaded: sent && Boolean(target),
+              ambiguous: !sent && providerWorkStarted,
+            };
           }
           if (account.provider === "microsoft") {
-            providerWorkStarted = true;
-            return this.replyMicrosoftEmail(account, params);
+            return this.replyMicrosoftEmail(account, params, markSendStarted);
           }
           if (account.provider === "icloud") {
             if (!account.accessToken || !account.emailAddress) return notSent;
             const email = account.emailAddress as string;
             const appPassword = decryptSecret(account.accessToken);
             const threading = await findIcloudReplyThreading(email, appPassword, query);
-            providerWorkStarted = true;
-            const sent = await sendIcloudMail(email, appPassword, { ...sendParams, threading });
-            return { sent, threaded: sent && Boolean(threading) };
+            const sent = await sendIcloudMail(email, appPassword, {
+              ...sendParams,
+              threading,
+              onSendAttempt: markSendStarted,
+              onDefinitiveFailure: markDefinitiveFailure,
+            });
+            return {
+              sent,
+              threaded: sent && Boolean(threading),
+              ambiguous: !sent && providerWorkStarted,
+            };
           }
           if (account.provider === "agentmail") {
             if (!account.accessToken || !account.emailAddress) return notSent;
@@ -759,11 +796,19 @@ export class IntegrationService {
               userId: this.userId,
               provider: "agentmail",
               perform: async () => {
-                providerWorkStarted = true;
-                return sendAgentMail(email, apiKey, { ...sendParams, threading });
+                return sendAgentMail(email, apiKey, {
+                  ...sendParams,
+                  threading,
+                  onSendAttempt: markSendStarted,
+                  onDefinitiveFailure: markDefinitiveFailure,
+                });
               },
             });
-            return { sent, threaded: sent && Boolean(threading) };
+            return {
+              sent,
+              threaded: sent && Boolean(threading),
+              ambiguous: !sent && providerWorkStarted,
+            };
           }
           log.warn("Inbox reply refused: this mailbox provider cannot send", {
             userId: this.userId,
@@ -778,6 +823,16 @@ export class IntegrationService {
       }
       return fenced.result;
     } catch (err) {
+      if (providerWorkStarted) {
+        if (!isDefinitiveProviderRejection(err)) {
+          log.error("Inbox reply provider outcome is uncertain", {
+            userId: this.userId,
+            error: getErrorMessage(err),
+          });
+          return { sent: false, threaded: false, ambiguous: true };
+        }
+        providerWorkStarted = false;
+      }
       if (err instanceof AppError) throw err;
       log.error("Inbox reply failed", { userId: this.userId, error: getErrorMessage(err) });
       return notSent;
@@ -984,12 +1039,14 @@ export class IntegrationService {
     account: any,
     params: ConnectedMailboxSendParams,
     providerThreadId?: string,
+    onSendAttempt?: () => void,
   ): Promise<boolean> {
     const auth = await this.getGoogleClient(account);
     const google = await googleApis();
     const gmail = google.gmail({ version: "v1", auth });
     const message = buildConnectedMailboxMime(params);
     const encodedMessage = Buffer.from(message, "utf8").toString("base64url");
+    onSendAttempt?.();
     await gmail.users.messages.send({
       userId: "me",
       requestBody: {
@@ -1166,6 +1223,14 @@ export class IntegrationService {
     account: any,
     params: ConnectedMailboxSendParams,
   ): Promise<boolean> {
+    return (await this.sendMicrosoftEmailOutcome(account, params)).sent;
+  }
+
+  private async sendMicrosoftEmailOutcome(
+    account: any,
+    params: ConnectedMailboxSendParams,
+    onSendAttempt?: () => void,
+  ): Promise<{ sent: boolean; ambiguous: boolean }> {
     const token = await this.getMicrosoftToken(account);
 
     // Graph JSON only accepts custom Internet headers beginning with "x-".
@@ -1174,6 +1239,7 @@ export class IntegrationService {
     // are present. Microsoft documents text/plain + base64 MIME for sendMail.
     if (params.unsubscribeHeaders) {
       const message = buildConnectedMailboxMime(params);
+      onSendAttempt?.();
       const res = await fetchWithTimeout(
         "https://graph.microsoft.com/v1.0/me/sendMail",
         {
@@ -1183,9 +1249,13 @@ export class IntegrationService {
         },
         15_000,
       );
-      return res.ok;
+      return {
+        sent: res.ok,
+        ambiguous: !res.ok && isAmbiguousProviderStatus(res.status),
+      };
     }
 
+    onSendAttempt?.();
     const res = await fetchWithTimeout(
       "https://graph.microsoft.com/v1.0/me/sendMail",
       {
@@ -1201,7 +1271,7 @@ export class IntegrationService {
       },
       15_000,
     );
-    return res.ok;
+    return { sent: res.ok, ambiguous: !res.ok && isAmbiguousProviderStatus(res.status) };
   }
 
   /** The Graph id of the newest inbox message from `from` with this subject. */
@@ -1247,6 +1317,7 @@ export class IntegrationService {
   private async replyMicrosoftEmail(
     account: any,
     params: { to: string; subject: string; body: string },
+    onSendAttempt?: () => void,
   ): Promise<ThreadReplyOutcome> {
     const token = await this.getMicrosoftToken(account);
     const targetId = await this.findMicrosoftReplyTarget(token, {
@@ -1256,6 +1327,7 @@ export class IntegrationService {
     if (targetId) {
       // Graph's reply action addresses the sender and sets the thread headers.
       // A failed reply is not retried as a fresh send: it may have been accepted.
+      onSendAttempt?.();
       const res = await fetchWithTimeout(
         `https://graph.microsoft.com/v1.0/me/messages/${encodeURIComponent(targetId)}/reply`,
         {
@@ -1267,14 +1339,22 @@ export class IntegrationService {
         },
         15_000,
       );
-      return { sent: res.ok, threaded: res.ok };
+      return {
+        sent: res.ok,
+        threaded: res.ok,
+        ambiguous: !res.ok && isAmbiguousProviderStatus(res.status),
+      };
     }
-    const sent = await this.sendMicrosoftEmail(account, {
-      to: params.to,
-      subject: params.subject,
-      body: plainTextEmailBodyHtml(params.body),
-    });
-    return { sent, threaded: false };
+    const outcome = await this.sendMicrosoftEmailOutcome(
+      account,
+      {
+        to: params.to,
+        subject: params.subject,
+        body: plainTextEmailBodyHtml(params.body),
+      },
+      onSendAttempt,
+    );
+    return { ...outcome, threaded: false };
   }
 
   private async getMicrosoftToken(account: any): Promise<string> {

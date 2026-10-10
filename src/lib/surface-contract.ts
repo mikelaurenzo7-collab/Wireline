@@ -103,7 +103,7 @@ export const AUTHENTICATED_SURFACE_CONTRACT = {
     tabs: KNOWLEDGE_TABS,
   },
   hierarchy: {
-    studio: "canonical home and Bot workspace: create, select, configure, test, and improve",
+    studio: "canonical home and Bot workspace: create, select, configure, rehearse, and improve",
     inbox:
       "email and text conversations, globally or scoped to one Bot; providers are filters, not navigation",
     calls:

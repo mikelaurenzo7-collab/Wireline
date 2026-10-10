@@ -20,10 +20,15 @@ describe("mcp oauth security contract", () => {
     expect(oauthRoutes).toContain("backfillMcpOAuthResourceBindings");
   });
 
-  it("retains legacy client-wide rotation while desktop grants remain installation-independent", () => {
+  it("rotates tokens for the same registered client and contains no Desktop client exception", () => {
     const oauthRoutes = read("src/routes/chatgpt-mcp-routes.ts");
     expect(oauthRoutes).toContain("revokeMcpAccessTokensForClient");
-    expect(oauthRoutes).toContain("if (input.clientId !== BOTBOUND_DESKTOP_CLIENT_ID)");
+    expect(oauthRoutes).toContain(
+      "revokeMcpAccessTokensForClient(input.userId, input.clientId, tx)",
+    );
+    expect(oauthRoutes).not.toContain("BOTBOUND_DESKTOP_CLIENT_ID");
+    const oauthSecurity = read("src/lib/mcp-oauth-security.ts");
+    expect(oauthSecurity).toContain("WHERE user_id = ${userId}::uuid AND client_id = ${clientId}");
   });
 
   it("rate-limits draft writes and token endpoint traffic", () => {

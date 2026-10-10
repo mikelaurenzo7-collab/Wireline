@@ -143,8 +143,8 @@ describe("public pricing activation availability", () => {
   });
   it("keeps Free Builder and plan intent available while checking, without offering a purchase", () => {
     expect(text(render())).toContain("Checking activation availability…");
-    expect(text(planLink("free"))).toBe("Build Free ");
-    expect(text(planLink("voice-regular"))).toBe("Build with These Channels ");
+    expect(text(planLink("free"))).toBe("Create a Free Bot ");
+    expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(text(render())).not.toContain("Start for $19");
   });
 
@@ -170,9 +170,11 @@ describe("public pricing activation availability", () => {
     ],
   ])("keeps a free setup CTA when %s", async (_reason, flags) => {
     await load(response({ plans: [{ id: "voice-regular", ...flags }] }));
-    expect(text(planLink("voice-regular"))).toBe("Build with These Channels ");
+    expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
-    expect(text(render())).toContain("Build free. Paid activation is currently unavailable.");
+    expect(text(render())).toContain(
+      "Paid activation is unavailable. Create a Bot for free and rehearse privately.",
+    );
   });
 
   it.each([
@@ -182,7 +184,7 @@ describe("public pricing activation availability", () => {
     ["the selected plan is missing", response({ plans: [] })],
   ])("does not offer activation when %s", async (_reason, payload) => {
     await load(payload);
-    expect(text(planLink("voice-regular"))).toBe("Build with These Channels ");
+    expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
   });
 
   it("checks annual availability separately and preserves annual signup intent", async () => {
@@ -197,7 +199,7 @@ describe("public pricing activation availability", () => {
     elements(render())
       .find((element) => element.type === "button" && text(element) === "Annual")
       ?.props.onClick?.();
-    expect(text(planLink("voice-regular"))).toBe("Build with These Channels ");
+    expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=year");
   });
 
@@ -254,8 +256,10 @@ describe("public pricing activation availability", () => {
     );
     mount();
     await vi.waitFor(() => expect(harness.states[3]).toBe("unavailable"));
-    expect(text(render())).toContain("Activation status unavailable. Build free and check back.");
-    expect(text(planLink("voice-regular"))).toBe("Build with These Channels ");
+    expect(text(render())).toContain(
+      "Activation status unavailable. Create a Bot for free and rehearse privately.",
+    );
+    expect(text(planLink("voice-regular"))).toBe("Set Up These Channels ");
     expect(planLink("free")?.props.to).toBe("/signup?plan=free");
   });
 

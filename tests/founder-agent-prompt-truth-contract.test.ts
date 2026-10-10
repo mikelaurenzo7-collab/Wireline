@@ -29,9 +29,7 @@ describe("founder agent prompt truth contract", () => {
     expect(WIRELINE_PERSONAS.success.systemPrompt).toContain(
       "Light, Regular and High currently include one Bot",
     );
-    expect(WIRELINE_PERSONAS.technical.systemPrompt).toContain(
-      "PDF and Word uploads are not supported",
-    );
+    expect(WIRELINE_PERSONAS.technical.systemPrompt).toContain("PDF, Word, Excel");
   });
 
   it("keeps objection handling free of unsupported comparisons and demo promises", () => {

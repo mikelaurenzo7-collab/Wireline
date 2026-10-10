@@ -2,11 +2,12 @@
 
 BotBound is the operating layer for **your Bot across calls, texts, and email**. Start with one trained Bot or build a coordinated roster that can book appointments, revive leads, promote offers, recover opportunities, answer demand, text outcomes, draft follow-up, and surface the right work across web, mobile, browser, and ChatGPT.
 
-Public marketing leads with capabilities, outcomes, and a clear signup action. Operational guidance stays inside the product: after create, the setup guide is **Train -> Test -> Launch**. Product architecture supports this work through Create, Training, and Wire:
+Public marketing leads with capabilities, outcomes, and a clear signup action. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Product architecture supports these steps through Create, Training, and Wire:
 
-1. **Create / Build** a focused Bot quickly.
-2. **Train** it with facts, sources, policies, voice, tone, tools, and workflows.
-3. **Wire / Launch** it to an included number slot, integrations, routing, approvals, and billing controls.
+1. **Create** a focused Bot for a specific job.
+2. **Set Up** its facts, sources, policies, voice, tone, tools, and workflows.
+3. **Rehearse** customer conversations privately and refine the setup.
+4. **Connect and activate** a number, integrations, routing, approvals, and billing when ready.
 
 **Studio / Operations** brings calls, texts, follow-up, approvals, handoffs, and logged outcomes together. Conversation review and later refinements remain available after launch; they are not another setup step.
 
@@ -14,7 +15,6 @@ Public marketing leads with capabilities, outcomes, and a clear signup action. O
 
 - **Web/API - core product:** canonical Create, Training, Wire, Studio, billing, provider, and account runtime. Availability and pilot admission depend on the release gates in `docs/DEPLOYMENT_RUNBOOK.md`.
 - **BotBound Command - early access:** explicit-action Manifest V3 browser handoff for page context, calls, texts, follow-up, and tasks. Technical package paths retain the `wireline` namespace for compatibility.
-- **BotBound Desktop - internal development:** owner-directed work in a selected Windows/macOS application window, including browsers, and selected remote MCP tools. Every action requires local review; native device acceptance and signed distribution remain gated. See [the companion architecture](./docs/COMPUTER_COMPANION.md) and [desktop build instructions](./apps/desktop/README.md).
 - **ChatGPT / Claude / Cursor - early access:** OAuth-connected, account-bound MCP tools. Cursor Directory packaging is `.mcp.json` at the repo root. Create an account, draft the first Bot, privately rehearse, then continue in BotBound.
 - **iOS - planned:** native calls, Siri, widgets, CallKit, push, and urgent owner controls; TestFlight and App Store release remain gated.
 - **Android - internal beta:** native calls, notifications, widgets, Telecom, FCM, and urgent owner controls; Play release remains gated.
@@ -36,7 +36,7 @@ Calendar owns appointments, weekly availability, timezone, and booking rules at 
 - **Voice/PSTN:** OpenAI Realtime owns authenticated Studio/ChatGPT rehearsals, founder-owned internal Bot profiles, and every customer phone conversation. Public voice previews are retired. Twilio owns carrier transport, numbers, SIP, and SMS. There is no alternate call runtime.
 - **Persistent phone worker:** production SIP calls require a separate always-on Node 22 service built from `src/entrypoints/voice-worker.ts`. The web/API service forwards verified webhooks; the worker maintains calls for up to 60 minutes and drains before replacement. The Render migration uses separate API and voice services in `render.yaml`; source deployment alone does not complete the traffic cutover. See `deploy/voice-worker/` and `docs/OPENAI_REALTIME_VOICE.md`.
 - **Browser:** explicit-user-action context handoff only. No broad host permissions, silent browsing, token storage, or background page harvesting.
-- **Desktop companion:** Electron renderer with isolated IPC, OS-encrypted account state, and fixed native helpers. BotBound authorizes and meters planning; local owner approval controls execution. A public caller never inherits device access.
+- **Cloud computer:** each Bot can work in an isolated hosted browser, show its live screen and activity, and pause for its owner to take control at account or decision checkpoints. BotBound keeps browser access, AI usage, and external actions behind server-side controls.
 - **Native:** SwiftUI/XcodeGen for iOS and Kotlin/Compose for Android. Clients remain thin adapters over server-owned policy.
 - **Security:** server-owned authorization, provider credentials, billing, webhooks, tenant-scoped data access, CSP checks, rate limits, and verification gates.
 
@@ -70,8 +70,6 @@ node scripts/check-chatgpt-app-release.mjs --url https://botbound.app
 ```
 
 Use `npm run verify` for focused implementation branches. Use `npm run verify:full` before merge/release or any change touching auth, billing, CSP, routes, data access, provider integrations, shared runtime contracts, migrations, or production environment shape.
-
-For standalone root tests after a fresh checkout, run `npm run desktop:deps` once to install the desktop package's locked dependencies. `verify:full` performs this setup and desktop type/build checks automatically; native Windows/macOS builds and real device acceptance are separate release gates.
 
 Phone-worker releases additionally require `npm run build:voice-worker`, container/runtime verification and the two-service release sequence in [docs/DEPLOYMENT_RUNBOOK.md](./docs/DEPLOYMENT_RUNBOOK.md). Founder funding, workflow proof and publication steps live in [docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md](./docs/LAUNCH_GURU_PLAYBOOK_2026-07-20.md).
 

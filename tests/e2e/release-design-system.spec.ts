@@ -259,7 +259,7 @@ test("pricing keeps its header, annual prices, and both mobile actions readable 
     `$${currentPlan.price_usd_annual.toLocaleString()}/year`,
   );
   await expect(
-    selectedPackage.getByRole("link", { name: "Build with These Channels", exact: true }),
+    selectedPackage.getByRole("link", { name: "Set Up These Channels", exact: true }),
   ).toHaveAttribute("href", `/signup?plan=${currentPlan.id}&interval=year`);
   await expectContentFits(page.locator("#plans, #plans *"));
 

@@ -3,7 +3,7 @@ import { isBotMarkKey, type BotMarkKey } from "./bot-mark";
 /** Session key for non-fatal warnings after Fast Start agent creation. */
 export const CREATE_WARNING_SESSION_KEY = "wireline:create-warning";
 
-/** Post-create wizard payload — Train → Test → Launch after create.
+/** Post-create wizard payload — Train → Rehearse → Launch after create.
  *  Private rehearsal comes before customer traffic. Free Builder stays private;
  *  a paid Bot's managed phone and mailbox can prepare in the background.
  *  "wire" and "channels" survive in the step type only as legacy stored

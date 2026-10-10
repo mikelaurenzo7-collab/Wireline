@@ -64,9 +64,9 @@ describe("sales trust copy contract", () => {
     expect(wedges).toContain(
       'metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up"',
     );
-    expect(wedges).toContain(
-      'headline: "Your Sales Bot Works the Queue While Your Team Works the Deals"',
-    );
+    expect(wedges).toContain('headline: "Set Up a Sales Bot for Lead Follow-Up"');
+    expect(wedges).toContain("server-verifiable consent records");
+    expect(wedges).toContain("Federal Do Not Call screening");
     expect(wedges).toContain("Fast, Governed Speed to Lead");
     expect(wedges).toContain("Approved actions sync");
     expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');

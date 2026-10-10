@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("react-router", () => ({ Link: "a" }));
 
-import { voiceTestsLeftCopy } from "../src/components/RoleplaySandbox";
+import { voiceRehearsalsLeftCopy } from "../src/components/RoleplaySandbox";
 import {
   OPENAI_FREE_REHEARSAL_SECONDS,
   OPENAI_REALTIME_SESSION_MINIMUM_RESERVE_USD,
@@ -26,17 +26,17 @@ describe("free voice rehearsals", () => {
     expect(Math.floor(1.5 / realtimeReserveForWindowUsd(1, 120))).toBe(3);
   });
 
-  it("tells the owner how many voice tests are left", () => {
+  it("tells the owner how many voice rehearsals are left", () => {
     expect(
-      voiceTestsLeftCopy({ voice_rehearsals_remaining: 3, voice_rehearsal_seconds: 120 }),
-    ).toBe("3 voice tests left this month (2 minutes each).");
+      voiceRehearsalsLeftCopy({ voice_rehearsals_remaining: 3, voice_rehearsal_seconds: 120 }),
+    ).toBe("3 voice rehearsals left this month (2 minutes each).");
     expect(
-      voiceTestsLeftCopy({ voice_rehearsals_remaining: 1, voice_rehearsal_seconds: 120 }),
-    ).toBe("1 voice test left this month (2 minutes each).");
-    expect(voiceTestsLeftCopy({ voice_rehearsals_remaining: 0 })).toBe(
-      "Voice tests are used for this month. Text tests still work.",
+      voiceRehearsalsLeftCopy({ voice_rehearsals_remaining: 1, voice_rehearsal_seconds: 120 }),
+    ).toBe("1 voice rehearsal left this month (2 minutes each).");
+    expect(voiceRehearsalsLeftCopy({ voice_rehearsals_remaining: 0 })).toBe(
+      "Voice rehearsals are used for this month. Text rehearsals are still available.",
     );
-    expect(voiceTestsLeftCopy({ voice_rehearsals_remaining: null })).toBeNull();
+    expect(voiceRehearsalsLeftCopy({ voice_rehearsals_remaining: null })).toBeNull();
   });
 
   it("mints the shorter session only for Free Builder", () => {

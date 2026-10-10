@@ -287,7 +287,7 @@ describe("outbound dialog viewport ownership", () => {
       nodes.some((node) => node.type === "button" && node.props.children === "Place call"),
     ).toBe(false);
     expect(
-      nodes.some((node) => node.type === "a" && node.props.children === "Test in Studio"),
+      nodes.some((node) => node.type === "a" && node.props.children === "Rehearse in Studio"),
     ).toBe(true);
     expect(
       nodes.some((node) => node.type === "a" && node.props.children === "Review Compliance"),

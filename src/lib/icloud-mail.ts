@@ -141,6 +141,10 @@ export async function sendIcloudMail(
     unsubscribeHeaders?: Record<string, string>;
     /** Places the message in the customer's existing thread when known. */
     threading?: ReplyThreading | null;
+    /** Called only once the SMTP send request is about to begin. */
+    onSendAttempt?: () => void;
+    /** Called when SMTP explicitly rejects the message. */
+    onDefinitiveFailure?: () => void;
   },
 ): Promise<boolean> {
   const transporter = nodemailer.createTransport({
@@ -156,6 +160,7 @@ export async function sendIcloudMail(
 
   try {
     await transporter.verify();
+    params.onSendAttempt?.();
     await transporter.sendMail({
       from: email,
       to: params.to,
@@ -169,6 +174,11 @@ export async function sendIcloudMail(
     });
     return true;
   } catch (err) {
+    const responseCode =
+      err && typeof err === "object" && "responseCode" in err
+        ? Number((err as { responseCode?: unknown }).responseCode)
+        : Number.NaN;
+    if (responseCode >= 400 && responseCode < 600) params.onDefinitiveFailure?.();
     log.error("iCloud SMTP send failed", { email, error: getErrorMessage(err) });
     return false;
   } finally {

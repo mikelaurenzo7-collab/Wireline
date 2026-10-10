@@ -67,28 +67,18 @@ describe("marketing signup continuity", () => {
     },
   );
 
-  it.each([
-    ["sales", "Outbound calls are not available yet."],
-    ["home-services", "Outbound calls are not available yet."],
-    ["medical", "Outbound calls are not available yet."],
-    ["real-estate", "Outbound calls are not available yet."],
-    ["insurance", "Outbound calls are not available yet."],
-    ["personal", "Outbound calls are not available yet. Build and test privately."],
-    ["legal", undefined],
-    ["restaurants", undefined],
-  ] as const)("discloses the relevant outbound limit on the %s page", (slug, expectedNotice) => {
-    const notice = elements(VerticalLanding({ slug })).find(
-      (element) =>
-        element.type === "p" &&
-        /^(Marketing|Outbound) calls are not available yet\./.test(
-          Children.toArray(element.props.children).join(""),
-        ),
-    );
-    expect(notice && Children.toArray(notice.props.children).join("")).toBe(expectedNotice);
-    if (notice) expect(notice.props.className).not.toContain("sr-only");
-  });
+  it.each(Object.keys(WEDGES) as VerticalKey[])(
+    "keeps outbound positioning on the %s page free of coming-soon language",
+    (slug) => {
+      const page = VerticalLanding({ slug });
+      const renderedText = elements(page)
+        .map((element) => Children.toArray(element.props.children).join(""))
+        .join(" ");
+      expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
+    },
+  );
 
-  it("discloses that outbound calls are off on the home page while it sells outbound roles", () => {
+  it("markets outbound roles while clearly stating the live-dialing gate", () => {
     const text = (node: ReactNode): string =>
       Array.isArray(node)
         ? node.map(text).join("")
@@ -97,16 +87,14 @@ describe("marketing signup continuity", () => {
           : typeof node === "string"
             ? node
             : "";
-    const notices = elements(WireAgentLanding()).filter(
-      (element) =>
-        (element.type === "p" || element.props.className === "landing-prestige__outbound-note") &&
-        text(element.props.children).startsWith("Outbound calls are not available yet."),
-    );
-    expect(notices.map((element) => text(element.props.children))).toEqual([
-      "Outbound calls are not available yet. Build and test a Sales Rep free.",
-      "Outbound calls are not available yet. Outbound roles build and test free today.",
-    ]);
-    for (const notice of notices) expect(notice.props.className).not.toContain("sr-only");
+    const page = WireAgentLanding();
+    const renderedText = elements(page)
+      .map((element) => text(element.props.children))
+      .join(" ");
+    expect(renderedText).toContain("Outbound");
+    expect(renderedText).toContain("server-verifiable consent records");
+    expect(renderedText).toContain("Federal Do Not Call screening");
+    expect(renderedText).not.toMatch(/outbound calls are not available yet|coming soon/i);
   });
 
   it.each(["sales", "support"])("preserves the %s solution's signup destination", (wedge) => {
@@ -117,6 +105,15 @@ describe("marketing signup continuity", () => {
     );
     expect(heroLink?.props.to).toBeTruthy();
     expect(stickyDestination(page)).toBe(heroLink?.props.to);
+    const renderedText = elements(page)
+      .map((element) => Children.toArray(element.props.children).join(""))
+      .join(" ");
+    if (wedge === "sales") {
+      expect(renderedText).toMatch(/outbound/i);
+      expect(renderedText).toContain("server-verifiable consent records");
+      expect(renderedText).toContain("Federal Do Not Call screening");
+      expect(renderedText).not.toMatch(/not available yet|coming soon/i);
+    }
   });
 
   it.each(["constructor", "toString", "__proto__", "hasOwnProperty", "not-a-solution"])(
@@ -131,21 +128,6 @@ describe("marketing signup continuity", () => {
       expect(heading?.props.children).toBe("A Front Desk That Answers Before Demand Goes Cold");
       expect(heroLink?.props.to).toBe("/signup?wedge=support");
       expect(stickyDestination(page)).toBe(heroLink?.props.to);
-    },
-  );
-
-  it.each(["sales", "support"])(
-    "shows the marketing-call availability notice only for sales: %s",
-    (wedge) => {
-      harness.wedge = wedge;
-      const notice = elements(SolutionsPage()).find(
-        (element) =>
-          element.type === "p" &&
-          Children.toArray(element.props.children).join("") ===
-            "Outbound calls are not available yet. Build and test your Sales Bot free.",
-      );
-      expect(Boolean(notice)).toBe(wedge === "sales");
-      if (notice) expect(notice.props.className).not.toContain("sr-only");
     },
   );
 

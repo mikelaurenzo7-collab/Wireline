@@ -89,7 +89,7 @@ describe("knowledge upload capabilities", () => {
       dropZone.props.onDrop({ preventDefault: vi.fn(), dataTransfer: { files: [file] } });
       await vi.waitFor(() =>
         expect(h.setters[7]).toHaveBeenCalledWith(
-          "Image uploads are unavailable. Upload TXT, MD or CSV.",
+          "Image uploads are unavailable. Upload TXT, MD, CSV, PDF, DOCX, or XLSX files.",
         ),
       );
       expect(file.text).not.toHaveBeenCalled();

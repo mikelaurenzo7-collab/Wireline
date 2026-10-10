@@ -23,7 +23,7 @@ export default function FirstRunWorkspace() {
               One Workspace
             </span>
             <h1 className="mt-5 max-w-[15ch] font-[var(--wireline-font-family-display)] text-[clamp(2rem,5vw,4rem)] font-semibold leading-[0.94] tracking-[-0.045em] text-foreground">
-              Build Your Bot
+              Create Your Bot
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
               Start with a proven role or create your own. Configure voice, text, email, knowledge,

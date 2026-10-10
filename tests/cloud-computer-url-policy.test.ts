@@ -55,6 +55,7 @@ describe("cloud computer network policy", () => {
       "::ffff:127.0.0.1",
       "::ffff:10.0.0.1",
       "64:ff9b::a00:1",
+      "64:ff9b:1::c0a8:101",
       "2002:c0a8::1",
       "not-an-ip",
     ]) {

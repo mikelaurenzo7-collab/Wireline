@@ -71,7 +71,7 @@ function StudioEmptyState() {
       <BotBoundLockup size="standard" surface="bare" className="mx-auto mb-6" />
       <EmptyState
         icon={Sparkles}
-        title="Build Your Bot"
+        title="Create Your Bot"
         description="Describe the role and outcome."
         className="wl-composer-dock mx-auto w-full max-w-3xl"
       >
@@ -139,7 +139,7 @@ export default function StudioWorkspaceV2() {
   const [workroomMode, setWorkroomModeState] = useState<WorkroomMode>(() =>
     readStudioWorkroomMode(routeState),
   );
-  const [customerTestRequest, setCustomerTestRequest] = useState<{
+  const [rehearsalFocusRequest, setRehearsalFocusRequest] = useState<{
     agentId: string;
     ownerId: string;
   } | null>(null);
@@ -239,30 +239,30 @@ export default function StudioWorkspaceV2() {
     [setParams],
   );
 
-  const startCustomerTest = useCallback(() => {
+  const startRehearsal = useCallback(() => {
     if (!active?.id || !user?.id) return;
-    setCustomerTestRequest({ agentId: active.id, ownerId: user.id });
+    setRehearsalFocusRequest({ agentId: active.id, ownerId: user.id });
     setWorkroomMode("test");
   }, [active?.id, setWorkroomMode, user?.id]);
 
   useEffect(() => {
-    if (!customerTestRequest) return;
+    if (!rehearsalFocusRequest) return;
     if (
-      customerTestRequest.agentId !== active?.id ||
-      customerTestRequest.ownerId !== user?.id ||
+      rehearsalFocusRequest.agentId !== active?.id ||
+      rehearsalFocusRequest.ownerId !== user?.id ||
       workroomMode !== "test"
     ) {
-      setCustomerTestRequest(null);
+      setRehearsalFocusRequest(null);
       return;
     }
     if (loading || inspectorOpen) return;
-    // The matching Test composer is now committed. Its focus handle preserves
+    // The matching rehearsal composer is now committed. Its focus handle preserves
     // a retained draft; no delayed callback can seed a different Bot or account.
     workroomRef.current?.focusComposer(
       "Hi, can you explain what you can do and help me take the next step?",
     );
-    setCustomerTestRequest(null);
-  }, [active?.id, customerTestRequest, inspectorOpen, loading, user?.id, workroomMode]);
+    setRehearsalFocusRequest(null);
+  }, [active?.id, inspectorOpen, loading, rehearsalFocusRequest, user?.id, workroomMode]);
 
   if (loading) return <StudioLoadingState />;
   if (agents.length === 0 && degraded) return <WorkspaceRecovery onRetry={refresh} />;
@@ -293,7 +293,7 @@ export default function StudioWorkspaceV2() {
       agentId={active.id}
       agentName={active.name}
       isBusinessAgent={Boolean(active.is_business_agent)}
-      onTestVoiceInChat={startCustomerTest}
+      onRehearseVoiceInChat={startRehearsal}
       drafts={setupDrafts}
       className="h-full border-t-0"
       compact={splitWorkspace}
@@ -308,7 +308,7 @@ export default function StudioWorkspaceV2() {
       agentRole={active.role}
       phoneNumber={active.phone_number}
       onEdit={() => openInspector("setup")}
-      onTest={startCustomerTest}
+      onRehearse={startRehearsal}
       className="h-full"
       compact={splitWorkspace}
     />

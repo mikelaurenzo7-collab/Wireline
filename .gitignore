@@ -97,6 +97,7 @@ Thumbs.db
 /coverage/
 test-results/
 playwright-report/
+/apps/desktop/dist/
 .qa-temp/
 .env.visual-qa
 visual-qa/

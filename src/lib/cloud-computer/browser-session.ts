@@ -4,13 +4,21 @@ import {
   chromium,
   type Browser,
   type BrowserContext,
+  type Locator,
   type Page,
   type Request as BrowserRequest,
   type Response as BrowserResponse,
   type Route,
 } from "playwright-core";
 
-import { chordTypesText, clampNumber, parseKeySequence, parseModifiers } from "./browser-input";
+import {
+  chordTypesText,
+  clampNumber,
+  normalizeKeyName,
+  parseKeySequence,
+  parseModifiers,
+} from "./browser-input";
+import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
 import { snapshotExpression, type SnapshotMode } from "./page-snapshot";
 import {
   checkUrlAllowed,
@@ -22,18 +30,21 @@ import {
 
 /**
  * One Bot's cloud computer: an isolated Chromium session driven through the
- * Claude browser toolset. Production connects to a remote, sandboxed browser
- * over CDP so page traffic never originates inside BotBound's network; a local
- * Chromium launch is allowed only for development and tests.
+ * OpenAI computer tool. Production connects to a remote, sandboxed browser
+ * over Browserless's native Playwright protocol so request and WebSocket
+ * routing stay available; a local Chromium launch is allowed only for tests.
  */
 
-export const CLOUD_BROWSER_VIEWPORT = { width: 1280, height: 800 } as const;
 const NAVIGATION_TIMEOUT_MS = 30_000;
 const ACTION_TIMEOUT_MS = 8_000;
 const READ_MAX_CHARS = 50_000;
 const TEXT_MAX_CHARS = 50_000;
 const MAX_TABS = 8;
 const MAX_TYPE_CHARS = 4_000;
+const MAX_OWNER_REDACTIONS = 32;
+const MAX_OWNER_REDACTION_CHARS = 16_000;
+const MODEL_EDITABLE_SELECTOR =
+  'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, select, [contenteditable="true"], [role="textbox"]';
 // Typing is sent in short runs so a deadline or a newly focused password
 // field stops it between runs instead of after thousands of keystrokes.
 const TYPE_CHUNK_CHARS = 40;
@@ -143,17 +154,22 @@ type Target = { type: "coordinate"; x: number; y: number } | { type: "ref"; ref:
 
 type MemberInput = Record<string, unknown>;
 
+/** Direct owner input is deliberately separate from model computer actions. */
+export type OwnerControlInput =
+  | { kind: "click"; x: number; y: number }
+  | { kind: "drag"; from: { x: number; y: number }; to: { x: number; y: number } }
+  | { kind: "scroll"; x: number; y: number; deltaX: number; deltaY: number }
+  | { kind: "navigate"; url: string }
+  | { kind: "history"; action: "back" | "forward" | "reload" }
+  | { kind: "type"; text: string }
+  | { kind: "key"; key: string };
+
 /** Set when a member's deadline passes, so work it started stops at its next check. */
 type MemberToken = { cancelled: boolean };
 
 const PRIVATE_ADDRESS_STOP = "The page moved to a private or unsupported address and was stopped.";
 const TOO_MANY_SITES =
   "This task has visited too many different sites. Start a new task with a narrower goal.";
-
-/** A vendor default page that holds no earlier session's content. */
-function isFreshPageUrl(raw: string): boolean {
-  return isLocalFrameUrl(raw) || raw.startsWith("about:") || raw.startsWith("chrome://");
-}
 
 class MemberError extends Error {}
 
@@ -214,6 +230,8 @@ export class CloudBrowserSession {
   /** Tabs that loaded something from a private address the guard could not stop. */
   private readonly tainted = new WeakSet<Page>();
   private activeToken: MemberToken | null = null;
+  /** Owner-entered text stays in memory for screenshot/text redaction only. */
+  private readonly ownerEnteredValues: string[] = [];
   private closed = false;
   private disconnected = false;
   /** Set when a page tried to reach a private or non-web address. */
@@ -222,7 +240,6 @@ export class CloudBrowserSession {
   private constructor(
     private readonly browser: Browser,
     private readonly context: BrowserContext,
-    private readonly ownsContext: boolean,
   ) {}
 
   /**
@@ -246,32 +263,27 @@ export class CloudBrowserSession {
   ): Promise<CloudBrowserSession> {
     const browser =
       connection.kind === "remote"
-        ? await chromium.connectOverCDP(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
+        ? await chromium.connect(connection.wsEndpoint, { timeout: NAVIGATION_TIMEOUT_MS })
         : await chromium.launch({
             executablePath: connection.executablePath,
             headless: true,
             args: ["--disable-dev-shm-usage", "--no-first-run", "--no-default-browser-check"],
           });
     let context: BrowserContext | null = null;
-    let ownsContext = true;
     try {
-      try {
-        context = await browser.newContext({
-          viewport: CLOUD_BROWSER_VIEWPORT,
-          deviceScaleFactor: 1,
-          acceptDownloads: false,
-          serviceWorkers: "block",
-          javaScriptEnabled: true,
-          permissions: [],
-          locale: "en-US",
-          timezoneId: "America/Chicago",
-        });
-      } catch {
-        // Some hosted browsers expose only their own default context over CDP.
-        context = await CloudBrowserSession.vendorDefaultContext(browser);
-        ownsContext = false;
-      }
-      const session = new CloudBrowserSession(browser, context, ownsContext);
+      // Never reuse a vendor default context: it may contain another session's
+      // cookies, history, or open pages. If isolation is unavailable, fail closed.
+      context = await browser.newContext({
+        viewport: CLOUD_BROWSER_VIEWPORT,
+        deviceScaleFactor: 1,
+        acceptDownloads: false,
+        serviceWorkers: "block",
+        javaScriptEnabled: true,
+        permissions: [],
+        locale: "en-US",
+        timezoneId: "America/Chicago",
+      });
+      const session = new CloudBrowserSession(browser, context);
       browser.on("disconnected", () => {
         session.disconnected = true;
       });
@@ -313,38 +325,15 @@ export class CloudBrowserSession {
       await first.setViewportSize(CLOUD_BROWSER_VIEWPORT).catch(() => undefined);
       return session;
     } catch (error) {
-      const owned = ownsContext ? context : null;
       await withDeadline(
         (async () => {
-          await owned?.close().catch(() => undefined);
+          await context?.close().catch(() => undefined);
           await browser.close().catch(() => undefined);
         })(),
         CLOSE_DEADLINE_MS,
       ).catch(() => undefined);
       throw error;
     }
-  }
-
-  /**
-   * A vendor's default context is used only when it is fresh. Pages or
-   * cookies already in it mean the vendor hands out reused browsers, whose
-   * earlier session's storage and history would be readable here.
-   */
-  private static async vendorDefaultContext(browser: Browser): Promise<BrowserContext> {
-    const existing = browser.contexts()[0];
-    if (!existing) throw new Error("The cloud browser did not provide a browsing context.");
-    // Storage that cannot be read cannot be shown to be empty.
-    const cookies = await existing.cookies().catch(() => null);
-    if (!cookies) throw new Error("The cloud browser's storage could not be checked.");
-    if (cookies.length || existing.pages().some((page) => !isFreshPageUrl(page.url()))) {
-      throw new Error("The cloud browser was already in use by another session.");
-    }
-    await existing.clearPermissions().catch(() => undefined);
-    const cdp = await browser.newBrowserCDPSession().catch(() => null);
-    await cdp?.send("Browser.setDownloadBehavior", { behavior: "deny" }).catch(() => undefined);
-    await cdp?.detach().catch(() => undefined);
-    for (const extra of existing.pages().slice(1)) await extra.close().catch(() => undefined);
-    return existing;
   }
 
   private register(page: Page): string {
@@ -614,21 +603,155 @@ export class CloudBrowserSession {
     }
   }
 
+  /** Redacted JPEG for the model. Form values and owner-entered text are masked. */
+  async modelFrame(): Promise<Buffer | null> {
+    try {
+      if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
+      const jpeg = await this.captureModelScreenshot(this.activePage(), {
+        type: "jpeg",
+        quality: 62,
+        timeout: 10_000,
+      });
+      if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) return null;
+      return jpeg;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Apply one explicit owner action during a paused Bot handoff. Unlike model
+   * actions, owner typing may reach password fields. It is never returned as
+   * activity or included in a model tool result.
+   */
+  async executeOwnerInput(input: OwnerControlInput): Promise<Buffer> {
+    const token: MemberToken = { cancelled: false };
+    this.activeToken = token;
+    try {
+      if (this.disconnected || this.closed) fail("The cloud computer is no longer connected.");
+      if ((await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS)).size) {
+        this.failPrivateAddress();
+      }
+      const page = this.activePage();
+      await withDeadline(
+        (async () => {
+          switch (input.kind) {
+            case "click": {
+              const point = parseTarget({ type: "coordinate", x: input.x, y: input.y }, false);
+              if (point.type !== "coordinate") fail("Choose a point on the browser screen.");
+              await page.mouse.click(point.x, point.y);
+              break;
+            }
+            case "drag": {
+              const from = parseTarget({ type: "coordinate", ...input.from }, false);
+              const to = parseTarget({ type: "coordinate", ...input.to }, false);
+              if (from.type !== "coordinate" || to.type !== "coordinate") {
+                fail("Choose points inside the browser screen.");
+              }
+              await page.mouse.move(from.x, from.y);
+              await page.mouse.down();
+              try {
+                await page.mouse.move(to.x, to.y, { steps: 8 });
+              } finally {
+                await page.mouse.up().catch(() => undefined);
+              }
+              break;
+            }
+            case "scroll": {
+              const point = parseTarget({ type: "coordinate", x: input.x, y: input.y }, false);
+              if (point.type !== "coordinate") fail("Choose a point on the browser screen.");
+              if (
+                !Number.isFinite(input.deltaX) ||
+                !Number.isFinite(input.deltaY) ||
+                Math.abs(input.deltaX) > 1_200 ||
+                Math.abs(input.deltaY) > 1_200 ||
+                (!input.deltaX && !input.deltaY)
+              ) {
+                fail("That scroll movement is outside the allowed range.");
+              }
+              await page.mouse.move(point.x, point.y);
+              await page.mouse.wheel(input.deltaX, input.deltaY);
+              break;
+            }
+            case "navigate": {
+              const target = parseNavigateTarget(input.url);
+              if (target.kind !== "url") {
+                fail(target.kind === "refused" ? target.reason : "Use a full web address.");
+              }
+              await page.goto(target.url.toString(), { waitUntil: "domcontentloaded" });
+              break;
+            }
+            case "history":
+              if (input.action === "back") {
+                await page.goBack({ waitUntil: "domcontentloaded" }).catch(() => null);
+              } else if (input.action === "forward") {
+                await page.goForward({ waitUntil: "domcontentloaded" }).catch(() => null);
+              } else {
+                await page.reload({ waitUntil: "domcontentloaded" });
+              }
+              break;
+            case "type": {
+              if (typeof input.text !== "string" || !input.text || input.text.length > 1_000) {
+                fail("Enter up to 1,000 characters to send to the focused page field.");
+              }
+              this.rememberOwnerEnteredValue(input.text);
+              for (const piece of typingPieces(input.text)) {
+                if (token.cancelled || this.closed) fail("Owner input was stopped.");
+                if (piece === "\n") await page.keyboard.press("Enter");
+                else await page.keyboard.type(piece, { delay: 0 });
+              }
+              break;
+            }
+            case "key": {
+              const key = typeof input.key === "string" ? normalizeKeyName(input.key) : null;
+              const allowed = new Set([
+                "Enter",
+                "Tab",
+                "Escape",
+                "Backspace",
+                "Delete",
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight",
+                "Home",
+                "End",
+                "PageUp",
+                "PageDown",
+              ]);
+              if (!key || !allowed.has(key)) fail("Choose a supported navigation key.");
+              await page.keyboard.press(key);
+              break;
+            }
+          }
+          await this.settle(page);
+          await this.afterNavigationCheck(page);
+        })(),
+        MEMBER_DEADLINE_MS,
+      );
+      const frame = await this.frame();
+      if (!frame) this.failPrivateAddress();
+      return frame;
+    } catch (error) {
+      token.cancelled = true;
+      throw error;
+    } finally {
+      if (this.activeToken === token) this.activeToken = null;
+    }
+  }
+
+  /** Stop an in-flight owner typing action when the task is stopped. */
+  cancelCurrentInput(): void {
+    if (this.activeToken) this.activeToken.cancelled = true;
+  }
+
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+    this.ownerEnteredValues.length = 0;
     if (this.activeToken) this.activeToken.cancelled = true;
     const shutdown = async () => {
-      if (this.ownsContext) {
-        await this.context.close().catch(() => undefined);
-      } else {
-        // A vendor's default context outlives this connection: leave nothing
-        // running in it, then end that browser so no later session inherits it.
-        for (const page of this.context.pages()) await page.close().catch(() => undefined);
-        await this.context.clearCookies().catch(() => undefined);
-        const cdp = await this.browser.newBrowserCDPSession().catch(() => null);
-        await cdp?.send("Browser.close").catch(() => undefined);
-      }
+      await this.context.close().catch(() => undefined);
       await this.browser.close().catch(() => undefined);
     };
     // A dead websocket must not hold the task open.
@@ -668,10 +791,9 @@ export class CloudBrowserSession {
 
   /** JPEG keeps each screenshot a fraction of a PNG's size in the model's history. */
   private async screenshotBlock(page: Page): Promise<MemberResultBlock> {
-    const jpeg = await page.screenshot({
+    const jpeg = await this.captureModelScreenshot(page, {
       type: "jpeg",
       quality: 70,
-      animations: "disabled",
       timeout: 15_000,
     });
     return {
@@ -713,13 +835,32 @@ export class CloudBrowserSession {
       // screenshot, and the whole result is withheld.
       const after = await withDeadline(this.enforcePublicTabs(), MEMBER_DEADLINE_MS);
       if (after.size) this.failPrivateAddress();
-      return result;
+      return {
+        ...result,
+        content: result.content.map((block) => {
+          if (block.type === "text") {
+            return { ...block, text: this.redactOwnerText(block.text) };
+          }
+          if (block.type === "browser_state") {
+            return {
+              ...block,
+              tabs: block.tabs.map((tab) => ({
+                ...tab,
+                title: this.redactOwnerText(tab.title),
+                url: this.redactOwnerText(tab.url),
+              })),
+            };
+          }
+          return block;
+        }),
+        activity: this.redactOwnerText(result.activity),
+      };
     } catch (error) {
       // Work the member started (typing, above all) stops at its next check.
       token.cancelled = true;
       const message =
         error instanceof MemberError
-          ? error.message
+          ? this.redactOwnerText(error.message)
           : error instanceof Error && /Timeout/i.test(error.name + error.message)
             ? `${member} timed out. The page may still be loading; take a screenshot to check.`
             : `${member} failed. Take a screenshot or re-read the page and try another approach.`;
@@ -748,6 +889,52 @@ export class CloudBrowserSession {
     return { ok: true, content: [{ type: "text", text }, ...extra], activity };
   }
 
+  private rememberOwnerEnteredValue(value: string): void {
+    const trimmed = value.trim();
+    if (trimmed.length < 4 || this.ownerEnteredValues.includes(trimmed)) return;
+    this.ownerEnteredValues.push(trimmed);
+    let total = this.ownerEnteredValues.reduce((sum, item) => sum + item.length, 0);
+    while (
+      this.ownerEnteredValues.length > MAX_OWNER_REDACTIONS ||
+      total > MAX_OWNER_REDACTION_CHARS
+    ) {
+      const removed = this.ownerEnteredValues.shift();
+      total -= removed?.length ?? 0;
+    }
+  }
+
+  private redactOwnerText(value: string): string {
+    return this.ownerEnteredValues.reduce((text, secret) => {
+      const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return text.replace(new RegExp(escaped, "gi"), "[owner-entered text hidden]");
+    }, value);
+  }
+
+  private async captureModelScreenshot(
+    page: Page,
+    options: {
+      type: "jpeg";
+      quality: number;
+      timeout: number;
+      clip?: { x: number; y: number; width: number; height: number };
+    },
+  ): Promise<Buffer> {
+    const masks: Locator[] = [];
+    for (const frame of page.frames()) {
+      masks.push(frame.locator(MODEL_EDITABLE_SELECTOR));
+      for (const value of this.ownerEnteredValues) {
+        masks.push(frame.getByText(value, { exact: false }));
+      }
+    }
+    return page.screenshot({
+      ...options,
+      animations: "disabled",
+      caret: "hide",
+      mask: masks,
+      maskColor: "#111111",
+    });
+  }
+
   private async run(member: string, input: MemberInput, token: MemberToken): Promise<MemberResult> {
     if (this.closed) fail("The cloud computer has shut down.");
     switch (member) {
@@ -765,9 +952,7 @@ export class CloudBrowserSession {
         }
         await this.afterNavigationCheck(page);
         const where = displayUrl(page.url()) || "the page";
-        return this.ok(`Navigated to ${page.url()}`, `Opened ${where}`, [
-          await this.browserState(),
-        ]);
+        return this.ok(`Navigated to ${where}`, `Opened ${where}`, [await this.browserState()]);
       }
       case "screenshot": {
         const page = this.activePage(input.tab_id);
@@ -787,31 +972,26 @@ export class CloudBrowserSession {
         const width = Math.max(1, Math.min(CLOUD_BROWSER_VIEWPORT.width, x1) - Math.max(0, x0));
         const height = Math.max(1, Math.min(CLOUD_BROWSER_VIEWPORT.height, y1) - Math.max(0, y0));
         if (width < 4 || height < 4) fail("That zoom region is too small.");
-        const scale = Math.min(
-          CLOUD_BROWSER_VIEWPORT.width / width,
-          CLOUD_BROWSER_VIEWPORT.height / height,
-          4,
-        );
-        const cdp = await page.context().newCDPSession(page);
-        try {
-          const shot = (await cdp.send("Page.captureScreenshot", {
-            format: "jpeg",
-            quality: 70,
-            clip: { x: Math.max(0, x0), y: Math.max(0, y0), width, height, scale },
-          })) as { data: string };
-          return {
-            ok: true,
-            content: [
-              {
-                type: "image",
-                source: { type: "base64", media_type: "image/jpeg", data: shot.data },
+        const shot = await this.captureModelScreenshot(page, {
+          type: "jpeg",
+          quality: 82,
+          timeout: 15_000,
+          clip: { x: Math.max(0, x0), y: Math.max(0, y0), width, height },
+        });
+        return {
+          ok: true,
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: shot.toString("base64"),
               },
-            ],
-            activity: "Zoomed in to read details",
-          };
-        } finally {
-          await cdp.detach().catch(() => undefined);
-        }
+            },
+          ],
+          activity: "Zoomed in to read details",
+        };
       }
       case "left_click":
       case "right_click":
@@ -861,17 +1041,25 @@ export class CloudBrowserSession {
       case "mouse_move": {
         const page = this.activePage(input.tab_id);
         const point = parseTarget(input.target, false) as { x: number; y: number };
-        await page.mouse.move(point.x, point.y);
+        await this.withModifiers(page, input.modifiers, () => page.mouse.move(point.x, point.y));
         return this.ok("Moved the pointer.", "Moved the pointer");
       }
       case "left_click_drag": {
         const page = this.activePage(input.tab_id);
-        const from = parseTarget(input.from, false) as { x: number; y: number };
-        const to = parseTarget(input.target, false) as { x: number; y: number };
-        await page.mouse.move(from.x, from.y);
-        await page.mouse.down();
-        await page.mouse.move(to.x, to.y, { steps: 12 });
-        await page.mouse.up();
+        const rawPath = Array.isArray(input.path) ? input.path : [input.from, input.target];
+        if (rawPath.length < 2 || rawPath.length > 50) fail("The drag path is invalid.");
+        const path = rawPath.map((point) => parseTarget(point, false) as { x: number; y: number });
+        await this.withModifiers(page, input.modifiers, async () => {
+          const [from, ...remaining] = path;
+          if (!from) fail("The drag path is invalid.");
+          await page.mouse.move(from.x, from.y);
+          await page.mouse.down();
+          try {
+            for (const point of remaining) await page.mouse.move(point.x, point.y);
+          } finally {
+            await page.mouse.up().catch(() => undefined);
+          }
+        });
         return this.ok("Dragged.", "Dragged on the page");
       }
       case "left_mouse_down":
@@ -886,15 +1074,23 @@ export class CloudBrowserSession {
       case "scroll": {
         const page = this.activePage(input.tab_id);
         const point = parseTarget(input.target, false) as { x: number; y: number };
-        const direction = String(input.scroll_direction || "down");
-        const amount = clampNumber(input.scroll_amount, 1, 10, 3) * 120;
-        const dx = direction === "left" ? -amount : direction === "right" ? amount : 0;
-        const dy = direction === "up" ? -amount : direction === "down" ? amount : 0;
-        if (!dx && !dy) fail("scroll_direction must be up, down, left, or right.");
+        const hasDeltas = input.scroll_x !== undefined || input.scroll_y !== undefined;
+        let dx: number;
+        let dy: number;
+        if (hasDeltas) {
+          dx = clampNumber(input.scroll_x, -1_200, 1_200, 0);
+          dy = clampNumber(input.scroll_y, -1_200, 1_200, 0);
+        } else {
+          const direction = String(input.scroll_direction || "down");
+          const amount = clampNumber(input.scroll_amount, 1, 10, 3) * 120;
+          dx = direction === "left" ? -amount : direction === "right" ? amount : 0;
+          dy = direction === "up" ? -amount : direction === "down" ? amount : 0;
+        }
+        if (!dx && !dy) fail("Provide a non-zero horizontal or vertical scroll.");
         await page.mouse.move(point.x, point.y);
-        await page.mouse.wheel(dx, dy);
+        await this.withModifiers(page, input.modifiers, () => page.mouse.wheel(dx, dy));
         await page.waitForTimeout(250);
-        return this.ok(`Scrolled ${direction}.`, `Scrolled ${direction}`);
+        return this.ok("Scrolled the page.", "Scrolled the page");
       }
       case "scroll_to": {
         const page = this.activePage(input.tab_id);

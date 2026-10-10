@@ -100,7 +100,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
       "is this ai",
     ],
     response_template:
-      "Honest answer: yes, it's AI. The best test is the private rehearsal inside your BotBound account, where you can hear your own Bot before launch.",
+      "Honest answer: yes, it's AI. The best way to know is a private rehearsal in BotBound, where you can hear your own Bot before launch.",
     follow_up_question: "Want the shortest path to a private rehearsal?",
     rationale:
       "Lead with honest disclosure and a demo path BotBound can actually provide without promising an unverified callback or comparative claim.",
@@ -123,7 +123,7 @@ export const WIRELINE_OBJECTIONS: readonly ObjectionEntry[] = Object.freeze([
     response_template:
       "Totally fair. Usually when folks want to think it over, there's one specific thing on their mind: pricing, switching cost, or whether it'll actually work for their setup. Which one is closest for you?",
     follow_up_question:
-      "And in the meantime, want me to set you up with a free agent, no card needed, so you can build and test it instead of imagining it?",
+      "And in the meantime, want a free Bot with no card needed? You can shape what it knows, then rehearse a private conversation instead of imagining how it might work.",
     rationale:
       "Surfaces the real blocker (almost never 'thinking'; it's a specific concern) and offers the lowest-friction next step (a free, no-card agent build).",
   },

@@ -221,18 +221,11 @@ export const ENV_REGISTRY: EnvVarConfig[] = [
     validate: nonEmpty,
   },
   {
-    name: "ANTHROPIC_API_KEY",
-    group: "ai",
-    required: false,
-    description: "Claude planner for each Bot's cloud computer; unset keeps the computer off",
-    validate: nonEmpty,
-  },
-  {
     name: "CLOUD_COMPUTER_BROWSER_WS_URL",
     group: "ai",
     required: false,
     description:
-      "Isolated hosted-browser CDP endpoint for the cloud computer; production requires wss://",
+      "Isolated hosted-browser CDP endpoint for the OpenAI cloud computer; production requires wss://",
     validate: (value) => /^wss?:\/\//.test(value),
     formatHint: "wss://<hosted browser CDP endpoint>",
   },

@@ -78,7 +78,7 @@ type Props = {
   ref?: { current: unknown };
   mode?: string;
   onTest?: () => void;
-  onTestVoiceInChat?: () => void;
+  onRehearseVoiceInChat?: () => void;
   onModeChange?: (mode: "configure" | "test") => void;
 };
 function elements(node: ReactNode): Array<ReactElement<Props>> {
@@ -104,7 +104,7 @@ function requestTest() {
   const nodes = render();
   const setup = nodes.find((node) => node.type === "setup-panel");
   const review = nodes.find((node) => node.type === "review-panel");
-  (setup?.props.onTestVoiceInChat ?? review?.props.onTest)!();
+  (setup?.props.onRehearseVoiceInChat ?? review?.props.onRehearse)!();
   return nodes.find((node) => node.type === "workroom")!;
 }
 beforeEach(() => {

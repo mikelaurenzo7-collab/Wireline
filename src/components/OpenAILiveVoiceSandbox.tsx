@@ -48,7 +48,7 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "failed" as const,
       title: "Live Voice Needs Attention",
-      detail: "The test stopped before the conversation could continue.",
+      detail: "The rehearsal stopped before the conversation could continue.",
     };
   if (state === "connecting")
     return {
@@ -72,12 +72,12 @@ function voiceActivity(state: VoiceState) {
     return {
       state: "complete" as const,
       title: "Listening",
-      detail: "Microphone audio is streaming to this private live test.",
+      detail: "Microphone audio streams to OpenAI for this private rehearsal.",
     };
   return {
     state: "pending" as const,
-    title: "Ready for a Private Live Test",
-    detail: "Start a test to speak with this agent using its configured rules and Training facts.",
+    title: "Ready for a Voice Rehearsal",
+    detail: "Start a rehearsal to speak with this Bot using its rules and Training facts.",
   };
 }
 
@@ -334,7 +334,7 @@ export default function OpenAILiveVoiceSandbox({
         if (currentGeneration !== generation.current) return;
         if (connection.connectionState === "connected") setState("listening");
         if (["failed", "closed"].includes(connection.connectionState))
-          fail("Live voice connection ended. Start the test again to continue.");
+          fail("Live voice connection ended. Start the rehearsal again to continue.");
       };
       events.onmessage = (message) => {
         let event: Record<string, unknown>;
@@ -415,12 +415,12 @@ export default function OpenAILiveVoiceSandbox({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-0">
-            <p className="wl-stitch-label">Live voice</p>
+            <p className="wl-stitch-label">Voice rehearsal</p>
             <h3 className="mt-1 font-display text-[length:var(--wireline-typography-h3-size)] font-semibold tracking-[-.02em] text-foreground">
               Speak with <span className="wl-preserve-case">{agentName}</span>
             </h3>
             <p className="mt-1 max-w-2xl text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              A private browser test of this Bot's rules, facts, and voice.
+              Rehearse this Bot's rules, facts, and voice in a private browser session.
             </p>
           </div>
         </div>
@@ -436,7 +436,7 @@ export default function OpenAILiveVoiceSandbox({
           ) : (
             <Mic size={16} />
           )}
-          {active ? "End live test" : "Start live test"}
+          {active ? "End rehearsal" : "Start rehearsal"}
         </button>
       </div>
 
@@ -451,7 +451,7 @@ export default function OpenAILiveVoiceSandbox({
       <div
         className="mt-4 min-h-[130px] space-y-3 rounded-lg border border-border bg-secondary p-4"
         aria-live="polite"
-        aria-label="Live voice transcript"
+        aria-label="Voice rehearsal transcript"
       >
         {lines.length ? (
           lines.map((line) => (
@@ -467,8 +467,8 @@ export default function OpenAILiveVoiceSandbox({
         ) : (
           <div className="grid min-h-[96px] place-items-center text-center">
             <p className="max-w-md text-[length:var(--wireline-typography-caption-size)] leading-5 text-muted-foreground">
-              Start a test, ask a real question, and interrupt naturally. This safe channel can
-              search approved Training facts but cannot perform external actions.
+              Ask a real question and interrupt naturally. This private rehearsal can search
+              approved Training facts but cannot perform external actions.
             </p>
           </div>
         )}

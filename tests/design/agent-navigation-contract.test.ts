@@ -64,7 +64,7 @@ describe("authenticated Bot navigation contract", () => {
     expect(shell).not.toContain("orderedAgents");
   });
 
-  it("keeps Studio as one workroom with a Setup/Review inspector", () => {
+  it("keeps Studio as one setup workspace with private rehearsal as an action", () => {
     expect(studio).toContain('type InspectorSection = "setup" | "review"');
     expect(studio).toContain('type WorkroomMode = "configure" | "test"');
     expect(studio).toContain('id === "setup" ? "Setup" : "Review"');
@@ -72,6 +72,9 @@ describe("authenticated Bot navigation contract", () => {
     expect(studio).toContain("StudioWorkroom");
     expect(studio).toContain("StudioAgentReviewPanel");
     expect(studio).toContain("WorkspaceResizablePanel");
+    expect(workroom).toContain('mode === "test" ? "Private Rehearsal" : "Set Up"');
+    expect(workroom).toContain("Rehearse");
+    expect(workroom).not.toContain('role="tablist"');
     expect(studio).not.toContain("StudioAgentCanvas");
     expect(studio).not.toContain("posture=");
   });

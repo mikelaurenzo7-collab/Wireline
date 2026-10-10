@@ -4,8 +4,8 @@
 
 **Source:** canonical production route registry (`src/server/register-api-routes.ts`)
 
-**Routes scanned:** 400
-**Protected:** 323
+**Routes scanned:** 405
+**Protected:** 328
 **Public (allowlisted):** 77
 **Violations:** 0
 
@@ -220,6 +220,9 @@
 | computer-routes.ts | GET | `/api/computer/tasks` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks` | inline | — | — | Protected |
 | computer-routes.ts | GET | `/api/computer/tasks/:taskId` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks/:taskId/control` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks/:taskId/control/input` | inline | — | — | Protected |
+| computer-routes.ts | POST | `/api/computer/tasks/:taskId/control/return` | inline | — | — | Protected |
 | computer-routes.ts | GET | `/api/computer/tasks/:taskId/frame` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/reply` | inline | — | — | Protected |
 | computer-routes.ts | POST | `/api/computer/tasks/:taskId/stop` | inline | — | — | Protected |
@@ -246,6 +249,8 @@
 | email-routes.ts | DELETE | `/api/emails/accounts/:id` | inline | — | — | Protected |
 | email-routes.ts | GET | `/api/emails/threads` | inline | — | — | Protected |
 | email-routes.ts | GET | `/api/emails/threads/:id/messages` | inline | — | — | Protected |
+| email-routes.ts | POST | `/api/emails/threads/:id/reply` | inline | — | — | Protected |
+| email-routes.ts | POST | `/api/emails/threads/:id/reply/acknowledge` | inline | — | — | Protected |
 | email-routes.ts | POST | `/api/emails/threads/read-state` | inline | — | — | Protected |
 | email-sync-routes.ts | POST | `/api/emails/sync` | inline | — | — | Protected |
 | email-unsubscribe-routes.ts | POST | `/api/email/unsubscribe` | — | — | yes | Public (allowlisted) |

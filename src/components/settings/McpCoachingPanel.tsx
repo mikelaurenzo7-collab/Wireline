@@ -195,9 +195,7 @@ export default function McpCoachingPanel() {
                           ? "Edit Drafts & Training"
                           : scope === "demo.voice"
                             ? "Private Rehearsals"
-                            : scope === "computer.plan"
-                              ? "Plan Computer Tasks"
-                              : scope,
+                            : scope,
                     )
                     .join(" · ")}
                 </p>

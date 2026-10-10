@@ -122,7 +122,7 @@ export default function KnowledgePage() {
       <Button asChild variant="secondary" size="sm" className="min-h-11 shrink-0 justify-center">
         <Link to={`/studio?agent=${encodeURIComponent(agentId)}&section=test`}>
           <MessageCircle size={15} aria-hidden="true" />
-          Test in Studio
+          Rehearse in Studio
         </Link>
       </Button>
       {populated && activeTab === "knowledge" ? (

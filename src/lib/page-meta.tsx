@@ -15,7 +15,7 @@ const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 const DEFAULT_TITLE = "BotBound | Hire a Voice Bot";
 const DEFAULT_DESCRIPTION =
-  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Build and test free.";
+  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Create a Bot for free, then rehearse privately.";
 
 function brandTitle(value: string): string {
   return value

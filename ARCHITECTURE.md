@@ -4,7 +4,7 @@ BotBound is one Bot product and workspace across calls, texts, email, tools, and
 outcomes. Its technical operating loop is **Create -> Train -> Wire -> Run**.
 Public messaging leads with concrete Bot capabilities, outcomes, and signup rather than a setup-step list.
 
-A customer configures a Bot with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Test -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes remain available for optional review and later refinements. Ongoing review is not an additional setup step.
+A customer configures a Bot with durable knowledge and policy, connects it to numbers and tools, then runs work through Studio. After create, customers see **Train -> Rehearse -> Launch**. Calls, texts, follow-up, approvals, handoffs, transcripts, and outcomes remain available for optional review and later refinements. Ongoing review is not an additional setup step.
 
 ## Product boundary
 
@@ -85,8 +85,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
   - Speech generation and live-call voice remain OpenAI-owned; structured continuity never changes the selected speaker.
 - **Video presenters:** Live talking-head video is retired. `src/lib/video-presenter/` remains compatibility infrastructure for identity badges and fail-closed legacy paths; customer surfaces must not offer presenter checkout or session minting.
 - **Browser extension:** BotBound Command only sends active page context by explicit user action. No broad host permissions, background harvesting, token storage, or silent browsing collection.
-- **Desktop companion:** `apps/desktop` owns local window grants, explicit action approval, third-party MCP credentials, and durable execution receipts. The scoped `plan_computer_step` tool returns one bounded proposal using paid account AI allowance; it cannot execute it. OS helpers recheck the selected window before input. This is an owner-reviewed control surface, not an OS sandbox. See [COMPUTER_COMPANION.md](./docs/COMPUTER_COMPANION.md).
-- **Cloud computer:** `/computer` gives each Bot owner-assigned web tasks. `src/lib/cloud-computer/` runs a Claude planner (`ANTHROPIC_API_KEY`, `claude-sonnet-5-5` by default) over Anthropic's browser toolset against an isolated hosted browser reached by `CLOUD_COMPUTER_BROWSER_WS_URL` (wss in production; a local Chromium is development-only). Every request is DNS-checked to public addresses; scripts, uploads, downloads, console, and network reads are disabled; the Bot never types passwords or payment details, pauses for the owner at logins and payments, and only submits forms the owner's task asks for. Each model turn reserves and settles against the account's AI allowance (`computer.browse`), tasks require a paid plan, ownership, live-action policy, and Upstash limits, and `wireline_computer_tasks` keeps only the goal, a bounded activity log, and the report. Live frames stay in process memory and are never stored.
+- **Cloud computer:** `/computer` gives each Bot owner-assigned web tasks in an isolated hosted browser. The owner can view the live screen and activity, take direct control during a handoff, then return the browser to the Bot. `src/lib/cloud-computer/` uses the shared `OPENAI_API_KEY` with the OpenAI Responses computer tool and an isolated hosted browser reached by `CLOUD_COMPUTER_BROWSER_WS_URL` (wss in production; local Chromium is development-only). Every request is DNS-checked to public addresses; scripts, uploads, downloads, console, and network reads are disabled. The Bot never types passwords or payment details; direct owner-entered browser text stays in memory for redaction, is not stored in task history or sent as separate text to the model, and is masked from the screen shared with OpenAI after hand-back. Each model turn reserves and settles against the account's AI allowance (`computer.browse`), tasks require a paid plan, ownership, live-action policy, and Upstash limits, and `wireline_computer_tasks` keeps only the goal, a bounded activity log, and the report. Live frames stay in process memory and are never stored.
 - **ChatGPT App:** OAuth-connected MCP surface for account-bound private actions and simulations.
 - **Webhooks:** signature verification and idempotent handling remain server-side.
 
@@ -94,7 +93,7 @@ Runtime execution reads the saved Bot profile, selected model/voice posture, con
 
 - Tenant-owned queries and writes are scoped to the authenticated user.
 - Provider credentials are environment variables or server-side secrets.
-- Owner-supplied third-party MCP credentials are a separate desktop-only trust boundary: OS-encrypted locally, bound to the approved HTTPS endpoint, and never sent to BotBound or model providers. Shared window images and approved tool context do reach the configured model route with owner consent.
+- Owner-entered cloud-browser text is transmitted only to the currently open website through the isolated browser session; it is not written to BotBound logs, task history, or the model prompt. The owner explicitly starts and ends that control period.
 - Billing, webhooks, account deletion, provider callbacks, and connected-tool writes are server-owned workflows.
 - Browser/mobile clients may initiate intent but must not own authorization decisions.
 - Outbound marketing dials run tenant DNC + federal DNC (when configured) + TCPA consent gates before PSTN spend.

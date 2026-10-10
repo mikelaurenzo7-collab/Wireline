@@ -42,7 +42,7 @@ describe("authenticated seeded-state visual QA contract", () => {
 
     expect(routes).toContain('<Route path="/" element={<Navigate to="/studio" replace />} />');
     expect(routes).toContain('path="/overview" element={<ToStudioRedirect />}');
-    expect(studio).toContain('title="Build Your Bot"');
+    expect(studio).toContain('title="Create Your Bot"');
     expect(studio).toContain("Create Bot");
     expect(studio).toContain("data-studio-first-run");
     expect(studio).toContain("sm:pt-12 lg:pt-16");

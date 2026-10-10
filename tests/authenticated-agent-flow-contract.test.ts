@@ -128,7 +128,7 @@ describe("authenticated Bot flow", () => {
     expect(createDialog).toContain("Cancel");
     expect(createDialog).not.toContain("VoicePickerField");
     expect(createDialog).not.toContain("CreateAgentCatalogFacePicker");
-    expect(productCopy).toContain('createHeadline: "Build Your Bot"');
+    expect(productCopy).toContain('createHeadline: "Create Your Bot"');
     const emptyCue = productCopy.match(/emptyCue:\s*"([^"]+)"/)?.[1] ?? "";
     expect(emptyCue).toMatch(/Describe the job/i);
     for (const capability of ["calls", "text", "email", "knowledge", "tools"]) {

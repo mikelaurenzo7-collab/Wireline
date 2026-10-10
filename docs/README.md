@@ -1,6 +1,6 @@
 # BotBound Documentation
 
-BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, the post-create guide remains **Train -> Test -> Launch**. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
+BotBound's public story leads with capabilities, outcomes, and a clear signup action. It does not require a setup sequence. Inside the product, customers create a Bot, set it up, and rehearse privately before activating live work. Technical surface names such as Create, Training, Connections, Phone, Inbox, and Studio describe implementation ownership. Current launch positioning and creative status are governed by the launch source of truth indexed under Operating and release runbooks below.
 
 Broad public copy uses **Bot** or **Phone Bot**. Customers describe the job and choose Calls, Email, SMS, or a combination in the same workspace. Technical contracts retain `agent` and legacy plan/account identifiers for compatibility. Calls/SMS packages include one shared number; Email packages include a managed inbox. SMS and outbound calling remain unavailable until their separate readiness checks pass. The current commercial source is `src/lib/plan-catalog.ts`, reconciled through `docs/P0_BILLING_OPS_NOTE.md`.
 
@@ -16,7 +16,7 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | Connections      | `src/pages/ConnectionsPage.tsx`, `src/pages/SalesforceIntegrationPage.tsx`                          | Numbers, integrations, routing, approvals, billing, and launch controls.                             |
 | Run / Studio     | `src/components/StudioWorkspaceV2.tsx`, `src/components/StudioWorkroom.tsx`                         | Calls, texts, follow-up, approvals, handoff, and review.                                             |
 | BotBound Command | `apps/browser-extension/`                                                                           | **Early access** explicit-action browser handoff; technical package names remain stable.             |
-| BotBound Desktop | `apps/desktop/`                                                                                     | **Internal development** owner-reviewed Windows/macOS and MCP tasks; signed distribution and native acceptance pending. |
+| Cloud Computer   | `src/pages/ComputerPage.tsx`, `src/lib/cloud-computer/`                                            | Owner-assigned work in an isolated hosted browser, with direct owner takeover at sign-in and decision checkpoints. |
 | iOS              | `ios/`                                                                                              | **Planned** until signing, physical-device acceptance, privacy review, and TestFlight.               |
 | Android          | `android/`                                                                                          | **Internal beta** until device acceptance, signing, privacy review, and Play release.                |
 | ChatGPT App      | `src/routes/chatgpt-mcp-*`, `src/lib/chatgpt-mcp-*`, `api/mcp.ts`                                   | **Early access** account-bound MCP/OAuth surface shared with Claude and Cursor.                      |
@@ -46,9 +46,6 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [CUSTOMER_TERMINOLOGY.md](./CUSTOMER_TERMINOLOGY.md)                                             | One-product customer-language contract and compatibility boundary.                |
 | [ONE-AGENT-STRATEGY.md](./ONE-AGENT-STRATEGY.md)                                                 | Unified Bot positioning and roster-compatible launch framing.                     |
 | [CLIENT_SURFACES.md](./CLIENT_SURFACES.md)                                                       | Web, browser, native, ChatGPT, and presenter ownership and release boundaries.    |
-| [COMPUTER_COMPANION.md](./COMPUTER_COMPANION.md)                                                 | Desktop planning, local execution authority, account isolation, spend, and platform release gates. |
-| [Desktop client](../apps/desktop/README.md)                                                     | Local development, task interface, packaging, and distribution requirements. |
-| [Desktop native helpers](../apps/desktop/native/README.md)                                      | Platform compilation, fixed native operations, and device acceptance. |
 | [CHATGPT_APP.md](./CHATGPT_APP.md)                                                               | ChatGPT App behavior, OAuth, tool boundaries, and release verification.           |
 | [CLAUDE_CONNECTOR.md](./CLAUDE_CONNECTOR.md)                                                     | Claude Connector Directory and MCP App behavior for the shared `/mcp` server.     |
 | [CURSOR_PLUGIN.md](./CURSOR_PLUGIN.md)                                                           | Cursor Directory plugin package and account-bound MCP behavior.                   |

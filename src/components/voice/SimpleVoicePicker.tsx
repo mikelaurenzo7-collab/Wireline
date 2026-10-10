@@ -260,7 +260,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
       ) : null}
 
       <p className="text-xs leading-5 text-muted-foreground">
-        Used for calls and browser tests. Preview starts a private voice session.
+        Used for phone calls and browser rehearsals. Preview starts a private voice rehearsal.
       </p>
       <button
         type="button"

@@ -1,5 +1,4 @@
 import express, { type Request, type Response } from "express";
-import { z } from "zod";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { AppError } from "../lib/api-error";
 import { type AgentCustomizationInput, assertDraftConfirmation } from "../lib/agent-customization";
@@ -20,7 +19,7 @@ import {
   MCP_SERVER_VERSION,
   mcpUiResourceMeta,
 } from "../lib/mcp-app-metadata";
-import { mcpDraftSourceForClient } from "../lib/mcp-client-registry";
+import { isRetiredMcpClient, mcpDraftSourceForClient } from "../lib/mcp-client-registry";
 import {
   assertMcpDraftWriteRateLimit,
   hashMcpOAuthToken,
@@ -54,8 +53,6 @@ import { isHardSpendCapExceeded } from "../lib/spend-guards";
 import { shouldRetainRealtimeReservation } from "../lib/realtime-provider-outcome";
 import { assertLiveExternalActionAllowed } from "../lib/account-environment-policy";
 import { BOT_MARK_IDENTITY_CAPACITY } from "../lib/bot-mark";
-import { planComputerStep } from "../lib/computer-planner";
-import { computerStepInputSchema, computerStepProposalSchema } from "../lib/computer-protocol";
 import * as schema from "../db/schema";
 
 const router = express.Router();
@@ -117,6 +114,7 @@ async function principalFromRequest(req: Request): Promise<McpPrincipal | null> 
   };
   const record = result.rows?.[0];
   if (!record || new Date(record.expires_at).getTime() <= Date.now()) return null;
+  if (isRetiredMcpClient(record.client_id || "")) return null;
   if (!isMcpResourceBound(record.resource, req)) return null;
   const scopes = parseScopes(record.scope);
   if (!scopes.length) return null;
@@ -445,22 +443,6 @@ function toolDefinitions() {
   };
 
   return [
-    {
-      name: "plan_computer_step",
-      title: "Plan a computer step",
-      description:
-        "Proposes one step using an owned Bot and observations deliberately shared by the account holder. Consumes the paid managed AI allowance. Never executes a device action or remote MCP tool; the local companion must obtain separate approval and verify the result. Public callers have no device access.",
-      inputSchema: z.toJSONSchema(computerStepInputSchema),
-      outputSchema: z.toJSONSchema(computerStepProposalSchema),
-      annotations: {
-        readOnlyHint: false,
-        openWorldHint: false,
-        destructiveHint: false,
-        idempotentHint: false,
-      },
-      securitySchemes: [{ type: "oauth2", scopes: ["computer.plan", "agents.read"] }],
-      _meta: { securitySchemes: [{ type: "oauth2", scopes: ["computer.plan", "agents.read"] }] },
-    },
     {
       name: "create_agent_draft",
       title: "Create a BotBound agent draft",
@@ -859,19 +841,6 @@ router.post("/mcp", async (req, res) => {
         ? (params.arguments as Record<string, unknown>)
         : {};
 
-    if (name === "plan_computer_step") {
-      const authed = requireScope(principal, "computer.plan");
-      requireScope(authed, "agents.read");
-      const proposal = await tenantStore.run(authed.userId, () =>
-        planComputerStep(authed.userId, args),
-      );
-      return jsonRpc(res, id, {
-        content: [{ type: "text", text: proposal.summary }],
-        structuredContent: proposal,
-        _meta: { execution: "local_owner_approval_required" },
-      });
-    }
-
     if (name === "create_agent_draft") {
       const authed = requireScope(principal, "agents.write");
       assertDraftConfirmation(args.confirmed);
@@ -1013,7 +982,7 @@ router.post("/mcp", async (req, res) => {
           throw new AppError(
             402,
             "SPEND_CAP_REACHED",
-            "The plan-funded simulation allowance is used for this period. Continue from BotBound billing.",
+            "The plan-funded private rehearsal allowance is used for this period. Continue from BotBound billing.",
             {
               period: spendDecision.period,
               month_to_date_usd: spendDecision.monthToDateUsd,

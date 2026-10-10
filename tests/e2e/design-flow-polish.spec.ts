@@ -118,7 +118,7 @@ for (const width of [320, 390, 1440]) {
     await page.evaluate(() => document.fonts.ready);
     const pillars = page.getByRole("list", { name: "What every Bot gets" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
-      "Answers Every Call",
+      "Answers and Makes Calls",
       "Finishes the Work",
       "Follows Up in Writing",
     ]);
@@ -129,7 +129,7 @@ for (const width of [320, 390, 1440]) {
       "Approvals and Handoffs",
       "Shared Context",
       "Clear Outcomes",
-      "Private Test First",
+      "Rehearse Before Launch",
     ]);
     if (width >= 1024) {
       const geometry = await page.evaluate(() => {

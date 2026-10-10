@@ -190,6 +190,9 @@ function isNonPublicIpv6(address: string): boolean {
   }
   // NAT64 well-known prefix embeds IPv4.
   if (groups[0] === 0x64 && groups[1] === 0xff9b) {
+    // RFC 8215 reserves 64:ff9b:1::/48 for local-use translation. It can
+    // route to private IPv4 destinations, so never let a hosted browser use it.
+    if (groups[2] === 0x0001) return true;
     const v4 = `${groups[6] >> 8}.${groups[6] & 0xff}.${groups[7] >> 8}.${groups[7] & 0xff}`;
     return isNonPublicIpv4(v4);
   }

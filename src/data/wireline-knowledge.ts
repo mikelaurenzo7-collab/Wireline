@@ -14,17 +14,17 @@ export const WIRELINE_ONE_LINER =
   "BotBound runs calls, texts, follow-up, browser context, email, and integrations through trained Bots that stay on your playbook.";
 
 export const WIRELINE_VOICE_STACK =
-  "Live calls and private browser tests run on separate BotBound-managed voice paths, so testing cannot take over a customer phone Bot.";
+  "Live calls and private browser rehearsals run on separate BotBound-managed voice paths, so a rehearsal cannot take over a customer phone Bot.";
 
 export const WIRELINE_PLANS = [
   {
     name: "BotBound Free Builder",
-    price: "Free to create, train, and privately simulate",
+    price: "Free to create, train, and privately rehearse",
     bestFor: "Trying BotBound before going live.",
     includes: [
       "One private draft Bot",
-      "Setup and bounded private testing",
-      "Private simulation only: no live calls, texts, or number until you activate a paid plan",
+      "Setup and bounded private rehearsal",
+      "Private rehearsals only: no live calls, texts, or number until you activate a paid plan",
     ],
   },
   ...STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels").map((plan) => ({
@@ -87,7 +87,7 @@ export const WIRELINE_FEATURES = [
   {
     title: "Outbound Sales",
     blurb:
-      "Marketing campaigns stay blocked until required consent rules and federal DNC screening are ready. Lead Hunt surfaces prospects through connected sources, or you import a list. Review the queue, then your Sales Bot calls, qualifies, books, and records the outcome.",
+      "Lead Hunt surfaces prospects through connected sources, or you import a list. Set up and privately rehearse the Sales Bot playbook. Live outbound calling stays gated until server-verifiable consent records and Federal Do Not Call screening are in place.",
   },
   {
     title: "Email Workflows",

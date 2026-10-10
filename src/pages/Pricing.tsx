@@ -16,7 +16,6 @@ import {
 import BillingIntervalControl from "../components/BillingIntervalControl";
 import ChannelPlanPicker from "../components/ChannelPlanPicker";
 import { usePaidPlanAvailability } from "../hooks/usePaidPlanAvailability";
-import { MARKETING_CALLS_NOTICE } from "../lib/product-copy";
 
 const CHANNEL_PLANS = STRIPE_PLANS.filter((plan) => plan.catalogFamily === "channels");
 const TOPUP_RATE = `$${FLAT_OVERAGE_PER_MIN_USD.toFixed(2)}/min`;
@@ -43,7 +42,7 @@ const FAQ = [
   ],
   [
     "How Long Can a Call Last?",
-    "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser tests and message-taking flows have a 5-minute maximum. Reaching a session limit ends the call.",
+    "Live phone calls can run for up to 60 minutes per session, unless a shorter limit is configured. Private browser rehearsals and message-taking flows have a 5-minute maximum. Reaching a session limit ends the call.",
   ],
   [
     "How Is Email Usage Covered?",
@@ -160,7 +159,7 @@ export default function Pricing() {
                   <div className="space-y-3">
                     <p role="status" className="text-sm text-muted-foreground">
                       {smsPending
-                        ? "SMS setup is not available yet. You can still build and test privately."
+                        ? "SMS setup is not available yet. You can still set up and rehearse privately."
                         : notice}
                     </p>
                     <Link
@@ -169,7 +168,7 @@ export default function Pricing() {
                     >
                       {canActivate(plan.id) && !smsPending
                         ? "Get Started"
-                        : "Build with These Channels"}{" "}
+                        : "Set Up These Channels"}{" "}
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
                   </div>
@@ -181,8 +180,9 @@ export default function Pricing() {
               {selectedHasCalls ? (
                 <>
                   {" "}
-                  Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit.{" "}
-                  {MARKETING_CALLS_NOTICE}
+                  Extra minutes cost {TOPUP_RATE}, using Runtime Balance or completion credit. Bots
+                  answer calls from their own number. Live outbound dialing is gated until
+                  server-verifiable consent records and Federal Do Not Call screening are in place.
                 </>
               ) : null}
             </p>
@@ -190,14 +190,14 @@ export default function Pricing() {
               <div className="text-left">
                 <h2 className="text-base font-semibold">Start with Free Builder</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  One private Bot. Set up, add knowledge, and test before activation.
+                  One private Bot. Set it up, add knowledge, and rehearse before activation.
                 </p>
               </div>
               <Link
                 to={signupHrefForPlan("personal")}
                 className="marketing-btn-secondary inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
               >
-                Build Free <ArrowRight className="size-4" aria-hidden="true" />
+                Create a Free Bot <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
             <article

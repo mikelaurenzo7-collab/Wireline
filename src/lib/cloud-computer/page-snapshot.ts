@@ -149,12 +149,11 @@ export const PAGE_SNAPSHOT_SOURCE = String.raw`(args) => {
     }
     if ((tag === "INPUT" || tag === "TEXTAREA") && role !== "checkbox" && role !== "radio" && role !== "button") {
       const type = (el.getAttribute("type") || "").toLowerCase();
-      const value = type === "password" ? (el.value ? "••••" : "") : clean(el.value, 60);
-      if (value) line += " value=" + quote(value);
+      if (el.value) line += type === "password" ? " value=\"••••\"" : " has_value";
     }
     if (tag === "SELECT") {
       const selected = el.options && el.selectedIndex >= 0 ? el.options[el.selectedIndex] : null;
-      if (selected) line += " value=" + quote(clean(selected.textContent, 60));
+      if (selected) line += " has_value";
     }
     if (role === "link") {
       const href = el.getAttribute("href") || "";

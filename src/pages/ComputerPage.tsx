@@ -1,11 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
+} from "react";
+import { Link, useSearchParams } from "react-router";
 import {
   CheckCircle2,
   CircleAlert,
   ExternalLink,
   Globe,
   Hand,
+  MousePointer2,
   Loader2,
   MonitorSmartphone,
   Send,
@@ -50,8 +59,19 @@ type ComputerTask = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  currentUrl: string | null;
+  ownerControl: boolean;
   stopping: boolean;
 };
+
+type OwnerBrowserInput =
+  | { kind: "click"; x: number; y: number }
+  | { kind: "drag"; from: { x: number; y: number }; to: { x: number; y: number } }
+  | { kind: "scroll"; x: number; y: number; deltaX: number; deltaY: number }
+  | { kind: "navigate"; url: string }
+  | { kind: "history"; action: "back" | "forward" | "reload" }
+  | { kind: "type"; text: string }
+  | { kind: "key"; key: string };
 
 type ComputerStatus = {
   available: boolean;
@@ -189,10 +209,21 @@ function UnavailableNotice({ status }: { status: ComputerStatus }) {
   );
 }
 
-function LiveScreen({ task }: { task: ComputerTask }) {
+function LiveScreen({
+  task,
+  ownerControl = false,
+  onOwnerInput,
+}: {
+  task: ComputerTask;
+  ownerControl?: boolean;
+  onOwnerInput?: (input: OwnerBrowserInput) => void;
+}) {
   const [src, setSrc] = useState<string | null>(null);
   const active = ACTIVE.includes(task.status);
   const latest = useRef<string | null>(null);
+  const pointerStart = useRef<{ id: number; x: number; y: number; pointerType: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!active) {
@@ -235,7 +266,20 @@ function LiveScreen({ task }: { task: ComputerTask }) {
     [],
   );
 
-  const lastUrl = [...task.events].reverse().find((event) => event.url)?.url;
+  const lastUrl = task.currentUrl || [...task.events].reverse().find((event) => event.url)?.url;
+
+  const screenPoint = (
+    event: ReactPointerEvent<HTMLDivElement> | ReactWheelEvent<HTMLDivElement>,
+  ) => {
+    const image = event.currentTarget.querySelector("img");
+    if (!image) return null;
+    const bounds = image.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return null;
+    return {
+      x: Math.max(0, Math.min(1280, ((event.clientX - bounds.left) / bounds.width) * 1280)),
+      y: Math.max(0, Math.min(800, ((event.clientY - bounds.top) / bounds.height) * 800)),
+    };
+  };
 
   return (
     <figure className="wl-computer-screen">
@@ -251,9 +295,68 @@ function LiveScreen({ task }: { task: ComputerTask }) {
         </span>
         {active ? <span className="wl-computer-screen__live">Live</span> : null}
       </div>
-      <div className="wl-computer-screen__viewport">
+      <div
+        className={cn("wl-computer-screen__viewport", ownerControl && "is-owner-controlled")}
+        role={ownerControl ? "group" : undefined}
+        aria-label={
+          ownerControl ? "Live browser. Click or drag on the screen to interact." : undefined
+        }
+        onPointerDown={(event) => {
+          if (!ownerControl || event.button !== 0) return;
+          const point = screenPoint(event);
+          if (!point) return;
+          pointerStart.current = { id: event.pointerId, pointerType: event.pointerType, ...point };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerUp={(event) => {
+          const start = pointerStart.current;
+          if (!ownerControl || !start || start.id !== event.pointerId) return;
+          pointerStart.current = null;
+          const point = screenPoint(event);
+          if (!point) return;
+          const moved = Math.hypot(point.x - start.x, point.y - start.y) > 5;
+          if (moved && start.pointerType === "touch") {
+            onOwnerInput?.({
+              kind: "scroll",
+              x: start.x,
+              y: start.y,
+              deltaX: Math.max(-1_200, Math.min(1_200, start.x - point.x)),
+              deltaY: Math.max(-1_200, Math.min(1_200, start.y - point.y)),
+            });
+          } else {
+            onOwnerInput?.(
+              moved
+                ? { kind: "drag", from: { x: start.x, y: start.y }, to: point }
+                : { kind: "click", ...point },
+            );
+          }
+        }}
+        onPointerCancel={() => {
+          pointerStart.current = null;
+        }}
+        onWheel={(event) => {
+          if (!ownerControl) return;
+          const point = screenPoint(event);
+          if (!point) return;
+          event.preventDefault();
+          onOwnerInput?.({
+            kind: "scroll",
+            ...point,
+            deltaX: Math.max(-1_200, Math.min(1_200, event.deltaX)),
+            deltaY: Math.max(-1_200, Math.min(1_200, event.deltaY)),
+          });
+        }}
+      >
         {active && src ? (
-          <img src={src} alt="What your Bot's cloud computer shows right now" />
+          <img
+            src={src}
+            alt={
+              ownerControl
+                ? "Live browser screen. Click or drag to interact with the page."
+                : "What your Bot's cloud computer shows right now"
+            }
+            draggable={false}
+          />
         ) : (
           <div className="wl-computer-screen__empty">
             {active ? (
@@ -280,14 +383,21 @@ function LiveScreen({ task }: { task: ComputerTask }) {
 function TaskDetail({
   task,
   onChanged,
+  botName,
+  phoneNumber,
 }: {
   task: ComputerTask;
   onChanged: (task: ComputerTask) => void;
+  botName?: string;
+  phoneNumber?: string | null;
 }) {
   const [reply, setReply] = useState("");
-  const [busy, setBusy] = useState<"stop" | "reply" | null>(null);
+  const [busy, setBusy] = useState<"stop" | "reply" | "take" | "input" | "return" | null>(null);
   // An error belongs to the state it happened in; once the task moves on it is stale.
   const [failure, setFailure] = useState<{ message: string; status: TaskStatus } | null>(null);
+  const [ownerText, setOwnerText] = useState("");
+  const [ownerUrl, setOwnerUrl] = useState(task.currentUrl || task.startUrl || "");
+  const ownerActionInFlight = useRef(false);
   const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
   const active = ACTIVE.includes(task.status);
@@ -312,7 +422,38 @@ function TaskDetail({
         status: task.status,
       });
     } finally {
-      setBusy(null);
+      setBusy((current) => (current === kind ? null : current));
+    }
+  };
+
+  const ownerAction = async (kind: "take" | "input" | "return", input?: OwnerBrowserInput) => {
+    if (ownerActionInFlight.current) return;
+    ownerActionInFlight.current = true;
+    setBusy(kind);
+    setFailure(null);
+    try {
+      const path =
+        kind === "take" ? "control" : kind === "return" ? "control/return" : "control/input";
+      const response = await authFetch(`/api/computer/tasks/${task.id}/${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: kind === "input" ? JSON.stringify(input) : "{}",
+      });
+      const result = await readApiJson<{ task: ComputerTask }>(response);
+      if (!result.ok) throw new Error(result.error);
+      if (kind === "input" && input?.kind === "type") setOwnerText("");
+      if (kind === "input" && (input?.kind === "navigate" || input?.kind === "history")) {
+        setOwnerUrl(result.data.task.currentUrl || "");
+      }
+      onChanged(result.data.task);
+    } catch (reason) {
+      setFailure({
+        message: reason instanceof Error ? reason.message : "That did not go through. Try again.",
+        status: task.status,
+      });
+    } finally {
+      ownerActionInFlight.current = false;
+      setBusy((current) => (current === kind ? null : current));
     }
   };
 
@@ -328,6 +469,12 @@ function TaskDetail({
             <span className="text-xs text-muted-foreground">
               Started {timeAgo(task.startedAt)} · {task.actionCount} actions
             </span>
+            {botName ? (
+              <span className="text-xs text-muted-foreground">
+                {botName}
+                {phoneNumber ? ` · ${phoneNumber}` : ""}
+              </span>
+            ) : null}
           </div>
           {/* The goal is the owner's own sentence: body type, not a display title. */}
           <p id="computer-task-title" className="wl-computer-detail__goal">
@@ -343,7 +490,7 @@ function TaskDetail({
             className="shrink-0"
             onClick={() => void act("stop")}
             aria-busy={busy === "stop" || task.stopping}
-            disabled={busy !== null || task.stopping}
+            disabled={busy === "stop" || task.stopping}
           >
             {task.stopping ? (
               <Loader2 className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -364,37 +511,59 @@ function TaskDetail({
             />
             <p className="font-medium">{task.question}</p>
           </div>
-          <form
-            className="mt-3 flex flex-col gap-2 sm:flex-row"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (reply.trim()) void act("reply");
-            }}
-          >
-            <label htmlFor="computer-reply" className="sr-only">
-              Reply to your Bot
-            </label>
-            <Input
-              id="computer-reply"
-              value={reply}
-              onChange={(event) => setReply(event.target.value)}
-              placeholder="Tell your Bot what to do next"
-              maxLength={1000}
-              autoComplete="off"
-              className="min-w-0 flex-1"
-            />
-            <Button
-              type="submit"
-              disabled={!reply.trim() || busy !== null}
-              aria-busy={busy === "reply"}
-            >
-              <Send aria-hidden="true" />
-              Reply
-            </Button>
-          </form>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Never share passwords, codes, or card numbers here. Handle those steps yourself.
-          </p>
+          {task.ownerControl ? (
+            <p className="mt-3 text-sm font-medium" role="status">
+              You’re in control of the browser. Sign in or complete the step, then return control to
+              your Bot.
+            </p>
+          ) : (
+            <>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  onClick={() => void ownerAction("take")}
+                  disabled={!task.liveView || busy !== null}
+                  aria-busy={busy === "take"}
+                >
+                  <MousePointer2 aria-hidden="true" />
+                  {busy === "take" ? "Connecting…" : "Take control"}
+                </Button>
+                <span className="self-center text-xs text-muted-foreground">
+                  Sign in, handle a checkpoint, then hand the browser back.
+                </span>
+              </div>
+              <form
+                className="mt-3 flex flex-col gap-2 sm:flex-row"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (reply.trim()) void act("reply");
+                }}
+              >
+                <label htmlFor="computer-reply" className="sr-only">
+                  Reply to your Bot
+                </label>
+                <Input
+                  id="computer-reply"
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value)}
+                  placeholder="Tell your Bot what to do next"
+                  maxLength={1000}
+                  autoComplete="off"
+                  className="min-w-0 flex-1"
+                />
+                <Button
+                  type="submit"
+                  disabled={!reply.trim() || busy !== null}
+                  aria-busy={busy === "reply"}
+                >
+                  <Send aria-hidden="true" />
+                  Reply
+                </Button>
+              </form>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Replies go to your Bot. Use Take control for passwords, codes, or private details.
+              </p>
+            </>
+          )}
         </div>
       ) : null}
 
@@ -404,7 +573,130 @@ function TaskDetail({
         </StatusNotice>
       ) : null}
 
-      <LiveScreen task={task} />
+      {task.ownerControl ? (
+        <div className="wl-computer-takeover">
+          <LiveScreen
+            task={task}
+            ownerControl
+            onOwnerInput={(input) => void ownerAction("input", input)}
+          />
+          <aside className="wl-computer-control" aria-label="Browser controls">
+            <div className="wl-computer-control__heading">
+              <MousePointer2 className="size-4" aria-hidden="true" />
+              <div>
+                <h2>You’re in control</h2>
+                <p>
+                  Click, scroll, or drag on the screen. Type into the focused browser field below.
+                </p>
+              </div>
+            </div>
+            <form
+              className="wl-computer-control__form"
+              aria-label="Go to a website"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (ownerUrl.trim() && busy === null) {
+                  void ownerAction("input", { kind: "navigate", url: ownerUrl });
+                }
+              }}
+            >
+              <label htmlFor="computer-owner-url">Web address</label>
+              <Input
+                id="computer-owner-url"
+                type="url"
+                value={ownerUrl}
+                onChange={(event) => setOwnerUrl(event.target.value)}
+                placeholder="https://example.com"
+                autoComplete="url"
+                maxLength={2048}
+                disabled={busy !== null}
+              />
+              <Button type="submit" variant="outline" disabled={!ownerUrl.trim() || busy !== null}>
+                Go to website
+              </Button>
+            </form>
+            <div
+              className="wl-computer-control__keys"
+              role="group"
+              aria-label="Browser history controls"
+            >
+              {(["back", "forward", "reload"] as const).map((action) => (
+                <Button
+                  key={action}
+                  variant="outline"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={() => void ownerAction("input", { kind: "history", action })}
+                >
+                  {action === "back" ? "Back" : action === "forward" ? "Forward" : "Reload"}
+                </Button>
+              ))}
+            </div>
+            <form
+              className="wl-computer-control__form"
+              aria-label="Type into the browser"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (ownerText && busy === null) {
+                  void ownerAction("input", { kind: "type", text: ownerText });
+                }
+              }}
+            >
+              <label htmlFor="computer-owner-input">Type into the focused page field</label>
+              <Input
+                id="computer-owner-input"
+                value={ownerText}
+                onChange={(event) => setOwnerText(event.target.value)}
+                autoComplete="off"
+                maxLength={1000}
+                disabled={busy !== null}
+              />
+              <Button
+                type="submit"
+                disabled={!ownerText || busy !== null}
+                aria-busy={busy === "input"}
+              >
+                <Send aria-hidden="true" />
+                Send to page
+              </Button>
+            </form>
+            <div
+              className="wl-computer-control__keys"
+              role="group"
+              aria-label="Browser navigation keys"
+            >
+              {(["Tab", "Enter", "Backspace", "Escape"] as const).map((key) => (
+                <Button
+                  key={key}
+                  variant="outline"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={() => void ownerAction("input", { kind: "key", key })}
+                >
+                  {key === "Escape" ? "Esc" : key}
+                </Button>
+              ))}
+            </div>
+            <p className="wl-computer-control__privacy">
+              Your clicks and text travel through BotBound to the hosted browser provider and the
+              open site. They aren’t saved in task activity or sent as separate Bot messages. When
+              you return control, a screen with form fields and your entered text masked is sent to
+              OpenAI so your Bot can continue from the updated page.
+            </p>
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={() => void ownerAction("return")}
+              disabled={busy !== null}
+              aria-busy={busy === "return"}
+            >
+              {busy === "return" ? "Returning control…" : "Return control to Bot"}
+            </Button>
+          </aside>
+        </div>
+      ) : (
+        <LiveScreen task={task} />
+      )}
 
       {!active && task.summary ? (
         <div
@@ -466,7 +758,9 @@ function TaskDetail({
 
 export default function ComputerPage() {
   const { agents, loading: agentsLoading, degraded, refresh } = useAgents();
-  const [agentId, setAgentId] = useState<string>("");
+  const [searchParams] = useSearchParams();
+  const requestedAgentId = searchParams.get("agent")?.trim() || "";
+  const [agentId, setAgentId] = useState<string>(requestedAgentId);
   const [status, setStatus] = useState<ComputerStatus | null>(null);
   const [statusFailed, setStatusFailed] = useState(false);
   const [tasks, setTasks] = useState<ComputerTask[] | null>(null);
@@ -484,8 +778,15 @@ export default function ComputerPage() {
   }, [tasks]);
 
   useEffect(() => {
-    if (!agentId && agents.length) setAgentId(agents[0].id);
-  }, [agents, agentId]);
+    if (!agents.length) return;
+    setAgentId((current) => {
+      if (current && agents.some((agent) => agent.id === current)) return current;
+      if (requestedAgentId && agents.some((agent) => agent.id === requestedAgentId)) {
+        return requestedAgentId;
+      }
+      return agents[0].id;
+    });
+  }, [agents, requestedAgentId]);
 
   const loadStatus = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -559,6 +860,7 @@ export default function ComputerPage() {
   }, []);
 
   const selected = tasks?.find((task) => task.id === selectedId) ?? null;
+  const composerBot = agents.find((agent) => agent.id === agentId);
   // A new task cannot start while one is active, so the active task is always
   // the newest. Poll it whichever task the owner is reading, so a question or a
   // finish is never missed. Keyed on the id, not the object, so each poll result
@@ -630,8 +932,15 @@ export default function ComputerPage() {
   // The selected task leads and the composer follows it, like a conversation:
   // finishing a task never moves its result out from under the owner.
   // Keyed per task: its screen, reply draft, and errors never carry over.
+  const selectedBot = selected ? agents.find((agent) => agent.id === selected.agentId) : undefined;
   const taskDetail = selected ? (
-    <TaskDetail key={selected.id} task={selected} onChanged={(next) => applyTask(next, false)} />
+    <TaskDetail
+      key={selected.id}
+      task={selected}
+      onChanged={(next) => applyTask(next, false)}
+      botName={selectedBot?.name}
+      phoneNumber={selectedBot?.phone_number}
+    />
   ) : null;
 
   return (
@@ -639,7 +948,7 @@ export default function ComputerPage() {
       <WorkspacePageFrame mode="standard" className="max-w-[1240px]">
         <WorkspacePageIntro
           title="Computer"
-          description="Give your Bot a task. It works in its own secure cloud browser and asks you before anything sensitive."
+          description="Each task stays with one Bot and its phone number. When a sign-in or decision needs you, take over the live browser beside the screen, then hand that same session back."
         />
 
         {status && !status.available ? <UnavailableNotice status={status} /> : null}
@@ -687,6 +996,17 @@ export default function ComputerPage() {
                 if (canStart) void start();
               }}
             >
+              {composerBot ? (
+                <p className="wl-computer-agent-context">
+                  <span>{composerBot.name}</span>
+                  {composerBot.phone_number ? (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="font-mono">{composerBot.phone_number}</span>
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
               {agents.length > 1 ? (
                 <div className="wl-computer-field">
                   <label htmlFor="computer-agent">Bot</label>
