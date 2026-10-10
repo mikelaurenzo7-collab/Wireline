@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   recordAmbiguousProviderAttempt: vi.fn(),
+  warn: vi.fn(),
 }));
 
 vi.mock("../src/lib/ai-audit", () => ({
@@ -10,6 +11,9 @@ vi.mock("../src/lib/ai-audit", () => ({
 vi.mock("../src/lib/ai-client", () => ({
   DefiniteProviderRejectionError: class DefiniteProviderRejectionError extends Error {},
   RuntimeUnavailableError: class RuntimeUnavailableError extends Error {},
+}));
+vi.mock("../src/lib/server-logger", () => ({
+  log: { warn: mocks.warn },
 }));
 
 import {
@@ -78,5 +82,39 @@ describe("OpenAI Responses API transport", () => {
 
     await expect(openAIResponsesCreate({ model: "gpt-5.6-luna" })).rejects.toThrow();
     expect(mocks.recordAmbiguousProviderAttempt).toHaveBeenCalledOnce();
+  });
+
+  it("logs only safe protocol fields for rejected Responses calls", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        headers: { get: (name: string) => (name === "x-request-id" ? "req_safe-123" : null) },
+        clone: () => ({
+          json: async () => ({
+            error: {
+              type: "invalid_request_error",
+              code: "invalid_value",
+              param: "input[3].output.image_url",
+              message: "Do not copy customer prompts into application logs.",
+            },
+          }),
+        }),
+      }),
+    );
+
+    await expect(openAIResponsesCreate({ model: "gpt-5.6-luna" })).rejects.toThrow();
+
+    expect(mocks.warn).toHaveBeenCalledWith("OpenAI Responses request rejected", {
+      status: 400,
+      providerRequestId: "req_safe-123",
+      providerErrorType: "invalid_request_error",
+      providerErrorCode: "invalid_value",
+      providerErrorParam: "input.3.output.image_url",
+    });
+    expect(JSON.stringify(mocks.warn.mock.calls)).not.toContain(
+      "Do not copy customer prompts into application logs.",
+    );
   });
 });
