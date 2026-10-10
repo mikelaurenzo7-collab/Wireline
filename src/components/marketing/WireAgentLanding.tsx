@@ -121,7 +121,7 @@ export default function WireAgentLanding() {
                 <span className="landing-prestige__direction-label">
                   <PhoneIncoming aria-hidden="true" /> Inbound
                 </span>
-                <strong>Answer. Qualify. Route.</strong>
+                <strong>Answer. Act.</strong>
                 <span className="landing-prestige__direction-action">
                   Create an Inbound Bot <ArrowRight aria-hidden="true" />
                 </span>
@@ -134,7 +134,7 @@ export default function WireAgentLanding() {
                 <span className="landing-prestige__direction-label">
                   <PhoneOutgoing aria-hidden="true" /> Outbound
                 </span>
-                <strong>Find. Call. Book.</strong>
+                <strong>Call. Book.</strong>
                 <span className="landing-prestige__direction-action">
                   Create an Outbound Bot <ArrowRight aria-hidden="true" />
                 </span>
