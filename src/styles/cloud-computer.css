@@ -386,6 +386,22 @@
   text-align: center;
 }
 
+/* A finished task has no live frame. Keep that privacy state visible without
+ * letting an empty 16:10 browser push the next task form below the fold. */
+.wl-computer-screen-cleared {
+  display: flex;
+  align-items: center;
+  gap: var(--wireline-space-075);
+  margin: 0;
+  padding: var(--wireline-space-100) var(--wireline-space-125);
+  border: 1px solid var(--wireline-color-border-default);
+  border-radius: var(--wireline-radius-md);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .wl-computer-result {
   padding: var(--wireline-space-125);
   border: 1px solid var(--wireline-color-border-default);

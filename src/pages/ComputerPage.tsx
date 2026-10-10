@@ -701,8 +701,13 @@ function TaskDetail({
             </Button>
           </aside>
         </div>
-      ) : (
+      ) : active ? (
         <LiveScreen task={task} />
+      ) : (
+        <p className="wl-computer-screen-cleared">
+          <MonitorSmartphone className="size-4 shrink-0" aria-hidden="true" />
+          The browser screen was cleared after this task ended.
+        </p>
       )}
 
       {!active && task.summary ? (
