@@ -146,6 +146,13 @@ This file maps current doctrine, operating runbooks, and active plans. Dated aud
 | [Drive Start Here](../brand-work/launch-2026-09-refresh/DRIVE-START-HERE.md) | Current library navigation and historical holds. |
 | [Drive Release Pointer](../brand-work/launch-2026-09-refresh/DRIVE-RELEASE-POINTER.md) | Current private creative delivery pointer. |
 
+## October Goal Creative
+
+| Document | Role |
+| --- | --- |
+| [Goal campaign workspace](../brand-work/launch-2026-10-goal/README.md) | Prepared artwork, placement sizes, provenance, and release boundary. |
+| [Goal campaign copy](../brand-work/launch-2026-10-goal/COPY-KIT.md) | Draft social, founder, email, and accessible image copy. |
+
 ## Active strategy and planned work
 
 | Document                                                                                     | Role                                                                     |
