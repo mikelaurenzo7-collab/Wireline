@@ -129,7 +129,7 @@ describe("cloud computer source contracts", () => {
     expect(runner).toContain(
       "The model gets a fixed handoff signal, never the owner's typed values.",
     );
-    expect(runner).toContain('resume(\n    "The owner completed the browser step');
+    expect(runner).toContain('resume(\n    "The owner returned browser control. Inspect');
     const browser = read("src/lib/cloud-computer/browser-session.ts");
     expect(browser).toContain("It is never returned as");
     expect(browser).toContain("activity or included in a model tool result.");

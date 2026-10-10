@@ -1256,7 +1256,7 @@ export async function returnComputerControlToBot(
   pushEvent(task, { kind: "note", text: "You returned browser control to your Bot." });
   // The model gets a fixed handoff signal, never the owner's typed values.
   resume(
-    "The owner completed the browser step and returned the updated page. Continue from the current browser state. Ask the owner again if you still need help.",
+    "The owner returned browser control. Inspect the current redacted screen before deciding whether the step succeeded. Ask the owner again if you still need help.",
   );
   return toView({ ...row, status: "running", question: null, events: task.events });
 }
