@@ -60,7 +60,7 @@ for (const width of [320, 1280]) {
     const studio = dialog.getByRole("link", { name: "Test in Studio", exact: true });
     await expect(studio).toHaveAttribute("href", "/studio?workroom=test");
     await expect(
-      dialog.getByRole("link", { name: "Review compliance", exact: true }),
+      dialog.getByRole("link", { name: "Review Compliance", exact: true }),
     ).toHaveAttribute("href", "/settings/compliance");
     for (const control of [
       studio,

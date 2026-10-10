@@ -228,7 +228,7 @@ export default function OutboundDialDialog({
                 </Button>
                 <Button variant="secondary" asChild>
                   <Link to="/settings/compliance" onClick={closeForNavigation}>
-                    Review compliance
+                    Review Compliance
                   </Link>
                 </Button>
               </div>

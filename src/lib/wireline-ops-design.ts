@@ -73,7 +73,7 @@ export const OPS_CHANNEL_EMPTY = {
   floor: {
     title: "No Active Callers",
     actions: [
-      { label: "View call history", to: "/phone?tab=logs" },
+      { label: "View Call History", to: "/phone?tab=logs" },
       { label: "Open Studio", to: "/studio", primary: true },
     ],
   },
@@ -93,8 +93,8 @@ export const OPS_CHANNEL_EMPTY = {
   phone: {
     title: "No Calls Yet",
     actions: [
-      { label: "Configure a number", to: "/phone?tab=setup", primary: true },
-      { label: "Start outbound", to: "/phone?tab=outbound" },
+      { label: "Configure a Number", to: "/phone?tab=setup", primary: true },
+      { label: "Start Outbound", to: "/phone?tab=outbound" },
     ],
   },
   phoneNoMatch: {
@@ -103,8 +103,8 @@ export const OPS_CHANNEL_EMPTY = {
   sms: {
     title: "No SMS Yet",
     actions: [
-      { label: "Configure SMS sender", to: "/phone?tab=setup", primary: true },
-      { label: "Start outbound", to: "/phone?tab=outbound" },
+      { label: "Configure SMS Sender", to: "/phone?tab=setup", primary: true },
+      { label: "Start Outbound", to: "/phone?tab=outbound" },
     ],
   },
   email: {
@@ -120,7 +120,7 @@ export const OPS_CHANNEL_EMPTY = {
   pipeline: {
     title: "No Leads in the Pipeline",
     actions: [
-      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Open Connections", to: "/connections" },
     ],
   },
@@ -150,12 +150,12 @@ export const OPS_CHANNEL_EMPTY = {
   },
   sentiment: {
     title: "No Conversations Yet",
-    actions: [{ label: "Call test line", to: "tel:+16306425661", primary: true }],
+    actions: [{ label: "Call Test Line", to: "tel:+16306425661", primary: true }],
   },
   campaigns: {
     title: "No Campaigns Yet",
     actions: [
-      { label: "Create campaign", to: "/phone?tab=outbound&view=campaigns", primary: true },
+      { label: "Create Campaign", to: "/phone?tab=outbound&view=campaigns", primary: true },
     ],
   },
   outboundQueue: {
@@ -167,14 +167,14 @@ export const OPS_CHANNEL_EMPTY = {
   callbacks: {
     title: "No Scheduled Callbacks",
     actions: [
-      { label: "Open dispatch", to: "/phone?tab=outbound&view=dispatch", primary: true },
-      { label: "View call history", to: "/phone?tab=logs" },
+      { label: "Open Dispatch", to: "/phone?tab=outbound&view=dispatch", primary: true },
+      { label: "View Call History", to: "/phone?tab=logs" },
     ],
   },
   cadences: {
     title: "No Sequences Yet",
     actions: [
-      { label: "Create sequence", to: "/phone?tab=outbound&view=sequences", primary: true },
+      { label: "Create Sequence", to: "/phone?tab=outbound&view=sequences", primary: true },
     ],
   },
   appointmentsUpcoming: {
@@ -185,13 +185,13 @@ export const OPS_CHANNEL_EMPTY = {
   },
   contactNotFound: {
     title: "Contact Not Found",
-    actions: [{ label: "Back to pipeline", to: "/pipeline", primary: true }],
+    actions: [{ label: "Back to Pipeline", to: "/pipeline", primary: true }],
   },
   contactTimeline: {
     title: "No Interactions Yet",
     actions: [
-      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "View call history", to: "/phone?tab=logs" },
+      { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "View Call History", to: "/phone?tab=logs" },
     ],
   },
 } as const;
@@ -220,8 +220,8 @@ export const OPS_TRIAGE_EMPTY = {
   hotLeads: {
     title: "No Hot Leads Yet",
     actions: [
-      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
-      { label: "Call activity", to: "/phone?tab=logs" },
+      { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "Call Activity", to: "/phone?tab=logs" },
     ],
   },
   compliance: {
@@ -229,15 +229,15 @@ export const OPS_TRIAGE_EMPTY = {
   },
   openTasks: {
     title: "Inbox Zero",
-    actions: [{ label: "View action queue", to: "/approvals" }],
+    actions: [{ label: "View Action Queue", to: "/approvals" }],
   },
   knowledgeGaps: {
     title: "Coverage Looks Solid",
-    actions: [{ label: "Open training", to: "/studio" }],
+    actions: [{ label: "Open Training", to: "/studio" }],
   },
   escalations: {
     title: "No Escalations",
-    actions: [{ label: "Active calls", to: "/phone" }],
+    actions: [{ label: "Active Calls", to: "/phone" }],
   },
 } as const;
 
@@ -595,7 +595,7 @@ export const OPS_INSIGHTS_EMPTY = {
   funnel: {
     title: "No Funnel Data",
     actions: [
-      { label: "Start outbound", to: "/phone?tab=outbound", primary: true },
+      { label: "Start Outbound", to: "/phone?tab=outbound", primary: true },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
@@ -603,21 +603,21 @@ export const OPS_INSIGHTS_EMPTY = {
     title: "No Ranked Bots",
     actions: [
       { label: "Create Bot", to: "/studio", primary: true },
-      { label: "Call history", to: "/phone?tab=logs" },
+      { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   latency: {
     title: "No Latency Samples",
     actions: [
       { label: "Bot Studio", to: "/studio", primary: true },
-      { label: "Call history", to: "/phone?tab=logs" },
+      { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   reliability: {
     title: "No Reliability Samples",
     actions: [
       { label: "Bot Studio", to: "/studio", primary: true },
-      { label: "Call history", to: "/phone?tab=logs" },
+      { label: "Call History", to: "/phone?tab=logs" },
     ],
   },
   spend: {
@@ -630,28 +630,28 @@ export const OPS_INSIGHTS_EMPTY = {
   attribution: {
     title: "No Tagged Calls",
     actions: [
-      { label: "Call setup", to: "/phone?tab=setup", primary: true },
+      { label: "Call Setup", to: "/phone?tab=setup", primary: true },
       { label: "Outbound", to: "/phone?tab=outbound" },
     ],
   },
   quality: {
     title: "No QA Scores",
     actions: [
-      { label: "Call history", to: "/phone?tab=logs" },
+      { label: "Call History", to: "/phone?tab=logs" },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
   heatmap: {
     title: "No Call Activity",
     actions: [
-      { label: "Call history", to: "/phone?tab=logs", primary: true },
+      { label: "Call History", to: "/phone?tab=logs", primary: true },
       { label: "Bot Studio", to: "/studio" },
     ],
   },
   topics: {
     title: "Not Enough Calls",
     actions: [
-      { label: "Call history", to: "/phone?tab=logs", primary: true },
+      { label: "Call History", to: "/phone?tab=logs", primary: true },
       { label: "Studio", to: "/studio" },
     ],
   },

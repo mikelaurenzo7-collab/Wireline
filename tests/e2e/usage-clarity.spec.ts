@@ -85,7 +85,7 @@ for (const width of [1440, 390]) {
     await page.goto("/settings/billing");
     const activity = page
       .locator("details")
-      .filter({ has: page.locator("summary", { hasText: "Recent activity" }) });
+      .filter({ has: page.locator("summary", { hasText: "Recent Activity" }) });
     const summary = activity.locator("summary");
     await expect(summary).toBeVisible();
     await expect(activity.getByRole("list")).toBeHidden();

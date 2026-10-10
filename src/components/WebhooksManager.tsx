@@ -149,7 +149,7 @@ export default function WebhooksManager() {
           <EmptyState
             icon={Webhook}
             title="No Webhooks"
-            actions={[{ label: "Add webhook", onClick: () => setShowForm(true), primary: true }]}
+            actions={[{ label: "Add Webhook", onClick: () => setShowForm(true), primary: true }]}
           />
         ) : (
           hooks.map((h) => <HookRow key={h.id} hook={h} onChanged={refresh} />)

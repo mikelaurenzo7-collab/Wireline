@@ -310,7 +310,7 @@ describe("notification channel recovery", () => {
         await mount();
         expect(text(render())).toContain(`Could not load ${provider.name} channels.`);
         h.fetch.mockImplementation(defaultFetch);
-        button(`Retry ${provider.name} channels`).props.onClick!();
+        button(`Retry ${provider.name} Channels`).props.onClick!();
         await settle();
         expect(select(provider.label).props.disabled).toBe(false);
         expect(text(render())).not.toContain(`Could not load ${provider.name} channels.`);
@@ -392,8 +392,8 @@ describe("notification channel recovery", () => {
     await mount();
     expect(text(render())).toContain("Could not load Slack channels.");
     expect(text(render())).toContain("Could not load Teams channels.");
-    expect(button("Retry Slack channels")).toBeDefined();
-    expect(button("Retry Teams channels")).toBeDefined();
+    expect(button("Retry Slack Channels")).toBeDefined();
+    expect(button("Retry Teams Channels")).toBeDefined();
   });
 
   it("explains a confirmed empty channel list without treating it as a load failure", async () => {

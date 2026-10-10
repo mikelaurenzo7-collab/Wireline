@@ -212,12 +212,12 @@ export function CapacityUpgradeContent({
         disabled={saving}
       >
         {open
-          ? "Hide capacity options"
+          ? "Hide Capacity Options"
           : status?.pending
             ? pendingIncomplete
-              ? "Review capacity change"
-              : "Scheduled capacity change"
-            : "Increase capacity"}
+              ? "Review Capacity Change"
+              : "Scheduled Capacity Change"
+            : "Increase Capacity"}
       </ShadButton>
       {open ? (
         <div className="mt-4 space-y-3">
@@ -238,7 +238,7 @@ export function CapacityUpgradeContent({
                 }}
                 disabled={loading || saving}
               >
-                Refresh options
+                Refresh Options
               </ShadButton>
             </div>
           ) : null}
@@ -264,11 +264,11 @@ export function CapacityUpgradeContent({
                 {saving
                   ? "Removing…"
                   : pendingIncomplete
-                    ? "Remove unconfirmed change"
-                    : "Remove scheduled change"}
+                    ? "Remove Unconfirmed Change"
+                    : "Remove Scheduled Change"}
               </ShadButton>
               <p className="text-sm text-muted-foreground">
-                To cancel your subscription, remove this change first, then use Manage billing.
+                To cancel your subscription, remove this change first, then use Manage Billing.
               </p>
             </div>
           ) : status?.available && eligible.length > 1 ? (
@@ -296,7 +296,7 @@ export function CapacityUpgradeContent({
                       disabled={!canSchedule}
                       onClick={() => void schedule()}
                     >
-                      {saving ? "Scheduling…" : "Schedule capacity increase"}
+                      {saving ? "Scheduling…" : "Schedule Capacity Increase"}
                     </ShadButton>
                   </div>
                 )}

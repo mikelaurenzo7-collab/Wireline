@@ -191,7 +191,7 @@ export function CarrierPanel({
 
           <details className="rounded-xl border border-border bg-background">
             <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-foreground">
-              Developer connections
+              Developer Connections
             </summary>
             <div className="space-y-5 border-t border-border p-4">
               <WebhooksManager />
@@ -230,7 +230,7 @@ export function CarrierPanel({
 
           {phoneNumbers.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
-              <p className="text-sm font-semibold text-foreground">No active customer lines</p>
+              <p className="text-sm font-semibold text-foreground">No Active Customer Lines</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Claim a number above when the Bot is ready.
               </p>

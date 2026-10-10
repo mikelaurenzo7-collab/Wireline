@@ -24,7 +24,7 @@ function LegalLayout({
           to="/"
           className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back home
+          <ArrowLeft className="w-3.5 h-3.5" /> Back Home
         </Link>
 
         <div className="mb-3 flex items-center gap-3">
@@ -33,7 +33,7 @@ function LegalLayout({
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">{title}</h1>
         </div>
-        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
+        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated · {LAST_UPDATED}</p>
 
         {summary?.length ? (
           <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label={`${title} summary`}>
@@ -131,7 +131,7 @@ export function TermsOfService() {
 
       <Section title="3. Acceptable Use">
         <p>You agree not to use BotBound to:</p>
-        <ul className="list-disc list-inside space-y-1 ml-2">
+        <ul className="list-disc space-y-1 pl-5 marker:text-muted-foreground">
           <li>Dial numbers on the National Do Not Call Registry without a valid exemption</li>
           <li>
             Send unsolicited commercial messages (spam) in violation of CAN-SPAM, CASL, or similar

@@ -155,7 +155,7 @@ describe("Active Rules editing", () => {
     h.externallyBusy = true;
     render();
     expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     button(`Edit rule: ${oldRule}`).props.onClick!();
     render();
     expect(input()).toBeUndefined();
@@ -185,7 +185,7 @@ describe("Active Rules editing", () => {
     render();
     input().props.onChange!({ target: { value: "New hours draft" } });
     render();
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
     expect(factButtons()[0].props.disabled).toBe(true);
     factButtons()[0].props.onClick!();
@@ -210,7 +210,7 @@ describe("Active Rules editing", () => {
     );
     button("Save").props.onClick!();
     render();
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     expect(button("Save").props.disabled).toBe(true);
     button("Save").props.onClick!();
     expect(h.fetch).toHaveBeenCalledTimes(2);
@@ -224,15 +224,15 @@ describe("Active Rules editing", () => {
     button("Save").props.onClick!();
     await settle();
     expect(text(tree)).toContain("Knowledge updated.");
-    expect(button("Choose files").props.disabled).toBe(false);
+    expect(button("Choose Files").props.disabled).toBe(false);
     const remove = elements(tree).find((node) => node.props["aria-label"]?.startsWith("Remove "))!;
     remove.props.onClick!();
     render();
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(true);
     button("Cancel").props.onClick!();
     render();
-    expect(button("Choose files").props.disabled).toBe(false);
+    expect(button("Choose Files").props.disabled).toBe(false);
   });
 
   it("blocks fact edit and removal until upload and its snapshot refresh both finish", async () => {
@@ -280,10 +280,10 @@ describe("Active Rules editing", () => {
     expect(input()).toBeUndefined();
     finishUpload(response({ summary: "Added fact." }));
     await settle();
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     finishRefresh(response(snapshot));
     await settle();
-    expect(button("Choose files").props.disabled).toBe(false);
+    expect(button("Choose Files").props.disabled).toBe(false);
   });
 
   it("saves one rule in place through the owned PATCH without appending training", async () => {
@@ -454,7 +454,7 @@ describe("Active Rules editing", () => {
     expect(button(`Edit rule: ${oldRule}`).props.disabled).toBe(false);
     button(`Edit rule: ${oldRule}`).props.onClick!();
     render();
-    expect(button("Choose files").props.disabled).toBe(true);
+    expect(button("Choose Files").props.disabled).toBe(true);
     const requestsBeforeDrop = h.fetch.mock.calls.length;
     drop();
     await settle();

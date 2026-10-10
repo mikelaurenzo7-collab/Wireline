@@ -103,7 +103,7 @@ async function mount() {
 async function search() {
   const input = elements(render()).find((node) => node.type === "input")!;
   input.props.onChange!({ target: { value: "312" } });
-  await button("Find numbers").props.onClick!();
+  await button("Find Numbers").props.onClick!();
 }
 
 beforeEach(() => {
@@ -203,7 +203,7 @@ describe("phone number picker recovery", () => {
       expect(alerts()).toEqual([expect.stringContaining("That number could not be activated.")]);
       expect(h.onClaim).not.toHaveBeenCalled();
       expect(button("(312) 555-0120").props.disabled).toBe(false);
-      if (operation === "provision") expect(button("Find numbers").props.disabled).toBe(false);
+      if (operation === "provision") expect(button("Find Numbers").props.disabled).toBe(false);
 
       if (operation === "provision") await search();
       await button("(312) 555-0120").props.onClick!();

@@ -350,7 +350,7 @@ export default function StudioAgentWorkspacePanel({
                   variant="outline"
                   onClick={() => setReloadKey((current) => current + 1)}
                 >
-                  Try again
+                  Try Again
                 </Button>
               }
             >
@@ -414,7 +414,7 @@ export default function StudioAgentWorkspacePanel({
                     to={`/knowledge?agent=${encodeURIComponent(agentId)}`}
                     className="shrink-0 text-xs font-medium text-primary hover:underline"
                   >
-                    Knowledge & rules
+                    Knowledge & Rules
                   </Link>
                 </div>
                 <textarea
@@ -483,7 +483,7 @@ export default function StudioAgentWorkspacePanel({
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {applyingSetup ? "Saving…" : "Save changes"}
+                {applyingSetup ? "Saving…" : "Save Changes"}
               </Button>
             </div>
           )}

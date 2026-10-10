@@ -204,7 +204,7 @@ export default function TrustPackPage() {
         <div className="mx-auto max-w-lg px-4 py-16 text-center">
           <p className="text-muted">Trust pack not found.</p>
           <Link to="/security" className="wl-label mt-4 inline-block text-brand">
-            Security overview
+            Security Overview
           </Link>
         </div>
       </MarketingChrome>
@@ -317,14 +317,14 @@ export default function TrustPackPage() {
               to="/contact?intent=enterprise"
               className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-brand px-5 py-3 text-sm font-semibold text-on-brand transition-opacity hover:opacity-90"
             >
-              Start a security review
+              Start a Security Review
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
               to="/security"
               className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-border px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-black/[0.03]"
             >
-              Read security details
+              Read Security Details
             </Link>
           </div>
         </section>

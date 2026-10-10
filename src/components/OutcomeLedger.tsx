@@ -197,7 +197,7 @@ export default function OutcomeLedger({
         title="Customer Outcomes Unavailable"
         action={
           <Button type="button" variant="secondary" size="sm" onClick={() => void load()}>
-            Try again
+            Try Again
           </Button>
         }
       >
@@ -224,7 +224,7 @@ export default function OutcomeLedger({
                   : "/studio?create=1"
               }
             >
-              Test a call
+              Test a Call
             </Link>
           </Button>
         }
@@ -242,7 +242,7 @@ export default function OutcomeLedger({
       {followUpsHref ? (
         <div className="mb-1 flex justify-end">
           <Link to={followUpsHref} className="text-xs font-semibold text-primary hover:underline">
-            Review follow-ups →
+            Review Follow-Ups →
           </Link>
         </div>
       ) : null}
@@ -323,7 +323,7 @@ export default function OutcomeLedger({
               {row.coaching_note?.trim() ? (
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Review note
+                    Review Note
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-foreground">
                     {row.coaching_note.trim()}
@@ -343,11 +343,11 @@ export default function OutcomeLedger({
                 ) : null}
                 {(row.pending_task_count ?? 0) > 0 ? (
                   <Link to="/approvals" className="text-primary hover:underline">
-                    Review action
+                    Review Action
                   </Link>
                 ) : null}
                 <Link to="/phone?tab=logs" className="text-primary hover:underline">
-                  Call history
+                  Call History
                 </Link>
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function OutcomeLedger({
           to="/phone?tab=logs"
           className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
         >
-          View all calls
+          View All Calls
           <ArrowRight size={12} aria-hidden="true" />
         </Link>
       ) : null}

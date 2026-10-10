@@ -238,7 +238,7 @@ export default function UsageMeter({
           ) : (
             <TrendingUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           )}
-          Manage billing
+          Manage Billing
         </Button>
       )}
 

@@ -42,7 +42,7 @@ describe("demand-driven authenticated experience", () => {
     expect(workroom).toContain('mode === "test" && allowOutbound');
     expect(review).toContain("const hasPhone = Boolean(phoneNumber)");
     expect(review).toContain("No phone connected");
-    expect(review).toContain("Connect phone");
+    expect(review).toContain("Connect Phone");
   });
 
   it("keeps Inbox and Activity as independent canonical read surfaces", () => {
@@ -63,7 +63,7 @@ describe("demand-driven authenticated experience", () => {
     expect(activation).toContain("Phone number connected");
     expect(activation).toContain("First live customer handled");
     expect(activation).toContain("First follow-up reviewed");
-    expect(activation).toContain('actionLabel: "Connect phone number"');
+    expect(activation).toContain('actionLabel: "Connect Phone Number"');
     expect(activation).not.toContain("Test conversation completed");
   });
 
@@ -94,7 +94,7 @@ describe("demand-driven authenticated experience", () => {
   });
 
   it("keeps voice choice customer-facing rather than narrating provider topology", () => {
-    expect(voice).toContain("Preview voice");
+    expect(voice).toContain("Preview Voice");
     expect(voice).toContain("OpenAILiveVoiceSandbox");
     expect(voice).not.toContain("Browser tests the words");
     expect(voice).not.toContain("Speech-to-Speech");

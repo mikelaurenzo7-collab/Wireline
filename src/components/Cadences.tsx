@@ -318,7 +318,7 @@ export default function Cadences() {
             className="touch-press w-full justify-center rounded-md sm:w-auto"
           >
             <Plus className="w-3.5 h-3.5" />
-            Create sequence
+            Create Sequence
           </ShadButton>
         ) : null}
       </div>
@@ -330,7 +330,7 @@ export default function Cadences() {
           titleTone="ui"
           actions={[
             {
-              label: "Create sequence",
+              label: "Create Sequence",
               onClick: () => setShowBuilder(true),
               primary: true,
             },
@@ -341,7 +341,7 @@ export default function Cadences() {
         >
           <div className="w-full max-w-3xl mt-2 text-left">
             <p className="mb-3 text-center text-xs font-semibold text-muted-foreground">
-              Start from a template
+              Start from a Template
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {STARTER_TEMPLATES.map((t) => (
@@ -645,7 +645,7 @@ export default function Cadences() {
                 className="h-auto px-0 wl-label text-muted hover:text-brand"
               >
                 <Plus className="w-3 h-3" />
-                Add step
+                Add Step
               </ShadButton>
             </div>
 

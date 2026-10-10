@@ -190,7 +190,7 @@ describe("OpenAI Studio voice selection", () => {
     expect(routes).not.toContain('new Set(["openai", "presenter"])');
     expect(routes).not.toContain('if (provider !== "presenter")');
     expect(picker).toContain("includedVoices.map(renderVoice)");
-    expect(picker).toContain("Preview voice");
+    expect(picker).toContain("Preview Voice");
     expect(picker).toContain("<OpenAILiveVoiceSandbox");
     expect(picker).toContain("Preview starts a private voice session.");
     expect(picker).toContain("key={`${selectedProvider}:${selectedVoiceId}`}");

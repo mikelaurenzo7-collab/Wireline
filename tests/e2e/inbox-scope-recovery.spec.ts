@@ -116,7 +116,7 @@ test("an unavailable Bot does not silently become All Bots", async ({ page }) =>
     "removed-bot",
   );
 
-  await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+  await page.getByRole("button", { name: "Clear Filters", exact: true }).click();
   await expect.poll(() => requests.length).toBeGreaterThan(0);
   expect(requests.every((url) => !url.searchParams.has("agent_id"))).toBe(true);
   await expect(page).not.toHaveURL(/agent=/);

@@ -65,7 +65,7 @@ test("a second Bot keeps its own activation selection and opens its new line", a
   await botSelection.click();
   await page.getByRole("option", { name: "Sales Bot", exact: true }).click();
   await expect(botSelection).toHaveText("Sales Bot");
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await page.getByRole("radio", { name: "(312) 555-0101 Chicago, IL", exact: true }).check();
   await page
     .getByRole("region", { name: "Add phone line" })
@@ -131,7 +131,7 @@ test("a paid Bot's setup guide still opens number selection while new checkout i
   await expect(guide.getByText("Live activation is paused", { exact: true })).toHaveCount(0);
   await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
   await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
-  await expect(page.getByRole("button", { name: "Find numbers", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
 });
 
 test("caller identity deep links reveal the section", async ({ page }) => {
@@ -145,7 +145,7 @@ test("changing a role starter preserves a supplied customer brief", async ({ pag
   const brief = "Book a 30-minute appointment only after confirming the customer's ZIP code.";
   await page.goto(`/studio?create=1&brief=${encodeURIComponent(brief)}`);
   const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
-  await dialog.getByText("Start From a Role", { exact: true }).click();
+  await dialog.getByText("Start from a Role", { exact: true }).click();
   const description = dialog.getByRole("textbox", { name: "Describe the Job" });
   await expect(description).toHaveValue(brief);
   await dialog
@@ -194,17 +194,17 @@ for (const failure of ["unavailable", "malformed"] as const) {
     await expect(
       guide.getByText("Couldn't refresh phone lines. Retry before provisioning another number."),
     ).toBeVisible();
-    await expect(guide.getByRole("button", { name: "Retry line lookup" })).toBeEnabled();
+    await expect(guide.getByRole("button", { name: "Retry Line Lookup" })).toBeEnabled();
     await expect(
       guide.getByRole("button", { name: "Choose a number", exact: true }),
     ).toBeDisabled();
     await expect(guide.getByText("No phone number yet.", { exact: false })).toHaveCount(0);
     recovered = true;
-    await guide.getByRole("button", { name: "Retry line lookup" }).click();
+    await guide.getByRole("button", { name: "Retry Line Lookup" }).click();
     await expect(guide.getByRole("button", { name: "Choose a number", exact: true })).toBeEnabled();
     await guide.getByRole("button", { name: "Choose a number", exact: true }).click();
     await expect(page).toHaveURL(/\/phone\?tab=setup&agent=bot-front-desk$/);
-    await expect(page.getByRole("button", { name: "Find numbers", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Find Numbers", exact: true })).toBeVisible();
     expect(provisionCount).toBe(0);
   });
 }

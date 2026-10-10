@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { History, Loader2 } from "lucide-react";
 
 import { authFetch } from "../lib/api";
@@ -79,7 +78,7 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
               size="sm"
               onClick={() => setAttempt((current) => current + 1)}
             >
-              Try again
+              Try Again
             </Button>
           }
         >
@@ -132,46 +131,27 @@ export default function PhoneCallHistoryPanel({ agentId }: { agentId?: string | 
 
   const livePhone = relevantAgents.find((agent) => agent.phone_number)?.phone_number ?? null;
   const emptyState = !hasAgents
-    ? {
-        title: "Create a Bot",
-        description: undefined,
-        action: (
-          <Button asChild variant="secondary" size="sm">
-            <Link to="/studio?create=1">New Bot</Link>
-          </Button>
-        ),
-      }
+    ? { title: "Create a Bot", action: { label: "New Bot", to: "/studio?create=1" } }
     : !livePhone
-      ? {
-          title: "Connect a Line",
-          description: undefined,
-          action: (
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/phone?tab=setup">Add a Line</Link>
-            </Button>
-          ),
-        }
+      ? { title: "Connect a Line", action: { label: "Add a Line", to: "/phone?tab=setup" } }
       : {
-          title: agentId ? "No calls for this Bot" : "No calls yet",
-          description: undefined,
-          action: (
-            <Button asChild variant="secondary" size="sm">
-              <a href={`tel:${livePhone}`}>Call the Line</a>
-            </Button>
-          ),
+          title: agentId ? "No Calls for This Bot" : "No Calls Yet",
+          action: { label: "Call the Line", to: `tel:${livePhone}` },
         };
 
+  // The same compact framed card as Callbacks and Lines: one next step, not a
+  // viewport-tall empty panel with a lone link in the middle.
   return (
-    <div className="wl-call-history-empty mx-auto my-4 grid min-h-[24rem] w-full max-w-[980px] flex-1 place-items-center px-4 py-8 sm:px-8">
+    <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
       <EmptyState
+        framed
         density="compact"
         titleTone="ui"
         withHalo={false}
         className="w-full max-w-lg"
-        icon={<History className="size-5" aria-hidden />}
+        icon={History}
         title={emptyState.title}
-        description={emptyState.description}
-        action={emptyState.action}
+        actions={[{ ...emptyState.action, primary: true }]}
       />
     </div>
   );

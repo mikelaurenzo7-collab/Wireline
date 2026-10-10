@@ -51,7 +51,7 @@ describe("Bot roster: empty versus unreachable", () => {
   it("keeps one recovery component rather than a copy per surface", () => {
     const shared = read("src/components/WorkspaceRecovery.tsx");
     expect(shared).toContain("We could not load your agent roster");
-    expect(shared).toContain("Retry workspace");
+    expect(shared).toContain("Retry Workspace");
 
     const redefinitions = tsxFiles(SRC)
       .map((file) => relative(process.cwd(), file).replaceAll("\\", "/"))

@@ -201,10 +201,10 @@ export default function StudioAgentReviewPanel({
         ) : !access.data?.channels.length ? (
           <StatusNotice
             tone="info"
-            title="Choose live channels"
+            title="Choose Live Channels"
             action={
               <Button asChild size="sm" variant="secondary">
-                <Link to={activationBillingHref(getStoredSignupIntent())}>Choose channels</Link>
+                <Link to={activationBillingHref(getStoredSignupIntent())}>Choose Channels</Link>
               </Button>
             }
           >
@@ -228,7 +228,7 @@ export default function StudioAgentReviewPanel({
                   ) : (
                     <PhoneCall className="size-4" aria-hidden="true" />
                   )}
-                  {hasPhone ? "Review outcomes" : "Connect phone"}
+                  {hasPhone ? "Review Outcomes" : "Connect Phone"}
                 </Link>
               </Button>
             ) : access.includes("email") || access.includes("sms") ? (
@@ -253,7 +253,7 @@ export default function StudioAgentReviewPanel({
                 className="justify-center"
               >
                 <Settings2 className="size-4" aria-hidden="true" />
-                Edit setup
+                Edit Setup
               </Button>
               <Button
                 type="button"
@@ -263,13 +263,13 @@ export default function StudioAgentReviewPanel({
                 className="justify-center"
               >
                 <MessageCircle className="size-4" aria-hidden="true" />
-                Test conversation
+                Test Conversation
               </Button>
             </div>
           </div>
           <details className="group mt-4 border-t border-border pt-1">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-sm font-medium text-muted-foreground wl-focus-ring-halo">
-              More settings
+              More Settings
               <ChevronDown
                 className="size-4 transition-transform group-open:rotate-180"
                 aria-hidden="true"
@@ -281,7 +281,7 @@ export default function StudioAgentReviewPanel({
                   to={`/phone?tab=setup&agent=${encodeURIComponent(agentId)}#company-identity`}
                   className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
                 >
-                  Caller identity
+                  Caller Identity
                 </Link>
               ) : null}
               <Link
@@ -300,7 +300,7 @@ export default function StudioAgentReviewPanel({
                 to="/settings/customization"
                 className="flex min-h-11 items-center rounded-md font-medium text-primary hover:underline wl-focus-ring-halo"
               >
-                Appearance & brand
+                Appearance & Brand
               </Link>
             </div>
           </details>

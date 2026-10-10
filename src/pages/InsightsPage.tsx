@@ -37,7 +37,7 @@ export default function InsightsPage() {
               value={chrome.secondary.activeId}
               onChange={(event) => chrome.secondary?.setActiveId(event.target.value)}
               aria-label="Activity view"
-              className="h-9 max-w-[12rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary/50"
+              className="h-11 max-w-[12rem] rounded-lg border border-border bg-card px-2 text-xs font-semibold sm:h-9 text-foreground outline-none focus:border-primary/50"
             >
               {chrome.secondary.tabs.map((tab) => (
                 <option key={tab.id} value={tab.id}>

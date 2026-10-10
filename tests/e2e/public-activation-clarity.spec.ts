@@ -35,7 +35,7 @@ test("paused activation stays explicit from the homepage through paid signup", a
     "Build free. Paid activation is currently unavailable.",
   );
   const access = page.getByRole("region", { name: "Account access" });
-  await page.getByRole("link", { name: "Set up Calls", exact: true }).click();
+  await page.getByRole("link", { name: "Set Up Calls", exact: true }).click();
   await expect(page).toHaveURL(/\/signup\?plan=voice/);
   await expect(access.getByRole("status")).toHaveText(
     "Build free. Paid activation is currently unavailable.",
@@ -46,7 +46,7 @@ test("paused activation stays explicit from the homepage through paid signup", a
     page.getByText("Build free. Paid activation is currently unavailable."),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Build with these channels", exact: true }),
+    page.getByRole("link", { name: "Build with These Channels", exact: true }),
   ).toBeVisible();
 });
 
@@ -63,7 +63,7 @@ for (const failure of ["http", "malformed"] as const) {
     await expect(page.locator(".landing-prestige__activation")).toHaveText(
       "Activation status unavailable. Build free and check back.",
     );
-    await expect(page.getByRole("link", { name: "Set up Calls", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Set Up Calls", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Choose Calls", exact: true })).toHaveCount(0);
   });
 }

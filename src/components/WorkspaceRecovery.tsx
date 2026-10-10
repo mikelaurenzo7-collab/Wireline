@@ -19,7 +19,7 @@ export default function WorkspaceRecovery({ onRetry }: { onRetry: () => void }) 
         We could not load your agent roster. Your agents and customer data are unchanged.
       </StatusNotice>
       <Button type="button" variant="secondary" className="mt-4" onClick={onRetry}>
-        Retry workspace
+        Retry Workspace
       </Button>
     </section>
   );

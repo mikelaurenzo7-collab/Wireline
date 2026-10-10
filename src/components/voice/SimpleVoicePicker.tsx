@@ -270,7 +270,7 @@ export default function SimpleVoicePicker({ agentId, agentName, markKey }: Simpl
         className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted wl-focus-ring-halo"
       >
         <Volume2 className="size-4" aria-hidden="true" />
-        {previewOpen ? "Close preview" : "Preview voice"}
+        {previewOpen ? "Close Preview" : "Preview Voice"}
       </button>
 
       {previewOpen && selectedIsAvailable ? (

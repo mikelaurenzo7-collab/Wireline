@@ -67,14 +67,15 @@ export default function OutboundHub({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
         {activeView === "dispatch" && (
           <div className="flex min-h-full flex-col">
-            <div className="flex flex-1 flex-col justify-center px-3 py-6 sm:px-6">
+            <div className="flex w-full flex-col items-center px-3 py-6 sm:px-6">
               <EmptyState
                 icon={Zap}
                 title="No Calls Queued"
+                framed
                 density="compact"
-                fill
                 titleTone="ui"
                 withHalo={false}
+                className="w-full max-w-lg"
                 actions={[
                   {
                     label: "Find Leads",

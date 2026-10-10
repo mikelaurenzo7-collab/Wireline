@@ -189,7 +189,7 @@ describe("billing plan decisions", () => {
     for (const feature of originalFeatures) expect(text(details)).toContain(feature);
     expect(
       elements.findIndex(
-        (element) => element.type === "button" && text(element).includes("Continue to checkout"),
+        (element) => element.type === "button" && text(element).includes("Continue to Checkout"),
       ),
     ).toBeLessThan(elements.indexOf(details!));
   });
@@ -218,7 +218,7 @@ describe("billing plan decisions", () => {
       (element) => element.type === "a" && text(element).includes("Contact Sales"),
     );
     expect(contact).toBeUndefined();
-    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
+    expect(button("card", "Continue to Checkout").props.disabled).toBe(false);
     expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
   });
 
@@ -245,7 +245,7 @@ describe("billing plan decisions", () => {
     expect(
       elements.some((element) => element.type === "a" && text(element).includes("Contact Sales")),
     ).toBe(false);
-    expect(button("card", "Checkout paused").props.disabled).toBe(true);
+    expect(button("card", "Checkout Paused").props.disabled).toBe(true);
     expect(
       elements.some((element) => text(element).includes("New purchases are temporarily paused")),
     ).toBe(true);
@@ -255,7 +255,7 @@ describe("billing plan decisions", () => {
     await mount("card");
     button("card", "Annual").props.onClick?.();
     expect(render("card").some((element) => text(element).includes("$150/year"))).toBe(true);
-    await button("card", "Continue to checkout").props.onClick?.();
+    await button("card", "Continue to Checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
       expect.objectContaining({
@@ -268,8 +268,8 @@ describe("billing plan decisions", () => {
     h.catalog.plans = [paidPlan({ configured: false, annual_configured: true })];
     await mount("card");
     button("card", "Annual").props.onClick?.();
-    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
-    await button("card", "Continue to checkout").props.onClick?.();
+    expect(button("card", "Continue to Checkout").props.disabled).toBe(false);
+    await button("card", "Continue to Checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
       expect.objectContaining({
@@ -288,7 +288,7 @@ describe("billing plan decisions", () => {
       )?.props.to,
     ).toBeUndefined();
     button("card", "Monthly").props.onClick?.();
-    expect(button("card", "Continue to checkout").props.disabled).toBe(false);
+    expect(button("card", "Continue to Checkout").props.disabled).toBe(false);
   });
 });
 afterEach(() => vi.unstubAllGlobals());
@@ -307,10 +307,10 @@ async function mount(surface: Surface) {
       controls.some(
         (element) =>
           element.type === "button" &&
-          (text(element).includes("Continue to checkout") ||
-            text(element).includes("Checkout paused") ||
-            text(element).includes("Continue to checkout") ||
-            text(element).includes("Manage billing")),
+          (text(element).includes("Continue to Checkout") ||
+            text(element).includes("Checkout Paused") ||
+            text(element).includes("Continue to Checkout") ||
+            text(element).includes("Manage Billing")),
       ),
     ).toBe(true);
     expect(
@@ -325,7 +325,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
     async (flag) => {
       h.catalog.checkout_available = flag;
       await mount(surface);
-      const control = button(surface, "Checkout paused");
+      const control = button(surface, "Checkout Paused");
       expect(control.props.disabled).toBe(true);
       await control.props.onClick?.();
       expect(h.fetch.mock.calls.some(([path]) => path === "/api/billing/checkout")).toBe(false);
@@ -341,7 +341,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
     await mount(surface);
     const control = button(
       surface,
-      surface === "card" ? "Continue to checkout" : "Continue to checkout",
+      surface === "card" ? "Continue to Checkout" : "Continue to Checkout",
     );
     expect(control.props.disabled).toBe(false);
     if (surface === "card") expect(h.checkoutAvailability).toHaveBeenLastCalledWith("available");
@@ -357,7 +357,7 @@ describe.each(["card", "modal"] as const)("%s platform checkout gate", (surface)
   it("keeps an unconfigured plan disabled even when the platform gate is open", async () => {
     h.catalog.plans = [paidPlan({ configured: false, annual_configured: false })];
     await mount(surface);
-    expect(button(surface, "Checkout paused").props.disabled).toBe(true);
+    expect(button(surface, "Checkout Paused").props.disabled).toBe(true);
   });
 });
 
@@ -375,7 +375,7 @@ it("keeps paused plans optional and makes available checkout immediately accessi
   h.catalog.checkout_available = true;
   await mount("modal");
   expect(render("modal").find((element) => element.type === "details")?.props.open).toBe(true);
-  expect(button("modal", "Continue to checkout").props.disabled).toBe(false);
+  expect(button("modal", "Continue to Checkout").props.disabled).toBe(false);
 });
 
 it.each(["http", "network", "malformed"])(
@@ -413,7 +413,7 @@ it("keeps existing subscription management available while new purchases are pau
     cancel_at_period_end: false,
   };
   await mount("card");
-  const portal = button("card", "Manage billing");
+  const portal = button("card", "Manage Billing");
   expect(render("card").find((element) => element.type === "usage-meter")?.props.showBalance).toBe(
     true,
   );
@@ -469,7 +469,7 @@ it.each(["success", "failure"] as const)(
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(h.checkoutAvailability.mock.calls).toHaveLength(reportedBeforeOldRead);
-    expect(button("card", "Checkout paused").props.disabled).toBe(true);
+    expect(button("card", "Checkout Paused").props.disabled).toBe(true);
     expect(render("card").some((element) => text(element).includes("obsolete"))).toBe(false);
   },
 );
@@ -520,7 +520,7 @@ describe.each(["card", "modal"] as const)("%s selected channel package", (surfac
     await mount(surface);
     selectChannel(1);
     selectChannel(0);
-    await button(surface, "Continue to checkout").props.onClick?.();
+    await button(surface, "Continue to Checkout").props.onClick?.();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/billing/checkout",
       expect.objectContaining({

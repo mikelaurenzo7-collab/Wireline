@@ -300,7 +300,7 @@ export default function AgentToolPermissions({
                     setReloadKey((current) => current + 1);
                   }}
                 >
-                  Try again
+                  Try Again
                 </Button>
               }
             >
@@ -438,7 +438,7 @@ export default function AgentToolPermissions({
                 ) : (
                   <Save className="size-4" aria-hidden="true" />
                 )}
-                {saving ? "Saving…" : "Save actions"}
+                {saving ? "Saving…" : "Save Actions"}
               </Button>
             </fieldset>
           )}

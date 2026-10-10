@@ -190,7 +190,7 @@ export default function WireAgentLanding() {
                       to={signupHrefForPlan("personal", { template: template.key })}
                       onClick={() => trackSignupIntent("role_starter", template.name)}
                     >
-                      Build this role
+                      Build This Role
                       <span className="sr-only">: {template.name}</span>
                       <ArrowRight aria-hidden="true" />
                     </Link>
@@ -264,8 +264,8 @@ export default function WireAgentLanding() {
                       onClick={() => trackSignupIntent("pricing", PLAN_NAMES[id])}
                     >
                       {free
-                        ? "Start free"
-                        : `${canActivate(id) ? "Choose" : "Set up"} ${PLAN_NAMES[id]}`}
+                        ? "Start Free"
+                        : `${canActivate(id) ? "Choose" : "Set Up"} ${PLAN_NAMES[id]}`}
                     </Link>
                   </article>
                 );

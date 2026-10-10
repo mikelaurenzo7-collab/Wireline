@@ -110,7 +110,7 @@ export default function CalendarPage() {
             {error ? (
               <StatusNotice
                 tone="warning"
-                title="Availability unavailable"
+                title="Availability Unavailable"
                 className="m-4"
                 action={
                   <Button

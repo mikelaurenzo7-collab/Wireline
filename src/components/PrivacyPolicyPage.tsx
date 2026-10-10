@@ -86,7 +86,7 @@ export default function PrivacyPolicyPage() {
           to="/"
           className="inline-flex items-center gap-2 text-caption font-medium text-muted hover:text-foreground transition-colors mb-8 -mx-2 px-2 py-2 rounded-md hover:bg-black/[0.03] min-h-[44px]"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back home
+          <ArrowLeft className="w-3.5 h-3.5" /> Back Home
         </Link>
 
         <div className="mb-3 flex items-center gap-3">
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
           </div>
           <h1 className="marketing-hero-title text-2xl sm:text-3xl">Privacy Policy</h1>
         </div>
-        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated: {LAST_UPDATED}</p>
+        <p className="mb-10 text-eyebrow !mx-0 !text-[0.625rem]">Last updated · {LAST_UPDATED}</p>
 
         <div className="mb-10 grid gap-3 sm:grid-cols-3" aria-label="Privacy Policy summary">
           {[
@@ -128,7 +128,7 @@ export default function PrivacyPolicyPage() {
                 <p className="mt-1 text-sm leading-6 text-foreground/75">
                   Plausible product analytics remains separate and does not use advertising cookies.
                   Meta advertising measurement loads only when you choose{" "}
-                  <strong>Allow optional</strong>.
+                  <strong>Allow Optional</strong>.
                 </p>
               </div>
 
@@ -152,7 +152,7 @@ export default function PrivacyPolicyPage() {
                   disableAnimations
                   onClick={() => saveMeasurementConsent("denied")}
                 >
-                  Keep measurement off
+                  Keep Measurement Off
                 </ShadButton>
                 <ShadButton
                   type="button"
@@ -161,7 +161,7 @@ export default function PrivacyPolicyPage() {
                   disabled={privacySignalEnabled}
                   onClick={() => saveMeasurementConsent("granted")}
                 >
-                  Allow optional
+                  Allow Optional
                 </ShadButton>
               </div>
             </div>
@@ -235,7 +235,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="4. Third-Party Sub-Processors and Measurement Providers">
             <p>We rely on the following providers for defined service functions:</p>
-            <ul className="list-disc list-inside space-y-1.5 ml-2">
+            <ul className="list-disc space-y-1.5 pl-5 marker:text-muted-foreground">
               <li>
                 <strong>Supabase</strong>: Managed Postgres storage and backup
               </li>
@@ -329,7 +329,7 @@ export default function PrivacyPolicyPage() {
           <Section id="ccpa" title="7. California Privacy Rights (CCPA / CPRA)">
             <p>{CCPA_SHARING_DISCLOSURE}</p>
             <p>
-              Select <strong>Keep measurement off</strong>, close the privacy notice, or enable
+              Select <strong>Keep Measurement Off</strong>, close the privacy notice, or enable
               Global Privacy Control to opt out. You may return to the controls above at any time.
               We will not discriminate against you for exercising a privacy right.
             </p>
@@ -350,7 +350,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <p>
               Meta Pixel is optional and remains off until you choose{" "}
-              <strong>Allow optional</strong>. Global Privacy Control overrides an allow choice.
+              <strong>Allow Optional</strong>. Global Privacy Control overrides an allow choice.
               Turning measurement off replaces BotBound's browser-side measurement function with a
               no-op so future BotBound-triggered Meta events stop;{" "}
               {"a request already in flight before revocation may still complete"}.

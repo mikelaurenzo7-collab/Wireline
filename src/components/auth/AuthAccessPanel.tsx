@@ -790,7 +790,7 @@ export default function AuthAccessPanel({
               disabled={disabled}
               onClick={() => changeMode("signin")}
             >
-              <ArrowLeft aria-hidden="true" /> Back to sign in
+              <ArrowLeft aria-hidden="true" /> Back to Sign In
             </button>
           ) : null}
 
@@ -798,7 +798,7 @@ export default function AuthAccessPanel({
             <StatusNotice id={errorId} tone="destructive" title={error}>
               {isSignUp && /already exists/i.test(error) ? (
                 <button type="button" disabled={disabled} onClick={() => changeMode("signin")}>
-                  Sign in instead
+                  Sign In Instead
                 </button>
               ) : null}
             </StatusNotice>

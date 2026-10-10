@@ -218,8 +218,8 @@ export default function McpCoachingPanel() {
           {disconnecting
             ? "Disconnecting…"
             : confirmDisconnect
-              ? "Confirm disconnect all"
-              : "Disconnect all connected apps"}
+              ? "Confirm Disconnect All"
+              : "Disconnect All Connected Apps"}
         </Button>
       ) : null}
 

@@ -57,7 +57,7 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/studio?create=1");
     const dialog = page.getByRole("dialog", { name: "What Should Your Bot Do?" });
     await expect(dialog.getByRole("heading", { name: "What Should Your Bot Do?" })).toBeFocused();
-    await dialog.getByText("Start From a Role", { exact: true }).click();
+    await dialog.getByText("Start from a Role", { exact: true }).click();
     const role = dialog.getByRole("combobox", { name: "Bot role starters" });
     const brief = dialog.getByRole("textbox", { name: "Describe the Job" });
     await role.selectOption("front-desk");
@@ -311,12 +311,12 @@ test("password reset names and focuses the invalid field and permits reviewing b
   await expect(confirm).toHaveAccessibleName("Confirm new password");
   await password.fill("onlylowercase");
   await confirm.fill("onlylowercase");
-  await page.getByRole("button", { name: "Reset password", exact: true }).click();
+  await page.getByRole("button", { name: "Reset Password", exact: true }).click();
   await expect(password).toBeFocused();
   await expect(password).toHaveAttribute("aria-invalid", "true");
   await expect(password).toHaveAccessibleDescription(/uppercase/i);
   await password.fill("LocalTest123");
-  await page.getByRole("button", { name: "Reset password", exact: true }).click();
+  await page.getByRole("button", { name: "Reset Password", exact: true }).click();
   await expect(confirm).toBeFocused();
   await expect(confirm).toHaveAccessibleDescription("Passwords don't match.");
   await page.getByRole("button", { name: "Show passwords" }).click();

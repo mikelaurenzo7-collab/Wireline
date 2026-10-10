@@ -231,7 +231,7 @@ export default function PostCreateActivationWizard({
   const completeCopy = useMemo(() => {
     if (!access.includes("voice"))
       return {
-        title: "Your Bot is saved",
+        title: "Your Bot Is Saved",
         detail: "Keep testing privately, or open your selected channels to finish setup.",
       };
     if (hasLiveLine && phoneNumber) {
@@ -404,7 +404,7 @@ export default function PostCreateActivationWizard({
                           to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}
                           onClick={dismiss}
                         >
-                          Set up text line
+                          Set Up Text Line
                         </Link>
                       </Button>
                     ) : null}
@@ -424,13 +424,13 @@ export default function PostCreateActivationWizard({
                       to={activationPlanPath}
                       onClick={() => stashPostCreateWizardStep("launch")}
                     >
-                      Choose channels
+                      Choose Channels
                     </Link>
                   </Button>
                 </>
               )}
               <Button type="button" size="sm" variant="secondary" onClick={() => finish(null)}>
-                Finish for now
+                Finish for Now
               </Button>
             </section>
           ) : null}
@@ -516,7 +516,7 @@ export default function PostCreateActivationWizard({
                             onClick={() => void refreshPhone()}
                             disabled={refreshingPhone}
                           >
-                            Retry line lookup
+                            Retry Line Lookup
                           </Button>
                         ) : undefined
                       }
@@ -545,14 +545,14 @@ export default function PostCreateActivationWizard({
                       disabled={refreshingPhone}
                       onClick={() => void refreshPhone()}
                     >
-                      Retry connection
+                      Retry Connection
                     </Button>
                     <Button asChild variant="secondary" size="sm">
                       <Link
                         to={`/phone?tab=setup&agent=${encodeURIComponent(payload.agentId)}`}
                         onClick={dismiss}
                       >
-                        Open Phone setup
+                        Open Phone Setup
                       </Link>
                     </Button>
                   </>
@@ -668,7 +668,7 @@ export default function PostCreateActivationWizard({
         <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-4 sm:px-6">
           {step !== "complete" ? (
             <Button type="button" variant="ghost" size="sm" onClick={dismiss}>
-              Skip for now
+              Skip for Now
             </Button>
           ) : null}
           {step === "test" ? (
@@ -696,7 +696,7 @@ export default function PostCreateActivationWizard({
                     }
                   >
                     {hasLine
-                      ? "Open Phone setup"
+                      ? "Open Phone Setup"
                       : checkoutClosed
                         ? SOFT_OPEN_CHECKOUT_COPY.cta
                         : POST_CREATE_WIZARD_COPY.complete.phoneCta}

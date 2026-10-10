@@ -152,7 +152,7 @@ describe("connected app access recovery", () => {
       expect(nodes.some((node) => node.props.title === "App Access Unavailable")).toBe(false);
       expect(nodes.some((node) => text(node) === "Cursor")).toBe(true);
       expect(
-        nodes.find((node) => text(node) === "Disconnect all connected apps")?.props.disabled,
+        nodes.find((node) => text(node) === "Disconnect All Connected Apps")?.props.disabled,
       ).toBe(false);
       expect(h.fetch.mock.calls).toEqual([["/api/mcp/connections"], ["/api/mcp/connections"]]);
     },

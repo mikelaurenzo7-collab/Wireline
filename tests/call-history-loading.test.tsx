@@ -150,7 +150,7 @@ describe("call history request ordering", () => {
       .mockReturnValueOnce(page.promise);
     await settle();
     const refresh = button("Refresh calls");
-    const more = button("Load more calls");
+    const more = button("Load More Calls");
     more.props.onClick!();
     more.props.onClick!();
     refresh.props.onClick!();
@@ -171,11 +171,11 @@ describe("call history request ordering", () => {
       .mockResolvedValueOnce(json([{ id: "new" }], 2))
       .mockReturnValueOnce(newPage.promise);
     await settle();
-    button("Load more calls").props.onClick!();
+    button("Load More Calls").props.onClick!();
     await settle();
     agentId = "second";
     await settle();
-    button("Load more calls").props.onClick!();
+    button("Load More Calls").props.onClick!();
     await settle();
     oldPage.resolve(json([{ id: "stale" }], 2));
     await settle();
@@ -191,11 +191,11 @@ describe("call history request ordering", () => {
       .mockResolvedValueOnce(json([], 2, 503))
       .mockResolvedValueOnce(json([{ id: "two" }], 2));
     await settle();
-    button("Load more calls").props.onClick!();
+    button("Load More Calls").props.onClick!();
     await settle();
     expect(text(tree)).toContain("1 of 2 calls");
     expect(elements(tree).some((n) => n.props.title === "More Calls Unavailable")).toBe(true);
-    button("Try again").props.onClick!();
+    button("Try Again").props.onClick!();
     await settle();
     expect(h.fetch.mock.calls[1][0]).toEqual(h.fetch.mock.calls[2][0]);
     expect(text(tree)).toContain("2 for this Bot");

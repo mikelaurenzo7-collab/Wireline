@@ -22,7 +22,7 @@ export default function ChannelAccessNotice({
     return (
       <StatusNotice
         tone="warning"
-        title="Channel access unavailable"
+        title="Channel Access Unavailable"
         className="my-3"
         action={
           <Button size="sm" variant="secondary" onClick={access.retry}>
@@ -43,7 +43,7 @@ export default function ChannelAccessNotice({
     return (
       <StatusNotice
         tone="warning"
-        title="Payment needs attention"
+        title="Payment Needs Attention"
         className="my-3"
         action={
           <Button asChild size="sm">
@@ -69,7 +69,7 @@ export default function ChannelAccessNotice({
       action={
         <Button asChild size="sm" variant="secondary">
           <Link to={active ? "/settings/billing" : `/settings/billing?plan=${channel}`}>
-            {active ? "View billing" : "Choose channels"}
+            {active ? "View Billing" : "Choose Channels"}
           </Link>
         </Button>
       }

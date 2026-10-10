@@ -78,7 +78,7 @@ describe("voice allowance boundary copy", () => {
     if (!isValidElement<{ disabled: boolean; "aria-busy": boolean }>(action)) return;
     expect(action.props.disabled).toBe(true);
     expect(action.props["aria-busy"]).toBe(true);
-    expect(text(action)).toBe("Manage billing");
+    expect(text(action)).toBe("Manage Billing");
   });
 
   it("keeps the balance visible by default on standalone usage surfaces", () => {

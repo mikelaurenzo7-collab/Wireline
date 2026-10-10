@@ -231,7 +231,7 @@ export default function EmailVerifyBanner() {
       ? "wl-banner--warn"
       : "wl-banner--info";
 
-  let buttonLabel: React.ReactNode = view.verified === null ? "Check status" : "Resend email";
+  let buttonLabel: React.ReactNode = view.verified === null ? "Check Status" : "Resend Email";
   let buttonDisabled = view.verified === null && view.checking;
   if (buttonDisabled || outcome === "pending") {
     buttonLabel = (

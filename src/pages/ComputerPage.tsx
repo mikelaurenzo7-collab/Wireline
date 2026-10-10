@@ -64,6 +64,36 @@ type ComputerStatus = {
   limits: { maxMinutes: number; maxSteps: number };
 };
 
+const STATUS_REASONS: ReadonlySet<string> = new Set([
+  "ready",
+  "model_unconfigured",
+  "browser_unconfigured",
+  "storage_unavailable",
+  "plan_required",
+]);
+
+/** A status the page can render, or null so a malformed answer offers Retry instead of crashing. */
+function readComputerStatus(value: unknown): ComputerStatus | null {
+  if (!value || typeof value !== "object") return null;
+  const status = value as Partial<ComputerStatus>;
+  const limits = status.limits;
+  if (
+    typeof status.available !== "boolean" ||
+    typeof status.reason !== "string" ||
+    !STATUS_REASONS.has(status.reason) ||
+    !limits ||
+    typeof limits.maxMinutes !== "number" ||
+    typeof limits.maxSteps !== "number"
+  ) {
+    return null;
+  }
+  return {
+    available: status.available,
+    reason: status.reason,
+    limits: { maxMinutes: limits.maxMinutes, maxSteps: limits.maxSteps },
+  };
+}
+
 const ACTIVE: TaskStatus[] = ["running", "needs_input"];
 
 const STATUS_COPY: Record<
@@ -369,7 +399,7 @@ function TaskDetail({
       ) : null}
 
       {error ? (
-        <StatusNotice tone="destructive" title="Something went wrong">
+        <StatusNotice tone="destructive" title="Something Went Wrong">
           {error}
         </StatusNotice>
       ) : null}
@@ -460,10 +490,11 @@ export default function ComputerPage() {
   const loadStatus = useCallback(async (signal?: AbortSignal) => {
     try {
       const response = await authFetch("/api/computer/status", { signal });
-      const result = await readApiJson<ComputerStatus>(response);
+      const result = await readApiJson<unknown>(response);
       if (signal?.aborted) return;
-      setStatusFailed(!result.ok);
-      if (result.ok) setStatus(result.data);
+      const next = result.ok ? readComputerStatus(result.data) : null;
+      setStatusFailed(!next);
+      if (next) setStatus(next);
     } catch {
       if (!signal?.aborted) setStatusFailed(true);
     }
@@ -484,13 +515,13 @@ export default function ComputerPage() {
     }: { signal?: AbortSignal; focusActive?: boolean } = {}) => {
       try {
         const response = await authFetch("/api/computer/tasks", { signal });
-        const result = await readApiJson<{ tasks: ComputerTask[] }>(response);
+        const result = await readApiJson<{ tasks?: unknown }>(response);
         if (signal?.aborted) return;
-        if (!result.ok) {
+        if (!result.ok || !Array.isArray(result.data?.tasks)) {
           setListFailed(true);
           return;
         }
-        const next = result.data.tasks;
+        const next = result.data.tasks as ComputerTask[];
         const activeTask = next.find((task) => ACTIVE.includes(task.status));
         setListFailed(false);
         setTasks(next);
@@ -722,7 +753,7 @@ export default function ComputerPage() {
                 </Button>
               </div>
               {error ? (
-                <StatusNotice tone="destructive" title="The task did not start">
+                <StatusNotice tone="destructive" title="The Task Did Not Start">
                   {error}
                 </StatusNotice>
               ) : null}

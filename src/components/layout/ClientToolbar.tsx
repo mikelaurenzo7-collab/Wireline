@@ -69,7 +69,7 @@ export default function ClientToolbar({
                 size="icon"
                 aria-label="Open page actions"
                 aria-controls="wireline-toolbar-actions"
-                className="shrink-0 md:hidden"
+                className="ml-auto shrink-0 md:hidden"
               >
                 <MoreHorizontal className="size-5" aria-hidden="true" />
               </Button>

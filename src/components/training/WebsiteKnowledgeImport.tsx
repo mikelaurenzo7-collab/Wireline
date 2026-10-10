@@ -161,7 +161,7 @@ export default function WebsiteKnowledgeImport({
               Importing…
             </>
           ) : (
-            "Import page"
+            "Import Page"
           )}
         </Button>
       </form>

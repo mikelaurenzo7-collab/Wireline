@@ -84,11 +84,11 @@ it("passes the saved mark into an idle voice preview and updates it after a save
   render("spark-rose");
   await vi.waitFor(() => {
     const preview = render("spark-rose").find(
-      (node) => node.type === "button" && text(node) === "Preview voice",
+      (node) => node.type === "button" && text(node) === "Preview Voice",
     );
     expect(preview?.props.disabled).toBe(false);
   });
-  render("spark-rose").find((node) => node.type === "button" && text(node) === "Preview voice")!
+  render("spark-rose").find((node) => node.type === "button" && text(node) === "Preview Voice")!
     .props.onClick!();
   expect(render("spark-rose").find((node) => node.type === "voice-sandbox")?.props.markKey).toBe(
     "spark-rose",

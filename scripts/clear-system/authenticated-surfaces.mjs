@@ -251,7 +251,7 @@ export function checkAuthenticatedSurfaces({ read, mustInclude, mustExclude }) {
   mustInclude(
     "src/pages/SettingsPage.tsx",
     settingsPage,
-    /Delete account|Account deletion/,
+    /Delete account|Account deletion/i,
     "settings must expose account deletion",
   );
   mustInclude(

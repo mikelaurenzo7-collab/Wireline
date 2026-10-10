@@ -226,7 +226,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             title="More Calls Unavailable"
             action={
               <Button type="button" variant="secondary" size="sm" onClick={loadMore}>
-                Try again
+                Try Again
               </Button>
             }
           >
@@ -242,7 +242,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
             disabled={loadingMore}
           >
             {loadingMore ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : null}
-            {loadingMore ? "Loading more" : "Load more calls"}
+            {loadingMore ? "Loading More" : "Load More Calls"}
           </Button>
         )}
       </div>

@@ -249,7 +249,7 @@ describe("secure website knowledge ingestion", () => {
     expect(component).toContain("Add facts and rules from one public page of your website.");
     expect(component).toContain("Website Knowledge");
     expect(component).toContain('type="url"');
-    expect(component).toContain("Import page");
+    expect(component).toContain("Import Page");
   });
 
   it("retires the contradictory legacy crawl endpoint with an authenticated migration response", () => {

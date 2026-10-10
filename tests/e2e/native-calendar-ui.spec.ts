@@ -73,7 +73,7 @@ for (const width of [320, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const writes = await mockCalendar(page);
     await page.goto("/calendar?tab=availability");
-    await expect(page.getByRole("heading", { name: "Weekly hours" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Weekly Hours" })).toBeVisible();
     if (width === 320)
       await page.evaluate(async () => {
         document.documentElement.style.fontSize = "200%";
@@ -89,7 +89,7 @@ for (const width of [320, 1440]) {
     await page
       .getByRole("combobox", { name: "Confirmation", exact: true })
       .selectOption("approval");
-    await page.getByRole("button", { name: "Enable booking", exact: true }).click();
+    await page.getByRole("button", { name: "Enable Booking", exact: true }).click();
     await expect(
       page.getByText("Calendar temporarily unavailable. Try again.", { exact: true }),
     ).toBeVisible();
@@ -99,7 +99,7 @@ for (const width of [320, 1440]) {
     await expect(page.getByRole("combobox", { name: "Confirmation", exact: true })).toHaveValue(
       "approval",
     );
-    await page.getByRole("button", { name: "Enable booking", exact: true }).click();
+    await page.getByRole("button", { name: "Enable Booking", exact: true }).click();
     await expect(page.getByText("Availability saved.", { exact: true })).toBeVisible();
     expect(writes).toHaveLength(2);
     expect(writes[1]).toMatchObject({
@@ -132,7 +132,7 @@ for (const width of [320, 1440]) {
           ),
       )
       .toEqual([]);
-    const save = page.getByRole("button", { name: "Save changes", exact: true });
+    const save = page.getByRole("button", { name: "Save Changes", exact: true });
     await save.scrollIntoViewIfNeeded();
     if (width === 320) {
       const action = (await save.boundingBox())!;
@@ -156,7 +156,7 @@ for (const width of [320, 1440]) {
     expect(writes[3]).toMatchObject({ enabled: true });
     await expect(page.getByText("Availability saved.", { exact: true })).toBeVisible();
     await page.getByText("Connected calendars", { exact: false }).click();
-    await expect(page.getByRole("button", { name: "Sync busy times", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sync Busy Times", exact: true })).toBeVisible();
     await expect(page.getByText(/New BotBound bookings stay here/)).toBeVisible();
   });
 }
@@ -172,5 +172,5 @@ test("legacy appointment links land on native Calendar with their scope and anch
   ).toBeVisible();
   await page.getByRole("button", { name: "Set Availability", exact: true }).click();
   await expect(page).toHaveURL(/\/calendar\?agent=bot-a&tab=availability/);
-  await expect(page.getByRole("heading", { name: "Weekly hours", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Weekly Hours", exact: true })).toBeVisible();
 });

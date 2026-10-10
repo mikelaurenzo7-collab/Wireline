@@ -168,8 +168,8 @@ export default function Pricing() {
                       className="marketing-btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold"
                     >
                       {canActivate(plan.id) && !smsPending
-                        ? "Get started"
-                        : "Build with these channels"}{" "}
+                        ? "Get Started"
+                        : "Build with These Channels"}{" "}
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
                   </div>
@@ -187,7 +187,7 @@ export default function Pricing() {
               ) : null}
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-              <div>
+              <div className="text-left">
                 <h2 className="text-base font-semibold">Start with Free Builder</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   One private Bot. Set up, add knowledge, and test before activation.
@@ -200,24 +200,24 @@ export default function Pricing() {
                 Build Free <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
-          </div>
-          <article
-            id="scale"
-            className="mt-7 flex scroll-mt-24 flex-col items-start gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div>
-              <h2 className="text-lg font-semibold">More Bots or a Custom Setup?</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Talk through capacity, integrations, and rollout with us.
-              </p>
-            </div>
-            <Link
-              to="/contact?topic=enterprise"
-              className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl px-4 text-sm font-semibold"
+            <article
+              id="scale"
+              className="mt-6 flex scroll-mt-24 flex-col items-start gap-3 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center sm:justify-between"
             >
-              Contact us
-            </Link>
-          </article>
+              <div className="text-left">
+                <h2 className="text-lg font-semibold">More Bots or a Custom Setup?</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Talk through capacity, integrations, and rollout with us.
+                </p>
+              </div>
+              <Link
+                to="/contact?topic=enterprise"
+                className="marketing-btn-secondary inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl px-4 text-sm font-semibold"
+              >
+                Contact Us
+              </Link>
+            </article>
+          </div>
           <details className="pricing-more group mx-auto mt-4 w-full">
             <summary className="pricing-more__summary wl-focus-ring-halo mx-auto flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg text-sm font-semibold text-muted-foreground marker:hidden">
               Usage Details &amp; FAQs{" "}

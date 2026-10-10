@@ -191,7 +191,7 @@ function DangerZone() {
               className="border-[var(--wireline-color-feedback-error-border)] text-[var(--wireline-color-status-error)] hover:bg-[var(--wireline-color-feedback-error-surface)]"
             >
               <Trash2 size={14} aria-hidden="true" />
-              {working ? "Scheduling…" : "Delete account"}
+              {working ? "Scheduling…" : "Delete Account"}
             </Button>
           </div>
         ) : null}
@@ -221,7 +221,7 @@ function DangerZone() {
             onClick={cancelDeletion}
             className="mt-3"
           >
-            {cancelWorking ? "Keeping account…" : "Keep my account"}
+            {cancelWorking ? "Keeping Account…" : "Keep My Account"}
           </Button>
         ) : null}
         {error ? (
@@ -272,7 +272,10 @@ export default function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetState, setResetState] = useState<"idle" | "sending" | "sent">("idle");
-  const displayName = workspaceSidebarLabel(user?.full_name, user?.email, "Workspace owner");
+  // The profile shows the name as entered. The sidebar label is a short
+  // first-name chip, which here read as if the surname had been lost.
+  const displayName =
+    user?.full_name?.trim() || workspaceSidebarLabel(null, user?.email, "Workspace owner");
   const email = user?.email || "";
 
   async function requestPasswordReset() {
@@ -315,7 +318,7 @@ export default function SettingsPage() {
         <section className="wl-paper wl-paper-elevated p-5 sm:p-6">
           <h2 className="text-base font-semibold leading-6 text-foreground">Profile</h2>
           <div className="mt-3 grid">
-            <ProfileRow icon={UserRound} label="Name" value={displayName} />
+            <ProfileRow icon={UserRound} label="Name" value={displayName} wrapValue />
             <ProfileRow icon={Mail} label="Email" value={email || "N/A"} wrapValue />
           </div>
         </section>

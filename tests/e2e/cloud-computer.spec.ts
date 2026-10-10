@@ -314,7 +314,7 @@ test("a page that did not load offers a retry instead of a dead form", async ({ 
   await expect(page.getByText("Your Bot's Computer Did Not Load")).toBeVisible();
   const history = page.getByRole("complementary", { name: "Recent tasks" });
   await expect(history.getByText("Recent tasks did not load.")).toBeVisible();
-  await expect(page.getByText("The task did not start")).toHaveCount(0);
+  await expect(page.getByText("The Task Did Not Start")).toHaveCount(0);
   await capture(page, info, "computer-load-retry");
 
   await page.getByRole("button", { name: "Retry" }).first().click();

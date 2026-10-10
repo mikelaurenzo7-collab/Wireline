@@ -682,12 +682,12 @@ export default function AgentTemplates() {
                       search
                         ? [
                             {
-                              label: "Clear search",
+                              label: "Clear Search",
                               onClick: () => setSearch(""),
                               primary: true,
                             },
                           ]
-                        : [{ label: "Create from scratch", to: "/studio?create=1", primary: true }]
+                        : [{ label: "Create from Scratch", to: "/studio?create=1", primary: true }]
                     }
                   />
                 </motion.div>

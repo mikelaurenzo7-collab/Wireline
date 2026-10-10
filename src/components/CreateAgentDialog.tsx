@@ -473,7 +473,7 @@ export default function CreateAgentDialog({
                   className="size-4 shrink-0 transition-transform group-open:rotate-90 motion-reduce:transition-none"
                   aria-hidden="true"
                 />
-                Start From a Role
+                Start from a Role
               </summary>
               <NativeSelect
                 id="create-bot-role"

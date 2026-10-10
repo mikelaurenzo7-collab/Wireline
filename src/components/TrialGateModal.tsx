@@ -100,17 +100,17 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
   switch (detail.code) {
     case "ACTIVATION_REQUIRED":
       return {
-        title: "Go live",
+        title: "Go Live",
         body: "Choose a plan to connect your Bot.",
       };
     case "EMAIL_UNVERIFIED":
       return {
-        title: "Verify your email",
+        title: "Verify Your Email",
         body: "Open the link in your email to continue.",
       };
     case "TRIAL_LIMIT_HIT":
       return {
-        title: "Trial limit reached",
+        title: "Trial Limit Reached",
         body:
           typeof detail.limit === "number" && typeof detail.current === "number"
             ? `You've used ${detail.current} of ${detail.limit}. Choose a plan to continue.`
@@ -118,12 +118,12 @@ function headlineForCode(detail: TrialGateBlockDetail): { title: string; body: s
       };
     case "TRIAL_EXPIRED":
       return {
-        title: "Your trial has ended",
+        title: "Your Trial Has Ended",
         body: "Choose a plan to resume. Your Bot and history are saved.",
       };
     case "SUBSCRIPTION_REQUIRED":
       return {
-        title: "Payment needed",
+        title: "Payment Needed",
         body: "Update your payment method to resume live work.",
       };
     default:
@@ -450,7 +450,7 @@ export default function TrialGateModal() {
                     ) : (
                       <span className="inline-flex items-center gap-1.5">
                         <Mail className="h-4 w-4" />
-                        Resend verification email
+                        Resend Verification Email
                       </span>
                     )}
                   </ShadButton>
@@ -486,12 +486,12 @@ export default function TrialGateModal() {
                     {pending === "billing-portal" ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Opening billing
+                        Opening Billing…
                       </>
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4" />
-                        Update payment
+                        Update Payment
                       </>
                     )}
                   </ShadButton>
@@ -499,7 +499,7 @@ export default function TrialGateModal() {
                     href="/settings/billing"
                     className="text-xs text-brand underline-offset-2 hover:underline"
                   >
-                    Billing details
+                    Billing Details
                   </a>
                 </div>
               )}
@@ -521,7 +521,7 @@ export default function TrialGateModal() {
                       hidden={!checkoutUnavailable}
                       className="min-h-11 cursor-pointer py-3 text-sm font-medium text-brand"
                     >
-                      View plans
+                      View Plans
                     </summary>
                     <ChannelPlanPicker
                       id="activation"
@@ -559,10 +559,10 @@ export default function TrialGateModal() {
                               ) : smsPending ? (
                                 "SMS setup unavailable"
                               ) : tier?.disabled ? (
-                                "Checkout paused"
+                                "Checkout Paused"
                               ) : (
                                 <>
-                                  <CreditCard className="size-4" /> Continue to checkout
+                                  <CreditCard className="size-4" /> Continue to Checkout
                                 </>
                               )}
                             </ShadButton>
@@ -597,11 +597,11 @@ export default function TrialGateModal() {
                     onClick={closeModal}
                     className="text-brand hover:underline"
                   >
-                    Compare plans
+                    Compare Plans
                   </Link>
                   <span>Cancel anytime</span>
                   <Link to="/contact" onClick={closeModal} className="text-brand hover:underline">
-                    Contact sales
+                    Contact Sales
                   </Link>
                 </div>
               )}

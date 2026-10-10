@@ -75,7 +75,7 @@ export default function RuntimeBalanceActivity({
   return (
     <details className="group mt-5 border-t border-border pt-2">
       <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
-        Recent activity
+        Recent Activity
         <ChevronDown
           className="size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
           aria-hidden="true"
@@ -99,10 +99,10 @@ export default function RuntimeBalanceActivity({
         ) : unavailable ? (
           <StatusNotice
             tone="warning"
-            title="Activity unavailable"
+            title="Activity Unavailable"
             action={
               <Button type="button" variant="secondary" size="sm" onClick={onRetry}>
-                Retry activity
+                Retry Activity
               </Button>
             }
           >

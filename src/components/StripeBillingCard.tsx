@@ -587,7 +587,7 @@ function PlanPicker({
   return (
     <div className="wl-billing-plans space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h3 className="text-2xl font-semibold tracking-tight">Your plan</h3>
+        <h3 className="text-2xl font-semibold tracking-tight">Your Plan</h3>
         <BillingIntervalControl
           value={billingInterval}
           onChange={(interval) => {
@@ -627,9 +627,9 @@ function PlanPicker({
                 ) : smsPending ? (
                   "SMS setup unavailable"
                 ) : canSubscribe ? (
-                  "Continue to checkout"
+                  "Continue to Checkout"
                 ) : (
-                  "Checkout paused"
+                  "Checkout Paused"
                 )}
               </ShadButton>
               {smsPending ? (
@@ -792,7 +792,7 @@ function ActiveSubCard({
           ) : (
             <ExternalLink className="w-4 h-4" />
           )}
-          Manage billing
+          Manage Billing
         </ShadButton>
       </div>
     </div>

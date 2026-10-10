@@ -99,7 +99,7 @@ export default function CallOpsOverview() {
                 size="sm"
                 onClick={() => setAttempt((current) => current + 1)}
               >
-                Try again
+                Try Again
               </Button>
             }
           >

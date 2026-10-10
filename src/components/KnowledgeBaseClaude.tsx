@@ -839,7 +839,7 @@ export default function KnowledgeBaseClaude({
             aria-expanded={showAllRules}
             onClick={() => setShowAllRules((current) => !current)}
           >
-            {showAllRules ? "Show fewer rules" : `Show all ${directives.length} rules`}
+            {showAllRules ? "Show Fewer Rules" : `Show All ${directives.length} Rules`}
           </Button>
         ) : null}
       </section>
@@ -859,7 +859,7 @@ export default function KnowledgeBaseClaude({
           Uploading…
         </>
       ) : (
-        "Choose files"
+        "Choose Files"
       )}
     </Button>
   );
@@ -1091,7 +1091,7 @@ export default function KnowledgeBaseClaude({
                 onClick={() => setShowAllKnowledge((value) => !value)}
                 className="self-start text-[12px] font-semibold text-[var(--wireline-color-action-primary-default)] hover:underline"
               >
-                {showAllKnowledge ? "Show less" : `Show all ${knowledge.length}`}
+                {showAllKnowledge ? "Show Less" : `Show All ${knowledge.length}`}
               </button>
             ) : null}
           </>

@@ -198,7 +198,7 @@ describe("report settings save continuity", () => {
     await settle();
     const changeFormat = control("Default format").props.onChange!;
     const changeTime = control("Delivery time").props.onChange!;
-    const save = button("Save report settings").props.onClick!;
+    const save = button("Save Report Settings").props.onClick!;
     save();
     save();
     changeFormat({ target: { value: "docx" } });
@@ -231,11 +231,11 @@ describe("report settings save continuity", () => {
     control("Default format").props.onChange?.({ target: { value: "docx" } });
     control("Delivery time").props.onChange?.({ target: { value: "18:30" } });
     await settle();
-    button("Save report settings").props.onClick?.();
+    button("Save Report Settings").props.onClick?.();
     await settle();
     expect(control("Default format").props.value).toBe("docx");
     expect(control("Delivery time").props.value).toBe("18:30");
-    button("Save report settings").props.onClick?.();
+    button("Save Report Settings").props.onClick?.();
     await settle();
     expect(posts()).toHaveLength(2);
     expect(posts()[1][1].body).toBe(posts()[0][1].body);
@@ -261,7 +261,7 @@ describe("report settings save continuity", () => {
     await settle();
     control("Delivery time").props.onChange?.({ target: { value: "" } });
     await settle();
-    button("Save report settings").props.onClick?.();
+    button("Save Report Settings").props.onClick?.();
     await settle();
     expect(posts()).toHaveLength(0);
     expect(text(tree)).toContain("Choose a delivery time.");

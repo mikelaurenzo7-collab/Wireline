@@ -84,7 +84,7 @@ test("an owner sets business hours and an after-hours greeting in Studio", async
   await hours
     .getByRole("textbox", { name: /After-hours greeting/ })
     .fill("Thanks for calling Front Desk. We're closed, but I can take a message.");
-  await hours.getByRole("button", { name: "Save hours" }).click();
+  await hours.getByRole("button", { name: "Save Hours" }).click();
 
   await expect(hours.getByText("Hours Saved", { exact: true })).toBeVisible();
   expect(saves).toEqual([
@@ -112,7 +112,7 @@ test("a day that never opens is explained instead of saved", async ({ page }) =>
   const hours = await openHours(page);
 
   await hours.getByLabel("Tuesday closes").fill("09:00");
-  await hours.getByRole("button", { name: "Save hours" }).click();
+  await hours.getByRole("button", { name: "Save Hours" }).click();
 
   await expect(hours.getByText(/Tuesday opens and closes at the same time/)).toBeVisible();
   expect(saves).toEqual([]);

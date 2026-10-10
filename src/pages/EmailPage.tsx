@@ -261,7 +261,7 @@ export default function EmailPage() {
                   Retry
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearScope}>
-                  Clear filters
+                  Clear Filters
                 </Button>
               </div>
             </StatusNotice>

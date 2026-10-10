@@ -98,9 +98,9 @@ function response(data: unknown, code = 200) {
   return new Response(JSON.stringify(data), { status: code });
 }
 async function open() {
-  button("Increase capacity").props.onClick?.();
+  button("Increase Capacity").props.onClick?.();
   render();
-  await vi.waitFor(() => expect(button("Schedule capacity increase")).toBeDefined());
+  await vi.waitFor(() => expect(button("Schedule Capacity Increase")).toBeDefined());
 }
 function selectRegular() {
   const control = render().find((node) => node.type === "input" && node.props.value === "regular");
@@ -120,19 +120,19 @@ afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 describe("paid capacity scheduling", () => {
   it("keeps the same channels, requires selection, and confirms the exact renewal receipt", async () => {
     await open();
-    expect(button("Schedule capacity increase").props.disabled).toBe(true);
+    expect(button("Schedule Capacity Increase").props.disabled).toBe(true);
     const channels = render().filter((node) => node.type === Checkbox);
     expect(channels).toHaveLength(3);
     expect(channels.every((node) => node.props.disabled)).toBe(true);
     selectRegular();
-    expect(button("Schedule capacity increase").props.disabled).toBe(false);
+    expect(button("Schedule Capacity Increase").props.disabled).toBe(false);
     let finish!: (value: Response) => void;
     h.fetch.mockReturnValueOnce(
       new Promise<Response>((resolve) => {
         finish = resolve;
       }),
     );
-    const action = button("Schedule capacity increase").props.onClick!;
+    const action = button("Schedule Capacity Increase").props.onClick!;
     action();
     action();
     expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
@@ -157,21 +157,21 @@ describe("paid capacity scheduling", () => {
     );
     expect(
       render().some(
-        (node) => node.type === "button" && text(node).includes("Schedule capacity increase"),
+        (node) => node.type === "button" && text(node).includes("Schedule Capacity Increase"),
       ),
     ).toBe(false);
   });
 
   it("does not invent eligibility on a failed lookup and recovers without checkout", async () => {
     h.fetch.mockResolvedValueOnce(response({ error: "Capacity is unavailable." }, 503));
-    button("Increase capacity").props.onClick?.();
+    button("Increase Capacity").props.onClick?.();
     render();
-    await vi.waitFor(() => expect(button("Refresh options")).toBeDefined());
+    await vi.waitFor(() => expect(button("Refresh Options")).toBeDefined());
     expect(render().some((node) => node.props.type === "radio")).toBe(false);
     h.fetch.mockResolvedValueOnce(response(status()));
-    button("Refresh options").props.onClick?.();
+    button("Refresh Options").props.onClick?.();
     render();
-    await vi.waitFor(() => expect(button("Schedule capacity increase")).toBeDefined());
+    await vi.waitFor(() => expect(button("Schedule Capacity Increase")).toBeDefined());
     expect(h.fetch.mock.calls.some(([path]) => String(path).includes("checkout"))).toBe(false);
   });
 
@@ -185,16 +185,16 @@ describe("paid capacity scheduling", () => {
         effective_at: "2026-10-05T00:00:00Z",
       }),
     );
-    button("Schedule capacity increase").props.onClick?.();
-    await vi.waitFor(() => expect(button("Refresh options")).toBeDefined());
+    button("Schedule Capacity Increase").props.onClick?.();
+    await vi.waitFor(() => expect(button("Refresh Options")).toBeDefined());
     expect(render().map(text).join(" ")).not.toContain("is scheduled for");
-    expect(button("Schedule capacity increase").props.disabled).toBe(true);
+    expect(button("Schedule Capacity Increase").props.disabled).toBe(true);
     h.fetch.mockResolvedValueOnce(
       response(
         status({ pending: { plan_id: "voice-regular", effective_at: "2026-10-05T00:00:00Z" } }),
       ),
     );
-    button("Refresh options").props.onClick?.();
+    button("Refresh Options").props.onClick?.();
     render();
     await vi.waitFor(() => expect(render().map(text).join(" ")).toContain("is scheduled for"));
     expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "POST")).toHaveLength(1);
@@ -211,11 +211,11 @@ describe("paid capacity scheduling", () => {
 
   it("refreshes parent billing when renewal has changed the current plan", async () => {
     h.fetch.mockResolvedValueOnce(response(status({ current_plan_id: "voice-regular" })));
-    button("Increase capacity").props.onClick?.();
+    button("Increase Capacity").props.onClick?.();
     render();
-    await vi.waitFor(() => expect(button("Refresh options")).toBeDefined());
+    await vi.waitFor(() => expect(button("Refresh Options")).toBeDefined());
     expect(render().some((node) => node.props.type === "radio")).toBe(false);
-    button("Refresh options").props.onClick?.();
+    button("Refresh Options").props.onClick?.();
     expect(h.refreshBilling).toHaveBeenCalledTimes(1);
     expect(h.fetch.mock.calls.some(([, options]) => options?.method === "POST")).toBe(false);
   });
@@ -233,21 +233,21 @@ describe("paid capacity scheduling", () => {
       ),
     );
     render();
-    await vi.waitFor(() => expect(button("Review capacity change")).toBeDefined());
-    button("Review capacity change").props.onClick?.();
+    await vi.waitFor(() => expect(button("Review Capacity Change")).toBeDefined());
+    button("Review Capacity Change").props.onClick?.();
     expect(render().map(text).join(" ")).toContain(
       "Capacity change wasn’t confirmed. Remove it, then try again.",
     );
     expect(render().map(text).join(" ")).not.toContain("is scheduled for");
     h.fetch.mockResolvedValueOnce(response({ status: "unknown" }));
-    button("Remove unconfirmed change").props.onClick?.();
-    await vi.waitFor(() => expect(button("Refresh options")).toBeDefined());
-    expect(button("Remove unconfirmed change")).toBeDefined();
+    button("Remove Unconfirmed Change").props.onClick?.();
+    await vi.waitFor(() => expect(button("Refresh Options")).toBeDefined());
+    expect(button("Remove Unconfirmed Change")).toBeDefined();
     h.fetch
       .mockResolvedValueOnce(response({ status: "removed" }))
       .mockResolvedValueOnce(response(status()));
-    button("Remove unconfirmed change").props.onClick?.();
-    await vi.waitFor(() => expect(button("Schedule capacity increase")).toBeDefined());
+    button("Remove Unconfirmed Change").props.onClick?.();
+    await vi.waitFor(() => expect(button("Schedule Capacity Increase")).toBeDefined());
     expect(render().map(text).join(" ")).not.toContain("wasn’t confirmed");
   });
 
@@ -257,19 +257,19 @@ describe("paid capacity scheduling", () => {
         status({ pending: { plan_id: "voice-regular", effective_at: "2026-10-05T00:00:00Z" } }),
       ),
     );
-    button("Increase capacity").props.onClick?.();
+    button("Increase Capacity").props.onClick?.();
     render();
-    await vi.waitFor(() => expect(button("Remove scheduled change")).toBeDefined());
-    expect(render().map(text).join(" ")).toContain("then use Manage billing");
+    await vi.waitFor(() => expect(button("Remove Scheduled Change")).toBeDefined());
+    expect(render().map(text).join(" ")).toContain("then use Manage Billing");
     h.fetch.mockResolvedValueOnce(response({ status: "unknown" }));
-    button("Remove scheduled change").props.onClick?.();
-    await vi.waitFor(() => expect(button("Refresh options")).toBeDefined());
+    button("Remove Scheduled Change").props.onClick?.();
+    await vi.waitFor(() => expect(button("Refresh Options")).toBeDefined());
     expect(render().map(text).join(" ")).toContain("is scheduled for");
     h.fetch
       .mockResolvedValueOnce(response({ status: "removed" }))
       .mockResolvedValueOnce(response(status()));
-    button("Remove scheduled change").props.onClick?.();
-    await vi.waitFor(() => expect(button("Schedule capacity increase")).toBeDefined());
+    button("Remove Scheduled Change").props.onClick?.();
+    await vi.waitFor(() => expect(button("Schedule Capacity Increase")).toBeDefined());
     expect(render().map(text).join(" ")).not.toContain("is scheduled for");
     expect(h.fetch.mock.calls.filter(([, options]) => options?.method === "DELETE")).toHaveLength(
       2,

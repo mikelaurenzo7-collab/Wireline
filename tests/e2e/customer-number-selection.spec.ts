@@ -70,7 +70,7 @@ test("customers search their own area code and activate only the exact selected 
   await page.getByRole("textbox", { name: "Area Code (Optional)" }).fill("561");
   const activate = page.getByRole("button", { name: "Activate Line", exact: true });
   await expect(activate).toBeDisabled();
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect(page.getByRole("radio")).toHaveCount(2);
   expect(searched).toEqual({ area_code: "561" });
   expect(requests).toEqual([]);
@@ -110,10 +110,10 @@ test("changing area codes clears the selection and ignores an earlier search res
   });
   const area = page.getByRole("textbox", { name: "Area Code (Optional)" });
   await area.fill("312");
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect.poll(() => firstStarted).toBe(true);
   await area.fill("815");
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect(
     page.getByRole("radio", { name: "(815) 555-0101 Local", exact: true }),
   ).toBeVisible();
@@ -150,12 +150,12 @@ for (const kind of ["unavailable", "malformed", "null", "wrong-area"] as const) 
       ),
     );
     await page.getByRole("textbox", { name: "Area Code (Optional)" }).fill("773");
-    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+    await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
     await expect(page.getByText("Lines Need Attention", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeDisabled();
     expect(purchases).toBe(0);
     recovered = true;
-    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+    await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
     await expect(page.getByRole("radio", { name: "(773) 555-0101", exact: true })).toBeVisible();
     await expect(page.getByText("Lines Need Attention", { exact: true })).toHaveCount(0);
   });
@@ -172,11 +172,11 @@ test("a full plan offers billing recovery even when new checkout is paused", asy
       },
     }),
   );
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect(
     page.getByText("Your plan includes 1 dedicated line", { exact: false }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Open billing", exact: true })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Open Billing", exact: true })).toHaveAttribute(
     "href",
     "/settings/billing",
   );
@@ -197,7 +197,7 @@ for (const checkout of [false, "unavailable"] as const) {
         json: { available: [{ phone_number: "+13125550101", region: "Chicago, IL" }] },
       }),
     );
-    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+    await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
     await page.getByRole("radio", { name: "(312) 555-0101 Chicago, IL", exact: true }).check();
     await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toBeEnabled();
     await expect(page.getByText("Live activation is paused", { exact: true })).toHaveCount(0);
@@ -220,7 +220,7 @@ test("an unactivated customer gets the paused-sales explanation after the entitl
       json: { code: "ACTIVATION_REQUIRED", error: "Activate a paid plan." },
     }),
   );
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await expect(page.getByText("Live activation is paused", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activate Line", exact: true })).toHaveCount(0);
   expect(purchases).toBe(0);
@@ -253,7 +253,7 @@ test("a reserved line only reports connected after routing is confirmed", async 
   await expect(line.getByText("Connection not confirmed", { exact: true })).toBeVisible();
   await expect(line.getByText("Connected", { exact: true })).toHaveCount(0);
   confirmed = true;
-  await line.getByRole("button", { name: "Retry connection", exact: true }).click();
+  await line.getByRole("button", { name: "Retry Connection", exact: true }).click();
   await expect(line.getByText("Connected", { exact: true })).toBeVisible();
   expect(purchases).toBe(0);
 });
@@ -268,7 +268,7 @@ test("the number choices and activation reflow at 320px with enlarged text", asy
       },
     }),
   );
-  await page.getByRole("button", { name: "Find numbers", exact: true }).click();
+  await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
   await page.getByRole("radio", { name: "(212) 555-0101 New York, NY", exact: true }).check();
   await page.evaluate(() => {
     document.documentElement.style.fontSize = "200%";

@@ -463,7 +463,7 @@ export default function ReportingPreferences() {
 
       <div className="flex justify-end">
         <Button type="button" disabled={saving} onClick={() => void save()}>
-          {saving ? "Saving…" : "Save report settings"}
+          {saving ? "Saving…" : "Save Report Settings"}
         </Button>
       </div>
     </fieldset>

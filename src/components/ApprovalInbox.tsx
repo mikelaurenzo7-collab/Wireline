@@ -724,7 +724,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
           title="Approvals Unavailable"
           action={
             <ShadButton type="button" size="sm" variant="secondary" onClick={() => void load()}>
-              Try again
+              Try Again
             </ShadButton>
           }
         >
@@ -769,7 +769,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                   )
                 }
               >
-                Show more ({actionableTasks.length - visibleCount} remaining)
+                Show More ({actionableTasks.length - visibleCount} remaining)
               </ShadButton>
             ) : null}
           </div>
@@ -828,7 +828,7 @@ export default function ApprovalInbox({ embedded = false }: ApprovalInboxProps) 
                 setVisibleCount((count) => Math.min(count + APPROVAL_PAGE_SIZE, bucketItems.length))
               }
             >
-              Show more ({bucketItems.length - visibleCount} remaining)
+              Show More ({bucketItems.length - visibleCount} remaining)
             </ShadButton>
           ) : null}
         </div>

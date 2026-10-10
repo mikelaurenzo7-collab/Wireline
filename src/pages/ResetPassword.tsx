@@ -264,12 +264,12 @@ export default function ResetPassword() {
                 disabled={loading}
                 className="w-full px-5 py-3.5 min-h-[48px] rounded-md text-sm font-medium"
               >
-                {loading ? "Updating…" : "Reset password"}
+                {loading ? "Updating…" : "Reset Password"}
               </Button>
 
               <div className="text-center pt-2">
                 <Link to="/signin" className="text-caption font-medium text-brand hover:underline">
-                  ← Back to sign in
+                  ← Back to Sign In
                 </Link>
               </div>
             </form>

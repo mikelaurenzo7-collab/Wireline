@@ -130,7 +130,7 @@ describe("agent action editor loading", () => {
     firstAction().props.onChange!();
     const editor = elements(render());
     const save = editor.find(
-      (node) => node.type === "button" && textOf(node).includes("Save actions"),
+      (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!;
     const enableGroup = editor.find(
       (node) => node.props["aria-label"] === "Enable all CRM actions",
@@ -159,7 +159,7 @@ describe("agent action editor loading", () => {
         ?.props.disabled,
     ).toBe(false);
     elements(render()).find(
-      (node) => node.type === "button" && textOf(node).includes("Save actions"),
+      (node) => node.type === "button" && textOf(node).includes("Save Actions"),
     )!.props.onClick!();
     settle(json({ enabledTools: submitted }));
     await flush();
@@ -212,7 +212,7 @@ describe("agent action editor loading", () => {
     await flush();
 
     expect(textOf(render())).not.toContain("Loading actions");
-    expect(textOf(render())).toContain("Save actions");
+    expect(textOf(render())).toContain("Save Actions");
   });
 
   it("does not refetch and overwrite loaded edits when collapsed and reopened", async () => {
@@ -233,7 +233,7 @@ describe("agent action editor loading", () => {
     toggle();
     await flush();
 
-    expect(textOf(render())).toContain("Save actions");
+    expect(textOf(render())).toContain("Save Actions");
     expect(firstAction().props.checked).toBe(true);
     expect(h.fetch).toHaveBeenCalledTimes(calls);
   });

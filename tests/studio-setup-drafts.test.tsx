@@ -166,7 +166,7 @@ function button(label: string) {
   )!;
 }
 async function save() {
-  button("Save changes").props.onClick!();
+  button("Save Changes").props.onClick!();
   await vi.waitFor(() => expect(drafts.read(h.botId).saving).toBe(false));
 }
 beforeEach(() => {
@@ -211,7 +211,7 @@ describe("Studio inspector draft lifecycle", () => {
   it("names the saved Knowledge and rules destination and preserves the active Bot", async () => {
     await mount();
     const link = elements(render()).find(
-      (element) => element.type === "a" && text(element) === "Knowledge & rules",
+      (element) => element.type === "a" && text(element) === "Knowledge & Rules",
     );
     expect(link?.props.to).toBe(`/knowledge?agent=${h.botId}`);
   });
@@ -389,7 +389,7 @@ describe("Studio inspector draft lifecycle", () => {
     h.fetch.mockImplementation((path: string, options?: RequestInit) =>
       path === "/api/train/extract" ? pending.promise : usual(path, options),
     );
-    button("Save changes").props.onClick!();
+    button("Save Changes").props.onClick!();
     await vi.waitFor(() =>
       expect(h.fetch.mock.calls.some(([path]) => path === "/api/train/extract")).toBe(true),
     );

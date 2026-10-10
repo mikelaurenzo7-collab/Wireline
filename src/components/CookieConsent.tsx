@@ -158,7 +158,7 @@ export default function CookieConsent() {
           transition={{ type: "spring", stiffness: 400, damping: 36 }}
           className="fixed z-[9999] left-3 right-3 sm:left-auto sm:right-4 sm:w-[720px] sm:max-w-[calc(100vw-2rem)] max-lg:bottom-[var(--wl-fixed-overlay-bottom)] lg:bottom-5 max-h-[calc(100dvh-var(--wl-fixed-overlay-bottom)-1rem)] lg:max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain rounded-md"
           role="region"
-          aria-label="Privacy choices"
+          aria-label="Privacy Choices"
           tabIndex={-1}
           ref={privacyPanelRef}
         >
@@ -174,7 +174,7 @@ export default function CookieConsent() {
 
             <div className="flex-1 min-w-0 space-y-3 sm:flex sm:items-center sm:gap-3 sm:space-y-0">
               <h2 className="pr-10 text-sm font-semibold leading-snug sm:sr-only">
-                Privacy choices
+                Privacy Choices
               </h2>
               <p className="wl-balance text-sm leading-relaxed text-foreground/80 sm:flex-1">
                 Essential storage keeps{" "}
@@ -207,7 +207,7 @@ export default function CookieConsent() {
                     onClick={() => saveChoice("denied")}
                     className="min-w-0 sm:min-w-[132px]"
                   >
-                    Essential only
+                    Essential Only
                   </ShadButton>
                   <ShadButton
                     type="button"
@@ -216,7 +216,7 @@ export default function CookieConsent() {
                     onClick={() => saveChoice("granted")}
                     className="min-w-0 sm:min-w-[148px]"
                   >
-                    Allow optional
+                    Allow Optional
                   </ShadButton>
                 </div>
               )}

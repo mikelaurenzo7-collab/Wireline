@@ -290,7 +290,7 @@ describe("outbound dialog viewport ownership", () => {
       nodes.some((node) => node.type === "a" && node.props.children === "Test in Studio"),
     ).toBe(true);
     expect(
-      nodes.some((node) => node.type === "a" && node.props.children === "Review compliance"),
+      nodes.some((node) => node.type === "a" && node.props.children === "Review Compliance"),
     ).toBe(true);
   });
 });

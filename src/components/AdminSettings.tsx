@@ -49,15 +49,6 @@ const CLOSED_CONFIRM: ConfirmState = {
   confirmLabel: "Confirm",
   onConfirm: () => {},
 };
-const ADMIN_TAB_SHORT_LABELS: Record<string, string> = {
-  accounts: "Acct",
-  branding: "Brand",
-  carrier: "Route",
-  subscription: "Bill",
-  team: "Team",
-  flywheel: "Grow",
-  activity: "Audit",
-};
 
 interface AdminSettingsState {
   subscription_status: string;
@@ -325,7 +316,7 @@ function AdminSettingsContent() {
       title: "Permanently Release Number",
       message:
         "This permanently releases the number from BotBound and its carrier. Calls and texts stop immediately, and the number may not be recoverable. This cannot be undone. Releasing does not reset the 31-day replacement limit.",
-      confirmLabel: "Release number",
+      confirmLabel: "Release Number",
       onConfirm: async () => {
         setIsDeletingNumber(id);
         try {
@@ -390,22 +381,25 @@ function AdminSettingsContent() {
             to="/settings"
             className="inline-flex min-h-10 items-center rounded-xl px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            Account settings
+            Account Settings
           </Link>
         </div>
-        <WorkspaceTabStrip
-          ariaLabel="Admin sections"
-          activeId={activeTab}
-          onSelect={(id) => navigate(id === "team" ? "/settings/team" : `/admin?tab=${id}`)}
-          density="compact"
-          wrap="always"
-          className="mb-3 border-b border-border/70 pb-3"
-          tabs={VALID_TABS.map((tab) => ({
-            id: tab,
-            label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
-            shortLabel: ADMIN_TAB_SHORT_LABELS[tab],
-          }))}
-        />
+        {/* Phones get the same section picker as Settings, Calls, and Calendar
+            instead of seven abbreviated chips wrapping onto two rows. */}
+        <div className="mb-3 border-b border-border/70 pb-3">
+          <WorkspaceTabStrip
+            ariaLabel="Admin sections"
+            activeId={activeTab}
+            onSelect={(id) => navigate(id === "team" ? "/settings/team" : `/admin?tab=${id}`)}
+            density="compact"
+            wrap="always"
+            mobileSelect
+            tabs={VALID_TABS.map((tab) => ({
+              id: tab,
+              label: OPS_ADMIN.tabLabels[tab as OpsAdminTab] ?? tab,
+            }))}
+          />
+        </div>
         <WorkspacePageFrame mode="operate" className="gap-0 pb-0">
           <div className="h-full flex flex-col">
             <IntegrationHealthBanner

@@ -83,7 +83,7 @@ function descendants(node: ReactNode): Element[] {
 function render() {
   hooks.stateCursor = hooks.refCursor = hooks.effectCursor = 0;
   const elements = descendants(CookieConsent());
-  const region = elements.find((element) => element.props["aria-label"] === "Privacy choices");
+  const region = elements.find((element) => element.props["aria-label"] === "Privacy Choices");
   if (region?.props.ref)
     region.props.ref.current = Object.assign(panel, { contains: panelContains });
   for (const { index, run } of hooks.effects.splice(0)) {
@@ -161,8 +161,8 @@ afterEach(() => {
 
 describe("privacy choices return focus", () => {
   it.each([
-    ["Essential only", "denied"],
-    ["Allow optional", "granted"],
+    ["Essential Only", "denied"],
+    ["Allow Optional", "granted"],
     ["Keep advertising measurement off and dismiss", "denied"],
   ])("returns to the opener after %s and preserves its choice", (label, expectedChoice) => {
     open();
@@ -182,7 +182,7 @@ describe("privacy choices return focus", () => {
     open();
     escape(true);
     expect(documentState.activeElement).toBe(panel);
-    expect(render().some((element) => element.props["aria-label"] === "Privacy choices")).toBe(
+    expect(render().some((element) => element.props["aria-label"] === "Privacy Choices")).toBe(
       true,
     );
   });
@@ -199,7 +199,7 @@ describe("privacy choices return focus", () => {
     open();
     if (state === "removed") opener.isConnected = false;
     else opener.hidden = true;
-    choose("Essential only");
+    choose("Essential Only");
     expect(opener.focus).not.toHaveBeenCalled();
   });
 
@@ -216,7 +216,7 @@ describe("privacy choices return focus", () => {
     open();
     events.dispatchEvent(new Event("wireline:open-privacy-choices"));
     render();
-    choose("Essential only");
+    choose("Essential Only");
     expect(documentState.activeElement).toBe(opener);
   });
 

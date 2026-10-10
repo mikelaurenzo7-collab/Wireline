@@ -126,7 +126,7 @@ describe("native Calendar availability UI", () => {
     );
     render();
     expect(h.fetch).not.toHaveBeenCalled();
-    expect(text(render())).toContain("Enable booking");
+    expect(text(render())).toContain("Enable Booking");
     await submit();
     expect(h.fetch).toHaveBeenCalledWith(
       "/api/calendar/settings",
@@ -174,7 +174,7 @@ describe("native Calendar availability UI", () => {
     await pending;
     expect(saved).not.toHaveBeenCalled();
     expect(text(render())).toContain("Reload Calendar to check it before retrying.");
-    expect(button("Enable booking").props.disabled).toBe(false);
+    expect(button("Enable Booking").props.disabled).toBe(false);
   });
 
   it("requires hours before enabling but allows an already configured calendar to be paused", async () => {
@@ -194,7 +194,7 @@ describe("native Calendar availability UI", () => {
     h.fetch.mockResolvedValueOnce(
       response({ google: { status: "success" }, outlook: { status: "partial" } }),
     );
-    await button("Sync busy times").props.onClick!();
+    await button("Sync Busy Times").props.onClick!();
     expect(text(render())).toContain("Outlook did not fully sync");
     expect(text(render())).not.toContain("Busy times refreshed at");
     expect(saved).not.toHaveBeenCalled();
@@ -205,7 +205,7 @@ describe("native Calendar availability UI", () => {
     h.fetch.mockResolvedValueOnce(
       response({ google: { status: "skipped" }, outlook: { status: "success" } }),
     );
-    await button("Sync busy times").props.onClick!();
+    await button("Sync Busy Times").props.onClick!();
     expect(text(render())).toContain("Busy times refreshed at");
     expect(text(render())).not.toContain("did not fully sync");
     expect(saved).not.toHaveBeenCalled();
@@ -214,17 +214,17 @@ describe("native Calendar availability UI", () => {
   it("does not claim busy times are refreshed when the provider response is missing", async () => {
     h.fetch.mockResolvedValueOnce(response({ accounts: [{ provider: "microsoft" }] }));
     h.fetch.mockResolvedValueOnce(response({ google: { status: "success" } }));
-    await button("Sync busy times").props.onClick!();
+    await button("Sync Busy Times").props.onClick!();
     expect(text(render())).toContain("Outlook did not fully sync");
     expect(text(render())).not.toContain("Busy times refreshed at");
   });
 
   it("keeps native booking independent when no provider is connected", async () => {
     h.fetch.mockResolvedValueOnce(response({ accounts: [] }));
-    await button("Sync busy times").props.onClick!();
+    await button("Sync Busy Times").props.onClick!();
     expect(h.fetch).toHaveBeenCalledOnce();
     expect(text(render())).toContain("Connect Google or Outlook to import busy times.");
-    expect(button("Enable booking").props.disabled).toBe(false);
+    expect(button("Enable Booking").props.disabled).toBe(false);
   });
 
   it("accepts only complete, valid response settings and preserves a saved timezone", () => {

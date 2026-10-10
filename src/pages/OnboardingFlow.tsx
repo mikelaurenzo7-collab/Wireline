@@ -37,7 +37,7 @@ export default function OnboardingFlow() {
           showFallback
             ? [
                 { href: CREATE_DESTINATION, label: "Continue now" },
-                { href: "/", label: "Back home", variant: "secondary" },
+                { href: "/", label: "Back Home", variant: "secondary" },
               ]
             : []
         }

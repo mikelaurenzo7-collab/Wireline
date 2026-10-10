@@ -225,7 +225,7 @@ describe("sequence draft continuity", () => {
     render();
     h.effects[0]();
     await flush();
-    button("Create sequence").props.onClick!();
+    button("Create Sequence").props.onClick!();
     elements(render()).find((node) => node.props.id === "builder-name")!.props.onChange!({
       target: { value: "Consultation Follow-Up" },
     });
@@ -247,7 +247,7 @@ describe("sequence draft continuity", () => {
     expect(attempts).toBe(1);
     expect(messageField().props.value).toBe(message);
 
-    finishSave(new Response(JSON.stringify({ error: "Try again" }), { status: 503 }));
+    finishSave(new Response(JSON.stringify({ error: "Try Again" }), { status: 503 }));
     await flush();
     expect(messageField().props.disabled).toBe(false);
     expect(messageField().props.value).toBe(message);

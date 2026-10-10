@@ -61,7 +61,7 @@ export default function IntegrationHealthBanner({ health, onOpenIntegrations }: 
               onClick={onOpenIntegrations}
               className="h-auto p-0 wl-label text-brand"
             >
-              Open integrations
+              Open Integrations
             </ShadButton>
           )}
         </div>

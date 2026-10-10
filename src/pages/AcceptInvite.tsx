@@ -206,7 +206,7 @@ export default function AcceptInvite() {
                 {switchingAccount
                   ? "Signing Out…"
                   : user
-                    ? "Sign in with another email"
+                    ? "Sign In with Another Email"
                     : "Sign In"}
               </button>
             </div>

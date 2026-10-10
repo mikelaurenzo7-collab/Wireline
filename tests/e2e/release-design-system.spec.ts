@@ -93,13 +93,13 @@ for (const viewport of [
       expect((await heading.boundingBox())?.height).toBeLessThanOrEqual(1);
     }
     await page.getByRole("button", { name: "Add Line", exact: true }).click();
-    await page.getByRole("button", { name: "Find numbers", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Go live", exact: true });
+    await page.getByRole("button", { name: "Find Numbers", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Go Live", exact: true });
     await expect(dialog).toBeVisible();
     await expect(
       dialog.getByText("Checkout is temporarily unavailable. Your Bot is saved.", { exact: true }),
     ).toBeVisible();
-    const plans = dialog.getByRole("button", { name: "Checkout paused", exact: true });
+    const plans = dialog.getByRole("button", { name: "Checkout Paused", exact: true });
     await expect(plans).toBeHidden();
     await page.evaluate(() => document.fonts.ready);
     await expect(dialog).toHaveCSS("opacity", "1");
@@ -110,7 +110,7 @@ for (const viewport of [
         .then(() => testInfo.outputPath(`activation-${viewport.width}.png`)),
       contentType: "image/png",
     });
-    await dialog.getByText("View plans", { exact: true }).click();
+    await dialog.getByText("View Plans", { exact: true }).click();
     await expect(plans).toHaveCount(1);
     await expect(dialog.getByRole("checkbox")).toHaveCount(3);
     await expect(plans).toBeDisabled();
@@ -259,7 +259,7 @@ test("pricing keeps its header, annual prices, and both mobile actions readable 
     `$${currentPlan.price_usd_annual.toLocaleString()}/year`,
   );
   await expect(
-    selectedPackage.getByRole("link", { name: "Build with these channels", exact: true }),
+    selectedPackage.getByRole("link", { name: "Build with These Channels", exact: true }),
   ).toHaveAttribute("href", `/signup?plan=${currentPlan.id}&interval=year`);
   await expectContentFits(page.locator("#plans, #plans *"));
 
@@ -303,7 +303,7 @@ test("billing reflows its interval, cards, and dock without losing bottom action
   await expect(selectedPackage).toContainText(
     `$${callsPlan.price_usd_annual.toLocaleString()}/year`,
   );
-  await expect(selectedPackage.getByRole("button", { name: "Checkout paused" })).toBeDisabled();
+  await expect(selectedPackage.getByRole("button", { name: "Checkout Paused" })).toBeDisabled();
   const rows = await page
     .locator(".wl-shell-dock-item")
     .evaluateAll(
@@ -419,13 +419,13 @@ test("global overlays clear wrapped workspace and marketing controls", async ({ 
       )
       .toBeLessThan(chromeBox.y);
     await page.evaluate(() => window.dispatchEvent(new Event("wireline:open-privacy-choices")));
-    const privacy = page.getByRole("region", { name: "Privacy choices" });
+    const privacy = page.getByRole("region", { name: "Privacy Choices" });
     await expect(privacy).toBeVisible();
     await expectContentFits(privacy.locator("*"));
     await expect
       .poll(() => privacy.evaluate((el) => el.getBoundingClientRect().bottom))
       .toBeLessThan(chromeBox.y);
-    const lastChoice = privacy.getByRole("button", { name: "Allow optional", exact: true });
+    const lastChoice = privacy.getByRole("button", { name: "Allow Optional", exact: true });
     await lastChoice.scrollIntoViewIfNeeded();
     const choiceBox = (await lastChoice.boundingBox())!;
     expect(choiceBox.y).toBeGreaterThanOrEqual(0);

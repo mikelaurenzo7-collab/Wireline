@@ -185,7 +185,7 @@ describe("authenticated Bot flow", () => {
     expect(templates).toContain('aria-label="Template category filter"');
     expect(templates).toContain('aria-label="Template category"');
     expect(templates).toContain("value={activeCategory}");
-    expect(templates).toContain("Clear search");
+    expect(templates).toContain("Clear Search");
     expect(templates).not.toContain("hidden hidden");
   });
 

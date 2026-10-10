@@ -194,7 +194,7 @@ export function ErrCard({ error, onRetry }: { error: string; onRetry?: () => voi
             onClick={onRetry}
             className="border-destructive/40 text-destructive hover:bg-destructive/10"
           >
-            <RotateCw className="w-3.5 h-3.5" /> Try again
+            <RotateCw className="w-3.5 h-3.5" /> Try Again
           </Button>
         )}
       </div>

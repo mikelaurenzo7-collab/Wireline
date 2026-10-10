@@ -96,13 +96,13 @@ describe("account deletion disclosure recovery", () => {
     await mount();
     element("details").props.onToggle!({ currentTarget: { open: true } });
     element("input").props.onChange!({ target: { value: "DELET" } });
-    expect(button("Delete account").props.disabled).toBe(true);
+    expect(button("Delete Account").props.disabled).toBe(true);
     element("input").props.onChange!({ target: { value: "DELETE" } });
-    expect(button("Delete account").props.disabled).toBe(false);
+    expect(button("Delete Account").props.disabled).toBe(false);
 
     let finish!: (result: Response) => void;
     h.fetch.mockReturnValueOnce(new Promise<Response>((resolve) => (finish = resolve)));
-    const scheduling = button("Delete account").props.onClick!();
+    const scheduling = button("Delete Account").props.onClick!();
     expect(text(element("summary"))).toBe("Scheduling Deletion…");
     element("details").props.onToggle!({ currentTarget: { open: false } });
     expect(element("details").props.open).toBe(false);
@@ -115,14 +115,14 @@ describe("account deletion disclosure recovery", () => {
 
     element("details").props.onToggle!({ currentTarget: { open: true } });
     h.fetch.mockReturnValueOnce(new Promise<Response>((resolve) => (finish = resolve)));
-    const canceling = button("Keep my account").props.onClick!();
+    const canceling = button("Keep My Account").props.onClick!();
     element("details").props.onToggle!({ currentTarget: { open: false } });
     finish(response({ billing_reactivation_required: true }));
     await canceling;
     expect(element("details").props.open).toBe(true);
     expect(text(element("summary"))).toBe("Delete Account");
     expect(text(element("aside"))).toContain("did not restart billing automatically");
-    expect(button("Delete account").props.disabled).toBe(true);
+    expect(button("Delete Account").props.disabled).toBe(true);
   });
 
   it("keeps an existing pending deletion identifiable when collapsed", async () => {
@@ -131,7 +131,7 @@ describe("account deletion disclosure recovery", () => {
     element("details").props.onToggle!({ currentTarget: { open: false } });
     expect(element("details").props.open).toBe(false);
     expect(text(element("summary"))).toBe("Deletion Scheduled");
-    expect(button("Keep my account")).toBeDefined();
+    expect(button("Keep My Account")).toBeDefined();
   });
 
   it("reopens a failed scheduling result and allows retry", async () => {
@@ -140,12 +140,12 @@ describe("account deletion disclosure recovery", () => {
     element("input").props.onChange!({ target: { value: "DELETE" } });
     let finish!: (result: Response) => void;
     h.fetch.mockReturnValueOnce(new Promise<Response>((resolve) => (finish = resolve)));
-    const scheduling = button("Delete account").props.onClick!();
+    const scheduling = button("Delete Account").props.onClick!();
     element("details").props.onToggle!({ currentTarget: { open: false } });
     finish(response({ error: "Please try again." }, 503));
     await scheduling;
     expect(element("details").props.open).toBe(true);
     expect(element("aside").props.title).toBe("Deletion Unavailable");
-    expect(button("Delete account").props.disabled).toBe(false);
+    expect(button("Delete Account").props.disabled).toBe(false);
   });
 });

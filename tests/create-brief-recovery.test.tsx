@@ -216,7 +216,7 @@ describe("first-brief recovery after Bot creation", () => {
       expect(text(render())).toContain("starting brief");
       h.fetch.mockImplementation(usualFetch);
       elements(render()).find(
-        (element) => element.type === "button" && text(element) === "Save changes",
+        (element) => element.type === "button" && text(element) === "Save Changes",
       )!.props.onClick!();
       await vi.waitFor(() => expect(knowledge().props.value).toBe(""));
       await mount("setup");
@@ -315,7 +315,7 @@ describe("pending brief ownership", () => {
       path.endsWith("/mark") ? pending.promise : usualFetch(path),
     );
     const saving = elements(render()).find(
-      (element) => element.type === "button" && text(element) === "Save changes",
+      (element) => element.type === "button" && text(element) === "Save Changes",
     )!.props.onClick!();
     setCreateBriefRecoveryOwner("other-owner");
     pending.resolve(json({ ok: true }));

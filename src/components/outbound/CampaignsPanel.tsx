@@ -300,7 +300,7 @@ export default function CampaignsPanel() {
             disabled={creating || !name.trim()}
             onClick={() => void createCampaign()}
           >
-            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create draft"}
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Draft"}
           </ShadButton>
         </div>
       )}

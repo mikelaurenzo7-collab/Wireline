@@ -242,7 +242,7 @@ export default function MailboxConnectionCard() {
           {access.status === "error" ? (
             <StatusNotice
               tone="warning"
-              title="Connection access unavailable"
+              title="Connection Access Unavailable"
               className="mt-4"
               action={
                 <Button size="sm" variant="secondary" onClick={access.retry}>
@@ -377,7 +377,7 @@ export default function MailboxConnectionCard() {
                         {isBusy ? (
                           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                         ) : null}
-                        {providerAccounts.length ? "Connect another" : `Connect ${label}`}
+                        {providerAccounts.length ? "Connect Another" : `Connect ${label}`}
                       </Button>
                     </div>
                   ) : null}

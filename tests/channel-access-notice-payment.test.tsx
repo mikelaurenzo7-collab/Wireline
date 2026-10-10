@@ -29,7 +29,7 @@ describe("channel access notice", () => {
     "asks a %s owner to update payment instead of choosing a package",
     (status) => {
       const notice = ChannelAccessNotice({ access: access(status), channel: "voice" })!;
-      expect(notice.props.title).toBe("Payment needs attention");
+      expect(notice.props.title).toBe("Payment Needs Attention");
       expect(notice.props.tone).toBe("warning");
       expect(text(notice.props.children)).toContain(
         "aren't answered until your payment is updated",

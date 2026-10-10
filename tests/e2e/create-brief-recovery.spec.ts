@@ -85,7 +85,7 @@ for (const sessionFailure of ["unavailable", "offline"] as const) {
     failSession = false;
     await page.goto(`/studio?agent=${bot.id}&section=setup`);
     await expect(knowledge).toHaveValue(brief);
-    await page.getByRole("button", { name: "Save changes", exact: true }).click();
+    await page.getByRole("button", { name: "Save Changes", exact: true }).click();
     await expect(
       page.getByText("Saved. Run a test before sending live traffic.", { exact: true }),
     ).toBeVisible();

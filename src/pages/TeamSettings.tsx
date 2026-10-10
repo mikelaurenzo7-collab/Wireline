@@ -346,7 +346,7 @@ export default function TeamSettings() {
                   ) : (
                     <>
                       <Plus size={16} />
-                      Send invite
+                      Send Invite
                     </>
                   )}
                 </Button>

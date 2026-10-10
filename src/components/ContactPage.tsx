@@ -168,7 +168,7 @@ export function ContactPage() {
           className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back home
+          Back Home
         </Link>
         <div className="mx-auto mt-8 max-w-3xl text-center">
           <h1 className="marketing-hero-title wl-stitch-marketing-hero mx-auto max-w-[18ch] text-balance text-[clamp(1.9rem,3.4vw,2.9rem)]">
@@ -367,7 +367,7 @@ export function ContactPage() {
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
-                {submitting ? "Sending…" : "Send message"}
+                {submitting ? "Sending…" : "Send Message"}
               </button>
             </form>
           )}

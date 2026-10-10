@@ -27,7 +27,7 @@ describe("activation path contract", () => {
     expect(overview).toContain("ActivationChecklist");
     expect(studioSetup).not.toContain("ActivationChecklist");
     expect(studioSetup).toContain("Tone & Knowledge");
-    expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save changes"}');
+    expect(studioSetup).toContain('{applyingSetup ? "Saving…" : "Save Changes"}');
     expect(overview).toContain("FirstRunWorkspace");
     expect(overview).toContain("degraded && !hasBots");
     expect(overview).toContain("WorkspaceRecovery");

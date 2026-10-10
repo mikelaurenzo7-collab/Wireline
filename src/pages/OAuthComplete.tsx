@@ -154,7 +154,7 @@ export default function OAuthComplete() {
               to="/signin"
               className={`marketing-btn-secondary ${needsSignup ? "mt-3" : "mt-7"} inline-flex min-h-12 w-full items-center justify-center`}
             >
-              Back to sign in
+              Back to Sign In
             </Link>
           ) : null}
         </section>

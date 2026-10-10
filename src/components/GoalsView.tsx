@@ -193,7 +193,7 @@ function GoalEditor({
           ) : (
             <Check className="w-3.5 h-3.5" />
           )}
-          Save goal
+          Save Goal
         </ShadButton>
         <ShadButton
           type="button"
@@ -377,7 +377,7 @@ function EmptyMetricCard({
         className="mt-auto min-h-11 w-full rounded-md text-brand text-[length:var(--wireline-typography-overline-size)] uppercase tracking-[0.14em] hover:bg-brand/5"
       >
         <Plus className="w-3.5 h-3.5" />
-        Set a target
+        Set a Target
       </ShadButton>
     </div>
   );

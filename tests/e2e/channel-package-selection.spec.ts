@@ -35,8 +35,8 @@ test("all channel capacities retain exact annual signup intent in one readable s
     document.documentElement.style.fontSize = "200%";
     await document.fonts.ready;
   });
-  const privacy = page.getByRole("region", { name: "Privacy choices" });
-  await privacy.getByRole("button", { name: "Essential only", exact: true }).click();
+  const privacy = page.getByRole("region", { name: "Privacy Choices" });
+  await privacy.getByRole("button", { name: "Essential Only", exact: true }).click();
   await expect(privacy).toBeHidden();
   const labels = { voice: "Calls", email: "Email", sms: "SMS" } as const;
   for (const plan of plans) {
@@ -168,25 +168,25 @@ test("an existing Calls subscription schedules more capacity without another che
   await page.goto("/settings/billing");
   const capacity = page.getByRole("region", { name: "Plan capacity" });
   await capacity
-    .getByRole("button", { name: /^(Increase capacity|Scheduled capacity change)$/ })
+    .getByRole("button", { name: /^(Increase Capacity|Scheduled Capacity Change)$/ })
     .click();
   await capacity.getByRole("radio", { name: /^Regular\b/ }).check();
   for (const checkbox of await capacity.getByRole("checkbox").all())
     await expect(checkbox).toBeDisabled();
   await expect(capacity).toContainText("after successful renewal payment");
-  await capacity.getByRole("button", { name: "Schedule capacity increase", exact: true }).click();
+  await capacity.getByRole("button", { name: "Schedule Capacity Increase", exact: true }).click();
   await expect(capacity).toContainText("BotBound Calls Regular is scheduled for");
   await expect(capacity).toContainText("Your current capacity stays available until then.");
   await page.reload();
   await capacity
-    .getByRole("button", { name: /^(Increase capacity|Scheduled capacity change)$/ })
+    .getByRole("button", { name: /^(Increase Capacity|Scheduled Capacity Change)$/ })
     .click();
   await expect(capacity).toContainText("BotBound Calls Regular is scheduled for");
   expect(posts).toBe(1);
   expect(checkoutPosts).toBe(0);
-  await capacity.getByRole("button", { name: "Remove scheduled change", exact: true }).click();
+  await capacity.getByRole("button", { name: "Remove Scheduled Change", exact: true }).click();
   await expect(
-    capacity.getByRole("button", { name: "Schedule capacity increase", exact: true }),
+    capacity.getByRole("button", { name: "Schedule Capacity Increase", exact: true }),
   ).toBeVisible();
   await expect(capacity).not.toContainText("is scheduled for");
   expect(await capacity.evaluate((element) => element.scrollWidth <= element.clientWidth + 1)).toBe(

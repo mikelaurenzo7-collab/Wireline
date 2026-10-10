@@ -53,7 +53,7 @@ describe("Call Ops analytics truth", () => {
     expect(phonePage).toContain("<CallOpsOverview />");
     expect(callOps).toContain("const CALL_PAGE_SIZE = 100;");
     expect(callOps).toContain("offset: String(calls.length)");
-    expect(callOps).toContain("Load more calls");
+    expect(callOps).toContain("Load More Calls");
     expect(callOps).not.toContain("/api/calls?limit=500");
     expect(callOps).not.toContain("function AnalyticsContent()");
   });

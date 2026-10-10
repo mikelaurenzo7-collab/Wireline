@@ -188,7 +188,7 @@ describe("signup states the whole password policy before submission", () => {
       "An account with this email already exists. Try signing in instead.",
     );
     const access = read("src/components/auth/AuthAccessPanel.tsx");
-    expect(access).toContain("Sign in instead");
+    expect(access).toContain("Sign In Instead");
     expect(access).toMatch(/already exists\/i\.test\(error\)/);
   });
 });

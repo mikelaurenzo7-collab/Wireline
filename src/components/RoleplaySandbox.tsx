@@ -129,7 +129,7 @@ function SimulationAllowanceMeter({ refreshTick }: { refreshTick: number }) {
                 to="/settings/billing"
                 className="font-semibold text-primary underline underline-offset-4"
               >
-                Choose a plan
+                Choose a Plan
               </Link>{" "}
               to keep testing and go live.
             </>

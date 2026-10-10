@@ -63,14 +63,14 @@ export default class ErrorBoundary extends Component<Props, State> {
    * signed-out visitors and drops them into a login wall on top of the crash.
    */
   private recoveryHref(): { href: string; label: string } {
-    if (typeof window === "undefined") return { href: "/", label: "Back home" };
+    if (typeof window === "undefined") return { href: "/", label: "Back Home" };
     const path = window.location.pathname;
     const isWorkspace =
       /^\/(?:overview|studio|agents|approvals|call-logs|logs|calls|inbox|phone|knowledge|insights|connections|settings|apps|admin|billing|audit|dnc|templates|onboarding)/.test(
         path,
       );
-    if (isWorkspace) return { href: "/studio", label: "Back to workspace" };
-    return { href: "/", label: "Back home" };
+    if (isWorkspace) return { href: "/studio", label: "Back to Workspace" };
+    return { href: "/", label: "Back Home" };
   }
 
   render() {
@@ -116,7 +116,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             {import.meta.env.DEV ? (
               <details className="relative z-10 overflow-x-auto rounded-md border border-border bg-muted/10 p-4 font-mono text-xs text-foreground/70">
                 <summary className="wl-label-muted cursor-pointer transition-colors hover:text-foreground">
-                  Error details
+                  Error Details
                 </summary>
                 <pre className="mt-3 whitespace-pre-wrap break-words">
                   {this.state.error.message}
@@ -130,7 +130,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 disableAnimations
                 className="!px-6 !py-3 !text-[length:var(--wireline-typography-overline-size)]"
               >
-                <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try again"}
+                <RefreshCw className="h-3.5 w-3.5" /> {staleChunk ? "Reload" : "Try Again"}
               </ShadButton>
               <ShadButton
                 variant="outline"

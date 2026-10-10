@@ -155,7 +155,7 @@ describe("email verification feedback and recovery", () => {
   it("never treats the success URL as verification of an unverified account", async () => {
     await mount("?verified=1");
     expect(textOf(tree)).toContain("email is not yet confirmed");
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     expect(h.success).not.toHaveBeenCalled();
   });
 
@@ -323,7 +323,7 @@ describe("email verification feedback and recovery", () => {
       expect(textOf(tree)).toContain("Couldn't check");
       expect(h.success).not.toHaveBeenCalled();
       h.fetch.mockResolvedValueOnce(json({ email_verified: true }));
-      await button("Check status").onClick?.();
+      await button("Check Status").onClick?.();
       await settle();
       expect(tree).toBeNull();
       expect(h.success).toHaveBeenCalledOnce();
@@ -335,7 +335,7 @@ describe("email verification feedback and recovery", () => {
     h.fetch.mockResolvedValueOnce(json({ email_verified: null }));
     await focus();
     expect(textOf(tree)).toContain("request another verification email");
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     expect(h.success).not.toHaveBeenCalled();
   });
 
@@ -371,7 +371,7 @@ describe("email verification feedback and recovery", () => {
     h.fetch.mockReturnValueOnce(oldRead.promise);
     await focus();
     h.fetch.mockResolvedValueOnce(json({ ok: true, sent: false, reason: "already_verified" }));
-    await button("Resend email").onClick?.();
+    await button("Resend Email").onClick?.();
     await settle();
     oldRead.resolve(json({ email_verified: false }));
     await settle();
@@ -386,10 +386,10 @@ describe("email verification feedback and recovery", () => {
   ])("does not trust a non-OK resend body: %o", async (body) => {
     await mount();
     h.fetch.mockResolvedValueOnce(json(body, 503));
-    await button("Resend email").onClick?.();
+    await button("Resend Email").onClick?.();
     await settle();
     expect(textOf(tree)).toContain("Couldn't send the verification email");
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     expect(h.success).not.toHaveBeenCalled();
   });
 
@@ -397,7 +397,7 @@ describe("email verification feedback and recovery", () => {
     await mount();
     const pending = deferred();
     h.fetch.mockReturnValueOnce(pending.promise);
-    const resend = button("Resend email").onClick!;
+    const resend = button("Resend Email").onClick!;
     const first = resend();
     await resend();
     expect(
@@ -413,21 +413,21 @@ describe("email verification feedback and recovery", () => {
     await mount();
     const pending = deferred();
     h.fetch.mockReturnValueOnce(pending.promise);
-    const request = button("Resend email").onClick?.();
+    const request = button("Resend Email").onClick?.();
     h.search = "?agent=bot-b";
     render();
     await settle();
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     pending.resolve(json({ ok: true, sent: true }));
     await request;
     await settle();
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
   });
 
   it.each(["expired", "error"])("explains a %s return and offers a fresh link", async (result) => {
     await mount(`?verified=${result}`);
     expect(textOf(tree)).toContain("Request another verification email below");
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     expect(h.success).not.toHaveBeenCalled();
   });
 
@@ -440,7 +440,7 @@ describe("email verification feedback and recovery", () => {
     } else {
       await mount();
       h.fetch.mockReturnValueOnce(old.promise);
-      request = button("Resend email").onClick?.();
+      request = button("Resend Email").onClick?.();
     }
     h.ownerId = "account-b";
     h.search = "";
@@ -465,7 +465,7 @@ describe("email verification feedback and recovery", () => {
       },
     });
     await mount();
-    expect(button("Resend email").disabled).toBe(false);
+    expect(button("Resend Email").disabled).toBe(false);
     const dismiss = elements(tree).find((node) =>
       node.props["aria-label"]?.startsWith("Dismiss email"),
     );
@@ -497,7 +497,7 @@ describe("email verification feedback and recovery", () => {
       h.ownerId = "account-b";
       render();
       await settle();
-      expect(button("Resend email").disabled).toBe(false);
+      expect(button("Resend Email").disabled).toBe(false);
     },
   );
 });

@@ -233,7 +233,7 @@ export default function ChannelPlanPicker({
         {plan.features.length ? (
           <details className="mt-3 border-t border-border pt-2">
             <summary className="wl-focus-ring-halo min-h-11 cursor-pointer py-3 text-sm font-medium text-muted-foreground">
-              Plan details
+              Plan Details
             </summary>
             <ul className="space-y-2 pb-2 text-sm text-muted-foreground">
               {plan.features.map((feature) => (

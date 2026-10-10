@@ -189,7 +189,7 @@ function button(label: string) {
   return elements(phone()).find((node) => node.type === "button" && text(node) === label)!;
 }
 async function selectNumber() {
-  await button("Find numbers").props.onClick!();
+  await button("Find Numbers").props.onClick!();
   await vi.waitFor(() =>
     expect(elements(phone()).some((node) => node.props.type === "radio")).toBe(true),
   );
@@ -430,7 +430,7 @@ describe("Bot context across workspace pages", () => {
 
   it("does not imply Stripe Checkout after the server requires activation while sales are closed", async () => {
     await loadLines([], false);
-    expect(button("Find numbers")).toBeDefined();
+    expect(button("Find Numbers")).toBeDefined();
     h.fetch.mockResolvedValueOnce(
       new Response(
         JSON.stringify({ code: "ACTIVATION_REQUIRED", error: "Activate a paid plan." }),
@@ -439,7 +439,7 @@ describe("Bot context across workspace pages", () => {
         },
       ),
     );
-    await button("Find numbers").props.onClick!();
+    await button("Find Numbers").props.onClick!();
     await vi.waitFor(() => expect(text(phone())).toContain("Live activation is paused"));
     const tree = phone();
     expect(text(tree)).toContain("Live activation is paused");
@@ -452,7 +452,7 @@ describe("Bot context across workspace pages", () => {
       (node) => node.type === "a" && node.props.to === "/contact?topic=billing",
     );
     expect(text(contact)).toBe("Contact support");
-    expect(elements(tree).some((node) => node.type === "a" && text(node) === "Open billing")).toBe(
+    expect(elements(tree).some((node) => node.type === "a" && text(node) === "Open Billing")).toBe(
       false,
     );
     expect(elements(tree).some((node) => node.type === "notice")).toBe(false);
@@ -486,11 +486,11 @@ describe("Bot context across workspace pages", () => {
     await button("Activate Line").props.onClick!();
     await vi.waitFor(() => {
       expect(
-        elements(phone()).some((node) => node.type === "a" && text(node) === "Open billing"),
+        elements(phone()).some((node) => node.type === "a" && text(node) === "Open Billing"),
       ).toBe(true);
     });
     const billing = elements(phone()).find(
-      (node) => node.type === "a" && text(node) === "Open billing",
+      (node) => node.type === "a" && text(node) === "Open Billing",
     );
     expect(billing?.props.to).toBe("/settings/billing");
     expect(text(phone())).toContain("Choose a Calls, Email, or Calls + Email plan");

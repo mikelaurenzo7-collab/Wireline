@@ -38,7 +38,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
           <div className="space-y-4">
             <div>
               <label htmlFor={nameId} className="app-field-label">
-                Platform Name
+                Platform name
               </label>
               <Input
                 id={nameId}
@@ -51,7 +51,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
             <div>
               <label htmlFor={logoId} className="app-field-label">
-                Brand Logo URL
+                Brand logo URL
               </label>
               <Input
                 id={logoId}
@@ -64,7 +64,7 @@ export function BrandingPanel({ settings, onUpdate, onSave, isSaving }: Branding
             </div>
             <div>
               <label htmlFor={colorId} className="app-field-label">
-                Primary Color
+                Primary color
               </label>
               <div className="flex gap-2.5">
                 <Input

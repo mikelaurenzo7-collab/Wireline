@@ -168,7 +168,7 @@ export default function MarketingFooter({
               className="inline-flex min-h-11 items-center transition-colors hover:text-foreground"
               onClick={() => window.dispatchEvent(new Event(OPEN_PRIVACY_CHOICES_EVENT))}
             >
-              Privacy choices
+              Privacy Choices
             </button>
           </nav>
         </div>

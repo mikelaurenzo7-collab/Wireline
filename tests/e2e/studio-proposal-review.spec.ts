@@ -252,7 +252,7 @@ for (const section of ["Setup", "Review"] as const) {
     await page.getByRole("tab", { name: section, exact: true }).click();
     await page
       .getByRole("button", {
-        name: section === "Setup" ? "Test Bot" : "Test conversation",
+        name: section === "Setup" ? "Test Bot" : "Test Conversation",
         exact: true,
       })
       .click();

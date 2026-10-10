@@ -223,7 +223,7 @@ export default function StudioProposalReview({
               className="mt-3"
               onClick={() => setCall(action)}
             >
-              Review call availability
+              Review Call Availability
             </Button>
           ) : (
             <Link

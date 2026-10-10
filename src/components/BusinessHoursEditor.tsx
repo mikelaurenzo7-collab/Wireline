@@ -315,7 +315,7 @@ export default function BusinessHoursEditor({
               variant="outline"
               onClick={() => setReloadKey((current) => current + 1)}
             >
-              Try again
+              Try Again
             </Button>
           }
         >
@@ -481,7 +481,7 @@ export default function BusinessHoursEditor({
             ) : (
               <Save className="size-4" aria-hidden="true" />
             )}
-            {saving ? "Saving…" : "Save hours"}
+            {saving ? "Saving…" : "Save Hours"}
           </Button>
         </form>
       )}

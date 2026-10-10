@@ -23,7 +23,7 @@ describe("voice catalog", () => {
     expect(picker).not.toContain('authFetch("/api/voices")');
     expect(picker).toContain("voice.provider");
     expect(picker).toContain("OpenAILiveVoiceSandbox");
-    expect(picker).toContain("Preview voice");
+    expect(picker).toContain("Preview Voice");
     expect(picker).not.toContain("VoiceCloningStudio");
     expect(picker).not.toContain("api.elevenlabs.io");
     expect(existsSync(resolve(process.cwd(), "src/routes/voices-routes.ts"))).toBe(false);

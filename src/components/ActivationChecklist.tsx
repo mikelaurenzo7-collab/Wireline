@@ -47,7 +47,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "job",
       label: "Role and greeting set",
-      actionLabel: "Set role and greeting",
+      actionLabel: "Set Role and Greeting",
       detail: "Define the work, boundaries, and successful outcomes.",
       done: p.agents > 0,
       href: "/studio?section=setup",
@@ -56,7 +56,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "facts",
       label: "Knowledge added",
-      actionLabel: "Add knowledge",
+      actionLabel: "Add Knowledge",
       detail: "Add facts, preferences, policies, FAQs, or other answers the Bot needs.",
       done: p.knowledge > 0,
       href: "/studio?section=setup",
@@ -65,7 +65,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "line",
       label: "Phone number connected",
-      actionLabel: "Connect phone number",
+      actionLabel: "Connect Phone Number",
       detail:
         "Activate a paid plan, then claim an included BotBound number so customers can call or text.",
       done: p.numbers > 0,
@@ -75,7 +75,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "live",
       label: "First live customer handled",
-      actionLabel: "Handle first live customer",
+      actionLabel: "Handle First Live Customer",
       detail: "Confirm the line received a real conversation and logged the outcome.",
       done: p.activated,
       href: "/phone?tab=logs",
@@ -84,7 +84,7 @@ function buildSteps(progress: AssistantSetupProgress | null): Step[] {
     {
       id: "review",
       label: "First follow-up reviewed",
-      actionLabel: "Review first follow-up",
+      actionLabel: "Review First Follow-Up",
       detail: "Approve, edit, or decline the next action before it goes out.",
       done: p.approvedAction,
       href: "/approvals",
@@ -159,7 +159,7 @@ export default function ActivationChecklist({ className }: { className?: string 
                 setCelebrationDismissed(true);
               }}
             >
-              Review the first outcome
+              Review the First Outcome
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <button
@@ -201,7 +201,7 @@ export default function ActivationChecklist({ className }: { className?: string 
             setDismissed(true);
           }}
         >
-          Hide checklist
+          Hide Checklist
         </button>
       </div>
 

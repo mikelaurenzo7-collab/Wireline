@@ -156,7 +156,7 @@ export default function NotFound({ mode }: { mode?: "public" | "auth" } = {}) {
           >
             Already have an account?{" "}
             <Link to="/signin" className="text-brand hover:opacity-80 transition-opacity">
-              Sign in →
+              Sign In →
             </Link>
           </motion.p>
         )}

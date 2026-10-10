@@ -821,7 +821,7 @@ export default function CrmConnectionCard() {
                           disableAnimations
                           onClick={() => setSlackChannelsRetry((attempt) => attempt + 1)}
                         >
-                          Retry Slack channels
+                          Retry Slack Channels
                         </ShadButton>
                       </div>
                     ) : (
@@ -885,7 +885,7 @@ export default function CrmConnectionCard() {
                           disableAnimations
                           onClick={() => setTeamsTargetsRetry((attempt) => attempt + 1)}
                         >
-                          Retry Teams channels
+                          Retry Teams Channels
                         </ShadButton>
                       </div>
                     ) : (

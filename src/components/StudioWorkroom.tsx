@@ -593,7 +593,7 @@ const StudioWorkroom = forwardRef<
                       requestAnimationFrame(() => inputRef.current?.focus());
                     }}
                   >
-                    Edit and retry
+                    Edit and Retry
                   </Button>
                 ) : undefined
               }

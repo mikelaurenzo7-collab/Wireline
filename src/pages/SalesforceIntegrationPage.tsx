@@ -98,7 +98,7 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
       <Button asChild variant="secondary" className="mt-5 w-full">
         <Link to="/connections">
           <ExternalLink size={16} />
-          Manage connection
+          Manage Connection
         </Link>
       </Button>
     </section>

@@ -307,7 +307,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
                 ) : (
                   <>
                     <Phone className="w-3.5 h-3.5" />
-                    Find numbers
+                    Find Numbers
                   </>
                 )}
               </ShadButton>

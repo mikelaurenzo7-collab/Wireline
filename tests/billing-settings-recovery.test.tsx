@@ -298,10 +298,10 @@ describe("Runtime Balance recent activity", () => {
     ];
     await settle();
     const disclosure = tree.find(
-      (node) => node.type === "details" && text(node).startsWith("Recent activity"),
+      (node) => node.type === "details" && text(node).startsWith("Recent Activity"),
     )!;
     expect(disclosure.props.open).toBeUndefined();
-    expect(tree.some((node) => node.type === "summary" && text(node) === "Recent activity")).toBe(
+    expect(tree.some((node) => node.type === "summary" && text(node) === "Recent Activity")).toBe(
       true,
     );
     expect(text(activity())).toContain("Runtime Balance top-up");
@@ -370,7 +370,7 @@ describe("Runtime Balance recent activity", () => {
     expect(hasText("Cancels at period end")).toBe(true);
     expect(hasText("Active")).toBe(true);
     expect(hasText("Renews")).toBe(false);
-    expect(button("Manage billing").props.disabled).toBe(false);
+    expect(button("Manage Billing").props.disabled).toBe(false);
   });
 
   it.each([
@@ -388,8 +388,8 @@ describe("Runtime Balance recent activity", () => {
       ledger = badLedger;
       await settle();
       expect(hasText("$24.50")).toBe(true);
-      expect(tree.some((node) => node.props.title === "Activity unavailable")).toBe(true);
-      expect(button("Retry activity").props.onClick).toBeTypeOf("function");
+      expect(tree.some((node) => node.props.title === "Activity Unavailable")).toBe(true);
+      expect(button("Retry Activity").props.onClick).toBeTypeOf("function");
       expect(hasText("No balance activity yet.")).toBe(false);
       expect(activity()).toBeUndefined();
     },
@@ -421,11 +421,11 @@ describe("Runtime Balance recent activity", () => {
     expect(hasText("No balance activity yet.")).toBe(false);
     ledger = [];
     h.fetch.mockImplementation(usualFetch);
-    button("Retry activity").props.onClick?.();
+    button("Retry Activity").props.onClick?.();
     await settle();
     expect(hasText("No balance activity yet.")).toBe(true);
     expect(activity()).toBeUndefined();
-    expect(tree.some((node) => node.props.title === "Activity unavailable")).toBe(false);
+    expect(tree.some((node) => node.props.title === "Activity Unavailable")).toBe(false);
   });
 
   it("recovers a balance outage without replacing the last entries with zero activity", async () => {
@@ -441,7 +441,7 @@ describe("Runtime Balance recent activity", () => {
     expect(hasText("Showing last confirmed entries.")).toBe(true);
     balanceFails = false;
     ledger = [entry({ id: "refund-new", entryKind: "refund", customerReason: null, deltaUsd: 2 })];
-    button("Retry activity").props.onClick?.();
+    button("Retry Activity").props.onClick?.();
     await settle();
     expect(text(activity())).toContain("Refund");
     expect(text(activity())).toContain("+$2.00");
@@ -463,19 +463,19 @@ describe("Billing Settings shared recovery", () => {
     );
     await settle();
     const upgrade = () => tree.find((element) => element.type === "usage-meter")!;
-    const opening = button("Manage billing").props.onClick?.();
+    const opening = button("Manage Billing").props.onClick?.();
     // A second entry point can be clicked before React commits the busy state.
     upgrade().props.onUpgrade?.();
     await settle();
     expect(requests("/api/billing/portal")).toHaveLength(1);
-    expect(button("Manage billing").props.disabled).toBe(true);
+    expect(button("Manage Billing").props.disabled).toBe(true);
     expect(upgrade().props.upgradePending).toBe(true);
 
     finish(response({ error: "Billing portal unavailable. Try again." }, 503));
     await opening;
     await settle();
     expect(hasText("Billing portal unavailable. Try again.")).toBe(true);
-    expect(button("Manage billing").props.disabled).toBe(false);
+    expect(button("Manage Billing").props.disabled).toBe(false);
     expect(upgrade().props.upgradePending).toBe(false);
 
     h.fetch.mockImplementation((path: string) =>
@@ -554,7 +554,7 @@ describe("Billing Settings shared recovery", () => {
       expect(hasText("Cancels at period end")).toBe(false);
     }
     if (label !== "Renews") expect(hasText("Renews")).toBe(false);
-    expect(button("Manage billing").props.disabled).toBe(false);
+    expect(button("Manage Billing").props.disabled).toBe(false);
   });
 
   it("recovers the page status and Runtime Balance when the plan-card Retry succeeds", async () => {

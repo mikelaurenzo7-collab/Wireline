@@ -264,7 +264,7 @@ describe("workspace invitation recovery", () => {
         finish = resolve;
       }),
     );
-    button("Sign in with another email")!.props.onClick!();
+    button("Sign In with Another Email")!.props.onClick!();
     expect(h.signOut).toHaveBeenCalledOnce();
     expect(h.signOut).toHaveBeenCalledWith({ requireServerConfirmation: true });
     expect(h.navigate).not.toHaveBeenCalled();
@@ -280,13 +280,13 @@ describe("workspace invitation recovery", () => {
     await settle();
     h.signOut.mockRejectedValueOnce(new Error("Sign-out could not be confirmed."));
 
-    button("Sign in with another email")!.props.onClick!();
+    button("Sign In with Another Email")!.props.onClick!();
     await settle();
 
     expect(h.navigate).not.toHaveBeenCalled();
     expect(stored.get(pendingKey)).toBe("invite-secret");
     expect(text(render())).toContain("Sign-out could not finish. Try again.");
-    expect(button("Sign in with another email")?.props.disabled).toBe(false);
+    expect(button("Sign In with Another Email")?.props.disabled).toBe(false);
   });
 
   it("scrubs legacy query tokens before the unauthenticated signup handoff", () => {

@@ -436,7 +436,7 @@ export default function PhoneSetupPanel({
           action={
             recoveryPath ? (
               <Button asChild size="sm" variant="secondary">
-                <Link to={recoveryPath}>Open billing</Link>
+                <Link to={recoveryPath}>Open Billing</Link>
               </Button>
             ) : inventoryUnavailable ? (
               <Button
@@ -569,7 +569,7 @@ export default function PhoneSetupPanel({
               (normalizedAreaCode.length > 0 && normalizedAreaCode.length !== 3)
             }
           >
-            {searching ? "Searching…" : "Find numbers"}
+            {searching ? "Searching…" : "Find Numbers"}
           </Button>
           {availableNumbers.length > 0 ? (
             <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -727,7 +727,7 @@ export default function PhoneSetupPanel({
                       disabled={loading || working || attaching}
                       onClick={() => void loadNumbers(activeNumber.agent_id || undefined)}
                     >
-                      {loading ? "Checking connection…" : "Retry connection"}
+                      {loading ? "Checking connection…" : "Retry Connection"}
                     </Button>
                   )}
                 </div>

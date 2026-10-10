@@ -143,7 +143,7 @@ export function AppointmentRow({
                   disabled={busy}
                   onClick={() => onCancelIntent?.(null)}
                 >
-                  Keep appointment
+                  Keep Appointment
                 </Button>
                 <Button
                   variant="destructive"
@@ -151,7 +151,7 @@ export function AppointmentRow({
                   disabled={busy}
                   onClick={() => onStatus(appointment, "Cancelled")}
                 >
-                  {busy ? "Saving…" : "Cancel appointment"}
+                  {busy ? "Saving…" : "Cancel Appointment"}
                 </Button>
               </>
             ) : (
@@ -357,8 +357,9 @@ export default function AppointmentsPanel({
 
   if (appointments.length === 0) {
     return (
-      <div className="wl-call-history-empty mx-auto my-4 grid min-h-[24rem] w-full max-w-[980px] flex-1 place-items-center px-4 py-8 sm:px-8">
+      <div className="flex w-full flex-col items-center px-4 py-8 sm:px-6">
         <EmptyState
+          framed
           density="compact"
           titleTone="ui"
           withHalo={false}
@@ -381,7 +382,7 @@ export default function AppointmentsPanel({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-5 sm:px-6">
       {mutationError ? (
-        <StatusNotice tone="warning" title="Appointment not updated">
+        <StatusNotice tone="warning" title="Appointment Not Updated">
           {mutationError}
         </StatusNotice>
       ) : null}

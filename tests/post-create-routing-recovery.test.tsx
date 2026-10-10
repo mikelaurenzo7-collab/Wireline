@@ -172,9 +172,9 @@ describe("setup guide requires confirmed calling", () => {
       expect(text(render())).not.toContain("Your live number");
       expect(button("Continue")).toBeUndefined();
       expect(button("Choose a number")).toBeUndefined();
-      expect(button("Retry connection")?.props.disabled).toBe(false);
+      expect(button("Retry Connection")?.props.disabled).toBe(false);
       numbers = [line("active")];
-      button("Retry connection")?.props.onClick?.();
+      button("Retry Connection")?.props.onClick?.();
       await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
       button("Continue")?.props.onClick?.();
       expect(text(render())).toContain("It's on the Line");
@@ -204,7 +204,7 @@ describe("setup guide requires confirmed calling", () => {
     expect(button("Continue")).toBeUndefined();
     numbersStatus = 200;
     numbers = [line("active")];
-    button("Retry line lookup")?.props.onClick?.();
+    button("Retry Line Lookup")?.props.onClick?.();
     await vi.waitFor(() => expect(text(render())).toContain("Your live number"));
   });
 
@@ -279,8 +279,8 @@ it("email-only activation has no phone prerequisite or invented live milestone",
   expect(text(render())).toContain("Open Email");
   expect(text(render())).not.toContain("No phone number");
   expect(button("Choose a number")).toBeUndefined();
-  button("Finish for now")?.props.onClick?.();
-  expect(text(render())).toContain("Your Bot is saved");
+  button("Finish for Now")?.props.onClick?.();
+  expect(text(render())).toContain("Your Bot Is Saved");
   expect(h.event.mock.calls.some(([event]) => event.event === "agent_launch_completed")).toBe(
     false,
   );

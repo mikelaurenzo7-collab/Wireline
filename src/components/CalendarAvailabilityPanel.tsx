@@ -169,7 +169,7 @@ export default function CalendarAvailabilityPanel({
             className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-3 sm:p-4"
           >
             <h2 id="calendar-hours-heading" className="text-sm font-semibold">
-              Weekly hours
+              Weekly Hours
             </h2>
             <div className="space-y-1.5">
               <label htmlFor="calendar-time-zone" className="text-sm font-medium">
@@ -247,7 +247,7 @@ export default function CalendarAvailabilityPanel({
             className="min-w-0 space-y-4 rounded-xl border border-border bg-card p-3 sm:p-4"
           >
             <h2 id="calendar-rules-heading" className="text-sm font-semibold">
-              Booking rules
+              Booking Rules
             </h2>
             <div className="space-y-1.5">
               <label htmlFor="calendar-appointment-name" className="text-sm font-medium">
@@ -313,13 +313,13 @@ export default function CalendarAvailabilityPanel({
           </section>
         </fieldset>
         {error ? (
-          <StatusNotice tone="warning" title="Availability not saved">
+          <StatusNotice tone="warning" title="Availability Not Saved">
             {error}
           </StatusNotice>
         ) : null}
         <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : configured ? "Save changes" : "Enable booking"}
+            {saving ? "Saving…" : configured ? "Save Changes" : "Enable Booking"}
           </Button>
           {saved ? (
             <span role="status" className="text-sm text-muted-foreground">
@@ -339,14 +339,14 @@ export default function CalendarAvailabilityPanel({
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={syncBusyTimes} disabled={syncing}>
-              {syncing ? "Syncing…" : "Sync busy times"}
+              {syncing ? "Syncing…" : "Sync Busy Times"}
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/connections">Manage connections</Link>
+              <Link to="/connections">Manage Connections</Link>
             </Button>
           </div>
           {syncError ? (
-            <StatusNotice tone="warning" title="Calendar sync incomplete">
+            <StatusNotice tone="warning" title="Calendar Sync Incomplete">
               {syncError}
             </StatusNotice>
           ) : null}
