@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { WEDGES } from "../src/data/vertical-wedges";
 import { TRUST_DISCLOSURE_FAQ } from "../src/lib/product-copy";
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
@@ -58,19 +59,18 @@ describe("sales trust copy contract", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps the sales wedge governed, Bot-native, and tied to canonical disclosure guidance", () => {
-    const wedges = read("src/data/vertical-wedges.ts");
+  it("keeps the sales wedge Bot-native while trust guidance stays on the Trust Center", () => {
+    const sales = WEDGES.sales;
+    const security = read("src/components/Security.tsx");
     const product = read("src/lib/bot-product.ts");
-    expect(wedges).toContain(
-      'metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up"',
-    );
-    expect(wedges).toContain('headline: "Set Up a Sales Bot for Lead Follow-Up"');
-    expect(wedges).toContain("server-verifiable consent records");
-    expect(wedges).toContain("Federal Do Not Call screening");
-    expect(wedges).toContain("Fast, Governed Speed to Lead");
-    expect(wedges).toContain("Approved actions sync");
-    expect(wedges).toContain('import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy"');
-    expect(wedges).toContain("a: TRUST_DISCLOSURE_FAQ,");
+    expect(sales.metaTitle).toBe("BotBound for Sales Teams | Phone Bots for Lead Follow-Up");
+    expect(sales.headline).toBe("Set Up a Sales Bot for Lead Follow-Up");
+    expect(sales.pains.map(({ title }) => title)).toContain("Outbound Follow-Up");
+    expect(sales.statValue).toBe("Fast Follow-Up");
+    expect(sales.trustLine).toContain("Approved actions sync");
+    expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
+    expect(security).toContain("Federal Do Not Call screening");
+    expect(security).toContain("server-owned recipient-consent records");
     expect(product).toContain('name: "Sales Rep"');
     expect(product).toContain('category: "Operations" as const');
   });

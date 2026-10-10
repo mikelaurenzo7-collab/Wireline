@@ -1,4 +1,3 @@
-import { TRUST_DISCLOSURE_FAQ } from "../lib/product-copy";
 import { signupHrefForWedge } from "../lib/signup-intent";
 
 const PRODUCT_TOUR_CTA = { label: "See How It Works", href: "/features" } as const;
@@ -495,15 +494,15 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     scriptPreview: `"Hi, this is Casey calling from [Your Company]. I saw you downloaded our [resource] last week. Got 2 minutes to see if what we do is even a fit before I book any of your team's time?"`,
     statValue: "Fast Follow-Up",
     statLabel:
-      "Shape fast-response playbooks for inbound requests and approved warm leads, with consent rules, limits, and reviewable outcomes.",
+      "Give new requests and selected leads a clear next step, from the first call through booking and follow-up.",
     primaryCta: { label: "Create Sales Bot", href: signupHrefForWedge("sales") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
       "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment is available in beta.",
     faqs: [
       {
-        q: "Will Prospects Know It Is AI?",
-        a: TRUST_DISCLOSURE_FAQ,
+        q: "Can I Shape What the Bot Says?",
+        a: "Yes. Set its introduction, qualification questions, offer details, booking rules, and next step. Rehearse the playbook before activation.",
       },
       {
         q: "How Do I Control Outreach?",
@@ -515,7 +514,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "How Is This Different from Apollo or Outreach AI Features?",
-        a: "Those products center on sales sequencing and enrichment. BotBound centers on governed voice conversations, call outcomes, and connected text and email follow-up. Use each only where its configured integration and your consent policy support the workflow.",
+        a: "Those products center on sales sequencing and enrichment. BotBound centers on voice conversations, call outcomes, and connected text and email follow-up when those channels are enabled.",
       },
     ],
   },
