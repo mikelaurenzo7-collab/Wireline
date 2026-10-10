@@ -8,7 +8,7 @@ export const SITE_URL = BOTBOUND_PRODUCTION_ORIGIN;
 const BRAND_SUFFIX = ` | ${BOTBOUND_BRAND_NAME}`;
 export const HOME_TITLE = "BotBound | Hire a Voice Bot";
 export const HOME_DESCRIPTION =
-  "A voice Bot with its own business number. Add a dedicated email inbox and SMS with your choice of channels. Create a Bot for free, then rehearse privately.";
+  "BotBound brings inbound and outbound voice calls, cloud browser tasks, and managed email into a Bot workspace. Build and rehearse a Bot for free.";
 const HOME_ROBOTS_TAG =
   '<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />';
 const HOME_GOOGLEBOT_TAG =
@@ -52,14 +52,14 @@ function withBrand(title: string): string {
 
 const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/pricing": {
-    title: "Pricing | Email from $9, Calls from $19",
+    title: "Pricing | Build Free, Add Calls or Email",
     description:
-      "Build a Bot free. Choose Email from $9/month, Calls from $19/month, or combine channels. SMS activation is pending. Check live availability and included usage.",
+      "Build and rehearse a Bot for free. Compare Calls, Email, and combined plans, including their monthly usage and live activation options.",
   },
   "/features": {
     title: "Features",
     description:
-      "Build and train a Bot that calls, texts, emails, books, follows up, and logs outcomes under shared rules and memory.",
+      "Build a voice Bot for inbound and outbound calls, give it business knowledge and rules, and assign cloud browser tasks from the workspace.",
   },
   "/compare": {
     title: "Why BotBound | Compare Bots",
@@ -69,7 +69,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/about": {
     title: "About BotBound | Bots for Calls and Follow-Through",
     description:
-      "BotBound is an independent platform for Bots that call, text, and email. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
+      "BotBound is an independent platform for voice Bots, cloud browser tasks, and plan-based email. Set your knowledge and rules, review outcomes, and reach the founder directly for support.",
   },
   "/blog": {
     title: "BotBound Notes | Bot Guides for Small Business",
@@ -136,11 +136,12 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/solutions/sales": {
     title: "Set Up a Sales Bot for Lead Follow-Up | BotBound",
     description:
-      "Find leads through a connected source or bring a list. Set up a Sales Bot playbook to qualify, book, and record next steps. Live outbound calling requires server-verifiable consent records and Federal Do Not Call screening.",
+      "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
   },
   "/solutions/support": {
     title: "A Front Desk That Answers Before Demand Goes Cold | BotBound",
-    description: "Give a trained Front Desk Bot your policies, calendar, and handoff rules.",
+    description:
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, handles routine questions, and records the next step. Add text or email when those channels are configured.",
   },
 };
 

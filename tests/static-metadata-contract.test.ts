@@ -10,7 +10,7 @@ describe("BotBound static marketing metadata", () => {
     const index = read("index.html");
 
     expect(index).toContain("BotBound | Hire a Voice Bot");
-    expect(index).toContain("A voice Bot with its own business number.");
+    expect(index).toContain("BotBound brings inbound and outbound voice calls");
     expect(index).toContain('"name":"BotBound"');
     expect(index).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(index).toContain('"logo":"https://botbound.app/botbound-icon-512.png"');
@@ -67,32 +67,43 @@ describe("BotBound static marketing metadata", () => {
     expect(landing).not.toContain("LEGACY_PRODUCTION_ORIGIN");
     expect(landing).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).toContain('DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
-    expect(pageMeta).toMatch(/DEFAULT_DESCRIPTION =\s*"A voice Bot with its own business number\./);
+    expect(pageMeta).toMatch(
+      /DEFAULT_DESCRIPTION =\s*"BotBound brings inbound and outbound voice calls/,
+    );
     expect(pageMeta).toContain("BOTBOUND_PRODUCTION_ORIGIN");
     expect(pageMeta).not.toContain("VITE_PUBLIC_SITE_URL");
     expect(pageMeta).not.toContain('DEFAULT_TITLE = "WIRELINE');
   });
 
-  it("keeps the OG image aligned with the outbound-first, inbound-capable story", () => {
+  it("keeps the OG source aligned with the current inbound and outbound story", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("Find. Call. Book");
-    expect(ogImage).toContain("Outbound sales. Inbound calls.");
+    expect(ogImage).toContain("Give Your Bot a Goal");
+    expect(ogImage).toContain("Inbound and outbound voice Bots with cloud-browser work.");
     expect(ogImage).not.toContain("ONE BOT");
-    expect(ogImage).toContain("GET YOUR SALES BOT");
+    expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
-    expect(ogImage).toContain("#8B5CF6");
+    expect(ogImage).toContain('width="1200" height="630"');
     expect(ogImage).not.toContain("PUT YOUR BOT ON THE LINE");
   });
 
-  it("keeps every OG text element legible after preview downscale", () => {
-    const ogImage = read("public/og-image.svg");
-    const sizes = [...ogImage.matchAll(/font-size="([\d.]+)"/g)].map((match) => Number(match[1]));
+  it("ships the reviewed wide creative as the 1200 by 630 OG raster", () => {
+    const encodedImage = read("public/og-image.svg").match(
+      /href="data:image\/png;base64,([^"]+)"/,
+    )?.[1];
+    const campaignImage = readFileSync(
+      resolve(
+        process.cwd(),
+        "brand-work/launch-2026-10-goal/exports/botbound-goal-wide-1200x630.png",
+      ),
+    );
+    expect(encodedImage).toBeTruthy();
+    const ogImage = Buffer.from(encodedImage!, "base64");
 
-    expect(sizes.length).toBeGreaterThanOrEqual(3);
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(20);
-    expect(Math.max(...sizes)).toBeGreaterThanOrEqual(80);
+    expect(ogImage.equals(campaignImage)).toBe(true);
+    expect(ogImage.readUInt32BE(16)).toBe(1200);
+    expect(ogImage.readUInt32BE(20)).toBe(630);
   });
 
   it("keeps the installable app Studio-first and BotBound-branded", () => {
@@ -107,7 +118,9 @@ describe("BotBound static marketing metadata", () => {
 
     expect(manifest.name).toBe("BotBound | Your Next Hire Is a Bot");
     expect(manifest.short_name).toBe("BotBound");
-    expect(manifest.description).toBe("Your Bot for calls, texts, and email.");
+    expect(manifest.description).toBe(
+      "Voice Bots for inbound and outbound calls and cloud browser tasks.",
+    );
     expect(manifest.start_url).toBe("/studio");
     expect(manifest.icons[0]?.src).toBe("/botbound-icon-192.png");
     expect(manifest.shortcuts.map((shortcut) => shortcut.name)).toEqual([

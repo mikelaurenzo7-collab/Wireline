@@ -11,7 +11,7 @@ describe("Stripe merchant-brand assets", () => {
     expect(renderer).toContain('readFileSync(resolve(root, "public/brand/botbound-app-icon.png"))');
     expect(renderer).toContain("const stripeLogoSource = writeStripeLogoSource(appIcon)");
     expect(renderer).toContain("BotBound");
-    expect(renderer).toMatch(/>Your Bot for Calls, Texts, and Email<\/text>/i);
+    expect(renderer).toMatch(/>Voice Bots for Calls and Web Work<\/text>/i);
     expect(renderer).toContain('out: "public/botbound-stripe-logo.png"');
     expect(renderer).toContain('out: "public/wireline-stripe-logo.png"');
     expect(renderer).toContain('out: "ios/Wireline/Assets.xcassets/AppIcon.appiconset/icon.png"');

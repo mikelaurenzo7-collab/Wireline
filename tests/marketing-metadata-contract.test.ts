@@ -17,8 +17,8 @@ describe("marketing metadata contract", () => {
     expect(staticHead).toContain("BotBound | Hire a Voice Bot");
     expect(runtimeMeta).toContain('const DEFAULT_TITLE = "BotBound | Hire a Voice Bot"');
     for (const source of [staticHead, runtimeMeta]) {
-      expect(source).toContain("A voice Bot with its own business number.");
-      expect(source).toContain("Add a dedicated email inbox and SMS with your choice of channels.");
+      expect(source).toContain("BotBound brings inbound and outbound voice calls");
+      expect(source).toContain("cloud browser tasks, and managed email");
       expect(source).not.toContain("WIRE YOUR PHONE BOT");
       expect(source).not.toContain("VOICE-FIRST");
       expect(source).not.toContain("—");
@@ -114,9 +114,9 @@ describe("marketing metadata contract", () => {
     expect(planById("team")?.included_phone_numbers).toBe(2);
     expect(planById("business")?.price_usd_monthly).toBe(79);
     expect(planById("business")?.included_phone_numbers).toBe(5);
-    expect(pricing).toContain(`Email from $${planById("email")?.price_usd_monthly}/month`);
-    expect(pricing).toContain(`Calls from $${planById("voice")?.price_usd_monthly}/month`);
-    expect(pricing).toContain("Check live availability and included usage.");
+    expect(pricing).toContain(`Plans from $${planById("email")?.price_usd_monthly}/month`);
+    expect(pricing).toContain("Compare Calls, Email, and combined plans");
+    expect(pricing).toContain("CHANNEL_PLANS = STRIPE_PLANS.filter");
     expect(pricing).toContain("plan.price_usd_monthly");
     // Contact is an inquiry form; prices and availability belong to Pricing.
     expect(contact).not.toContain("Starter launches at");

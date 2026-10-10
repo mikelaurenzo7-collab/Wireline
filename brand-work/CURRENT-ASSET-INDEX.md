@@ -4,7 +4,7 @@
 
 The [Give Your Bot a Goal family](launch-2026-10-goal/README.md) is the current prepared static set for inbound and outbound voice Bots plus separately started cloud-browser tasks. It includes reviewed wide, feed, story, square, and email-header compositions, with a matching [copy kit](launch-2026-10-goal/COPY-KIT.md) and source/input hashes. The files are local review candidates. No Google Drive delivery, social post, email send, paid placement, or public-release approval is implied. Use this set for new planning; preserve the dated September families below as historical creative.
 
-The live site is the authority for the current offer and CTA. Recheck the selected plan and destination before publishing. The current promotional art avoids customer-result claims and does not present browser work as automatically sharing phone or email context.
+The live site is the authority for the current offer and CTA. Recheck the selected plan and destination before publishing. The wide asset is wired into the website's OG image build. The current promotional art avoids customer-result claims and does not present browser work as automatically sharing phone or email context.
 
 ## Historical Library — September 2026
 

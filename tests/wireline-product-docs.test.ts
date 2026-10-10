@@ -124,7 +124,7 @@ describe("product documentation and compatibility contract", () => {
     const ogImage = read("public/og-image.svg");
 
     expect(head).toContain("BotBound | Hire a Voice Bot");
-    expect(head).toContain("A voice Bot with its own business number.");
+    expect(head).toContain("BotBound brings inbound and outbound voice calls");
     expect(head).toContain('"name":"BotBound"');
     expect(head).toContain('"slogan":"Your Next Hire Is a Bot"');
     expect(head).not.toContain("WIRE YOUR PHONE BOT");
@@ -132,10 +132,10 @@ describe("product documentation and compatibility contract", () => {
     expect(head).not.toContain("—");
 
     expect(ogImage).toContain("BotBound");
-    expect(ogImage).toContain("Find. Call. Book");
-    expect(ogImage).toContain("OUTBOUND SALES. INBOUND CALLS.");
+    expect(ogImage).toContain("Give Your Bot a Goal");
+    expect(ogImage).toContain("Inbound and outbound voice Bots with cloud-browser work.");
     expect(ogImage).not.toContain("ONE BOT.");
-    expect(ogImage).toContain("Find leads. Make calls. Answer inbound.");
+    expect(ogImage).not.toContain("Find. Call. Book");
     expect(ogImage).toMatch(/phone|Phone/);
     expect(ogImage).not.toContain("WIRE YOUR");
     expect(ogImage).not.toContain("ONE WORKSPACE");

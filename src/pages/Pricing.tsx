@@ -114,8 +114,8 @@ export default function Pricing() {
   return (
     <MarketingPageFrame className="wl-pricing-page" stickyCta>
       <PageMeta
-        title="Pricing | Email from $9, Calls from $19 | BotBound"
-        description="Build a Bot free. Choose Email from $9/month, Calls from $19/month, or combine channels. SMS activation is pending. Check live availability and included usage."
+        title="Pricing | Build Free, Add Calls or Email | BotBound"
+        description="Build and rehearse a Bot for free. Compare Calls, Email, and combined plans, including their monthly usage and live activation options."
         path="/pricing"
       />
       <script

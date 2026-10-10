@@ -20,6 +20,8 @@ The campaign headline is intentionally broader than a single channel. BotBound o
 
 Use the matching text and alt text in [the copy kit](COPY-KIT.md). The [manifest](exports/manifest.json) records dimensions, hashes, and source inputs. The destination is `https://botbound.app/signup?plan=free`.
 
+The web asset build copies the wide image to `/og-image.png`; deploying that build makes it the public link preview. The other formats remain prepared placement assets until separately selected.
+
 ## Rebuild and Release
 
 Run `npm run brand:goal` from the repository root. The script uses the approved operator, the existing Stay in the Work photograph, and the brand fonts. Inspect all five PNGs after any copy or input change.

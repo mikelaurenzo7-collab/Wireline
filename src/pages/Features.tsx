@@ -89,7 +89,7 @@ export default function Features() {
     >
       <PageMeta
         title="Features | BotBound"
-        description="Build and train a Bot that calls, texts, emails, books, uses a cloud browser, and logs outcomes under your rules."
+        description="Build a voice Bot for inbound and outbound calls, give it business knowledge and rules, and assign cloud browser tasks from the workspace."
         path="/features"
       />
 

@@ -6,7 +6,7 @@ const SOLUTIONS = {
   sales: {
     title: "Set Up a Sales Bot for Lead Follow-Up",
     description:
-      "Find leads through a connected source or bring a list. Give your Sales Bot a playbook to call, qualify, book, and follow up while keeping every outcome in one place.",
+      "Bring a list or connect a source. Give your Sales Bot a playbook to call prospects, qualify interest, and record the next step.",
     primary: { href: "/signup?wedge=sales", label: "Create Your Sales Bot" },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
@@ -28,31 +28,25 @@ const SOLUTIONS = {
         "Your Playbook in Every Call",
         "Use your positioning, tone, qualification rules, and approved claims.",
       ],
-      [
-        "Follow-Up Across Channels",
-        "Continue by text or email without restarting the conversation.",
-      ],
+      ["Follow-Up Across Channels", "Add text or email follow-up when you enable those channels."],
       [
         "Calendar-Aware Booking",
         "Offer real availability and write the confirmed next step back to the record.",
       ],
     ],
-    proof: "One Bot finds leads, makes calls, books next steps, and keeps follow-up moving.",
+    proof: "Give one Sales Bot a calling playbook and keep its outcomes visible.",
   },
   support: {
     title: "A Front Desk That Answers Before Demand Goes Cold",
     description:
-      "Give a trained Front Desk Bot your policies, calendar, and handoff rules. It answers calls, holds natural conversations, continues by text and email, then resolves or routes the next step.",
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, handles routine questions, and records the next step. Add text or email when those channels are configured.",
     primary: {
       href: "/signup?wedge=support",
       label: "Create Front Desk Bot",
     },
     secondary: { href: "/features", label: "See How It Works" },
     sequence: [
-      [
-        "A Customer Reaches Out",
-        "A Conversation Bot answers by call, text, or email with the same identity and context.",
-      ],
+      ["A Customer Reaches Out", "Customers reach your Bot through the channels you enable."],
       [
         "It Uses Your Approved Truth",
         "Policies, services, availability, and escalation rules stay consistent.",
@@ -69,14 +63,11 @@ const SOLUTIONS = {
       ],
       [
         "Booking That Closes the Loop",
-        "Schedule, confirm, and continue the conversation across email and text.",
+        "Offer available times through Calendar and capture the confirmed booking.",
       ],
-      [
-        "Escalation with Context",
-        "Route exceptions with the customer, history, and requested outcome intact.",
-      ],
+      ["Escalation with Context", "Route exceptions with the request and outcome attached."],
     ],
-    proof: "Customers get an answer sooner. Your team joins only when its judgment matters.",
+    proof: "Answer repeatable questions while your team takes the exceptions.",
   },
 } as const;
 

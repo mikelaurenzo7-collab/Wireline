@@ -1,7 +1,7 @@
 {
   "name": "BotBound | Your Next Hire Is a Bot",
   "short_name": "BotBound",
-  "description": "Your Bot for calls, texts, and email.",
+  "description": "Voice Bots for inbound and outbound calls and cloud browser tasks.",
   "id": "/",
   "start_url": "/studio",
   "scope": "/",
