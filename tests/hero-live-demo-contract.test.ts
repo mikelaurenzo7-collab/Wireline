@@ -13,13 +13,13 @@ describe("public voice-preview retirement contract", () => {
     expect(landing).toContain("<span>and Branded Email.</span>");
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("Call. Book.");
+    expect(landing).toContain("Answer. Act.");
     expect(landing).not.toMatch(/BrowserCallWidget|useProtectedPublicDemo|\/api\/public\/demo-/);
     expect(botProduct).toContain('slogan: "Your Next Hire Is a Bot"');
     expect(botProduct).toContain('supportingLine: "CALL · TEXT · EMAIL"');
     expect(botProduct).toContain(
-      'activationLine:\n    "Your Bot answers customers, lets you plan outbound follow-up, starts work on its cloud computer, and follows through from its own inbox."',
+      'activationLine:\n    "Give your Bot a goal. It answers customers, calls prospects, works on its cloud computer, and follows through from its own inbox."',
     );
   });
 

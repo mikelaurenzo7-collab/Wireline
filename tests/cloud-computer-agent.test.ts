@@ -274,16 +274,11 @@ describe("OpenAI cloud computer agent loop", () => {
         "Cloud computer Responses follow-up rejected",
         expect.objectContaining({
           turn: 2,
-          recentInputTypes: [
-            "user_message",
-            "function_call",
-            "function_call_output",
-            "user_message",
-          ],
+          recentInputTypes: ["user_message", "function_call", "function_call_output"],
           computerCallCount: 0,
           computerOutputCount: 0,
           functionOutputCount: 1,
-          userImageCount: 2,
+          userImageCount: 1,
         }),
       );
       expect(JSON.stringify(warn.mock.calls)).not.toContain("private-path");
@@ -446,12 +441,18 @@ describe("OpenAI cloud computer agent loop", () => {
       true,
     );
     expect(events.map(({ kind }) => kind)).toEqual(["question", "reply"]);
-    const resumedImages = (requests[1].input as Item[])
-      .flatMap((item) => (Array.isArray(item.content) ? item.content : []))
-      .filter((part) => part.type === "input_image") as Item[];
-    expect(resumedImages.at(-1)?.image_url).toBe(
-      `data:image/jpeg;base64,${Buffer.from("model-frame-2").toString("base64")}`,
+    const ownerResult = (requests[1].input as Item[]).find(
+      (item) => item.type === "function_call_output" && item.call_id === "q1",
     );
+    expect(ownerResult?.output).toEqual([
+      { type: "input_text", text: "Owner replied: No, leave it unsent." },
+      {
+        type: "input_image",
+        image_url: `data:image/jpeg;base64,${Buffer.from("model-frame-2").toString("base64")}`,
+        detail: "original",
+      },
+    ]);
+    expect((requests[1].input as Item[]).filter((item) => item.role === "user")).toHaveLength(1);
     expect(outcome).toMatchObject({ status: "completed", summary: "I left the form unsent." });
   });
 
@@ -629,15 +630,60 @@ describe("OpenAI cloud computer agent loop", () => {
     });
 
     expect(calls).toMatchObject([{ member: "navigate", input: { url: "https://example.com" } }]);
-    expect(
-      (requests[1].input as Item[]).some(
-        (item) =>
-          item.role === "user" &&
-          Array.isArray(item.content) &&
-          item.content.some((part: Item) => part.type === "input_image"),
-      ),
-    ).toBe(true);
+    expect((requests[1].input as Item[]).at(-1)).toEqual({
+      type: "function_call_output",
+      call_id: "n1",
+      output: [
+        {
+          type: "input_text",
+          text: "Opened https://example.com/. Review the screenshot before continuing.",
+        },
+        {
+          type: "input_image",
+          image_url: `data:image/jpeg;base64,${Buffer.from("model-frame-2").toString("base64")}`,
+          detail: "original",
+        },
+      ],
+    });
+    expect((requests[1].input as Item[]).filter((item) => item.role === "user")).toHaveLength(1);
     expect(outcome).toMatchObject({ status: "completed", summary: "Verified the public page." });
+  });
+
+  it("replays each navigation frame once when a later computer turn continues", async () => {
+    const { session } = fakeSession({}, "about:blank");
+    const { client: openai, requests } = client([
+      response([openPublicUrlCall("n1", "https://example.com")]),
+      response([computerCall("c1", [{ type: "screenshot" }])]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "Verified the page.",
+          sources: [],
+        }),
+      ]),
+    ]);
+
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Check a public page.",
+      startUrl: null,
+      hooks: hooks().hooks,
+    });
+
+    const history = requests[2].input as Item[];
+    const navigation = history.find(
+      (item) => item.type === "function_call_output" && item.call_id === "n1",
+    );
+    const navigationImages = Array.isArray(navigation?.output)
+      ? navigation.output.filter((part: Item) => part.type === "input_image")
+      : [];
+    expect(navigationImages).toHaveLength(1);
+    expect(history.filter((item) => item.role === "user")).toHaveLength(1);
+    expect(history.at(-1)).toMatchObject({ type: "computer_call_output", call_id: "c1" });
+    expect(outcome).toMatchObject({ status: "completed" });
   });
 
   it("does not mark a task complete from a plain message or before opening a public page", async () => {

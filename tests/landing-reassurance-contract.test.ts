@@ -28,11 +28,11 @@ describe("home landing launch clarity", () => {
   it("keeps free and paid capacity distinct without crowding the hero", () => {
     expect(landing).toContain("BOT_MARKETING_VOICE.activationLine");
     expect(product).toContain(
-      'activationLine:\n    "Your Bot answers customers, lets you plan outbound follow-up, starts work on its cloud computer, and follows through from its own inbox."',
+      'activationLine:\n    "Give your Bot a goal. It answers customers, calls prospects, works on its cloud computer, and follows through from its own inbox."',
     );
     expect(landing).toContain("landing-prestige__directions");
-    expect(landing).toContain("Find. Call. Book.");
-    expect(landing).toContain("Answer. Qualify. Route.");
+    expect(landing).toContain("Call. Book.");
+    expect(landing).toContain("Answer. Act.");
     expect(landing).not.toContain("Build free. Put it on a number when it is ready.");
     expect(landing).toContain(
       'const PUBLIC_PLAN_IDS = ["personal", "email", "voice-regular", "voice-email-regular"]',

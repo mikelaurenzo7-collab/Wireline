@@ -532,7 +532,6 @@ export async function runCloudComputerAgent(input: {
   let actions = 0;
   let questions = 0;
   let ownerWaitMs = 0;
-  const contextScreenshots: string[] = [];
   const overTime = () => now() - startedAt - ownerWaitMs > CLOUD_COMPUTER_LIMITS.maxRunMs;
   const timeLimit: CloudComputerOutcome = {
     status: "failed",
@@ -710,11 +709,17 @@ export async function runCloudComputerAgent(input: {
           screenshotBytes += currentScreen.length;
           if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
             return { ...CONTEXT_LIMIT_OUTCOME };
-          contextScreenshots.push(`data:image/jpeg;base64,${currentScreen.toString("base64")}`);
           toolOutputs.push({
             type: "function_call_output",
             call_id: callId,
-            output: `Owner replied: ${reply.slice(0, 1_000)}`,
+            output: [
+              { type: "input_text", text: `Owner replied: ${reply.slice(0, 1_000)}` },
+              {
+                type: "input_image",
+                image_url: `data:image/jpeg;base64,${currentScreen.toString("base64")}`,
+                detail: "original",
+              },
+            ],
           });
           deferred = "Not executed: the owner just replied. Re-plan with the answer first.";
           continue;
@@ -750,13 +755,22 @@ export async function runCloudComputerAgent(input: {
           screenshotBytes += screenshot.length;
           if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
             return { ...CONTEXT_LIMIT_OUTCOME };
-          contextScreenshots.push(`data:image/jpeg;base64,${screenshot.toString("base64")}`);
           toolOutputs.push({
             type: "function_call_output",
             call_id: callId,
-            output: result.ok
-              ? `Opened ${displayUrl(input.session.activeUrl()) || "the public page"}. Review the screenshot before continuing.`
-              : `Could not open the page. ${result.activity}`,
+            output: [
+              {
+                type: "input_text",
+                text: result.ok
+                  ? `Opened ${displayUrl(input.session.activeUrl()) || "the public page"}. Review the screenshot before continuing.`
+                  : `Could not open the page. ${result.activity}`,
+              },
+              {
+                type: "input_image",
+                image_url: `data:image/jpeg;base64,${screenshot.toString("base64")}`,
+                detail: "original",
+              },
+            ],
           });
           deferred =
             "A page-open request just completed. Review its screenshot and re-plan before acting.";
@@ -885,22 +899,6 @@ export async function runCloudComputerAgent(input: {
       };
     }
     for (const item of toolOutputs) append(item);
-    if (contextScreenshots.length) {
-      append({
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: "Current redacted browser screen after navigation or the owner handoff:",
-          },
-          ...contextScreenshots.map((image_url) => ({
-            type: "input_image",
-            image_url,
-            detail: "original",
-          })),
-        ],
-      });
-    }
   }
 
   return {
