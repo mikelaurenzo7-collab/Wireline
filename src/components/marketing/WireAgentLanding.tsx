@@ -116,6 +116,7 @@ export default function WireAgentLanding() {
               <Link
                 className="landing-prestige__direction is-inbound"
                 to={signupHrefForPlan("personal", { template: "front-desk" })}
+                aria-label="Inbound: Answer. Act. Create an Inbound Bot"
                 onClick={() => trackSignupIntent("hero_direction", "Inbound Front Desk")}
               >
                 <span className="landing-prestige__direction-label">
@@ -129,6 +130,7 @@ export default function WireAgentLanding() {
               <Link
                 className="landing-prestige__direction is-outbound"
                 to={signupHrefForPlan("personal", { template: "sales-rep" })}
+                aria-label="Outbound: Call. Book. Create an Outbound Bot"
                 onClick={() => trackSignupIntent("hero_direction", "Outbound Sales Rep")}
               >
                 <span className="landing-prestige__direction-label">

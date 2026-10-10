@@ -119,7 +119,7 @@ for (const width of [320, 390, 1440]) {
     const pillars = page.getByRole("list", { name: "What every Bot gets" });
     await expect(pillars.getByRole("heading", { level: 2 })).toHaveText([
       "Answers and Makes Calls",
-      "Finishes the Work",
+      "Works From a Goal",
       "Follows Up in Writing",
     ]);
     const features = page.getByRole("list", { name: "Built Around Your Business" });
@@ -127,7 +127,7 @@ for (const width of [320, 390, 1440]) {
       "Trained on Your Business",
       "Native Calendar Booking",
       "Approvals and Handoffs",
-      "Shared Context",
+      "One Workspace",
       "Clear Outcomes",
       "Rehearse Before Launch",
     ]);

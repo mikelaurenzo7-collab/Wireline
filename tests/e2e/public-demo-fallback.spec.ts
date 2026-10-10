@@ -61,9 +61,11 @@ test("home offers outbound and inbound account paths without a public audio cont
   await openPage(page, "/");
 
   const directions = page.getByRole("navigation", { name: "Choose Bot direction" });
-  const outbound = directions.getByRole("link", { name: /OUTBOUND\s+Find\. Call\. Book\./i });
+  const outbound = directions.getByRole("link", {
+    name: /Outbound: Call\. Book\. Create an Outbound Bot/i,
+  });
   const inbound = directions.getByRole("link", {
-    name: /INBOUND\s+Answer\. Qualify\. Route\./i,
+    name: /Inbound: Answer\. Act\. Create an Inbound Bot/i,
   });
   await expect(outbound).toHaveAttribute(
     "href",

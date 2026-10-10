@@ -84,7 +84,7 @@ test("homepage primary paths expose focus and change state cleanly", async ({ pa
 
   const outbound = page
     .getByRole("navigation", { name: "Choose Bot direction" })
-    .getByRole("link", { name: /OUTBOUND\s+Find\. Call\. Book\./i });
+    .getByRole("link", { name: /Outbound: Call\. Book\. Create an Outbound Bot/i });
   await outbound.focus();
   await expect(outbound).toBeFocused();
   const focusStyle = await outbound.evaluate((element) => {

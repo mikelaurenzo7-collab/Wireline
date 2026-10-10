@@ -289,7 +289,9 @@ for (const width of [390, 1440]) {
     await expect(page.getByText("Your hours match on both pages.")).toBeVisible();
     // The finished task never shows the live task's screen.
     const finished = page.getByRole("region", { name: /Google Business page/ });
-    await expect(finished.getByText("The screen is cleared after a task ends.")).toBeVisible();
+    await expect(
+      finished.getByText("The browser screen was cleared after this task ended."),
+    ).toBeVisible();
     await expect(finished.getByRole("img")).toHaveCount(0);
   });
 }
