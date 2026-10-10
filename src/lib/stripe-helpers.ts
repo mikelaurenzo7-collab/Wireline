@@ -868,52 +868,35 @@ async function syncSubscriptionFromStripeUnderLease(
       assertSyncLease,
     });
 
+    // One snapshot per row for the insert and its conflict update. Separate
+    // `new Date()` calls stamped the same mirror a millisecond apart depending
+    // on whether the row already existed.
+    const subscriptionMirror = {
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: sub.id,
+      plan: plan?.id ?? null,
+      status: stripeStatus,
+      currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
+      cancelAtPeriodEnd: cancellation.atPeriodEnd,
+      updatedAt: new Date(),
+    };
     await assertSyncLease();
     await drizzle
       .insert(schema.subscriptions)
-      .values({
-        userId,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: sub.id,
-        plan: plan?.id ?? null,
-        status: stripeStatus,
-        currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-        cancelAtPeriodEnd: cancellation.atPeriodEnd,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [schema.subscriptions.userId],
-        set: {
-          stripeCustomerId: customerId,
-          stripeSubscriptionId: sub.id,
-          plan: plan?.id ?? null,
-          status: stripeStatus,
-          currentPeriodEnd: currentPeriodEndIso ? new Date(currentPeriodEndIso) : null,
-          cancelAtPeriodEnd: cancellation.atPeriodEnd,
-          updatedAt: new Date(),
-        },
-      });
+      .values({ userId, ...subscriptionMirror })
+      .onConflictDoUpdate({ target: [schema.subscriptions.userId], set: subscriptionMirror });
 
+    const settingsMirror = {
+      subscriptionStatus: localStatus,
+      maxAgents: effectiveMaxAgents,
+      extraAgents,
+      updatedAt: new Date(),
+    };
     await assertSyncLease();
     await drizzle
       .insert(schema.settings)
-      .values({
-        id: userId,
-        userId,
-        subscriptionStatus: localStatus,
-        maxAgents: effectiveMaxAgents,
-        extraAgents,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [schema.settings.userId],
-        set: {
-          subscriptionStatus: localStatus,
-          maxAgents: effectiveMaxAgents,
-          extraAgents,
-          updatedAt: new Date(),
-        },
-      });
+      .values({ id: userId, userId, ...settingsMirror })
+      .onConflictDoUpdate({ target: [schema.settings.userId], set: settingsMirror });
 
     const { ensureDefaultAiSpendBudget } = await import("./workspace-usage-snapshot");
     const spendBudgetPlanId =
