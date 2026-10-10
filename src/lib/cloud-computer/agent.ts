@@ -1,4 +1,6 @@
 import { estimateCost } from "../ai-audit";
+import { DefiniteProviderRejectionError } from "../ai-client";
+import { log } from "../server-logger";
 import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
 import type { CloudBrowserSession, MemberResult } from "./browser-session";
 import { displayUrl } from "./url-policy";
@@ -191,6 +193,72 @@ function cleanSources(value: unknown): string[] {
 
 function jsonBytes(value: unknown): number {
   return Buffer.byteLength(JSON.stringify(value), "utf8");
+}
+
+/** Only protocol shape goes into logs; never copy model or browser content. */
+function followUpInputDiagnostics(items: unknown[]): Record<string, unknown> {
+  const records = items.map((item) =>
+    item && typeof item === "object" && !Array.isArray(item)
+      ? (item as Record<string, unknown>)
+      : {},
+  );
+  const typeOf = (item: Record<string, unknown>): string => {
+    if (item.role === "user") return "user_message";
+    if (item.role === "assistant") return "assistant_message";
+    switch (item.type) {
+      case "reasoning":
+      case "computer_call":
+      case "computer_call_output":
+      case "function_call":
+      case "function_call_output":
+        return item.type;
+      default:
+        return "other";
+    }
+  };
+  const computerCallIds = new Set(
+    records
+      .filter((item) => item.type === "computer_call" && typeof item.call_id === "string")
+      .map((item) => item.call_id),
+  );
+  const computerOutputs = records.filter((item) => item.type === "computer_call_output");
+  const reasoning = records.filter((item) => item.type === "reasoning");
+  return {
+    inputItemCount: records.length,
+    recentInputTypes: records.slice(-12).map(typeOf),
+    reasoningItemCount: reasoning.length,
+    encryptedReasoningItemCount: reasoning.filter(
+      (item) => typeof item.encrypted_content === "string" && item.encrypted_content.length > 0,
+    ).length,
+    computerCallCount: computerCallIds.size,
+    computerOutputCount: computerOutputs.length,
+    unmatchedComputerOutputCount: computerOutputs.filter(
+      (item) => !computerCallIds.has(item.call_id),
+    ).length,
+    functionOutputCount: records.filter((item) => item.type === "function_call_output").length,
+    userImageCount: records.reduce((count, item) => {
+      if (item.role !== "user" || !Array.isArray(item.content)) return count;
+      return (
+        count +
+        item.content.filter(
+          (part: unknown) =>
+            part &&
+            typeof part === "object" &&
+            (part as Record<string, unknown>).type === "input_image",
+        ).length
+      );
+    }, 0),
+    replayHasCreatedBy: records.some((item) => Object.hasOwn(item, "created_by")),
+  };
+}
+
+function hasPendingComputerSafetyChecks(output: unknown[]): boolean {
+  return output.some((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const call = item as Record<string, unknown>;
+    if (call.type !== "computer_call" || call.pending_safety_checks === undefined) return false;
+    return !Array.isArray(call.pending_safety_checks) || call.pending_safety_checks.length > 0;
+  });
 }
 
 /** Count screenshot images by model item, not by their base64 transport size. */
@@ -423,6 +491,7 @@ export async function runCloudComputerAgent(input: {
   bot: BotContext;
   goal: string;
   startUrl: string | null;
+  taskHash?: string;
   hooks: CloudComputerHooks;
   now?: () => number;
 }): Promise<CloudComputerOutcome> {
@@ -475,8 +544,8 @@ export async function runCloudComputerAgent(input: {
     if (input.hooks.stopRequested()) return { status: "stopped", summary: "Stopped by the owner." };
     if (overTime()) return timeLimit;
     const request = { ...requestBase, input: inputItems };
-    if (jsonBytes(request) > CLOUD_COMPUTER_LIMITS.maxRequestBytes)
-      return { ...CONTEXT_LIMIT_OUTCOME };
+    const requestBytes = jsonBytes(request);
+    if (requestBytes > CLOUD_COMPUTER_LIMITS.maxRequestBytes) return { ...CONTEXT_LIMIT_OUTCOME };
     const reserveUsd = turnReserveUsd(input.model, instructions, TOOLS, inputItems);
     if (!Number.isFinite(reserveUsd)) return { ...CONTEXT_LIMIT_OUTCOME };
 
@@ -485,7 +554,20 @@ export async function runCloudComputerAgent(input: {
       turn,
       operation: async () => {
         const started = now();
-        const result = await input.client.responses.create(request);
+        let result: Awaited<ReturnType<CloudComputerClient["responses"]["create"]>>;
+        try {
+          result = await input.client.responses.create(request);
+        } catch (error) {
+          if (turn > 1 && error instanceof DefiniteProviderRejectionError && error.status === 400) {
+            log.warn("Cloud computer Responses follow-up rejected", {
+              ...(input.taskHash ? { taskHash: input.taskHash } : {}),
+              turn,
+              requestBytes,
+              ...followUpInputDiagnostics(inputItems),
+            });
+          }
+          throw error;
+        }
         input.hooks.recordUsage(
           input.model,
           result as unknown as Record<string, unknown>,
@@ -516,6 +598,13 @@ export async function runCloudComputerAgent(input: {
         code: "COMPUTER_DECLINED",
         summary:
           "This task was declined by the AI safety system. Rephrase it or choose a different task.",
+      };
+    }
+    if (hasPendingComputerSafetyChecks(output)) {
+      return {
+        status: "failed",
+        code: "COMPUTER_SAFETY_CHECK_REQUIRED",
+        summary: "The AI provider requested a safety review, so the Bot stopped before acting.",
       };
     }
     if (output.length) {

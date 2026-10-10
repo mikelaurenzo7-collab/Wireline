@@ -711,6 +711,7 @@ async function executeTask(
       bot: input.bot,
       goal: input.goal,
       startUrl: input.startUrl,
+      taskHash,
       hooks: {
         emit: async (event) => {
           if (event.kind === "action" || event.kind === "error") task.actions += 1;
@@ -816,6 +817,7 @@ async function executeTask(
     if (!(error instanceof AppError)) {
       log.warn("Cloud computer task failed", {
         taskId: task.taskId,
+        taskHash,
         error: getErrorMessage(error),
       });
     }

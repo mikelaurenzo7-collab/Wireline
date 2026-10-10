@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { OPENAI_MODELS } from "../src/lib/ai-models";
+import { DefiniteProviderRejectionError } from "../src/lib/ai-client";
 import {
   buildSystemPrompt,
   runCloudComputerAgent,
@@ -9,6 +10,7 @@ import {
 } from "../src/lib/cloud-computer/agent";
 import type { CloudBrowserSession, MemberResult } from "../src/lib/cloud-computer/browser-session";
 import type { CloudComputerClient } from "../src/lib/cloud-computer/config";
+import { log } from "../src/lib/server-logger";
 
 type Item = Record<string, unknown>;
 
@@ -86,6 +88,7 @@ function client(responses: unknown[]) {
     requests.push(JSON.parse(JSON.stringify(body)) as Record<string, unknown>);
     const next = responses.shift();
     if (!next) throw new Error("No scripted response");
+    if (next instanceof Error) throw next;
     return next;
   });
   return { client: { responses: { create } } as CloudComputerClient, requests };
@@ -187,6 +190,143 @@ describe("OpenAI cloud computer agent loop", () => {
       call_id: "c1",
       output: { type: "computer_screenshot", detail: "original" },
     });
+  });
+
+  it("logs only bounded input shape when a Computer follow-up gets a provider 400", async () => {
+    const warn = vi.spyOn(log, "warn").mockImplementation(() => undefined);
+    try {
+      const { session } = fakeSession();
+      const { client: openai, requests } = client([
+        response([
+          {
+            type: "reasoning",
+            id: "rs_private",
+            summary: [],
+            encrypted_content: "private-reasoning",
+          },
+          computerCall("call_private", [{ type: "screenshot" }]),
+        ]),
+        new DefiniteProviderRejectionError("OpenAI", 400),
+      ]);
+
+      await expect(
+        runCloudComputerAgent({
+          client: openai,
+          model: OPENAI_MODELS.GPT_5_6_TERRA,
+          session,
+          bot,
+          goal: "private-goal",
+          startUrl: null,
+          taskHash: "a".repeat(24),
+          hooks: hooks().hooks,
+        }),
+      ).rejects.toBeInstanceOf(DefiniteProviderRejectionError);
+
+      expect(requests).toHaveLength(2);
+      expect(warn).toHaveBeenCalledWith("Cloud computer Responses follow-up rejected", {
+        taskHash: "a".repeat(24),
+        turn: 2,
+        requestBytes: expect.any(Number),
+        inputItemCount: 4,
+        recentInputTypes: ["user_message", "reasoning", "computer_call", "computer_call_output"],
+        reasoningItemCount: 1,
+        encryptedReasoningItemCount: 1,
+        computerCallCount: 1,
+        computerOutputCount: 1,
+        unmatchedComputerOutputCount: 0,
+        functionOutputCount: 0,
+        userImageCount: 1,
+        replayHasCreatedBy: false,
+      });
+      const logged = JSON.stringify(warn.mock.calls);
+      expect(logged).not.toContain("private-goal");
+      expect(logged).not.toContain("private-reasoning");
+      expect(logged).not.toContain("call_private");
+      expect(logged).not.toContain("model-frame");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("identifies a rejected page-open follow-up without logging the URL", async () => {
+    const warn = vi.spyOn(log, "warn").mockImplementation(() => undefined);
+    try {
+      const { session } = fakeSession({}, "about:blank");
+      const { client: openai, requests } = client([
+        response([openPublicUrlCall("call_private", "https://example.com/private-path")]),
+        new DefiniteProviderRejectionError("OpenAI", 400),
+      ]);
+
+      await expect(
+        runCloudComputerAgent({
+          client: openai,
+          model: OPENAI_MODELS.GPT_5_6_TERRA,
+          session,
+          bot,
+          goal: "Visit the site.",
+          startUrl: null,
+          hooks: hooks().hooks,
+        }),
+      ).rejects.toBeInstanceOf(DefiniteProviderRejectionError);
+
+      expect(requests).toHaveLength(2);
+      expect(warn).toHaveBeenCalledWith(
+        "Cloud computer Responses follow-up rejected",
+        expect.objectContaining({
+          turn: 2,
+          recentInputTypes: [
+            "user_message",
+            "function_call",
+            "function_call_output",
+            "user_message",
+          ],
+          computerCallCount: 0,
+          computerOutputCount: 0,
+          functionOutputCount: 1,
+          userImageCount: 2,
+        }),
+      );
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("private-path");
+      expect(JSON.stringify(warn.mock.calls)).not.toContain("call_private");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("stops before executing a computer call with pending safety checks", async () => {
+    const { session, calls } = fakeSession();
+    const { client: openai, requests } = client([
+      response([
+        message("Private provider detail"),
+        {
+          ...computerCall("c1", [{ type: "click", x: 42, y: 84 }]),
+          pending_safety_checks: [
+            { id: "check_private", code: "review", message: "Private provider detail" },
+          ],
+        },
+      ]),
+    ]);
+    const { hooks: h, events } = hooks();
+
+    const outcome = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Inspect the page.",
+      startUrl: null,
+      hooks: h,
+    });
+
+    expect(outcome).toEqual({
+      status: "failed",
+      code: "COMPUTER_SAFETY_CHECK_REQUIRED",
+      summary: "The AI provider requested a safety review, so the Bot stopped before acting.",
+    });
+    expect(calls).toHaveLength(0);
+    expect(requests).toHaveLength(1);
+    expect(events).toHaveLength(0);
+    expect(JSON.stringify(outcome)).not.toContain("Private provider detail");
   });
 
   it("preserves modifier keys on pointer actions and every point in a drag path", async () => {
