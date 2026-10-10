@@ -179,6 +179,23 @@ function cleanSources(value: unknown): string[] {
     try {
       const url = new URL(item.trim());
       if (url.protocol !== "http:" && url.protocol !== "https:") continue;
+      // A source becomes a persistent owner-facing link. Auth and token URLs
+      // are not public citations, even if the model offered one as a source.
+      const segments = decodeURIComponent(url.pathname).split("/").filter(Boolean);
+      if (
+        segments.some(
+          (segment) =>
+            /(^|[-_])(auth|oauth|callback|login|log-in|signin|sign-in|signup|sign-up|register|verify|verification|magic|token|reset|password|invite|invitation|confirm)([-_]|$)/i.test(
+              segment,
+            ) ||
+            (segment.length >= 20 &&
+              /^[A-Za-z0-9_-]+$/.test(segment) &&
+              /[A-Za-z]/.test(segment) &&
+              /\d/.test(segment)),
+        )
+      ) {
+        continue;
+      }
       url.username = "";
       url.password = "";
       // Source links are saved in the task ledger and shown to the owner.

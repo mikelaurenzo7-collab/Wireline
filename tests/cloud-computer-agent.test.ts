@@ -104,7 +104,11 @@ describe("OpenAI cloud computer agent loop", () => {
         functionCall("f1", "finish_task", {
           outcome: "completed",
           summary: "Found the hours.",
-          sources: ["https://reader:secret@example.com/hours?code=one-time-secret#access_token"],
+          sources: [
+            "https://reader:secret@example.com/hours?code=one-time-secret#access_token",
+            "https://example.com/magic/one-time-secret",
+            "https://example.com/s/3xKr5D2pYq7vM9nT4bR8aC1f",
+          ],
         }),
       ]),
     ]);

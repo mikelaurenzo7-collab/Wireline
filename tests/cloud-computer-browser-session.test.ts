@@ -128,7 +128,7 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
   afterAll(async () => {
     await session?.close();
     await new Promise<void>((resolve) => server?.close(() => resolve()));
-  });
+  }, 30_000);
 
   it("reads the page as a tagged accessibility tree with stable refs", async () => {
     const first = await session.execute("read_page", { filter: "interactive" });
@@ -270,17 +270,20 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect((bodyText.content[0] as { text: string }).text).not.toContain("owner@example.test");
   });
 
-  it("leaves private query and fragment values out of model link snapshots", async () => {
+  it("leaves token-bearing link paths, queries, and fragments out of model snapshots", async () => {
     await session
       .activePage()
       .setContent(
-        '<a href="https://example.com/login?code=one-time-secret#access_token=hidden">Continue</a>',
+        '<a href="https://example.com/magic/one-time-secret?code=hidden#access_token=hidden">Continue</a>',
       );
     const snapshot = await session.execute("read_page", { filter: "all" });
     const text = (snapshot.content[0] as { text: string }).text;
-    expect(text).toContain('href="https://example.com/login"');
+    expect(text).toMatch(/link "Continue" \[ref_\d+\]/);
+    expect(text).not.toContain("magic");
     expect(text).not.toContain("one-time-secret");
+    expect(text).not.toContain("code=hidden");
     expect(text).not.toContain("access_token");
+    expect(text).not.toContain("href=");
   });
 
   it("returns real JPEG screenshots and masked zoom crops", async () => {
