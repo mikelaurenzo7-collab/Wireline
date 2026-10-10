@@ -64,8 +64,8 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   },
   {
     icon: Waypoints,
-    title: "Shared Context",
-    body: "Calls, email, and computer tasks share one memory, so nobody repeats themselves.",
+    title: "One Workspace",
+    body: "Manage your Bot's calls, email, and computer tasks from one place.",
   },
   {
     icon: ClipboardCheck,
