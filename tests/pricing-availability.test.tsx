@@ -158,6 +158,53 @@ describe("public pricing activation availability", () => {
     expect(planLink("voice-regular")?.props.to).toBe("/signup?plan=voice-regular&interval=month");
   });
 
+  it("offers private setup and a review contact for an unconfigured Email package", async () => {
+    window.location.search = "?plan=voice-email-regular&interval=month";
+    await load(
+      response({
+        plans: [
+          {
+            id: "voice-email-regular",
+            configured: false,
+            annual_configured: false,
+            contact_sales: true,
+          },
+          {
+            id: "voice-regular",
+            configured: true,
+            annual_configured: true,
+            contact_sales: false,
+          },
+        ],
+      }),
+    );
+    expect(text(render())).toContain(
+      "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation.",
+    );
+    expect(text(planLink("voice-email-regular"))).toBe("Create a Free Bot ");
+    expect(planLink("voice-email-regular")?.props.to).toBe(
+      "/signup?plan=voice-email-regular&interval=month",
+    );
+    const contact = links().find((element) => element.props.to === "/contact?topic=email");
+    expect(text(contact)).toBe("Ask About Email Setup");
+  });
+
+  it("keeps SMS as private planning with a setup review instead of paid checkout", async () => {
+    window.location.search = "?plan=sms&interval=month";
+    await load(
+      response({
+        plans: [{ id: "sms", configured: false, annual_configured: false, contact_sales: true }],
+      }),
+    );
+    expect(text(render())).toContain(
+      "Plan and rehearse an SMS Bot privately. Ask us to review what live activation would require.",
+    );
+    expect(text(planLink("sms"))).toBe("Create a Free Bot ");
+    expect(planLink("sms")?.props.to).toBe("/signup?plan=sms&interval=month");
+    const contact = links().find((element) => element.props.to === "/contact?topic=sms");
+    expect(text(contact)).toBe("Ask About SMS Setup");
+  });
+
   it.each([
     ["release is closed", { configured: false, annual_configured: false, contact_sales: true }],
     [

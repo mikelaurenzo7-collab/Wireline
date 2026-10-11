@@ -28,6 +28,38 @@ const paidPlans = {
   })),
 };
 
+test("homepage gives Email interests a private build and setup-review path", async ({ page }) => {
+  await mockPublicAccount(page, {
+    ...paidPlans,
+    plans: paidPlans.plans.map((plan) =>
+      plan.id.includes("email")
+        ? { ...plan, configured: false, annual_configured: false, contact_sales: true }
+        : plan,
+    ),
+  });
+  await page.goto("/");
+  const email = page.getByRole("article", { name: "Email plan", exact: true });
+  const combined = page.getByRole("article", { name: "Calls + Email plan", exact: true });
+  const calls = page.getByRole("article", { name: "Calls plan", exact: true });
+  await expect(email).toContainText("$9");
+  await expect(combined).toContainText("$79");
+  await expect(email.getByRole("link", { name: "Build Email Bot Free" })).toHaveAttribute(
+    "href",
+    "/signup?plan=email",
+  );
+  await expect(
+    combined.getByRole("link", { name: "Build Calls + Email Bot Free" }),
+  ).toHaveAttribute("href", "/signup?plan=voice-email-regular");
+  await expect(email.getByRole("link", { name: "setup review" })).toHaveAttribute(
+    "href",
+    "/contact?topic=email",
+  );
+  await expect(calls.getByRole("link", { name: "Choose Calls" })).toHaveAttribute(
+    "href",
+    "/signup?plan=voice-regular",
+  );
+});
+
 test("paused activation stays explicit from the homepage through paid signup", async ({ page }) => {
   await mockPublicAccount(page, { ...paidPlans, checkout_available: false });
   await page.goto("/");

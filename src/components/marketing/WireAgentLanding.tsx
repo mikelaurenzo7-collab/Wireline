@@ -62,7 +62,7 @@ const PUBLIC_PLANS = PUBLIC_PLAN_IDS.map((id) => {
 });
 
 export default function WireAgentLanding() {
-  const { canActivate, notice } = usePaidPlanAvailability();
+  const { canActivate, needsEmailSetupReview, notice } = usePaidPlanAvailability();
   useEffect(() => {
     emitProductEventOnce({
       event: "landing_viewed",
@@ -204,9 +204,11 @@ export default function WireAgentLanding() {
               {PUBLIC_PLANS.map(({ id, plan }) => {
                 const free = id === "personal";
                 const featured = id === "voice-email-regular";
+                const emailSetupReview = needsEmailSetupReview(id);
                 return (
                   <article
                     key={id}
+                    aria-label={`${PLAN_NAMES[id]} plan`}
                     className={`landing-prestige__price-card${featured ? " is-featured" : ""}`}
                   >
                     <div>
@@ -245,6 +247,11 @@ export default function WireAgentLanding() {
                               : "1 local number included"}
                       </li>
                     </ul>
+                    {emailSetupReview ? (
+                      <p className="landing-prestige__price-note">
+                        Email activation has a <Link to="/contact?topic=email">setup review</Link>.
+                      </p>
+                    ) : null}
                     <Link
                       to={signupHrefForPlan(id)}
                       className={featured ? "is-primary" : undefined}
@@ -252,7 +259,9 @@ export default function WireAgentLanding() {
                     >
                       {free
                         ? "Start Free"
-                        : `${canActivate(id) ? "Choose" : "Set Up"} ${PLAN_NAMES[id]}`}
+                        : emailSetupReview
+                          ? `Build ${PLAN_NAMES[id]} Bot Free`
+                          : `${canActivate(id) ? "Choose" : "Set Up"} ${PLAN_NAMES[id]}`}
                     </Link>
                   </article>
                 );

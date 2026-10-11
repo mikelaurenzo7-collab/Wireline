@@ -26,7 +26,7 @@ const FAQ = [
   ],
   [
     "Can One Bot Use Several Channels?",
-    "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge, rules, and conversation context. SMS packages are not available for activation yet.",
+    "Yes. Choose Calls, Email, SMS, or any combination. Your selected channels share the Bot's knowledge and rules. SMS selections are for private planning and rehearsal; live activation requests receive a setup review.",
   ],
   [
     "When Does Included Usage Reset?",
@@ -105,7 +105,7 @@ export default function Pricing() {
       }),
     );
   };
-  const { canActivate, notice } = usePaidPlanAvailability({
+  const { canActivate, emailSetupReview, notice } = usePaidPlanAvailability({
     interval: billingInterval,
     planId: selectedPlanId,
   });
@@ -159,7 +159,7 @@ export default function Pricing() {
                   <div className="space-y-3">
                     <p role="status" className="text-sm text-muted-foreground">
                       {smsPending
-                        ? "SMS setup is not available yet. You can still set up and rehearse privately."
+                        ? "Plan and rehearse an SMS Bot privately. Ask us to review what live activation would require."
                         : notice}
                     </p>
                     <Link
@@ -168,9 +168,19 @@ export default function Pricing() {
                     >
                       {canActivate(plan.id) && !smsPending
                         ? "Get Started"
-                        : "Set Up These Channels"}{" "}
+                        : emailSetupReview || smsPending
+                          ? "Create a Free Bot"
+                          : "Set Up These Channels"}{" "}
                       <ArrowRight className="size-4" aria-hidden="true" />
                     </Link>
+                    {emailSetupReview || smsPending ? (
+                      <Link
+                        to={smsPending ? "/contact?topic=sms" : "/contact?topic=email"}
+                        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold text-primary underline underline-offset-4"
+                      >
+                        {smsPending ? "Ask About SMS Setup" : "Ask About Email Setup"}
+                      </Link>
+                    ) : null}
                   </div>
                 );
               }}

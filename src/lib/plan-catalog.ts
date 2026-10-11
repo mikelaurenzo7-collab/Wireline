@@ -491,7 +491,7 @@ export const STRIPE_PLANS: StripePlan[] = [
           ...(sms
             ? [
                 `$${capacity.transport} monthly transport allowance`,
-                "SMS setup is not available yet; registration charges are quoted separately",
+                "SMS activation requests receive a setup review; registration charges are quoted separately",
               ]
             : []),
           ...(voice

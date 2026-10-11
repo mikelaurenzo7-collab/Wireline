@@ -59,6 +59,18 @@ export function usePaidPlanAvailability({
     : STRIPE_PLANS.some(
         (plan) => plan.public !== false && plan.price_usd_monthly > 0 && canActivate(plan.id),
       );
+  const needsEmailSetupReview = (id: string) => {
+    const livePlan = plans?.plans.find((plan) => plan?.id === id);
+    const catalogPlan = STRIPE_PLANS.find((plan) => plan.id === id);
+    return (
+      status === "ready" &&
+      isSelfServeCheckoutAvailable(plans) &&
+      livePlan?.contact_sales === true &&
+      catalogPlan?.channels.includes("email") === true &&
+      catalogPlan?.channels.includes("sms") === false
+    );
+  };
+  const emailSetupReview = planId ? needsEmailSetupReview(planId) : false;
   const notice =
     status === "loading"
       ? "Checking activation availability…"
@@ -66,7 +78,9 @@ export function usePaidPlanAvailability({
         ? "Activation status unavailable. Create a Bot for free and rehearse privately."
         : available
           ? "Create a Bot for free. Rehearse privately, then activate when ready."
-          : "Paid activation is unavailable. Create a Bot for free and rehearse privately.";
+          : emailSetupReview
+            ? "Email activation requires a setup review. Create a Bot for free, rehearse privately, then ask us about activation."
+            : "Paid activation is unavailable. Create a Bot for free and rehearse privately.";
 
-  return { canActivate, notice };
+  return { canActivate, emailSetupReview, needsEmailSetupReview, notice };
 }

@@ -29,7 +29,11 @@ export function ContactPage() {
       ? "Billing Help"
       : initialIntent?.toLowerCase() === "enterprise"
         ? "Enterprise rollout"
-        : "",
+        : initialIntent?.toLowerCase() === "email"
+          ? "Email setup review"
+          : initialIntent?.toLowerCase() === "sms"
+            ? "SMS setup review"
+            : "",
   );
   const [phone, setPhone] = useState("");
   const [body, setBody] = useState("");

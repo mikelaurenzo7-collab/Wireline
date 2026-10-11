@@ -55,7 +55,7 @@ test("all channel capacities retain exact annual signup intent in one readable s
     const card = page.getByRole("article", { name: "Selected package" });
     await expect(card).toHaveCount(1);
     await expect(card).toContainText(`$${plan.price_usd_annual.toLocaleString()}`);
-    const signup = card.getByRole("link");
+    const signup = card.locator('a[href^="/signup?"]');
     await expect(signup).toHaveAttribute("href", `/signup?plan=${plan.id}&interval=year`);
     const usageNote = page.getByText("Included usage is shown per month.", { exact: false });
     await expect(usageNote).toContainText("No automatic top-ups or overage invoices.");
@@ -68,7 +68,7 @@ test("all channel capacities retain exact annual signup intent in one readable s
       await expect(usageNote).not.toContainText("Outbound calls");
     }
     if (plan.checkoutAvailability !== "available")
-      await expect(card).toContainText("SMS setup is not available yet.");
+      await expect(card).toContainText("Plan and rehearse an SMS Bot privately.");
     const overflow = await card.locator("..").evaluate((element) =>
       [element, ...element.querySelectorAll("*")]
         .filter((node) => node.clientWidth > 0 && node.scrollWidth > node.clientWidth + 2)
