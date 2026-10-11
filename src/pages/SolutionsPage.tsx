@@ -39,7 +39,7 @@ const SOLUTIONS = {
   support: {
     title: "A Front Desk That Answers Before Demand Goes Cold",
     description:
-      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, handles routine questions, and records the next step. Add text or email when those channels are configured.",
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, completes supported requests, books available times, and records outcomes. Add text or email when those channels are configured.",
     primary: {
       href: "/signup?wedge=support",
       label: "Create Front Desk Bot",
@@ -52,8 +52,8 @@ const SOLUTIONS = {
         "Policies, services, availability, and escalation rules stay consistent.",
       ],
       [
-        "It Resolves or Hands Off Cleanly",
-        "The right person receives the request with context already attached.",
+        "It Completes the Next Step",
+        "Your Bot answers, books when Calendar is connected, and records the outcome. Your rules decide when a person steps in.",
       ],
     ],
     capabilities: [
@@ -65,9 +65,10 @@ const SOLUTIONS = {
         "Booking That Closes the Loop",
         "Offer available times through Calendar and capture the confirmed booking.",
       ],
-      ["Escalation with Context", "Route exceptions with the request and outcome attached."],
+      ["Human Help When Needed", "Bring in a person for exceptions with the context attached."],
     ],
-    proof: "Answer repeatable questions while your team takes the exceptions.",
+    proof:
+      "Give every caller an answer and a clear outcome, without making your team repeat the work.",
   },
 } as const;
 
