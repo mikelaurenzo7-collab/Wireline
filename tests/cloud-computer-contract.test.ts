@@ -102,6 +102,19 @@ describe("cloud computer source contracts", () => {
     expect(runner).toMatch(/tenantStore\s*\.run\(userId/);
   });
 
+  it("does not wait for owner input when the question was not saved", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    const ownerWait = runner.slice(
+      runner.indexOf("askOwner: async"),
+      runner.indexOf("meter: async"),
+    );
+    expect(ownerWait).toContain("const checkpoint = await persist(task, {");
+    expect(ownerWait).toContain('checkpoint !== "written"');
+    expect(ownerWait.indexOf('checkpoint !== "written"')).toBeLessThan(
+      ownerWait.indexOf("new Promise<string | null>"),
+    );
+  });
+
   it("uses the Playwright transport required by browser request guards", () => {
     const browser = read("src/lib/cloud-computer/browser-session.ts");
     expect(browser).toContain("await chromium.connect(connection.wsEndpoint");

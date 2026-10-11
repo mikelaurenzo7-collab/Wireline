@@ -727,7 +727,18 @@ async function executeTask(
         askOwner: async (question, waitMs) => {
           // Stop pressed during the model call: do not park on a new question.
           if (task.stop) return null;
-          await persist(task, { status: "needs_input", question: cleanText(question, 300) });
+          const checkpoint = await persist(task, {
+            status: "needs_input",
+            question: cleanText(question, 300),
+          });
+          // If the owner cannot see the question, waiting here leaves the Bot
+          // stuck until its timeout with no way for the owner to take control.
+          if (checkpoint !== "written") {
+            if (task.stop || task.finished) return null;
+            throw AppError.serviceUnavailable(
+              "The cloud computer could not show your Bot's question. Try the task again.",
+            );
+          }
           if (task.stop) return null;
           // waitMs is what remains of the task's owner-wait budget.
           const reply = await new Promise<string | null>((resolve) => {

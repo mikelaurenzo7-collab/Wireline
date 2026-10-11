@@ -57,6 +57,53 @@ describe("Office document text extraction", () => {
     expect(text).not.toContain("Row 1001:");
   });
 
+  it("uses visible workbook sheet names and order, excluding hidden worksheets", () => {
+    const bytes = storedZip([
+      {
+        name: "xl/workbook.xml",
+        contents:
+          '<workbook><sheets><sheet name="Policies &amp; Hours" sheetId="2" r:id="rId2"/><sheet name="Internal secrets" sheetId="1" state="veryHidden" r:id="rId1"/></sheets></workbook>',
+      },
+      {
+        name: "xl/_rels/workbook.xml.rels",
+        contents:
+          '<Relationships><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/></Relationships>',
+      },
+      {
+        name: "xl/worksheets/sheet1.xml",
+        contents:
+          '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Private token</t></is></c></row></sheetData></worksheet>',
+      },
+      {
+        name: "xl/worksheets/sheet2.xml",
+        contents:
+          '<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Open Monday</t></is></c></row></sheetData></worksheet>',
+      },
+    ]);
+
+    expect(extractOfficeDocumentText(bytes, "xlsx")).toBe(
+      "Sheet Policies & Hours\nRow 1: A1: Open Monday",
+    );
+  });
+
+  it("rejects a workbook that declares sheets without readable relationships", () => {
+    const bytes = storedZip([
+      {
+        name: "xl/workbook.xml",
+        contents: '<workbook><sheets><sheet name="Visible" r:id="rId1"/></sheets></workbook>',
+      },
+      {
+        name: "xl/worksheets/sheet1.xml",
+        contents:
+          '<worksheet><sheetData><row r="1"><c r="A1"><v>123</v></c></row></sheetData></worksheet>',
+      },
+    ]);
+
+    expect(() => extractOfficeDocumentText(bytes, "xlsx")).toThrow(
+      "The Office document is damaged or uses an unsupported format.",
+    );
+  });
+
   it("rejects malformed archives, mismatched Office formats, and empty workbooks", () => {
     expect(() => extractOfficeDocumentText(Buffer.from("not a zip"), "docx")).toThrow();
     expect(() =>

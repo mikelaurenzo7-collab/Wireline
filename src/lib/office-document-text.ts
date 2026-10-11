@@ -1,4 +1,5 @@
 import { inflateRawSync } from "node:zlib";
+import { posix } from "node:path";
 
 import { AppError } from "./api-error";
 
@@ -84,6 +85,7 @@ function zipDirectory(bytes: Buffer): Map<string, ZipEntry> {
     const relevant =
       name === "word/document.xml" ||
       name === "xl/workbook.xml" ||
+      name === "xl/_rels/workbook.xml.rels" ||
       name === "xl/sharedStrings.xml" ||
       /^xl\/worksheets\/sheet\d+\.xml$/.test(name);
     if (relevant) {
@@ -222,8 +224,8 @@ function attribute(source: string, name: string): string | null {
   return new RegExp(`(?:^|\\s)${escaped}="([^"]*)"`).exec(source)?.[1] ?? null;
 }
 
-function sheetText(xml: string, sharedStrings: string[], sheetNumber: number): string[] {
-  const lines = [`Sheet ${sheetNumber}`];
+function sheetText(xml: string, sharedStrings: string[], sheetLabel: string): string[] {
+  const lines = [`Sheet ${sheetLabel}`];
   const rows = /<row\b([^>]*)>([\s\S]*?)<\/row\s*>/g;
   let rowIndex = 0;
   for (const row of xml.matchAll(rows)) {
@@ -255,6 +257,53 @@ function sheetText(xml: string, sharedStrings: string[], sheetNumber: number): s
   return lines.length > 1 ? lines : [];
 }
 
+function visibleSheets(reader: OfficeZipReader): Array<{ path: string; label: string }> {
+  const workbook = reader.read("xl/workbook.xml");
+  if (!workbook) return invalidDocument();
+  const sheetsXml = /<(?:[\w.-]+:)?sheets\b[^>]*>([\s\S]*?)<\/(?:[\w.-]+:)?sheets\s*>/.exec(
+    workbook,
+  )?.[1];
+  // A workbook without sheet metadata is only useful in minimal ZIP fixtures.
+  // A real workbook declares each visible sheet and its relationship.
+  if (sheetsXml === undefined) {
+    return reader
+      .sheetNames()
+      .sort(
+        (left, right) =>
+          Number(/sheet(\d+)/.exec(left)?.[1]) - Number(/sheet(\d+)/.exec(right)?.[1]),
+      )
+      .slice(0, MAX_SHEETS)
+      .map((path, index) => ({ path, label: String(index + 1) }));
+  }
+
+  const relationships = reader.read("xl/_rels/workbook.xml.rels");
+  if (!relationships) return invalidDocument();
+  const paths = new Map<string, string>();
+  for (const match of relationships.matchAll(/<(?:[\w.-]+:)?Relationship\b([^>]*)\/?\s*>/g)) {
+    const id = attribute(match[1] || "", "Id");
+    const target = attribute(match[1] || "", "Target");
+    const type = attribute(match[1] || "", "Type");
+    if (!id || !target || !type?.endsWith("/worksheet")) continue;
+    const path = posix.normalize(target.startsWith("/") ? target.slice(1) : `xl/${target}`);
+    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(path)) paths.set(id, path);
+  }
+
+  const visible: Array<{ path: string; label: string }> = [];
+  for (const match of sheetsXml.matchAll(/<(?:[\w.-]+:)?sheet\b([^>]*)\/?\s*>/g)) {
+    const attrs = match[1] || "";
+    if (["hidden", "veryHidden"].includes(attribute(attrs, "state") || "")) continue;
+    const path = paths.get(attribute(attrs, "r:id") || "");
+    if (!path || !reader.has(path)) return invalidDocument();
+    const label = decodeXml(attribute(attrs, "name") || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80);
+    visible.push({ path, label: label || String(visible.length + 1) });
+    if (visible.length >= MAX_SHEETS) break;
+  }
+  return visible;
+}
+
 function excelText(reader: OfficeZipReader): string {
   const sharedXml = reader.read("xl/sharedStrings.xml");
   const sharedStrings = sharedXml
@@ -262,16 +311,10 @@ function excelText(reader: OfficeZipReader): string {
         xmlText(item[1] || "", "t"),
       )
     : [];
-  const sheetNames = reader
-    .sheetNames()
-    .sort(
-      (left, right) => Number(/sheet(\d+)/.exec(left)?.[1]) - Number(/sheet(\d+)/.exec(right)?.[1]),
-    )
-    .slice(0, MAX_SHEETS);
   const lines: string[] = [];
-  sheetNames.forEach((name, index) => {
-    const xml = reader.read(name);
-    if (xml) lines.push(...sheetText(xml, sharedStrings, index + 1));
+  visibleSheets(reader).forEach(({ path, label }) => {
+    const xml = reader.read(path);
+    if (xml) lines.push(...sheetText(xml, sharedStrings, label));
   });
   return boundedOutput(lines);
 }
