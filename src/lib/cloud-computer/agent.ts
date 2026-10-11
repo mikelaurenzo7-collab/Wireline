@@ -506,6 +506,15 @@ async function captureModelFrame(input: {
   return modelFrame;
 }
 
+/** Publish a safe owner frame before recording an action in the activity feed. */
+async function refreshOwnerFrame(input: {
+  session: CloudBrowserSession;
+  hooks: CloudComputerHooks;
+}): Promise<void> {
+  const frame = await input.session.frame();
+  if (frame) input.hooks.frame(frame);
+}
+
 export async function runCloudComputerAgent(input: {
   client: CloudComputerClient;
   model: string;
@@ -760,6 +769,7 @@ export async function runCloudComputerAgent(input: {
           });
           hasPublicPage = result.ok && /^https?:\/\//i.test(input.session.activeUrl());
           ranBrowser = true;
+          await refreshOwnerFrame(input);
           await input.hooks.emit({
             kind: result.ok ? "action" : "error",
             text: result.activity,
@@ -851,6 +861,7 @@ export async function runCloudComputerAgent(input: {
           rawAction as Record<string, unknown>,
         );
         ranBrowser = true;
+        await refreshOwnerFrame(input);
         await input.hooks.emit({
           kind: result.ok ? "action" : "error",
           text: result.activity,

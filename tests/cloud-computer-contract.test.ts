@@ -131,6 +131,15 @@ describe("cloud computer source contracts", () => {
     expect(authenticated.length).toBe(handlers.length);
   });
 
+  it("accepts tenant-owned founder showcase Bot IDs and isolates live frame reads", () => {
+    const routes = read("src/routes/computer-routes.ts");
+    expect(routes).toContain("/^[A-Za-z0-9_:-]{1,128}$/");
+    expect(routes).toMatch(/\/api\/computer\/tasks\/:taskId\/frame"[\s\S]*?computerFrameRateLimit/);
+    const limits = read("src/middleware/api-rate-limits.ts");
+    expect(limits).toContain('bucket: "api:computer-frame"');
+    expect(limits).toContain('bucket: "api:computer-owner-input"');
+  });
+
   it("keeps owner browser input out of task events and hands the Bot a fixed resume signal", () => {
     const runner = read("src/lib/cloud-computer/task-runner.ts");
     expect(runner).toContain("export async function sendComputerOwnerInput(");

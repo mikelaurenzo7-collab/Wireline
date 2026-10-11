@@ -59,8 +59,11 @@ type ComputerTask = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  frameCapturedAt?: string | null;
+  frameUrl?: string | null;
   currentUrl: string | null;
   ownerControl: boolean;
+  preparingBrowser?: boolean;
   stopping: boolean;
 };
 
@@ -172,13 +175,20 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+function frameAge(iso: string): string {
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seconds < 5) return "now";
+  if (seconds < 60) return `${seconds}s ago`;
+  return `${Math.round(seconds / 60)}m ago`;
+}
+
 function clockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
 function hostOf(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    return new URL(url).hostname.replace(/^www\./, "") || "New tab";
   } catch {
     return url;
   }
@@ -213,14 +223,18 @@ function LiveScreen({
   task,
   ownerControl = false,
   onOwnerInput,
+  onRequestAddress,
 }: {
   task: ComputerTask;
   ownerControl?: boolean;
   onOwnerInput?: (input: OwnerBrowserInput) => void;
+  onRequestAddress?: () => void;
 }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const active = ACTIVE.includes(task.status);
   const latest = useRef<string | null>(null);
+  const misses = useRef(0);
   const pointerStart = useRef<{ id: number; x: number; y: number; pointerType: string } | null>(
     null,
   );
@@ -230,11 +244,16 @@ function LiveScreen({
       // The screen is cleared once a task ends, here as on the server.
       if (latest.current) URL.revokeObjectURL(latest.current);
       latest.current = null;
+      setSrc(null);
       return;
     }
     const controller = new AbortController();
     let timer: number | undefined;
     const load = async () => {
+      if (document.hidden) {
+        timer = window.setTimeout(load, 1500);
+        return;
+      }
       try {
         const response = await authFetch(`/api/computer/tasks/${task.id}/frame`, {
           signal: controller.signal,
@@ -246,9 +265,22 @@ function LiveScreen({
           if (latest.current) URL.revokeObjectURL(latest.current);
           latest.current = url;
           setSrc(url);
+          misses.current = 0;
+        } else {
+          misses.current += 1;
+          if (misses.current >= 2) {
+            if (latest.current) URL.revokeObjectURL(latest.current);
+            latest.current = null;
+            setSrc(null);
+          }
         }
       } catch {
-        /* keep the previous frame */
+        misses.current += 1;
+        if (misses.current >= 2) {
+          if (latest.current) URL.revokeObjectURL(latest.current);
+          latest.current = null;
+          setSrc(null);
+        }
       }
       if (!controller.signal.aborted) timer = window.setTimeout(load, 1500);
     };
@@ -267,6 +299,12 @@ function LiveScreen({
   );
 
   const lastUrl = task.currentUrl || [...task.events].reverse().find((event) => event.url)?.url;
+  const latestEvent = [...task.events]
+    .reverse()
+    .find((event) => event.kind === "action" || event.kind === "note" || event.kind === "error");
+  const screenCurrent = !task.frameUrl || !lastUrl || task.frameUrl === lastUrl;
+  const newTab =
+    ownerControl && task.preparingBrowser && !/^https?:\/\//i.test(task.currentUrl || "");
 
   const screenPoint = (
     event: ReactPointerEvent<HTMLDivElement> | ReactWheelEvent<HTMLDivElement>,
@@ -293,21 +331,60 @@ function LiveScreen({
           <Globe className="size-3.5" />
           {lastUrl ? hostOf(lastUrl) : "Cloud computer"}
         </span>
-        {active ? <span className="wl-computer-screen__live">Live</span> : null}
+        {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
       </div>
+      {active ? (
+        <div className="wl-computer-screen__progress" role="status">
+          {ownerControl ? (
+            <>
+              <MousePointer2 className="size-3.5" aria-hidden="true" />
+              You control the browser
+            </>
+          ) : (
+            <>
+              <Loader2
+                className="size-3.5 animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+              <span>
+                {task.status === "needs_input"
+                  ? "Waiting for you"
+                  : latestEvent?.text || "Bot is opening the browser"}
+              </span>
+              <span className="wl-computer-screen__steps">
+                {task.actionCount} actions
+                {task.frameCapturedAt ? ` · screen ${frameAge(task.frameCapturedAt)}` : ""}
+              </span>
+            </>
+          )}
+        </div>
+      ) : null}
       <div
-        className={cn("wl-computer-screen__viewport", ownerControl && "is-owner-controlled")}
-        role={ownerControl ? "group" : undefined}
+        className={cn(
+          "wl-computer-screen__viewport",
+          ownerControl && src && screenCurrent && "is-owner-controlled",
+        )}
+        role={ownerControl && src && screenCurrent ? "group" : undefined}
         aria-label={
-          ownerControl ? "Live browser. Click or drag on the screen to interact." : undefined
+          ownerControl && src && screenCurrent
+            ? "Live browser. Click or drag on the screen to interact."
+            : undefined
         }
         onPointerDown={(event) => {
           if (!ownerControl || event.button !== 0) return;
+          if ((event.target as HTMLElement).closest(".wl-computer-new-tab")) return;
           const point = screenPoint(event);
           if (!point) return;
           pointerStart.current = { id: event.pointerId, pointerType: event.pointerType, ...point };
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
+        onPointerEnter={(event) => {
+          if (ownerControl && event.pointerType !== "touch") setCursor(screenPoint(event));
+        }}
+        onPointerMove={(event) => {
+          if (ownerControl && event.pointerType !== "touch") setCursor(screenPoint(event));
+        }}
+        onPointerLeave={() => setCursor(null)}
         onPointerUp={(event) => {
           const start = pointerStart.current;
           if (!ownerControl || !start || start.id !== event.pointerId) return;
@@ -347,15 +424,16 @@ function LiveScreen({
           });
         }}
       >
-        {active && src ? (
+        {active && src && screenCurrent ? (
           <img
             src={src}
             alt={
               ownerControl
-                ? "Live browser screen. Click or drag to interact with the page."
+                ? "Browser screen. Click or drag to interact with the page."
                 : "What your Bot's cloud computer shows right now"
             }
             draggable={false}
+            onError={() => setSrc(null)}
           />
         ) : (
           <div className="wl-computer-screen__empty">
@@ -365,7 +443,13 @@ function LiveScreen({
                   className="size-5 animate-spin motion-reduce:animate-none"
                   aria-hidden="true"
                 />
-                <span>Starting a secure browser…</span>
+                <span>
+                  {!screenCurrent
+                    ? "Refreshing the browser screen…"
+                    : task.liveView
+                      ? "The screen is temporarily unavailable. Retrying…"
+                      : "Starting a secure browser…"}
+                </span>
               </>
             ) : (
               <>
@@ -375,6 +459,23 @@ function LiveScreen({
             )}
           </div>
         )}
+        {newTab && src && screenCurrent ? (
+          <div className="wl-computer-new-tab">
+            <Globe className="size-7" aria-hidden="true" />
+            <strong>Your browser is ready</strong>
+            <span>Enter a website to start browsing, then give your Bot a task.</span>
+            <Button type="button" size="sm" onClick={onRequestAddress}>
+              Enter a web address
+            </Button>
+          </div>
+        ) : null}
+        {ownerControl && cursor && src && screenCurrent ? (
+          <MousePointer2
+            className="wl-computer-screen__cursor"
+            style={{ left: `${(cursor.x / 1280) * 100}%`, top: `${(cursor.y / 800) * 100}%` }}
+            aria-hidden="true"
+          />
+        ) : null}
       </div>
     </figure>
   );
@@ -396,7 +497,10 @@ function TaskDetail({
   // An error belongs to the state it happened in; once the task moves on it is stale.
   const [failure, setFailure] = useState<{ message: string; status: TaskStatus } | null>(null);
   const [ownerText, setOwnerText] = useState("");
-  const [ownerUrl, setOwnerUrl] = useState(task.currentUrl || task.startUrl || "");
+  const [ownerUrl, setOwnerUrl] = useState(
+    /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
+  );
+  const [handoffGoal, setHandoffGoal] = useState("");
   const ownerActionInFlight = useRef(false);
   const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
@@ -441,7 +545,12 @@ function TaskDetail({
       const response = await authFetch(`/api/computer/tasks/${task.id}/${path}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: kind === "input" ? JSON.stringify(input) : "{}",
+        body:
+          kind === "input"
+            ? JSON.stringify(input)
+            : kind === "return" && task.preparingBrowser
+              ? JSON.stringify({ goal: handoffGoal })
+              : "{}",
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) throw new Error(result.error);
@@ -481,7 +590,7 @@ function TaskDetail({
           </div>
           {/* The goal is the owner's own sentence: body type, not a display title. */}
           <p id="computer-task-title" className="wl-computer-detail__goal">
-            {task.goal}
+            {task.preparingBrowser ? "Your browser is ready" : task.goal}
           </p>
         </div>
         {active ? (
@@ -505,7 +614,10 @@ function TaskDetail({
         ) : null}
       </header>
 
-      {task.status === "needs_input" && task.question && !task.stopping ? (
+      {task.status === "needs_input" &&
+      task.question &&
+      !task.stopping &&
+      !task.preparingBrowser ? (
         <div className="wl-computer-question">
           <div className="flex items-start gap-2">
             <Hand
@@ -516,8 +628,9 @@ function TaskDetail({
           </div>
           {task.ownerControl ? (
             <p className="mt-3 text-sm font-medium" role="status">
-              You’re in control of the browser. Sign in or complete the step, then return control to
-              your Bot.
+              {task.preparingBrowser
+                ? "You’re in control. Browse first, then give your Bot a task using this browser."
+                : "You’re in control of the browser. Sign in or complete the step, then return control to your Bot."}
             </p>
           ) : (
             <>
@@ -582,6 +695,7 @@ function TaskDetail({
             task={task}
             ownerControl
             onOwnerInput={(input) => void ownerAction("input", input)}
+            onRequestAddress={() => document.getElementById("computer-owner-url")?.focus()}
           />
           <aside className="wl-computer-control" aria-label="Browser controls">
             <div className="wl-computer-control__heading">
@@ -589,7 +703,8 @@ function TaskDetail({
               <div>
                 <h2>You’re in control</h2>
                 <p>
-                  Click, scroll, or drag on the screen. Type into the focused browser field below.
+                  Click, scroll, or drag on the screen. Use the address bar or type into the focused
+                  page field below.
                 </p>
               </div>
             </div>
@@ -606,10 +721,11 @@ function TaskDetail({
               <label htmlFor="computer-owner-url">Web address</label>
               <Input
                 id="computer-owner-url"
-                type="url"
+                type="text"
+                inputMode="url"
                 value={ownerUrl}
                 onChange={(event) => setOwnerUrl(event.target.value)}
-                placeholder="https://example.com"
+                placeholder="example.com"
                 autoComplete="url"
                 maxLength={2048}
                 disabled={busy !== null}
@@ -684,21 +800,42 @@ function TaskDetail({
                 </Button>
               ))}
             </div>
+            {task.preparingBrowser ? (
+              <div className="wl-computer-control__form">
+                <label htmlFor="computer-handoff-goal">What should your Bot do from here?</label>
+                <Textarea
+                  id="computer-handoff-goal"
+                  value={handoffGoal}
+                  onChange={(event) => setHandoffGoal(event.target.value)}
+                  placeholder="Describe the task for your Bot to complete using this browser."
+                  rows={3}
+                  maxLength={2000}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your Bot starts working after you hand it this task. You have up to 10 minutes to
+                  hand over this browser.
+                </p>
+              </div>
+            ) : null}
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={() => void ownerAction("return")}
+              disabled={busy !== null || (task.preparingBrowser && handoffGoal.trim().length < 4)}
+              aria-busy={busy === "return"}
+            >
+              {busy === "return"
+                ? "Handing browser to Bot…"
+                : task.preparingBrowser
+                  ? "Give task to Bot"
+                  : "Return control to Bot"}
+            </Button>
             <p className="wl-computer-control__privacy">
               Your clicks and text travel through BotBound to the hosted browser provider and the
               open site. They aren’t saved in task activity or sent as separate Bot messages. When
               you return control, a screen with form fields and your entered text masked is sent to
               OpenAI so your Bot can continue from the updated page.
             </p>
-            <Button
-              className="w-full"
-              variant="secondary"
-              onClick={() => void ownerAction("return")}
-              disabled={busy !== null}
-              aria-busy={busy === "return"}
-            >
-              {busy === "return" ? "Returning control…" : "Return control to Bot"}
-            </Button>
           </aside>
         </div>
       ) : active ? (
@@ -780,7 +917,7 @@ export default function ComputerPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [goal, setGoal] = useState("");
   const [startUrl, setStartUrl] = useState("");
-  const [starting, setStarting] = useState(false);
+  const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const tasksRef = useRef<ComputerTask[] | null>(null);
@@ -883,6 +1020,10 @@ export default function ComputerPage() {
     const controller = new AbortController();
     let timer: number | undefined;
     const poll = async () => {
+      if (document.hidden) {
+        timer = window.setTimeout(poll, 2000);
+        return;
+      }
       try {
         const response = await authFetch(`/api/computer/tasks/${activeId}`, {
           signal: controller.signal,
@@ -910,14 +1051,18 @@ export default function ComputerPage() {
 
   const anyActive = activeId !== null;
 
-  const start = async () => {
-    setStarting(true);
+  const start = async (prepareBrowser = false) => {
+    setStartingMode(prepareBrowser ? "browser" : "task");
     setError(null);
     try {
       const response = await authFetch("/api/computer/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId, goal, startUrl: startUrl.trim() || undefined }),
+        body: JSON.stringify(
+          prepareBrowser
+            ? { agentId, prepareBrowser: true }
+            : { agentId, goal, startUrl: startUrl.trim() || undefined },
+        ),
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) {
@@ -925,19 +1070,24 @@ export default function ComputerPage() {
         if (result.code === "COMPUTER_BUSY") void loadTasks({ focusActive: true });
         throw new Error(result.error);
       }
-      setGoal("");
-      setStartUrl("");
+      if (!prepareBrowser) {
+        setGoal("");
+        setStartUrl("");
+      }
       setTasks((current) => [result.data.task, ...(current ?? [])]);
       setSelectedId(result.data.task.id);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The task could not start.");
     } finally {
-      setStarting(false);
+      setStartingMode(null);
     }
   };
 
   const canStart = Boolean(
-    status?.available && agentId && tasks !== null && goal.trim().length >= 4 && !anyActive,
+    status?.available && composerBot && tasks !== null && goal.trim().length >= 4 && !anyActive,
+  );
+  const canOpenBrowser = Boolean(
+    status?.available && composerBot && tasks !== null && !anyActive && !startingMode,
   );
   const botName = (id: string) =>
     agents.length > 1 ? agents.find((agent) => agent.id === id)?.name : undefined;
@@ -960,7 +1110,7 @@ export default function ComputerPage() {
       <WorkspacePageFrame mode="standard" className="max-w-[1240px]">
         <WorkspacePageIntro
           title="Computer"
-          description="Each task stays with one Bot and its phone number. When a sign-in or decision needs you, take over the live browser beside the screen, then hand that same session back."
+          description="Open a browser and explore it yourself, then hand your Bot a task in the same session. Or give your Bot a task and watch it work, taking control whenever it needs you."
         />
 
         {status && !status.available ? <UnavailableNotice status={status} /> : null}
@@ -998,105 +1148,129 @@ export default function ComputerPage() {
           </StatusNotice>
         ) : null}
 
-        <div className="wl-computer-layout">
+        <div className={cn("wl-computer-layout", anyActive && "is-active")}>
           <div className="wl-computer-main">
-            {taskDetail}
-            <form
-              className="wl-computer-composer"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (canStart) void start();
-              }}
-            >
-              {composerBot ? (
-                <p className="wl-computer-agent-context">
-                  <span>{composerBot.name}</span>
-                  {composerBot.phone_number ? (
-                    <>
-                      <span aria-hidden="true">·</span>
-                      <span className="font-mono">{composerBot.phone_number}</span>
-                    </>
-                  ) : null}
-                </p>
-              ) : null}
-              {agents.length > 1 ? (
-                <div className="wl-computer-field">
-                  <label htmlFor="computer-agent">Bot</label>
-                  <NativeSelect
-                    id="computer-agent"
-                    value={agentId}
-                    onChange={(event) => setAgentId(event.target.value)}
-                  >
-                    {agents.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                </div>
-              ) : null}
-              <div className="wl-computer-field">
-                <label htmlFor="computer-goal">What should your Bot do?</label>
-                <Textarea
-                  id="computer-goal"
-                  value={goal}
-                  onChange={(event) => setGoal(event.target.value)}
-                  placeholder="Describe the job, like comparing supplier prices or checking a listing."
-                  rows={3}
-                  maxLength={2000}
-                />
-                {goal.trim() ? null : (
-                  <div className="wl-computer-examples" role="group" aria-label="Example tasks">
-                    {EXAMPLES.map((example) => (
-                      <button
-                        key={example.label}
-                        type="button"
-                        title={example.goal}
-                        onClick={() => setGoal(example.goal)}
-                      >
-                        {example.label}
-                      </button>
-                    ))}
+            {anyActive ? taskDetail : null}
+            {!anyActive ? (
+              <form
+                className="wl-computer-composer"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (canStart) void start(false);
+                }}
+              >
+                {composerBot ? (
+                  <p className="wl-computer-agent-context">
+                    <span>{composerBot.name}</span>
+                    {composerBot.phone_number ? (
+                      <>
+                        <span aria-hidden="true">·</span>
+                        <span className="font-mono">{composerBot.phone_number}</span>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
+                {agents.length > 1 ? (
+                  <div className="wl-computer-field">
+                    <label htmlFor="computer-agent">Bot</label>
+                    <NativeSelect
+                      id="computer-agent"
+                      value={agentId}
+                      onChange={(event) => setAgentId(event.target.value)}
+                    >
+                      {agents.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                    </NativeSelect>
                   </div>
-                )}
-              </div>
-              <div className="wl-computer-field">
-                <label htmlFor="computer-start-url">
-                  Start page <span className="font-normal text-muted-foreground">(optional)</span>
-                </label>
-                <Input
-                  id="computer-start-url"
-                  value={startUrl}
-                  onChange={(event) => setStartUrl(event.target.value)}
-                  placeholder="example.com"
-                  inputMode="url"
-                  autoComplete="off"
-                />
-              </div>
-              <div className="wl-computer-composer__footer">
-                <p>
-                  <ShieldCheck className="size-4" aria-hidden="true" />
-                  Never types passwords or card details. Asks you before logins and payments, and
-                  only submits forms you ask for. Up to {status?.limits.maxMinutes ?? 15} minutes
-                  per task.
-                </p>
-                <Button type="submit" disabled={!canStart || starting} aria-busy={starting}>
-                  {anyActive ? "Bot Is Working" : "Start Task"}
-                </Button>
-              </div>
-              {error ? (
-                <StatusNotice tone="destructive" title="The Task Did Not Start">
-                  {error}
-                </StatusNotice>
-              ) : null}
-            </form>
+                ) : null}
+                <div className="wl-computer-browse-first">
+                  <div>
+                    <h2>Start with a browser</h2>
+                    <p>Browse with your cursor first. Give your Bot a task when you’re ready.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => void start(true)}
+                    disabled={!canOpenBrowser}
+                    aria-busy={startingMode === "browser"}
+                  >
+                    <MousePointer2 aria-hidden="true" />
+                    {startingMode === "browser" ? "Opening browser…" : "Open browser"}
+                  </Button>
+                </div>
+                <p className="wl-computer-choice">Or send your Bot straight to a task</p>
+                <div className="wl-computer-field">
+                  <label htmlFor="computer-goal">What should your Bot do?</label>
+                  <Textarea
+                    id="computer-goal"
+                    value={goal}
+                    onChange={(event) => setGoal(event.target.value)}
+                    placeholder="Describe the job, like comparing supplier prices or checking a listing."
+                    rows={3}
+                    maxLength={2000}
+                  />
+                  {goal.trim() ? null : (
+                    <div className="wl-computer-examples" role="group" aria-label="Example tasks">
+                      {EXAMPLES.map((example) => (
+                        <button
+                          key={example.label}
+                          type="button"
+                          title={example.goal}
+                          onClick={() => setGoal(example.goal)}
+                        >
+                          {example.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="wl-computer-field">
+                  <label htmlFor="computer-start-url">
+                    Start page <span className="font-normal text-muted-foreground">(optional)</span>
+                  </label>
+                  <Input
+                    id="computer-start-url"
+                    value={startUrl}
+                    onChange={(event) => setStartUrl(event.target.value)}
+                    placeholder="example.com"
+                    inputMode="url"
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="wl-computer-composer__footer">
+                  <p>
+                    <ShieldCheck className="size-4" aria-hidden="true" />
+                    Never types passwords or card details. Asks you before logins and payments, and
+                    only submits forms you ask for. Up to {status?.limits.maxMinutes ?? 15} minutes
+                    per task.
+                  </p>
+                  <Button
+                    type="submit"
+                    disabled={!canStart || startingMode !== null}
+                    aria-busy={startingMode === "task"}
+                  >
+                    {startingMode === "task" ? "Starting task…" : "Start Task"}
+                  </Button>
+                </div>
+                {error ? (
+                  <StatusNotice tone="destructive" title="The Task Did Not Start">
+                    {error}
+                  </StatusNotice>
+                ) : null}
+              </form>
+            ) : null}
+            {!anyActive ? taskDetail : null}
 
             {tasks && !tasks.length && status?.available ? (
               <div className="wl-computer-empty">
                 <MonitorSmartphone className="size-6" aria-hidden="true" />
                 <p className="font-medium">Your Bot's computer is ready.</p>
                 <p className="text-sm text-muted-foreground">
-                  Describe a task above. You'll see its screen and every step here.
+                  Open a browser above, or describe a task for your Bot. You’ll see its latest
+                  screen and each step here.
                 </p>
               </div>
             ) : null}

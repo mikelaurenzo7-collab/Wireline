@@ -18,6 +18,14 @@
     position: sticky;
     top: var(--wireline-space-100);
   }
+
+  .wl-computer-layout.is-active {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wl-computer-layout.is-active .wl-computer-history {
+    position: static;
+  }
 }
 
 .wl-computer-main {
@@ -56,6 +64,49 @@
 .wl-computer-agent-context > span:first-child {
   color: var(--wireline-color-text-primary);
   font-weight: 600;
+}
+
+.wl-computer-browse-first {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wireline-space-100);
+  padding: var(--wireline-space-125);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--wireline-color-action-primary-default) 35%,
+      var(--wireline-color-border-default)
+    );
+  border-radius: var(--wireline-radius-md);
+  background: color-mix(
+    in srgb,
+    var(--wireline-color-action-primary-default) 6%,
+    var(--wireline-color-surface-default)
+  );
+}
+
+.wl-computer-browse-first h2 {
+  margin: 0;
+  color: var(--wireline-color-text-primary);
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.wl-computer-browse-first p {
+  margin: var(--wireline-space-025) 0 0;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.wl-computer-choice {
+  margin: 0;
+  color: var(--wireline-color-text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .wl-computer-field {
@@ -254,7 +305,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  color: var(--wireline-color-status-error);
+  color: var(--wireline-color-text-secondary);
   font-family: var(--wireline-font-family-mono);
   font-size: 0.68rem;
   font-weight: 600;
@@ -262,13 +313,37 @@
   text-transform: uppercase;
 }
 
-.wl-computer-screen__live::before {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: currentColor;
-  content: "";
-  animation: wl-computer-pulse 1.4s ease-in-out infinite;
+.wl-computer-screen__progress {
+  display: flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: var(--wireline-space-050);
+  padding: 0 var(--wireline-space-100);
+  border-bottom: 1px solid var(--wireline-color-border-default);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+  font-size: 0.77rem;
+  line-height: 1.35;
+}
+
+.wl-computer-screen__progress > svg {
+  flex-shrink: 0;
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-computer-screen__progress > span:first-of-type {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-computer-screen__steps {
+  color: var(--wireline-color-text-secondary);
+  font-family: var(--wireline-font-family-mono);
+  font-size: 0.69rem;
+  white-space: nowrap;
 }
 
 .wl-computer-screen__viewport {
@@ -285,9 +360,48 @@
 }
 
 .wl-computer-screen__viewport.is-owner-controlled {
-  cursor: crosshair;
+  cursor: none;
   touch-action: none;
   user-select: none;
+}
+
+.wl-computer-screen__cursor {
+  position: absolute;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #ffffff;
+  filter: drop-shadow(0 1px 0 #111827) drop-shadow(0 0 2px #111827);
+  pointer-events: none;
+  transform: translate(-15%, -5%);
+}
+
+.wl-computer-new-tab {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wireline-space-075);
+  padding: var(--wireline-space-150);
+  background: var(--wireline-color-surface-subtle);
+  color: var(--wireline-color-text-primary);
+  text-align: center;
+}
+
+.wl-computer-new-tab > svg {
+  color: var(--wireline-color-action-primary-default);
+}
+
+.wl-computer-new-tab strong {
+  font-size: 1rem;
+}
+
+.wl-computer-new-tab span {
+  max-width: 18rem;
+  color: var(--wireline-color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .wl-computer-screen__viewport.is-owner-controlled img {
@@ -616,14 +730,22 @@
     width: 100%;
   }
 
+  .wl-computer-browse-first > button {
+    width: 100%;
+  }
+
   .wl-computer-activity li {
     grid-template-columns: 3.75rem minmax(0, 1fr);
+  }
+
+  .wl-computer-screen__steps {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .wl-computer-pulse,
-  .wl-computer-screen__live::before {
+  .wl-computer-screen__progress .animate-spin {
     animation: none;
   }
 }

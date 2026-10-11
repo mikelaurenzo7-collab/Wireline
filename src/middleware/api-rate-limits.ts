@@ -477,9 +477,16 @@ export const calendarRateLimit = createRateLimiter({
   max: 30,
 });
 
-/** Cloud computer reads, including the live-view frame poll (~1 per 1.5s). */
+/** Cloud computer status and task state reads. */
 export const computerReadRateLimit = createRateLimiter({
   bucket: "api:computer-read",
+  windowMs: 60 * 1000,
+  max: 120,
+});
+
+/** Live frames are polled independently of task state. */
+export const computerFrameRateLimit = createRateLimiter({
+  bucket: "api:computer-frame",
   windowMs: 60 * 1000,
   max: 120,
 });
@@ -489,6 +496,14 @@ export const computerWriteRateLimit = createRateLimiter({
   bucket: "api:computer-write",
   windowMs: 60 * 1000,
   max: 20,
+});
+
+/** Owner cursor, keyboard, and navigation while a Bot is paused. */
+export const computerOwnerInputRateLimit = createRateLimiter({
+  bucket: "api:computer-owner-input",
+  windowMs: 60 * 1000,
+  max: 120,
+  failClosedOnError: true,
 });
 
 /** Agent CRUD + training mutations. */

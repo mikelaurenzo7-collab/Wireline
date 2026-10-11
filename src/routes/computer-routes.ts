@@ -15,7 +15,12 @@ import {
 } from "../lib/cloud-computer/task-runner";
 import { ownerInputFrom } from "../lib/cloud-computer/owner-input";
 import { authenticateUser } from "../middleware/auth";
-import { computerReadRateLimit, computerWriteRateLimit } from "../middleware/api-rate-limits";
+import {
+  computerOwnerInputRateLimit,
+  computerFrameRateLimit,
+  computerReadRateLimit,
+  computerWriteRateLimit,
+} from "../middleware/api-rate-limits";
 import type { AuthenticatedRequest } from "../types/auth";
 
 /**
@@ -26,7 +31,7 @@ import type { AuthenticatedRequest } from "../types/auth";
 const router = Router();
 
 function agentIdFrom(value: unknown): string {
-  if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
+  if (typeof value !== "string" || !/^[A-Za-z0-9_:-]{1,128}$/.test(value)) {
     throw AppError.badRequest("Choose a Bot.");
   }
   return value;
@@ -77,7 +82,7 @@ router.get(
 router.get(
   "/api/computer/tasks/:taskId/frame",
   authenticateUser,
-  computerReadRateLimit,
+  computerFrameRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     const frame = await getComputerFrame(req.user.id, String(req.params.taskId));
     res.setHeader("Cache-Control", "no-store, private");
@@ -123,7 +128,7 @@ router.post(
 router.post(
   "/api/computer/tasks/:taskId/control/input",
   authenticateUser,
-  computerWriteRateLimit,
+  computerOwnerInputRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
     res.json({
       task: await sendComputerOwnerInput(
@@ -140,7 +145,9 @@ router.post(
   authenticateUser,
   computerWriteRateLimit,
   async (req: AuthenticatedRequest, res: Response) => {
-    res.json({ task: await returnComputerControlToBot(req.user.id, String(req.params.taskId)) });
+    res.json({
+      task: await returnComputerControlToBot(req.user.id, String(req.params.taskId), req.body),
+    });
   },
 );
 

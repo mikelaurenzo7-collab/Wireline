@@ -56,6 +56,7 @@ const SHUTDOWN_DEADLINE_MS = 5_000;
 const ACTIVE_STATUSES: ComputerTaskStatus[] = ["running", "needs_input"];
 const INTERRUPTED_SUMMARY = "This task was interrupted by a BotBound update. Start it again.";
 const STOPPED_SUMMARY = "Stopped by the owner.";
+const BROWSE_FIRST_GOAL = "Browse first, then give your Bot a task.";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Cache reads cost a tenth of fresh input; a task replays its whole context
 // every turn, so the daily token quota counts them at that ratio.
@@ -94,12 +95,15 @@ type LiveTask = {
   session: CloudBrowserSession | null;
   frame: Buffer | null;
   frameAt: number;
+  frameUrl: string | null;
   currentUrl: string | null;
   events: ComputerTaskEvent[];
   turns: number;
   actions: number;
   reply: ((value: string | null) => void) | null;
   ownerControl: boolean;
+  preparingBrowser: boolean;
+  handoffGoal: string | null;
   ownerInputBusy: boolean;
   finished: boolean;
   /** Set when the task finishes, and kept until the row holds it. */
@@ -132,6 +136,20 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function waitForOwner(task: LiveTask, waitMs: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      task.reply = null;
+      resolve(null);
+    }, waitMs);
+    task.reply = (value) => {
+      clearTimeout(timer);
+      task.reply = null;
+      resolve(value);
+    };
+  });
+}
+
 /** Stop at the executor's next checkpoint, and end any wait for an owner reply. */
 function requestStop(task: LiveTask) {
   if (!task.stop) {
@@ -160,9 +178,12 @@ export type ComputerTaskView = {
   finishedAt: string | null;
   updatedAt: string;
   liveView: boolean;
+  frameCapturedAt: string | null;
+  frameUrl: string | null;
   currentUrl: string | null;
   /** True only while this process is holding an owner takeover at a Bot checkpoint. */
   ownerControl: boolean;
+  preparingBrowser: boolean;
   /** Stop was requested; the task ends at its executor's next checkpoint. */
   stopping: boolean;
 };
@@ -188,6 +209,11 @@ function toView(row: TaskRow): ComputerTaskView {
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
     updatedAt: row.updatedAt.toISOString(),
     liveView: Boolean(task && !task.finished && task.frame && task.userId === row.userId),
+    frameCapturedAt:
+      task && !task.finished && task.frame && task.userId === row.userId
+        ? new Date(task.frameAt).toISOString()
+        : null,
+    frameUrl: task && !task.finished && task.userId === row.userId ? task.frameUrl : null,
     currentUrl: task?.userId === row.userId && !task.finished ? task.currentUrl : null,
     ownerControl: Boolean(
       task &&
@@ -198,6 +224,7 @@ function toView(row: TaskRow): ComputerTaskView {
       task.userId === row.userId &&
       row.status === "needs_input",
     ),
+    preparingBrowser: Boolean(task && !task.finished && task.preparingBrowser),
     stopping: Boolean(
       task &&
       !task.finished &&
@@ -278,13 +305,26 @@ export async function getComputerStatus(userId: string): Promise<ComputerStatus>
   return { ...base, available: true, reason: "ready" };
 }
 
-function parseStartInput(body: unknown): { goal: string; startUrl: string | null } {
-  const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
-  const goal = typeof record.goal === "string" ? cleanText(record.goal, 10_000, true).trim() : "";
+function parseGoal(value: unknown): string {
+  const goal = typeof value === "string" ? cleanText(value, 10_000, true).trim() : "";
   if (goal.length < 4) throw AppError.badRequest("Describe the task in a sentence or two.");
   if (goal.length > CLOUD_COMPUTER_LIMITS.goalChars) {
     throw AppError.badRequest(`Keep the task under ${CLOUD_COMPUTER_LIMITS.goalChars} characters.`);
   }
+  return goal;
+}
+
+function parseStartInput(body: unknown): {
+  goal: string;
+  startUrl: string | null;
+  prepareBrowser: boolean;
+} {
+  const record = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const prepareBrowser = record.prepareBrowser === true;
+  if (prepareBrowser && (record.goal || record.startUrl)) {
+    throw AppError.badRequest("Open the browser first, then choose a website and task.");
+  }
+  const goal = prepareBrowser ? BROWSE_FIRST_GOAL : parseGoal(record.goal);
   let startUrl: string | null = null;
   if (typeof record.startUrl === "string" && record.startUrl.trim()) {
     const target = parseNavigateTarget(record.startUrl);
@@ -295,7 +335,7 @@ function parseStartInput(body: unknown): { goal: string; startUrl: string | null
     }
     startUrl = target.url.toString();
   }
-  return { goal, startUrl };
+  return { goal, startUrl, prepareBrowser };
 }
 
 async function enforceTaskLimits(userId: string): Promise<void> {
@@ -325,7 +365,7 @@ export async function startComputerTask(
   agentId: string,
   body: unknown,
 ): Promise<ComputerTaskView> {
-  const { goal, startUrl } = parseStartInput(body);
+  const { goal, startUrl, prepareBrowser } = parseStartInput(body);
   const readiness = cloudComputerReadiness();
   const connection = cloudComputerConnection();
   if (!readiness.available || !connection || !(await computerStorageReady())) {
@@ -355,7 +395,7 @@ export async function startComputerTask(
   }
   starting.add(userId);
   try {
-    return await admitComputerTask(userId, agentId, goal, startUrl, connection);
+    return await admitComputerTask(userId, agentId, goal, startUrl, prepareBrowser, connection);
   } finally {
     starting.delete(userId);
   }
@@ -374,6 +414,7 @@ async function admitComputerTask(
   agentId: string,
   goal: string,
   startUrl: string | null,
+  prepareBrowser: boolean,
   connection: NonNullable<ReturnType<typeof cloudComputerConnection>>,
 ): Promise<ComputerTaskView> {
   const brief = await getAgentCoachingBrief(userId, agentId);
@@ -457,12 +498,15 @@ async function admitComputerTask(
     session: null,
     frame: null,
     frameAt: Date.now(),
+    frameUrl: null,
     currentUrl: null,
     events: [],
     turns: 0,
     actions: 0,
     reply: null,
     ownerControl: false,
+    preparingBrowser: false,
+    handoffGoal: null,
     ownerInputBusy: false,
     finished: false,
     outcome: null,
@@ -477,7 +521,9 @@ async function admitComputerTask(
     rules: brief.operating_rules.map((rule) => rule.content),
   };
   void tenantStore
-    .run(userId, () => executeTask(task, { goal, startUrl, model, bot, connection }))
+    .run(userId, () =>
+      executeTask(task, { goal, startUrl, prepareBrowser, model, bot, connection }),
+    )
     .catch((error) => {
       log.error("Cloud computer task crashed", { taskId: row.id, error: getErrorMessage(error) });
     });
@@ -567,6 +613,7 @@ function finishTask(task: LiveTask, outcome: TerminalOutcome): boolean {
   task.reply?.(null);
   task.reply = null;
   task.frame = null;
+  task.frameUrl = null;
   pushEvent(task, FINAL_EVENTS[outcome.status]);
   return true;
 }
@@ -659,13 +706,14 @@ async function executeTask(
   input: {
     goal: string;
     startUrl: string | null;
+    prepareBrowser: boolean;
     model: string;
     bot: { name: string; role: string; facts: string[]; rules: string[] };
     connection: NonNullable<ReturnType<typeof cloudComputerConnection>>;
   },
 ): Promise<void> {
   let session: CloudBrowserSession | null = null;
-  let outcome: CloudComputerOutcome;
+  let outcome: CloudComputerOutcome = { status: "stopped", summary: STOPPED_SUMMARY };
   const taskHash = createHash("sha256").update(task.taskId).digest("hex").slice(0, 24);
   const heartbeat = setInterval(() => void heartbeatTick(task, heartbeat), HEARTBEAT_MS);
   heartbeat.unref?.();
@@ -688,140 +736,184 @@ async function executeTask(
     }
     task.session = session;
     task.currentUrl = displayUrl(session.activeUrl()) || null;
-    if (input.startUrl && !task.stop) {
-      const opened = await session.execute("navigate", { url: input.startUrl });
-      pushEvent(task, {
-        kind: opened.ok ? "action" : "error",
-        text: opened.activity,
-        url: displayUrl(session.activeUrl()) || undefined,
-        ok: opened.ok,
-      });
-      const frame = await session.frame();
-      if (frame) {
-        task.frame = frame;
-        task.frameAt = Date.now();
+    if (input.prepareBrowser && !task.stop) {
+      const firstFrame = await session.frame();
+      if (!firstFrame) {
+        throw AppError.serviceUnavailable("The browser could not open a safe screen. Try again.");
       }
-      await persist(task, {});
+      task.frame = firstFrame;
+      task.frameAt = Date.now();
+      task.frameUrl = displayUrl(session.activeUrl()) || null;
+      task.ownerControl = true;
+      task.preparingBrowser = true;
+      pushEvent(task, { kind: "note", text: "Browser ready for you to explore." });
+      // Register the handoff before exposing the checkpoint. Owner input and
+      // Return control both require this resolver, so there is no dead window.
+      const handoff = waitForOwner(task, CLOUD_COMPUTER_LIMITS.ownerReplyWaitMs);
+      const checkpoint = await persist(task, {
+        status: "needs_input",
+        question: "Browse the web, then tell your Bot what to do from this browser.",
+      });
+      if (checkpoint !== "written") {
+        task.reply?.(null);
+        throw AppError.serviceUnavailable("The browser could not be shown. Try again.");
+      }
+      await handoff;
+      task.preparingBrowser = false;
+      task.ownerControl = false;
+      if (task.stop) {
+        outcome = { status: "stopped", summary: STOPPED_SUMMARY };
+      } else if (!task.handoffGoal) {
+        outcome = {
+          status: "blocked",
+          summary:
+            "The browser setup timed out before a task was given. Start a new browser session.",
+          sources: [],
+        };
+      } else {
+        input.goal = task.handoffGoal;
+        const currentUrl = session.activeUrl();
+        input.startUrl = /^https?:\/\//i.test(currentUrl) ? displayUrl(currentUrl) : null;
+      }
     }
-    const activeSession = session;
-    outcome = await runCloudComputerAgent({
-      client,
-      model: input.model,
-      session: activeSession,
-      bot: input.bot,
-      goal: input.goal,
-      startUrl: input.startUrl,
-      taskHash,
-      hooks: {
-        emit: async (event) => {
-          if (event.kind === "action" || event.kind === "error") task.actions += 1;
-          pushEvent(task, event);
-          if (event.url) task.currentUrl = displayUrl(event.url) || task.currentUrl;
-          await persist(task, {});
-        },
-        frame: (jpeg) => {
-          task.frame = jpeg;
+    if (!input.prepareBrowser || task.handoffGoal) {
+      if (input.startUrl && !input.prepareBrowser && !task.stop) {
+        const opened = await session.execute("navigate", { url: input.startUrl });
+        pushEvent(task, {
+          kind: opened.ok ? "action" : "error",
+          text: opened.activity,
+          url: displayUrl(session.activeUrl()) || undefined,
+          ok: opened.ok,
+        });
+        const frame = await session.frame();
+        if (frame) {
+          task.frame = frame;
           task.frameAt = Date.now();
-        },
-        stopRequested: () => task.stop,
-        askOwner: async (question, waitMs) => {
-          // Stop pressed during the model call: do not park on a new question.
-          if (task.stop) return null;
-          const checkpoint = await persist(task, {
-            status: "needs_input",
-            question: cleanText(question, 300),
-          });
-          // If the owner cannot see the question, waiting here leaves the Bot
-          // stuck until its timeout with no way for the owner to take control.
-          if (checkpoint !== "written") {
-            if (task.stop || task.finished) return null;
-            throw AppError.serviceUnavailable(
-              "The cloud computer could not show your Bot's question. Try the task again.",
-            );
-          }
-          if (task.stop) return null;
-          // waitMs is what remains of the task's owner-wait budget.
-          const reply = await new Promise<string | null>((resolve) => {
-            const timer = setTimeout(() => {
-              task.reply = null;
-              resolve(null);
-            }, waitMs);
-            task.reply = (value) => {
-              clearTimeout(timer);
-              task.reply = null;
-              resolve(value);
-            };
-          });
-          if (!task.finished) await persist(task, { status: "running", question: null });
-          return reply;
-        },
-        meter: async ({ reserveUsd, turn, operation }) => {
-          task.turns = turn;
-          // Each provider attempt is its own reservation: the SDK never retries
-          // behind the meter, and a transient overload gets one metered retry.
-          const attempt = (retry: number) =>
-            runWithManagedAiSpend({
-              userId: task.userId,
-              action: "computer.browse",
-              model: input.model,
-              reserveUsd,
-              cacheReadQuotaWeight: CACHE_READ_QUOTA_WEIGHT,
-              requestMeta: { agent_id: task.agentId, task_hash: taskHash, turn, retry },
-              operation: async () => {
-                try {
-                  return await operation();
-                } catch (error) {
-                  if (
-                    error instanceof DefiniteProviderRejectionError ||
-                    error instanceof RuntimeUnavailableError
-                  )
-                    throw error;
-                  recordAmbiguousProviderAttempt();
-                  throw new RuntimeUnavailableError();
-                }
-              },
+          task.frameUrl = displayUrl(session.activeUrl()) || null;
+        }
+        await persist(task, {});
+      }
+      const activeSession = session;
+      outcome = await runCloudComputerAgent({
+        client,
+        model: input.model,
+        session: activeSession,
+        bot: input.bot,
+        goal: input.goal,
+        startUrl: input.startUrl,
+        taskHash,
+        hooks: {
+          emit: async (event) => {
+            if (event.kind === "action" || event.kind === "error") task.actions += 1;
+            pushEvent(task, event);
+            if (event.url) task.currentUrl = displayUrl(event.url) || task.currentUrl;
+            await persist(task, {});
+          },
+          frame: (jpeg) => {
+            task.frame = jpeg;
+            task.frameAt = Date.now();
+            task.frameUrl = displayUrl(activeSession.activeUrl()) || null;
+          },
+          stopRequested: () => task.stop,
+          askOwner: async (question, waitMs) => {
+            // Stop pressed during the model call: do not park on a new question.
+            if (task.stop) return null;
+            const checkpoint = await persist(task, {
+              status: "needs_input",
+              question: cleanText(question, 300),
             });
-          try {
-            return await attempt(0);
-          } catch (error) {
-            if (!(error instanceof RuntimeUnavailableError) || task.stop) throw error;
-            await sleep(3_000);
-            // Stop pressed during the backoff: reserve and send nothing more.
-            if (task.stop) throw error;
-            return attempt(1);
-          }
-        },
-        recordUsage: (model, response, latencyMs) => {
-          const rawUsage =
-            response.usage && typeof response.usage === "object"
-              ? (response.usage as Record<string, unknown>)
-              : {};
-          const usage = normalizeResponsesUsage(rawUsage);
-          const output = Array.isArray(response.output) ? response.output : [];
-          const computerToolCalls = output.filter((item) =>
-            Boolean(
-              item &&
-              typeof item === "object" &&
-              (item as Record<string, unknown>).type === "computer_call",
-            ),
-          ).length;
-          recordUsage(
-            model,
-            {
-              model: typeof response.model === "string" ? response.model : model,
-              usage: {
-                input_tokens: usage.inputTokens,
-                output_tokens: usage.outputTokens,
-                cache_read_input_tokens: usage.cacheReadTokens,
-                cache_creation_input_tokens: usage.cacheWriteTokens,
+            // If the owner cannot see the question, waiting here leaves the Bot
+            // stuck until its timeout with no way for the owner to take control.
+            if (checkpoint !== "written") {
+              if (task.stop || task.finished) return null;
+              throw AppError.serviceUnavailable(
+                "The cloud computer could not show your Bot's question. Try the task again.",
+              );
+            }
+            if (task.stop) return null;
+            // waitMs is what remains of the task's owner-wait budget.
+            const reply = await new Promise<string | null>((resolve) => {
+              const timer = setTimeout(() => {
+                task.reply = null;
+                resolve(null);
+              }, waitMs);
+              task.reply = (value) => {
+                clearTimeout(timer);
+                task.reply = null;
+                resolve(value);
+              };
+            });
+            if (!task.finished) await persist(task, { status: "running", question: null });
+            return reply;
+          },
+          meter: async ({ reserveUsd, turn, operation }) => {
+            task.turns = turn;
+            // Each provider attempt is its own reservation: the SDK never retries
+            // behind the meter, and a transient overload gets one metered retry.
+            const attempt = (retry: number) =>
+              runWithManagedAiSpend({
+                userId: task.userId,
+                action: "computer.browse",
+                model: input.model,
+                reserveUsd,
+                cacheReadQuotaWeight: CACHE_READ_QUOTA_WEIGHT,
+                requestMeta: { agent_id: task.agentId, task_hash: taskHash, turn, retry },
+                operation: async () => {
+                  try {
+                    return await operation();
+                  } catch (error) {
+                    if (
+                      error instanceof DefiniteProviderRejectionError ||
+                      error instanceof RuntimeUnavailableError
+                    )
+                      throw error;
+                    recordAmbiguousProviderAttempt();
+                    throw new RuntimeUnavailableError();
+                  }
+                },
+              });
+            try {
+              return await attempt(0);
+            } catch (error) {
+              if (!(error instanceof RuntimeUnavailableError) || task.stop) throw error;
+              await sleep(3_000);
+              // Stop pressed during the backoff: reserve and send nothing more.
+              if (task.stop) throw error;
+              return attempt(1);
+            }
+          },
+          recordUsage: (model, response, latencyMs) => {
+            const rawUsage =
+              response.usage && typeof response.usage === "object"
+                ? (response.usage as Record<string, unknown>)
+                : {};
+            const usage = normalizeResponsesUsage(rawUsage);
+            const output = Array.isArray(response.output) ? response.output : [];
+            const computerToolCalls = output.filter((item) =>
+              Boolean(
+                item &&
+                typeof item === "object" &&
+                (item as Record<string, unknown>).type === "computer_call",
+              ),
+            ).length;
+            recordUsage(
+              model,
+              {
+                model: typeof response.model === "string" ? response.model : model,
+                usage: {
+                  input_tokens: usage.inputTokens,
+                  output_tokens: usage.outputTokens,
+                  cache_read_input_tokens: usage.cacheReadTokens,
+                  cache_creation_input_tokens: usage.cacheWriteTokens,
+                },
+                provider_tool_call_cost_usd: computerToolCalls * CLOUD_COMPUTER_TOOL_CALL_USD,
               },
-              provider_tool_call_cost_usd: computerToolCalls * CLOUD_COMPUTER_TOOL_CALL_USD,
-            },
-            latencyMs,
-          );
+              latencyMs,
+            );
+          },
         },
-      },
-    });
+      });
+    }
   } catch (error) {
     // A step that failed after the owner pressed Stop is still the owner's stop.
     outcome = task.stop ? { status: "stopped", summary: STOPPED_SUMMARY } : failureOutcome(error);
@@ -1178,6 +1270,7 @@ export async function sendComputerOwnerInput(
     }
     task.frame = frame;
     task.frameAt = Date.now();
+    task.frameUrl = displayUrl(task.session.activeUrl()) || null;
     task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
     return toView({ ...row, status: "needs_input", events: task.events });
   } finally {
@@ -1188,6 +1281,7 @@ export async function sendComputerOwnerInput(
 export async function returnComputerControlToBot(
   userId: string,
   taskId: string,
+  body?: unknown,
 ): Promise<ComputerTaskView> {
   const row = await ownedRow(userId, taskId);
   const task = live.get(taskId);
@@ -1214,6 +1308,10 @@ export async function returnComputerControlToBot(
       "Wait for the current browser action to finish.",
     );
   }
+
+  const handoffGoal = task.preparingBrowser
+    ? parseGoal(body && typeof body === "object" ? (body as Record<string, unknown>).goal : null)
+    : null;
 
   const resume = task.reply;
   let frame: Buffer | null;
@@ -1244,9 +1342,14 @@ export async function returnComputerControlToBot(
   }
   task.frame = frame;
   task.frameAt = Date.now();
+  task.frameUrl = displayUrl(task.session.activeUrl()) || null;
   task.currentUrl = displayUrl(task.session.activeUrl()) || task.currentUrl;
   task.ownerControl = false;
-  const saved = await persist(task, { status: "running", question: null });
+  const saved = await persist(task, {
+    status: "running",
+    question: null,
+    ...(handoffGoal ? { goal: handoffGoal } : {}),
+  });
   if (saved !== "written") {
     if (saved === "error" && !task.finished && !task.stop) task.ownerControl = true;
     throw new AppError(
@@ -1264,12 +1367,22 @@ export async function returnComputerControlToBot(
       "This browser task is no longer waiting for you.",
     );
   }
+  if (handoffGoal) {
+    task.handoffGoal = handoffGoal;
+    task.preparingBrowser = false;
+  }
   pushEvent(task, { kind: "note", text: "You returned browser control to your Bot." });
   // The model gets a fixed handoff signal, never the owner's typed values.
   resume(
     "The owner returned browser control. Inspect the current redacted screen before deciding whether the step succeeded. Ask the owner again if you still need help.",
   );
-  return toView({ ...row, status: "running", question: null, events: task.events });
+  return toView({
+    ...row,
+    status: "running",
+    goal: handoffGoal ?? row.goal,
+    question: null,
+    events: task.events,
+  });
 }
 
 /** Test seam: clear in-process state between cases. */

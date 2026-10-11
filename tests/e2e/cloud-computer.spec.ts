@@ -63,7 +63,9 @@ async function mockComputer(
   const ownerInputs: unknown[] = [];
   const takeovers: string[] = [];
   const returns: string[] = [];
+  const starts: unknown[] = [];
   let tasks = options.tasks;
+  let frame = options.frame;
   let statusReads = 0;
   let listReads = 0;
   const setTask = (id: string, patch: Partial<MockTask>) => {
@@ -116,12 +118,37 @@ async function mockComputer(
         ? route.fulfill({ status: 500, json: { error: "Something went wrong." } })
         : route.fulfill({ json: { tasks } });
     }
+    if (path === "/api/computer/tasks" && request.method() === "POST") {
+      const body = request.postDataJSON() as {
+        agentId: string;
+        prepareBrowser?: boolean;
+        goal?: string;
+      };
+      starts.push(body);
+      const next = task({
+        id: "task-new",
+        agentId: body.agentId,
+        goal: body.prepareBrowser ? "Browse first, then give your Bot a task." : (body.goal ?? ""),
+        status: body.prepareBrowser ? "needs_input" : "running",
+        question: body.prepareBrowser
+          ? "Browse the web, then tell your Bot what to do from this browser."
+          : null,
+        currentUrl: null,
+        frameUrl: null,
+        frameCapturedAt: NOW,
+        preparingBrowser: Boolean(body.prepareBrowser),
+        ownerControl: Boolean(body.prepareBrowser),
+        actionCount: 0,
+      });
+      tasks = [next, ...tasks];
+      return route.fulfill({ status: 201, json: { task: next } });
+    }
     const frameMatch = /^\/api\/computer\/tasks\/([^/]+)\/frame$/.exec(path);
     if (frameMatch) {
       // Like the server: a finished task's screen is gone.
       const live = ACTIVE.has(tasks.find((item) => item.id === frameMatch[1])?.status ?? "");
-      return options.frame && live
-        ? route.fulfill({ status: 200, contentType: "image/jpeg", body: options.frame })
+      return frame && live
+        ? route.fulfill({ status: 200, contentType: "image/jpeg", body: frame })
         : route.fulfill({ status: 204, body: "" });
     }
     const stopMatch = /^\/api\/computer\/tasks\/([^/]+)\/stop$/.exec(path);
@@ -143,7 +170,10 @@ async function mockComputer(
       const input = request.postDataJSON() as { kind?: string; url?: string; action?: string };
       ownerInputs.push(input);
       if (input.kind === "navigate" && input.url) {
-        setTask(controlInputMatch[1], { currentUrl: new URL(input.url).toString() });
+        const url = new URL(
+          input.url.includes("://") ? input.url : `https://${input.url}`,
+        ).toString();
+        setTask(controlInputMatch[1], { currentUrl: url, frameUrl: url });
       }
       return route.fulfill({
         json: { task: tasks.find((item) => item.id === controlInputMatch[1]) },
@@ -152,9 +182,17 @@ async function mockComputer(
     const controlReturnMatch = /^\/api\/computer\/tasks\/([^/]+)\/control\/return$/.exec(path);
     if (controlReturnMatch) {
       returns.push(controlReturnMatch[1]);
+      const body = request.postDataJSON() as { goal?: string };
       tasks = tasks.map((item) =>
         item.id === controlReturnMatch[1]
-          ? { ...item, status: "running", question: null, ownerControl: false }
+          ? {
+              ...item,
+              status: "running",
+              question: null,
+              ownerControl: false,
+              preparingBrowser: false,
+              goal: body.goal ?? item.goal,
+            }
           : item,
       );
       return route.fulfill({
@@ -175,7 +213,18 @@ async function mockComputer(
       json: { accounts: [], data: [], numbers: [], integrations: [], messages: [], threads: [] },
     });
   });
-  return { replies, stops, ownerInputs, takeovers, returns, setTask };
+  return {
+    replies,
+    stops,
+    ownerInputs,
+    takeovers,
+    returns,
+    starts,
+    setTask,
+    setFrame: (next: Buffer | null) => {
+      frame = next;
+    },
+  };
 }
 
 /** Nothing in the computer layout is wider than its box, and nothing scrolls sideways. */
@@ -264,18 +313,11 @@ for (const width of [390, 1440]) {
     await expect(
       detail.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Bot Is Working" })).toBeDisabled();
-    // The live task leads the page; Stop keeps its shape beside a long goal.
+    await expect(page.getByRole("button", { name: "Open browser" })).toHaveCount(0);
+    // The live browser owns the page until the task finishes.
     const stop = await detail.getByRole("button", { name: "Stop" }).boundingBox();
     expect(stop && stop.width > stop.height).toBe(true);
-    const order = await page.evaluate(() => {
-      const detailTop = document.querySelector(".wl-computer-detail")!.getBoundingClientRect().top;
-      const composerTop = document
-        .querySelector(".wl-computer-composer")!
-        .getBoundingClientRect().top;
-      return detailTop < composerTop;
-    });
-    expect(order).toBe(true);
+    await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await capture(page, info, `computer-needs-input-${width}`);
 
@@ -373,7 +415,7 @@ for (const width of [390, 1440]) {
     expect(takeovers).toEqual(["task-live"]);
 
     const screen = detail.getByRole("img", {
-      name: "Live browser screen. Click or drag to interact with the page.",
+      name: "Browser screen. Click or drag to interact with the page.",
     });
     await expect(screen).toBeVisible();
     const bounds = await screen.boundingBox();
@@ -424,6 +466,69 @@ for (const width of [390, 1440]) {
     expect(returns).toEqual(["task-live"]);
   });
 }
+
+for (const width of [390, 1440]) {
+  test(`the owner can open a browser before entering a URL or goal at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+    const { starts, ownerInputs, returns } = await mockComputer(page, {
+      status: READY,
+      frame: await fakeFrame(page),
+      tasks: [],
+    });
+
+    await page.goto("/computer");
+    await page.getByRole("button", { name: "Open browser" }).click();
+    expect(starts).toEqual([{ agentId: "design-bot", prepareBrowser: true }]);
+    const detail = page.getByRole("region", { name: "Your browser is ready" });
+    await expect(detail.getByRole("heading", { name: "You’re in control" })).toBeVisible();
+    await expect(
+      detail.getByRole("img", {
+        name: "Browser screen. Click or drag to interact with the page.",
+      }),
+    ).toBeVisible();
+    await expect(detail.getByRole("button", { name: "Give task to Bot" })).toBeDisabled();
+    await expect(
+      detail.getByText("Enter a website to start browsing, then give your Bot a task."),
+    ).toBeVisible();
+    await capture(page, info, `computer-browse-first-${width}-top`);
+    await detail.getByRole("button", { name: "Enter a web address" }).click();
+    await expect(detail.getByRole("textbox", { name: "Web address" })).toBeFocused();
+    await detail.getByRole("textbox", { name: "Web address" }).fill("google.com");
+    await detail.getByRole("button", { name: "Go to website" }).click();
+    expect(ownerInputs).toContainEqual({ kind: "navigate", url: "google.com" });
+    await detail
+      .getByRole("textbox", { name: "What should your Bot do from here?" })
+      .fill("Find the official support phone number on this site.");
+    await expectNoHorizontalOverflow(page);
+    await capture(page, info, `computer-browse-first-${width}`);
+    await detail.getByRole("button", { name: "Give task to Bot" }).click();
+    const working = page.getByRole("region", {
+      name: "Find the official support phone number on this site.",
+    });
+    await expect(working.getByText("Working", { exact: true })).toBeVisible();
+    expect(returns).toEqual(["task-new"]);
+  });
+}
+
+test("a lost frame clears the old screen instead of looking live", async ({ page }) => {
+  const { setFrame } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [task({ id: "task-live", status: "running" })],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  await expect(
+    detail.getByRole("img", { name: "What your Bot's cloud computer shows right now" }),
+  ).toBeVisible();
+  setFrame(null);
+  await expect(detail.getByText("The screen is temporarily unavailable. Retrying…")).toBeVisible({
+    timeout: 7000,
+  });
+  await expect(detail.getByRole("img")).toHaveCount(0);
+});
 
 test("a page that did not load offers a retry instead of a dead form", async ({ page }, info) => {
   await page.setViewportSize({ width: 1280, height: 900 });
