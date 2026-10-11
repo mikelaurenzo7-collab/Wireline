@@ -176,7 +176,7 @@ export default function Pricing() {
                     {emailSetupReview || smsPending ? (
                       <Link
                         to={smsPending ? "/contact?topic=sms" : "/contact?topic=email"}
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-semibold text-primary underline underline-offset-4"
+                        className="inline-flex min-h-11 w-full items-center justify-center px-4 text-sm font-semibold text-primary underline underline-offset-4"
                       >
                         {smsPending ? "Ask About SMS Setup" : "Ask About Email Setup"}
                       </Link>

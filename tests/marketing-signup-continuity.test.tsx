@@ -32,7 +32,11 @@ vi.mock("../src/lib/product-event-client", () => ({
   emitProductEventOnce: vi.fn(),
 }));
 vi.mock("../src/hooks/usePaidPlanAvailability", () => ({
-  usePaidPlanAvailability: () => ({ canActivate: () => false, notice: "" }),
+  usePaidPlanAvailability: () => ({
+    canActivate: () => false,
+    needsEmailSetupReview: () => false,
+    notice: "",
+  }),
 }));
 
 type Element = ReactElement<{ children?: ReactNode; to?: string; className?: string }>;
