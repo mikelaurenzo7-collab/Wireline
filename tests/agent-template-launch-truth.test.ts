@@ -29,16 +29,28 @@ describe("agent template launch truth", () => {
     const phoneOrder = template("ecommerce-phone-order");
 
     expect(support.name).toBe("Connected Store Support");
-    expect(support.description).toContain("Shopify or Square connected");
-    expect(support.description).toContain("looks up orders, customers, and inventory");
+    expect(support.description).toContain("Answers store questions from your Knowledge");
+    expect(support.description).toContain("captures requests");
+    expect(support.description).toContain("Looks up orders, customers, and inventory");
+    expect(support.description).toContain("when Shopify or Square is connected");
     expect(support.description).not.toMatch(/returns|address changes|discount codes/i);
     expect(support.firstMessage).not.toMatch(/returns|address changes|discount codes/i);
+    expect(support.firstMessage).toContain("take details for follow-up");
+    expect(support.firstMessage).not.toMatch(/look up your order|current inventory/i);
 
+    expect(phoneOrder.description).toContain("captures order details");
     expect(phoneOrder.description).toContain("Square payment links");
     expect(phoneOrder.description).toContain("Shopify draft-order checkout links");
     expect(phoneOrder.description).toContain("matching provider is connected");
     expect(phoneOrder.description).not.toMatch(/applies discounts|address corrections|all live/i);
-    expect(phoneOrder.firstMessage).toContain("secure checkout link");
+    expect(phoneOrder.firstMessage).toContain("take your order details");
+    expect(phoneOrder.firstMessage).not.toContain("secure checkout link");
+  });
+
+  it("qualifies CRM updates while keeping standalone sales follow-up useful", () => {
+    const sales = template("sales-sdr");
+    expect(sales.description).toContain("books demos, and records the outcome");
+    expect(sales.description).toContain("Updates your CRM when connected");
   });
 
   it("uses FDCPA-aware guidance without presenting BotBound as a compliance certifier", () => {

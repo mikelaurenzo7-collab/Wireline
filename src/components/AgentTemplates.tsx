@@ -63,7 +63,8 @@ export const AGENT_TEMPLATES = [
     id: "sales-sdr",
     category: "Sales & Revenue",
     name: "Outbound Sales Caller",
-    description: "Qualifies prospects, books demos, and updates your CRM.",
+    description:
+      "Qualifies prospects, books demos, and records the outcome. Updates your CRM when connected.",
     role: "sales",
     channel: "voice" as const,
     icon: Target,
@@ -230,28 +231,28 @@ export const AGENT_TEMPLATES = [
     category: "E-commerce",
     name: "Connected Store Support",
     description:
-      "With Shopify or Square connected, looks up orders, customers, and inventory. Store actions depend on the provider and enabled tools.",
+      "Answers store questions from your Knowledge and captures requests. Looks up orders, customers, and inventory when Shopify or Square is connected.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Headphones,
     accent: BRAND.colors.onSurfaceMuted,
     badge: "Shopify or Square",
     firstMessage:
-      "Thanks for calling! I can help look up your order, purchase history, or current inventory. What can I check for you?",
+      "Thanks for calling! I can help with store questions and take details for follow-up. What can I help you with today?",
   },
   {
     id: "ecommerce-phone-order",
     category: "E-commerce",
     name: "Phone Order Bot",
     description:
-      "Creates Square payment links or Shopify draft-order checkout links when the matching provider is connected.",
+      "Helps callers choose products and captures order details. Creates Square payment links or Shopify draft-order checkout links when the matching provider is connected.",
     role: "ecommerce",
     channel: "voice" as const,
     icon: Receipt,
     accent: BRAND.colors.onSurfaceMuted,
     badge: "Phone sales",
     firstMessage:
-      "Hi, welcome to our store! I can help find the right item and send a secure checkout link. What are you looking for today?",
+      "Hi, welcome to our store! I can help you find the right item and take your order details. What are you looking for today?",
   },
   // === EVERYDAY & LIFESTYLE ===
   // These are role starters in the same Bot workspace, not a separate product.
