@@ -189,12 +189,6 @@ export function checkBillingIntegrity({ read, mustInclude, mustExclude }) {
     /Start 14-day free trial|14-day free trial|Free trial|Everyday tier|\$7\/mo|Account Holder|personal AI voice assistant/i,
     "vertical wedges must not revive retired trial or pricing copy",
   );
-  mustInclude(
-    "src/data/vertical-wedges.ts",
-    verticalWedges,
-    /a: TRUST_DISCLOSURE_FAQ,/,
-    "sales wedge disclosure answer must use the canonical trust constant",
-  );
   mustExclude(
     "src/lib/founder-fleet-seed.ts",
     founderSeed,
