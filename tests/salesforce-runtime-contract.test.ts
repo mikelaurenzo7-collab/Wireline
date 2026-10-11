@@ -43,4 +43,12 @@ describe("Salesforce activity delivery contract", () => {
     expect(page).not.toContain("Save preview choices");
     expect(page).not.toContain("Draft saved for this session");
   });
+
+  it("does not send owners to a disabled Salesforce connection", () => {
+    const page = source("src/pages/SalesforceIntegrationPage.tsx");
+    expect(page).toContain("connection?.configured === false ? (");
+    expect(page).toContain('title="Salesforce Unavailable"');
+    expect(page).toContain("Salesforce is not configured in BotBound right now");
+    expect(page).toContain("!isConnected && !isRefreshing && !connectionError");
+  });
 });

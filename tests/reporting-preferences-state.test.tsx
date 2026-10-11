@@ -266,4 +266,22 @@ describe("report settings save continuity", () => {
     expect(posts()).toHaveLength(0);
     expect(text(tree)).toContain("Choose a delivery time.");
   });
+
+  it("names the Connections cards that enable report storage", async () => {
+    const data = payload();
+    getResponses = [
+      () =>
+        Promise.resolve(
+          response({
+            ...data,
+            connections: { ...data.connections, google_drive: false, google_sheets: false },
+          }),
+        ),
+    ];
+    await settle();
+    expect(text(tree)).toContain("Google Sheets for Google Drive");
+    expect(text(tree)).toContain("Microsoft Excel for OneDrive");
+    expect(text(tree)).toContain("Check which connections are available under Business Tools.");
+    expect(text(tree)).not.toContain("Connect Google Drive or OneDrive");
+  });
 });

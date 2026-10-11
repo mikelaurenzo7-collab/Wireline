@@ -67,7 +67,11 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
           <h2 className="font-semibold text-foreground">Salesforce Connection</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">{detail}</p>
           <Badge variant={connected ? "success" : "warning"} className="mt-2">
-            {connected ? "Connected" : "Not connected"}
+            {connected
+              ? "Connected"
+              : connection.configured === false
+                ? "Unavailable"
+                : "Not connected"}
           </Badge>
         </div>
       </div>
@@ -95,12 +99,14 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
         </div>
       </dl>
 
-      <Button asChild variant="secondary" className="mt-5 w-full">
-        <Link to="/connections">
-          <ExternalLink size={16} />
-          Manage Connection
-        </Link>
-      </Button>
+      {connection.configured !== false ? (
+        <Button asChild variant="secondary" className="mt-5 w-full">
+          <Link to="/connections">
+            <ExternalLink size={16} />
+            Manage Connection
+          </Link>
+        </Button>
+      ) : null}
     </section>
   );
 }
@@ -189,7 +195,11 @@ export default function SalesforceIntegrationPage() {
           action={
             <div className="flex items-center gap-2">
               <Badge variant={isConnected ? "success" : "warning"}>
-                {isConnected ? "Connected" : "Connection required"}
+                {isConnected
+                  ? "Connected"
+                  : connection?.configured === false
+                    ? "Unavailable"
+                    : "Connection required"}
               </Badge>
               <Button
                 type="button"
@@ -266,20 +276,27 @@ export default function SalesforceIntegrationPage() {
                   {saveError}
                 </StatusNotice>
               ) : null}
-              {!isConnected && !isRefreshing ? (
-                <StatusNotice
-                  className="mt-5"
-                  tone="warning"
-                  title="Connect Salesforce First"
-                  action={
-                    <Button asChild size="sm">
-                      <Link to="/connections">Connect Salesforce</Link>
-                    </Button>
-                  }
-                >
-                  Connect your Salesforce account on the Connections page so BotBound can log your
-                  calls there.
-                </StatusNotice>
+              {!isConnected && !isRefreshing && !connectionError ? (
+                connection?.configured === false ? (
+                  <StatusNotice className="mt-5" tone="warning" title="Salesforce Unavailable">
+                    Salesforce is not configured in BotBound right now. Call activity sync is
+                    paused.
+                  </StatusNotice>
+                ) : (
+                  <StatusNotice
+                    className="mt-5"
+                    tone="warning"
+                    title="Connect Salesforce First"
+                    action={
+                      <Button asChild size="sm">
+                        <Link to="/connections">Connect Salesforce</Link>
+                      </Button>
+                    }
+                  >
+                    Connect your Salesforce account on the Connections page so BotBound can log your
+                    calls there.
+                  </StatusNotice>
+                )
               ) : null}
             </section>
 

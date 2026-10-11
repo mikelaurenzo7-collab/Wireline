@@ -270,7 +270,8 @@ export default function ReportingPreferences() {
 
       {noStorageConnected ? (
         <StatusNotice tone="warning" title="Connect a Report Destination">
-          Connect Google Drive or OneDrive to save report files.{" "}
+          To save report files, use Google Sheets for Google Drive or Microsoft Excel for OneDrive.
+          Check which connections are available under Business Tools.{" "}
           <Link to="/connections" className="font-semibold underline underline-offset-4">
             Open Connections
           </Link>
