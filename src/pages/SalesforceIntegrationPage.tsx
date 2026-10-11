@@ -69,7 +69,7 @@ function ConnectionSummary({ connection }: { connection: SalesforceConnection | 
           <Badge variant={connected ? "success" : "warning"} className="mt-2">
             {connected
               ? "Connected"
-              : connection.configured === false
+              : connection?.configured === false
                 ? "Unavailable"
                 : "Not connected"}
           </Badge>
