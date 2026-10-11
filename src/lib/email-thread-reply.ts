@@ -47,11 +47,11 @@ type Claim =
 export function replyRecipient(customerEmail: string | null | undefined): string | null {
   const raw = (customerEmail ?? "").trim();
   if (!raw) return null;
-  const bracketed = raw.match(/<[^<>]*>/g);
   let candidate = raw;
-  if (bracketed) {
-    if (bracketed.length !== 1) return null;
-    candidate = bracketed[0].slice(1, -1).trim();
+  if (raw.includes("<") || raw.includes(">")) {
+    const named = /^([^<>\r\n]*)<([^<>]*)>$/.exec(raw);
+    if (!named || /[@;\r\n]/.test(named[1])) return null;
+    candidate = named[2].trim();
   }
   return /^[^\s@,;<>"]+@[^\s@,;<>"]+\.[^\s@,;<>"]+$/.test(candidate) ? candidate : null;
 }

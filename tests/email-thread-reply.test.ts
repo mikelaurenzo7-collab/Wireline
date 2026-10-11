@@ -134,6 +134,8 @@ describe("reply recipient", () => {
 
   it("refuses lists, names alone, and anything that could add a recipient", () => {
     expect(replyRecipient("A <a@example.com>, B <b@example.com>")).toBeNull();
+    expect(replyRecipient("A <a@example.com>, b@example.com")).toBeNull();
+    expect(replyRecipient("a@example.com, B <b@example.com>")).toBeNull();
     expect(replyRecipient("a@example.com, b@example.com")).toBeNull();
     expect(replyRecipient("Dana Reyes")).toBeNull();
     expect(replyRecipient("dana@example.com\r\nBcc: x@example.com")).toBeNull();
