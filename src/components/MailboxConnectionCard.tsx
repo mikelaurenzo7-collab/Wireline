@@ -262,7 +262,11 @@ export default function MailboxConnectionCard() {
               );
               const isBusy = busy === provider.id;
               const label =
-                !emailIncluded && provider.id === "google" ? "Google Calendar" : provider.label;
+                !emailIncluded && provider.id === "google"
+                  ? "Google Calendar"
+                  : !emailIncluded && provider.id === "microsoft"
+                    ? "Outlook Calendar"
+                    : provider.label;
               return (
                 <article
                   key={provider.id}
@@ -279,9 +283,11 @@ export default function MailboxConnectionCard() {
                           <Badge variant="outline">Connected</Badge>
                         ) : null}
                       </span>
-                      <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                        {!emailIncluded && provider.id !== "icloud" ? "Calendar" : provider.detail}
-                      </span>
+                      {emailIncluded || provider.id === "icloud" ? (
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                          {provider.detail}
+                        </span>
+                      ) : null}
                     </span>
                   </div>
 

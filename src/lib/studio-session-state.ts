@@ -8,7 +8,7 @@ import { createStudioSetupDrafts } from "./studio-setup-drafts";
 export const STUDIO_RECENT_BOT_LIMIT = 32;
 export const STUDIO_CONVERSATION_MESSAGE_LIMIT = 80;
 
-/** Proposal payloads and draft communications cannot be restored from server history. */
+/** Keep unsaved reviews visible in the current session as older turns roll out of view. */
 function reviewableMessageIds(session: StudioConversationSession, messages: StudioMessage[]) {
   const retained = new Set(
     [...session.operations]
@@ -25,9 +25,12 @@ function reviewableMessageIds(session: StudioConversationSession, messages: Stud
     ] as const) {
       if (
         items?.some((_, index) => {
-          const operation = session.operations.get(`${message.id}:${kind}-${index}`);
+          const key = `${kind}-${index}`;
+          const operation = session.operations.get(`${message.id}:${key}`);
           // New cards may not have mounted and created their operation yet.
-          return !operation || operation.snapshot.pending || !operation.snapshot.saved;
+          return operation
+            ? operation.snapshot.pending || !operation.snapshot.saved
+            : !message.savedProposalKeys?.includes(key);
         })
       ) {
         retained.add(message.id);
@@ -82,7 +85,7 @@ export function createStudioSessionState(ownerId: string | null) {
   };
 }
 
-/** Keep recent history plus drafts and reviews that cannot be restored from the server. */
+/** Keep recent history plus draft reviews and pending saves in this page session. */
 export function retainStudioConversationMessages(
   session: StudioConversationSession,
   messages: StudioMessage[],

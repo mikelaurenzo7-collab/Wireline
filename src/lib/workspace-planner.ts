@@ -31,6 +31,7 @@ import {
   type AgentToolName,
 } from "./agent-capabilities";
 import { DIRECTOR_INTEGRATION_TOOLS } from "./director-integration-tools";
+import { claimsStudioReview } from "./studio-proposal-state";
 
 /** Personality vibes the chat may set — mirrors the Vapi factory. */
 export const WORKSPACE_VIBE_OPTIONS = ["warm", "playful", "authoritative"] as const;
@@ -441,7 +442,7 @@ Creative collaborator mode (chat-only, no extra tools required):
 Rules:
 - Never invent fields, tools, or recipients. Use only the allowlisted fields and listed capabilities.
 - For personality_vibe, value MUST be one of: warm, playful, authoritative.
-- For an explicit new operating rule, use operating_rule with one complete, concise instruction. This appends a rule without replacing existing rules.
+- For an explicit new operating rule, use operating_rule with one complete, concise instruction. This appends a rule without replacing existing rules. If the Account Holder asks to replace or edit an existing rule, explain that this chat cannot do that; direct them to Knowledge → Rules to edit the current rule. Do not propose an additive operating_rule as a replacement.
 - Approving transfer_phone turns on live transfer: callers who ask for a person are transferred to that number. Say so in that change's summary.
 - Never claim a proposal has been saved or an external action has happened. Saving and dispatch require separate approval.
 - Everything you propose is a PROPOSAL the Account Holder approves. Say so naturally ("I've drafted… approve it when ready").
@@ -523,10 +524,10 @@ const COACH_DIRECTOR_REPLY_MAX = 32_000;
 
 export function normalizePlan(
   raw: RawDirectAgent,
-  opts?: { agentId?: string; coachAsDirector?: boolean },
+  opts?: { agentId?: string; coachAsDirector?: boolean; userMessage?: string },
 ): WorkspacePlan {
   const replyMax = opts?.coachAsDirector ? COACH_DIRECTOR_REPLY_MAX : WORKSPACE_REPLY_MAX;
-  const reply =
+  let reply =
     clampString(raw.reply, replyMax) || "Got it. Let me know what you'd like me to adjust.";
 
   const changes: ProposedChange[] = [];
@@ -629,6 +630,33 @@ export function normalizePlan(
     j.step = step++;
   }
 
+  // The only chat-writable rule is additive. Never turn a request to replace
+  // an existing rule into a second, potentially conflicting directive.
+  const requestedRuleEdit =
+    /\b(?:remove|delete|replace|rewrite|edit|update|change|revise|modify)\b[\s\S]{0,160}\b(?:rule|directive)\b/i.test(
+      opts?.userMessage || "",
+    ) ||
+    /\b(?:rule|directive)\b[\s\S]{0,160}\b(?:remove|delete|replace|rewrite|edit|update|change|revise|modify)\b/i.test(
+      opts?.userMessage || "",
+    );
+  if (requestedRuleEdit) {
+    changes.length = 0;
+    toolToggles.length = 0;
+    actions.length = 0;
+    integrationJobs.length = 0;
+    reply =
+      "I can't edit or remove existing rules from this chat. Open Knowledge → Rules to make that change. Nothing has changed.";
+  } else if (
+    changes.length === 0 &&
+    toolToggles.length === 0 &&
+    actions.length === 0 &&
+    integrationJobs.length === 0 &&
+    claimsStudioReview(reply)
+  ) {
+    reply =
+      "I couldn't prepare a reviewable change from that request. Nothing is waiting for approval. Please try rephrasing the change or use the relevant settings editor.";
+  }
+
   return { reply, changes, toolToggles, actions, integrationJobs };
 }
 
@@ -653,7 +681,7 @@ export async function planWorkspace(input: PlanWorkspaceInput): Promise<Workspac
     model: STRUCTURED_RUNTIME_MODELS.STANDARD,
     maxTokens: 1500,
   });
-  const plan = normalizePlan(raw);
+  const plan = normalizePlan(raw, { userMessage: input.userMessage });
   return { ...plan, reasoning: thinking, thinkingDurationMs };
 }
 

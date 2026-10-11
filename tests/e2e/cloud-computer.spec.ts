@@ -495,9 +495,6 @@ for (const width of [390, 1440]) {
       }),
     ).toBeVisible();
     await expect(detail.getByRole("button", { name: "Give task to Bot" })).toBeDisabled();
-    await expect(
-      detail.getByText("Enter a website to start browsing, then give your Bot a task."),
-    ).toBeVisible();
     await capture(page, info, `computer-browse-first-${width}-top`);
     await detail.getByRole("button", { name: "Enter a web address" }).click();
     await expect(detail.getByRole("textbox", { name: "Web address" })).toBeFocused();

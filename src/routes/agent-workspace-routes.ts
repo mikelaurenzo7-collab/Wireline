@@ -23,6 +23,9 @@ import {
   normalizePlan,
   WORKSPACE_FIELDS,
   WORKSPACE_VIBE_OPTIONS,
+  type ProposedAction,
+  type ProposedChange,
+  type ProposedToolToggle,
   type WorkspaceFieldKey,
 } from "../lib/workspace-planner";
 import {
@@ -38,8 +41,93 @@ import { enforceSpendCap, enforcePrivateTextSimulationSpendCap } from "../lib/sp
 import { OPENING_GREETING_PREFIX, resolveAgentGreeting } from "../lib/agent-greeting";
 import { composeSetupPersonality } from "../lib/compose-setup-personality";
 import { removesRegulatedTemplateProvenance } from "../lib/runtime-template-personality";
+import {
+  claimsStudioReview,
+  proposalMatchesReview,
+  readStoredStudioMessageMetadata,
+  storedStudioMessageMetadata,
+} from "../lib/studio-proposal-state";
 
 const router = express.Router();
+type WorkspaceTx = Parameters<Parameters<typeof drizzle.transaction>[0]>[0];
+
+type ProposalReviewRef = { messageId: bigint; key: string };
+
+function proposalReviewRef(body: Record<string, unknown>): ProposalReviewRef {
+  const rawId = body.proposalMessageId;
+  const rawKey = body.proposalKey;
+  if (rawId == null && rawKey == null) {
+    throw AppError.fromHttpStatus(
+      409,
+      "This Studio draft is out of date. Refresh Studio and ask your Bot to draft it again.",
+    );
+  }
+  if (
+    typeof rawId !== "string" ||
+    !/^[1-9]\d{0,18}$/.test(rawId) ||
+    BigInt(rawId) > 9223372036854775807n ||
+    typeof rawKey !== "string" ||
+    !/^(?:change|tool)-(?:0|[1-9]\d*)$/.test(rawKey)
+  ) {
+    throw AppError.badRequest("Choose a valid Studio review card.");
+  }
+  return { messageId: BigInt(rawId), key: rawKey };
+}
+
+async function lockProposalReview(
+  tx: WorkspaceTx,
+  userId: string,
+  agentId: string,
+  ref: ProposalReviewRef,
+  expected: { field: string; value: string } | { tool: string; enable: boolean },
+) {
+  const [message] = await tx
+    .select({
+      role: schema.agentConversationMessages.role,
+      metadata: schema.agentConversationMessages.metadata,
+    })
+    .from(schema.agentConversationMessages)
+    .where(
+      and(
+        eq(schema.agentConversationMessages.id, ref.messageId),
+        eq(schema.agentConversationMessages.userId, userId),
+        eq(schema.agentConversationMessages.agentId, agentId),
+      ),
+    )
+    .limit(1)
+    .for("update");
+  const metadata = readStoredStudioMessageMetadata(message?.metadata);
+  if (
+    message?.role !== "agent" ||
+    !metadata ||
+    !proposalMatchesReview(metadata.proposals, ref.key, expected)
+  ) {
+    throw AppError.fromHttpStatus(409, "This Studio review card is no longer valid.");
+  }
+  return { ref, metadata, userId, agentId };
+}
+
+async function markProposalSaved(
+  tx: WorkspaceTx,
+  review: Awaited<ReturnType<typeof lockProposalReview>>,
+) {
+  if (review.metadata.savedProposalKeys.includes(review.ref.key)) return;
+  await tx
+    .update(schema.agentConversationMessages)
+    .set({
+      metadata: {
+        ...review.metadata,
+        savedProposalKeys: [...review.metadata.savedProposalKeys, review.ref.key],
+      },
+    })
+    .where(
+      and(
+        eq(schema.agentConversationMessages.id, review.ref.messageId),
+        eq(schema.agentConversationMessages.userId, review.userId),
+        eq(schema.agentConversationMessages.agentId, review.agentId),
+      ),
+    );
+}
 
 /** Both composer routes plan against the same saved, tenant-owned configuration. */
 async function loadPlanningAgent(agentId: string, userId: string) {
@@ -144,13 +232,19 @@ router.get(
           role: agent.role,
           enabledTools: resolveAgentTools(agent.role ?? undefined, agent.enabledTools),
         },
-        messages: messages.reverse().map((m) => ({
-          id: String(m.id),
-          role: m.role,
-          content: m.content,
-          reasoning: m.reasoning || undefined,
-          createdAt: m.createdAt,
-        })),
+        messages: messages.reverse().map((m) => {
+          const metadata = readStoredStudioMessageMetadata(m.metadata);
+          return {
+            id: String(m.id),
+            role: m.role,
+            content: m.content,
+            reasoning: m.reasoning || undefined,
+            createdAt: m.createdAt,
+            proposals: metadata?.proposals,
+            savedProposalKeys: metadata?.savedProposalKeys,
+            reviewUnavailable: m.role === "agent" && !metadata && claimsStudioReview(m.content),
+          };
+        }),
       });
     } catch (e) {
       if (e instanceof AppError) throw e;
@@ -225,9 +319,9 @@ router.post(
       });
 
       let reply: string;
-      let changes: unknown[] = [];
-      let toolToggles: unknown[] = [];
-      let actions: unknown[] = [];
+      let changes: ProposedChange[] = [];
+      let toolToggles: ProposedToolToggle[] = [];
+      let actions: ProposedAction[] = [];
       let reasoning: string | undefined;
       let thinkingDurationMs: number | undefined;
 
@@ -256,15 +350,27 @@ router.post(
         }
       }
 
-      await drizzle.insert(schema.agentConversationMessages).values({
-        userId: req.user.id,
-        agentId,
-        role: "agent",
-        content: reply,
-        reasoning: reasoning || null,
-      });
+      const [savedMessage] = await drizzle
+        .insert(schema.agentConversationMessages)
+        .values({
+          userId: req.user.id,
+          agentId,
+          role: "agent",
+          content: reply,
+          reasoning: reasoning || null,
+          metadata: storedStudioMessageMetadata({ changes, toolToggles, actions }),
+        })
+        .returning({ id: schema.agentConversationMessages.id });
 
-      res.json({ reply, changes, toolToggles, actions, reasoning, thinkingDurationMs });
+      res.json({
+        reply,
+        changes,
+        toolToggles,
+        actions,
+        messageId: String(savedMessage.id),
+        reasoning,
+        thinkingDurationMs,
+      });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace POST failed", { error: getErrorMessage(e) });
@@ -354,30 +460,19 @@ router.post(
             onThinkingChunk: (text) => sse.write("thinking_chunk", { text }),
             onThinkingEnd: (fullText, durationMs) =>
               sse.write("thinking_end", { thinking: fullText, durationMs }),
-            onResult: (r) =>
-              sse.write("reply", normalizePlan((r || {}) as Parameters<typeof normalizePlan>[0])),
+            // The result is returned to the client only after its review cards
+            // and message ID have been saved below.
           },
         );
 
         // Use the same allowlist and validation as the non-streaming planner.
-        const { reply, changes, toolToggles, actions } = normalizePlan(result || {});
-
-        sse.write("reply", { reply, changes, toolToggles, actions });
-        sse.write("done", {
-          reply,
-          changes,
-          toolToggles,
-          actions,
-          reasoning: thinking,
-          thinkingDurationMs,
+        const { reply, changes, toolToggles, actions } = normalizePlan(result || {}, {
+          userMessage,
         });
-        // Persist the agent turn before ending the response. The client already
-        // has the payload from the `done` event above, but a fire-and-forget
-        // insert after `sse.end()` races the serverless freeze that follows a
-        // completed response — the reply reached the user and then vanished
-        // from conversation history on the next load. A persist failure is
-        // still non-fatal: the turn was already delivered.
-        await drizzle
+
+        // A review card must be durable before it reaches the client. The
+        // receipt ID also binds later approvals to this exact, tenant-owned turn.
+        const [savedMessage] = await drizzle
           .insert(schema.agentConversationMessages)
           .values({
             userId: req.user.id,
@@ -385,10 +480,18 @@ router.post(
             role: "agent",
             content: reply || "(empty)",
             reasoning: thinking || null,
+            metadata: storedStudioMessageMetadata({ changes, toolToggles, actions }),
           })
-          .catch((err) =>
-            log.error("workspace stream persist failed", { error: getErrorMessage(err), agentId }),
-          );
+          .returning({ id: schema.agentConversationMessages.id });
+        sse.write("done", {
+          reply,
+          changes,
+          toolToggles,
+          actions,
+          messageId: String(savedMessage.id),
+          reasoning: thinking,
+          thinkingDurationMs,
+        });
         sse.end();
       } catch (e) {
         if (e instanceof AppError) throw e;
@@ -586,12 +689,18 @@ router.post(
 
       const agent = await findOwnedAgentProfile(agentId, req.user.id);
       if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
+      const reviewRef = proposalReviewRef(req.body || {});
 
       await drizzle.transaction(async (tx) => {
         // Serialize related setup changes and repeated rule saves for this Bot.
         await tx.execute(
           sql`SELECT ${schema.agents.id} FROM ${schema.agents} WHERE ${schema.agents.id} = ${agentId} AND ${schema.agents.userId} = ${req.user.id} FOR UPDATE`,
         );
+        const review = await lockProposalReview(tx, req.user.id, agentId, reviewRef, {
+          field,
+          value: rawValue.trim(),
+        });
+        if (review.metadata.savedProposalKeys.includes(review.ref.key)) return;
         if (spec.kind === "directive") {
           const [existing] = await tx
             .select({ id: schema.directives.id })
@@ -661,10 +770,17 @@ router.post(
               });
           }
         }
+        await markProposalSaved(tx, review);
       });
 
       log.info("workspace config change applied", { agentId, field });
-      res.json({ success: true, field, label: spec.label, value });
+      res.json({
+        success: true,
+        field,
+        label: spec.label,
+        value,
+        savedProposalKey: reviewRef.key,
+      });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace apply-change failed", { error: getErrorMessage(e) });
@@ -686,6 +802,7 @@ router.post(
       const enable = req.body?.enable;
       if (!isAgentToolName(tool)) throw AppError.fromHttpStatus(400, "Unknown tool");
       if (typeof enable !== "boolean") throw AppError.fromHttpStatus(400, "enable must be boolean");
+      const reviewRef = proposalReviewRef(req.body || {});
 
       const next = await drizzle.transaction(async (tx) => {
         // Each proposal changes one capability. Lock before reading the array
@@ -698,7 +815,15 @@ router.post(
           .for("update");
         if (!agent) throw AppError.fromHttpStatus(404, "Agent not found");
 
+        const review = await lockProposalReview(tx, req.user.id, agentId, reviewRef, {
+          tool,
+          enable,
+        });
+
         const current = resolveAgentTools(agent.role ?? undefined, agent.enabledTools);
+        if (review.metadata.savedProposalKeys.includes(review.ref.key)) {
+          return { enabledTools: current, previouslySaved: true };
+        }
         const updated = enable
           ? Array.from(new Set([...current, tool]))
           : current.filter((t) => t !== tool);
@@ -706,11 +831,19 @@ router.post(
           .update(schema.agents)
           .set({ enabledTools: normalizeEnabledTools(updated) })
           .where(and(eq(schema.agents.id, agentId), eq(schema.agents.userId, req.user.id)));
-        return updated;
+        await markProposalSaved(tx, review);
+        return { enabledTools: updated, previouslySaved: false };
       });
 
       log.info("workspace tool toggled", { agentId, tool, enable });
-      res.json({ success: true, tool, enable, enabledTools: next });
+      res.json({
+        success: true,
+        tool,
+        enable,
+        enabledTools: next.enabledTools,
+        previouslySaved: next.previouslySaved,
+        savedProposalKey: reviewRef.key,
+      });
     } catch (e) {
       if (e instanceof AppError) throw e;
       log.error("workspace toggle-tool failed", { error: getErrorMessage(e) });

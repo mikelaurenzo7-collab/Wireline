@@ -462,8 +462,6 @@ function LiveScreen({
         {newTab && src && screenCurrent ? (
           <div className="wl-computer-new-tab">
             <Globe className="size-7" aria-hidden="true" />
-            <strong>Your browser is ready</strong>
-            <span>Enter a website to start browsing, then give your Bot a task.</span>
             <Button type="button" size="sm" onClick={onRequestAddress}>
               Enter a web address
             </Button>
@@ -716,10 +714,6 @@ function TaskDetail({
               <MousePointer2 className="size-4" aria-hidden="true" />
               <div>
                 <h2>You’re in control</h2>
-                <p>
-                  Click, scroll, or drag on the screen. Use the address bar or type into the focused
-                  page field below.
-                </p>
               </div>
             </div>
             <form
@@ -821,13 +815,11 @@ function TaskDetail({
                   id="computer-handoff-goal"
                   value={handoffGoal}
                   onChange={(event) => setHandoffGoal(event.target.value)}
-                  placeholder="Describe the task for your Bot to complete using this browser."
                   rows={3}
                   maxLength={2000}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Your Bot starts working after you hand it this task. You have up to 10 minutes to
-                  hand over this browser.
+                  Give your Bot a task within 10 minutes.
                 </p>
               </div>
             ) : null}
@@ -1218,7 +1210,6 @@ export default function ComputerPage() {
                 <div className="wl-computer-browse-first">
                   <div>
                     <h2>Start with a browser</h2>
-                    <p>Browse with your cursor first. Give your Bot a task when you’re ready.</p>
                   </div>
                   <Button
                     type="button"
@@ -1292,17 +1283,6 @@ export default function ComputerPage() {
               </form>
             ) : null}
             {!anyActive ? taskDetail : null}
-
-            {tasks && !tasks.length && status?.available ? (
-              <div className="wl-computer-empty">
-                <MonitorSmartphone className="size-6" aria-hidden="true" />
-                <p className="font-medium">Your Bot's computer is ready.</p>
-                <p className="text-sm text-muted-foreground">
-                  Open a browser above, or describe a task for your Bot. You’ll see its latest
-                  screen and each step here.
-                </p>
-              </div>
-            ) : null}
           </div>
 
           <aside className="wl-computer-history" aria-label="Recent tasks">

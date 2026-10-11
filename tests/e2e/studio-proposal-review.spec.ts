@@ -84,6 +84,74 @@ async function requestProposal(page: Page) {
   return review;
 }
 
+test("Studio review cards and saved receipts survive a full page reload", async ({ page }) => {
+  await mockWorkspace(page);
+  let persisted = false;
+  let saved = false;
+  const writes: unknown[] = [];
+  await page.route("**/api/agents/bot-front-desk/workspace/messages", (route) =>
+    route.fulfill({
+      json: {
+        messages: persisted
+          ? [
+              {
+                id: "42",
+                role: "agent",
+                content: plan.reply,
+                createdAt: "2026-10-11T00:00:00.000Z",
+                proposals: { changes: [opening], toolToggles: [], actions: [] },
+                savedProposalKeys: saved ? ["change-0"] : [],
+              },
+            ]
+          : [],
+      },
+    }),
+  );
+  await page.route("**/api/agents/bot-front-desk/workspace/messages/stream", (route) => {
+    persisted = true;
+    return route.fulfill({
+      contentType: "text/event-stream",
+      body: `event: done\ndata: ${JSON.stringify({
+        reply: plan.reply,
+        changes: [opening],
+        toolToggles: [],
+        actions: [],
+        messageId: "42",
+      })}\n\n`,
+    });
+  });
+  await page.route("**/api/agents/bot-front-desk/workspace/apply-change", (route) => {
+    writes.push(route.request().postDataJSON());
+    saved = true;
+    return route.fulfill({
+      json: {
+        success: true,
+        field: opening.field,
+        value: opening.value,
+        savedProposalKey: "change-0",
+      },
+    });
+  });
+
+  await requestProposal(page);
+  await page.reload();
+  const review = page.getByRole("region", { name: "Review Opening greeting", exact: true });
+  await expect(review.getByRole("button", { name: "Save Opening greeting" })).toBeVisible();
+  await review.getByRole("button", { name: "Save Opening greeting" }).click();
+  await expect(review.getByText("Saved", { exact: true })).toBeVisible();
+  expect(writes).toEqual([
+    {
+      field: opening.field,
+      value: opening.value,
+      proposalMessageId: "42",
+      proposalKey: "change-0",
+    },
+  ]);
+  await page.reload();
+  await expect(review.getByText("Saved", { exact: true })).toBeVisible();
+  await expect(review.getByRole("button", { name: "Save Opening greeting" })).toHaveCount(0);
+});
+
 test("Studio opens Computer for the Bot currently selected", async ({ page }) => {
   await mockWorkspace(page);
   await page.goto(`/studio?agent=${bots[1].id}`);

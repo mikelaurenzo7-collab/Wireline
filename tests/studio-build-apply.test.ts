@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
   lockTail: Promise.resolve(),
   executeAction: vi.fn(),
   lastAgentUpdate: null as Record<string, unknown> | null,
+  metadata: null as Record<string, unknown> | null,
+  messageOwner: "tenant" as string,
 }));
 vi.mock("express", () => ({
   default: {
@@ -72,21 +74,37 @@ vi.mock("../src/lib/server-context", async () => {
           select: () => ({
             from: (table: Parameters<typeof getTableName>[0]) => ({
               where: (statement: Parameters<typeof dialect.sqlToQuery>[0]) => ({
-                limit: async () => {
+                limit: () => {
                   const query = dialect.sqlToQuery(statement);
                   expect(query.params).toContain("tenant");
-                  return getTableName(table).includes("personality")
-                    ? [{ content: h.personality }]
-                    : h.rules.includes(String(query.params.at(-1)))
-                      ? [{ id: 1n }]
-                      : [];
+                  const name = getTableName(table);
+                  const rows = name.includes("conversation_messages")
+                    ? h.messageOwner === "tenant" && query.params.includes(42n)
+                      ? [{ role: "agent", metadata: h.metadata }]
+                      : []
+                    : name.includes("personality")
+                      ? [{ content: h.personality }]
+                      : h.rules.includes(String(query.params.at(-1)))
+                        ? [{ id: 1n }]
+                        : [];
+                  return Object.assign(Promise.resolve(rows), {
+                    for: async (mode: string) => {
+                      expect(mode).toBe("update");
+                      return rows;
+                    },
+                  });
                 },
               }),
             }),
           }),
-          update: () => ({
-            set: (value: { firstMessage?: string }) => ({
-              where: async () => {
+          update: (table: Parameters<typeof getTableName>[0]) => ({
+            set: (value: { firstMessage?: string; metadata?: Record<string, unknown> }) => ({
+              where: async (statement: Parameters<typeof dialect.sqlToQuery>[0]) => {
+                if (getTableName(table).includes("conversation_messages")) {
+                  expect(dialect.sqlToQuery(statement).params).toEqual([42n, "tenant", "bot"]);
+                  h.metadata = value.metadata || null;
+                  return;
+                }
                 h.lastAgentUpdate = value;
                 if (value.firstMessage) h.firstMessage = value.firstMessage;
               },
@@ -122,17 +140,25 @@ vi.mock("../src/lib/server-context", async () => {
 });
 import "../src/routes/agent-workspace-routes";
 
-async function apply(field: string, value: string) {
+async function applyBody(body: Record<string, unknown>) {
   const json = vi.fn();
   await h.routes.get("post /api/agents/:id/workspace/apply-change")!(
-    {
-      user: { id: "tenant" },
-      params: { id: "bot" },
-      body: { field, value },
-    },
+    { user: { id: "tenant" }, params: { id: "bot" }, body },
     { json },
   );
   return json.mock.calls[0]?.[0];
+}
+
+async function apply(field: string, value: string) {
+  h.metadata = {
+    proposals: {
+      changes: [{ field, label: "Review", value, summary: "Review change" }],
+      toolToggles: [],
+      actions: [],
+    },
+    savedProposalKeys: [],
+  };
+  return applyBody({ field, value, proposalMessageId: "42", proposalKey: "change-0" });
 }
 
 beforeEach(() => {
@@ -143,6 +169,8 @@ beforeEach(() => {
   h.lockTail = Promise.resolve();
   h.executeAction.mockReset();
   h.lastAgentUpdate = null;
+  h.metadata = null;
+  h.messageOwner = "tenant";
 });
 
 describe("explicit Studio proposal application", () => {
@@ -198,6 +226,43 @@ describe("explicit Studio proposal application", () => {
     expect(h.personality).toContain(
       "## TEMPLATE SPECIALTY: Medical Office Scheduling\nRequires review.",
     );
+  });
+
+  it("requires a matching, tenant-owned review card and keeps a repeated save idempotent", async () => {
+    await expect(applyBody({ field: "first_message", value: "Unsafe" })).rejects.toMatchObject({
+      status: 409,
+    });
+    await apply("first_message", "Welcome to Acme.");
+    expect(h.metadata).toMatchObject({ savedProposalKeys: ["change-0"] });
+    expect(
+      await applyBody({
+        field: "first_message",
+        value: "Welcome to Acme.",
+        proposalMessageId: "42",
+        proposalKey: "change-0",
+      }),
+    ).toMatchObject({ success: true, savedProposalKey: "change-0" });
+    expect(h.metadata).toMatchObject({ savedProposalKeys: ["change-0"] });
+
+    await expect(
+      applyBody({
+        field: "first_message",
+        value: "Tampered value",
+        proposalMessageId: "42",
+        proposalKey: "change-0",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(h.firstMessage).toBe("Welcome to Acme.");
+
+    h.messageOwner = "another-tenant";
+    await expect(
+      applyBody({
+        field: "first_message",
+        value: "Welcome to Acme.",
+        proposalMessageId: "42",
+        proposalKey: "change-0",
+      }),
+    ).rejects.toMatchObject({ status: 409 });
   });
 
   it("preserves queued-for-approval instead of implying an external send completed", async () => {

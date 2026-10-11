@@ -32,6 +32,8 @@ export type StudioMessage = {
   content: string;
   createdAt: string;
   proposals?: StudioProposals;
+  savedProposalKeys?: string[];
+  reviewUnavailable?: boolean;
 };
 
 export type StudioConversationSession = {
@@ -111,8 +113,14 @@ function MessageBubble({
             agentId={agentId}
             proposals={message.proposals}
             messageId={message.id}
+            savedProposalKeys={message.savedProposalKeys}
             operations={operations}
           />
+        ) : null}
+        {mode === "configure" && message.reviewUnavailable ? (
+          <p className="mt-2 text-xs text-muted-foreground" role="status">
+            This earlier draft is unavailable. Ask your Bot to draft it again.
+          </p>
         ) : null}
       </div>
     </article>
@@ -304,7 +312,10 @@ const StudioWorkroom = forwardRef<
       setMessages((current) => [
         ...current,
         {
-          id: `agent-${Date.now()}`,
+          id:
+            typeof payload.messageId === "string" && /^[1-9]\d*$/.test(payload.messageId)
+              ? payload.messageId
+              : `agent-${Date.now()}`,
           role: "agent",
           content: typeof payload.reply === "string" ? payload.reply : "Done.",
           createdAt: new Date().toISOString(),
@@ -313,6 +324,7 @@ const StudioWorkroom = forwardRef<
             toolToggles: Array.isArray(payload.toolToggles) ? payload.toolToggles : [],
             actions: Array.isArray(payload.actions) ? payload.actions : [],
           },
+          savedProposalKeys: [],
         },
       ]);
       setSending(false);

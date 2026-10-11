@@ -533,6 +533,13 @@
       "when": 1791658048000,
       "tag": "0177_audit_log_server_settlement_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1791732958950,
+      "tag": "0178_studio_proposal_review_state",
+      "breakpoints": true
     }
   ]
 }

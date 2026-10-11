@@ -31,10 +31,12 @@ const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 function ReviewCard({
   item,
   agentId,
+  messageId,
   operation,
 }: {
   item: ReviewItem;
   agentId: string;
+  messageId: string;
   operation: StudioProposalOperation;
 }) {
   const subscribe = useCallback(
@@ -60,12 +62,16 @@ function ReviewCard({
     if (operation.snapshot.pending || operation.snapshot.saved) return;
     update({ pending: true, saved: false, error: null });
     try {
+      const persistedMessage = /^[1-9]\d*$/.test(messageId);
       const response = await authFetch(
         `/api/agents/${encodeURIComponent(agentId)}/workspace/${item.path}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(item.body),
+          body: JSON.stringify({
+            ...item.body,
+            ...(persistedMessage ? { proposalMessageId: messageId, proposalKey: item.key } : {}),
+          }),
         },
       );
       const payload: unknown = await response.json();
@@ -74,12 +80,14 @@ function ReviewCard({
       const confirmed =
         record(payload) &&
         payload.success === true &&
+        (!persistedMessage || payload.savedProposalKey === item.key) &&
         (item.path === "apply-change"
           ? payload.field === item.body.field && String(payload.value) === String(item.body.value)
           : payload.tool === item.body.tool &&
             payload.enable === item.body.enable &&
-            Array.isArray(payload.enabledTools) &&
-            payload.enabledTools.includes(item.body.tool) === item.body.enable);
+            (payload.previouslySaved === true ||
+              (Array.isArray(payload.enabledTools) &&
+                payload.enabledTools.includes(item.body.tool) === item.body.enable)));
       if (!confirmed) throw new Error("Save was not confirmed. Try again.");
       // Persist the receipt in this Bot's session even if its workroom was closed
       // while the server completed the write. Never label another Bot as saved.
@@ -139,11 +147,13 @@ export default function StudioProposalReview({
   agentId,
   proposals,
   messageId,
+  savedProposalKeys,
   operations,
 }: {
   agentId: string;
   proposals: StudioProposals;
   messageId: string;
+  savedProposalKeys?: string[];
   operations: Map<string, StudioProposalOperation>;
 }) {
   const [call, setCall] = useState<Record<string, unknown> | null>(null);
@@ -191,12 +201,24 @@ export default function StudioProposalReview({
         let operation = operations.get(key);
         if (!operation) {
           operation = {
-            snapshot: { pending: false, saved: false, error: null },
+            snapshot: {
+              pending: false,
+              saved: savedProposalKeys?.includes(item.key) === true,
+              error: null,
+            },
             listeners: new Set(),
           };
           operations.set(key, operation);
         }
-        return <ReviewCard key={item.key} item={item} agentId={agentId} operation={operation} />;
+        return (
+          <ReviewCard
+            key={item.key}
+            item={item}
+            agentId={agentId}
+            messageId={messageId}
+            operation={operation}
+          />
+        );
       })}
       {actions.map((action, index) => (
         <section

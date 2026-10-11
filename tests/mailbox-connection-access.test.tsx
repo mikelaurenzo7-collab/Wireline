@@ -97,7 +97,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 describe("connection choices follow purchased channels", () => {
   it("keeps calendar connections and omits unavailable new mail connections", () => {
-    expect(buttons().map(label)).toEqual(["Connect Google Calendar", "Connect Outlook"]);
+    expect(buttons().map(label)).toEqual(["Connect Google Calendar", "Connect Outlook Calendar"]);
     expect(label(MailboxConnectionCard())).not.toContain("Mail + calendar");
   });
   it("keeps an existing iCloud account manageable without offering another mailbox", () => {

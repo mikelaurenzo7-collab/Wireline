@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   lockTail: Promise.resolve(),
   owned: true,
   writes: 0,
+  messages: new Map<bigint, Record<string, unknown>>(),
 }));
 vi.mock("express", () => ({
   default: {
@@ -48,12 +49,20 @@ vi.mock("../src/lib/agent-ownership", () => ({
   },
 }));
 vi.mock("../src/lib/server-context", async () => {
+  const { getTableName } = await import("drizzle-orm");
   const { PgDialect } = await import("drizzle-orm/pg-core");
   const dialect = new PgDialect();
-  const update = () => ({
-    set: ({ enabledTools }: { enabledTools: string[] }) => ({
-      where: async () => {
-        h.tools = [...enabledTools];
+  const update = (table: Parameters<typeof getTableName>[0]) => ({
+    set: (value: { enabledTools?: string[]; metadata?: Record<string, unknown> }) => ({
+      where: async (statement: Parameters<typeof dialect.sqlToQuery>[0]) => {
+        if (getTableName(table).includes("conversation_messages")) {
+          const params = dialect.sqlToQuery(statement).params;
+          expect(params).toContain("tenant");
+          expect(params).toContain("bot");
+          h.messages.set(params[0] as bigint, value.metadata!);
+          return;
+        }
+        h.tools = [...value.enabledTools!];
         h.writes++;
       },
     }),
@@ -67,12 +76,19 @@ vi.mock("../src/lib/server-context", async () => {
         let unlock: (() => void) | undefined;
         const tx = {
           select: () => ({
-            from: () => ({
+            from: (table: Parameters<typeof getTableName>[0]) => ({
               where: (statement: Parameters<typeof dialect.sqlToQuery>[0]) => ({
                 limit: () => ({
                   for: async (mode: string) => {
                     expect(mode).toBe("update");
-                    expect(dialect.sqlToQuery(statement).params).toEqual(["bot", "tenant"]);
+                    const params = dialect.sqlToQuery(statement).params;
+                    if (getTableName(table).includes("conversation_messages")) {
+                      expect(params[0]).toBeTypeOf("bigint");
+                      expect(params.slice(1)).toEqual(["tenant", "bot"]);
+                      const metadata = h.messages.get(params[0] as bigint);
+                      return metadata ? [{ role: "agent", metadata }] : [];
+                    }
+                    expect(params).toEqual(["bot", "tenant"]);
                     const prior = h.lockTail;
                     h.lockTail = new Promise((resolve) => {
                       unlock = resolve;
@@ -101,10 +117,26 @@ vi.mock("../src/lib/server-context", async () => {
 import "../src/routes/agent-workspace-routes";
 
 function toggle(tool: string, enable: boolean) {
+  const id = tool === "book_appointment" ? 43n : enable ? 42n : 44n;
+  if (!h.messages.has(id)) {
+    h.messages.set(id, {
+      proposals: {
+        changes: [],
+        toolToggles: [{ tool, enable, label: tool, reason: "Review capability" }],
+        actions: [],
+      },
+      savedProposalKeys: [],
+    });
+  }
+  const json = vi.fn();
   return h.routes.get("post /api/agents/:id/workspace/toggle-tool")!(
-    { user: { id: "tenant" }, params: { id: "bot" }, body: { tool, enable } },
-    { json: vi.fn() },
-  );
+    {
+      user: { id: "tenant" },
+      params: { id: "bot" },
+      body: { tool, enable, proposalMessageId: String(id), proposalKey: "tool-0" },
+    },
+    { json },
+  ).then(() => json.mock.calls[0]?.[0]);
 }
 
 beforeEach(() => {
@@ -112,6 +144,7 @@ beforeEach(() => {
   h.lockTail = Promise.resolve();
   h.owned = true;
   h.writes = 0;
+  h.messages.clear();
 });
 
 describe("reviewed tool proposal concurrency", () => {
@@ -131,5 +164,18 @@ describe("reviewed tool proposal concurrency", () => {
     h.owned = false;
     await expect(toggle("send_email", true)).rejects.toMatchObject({ status: 404 });
     expect(h.writes).toBe(0);
+  });
+
+  it("returns the saved receipt after a later card changes the same tool", async () => {
+    expect(await toggle("send_email", true)).toMatchObject({ previouslySaved: false });
+    expect(await toggle("send_email", false)).toMatchObject({ previouslySaved: false });
+    expect(h.tools).toEqual([]);
+    expect(await toggle("send_email", true)).toMatchObject({
+      previouslySaved: true,
+      savedProposalKey: "tool-0",
+      enabledTools: [],
+    });
+    expect(h.tools).toEqual([]);
+    expect(h.writes).toBe(2);
   });
 });

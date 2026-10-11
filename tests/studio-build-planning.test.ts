@@ -84,4 +84,45 @@ describe("reviewable Studio Build plans", () => {
       { field: "auto_zoom_link", value: "false" },
     ]);
   });
+
+  it("does not claim an approval exists after malformed proposals are discarded", () => {
+    const plan = normalizePlan({
+      reply: "I've drafted the updated booking rule. Approve it when ready.",
+      config_changes: [{ field: "unknown_field", value: "Do the work." }],
+    });
+    expect(plan.changes).toEqual([]);
+    expect(plan.reply).toContain("Nothing is waiting for approval");
+  });
+
+  it("does not append a duplicate when asked to remove and replace a rule", () => {
+    const plan = normalizePlan(
+      {
+        reply: "I've drafted the replacement. Approve it when ready.",
+        config_changes: [{ field: "operating_rule", value: "Book only after confirmation." }],
+        tool_toggles: [{ tool: "send_email", enable: true }],
+      },
+      { userMessage: "Remove the outdated rule about bookings. Replace it with this one." },
+    );
+    expect(plan.changes).toEqual([]);
+    expect(plan.toolToggles).toEqual([]);
+    expect(plan.reply).toContain("Knowledge → Rules");
+    expect(plan.reply).toContain("Nothing has changed");
+  });
+
+  it.each([
+    "Change the current booking rule.",
+    "Revise the existing booking directive.",
+    "Modify the rule about callback times.",
+    "The old rule needs an update.",
+  ])("directs an existing-rule edit to Knowledge for %s", (userMessage) => {
+    const plan = normalizePlan(
+      {
+        reply: "I've drafted the updated rule. Approve it when ready.",
+        config_changes: [{ field: "operating_rule", value: "New booking instruction." }],
+      },
+      { userMessage },
+    );
+    expect(plan.changes).toEqual([]);
+    expect(plan.reply).toContain("Knowledge → Rules");
+  });
 });
