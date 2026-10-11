@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Copy, ExternalLink, MessageSquareText, Sparkles, Terminal } from "lucide-react";
+import { Copy, ExternalLink, MessageSquareText, Terminal } from "lucide-react";
 
 import { Button } from "../components/atoms";
 import MarketingPageFrame from "../components/layout/MarketingPageFrame";
@@ -47,13 +47,6 @@ const MCP_CLIENTS = [
     action: "Open ChatGPT Apps",
     href: "https://chatgpt.com/",
     icon: MessageSquareText,
-  },
-  {
-    title: "Claude",
-    description: "Add BotBound as a remote connector and build your first Phone Bot from Claude.",
-    action: "Open Claude Connectors",
-    href: "https://claude.ai/settings/connectors",
-    icon: Sparkles,
   },
   {
     title: "Cursor",
@@ -104,7 +97,7 @@ export default function Developers() {
     <MarketingPageFrame>
       <PageMeta
         title="Developer Portal | BotBound"
-        description="Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
+        description="Connect BotBound to ChatGPT and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys."
         path="/developers"
       />
 
@@ -135,7 +128,7 @@ export default function Developers() {
             Connect Once
           </h2>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             {MCP_CLIENTS.map(({ title, description, action, href, icon: Icon }) => (
               <article
                 key={title}

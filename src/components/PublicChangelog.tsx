@@ -48,6 +48,12 @@ const TAG_META: Record<EntryTag, { label: string; tone: string; icon: typeof Spa
 
 const ENTRIES: ChangelogEntry[] = [
   {
+    date: "Oct 10, 2026",
+    tag: "feature",
+    title: "Cloud Computer, More Knowledge Formats, and Inbox Replies",
+    body: "Bots can use a cloud browser for guided tasks, with owner take-control when a sign-in or decision needs a person. Knowledge accepts PDF, Word, and Excel uploads, and configured inboxes support replies within an email thread. Public and Studio pages received a visual consistency pass. Paid email activation still requires a setup review.",
+  },
+  {
     date: "Aug 17, 2026",
     tag: "infra",
     title: "Production Phone Calls Use a Dedicated Carrier-Grade Path",
