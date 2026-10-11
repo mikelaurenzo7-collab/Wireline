@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- module operates on heterogeneous data shapes across integrations. */
 import { drizzle } from "./server-context";
 import * as schema from "../db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   googleGrantedScopesAllowCalendarWrite,
   microsoftGrantedScopesAllowCalendarWrite,
 } from "./oauth-helpers";
 
 export interface IntegrationHealthResult {
+  has_oauth_connections: boolean;
   reconnect_google_calendar: boolean;
   reconnect_microsoft_calendar: boolean;
   calendar_scope_unknown_google: boolean;
@@ -133,18 +134,18 @@ export async function computeIntegrationHealth(userId: string): Promise<Integrat
     }
   }
 
-  const inactiveCrm = await drizzle
+  const oauthCrm = await drizzle
     .select({
       provider: schema.crmConnections.provider,
+      active: schema.crmConnections.active,
     })
     .from(schema.crmConnections)
-    .where(
-      and(
-        eq(schema.crmConnections.userId, userId),
-        eq(schema.crmConnections.active, false),
-        inArray(schema.crmConnections.provider, ["hubspot", "salesforce", "google_sheets"]),
-      ),
-    );
+    .where(eq(schema.crmConnections.userId, userId));
+
+  const inactiveCrm = oauthCrm.filter(
+    (row) =>
+      row.active === false && ["hubspot", "salesforce", "google_sheets"].includes(row.provider),
+  );
 
   const reconnect_hubspot = inactiveCrm.some((r) => r.provider === "hubspot");
   const reconnect_salesforce = inactiveCrm.some((r) => r.provider === "salesforce");
@@ -167,6 +168,7 @@ export async function computeIntegrationHealth(userId: string): Promise<Integrat
   }
 
   return {
+    has_oauth_connections: hasGoogle || hasMicrosoft || oauthCrm.length > 0,
     reconnect_google_calendar,
     reconnect_microsoft_calendar,
     calendar_scope_unknown_google,

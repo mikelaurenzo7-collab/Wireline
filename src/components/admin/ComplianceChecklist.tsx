@@ -4,11 +4,13 @@ import { Link } from "react-router";
 import { authFetch } from "../../lib/api";
 import { ShadButton } from "../ui/shadcn/ShadButton";
 import { cn } from "../../lib/utils";
+import { getIntegrationChecklistStatus } from "./compliance-checklist-status";
 
 type ChecklistItem = {
   id: string;
   label: string;
   done: boolean;
+  applicable?: boolean;
   href?: string;
 };
 
@@ -56,16 +58,18 @@ export default function ComplianceChecklist() {
         if (cancelled) return;
         const dncLen = Array.isArray(dncRes?.entries) ? dncRes.entries.length : 0;
         setDncCount(dncRes ? dncLen : null);
-        // Failed health fetches must stay pending — never treat null as "all clear".
-        const intOk =
-          intRes != null &&
-          !intRes.reconnect_google_calendar &&
-          !intRes.reconnect_microsoft_calendar &&
-          !(Array.isArray(intRes.reasons) && intRes.reasons.length > 0);
+        // Empty or failed health responses cannot prove a connection is healthy.
+        const integrationStatus = getIntegrationChecklistStatus(intRes);
         setItems((prev) =>
           prev.map((item) => {
             if (item.id === "dnc") return { ...item, done: dncRes != null && dncLen > 0 };
-            if (item.id === "integrations") return { ...item, done: intOk };
+            if (item.id === "integrations") {
+              return {
+                ...item,
+                done: integrationStatus === "done",
+                applicable: integrationStatus !== "not_applicable",
+              };
+            }
             return item;
           }),
         );
@@ -78,7 +82,8 @@ export default function ComplianceChecklist() {
     };
   }, []);
 
-  const doneCount = items.filter((i) => i.done).length;
+  const applicableItems = items.filter((item) => item.applicable !== false);
+  const doneCount = applicableItems.filter((item) => item.done).length;
 
   return (
     <div className="wl-panel border border-border rounded-md p-4 space-y-4">
@@ -89,7 +94,8 @@ export default function ComplianceChecklist() {
             Compliance Checklist
           </p>
           <p className="text-[length:var(--wireline-typography-caption-size)] text-muted leading-relaxed max-w-xl">
-            Account Holder-facing controls for regulated buyers. {doneCount}/{items.length} complete
+            Account Holder-facing controls for regulated buyers. {doneCount}/
+            {applicableItems.length} complete
             {dncCount != null ? ` · ${dncCount} DNC ${dncCount === 1 ? "entry" : "entries"}` : ""}.
           </p>
         </div>
@@ -116,7 +122,10 @@ export default function ComplianceChecklist() {
               item.done ? "border-brand/20 bg-brand/5" : "border-border bg-surface/40",
             )}
           >
-            <span className={item.done ? "text-foreground" : "text-muted"}>{item.label}</span>
+            <span className={item.done ? "text-foreground" : "text-muted"}>
+              {item.label}
+              {item.applicable === false ? " · Not applicable" : ""}
+            </span>
             {item.href ? (
               <Link
                 to={item.href}

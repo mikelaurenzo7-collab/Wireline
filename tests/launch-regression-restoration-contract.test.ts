@@ -196,7 +196,7 @@ describe("restored launch regression guards", () => {
     expect(kb).not.toContain("PDF, DOCX, TXT, CSV");
     expect(kb).toContain("document type that does not match its extension");
     expect(kb).toContain("Knowledge could not be loaded.");
-    expect(checklist).toContain("intRes != null &&");
+    expect(checklist).toContain("getIntegrationChecklistStatus(intRes)");
     expect(checklist).toContain("dncRes != null && dncLen > 0");
     expect(security).toMatch(
       /Outbound call policy accounts for recipient consent and Do Not Call screening before a call can start/i,
