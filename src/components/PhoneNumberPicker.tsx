@@ -44,6 +44,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
   const [error, setError] = useState<string | null>(null);
   const [inventoryUnavailable, setInventoryUnavailable] = useState(false);
   const [inventoryError, setInventoryError] = useState<string | null>(null);
+  const [capacityReached, setCapacityReached] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchAreaCode, setSearchAreaCode] = useState("");
   const [previewNumbers, setPreviewNumbers] = useState<Set<string>>(new Set());
@@ -54,6 +55,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
     // another action replaces it, even if inventory also becomes unavailable.
     setInventoryError(null);
     setInventoryUnavailable(false);
+    setCapacityReached(false);
     try {
       const [availableResponse, areaCodesResponse] = await Promise.all([
         authFetch("/api/phone-numbers/available"),
@@ -64,6 +66,7 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
         readApiJson<{ area_codes?: AreaCode[] }>(areaCodesResponse),
       ]);
       if (availableResult.ok === false) {
+        setCapacityReached(availableResult.code === "PHONE_CAPACITY_REACHED");
         throw new Error(availableResult.error);
       }
       setAvailable(availableResult.data.available || []);
@@ -202,19 +205,23 @@ export default function PhoneNumberPicker({ agentId, onClaim, title }: PhoneNumb
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 size-5 shrink-0 text-[var(--wireline-color-status-warning)]" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">Number inventory unavailable</p>
+              <p className="text-sm font-semibold text-foreground">
+                {capacityReached ? "All included lines are in use" : "Number inventory unavailable"}
+              </p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">{inventoryError}</p>
-              <ShadButton
-                type="button"
-                variant="outline"
-                size="sm"
-                disableAnimations
-                onClick={refresh}
-                className="mt-3"
-              >
-                <RefreshCw className="size-3.5" />
-                Retry
-              </ShadButton>
+              {!capacityReached && (
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disableAnimations
+                  onClick={refresh}
+                  className="mt-3"
+                >
+                  <RefreshCw className="size-3.5" />
+                  Retry
+                </ShadButton>
+              )}
             </div>
           </div>
         </div>

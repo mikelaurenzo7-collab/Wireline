@@ -14,12 +14,7 @@ type ChecklistItem = {
 
 const BASE_ITEMS: ChecklistItem[] = [
   { id: "rls", label: "Row-level security on tenant tables", done: true },
-  {
-    id: "audit",
-    label: "Security audit log enabled",
-    done: true,
-    href: "/admin?tab=activity",
-  },
+  { id: "audit", label: "Security audit log enabled", done: true },
   {
     id: "dnc",
     label: "DNC list configured",
@@ -30,13 +25,13 @@ const BASE_ITEMS: ChecklistItem[] = [
     id: "retention",
     label: "Data retention policy reviewed",
     done: false,
-    href: "/admin?tab=carrier",
+    href: "/security",
   },
   {
     id: "team",
     label: "Team roles assigned (least privilege)",
     done: false,
-    href: "/admin?tab=team",
+    href: "/settings/team",
   },
   {
     id: "integrations",

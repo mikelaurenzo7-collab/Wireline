@@ -166,6 +166,27 @@ describe("picker mutations refresh the shared roster", () => {
 });
 
 describe("phone number picker recovery", () => {
+  it("shows a full plan's line limit as capacity rather than carrier inventory failure", async () => {
+    const fetchDefault = h.fetch.getMockImplementation()!;
+    h.fetch.mockImplementation(async (url: string) =>
+      url.endsWith("/available")
+        ? json(
+            {
+              code: "PHONE_CAPACITY_REACHED",
+              error: "Your plan includes 1 dedicated line; upgrade or add an Extra Agent for more.",
+            },
+            403,
+          )
+        : fetchDefault(url),
+    );
+    await mount();
+
+    expect(alerts()).toEqual([expect.stringContaining("All included lines are in use")]);
+    expect(alerts()[0]).toContain("Your plan includes 1 dedicated line");
+    expect(alerts()[0]).not.toContain("Number inventory unavailable");
+    expect(textOf(render())).not.toContain("Retry");
+  });
+
   it("discloses the acquisition limit and keeps the eligible date visible after a blocked purchase", async () => {
     const fetchDefault = h.fetch.getMockImplementation()!;
     h.fetch.mockImplementation(async (url: string) =>
