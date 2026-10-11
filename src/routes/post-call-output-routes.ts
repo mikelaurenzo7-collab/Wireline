@@ -4,7 +4,9 @@ import { z } from "zod";
 
 import * as schema from "../db/schema";
 import { AppError } from "../lib/api-error";
+import { googleSheetsConfigured } from "../lib/google-sheets-service";
 import { enqueue } from "../lib/job-queue";
+import { microsoftGraphConfigured } from "../lib/microsoft-graph-service";
 import {
   POST_CALL_ARTIFACT_DESTINATIONS,
   POST_CALL_ARTIFACT_FORMATS,
@@ -16,10 +18,7 @@ import {
   savePostCallOutputPreferences,
   type PostCallArtifactDestination,
 } from "../lib/post-call-output-preferences";
-import {
-  ensureNextScheduledReport,
-  nextScheduledReportAt,
-} from "../lib/scheduled-report-service";
+import { ensureNextScheduledReport, nextScheduledReportAt } from "../lib/scheduled-report-service";
 import { drizzle, log } from "../lib/server-context";
 import { getErrorMessage } from "../lib/server-utils";
 import { authenticateUser } from "../middleware/auth";
@@ -55,7 +54,7 @@ type ConnectionState = Awaited<ReturnType<typeof connectionState>>;
 
 async function connectionState(userId: string) {
   const rows = await drizzle
-    .select({ provider: schema.crmConnections.provider })
+    .select({ provider: schema.crmConnections.provider, active: schema.crmConnections.active })
     .from(schema.crmConnections)
     .where(
       and(
@@ -63,12 +62,14 @@ async function connectionState(userId: string) {
         inArray(schema.crmConnections.provider, ["google_sheets", "microsoft_excel"]),
       ),
     );
-  const providers = new Set(rows.map((row) => row.provider));
+  const providers = new Set(rows.filter((row) => row.active !== false).map((row) => row.provider));
+  const googleSheetsConnected = providers.has("google_sheets") && googleSheetsConfigured();
+  const microsoftExcelConnected = providers.has("microsoft_excel") && microsoftGraphConfigured();
   return {
-    google_sheets: providers.has("google_sheets"),
-    microsoft_excel: providers.has("microsoft_excel"),
-    google_drive: providers.has("google_sheets"),
-    onedrive: providers.has("microsoft_excel"),
+    google_sheets: googleSheetsConnected,
+    microsoft_excel: microsoftExcelConnected,
+    google_drive: googleSheetsConnected,
+    onedrive: microsoftExcelConnected,
   };
 }
 
@@ -217,12 +218,7 @@ router.post(
           })
           .from(schema.callLogs)
           .leftJoin(schema.agents, eq(schema.callLogs.agentId, schema.agents.id))
-          .where(
-            and(
-              eq(schema.callLogs.id, callLogId),
-              eq(schema.callLogs.userId, req.user.id),
-            ),
-          )
+          .where(and(eq(schema.callLogs.id, callLogId), eq(schema.callLogs.userId, req.user.id)))
           .limit(1)
           .then((rows) => rows[0] || null),
         getPostCallOutputPreferences(req.user.id),
@@ -243,7 +239,10 @@ router.post(
         throw AppError.fromHttpStatus(400, "Choose a Google Drive or OneDrive destination.");
       }
       if (!destinationConnected(destination, connections)) {
-        throw AppError.fromHttpStatus(409, "Connect the selected destination before creating a file.");
+        throw AppError.fromHttpStatus(
+          409,
+          "Connect the selected destination before creating a file.",
+        );
       }
 
       const queued = await enqueue(drizzle, {
