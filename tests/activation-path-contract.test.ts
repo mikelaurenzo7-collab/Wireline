@@ -38,7 +38,8 @@ describe("activation path contract", () => {
     expect(firstRun).toContain('to="/templates"');
     expect(studio).toContain("Create Your Bot");
     expect(studio).not.toMatch(/one (?:job|task)/i);
-    expect(studio).toContain("Describe the role and outcome.");
+    expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
+    expect(studio).not.toContain("Describe the role and outcome.");
     expect(studio).toContain("to={createHref()}");
     expect(`${overview}\n${firstRun}\n${studio}`).not.toMatch(
       /posture=|personalAgents|businessAgents|dayGreeting/,

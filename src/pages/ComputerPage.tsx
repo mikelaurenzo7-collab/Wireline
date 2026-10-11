@@ -501,6 +501,14 @@ function TaskDetail({
     /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
   );
   const [handoffGoal, setHandoffGoal] = useState("");
+  // A click can navigate, and a site can redirect after the click response.
+  // Keep the address bar tied to the active browser URL from the task poll,
+  // while leaving an unchanged address draft alone.
+  useEffect(() => {
+    if (task.ownerControl) {
+      setOwnerUrl(/^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : "");
+    }
+  }, [task.currentUrl, task.ownerControl]);
   const ownerActionInFlight = useRef(false);
   const error = failure?.status === task.status ? failure.message : null;
   const status = STATUS_COPY[task.status];
@@ -554,8 +562,14 @@ function TaskDetail({
       });
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) throw new Error(result.error);
-      if (kind === "input" && (input?.kind === "navigate" || input?.kind === "history")) {
-        setOwnerUrl(result.data.task.currentUrl || "");
+      if (
+        kind === "input" &&
+        (input?.kind === "navigate" ||
+          input?.kind === "history" ||
+          result.data.task.currentUrl !== task.currentUrl)
+      ) {
+        const currentUrl = result.data.task.currentUrl || "";
+        setOwnerUrl(/^https?:\/\//i.test(currentUrl) ? currentUrl : "");
       }
       onChanged(result.data.task);
     } catch (reason) {
@@ -1002,6 +1016,9 @@ export default function ComputerPage() {
         next,
       );
       if (message) setAnnouncement(message);
+    } else if (next.status === "running") {
+      // A new owner handoff supersedes an earlier completion or checkpoint.
+      setAnnouncement("");
     }
     setTasks((current) =>
       current ? current.map((task) => (task.id === next.id ? next : task)) : current,
@@ -1019,11 +1036,13 @@ export default function ComputerPage() {
     if (!activeId) return;
     const controller = new AbortController();
     let timer: number | undefined;
+    let inFlight = false;
     const poll = async () => {
       if (document.hidden) {
         timer = window.setTimeout(poll, 2000);
         return;
       }
+      inFlight = true;
       try {
         const response = await authFetch(`/api/computer/tasks/${activeId}`, {
           signal: controller.signal,
@@ -1039,13 +1058,25 @@ export default function ComputerPage() {
         }
       } catch {
         /* a dropped poll is retried below */
+      } finally {
+        inFlight = false;
       }
       if (!controller.signal.aborted) timer = window.setTimeout(poll, 2000);
     };
+    const refreshOnReturn = () => {
+      if (document.hidden || inFlight) return;
+      if (timer) window.clearTimeout(timer);
+      timer = undefined;
+      void poll();
+    };
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("focus", refreshOnReturn);
     timer = window.setTimeout(poll, 2000);
     return () => {
       controller.abort();
       if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.removeEventListener("focus", refreshOnReturn);
     };
   }, [activeId, applyTask, loadTasks]);
 
@@ -1054,6 +1085,7 @@ export default function ComputerPage() {
   const start = async (prepareBrowser = false) => {
     setStartingMode(prepareBrowser ? "browser" : "task");
     setError(null);
+    setAnnouncement("");
     try {
       const response = await authFetch("/api/computer/tasks", {
         method: "POST",
@@ -1108,10 +1140,7 @@ export default function ComputerPage() {
   return (
     <WorkspaceShell contentClassName="pt-1 pb-6">
       <WorkspacePageFrame mode="standard" className="max-w-[1240px]">
-        <WorkspacePageIntro
-          title="Computer"
-          description="Open a browser and explore it yourself, then hand your Bot a task in the same session. Or give your Bot a task and watch it work, taking control whenever it needs you."
-        />
+        <WorkspacePageIntro title="Computer" />
 
         {status && !status.available ? <UnavailableNotice status={status} /> : null}
         {!status && statusFailed ? (

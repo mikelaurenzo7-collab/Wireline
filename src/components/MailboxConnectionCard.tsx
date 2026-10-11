@@ -198,11 +198,6 @@ export default function MailboxConnectionCard() {
                 ? "Email & Calendar"
                 : "Calendar"}
           </h2>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            {emailIncluded
-              ? "Connect your existing inbox and calendar."
-              : "Connect your calendar for scheduling."}
-          </p>
         </div>
       </div>
 

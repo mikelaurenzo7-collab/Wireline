@@ -72,7 +72,6 @@ function StudioEmptyState() {
       <EmptyState
         icon={Sparkles}
         title="Create Your Bot"
-        description="Describe the role and outcome."
         className="wl-composer-dock mx-auto w-full max-w-3xl"
       >
         <div className="mx-auto mt-2 w-full max-w-xl text-left">
@@ -274,7 +273,6 @@ export default function StudioWorkspaceV2() {
         fill
         icon={Users}
         title="Choose a Bot"
-        description="Select or create one."
         action={
           <Button asChild>
             <Link to="/studio?create=1">

@@ -54,6 +54,7 @@ async function mockComputer(
     status: Record<string, unknown>;
     tasks: MockTask[];
     frame?: Buffer | null;
+    clickNavigatesTo?: string;
     /** Answer the first status and task-list reads with a server error. */
     failFirstLoad?: boolean;
   },
@@ -174,6 +175,11 @@ async function mockComputer(
           input.url.includes("://") ? input.url : `https://${input.url}`,
         ).toString();
         setTask(controlInputMatch[1], { currentUrl: url, frameUrl: url });
+      } else if (input.kind === "click" && options.clickNavigatesTo) {
+        setTask(controlInputMatch[1], {
+          currentUrl: options.clickNavigatesTo,
+          frameUrl: options.clickNavigatesTo,
+        });
       }
       return route.fulfill({
         json: { task: tasks.find((item) => item.id === controlInputMatch[1]) },
@@ -511,6 +517,66 @@ for (const width of [390, 1440]) {
     expect(returns).toEqual(["task-new"]);
   });
 }
+
+test("the browser address follows a clicked link and a later redirect", async ({ page }) => {
+  const { setTask, ownerInputs } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    clickNavigatesTo: "https://www.iana.org/domains/reserved",
+    tasks: [
+      task({
+        id: "task-live",
+        status: "needs_input",
+        ownerControl: true,
+        currentUrl: "https://example.com/",
+        frameUrl: "https://example.com/",
+      }),
+    ],
+  });
+  await page.goto("/computer");
+  const detail = page.getByRole("region", { name: /Find three plumbers/ });
+  const address = detail.getByRole("textbox", { name: "Web address" });
+  await expect(address).toHaveValue("https://example.com/");
+  const screen = detail.getByRole("img", {
+    name: "Browser screen. Click or drag to interact with the page.",
+  });
+  const bounds = await screen.boundingBox();
+  expect(bounds).not.toBeNull();
+  if (bounds) {
+    await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  }
+  await expect.poll(() => ownerInputs.length).toBeGreaterThan(0);
+  await expect(address).toHaveValue("https://www.iana.org/domains/reserved");
+
+  setTask("task-live", {
+    currentUrl: "https://www.iana.org/help",
+    frameUrl: "https://www.iana.org/help",
+  });
+  await expect(address).toHaveValue("https://www.iana.org/help");
+});
+
+test("starting fresh work clears the previous completion announcement", async ({ page }) => {
+  const { setTask } = await mockComputer(page, {
+    status: READY,
+    frame: await fakeFrame(page),
+    tasks: [task({ id: "task-live", status: "running" })],
+  });
+  await page.goto("/computer");
+  await expect(page.getByRole("region", { name: /Find three plumbers/ })).toBeVisible();
+  setTask("task-live", {
+    status: "completed",
+    summary: "The research is complete.",
+    liveView: false,
+  });
+  const announcement = page.locator('[aria-live="polite"][aria-atomic="true"]');
+  await expect(announcement).toHaveText("Your Bot finished the task.");
+  await page
+    .getByRole("textbox", { name: "What should your Bot do?" })
+    .fill("Find three suppliers.");
+  await page.getByRole("button", { name: "Start Task" }).click();
+  await expect(page.getByRole("region", { name: "Find three suppliers." })).toBeVisible();
+  await expect(announcement).toHaveText("");
+});
 
 test("a lost frame clears the old screen instead of looking live", async ({ page }) => {
   const { setFrame } = await mockComputer(page, {

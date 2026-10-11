@@ -32,7 +32,7 @@ describe("demand-driven authenticated experience", () => {
     expect(studio).not.toMatch(/one (?:job|task)/i);
     expect(studio).toContain("BOT_LANGUAGE.setupPrompt");
     expect(studio).toContain("Create Bot");
-    expect(studio).toContain('description="Describe the role and outcome."');
+    expect(studio).not.toContain('description="Describe the role and outcome."');
     expect(studio).not.toContain("posture=");
   });
 

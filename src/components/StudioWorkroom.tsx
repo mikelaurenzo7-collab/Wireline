@@ -623,12 +623,6 @@ const StudioWorkroom = forwardRef<
                 <h2 className="text-2xl font-semibold text-foreground">
                   {mode === "test" ? "Try a Customer Question" : "What Should We Change?"}
                 </h2>
-                {mode === "test" ? (
-                  <p className="text-sm text-muted-foreground">
-                    Private rehearsal. See what customers experience, then save improvements in Set
-                    Up.
-                  </p>
-                ) : null}
               </div>
             )}
           </div>

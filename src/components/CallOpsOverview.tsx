@@ -80,11 +80,8 @@ export default function CallOpsOverview() {
     <div className="mx-auto w-full max-w-[1180px] space-y-7 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       <section aria-labelledby="call-ops-now-title" className="space-y-3">
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
-            Call Ops
-          </p>
-          <h2 id="call-ops-now-title" className="mt-1 text-base font-semibold text-foreground">
-            Current Workspace
+          <h2 id="call-ops-now-title" className="text-base font-semibold text-foreground">
+            Current Activity
           </h2>
         </div>
 
@@ -125,11 +122,8 @@ export default function CallOpsOverview() {
 
       <section aria-labelledby="call-ops-all-time-title" className="space-y-3">
         <div>
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            All Time
-          </p>
-          <h2 id="call-ops-all-time-title" className="mt-1 text-base font-semibold text-foreground">
-            Call Performance
+          <h2 id="call-ops-all-time-title" className="text-base font-semibold text-foreground">
+            All-Time Performance
           </h2>
         </div>
         <CallOpsAnalytics />
