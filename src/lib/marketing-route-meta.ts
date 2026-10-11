@@ -117,7 +117,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/developers": {
     title: "Developer Portal | BotBound",
     description:
-      "Connect BotBound to ChatGPT, Claude, and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
+      "Connect BotBound to ChatGPT and Cursor. Create an account, build your first Phone Bot in the chat you already use, then continue in the same BotBound workspace. No public API keys.",
   },
   "/changelog": {
     title: "Changelog | BotBound",
@@ -141,7 +141,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/solutions/support": {
     title: "A Front Desk That Answers Before Demand Goes Cold | BotBound",
     description:
-      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, handles routine questions, and records the next step. Add text or email when those channels are configured.",
+      "Give a Front Desk Bot your policies, calendar, and rules. It answers calls, completes supported requests, books available times, and records outcomes. Add text or email when those channels are configured.",
   },
 };
 

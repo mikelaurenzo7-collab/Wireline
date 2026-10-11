@@ -67,12 +67,24 @@ describe("sales trust copy contract", () => {
     expect(sales.headline).toBe("Set Up a Sales Bot for Lead Follow-Up");
     expect(sales.pains.map(({ title }) => title)).toContain("Outbound Follow-Up");
     expect(sales.statValue).toBe("Fast Follow-Up");
-    expect(sales.trustLine).toContain("Approved actions sync");
+    expect(sales.trustLine).toContain("remain visible in BotBound");
     expect(JSON.stringify(sales)).not.toMatch(/consent|do not call|\bDNC\b|coming soon/i);
     expect(security).toContain("Federal Do Not Call screening");
     expect(security).toContain("server-owned recipient-consent records");
     expect(product).toContain('name: "Sales Rep"');
     expect(product).toContain('category: "Operations" as const');
+  });
+
+  it("describes calendar imports and CRM availability accurately on public pages", () => {
+    const wedges = read("src/data/vertical-wedges.ts");
+    const features = read("src/pages/Features.tsx");
+    const compare = read("src/pages/Compare.tsx");
+    expect(wedges).not.toMatch(
+      /real Google or Outlook availability|Salesforce are supported today|reservation writes back|SMS activation is pending/i,
+    );
+    expect(wedges).toContain("Google or Outlook busy times can be imported when you sync.");
+    expect(features).toContain("Optionally import Google or Outlook busy times when you sync.");
+    expect(compare).not.toContain("continues with shared context");
   });
 
   it("keeps the landing customer-facing without internal design meta", () => {

@@ -7,7 +7,7 @@ import MarketingPageFrame from "../components/layout/MarketingPageFrame";
 const DIFFERENCES = [
   {
     title: "Works Across Channels",
-    copy: "Handles conversations through the voice, email, and text channels you configure, then continues with shared context.",
+    copy: "Handles conversations through the voice, email, and text channels you configure, with outcomes visible in one workspace.",
   },
   {
     title: "Plain Instructions",
@@ -19,7 +19,7 @@ const DIFFERENCES = [
   },
   {
     title: "Real Calendar Booking",
-    copy: "Checks connected-calendar availability and timezone before supported bookings.",
+    copy: "Checks your configured hours, timezone, buffers, and imported busy times before supported bookings.",
   },
   {
     title: "After-Hours Coverage",

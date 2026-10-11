@@ -69,7 +69,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Clock",
         title: "24/7 Emergency Intake",
-        body: "Burst pipes do not wait for office hours. Your Bot can answer, qualify the urgency, alert the person on call, and text the caller a confirmation.",
+        body: "Burst pipes do not wait for office hours. Your Bot can answer, qualify the urgency, alert the person on call, and record the next step.",
       },
       {
         icon: "Calendar",
@@ -106,11 +106,11 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Can the Bot Actually Dispatch Me on an Emergency?",
-        a: "Configure on-call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available Google or Outlook calendar windows; emergency dispatch, arrival promises, and direct field-service write-back stay with the tools and people you approve.",
+        a: "Configure on-call routing and approved urgency rules such as water, smoke, sparks, or no heat. The workflow can alert staff and offer available times from your configured Calendar; emergency dispatch, arrival promises, and direct field-service write-back stay with the tools and people you approve.",
       },
       {
         q: "How Much Does It Cost Compared with an Answering Service?",
-        a: "Calls plans start at $19/month with included minutes and prepaid Runtime Balance for additional calls. Add Email when you need it. Compare the workflow, connected tools, and logged outcomes against your answering service. SMS activation is pending.",
+        a: "Calls plans start at $19/month with included minutes and prepaid Runtime Balance for additional calls. Add Email when you need it. Compare the workflow, connected tools, and logged outcomes against your answering service.",
       },
     ],
   },
@@ -130,8 +130,8 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "Calendar",
-        title: "Books to Your Connected Calendar",
-        body: "Reads connected Google or Outlook availability, respects configured buffers, books supported events, and can send a text confirmation.",
+        title: "Books Around Your Availability",
+        body: "Uses the hours, timezone, and buffers you set in BotBound Calendar to offer times and record supported bookings. Google or Outlook busy times can be imported when you sync.",
       },
       {
         icon: "MailCheck",
@@ -245,7 +245,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Showing Scheduler",
-        body: "Books showings around the listing agent's real calendar, adds buffer time, confirms by text, and can update supported events when the workflow and your rules allow it.",
+        body: "Uses your configured hours, buffers, and any busy times you import to offer showing slots and record supported bookings.",
       },
       {
         icon: "Sparkles",
@@ -254,18 +254,18 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         icon: "DollarSign",
-        title: "CRM-Native Pipeline",
-        body: "Can push qualified leads into connected HubSpot or Salesforce records with the call summary and approved next-step task.",
+        title: "Reviewable Lead Pipeline",
+        body: "Keeps qualified buyer details, call outcomes, and next steps visible in BotBound for staff review.",
       },
     ],
     scriptPreview: `"Hi. You called about the listing at 1247 Maple. Great property. Quick question. Are you working with a buyer's agent already, or are we starting fresh? And ballpark, where do you need to be on price?"`,
     statValue: "Calendar Aware",
     statLabel:
-      "Qualified buyers can receive approved showing options from the connected calendar; follow-up cadence and staff handoff remain configurable.",
+      "Qualified buyers can receive showing options from your configured Calendar; follow-up cadence and staff handoff remain configurable.",
     primaryCta: { label: "Create Real Estate Bot", href: signupHrefForWedge("real-estate") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Supports connected HubSpot, Salesforce, Google Calendar, and Outlook paths. Buyers hear the brokerage identity you configure, subject to carrier display behavior.",
+      "Buyers hear the brokerage identity you configure, subject to carrier display behavior. Your team can review outcomes and next steps in BotBound.",
     faqs: [
       {
         q: "Will the Bot Know My Listings?",
@@ -273,7 +273,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "Does It Work for a Single Professional or a Full Brokerage?",
-        a: "Both. Solo users can start with one live Bot and the phone capacity included in their plan; larger teams can add Bot capacity and configure brokerage-level routing in the same workspace. Runtime Balance covers supported usage beyond included plan allowances.",
+        a: "A solo professional can start with one Bot and the phone capacity included in a Calls plan. For brokerage needs beyond that capacity, contact BotBound to plan the rollout. Runtime Balance covers supported usage beyond included plan allowances.",
       },
       {
         q: "How Does It Qualify the Buyer?",
@@ -416,7 +416,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Reservation Taking Without the Host",
-        body: "Captures party size, name, time, and special requests, then books through a connected calendar or approved reservation workflow. Confirmation timing is configurable.",
+        body: "Captures party size, name, time, and special requests, then offers configured availability and records supported bookings in BotBound Calendar. Confirmation timing is configurable.",
       },
       {
         icon: "PhoneIncoming",
@@ -445,7 +445,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     faqs: [
       {
         q: "Will It Integrate with Resy, OpenTable, or Tock?",
-        a: 'Today the Bot books against your connected Google or Outlook calendar. The caller can hear "I have 7pm or 8:15pm, which works?" from real availability, and the reservation writes back. Direct Resy, OpenTable, and Tock sync remains on the roadmap.',
+        a: "BotBound does not sync reservations to Resy, OpenTable, or Tock. Set your hours and booking rules in BotBound Calendar so your Bot can offer available slots and record supported bookings there. You can import Google or Outlook busy times when you sync.",
       },
       {
         q: "Can It Handle Dietary Restrictions and Allergens Correctly?",
@@ -466,7 +466,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     slug: "sales",
     metaTitle: "BotBound for Sales Teams | Phone Bots for Lead Follow-Up",
     metaDescription:
-      "Give a Sales Bot the playbook for speed-to-lead, quote follow-up, warm reactivation, and approved CRM actions.",
+      "Give a Sales Bot the playbook for speed-to-lead, quote follow-up, warm reactivation, and reviewable outcomes.",
     eyebrow: "For Sales Teams",
     headline: "Set Up a Sales Bot for Lead Follow-Up",
     pains: [
@@ -483,7 +483,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       {
         icon: "Calendar",
         title: "Calendar-Aware Booking",
-        body: "Reads your team's real Google or Outlook availability, offers specific slots, books the meeting, sends the invitation, and preserves the conversation context.",
+        body: "Uses your configured hours, timezone, buffers, and imported busy times to offer slots and record supported bookings.",
       },
       {
         icon: "Shield",
@@ -498,7 +498,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
     primaryCta: { label: "Create Sales Bot", href: signupHrefForWedge("sales") },
     secondaryCta: PRODUCT_TOUR_CTA,
     trustLine:
-      "Connects to HubSpot and Salesforce. Approved actions sync to your connected CRM. Apollo enrichment is available in beta.",
+      "Lead details, call outcomes, and next steps remain visible in BotBound for your team to review.",
     faqs: [
       {
         q: "Can I Shape What the Bot Says?",
@@ -510,7 +510,7 @@ export const WEDGES: Record<VerticalKey, VerticalConfig> = {
       },
       {
         q: "What About CRM Logging?",
-        a: "Approved actions sync to your connected CRM: contact, outcome, transcript, recording link, and next step booked. HubSpot and Salesforce are supported today; Apollo enrichment is in beta. Custom CRMs can use webhooks.",
+        a: "BotBound records contact details, call outcomes, transcripts, and next steps for review. CRM delivery requires a supported, configured connection; check Connections for the integrations available to your account.",
       },
       {
         q: "How Is This Different from Apollo or Outreach AI Features?",

@@ -55,7 +55,7 @@ const CAPABILITIES: readonly { icon: LucideIcon; title: string; body: string }[]
   {
     icon: CalendarCheck,
     title: "Native Calendar Booking",
-    body: "Weekly availability, your timezone, and booking rules. Google and Outlook busy time stays respected.",
+    body: "Weekly availability, your timezone, and booking rules. Optionally import Google or Outlook busy times when you sync.",
   },
   {
     icon: Hand,
