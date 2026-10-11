@@ -23,7 +23,7 @@ export default function ConnectionsPage() {
               <span className="flex flex-col items-start gap-0.5 text-left">
                 <span>Business Tools</span>
                 <span className="text-xs font-normal text-muted-foreground">
-                  Salesforce, HubSpot, Slack, Shopify, and more
+                  CRM, team, social, and spreadsheet tools
                 </span>
               </span>
             </AccordionTrigger>
