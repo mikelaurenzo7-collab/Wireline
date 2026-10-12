@@ -228,10 +228,10 @@ beforeEach(() => {
 afterEach(() => h.slots.forEach((slot) => slot.cleanup?.()));
 
 describe("email inbox operation recovery", () => {
-  it("hides only a confirmed empty inbox when Email is definitively excluded", async () => {
+  it("hides an empty inbox while Email access is pending or excluded", async () => {
     channelEnabled = false;
     await settle();
-    expect(button("Refresh email")).toBeDefined();
+    expect(tree).toBeNull();
     channelAccessResolved = true;
     await settle();
     expect(tree).toBeNull();
