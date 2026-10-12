@@ -207,16 +207,13 @@ export default function OutboundDialDialog({
           <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
             {DIRECT_OUTBOUND_AVAILABILITY.available
               ? "Pick a Bot with a phone number, enter the number to call, and classify the call before dialing."
-              : "Live outbound calling is gated until server-verifiable recipient consent records and Federal Do Not Call screening are in place."}
+              : DIRECT_OUTBOUND_AVAILABILITY.message}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 overflow-y-auto overscroll-contain">
           {!DIRECT_OUTBOUND_AVAILABILITY.available ? (
-            <div className="space-y-4 px-6 py-5">
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {DIRECT_OUTBOUND_AVAILABILITY.message}
-              </p>
+            <div className="px-6 py-5">
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
                   <Link

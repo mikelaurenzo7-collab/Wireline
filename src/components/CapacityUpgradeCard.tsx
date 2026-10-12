@@ -56,6 +56,7 @@ function dateLabel(value: string): string {
 export default function CapacityUpgradeCard(props: {
   currentPlanId: string;
   plans: ClientPlan[];
+  cancelAtPeriodEnd?: boolean;
   refreshKey?: number;
   onRefreshBilling?: () => void;
 }) {
@@ -66,11 +67,13 @@ export default function CapacityUpgradeCard(props: {
 export function CapacityUpgradeContent({
   currentPlanId,
   plans,
+  cancelAtPeriodEnd = false,
   refreshKey = 0,
   onRefreshBilling,
 }: {
   currentPlanId: string;
   plans: ClientPlan[];
+  cancelAtPeriodEnd?: boolean;
   refreshKey?: number;
   onRefreshBilling?: () => void;
 }) {
@@ -304,7 +307,9 @@ export function CapacityUpgradeContent({
             </>
           ) : status && !loading && !error ? (
             <p role="status" className="text-sm text-muted-foreground">
-              No capacity increase is available for this subscription.
+              {cancelAtPeriodEnd
+                ? "This plan is set to end. Use Manage Billing above to resume it. Capacity changes are unavailable while cancellation is scheduled."
+                : "No capacity increase is available for this subscription."}
             </p>
           ) : null}
         </div>

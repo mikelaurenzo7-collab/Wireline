@@ -44,8 +44,9 @@ const MARKET_OPTIONS = [
   },
   {
     name: "Goodcall",
-    price: "$79/agent/mo",
-    usage: "Unlimited minutes and tokens; 100 unique customers monthly on Starter",
+    price: "$79/mo Starter",
+    usage:
+      "100 unique customers/mo, then $0.79 each; no per-minute charge. AI test runs have a separate allowance.",
     fit: "Flat rate AI phone answering where customer count limits fit the call pattern",
     href: "https://www.goodcall.com/pricing",
     source: "Goodcall pricing",
@@ -107,7 +108,7 @@ export default function Compare() {
     >
       <PageMeta
         title="Why BotBound | Compare Bots"
-        description="Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing."
+        description="Compare BotBound's Bot workspace with flat-rate, per-call, and developer voice infrastructure pricing."
         path="/compare"
       />
 
@@ -241,7 +242,7 @@ export default function Compare() {
           </div>
 
           <p className="mt-4 max-w-4xl text-xs leading-5 text-muted-foreground">
-            Public prices were checked on the linked official pages on September 27, 2026 and may
+            Public prices were checked on the linked official pages on October 11, 2026 and may
             change. Taxes, carrier fees, optional extras, annual discounts, implementation services,
             and usage patterns can change the effective total. This is a buying-model reference, not
             a claim that unlike products are feature-for-feature equivalents.

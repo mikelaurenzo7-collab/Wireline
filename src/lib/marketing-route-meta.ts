@@ -64,7 +64,7 @@ const STATIC_ROUTE_META: Record<string, StaticRouteMeta> = {
   "/compare": {
     title: "Why BotBound | Compare Bots",
     description:
-      "Compare BotBound's Bot workspace with per-agent, per-call, and developer voice infrastructure pricing.",
+      "Compare BotBound's Bot workspace with flat-rate, per-call, and developer voice infrastructure pricing.",
   },
   "/about": {
     title: "About BotBound | Bots for Calls and Follow-Through",

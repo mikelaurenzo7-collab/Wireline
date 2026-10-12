@@ -303,7 +303,7 @@
   gap: 0.45rem;
   color: var(--wireline-color-action-primary-default);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.66rem;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -477,7 +477,7 @@
   min-width: 0;
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.64rem;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
   letter-spacing: 0.1em;
   line-height: 1.5;
@@ -603,7 +603,7 @@
   margin-top: 0.15rem;
   color: var(--wireline-color-text-tertiary);
   font-family: var(--wireline-font-family-mono);
-  font-size: 0.64rem;
+  font-size: var(--wireline-typography-overline-size);
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;

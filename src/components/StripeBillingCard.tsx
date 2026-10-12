@@ -421,6 +421,7 @@ export default function StripeBillingCard({
           key={sub.plan}
           currentPlanId={sub.plan}
           plans={plans}
+          cancelAtPeriodEnd={sub.cancel_at_period_end === true}
           refreshKey={refreshKey}
           onRefreshBilling={() => (onRetry ? onRetry() : void refresh())}
         />
