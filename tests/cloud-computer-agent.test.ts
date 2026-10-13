@@ -172,6 +172,15 @@ describe("OpenAI cloud computer agent loop", () => {
 
   it("executes browser actions in order, returns a fresh screenshot, and meters each turn", async () => {
     const { session, calls } = fakeSession();
+    const frameOrder: string[] = [];
+    vi.mocked(session.frame).mockImplementation(async () => {
+      frameOrder.push("owner");
+      return Buffer.from("jpeg");
+    });
+    vi.mocked(session.modelFrame).mockImplementation(async () => {
+      frameOrder.push("model");
+      return Buffer.from("masked-jpeg");
+    });
     const { client: openai, requests } = client([
       response([
         computerCall("c1", [
@@ -199,6 +208,8 @@ describe("OpenAI cloud computer agent loop", () => {
     });
 
     expect(calls.map(({ member }) => member)).toEqual(["left_click", "type"]);
+    expect(frameOrder).toEqual(["owner", "model", "owner", "owner", "model"]);
+    expect(h.frame).toHaveBeenCalledTimes(3);
     expect(calls[0].input).toMatchObject({ target: { x: 42, y: 84 } });
     expect(meter).toHaveBeenCalledTimes(2);
     expect((meter.mock.calls[0]?.[0] as { reserveUsd: number }).reserveUsd).toBeGreaterThan(0.02);

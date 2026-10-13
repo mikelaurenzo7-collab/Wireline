@@ -187,9 +187,7 @@ function extractionReply(parsed: ExtractedConfig) {
       `Saved ${parsed.directives.length} operating rule${parsed.directives.length === 1 ? "" : "s"}.`,
     );
   if (parsed.knowledge.length)
-    parts.push(
-      `Saved ${parsed.knowledge.length} verified fact${parsed.knowledge.length === 1 ? "" : "s"}.`,
-    );
+    parts.push(`Saved ${parsed.knowledge.length} fact${parsed.knowledge.length === 1 ? "" : "s"}.`);
   if (parsed.personality) parts.push("Updated the tone guidance.");
   return parts.length
     ? `${parts.join(" ")} They now appear under Knowledge.`

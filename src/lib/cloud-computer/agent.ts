@@ -493,16 +493,17 @@ function hasRefusal(response: Record<string, unknown>): boolean {
 }
 
 /** Keep the owner's full live view local; give the model only a redacted frame. */
-async function captureModelFrame(input: {
-  session: CloudBrowserSession;
-  hooks: CloudComputerHooks;
-}): Promise<Buffer | null> {
-  const [ownerFrame, modelFrame] = await Promise.all([
-    input.session.frame(),
-    input.session.modelFrame(),
-  ]);
-  if (!ownerFrame || !modelFrame) return null;
-  input.hooks.frame(ownerFrame);
+async function captureModelFrame(
+  input: { session: CloudBrowserSession; hooks: CloudComputerHooks },
+  publishedOwnerFrame?: Buffer | null,
+): Promise<Buffer | null> {
+  // Capture the owner and masked model views in sequence on the same page.
+  // Reuse the owner frame already published after an action.
+  const ownerFrame = publishedOwnerFrame ?? (await input.session.frame());
+  if (!ownerFrame) return null;
+  const modelFrame = await input.session.modelFrame();
+  if (!modelFrame) return null;
+  if (!publishedOwnerFrame) input.hooks.frame(ownerFrame);
   return modelFrame;
 }
 
@@ -510,9 +511,10 @@ async function captureModelFrame(input: {
 async function refreshOwnerFrame(input: {
   session: CloudBrowserSession;
   hooks: CloudComputerHooks;
-}): Promise<void> {
+}): Promise<Buffer | null> {
   const frame = await input.session.frame();
   if (frame) input.hooks.frame(frame);
+  return frame;
 }
 
 export async function runCloudComputerAgent(input: {
@@ -769,14 +771,14 @@ export async function runCloudComputerAgent(input: {
           });
           hasPublicPage = result.ok && /^https?:\/\//i.test(input.session.activeUrl());
           ranBrowser = true;
-          await refreshOwnerFrame(input);
+          const ownerFrame = await refreshOwnerFrame(input);
           await input.hooks.emit({
             kind: result.ok ? "action" : "error",
             text: result.activity,
             url: displayUrl(input.session.activeUrl()) || undefined,
             ok: result.ok,
           });
-          const screenshot = await captureModelFrame(input);
+          const screenshot = await captureModelFrame(input, ownerFrame);
           if (!screenshot) {
             return {
               status: "failed",
@@ -843,6 +845,7 @@ export async function runCloudComputerAgent(input: {
         return { status: "stopped", summary: "Stopped by the owner." };
       if (overTime()) return timeLimit;
       const requestedActions = Array.isArray(call.actions) ? call.actions : [];
+      let ownerFrame: Buffer | null = null;
       for (const rawAction of requestedActions) {
         if (!rawAction || typeof rawAction !== "object") {
           halted = true;
@@ -861,7 +864,7 @@ export async function runCloudComputerAgent(input: {
           rawAction as Record<string, unknown>,
         );
         ranBrowser = true;
-        await refreshOwnerFrame(input);
+        ownerFrame = await refreshOwnerFrame(input);
         await input.hooks.emit({
           kind: result.ok ? "action" : "error",
           text: result.activity,
@@ -873,7 +876,7 @@ export async function runCloudComputerAgent(input: {
           break;
         }
       }
-      const screenshot = await captureModelFrame(input);
+      const screenshot = await captureModelFrame(input, ownerFrame);
       if (!screenshot)
         return {
           status: "failed",

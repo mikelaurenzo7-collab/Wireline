@@ -73,7 +73,7 @@ export default function RuntimeBalanceActivity({
   onRetry: () => void;
 }) {
   return (
-    <details className="group mt-5 border-t border-border pt-2">
+    <details className="group mt-5 border-t border-border px-1 pt-2">
       <summary className="wl-focus-ring-halo flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
         Recent Activity
         <ChevronDown

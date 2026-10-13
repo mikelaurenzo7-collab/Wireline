@@ -85,6 +85,21 @@ function statusTone(value: string | null | undefined) {
   return "text-muted-foreground";
 }
 
+export function readableCallSummary(
+  summary: string | null | undefined,
+  transcript: string | null | undefined,
+) {
+  const text = summary?.trim();
+  if (!text) return "No summary is available for this call yet.";
+  // Some older calls stored a clipped transcript in the summary field. Show
+  // the full transcript once, under its own disclosure, instead of duplicating it.
+  const excerpt = text.replace(/…$/, "").replace(/\s+/g, " ");
+  if (excerpt.length >= 120 && transcript?.replace(/\s+/g, " ").startsWith(excerpt)) {
+    return "A short summary isn't available for this call. Open Transcript below to review it.";
+  }
+  return text;
+}
+
 export default function CallLogsClaude({ agentId }: { agentId?: string | null }) {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
@@ -364,7 +379,7 @@ export default function CallLogsClaude({ agentId }: { agentId?: string | null })
         <section>
           <h4 className="text-xs font-semibold tracking-[0.08em] text-muted-foreground">Summary</h4>
           <p className="wl-preserve-case mt-2 text-sm leading-6 text-foreground">
-            {selected.summary || "No summary is available for this call yet."}
+            {readableCallSummary(selected.summary, selected.transcript)}
           </p>
         </section>
 
