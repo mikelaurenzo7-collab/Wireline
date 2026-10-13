@@ -231,6 +231,36 @@ export function displayUrl(raw: string, maxLength = 160): string {
   }
 }
 
+/** A public, non-credential link that is safe to show as task evidence. */
+export function publicEvidenceUrl(raw: string): { url: string; exact: boolean } | null {
+  try {
+    const parsed = new URL(raw);
+    if (!checkUrlAllowed(parsed).allowed) return null;
+    const segments = decodeURIComponent(parsed.pathname).split("/").filter(Boolean);
+    if (
+      segments.some(
+        (segment) =>
+          /(^|[-_])(auth|oauth|callback|login|log-in|signin|sign-in|signup|sign-up|register|verify|verification|magic|token|reset|password|invite|invitation|confirm)([-_]|$)/i.test(
+            segment,
+          ) ||
+          (segment.length >= 20 &&
+            /^[A-Za-z0-9_-]+$/.test(segment) &&
+            /[A-Za-z]/.test(segment) &&
+            /\d/.test(segment)) ||
+          /^[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}$/.test(segment),
+      )
+    )
+      return null;
+    const exact = !parsed.search && !parsed.hash;
+    parsed.search = "";
+    parsed.hash = "";
+    const url = parsed.toString();
+    return url.length <= 500 ? { url, exact } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Browser state sent to the model needs site identity, never bearer material in a URL. */
 export function modelBrowserUrl(raw: string): string {
   try {

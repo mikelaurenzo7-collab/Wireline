@@ -26,6 +26,7 @@ import {
   modelBrowserUrl,
   normalizeHostname,
   parseNavigateTarget,
+  publicEvidenceUrl,
 } from "./url-policy";
 
 export { modelBrowserUrl } from "./url-policy";
@@ -147,6 +148,8 @@ export type MemberResult = {
   content: MemberResultBlock[];
   /** Short, owner-readable line for the activity feed. Never contains typed text. */
   activity: string;
+  /** Only set after inspecting a visible link with a fully public destination. */
+  verifiedLinkUrl?: string;
 };
 
 export type CloudBrowserConnection =
@@ -546,6 +549,11 @@ export class CloudBrowserSession {
     }
   }
 
+  safeCurrentEvidenceUrl(): string | null {
+    const evidence = publicEvidenceUrl(this.activeUrl());
+    return evidence && !this.containsOwnerEnteredUrlText(evidence.url) ? evidence.url : null;
+  }
+
   async browserState(): Promise<BrowserStateBlock> {
     const tabs: BrowserStateTab[] = [];
     for (const [tabId, page] of this.tabs) {
@@ -901,6 +909,21 @@ export class CloudBrowserSession {
     }, value);
   }
 
+  private containsOwnerEnteredUrlText(url: string): boolean {
+    let candidate = url;
+    for (let pass = 0; pass < 3; pass++) {
+      if (this.redactOwnerText(candidate) !== candidate) return true;
+      try {
+        const decoded = decodeURIComponent(candidate);
+        if (decoded === candidate) break;
+        candidate = decoded;
+      } catch {
+        break;
+      }
+    }
+    return false;
+  }
+
   private async captureModelScreenshot(
     page: Page,
     options: {
@@ -1145,6 +1168,63 @@ export class CloudBrowserSession {
         const seconds = clampNumber(input.duration, 0, 10, 1);
         await page.waitForTimeout(seconds * 1000);
         return this.ok(`Waited ${seconds} seconds.`, "Waited for the page");
+      }
+      case "inspect_visible_element": {
+        const page = this.activePage(input.tab_id);
+        const point = parseTarget({ type: "coordinate", x: input.x, y: input.y }, false);
+        if (point.type !== "coordinate") fail("Choose a point on the browser screen.");
+        const inspected: unknown = await page.evaluate(({ x, y }) => {
+          const element = document.elementFromPoint(x, y);
+          const anchor = element?.closest("a[href]");
+          const heading = element?.closest("h1,h2,h3,h4,h5,h6,[role=heading]");
+          return {
+            tag: element?.tagName.toLowerCase() ?? "none",
+            heading: heading?.tagName.toLowerCase() ?? null,
+            ariaHeading: heading?.getAttribute("role") === "heading",
+            href: anchor?.getAttribute("href") ?? null,
+          };
+        }, point);
+        if (!inspected || typeof inspected !== "object") fail("Could not inspect that point.");
+        const item = inspected as Record<string, unknown>;
+        const tag =
+          typeof item.tag === "string" && /^[a-z][a-z0-9-]{0,30}$/.test(item.tag)
+            ? item.tag
+            : "unknown";
+        const heading =
+          typeof item.heading === "string" && /^h[1-6]$/.test(item.heading)
+            ? item.heading
+            : item.ariaHeading === true
+              ? "ARIA heading"
+              : "none";
+        const details = [`Element: ${tag}. Heading: ${heading}.`];
+        let verifiedLinkUrl: string | undefined;
+        if (typeof item.href === "string") {
+          let evidence: ReturnType<typeof publicEvidenceUrl> = null;
+          try {
+            evidence = publicEvidenceUrl(new URL(item.href, page.url()).toString());
+          } catch {
+            // Invalid or script-only links are never returned to the model.
+          }
+          if (!evidence) details.push("Link destination: withheld (not a safe public URL).");
+          else if (this.containsOwnerEnteredUrlText(evidence.url))
+            details.push("Link destination: withheld (owner-entered value).");
+          else if (!evidence.exact)
+            details.push(
+              `Link destination: ${evidence.url} (query or fragment withheld; exact destination unverified).`,
+            );
+          else {
+            verifiedLinkUrl = evidence.url;
+            details.push(`Verified visible link destination: ${evidence.url}`);
+          }
+        } else {
+          details.push("No link at this point.");
+        }
+        return {
+          ok: true,
+          content: [{ type: "text", text: details.join(" ") }],
+          activity: "Inspected an on-screen element",
+          ...(verifiedLinkUrl ? { verifiedLinkUrl } : {}),
+        };
       }
       case "read_page": {
         const page = this.activePage(input.tab_id);

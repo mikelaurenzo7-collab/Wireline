@@ -158,6 +158,7 @@ export default function CreateAgentDialog({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLFormElement>(null);
+  const conflictFocusRef = useRef<"mark" | "name" | null>(null);
   const language = customerAgentLanguage();
 
   useModalFocusTrap(dialogRef, { active: open, onEscape: close });
@@ -187,10 +188,23 @@ export default function CreateAgentDialog({
     briefIsTemplateTextRef.current = !initialBrief.trim();
     setError("");
     setCustomizing(false);
+    conflictFocusRef.current = null;
     // Keep the whole form in view without opening the mobile keyboard.
     const frame = requestAnimationFrame(() => headingRef.current?.focus());
     return () => cancelAnimationFrame(frame);
   }, [initialBrief, initialTemplateKey, open]);
+
+  useLayoutEffect(() => {
+    if (!open || creating || !customizing || !conflictFocusRef.current) return;
+    const target =
+      conflictFocusRef.current === "mark"
+        ? dialogRef.current?.querySelector<HTMLButtonElement>(
+            '[data-bot-mark-picker] [role="radio"][aria-checked="true"]:not(:disabled)',
+          )
+        : nameRef.current;
+    target?.focus();
+    conflictFocusRef.current = null;
+  }, [open, creating, customizing, error]);
 
   useEffect(() => {
     if (!open || !unavailableMarkKeys.has(markKey)) return;
@@ -280,16 +294,8 @@ export default function CreateAgentDialog({
           setError(safeCreateAgentError(response.status, body?.code, body?.error));
           const markConflict = body?.code?.toLowerCase() === "bot_mark_conflict";
           if (response.status === 409 || markConflict) {
+            conflictFocusRef.current = markConflict ? "mark" : "name";
             setCustomizing(true);
-            requestAnimationFrame(() => {
-              if (markConflict) {
-                dialogRef.current
-                  ?.querySelector<HTMLButtonElement>(
-                    '[data-bot-mark-picker] [role="radio"][aria-checked="true"]:not(:disabled)',
-                  )
-                  ?.focus();
-              } else nameRef.current?.focus();
-            });
           }
         }
         return;

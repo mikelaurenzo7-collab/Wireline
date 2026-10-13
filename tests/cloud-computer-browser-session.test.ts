@@ -270,6 +270,62 @@ describe.skipIf(!executablePath)("cloud computer browser session (real Chromium)
     expect((bodyText.content[0] as { text: string }).text).not.toContain("owner@example.test");
   });
 
+  it("inspects only visible heading semantics and safe public link destinations", async () => {
+    const page = session.activePage();
+    await page.setContent(`
+      <h2 id="heading">Example domains</h2>
+      <p id="body">This sentence is not a heading.</p>
+      <a id="safe" href="https://example.com/help/example-domains">Learn more</a>
+      <a id="private" href="https://example.com/help?token=private">Private query</a>
+    `);
+    const inspect = async (selector: string) => {
+      const box = await page.locator(selector).boundingBox();
+      expect(box).not.toBeNull();
+      return session.execute("inspect_visible_element", {
+        x: box!.x + box!.width / 2,
+        y: box!.y + box!.height / 2,
+      });
+    };
+    const heading = await inspect("#heading");
+    expect((heading.content[0] as { text: string }).text).toContain("Heading: h2");
+    const body = await inspect("#body");
+    expect((body.content[0] as { text: string }).text).toContain("Heading: none");
+    const link = await inspect("#safe");
+    expect(link.verifiedLinkUrl).toBe("https://example.com/help/example-domains");
+    const privateQuery = await inspect("#private");
+    expect(privateQuery.verifiedLinkUrl).toBeUndefined();
+    expect((privateQuery.content[0] as { text: string }).text).not.toContain("token=private");
+  });
+
+  it("withholds a link containing owner-entered text", async () => {
+    const page = session.activePage();
+    await page.setContent(
+      '<input id="owner"><a id="secret" href="https://example.com/owner-secret-123">Owner link</a>',
+    );
+    await page.locator("#owner").focus();
+    await session.executeOwnerInput({ kind: "type", text: "owner-secret-123" });
+    const box = await page.locator("#secret").boundingBox();
+    expect(box).not.toBeNull();
+    const inspected = await session.execute("inspect_visible_element", {
+      x: box!.x + box!.width / 2,
+      y: box!.y + box!.height / 2,
+    });
+    expect(inspected.verifiedLinkUrl).toBeUndefined();
+    expect(JSON.stringify(inspected)).not.toContain("owner-secret-123");
+
+    await page.setContent(
+      '<a id="encoded" href="https://example.com/u/owner%2Dsecret%2D123">Encoded owner link</a>',
+    );
+    const encodedBox = await page.locator("#encoded").boundingBox();
+    expect(encodedBox).not.toBeNull();
+    const encoded = await session.execute("inspect_visible_element", {
+      x: encodedBox!.x + encodedBox!.width / 2,
+      y: encodedBox!.y + encodedBox!.height / 2,
+    });
+    expect(encoded.verifiedLinkUrl).toBeUndefined();
+    expect(JSON.stringify(encoded)).not.toContain("owner%2Dsecret%2D123");
+  });
+
   it("leaves token-bearing link paths, queries, and fragments out of model snapshots", async () => {
     await session
       .activePage()

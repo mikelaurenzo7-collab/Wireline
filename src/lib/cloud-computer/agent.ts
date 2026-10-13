@@ -3,7 +3,7 @@ import { DefiniteProviderRejectionError } from "../ai-client";
 import { log } from "../server-logger";
 import { CLOUD_BROWSER_VIEWPORT } from "./browser-constants";
 import type { CloudBrowserSession, MemberResult } from "./browser-session";
-import { displayUrl, modelBrowserUrl } from "./url-policy";
+import { displayUrl, modelBrowserUrl, publicEvidenceUrl } from "./url-policy";
 import type { CloudComputerClient } from "./config";
 
 /**
@@ -44,6 +44,23 @@ const OPEN_PUBLIC_URL_TOOL = {
     required: ["url"],
     properties: {
       url: { type: "string", description: "A public http or https URL, no credentials." },
+    },
+  },
+} as const;
+
+const INSPECT_VISIBLE_ELEMENT_TOOL = {
+  type: "function",
+  name: "inspect_visible_element",
+  description:
+    "Inspect the element visible at a screenshot coordinate. Confirms heading semantics and a public link destination without clicking. Use before reporting an exact link target or heading. Private or token-bearing destinations are withheld.",
+  strict: true,
+  parameters: {
+    type: "object",
+    additionalProperties: false,
+    required: ["x", "y"],
+    properties: {
+      x: { type: "number", description: "Horizontal screenshot coordinate." },
+      y: { type: "number", description: "Vertical screenshot coordinate." },
     },
   },
 } as const;
@@ -89,7 +106,13 @@ const ASK_OWNER_TOOL = {
   },
 } as const;
 
-const TOOLS = [COMPUTER_TOOL, OPEN_PUBLIC_URL_TOOL, FINISH_TASK_TOOL, ASK_OWNER_TOOL];
+const TOOLS = [
+  COMPUTER_TOOL,
+  OPEN_PUBLIC_URL_TOOL,
+  INSPECT_VISIBLE_ELEMENT_TOOL,
+  FINISH_TASK_TOOL,
+  ASK_OWNER_TOOL,
+];
 
 export type BotContext = {
   name: string;
@@ -143,6 +166,7 @@ export function buildSystemPrompt(bot: BotContext): string {
     "- Use the computer tool to act and verify the result with a fresh screenshot.",
     "- Batch a few simple actions in one computer call, then inspect the returned screen before continuing.",
     "- Keep going until the task is done, then call finish_task with a clear report and public URLs relied on.",
+    "- Before stating an exact link destination or heading, inspect that visible element. Put verified public URLs in sources. If inspection withholds a target, say the exact destination could not be verified.",
     "- If a login, payment, CAPTCHA, unapproved submission, or owner decision blocks progress, call ask_owner.",
     "- The owner can take direct control of the browser at an ask_owner checkpoint. After control returns, inspect the refreshed screen and continue from that state.",
     "",
@@ -176,41 +200,32 @@ function cleanSources(value: unknown): string[] {
   const out: string[] = [];
   for (const item of value) {
     if (typeof item !== "string") continue;
-    try {
-      const url = new URL(item.trim());
-      if (url.protocol !== "http:" && url.protocol !== "https:") continue;
-      // A source becomes a persistent owner-facing link. Auth and token URLs
-      // are not public citations, even if the model offered one as a source.
-      const segments = decodeURIComponent(url.pathname).split("/").filter(Boolean);
-      if (
-        segments.some(
-          (segment) =>
-            /(^|[-_])(auth|oauth|callback|login|log-in|signin|sign-in|signup|sign-up|register|verify|verification|magic|token|reset|password|invite|invitation|confirm)([-_]|$)/i.test(
-              segment,
-            ) ||
-            (segment.length >= 20 &&
-              /^[A-Za-z0-9_-]+$/.test(segment) &&
-              /[A-Za-z]/.test(segment) &&
-              /\d/.test(segment)) ||
-            /^[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}$/.test(segment),
-        )
-      ) {
-        continue;
-      }
-      url.username = "";
-      url.password = "";
-      // Source links are saved in the task ledger and shown to the owner.
-      // Auth flows and magic links often put bearer material after ? or #.
-      url.search = "";
-      url.hash = "";
-      const text = url.toString();
-      if (!out.includes(text)) out.push(text.slice(0, 500));
-    } catch {
-      continue;
-    }
+    const evidence = publicEvidenceUrl(item.trim());
+    if (evidence && !out.includes(evidence.url)) out.push(evidence.url);
     if (out.length >= 8) break;
   }
   return out;
+}
+
+function sanitizeSummaryLinks(
+  raw: string,
+  verified: Set<string>,
+): {
+  summary: string;
+  unverified: boolean;
+} {
+  let unverified = false;
+  const summary = raw.replace(/https?:\/\/[^\s<>"']+/gi, (match) => {
+    const candidate = match.replace(/[.,;!?)]*$/, "");
+    const suffix = match.slice(candidate.length);
+    const evidence = publicEvidenceUrl(candidate);
+    if (!evidence?.exact || !verified.has(evidence.url)) {
+      unverified = true;
+      return `[unverified link]${suffix}`;
+    }
+    return `${evidence.url}${suffix}`;
+  });
+  return { summary, unverified };
 }
 
 function jsonBytes(value: unknown): number {
@@ -539,6 +554,17 @@ export async function runCloudComputerAgent(input: {
       summary: "The cloud computer could not capture a safe screen. Try the task again.",
     };
   }
+  const verifiedSources = new Set<string>();
+  const inspectedLinks = new Set<string>();
+  const exactLinkRequested =
+    /\b(?:destination|target|href|url)\b.{0,100}\blink\b|\blink\b.{0,100}\b(?:destination|target|href|url)\b/i.test(
+      input.goal,
+    );
+  const rememberCurrentPage = () => {
+    const evidence = input.session.safeCurrentEvidenceUrl();
+    if (evidence) verifiedSources.add(evidence);
+  };
+  rememberCurrentPage();
   let screenshotBytes = initialScreenshot.length;
   if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes) return { ...CONTEXT_LIMIT_OUTCOME };
   const initialImageUrl = `data:image/jpeg;base64,${initialScreenshot.toString("base64")}`;
@@ -739,6 +765,7 @@ export async function runCloudComputerAgent(input: {
               summary: "The cloud computer could not capture a safe screen. Try the task again.",
             };
           }
+          rememberCurrentPage();
           screenshotBytes += currentScreen.length;
           if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
             return { ...CONTEXT_LIMIT_OUTCOME };
@@ -755,6 +782,35 @@ export async function runCloudComputerAgent(input: {
             ],
           });
           deferred = "Not executed: the owner just replied. Re-plan with the answer first.";
+          continue;
+        }
+        if (name === "inspect_visible_element") {
+          if (actions >= CLOUD_COMPUTER_LIMITS.maxActions) {
+            return {
+              status: "failed",
+              code: "COMPUTER_ACTION_LIMIT",
+              summary: "The task reached its action limit. Try a narrower task.",
+            };
+          }
+          actions += 1;
+          const result = await input.session.execute("inspect_visible_element", {
+            x: args.x,
+            y: args.y,
+          });
+          ranBrowser = true;
+          if (result.ok && result.verifiedLinkUrl) {
+            verifiedSources.add(result.verifiedLinkUrl);
+            inspectedLinks.add(result.verifiedLinkUrl);
+          }
+          await input.hooks.emit({ kind: result.ok ? "action" : "error", text: result.activity });
+          toolOutputs.push({
+            type: "function_call_output",
+            call_id: callId,
+            output: result.content
+              .filter((block) => block.type === "text")
+              .map((block) => block.text)
+              .join("\n"),
+          });
           continue;
         }
         if (name === "open_public_url") {
@@ -786,6 +842,7 @@ export async function runCloudComputerAgent(input: {
               summary: "The cloud computer could not capture a safe screen. Try the task again.",
             };
           }
+          rememberCurrentPage();
           screenshotBytes += screenshot.length;
           if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
             return { ...CONTEXT_LIMIT_OUTCOME };
@@ -826,6 +883,7 @@ export async function runCloudComputerAgent(input: {
             code: "COMPUTER_BROWSER_LOST",
             summary: "The cloud computer could not capture a safe screen. Try the task again.",
           };
+        rememberCurrentPage();
         screenshotBytes += screenshot.length;
         if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
           return { ...CONTEXT_LIMIT_OUTCOME };
@@ -883,6 +941,7 @@ export async function runCloudComputerAgent(input: {
           code: "COMPUTER_BROWSER_LOST",
           summary: "The cloud computer could not capture a safe screen. Try the task again.",
         };
+      rememberCurrentPage();
       screenshotBytes += screenshot.length;
       if (screenshotBytes > CLOUD_COMPUTER_LIMITS.imageBudgetBytes)
         return { ...CONTEXT_LIMIT_OUTCOME };
@@ -922,8 +981,29 @@ export async function runCloudComputerAgent(input: {
           };
       } else {
         const outcome = finishCall.args.outcome === "blocked" ? "blocked" : "completed";
-        const summary = clip(String(finishCall.args.summary ?? ""), 1_200) || "Task finished.";
-        return { status: outcome, summary, sources: cleanSources(finishCall.args.sources) };
+        const proposedSources = cleanSources(finishCall.args.sources);
+        const sources = proposedSources.filter((source) => verifiedSources.has(source));
+        const report = sanitizeSummaryLinks(
+          clip(String(finishCall.args.summary ?? ""), 1_200) || "Task finished.",
+          verifiedSources,
+        );
+        const missingExactLinkEvidence =
+          exactLinkRequested && !sources.some((source) => inspectedLinks.has(source));
+        if (
+          outcome === "completed" &&
+          (report.unverified ||
+            sources.length !== proposedSources.length ||
+            missingExactLinkEvidence)
+        ) {
+          return {
+            status: "blocked",
+            summary: missingExactLinkEvidence
+              ? "The Bot could not verify the exact link destination on screen. Check the browser and try a narrower task before relying on that destination."
+              : "The Bot reported a link it did not open or inspect. Check the browser and try a narrower task before relying on that destination.",
+            sources,
+          };
+        }
+        return { status: outcome, summary: report.summary, sources };
       }
     }
 

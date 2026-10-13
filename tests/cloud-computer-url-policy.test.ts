@@ -6,6 +6,7 @@ import {
   isBlockedHostname,
   isNonPublicAddress,
   parseNavigateTarget,
+  publicEvidenceUrl,
 } from "../src/lib/cloud-computer/url-policy";
 import {
   normalizeChord,
@@ -14,6 +15,24 @@ import {
 } from "../src/lib/cloud-computer/browser-input";
 
 describe("cloud computer network policy", () => {
+  it("keeps only public, non-tokenized task evidence URLs", () => {
+    expect(publicEvidenceUrl("https://example.com/help/example-domains")).toEqual({
+      url: "https://example.com/help/example-domains",
+      exact: true,
+    });
+    expect(publicEvidenceUrl("https://example.com/help?token=private#section")).toEqual({
+      url: "https://example.com/help",
+      exact: false,
+    });
+    for (const url of [
+      "http://localhost/",
+      "https://user:pass@example.com/help",
+      "https://example.com/magic/secret",
+      "https://example.com/secret/3xKr5D2pYq7vM9nT4bR8aC1f",
+    ]) {
+      expect(publicEvidenceUrl(url), url).toBeNull();
+    }
+  });
   it("accepts public web addresses and adds https to bare hosts", () => {
     const target = parseNavigateTarget("example.com/pricing");
     expect(target.kind).toBe("url");

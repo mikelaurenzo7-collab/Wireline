@@ -11,6 +11,7 @@ import {
 } from "../src/lib/cloud-computer/agent";
 import type { CloudBrowserSession, MemberResult } from "../src/lib/cloud-computer/browser-session";
 import type { CloudComputerClient } from "../src/lib/cloud-computer/config";
+import { publicEvidenceUrl } from "../src/lib/cloud-computer/url-policy";
 import { log } from "../src/lib/server-logger";
 
 type Item = Record<string, unknown>;
@@ -61,6 +62,7 @@ function fakeSession(
       return result;
     }),
     activeUrl: () => currentUrl,
+    safeCurrentEvidenceUrl: () => publicEvidenceUrl(currentUrl)?.url ?? null,
     frame: vi.fn(async () => Buffer.from("jpeg")),
     modelFrame: vi.fn(async () => Buffer.from(`model-frame-${++modelFrameCount}`)),
     isClosed: false,
@@ -111,7 +113,7 @@ describe("OpenAI cloud computer agent loop", () => {
   });
 
   it("uses the Responses computer tool, disables server storage, and accepts a safe finish report", async () => {
-    const { session } = fakeSession();
+    const { session } = fakeSession({}, "https://example.com/hours?token=secret");
     const { client: openai, requests } = client([
       response([
         functionCall("f1", "finish_task", {
@@ -119,6 +121,7 @@ describe("OpenAI cloud computer agent loop", () => {
           summary: "Found the hours.",
           sources: [
             "https://reader:secret@example.com/hours?code=one-time-secret#access_token",
+            "https://example.com/hours?code=one-time-secret#access_token",
             "https://example.com/magic/one-time-secret",
             "https://example.com/s/3xKr5D2pYq7vM9nT4bR8aC1f",
             "https://example.com/s/eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abcdefgh12345678",
@@ -145,6 +148,7 @@ describe("OpenAI cloud computer agent loop", () => {
       tools: [
         { type: "computer" },
         { type: "function", name: "open_public_url" },
+        { type: "function", name: "inspect_visible_element" },
         { type: "function", name: "finish_task" },
         { type: "function", name: "ask_owner" },
       ],
@@ -168,6 +172,98 @@ describe("OpenAI cloud computer agent loop", () => {
       summary: "Found the hours.",
       sources: ["https://example.com/hours"],
     });
+  });
+
+  it("blocks an invented exact link even when the model calls it a source", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const { client: openai } = client([
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "The link goes to https://example.com/domains/example.",
+          sources: ["https://example.com/domains/example"],
+        }),
+      ]),
+    ]);
+
+    const result = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Find the link destination.",
+      startUrl: "https://example.com/",
+      hooks: hooks().hooks,
+    });
+    expect(result).toMatchObject({ status: "blocked", sources: [] });
+    expect(JSON.stringify(result)).not.toContain("/domains/example");
+  });
+
+  it("blocks a bare-path link claim without inspected destination evidence", async () => {
+    const { session } = fakeSession({}, "https://example.com/");
+    const { client: openai } = client([
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: "The Learn more link goes to /domains/example.",
+          sources: [],
+        }),
+      ]),
+    ]);
+    const result = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Report the destination of the Learn more link.",
+      startUrl: "https://example.com/",
+      hooks: hooks().hooks,
+    });
+    expect(result).toMatchObject({ status: "blocked", sources: [] });
+    expect(JSON.stringify(result)).not.toContain("/domains/example");
+  });
+
+  it("accepts an inspected visible public link as a verified source", async () => {
+    const target = "https://example.com/help/example-domains";
+    const { session } = fakeSession({
+      inspect_visible_element: {
+        ok: true,
+        content: [
+          {
+            type: "text",
+            text: `Element: a. Heading: none. Verified visible link destination: ${target}`,
+          },
+        ],
+        activity: "Inspected an on-screen element",
+        verifiedLinkUrl: target,
+      },
+    });
+    const { client: openai } = client([
+      response([functionCall("i1", "inspect_visible_element", { x: 120, y: 100 })]),
+      response([
+        functionCall("f1", "finish_task", {
+          outcome: "completed",
+          summary: `The visible link goes to ${target}.`,
+          sources: [target],
+        }),
+      ]),
+    ]);
+
+    const result = await runCloudComputerAgent({
+      client: openai,
+      model: OPENAI_MODELS.GPT_5_6_TERRA,
+      session,
+      bot,
+      goal: "Find the link destination.",
+      startUrl: "https://example.com/",
+      hooks: hooks().hooks,
+    });
+    expect(result).toEqual({
+      status: "completed",
+      summary: `The visible link goes to ${target}.`,
+      sources: [target],
+    });
+    expect(session.execute).toHaveBeenCalledWith("inspect_visible_element", { x: 120, y: 100 });
   });
 
   it("executes browser actions in order, returns a fresh screenshot, and meters each turn", async () => {
