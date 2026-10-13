@@ -596,6 +596,17 @@ test("the browser address follows a clicked link and a later redirect", async ({
     frameUrl: "https://www.iana.org/help",
   });
   await expect(address).toHaveValue("https://www.iana.org/help");
+
+  await address.fill("example.org");
+  await address.press("Enter");
+  await expect(address).toHaveValue("https://example.org/");
+  await address.focus();
+  await expect(address).toBeFocused();
+  setTask("task-live", {
+    currentUrl: "https://example.org/redirected",
+    frameUrl: "https://example.org/redirected",
+  });
+  await expect(address).toHaveValue("https://example.org/redirected");
 });
 
 test("starting fresh work clears the previous completion announcement", async ({ page }) => {

@@ -257,7 +257,7 @@ describe("code review hardening contracts", () => {
     expect(sms).toContain("const isCurrentRequest = () =>");
     expect(sms).toContain("activeIdRef.current === threadId");
     expect(sms).toContain("messageOperationRef.current === operation");
-    expect(sms).toMatch(/return \(\) => \{\s*controller\.abort\(\);/);
+    expect(sms).toMatch(/return \(\) => \{[\s\S]*?activeThreadFetchRef\.current\?\.abort\(\);/);
     const smsLoader = sms.slice(
       sms.indexOf("const fetchMessages = useCallback("),
       sms.indexOf("useEffect(() =>", sms.indexOf("const fetchMessages = useCallback(")),

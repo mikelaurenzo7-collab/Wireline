@@ -56,6 +56,11 @@ const SHUTDOWN_DEADLINE_MS = 5_000;
 const ACTIVE_STATUSES: ComputerTaskStatus[] = ["running", "needs_input"];
 const INTERRUPTED_SUMMARY = "This task was interrupted by a BotBound update. Start it again.";
 const STOPPED_SUMMARY = "Stopped by the owner.";
+const EXPIRED_BROWSER_OUTCOME = {
+  status: "failed",
+  code: "COMPUTER_BROWSER_EXPIRED",
+  summary: "This browser session ended. Start a new task.",
+} satisfies CloudComputerOutcome;
 const BROWSE_FIRST_GOAL = "Browse first, then give your Bot a task.";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Cache reads cost a tenth of fresh input; a task replays its whole context
@@ -90,6 +95,8 @@ type LiveTask = {
   agentId: string;
   startedAt: number;
   stop: boolean;
+  /** The provider ended the browser while the owner was using it. */
+  expiredBrowser: boolean;
   /** When stop was first requested. */
   stopAt: number | null;
   session: CloudBrowserSession | null;
@@ -159,6 +166,12 @@ function requestStop(task: LiveTask) {
   task.ownerControl = false;
   task.session?.cancelCurrentInput();
   task.reply?.(null);
+}
+
+function failExpiredBrowser(task: LiveTask): never {
+  task.expiredBrowser = true;
+  requestStop(task);
+  throw new AppError(410, EXPIRED_BROWSER_OUTCOME.code, EXPIRED_BROWSER_OUTCOME.summary);
 }
 
 export type ComputerTaskView = {
@@ -494,6 +507,7 @@ async function admitComputerTask(
     agentId: brief.agent_id,
     startedAt: Date.now(),
     stop: false,
+    expiredBrowser: false,
     stopAt: null,
     session: null,
     frame: null,
@@ -929,6 +943,10 @@ async function executeTask(
     await closeSession(session);
   }
 
+  // A provider disconnect is a failed session, even though stopping the
+  // executor is how we wake it from a pending owner handoff.
+  if (task.expiredBrowser) outcome = EXPIRED_BROWSER_OUTCOME;
+
   // The watchdog or the shutdown hook may have finished the task already.
   if (finishTask(task, terminalOutcome(outcome))) await persistTerminal(task);
 }
@@ -960,7 +978,9 @@ async function heartbeatTick(task: LiveTask, heartbeat: ReturnType<typeof setInt
     task,
     terminalOutcome(
       task.stop
-        ? { status: "stopped", summary: STOPPED_SUMMARY }
+        ? task.expiredBrowser
+          ? EXPIRED_BROWSER_OUTCOME
+          : { status: "stopped", summary: STOPPED_SUMMARY }
         : {
             status: "failed",
             code: "COMPUTER_TIMEOUT",
@@ -1249,10 +1269,12 @@ export async function sendComputerOwnerInput(
   }
   task.ownerInputBusy = true;
   try {
+    if (task.session.isClosed) failExpiredBrowser(task);
     let frame: Buffer;
     try {
       frame = await task.session.executeOwnerInput(input);
     } catch {
+      if (task.session.isClosed) failExpiredBrowser(task);
       // Browser errors may include page-provided strings or entered values.
       // Keep them out of API output, logs, and the task ledger.
       throw new AppError(
@@ -1261,6 +1283,7 @@ export async function sendComputerOwnerInput(
         "That browser action did not go through. Check the screen and try again.",
       );
     }
+    if (task.session.isClosed) failExpiredBrowser(task);
     if (task.stop || task.finished || !task.ownerControl) {
       throw new AppError(
         409,
@@ -1314,6 +1337,7 @@ export async function returnComputerControlToBot(
     : null;
 
   const resume = task.reply;
+  if (task.session.isClosed) failExpiredBrowser(task);
   let frame: Buffer | null;
   try {
     frame = await task.session.frame();
@@ -1321,12 +1345,14 @@ export async function returnComputerControlToBot(
     frame = null;
   }
   if (!frame) {
+    if (task.session.isClosed) failExpiredBrowser(task);
     throw new AppError(
       409,
       "COMPUTER_SCREEN_UNAVAILABLE",
       "The browser could not confirm a safe screen. Keep control and try again after the page settles.",
     );
   }
+  if (task.session.isClosed) failExpiredBrowser(task);
   if (
     task.reply !== resume ||
     task.finished ||

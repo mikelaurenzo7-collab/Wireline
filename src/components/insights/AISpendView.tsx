@@ -54,14 +54,28 @@ type SpendBudget = {
   simulation_allowance_enabled?: boolean;
 };
 
+const KNOWN_ACTION_LABELS = new Map([
+  ["training.training", "Training"],
+  ["train-extract", "Knowledge extraction"],
+  ["training.asset_text", "Text upload"],
+  ["training.asset_image", "Image upload"],
+  ["training.asset_document", "Document upload"],
+  ["training.google_drive", "Google Drive import"],
+  ["website-knowledge.import", "Website import"],
+  ["agent_tool.send_email", "Send email"],
+  ["agent_tool.send_text_message", "Send text"],
+]);
+
 function actionLabel(action: string): string {
+  const knownLabel = KNOWN_ACTION_LABELS.get(action);
+  if (knownLabel) return knownLabel;
   if (/^workspace\.api\.agents\..*\.workspace\.messages(?:\.stream)?$/.test(action)) {
     return "Bot Setup";
   }
   if (/^workspace\.api\.agents\..*\.workspace\.files$/.test(action)) {
     return "Knowledge upload";
   }
-  if (/^agent-test(?:\.|$)/.test(action)) return "Bot simulation";
+  if (/^agent-test(?:\.|$)/.test(action)) return "Bot rehearsal";
   const label = action
     .split(".api.")[0]
     .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "")

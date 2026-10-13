@@ -309,14 +309,18 @@ function LiveScreen({
 
   const screenPoint = (
     event: ReactPointerEvent<HTMLDivElement> | ReactWheelEvent<HTMLDivElement>,
+    clamp = false,
   ) => {
     const image = event.currentTarget.querySelector("img");
     if (!image) return null;
     const bounds = image.getBoundingClientRect();
     if (!bounds.width || !bounds.height) return null;
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    if (!clamp && (x < 0 || x > 1 || y < 0 || y > 1)) return null;
     return {
-      x: Math.max(0, Math.min(1280, ((event.clientX - bounds.left) / bounds.width) * 1280)),
-      y: Math.max(0, Math.min(800, ((event.clientY - bounds.top) / bounds.height) * 800)),
+      x: Math.max(0, Math.min(1280, x * 1280)),
+      y: Math.max(0, Math.min(800, y * 800)),
     };
   };
 
@@ -333,12 +337,20 @@ function LiveScreen({
           {lastUrl ? hostOf(lastUrl) : "Cloud computer"}
         </span>
         {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
-        {active && src && screenCurrent && !ownerControl ? (
+        {ownerControl && zoomed ? (
+          <span className="wl-computer-screen__pan-hint">Alt+wheel or touch drag pans</span>
+        ) : null}
+        {active && src && screenCurrent ? (
           <button
             type="button"
             className="wl-computer-screen__zoom"
             aria-label={zoomed ? "Fit browser screen" : "View browser at actual size"}
             aria-pressed={zoomed}
+            title={
+              ownerControl && zoomed
+                ? "Alt + wheel or touch drag pans this view; wheel scrolls the website"
+                : undefined
+            }
             onClick={() => setZoomed((current) => !current)}
           >
             {zoomed ? "Fit" : "Zoom"}
@@ -375,36 +387,53 @@ function LiveScreen({
         className={cn(
           "wl-computer-screen__viewport",
           ownerControl && src && screenCurrent && "is-owner-controlled",
-          zoomed && !ownerControl && src && screenCurrent && "is-zoomed",
+          zoomed && src && screenCurrent && "is-zoomed",
         )}
         role={ownerControl && src && screenCurrent ? "group" : undefined}
         aria-label={
           ownerControl && src && screenCurrent
-            ? "Live browser. Click or drag on the screen to interact."
+            ? zoomed
+              ? "Live browser at actual size. Tap or click to interact. Touch drag or Alt plus wheel pans this view."
+              : "Live browser. Click or drag on the screen to interact."
             : undefined
         }
         onPointerDown={(event) => {
           if (!ownerControl || event.button !== 0) return;
-          if ((event.target as HTMLElement).closest(".wl-computer-new-tab")) return;
+          if (!(event.target as HTMLElement).closest(".wl-computer-screen__canvas")) return;
           const point = screenPoint(event);
           if (!point) return;
           pointerStart.current = { id: event.pointerId, pointerType: event.pointerType, ...point };
-          event.currentTarget.setPointerCapture(event.pointerId);
+          if (!(zoomed && event.pointerType === "touch")) {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }
         }}
         onPointerEnter={(event) => {
-          if (ownerControl && event.pointerType !== "touch") setCursor(screenPoint(event));
+          if (ownerControl && event.pointerType !== "touch") {
+            setCursor(
+              (event.target as HTMLElement).closest(".wl-computer-screen__canvas")
+                ? screenPoint(event)
+                : null,
+            );
+          }
         }}
         onPointerMove={(event) => {
-          if (ownerControl && event.pointerType !== "touch") setCursor(screenPoint(event));
+          if (ownerControl && event.pointerType !== "touch") {
+            const captured = pointerStart.current?.id === event.pointerId;
+            const overCanvas = Boolean(
+              (event.target as HTMLElement).closest(".wl-computer-screen__canvas"),
+            );
+            setCursor(captured || overCanvas ? screenPoint(event) : null);
+          }
         }}
         onPointerLeave={() => setCursor(null)}
         onPointerUp={(event) => {
           const start = pointerStart.current;
           if (!ownerControl || !start || start.id !== event.pointerId) return;
           pointerStart.current = null;
-          const point = screenPoint(event);
+          const point = screenPoint(event, true);
           if (!point) return;
           const moved = Math.hypot(point.x - start.x, point.y - start.y) > 5;
+          if (zoomed && start.pointerType === "touch" && moved) return;
           if (moved && start.pointerType === "touch") {
             onOwnerInput?.({
               kind: "scroll",
@@ -426,6 +455,15 @@ function LiveScreen({
         }}
         onWheel={(event) => {
           if (!ownerControl) return;
+          if (zoomed && event.altKey) {
+            event.preventDefault();
+            event.currentTarget.scrollBy({
+              left: event.shiftKey ? event.deltaY : event.deltaX,
+              top: event.shiftKey ? 0 : event.deltaY,
+            });
+            setCursor(screenPoint(event));
+            return;
+          }
           const point = screenPoint(event);
           if (!point) return;
           event.preventDefault();
@@ -438,16 +476,25 @@ function LiveScreen({
         }}
       >
         {active && src && screenCurrent ? (
-          <img
-            src={src}
-            alt={
-              ownerControl
-                ? "Browser screen. Click or drag to interact with the page."
-                : "What your Bot's cloud computer shows right now"
-            }
-            draggable={false}
-            onError={() => setSrc(null)}
-          />
+          <div className="wl-computer-screen__canvas">
+            <img
+              src={src}
+              alt={
+                ownerControl
+                  ? "Browser screen. Click or drag to interact with the page."
+                  : "What your Bot's cloud computer shows right now"
+              }
+              draggable={false}
+              onError={() => setSrc(null)}
+            />
+            {ownerControl && cursor ? (
+              <MousePointer2
+                className="wl-computer-screen__cursor"
+                style={{ left: `${(cursor.x / 1280) * 100}%`, top: `${(cursor.y / 800) * 100}%` }}
+                aria-hidden="true"
+              />
+            ) : null}
+          </div>
         ) : (
           <div className="wl-computer-screen__empty">
             {active ? (
@@ -480,13 +527,6 @@ function LiveScreen({
             </Button>
           </div>
         ) : null}
-        {ownerControl && cursor && src && screenCurrent ? (
-          <MousePointer2
-            className="wl-computer-screen__cursor"
-            style={{ left: `${(cursor.x / 1280) * 100}%`, top: `${(cursor.y / 800) * 100}%` }}
-            aria-hidden="true"
-          />
-        ) : null}
       </div>
     </figure>
   );
@@ -511,12 +551,14 @@ function TaskDetail({
   const [ownerUrl, setOwnerUrl] = useState(
     /^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : task.startUrl || "",
   );
+  // A changed address is a draft until a navigation or history action succeeds.
+  // Focus alone must not freeze redirects after the owner presses Enter.
+  const ownerUrlEditedRef = useRef(false);
   const [handoffGoal, setHandoffGoal] = useState("");
   // A click can navigate, and a site can redirect after the click response.
-  // Keep the address bar tied to the active browser URL from the task poll,
-  // while leaving an unchanged address draft alone.
+  // Follow the active browser URL unless an unsent address draft exists.
   useEffect(() => {
-    if (task.ownerControl) {
+    if (task.ownerControl && !ownerUrlEditedRef.current) {
       setOwnerUrl(/^https?:\/\//i.test(task.currentUrl || "") ? task.currentUrl! : "");
     }
   }, [task.currentUrl, task.ownerControl]);
@@ -574,10 +616,17 @@ function TaskDetail({
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) throw new Error(result.error);
       if (
+        kind === "take" ||
+        (kind === "input" && (input?.kind === "navigate" || input?.kind === "history"))
+      ) {
+        ownerUrlEditedRef.current = false;
+      }
+      if (
         kind === "input" &&
         (input?.kind === "navigate" ||
           input?.kind === "history" ||
-          result.data.task.currentUrl !== task.currentUrl)
+          result.data.task.currentUrl !== task.currentUrl) &&
+        !ownerUrlEditedRef.current
       ) {
         const currentUrl = result.data.task.currentUrl || "";
         setOwnerUrl(/^https?:\/\//i.test(currentUrl) ? currentUrl : "");
@@ -745,7 +794,10 @@ function TaskDetail({
                 type="text"
                 inputMode="url"
                 value={ownerUrl}
-                onChange={(event) => setOwnerUrl(event.target.value)}
+                onChange={(event) => {
+                  ownerUrlEditedRef.current = true;
+                  setOwnerUrl(event.target.value);
+                }}
                 placeholder="example.com"
                 autoComplete="url"
                 maxLength={2048}
@@ -996,7 +1048,7 @@ export default function ComputerPage() {
         setListFailed(false);
         setTasks(next);
         setSelectedId((current) =>
-          focusActive && activeTask
+          (focusActive || activeTask?.status === "needs_input") && activeTask
             ? activeTask.id
             : current && next.some((task) => task.id === current)
               ? current
@@ -1017,11 +1069,13 @@ export default function ComputerPage() {
 
   const applyTask = useCallback((next: ComputerTask, announce: boolean) => {
     if (announce) {
-      const message = announcementFor(
-        tasksRef.current?.find((task) => task.id === next.id),
-        next,
-      );
+      const previous = tasksRef.current?.find((task) => task.id === next.id);
+      const message = announcementFor(previous, next);
       if (message) setAnnouncement(message);
+      if (previous?.status !== next.status && next.status === "needs_input") {
+        setSelectedId(next.id);
+        setShowComposer(false);
+      }
     } else if (next.status === "running") {
       // A new owner handoff supersedes an earlier completion or checkpoint.
       setAnnouncement("");
@@ -1037,7 +1091,8 @@ export default function ComputerPage() {
   // the newest. Poll it whichever task the owner is reading, so a question or a
   // finish is never missed. Keyed on the id, not the object, so each poll result
   // does not tear the loop down; the next poll waits for the previous one.
-  const activeId = tasks?.find((task) => ACTIVE.includes(task.status))?.id ?? null;
+  const activeTask = tasks?.find((task) => ACTIVE.includes(task.status)) ?? null;
+  const activeId = activeTask?.id ?? null;
   useEffect(() => {
     if (!activeId) return;
     const controller = new AbortController();
@@ -1189,6 +1244,23 @@ export default function ComputerPage() {
 
         <div className={cn("wl-computer-layout", anyActive && "is-active")}>
           <div className="wl-computer-main">
+            {activeTask && selected?.id !== activeTask.id ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={activeTask.status === "needs_input" ? "default" : "outline"}
+                  onClick={() => {
+                    setSelectedId(activeTask.id);
+                    setShowComposer(false);
+                  }}
+                >
+                  {activeTask.status === "needs_input"
+                    ? "Respond to active task"
+                    : "View active task"}
+                </Button>
+              </div>
+            ) : null}
             {anyActive ? taskDetail : null}
             {!anyActive && selected ? (
               <div className="flex justify-end">

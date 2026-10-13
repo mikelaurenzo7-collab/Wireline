@@ -157,6 +157,14 @@ describe("cloud computer source contracts", () => {
     expect(browser).toContain("activity or included in a model tool result.");
   });
 
+  it("records an expired owner browser as a durable failure rather than an owner stop", () => {
+    const runner = read("src/lib/cloud-computer/task-runner.ts");
+    expect(runner).toContain('code: "COMPUTER_BROWSER_EXPIRED"');
+    expect(runner).toContain("task.expiredBrowser = true;");
+    expect(runner).toContain("if (task.expiredBrowser) outcome = EXPIRED_BROWSER_OUTCOME;");
+    expect(runner).toMatch(/task\.stop\s*\? task\.expiredBrowser\s*\? EXPIRED_BROWSER_OUTCOME/);
+  });
+
   it("ships the ledger with RLS, explicit grants, and account deletion coverage", () => {
     const migration = read("drizzle/migrations/0176_cloud_computer_tasks.sql");
     expect(migration).toContain("ENABLE ROW LEVEL SECURITY");

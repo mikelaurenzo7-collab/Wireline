@@ -426,7 +426,7 @@ describe("Activity spend presentation", () => {
       [`workspace.api.agents.${agentId}.workspace.messages.stream`, "Bot Setup"],
       [`workspace.api.agents.${agentId}.workspace.messages`, "Bot Setup"],
       [`workspace.api.agents.${agentId}.workspace.files`, "Knowledge upload"],
-      [`agent-test.api.agents.${agentId}.test.stream`, "Bot simulation"],
+      [`agent-test.api.agents.${agentId}.test.stream`, "Bot rehearsal"],
       ["terms_accepted", "Terms accepted"],
       [`custom-check.api.agents.${agentId}.status`, "Custom check"],
     ];

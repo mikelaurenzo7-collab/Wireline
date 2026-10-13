@@ -179,6 +179,7 @@ export default function SmsThreads({
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [fetchErr, setFetchErr] = useState<string | null>(null);
   const [threadErr, setThreadErr] = useState<string | null>(null);
+  const [messageLoadFailed, setMessageLoadFailed] = useState(false);
   const [search, setSearch] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, SmsReplyDraft>>({});
   const [sending, setSending] = useState(false);
@@ -246,6 +247,7 @@ export default function SmsThreads({
     setMessages([]);
     setFetchErr(null);
     setThreadErr(null);
+    setMessageLoadFailed(false);
     setLoading(true);
   }, [agentId]);
 
@@ -260,6 +262,7 @@ export default function SmsThreads({
     setMessages([]);
     setMessagesLoading(Boolean(activeId));
     setThreadErr(null);
+    setMessageLoadFailed(false);
     setDraftError(null);
     setDrafting(false);
     setSending(false);
@@ -339,6 +342,7 @@ export default function SmsThreads({
         messageOperationRef.current === operation;
       setMessagesLoading(true);
       setThreadErr(null);
+      setMessageLoadFailed(false);
       try {
         const response = await authFetch(`/api/sms/threads/${threadId}/messages`, { signal });
         const body = await response.json().catch(() => ({}));
@@ -389,6 +393,7 @@ export default function SmsThreads({
         if (!isCurrentRequest()) return;
         const message = reason?.message || "Could not load this text thread.";
         setThreadErr(message);
+        setMessageLoadFailed(true);
         toastError("Thread unavailable", message);
       } finally {
         if (isCurrentRequest()) setMessagesLoading(false);
@@ -410,10 +415,20 @@ export default function SmsThreads({
     activeThreadFetchRef.current = controller;
     void fetchMessages(activeId, controller.signal);
     return () => {
-      controller.abort();
-      if (activeThreadFetchRef.current === controller) activeThreadFetchRef.current = null;
+      // A retry replaces the initial controller. Abort whichever request is
+      // current when this conversation is left or the effect is retired.
+      activeThreadFetchRef.current?.abort();
+      activeThreadFetchRef.current = null;
     };
   }, [activeId, fetchMessages]);
+
+  const retryMessages = () => {
+    if (!activeId || messagesLoading) return;
+    activeThreadFetchRef.current?.abort();
+    const controller = new AbortController();
+    activeThreadFetchRef.current = controller;
+    void fetchMessages(activeId, controller.signal);
+  };
 
   useEffect(() => {
     if (!messagesEndRef.current || !messages.length) return;
@@ -879,6 +894,13 @@ export default function SmsThreads({
                   tone="destructive"
                   title="Conversation Unavailable"
                   className="m-3 sm:m-4"
+                  action={
+                    messageLoadFailed ? (
+                      <Button type="button" variant="secondary" size="sm" onClick={retryMessages}>
+                        Retry Conversation
+                      </Button>
+                    ) : undefined
+                  }
                 >
                   {threadErr}
                 </StatusNotice>
@@ -886,8 +908,15 @@ export default function SmsThreads({
 
               <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 sm:p-5">
                 {messagesLoading ? (
-                  <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  <div
+                    className="flex h-full items-center justify-center gap-2 text-sm text-muted-foreground"
+                    role="status"
+                  >
+                    <Loader2
+                      className="size-4 animate-spin motion-reduce:animate-none"
+                      aria-hidden="true"
+                    />
+                    Loading conversation…
                   </div>
                 ) : (
                   <div className="space-y-3">
