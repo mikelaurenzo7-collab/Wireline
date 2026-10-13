@@ -78,7 +78,7 @@ export default function InsightsView() {
 
   const viewContent = useMemo(() => {
     const views: Record<string, React.ReactNode> = {
-      funnel: wrap("Funnel", <FunnelView days={days} />),
+      funnel: wrap("Activity totals", <FunnelView days={days} />),
       goals: wrap("Goals", <GoalsView />),
       attribution: wrap("Attribution", <AttributionView days={days} />),
       topics: wrap("Topics", <TopicsView />),

@@ -38,7 +38,36 @@ router.get(
         userId: req.user.id,
         days,
       });
-      res.json(payload);
+      const { windowDays, totalCalls, latency, hangups, toolCalls, escalations, webhooks } =
+        payload.summary;
+      // Internal unit economics inform operations, but are not tenant reliability metrics.
+      res.json({
+        summary: {
+          windowDays,
+          totalCalls,
+          latency,
+          hangups,
+          toolCalls,
+          escalations,
+          webhooks,
+          healthy:
+            latency.healthy &&
+            hangups.abnormalRatePct <= 10 &&
+            (toolCalls.successRatePct == null || toolCalls.successRatePct >= 95) &&
+            (escalations.successRatePct == null || escalations.successRatePct >= 90) &&
+            (webhooks.failureRatePct == null || webhooks.failureRatePct <= 5),
+        },
+        trends: payload.trends.map((point) => ({
+          date: point.date,
+          totalCalls: point.totalCalls,
+          avgTtftMs: point.avgTtftMs,
+          p95TtftMs: point.p95TtftMs,
+          abnormalHangupRate: point.abnormalHangupRate,
+          toolCallFailureRate: point.toolCallFailureRate,
+          webhookFailureRate: point.webhookFailureRate,
+        })),
+        generatedAt: payload.generatedAt,
+      });
     } catch (err) {
       if (err instanceof AppError) throw err;
       log.error("GET /insights/voice-reliability failed", {

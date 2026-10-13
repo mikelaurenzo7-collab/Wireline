@@ -232,6 +232,7 @@ function LiveScreen({
 }) {
   const [src, setSrc] = useState<string | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [zoomed, setZoomed] = useState(false);
   const active = ACTIVE.includes(task.status);
   const latest = useRef<string | null>(null);
   const misses = useRef(0);
@@ -321,8 +322,8 @@ function LiveScreen({
 
   return (
     <figure className="wl-computer-screen">
-      <div className="wl-computer-screen__bar" aria-hidden="true">
-        <span className="wl-computer-screen__dots">
+      <div className="wl-computer-screen__bar">
+        <span className="wl-computer-screen__dots" aria-hidden="true">
           <i />
           <i />
           <i />
@@ -332,6 +333,17 @@ function LiveScreen({
           {lastUrl ? hostOf(lastUrl) : "Cloud computer"}
         </span>
         {active ? <span className="wl-computer-screen__live">Latest screen</span> : null}
+        {active && src && screenCurrent && !ownerControl ? (
+          <button
+            type="button"
+            className="wl-computer-screen__zoom"
+            aria-label={zoomed ? "Fit browser screen" : "View browser at actual size"}
+            aria-pressed={zoomed}
+            onClick={() => setZoomed((current) => !current)}
+          >
+            {zoomed ? "Fit" : "Zoom"}
+          </button>
+        ) : null}
       </div>
       {active ? (
         <div className="wl-computer-screen__progress" role="status">
@@ -363,6 +375,7 @@ function LiveScreen({
         className={cn(
           "wl-computer-screen__viewport",
           ownerControl && src && screenCurrent && "is-owner-controlled",
+          zoomed && !ownerControl && src && screenCurrent && "is-zoomed",
         )}
         role={ownerControl && src && screenCurrent ? "group" : undefined}
         aria-label={
@@ -1221,7 +1234,6 @@ export default function ComputerPage() {
                     {startingMode === "browser" ? "Opening browser…" : "Open browser"}
                   </Button>
                 </div>
-                <p className="wl-computer-choice">Or send your Bot straight to a task</p>
                 <div className="wl-computer-field">
                   <label htmlFor="computer-goal">What should your Bot do?</label>
                   <Textarea
@@ -1263,9 +1275,8 @@ export default function ComputerPage() {
                 <div className="wl-computer-composer__footer">
                   <p>
                     <ShieldCheck className="size-4" aria-hidden="true" />
-                    Never types passwords or card details. Asks you before logins and payments, and
-                    only submits forms you ask for. Up to {status?.limits.maxMinutes ?? 15} minutes
-                    per task.
+                    Passwords and card details stay with you. Your Bot submits forms only when you
+                    ask. Up to {status?.limits.maxMinutes ?? 15} minutes per task.
                   </p>
                   <Button
                     type="submit"

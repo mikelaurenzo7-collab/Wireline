@@ -468,6 +468,8 @@ router.get(
         .where(
           and(
             eq(schema.callLogs.userId, req.user.id),
+            // Connection failures have no conversation to qualify or classify.
+            sql`nullif(btrim(${schema.callLogs.transcript}), '') is not null`,
             or(
               lt(schema.callLogs.leadScore, 30),
               eq(schema.callLogs.intentLabel, "low"),
@@ -481,7 +483,7 @@ router.get(
       if (!rows || rows.length < 2) {
         return res.json({
           modes: [],
-          message: "Not enough failed calls yet, system is performing well.",
+          message: "Not enough conversations to analyze yet.",
         });
       }
 

@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  DollarSign,
-  Gauge,
-  PhoneOff,
-  ShieldAlert,
-  Wrench,
-} from "lucide-react";
+import { Activity, AlertTriangle, Gauge, PhoneOff, ShieldAlert, Wrench } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -18,10 +10,6 @@ import {
   YAxis,
 } from "recharts";
 import { cn } from "../../lib/utils";
-import {
-  TENANT_OBSERVED_COGS_HEADROOM_RATIO,
-  VOICE_VARIABLE_COST_PER_MIN_USD,
-} from "../../lib/plan-catalog";
 import type { VoiceLatencyRecentCallRow, VoiceReliabilityResponse } from "../../types/api";
 import { fetchInsight, InsightSkeleton, ErrCard, InsightEmpty } from "./shared";
 
@@ -29,8 +17,10 @@ function formatPct(value: number | null, fallback = "N/A"): string {
   return value == null ? fallback : `${value.toFixed(1)}%`;
 }
 
-function formatUsd(value: number | null, digits = 3): string {
-  return value == null ? "N/A" : `$${value.toFixed(digits)}`;
+function callEndingLabel(reason: string): string {
+  if (reason === "provider-close-1006") return "Unexpected disconnection";
+  if (reason === "pre-session-rejected") return "Could not connect";
+  return "Other call endings";
 }
 
 export default function VoiceReliabilityView({ days }: { days: number }) {
@@ -73,16 +63,22 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
   }
 
   const { summary, trends } = data;
-  const topHangups = Object.entries(summary.hangups.byReason)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
+  const hangupCounts = Object.entries(summary.hangups.byReason).reduce<Record<string, number>>(
+    (counts, [reason, count]) => {
+      const label = callEndingLabel(reason);
+      counts[label] = (counts[label] ?? 0) + count;
+      return counts;
+    },
+    {},
+  );
+  const topHangups = Object.entries(hangupCounts).sort((a, b) => b[1] - a[1]);
 
   const tiles = [
     {
       icon: Gauge,
-      label: "TTFT p95",
+      label: "Response time",
       value: summary.latency.ttftP95Ms != null ? `${summary.latency.ttftP95Ms}ms` : "N/A",
-      sub: "target <1.2s",
+      sub: "95th percentile · goal under 1.2s",
       healthy: summary.latency.healthy,
     },
     {
@@ -94,7 +90,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     },
     {
       icon: Wrench,
-      label: "Tool-call success",
+      label: "Bot actions",
       value: formatPct(summary.toolCalls.successRatePct),
       sub:
         summary.toolCalls.total > 0
@@ -104,7 +100,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     },
     {
       icon: ShieldAlert,
-      label: "Escalation success",
+      label: "Transfers",
       value: formatPct(summary.escalations.successRatePct),
       sub:
         summary.escalations.attempted > 0
@@ -115,22 +111,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
     },
     {
       icon: Activity,
-      label: "Webhook failures",
+      label: "Delivery errors",
       value: formatPct(summary.webhooks.failureRatePct),
       sub: `${summary.webhooks.failures}/${summary.webhooks.total || 0} events`,
       healthy: summary.webhooks.failureRatePct == null || summary.webhooks.failureRatePct <= 5,
-    },
-    {
-      icon: DollarSign,
-      label: "COGS / min",
-      value: formatUsd(summary.economics.cogsPerMinUsd),
-      sub: `est. $${VOICE_VARIABLE_COST_PER_MIN_USD}/min · margin ${formatPct(summary.economics.grossMarginPct)}`,
-      // Same bound the server-side reliability summary applies, via the shared
-      // ratio — the banner and this tile must agree about health.
-      healthy:
-        summary.economics.cogsPerMinUsd == null ||
-        summary.economics.cogsPerMinUsd <=
-          VOICE_VARIABLE_COST_PER_MIN_USD * TENANT_OBSERVED_COGS_HEADROOM_RATIO,
     },
   ];
 
@@ -140,8 +124,8 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
         <div className="flex items-center gap-2 p-3 rounded-md bg-amber-500/10 border border-amber-200">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
           <p className="text-xs text-[var(--wireline-color-status-warning)]">
-            Voice reliability is below operating thresholds in the last {summary.windowDays} days.
-            Review latency, hangups, tool calls, escalations, and webhook health below.
+            Some calls need attention in the last {summary.windowDays} days. Review response time
+            and connection issues below.
           </p>
         </div>
       )}
@@ -177,7 +161,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
       {trends.length > 1 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           <div className="rounded-md wl-panel border border-border p-5">
-            <p className="wl-insight-label text-brand/70 mb-4">TTFT trend</p>
+            <p className="wl-insight-label text-brand/70 mb-4">Response time trend</p>
             <div className="h-52 min-h-44">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trends}>
@@ -188,7 +172,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                   <Area
                     type="monotone"
                     dataKey="avgTtftMs"
-                    name="Avg TTFT"
+                    name="Average response time"
                     stroke="var(--wireline-color-action-primary-default)"
                     strokeWidth={2}
                     fill="var(--wireline-color-action-primary-default)"
@@ -197,7 +181,7 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                   <Area
                     type="monotone"
                     dataKey="p95TtftMs"
-                    name="p95 TTFT"
+                    name="95th percentile response time"
                     stroke="var(--muted-foreground)"
                     strokeWidth={2}
                     fill="var(--muted-foreground)"
@@ -253,10 +237,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-md wl-panel border border-border p-5">
-          <p className="wl-insight-label text-brand/70 mb-4">Hangup reasons</p>
+          <p className="wl-insight-label text-brand/70 mb-4">Call endings</p>
           <div className="space-y-2">
             {topHangups.length === 0 ? (
-              <p className="text-sm text-muted">No hangup reasons recorded yet.</p>
+              <p className="text-sm text-muted">No call endings recorded yet.</p>
             ) : (
               topHangups.map(([reason, count]) => (
                 <div
@@ -289,8 +273,10 @@ export default function VoiceReliabilityView({ days }: { days: number }) {
                       {call.outcomeTag || call.sentiment || "call"}
                     </p>
                     <p className="text-[length:var(--wireline-typography-overline-size)] text-muted font-mono">
-                      {call.ttftMs != null ? `${call.ttftMs}ms TTFT` : "no TTFT"}
-                      {call.pipelineError ? ` · ${call.pipelineError}` : ""}
+                      {call.ttftMs != null
+                        ? `${call.ttftMs}ms response`
+                        : "Response time unavailable"}
+                      {call.pipelineError ? " · Call setup issue" : ""}
                     </p>
                   </div>
                   <span className="font-mono text-[length:var(--wireline-typography-overline-size)] text-muted shrink-0">

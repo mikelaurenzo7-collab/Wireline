@@ -149,7 +149,7 @@ export type AppPageSecondaryTabRoute = {
 };
 
 export const INSIGHTS_VIEW_TABS: Record<string, AppPageSubTab> = {
-  funnel: { id: "funnel", label: "Funnel", icon: TrendingUp },
+  funnel: { id: "funnel", label: "Totals", icon: TrendingUp },
   goals: { id: "goals", label: "Goals", icon: Target },
   heatmap: {
     id: "heatmap",

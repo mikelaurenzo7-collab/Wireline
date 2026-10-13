@@ -264,8 +264,7 @@ export function LeadHuntReview({
             <h2 className="text-sm font-semibold text-foreground">Find. Review. Queue.</h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Apollo matches your saved targeting. Nothing is called until you approve a draft and
-            launch it.
+            Find matches for your targeting. Review each lead before a campaign calls.
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

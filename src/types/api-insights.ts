@@ -111,14 +111,6 @@ export interface VoiceReliabilitySummaryResponse {
     failures: number;
     failureRatePct: number | null;
   };
-  economics: {
-    cogsPerMinUsd: number | null;
-    estimatedCogsPerMinUsd: number;
-    revenuePerMinUsd: number | null;
-    grossMarginPct: number | null;
-    totalCostUsd: number;
-    totalMinutes: number;
-  };
 }
 
 export interface VoiceReliabilityTrendPointResponse {
@@ -129,7 +121,6 @@ export interface VoiceReliabilityTrendPointResponse {
   abnormalHangupRate: number;
   toolCallFailureRate: number;
   webhookFailureRate: number;
-  cogsPerMinUsd: number | null;
 }
 
 /** GET /api/insights/voice-reliability */

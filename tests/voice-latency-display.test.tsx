@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   cursor: 0,
   voice: {} as Record<string, unknown>,
   trends: vi.fn(),
+  reliability: vi.fn(),
 }));
 
 vi.mock("react", async (original) => ({
@@ -38,7 +39,7 @@ vi.mock("../src/middleware/auth", () => ({ authenticateUser: vi.fn() }));
 vi.mock("../src/middleware/api-rate-limits", () => ({ insightsRateLimit: vi.fn() }));
 vi.mock("../src/lib/api-validation", () => ({ validateQuery: () => vi.fn() }));
 vi.mock("../src/lib/voice-observability", () => ({ getLatencyTrends: h.trends }));
-vi.mock("../src/lib/voice-reliability", () => ({ getVoiceReliabilityPayload: vi.fn() }));
+vi.mock("../src/lib/voice-reliability", () => ({ getVoiceReliabilityPayload: h.reliability }));
 
 function text(node: ReactNode): string {
   if (Array.isArray(node)) return node.map(text).join("");
@@ -64,6 +65,10 @@ const layers = (
 ).stack;
 const route = layers.find((layer) => layer.route?.path === "/api/insights/latency")!.route!;
 const latencyHandler = route.stack[route.stack.length - 1].handle;
+const reliabilityRoute = layers.find(
+  (layer) => layer.route?.path === "/api/insights/voice-reliability",
+)!.route!;
+const reliabilityHandler = reliabilityRoute.stack[reliabilityRoute.stack.length - 1].handle;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -136,5 +141,43 @@ describe("voice latency configured call limit", () => {
     const content = text(VoiceLatencyView({ days: 30 }));
     expect(content).toContain("Average TTFT0ms");
     expect(content).toContain("TTFT p950ms");
+  });
+});
+
+describe("customer voice reliability response", () => {
+  it("omits internal unit economics and bases customer health on call reliability", async () => {
+    h.reliability.mockResolvedValue({
+      summary: {
+        windowDays: 7,
+        totalCalls: 1,
+        latency: { ttftP95Ms: 600, healthy: true },
+        hangups: { abnormalRatePct: 0, byReason: {} },
+        toolCalls: { successRatePct: null },
+        escalations: { successRatePct: null },
+        webhooks: { failureRatePct: null },
+        economics: { cogsPerMinUsd: 999, grossMarginPct: -999 },
+        healthy: false,
+      },
+      trends: [
+        {
+          date: "2026-10-13",
+          totalCalls: 1,
+          avgTtftMs: 600,
+          p95TtftMs: 600,
+          abnormalHangupRate: 0,
+          toolCallFailureRate: 0,
+          webhookFailureRate: 0,
+          cogsPerMinUsd: 999,
+        },
+      ],
+      generatedAt: "2026-10-13T00:00:00Z",
+    });
+    const json = vi.fn();
+    await reliabilityHandler({ user: { id: "tenant-a" }, query: { days: 7 } }, { json });
+    const result = json.mock.calls[0][0];
+    expect(result.summary.healthy).toBe(true);
+    expect(result.summary).not.toHaveProperty("economics");
+    expect(result.trends[0]).not.toHaveProperty("cogsPerMinUsd");
+    expect(h.reliability).toHaveBeenCalledWith({ userId: "tenant-a", days: 7 });
   });
 });
