@@ -468,8 +468,8 @@ router.get(
         .where(
           and(
             eq(schema.callLogs.userId, req.user.id),
-            // Connection failures have no conversation to qualify or classify.
-            sql`nullif(btrim(${schema.callLogs.transcript}), '') is not null`,
+            // An agent-only greeting is not evidence of caller intent or qualification.
+            sql`${schema.callLogs.transcript} ~ ${"(^|\n)Caller: [^[:space:]]"}`,
             or(
               lt(schema.callLogs.leadScore, 30),
               eq(schema.callLogs.intentLabel, "low"),
