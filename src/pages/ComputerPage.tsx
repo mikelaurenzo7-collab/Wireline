@@ -934,6 +934,7 @@ export default function ComputerPage() {
   const [tasks, setTasks] = useState<ComputerTask[] | null>(null);
   const [listFailed, setListFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
   const [goal, setGoal] = useState("");
   const [startUrl, setStartUrl] = useState("");
   const [startingMode, setStartingMode] = useState<"browser" | "task" | null>(null);
@@ -1104,7 +1105,10 @@ export default function ComputerPage() {
       const result = await readApiJson<{ task: ComputerTask }>(response);
       if (!result.ok) {
         // Started from another tab or device: bring that task into view.
-        if (result.code === "COMPUTER_BUSY") void loadTasks({ focusActive: true });
+        if (result.code === "COMPUTER_BUSY") {
+          setShowComposer(false);
+          void loadTasks({ focusActive: true });
+        }
         throw new Error(result.error);
       }
       if (!prepareBrowser) {
@@ -1113,6 +1117,7 @@ export default function ComputerPage() {
       }
       setTasks((current) => [result.data.task, ...(current ?? [])]);
       setSelectedId(result.data.task.id);
+      setShowComposer(false);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The task could not start.");
     } finally {
@@ -1128,8 +1133,8 @@ export default function ComputerPage() {
   );
   const botName = (id: string) =>
     agents.length > 1 ? agents.find((agent) => agent.id === id)?.name : undefined;
-  // The selected task leads and the composer follows it, like a conversation:
-  // finishing a task never moves its result out from under the owner.
+  // Show a selected result first. The new-task form opens when requested, so
+  // returning to Computer does not bury the answer under a full form.
   // Keyed per task: its screen, reply draft, and errors never carry over.
   const selectedBot = selected ? agents.find((agent) => agent.id === selected.agentId) : undefined;
   const taskDetail = selected ? (
@@ -1185,7 +1190,20 @@ export default function ComputerPage() {
         <div className={cn("wl-computer-layout", anyActive && "is-active")}>
           <div className="wl-computer-main">
             {anyActive ? taskDetail : null}
-            {!anyActive ? (
+            {!anyActive && selected ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowComposer((current) => !current)}
+                >
+                  {showComposer ? "Back to task" : "New task"}
+                </Button>
+              </div>
+            ) : null}
+            {!anyActive && selected && !showComposer ? taskDetail : null}
+            {!anyActive && (!selected || showComposer) ? (
               <form
                 className="wl-computer-composer"
                 onSubmit={(event) => {
@@ -1293,7 +1311,7 @@ export default function ComputerPage() {
                 ) : null}
               </form>
             ) : null}
-            {!anyActive ? taskDetail : null}
+            {!anyActive && selected && showComposer ? taskDetail : null}
           </div>
 
           <aside className="wl-computer-history" aria-label="Recent tasks">
@@ -1326,7 +1344,10 @@ export default function ComputerPage() {
                       <button
                         type="button"
                         aria-current={task.id === selectedId ? "true" : undefined}
-                        onClick={() => setSelectedId(task.id)}
+                        onClick={() => {
+                          setSelectedId(task.id);
+                          setShowComposer(false);
+                        }}
                       >
                         <span className="wl-computer-history__goal">{task.goal}</span>
                         <span className="wl-computer-history__meta">

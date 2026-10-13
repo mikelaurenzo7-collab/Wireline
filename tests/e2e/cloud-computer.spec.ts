@@ -273,6 +273,51 @@ async function capture(page: Page, info: TestInfo, name: string) {
 const READY = { available: true, reason: "ready", limits: { maxMinutes: 15, maxSteps: 120 } };
 
 for (const width of [390, 1440]) {
+  test(`a finished task opens on its result and keeps a new task one click away at ${width}px`, async ({
+    page,
+  }, info) => {
+    await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+    await mockComputer(page, {
+      status: READY,
+      tasks: [
+        task({
+          id: "task-recent",
+          status: "completed",
+          goal: "Check our Google Business page.",
+          summary: "The listing has Saturday hours.",
+          liveView: false,
+        }),
+        task({
+          id: "task-older",
+          status: "completed",
+          goal: "Compare supplier prices.",
+          summary: "Supplier A costs less.",
+          liveView: false,
+        }),
+      ],
+    });
+
+    await page.goto("/computer");
+    const result = page.getByRole("region", { name: "Check our Google Business page." });
+    await expect(result.getByText("The listing has Saturday hours.")).toBeVisible();
+    await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, info, `computer-completed-result-${width}`);
+
+    await page.getByRole("button", { name: "New task" }).click();
+    await expect(page.getByRole("textbox", { name: "What should your Bot do?" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back to task" })).toBeVisible();
+    await capture(page, info, `computer-new-task-${width}`);
+
+    const history = page.getByRole("complementary", { name: "Recent tasks" });
+    await history.getByRole("button", { name: /Compare supplier prices/ }).click();
+    await expect(page.locator(".wl-computer-composer")).toHaveCount(0);
+    await expect(page.getByText("Supplier A costs less.")).toBeVisible();
+  });
+}
+
+for (const width of [390, 1440]) {
   test(`a Bot that needs the owner shows its screen, question, and reply at ${width}px`, async ({
     page,
   }, info) => {
@@ -390,6 +435,7 @@ test("a running task keeps updating while the owner reads an older result", asyn
     history.getByRole("button", { name: /Find three plumbers/ }).getByText("Stopped"),
   ).toBeVisible();
   await expect(page.getByText("The task stopped.")).toBeAttached();
+  await page.getByRole("button", { name: "New task" }).click();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
     .fill("Compare two supplier prices.");
@@ -567,6 +613,7 @@ test("starting fresh work clears the previous completion announcement", async ({
   });
   const announcement = page.locator('[aria-live="polite"][aria-atomic="true"]');
   await expect(announcement).toHaveText("Your Bot finished the task.");
+  await page.getByRole("button", { name: "New task" }).click();
   await page
     .getByRole("textbox", { name: "What should your Bot do?" })
     .fill("Find three suppliers.");

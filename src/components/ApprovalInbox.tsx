@@ -504,7 +504,7 @@ function ApprovalTaskCard({ task, onResolved }: ApprovalTaskCardProps) {
             ) : (
               <Check className="size-3.5" aria-hidden="true" />
             )}
-            {manualTask ? "Complete" : "Approve"}
+            {manualTask ? "Mark complete" : "Approve"}
           </ShadButton>
           {!manualTask ? (
             <ShadButton

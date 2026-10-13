@@ -104,7 +104,7 @@ describe("omnichannel outcome loop", () => {
     );
     expect(approvals).toContain('rawTaskType(task) === "human_handoff"');
     expect(approvals).toContain("manualHandoff || isManualOperatorTask(rawTaskType(task))");
-    expect(approvals).toContain('{manualTask ? "Complete" : "Approve"}');
+    expect(approvals).toContain('{manualTask ? "Mark complete" : "Approve"}');
     expect(approvals).toContain('{manualHandoff ? "Dismiss" : "Reject"}');
     expect(approvals).toContain("if (!manualTask) {");
   });

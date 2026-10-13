@@ -935,6 +935,49 @@ export default function KnowledgeBaseClaude({
         </div>
       ) : null}
 
+      <div
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        className={`flex rounded-[var(--wireline-radius-lg)] border-2 border-dashed text-center transition-colors ${
+          compactUpload
+            ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
+            : "min-h-[96px] flex-col items-center justify-center px-6 py-5"
+        } ${
+          dragOver
+            ? "border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)]"
+            : "border-[var(--wireline-color-border-strong)] bg-transparent hover:border-[var(--wireline-color-action-primary-default)] hover:bg-[var(--wireline-color-surface-subtle)]"
+        }`}
+      >
+        <UploadCloud
+          className={`shrink-0 text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "size-4" : "mb-2 size-5"}`}
+          aria-hidden="true"
+        />
+        <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
+          <h2 className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
+            Add Documents
+          </h2>
+          <div
+            className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
+          >
+            {imageUploadsAvailable
+              ? "Text, Markdown, CSV, PDF, DOCX, or XLSX files, or PNG, JPG, WEBP, or GIF images"
+              : "Text, Markdown, CSV, PDF, DOCX, or XLSX files"}{" "}
+            up to {KNOWLEDGE_ASSET_MAX_LABEL} each.
+            <span className="block">
+              Excel extraction reads up to the first 1,000 rows per sheet.
+            </span>
+          </div>
+        </div>
+        <div
+          className={
+            compactUpload ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto" : "mt-3 shrink-0"
+          }
+        >
+          {uploadTrigger}
+        </div>
+      </div>
+
       <section
         className="flex flex-col gap-2 empty:hidden"
         aria-label="Saved knowledge"
@@ -947,7 +990,7 @@ export default function KnowledgeBaseClaude({
               className="h-[68px] animate-pulse rounded-[var(--wireline-radius-lg)] bg-[var(--wireline-color-surface-subtle)]"
             />
           ))
-        ) : knowledge.length === 0 ? null : ( // stats -> empty pill -> identical upload pill. // way when empty so the page reads as: stats -> upload, not // Drop zone below already invites uploads — keep this row out of the
+        ) : knowledge.length === 0 ? null : (
           <>
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-base font-semibold leading-6 text-foreground">Saved Knowledge</h2>
@@ -1121,54 +1164,7 @@ export default function KnowledgeBaseClaude({
         )}
       </section>
 
-      {compactUpload ? activeRulesPanel : null}
-
-      <div
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        className={`flex rounded-[var(--wireline-radius-lg)] border-2 border-dashed text-center transition-colors ${
-          compactUpload
-            ? "min-h-[72px] flex-col items-stretch justify-center gap-3 px-4 py-4 text-left sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:px-5"
-            : knowledge.length === 0
-              ? "min-h-[96px] flex-col items-center justify-center px-6 py-5"
-              : "min-h-[120px] flex-col items-center justify-center px-6 py-8"
-        } ${
-          dragOver
-            ? "border-[var(--wireline-color-action-primary-default)] bg-[var(--wireline-color-action-primary-container)]"
-            : "border-[var(--wireline-color-border-strong)] bg-transparent hover:border-[var(--wireline-color-action-primary-default)] hover:bg-[var(--wireline-color-surface-subtle)]"
-        }`}
-      >
-        <UploadCloud
-          className={`shrink-0 text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "size-4" : "mb-2 size-5"}`}
-          aria-hidden="true"
-        />
-        <div className={compactUpload ? "min-w-0 flex-1" : undefined}>
-          <h2 className="text-sm font-semibold text-[var(--wireline-color-text-primary)]">
-            Add Documents
-          </h2>
-          <div
-            className={`text-xs text-[var(--wireline-color-text-tertiary)] ${compactUpload ? "mt-0.5" : "mt-1"}`}
-          >
-            {imageUploadsAvailable
-              ? "Text, Markdown, CSV, PDF, DOCX, or XLSX files, or PNG, JPG, WEBP, or GIF images"
-              : "Text, Markdown, CSV, PDF, DOCX, or XLSX files"}{" "}
-            up to {KNOWLEDGE_ASSET_MAX_LABEL} each.
-            <span className="block">
-              Excel extraction reads up to the first 1,000 rows per sheet.
-            </span>
-          </div>
-        </div>
-        <div
-          className={
-            compactUpload ? "shrink-0 [&>button]:w-full sm:[&>button]:w-auto" : "mt-3 shrink-0"
-          }
-        >
-          {uploadTrigger}
-        </div>
-      </div>
-
-      {!compactUpload ? activeRulesPanel : null}
+      {activeRulesPanel}
     </div>
   );
 }

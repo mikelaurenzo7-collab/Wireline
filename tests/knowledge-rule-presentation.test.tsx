@@ -65,6 +65,19 @@ beforeEach(() => {
 });
 
 describe("knowledge upload capabilities", () => {
+  it("offers document upload before a long saved knowledge list", () => {
+    h.knowledge = [{ id: 1, content: "Opening hours are Monday to Friday." }];
+    const rendered = elements(KnowledgeBaseClaude({ agentId: "bot-a" }));
+    const uploadIndex = rendered.findIndex((node) => "onDrop" in node.props);
+    const savedIndex = rendered.findIndex(
+      (node) =>
+        node.type === "section" &&
+        (node.props as Record<string, unknown>)["aria-label"] === "Saved knowledge",
+    );
+    expect(uploadIndex).toBeGreaterThan(-1);
+    expect(savedIndex).toBeGreaterThan(uploadIndex);
+  });
+
   it.each([undefined, false, true])(
     "matches chooser and help to server capability %s",
     (available) => {
