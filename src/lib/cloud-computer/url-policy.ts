@@ -236,7 +236,16 @@ export function publicEvidenceUrl(raw: string): { url: string; exact: boolean } 
   try {
     const parsed = new URL(raw);
     if (!checkUrlAllowed(parsed).allowed) return null;
-    const segments = decodeURIComponent(parsed.pathname).split("/").filter(Boolean);
+    // Nested percent-encoding must not hide auth or token path segments from
+    // the evidence filter. Refuse paths that remain encoded after the cap.
+    let decodedPath = parsed.pathname;
+    for (let pass = 0; pass < 4; pass++) {
+      const next = decodeURIComponent(decodedPath);
+      if (next === decodedPath) break;
+      decodedPath = next;
+    }
+    if (/%[0-9a-f]{2}/i.test(decodedPath)) return null;
+    const segments = decodedPath.split("/").filter(Boolean);
     if (
       segments.some(
         (segment) =>

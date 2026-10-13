@@ -24,10 +24,17 @@ describe("cloud computer network policy", () => {
       url: "https://example.com/help",
       exact: false,
     });
+    expect(publicEvidenceUrl("https://example.com/help%20center")).toEqual({
+      url: "https://example.com/help%20center",
+      exact: true,
+    });
     for (const url of [
       "http://localhost/",
       "https://user:pass@example.com/help",
       "https://example.com/magic/secret",
+      "https://example.com/%256dagic/secret",
+      "https://example.com/%25256cogin/continue",
+      "https://example.com/%252525256cogin/continue",
       "https://example.com/secret/3xKr5D2pYq7vM9nT4bR8aC1f",
     ]) {
       expect(publicEvidenceUrl(url), url).toBeNull();
